@@ -1,0 +1,69 @@
+# MemPalace per-project files (issue #185)
+mempalace.yaml
+entities.json
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node / frontend build
+node_modules/
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+
+# Data (large; sourced from IRS/ProPublica, not version-controlled)
+data/
+
+# Logs & runtime state
+*.log
+nohup.out
+.state
+.master_state.json
+logs/
+reports/
+
+# Local agent / tooling state
+.claude/
+autodev/logs/
+
+# Backups & archives
+backups/
+backup_*/
+archive_*/
+*.backup.*
+*.broken.*
+
+# Legacy / debris (see CLAUDE.md — not part of active codebase)
+app.py
+app.py.
+app.py.api-only.*
+app_with_feedback.py
+merit_app.py
+merit_daemon.py
+merit_master.py
+rebuild.py
+ui_agent.py
+test_load.py
+inspect_csv.py
+debug_app.py
+fix*.py
+patch.py
+propublica_fix.py
+cloudflared.deb
+HEALTH_CHECK_REPORT.txt
+VALIDATION_REPORT.txt
+MERIT_ERROR_LOG.md
+MERIT-STATUS-REVIEW.md
+Agent C/
+Agent E/
+0]
+
+# Separate / legacy sub-projects (not the canonical stack)
+nonprofit-explorer/
+static_web/
+templates/
+static/
+web/

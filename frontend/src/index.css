@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 216 48% 9%;
+    --foreground: 30 20% 94%;
+    --card: 0 0% 100%;
+    --card-foreground: 216 48% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 48% 9%;
+    --primary: 38 35% 61%;
+    --primary-foreground: 216 48% 9%;
+    --secondary: 214 38% 14%;
+    --secondary-foreground: 30 20% 94%;
+    --muted: 214 38% 14%;
+    --muted-foreground: 30 10% 62%;
+    --accent: 38 45% 65%;
+    --accent-foreground: 216 48% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 12% 88%;
+    --input: 30 12% 88%;
+    --ring: 38 35% 61%;
+    --radius: 0.625rem;
+
+    --deep-navy: #0A1628;
+    --dark-surface: #111D2E;
+    --navy-mid: #1A2744;
+    --warm-cream: #F5F0EB;
+    --soft-gold: #C9A96E;
+    --bright-gold: #D4B87A;
+    --pale-gold: #E8D5A3;
+    --muted-cream: #A89F94;
+    --cool-grey: #6B7280;
+    --light-grey: #E5E0DB;
+    --deep-gold: #8B7340;
+    --success-green: #4ADE80;
+    --alert-amber: #F59E0B;
+    /* New brand tokens */
+    --merit-navy:  #0D1C36;
+    --merit-gold:  #C9A84C;
+    --civic-teal:  #1A4A4A;
+    --teal-light:  #2D7070;
+    --merit-cream: #FAF8F3;
+    --charcoal:    #1E2530;
+    --slate:       #4B5563;
+    /* Tier colors */
+    --tier-beacon:  #B8902F;
+    --tier-lantern: #C9A84C;
+    --tier-flame:   #D4B968;
+    --tier-ember:   #D9A876;
+    --tier-spark:   #E8C896;
+  }
+
+  body {
+    font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
+    background-color: var(--deep-navy);
+    color: var(--warm-cream);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  .font-cinzel {
+    font-family: 'Cinzel', serif;
+  }
+
+  .font-body {
+    font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
+  }
+
+  .text-deep-navy { color: var(--deep-navy); }
+  .text-dark-surface { color: var(--dark-surface); }
+  .text-navy-mid { color: var(--navy-mid); }
+  .text-warm-cream { color: var(--warm-cream); }
+  .text-soft-gold { color: var(--soft-gold); }
+  .text-bright-gold { color: var(--bright-gold); }
+  .text-pale-gold { color: var(--pale-gold); }
+  .text-muted-cream { color: var(--muted-cream); }
+  .text-cool-grey { color: var(--cool-grey); }
+  .text-light-grey { color: var(--light-grey); }
+  .text-deep-gold { color: var(--deep-gold); }
+  .text-success-green { color: var(--success-green); }
+  .text-alert-amber { color: var(--alert-amber); }
+
+  .bg-deep-navy { background-color: var(--deep-navy); }
+  .bg-dark-surface { background-color: var(--dark-surface); }
+  .bg-navy-mid { background-color: var(--navy-mid); }
+  .bg-warm-cream { background-color: var(--warm-cream); }
+  .bg-soft-gold { background-color: var(--soft-gold); }
+  .bg-bright-gold { background-color: var(--bright-gold); }
+  .bg-pale-gold { background-color: var(--pale-gold); }
+  .bg-muted-cream { background-color: var(--muted-cream); }
+  .bg-cool-grey { background-color: var(--cool-grey); }
+  .bg-light-grey { background-color: var(--light-grey); }
+  .bg-deep-gold { background-color: var(--deep-gold); }
+  .bg-success-green { background-color: var(--success-green); }
+  .bg-alert-amber { background-color: var(--alert-amber); }
+
+  .border-soft-gold { border-color: var(--soft-gold); }
+  .border-light-grey { border-color: var(--light-grey); }
+  .border-navy-mid { border-color: var(--navy-mid); }
+  .border-muted-cream { border-color: var(--muted-cream); }
+
+  .hover-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(10, 22, 40, 0.08);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--deep-navy);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--navy-mid);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--soft-gold);
+}
