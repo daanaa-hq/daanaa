@@ -37,7 +37,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/directory" element={<Directory />} />
             <Route path="/category/:id" element={<CategoryPage />} />
-            <Route path="/organization/:id" element={<OrganizationDetail />} />
+            <Route path="/org/:id" element={<OrganizationDetail />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/how-it-works" element={<HowItWorks />} />

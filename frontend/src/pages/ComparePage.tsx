@@ -63,7 +63,7 @@ function OrgColumn({ ein }: { ein: string }) {
 
   return (
     <div className="flex-1 min-w-0">
-      <Link to={`/organization/${ein}`} className="block group mb-5">
+      <Link to={`/org/${ein}`} className="block group mb-5">
         <h2 className="font-display text-[18px] text-deep-navy group-hover:text-soft-gold transition-colors leading-snug">
           {org.organization_name}
         </h2>
@@ -82,7 +82,7 @@ function OrgColumn({ ein }: { ein: string }) {
       </div>
 
       <Link
-        to={`/organization/${ein}`}
+        to={`/org/${ein}`}
         className="mt-5 block w-full py-2.5 rounded-full border border-soft-gold/40 text-soft-gold font-body text-[13px] font-semibold text-center hover:bg-soft-gold/10 transition-colors"
       >
         View full profile →

@@ -135,7 +135,7 @@ export default function SemanticSearch() {
             <div className="space-y-3">
               {results.map(org => (
                 <Link key={org.EIN}
-                  to={`/organization/${org.EIN}`}
+                  to={`/org/${org.EIN}`}
                   className="block bg-white border border-light-grey rounded-xl p-5 hover:border-soft-gold/40 hover:shadow-md transition-all group">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
