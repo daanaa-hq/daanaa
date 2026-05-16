@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { usePageMeta } from '../hooks/usePageMeta'
 import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import LampMark from '../components/LampMark'
@@ -428,6 +429,7 @@ function FooterCTA() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
+  usePageMeta('', 'Discover IRS-verified 501(c)(3) nonprofits scored by financial health and transparency. 430,000+ organizations, free to search.')
   return (
     <div>
       <HeroSection />

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import LampMark from '../components/LampMark'
 import { TIER_COLORS, TIER_MICROCOPY, getNextTierPath } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 const TIERS: {
   name: TierName
@@ -88,6 +89,7 @@ const CRITERIA_ICON_UNMET = (
 )
 
 export default function TiersPage() {
+  usePageMeta('Nonprofit Tiers', 'Understand the five MERIT tiers — Beacon, Lantern, Flame, Ember, and Spark — and what each means for IRS-verified nonprofits.')
   return (
     <div className="min-h-[100dvh]">
 

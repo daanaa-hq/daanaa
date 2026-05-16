@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { submitWaitlist } from '../data/api'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
@@ -26,6 +27,7 @@ function StepDot({ n, label }: { n: number; label: string }) {
 }
 
 export default function ForNonprofits() {
+  usePageMeta('For Nonprofits', 'Claim your free MERIT profile. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
   const [email, setEmail] = useState('')
   const [ein, setEin] = useState('')
   const [submitted, setSubmitted] = useState(false)
