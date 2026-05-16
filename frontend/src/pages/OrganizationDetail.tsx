@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
-import { getTierSummary, getTierFromOrg, getFinancialHealth, PASSING_BANDS } from '../components/TrustBadge'
+import { getTierSummary, getTierFromOrg, getFinancialHealth, PASSING_BANDS, TIER_COLORS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
 import LampMark from '../components/LampMark'
@@ -433,6 +433,14 @@ export default function OrganizationDetail() {
                 size="lg"
                 onClick={() => setShowTierBreakdown(s => !s)}
               />
+              {/* Tier name — connects lamp mark to the /tiers page */}
+              <Link
+                to="/tiers"
+                className="font-body text-[12px] tracking-[0.04em] uppercase hover:text-bright-gold transition-colors"
+                style={{ color: TIER_COLORS[lampTier] }}
+              >
+                {lampTier} tier
+              </Link>
               {/* IRS verification — a real, defensible fact for every org */}
               <div className="flex flex-col items-center gap-2 text-center">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-body text-[12px] font-medium">

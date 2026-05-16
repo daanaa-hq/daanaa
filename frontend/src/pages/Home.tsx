@@ -139,46 +139,29 @@ function BrowseCauses() {
           </Link>
         </div>
 
-        {/* Tile grid — 2 cols mobile · 3 cols tablet · 4 cols desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+        {/* Cause grid — 2 cols mobile · 3 cols tablet · 4 cols desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
           {cats.map(cat => (
             <Link
               key={cat.id}
               to={`/category/${cat.id}`}
-              className="group relative flex flex-col rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-250 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
+              className="group flex flex-col justify-between bg-white border border-light-grey rounded-xl px-5 py-4 hover:border-soft-gold hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
+              style={{ minHeight: '90px' }}
             >
-              {/* Gradient panel — tall */}
-              <div
-                className="relative flex flex-col items-center justify-center gap-4 px-4 py-10"
-                style={{
-                  background: `linear-gradient(145deg, ${cat.gradient[0]}, ${cat.gradient[1]})`,
-                  minHeight: '180px',
-                }}
-              >
-                {/* Subtle noise/grain overlay for depth */}
-                <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")', backgroundSize: '200px' }} />
-
-                <span
-                  className="relative z-10 leading-none drop-shadow-md group-hover:scale-110 transition-transform duration-250"
-                  style={{ fontSize: '56px' }}
-                >
-                  {cat.emoji}
-                </span>
-
-                <span className="relative z-10 font-body text-[15px] font-bold text-white text-center leading-tight tracking-[0.01em] drop-shadow-sm">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-body text-[15px] font-semibold text-deep-navy leading-snug tracking-[0.01em] group-hover:text-soft-gold transition-colors duration-150">
                   {cat.name}
                 </span>
-
-                {/* Sub count badge */}
-                <span className="relative z-10 font-body text-[11px] text-white/65 tracking-[0.02em]">
-                  {cat.subs.length} subcategories
-                </span>
+                <svg
+                  width="8" height="12" viewBox="0 0 8 12"
+                  className="shrink-0 mt-[3px] opacity-20 group-hover:opacity-70 transition-opacity duration-200"
+                >
+                  <polygon points="4,0 8,6 4,12 0,6" fill="#C9A84C"/>
+                </svg>
               </div>
-
-              {/* Bottom hover strip */}
-              <div className="h-1 w-full group-hover:h-1.5 transition-all duration-200"
-                style={{ background: `linear-gradient(90deg, ${cat.gradient[0]}, ${cat.gradient[1]})` }}
-              />
+              <span className="font-body text-[12px] text-cool-grey mt-2">
+                {cat.subs.length} subcategories
+              </span>
             </Link>
           ))}
         </div>
