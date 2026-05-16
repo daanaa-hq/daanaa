@@ -123,7 +123,7 @@ export default function Legal() {
               For data corrections, partnership inquiries, or legal questions, contact us at{' '}
               <a href="mailto:akbar.khowaja@gmail.com"
                  className="text-soft-gold hover:text-bright-gold transition-colors">
-                akbar.khowaja@gmail.com
+                hello@meritgiving.org
               </a>.
             </p>
           </section>

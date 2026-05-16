@@ -69,9 +69,14 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
-              {['Guides', 'FAQ'].map((item) => (
-                <li key={item}>
-                  <span className="font-body text-[14px] text-muted-cream cursor-default">{item}</span>
+              {[
+                { label: 'Guides', to: '/guides' },
+                { label: 'FAQ', to: '/faq' },
+              ].map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-2">
+                    {label}
+                  </Link>
                 </li>
               ))}
             </ul>
