@@ -1,0 +1,292 @@
+import React from 'react'
+import { Link } from 'react-router-dom'
+import type { Organization } from '../data/organizations'
+import { formatCurrency, NTEE1_NAMES } from '../data/organizations'
+import BadgeChip from './BadgeChip'
+import { getTierFromOrg, getInlineVerifiedFact } from './TrustBadge'
+import LampMark from './LampMark'
+import { useGivingList } from '../hooks/useGivingList'
+import type { ApiOrganization } from '../data/api'
+import { getCardBadges } from '../utils/badges'
+import { useCompare } from '../contexts/CompareContext'
+
+interface OrgCardProps {
+  org: Organization
+  compact?: boolean
+  isSaved?: boolean
+  onToggleSave?: (e: React.MouseEvent, ein: string, meta?: { name: string; city?: string; state?: string; ntee1?: string }) => void
+  apiOrg?: ApiOrganization
+  trustSummary?: string
+  hideCompare?: boolean
+}
+
+function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={inList ? 'Remove from giving list' : 'Add to giving list'}
+      className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none"
+      style={{
+        backgroundColor: inList ? '#C9A96E' : 'transparent',
+        borderColor: inList ? '#C9A96E' : 'rgba(201,169,110,0.40)',
+        color: inList ? '#0A1628' : '#C9A96E',
+      }}
+    >
+      {inList ? (
+        <>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Added
+        </>
+      ) : (
+        <>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add
+        </>
+      )}
+    </button>
+  )
+}
+
+function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; canAdd: boolean; onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={inCompare ? 'Remove from comparison' : canAdd ? 'Add to comparison' : 'Comparison full (max 4)'}
+      disabled={!inCompare && !canAdd}
+      className="p-1.5 rounded-full transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none disabled:opacity-30 disabled:cursor-not-allowed"
+      aria-pressed={inCompare}
+    >
+      <svg
+        width="14" height="14" viewBox="0 0 24 24"
+        fill={inCompare ? '#C9A96E' : 'none'}
+        stroke={inCompare ? '#C9A96E' : '#A89F94'}
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      >
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+      </svg>
+    </button>
+  )
+}
+
+function BookmarkButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: React.MouseEvent) => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title={isSaved ? 'Remove from saved' : 'Save organization'}
+      className="p-1.5 rounded-full transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none"
+      aria-pressed={isSaved}
+    >
+      <svg
+        width="14" height="14" viewBox="0 0 24 24"
+        fill={isSaved ? '#C9A96E' : 'none'}
+        stroke={isSaved ? '#C9A96E' : '#A89F94'}
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      >
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+      </svg>
+    </button>
+  )
+}
+
+export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSummary, hideCompare }: OrgCardProps) {
+  const { isInList, addItem, removeItem } = useGivingList()
+  const { isInCompare, addItem: addCompare, removeItem: removeCompare, canAdd } = useCompare()
+  const inList    = isInList(org.ein)
+  const inCompare = isInCompare(org.ein)
+  const lampTier  = apiOrg ? getTierFromOrg(apiOrg) : undefined
+  const inlineFact = apiOrg ? getInlineVerifiedFact(apiOrg) : ''
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    onToggleSave?.(e, org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })
+  }
+
+  const handleAddToList = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    if (inList) {
+      removeItem(org.ein)
+    } else {
+      addItem({
+        ein: org.ein,
+        orgName: org.name,
+        city: org.city || undefined,
+        state: org.state || undefined,
+        ntee1: org.category || undefined,
+        amount: 0,
+        trustTier: lampTier || 'Spark',
+        trustSummary: trustSummary || 'IRS registered',
+      })
+    }
+  }
+
+  const handleCompare = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    if (inCompare) removeCompare(org.ein)
+    else addCompare({ ein: org.ein, name: org.name, ntee1: org.category, city: org.city || null, state: org.state || null })
+  }
+
+  return (
+    <Link
+      to={`/organization/${org.id}`}
+      className="flex items-center gap-4 bg-white border border-light-grey rounded-xl px-5 py-4 transition-all duration-200 hover:border-soft-gold/50 hover:shadow-card"
+    >
+      {/* LampMark sm */}
+      {lampTier && <LampMark tier={lampTier} size="sm" className="self-start mt-0.5" />}
+
+      {/* Name + fact + location */}
+      <div className="flex-1 min-w-0">
+        <h3 className="font-display text-[16px] text-deep-navy hover:text-soft-gold transition-colors truncate mb-0.5">
+          {org.name}
+        </h3>
+        <div className="flex items-center gap-2 flex-wrap">
+          {inlineFact && (
+            <span className="font-body text-[11px] text-soft-gold">{inlineFact}</span>
+          )}
+          {inlineFact && (org.city || org.subcategory) && (
+            <span className="text-cool-grey/30">·</span>
+          )}
+          <span className="font-body text-[12px] text-cool-grey">
+            {[org.city, org.state].filter(Boolean).join(', ')}
+          </span>
+          {org.subcategory && (
+            <>
+              <span className="text-cool-grey/30">·</span>
+              <span className="font-body text-[11px] text-cool-grey/70 truncate max-w-[160px]">{org.subcategory}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Badges */}
+      {apiOrg && (
+        <div className="hidden md:flex flex-wrap gap-1.5 shrink-0 max-w-[260px] justify-end">
+          {getCardBadges(apiOrg).map(badge => (
+            <BadgeChip key={badge.id} badge={badge} size="sm" variant="light" />
+          ))}
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
+        {onToggleSave && <BookmarkButton isSaved={isSaved} onClick={handleBookmark} />}
+        <AddButton inList={inList} onClick={handleAddToList} />
+      </div>
+    </Link>
+  )
+}
+
+export default function OrgCard({ org, compact = false, isSaved = false, onToggleSave, apiOrg, trustSummary, hideCompare }: OrgCardProps) {
+  const scored     = org.hasScore !== false && org.meritScore > 0
+  const { isInList, addItem, removeItem } = useGivingList()
+  const { isInCompare, addItem: addCompare, removeItem: removeCompare, canAdd } = useCompare()
+  const inList     = isInList(org.ein)
+  const inCompare  = isInCompare(org.ein)
+  const lampTier   = apiOrg ? getTierFromOrg(apiOrg) : undefined
+  const inlineFact = apiOrg ? getInlineVerifiedFact(apiOrg) : ''
+
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    onToggleSave?.(e, org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })
+  }
+
+  const handleAddToList = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    if (inList) {
+      removeItem(org.ein)
+    } else {
+      addItem({
+        ein: org.ein,
+        orgName: org.name,
+        city: org.city || undefined,
+        state: org.state || undefined,
+        ntee1: org.category || undefined,
+        amount: 0,
+        trustTier: lampTier || 'Spark',
+        trustSummary: trustSummary || 'IRS registered',
+      })
+    }
+  }
+
+  const handleCompare = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    if (inCompare) removeCompare(org.ein)
+    else addCompare({ ein: org.ein, name: org.name, ntee1: org.category, city: org.city || null, state: org.state || null })
+  }
+
+  return (
+    <Link
+      to={`/organization/${org.id}`}
+      className="block bg-white border border-light-grey rounded-xl p-5 transition-all duration-200 hover:border-soft-gold/50 hover:-translate-y-[3px] hover:shadow-card"
+    >
+      {/* Top row: lamp + name + add button */}
+      <div className="flex items-start gap-3 mb-1.5">
+        {lampTier && <LampMark tier={lampTier} size="md" className="mt-0.5 shrink-0" />}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="font-display text-[17px] text-deep-navy leading-tight hover:text-soft-gold transition-colors line-clamp-2 flex-1 min-w-0">
+              {org.name}
+            </h3>
+            <AddButton inList={inList} onClick={handleAddToList} />
+          </div>
+          {inlineFact && (
+            <p className="font-body text-[11px] text-soft-gold mt-0.5 leading-none">{inlineFact}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Location */}
+      <div className="flex items-center gap-1.5 mb-2">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        <span className="font-body text-[12px] text-cool-grey">
+          {[org.city, org.state].filter(Boolean).join(', ') || 'IRS registered'}
+        </span>
+      </div>
+
+      {/* Category */}
+      {org.subcategory && (
+        <div className="mb-3">
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-deep-navy/70 font-body text-[11px] font-medium tracking-[0.02em] truncate max-w-[200px]">
+            {org.subcategory}
+          </span>
+        </div>
+      )}
+
+      {/* Revenue (secondary) */}
+      {!compact && scored && (
+        <p className="font-body text-[12px] text-cool-grey mb-2.5">
+          {org.latestTaxYear && <span className="text-soft-gold font-medium mr-1.5">FY {org.latestTaxYear}</span>}
+          Revenue: {formatCurrency(org.revenue)}
+          {org.ntee1TotalOrgs && org.meritScore >= 50 && (
+            <span className="ml-1.5 text-success-green font-medium">
+              · Top {Math.max(1, 100 - org.meritScore)}%
+            </span>
+          )}
+        </p>
+      )}
+      {!compact && !scored && org.revenue > 0 && (
+        <p className="font-body text-[12px] text-cool-grey mb-2.5">Revenue: {formatCurrency(org.revenue)}</p>
+      )}
+
+      {/* Footer: badges + actions */}
+      <div className="flex items-start justify-between gap-2 mt-3 pt-2.5 border-t border-light-grey/60">
+        <div className="flex flex-wrap gap-1.5">
+          {apiOrg && getCardBadges(apiOrg).map(badge => (
+            <BadgeChip key={badge.id} badge={badge} size="sm" variant="light" />
+          ))}
+        </div>
+        <div className="flex items-center gap-0.5 shrink-0">
+          {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
+          {onToggleSave && <BookmarkButton isSaved={isSaved} onClick={handleBookmark} />}
+        </div>
+      </div>
+    </Link>
+  )
+}
