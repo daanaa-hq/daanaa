@@ -138,9 +138,9 @@ export default function HowItWorks() {
             </div>
           </Section>
 
-          <Section label="Trust tiers" title="Five levels of verified transparency">
+          <Section label="Trust tiers" title="The lamp: a visibility journey, not a grade">
             <p>
-              Every listing displays a lamp tier — a compact signal of how much public data backs that organization's profile. Tiers reflect the data available, not our opinion of the organization's mission or importance. The peer score within each tier is a revenue-based ranking against similar nonprofits — not a measure of governance quality or program effectiveness.
+              Every listing displays a lamp tier — and it is a journey, not a verdict. The lamp shows how much public data backs a profile <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, community-rooted, and nearly invisible in public data — and they are exactly who we built MERIT for. A fainter lamp isn't a judgment; it's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail — and that path stays free and open, always.
             </p>
             <div className="mt-4 space-y-3">
               {([

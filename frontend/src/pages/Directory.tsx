@@ -18,7 +18,6 @@ const FILTER_CATEGORIES = [
 ]
 
 const SORT_OPTIONS = [
-  { id: 'ntee1_percentile', label: 'MERIT Score' },
   { id: 'organization_name', label: 'Name A–Z' },
   { id: 'total_revenue', label: 'Revenue' },
 ]
@@ -143,7 +142,7 @@ function FilterRail({
   onClearAll: () => void
   resultCount: number
 }) {
-  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'ntee1_percentile' || !!subFilter || !!revenueFilter || !!scoreTier
+  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'organization_name' || !!subFilter || !!revenueFilter || !!scoreTier
   const subcats = NTEE_SUBCATEGORIES[activeCategory] ?? []
 
   return (
@@ -339,7 +338,7 @@ export default function Directory() {
   const [activeFilter, setActiveFilter] = useState(subParam ? subParam[0] : categoryParam)
   const [subFilter, setSubFilter] = useState(subParam)
   const [stateFilter, setStateFilter] = useState(stateParam)
-  const [sortBy, setSortBy] = useState('ntee1_percentile')
+  const [sortBy, setSortBy] = useState('organization_name')
   const [revenueFilter, setRevenueFilter] = useState<RevenueId>(
     REVENUE_PRESETS.some(p => p.id === revenueParam) ? revenueParam as RevenueId : ''
   )
@@ -443,7 +442,7 @@ export default function Directory() {
     setActiveFilter('all')
     setSubFilter('')
     setStateFilter('')
-    setSortBy('ntee1_percentile')
+    setSortBy('organization_name')
     setRevenueFilter('')
     setScoreTier('')
     setCurrentPage(1)
@@ -477,7 +476,7 @@ export default function Directory() {
     !!stateFilter,
     !!revenueFilter,
     !!scoreTier,
-    sortBy !== 'ntee1_percentile',
+    sortBy !== 'organization_name',
   ].filter(Boolean).length
 
   return (

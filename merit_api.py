@@ -192,7 +192,7 @@ def list_organizations():
                total_revenue, ntee1_percentile, ntee1_total_orgs, source,
                latest_tax_year, data_source, updated_at,
                revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
-               merit_tier,
+               merit_tier, merit_score, merit_band,
                (mission IS NOT NULL AND mission != '') as has_mission,
                (website IS NOT NULL AND website != '') as has_website
         FROM registry_enriched
@@ -241,7 +241,8 @@ def get_organization(ein):
         similar = db.execute("""
             SELECT EIN, organization_name, CITY, STATE, total_revenue,
                    ntee1_percentile, peer_percentile, peer_group, revenue_band,
-                   latest_tax_year, data_source, updated_at
+                   latest_tax_year, data_source, updated_at,
+                   merit_tier, merit_score, merit_band
             FROM registry_enriched
             WHERE NTEECC LIKE ? AND revenue_band = ? AND EIN != ?
             ORDER BY ABS(COALESCE(peer_percentile, 50) - ?) ASC
@@ -252,7 +253,8 @@ def get_organization(ein):
         similar = db.execute("""
             SELECT EIN, organization_name, CITY, STATE, total_revenue,
                    ntee1_percentile, peer_percentile, peer_group, revenue_band,
-                   latest_tax_year, data_source, updated_at
+                   latest_tax_year, data_source, updated_at,
+                   merit_tier, merit_score, merit_band
             FROM registry_enriched
             WHERE NTEE1 = ? AND EIN != ?
             ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC

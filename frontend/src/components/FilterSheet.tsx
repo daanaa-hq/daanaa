@@ -192,9 +192,8 @@ export default function FilterSheet({
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Sort By</span>
             <div className="flex gap-2">
               {[
-                { value: 'ntee1_percentile',  label: 'MERIT Score' },
-                { value: 'total_revenue',     label: 'Revenue' },
                 { value: 'organization_name', label: 'Name A–Z' },
+                { value: 'total_revenue',     label: 'Revenue' },
               ].map(opt => (
                 <button
                   key={opt.value}

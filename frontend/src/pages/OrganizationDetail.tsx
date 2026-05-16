@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import ScoreRing from '../components/ScoreRing'
 import OrgCard from '../components/OrgCard'
-import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
+import { getTierSummary, getTierFromOrg, getFinancialHealth, PASSING_BANDS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
 import LampMark from '../components/LampMark'
@@ -13,7 +12,7 @@ import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
 import { getOrganization } from '../data/api'
 import type { ApiOrganization } from '../data/api'
-import { formatCurrency, formatNumber, getScoreLabel } from '../data/organizations'
+import { formatCurrency, formatNumber } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 
 // ---- Revenue Bar Chart ----
@@ -116,18 +115,6 @@ function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
 }
 
 // ---- Metric Card ----
-function MetricCard({ label, value, percentage }: { label: string; value: string; percentage: number }) {
-  return (
-    <div className="bg-white border border-light-grey rounded-lg p-5">
-      <span className="font-body text-[12px] tracking-[0.02em] text-cool-grey">{label}</span>
-      <p className="font-body text-[24px] font-semibold tracking-[-0.02em] text-deep-navy mt-1">{value}</p>
-      <div className="mt-3 w-full h-[6px] bg-navy-mid/20 rounded-full overflow-hidden">
-        <div className="h-full bg-soft-gold rounded-full transition-all duration-1000 ease-out" style={{ width: `${percentage}%` }} />
-      </div>
-    </div>
-  )
-}
-
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
   taxYear: number | null;
@@ -287,9 +274,9 @@ export default function OrganizationDetail() {
     )
   }
 
-  const scoreLabel = getScoreLabel(org.meritScore)
   const lampTier     = getTierFromOrg(apiOrg!)
   const trustSummary = getTierSummary(lampTier, apiOrg!)
+  const finHealth    = getFinancialHealth(apiOrg!)
   const badges = getOrgBadges(apiOrg!)
 
   const handleGiveToggle = () => {
@@ -439,37 +426,41 @@ export default function OrganizationDetail() {
                 size="lg"
                 onClick={() => setShowTierBreakdown(s => !s)}
               />
-              {(org as any).hasScore ? (
-                <>
-                  <ScoreRing
-                    score={org.meritScore}
-                    size={140}
-                    strokeWidth={7}
-                    scoreSize="40px"
-                    peerContext={
-                      (org as any).peerTotal && (org as any).peerGroupLabel
-                        ? `${((org as any).peerTotal as number).toLocaleString()} ${(org as any).peerGroupLabel}`
-                        : undefined
-                    }
-                  />
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-success-green/20 text-success-green font-body text-[12px] font-medium">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    {scoreLabel}
+              {/* IRS verification — a real, defensible fact for every org */}
+              <div className="flex flex-col items-center gap-2 text-center">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-body text-[12px] font-medium">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  IRS-verified 501(c)(3)
+                </span>
+                {apiOrg!.latest_tax_year && (
+                  <span className="font-body text-[11px] text-muted-cream/60">
+                    Form 990 on file · FY {apiOrg!.latest_tax_year}
                   </span>
-                </>
-              ) : (
-                <div className="flex flex-col items-center gap-3 text-center">
-                  <div className="w-[140px] h-[140px] rounded-full border-2 border-emerald-500/40 bg-emerald-500/10 flex flex-col items-center justify-center gap-1">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                      <polyline points="9 12 11 14 15 10"/>
-                    </svg>
-                    <span className="font-body text-[11px] text-emerald-400 font-medium tracking-wide">VERIFIED</span>
-                  </div>
-                  <span className="font-body text-[12px] text-muted-cream/70 max-w-[160px] leading-[1.4]">
-                    IRS verified 501(c)(3) · Active organization
+                )}
+              </div>
+              {/* Independently-verified financial health — only where real 990 analysis exists */}
+              {finHealth ? (
+                <div
+                  className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg border"
+                  style={{
+                    borderColor: PASSING_BANDS.includes(finHealth.band) ? 'rgba(74,222,128,0.35)' : 'rgba(245,158,11,0.35)',
+                    background:  PASSING_BANDS.includes(finHealth.band) ? 'rgba(74,222,128,0.10)' : 'rgba(245,158,11,0.10)',
+                  }}
+                >
+                  <span className="font-body text-[10px] tracking-[0.06em] uppercase text-muted-cream/60">
+                    Financial health · MERIT-verified
+                  </span>
+                  <span className="font-body text-[14px] font-semibold" style={{ color: PASSING_BANDS.includes(finHealth.band) ? '#4ADE80' : '#F59E0B' }}>
+                    {finHealth.band} · {finHealth.score}/100
+                  </span>
+                  <span className="font-body text-[10px] text-muted-cream/50">
+                    Based on FY{apiOrg!.latest_tax_year ?? '—'} Form 990
                   </span>
                 </div>
+              ) : (
+                <span className="font-body text-[11px] text-muted-cream/50 max-w-[180px] text-center leading-[1.45]">
+                  Detailed financial analysis not yet available — requires an itemized Form 990.
+                </span>
               )}
             </div>
           </div>
@@ -509,57 +500,29 @@ export default function OrganizationDetail() {
               </div>
             )}
             <div className="flex flex-col gap-4">
-              {(org as any).hasScore ? (
-                <>
-                  <MetricCard
-                    label={(org as any).peerGroupLabel
-                      ? `MERIT Score vs. ${(org as any).peerGroupLabel}`
-                      : 'MERIT Score (Peer Percentile)'}
-                    value={`${org.meritScore}`}
-                    percentage={org.meritScore}
-                  />
-                  {(org as any).peerRank && (org as any).peerTotal ? (
-                    <MetricCard
-                      label={(org as any).peerGroupLabel
-                        ? `Rank among ${(org as any).peerGroupLabel}`
-                        : `Rank in ${org.category} category`}
-                      value={`#${(org as any).peerRank.toLocaleString()} of ${((org as any).peerTotal as number).toLocaleString()}`}
-                      percentage={Math.round((1 - (org as any).peerRank / (org as any).peerTotal) * 100)}
-                    />
-                  ) : null}
-                  {(org as any).stateCategoryRank && (org as any).stateCategoryTotal ? (
-                    <MetricCard
-                      label={`${org.state} rank — ${org.category} category`}
-                      value={`#${(org as any).stateCategoryRank} of ${((org as any).stateCategoryTotal as number).toLocaleString()}`}
-                      percentage={Math.round((1 - (org as any).stateCategoryRank / (org as any).stateCategoryTotal) * 100)}
-                    />
-                  ) : null}
-                </>
-              ) : (
-                <div className="bg-white border border-light-grey rounded-xl p-6 flex flex-col gap-4">
-                  <div>
-                    <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
-                    <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      This organization is verified by the IRS as an active 501(c)(3). A MERIT peer score becomes available as financial history accumulates in public records.
-                    </p>
-                  </div>
-                  <div className="border-t border-light-grey pt-4">
-                    <p className="font-body text-[13px] text-cool-grey mb-3">
-                      Are you part of this organization?
-                    </p>
-                    <Link
-                      to="/for-nonprofits"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                      Claim this page
-                    </Link>
-                  </div>
+              <div className="bg-white border border-light-grey rounded-xl p-6 flex flex-col gap-4">
+                <div>
+                  <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
+                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
+                    {apiOrg!.organization_name} is an IRS-verified 501(c)(3). This profile is still lighting up — adding a mission, website, and financial detail brightens its flame. A lower tier reflects the public data we have, not the organization&rsquo;s quality.
+                  </p>
                 </div>
-              )}
+                <div className="border-t border-light-grey pt-4">
+                  <p className="font-body text-[13px] text-cool-grey mb-3">
+                    Is this your nonprofit?
+                  </p>
+                  <Link
+                    to="/for-nonprofits"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Claim it free &amp; raise your flame
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
