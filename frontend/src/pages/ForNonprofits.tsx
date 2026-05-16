@@ -80,42 +80,56 @@ export default function ForNonprofits() {
             Tell your story in your own words
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <FeatureCard
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>}
-              title="Mission & programs"
-              description="Add your mission statement, program descriptions, and the populations you serve — in your words, clearly marked as self-reported."
-            />
-            <FeatureCard
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
-              title="Leadership team"
-              description="Introduce your executive director and board. Donors and volunteers want to know who stewards the organization."
-            />
-            <FeatureCard
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>}
-              title="Impact metrics"
-              description="Share the numbers that matter to you — meals served, families housed, students tutored. Context IRS data alone can't provide."
-            />
-            <div className="p-6 bg-white border border-light-grey rounded-xl opacity-60">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 rounded-lg bg-soft-gold/10 flex items-center justify-center text-soft-gold">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 max-w-[900px]">
+            {[
+              {
+                n: 1,
+                title: 'Mission & programs',
+                description: 'Add your mission statement, program descriptions, and the populations you serve — in your words, clearly marked as self-reported and separate from IRS data.',
+              },
+              {
+                n: 2,
+                title: 'Leadership team',
+                description: 'Introduce your executive director and board. Donors and volunteers want to know who stewards the organization and can\'t find that in a Form 990.',
+              },
+              {
+                n: 3,
+                title: 'Impact metrics',
+                description: 'Share the numbers that matter to you — meals served, families housed, students tutored. Context the IRS data alone can\'t provide.',
+              },
+              {
+                n: 4,
+                title: 'Annual reports & documents',
+                description: 'Link your latest annual report, impact summary, or external evaluations. Give donors the documents they\'re already searching for, directly on your listing.',
+              },
+              {
+                n: 5,
+                title: 'Events & volunteer opportunities',
+                description: 'Post upcoming events and volunteer shifts visible to donors in your region.',
+                phase2: true,
+              },
+              {
+                n: 6,
+                title: 'Regional connections',
+                description: 'Discover nonprofits doing complementary work nearby. Collaboration — not competition — is how communities thrive.',
+                phase2: true,
+              },
+            ].map(({ n, title, description, phase2 }) => (
+              <div key={n} className={`flex gap-5 ${phase2 ? 'opacity-55' : ''}`}>
+                <div className="shrink-0 w-8 h-8 rounded-full bg-soft-gold/15 border border-soft-gold/30 text-soft-gold font-body text-[13px] font-semibold flex items-center justify-center mt-0.5">
+                  {n}
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-cool-grey/10 border border-cool-grey/20 font-body text-[10px] text-cool-grey font-medium">Phase 2</span>
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <h3 className="font-body text-[16px] font-semibold text-deep-navy">{title}</h3>
+                    {phase2 && (
+                      <span className="px-2 py-0.5 rounded-full bg-cool-grey/10 border border-cool-grey/20 font-body text-[10px] text-cool-grey font-medium">Coming soon</span>
+                    )}
+                  </div>
+                  <p className="font-body text-[14px] text-cool-grey leading-[1.65]">{description}</p>
+                </div>
               </div>
-              <h3 className="font-display text-[18px] text-deep-navy mb-2">Events & volunteer opportunities</h3>
-              <p className="font-body text-[14px] text-cool-grey leading-[1.6]">Post upcoming events, volunteer shifts, and collaboration opportunities visible to donors and volunteers in your region.</p>
-            </div>
-            <FeatureCard
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>}
-              title="Annual reports & documents"
-              description="Upload your latest annual report, Form 990, or impact summary. Give donors documents they're already searching for."
-            />
-            <FeatureCard
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>}
-              title="Regional connections"
-              description="Discover and connect with nonprofits doing complementary work in your area. Collaboration — not competition — is how communities thrive."
-            />
+            ))}
           </div>
         </div>
       </div>

@@ -35,9 +35,9 @@ export default function Footer() {
 
           {/* Platform */}
           <div>
-            <h4 className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
+            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
               Platform
-            </h4>
+            </p>
             <ul className="space-y-3">
               {[
                 { label: 'Directory', to: '/directory' },
@@ -45,7 +45,7 @@ export default function Footer() {
                 { label: 'For Nonprofits', to: '/for-nonprofits' },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150">
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-2">
                     {label}
                   </Link>
                 </li>
@@ -55,16 +55,16 @@ export default function Footer() {
 
           {/* Resources */}
           <div>
-            <h4 className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
+            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
               Resources
-            </h4>
+            </p>
             <ul className="space-y-3">
               {[
                 { label: 'How It Works', to: '/how-it-works' },
                 { label: 'Trust Tiers', to: '/tiers' },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors">
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-2">
                     {label}
                   </Link>
                 </li>
@@ -79,9 +79,9 @@ export default function Footer() {
 
           {/* Company */}
           <div>
-            <h4 className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
+            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
               Company
-            </h4>
+            </p>
             <ul className="space-y-3">
               {[
                 { label: 'About', to: '/about' },
@@ -90,7 +90,7 @@ export default function Footer() {
                 { label: 'Privacy', to: '/legal' },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors">
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-2">
                     {label}
                   </Link>
                 </li>

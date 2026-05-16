@@ -19,6 +19,7 @@ const FILTER_CATEGORIES = [
 ]
 
 const SORT_OPTIONS = [
+  { id: 'merit_score', label: 'MERIT Score' },
   { id: 'organization_name', label: 'Name A–Z' },
   { id: 'total_revenue', label: 'Revenue' },
 ]
@@ -143,7 +144,7 @@ function FilterRail({
   onClearAll: () => void
   resultCount: number
 }) {
-  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'organization_name' || !!subFilter || !!revenueFilter || !!scoreTier
+  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier
   const subcats = NTEE_SUBCATEGORIES[activeCategory] ?? []
 
   return (
@@ -343,7 +344,7 @@ export default function Directory() {
   const [activeFilter, setActiveFilter] = useState(subParam ? subParam[0] : categoryParam)
   const [subFilter, setSubFilter] = useState(subParam)
   const [stateFilter, setStateFilter] = useState(stateParam)
-  const [sortBy, setSortBy] = useState('organization_name')
+  const [sortBy, setSortBy] = useState('merit_score')
   const [revenueFilter, setRevenueFilter] = useState<RevenueId>(
     REVENUE_PRESETS.some(p => p.id === revenueParam) ? revenueParam as RevenueId : ''
   )
@@ -481,7 +482,7 @@ export default function Directory() {
     !!stateFilter,
     !!revenueFilter,
     !!scoreTier,
-    sortBy !== 'organization_name',
+    sortBy !== 'merit_score',
   ].filter(Boolean).length
 
   return (

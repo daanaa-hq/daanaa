@@ -6,13 +6,16 @@ import { usePageMeta } from '../hooks/usePageMeta'
 
 function Section({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="py-12 md:py-16 border-b border-light-grey last:border-0">
+    <div className="py-14 md:py-20 border-b border-light-grey last:border-0">
       <div className="max-w-[760px]">
-        <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">{label}</span>
-        <h2 className="font-display italic text-deep-navy mt-2 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(24px, 3.5vw, 40px)' }}>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-6 h-px bg-soft-gold/50" />
+          <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">{label}</span>
+        </div>
+        <h2 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(26px, 3.5vw, 42px)' }}>
           {title}
         </h2>
-        <div className="mt-6 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+        <div className="mt-7 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
           {children}
         </div>
       </div>

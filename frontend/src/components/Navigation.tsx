@@ -26,7 +26,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
       >
         <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-0 group">
+          <Link to="/" className="flex items-center gap-0 group py-3">
             <span className="font-cinzel text-[18px] text-deep-navy tracking-[0.12em] relative">
               MER
               <span className="relative inline-block">
@@ -49,7 +49,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
               <Link
                 key={item.path}
                 to={item.path}
-                className="relative font-body text-[14px] tracking-[0.02em] transition-colors duration-150"
+                className="relative font-body text-[14px] tracking-[0.02em] transition-colors duration-150 py-3 flex items-center"
                 style={{
                   color: isActive(item.path) ? '#0A1628' : '#A89F94',
                   fontWeight: isActive(item.path) ? '500' : '400',
@@ -72,7 +72,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
             <GivingListDrawer />
             <Link
               to="/wallet"
-              className="relative inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-body text-[13px] transition-all duration-150"
+              className="relative inline-flex items-center gap-1.5 px-4 py-[11px] rounded-full font-body text-[13px] transition-all duration-150"
               style={{
                 color: isActive('/wallet') ? '#C9A96E' : '#6B7280',
                 background: isActive('/wallet') ? 'rgba(201,169,110,0.08)' : 'transparent',
@@ -84,12 +84,6 @@ export default function Navigation({ solid = true }: NavigationProps) {
                 <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
               </svg>
               Wallet
-            </Link>
-            <Link
-              to="/directory"
-              className="font-body text-[14px] font-medium bg-soft-gold text-deep-navy px-5 py-2 rounded-full transition-all duration-200 hover:bg-bright-gold"
-            >
-              Browse
             </Link>
           </div>
 

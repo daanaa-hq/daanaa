@@ -177,7 +177,7 @@ def list_organizations():
         where_clauses.append(f'merit_tier IN ({placeholders})')
         params.extend(included)
 
-    allowed_sorts = ['total_revenue', 'organization_name', 'ntee1_percentile', 'EIN', 'STATE', 'CITY']
+    allowed_sorts = ['total_revenue', 'organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']
     if sort_by not in allowed_sorts:
         sort_by = 'total_revenue'
     if order not in ['asc', 'desc']:
