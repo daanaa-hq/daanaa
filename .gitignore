@@ -67,3 +67,4 @@ static_web/
 templates/
 static/
 web/
+.gstack/
