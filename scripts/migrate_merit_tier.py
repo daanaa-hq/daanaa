@@ -6,12 +6,27 @@ Tier logic mirrors getTierFromOrg() in frontend/src/components/TrustBadge.tsx
 so the filter and card display are always consistent.
 
 Tiers (highest → lowest):
-  Beacon  — top-quartile peer score + mission + website + current 990
-  Lantern — any peer score + mission + website + current 990
-  Flame   — any peer score + current 990
-  Ember   — has current 990 or revenue data
+  Beacon  — top-quartile peer rank + mission + website + current 990 + positive
+            revenue, AND (where 990 financials are known) a passing financial
+            band. A known-weak band ('Mixed'/'Concerns') blocks Beacon.
+  Lantern — any peer rank + mission + website + current 990 + positive revenue,
+            AND (where known) a passing financial band — same gate as Beacon.
+  Flame   — any peer rank + current 990 + positive revenue
+  Ember   — has current 990 or any revenue on record
   Spark   — IRS BMF only, no financial detail
+
+Guardrails added 2026-05-16 (credibility rework):
+  * total_revenue must be > 0 for Beacon/Lantern/Flame — an org with zero or
+    negative revenue can no longer hold a "trust" tier.
+  * merit_band (from merit_scorer_v3_3, ~4.7k orgs) gates BOTH Beacon and
+    Lantern where present: only the bottom band 'Concerns' (score <35) is
+    blocked and demoted to Flame. 'Mixed' (mid-band) passes — since ~99% of
+    orgs have NO band at all, demoting only clearly-weak financials avoids
+    penalising the minority that happen to have data. NULL band is unaffected.
+    Flame is intentionally NOT gated (its copy implies no financial quality).
 """
+
+PASSING_BANDS = ('Exceptional', 'Strong', 'Solid')
 
 import sqlite3
 import sys
@@ -26,26 +41,33 @@ CASE
        AND (total_revenue IS NULL OR total_revenue <= 0)
   THEN 'Spark'
 
-  -- Top-quartile score + full profile → Beacon
+  -- Top-quartile rank + full profile + current 990 + positive revenue,
+  -- and (where 990 financials are known) a passing financial band → Beacon
   WHEN COALESCE(peer_percentile, ntee1_percentile) >= 75
        AND (mission IS NOT NULL AND TRIM(mission) != '')
        AND (website IS NOT NULL AND TRIM(website) != '')
        AND latest_tax_year >= 2022
+       AND total_revenue > 0
+       AND (merit_band IS NULL OR merit_band != 'Concerns')
   THEN 'Beacon'
 
-  -- Any score + full profile → Lantern
+  -- Any rank + full profile + current 990 + positive revenue,
+  -- and (where 990 financials are known) a passing financial band → Lantern
   WHEN COALESCE(peer_percentile, ntee1_percentile) IS NOT NULL
        AND (mission IS NOT NULL AND TRIM(mission) != '')
        AND (website IS NOT NULL AND TRIM(website) != '')
        AND latest_tax_year >= 2022
+       AND total_revenue > 0
+       AND (merit_band IS NULL OR merit_band != 'Concerns')
   THEN 'Lantern'
 
-  -- Score + current 990 → Flame
+  -- Any rank + current 990 + positive revenue → Flame
   WHEN COALESCE(peer_percentile, ntee1_percentile) IS NOT NULL
        AND latest_tax_year >= 2022
+       AND total_revenue > 0
   THEN 'Flame'
 
-  -- Current 990 or revenue data → Ember
+  -- Current 990 or any revenue on record → Ember
   WHEN latest_tax_year >= 2022
        OR (total_revenue IS NOT NULL AND total_revenue > 0)
   THEN 'Ember'

@@ -264,11 +264,6 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         <p className="font-body text-[12px] text-cool-grey mb-2.5">
           {org.latestTaxYear && <span className="text-soft-gold font-medium mr-1.5">FY {org.latestTaxYear}</span>}
           Revenue: {formatCurrency(org.revenue)}
-          {org.ntee1TotalOrgs && org.meritScore >= 50 && (
-            <span className="ml-1.5 text-success-green font-medium">
-              · Top {Math.max(1, 100 - org.meritScore)}%
-            </span>
-          )}
         </p>
       )}
       {!compact && !scored && org.revenue > 0 && (

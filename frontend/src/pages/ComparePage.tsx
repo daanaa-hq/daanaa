@@ -15,32 +15,6 @@ function formatCurrency(n: number | null): string {
   return `$${n.toLocaleString()}`
 }
 
-function ScoreGauge({ score, size = 80 }: { score: number; size?: number }) {
-  const r = (size / 2) - 6
-  const circ = 2 * Math.PI * r
-  const fill = (score / 100) * circ
-  const color = score >= 75 ? '#4ADE80' : score >= 50 ? '#C9A96E' : score >= 25 ? '#F59E0B' : '#6B7280'
-
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E5E0DB" strokeWidth="5" />
-        <circle
-          cx={size/2} cy={size/2} r={r}
-          fill="none" stroke={color} strokeWidth="5"
-          strokeDasharray={`${fill} ${circ}`}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size/2} ${size/2})`}
-        />
-        <text x={size/2} y={size/2 + 1} textAnchor="middle" dominantBaseline="middle" fontSize="16" fontWeight="700" fill="#0A1628">
-          {score}
-        </text>
-      </svg>
-      <span className="font-body text-[10px] text-cool-grey uppercase tracking-[0.05em]">MERIT Score</span>
-    </div>
-  )
-}
-
 function OrgColumn({ ein }: { ein: string }) {
   const { data: org, loading, error } = useApi(() => getOrganization(ein), [ein])
 
@@ -66,8 +40,6 @@ function OrgColumn({ ein }: { ein: string }) {
   }
 
   const lampTier = getTierFromOrg(org)
-  const score = Math.round(org.peer_percentile ?? org.ntee1_percentile ?? 0)
-  const hasScore = (org.data_source === 'propublica' || org.data_source === 'irs_soi') && score > 0
   const cat = NTEE_CATEGORIES.find(c => c.id === org.NTEE1)
 
   const rows: { label: string; value: React.ReactNode }[] = [
@@ -99,12 +71,6 @@ function OrgColumn({ ein }: { ein: string }) {
           {[org.CITY, org.STATE].filter(Boolean).join(', ')}
         </p>
       </Link>
-
-      {hasScore && (
-        <div className="flex justify-center mb-6">
-          <ScoreGauge score={score} />
-        </div>
-      )}
 
       <div className="space-y-2">
         {rows.map(row => (
