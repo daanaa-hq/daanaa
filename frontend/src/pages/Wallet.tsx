@@ -296,7 +296,7 @@ export default function Wallet() {
               <div className="space-y-2">
                 {savedOrgs.map(org => (
                   <div key={org.ein} className="flex items-center justify-between bg-white border border-light-grey rounded-xl px-5 py-4 hover:border-soft-gold/40 transition-colors group">
-                    <Link to={`/organization/${org.ein}`} className="flex-1 min-w-0">
+                    <Link to={`/org/${org.ein}`} className="flex-1 min-w-0">
                       <p className="font-body text-[15px] font-medium text-deep-navy group-hover:text-soft-gold transition-colors truncate">{org.name}</p>
                       {(org.city || org.state) && (
                         <p className="font-body text-[12px] text-cool-grey mt-0.5">{[org.city, org.state].filter(Boolean).join(', ')}</p>

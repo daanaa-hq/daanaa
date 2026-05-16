@@ -312,7 +312,7 @@ function PipelineTab({ adminKey }: { adminKey: string }) {
                     <div className="flex items-center gap-2.5">
                       <LampMark tier={tier} size="xs" />
                       <a
-                        href={`/organization/${org.EIN}`}
+                        href={`/org/${org.EIN}`}
                         target="_blank"
                         rel="noreferrer"
                         className="font-body text-[13px] font-medium text-deep-navy hover:text-soft-gold transition-colors line-clamp-1"

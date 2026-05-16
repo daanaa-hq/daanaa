@@ -132,7 +132,7 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
 
   return (
     <Link
-      to={`/organization/${org.id}`}
+      to={`/org/${org.id}`}
       className="flex items-center gap-4 bg-white border border-light-grey rounded-xl px-5 py-4 transition-all duration-200 hover:border-soft-gold/50 hover:shadow-card"
     >
       {/* LampMark sm */}
@@ -221,7 +221,7 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
 
   return (
     <Link
-      to={`/organization/${org.id}`}
+      to={`/org/${org.id}`}
       className="block bg-white border border-light-grey rounded-xl p-5 transition-all duration-200 hover:border-soft-gold/50 hover:-translate-y-[3px] hover:shadow-card"
     >
       {/* Top row: lamp + name + add button */}

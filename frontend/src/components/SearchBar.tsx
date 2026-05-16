@@ -126,7 +126,7 @@ export default function SearchBar({
               <button
                 key={org.EIN}
                 type="button"
-                onMouseDown={e => { e.preventDefault(); setOpen(false); navigate(`/organization/${org.EIN}`) }}
+                onMouseDown={e => { e.preventDefault(); setOpen(false); navigate(`/org/${org.EIN}`) }}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-cream transition-colors text-left group"
               >
                 <LampMark tier={tier} size="xs" />
