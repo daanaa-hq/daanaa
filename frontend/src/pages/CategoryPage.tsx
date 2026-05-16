@@ -1,9 +1,15 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { getNteeCategory, NTEE_CATEGORIES } from '../data/ntee'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 export default function CategoryPage() {
   const { id } = useParams<{ id: string }>()
   const category = getNteeCategory(id || '')
+
+  usePageMeta(
+    category?.name ?? '',
+    category ? `Browse ${category.name} nonprofits on MERIT — IRS-verified 501(c)(3) organizations scored by financial health and transparency.` : ''
+  )
 
   if (!category) return <Navigate to="/directory" replace />
 

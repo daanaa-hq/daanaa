@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { usePageMeta } from '../hooks/usePageMeta'
 import { useSearchParams, Link } from 'react-router-dom'
 import OrgCard, { OrgCardRow } from '../components/OrgCard'
 import FilterSheet from '../components/FilterSheet'
@@ -329,6 +330,10 @@ export default function Directory() {
   const categoryParam = searchParams.get('category') || 'all'
   const subParam      = searchParams.get('sub') || ''
   const qParam        = searchParams.get('q') || ''
+  usePageMeta(
+    qParam ? `"${qParam}" — Nonprofits` : 'Nonprofit Directory',
+    'Search 430,000+ IRS-verified 501(c)(3) nonprofits by name, category, location, and MERIT score.'
+  )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
   const tierParam     = searchParams.get('min_merit_tier') || ''

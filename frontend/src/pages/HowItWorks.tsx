@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import LampMark from '../components/LampMark'
 import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 function Section({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
   return (
@@ -43,6 +44,7 @@ function TierRow({ score, label, description }: { score: string; label: string; 
 }
 
 export default function HowItWorks() {
+  usePageMeta('How It Works', 'Learn how MERIT scores 430,000+ nonprofits using IRS data, peer-group benchmarking, and real Form 990 financials.')
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}

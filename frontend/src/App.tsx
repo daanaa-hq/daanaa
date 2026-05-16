@@ -18,6 +18,7 @@ const GivingReview = lazy(() => import('./pages/GivingReview'))
 const GivingConfirmation = lazy(() => import('./pages/GivingConfirmation'))
 const TiersPage = lazy(() => import('./pages/TiersPage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 function PageLoader() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
             <Route path="/tiers" element={<TiersPage />} />
           </Route>
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </CompareProvider>

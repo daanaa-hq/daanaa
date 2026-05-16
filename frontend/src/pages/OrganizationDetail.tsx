@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
+import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import { getTierSummary, getTierFromOrg, getFinancialHealth, PASSING_BANDS } from '../components/TrustBadge'
@@ -251,6 +252,12 @@ export default function OrganizationDetail() {
   const similarOrgs = useMemo(() => rawSimilarOrgs.map(adaptOrg), [rawSimilarOrgs])
 
   const inList = isInList(org?.ein || '')
+
+  const metaTitle = apiOrg?.organization_name ?? ''
+  const metaDesc = apiOrg
+    ? `${apiOrg.organization_name} is an IRS-verified 501(c)(3) nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. MERIT tier: ${apiOrg.merit_tier ?? 'Flame'}. Peer score: ${apiOrg.peer_percentile != null ? `${apiOrg.peer_percentile}th percentile` : 'pending'}.`
+    : ''
+  usePageMeta(metaTitle, metaDesc)
 
   if (orgLoading) {
     return (

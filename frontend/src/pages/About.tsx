@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom'
 import { useApi } from '../hooks/useApi'
 import { getStats } from '../data/api'
+import { usePageMeta } from '../hooks/usePageMeta'
 
 function formatCount(n: number): string {
   return n.toLocaleString('en-US')
 }
 
 export default function About() {
+  usePageMeta('About', 'MERIT is a civic nonprofit-discovery platform. We index IRS 501(c)(3) organizations and surface transparency scores so donors can give with confidence.')
   const { data: stats } = useApi(() => getStats(), [])
 
   return (
