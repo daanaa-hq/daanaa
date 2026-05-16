@@ -503,25 +503,34 @@ export default function OrganizationDetail() {
               <div className="bg-white border border-light-grey rounded-xl p-6 flex flex-col gap-4">
                 <div>
                   <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
-                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    {apiOrg!.organization_name} is an IRS-verified 501(c)(3). This profile is still lighting up — adding a mission, website, and financial detail brightens its flame. A lower tier reflects the public data we have, not the organization&rsquo;s quality.
-                  </p>
+                  {(lampTier === 'Beacon' || lampTier === 'Lantern') ? (
+                    <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
+                      {apiOrg!.organization_name} is a fully verified nonprofit — IRS 501(c)(3), current 990, mission, and website all on public record.
+                      {lampTier === 'Lantern' && ' Reaching a top-quartile peer score would light the full Beacon.'}
+                    </p>
+                  ) : (
+                    <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
+                      {apiOrg!.organization_name} is an IRS-verified 501(c)(3). This profile is still lighting up — adding a mission, website, and financial detail brightens its flame. A lower tier reflects the public data we have, not the organization&rsquo;s quality.
+                    </p>
+                  )}
                 </div>
-                <div className="border-t border-light-grey pt-4">
-                  <p className="font-body text-[13px] text-cool-grey mb-3">
-                    Is this your nonprofit?
-                  </p>
-                  <Link
-                    to="/for-nonprofits"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
-                    Claim it free &amp; raise your flame
-                  </Link>
-                </div>
+                {lampTier !== 'Beacon' && lampTier !== 'Lantern' && (
+                  <div className="border-t border-light-grey pt-4">
+                    <p className="font-body text-[13px] text-cool-grey mb-3">
+                      Is this your nonprofit?
+                    </p>
+                    <Link
+                      to="/for-nonprofits"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      Claim it free &amp; raise your flame
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>
