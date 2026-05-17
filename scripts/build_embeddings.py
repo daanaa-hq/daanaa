@@ -87,11 +87,14 @@ def serialize(vec: np.ndarray) -> bytes:
     return struct.pack(f"{len(vec)}f", *vec.tolist())
 
 
-def run(limit=None, rebuild=False):
+def run(limit=None, rebuild=False, force_device=None):
     import torch
     from sentence_transformers import SentenceTransformer
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if force_device:
+        device = force_device
+    else:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Device: {device}")
     if device == "cuda":
         props = torch.cuda.get_device_properties(0)
@@ -100,7 +103,6 @@ def run(limit=None, rebuild=False):
     print(f"Model:  {MODEL_NAME}  ({DIMS} dims)")
     print(f"Batch:  {BATCH_SIZE}\n")
 
-    # Load model
     print("Loading model...")
     t0 = time.time()
     model = SentenceTransformer(MODEL_NAME, device=device)
@@ -225,5 +227,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--limit", type=int, help="Only embed N orgs (for testing)")
     parser.add_argument("--rebuild", action="store_true", help="Drop and rebuild all embeddings")
+    parser.add_argument("--device", type=str, default=None, help="Force device: 'cuda' or 'cpu'")
     args = parser.parse_args()
-    run(limit=args.limit, rebuild=args.rebuild)
+    run(limit=args.limit, rebuild=args.rebuild, force_device=args.device)
