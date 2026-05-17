@@ -68,3 +68,4 @@ templates/
 static/
 web/
 .gstack/
+.env

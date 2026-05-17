@@ -34,14 +34,14 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
     >
       {inList ? (
         <>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
           Added
         </>
       ) : (
         <>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           Add
@@ -78,11 +78,11 @@ function BookmarkButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: R
     <button
       onClick={onClick}
       title={isSaved ? 'Remove from saved' : 'Save organization'}
-      className="p-1.5 rounded-full transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none"
+      className="p-2 rounded-full transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none"
       aria-pressed={isSaved}
     >
       <svg
-        width="14" height="14" viewBox="0 0 24 24"
+        width="18" height="18" viewBox="0 0 24 24"
         fill={isSaved ? '#C9A96E' : 'none'}
         stroke={isSaved ? '#C9A96E' : '#A89F94'}
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"

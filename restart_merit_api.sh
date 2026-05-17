@@ -14,6 +14,7 @@ fuser 5000/tcp 2>/dev/null && echo "Port still in use!" || echo "Port 5000 is fr
 echo "=== STARTING NEW FLASK API ==="
 source ~/meritgiving/venv/bin/activate
 cd ~/meritgiving
+[ -f .env ] && export $(grep -v '^#' .env | xargs)
 python3 merit_api.py > logs/merit_api.log 2>&1 &
 API_PID=$!
 echo $API_PID > logs/merit_api.pid
