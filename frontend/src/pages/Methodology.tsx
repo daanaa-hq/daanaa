@@ -71,7 +71,7 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 export default function Methodology() {
   usePageMeta(
     'Scoring Methodology',
-    'The complete formula MERIT uses to score 550,000+ nonprofits — peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
+    'The complete formula MERIT uses to score 430,000+ nonprofits — peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const methodologyVersion = stats?.methodology_version ?? 'v1'
@@ -277,7 +277,7 @@ export default function Methodology() {
             <div className="mt-4">
               <SourceRow
                 source="IRS Business Master File"
-                detail="501(c)(3) registration status, EIN, organization name, state, NTEE code. Updated quarterly by the IRS. All 550,000+ active organizations."
+                detail="501(c)(3) registration status, EIN, organization name, state, NTEE code. Updated quarterly by the IRS. MERIT indexes the active 501(c)(3) public charity subset — 430,000+ organizations."
               />
               <SourceRow
                 source="IRS Statistics of Income"
