@@ -11,14 +11,17 @@ sleep 2
 echo "=== VERIFY PORT IS FREE ==="
 fuser 5000/tcp 2>/dev/null && echo "Port still in use!" || echo "Port 5000 is free"
 
-echo "=== STARTING NEW FLASK API ==="
+echo "=== STARTING NEW FLASK API (gunicorn) ==="
 source ~/meritgiving/venv/bin/activate
 cd ~/meritgiving
 [ -f .env ] && export $(grep -v '^#' .env | xargs)
-python3 merit_api.py > logs/merit_api.log 2>&1 &
+gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 \
+  --access-logfile logs/gunicorn_access.log \
+  --error-logfile logs/merit_api.log \
+  --pid logs/merit_api.pid \
+  merit_api:app &
 API_PID=$!
-echo $API_PID > logs/merit_api.pid
-echo "API PID: $API_PID"
+echo "API PID: $API_PID (gunicorn master)"
 sleep 3
 
 echo "=== HEALTH CHECK ==="

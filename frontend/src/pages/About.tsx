@@ -71,8 +71,8 @@ export default function About() {
             <div className="mt-6 grid grid-cols-2 gap-4">
               {[
                 { label: stats ? formatCount(stats.total_organizations) : '—', sub: 'organizations indexed' },
-                { label: '24', sub: 'NTEE major categories' },
-                { label: 'FY 2020–2023', sub: 'financial data range' },
+                { label: '26', sub: 'NTEE major categories' },
+                { label: 'FY 2020–2024', sub: 'financial data range' },
                 { label: 'Monthly', sub: 'IRS BMF update cadence' },
               ].map(s => (
                 <div key={s.sub} className="bg-white border border-light-grey rounded-xl p-5">
