@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import LampMark from '../components/LampMark'
 import { useApi } from '../hooks/useApi'
-import { getStats } from '../data/api'
+import { getStats, getCategories } from '../data/api'
 import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
@@ -110,6 +110,12 @@ function HeroSection() {
 // ─── Browse by Cause tiles ────────────────────────────────────────────────────
 function BrowseCauses() {
   const cats = useMemo(() => seededShuffle(NTEE_CATEGORIES, weekSeed()), [])
+  const { data: catData } = useApi(() => getCategories(), [])
+  const orgCountByCode = useMemo(() => {
+    const map: Record<string, number> = {}
+    catData?.categories.forEach(c => { map[c.code] = c.count })
+    return map
+  }, [catData])
 
   return (
     <section className="bg-[#F8F5F0] border-t border-b border-light-grey py-16">
@@ -141,29 +147,32 @@ function BrowseCauses() {
 
         {/* Cause grid — 2 cols mobile · 3 cols tablet · 4 cols desktop */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {cats.map(cat => (
-            <Link
-              key={cat.id}
-              to={`/category/${cat.id}`}
-              className="group flex flex-col justify-between bg-white border border-light-grey rounded-xl px-5 py-4 hover:border-soft-gold hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
-              style={{ minHeight: '90px' }}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <span className="font-body text-[15px] font-semibold text-deep-navy leading-snug tracking-[0.01em] group-hover:text-soft-gold transition-colors duration-150">
-                  {cat.name}
+          {cats.map(cat => {
+            const count = orgCountByCode[cat.id]
+            return (
+              <Link
+                key={cat.id}
+                to={`/category/${cat.id}`}
+                className="group flex flex-col justify-between bg-white border border-light-grey rounded-xl px-5 py-4 hover:border-soft-gold hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
+                style={{ minHeight: '90px' }}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-body text-[15px] font-semibold text-deep-navy leading-snug tracking-[0.01em] group-hover:text-soft-gold transition-colors duration-150">
+                    {cat.name}
+                  </span>
+                  <svg
+                    width="8" height="12" viewBox="0 0 8 12"
+                    className="shrink-0 mt-[3px] opacity-20 group-hover:opacity-70 transition-opacity duration-200"
+                  >
+                    <polygon points="4,0 8,6 4,12 0,6" fill="#C9A84C"/>
+                  </svg>
+                </div>
+                <span className="font-body text-[12px] text-cool-grey mt-2">
+                  {count != null ? `${count.toLocaleString()} organizations` : `${cat.subs.length} subcategories`}
                 </span>
-                <svg
-                  width="8" height="12" viewBox="0 0 8 12"
-                  className="shrink-0 mt-[3px] opacity-20 group-hover:opacity-70 transition-opacity duration-200"
-                >
-                  <polygon points="4,0 8,6 4,12 0,6" fill="#C9A84C"/>
-                </svg>
-              </div>
-              <span className="font-body text-[12px] text-cool-grey mt-2">
-                {cat.subs.length} subcategories
-              </span>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </div>
       </div>
     </section>
@@ -376,6 +385,12 @@ function WalletSection() {
 
 // ─── Footer CTA ───────────────────────────────────────────────────────────────
 function FooterCTA() {
+  const { data: stats } = useApi(() => getStats(), [])
+  const orgCount = stats?.total_organizations
+  const countLabel = orgCount != null
+    ? `${(Math.floor(orgCount / 1000) * 1000).toLocaleString()}+`
+    : '430,000+'
+
   return (
     <section className="bg-white border-t border-light-grey py-16">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 text-center">
@@ -386,7 +401,7 @@ function FooterCTA() {
           Ready to give with intention?
         </h2>
         <p className="mt-4 font-body text-[16px] text-cool-grey">
-          Browse 550,000+ nonprofits, track your giving, and discover where your dollars make the most impact.
+          Browse {countLabel} nonprofits, track your giving, and discover where your dollars make the most impact.
         </p>
         <div className="mt-8 flex items-center justify-center gap-4 flex-wrap">
           <Link
