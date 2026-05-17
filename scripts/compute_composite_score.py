@@ -22,7 +22,7 @@ DB             = "data/merit_registry.db"
 DRY_RUN        = "--dry-run" in sys.argv
 MIN_GROUP      = 30
 REV_W, RSV_W   = 0.65, 0.35
-SCORER_VERSION = "v5-refined-bands"
+SCORER_VERSION = "v1"
 
 STATE_REGION = {
     'CT':'Northeast','ME':'Northeast','MA':'Northeast','NH':'Northeast',

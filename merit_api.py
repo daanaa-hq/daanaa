@@ -9,6 +9,11 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+# Scoring methodology version — the formula/algorithm. Changes rarely, and
+# only when the scoring logic itself changes (not on data refreshes). The
+# score-computation DATE is read dynamically from score_snapshots.
+METHODOLOGY_VERSION = "v1"
+
 # Lazy-loaded semantic search components (only initialised on first use)
 _embed_model = None
 _vec_ready   = None   # True/False/None (None = not yet checked)
@@ -341,7 +346,11 @@ def stats():
         "top_states": [dict(r) for r in db.execute(f"""
             SELECT STATE, COUNT(*) as count FROM registry_enriched
             WHERE {f} AND STATE IS NOT NULL GROUP BY STATE ORDER BY count DESC LIMIT 5
-        """).fetchall()]
+        """).fetchall()],
+        "methodology_version": METHODOLOGY_VERSION,
+        "scores_last_updated": db.execute(
+            "SELECT MAX(snapshot_date) FROM score_snapshots"
+        ).fetchone()[0],
     })
 
 @app.route('/api/scoring-runs')
