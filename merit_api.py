@@ -389,6 +389,16 @@ _DEDUCTIBILITY_FILTER = (
 def stats():
     db = get_db()
     f = _DEDUCTIBILITY_FILTER
+    fin_count = db.execute("SELECT COUNT(*) FROM propublica_financials").fetchone()[0]
+    reserve_stats = db.execute(f"""
+        SELECT
+            COUNT(CASE WHEN months_of_reserve IS NOT NULL THEN 1 END) as has_reserve,
+            COUNT(CASE WHEN months_of_reserve < 0 THEN 1 END) as insolvent,
+            COUNT(CASE WHEN months_of_reserve >= 0 AND months_of_reserve < 3 THEN 1 END) as at_risk,
+            COUNT(CASE WHEN months_of_reserve >= 3 AND months_of_reserve < 12 THEN 1 END) as minimal,
+            COUNT(CASE WHEN months_of_reserve >= 12 THEN 1 END) as healthy
+        FROM registry_enriched WHERE {f}
+    """).fetchone()
     return jsonify({
         "total_organizations": db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {f}").fetchone()[0],
         "with_revenue": db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {f} AND total_revenue > 0").fetchone()[0],
@@ -402,7 +412,62 @@ def stats():
         "scores_last_updated": db.execute(
             "SELECT MAX(snapshot_date) FROM score_snapshots"
         ).fetchone()[0],
+        "financial_records": fin_count,
+        "with_reserve_data": reserve_stats["has_reserve"] if reserve_stats else 0,
+        "reserve_health": {
+            "insolvent": reserve_stats["insolvent"] if reserve_stats else 0,
+            "at_risk": reserve_stats["at_risk"] if reserve_stats else 0,
+            "minimal": reserve_stats["minimal"] if reserve_stats else 0,
+            "healthy": reserve_stats["healthy"] if reserve_stats else 0,
+        },
     })
+
+@app.route('/api/sector-health')
+@limiter.exempt
+def sector_health():
+    db = get_db()
+    f = _DEDUCTIBILITY_FILTER
+    rows = db.execute(f"""
+        SELECT NTEE1 as code,
+               COUNT(*) as total_orgs,
+               COUNT(CASE WHEN months_of_reserve IS NOT NULL THEN 1 END) as has_reserve,
+               ROUND(AVG(CASE WHEN months_of_reserve > -900 THEN months_of_reserve END), 1) as avg_months_reserve,
+               COUNT(CASE WHEN months_of_reserve < 0 THEN 1 END) as insolvent,
+               COUNT(CASE WHEN months_of_reserve >= 0 AND months_of_reserve < 3 THEN 1 END) as at_risk,
+               COUNT(CASE WHEN months_of_reserve >= 3 AND months_of_reserve < 12 THEN 1 END) as minimal,
+               COUNT(CASE WHEN months_of_reserve >= 12 THEN 1 END) as healthy,
+               ROUND(AVG(CASE WHEN program_expense_pct IS NOT NULL AND program_expense_pct BETWEEN 0 AND 200 THEN program_expense_pct END), 1) as avg_program_pct,
+               ROUND(AVG(CASE WHEN total_revenue > 0 THEN total_revenue END), 0) as avg_revenue
+        FROM registry_enriched
+        WHERE NTEE1 IS NOT NULL AND {f}
+        GROUP BY NTEE1
+        ORDER BY total_orgs DESC
+    """).fetchall()
+
+    names = {
+        'A':'Arts, Culture & Humanities','B':'Education','C':'Environment',
+        'D':'Animal-Related','E':'Health','F':'Mental Health & Crisis',
+        'G':'Voluntary Health Associations','H':'Medical Research',
+        'I':'Crime & Legal-Related','J':'Employment',
+        'K':'Food, Agriculture & Nutrition','L':'Housing & Shelter',
+        'M':'Public Safety','N':'Recreation & Sports',
+        'O':'Youth Development','P':'Human Services',
+        'Q':'International','R':'Civil Rights & Advocacy',
+        'S':'Community Improvement','T':'Philanthropy & Voluntarism',
+        'U':'Science & Technology','V':'Social Science',
+        'W':'Public & Societal Benefit','X':'Religion-Related',
+        'Y':'Mutual & Membership','Z':'Unknown'
+    }
+
+    result = []
+    for row in rows:
+        d = dict(row)
+        d['name'] = names.get(d['code'], f"Category {d['code']}")
+        total = d['has_reserve'] or 1
+        d['at_risk_pct'] = round((d['insolvent'] + d['at_risk']) / d['total_orgs'] * 100, 1)
+        result.append(d)
+
+    return jsonify({"sectors": result})
 
 @app.route('/api/scoring-runs')
 @limiter.limit("20 per minute")

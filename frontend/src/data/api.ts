@@ -82,6 +82,33 @@ export interface ApiStats {
   top_states: { STATE: string; count: number }[];
   methodology_version: string;
   scores_last_updated: string | null;
+  financial_records: number;
+  with_reserve_data: number;
+  reserve_health: {
+    insolvent: number;
+    at_risk: number;
+    minimal: number;
+    healthy: number;
+  } | null;
+}
+
+export interface ApiSectorHealth {
+  code: string;
+  name: string;
+  total_orgs: number;
+  has_reserve: number;
+  avg_months_reserve: number | null;
+  insolvent: number;
+  at_risk: number;
+  minimal: number;
+  healthy: number;
+  at_risk_pct: number;
+  avg_program_pct: number | null;
+  avg_revenue: number | null;
+}
+
+export async function getSectorHealth(): Promise<{ sectors: ApiSectorHealth[] }> {
+  return fetchJson('/api/sector-health');
 }
 
 // GET /api/organizations
