@@ -94,7 +94,7 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
 
   // 3. 990 filing badge
   if (taxYear != null) {
-    const isCurrent = taxYear >= 2023
+    const isCurrent = taxYear >= new Date().getFullYear() - 2
     badges.push({
       id: 'tax_filing',
       label: `990 filed · FY ${taxYear}`,

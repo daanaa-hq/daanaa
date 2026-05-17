@@ -123,7 +123,7 @@ export default function HowItWorks() {
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">Revenue Band</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  A micro nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. We group organizations into five size tiers — Micro, Small, Medium, Large, and Major — and score within each tier. Your $80K community garden is ranked against other $80K community gardens.
+                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. We group organizations into six revenue bands — Nano, Micro, Small, Medium, Large, and Major — and score within each band. Your $80K community garden is ranked against other similarly-sized community gardens.
                 </p>
               </div>
             </div>
