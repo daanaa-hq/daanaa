@@ -62,6 +62,7 @@ export default function Footer() {
               {[
                 { label: 'How It Works', to: '/how-it-works' },
                 { label: 'Trust Tiers', to: '/tiers' },
+                { label: 'Scoring Methodology', to: '/methodology' },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-2">
