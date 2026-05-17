@@ -198,6 +198,8 @@ def list_organizations():
                latest_tax_year, data_source, updated_at,
                revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
                merit_tier, merit_score, merit_band,
+               months_of_reserve, net_assets, total_expenses,
+               employee_count, ruling_date, zipcode,
                (mission IS NOT NULL AND mission != '') as has_mission,
                (website IS NOT NULL AND website != '') as has_website
         FROM registry_enriched
@@ -315,6 +317,29 @@ def get_score_history(ein):
     return jsonify({
         "ein": ein_clean,
         "history": [dict(r) for r in rows],
+        "total": len(rows),
+    })
+
+@app.route('/api/organizations/<ein>/financials')
+@limiter.limit("60 per minute")
+def get_financials(ein):
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT tax_prd_yr, totrevenue, totfuncexpns, totassetsend,
+               totliabend, totnetassetend, totcntrbgfts, totprgmrevnue,
+               compnsatncurrofcr, pdf_url
+        FROM propublica_financials
+        WHERE EIN = ?
+        ORDER BY tax_prd_yr ASC
+    """, (ein_clean,)).fetchall()
+
+    return jsonify({
+        "ein": ein_clean,
+        "financials": [dict(r) for r in rows],
         "total": len(rows),
     })
 

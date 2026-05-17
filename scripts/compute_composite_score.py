@@ -43,17 +43,23 @@ cur  = conn.cursor()
 
 rows = cur.execute("""
     SELECT EIN, organization_name, NTEE1, peer_group, STATE,
-           total_revenue, total_assets, peer_percentile
+           total_revenue, total_assets, peer_percentile,
+           months_of_reserve, net_assets, total_expenses
     FROM registry_enriched
     WHERE peer_group IS NOT NULL AND total_revenue > 0
 """).fetchall()
 orgs = [dict(r) for r in rows]
 print(f"Loaded {len(orgs):,} orgs  |  mode: {'DRY RUN' if DRY_RUN else 'LIVE'}")
 
-# Attach region and compute reserve ratio
+# Attach region and compute reserve metric
+# Prefer months_of_reserve (net assets / monthly expenses) when available;
+# fall back to total_assets / total_revenue × 12 (crude proxy).
 for o in orgs:
-    o['_region']  = STATE_REGION.get(o['STATE'] or '', 'Other')
-    o['_ratio']   = max(0.0, o['total_assets'] or 0.0) / o['total_revenue']
+    o['_region'] = STATE_REGION.get(o['STATE'] or '', 'Other')
+    if o.get('months_of_reserve') is not None:
+        o['_ratio'] = max(0.0, o['months_of_reserve'])
+    else:
+        o['_ratio'] = max(0.0, o['total_assets'] or 0.0) / o['total_revenue'] * 12
     o['_reg_key'] = f"{o['peer_group']}:{o['_region']}"
 
 # Build group buckets

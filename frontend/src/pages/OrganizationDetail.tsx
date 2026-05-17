@@ -11,8 +11,8 @@ import MistakeRegistry from '../components/MistakeRegistry'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
-import { getOrganization, getScoreHistory } from '../data/api'
-import type { ApiOrganization, ScoreSnapshot } from '../data/api'
+import { getOrganization, getScoreHistory, getFinancials } from '../data/api'
+import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord } from '../data/api'
 import { formatCurrency, formatNumber } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 
@@ -241,6 +241,15 @@ export default function OrganizationDetail() {
   )
   const scoreHistory: ScoreSnapshot[] = scoreHistoryData?.history ?? []
 
+  const { data: financialsData } = useApi(
+    () => id ? getFinancials(id) : Promise.resolve({ ein: '', financials: [], total: 0 }),
+    [id]
+  )
+  const financials: ApiFinancialRecord[] = financialsData?.financials ?? []
+  const revenueTrend = financials
+    .filter(f => f.totrevenue !== null && f.totrevenue > 0)
+    .map(f => ({ year: f.tax_prd_yr, amount: f.totrevenue! }))
+
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [id])
@@ -402,7 +411,7 @@ export default function OrganizationDetail() {
                 {[
                   org.founded > 0 && { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>), label: 'Founded', value: String(org.founded) },
                   org.revenue > 0 && { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>), label: `Revenue${(org as any).latestTaxYear ? ` FY${(org as any).latestTaxYear}` : ''}`, value: formatCurrency(org.revenue) },
-                  org.employees > 0 && { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>), label: 'Employees', value: formatNumber(org.employees) },
+                  (apiOrg!.employee_count ?? 0) > 0 && { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>), label: 'Employees', value: formatNumber(apiOrg!.employee_count!) },
                   { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>), label: 'EIN', value: org.ein },
                 ].filter(Boolean).map((stat, i, arr) => (
                   <div key={(stat as {label: string}).label} className="flex items-center gap-4">
@@ -510,9 +519,52 @@ export default function OrganizationDetail() {
       {/* Financial Overview */}
       <div className="bg-warm-cream py-12 md:py-16">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+
+          {/* Key financial metrics row — shown when ProPublica data is available */}
+          {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              {apiOrg!.months_of_reserve !== null && (
+                <div className="bg-white border border-light-grey rounded-xl p-5">
+                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Months of Reserve</span>
+                  <span className="block font-body text-[26px] font-semibold tracking-[-0.02em] text-deep-navy">
+                    {apiOrg!.months_of_reserve! > 999 ? '999+' : apiOrg!.months_of_reserve! < 0 ? `(${Math.abs(apiOrg!.months_of_reserve!).toFixed(1)})` : apiOrg!.months_of_reserve!.toFixed(1)}
+                  </span>
+                  <span className="font-body text-[11px] text-cool-grey">Net assets ÷ monthly expenses</span>
+                </div>
+              )}
+              {apiOrg!.net_assets !== null && (
+                <div className="bg-white border border-light-grey rounded-xl p-5">
+                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Net Assets</span>
+                  <span className="block font-body text-[26px] font-semibold tracking-[-0.02em] text-deep-navy">
+                    {formatCurrency(apiOrg!.net_assets!)}
+                  </span>
+                  <span className="font-body text-[11px] text-cool-grey">Assets minus liabilities</span>
+                </div>
+              )}
+              {apiOrg!.total_expenses !== null && (
+                <div className="bg-white border border-light-grey rounded-xl p-5">
+                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Annual Expenses</span>
+                  <span className="block font-body text-[26px] font-semibold tracking-[-0.02em] text-deep-navy">
+                    {formatCurrency(apiOrg!.total_expenses!)}
+                  </span>
+                  <span className="font-body text-[11px] text-cool-grey">Total functional expenses</span>
+                </div>
+              )}
+              {(apiOrg!.employee_count ?? 0) > 0 && (
+                <div className="bg-white border border-light-grey rounded-xl p-5">
+                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Employees</span>
+                  <span className="block font-body text-[26px] font-semibold tracking-[-0.02em] text-deep-navy">
+                    {formatNumber(apiOrg!.employee_count!)}
+                  </span>
+                  <span className="font-body text-[11px] text-cool-grey">W-3 form headcount (NCCS)</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8">
-            {org.revenueTrend.length > 0 ? (
-              <RevenueChart data={org.revenueTrend} />
+            {revenueTrend.length > 0 ? (
+              <RevenueChart data={revenueTrend} />
             ) : (
               <div className="bg-white border border-light-grey rounded-xl p-6 flex flex-col justify-center">
                 <h4 className="font-display text-deep-navy text-[20px] mb-2">Revenue</h4>
@@ -765,6 +817,61 @@ export default function OrganizationDetail() {
               <Link to="/methodology" className="text-soft-gold hover:text-bright-gold transition-colors">
                 Methodology →
               </Link>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Multi-year Financial History (ProPublica 990 data) */}
+      {financials.length > 0 && (
+        <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">990 filings</span>
+            <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
+              Financial history
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-light-grey">
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Year</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Revenue</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Expenses</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Net Assets</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Contributions</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2">990</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...financials].reverse().map((f) => (
+                    <tr key={f.tax_prd_yr} className="border-b border-light-grey/50 hover:bg-white/50 transition-colors">
+                      <td className="font-body text-[13px] font-medium text-deep-navy py-3 pr-4">{f.tax_prd_yr}</td>
+                      <td className="font-body text-[13px] text-deep-navy py-3 pr-4">{f.totrevenue != null ? formatCurrency(f.totrevenue) : '—'}</td>
+                      <td className="font-body text-[13px] text-cool-grey py-3 pr-4">{f.totfuncexpns != null ? formatCurrency(f.totfuncexpns) : '—'}</td>
+                      <td className={`font-body text-[13px] py-3 pr-4 ${(f.totnetassetend ?? 0) < 0 ? 'text-amber-600' : 'text-cool-grey'}`}>
+                        {f.totnetassetend != null ? formatCurrency(f.totnetassetend) : '—'}
+                      </td>
+                      <td className="font-body text-[13px] text-cool-grey py-3 pr-4">{f.totcntrbgfts != null ? formatCurrency(f.totcntrbgfts) : '—'}</td>
+                      <td className="py-3">
+                        {f.pdf_url ? (
+                          <a
+                            href={f.pdf_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
+                          >
+                            PDF
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                          </a>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 font-body text-[12px] text-cool-grey">
+              Source: ProPublica Nonprofit Explorer · IRS Form 990 public filings
             </p>
           </div>
         </div>
