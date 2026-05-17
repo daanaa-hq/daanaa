@@ -28,6 +28,11 @@ MODEL_NAME = "BAAI/bge-large-en-v1.5"
 DIMS       = 1024
 BATCH_SIZE = 512   # safe for 32GB VRAM with bge-large
 
+MODEL_CONFIGS = {
+    "large": ("BAAI/bge-large-en-v1.5", 1024, 512),
+    "small": ("BAAI/bge-small-en-v1.5",  384,  256),
+}
+
 
 def _load_ntee_map():
     """Load ntee_map.json and build a flat (NTEECC → full description) lookup."""
@@ -87,9 +92,14 @@ def serialize(vec: np.ndarray) -> bytes:
     return struct.pack(f"{len(vec)}f", *vec.tolist())
 
 
-def run(limit=None, rebuild=False, force_device=None):
+def run(limit=None, rebuild=False, force_device=None, model_size="large"):
     import torch
     from sentence_transformers import SentenceTransformer
+
+    global MODEL_NAME, DIMS, BATCH_SIZE
+    cfg = MODEL_CONFIGS.get(model_size)
+    if cfg:
+        MODEL_NAME, DIMS, BATCH_SIZE = cfg
 
     if force_device:
         device = force_device
@@ -228,5 +238,7 @@ if __name__ == "__main__":
     parser.add_argument("--limit", type=int, help="Only embed N orgs (for testing)")
     parser.add_argument("--rebuild", action="store_true", help="Drop and rebuild all embeddings")
     parser.add_argument("--device", type=str, default=None, help="Force device: 'cuda' or 'cpu'")
+    parser.add_argument("--model", choices=["large", "small"], default="large",
+                        help="Model size: 'large' (1024-dim, best quality) or 'small' (384-dim, fast CPU)")
     args = parser.parse_args()
-    run(limit=args.limit, rebuild=args.rebuild, force_device=args.device)
+    run(limit=args.limit, rebuild=args.rebuild, force_device=args.device, model_size=args.model)
