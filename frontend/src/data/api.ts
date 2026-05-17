@@ -55,6 +55,7 @@ export interface ApiOrganization {
   activ3: string | null;
   program_expense_pct: number | null; // program revenue as % of total expenses
   nccs_year: number | null;
+  cause_tags?: string[] | null;           // LLM-extracted cause tags (3-5 per org)
   // Returned by GET /api/organizations/:ein only (SELECT *)
   mission?: string | null;
   website?: string | null;
