@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useApi } from '../hooks/useApi'
+import { getStats } from '../data/api'
 
 function Section({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
   return (
@@ -50,7 +52,7 @@ function BandRow({ band, range, orgs, note }: { band: string; range: string; org
 function VersionRow({ version, date, description }: { version: string; date: string; description: string }) {
   return (
     <div className="flex items-start gap-4 py-3 border-b border-light-grey last:border-0">
-      <span className="shrink-0 w-36 font-mono text-[13px] font-medium text-deep-navy">{version}</span>
+      <span className="shrink-0 w-20 font-mono text-[13px] font-medium text-deep-navy">{version}</span>
       <span className="shrink-0 w-28 font-body text-[13px] text-cool-grey">{date}</span>
       <span className="font-body text-[14px] text-cool-grey">{description}</span>
     </div>
@@ -71,6 +73,9 @@ export default function Methodology() {
     'Scoring Methodology',
     'The complete formula MERIT uses to score 550,000+ nonprofits — peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
   )
+  const { data: stats } = useApi(() => getStats(), [])
+  const methodologyVersion = stats?.methodology_version ?? 'v1'
+  const scoresUpdated = stats?.scores_last_updated ?? '—'
 
   return (
     <div className="min-h-[100dvh]">
@@ -88,14 +93,29 @@ export default function Methodology() {
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
             The complete formula, openly published. No black boxes — every input, weight, and design decision is documented here.
           </p>
-          <div className="mt-6 flex items-center gap-3">
-            <span className="font-mono text-[12px] text-soft-gold/70 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-              v5-refined-bands
-            </span>
-            <span className="font-body text-[12px] text-muted-cream/60">
-              Updated 2026-05-17
-            </span>
+          <div className="mt-7 flex flex-col sm:flex-row gap-4 sm:gap-10">
+            <div>
+              <p className="font-body text-[10px] font-medium tracking-[0.12em] text-soft-gold/60 uppercase mb-1.5">
+                Formula version · changes rarely
+              </p>
+              <span className="font-mono text-[14px] text-warm-cream bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                Methodology {methodologyVersion}
+              </span>
+            </div>
+            <div>
+              <p className="font-body text-[10px] font-medium tracking-[0.12em] text-soft-gold/60 uppercase mb-1.5">
+                Data refresh · updates as new 990s are filed
+              </p>
+              <span className="font-mono text-[14px] text-warm-cream bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                Scores last computed: {scoresUpdated}
+              </span>
+            </div>
           </div>
+          <p className="mt-5 font-body text-[13px] leading-[1.6] text-muted-cream/70 max-w-[620px]">
+            The methodology is the formula. It is versioned and changes rarely. Scores are
+            recomputed as new IRS filings become available — a new score date does not mean
+            the formula changed.
+          </p>
         </div>
       </div>
 
@@ -228,22 +248,25 @@ export default function Methodology() {
 
           <Section label="Version history" title="Scorer versioning and backward consistency">
             <p>
-              Every time the scoring methodology changes, a new scorer version is tagged. Raw inputs — total revenue, total assets, peer group, and region — are stored alongside each score, enabling backward-consistent recomputation when methodology evolves.
+              Every time the scoring methodology changes, a new version is tagged. Raw inputs — total revenue, total assets, peer group, and region — are stored alongside each score, so any prior period can be recomputed under a newer formula.
             </p>
             <div className="mt-4">
               <div className="flex items-start gap-4 py-2 border-b border-light-grey">
-                <span className="shrink-0 w-36 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Version</span>
+                <span className="shrink-0 w-20 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Version</span>
                 <span className="shrink-0 w-28 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Date</span>
-                <span className="font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">What changed</span>
+                <span className="font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">What it is</span>
               </div>
-              <VersionRow version="v5-refined-bands" date="2026-05-17" description="Split Micro band into Nano (<$25K) and Micro ($25K–$100K). 77K grassroots orgs now compared to true peers." />
-              <VersionRow version="v4-regional"      date="2026-05-17" description="Added US Census regional peer groups. 88% of orgs score against regional (not national) subcategory+band peers." />
-              <VersionRow version="v3-peer"          date="prior"      description="National subcategory+band peer groups introduced. Both revenue and reserves scored as within-group percentiles." />
-              <VersionRow version="v2-log"           date="prior"      description="Reserve ratio added using log-scale formula. Revenue rank remained national." />
-              <VersionRow version="v1-revenue"       date="prior"      description="Pure revenue percentile within NTEE1 broad category. No reserve dimension." />
+              <VersionRow
+                version={methodologyVersion}
+                date={scoresUpdated}
+                description="Initial public methodology — regional peer groups (NTEE subcategory + revenue band + US Census region), six revenue bands (Nano through Major), and a 0.65 revenue / 0.35 reserve composite computed within each peer group."
+              />
             </div>
+            <Callout>
+              Future methodology changes will appear here with a new version tag and a plain-English summary of what changed and why. Score recomputations against fresh IRS data are not methodology changes and do not bump the version.
+            </Callout>
             <p className="mt-6">
-              Historical input snapshots are preserved in the <code className="text-[14px] bg-deep-navy/[0.05] px-1.5 py-0.5 rounded">score_snapshots</code> table. When methodology changes, prior-period inputs can be rescored under the new formula, enabling chain-linked time series — the same approach used for CPI and home price indices.
+              Historical input snapshots are preserved in the <code className="text-[14px] bg-deep-navy/[0.05] px-1.5 py-0.5 rounded">score_snapshots</code> table. When the methodology does change, prior-period inputs can be rescored under the new formula, enabling chain-linked time series — the same approach used for CPI and home price indices.
             </p>
           </Section>
 
