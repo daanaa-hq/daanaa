@@ -292,6 +292,32 @@ def get_organization(ein):
 
     return jsonify(org)
 
+@app.route('/api/organizations/<ein>/score-history')
+@limiter.limit("60 per minute")
+def get_score_history(ein):
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT snapshot_date, peer_percentile, rev_pct, rsv_pct,
+               reserve_ratio, total_revenue, total_assets,
+               peer_group, group_key, group_size, scorer_version
+        FROM score_snapshots
+        WHERE EIN = ?
+        ORDER BY snapshot_date ASC
+    """, (ein_clean,)).fetchall()
+
+    if not rows:
+        return jsonify({"ein": ein_clean, "history": [], "total": 0})
+
+    return jsonify({
+        "ein": ein_clean,
+        "history": [dict(r) for r in rows],
+        "total": len(rows),
+    })
+
 @app.route('/api/ntee-categories')
 @limiter.exempt
 def ntee_categories():
