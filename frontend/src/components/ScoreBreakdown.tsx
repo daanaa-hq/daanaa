@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import type { ApiOrganization } from '../data/api'
 import { getOrgBadges } from '../utils/badges'
 import BadgeChip from './BadgeChip'
@@ -84,11 +85,17 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-light-grey shrink-0">
+      <div className="px-5 py-3 border-t border-light-grey shrink-0 flex items-start justify-between gap-3">
         <p className="font-body text-[10px] text-cool-grey/50 leading-[1.5]">
           Data sourced from {sourceLabel} and the IRS Business Master File.
           MERIT does not process donations or independently audit organizations.
         </p>
+        <Link
+          to="/methodology"
+          className="shrink-0 font-body text-[10px] text-soft-gold hover:text-bright-gold transition-colors whitespace-nowrap"
+        >
+          How scoring works →
+        </Link>
       </div>
     </div>
   )
