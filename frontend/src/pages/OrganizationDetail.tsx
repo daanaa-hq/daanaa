@@ -11,8 +11,8 @@ import MistakeRegistry from '../components/MistakeRegistry'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
-import { getOrganization } from '../data/api'
-import type { ApiOrganization } from '../data/api'
+import { getOrganization, getScoreHistory } from '../data/api'
+import type { ApiOrganization, ScoreSnapshot } from '../data/api'
 import { formatCurrency, formatNumber } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 
@@ -234,6 +234,12 @@ export default function OrganizationDetail() {
     () => getOrganization(id || ''),
     [id]
   )
+
+  const { data: scoreHistoryData } = useApi(
+    () => id ? getScoreHistory(id) : Promise.resolve({ ein: '', history: [], total: 0 }),
+    [id]
+  )
+  const scoreHistory: ScoreSnapshot[] = scoreHistoryData?.history ?? []
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -477,6 +483,12 @@ export default function OrganizationDetail() {
                   Detailed financial analysis not yet available — requires an itemized Form 990.
                 </span>
               )}
+              <Link
+                to="/methodology"
+                className="font-body text-[11px] text-muted-cream/40 hover:text-soft-gold transition-colors"
+              >
+                How is this scored? →
+              </Link>
             </div>
           </div>
         </div>
@@ -699,6 +711,61 @@ export default function OrganizationDetail() {
                 )
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Score History */}
+      {scoreHistory.length > 1 && (
+        <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Financial scale history</span>
+            <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
+              Score over time
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-light-grey">
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Date</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Score</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Revenue rank</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Reserve rank</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2">Peer group</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scoreHistory.map((snap, i) => {
+                    const prev = scoreHistory[i - 1]
+                    const delta = prev ? Math.round(snap.peer_percentile - prev.peer_percentile) : null
+                    return (
+                      <tr key={snap.snapshot_date} className="border-b border-light-grey/50">
+                        <td className="font-body text-[13px] text-deep-navy py-3 pr-6">{snap.snapshot_date}</td>
+                        <td className="py-3 pr-6">
+                          <span className="font-body text-[15px] font-semibold text-deep-navy">
+                            {Math.round(snap.peer_percentile)}
+                          </span>
+                          {delta !== null && delta !== 0 && (
+                            <span className={`ml-2 font-body text-[11px] font-medium ${delta > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                              {delta > 0 ? '+' : ''}{delta}
+                            </span>
+                          )}
+                        </td>
+                        <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{Math.round(snap.rev_pct)}th pct</td>
+                        <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{Math.round(snap.rsv_pct)}th pct</td>
+                        <td className="font-body text-[12px] text-cool-grey py-3 font-mono">{snap.group_key ?? snap.peer_group ?? '—'}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 font-body text-[12px] text-cool-grey leading-[1.5]">
+              Scores are recomputed as new IRS 990 filings become available. Each row represents a snapshot of raw financial inputs alongside the resulting score.{' '}
+              <Link to="/methodology" className="text-soft-gold hover:text-bright-gold transition-colors">
+                Methodology →
+              </Link>
+            </p>
           </div>
         </div>
       )}
