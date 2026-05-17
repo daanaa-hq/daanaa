@@ -76,7 +76,7 @@ export default function HowItWorks() {
               MERIT is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
             </p>
             <p>
-              We index every 501(c)(3) organization in the United States from IRS public records — over 550,000 of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
+              We index every 501(c)(3) organization in the United States from IRS public records — over 430,000 of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
               A high MERIT score means an organization is financially strong relative to similar nonprofits of similar size. It does not measure impact, goodness of purpose, or how efficiently a dollar reaches a beneficiary. Those things matter enormously — they are also much harder to measure, and we won't pretend otherwise.
