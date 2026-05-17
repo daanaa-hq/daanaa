@@ -255,7 +255,7 @@ export default function OrganizationDetail() {
 
   const metaTitle = apiOrg?.organization_name ?? ''
   const metaDesc = apiOrg
-    ? `${apiOrg.organization_name} is an IRS-verified 501(c)(3) nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. MERIT tier: ${apiOrg.merit_tier ?? 'Flame'}. Peer score: ${apiOrg.peer_percentile != null ? `${apiOrg.peer_percentile}th percentile` : 'pending'}.`
+    ? `${apiOrg.organization_name} is an IRS-verified 501(c)(3) nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. MERIT tier: ${apiOrg.merit_tier ?? 'Flame'}. Financial scale: ${apiOrg.peer_percentile != null ? `${Math.round(apiOrg.peer_percentile)}/100` : 'pending'}.`
     : ''
   usePageMeta(metaTitle, metaDesc)
 
@@ -521,7 +521,7 @@ export default function OrganizationDetail() {
                   {(lampTier === 'Beacon' || lampTier === 'Lantern') ? (
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
                       {apiOrg!.organization_name} is a fully verified nonprofit — IRS 501(c)(3), current 990, mission, and website all on public record.
-                      {lampTier === 'Lantern' && ' Reaching a top-quartile peer score would light the full Beacon.'}
+                      {lampTier === 'Lantern' && ' Reaching a top-quartile financial scale (75th percentile) would light the full Beacon.'}
                     </p>
                   ) : (
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">

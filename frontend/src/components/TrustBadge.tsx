@@ -76,10 +76,10 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
     },
     {
       id: 'peer_score',
-      label: 'Peer-group score',
-      description: 'Benchmarked against nonprofits of similar size and mission',
+      label: 'Financial scale',
+      description: 'Revenue and reserves relative to similar nonprofits — not a quality or impact rating',
       status: hasPeerScore ? 'met' : hasBroadScore ? 'partial' : 'unavailable',
-      shortFact: 'Peer scored',
+      shortFact: 'Financial scale',
     },
     {
       id: 'financial_health',
@@ -112,9 +112,9 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
 export function getNextTierPath(tier: TierName): string | null {
   switch (tier) {
     case 'Beacon':  return null
-    case 'Lantern': return 'Reach a top-quartile peer score (75th percentile or above within peer group).'
+    case 'Lantern': return 'Reach a top-quartile financial scale (75th percentile or above within peer group).'
     case 'Flame':   return 'Add a mission statement and website — once both are on public record, this org qualifies for Lantern.'
-    case 'Ember':   return 'A peer-group score is assigned as financial data accumulates in public records. MERIT updates automatically.'
+    case 'Ember':   return 'A financial scale score is assigned as revenue and asset data accumulates in public records. MERIT updates automatically.'
     case 'Spark':   return 'A current Form 990 or reported revenue on file moves this org to Ember.'
   }
 }
@@ -157,7 +157,7 @@ export function getTierSummary(tier: TierName, org: ApiOrganization): string {
   const parts: string[] = []
   if (has990) parts.push('IRS verified · 990 on file')
   else if (tier !== 'Spark') parts.push('IRS registered')
-  if (score != null && score >= 60) parts.push(`Top ${Math.max(1, 100 - Math.round(score))}% of peer orgs`)
+  if (score != null && score >= 60) parts.push(`Top ${Math.max(1, 100 - Math.round(score))}% financial scale`)
   if (org.has_mission && org.has_website) parts.push('Full profile')
   return parts.slice(0, 2).join(' · ') || 'IRS registered'
 }
