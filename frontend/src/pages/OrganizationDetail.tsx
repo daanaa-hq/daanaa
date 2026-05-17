@@ -326,7 +326,7 @@ export default function OrganizationDetail() {
                 background: isSaved(org.ein) ? 'rgba(201,169,110,0.1)' : 'transparent',
               }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill={isSaved(org.ein) ? '#C9A96E' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={isSaved(org.ein) ? '#C9A96E' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
               </svg>
               {isSaved(org.ein) ? 'Saved' : 'Save'}
@@ -342,7 +342,7 @@ export default function OrganizationDetail() {
                 border: inList ? '1px solid #C9A96E' : '1px solid transparent',
               }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24"
+              <svg width="16" height="16" viewBox="0 0 24 24"
                 fill={inList ? 'none' : '#0A1628'}
                 stroke={inList ? '#C9A96E' : '#0A1628'}
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
