@@ -32,6 +32,19 @@ function stubOrg(item: ReturnType<typeof useGivingList>['items'][0]): ApiOrganiz
     updated_at: null,
     has_mission: null,
     has_website: null,
+    months_of_reserve: null,
+    net_assets: null,
+    total_expenses: null,
+    total_liabilities: null,
+    employee_count: null,
+    ruling_date: null,
+    zipcode: null,
+    address: null,
+    activ1: null,
+    activ2: null,
+    activ3: null,
+    program_expense_pct: null,
+    nccs_year: null,
   }
 }
 
