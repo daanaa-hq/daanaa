@@ -22,7 +22,8 @@ NTEE_MAP = Path.home() / "meritgiving" / "ntee_map.json"
 MIN_PEER_GROUP = 30   # minimum peers before we trust a group
 
 REVENUE_BANDS = [
-    ("Micro",  0,          100_000),
+    ("Nano",   0,           25_000),
+    ("Micro",  25_000,     100_000),
     ("Small",  100_000,    500_000),
     ("Medium", 500_000,  5_000_000),
     ("Large",  5_000_000, 50_000_000),
