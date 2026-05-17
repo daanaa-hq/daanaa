@@ -18,10 +18,11 @@ Run: python3 scripts/compute_composite_score.py [--dry-run]
 import sqlite3, sys
 from collections import defaultdict
 
-DB           = "data/merit_registry.db"
-DRY_RUN      = "--dry-run" in sys.argv
-MIN_GROUP    = 30
-REV_W, RSV_W = 0.65, 0.35
+DB             = "data/merit_registry.db"
+DRY_RUN        = "--dry-run" in sys.argv
+MIN_GROUP      = 30
+REV_W, RSV_W   = 0.65, 0.35
+SCORER_VERSION = "v4-regional"
 
 STATE_REGION = {
     'CT':'Northeast','ME':'Northeast','MA':'Northeast','NH':'Northeast',
@@ -142,8 +143,31 @@ for ein, label in SPOTLIGHT.items():
 
 if not DRY_RUN:
     cur.executemany("UPDATE registry_enriched SET peer_percentile=? WHERE EIN=?", updates)
+
+    import datetime
+    today = datetime.date.today().isoformat()
+    snapshots = [
+        (
+            o['EIN'], today,
+            o['total_revenue'], o['total_assets'] or 0.0,
+            o['peer_group'], o['STATE'], o['_region'],
+            SCORER_VERSION,
+            b['new'], b['rev_pct'], b['rsv_pct'],
+            o['_ratio'], o['_group_size'], o['_group_used'],
+        )
+        for o, b in zip(orgs, before_after)
+    ]
+    cur.executemany("""
+        INSERT OR IGNORE INTO score_snapshots
+          (EIN, snapshot_date, total_revenue, total_assets,
+           peer_group, STATE, region, scorer_version,
+           peer_percentile, rev_pct, rsv_pct,
+           reserve_ratio, group_size, group_key)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """, snapshots)
+
     conn.commit()
-    print(f"\nWrote {len(updates):,} rows.")
+    print(f"\nWrote {len(updates):,} rows  |  {len(snapshots):,} snapshots → score_snapshots.")
 else:
     print("\nDry run — pass no flag to apply.")
 
