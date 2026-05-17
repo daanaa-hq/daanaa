@@ -407,6 +407,20 @@ export default function OrganizationDetail() {
                 ) : null
               })()}
 
+              {/* Financial stress indicator — amber/red chip when reserve data shows strain */}
+              {apiOrg!.months_of_reserve !== null && apiOrg!.months_of_reserve < 3 && (
+                <div className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border ${
+                  apiOrg!.months_of_reserve < 0
+                    ? 'bg-red-500/10 text-red-400 border-red-500/25'
+                    : 'bg-amber-500/10 text-amber-400 border-amber-500/25'
+                }`}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
+                  {apiOrg!.months_of_reserve < 0
+                    ? `Negative net assets · ${apiOrg!.months_of_reserve.toFixed(1)} mo`
+                    : `Low reserves · ${apiOrg!.months_of_reserve.toFixed(1)} mo operating runway`}
+                </div>
+              )}
+
               <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
                 {[
                   org.founded > 0 && { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>), label: 'Founded', value: String(org.founded) },
