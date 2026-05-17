@@ -407,17 +407,17 @@ export default function OrganizationDetail() {
                 ) : null
               })()}
 
-              {/* Financial stress indicator — amber/red chip when reserve data shows strain */}
+              {/* Financial stress indicator */}
               {apiOrg!.months_of_reserve !== null && apiOrg!.months_of_reserve < 3 && (
                 <div className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border ${
                   apiOrg!.months_of_reserve < 0
-                    ? 'bg-red-500/10 text-red-400 border-red-500/25'
-                    : 'bg-amber-500/10 text-amber-400 border-amber-500/25'
+                    ? 'bg-red-500/25 text-red-300 border-red-500/50'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                 }`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   {apiOrg!.months_of_reserve < 0
-                    ? `Negative net assets · ${apiOrg!.months_of_reserve.toFixed(1)} mo`
-                    : `Low reserves · ${apiOrg!.months_of_reserve.toFixed(1)} mo operating runway`}
+                    ? 'Negative net assets — this org owes more than it owns'
+                    : `Only ${apiOrg!.months_of_reserve.toFixed(1)} months of savings if donations stopped`}
                 </div>
               )}
 
@@ -511,6 +511,9 @@ export default function OrganizationDetail() {
                   <span className="font-body text-[14px] font-semibold" style={{ color: PASSING_BANDS.includes(finHealth.band) ? '#4ADE80' : '#F59E0B' }}>
                     {finHealth.band} · {finHealth.score}/100
                   </span>
+                  <span className="font-body text-[10px] text-muted-cream/60 text-center leading-[1.4]">
+                    Stronger than {finHealth.score}% of similar nonprofits
+                  </span>
                   <span className="font-body text-[10px] text-muted-cream/50">
                     Based on FY{apiOrg!.latest_tax_year ?? '—'} Form 990
                   </span>
@@ -552,12 +555,30 @@ export default function OrganizationDetail() {
           {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {apiOrg!.months_of_reserve !== null && (
-                <div className="bg-white border border-light-grey rounded-xl p-5">
-                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Months of Reserve</span>
-                  <span className="block font-body text-[26px] font-semibold tracking-[-0.02em] text-deep-navy">
+                <div className={`rounded-xl p-5 border ${
+                  apiOrg!.months_of_reserve < 0
+                    ? 'bg-red-50 border-red-200'
+                    : apiOrg!.months_of_reserve < 3
+                    ? 'bg-amber-50 border-amber-200'
+                    : 'bg-white border-light-grey'
+                }`}>
+                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
+                  <span className={`block font-body text-[26px] font-semibold tracking-[-0.02em] ${
+                    apiOrg!.months_of_reserve < 0
+                      ? 'text-red-600'
+                      : apiOrg!.months_of_reserve < 3
+                      ? 'text-amber-600'
+                      : 'text-deep-navy'
+                  }`}>
                     {apiOrg!.months_of_reserve! > 999 ? '999+' : apiOrg!.months_of_reserve! < 0 ? `(${Math.abs(apiOrg!.months_of_reserve!).toFixed(1)})` : apiOrg!.months_of_reserve!.toFixed(1)}
                   </span>
-                  <span className="font-body text-[11px] text-cool-grey">Net assets ÷ monthly expenses</span>
+                  <span className="font-body text-[11px] text-cool-grey">
+                    {apiOrg!.months_of_reserve < 0
+                      ? 'months — negative net assets'
+                      : apiOrg!.months_of_reserve < 3
+                      ? 'months of savings remaining'
+                      : 'months if revenue stopped today'}
+                  </span>
                 </div>
               )}
               {apiOrg!.net_assets !== null && (
