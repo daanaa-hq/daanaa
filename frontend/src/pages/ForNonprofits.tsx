@@ -3,18 +3,6 @@ import { Link } from 'react-router-dom'
 import { submitWaitlist } from '../data/api'
 import { usePageMeta } from '../hooks/usePageMeta'
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
-  return (
-    <div className="p-6 bg-white border border-light-grey rounded-xl">
-      <div className="w-10 h-10 rounded-lg bg-soft-gold/10 flex items-center justify-center mb-4 text-soft-gold">
-        {icon}
-      </div>
-      <h3 className="font-display text-[18px] text-deep-navy mb-2">{title}</h3>
-      <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{description}</p>
-    </div>
-  )
-}
-
 function StepDot({ n, label }: { n: number; label: string }) {
   return (
     <div className="flex items-center gap-4">
