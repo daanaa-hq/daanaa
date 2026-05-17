@@ -4,6 +4,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import OrgCard, { OrgCardRow } from '../components/OrgCard'
 import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
+import SemanticSearch from '../components/SemanticSearch'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { getOrganizations } from '../data/api'
@@ -354,6 +355,7 @@ export default function Directory() {
   const [currentPage, setCurrentPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [searchMode, setSearchMode] = useState<'browse' | 'ai'>('browse')
   const { isSaved, toggle: toggleSave } = useSavedOrgs()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -514,8 +516,42 @@ export default function Directory() {
             className="mt-7 max-w-[640px]"
           />
 
+          {/* Search mode toggle */}
+          <div className="mt-3 flex items-center gap-1 max-w-[640px]">
+            <button
+              onClick={() => setSearchMode('browse')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-[12px] font-medium transition-all duration-150 border"
+              style={{
+                backgroundColor: searchMode === 'browse' ? '#0A1628' : 'transparent',
+                color: searchMode === 'browse' ? '#F5F0EB' : '#6B7280',
+                borderColor: searchMode === 'browse' ? '#0A1628' : '#E5E0DB',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              Browse & filter
+            </button>
+            <button
+              onClick={() => setSearchMode('ai')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-[12px] font-medium transition-all duration-150 border"
+              style={{
+                backgroundColor: searchMode === 'ai' ? '#C9A96E' : 'transparent',
+                color: searchMode === 'ai' ? '#0A1628' : '#6B7280',
+                borderColor: searchMode === 'ai' ? '#C9A96E' : '#E5E0DB',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/>
+                <path d="M19 17l.75 2.25L22 20l-2.25.75L19 23l-.75-2.25L16 20l2.25-.75z" opacity=".5"/>
+              </svg>
+              AI Search
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-soft-gold/20 text-[9px] font-semibold tracking-wide uppercase" style={{ color: searchMode === 'ai' ? '#0A1628' : '#C9A96E' }}>beta</span>
+            </button>
+          </div>
+
           {/* Mobile: single Filters button */}
-          <div className="mt-5 md:hidden flex items-center gap-2">
+          {searchMode === 'browse' && <div className="mt-5 md:hidden flex items-center gap-2">
             <button
               onClick={() => setFilterSheetOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all duration-150"
@@ -540,10 +576,10 @@ export default function Directory() {
                 Clear
               </button>
             )}
-          </div>
+          </div>}
 
           {/* Tablet: category pills + state dropdown */}
-          <div className="mt-5 hidden md:flex lg:hidden items-center gap-2 flex-wrap">
+          {searchMode === 'browse' && <div className="mt-5 hidden md:flex lg:hidden items-center gap-2 flex-wrap">
             {FILTER_CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
@@ -576,10 +612,10 @@ export default function Directory() {
               </select>
               <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
-          </div>
+          </div>}
 
           {/* Tablet: subcategory pills when a category is active */}
-          {activeFilter !== 'all' && (NTEE_SUBCATEGORIES[activeFilter]?.length ?? 0) > 0 && (
+          {searchMode === 'browse' && activeFilter !== 'all' && (NTEE_SUBCATEGORIES[activeFilter]?.length ?? 0) > 0 && (
             <div className="mt-3 hidden md:flex lg:hidden items-center gap-1.5 flex-wrap">
               {NTEE_SUBCATEGORIES[activeFilter].map(sub => (
                 <button
@@ -621,6 +657,14 @@ export default function Directory() {
       {/* Results */}
       <div className="bg-warm-cream py-12 md:py-16">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+
+          {/* AI Search mode */}
+          {searchMode === 'ai' && (
+            <SemanticSearch />
+          )}
+
+          {/* Browse mode */}
+          {searchMode === 'browse' && (
           <div className="lg:flex lg:gap-8 lg:items-start">
 
             {/* Desktop filter rail */}
@@ -883,6 +927,8 @@ export default function Directory() {
               )}
             </div>
           </div>
+          )} {/* end browse mode */}
+
         </div>
       </div>
     </div>
