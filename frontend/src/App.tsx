@@ -20,6 +20,7 @@ const TiersPage = lazy(() => import('./pages/TiersPage'))
 const GuidesPage = lazy(() => import('./pages/GuidesPage'))
 const FAQPage = lazy(() => import('./pages/FAQPage'))
 const Methodology = lazy(() => import('./pages/Methodology'))
+const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/giving-list/confirmation" element={<GivingConfirmation />} />
             <Route path="/tiers" element={<TiersPage />} />
             <Route path="/methodology" element={<Methodology />} />
+            <Route path="/sector-health" element={<SectorHealth />} />
             <Route path="/guides" element={<GuidesPage />} />
             <Route path="/faq" element={<FAQPage />} />
           </Route>

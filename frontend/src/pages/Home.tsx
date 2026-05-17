@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type ReactNode } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
@@ -186,57 +186,69 @@ function StatsBar() {
   const finRecords = stats?.financial_records ?? 1_785_000
   const atRisk = (stats?.reserve_health?.insolvent ?? 0) + (stats?.reserve_health?.at_risk ?? 0)
 
+  const items: { icon: ReactNode; value: string; label: string; to?: string }[] = [
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      ),
+      value: `${count.toLocaleString()}+`,
+      label: 'verified nonprofits',
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      ),
+      value: `${Math.floor(finRecords / 1_000_000).toFixed(1)}M+`,
+      label: '990 filings indexed',
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      ),
+      value: atRisk > 0 ? `${Math.round(atRisk / 1000)}K` : '76K',
+      label: 'orgs under financial stress',
+      to: '/sector-health',
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+        </svg>
+      ),
+      value: 'Monthly',
+      label: 'IRS BMF updates',
+    },
+  ]
+
   return (
     <div className="bg-white border-b border-light-grey py-6">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 flex flex-wrap items-center justify-center gap-8 md:gap-12">
-        {[
-          {
-            icon: (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            ),
-            value: `${count.toLocaleString()}+`,
-            label: 'verified nonprofits',
-          },
-          {
-            icon: (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-            ),
-            value: `${Math.floor(finRecords / 1_000_000).toFixed(1)}M+`,
-            label: '990 filings indexed',
-          },
-          {
-            icon: (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-            ),
-            value: atRisk > 0 ? `${Math.round(atRisk / 1000)}K` : '76K',
-            label: 'orgs under financial stress',
-          },
-          {
-            icon: (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
-              </svg>
-            ),
-            value: 'Monthly',
-            label: 'IRS BMF updates',
-          },
-        ].map((item, i) => (
-          <div key={i} className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-light-grey/60 flex items-center justify-center shrink-0">
-              {item.icon}
+        {items.map((item, i) => {
+          const inner = (
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-light-grey/60 flex items-center justify-center shrink-0">
+                {item.icon}
+              </div>
+              <div>
+                <p className="font-body text-[16px] font-bold text-deep-navy leading-none">{item.value}</p>
+                <p className="font-body text-[13px] text-cool-grey mt-0.5">{item.label}</p>
+              </div>
             </div>
-            <div>
-              <p className="font-body text-[16px] font-bold text-deep-navy leading-none">{item.value}</p>
-              <p className="font-body text-[13px] text-cool-grey mt-0.5">{item.label}</p>
-            </div>
-          </div>
-        ))}
+          )
+          return item.to ? (
+            <Link key={i} to={item.to} className="hover:opacity-80 transition-opacity">
+              {inner}
+            </Link>
+          ) : (
+            <div key={i}>{inner}</div>
+          )
+        })}
       </div>
     </div>
   )

@@ -63,6 +63,7 @@ export default function Footer() {
                 { label: 'How It Works', to: '/how-it-works' },
                 { label: 'Trust Tiers', to: '/tiers' },
                 { label: 'Scoring Methodology', to: '/methodology' },
+                { label: 'Sector Health', to: '/sector-health' },
                 { label: 'Guides', to: '/guides' },
                 { label: 'FAQ', to: '/faq' },
               ].map(({ label, to }) => (
