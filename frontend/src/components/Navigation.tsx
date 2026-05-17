@@ -89,7 +89,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
 
           {/* Mobile Hamburger */}
           <button
-            className="md:hidden flex flex-col gap-[5px] p-2"
+            className="md:hidden flex flex-col gap-[5px] p-3"
             onClick={() => setMobileOpen(true)}
             aria-label="Open menu"
           >

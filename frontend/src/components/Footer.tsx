@@ -45,7 +45,7 @@ export default function Footer() {
                 { label: 'For Nonprofits', to: '/for-nonprofits' },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-2">
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-3">
                     {label}
                   </Link>
                 </li>
@@ -63,19 +63,11 @@ export default function Footer() {
                 { label: 'How It Works', to: '/how-it-works' },
                 { label: 'Trust Tiers', to: '/tiers' },
                 { label: 'Scoring Methodology', to: '/methodology' },
-              ].map(({ label, to }) => (
-                <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-2">
-                    {label}
-                  </Link>
-                </li>
-              ))}
-              {[
                 { label: 'Guides', to: '/guides' },
                 { label: 'FAQ', to: '/faq' },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-2">
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-3">
                     {label}
                   </Link>
                 </li>
@@ -96,7 +88,7 @@ export default function Footer() {
                 { label: 'Privacy', to: '/legal' },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-2">
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-3">
                     {label}
                   </Link>
                 </li>
