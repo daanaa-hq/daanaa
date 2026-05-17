@@ -240,6 +240,13 @@ def get_organization(ein):
     org = dict(row)
     org['total_revenue_formatted'] = f"${org['total_revenue']:,.0f}" if org['total_revenue'] else None
 
+    # Parse JSON text columns → Python lists
+    if org.get('cause_tags'):
+        try:
+            org['cause_tags'] = json.loads(org['cause_tags'])
+        except (json.JSONDecodeError, TypeError):
+            org['cause_tags'] = None
+
     # Similar orgs: prefer same NTEECC + revenue_band, fall back to NTEE1
     peer_group = org.get('peer_group') or ''
     if ':' in peer_group:
