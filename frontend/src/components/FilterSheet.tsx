@@ -48,6 +48,7 @@ interface FilterSheetProps {
   revenueFilter: string
   scoreTier: string
   hiddenGem?: boolean
+  directLink?: boolean
   cause?: string
   onCategoryChange: (id: string) => void
   onStateChange: (state: string) => void
@@ -55,6 +56,7 @@ interface FilterSheetProps {
   onRevenueChange: (id: string) => void
   onScoreTierChange: (id: string) => void
   onHiddenGemChange?: (v: boolean) => void
+  onDirectLinkChange?: (v: boolean) => void
   onCauseChange?: (v: string) => void
   onClearAll: () => void
   resultCount: number
@@ -62,9 +64,9 @@ interface FilterSheetProps {
 
 export default function FilterSheet({
   open, onClose,
-  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier, hiddenGem = false, cause = '',
+  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier, hiddenGem = false, directLink = false, cause = '',
   onCategoryChange, onStateChange, onSortChange, onRevenueChange, onScoreTierChange,
-  onHiddenGemChange, onCauseChange, onClearAll, resultCount,
+  onHiddenGemChange, onDirectLinkChange, onCauseChange, onClearAll, resultCount,
 }: FilterSheetProps) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -79,6 +81,7 @@ export default function FilterSheet({
     !!revenueFilter,
     !!scoreTier,
     hiddenGem,
+    directLink,
     !!cause,
   ].filter(Boolean).length
 
@@ -131,6 +134,31 @@ export default function FilterSheet({
                 </span>
                 <span className="block font-body text-[12px] text-cool-grey/70 leading-[1.4] mt-0.5">
                   Small orgs doing exceptional work quietly
+                </span>
+              </span>
+            </button>
+          )}
+
+          {/* Direct link available */}
+          {onDirectLinkChange && (
+            <button
+              onClick={() => onDirectLinkChange(!directLink)}
+              className="w-full flex items-start gap-3 px-4 py-3.5 rounded-xl border text-left transition-all"
+              style={{
+                backgroundColor: directLink ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.03)',
+                borderColor: directLink ? '#4ADE80' : 'rgba(74,222,128,0.25)',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={directLink ? '#4ADE80' : '#6B7280'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              <span>
+                <span className="block font-body text-[14px] font-semibold" style={{ color: directLink ? '#16a34a' : '#0A1628' }}>
+                  Direct link available
+                </span>
+                <span className="block font-body text-[12px] text-cool-grey/70 leading-[1.4] mt-0.5">
+                  Give directly — no hunting for a donate page
                 </span>
               </span>
             </button>

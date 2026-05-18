@@ -160,6 +160,7 @@ def list_organizations():
     min_pct = request.args.get('min_percentile', type=float)
     min_merit_tier = request.args.get('min_merit_tier', '').strip()
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
+    direct_link = request.args.get('direct_link', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
     sort_by = request.args.get('sort', 'total_revenue')
     order = request.args.get('order', 'desc')
@@ -197,6 +198,8 @@ def list_organizations():
         params.append(min_pct)
     if hidden_gem:
         where_clauses.append("is_hidden_gem = 1")
+    if direct_link:
+        where_clauses.append("donate_url IS NOT NULL AND donate_url != ''")
     if cause:
         where_clauses.append(
             "EXISTS (SELECT 1 FROM json_each(cause_tags) WHERE value LIKE ?)"
@@ -229,6 +232,7 @@ def list_organizations():
                merit_tier, merit_score, merit_band,
                months_of_reserve, net_assets, total_expenses,
                employee_count, ruling_date, zipcode, is_hidden_gem, cause_tags,
+               donate_url, donate_platform,
                (mission IS NOT NULL AND mission != '') as has_mission,
                (website IS NOT NULL AND website != '') as has_website
         FROM registry_enriched
