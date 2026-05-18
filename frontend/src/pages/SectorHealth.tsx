@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useApi } from '../hooks/useApi'
 import { getSectorHealth } from '../data/api'
 import type { ApiSectorHealth } from '../data/api'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../components/ui/tooltip'
 
 type SortKey = 'name' | 'total_orgs' | 'at_risk_pct' | 'avg_months_reserve' | 'avg_program_pct'
 
@@ -42,6 +43,7 @@ export default function SectorHealth() {
     'Financial health across all 26 nonprofit sectors. Reserve levels, at risk rates, and program spending for 430,000+ organizations the IRS recognizes.'
   )
 
+  const navigate = useNavigate()
   const { data, loading } = useApi(() => getSectorHealth(), [])
   const [sortKey, setSortKey] = useState<SortKey>('at_risk_pct')
   const [sortAsc, setSortAsc] = useState(false)
@@ -65,17 +67,33 @@ export default function SectorHealth() {
   const totalAtRisk = sectors.reduce((s, r) => s + r.insolvent + r.at_risk, 0)
   const totalOrgs   = sectors.reduce((s, r) => s + r.total_orgs, 0)
 
-  const Th = ({ label, sortBy, right }: { label: string; sortBy: SortKey; right?: boolean }) => (
+  const Th = ({ label, sortBy, right, tip }: { label: string; sortBy: SortKey; right?: boolean; tip?: string }) => (
     <th
-      className={`text-[11px] font-medium tracking-[0.06em] text-cool-grey uppercase pb-3 cursor-pointer hover:text-deep-navy select-none ${right ? 'text-right' : 'text-left'}`}
-      onClick={() => handleSort(sortBy)}
+      className={`text-[11px] font-medium tracking-[0.06em] text-cool-grey uppercase pb-3 select-none ${right ? 'text-right' : 'text-left'}`}
     >
-      {label}
-      <SortIcon active={sortKey === sortBy} asc={sortAsc} />
+      <span className={`inline-flex items-center gap-1 ${right ? 'flex-row-reverse' : ''}`}>
+        <span className="cursor-pointer hover:text-deep-navy" onClick={() => handleSort(sortBy)}>
+          {label}
+          <SortIcon active={sortKey === sortBy} asc={sortAsc} />
+        </span>
+        {tip && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button type="button" aria-label={`What ${label} means`} className="text-cool-grey/50 hover:text-soft-gold transition-colors leading-none">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[260px] font-body text-[12px] leading-[1.5] normal-case tracking-normal">
+              {tip}
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </span>
     </th>
   )
 
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="min-h-[100dvh]">
       {/* Hero */}
       <div className="bg-deep-navy pt-[72px]" style={{ background: 'linear-gradient(to bottom, #0A1628 80%, #F5F0E8)' }}>
@@ -143,11 +161,11 @@ export default function SectorHealth() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-light-grey">
-                    <Th label="Sector" sortBy="name" />
-                    <Th label="Orgs" sortBy="total_orgs" right />
-                    <Th label="At risk %" sortBy="at_risk_pct" right />
-                    <Th label="Avg reserves (mo)" sortBy="avg_months_reserve" right />
-                    <Th label="Avg program %" sortBy="avg_program_pct" right />
+                    <Th label="Sector" sortBy="name" tip="A broad category the IRS assigns to every nonprofit. Click a row to see the organizations in it." />
+                    <Th label="Orgs" sortBy="total_orgs" right tip="How many active nonprofits the IRS recognizes in this category." />
+                    <Th label="At risk %" sortBy="at_risk_pct" right tip="Share of organizations with fewer than 3 months of savings if revenue stopped. Based on the most recent 990 on file, which may be 1 to 3 years old." />
+                    <Th label="Avg reserves (mo)" sortBy="avg_months_reserve" right tip="On average, how many months an organization in this category could keep operating if revenue stopped, among those with reserve data." />
+                    <Th label="Avg program %" sortBy="avg_program_pct" right tip="On average, the share of spending that goes directly to the mission rather than overhead." />
                   </tr>
                 </thead>
                 <tbody>
@@ -158,7 +176,9 @@ export default function SectorHealth() {
                     return (
                       <tr
                         key={sector.code}
-                        className={`border-b border-light-grey/60 hover:bg-soft-gold/4 transition-colors ${
+                        onClick={() => navigate(`/directory?category=${sector.code}`)}
+                        title={`See ${sector.name} organizations`}
+                        className={`group border-b border-light-grey/60 hover:bg-soft-gold/4 transition-colors cursor-pointer ${
                           stressed ? 'bg-amber-50/60' : elevated ? 'bg-amber-50/30' : ''
                         }`}
                       >
@@ -168,7 +188,10 @@ export default function SectorHealth() {
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
                             )}
                             <div>
-                              <div className="font-body text-[14px] font-medium text-deep-navy">{sector.name}</div>
+                              <div className="font-body text-[14px] font-medium text-deep-navy group-hover:text-soft-gold transition-colors inline-flex items-center gap-1.5">
+                                {sector.name}
+                                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-soft-gold" aria-hidden="true">→</span>
+                              </div>
                               <div className="font-body text-[11px] text-cool-grey/60 mt-0.5">{sector.total_orgs.toLocaleString()} total · {sector.has_reserve.toLocaleString()} with reserve data</div>
                             </div>
                           </div>
@@ -225,7 +248,7 @@ export default function SectorHealth() {
               <strong className="text-cool-grey">Methodology note.</strong> Reserve data available for 84% of organizations using months of reserves = (net assets ÷ total expenses) × 12, the Charity Navigator-aligned working capital metric.
               At-risk = fewer than 3 months of operating reserves (insolvent + less than 3 months).
               Average program expense % may be lower for sectors with many pass-through or foundation-style organizations.
-              Data sourced from IRS Statistics of Income (FY 2019–2024), ProPublica Nonprofit Explorer, and NCCS.
+              Data sourced from IRS Statistics of Income (FY 2019 to 2024), ProPublica Nonprofit Explorer, and NCCS.
             </p>
             <div className="mt-4 flex items-center gap-4">
               <Link to="/methodology" className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors">
@@ -239,5 +262,6 @@ export default function SectorHealth() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   )
 }
