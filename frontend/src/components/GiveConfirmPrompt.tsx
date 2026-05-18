@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useGivingList } from '../hooks/useGivingList'
+import { submitLinkFeedback } from '../data/api'
 
 /**
  * LinkedIn-jobs pattern: after the donor clicks an external give link and
@@ -13,6 +14,7 @@ import { useGivingList } from '../hooks/useGivingList'
 export default function GiveConfirmPrompt() {
   const { pendingGive, confirmGiven, dismissPending } = useGivingList()
   const [show, setShow] = useState(false)
+  const [showReasons, setShowReasons] = useState(false)
 
   const maybeShow = useCallback((minAgeMs: number) => {
     if (!pendingGive) { setShow(false); return }
@@ -44,7 +46,21 @@ export default function GiveConfirmPrompt() {
   if (!show || !pendingGive) return null
 
   const yes = () => { confirmGiven(); setShow(false) }
-  const notYet = () => { dismissPending(); setShow(false) }
+  const notYet = () => setShowReasons(true)
+  const dismiss = () => { dismissPending(); setShow(false); setShowReasons(false) }
+
+  const reasons: { label: string; action: () => void }[] = [
+    {
+      label: "Couldn't find their donate page",
+      action: () => { if (pendingGive) submitLinkFeedback(pendingGive.ein, 'not_found'); dismiss() },
+    },
+    {
+      label: 'Site looked broken or off',
+      action: () => { if (pendingGive) submitLinkFeedback(pendingGive.ein, 'broken'); dismiss() },
+    },
+    { label: "I'll give later", action: dismiss },
+    { label: 'Changed my mind', action: dismiss },
+  ]
 
   return (
     <div
@@ -54,34 +70,58 @@ export default function GiveConfirmPrompt() {
                  rounded-2xl border border-soft-gold/30 bg-deep-navy shadow-2xl
                  px-6 py-5 animate-[fadeIn_0.25s_ease-out]"
     >
-      <p className="font-display italic text-warm-cream text-[20px] leading-tight">
-        Did you give to {pendingGive.orgName}?
-      </p>
-      <p className="mt-2 font-body text-[13px] text-muted-cream/70 leading-[1.55]">
-        We&rsquo;ll keep it in your Giving Wallet for your own tax records. MERIT never sees
-        the gift and never shares it.
-      </p>
-      <div className="mt-4 flex items-center gap-3">
-        <button
-          onClick={yes}
-          className="font-body text-[14px] font-semibold bg-soft-gold text-deep-navy px-5 py-2.5 rounded-full hover:bg-bright-gold transition-colors"
-        >
-          Yes, I gave
-        </button>
-        <button
-          onClick={notYet}
-          className="font-body text-[14px] text-muted-cream/80 hover:text-warm-cream transition-colors px-3 py-2.5"
-        >
-          Not yet
-        </button>
-        <Link
-          to="/wallet"
-          onClick={() => setShow(false)}
-          className="ml-auto font-body text-[12px] text-soft-gold/80 hover:text-soft-gold transition-colors"
-        >
-          Open Wallet
-        </Link>
-      </div>
+      {!showReasons ? (
+        <>
+          <p className="font-display italic text-warm-cream text-[20px] leading-tight">
+            Did you give to {pendingGive.orgName}?
+          </p>
+          <p className="mt-2 font-body text-[13px] text-muted-cream/70 leading-[1.55]">
+            We&rsquo;ll keep it in your Giving Wallet for your own tax records. MERIT never sees
+            the gift and never shares it.
+          </p>
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              onClick={yes}
+              className="font-body text-[14px] font-semibold bg-soft-gold text-deep-navy px-5 py-2.5 rounded-full hover:bg-bright-gold transition-colors"
+            >
+              Yes, I gave
+            </button>
+            <button
+              onClick={notYet}
+              className="font-body text-[14px] text-muted-cream/80 hover:text-warm-cream transition-colors px-3 py-2.5"
+            >
+              Not yet
+            </button>
+            <Link
+              to="/wallet"
+              onClick={() => setShow(false)}
+              className="ml-auto font-body text-[12px] text-soft-gold/80 hover:text-soft-gold transition-colors"
+            >
+              Open Wallet
+            </Link>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="font-display italic text-warm-cream text-[20px] leading-tight">
+            What got in the way?
+          </p>
+          <p className="mt-1 font-body text-[13px] text-muted-cream/70">
+            Helps us flag sites that need a fix. Nothing is tied to you.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {reasons.map(({ label, action }) => (
+              <button
+                key={label}
+                onClick={action}
+                className="font-body text-[13px] text-warm-cream border border-soft-gold/30 rounded-full px-4 py-2 hover:border-soft-gold hover:bg-soft-gold/10 transition-colors"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
