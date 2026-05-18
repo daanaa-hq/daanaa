@@ -112,7 +112,7 @@ export default function SemanticSearch() {
         <span className="font-body text-[11px] text-cool-grey/70">
           {ready
             ? `Searching across ${indexed.toLocaleString()} organizations by mission & purpose`
-            : 'Semantic index building in background — try keyword search in the meantime'}
+            : 'Semantic index is still building. Try keyword search in the meantime.'}
         </span>
       </div>
 

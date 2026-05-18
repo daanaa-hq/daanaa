@@ -26,7 +26,7 @@ export default function Legal() {
               {[
                 {
                   name: "IRS Business Master File (BMF)",
-                  detail: "Published by the U.S. Internal Revenue Service. Contains basic registration data for all recognized tax-exempt organizations. Public domain — no restrictions on use.",
+                  detail: "Published by the U.S. Internal Revenue Service. Contains basic registration data for all recognized tax exempt organizations. Public domain, no restrictions on use.",
                   url: "https://www.irs.gov/charities-non-profits/exempt-organizations-business-master-file-extract-eo-bmf",
                 },
                 {
@@ -72,7 +72,7 @@ export default function Legal() {
             </p>
             <p className="mt-3">
               MERIT scores and percentile rankings are recalculated within NTEE peer groups whenever
-              the underlying data is updated. Rankings are relative — a score reflects an
+              the underlying data is updated. Rankings are relative. A score reflects an
               organization's position among its registered peers, not an absolute quality rating.
             </p>
           </section>

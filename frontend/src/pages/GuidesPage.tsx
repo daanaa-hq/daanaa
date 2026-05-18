@@ -35,7 +35,7 @@ function Tip({ children }: { children: React.ReactNode }) {
 }
 
 export default function GuidesPage() {
-  usePageMeta('Giving Guides', 'Practical guides for informed charitable giving — how to read a MERIT score, document your donations, and research a nonprofit before you give.')
+  usePageMeta('Giving Guides', 'Practical guides for informed charitable giving. How to read a MERIT score, document your donations, and research a nonprofit before you give.')
 
   return (
     <div className="min-h-[100dvh]">
@@ -51,7 +51,7 @@ export default function GuidesPage() {
             Giving Guides
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[580px]">
-            Practical guidance for donors who want to give with intention — not anxiety.
+            Practical guidance for donors who want to give with intention, not anxiety.
           </p>
         </div>
       </div>
@@ -72,7 +72,7 @@ export default function GuidesPage() {
               The <strong className="text-deep-navy font-semibold">trust tier</strong> (Beacon → Spark) reflects how much public data backs the profile today. A Beacon has a current 990 on file, a mission statement, an active website, and a top-quartile peer score. A Spark is an IRS-registered nonprofit with little financial detail yet in public records. The tier is a transparency signal, not a quality verdict.
             </p>
             <Tip>
-              A high MERIT score in a Spark tier means: financially strong relative to peers, but limited public data. That combination often describes a well-run small organization that hasn't filed a full 990 (revenue under $50,000 — they file a 990-N postcard instead).
+              A high MERIT score in a Spark tier means the organization is financially strong next to its peers, but has limited public data. That combination often describes a well run small organization that hasn't filed a full 990. With revenue under $50,000 they file a short 990-N postcard instead.
             </Tip>
             <p>
               Each profile also shows a <strong className="text-deep-navy font-semibold">data vintage</strong> — the fiscal year and source of the financial figures. A "FY 2022 · IRS" badge means the revenue figure is from the organization's 2022 tax return. Always check the vintage before making a large gift.
@@ -82,7 +82,7 @@ export default function GuidesPage() {
           <GuideCard
             number="02"
             title="Documenting your donations for tax purposes"
-            description="The IRS has clear rules about charitable contribution documentation. Here's what you actually need — and when you need it."
+            description="The IRS has clear rules about charitable contribution documentation. Here's what you actually need, and when you need it."
           >
             <p>
               For any cash gift under <strong className="text-deep-navy font-semibold">$250</strong>, a bank statement, credit card statement, or cancelled check is the only documentation the IRS requires. You do not need a letter from the organization.
@@ -102,8 +102,8 @@ export default function GuidesPage() {
                 <tbody className="divide-y divide-light-grey">
                   {[
                     { amount: 'Under $250', doc: 'Bank or card statement', who: 'Your bank' },
-                    { amount: '$250 – $499', doc: 'Written acknowledgment letter', who: 'The nonprofit' },
-                    { amount: '$500 – $4,999', doc: 'Acknowledgment + IRS Form 8283', who: 'Nonprofit + you' },
+                    { amount: '$250 to $499', doc: 'Written acknowledgment letter', who: 'The nonprofit' },
+                    { amount: '$500 to $4,999', doc: 'Acknowledgment plus IRS Form 8283', who: 'Nonprofit and you' },
                     { amount: '$5,000+', doc: 'Qualified appraisal required (non-cash gifts)', who: 'Qualified appraiser' },
                   ].map(({ amount, doc, who }) => (
                     <tr key={amount}>
@@ -116,7 +116,7 @@ export default function GuidesPage() {
               </table>
             </div>
             <Tip>
-              MERIT's Giving Wallet logs each donation with date, org, EIN, and amount — the same fields an accountant or tax preparer needs. Export to CSV at year-end and hand it directly to whoever prepares your taxes.
+              MERIT's Giving Wallet logs each donation with date, org, EIN, and amount. These are the same fields an accountant or tax preparer needs. Export to CSV at year end and hand it directly to whoever prepares your taxes.
             </Tip>
             <p>
               MERIT does not process payments or issue acknowledgment letters. Those come directly from the organization you give to. If you give online through the organization's own site, they will typically email a receipt that qualifies as the written acknowledgment.
@@ -126,7 +126,7 @@ export default function GuidesPage() {
           <GuideCard
             number="03"
             title="Researching a nonprofit before you give"
-            description="Five things worth checking before making a meaningful gift — all findable from a MERIT profile."
+            description="Five things worth checking before making a meaningful gift, all findable from a MERIT profile."
           >
             <p><strong className="text-deep-navy font-semibold">1. Verify tax-exempt status.</strong> Every organization on MERIT is a current IRS-recognized 501(c)(3). If an organization is soliciting donations and isn't on MERIT, search the <a href="https://apps.irs.gov/app/eos/" target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:text-bright-gold transition-colors">IRS Tax Exempt Organization Search</a> to confirm status before giving.</p>
             <p><strong className="text-deep-navy font-semibold">2. Check the fiscal year of the revenue figure.</strong> A 990 filed in 2024 typically covers fiscal year 2022 or 2023. Revenue figures that are 2–3 years old can be misleading if an organization has grown or shrunk significantly since then.</p>
@@ -134,7 +134,7 @@ export default function GuidesPage() {
             <p><strong className="text-deep-navy font-semibold">4. Read the mission statement.</strong> MERIT shows mission text from IRS 990 filings when available. This is what the organization told the federal government its purpose is — not its marketing copy.</p>
             <p><strong className="text-deep-navy font-semibold">5. Look for a current website.</strong> A Lantern or Beacon tier confirms an active website is in public records. If you can't find one, call the organization directly before writing a large check.</p>
             <Tip>
-              For gifts over $1,000, spend 10 minutes on the organization's actual 990 filing — available on ProPublica Nonprofit Explorer. Look at Part IX (Statement of Functional Expenses) to see how much goes to program services vs. management vs. fundraising.
+              For gifts over $1,000, spend 10 minutes on the organization's actual 990 filing, available on ProPublica Nonprofit Explorer. Look at Part IX (Statement of Functional Expenses) to see how much goes to program services versus management versus fundraising.
             </Tip>
           </GuideCard>
 
@@ -146,7 +146,7 @@ export default function GuidesPage() {
             <div className="space-y-3">
               {[
                 { check: 'Confirm the organization is still IRS-recognized', detail: 'Status can change. Search MERIT or the IRS EOS tool before finalizing a gift.' },
-                { check: 'Verify your gift will be completed by December 31', detail: 'Online gifts by card are deductible in the year charged. Checks are deductible when mailed, not when cashed — mail with tracking.' },
+                { check: 'Verify your gift will be completed by December 31', detail: 'Online gifts by card are deductible in the year charged. Checks are deductible when mailed, not when cashed, so mail with tracking.' },
                 { check: 'Save your confirmation email or bank record', detail: 'For gifts under $250, this is your documentation. File it with your tax documents before you need it.' },
                 { check: 'Request an acknowledgment letter for gifts of $250+', detail: 'Some organizations send automatically; others require a request. Ask before year-end, not in April.' },
                 { check: 'Log gifts to your MERIT Giving Wallet', detail: 'One place, all gifts, all years. Export to CSV when tax time comes.' },
@@ -169,7 +169,7 @@ export default function GuidesPage() {
               <div>
                 <h3 className="font-display italic text-warm-cream text-[26px] leading-[1.1]">Track every gift you make</h3>
                 <p className="mt-2 font-body text-[15px] text-muted-cream max-w-[420px] leading-[1.6]">
-                  Your Giving Wallet logs donations privately on your device — no account, no tracking, exportable at tax time.
+                  Your Giving Wallet logs donations privately on your device. No account, no tracking, exportable at tax time.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 shrink-0">

@@ -26,7 +26,7 @@ export default function About() {
               Civic infrastructure for informed giving
             </h1>
             <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-              MERIT indexes every active 501(c)(3) nonprofit in the United States — 432,000 organizations — from public IRS data, assigns each a peer-ranked score, and makes that intelligence freely available to any donor who wants to give with confidence.
+              MERIT indexes every active 501(c)(3) nonprofit in the United States, 432,000 organizations, from public IRS data. It gives each one a score against its true peers and makes that intelligence freely available to any donor who wants to give with confidence.
             </p>
           </div>
         </div>
@@ -43,13 +43,13 @@ export default function About() {
             </h2>
             <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                The IRS makes 990 filings public. ProPublica makes them searchable. But converting a 30-page tax return into a clear signal — is this organization doing what it says, is it financially healthy, is it who it claims to be — requires hours of work that most donors don't have.
+                The IRS makes 990 filings public. ProPublica makes them searchable. But converting a 30 page tax return into a clear signal, answering whether this organization is doing what it says, whether it is financially healthy, whether it is who it claims to be, requires hours of work that most donors don't have.
               </p>
               <p>
-                MERIT does that work. We parse the filings, benchmark organizations against their peers, and surface the signal in a form that takes seconds to read. The score doesn't replace your judgment — it informs it.
+                MERIT does that work. We parse the filings, compare organizations to their peers, and surface the signal in a form that takes seconds to read. The score doesn't replace your judgment. It informs it.
               </p>
               <p>
-                We are not a charity. We do not solicit donations on behalf of organizations. We are infrastructure — a public-benefit data layer built to make the charitable sector more legible.
+                We are not a charity. We do not solicit donations on behalf of organizations. We are infrastructure, a public benefit data layer built to make the charitable sector easier to see clearly.
               </p>
             </div>
           </div>
@@ -62,17 +62,17 @@ export default function About() {
             </h2>
             <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                Every organization on MERIT is sourced from the IRS Business Master File — the authoritative list of active 501(c)(3) tax-exempt organizations in the United States. Financial data comes from IRS Statistics of Income extracts and ProPublica Nonprofit Explorer, both of which republish Form 990 data.
+                Every organization on MERIT is sourced from the IRS Business Master File, the authoritative list of active 501(c)(3) tax exempt organizations in the United States. Financial data comes from IRS Statistics of Income extracts and ProPublica Nonprofit Explorer, both of which republish Form 990 data.
               </p>
               <p>
-                We do not create or modify source data. We aggregate, normalize, score, and display it. The raw sources — IRS filings, BMF records — are publicly available for independent verification.
+                We do not create or modify source data. We aggregate, normalize, score, and display it. The raw sources, IRS filings and registration records, are publicly available for independent verification.
               </p>
             </div>
             <div className="mt-6 grid grid-cols-2 gap-4">
               {[
                 { label: stats ? formatCount(stats.total_organizations) : '—', sub: 'organizations indexed' },
                 { label: '26', sub: 'NTEE major categories' },
-                { label: 'FY 2020–2024', sub: 'financial data range' },
+                { label: 'FY 2020 to 2024', sub: 'financial data range' },
                 { label: 'Monthly', sub: 'IRS BMF update cadence' },
               ].map(s => (
                 <div key={s.sub} className="bg-white border border-light-grey rounded-xl p-5">
@@ -91,10 +91,10 @@ export default function About() {
             </h2>
             <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                A MERIT score of 87 means this organization outperforms 87% of nonprofits in its NTEE peer group by financial health indicators. It is not an absolute judgment — a score of 60 in a highly competitive peer group may represent stronger practice than a 90 in a sparse one.
+                A MERIT score of 87 means this organization is financially larger than 87% of nonprofits in its peer group. It is not an absolute judgment. A score of 60 in a highly competitive peer group may represent stronger practice than a 90 in a sparse one.
               </p>
               <p>
-                Every score is explainable. Each organization also carries a trust tier — Beacon, Lantern, Flame, Ember, or Spark — reflecting whether the filing is current, whether a peer score is available, and whether the organization has published its mission and website. Click any lamp mark on any profile to see the exact criteria and what's needed to reach the next level. There are no black boxes.
+                Every score is explainable. Each organization also carries a trust tier (Beacon, Lantern, Flame, Ember, or Spark) reflecting whether the filing is current, whether a peer score is available, and whether the organization has published its mission and website. Click any lamp mark on any profile to see the exact criteria and what's needed to reach the next level. There are no black boxes.
               </p>
             </div>
           </div>

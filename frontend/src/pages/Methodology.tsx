@@ -71,7 +71,7 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 export default function Methodology() {
   usePageMeta(
     'Scoring Methodology',
-    'The complete formula MERIT uses to score 430,000+ nonprofits — peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
+    'The complete formula MERIT uses to score 430,000+ nonprofits. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const methodologyVersion = stats?.methodology_version ?? 'v1'
@@ -91,7 +91,7 @@ export default function Methodology() {
             Scoring Methodology
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
-            The complete formula, openly published. No black boxes — every input, weight, and design decision is documented here.
+            The complete formula, openly published. No black boxes. Every input, weight, and design decision is documented here.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-4 sm:gap-10">
             <div>
@@ -113,7 +113,7 @@ export default function Methodology() {
           </div>
           <p className="mt-5 font-body text-[13px] leading-[1.6] text-muted-cream/70 max-w-[620px]">
             The methodology is the formula. It is versioned and changes rarely. Scores are
-            recomputed as new IRS filings become available — a new score date does not mean
+            recomputed as new IRS filings become available. A new score date does not mean
             the formula changed.
           </p>
         </div>
@@ -123,7 +123,7 @@ export default function Methodology() {
       <div className="bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          <Section label="The benchmark" title="Peer groups — how we define 'similar'">
+          <Section label="The benchmark" title="Peer groups, and how we define 'similar'">
             <p>
               Every nonprofit is scored against a peer group of organizations doing the same kind of work at a similar scale in the same part of the country. We never compare a food bank to a hospital, or a grassroots community group to a regional health system.
             </p>
@@ -167,38 +167,38 @@ export default function Methodology() {
                 <span className="font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Notes</span>
               </div>
               <BandRow band="Nano"   range="< $25K"         orgs="77,486"   note="grassroots, newly formed" />
-              <BandRow band="Micro"  range="$25K – $100K"   orgs="139,419"  />
-              <BandRow band="Small"  range="$100K – $500K"  orgs="168,323"  />
-              <BandRow band="Medium" range="$500K – $5M"    orgs="119,943"  />
-              <BandRow band="Large"  range="$5M – $50M"     orgs="37,992"   />
+              <BandRow band="Micro"  range="$25K to $100K"  orgs="139,419"  />
+              <BandRow band="Small"  range="$100K to $500K" orgs="168,323"  />
+              <BandRow band="Medium" range="$500K to $5M"   orgs="119,943"  />
+              <BandRow band="Large"  range="$5M to $50M"    orgs="37,992"   />
               <BandRow band="Major"  range="$50M+"          orgs="8,220"    note="hospitals, universities" />
             </div>
             <Callout>
-              The Nano and Micro bands were introduced in v5 to separate grassroots organizations from established community groups. Previously both were in a single "Micro" band covering $0–$100K — a range too wide to produce meaningful peer comparisons.
+              The Nano and Micro bands were introduced in v5 to separate grassroots organizations from established community groups. Previously both were in a single "Micro" band covering $0 to $100K, a range too wide to produce meaningful peer comparisons.
             </Callout>
           </Section>
 
           <Section label="The formula" title="How the composite score is computed">
             <p>
-              The financial scale score is a weighted average of two within-peer-group percentiles. Both dimensions are computed purely within the organization's peer group — not against all nonprofits nationally.
+              The financial scale score is a weighted average of two within group rankings. Both dimensions are computed purely within the organization's peer group, not against all nonprofits nationally.
             </p>
             <FormulaBlock>
               <div className="text-deep-navy/80">composite = <span className="text-deep-navy font-semibold">0.65</span> × revenue_percentile</div>
               <div className="text-deep-navy/80 ml-[80px]">+ <span className="text-deep-navy font-semibold">0.35</span> × reserve_percentile</div>
               <div className="mt-3 text-[13px] text-cool-grey/70">
-                revenue_percentile — rank by total annual revenue within peer group (0 = smallest, 100 = largest)<br />
-                reserve_percentile — rank by reserve ratio within peer group (0 = thinnest reserves, 100 = strongest)
+                revenue_percentile is rank by total annual revenue within peer group (0 = smallest, 100 = largest)<br />
+                reserve_percentile is rank by reserve ratio within peer group (0 = thinnest reserves, 100 = strongest)
               </div>
             </FormulaBlock>
             <p>
-              The 65/35 split reflects a deliberate choice: operational scale (revenue) is the primary signal of organizational reach, while balance-sheet health (reserves) adds the dimension that pure revenue rank misses entirely. An org with $580M in assets but $65M in revenue scores poorly on revenue rank alone — the reserve dimension corrects this.
+              The 65/35 split reflects a deliberate choice. Operational scale (revenue) is the primary signal of organizational reach, while balance sheet health (reserves) adds the dimension that pure revenue rank misses entirely. An org with $580M in assets but $65M in revenue scores poorly on revenue rank alone, and the reserve dimension corrects this.
             </p>
             <p>
-              Because both percentiles are computed within the peer group, the median organization in every peer group scores 50. This makes scores directly comparable across mission types: a 75 in K31 (Food Banks) and a 75 in E22 (Hospitals) mean the same thing — top quarter of peers.
+              Because both rankings are computed within the peer group, the median organization in every peer group scores 50. This makes scores directly comparable across mission types. A 75 in K31 (Food Banks) and a 75 in E22 (Hospitals) mean the same thing: top quarter of peers.
             </p>
           </Section>
 
-          <Section label="Why reserves" title="The reserve ratio — balance sheet health">
+          <Section label="Why reserves" title="The reserve ratio, a measure of balance sheet health">
             <p>
               The reserve ratio is defined as:
             </p>
@@ -206,16 +206,16 @@ export default function Methodology() {
               reserve_ratio = total_assets ÷ total_revenue
             </FormulaBlock>
             <p>
-              This approximates the working capital ratio — the measure academic research consistently identifies as the best single indicator of nonprofit financial health (Tuckman & Chang 1991, Bowman 2011, Calabrese 2013). It answers one question: could this organization survive a revenue disruption?
+              This approximates the working capital ratio, the measure academic research consistently identifies as the best single indicator of nonprofit financial health (Tuckman & Chang 1991, Bowman 2011, Calabrese 2013). It answers one question: could this organization survive a revenue disruption?
             </p>
             <p>
-              A ratio below 0.5 suggests thin reserves — less than six months of operating coverage. A ratio above 3.0 typically indicates an endowment-funded model. Both are legitimate organizational structures; the score places them within their own peer distribution, so endowment-funded organizations are compared to other endowment-funded peers.
+              A ratio below 0.5 suggests thin reserves, less than six months of operating coverage. A ratio above 3.0 typically indicates an endowment funded model. Both are legitimate organizational structures. The score places them within their own peer distribution, so endowment funded organizations are compared to other endowment funded peers.
             </p>
             <Callout>
               The true working capital ratio requires liability data from 990 Part X, which is available for approximately 4,700 organizations with full IRS SOI data. The reserve ratio using total assets is available for all 542,000+ scored organizations and produces comparable results for the vast majority.
             </Callout>
             <p>
-              Negative net assets (total_assets &lt; 0) are treated as zero. Reserve ratios are capped at the group maximum for the purpose of percentile ranking — no organization is penalized relative to peers for having too much.
+              Negative net assets (total_assets &lt; 0) are treated as zero. Reserve ratios are capped at the group maximum for the purpose of ranking, so no organization is penalized relative to peers for having too much.
             </p>
           </Section>
 
@@ -239,16 +239,16 @@ export default function Methodology() {
               ))}
             </ul>
             <Callout>
-              A lower financial scale score may reflect organizational structure rather than weakness. Pass-through models, federated chapters that consolidate revenue at a national entity, and newly founded organizations regularly score in the lower half — accurately describing their position in the peer distribution, not their quality or worth.
+              A lower financial scale score may reflect organizational structure rather than weakness. Pass through models, federated chapters that consolidate revenue at a national entity, and newly founded organizations regularly score in the lower half. That accurately describes their position in the peer distribution, not their quality or worth.
             </Callout>
             <p>
-              Outcome data — the measure donors most want — is not measurable from public filings at sector-wide scale. No rating system that claims to measure program effectiveness from 990 data alone should be trusted. MERIT does not make this claim.
+              Outcome data, the measure donors most want, is not measurable from public filings at sector wide scale. No rating system that claims to measure program effectiveness from 990 data alone should be trusted. MERIT does not make this claim.
             </p>
           </Section>
 
           <Section label="Version history" title="Scorer versioning and backward consistency">
             <p>
-              Every time the scoring methodology changes, a new version is tagged. Raw inputs — total revenue, total assets, peer group, and region — are stored alongside each score, so any prior period can be recomputed under a newer formula.
+              Every time the scoring methodology changes, a new version is tagged. Raw inputs (total revenue, total assets, peer group, and region) are stored alongside each score, so any prior period can be recomputed under a newer formula.
             </p>
             <div className="mt-4">
               <div className="flex items-start gap-4 py-2 border-b border-light-grey">
@@ -259,7 +259,7 @@ export default function Methodology() {
               <VersionRow
                 version={methodologyVersion}
                 date={scoresUpdated}
-                description="Initial public methodology — regional peer groups (NTEE subcategory + revenue band + US Census region), six revenue bands (Nano through Major), and a 0.65 revenue / 0.35 reserve composite computed within each peer group."
+                description="Initial public methodology. Regional peer groups (NTEE subcategory plus revenue band plus US Census region), six revenue bands (Nano through Major), and a 0.65 revenue / 0.35 reserve composite computed within each peer group."
               />
             </div>
             <Callout>
@@ -277,11 +277,11 @@ export default function Methodology() {
             <div className="mt-4">
               <SourceRow
                 source="IRS Business Master File"
-                detail="501(c)(3) registration status, EIN, organization name, state, NTEE code. Updated quarterly by the IRS. MERIT indexes the active 501(c)(3) public charity subset — 430,000+ organizations."
+                detail="501(c)(3) registration status, EIN, organization name, state, NTEE code. Updated quarterly by the IRS. MERIT indexes the active 501(c)(3) public charity subset, over 430,000 organizations."
               />
               <SourceRow
                 source="IRS Statistics of Income"
-                detail="Financial data from aggregated 990 filings — total revenue, total assets. Available for approximately 483,000 organizations with recent IRS extract data."
+                detail="Financial data from aggregated 990 filings, including total revenue and total assets. Available for approximately 483,000 organizations with recent IRS extract data."
               />
               <SourceRow
                 source="ProPublica Nonprofit Explorer"
@@ -293,7 +293,7 @@ export default function Methodology() {
               />
             </div>
             <Callout>
-              Data currency varies by source. IRS BMF is updated quarterly; 990 financials reflect the most recent filing on record, which may be 1–3 years behind the current fiscal year. Score dates reflect when MERIT last processed the available data, not when the organization filed.
+              Data currency varies by source. The IRS registration list is updated quarterly. 990 financials reflect the most recent filing on record, which may be 1 to 3 years behind the current fiscal year. Score dates reflect when MERIT last processed the available data, not when the organization filed.
             </Callout>
           </Section>
 

@@ -50,7 +50,7 @@ export default function ForNonprofits() {
               Your organization is already listed. Now make it yours.
             </h1>
             <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-              MERIT indexes every 501(c)(3) in the United States from public IRS data. Claim your page to add your mission, programs, leadership, and impact directly — clearly labeled as your own voice.
+              MERIT indexes every 501(c)(3) in the United States from public IRS data. Claim your page to add your mission, programs, leadership, and impact directly, clearly labeled as your own voice.
             </p>
             <a href="#claim" className="mt-8 inline-flex items-center gap-2 px-8 py-[14px] rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors">
               Join the waitlist
@@ -73,7 +73,7 @@ export default function ForNonprofits() {
               {
                 n: 1,
                 title: 'Mission & programs',
-                description: 'Add your mission statement, program descriptions, and the populations you serve — in your words, clearly marked as self-reported and separate from IRS data.',
+                description: 'Add your mission statement, program descriptions, and the populations you serve, in your words, clearly marked as self reported and separate from IRS data.',
               },
               {
                 n: 2,
@@ -83,7 +83,7 @@ export default function ForNonprofits() {
               {
                 n: 3,
                 title: 'Impact metrics',
-                description: 'Share the numbers that matter to you — meals served, families housed, students tutored. Context the IRS data alone can\'t provide.',
+                description: 'Share the numbers that matter to you, like meals served, families housed, or students tutored. Context the IRS data alone can\'t provide.',
               },
               {
                 n: 4,
@@ -99,7 +99,7 @@ export default function ForNonprofits() {
               {
                 n: 6,
                 title: 'Regional connections',
-                description: 'Discover nonprofits doing complementary work nearby. Collaboration — not competition — is how communities thrive.',
+                description: 'Discover nonprofits doing complementary work nearby. Collaboration, not competition, is how communities thrive.',
                 phase2: true,
               },
             ].map(({ n, title, description, phase2 }) => (
@@ -128,10 +128,10 @@ export default function ForNonprofits() {
           <div className="max-w-[680px]">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Trust by design</span>
             <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-6">
-              IRS data and your data — clearly separated
+              IRS data and your data, clearly separated
             </h2>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7] mb-4">
-              MERIT keeps two distinct layers on every profile. The IRS-sourced layer — revenue, NTEE category, tax status — is public data we display but you cannot edit. Your claimed layer — mission, programs, impact, leadership — is your own voice, clearly labeled.
+              MERIT keeps two distinct layers on every profile. The IRS layer, which covers revenue, category, and tax status, is public data we display but you cannot edit. Your claimed layer, which covers mission, programs, impact, and leadership, is your own voice, clearly labeled.
             </p>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
               Donors can always tell which is which. That transparency is the foundation of trust on both sides.
@@ -177,7 +177,7 @@ export default function ForNonprofits() {
               <StepDot n={1} label="Search for your organization in the directory" />
               <StepDot n={2} label="Click 'Claim this page' on your profile" />
               <StepDot n={3} label="Verify via your organization's EIN and email domain" />
-              <StepDot n={4} label="Edit your profile directly — changes go live immediately" />
+              <StepDot n={4} label="Edit your profile directly. Changes go live immediately" />
             </div>
             <p className="mt-8 font-body text-[14px] text-cool-grey leading-[1.6]">
               Claiming is free. MERIT does not charge organizations to be listed, to claim a page, or to update their information. Ever.

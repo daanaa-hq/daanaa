@@ -38,7 +38,7 @@ export default function LampMark({ tier, size = 'md', onClick, className = '' }:
       fill={fill}
       onClick={onClick}
       role={interactive ? 'button' : 'img'}
-      aria-label={interactive ? `${tier} tier — tap to see breakdown` : `${tier} tier`}
+      aria-label={interactive ? `${tier} tier, tap to see breakdown` : `${tier} tier`}
       tabIndex={interactive ? 0 : undefined}
       onKeyDown={interactive ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick() } : undefined}
       className={`shrink-0 block${interactive ? ' cursor-pointer' : ''}${className ? ` ${className}` : ''}`}

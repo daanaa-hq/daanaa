@@ -289,7 +289,7 @@ function PipelineTab({ adminKey }: { adminKey: string }) {
   return (
     <div>
       <p className="font-body text-[13px] text-cool-grey mb-5">
-        Top 50 Beacon + Lantern organizations — outreach targets. "In Waitlist" means they submitted a claiming request.
+        Top 50 Beacon and Lantern organizations, outreach targets. "In Waitlist" means they submitted a claiming request.
       </p>
       <div className="overflow-x-auto rounded-xl border border-light-grey">
         <table className="w-full min-w-[600px]">
@@ -370,7 +370,7 @@ export default function AdminPage() {
         <KeyGate onKey={handleKey} />
         {invalidKey && (
           <p className="fixed bottom-6 left-1/2 -translate-x-1/2 font-body text-[13px] text-red-500 bg-white shadow-lg rounded-full px-4 py-2">
-            Invalid key — try again
+            Invalid key. Try again
           </p>
         )}
       </>

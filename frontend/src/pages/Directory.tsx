@@ -21,7 +21,7 @@ const FILTER_CATEGORIES = [
 
 const SORT_OPTIONS = [
   { id: 'merit_score', label: 'MERIT Score' },
-  { id: 'organization_name', label: 'Name A–Z' },
+  { id: 'organization_name', label: 'Name A to Z' },
   { id: 'total_revenue', label: 'Revenue' },
 ]
 
@@ -279,7 +279,7 @@ function FilterRail({
             >
               <option value="">All States</option>
               {US_STATES.map(([abbr, name]) => (
-                <option key={abbr} value={abbr}>{abbr} — {name}</option>
+                <option key={abbr} value={abbr}>{abbr} · {name}</option>
               ))}
             </select>
             <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5">
@@ -389,7 +389,7 @@ export default function Directory() {
   const subParam      = searchParams.get('sub') || ''
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
-    qParam ? `"${qParam}" — Nonprofits` : 'Nonprofit Directory',
+    qParam ? `"${qParam}" · Nonprofits` : 'Nonprofit Directory',
     'Search 430,000+ IRS-verified 501(c)(3) nonprofits by name, category, location, and MERIT score.'
   )
   const stateParam    = searchParams.get('state') || ''
@@ -680,7 +680,7 @@ export default function Directory() {
               >
                 <option value="">All States</option>
                 {US_STATES.map(([abbr, name]) => (
-                  <option key={abbr} value={abbr}>{abbr} — {name}</option>
+                  <option key={abbr} value={abbr}>{abbr} · {name}</option>
                 ))}
               </select>
               <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>

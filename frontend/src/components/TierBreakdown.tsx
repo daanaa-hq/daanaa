@@ -99,7 +99,7 @@ export default function TierBreakdown({ org, tier, onClose }: TierBreakdownProps
         <div className="rounded-xl px-4 py-3.5 mb-5" style={{ background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.22)' }}>
           <p className="font-body text-[13px] text-deep-navy/85 leading-[1.55]">
             <span className="font-semibold">This profile is still lighting up.</span>{' '}
-            {org.organization_name} is an IRS-verified 501(c)(3) — a lower tier reflects the public data we have, not the quality of its work. Adding a mission and website brightens its flame.
+            {org.organization_name} is a 501(c)(3) the IRS recognizes. A lower tier reflects the public data we have, not the quality of its work. Adding a mission and website brightens its flame.
           </p>
           <Link
             to="/for-nonprofits"

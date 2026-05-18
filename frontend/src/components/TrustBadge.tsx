@@ -30,11 +30,11 @@ export const TIER_COLORS: Record<TierName, string> = {
 // Lower tiers get the most generous, explicitly non-judgmental wording —
 // they describe how much public data backs the profile, not the org's worth.
 export const TIER_MICROCOPY: Record<TierName, string> = {
-  Beacon:  'Fully lit — current 990, mission, website, and verified financial health all on public record. The most complete picture donors can see.',
-  Lantern: 'Brightly lit — current 990, mission, and website all on the public record.',
-  Flame:   'Lit — a current 990 is on file. Mission or website not yet on the public record; easily added.',
-  Ember:   'A faint light — this IRS-verified 501(c)(3) has limited public data so far. This reflects data availability, not the quality of its work.',
-  Spark:   'Newly listed — an IRS-verified 501(c)(3) with little public data yet. A starting point, not a judgment; many excellent community organizations begin here.',
+  Beacon:  'Fully lit. Current 990, mission, website, and verified financial health all on public record. The most complete picture donors can see.',
+  Lantern: 'Brightly lit. Current 990, mission, and website all on the public record.',
+  Flame:   'Lit. A current 990 is on file. Mission or website not yet on the public record, and easily added.',
+  Ember:   'A faint light. This IRS recognized 501(c)(3) has limited public data so far. It reflects data availability, not the quality of its work.',
+  Spark:   'Newly listed. An IRS recognized 501(c)(3) with little public data yet. A starting point, not a judgment. Many excellent community organizations begin here.',
 }
 
 export interface TierCriterion {
@@ -77,7 +77,7 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
     {
       id: 'peer_score',
       label: 'Financial scale',
-      description: 'Revenue and reserves relative to similar nonprofits — not a quality or impact rating',
+      description: 'Revenue and reserves compared to similar nonprofits. Not a quality or impact rating.',
       status: hasPeerScore ? 'met' : hasBroadScore ? 'partial' : 'unavailable',
       shortFact: 'Financial scale',
     },
@@ -112,8 +112,8 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
 export function getNextTierPath(tier: TierName): string | null {
   switch (tier) {
     case 'Beacon':  return null
-    case 'Lantern': return 'Reach a top-quartile financial scale (75th percentile or above within peer group).'
-    case 'Flame':   return 'Add a mission statement and website — once both are on public record, this org qualifies for Lantern.'
+    case 'Lantern': return 'Reach the top quarter for financial scale among similar organizations.'
+    case 'Flame':   return 'Add a mission statement and website. Once both are on public record, this org qualifies for Lantern.'
     case 'Ember':   return 'A financial scale score is assigned as revenue and asset data accumulates in public records. MERIT updates automatically.'
     case 'Spark':   return 'A current Form 990 or reported revenue on file moves this org to Ember.'
   }

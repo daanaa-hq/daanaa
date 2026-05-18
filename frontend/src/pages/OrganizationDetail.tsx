@@ -520,7 +520,7 @@ export default function OrganizationDetail() {
                 </div>
               ) : (
                 <span className="font-body text-[11px] text-muted-cream/50 max-w-[180px] text-center leading-[1.45]">
-                  Detailed financial analysis not yet available — requires an itemized Form 990.
+                  Detailed financial analysis is not available yet. It needs an itemized Form 990.
                 </span>
               )}
               <Link
@@ -574,7 +574,7 @@ export default function OrganizationDetail() {
                   </span>
                   <span className="font-body text-[11px] text-cool-grey">
                     {apiOrg!.months_of_reserve < 0
-                      ? 'months — negative net assets'
+                      ? 'months, negative net assets'
                       : apiOrg!.months_of_reserve < 3
                       ? 'months of savings remaining'
                       : 'months if revenue stopped today'}
@@ -633,12 +633,12 @@ export default function OrganizationDetail() {
                   <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
                   {(lampTier === 'Beacon' || lampTier === 'Lantern') ? (
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      {apiOrg!.organization_name} is a fully verified nonprofit — IRS 501(c)(3), current 990, mission, and website all on public record.
-                      {lampTier === 'Lantern' && ' Reaching a top-quartile financial scale (75th percentile) would light the full Beacon.'}
+                      {apiOrg!.organization_name} is a fully verified nonprofit. IRS 501(c)(3), current 990, mission, and website all on public record.
+                      {lampTier === 'Lantern' && ' Reaching the top quarter for financial scale among similar organizations would light the full Beacon.'}
                     </p>
                   ) : (
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      {apiOrg!.organization_name} is an IRS-verified 501(c)(3). This profile is still lighting up — adding a mission, website, and financial detail brightens its flame. A lower tier reflects the public data we have, not the organization&rsquo;s quality.
+                      {apiOrg!.organization_name} is a 501(c)(3) the IRS recognizes. This profile is still lighting up. Adding a mission, website, and financial detail brightens its flame. A lower tier reflects the public data we have, not the organization&rsquo;s quality.
                     </p>
                   )}
                 </div>

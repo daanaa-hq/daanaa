@@ -79,7 +79,7 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
             ))}
           </ul>
           <p className="mt-3 font-body text-[10px] text-cool-grey/50 leading-[1.5]">
-            These gaps reflect data we haven't collected yet — not red flags. Governance and impact data will be added as MERIT expands.
+            These gaps reflect data we haven't collected yet, not red flags. Governance and impact data will be added as MERIT expands.
           </p>
         </div>
       </div>

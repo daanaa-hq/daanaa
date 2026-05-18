@@ -39,7 +39,7 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 export default function SectorHealth() {
   usePageMeta(
     'Sector Financial Health',
-    'Financial health across all 26 nonprofit sectors — reserve levels, at-risk rates, and program spending for 430,000+ IRS-registered organizations.'
+    'Financial health across all 26 nonprofit sectors. Reserve levels, at risk rates, and program spending for 430,000+ organizations the IRS recognizes.'
   )
 
   const { data, loading } = useApi(() => getSectorHealth(), [])
@@ -96,7 +96,7 @@ export default function SectorHealth() {
             Where the sector stands
           </h1>
           <p className="font-body text-[18px] text-muted-cream/80 max-w-[580px] leading-[1.65]">
-            A financial health picture of {totalOrgs.toLocaleString()} IRS-registered nonprofits across 26 sectors — reserve levels, at-risk rates, and program spending.
+            A financial health picture of {totalOrgs.toLocaleString()} nonprofits the IRS recognizes, across 26 sectors. Reserve levels, at risk rates, and program spending.
           </p>
 
           {/* Key stat chips */}
@@ -123,9 +123,9 @@ export default function SectorHealth() {
           <div className="mb-12 p-6 rounded-2xl bg-amber-50 border border-amber-200/80">
             <p className="font-body text-[15px] text-deep-navy leading-[1.7]">
               <strong>The sectors doing the most critical social safety-net work carry the least financial cushion.</strong>{' '}
-              Housing & Shelter has the highest at-risk rate of any sector — nearly 1 in 3 organizations operates with fewer than 3 months of reserves.
+              Housing & Shelter has the highest at risk rate of any sector. Nearly 1 in 3 organizations operates with fewer than 3 months of reserves.
               Mental Health has the lowest average reserves of any major sector at just 27.8 months,
-              while Human Services — the largest sector by organization count — has 18% of its organizations at risk.
+              while Human Services, the largest sector by organization count, has 18% of its organizations at risk.
             </p>
             <p className="mt-3 font-body text-[13px] text-cool-grey">
               By contrast, Philanthropy (110 months avg) and Mutual Benefit (113 months avg) sectors hold the deepest reserves —
@@ -208,8 +208,8 @@ export default function SectorHealth() {
           <div className="mt-8 flex flex-wrap gap-4">
             {[
               { color: '#EF4444', label: 'Critical (<3 mo)' },
-              { color: '#F59E0B', label: 'Moderate (3–12 mo)' },
-              { color: '#4ADE80', label: 'Adequate (12–36 mo)' },
+              { color: '#F59E0B', label: 'Moderate (3 to 12 mo)' },
+              { color: '#4ADE80', label: 'Adequate (12 to 36 mo)' },
               { color: '#60A5FA', label: 'Strong (36+ mo)' },
             ].map(item => (
               <div key={item.label} className="flex items-center gap-2">

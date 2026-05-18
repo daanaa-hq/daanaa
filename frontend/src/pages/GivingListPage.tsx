@@ -248,7 +248,7 @@ export default function GivingListPage() {
                               className="w-full border border-light-grey rounded-lg px-3 py-2 font-body text-[13px] text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors"
                             />
                             <p className="mt-1 font-body text-[10px] text-cool-grey/50">
-                              Only used to deliver your letter — never shared with the nonprofit
+                              Only used to deliver your letter, never shared with the nonprofit
                             </p>
                           </div>
                         </div>
@@ -284,7 +284,7 @@ export default function GivingListPage() {
                               ? `(${fullChunks} × ${formatCurrency(SPLIT_THRESHOLD)} + ${formatCurrency(remainder)})`
                               : `of ${formatCurrency(SPLIT_THRESHOLD)}`
                             }
-                            {' '}— each covered by your bank statement.
+                            {' '}each covered by your bank statement.
                           </p>
                         </div>
                       )}
@@ -314,7 +314,7 @@ export default function GivingListPage() {
           <p className="font-body text-[12px] text-cool-grey/60">
             {hasLetterItems
               ? 'Letter-requested gifts will be documented once the nonprofit uploads to MERIT. Others are covered by your bank statement.'
-              : 'Each contribution under $250 — your bank statement is the only documentation required by the IRS.'
+              : 'Each contribution is under $250, so your bank statement is the only documentation the IRS requires.'
             }
           </p>
 

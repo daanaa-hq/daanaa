@@ -392,7 +392,7 @@ export default function Wallet() {
             {donations.length === 0 && !showDonationForm ? (
               <EmptyState
                 icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/><path d="M12 6v6l4 2"/></svg>}
-                message="Log donations made through any channel — your record, your history"
+                message="Log donations made through any channel. Your record, your history."
               />
             ) : (
               <div className="space-y-2">
