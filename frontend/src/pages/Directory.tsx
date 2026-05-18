@@ -125,6 +125,7 @@ function FilterRail({
   revenueFilter,
   scoreTier,
   hiddenGem,
+  directLink,
   cause,
   onCategoryChange,
   onSubChange,
@@ -133,6 +134,7 @@ function FilterRail({
   onRevenueChange,
   onScoreTierChange,
   onHiddenGemChange,
+  onDirectLinkChange,
   onCauseChange,
   onClearAll,
   resultCount,
@@ -144,6 +146,7 @@ function FilterRail({
   revenueFilter: RevenueId
   scoreTier: ScoreTierId
   hiddenGem: boolean
+  directLink: boolean
   cause: string
   onCategoryChange: (id: string) => void
   onSubChange: (code: string) => void
@@ -152,11 +155,12 @@ function FilterRail({
   onRevenueChange: (id: RevenueId) => void
   onScoreTierChange: (id: ScoreTierId) => void
   onHiddenGemChange: (v: boolean) => void
+  onDirectLinkChange: (v: boolean) => void
   onCauseChange: (v: string) => void
   onClearAll: () => void
   resultCount: number
 }) {
-  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem || !!cause
+  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || !!cause
   const subcats = NTEE_SUBCATEGORIES[activeCategory] ?? []
 
   return (
@@ -189,6 +193,29 @@ function FilterRail({
             </span>
             <span className="block font-body text-[11px] text-cool-grey/70 leading-[1.4] mt-0.5">
               Small orgs doing exceptional work quietly
+            </span>
+          </span>
+        </button>
+
+        {/* Direct donate link available */}
+        <button
+          onClick={() => onDirectLinkChange(!directLink)}
+          className="w-full flex items-start gap-2.5 px-3 py-3 rounded-xl mb-4 border transition-all duration-150 text-left"
+          style={{
+            backgroundColor: directLink ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.03)',
+            borderColor: directLink ? '#4ADE80' : 'rgba(74,222,128,0.25)',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={directLink ? '#4ADE80' : '#6B7280'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+          <span>
+            <span className="block font-body text-[13px] font-semibold" style={{ color: directLink ? '#16a34a' : '#6B7280' }}>
+              Direct link available
+            </span>
+            <span className="block font-body text-[11px] text-cool-grey/70 leading-[1.4] mt-0.5">
+              Give directly — no hunting for a donate page
             </span>
           </span>
         </button>
@@ -409,6 +436,7 @@ export default function Directory() {
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
   const [hiddenGem, setHiddenGem] = useState(searchParams.get('hidden_gem') === '1')
+  const [directLink, setDirectLink] = useState(searchParams.get('direct_link') === '1')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
@@ -464,9 +492,10 @@ export default function Directory() {
       max_revenue: revPreset?.max,
       min_merit_tier: scoreTier || undefined,
       hidden_gem: hiddenGem || undefined,
+      direct_link: directLink || undefined,
       cause: debouncedCause.trim() || undefined,
     }),
-    [activeFilter, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, debouncedCause, itemsPerPage]
+    [activeFilter, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, debouncedCause, itemsPerPage]
   )
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -524,6 +553,7 @@ export default function Directory() {
     setRevenueFilter('')
     setScoreTier('')
     setHiddenGem(false)
+    setDirectLink(false)
     setCause('')
     setDebouncedCause('')
     setCurrentPage(1)
@@ -717,6 +747,7 @@ export default function Directory() {
             revenueFilter={revenueFilter}
             scoreTier={scoreTier}
             hiddenGem={hiddenGem}
+            directLink={directLink}
             cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
@@ -724,6 +755,7 @@ export default function Directory() {
             onRevenueChange={(id) => handleRevenueChange(id as RevenueId)}
             onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
             onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
+            onDirectLinkChange={(v) => { setDirectLink(v); setCurrentPage(1); scrollTop() }}
             onCauseChange={setCause}
             onClearAll={handleClearAll}
             resultCount={total}
@@ -753,6 +785,7 @@ export default function Directory() {
               revenueFilter={revenueFilter}
               scoreTier={scoreTier}
               hiddenGem={hiddenGem}
+              directLink={directLink}
               cause={cause}
               onCategoryChange={handleFilterChange}
               onSubChange={handleSubChange}
@@ -761,6 +794,7 @@ export default function Directory() {
               onRevenueChange={handleRevenueChange}
               onScoreTierChange={handleScoreTierChange}
               onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
+              onDirectLinkChange={(v) => { setDirectLink(v); setCurrentPage(1); scrollTop() }}
               onCauseChange={setCause}
               onClearAll={handleClearAll}
               resultCount={total}
