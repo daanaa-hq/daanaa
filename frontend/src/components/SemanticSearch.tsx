@@ -42,12 +42,14 @@ export default function SemanticSearch() {
     }).catch(() => {})
   }, [])
 
+  const MAX_CHARS = 150
+
   const search = async (q = query) => {
-    if (!q.trim() || !ready) return
+    if (!q.trim() || !ready || loading) return
     setLoading(true)
     setError(null)
     try {
-      const data = await semanticSearch({ q: q.trim(), limit: 20 })
+      const data = await semanticSearch({ q: q.trim().slice(0, MAX_CHARS), limit: 20 })
       setResults(data.results)
     } catch (e: any) {
       setError(e.message || 'Search failed')
@@ -77,10 +79,17 @@ export default function SemanticSearch() {
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={onKey}
+            maxLength={150}
             placeholder={ready ? "Describe what you're looking for in plain English…" : `Building search index… ${indexed.toLocaleString()} / ${total.toLocaleString()} orgs`}
-            disabled={!ready}
+            disabled={!ready || loading}
             className="flex-1 font-body text-[15px] text-deep-navy placeholder:text-cool-grey/60 outline-none bg-transparent"
           />
+          {query.length > 80 && (
+            <span className="flex-shrink-0 font-body text-[11px] tabular-nums"
+                  style={{ color: query.length >= 130 ? '#C9A96E' : '#9ca3af' }}>
+              {query.length}/150
+            </span>
+          )}
           <button
             onClick={() => search()}
             disabled={!ready || !query.trim() || loading}

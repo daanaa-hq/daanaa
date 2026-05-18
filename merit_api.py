@@ -28,10 +28,12 @@ def _get_embed_model():
         import sqlite_vec
         from sentence_transformers import SentenceTransformer
         import torch
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        _embed_model = SentenceTransformer("BAAI/bge-large-en-v1.5", device=device)
+        # CPU only: we encode one query sentence per request (~50ms).
+        # GPU would help document embedding (already done at build time) but
+        # causes ROCm multi-process contention across gunicorn workers.
+        _embed_model = SentenceTransformer("BAAI/bge-large-en-v1.5", device="cpu")
         _vec_ready = True
-        print(f"[semantic] model loaded on {device}")
+        print("[semantic] model loaded on cpu")
     except Exception as e:
         print(f"[semantic] not available: {e}")
         _vec_ready = False
@@ -572,9 +574,12 @@ def semantic_search():
     except Exception:
         return jsonify({"error": "Embeddings not yet built. Run scripts/build_embeddings.py first."}), 503
 
-    # Encode query
-    vec = model.encode([q], normalize_embeddings=True)[0]
-    vec_bytes = struct.pack(f"{len(vec)}f", *vec.tolist())
+    # Encode query (CPU, ~50ms for one sentence)
+    try:
+        vec = model.encode([q], normalize_embeddings=True)[0]
+        vec_bytes = struct.pack(f"{len(vec)}f", *vec.tolist())
+    except Exception as e:
+        return jsonify({"error": f"Query encoding failed: {e}"}), 500
 
     # KNN search — fetch more than needed so we can filter by ntee/state
     k_fetch = min(limit * 5, 250)
