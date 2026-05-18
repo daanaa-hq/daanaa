@@ -509,7 +509,7 @@ export default function OrganizationDetail() {
                     Financial health · MERIT-verified
                   </span>
                   <span className="font-body text-[14px] font-semibold" style={{ color: PASSING_BANDS.includes(finHealth.band) ? '#4ADE80' : '#F59E0B' }}>
-                    {finHealth.band} · {finHealth.score}/100
+                    {({ Mixed: 'Mid-range', Concerns: 'Lower range' } as Record<string, string>)[finHealth.band] ?? finHealth.band} · {finHealth.score}/100
                   </span>
                   <span className="font-body text-[10px] text-muted-cream/60 text-center leading-[1.4]">
                     Stronger than {finHealth.score}% of similar nonprofits
