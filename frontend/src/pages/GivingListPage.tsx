@@ -120,15 +120,23 @@ export default function GivingListPage() {
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(28px, 5vw, 44px)' }}>
             Giving List
           </h1>
-          <p className="mt-2 font-body text-[14px] text-muted-cream">
-            {(() => {
-              const g = items.filter(i => i.status === 'given').length
-              const o = count - g
-              if (g && o) return `${o} ongoing · ${g} given`
-              if (g) return `${g} given · your private record`
-              return `${count} organization${count !== 1 ? 's' : ''} · Review before giving`
-            })()}
-          </p>
+          <div className="mt-2 flex items-baseline gap-3">
+            <p className="font-body text-[14px] text-muted-cream">
+              {(() => {
+                const g = items.filter(i => i.status === 'given').length
+                const o = count - g
+                if (g && o) return `${o} ongoing · ${g} given`
+                if (g) return `${g} given · your private record`
+                return `${count} organization${count !== 1 ? 's' : ''} · Review before giving`
+              })()}
+            </p>
+            <Link
+              to="/directory"
+              className="font-body text-[12px] text-soft-gold/80 hover:text-soft-gold transition-colors"
+            >
+              + Find more
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -156,7 +164,12 @@ export default function GivingListPage() {
               <div className="p-5">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
-                    <p className="font-display text-[17px] text-deep-navy font-medium truncate">{item.orgName}</p>
+                    <Link
+                      to={`/org/${item.ein}`}
+                      className="font-display text-[17px] text-deep-navy font-medium truncate hover:text-soft-gold transition-colors block"
+                    >
+                      {item.orgName}
+                    </Link>
                     {(item.city || item.state) && (
                       <p className="font-body text-[12px] text-cool-grey mt-0.5">{[item.city, item.state].filter(Boolean).join(', ')}</p>
                     )}

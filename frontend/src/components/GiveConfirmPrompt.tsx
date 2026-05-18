@@ -15,6 +15,7 @@ export default function GiveConfirmPrompt() {
   const { pendingGive, confirmGiven, dismissPending } = useGivingList()
   const [show, setShow] = useState(false)
   const [showReasons, setShowReasons] = useState(false)
+  const [savedConfirm, setSavedConfirm] = useState(false)
 
   const maybeShow = useCallback((minAgeMs: number) => {
     if (!pendingGive) { setShow(false); return }
@@ -47,7 +48,14 @@ export default function GiveConfirmPrompt() {
 
   const yes = () => { confirmGiven(); setShow(false) }
   const notYet = () => setShowReasons(true)
-  const dismiss = () => { dismissPending(); setShow(false); setShowReasons(false) }
+  const dismiss = () => { dismissPending(); setShow(false); setShowReasons(false); setSavedConfirm(false) }
+
+  const saveThenDismiss = () => {
+    // markPending already saved the org to the wallet when the give CTA was clicked,
+    // so this is a visual confirmation rather than a new write. Brief flash then close.
+    setSavedConfirm(true)
+    setTimeout(() => { dismissPending(); setShow(false); setShowReasons(false); setSavedConfirm(false) }, 1600)
+  }
 
   const reasons: { label: string; action: () => void }[] = [
     {
@@ -58,7 +66,7 @@ export default function GiveConfirmPrompt() {
       label: 'Site looked broken or off',
       action: () => { if (pendingGive) submitLinkFeedback(pendingGive.ein, 'broken'); dismiss() },
     },
-    { label: "I'll give later", action: dismiss },
+    { label: "I'll give later", action: saveThenDismiss },
     { label: 'Changed my mind', action: dismiss },
   ]
 
@@ -70,7 +78,14 @@ export default function GiveConfirmPrompt() {
                  rounded-2xl border border-soft-gold/30 bg-deep-navy shadow-2xl
                  px-6 py-5 animate-[fadeIn_0.25s_ease-out]"
     >
-      {!showReasons ? (
+      {savedConfirm ? (
+        <div className="flex items-center gap-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <p className="font-display italic text-warm-cream text-[18px] leading-tight">
+            Saved to your giving list
+          </p>
+        </div>
+      ) : !showReasons ? (
         <>
           <p className="font-display italic text-warm-cream text-[20px] leading-tight">
             Did you give to {pendingGive.orgName}?
@@ -125,3 +140,4 @@ export default function GiveConfirmPrompt() {
     </div>
   )
 }
+
