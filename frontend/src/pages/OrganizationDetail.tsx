@@ -455,7 +455,11 @@ export default function OrganizationDetail() {
                 ))}
               </div>
 
-              {(org as any).website && (
+              {/* Giving hand-off. The org's own site only when the link is
+                  verified live and on-domain; otherwise the unspoofable
+                  ProPublica/IRS record by EIN, which is always correct and
+                  closes the loop for every org, not just those with a site. */}
+              {(org as any).website && apiOrg!.website_status === 'ok' ? (
                 <div className="mt-5">
                   <a
                     href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
@@ -466,8 +470,23 @@ export default function OrganizationDetail() {
                     Support this organization
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                   </a>
-                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[320px]">
-                    Opens their own website, where you can give directly. MERIT never handles your money or tracks your gift.
+                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[340px]">
+                    Opens their own website, where you can give directly. We verified this link is live. MERIT never handles your money or tracks your gift.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-5">
+                  <a
+                    href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                  >
+                    View the verified public record
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  </a>
+                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[340px]">
+                    We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. To give: use the EIN <span className="text-muted-cream/80 font-medium">{org.ein}</span> with your bank, donor-advised fund, or a check. MERIT never handles your money.
                   </p>
                 </div>
               )}
