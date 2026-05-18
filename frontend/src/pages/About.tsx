@@ -8,7 +8,7 @@ function formatCount(n: number): string {
 }
 
 export default function About() {
-  usePageMeta('About', 'MERIT is a civic nonprofit-discovery platform. We index IRS 501(c)(3) organizations and surface transparency scores so donors can give with confidence.')
+  usePageMeta('About', 'MERIT is a civic nonprofit-discovery platform. We aim to index every IRS 501(c)(3) organization and surface transparency scores so donors can give with confidence.')
   const { data: stats } = useApi(() => getStats(), [])
 
   return (
@@ -26,7 +26,7 @@ export default function About() {
               Civic infrastructure for informed giving
             </h1>
             <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-              MERIT indexes every active 501(c)(3) nonprofit in the United States, 432,000 organizations, from public IRS data. It gives each one a score against its true peers and makes that intelligence freely available to any donor who wants to give with confidence.
+              MERIT aims to index every active 501(c)(3) nonprofit in the United States — over 432,000 organizations — from public IRS data. Our goal is to give each one a score against its true peers and make that intelligence freely available to any donor who wants to give with confidence.
             </p>
           </div>
         </div>

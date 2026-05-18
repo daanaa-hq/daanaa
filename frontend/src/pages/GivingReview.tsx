@@ -9,10 +9,11 @@ import LampMark from '../components/LampMark'
 import { TIER_COLORS } from '../components/TrustBadge'
 
 export default function GivingReview() {
-  const { items, total, count, clearList } = useGivingList()
+  const { items, total, count, clearList, updateAmount } = useGivingList()
   const { addDonationDirect } = useWallet()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
+  const [editing, setEditing] = useState<{ ein: string; value: string } | null>(null)
 
   if (count === 0) {
     return (
@@ -178,10 +179,50 @@ export default function GivingReview() {
                   )}
                 </div>
                 <div className="text-right shrink-0">
-                  {item.amount > 0 ? (
-                    <p className="font-display text-[20px] text-deep-navy">{formatCurrency(item.amount)}</p>
+                  {editing?.ein === item.ein ? (
+                    <div className="flex items-center gap-2">
+                      <span className="font-body text-[15px] text-cool-grey">$</span>
+                      <input
+                        autoFocus
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={editing.value}
+                        onChange={e => setEditing({ ein: item.ein, value: e.target.value })}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            const n = parseFloat(editing.value)
+                            if (n > 0) { updateAmount(item.ein, n); setEditing(null) }
+                          }
+                          if (e.key === 'Escape') setEditing(null)
+                        }}
+                        className="w-24 border-b border-soft-gold bg-transparent font-display text-[20px] text-deep-navy text-right outline-none"
+                        placeholder="0"
+                      />
+                      <button
+                        onClick={() => {
+                          const n = parseFloat(editing.value)
+                          if (n > 0) { updateAmount(item.ein, n); setEditing(null) }
+                        }}
+                        className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  ) : item.amount > 0 ? (
+                    <button
+                      onClick={() => setEditing({ ein: item.ein, value: String(item.amount) })}
+                      className="font-display text-[20px] text-deep-navy hover:text-soft-gold transition-colors"
+                    >
+                      {formatCurrency(item.amount)}
+                    </button>
                   ) : (
-                    <p className="font-body text-[13px] text-alert-amber">Enter amount</p>
+                    <button
+                      onClick={() => setEditing({ ein: item.ein, value: '' })}
+                      className="font-body text-[13px] text-alert-amber hover:text-soft-gold transition-colors"
+                    >
+                      Enter amount
+                    </button>
                   )}
                 </div>
               </div>

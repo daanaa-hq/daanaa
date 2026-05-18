@@ -228,7 +228,7 @@ export default function OrganizationDetail() {
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
-  const { isInList, addItem, removeItem, markPending } = useGivingList()
+  const { isInList, items: givingItems, addItem, removeItem, markPending } = useGivingList()
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
     () => getOrganization(id || ''),
@@ -267,6 +267,7 @@ export default function OrganizationDetail() {
   const similarOrgs = useMemo(() => rawSimilarOrgs.map(adaptOrg), [rawSimilarOrgs])
 
   const inList = isInList(org?.ein || '')
+  const hasGiven = givingItems.some(i => i.ein === (org?.ein || '') && i.status === 'given')
 
   const metaTitle = apiOrg?.organization_name ?? ''
   const metaDesc = apiOrg
@@ -590,7 +591,7 @@ export default function OrganizationDetail() {
               {/* Loop-closer: connect the give moment to a private record.
                   Appears under whichever CTA rendered. */}
               <div className="mt-4">
-                {inList ? (
+                {hasGiven ? (
                   <span className="inline-flex items-center gap-2 font-body text-[13px] text-emerald-400">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                     In your Giving Wallet
