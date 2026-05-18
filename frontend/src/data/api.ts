@@ -60,6 +60,7 @@ export interface ApiOrganization {
   // Returned by GET /api/organizations/:ein only (SELECT *)
   mission?: string | null;
   website?: string | null;
+  website_status?: string | null;        // 'ok' = verified live & on-domain; else fall back to EIN record
   similar_organizations?: ApiOrganization[];
   category_rank?: number;
   category_total?: number;
