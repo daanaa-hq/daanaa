@@ -38,6 +38,66 @@ function FormulaBlock({ children }: { children: React.ReactNode }) {
   )
 }
 
+function FlowStep({ kicker, title, detail, last }: { kicker: string; title: string; detail: string; last?: boolean }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="w-full max-w-[440px] rounded-xl border border-soft-gold/30 bg-white px-6 py-5 text-center shadow-[0_1px_3px_rgba(11,25,41,0.04)]">
+        <p className="font-body text-[10px] font-semibold tracking-[0.14em] text-soft-gold uppercase mb-1.5">{kicker}</p>
+        <p className="font-display italic text-deep-navy text-[20px] leading-tight">{title}</p>
+        <p className="font-body text-[13px] text-cool-grey mt-1.5 leading-[1.5]">{detail}</p>
+      </div>
+      {!last && (
+        <svg width="20" height="34" viewBox="0 0 20 34" fill="none" className="my-1.5" aria-hidden="true">
+          <line x1="10" y1="0" x2="10" y2="26" stroke="#C9A84C" strokeWidth="1.5" />
+          <path d="M4 24 L10 32 L16 24" stroke="#C9A84C" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </div>
+  )
+}
+
+function ScoreFlow() {
+  return (
+    <div className="py-14 md:py-16 border-b border-light-grey">
+      <div className="max-w-[760px]">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-6 h-px bg-soft-gold/50" />
+          <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">The whole picture</span>
+        </div>
+        <h2 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em] mb-2" style={{ fontSize: 'clamp(26px, 3.5vw, 42px)' }}>
+          How a score is made
+        </h2>
+        <p className="font-body text-[16px] text-cool-grey leading-[1.7] mb-9">
+          Four steps. Every detail below this is just a closer look at one of them.
+        </p>
+        <div className="flex flex-col items-center">
+          <FlowStep
+            kicker="Step 1 · Group"
+            title="Find its true peers"
+            detail="Same kind of work, similar size, same part of the country."
+          />
+          <FlowStep
+            kicker="Step 2 · Weigh"
+            title="Measure financial scale"
+            detail="Revenue rank ×0.65  +  reserve strength ×0.35, all within that peer group."
+          />
+          <FlowStep
+            kicker="Step 3 · Place"
+            title="A score from 0 to 100"
+            detail="Where it sits among its true peers. 50 is the middle of every group."
+          />
+          <FlowStep
+            kicker="Step 4 · Light"
+            title="It feeds the lamp"
+            detail="One quiet signal on the visibility journey. Never a grade, never a verdict."
+            last
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function BandRow({ band, range, orgs, note }: { band: string; range: string; orgs: string; note?: string }) {
   return (
     <div className="flex items-start gap-4 py-3 border-b border-light-grey last:border-0">
@@ -123,41 +183,34 @@ export default function Methodology() {
       <div className="bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          <Section label="The benchmark" title="Peer groups, and how we define 'similar'">
+          <ScoreFlow />
+
+          <Section label="Step 1 · The peer group" title="How we define 'similar'">
             <p>
-              Every nonprofit is scored against a peer group of organizations doing the same kind of work at a similar scale in the same part of the country. We never compare a food bank to a hospital, or a grassroots community group to a regional health system.
-            </p>
-            <p>
-              A peer group is defined by three dimensions:
+              We never compare a food bank to a hospital. Every nonprofit is scored only against organizations doing the same kind of work, at a similar size, in the same part of the country. A peer group is three things:
             </p>
             <ul className="list-none space-y-2 mt-2">
               <li className="flex gap-3">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]">
-                  <span className="text-[10px] font-semibold text-soft-gold">1</span>
-                </span>
-                <span><strong className="text-deep-navy font-medium">NTEE subcategory</strong> — the National Taxonomy of Exempt Entities assigns each 501(c)(3) a fine-grained mission code. K31 = Food Banks; E22 = Hospital inpatient care; B94 = Parent-teacher groups. Over 400 subcategories in use.</span>
+                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">1</span></span>
+                <span><strong className="text-deep-navy font-medium">Kind of work.</strong> The IRS gives every 501(c)(3) a fine mission code (Food Banks, Hospitals, Parent-teacher groups, and 400 more). We match within it.</span>
               </li>
               <li className="flex gap-3">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]">
-                  <span className="text-[10px] font-semibold text-soft-gold">2</span>
-                </span>
-                <span><strong className="text-deep-navy font-medium">Revenue band</strong> — six bands from Nano to Major. Organizations within the same band face similar operational realities: staffing structures, funding sources, compliance burden.</span>
+                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">2</span></span>
+                <span><strong className="text-deep-navy font-medium">Size.</strong> One of six revenue bands (below). A $40K group and a $40M one live in different worlds.</span>
               </li>
               <li className="flex gap-3">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]">
-                  <span className="text-[10px] font-semibold text-soft-gold">3</span>
-                </span>
-                <span><strong className="text-deep-navy font-medium">Census region</strong> — one of four US Census regions (Northeast, Midwest, South, West). Cost of living, philanthropic culture, and government funding patterns vary meaningfully by region.</span>
+                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">3</span></span>
+                <span><strong className="text-deep-navy font-medium">Region.</strong> One of four US Census regions. Cost of living and giving culture vary by region.</span>
               </li>
             </ul>
             <p>
-              Regional groups require a minimum of 30 organizations to be considered statistically viable. If a regional group is too thin, the national subcategory+band group is used instead. About 88% of organizations score against a regional peer group.
+              A regional group needs at least 30 organizations to be meaningful. If it is too thin, the national group for that work and size is used instead. About 88% of organizations are scored against a regional peer group.
             </p>
           </Section>
 
-          <Section label="Revenue bands" title="How organizations are grouped by size">
+          <Section label="Step 1 · Size bands" title="The six revenue bands">
             <p>
-              Revenue bands are assigned based on the most recent annual revenue on file from IRS or ProPublica records.
+              Size comes from the most recent annual revenue on file. The six bands:
             </p>
             <div className="mt-4">
               <div className="flex items-start gap-4 py-2 border-b border-light-grey">
@@ -174,49 +227,34 @@ export default function Methodology() {
               <BandRow band="Major"  range="$50M+"          orgs="8,220"    note="hospitals, universities" />
             </div>
             <Callout>
-              The Nano and Micro bands were introduced in v5 to separate grassroots organizations from established community groups. Previously both were in a single "Micro" band covering $0 to $100K, a range too wide to produce meaningful peer comparisons.
+              Nano and Micro are kept separate so a $5K volunteer group and a $90K community organization are not treated as the same kind of operation.
             </Callout>
           </Section>
 
-          <Section label="The formula" title="How the composite score is computed">
-            <p>
-              The financial scale score is a weighted average of two within group rankings. Both dimensions are computed purely within the organization's peer group, not against all nonprofits nationally.
-            </p>
+          <Section label="Step 2 · The formula" title="Two rankings, one number">
             <FormulaBlock>
               <div className="text-deep-navy/80">composite = <span className="text-deep-navy font-semibold">0.65</span> × revenue_percentile</div>
               <div className="text-deep-navy/80 ml-[80px]">+ <span className="text-deep-navy font-semibold">0.35</span> × reserve_percentile</div>
               <div className="mt-3 text-[13px] text-cool-grey/70">
-                revenue_percentile is rank by total annual revenue within peer group (0 = smallest, 100 = largest)<br />
-                reserve_percentile is rank by reserve ratio within peer group (0 = thinnest reserves, 100 = strongest)
+                revenue_percentile is rank by total annual revenue within the peer group (0 = smallest, 100 = largest)<br />
+                reserve_percentile is rank by reserve ratio within the peer group (0 = thinnest reserves, 100 = strongest)
               </div>
             </FormulaBlock>
             <p>
-              The 65/35 split reflects a deliberate choice. Operational scale (revenue) is the primary signal of organizational reach, while balance sheet health (reserves) adds the dimension that pure revenue rank misses entirely. An org with $580M in assets but $65M in revenue scores poorly on revenue rank alone, and the reserve dimension corrects this.
-            </p>
-            <p>
-              Because both rankings are computed within the peer group, the median organization in every peer group scores 50. This makes scores directly comparable across mission types. A 75 in K31 (Food Banks) and a 75 in E22 (Hospitals) mean the same thing: top quarter of peers.
+              Revenue carries more weight because scale is the clearest signal of reach. Reserves carry the rest because a thin balance sheet is a real risk that revenue alone hides. Both rankings are computed inside the peer group, so the middle organization in every group scores 50, and a 75 means the same thing for a food bank as for a hospital: top quarter of its peers.
             </p>
           </Section>
 
-          <Section label="Why reserves" title="The reserve ratio, a measure of balance sheet health">
-            <p>
-              The reserve ratio is defined as:
-            </p>
+          <Section label="Step 2 · The reserve half" title="Why reserves count">
             <FormulaBlock>
               reserve_ratio = total_assets ÷ total_revenue
             </FormulaBlock>
             <p>
-              This approximates the working capital ratio, the measure academic research consistently identifies as the best single indicator of nonprofit financial health (Tuckman & Chang 1991, Bowman 2011, Calabrese 2013). It answers one question: could this organization survive a revenue disruption?
-            </p>
-            <p>
-              A ratio below 0.5 suggests thin reserves, less than six months of operating coverage. A ratio above 3.0 typically indicates an endowment funded model. Both are legitimate organizational structures. The score places them within their own peer distribution, so endowment funded organizations are compared to other endowment funded peers.
+              This stands in for the working capital ratio, which the research consistently names as the best single indicator of nonprofit financial health (Tuckman & Chang 1991, Bowman 2011, Calabrese 2013). It answers one question: could this organization survive a year where the money stopped? A low ratio means thin coverage. A high one usually means a large endowment, which is a legitimate model, not a flaw, so organizations with big endowments are ranked against each other.
             </p>
             <Callout>
-              The true working capital ratio requires liability data from 990 Part X, which is available for approximately 4,700 organizations with full IRS SOI data. The reserve ratio using total assets is available for all 542,000+ scored organizations and produces comparable results for the vast majority.
+              The exact working capital ratio needs liability data filed by only about 4,700 organizations. The version using total assets is available for all 542,000+ scored organizations and tracks closely for the vast majority. Negative net worth is treated as zero, and reserves are capped at the group maximum so no one is penalized for having a lot.
             </Callout>
-            <p>
-              Negative net assets (total_assets &lt; 0) are treated as zero. Reserve ratios are capped at the group maximum for the purpose of ranking, so no organization is penalized relative to peers for having too much.
-            </p>
           </Section>
 
           <Section label="Scope and limits" title="What the score does not measure">
