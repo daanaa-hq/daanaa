@@ -228,7 +228,7 @@ export default function OrganizationDetail() {
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
-  const { isInList, addItem, removeItem } = useGivingList()
+  const { isInList, addItem, removeItem, markPending } = useGivingList()
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
     () => getOrganization(id || ''),
@@ -301,22 +301,28 @@ export default function OrganizationDetail() {
   const finHealth    = getFinancialHealth(apiOrg!)
   const badges = getOrgBadges(apiOrg!)
 
+  const givePayload = {
+    ein: org.ein,
+    orgName: org.name,
+    city: org.city || undefined,
+    state: org.state || undefined,
+    ntee1: org.category || undefined,
+    amount: 0,
+    trustTier: lampTier,
+    trustSummary,
+  }
+
   const handleGiveToggle = () => {
     if (inList) {
       removeItem(org.ein)
     } else {
-      addItem({
-        ein: org.ein,
-        orgName: org.name,
-        city: org.city || undefined,
-        state: org.state || undefined,
-        ntee1: org.category || undefined,
-        amount: 0,
-        trustTier: lampTier,
-        trustSummary,
-      })
+      addItem(givePayload)
     }
   }
+
+  // Donor clicked an external give link — track it and ask "did you give?"
+  // when they return (LinkedIn-jobs pattern).
+  const handleGiveClick = () => markPending(givePayload)
 
   return (
     <div className="min-h-[100dvh]">
@@ -465,6 +471,7 @@ export default function OrganizationDetail() {
                     href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={handleGiveClick}
                     className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
                   >
                     Support this organization
@@ -480,6 +487,7 @@ export default function OrganizationDetail() {
                     href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={handleGiveClick}
                     className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
                   >
                     View the verified public record
