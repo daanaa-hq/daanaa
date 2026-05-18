@@ -32,15 +32,15 @@ function Callout({ children }: { children: React.ReactNode }) {
 }
 
 function TierRow({ score, label, description }: { score: string; label: string; description: string }) {
-  const color = label === 'Exceptional' ? '#22c55e'
-    : label === 'High Impact' ? '#84cc16'
-    : label === 'Solid Performer' ? '#eab308'
-    : label === 'Developing' ? '#f97316'
-    : '#6b7280'
+  // Financial scale is not a danger gradient. Larger scale gets a gentle green;
+  // everything else is calm slate. A smaller organization is not "worse".
+  const color = label === 'Top of peer group' || label === 'Well above peer median'
+    ? '#5a9e6f'
+    : '#8a8f98'
   return (
     <div className="flex items-start gap-4 py-3 border-b border-light-grey last:border-0">
       <span className="shrink-0 w-16 font-body text-[13px] font-semibold" style={{ color }}>{score}</span>
-      <span className="shrink-0 w-36 font-body text-[14px] font-medium text-deep-navy">{label}</span>
+      <span className="shrink-0 w-44 font-body text-[14px] font-medium text-deep-navy">{label}</span>
       <span className="font-body text-[14px] text-cool-grey">{description}</span>
     </div>
   )
@@ -106,9 +106,9 @@ export default function HowItWorks() {
             </p>
           </Section>
 
-          <Section label="The MERIT score" title="How scoring works">
+          <Section label="The financial picture" title="How the financial number works">
             <p>
-              The MERIT score is a <strong className="text-deep-navy font-semibold">peer percentile</strong> — not a raw number, not an absolute grade. It answers one question: <em>how does this organization compare financially to nonprofits doing similar work at similar scale?</em>
+              This is the quiet layer beneath the lamp. It is a <strong className="text-deep-navy font-semibold">peer percentile</strong> — not a grade, not a verdict, not a measure of impact, quality, or worth. It answers one narrow question: <em>how does this organization compare in financial size to nonprofits doing similar work at a similar scale?</em> The lamp is the journey; this is one piece of evidence along it.
             </p>
             <p>
               We use two dimensions to define "similar":
@@ -132,13 +132,16 @@ export default function HowItWorks() {
             </p>
 
             <div className="mt-6">
-              <p className="font-body text-[14px] font-semibold text-deep-navy mb-3">Score tiers</p>
+              <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the number means</p>
+              <p className="font-body text-[13px] text-cool-grey mb-3 max-w-[640px]">
+                It places an organization by <em>financial size</em> within its peer group — nothing more. A smaller organization is not a worse one. This number says nothing about the work, the people, or the impact.
+              </p>
               <div className="bg-white rounded-xl border border-light-grey p-4">
-                <TierRow score="90–100" label="Exceptional" description="Top 10% of peers by revenue scale and financial consistency." />
-                <TierRow score="75–89" label="High Impact" description="Financially strong, well above the median for similar organizations." />
-                <TierRow score="60–74" label="Solid Performer" description="Above median — established and financially stable." />
-                <TierRow score="40–59" label="Developing" description="Near or below the median. Early-stage or growing organizations often fall here." />
-                <TierRow score="0–39" label="Needs Data" description="Limited financial history available in public records." />
+                <TierRow score="90–100" label="Top of peer group" description="Larger financial scale and reserves than roughly 90% of similar organizations." />
+                <TierRow score="75–89" label="Well above peer median" description="Financially larger than most similar organizations." />
+                <TierRow score="60–74" label="Above peer median" description="Financially larger than the typical similar organization." />
+                <TierRow score="40–59" label="Near peer median" description="A typical financial size for its peer group." />
+                <TierRow score="0–39" label="Below peer median" description="Smaller financial scale than most peers — common for newer or leaner organizations. Not a measure of the work." />
               </div>
             </div>
           </Section>

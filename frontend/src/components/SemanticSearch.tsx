@@ -13,11 +13,9 @@ const EXAMPLES = [
 
 function ScoreBadge({ score }: { score: number }) {
   const label = getScoreLabel(score)
-  const color = score >= 90 ? '#22c55e'
-    : score >= 75 ? '#84cc16'
-    : score >= 60 ? '#eab308'
-    : score >= 40 ? '#f97316'
-    : '#6b7280'
+  // Financial scale is not a danger gradient — larger scale gets a gentle green,
+  // everything else is calm slate. Small ≠ bad, so never alarm colors here.
+  const color = score >= 75 ? '#5a9e6f' : '#8a8f98'
   return (
     <span className="inline-flex items-center gap-1 font-body text-[11px] font-medium"
           style={{ color }}>

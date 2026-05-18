@@ -71,9 +71,9 @@ function HeroSection() {
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-6 font-body text-[18px] leading-[1.7] max-w-[520px] mx-auto" style={{ color: 'rgba(245,240,235,0.65)' }}>
-          Search and compare 501(c)(3) nonprofits across the US — free,
-          no account required.
+        <p className="mt-6 font-body text-[18px] leading-[1.7] max-w-[540px] mx-auto" style={{ color: 'rgba(245,240,235,0.65)' }}>
+          Every IRS-verified nonprofit in America — including the small, local ones
+          the big sites never show. Free, no account.
         </p>
 
         {/* Search */}
@@ -424,7 +424,7 @@ function FooterCTA() {
           Ready to give with intention?
         </h2>
         <p className="mt-4 font-body text-[16px] text-cool-grey">
-          Browse {countLabel} nonprofits, track your giving, and discover where your dollars make the most impact.
+          Browse {countLabel} nonprofits, keep a private record of your giving, and find the organizations doing quiet, essential work — including the ones nobody else surfaces.
         </p>
         <div className="mt-8 flex items-center justify-center gap-4 flex-wrap">
           <Link
