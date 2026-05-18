@@ -324,6 +324,19 @@ export default function OrganizationDetail() {
   // when they return (LinkedIn-jobs pattern).
   const handleGiveClick = () => markPending(givePayload)
 
+  // The always-available certain path. A verified website is not the same as
+  // a findable donate page, so this is shown under every CTA, not just on
+  // failure. No org setup, no third party, no funds through MERIT.
+  const mailingAddress = apiOrg!.address
+    ? `${apiOrg!.address}${apiOrg!.CITY ? `, ${apiOrg!.CITY}` : ''}${apiOrg!.STATE ? `, ${apiOrg!.STATE}` : ''}${apiOrg!.zipcode ? ` ${apiOrg!.zipcode}` : ''}`
+    : null
+  const certainPath = (
+    <p className="mt-2 font-body text-[12px] text-muted-cream/55 leading-[1.5] max-w-[360px]">
+      Can&rsquo;t find their donate page? Give using EIN{' '}
+      <span className="text-muted-cream/80 font-medium">{org.ein}</span> through your bank or donor-advised fund{mailingAddress ? <>, or mail a check to <span className="text-muted-cream/80">{mailingAddress}</span></> : ''}.
+    </p>
+  )
+
   return (
     <div className="min-h-[100dvh]">
       {/* Profile Header */}
@@ -477,9 +490,10 @@ export default function OrganizationDetail() {
                     Support this organization
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                   </a>
-                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[340px]">
-                    Opens their own website, where you can give directly. We verified this link is live. MERIT never handles your money or tracks your gift.
+                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
+                    Opens their own website. Look for &ldquo;Donate&rdquo; or &ldquo;Give&rdquo;, usually in the top menu. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
                   </p>
+                  {certainPath}
                 </div>
               ) : (
                 <div className="mt-5">
@@ -493,17 +507,10 @@ export default function OrganizationDetail() {
                     View the verified public record
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                   </a>
-                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[340px]">
-                    We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. To give: use the EIN <span className="text-muted-cream/80 font-medium">{org.ein}</span> with your bank or donor-advised fund. MERIT never handles your money.
+                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
+                    We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
                   </p>
-                  {apiOrg!.address && (
-                    <p className="mt-2 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[340px]">
-                      Or mail a check to:{' '}
-                      <span className="text-muted-cream/80">
-                        {apiOrg!.address}{apiOrg!.CITY ? `, ${apiOrg!.CITY}` : ''}{apiOrg!.STATE ? `, ${apiOrg!.STATE}` : ''}{apiOrg!.zipcode ? ` ${apiOrg!.zipcode}` : ''}
-                      </span>
-                    </p>
-                  )}
+                  {certainPath}
                 </div>
               )}
 
