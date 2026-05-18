@@ -8,7 +8,7 @@ export default function CategoryPage() {
 
   usePageMeta(
     category?.name ?? '',
-    category ? `Browse ${category.name} nonprofits on MERIT — IRS-verified 501(c)(3) organizations scored by financial health and transparency.` : ''
+    category ? `Browse ${category.name} nonprofits on MERIT. 501(c)(3) organizations the IRS recognizes, scored by financial health and transparency.` : ''
   )
 
   if (!category) return <Navigate to="/directory" replace />

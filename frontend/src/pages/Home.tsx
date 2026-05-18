@@ -14,7 +14,7 @@ const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
   { name: 'Lantern', pct: '1.9%',  blurb: 'Full profile, peer score, current 990' },
   { name: 'Flame',   pct: '75.5%', blurb: 'Peer score + current 990 on record' },
   { name: 'Ember',   pct: '21.3%', blurb: 'IRS confirmed with financial data' },
-  { name: 'Spark',   pct: '0.4%',  blurb: 'IRS BMF only — no financials yet' },
+  { name: 'Spark',   pct: '0.4%',  blurb: 'IRS listed, no financials yet' },
 ]
 
 // Returns the week number anchored to Monday so all users see the same shuffle each week
@@ -325,7 +325,7 @@ function WalletSection() {
               Your giving history,<br />private by design
             </h2>
             <p className="mt-5 font-body text-[16px] leading-[1.7]" style={{ color: 'rgba(245,240,235,0.65)' }}>
-              Log every donation — through any channel, to any 501(c)(3).
+              Log every donation you make, through any channel, to any 501(c)(3).
               Records stay on your device only, never our servers.
             </p>
             <ul className="mt-7 space-y-3.5">

@@ -123,7 +123,7 @@ export default function GivingConfirmation() {
               {/* Anonymous split note */}
               {isSplitItem && (
                 <p className="mt-3 font-body text-[12px] text-cool-grey/60">
-                  Logged as {splitCount} entries of {formatCurrency(SPLIT_THRESHOLD)} — each covered by your bank statement.
+                  Logged as {splitCount} entries of {formatCurrency(SPLIT_THRESHOLD)}, each covered by your bank statement.
                 </p>
               )}
 

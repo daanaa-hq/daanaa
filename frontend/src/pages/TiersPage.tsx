@@ -89,7 +89,7 @@ const CRITERIA_ICON_UNMET = (
 )
 
 export default function TiersPage() {
-  usePageMeta('Nonprofit Tiers', 'Understand the five MERIT tiers — Beacon, Lantern, Flame, Ember, and Spark — and what each means for IRS-verified nonprofits.')
+  usePageMeta('Nonprofit Tiers', 'Understand the five MERIT tiers (Beacon, Lantern, Flame, Ember, and Spark) and what each means for the nonprofits the IRS recognizes.')
   return (
     <div className="min-h-[100dvh]">
 
@@ -113,7 +113,7 @@ export default function TiersPage() {
                 Trust Tiers
               </h1>
               <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">
-                Every nonprofit on MERIT carries a lamp tier — a compact signal of how much public data backs that listing. Tiers reflect what the public record contains, not our opinion of the organization's mission or importance.
+                Every nonprofit on MERIT carries a lamp tier, a compact signal of how much public data backs that listing. Tiers reflect what the public record contains, not our opinion of the organization's mission or importance.
               </p>
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function TiersPage() {
               The IRS makes 990 filings public, but data availability varies widely. Some organizations have years of peer-benchmarked financial data; others appear in the IRS Business Master File with nothing else on record. MERIT's five-tier system makes that gap visible at a glance, so donors can calibrate their research accordingly.
             </p>
             <p className="font-body text-[16px] leading-[1.7] text-cool-grey mt-4">
-              Tiers are computed automatically from public sources — IRS BMF, ProPublica Nonprofit Explorer, and IRS Statistics of Income data — and updated monthly. No organization can pay to change its tier.
+              Tiers are computed automatically from public sources (the IRS registration list, ProPublica Nonprofit Explorer, and IRS Statistics of Income data) and updated monthly. No organization can pay to change its tier.
             </p>
           </div>
 
@@ -249,7 +249,7 @@ export default function TiersPage() {
             </h2>
             <div className="mt-4 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                A 990-N filer running an extraordinary neighborhood pantry will show as Spark or Ember. That reflects what the IRS collects — 990-N filers report only that they exist, not their financials. It says nothing about their effectiveness, their importance to the communities they serve, or whether they deserve your support.
+                A tiny organization running an extraordinary neighborhood pantry on a 990-N postcard will show as Spark or Ember. That reflects what the IRS collects. A 990-N reports only that the organization exists, not its financials. It says nothing about their effectiveness, their importance to the communities they serve, or whether they deserve your support.
               </p>
               <p>
                 Tiers answer one question: <em>how much public data backs this listing?</em> They are a starting point for research, not a verdict. Use them to calibrate how much additional due diligence to apply, not to rank organizations against each other.

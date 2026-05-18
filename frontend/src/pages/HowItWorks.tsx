@@ -71,15 +71,15 @@ export default function HowItWorks() {
       <div className="bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          <Section label="Our foundation" title="What MERIT is — and isn't">
+          <Section label="Our foundation" title="What MERIT is, and what it isn't">
             <p>
               MERIT is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
             </p>
             <p>
-              We index every 501(c)(3) organization in the United States from IRS public records — over 430,000 of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
+              We index every 501(c)(3) organization in the United States from IRS public records, over 430,000 of them, and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
-              A high MERIT score means an organization is financially strong relative to similar nonprofits of similar size. It does not measure impact, goodness of purpose, or how efficiently a dollar reaches a beneficiary. Those things matter enormously — they are also much harder to measure, and we won't pretend otherwise.
+              A high MERIT score means an organization is financially strong relative to similar nonprofits of similar size. It does not measure impact, goodness of purpose, or how efficiently a dollar reaches a beneficiary. Those things matter enormously. They are also much harder to measure, and we won't pretend otherwise.
             </Callout>
           </Section>
 
@@ -102,7 +102,7 @@ export default function HowItWorks() {
               ))}
             </div>
             <p className="mt-4">
-              Every listing shows a data timestamp — "FY 2023 · Source: IRS" — so you always know how recent the information is.
+              Every listing shows a data timestamp, like "FY 2023 · Source: IRS", so you always know how recent the information is.
             </p>
           </Section>
 
@@ -117,13 +117,13 @@ export default function HowItWorks() {
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">NTEE Subcategory</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  The IRS assigns each nonprofit an NTEE code — a two-letter subcategory within a broader sector. "B24" means Special Education; "E21" means Community Health Centers. We compare within subcategory, not just the broad sector. A small folk arts museum is not a peer of the Metropolitan Museum of Art.
+                  The IRS assigns each nonprofit an NTEE code. It is a short subcategory within a broader sector. "B24" means Special Education and "E21" means Community Health Centers. We compare within the subcategory, not just the broad sector. A small folk arts museum is not a peer of the Metropolitan Museum of Art.
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">Revenue Band</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. We group organizations into six revenue bands — Nano, Micro, Small, Medium, Large, and Major — and score within each band. Your $80K community garden is ranked against other similarly-sized community gardens.
+                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. We group organizations into six revenue bands (Nano, Micro, Small, Medium, Large, and Major) and score within each band. Your $80K community garden is ranked against other community gardens of a similar size.
                 </p>
               </div>
             </div>
@@ -148,13 +148,13 @@ export default function HowItWorks() {
 
           <Section label="Trust tiers" title="The lamp: a visibility journey, not a grade">
             <p>
-              Every listing displays a lamp tier — and it is a journey, not a verdict. The lamp shows how much public data backs a profile <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, community-rooted, and nearly invisible in public data — and they are exactly who we built MERIT for. A fainter lamp isn't a judgment; it's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail — and that path stays free and open, always.
+              Every listing displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a profile <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built MERIT for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
             </p>
             <div className="mt-4 space-y-3">
               {([
                 {
                   tier: 'Beacon' as TierName,
-                  what: 'Peer score in the top quartile (≥ 75th percentile), current 990, mission statement, and active website — all verified from public records.',
+                  what: 'In the top quarter for financial scale among similar organizations, with a current 990, mission statement, and active website all verified from public records.',
                 },
                 {
                   tier: 'Lantern' as TierName,
@@ -170,7 +170,7 @@ export default function HowItWorks() {
                 },
                 {
                   tier: 'Spark' as TierName,
-                  what: 'Registered 501(c)(3) in the IRS master file. No financial detail in our index yet — many 990-N filers (under $50K revenue) fall here.',
+                  what: 'Registered 501(c)(3) in the IRS master file. No financial detail in our index yet. Many small organizations filing a 990-N postcard (under $50K revenue) fall here.',
                 },
               ] as const).map(({ tier, what }) => (
                 <div key={tier} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">
@@ -183,7 +183,7 @@ export default function HowItWorks() {
               ))}
             </div>
             <Callout>
-              A lower tier is not a negative judgment. It reflects what public data is available — not the organization's character, impact, or importance. A 990-N filer doing extraordinary community work will show as Spark. That may change as more data enters the public record.
+              A lower tier is not a negative judgment. It reflects what public data is available, not the organization's character, impact, or importance. A small organization filing a 990-N postcard while doing extraordinary community work will show as Spark. That can change as more data enters the public record.
             </Callout>
             <div className="mt-6">
               <Link
@@ -216,7 +216,7 @@ export default function HowItWorks() {
               <div className="p-5 bg-white rounded-xl border-2 border-dashed border-soft-gold/30">
                 <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Organization's data</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
-                  Added directly by the organization. Clearly labeled as self-reported. Coming soon — claim your page.
+                  Added directly by the organization. Clearly labeled as self reported. Coming soon: claim your page.
                 </p>
                 <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
                   {['Mission statement', 'Program descriptions', 'Leadership team', 'Photos & annual reports', 'Impact metrics'].map(i => (
@@ -228,7 +228,7 @@ export default function HowItWorks() {
               </div>
             </div>
             <p className="mt-6">
-              This separation is fundamental to trust. You always know whether you're reading IRS-sourced data or an organization's own description of itself — and both are valuable for different reasons.
+              This separation is fundamental to trust. You always know whether you're reading data from the IRS or an organization's own description of itself. Both are valuable, for different reasons.
             </p>
           </Section>
 
@@ -249,7 +249,7 @@ export default function HowItWorks() {
               ))}
             </div>
             <p className="mt-4">
-              Every organization's detail page shows the data vintage — the tax year and source — so you're never guessing how old the information is.
+              Every organization's detail page shows the data vintage, the tax year and the source, so you're never guessing how old the information is.
             </p>
           </Section>
 

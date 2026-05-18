@@ -35,7 +35,7 @@ export default function MistakeRegistry({ compact = false }: MistakeRegistryProp
       <div className="flex items-start gap-2">
         <span className="inline-block w-2 h-2 rounded-full bg-cool-grey/30 shrink-0 mt-[5px]" />
         <p className="font-body text-[12px] text-cool-grey leading-[1.45]">
-          Monitoring active — no incidents on file for this organization.
+          Monitoring active. No incidents on file for this organization.
         </p>
       </div>
       <p className="mt-2 font-body text-[11px] text-cool-grey/55 leading-[1.35]">

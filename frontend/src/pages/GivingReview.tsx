@@ -221,7 +221,7 @@ export default function GivingReview() {
             disabled={submitting || invalidItems.length > 0 || total === 0}
             className="w-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold py-4 rounded-full hover:bg-bright-gold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {submitting ? 'Logging...' : `Confirm — ${formatCurrency(total)}`}
+            {submitting ? 'Logging...' : `Confirm ${formatCurrency(total)}`}
           </button>
 
           <p className="font-body text-[11px] text-muted-cream/40 text-center">

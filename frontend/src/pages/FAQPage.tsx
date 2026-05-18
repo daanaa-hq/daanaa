@@ -13,21 +13,21 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
     items: [
       {
         q: 'Is MERIT free?',
-        a: 'Yes — completely. MERIT is free to search, free to use, and free for nonprofits to claim their page. We do not charge for listings, scores, or access to any feature. We do not accept payments from organizations to influence their score or placement.',
+        a: 'Yes, completely. MERIT is free to search, free to use, and free for nonprofits to claim their page. We do not charge for listings, scores, or access to any feature. We do not accept payments from organizations to influence their score or placement.',
       },
       {
         q: 'Who runs MERIT?',
-        a: 'MERIT is an independent civic platform. We are not affiliated with the IRS, the federal government, or any existing nonprofit rating agency. We are not a nonprofit ourselves — we are infrastructure, built to make the charitable sector more legible.',
+        a: 'MERIT is an independent civic platform. We are not affiliated with the IRS, the federal government, or any existing nonprofit rating agency. We are not a nonprofit ourselves. We are infrastructure, built to make the charitable sector easier to see clearly.',
       },
       {
         q: 'How do you make money?',
-        a: 'We are currently in public beta and not yet monetized. When we do generate revenue, it will come from institutional tools — not from listing fees, score manipulation, or selling donor data. Organizations will never pay to improve their scores.',
+        a: 'We are currently in public beta and not yet monetized. When we do generate revenue, it will come from institutional tools, never from listing fees, score manipulation, or selling donor data. Organizations will never pay to improve their scores.',
       },
       {
         q: 'Is my data private?',
         a: (
           <>
-            Your Giving Wallet and saved organizations are stored locally on your device — they never leave your browser. We do not collect personal information from visitors, do not use tracking cookies, and do not sell or share user data. See our{' '}
+            Your Giving Wallet and saved organizations are stored locally on your device. They never leave your browser. We do not collect personal information from visitors, do not use tracking cookies, and do not sell or share user data. See our{' '}
             <Link to="/legal" className="text-soft-gold hover:text-bright-gold transition-colors">privacy policy</Link> for the full picture.
           </>
         ),
@@ -39,7 +39,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
     items: [
       {
         q: 'How is the MERIT score calculated?',
-        a: 'The MERIT score is a peer percentile — not an absolute grade. We take each organization\'s financial data (primarily total revenue from IRS 990 filings), group it with true peers by NTEE subcategory and revenue band, and compute its rank within that group. A score of 72 means the organization outperforms 72% of its peers financially. The score does not measure mission, impact, or goodness of purpose.',
+        a: 'The MERIT score is a place in line among similar organizations, not an absolute grade. We take each organization\'s financial data (primarily total revenue from IRS 990 filings), group it with true peers by category and size, and find where it sits in that group. A score of 72 means the organization is financially larger than 72% of its peers. The score does not measure mission, impact, or goodness of purpose.',
       },
       {
         q: 'What\'s the difference between the score and the trust tier?',
@@ -56,7 +56,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'Why doesn\'t my organization have a score?',
-        a: 'A peer score requires enough financial data to rank within a peer group. If your organization files a 990-N (revenue under $50,000), no financial detail is submitted to the IRS — only a confirmation that you still exist. We can confirm your status but cannot compute a peer score. As your organization grows and files a full 990, a score will appear automatically on the next data refresh.',
+        a: 'A score requires enough financial data to place an organization among similar ones. If your organization files a 990-N (revenue under $50,000), no financial detail is submitted to the IRS, only a confirmation that you still exist. We can confirm your status but cannot compute a score. As your organization grows and files a full 990, a score will appear automatically on the next data refresh.',
       },
       {
         q: 'Can an organization pay to improve its score?',
@@ -64,7 +64,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'My organization has a low score but we do great work. Why?',
-        a: 'The score measures financial health relative to peers — not mission quality, impact, or importance. A neighborhood food pantry operating on $30,000 a year may do extraordinary work in its community and still score in the 40th percentile financially. The score is one signal. Read the mission, look at the programs, make your own judgment.',
+        a: 'The score measures financial size next to similar organizations, not mission quality, impact, or importance. A neighborhood food pantry operating on $30,000 a year may do extraordinary work in its community and still sit low on financial size. The score is one signal. Read the mission, look at the programs, make your own judgment.',
       },
     ],
   },
@@ -81,7 +81,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'How current is the financial data?',
-        a: 'Form 990 filings are typically submitted 6–18 months after the fiscal year ends, and the IRS processes them on a rolling basis. The financial data on MERIT usually reflects the most recent 990 filed — which may be 1–3 years old depending on the organization. Every profile shows a "FY XXXX · Source" badge so you always know the vintage of the data you\'re looking at.',
+        a: 'Form 990 filings are typically submitted 6 to 18 months after the fiscal year ends, and the IRS processes them on a rolling basis. The financial data on MERIT usually reflects the most recent 990 filed, which may be 1 to 3 years old depending on the organization. Every profile shows a "FY XXXX · Source" badge so you always know the vintage of the data you\'re looking at.',
       },
       {
         q: 'How often is MERIT updated?',
@@ -123,11 +123,11 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'What can I add to my page once I claim it?',
-        a: 'Claimed pages let organizations add: mission statement, program descriptions, leadership team, impact metrics, annual reports, and eventually events and volunteer opportunities. All self-reported content is clearly labeled as such and kept visually separate from IRS-sourced data — donors can always tell which is which.',
+        a: 'Claimed pages let organizations add a mission statement, program descriptions, leadership team, impact metrics, annual reports, and eventually events and volunteer opportunities. All self reported content is clearly labeled as such and kept visually separate from IRS data, so donors can always tell which is which.',
       },
       {
         q: 'My organization isn\'t listed on MERIT. Why?',
-        a: 'MERIT indexes every IRS-recognized 501(c)(3) organization. If your organization isn\'t appearing, the most likely reasons are: your IRS recognition is recent (the BMF updates monthly — newly recognized orgs may take 30–60 days to appear), or your organization\'s status has lapsed. Search by EIN on the IRS Tax Exempt Organization Search to verify your status.',
+        a: 'MERIT indexes every 501(c)(3) organization the IRS recognizes. If your organization isn\'t appearing, the most likely reasons are that your IRS recognition is recent (the IRS list updates monthly, so newly recognized orgs may take 30 to 60 days to appear), or your organization\'s status has lapsed. Search by EIN on the IRS Tax Exempt Organization Search to verify your status.',
       },
     ],
   },
@@ -136,11 +136,11 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
     items: [
       {
         q: 'Does MERIT process donations?',
-        a: 'No. MERIT is a research and tracking tool — we help you find and research organizations. All actual giving happens directly with the nonprofit through their own website, by check, or by any other method you choose. MERIT logs your intent and keeps your record, but money never flows through us.',
+        a: 'No. MERIT is a research and tracking tool that helps you find and research organizations. All actual giving happens directly with the nonprofit through their own website, by check, or by any other method you choose. MERIT logs your intent and keeps your record, but money never flows through us.',
       },
       {
         q: 'What is the Giving Wallet?',
-        a: 'The Giving Wallet is a private, device-local donation log. You record gifts you\'ve made (through any channel), and the wallet stores them for reference at tax time. It\'s not connected to any payment processor. Think of it as a private spreadsheet that lives in your browser — useful for anyone who gives to multiple organizations and wants a single record.',
+        a: 'The Giving Wallet is a private donation log that lives on your device. You record gifts you\'ve made (through any channel), and the wallet stores them for reference at tax time. It\'s not connected to any payment processor. Think of it as a private spreadsheet that lives in your browser, useful for anyone who gives to multiple organizations and wants a single record.',
       },
       {
         q: 'What documentation do I need for a tax deduction?',
@@ -183,7 +183,7 @@ function FAQAccordion({ item }: { item: FAQItem }) {
 }
 
 export default function FAQPage() {
-  usePageMeta('FAQ', 'Frequently asked questions about MERIT — how scores work, where data comes from, how to claim your nonprofit page, and how donations are tracked.')
+  usePageMeta('FAQ', 'Frequently asked questions about MERIT. How scores work, where data comes from, how to claim your nonprofit page, and how donations are tracked.')
 
   return (
     <div className="min-h-[100dvh]">

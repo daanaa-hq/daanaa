@@ -182,7 +182,7 @@ export default function FilterSheet({
               >
                 <option value="">All States</option>
                 {US_STATES.map(([abbr, name]) => (
-                  <option key={abbr} value={abbr}>{abbr} — {name}</option>
+                  <option key={abbr} value={abbr}>{abbr} · {name}</option>
                 ))}
               </select>
               <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
@@ -239,7 +239,7 @@ export default function FilterSheet({
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Sort By</span>
             <div className="flex gap-2">
               {[
-                { value: 'organization_name', label: 'Name A–Z' },
+                { value: 'organization_name', label: 'Name A to Z' },
                 { value: 'total_revenue',     label: 'Revenue' },
               ].map(opt => (
                 <button
