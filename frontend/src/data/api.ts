@@ -265,6 +265,22 @@ export async function submitWaitlist(
   });
 }
 
+// Anonymous org-findability feedback. Sends ONLY ein + reason. No donor
+// data. Fire-and-forget — a failed beacon must never block the donor.
+export async function submitLinkFeedback(
+  ein: string,
+  reason: 'not_found' | 'broken',
+): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/api/link-feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ein, reason }),
+      keepalive: true,
+    });
+  } catch { /* anonymous best-effort; never surface to the donor */ }
+}
+
 export async function getAdminWaitlist(
   adminKey: string,
   params?: { source?: string; status?: string },

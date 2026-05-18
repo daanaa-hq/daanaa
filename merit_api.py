@@ -110,6 +110,24 @@ def _init_waitlist_table():
 
 _init_waitlist_table()
 
+
+def _init_link_feedback_table():
+    # Anonymous org-findability feedback: EIN + reason + timestamp only.
+    # No donor identity, no PII, no link to any wallet. This records whether
+    # an organization was reachable, never that a donor intended to give.
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS link_feedback (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                EIN         TEXT NOT NULL,
+                reason      TEXT NOT NULL,
+                created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.commit()
+
+_init_link_feedback_table()
+
 # Prevent absurdly large payloads on any endpoint
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # 64 KB
 
@@ -651,6 +669,29 @@ def waitlist_submit():
     )
     db.commit()
     return jsonify({'ok': True, 'id': cur.lastrowid}), 201
+
+
+_VALID_LINK_REASONS = {'not_found', 'broken'}
+
+@app.route('/api/link-feedback', methods=['POST'])
+@limiter.limit("30 per minute")
+def link_feedback_submit():
+    # Anonymous. We deliberately accept and store ONLY ein + reason.
+    # No email, no IP, no donor data. Only actionable reasons are sent
+    # by the client; reject anything else so this stays a findability
+    # signal, not behavioral tracking.
+    data   = request.get_json(silent=True) or {}
+    ein    = ''.join(c for c in str(data.get('ein', '')) if c.isdigit())[:10]
+    reason = str(data.get('reason', '')).strip()[:20]
+    if not ein or reason not in _VALID_LINK_REASONS:
+        return jsonify({'error': 'ein and a valid reason required'}), 400
+    db = get_db()
+    db.execute(
+        "INSERT INTO link_feedback (EIN, reason) VALUES (?, ?)",
+        (ein, reason),
+    )
+    db.commit()
+    return ('', 204)
 
 
 @app.route('/api/admin/waitlist', methods=['GET'])
