@@ -128,6 +128,7 @@ export async function getOrganizations(params?: {
   min_percentile?: number;    // legacy — filter by ntee1_percentile >= value
   min_merit_tier?: string;    // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
   hidden_gem?: boolean;       // true = only small, healthy, mission-focused orgs
+  cause?: string;             // matches a cause tag (e.g. "food bank", "mental health")
 }): Promise<{
   organizations: ApiOrganization[];
   total: number;
@@ -149,6 +150,7 @@ export async function getOrganizations(params?: {
   if (params?.min_percentile != null) sp.set('min_percentile', String(params.min_percentile));
   if (params?.min_merit_tier) sp.set('min_merit_tier', params.min_merit_tier);
   if (params?.hidden_gem) sp.set('hidden_gem', '1');
+  if (params?.cause) sp.set('cause', params.cause);
   return fetchJson(`/api/organizations?${sp.toString()}`);
 }
 
