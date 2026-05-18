@@ -64,7 +64,9 @@ def extract_donate_url(html: str) -> tuple:
         if not m:
             continue
         if platform == 'paypal':
-            url = 'https://' + m.group(0).lstrip('htps:/').split('"')[0].split("'")[0]
+            # m.group(0) matches 'paypal.com/donate/...' — just prepend scheme
+            raw = m.group(0).split('&')[0].split('"')[0].split("'")[0]
+            url = 'https://' + raw if not raw.startswith('http') else raw
             return url, platform
         slug = m.group(1).rstrip('/"\'> \t\n')
         if platform == 'donorbox' and slug.lower() in _DONORBOX_EXCLUDE:
