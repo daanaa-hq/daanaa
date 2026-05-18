@@ -34,13 +34,13 @@ function Callout({ children }: { children: React.ReactNode }) {
 function TierRow({ score, label, description }: { score: string; label: string; description: string }) {
   // Financial scale is not a danger gradient. Larger scale gets a gentle green;
   // everything else is calm slate. A smaller organization is not "worse".
-  const color = label === 'Top of peer group' || label === 'Well above peer median'
+  const color = label === 'Among the largest like it' || label === 'Larger than most like it'
     ? '#5a9e6f'
     : '#8a8f98'
   return (
     <div className="flex items-start gap-4 py-3 border-b border-light-grey last:border-0">
-      <span className="shrink-0 w-16 font-body text-[13px] font-semibold" style={{ color }}>{score}</span>
-      <span className="shrink-0 w-44 font-body text-[14px] font-medium text-deep-navy">{label}</span>
+      <span className="shrink-0 w-20 font-body text-[13px] font-semibold" style={{ color }}>{score}</span>
+      <span className="shrink-0 w-48 font-body text-[14px] font-medium text-deep-navy">{label}</span>
       <span className="font-body text-[14px] text-cool-grey">{description}</span>
     </div>
   )
@@ -108,7 +108,7 @@ export default function HowItWorks() {
 
           <Section label="The financial picture" title="How the financial number works">
             <p>
-              This is the quiet layer beneath the lamp. It is a <strong className="text-deep-navy font-semibold">peer percentile</strong> — not a grade, not a verdict, not a measure of impact, quality, or worth. It answers one narrow question: <em>how does this organization compare in financial size to nonprofits doing similar work at a similar scale?</em> The lamp is the journey; this is one piece of evidence along it.
+              This number sits quietly behind the lamp. It is not a grade and it is not a judgment. It says nothing about the quality of the work, the people, or the good they do. All it does is compare one organization's financial size to other groups doing similar work at a similar scale. The lamp is the journey. This is just one fact along the way.
             </p>
             <p>
               We use two dimensions to define "similar":
@@ -134,14 +134,14 @@ export default function HowItWorks() {
             <div className="mt-6">
               <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the number means</p>
               <p className="font-body text-[13px] text-cool-grey mb-3 max-w-[640px]">
-                It places an organization by <em>financial size</em> within its peer group — nothing more. A smaller organization is not a worse one. This number says nothing about the work, the people, or the impact.
+                It only tells you how big an organization is financially next to others doing similar work. A smaller organization is not a worse one. This number says nothing about the work, the people, or the good they do.
               </p>
               <div className="bg-white rounded-xl border border-light-grey p-4">
-                <TierRow score="90–100" label="Top of peer group" description="Larger financial scale and reserves than roughly 90% of similar organizations." />
-                <TierRow score="75–89" label="Well above peer median" description="Financially larger than most similar organizations." />
-                <TierRow score="60–74" label="Above peer median" description="Financially larger than the typical similar organization." />
-                <TierRow score="40–59" label="Near peer median" description="A typical financial size for its peer group." />
-                <TierRow score="0–39" label="Below peer median" description="Smaller financial scale than most peers — common for newer or leaner organizations. Not a measure of the work." />
+                <TierRow score="90 to 100" label="Among the largest like it" description="A bigger budget and stronger savings than almost every group doing similar work." />
+                <TierRow score="75 to 89" label="Larger than most like it" description="Financially bigger than most groups doing similar work." />
+                <TierRow score="60 to 74" label="A bit larger than most" description="A little bigger than the typical group doing this kind of work." />
+                <TierRow score="40 to 59" label="About average in size" description="A normal size for the kind of work it does." />
+                <TierRow score="0 to 39" label="Smaller than most like it" description="One of the smaller groups doing this work. Often newer, or running lean. It says nothing about how good the work is." />
               </div>
             </div>
           </Section>

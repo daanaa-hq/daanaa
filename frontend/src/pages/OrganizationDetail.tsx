@@ -416,7 +416,7 @@ export default function OrganizationDetail() {
                 }`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   {apiOrg!.months_of_reserve < 0
-                    ? 'Negative net assets — this org owes more than it owns'
+                    ? 'Negative net assets. This group owes more than it owns.'
                     : `Only ${apiOrg!.months_of_reserve.toFixed(1)} months of savings if donations stopped`}
                 </div>
               )}

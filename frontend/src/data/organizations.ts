@@ -641,12 +641,12 @@ export function getScoreColor(score: number): string {
   return 'bg-cool-grey';
 }
 
-// Financial-scale position within the org's peer group (revenue 65% + reserves 35%).
-// Describes financial size relative to similar orgs — never impact, quality, or worth.
+// How big this organization is financially next to others doing similar work.
+// Plain human language. Never about impact, quality, or worth.
 export function getScoreLabel(score: number): string {
-  if (score >= 90) return 'Top of peer group';
-  if (score >= 75) return 'Well above peer median';
-  if (score >= 60) return 'Above peer median';
-  if (score >= 40) return 'Near peer median';
-  return 'Below peer median';
+  if (score >= 90) return 'Among the largest like it';
+  if (score >= 75) return 'Larger than most like it';
+  if (score >= 60) return 'A bit larger than most';
+  if (score >= 40) return 'About average in size';
+  return 'Smaller than most like it';
 }
