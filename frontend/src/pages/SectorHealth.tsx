@@ -176,9 +176,18 @@ export default function SectorHealth() {
                     return (
                       <tr
                         key={sector.code}
+                        role="link"
+                        tabIndex={0}
                         onClick={() => navigate(`/directory?category=${sector.code}`)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            navigate(`/directory?category=${sector.code}`)
+                          }
+                        }}
+                        aria-label={`See ${sector.name} organizations`}
                         title={`See ${sector.name} organizations`}
-                        className={`group border-b border-light-grey/60 hover:bg-soft-gold/4 transition-colors cursor-pointer ${
+                        className={`group border-b border-light-grey/60 hover:bg-soft-gold/4 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold focus-visible:ring-inset transition-colors cursor-pointer ${
                           stressed ? 'bg-amber-50/60' : elevated ? 'bg-amber-50/30' : ''
                         }`}
                       >
