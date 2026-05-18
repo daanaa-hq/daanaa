@@ -456,16 +456,20 @@ export default function OrganizationDetail() {
               </div>
 
               {(org as any).website && (
-                <a
-                  href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
-                  Visit website
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                </a>
+                <div className="mt-5">
+                  <a
+                    href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                  >
+                    Support this organization
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  </a>
+                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[320px]">
+                    Opens their own website, where you can give directly. MERIT never handles your money or tracks your gift.
+                  </p>
+                </div>
               )}
             </div>
 
