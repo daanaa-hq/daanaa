@@ -483,8 +483,27 @@ export default function OrganizationDetail() {
                 const donateUrl  = apiOrg?.donate_url;
                 const donatePlatform = apiOrg?.donate_platform;
                 const platformLabel: Record<string, string> = {
-                  donorbox: 'Donorbox', networkforgood: 'Network for Good',
-                  classy: 'Classy', mightycause: 'Mightycause', paypal: 'PayPal',
+                  donorbox:       'Donorbox',
+                  givelively:     'Give Lively',
+                  givebutter:     'Givebutter',
+                  zeffy:          'Zeffy',
+                  stripe:         'Stripe',
+                  square:         'Square',
+                  classy:         'Classy',
+                  mightycause:    'Mightycause',
+                  gofundme:       'GoFundMe',
+                  fundly:         'Fundly',
+                  causevox:       'CauseVox',
+                  every_org:      'Every.org',
+                  networkforgood: 'Network for Good',
+                  justgiving:     'JustGiving',
+                  idonate:        'iDonate',
+                  flipcause:      'Flipcause',
+                  qgiv:           'Qgiv',
+                  anedot:         'Anedot',
+                  paypal:         'PayPal',
+                  venmo:          'Venmo',
+                  cashapp:        'Cash App',
                 };
                 const label = donatePlatform ? (platformLabel[donatePlatform] ?? donatePlatform) : null;
 

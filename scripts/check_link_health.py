@@ -35,25 +35,95 @@ UA = ("Mozilla/5.0 (compatible; MeritLinkHealth/1.0; "
 TIMEOUT = 8
 READ_BYTES = 60_000  # enough to find donate embeds deeper in the page body
 
-# Lowercased substrings that strongly indicate a parked / for-sale / takeover
-# landing page rather than the nonprofit's real site. Not exhaustive — cron
-# re-runs and the EIN fallback make a missed case degrade safely, not danger.
-# Known donation platforms. Patterns match campaign URLs/embeds in page HTML.
-# Fails gracefully — a miss just means no donate_url; the EIN fallback covers it.
+# Known donation platforms detected from org website HTML (links + iframes).
+# Fails gracefully — a miss means no donate_url; EIN fallback covers every org.
+# Ordered roughly by US nonprofit prevalence (first match wins).
 _DONATE_PLATFORMS = [
-    # (platform_key, url_prefix, slug_regex)
-    ('donorbox',       'https://donorbox.org/',         re.compile(r'donorbox\.org/(?:embed/)?([a-z0-9][a-z0-9_-]{1,80})', re.I)),
-    ('networkforgood', 'https://www.networkforgood.org/donate/', re.compile(r'networkforgood\.org/(?:donate/to/)?([a-z0-9][a-z0-9_%\-]{1,80})', re.I)),
-    ('classy',         'https://www.classy.org/give/',  re.compile(r'classy\.org/give/([a-z0-9][a-z0-9_/-]{1,80})', re.I)),
-    ('mightycause',    'https://mightycause.com/organization/', re.compile(r'mightycause\.com/organization/([a-z0-9][a-z0-9_-]{1,80})', re.I)),
-    ('paypal',         '',                              re.compile(r'(?:paypal\.com/donate|paypal\.com/fundraiser/hub)[^\s"\'<>]{0,120}', re.I)),
+    # (platform_key, canonical_prefix, slug_regex)
+
+    # --- Embedded / widget form platforms ---
+    ('donorbox',       'https://donorbox.org/',
+     re.compile(r'donorbox\.org/(?:embed/)?([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    ('givelively',     'https://secure.givelively.org/donate/',
+     re.compile(r'givelively\.org/donate/([a-z0-9][a-z0-9_/-]{2,100})', re.I)),
+
+    ('givebutter',     'https://givebutter.com/',
+     re.compile(r'givebutter\.com/(?:c/)?([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    ('zeffy',          'https://www.zeffy.com/donation-form/',
+     re.compile(r'zeffy\.com/(?:[a-z-]+/)?(?:donation-form|embed/donation-form)/([a-z0-9-]{8,50})', re.I)),
+
+    ('stripe',         'https://donate.stripe.com/',
+     re.compile(r'donate\.stripe\.com/([a-zA-Z0-9]{6,40})', re.I)),
+
+    ('square',         'https://checkout.square.site/pay/',
+     re.compile(r'(?:checkout\.square\.site/(?:pay/)?|square\.link/)([a-zA-Z0-9_-]{8,60})', re.I)),
+
+    # --- Fundraising / campaign platforms ---
+    ('classy',         'https://www.classy.org/give/',
+     re.compile(r'classy\.org/give/([a-z0-9][a-z0-9_/-]{2,80})', re.I)),
+
+    ('mightycause',    'https://mightycause.com/organization/',
+     re.compile(r'mightycause\.com/organization/([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    ('gofundme',       'https://www.gofundme.com/c/',
+     re.compile(r'gofundme\.com/c/([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    ('fundly',         'https://fundly.com/',
+     re.compile(r'fundly\.com/([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    ('causevox',       'https://causevox.com/',
+     re.compile(r'causevox\.com/[a-z0-9_-]+/([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    # --- Discovery / federated platforms ---
+    ('every_org',      'https://www.every.org/',
+     re.compile(r'every\.org/([a-z0-9][a-z0-9_-]{2,80})(?:/f/[a-z0-9_-]+)?', re.I)),
+
+    ('networkforgood', 'https://www.networkforgood.org/donate/',
+     re.compile(r'networkforgood\.org/(?:donate/to/)?([a-z0-9][a-z0-9_%\-]{2,80})', re.I)),
+
+    ('justgiving',     'https://www.justgiving.com/',
+     re.compile(r'justgiving\.com/(?:donate/to/)?([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    ('idonate',        'https://myidonate.com/',
+     re.compile(r'myidonate\.com/([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    ('flipcause',      'https://www.flipcause.com/secure/cause_pdetails/',
+     re.compile(r'flipcause\.com/secure/cause_pdetails/(\d{4,8})', re.I)),
+
+    ('qgiv',           'https://secure.qgiv.com/for/',
+     re.compile(r'qgiv\.com/for/([a-z0-9][a-z0-9_-]{2,80})', re.I)),
+
+    ('anedot',         'https://secure.anedot.com/',
+     re.compile(r'anedot\.com/([a-z0-9][a-z0-9_/-]{2,80})', re.I)),
+
+    # --- Payment providers (no campaign slug — full URL captured) ---
+    ('paypal',         '',
+     re.compile(r'(?:paypal\.com/donate|paypal\.com/fundraiser/hub)[^\s"\'<>]{0,120}', re.I)),
+
+    ('venmo',          '',
+     re.compile(r'venmo\.com/u/([a-z0-9][a-z0-9_-]{2,40})', re.I)),
+
+    ('cashapp',        '',
+     re.compile(r'cash\.app/\$([a-z0-9][a-z0-9_-]{2,40})', re.I)),
 ]
-# Donorbox nav/utility paths that are NOT campaigns — exclude these from detection.
-_DONORBOX_EXCLUDE = {
-    'help', 'pricing', 'about', 'login', 'signup', 'features', 'blog',
-    'nonprofit', 'nonprofits', 'terms', 'privacy', 'contact', 'demo',
-    'faq', 'api', 'documentation', 'partners', 'careers', 'press',
+
+# Per-platform nav slugs that are NOT campaigns.
+_PLATFORM_EXCLUDE: dict = {
+    'donorbox':  {'help', 'pricing', 'about', 'login', 'signup', 'features', 'blog',
+                  'nonprofit', 'nonprofits', 'terms', 'privacy', 'contact', 'demo',
+                  'faq', 'api', 'documentation', 'partners', 'careers', 'press'},
+    'givebutter': {'pricing', 'features', 'about', 'blog', 'login', 'signup',
+                   'contact', 'help', 'terms', 'privacy'},
+    'every_org':  {'about', 'help', 'nonprofits', 'blog', 'login', 'signup',
+                   'terms', 'privacy', 'contact', 'give', 'search'},
+    'gofundme':   {'about', 'help', 'blog', 'login', 'signup', 'discover',
+                   'fundraising-tips', 'how-it-works', 'contact', 'terms', 'privacy'},
 }
+
+# Full-URL platforms where m.group(0) IS the canonical path (no slug extraction).
+_FULL_URL_PLATFORMS = {'paypal', 'venmo', 'cashapp'}
 
 
 def extract_donate_url(html: str) -> tuple:
@@ -63,13 +133,13 @@ def extract_donate_url(html: str) -> tuple:
         m = pattern.search(html)
         if not m:
             continue
-        if platform == 'paypal':
-            # m.group(0) matches 'paypal.com/donate/...' — just prepend scheme
+        if platform in _FULL_URL_PLATFORMS:
             raw = m.group(0).split('&')[0].split('"')[0].split("'")[0]
             url = 'https://' + raw if not raw.startswith('http') else raw
             return url, platform
         slug = m.group(1).rstrip('/"\'> \t\n')
-        if platform == 'donorbox' and slug.lower() in _DONORBOX_EXCLUDE:
+        exclude = _PLATFORM_EXCLUDE.get(platform, set())
+        if slug.lower() in exclude:
             continue
         url = prefix + slug
         return url, platform
