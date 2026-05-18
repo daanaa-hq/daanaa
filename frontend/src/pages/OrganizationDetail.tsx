@@ -486,10 +486,41 @@ export default function OrganizationDetail() {
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                   </a>
                   <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[340px]">
-                    We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. To give: use the EIN <span className="text-muted-cream/80 font-medium">{org.ein}</span> with your bank, donor-advised fund, or a check. MERIT never handles your money.
+                    We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. To give: use the EIN <span className="text-muted-cream/80 font-medium">{org.ein}</span> with your bank or donor-advised fund. MERIT never handles your money.
                   </p>
+                  {apiOrg!.address && (
+                    <p className="mt-2 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[340px]">
+                      Or mail a check to:{' '}
+                      <span className="text-muted-cream/80">
+                        {apiOrg!.address}{apiOrg!.CITY ? `, ${apiOrg!.CITY}` : ''}{apiOrg!.STATE ? `, ${apiOrg!.STATE}` : ''}{apiOrg!.zipcode ? ` ${apiOrg!.zipcode}` : ''}
+                      </span>
+                    </p>
+                  )}
                 </div>
               )}
+
+              {/* Loop-closer: connect the give moment to a private record.
+                  Appears under whichever CTA rendered. */}
+              <div className="mt-4">
+                {inList ? (
+                  <span className="inline-flex items-center gap-2 font-body text-[13px] text-emerald-400">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    In your Giving Wallet
+                    <Link to="/wallet" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">View</Link>
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleGiveToggle}
+                    className="inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Keep a private record of this gift
+                  </button>
+                )}
+                <p className="mt-1.5 font-body text-[11px] text-muted-cream/40 leading-[1.5] max-w-[340px]">
+                  Saved on your device only, for your tax records. Never shared, never tracked.
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col items-center gap-3 lg:pt-4">
