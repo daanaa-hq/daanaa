@@ -44,20 +44,22 @@ interface FilterSheetProps {
   sortBy: string
   revenueFilter: string
   scoreTier: string
+  hiddenGem?: boolean
   onCategoryChange: (id: string) => void
   onStateChange: (state: string) => void
   onSortChange: (sort: string) => void
   onRevenueChange: (id: string) => void
   onScoreTierChange: (id: string) => void
+  onHiddenGemChange?: (v: boolean) => void
   onClearAll: () => void
   resultCount: number
 }
 
 export default function FilterSheet({
   open, onClose,
-  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier,
+  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier, hiddenGem = false,
   onCategoryChange, onStateChange, onSortChange, onRevenueChange, onScoreTierChange,
-  onClearAll, resultCount,
+  onHiddenGemChange, onClearAll, resultCount,
 }: FilterSheetProps) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -71,6 +73,7 @@ export default function FilterSheet({
     !!stateFilter,
     !!revenueFilter,
     !!scoreTier,
+    hiddenGem,
   ].filter(Boolean).length
 
   return (
@@ -102,6 +105,30 @@ export default function FilterSheet({
 
         {/* Scrollable body */}
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-6">
+
+          {/* Hidden gems — discovery toggle */}
+          {onHiddenGemChange && (
+            <button
+              onClick={() => onHiddenGemChange(!hiddenGem)}
+              className="w-full flex items-start gap-3 px-4 py-3.5 rounded-xl border text-left transition-all"
+              style={{
+                backgroundColor: hiddenGem ? 'rgba(201,169,110,0.12)' : 'rgba(201,169,110,0.04)',
+                borderColor: hiddenGem ? '#C9A96E' : 'rgba(201,169,110,0.25)',
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={hiddenGem ? '#C9A96E' : 'none'} stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              <span>
+                <span className="block font-body text-[14px] font-semibold" style={{ color: hiddenGem ? '#A8853E' : '#0A1628' }}>
+                  Hidden gems
+                </span>
+                <span className="block font-body text-[12px] text-cool-grey/70 leading-[1.4] mt-0.5">
+                  Small orgs doing exceptional work quietly
+                </span>
+              </span>
+            </button>
+          )}
 
           {/* Category */}
           <div>

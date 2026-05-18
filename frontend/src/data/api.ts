@@ -56,6 +56,7 @@ export interface ApiOrganization {
   program_expense_pct: number | null; // program revenue as % of total expenses
   nccs_year: number | null;
   cause_tags?: string[] | null;           // LLM-extracted cause tags (3-5 per org)
+  is_hidden_gem?: number | null;          // 1 = small org, healthy reserves, high program spend
   // Returned by GET /api/organizations/:ein only (SELECT *)
   mission?: string | null;
   website?: string | null;
@@ -126,6 +127,7 @@ export async function getOrganizations(params?: {
   max_revenue?: number;
   min_percentile?: number;    // legacy — filter by ntee1_percentile >= value
   min_merit_tier?: string;    // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
+  hidden_gem?: boolean;       // true = only small, healthy, mission-focused orgs
 }): Promise<{
   organizations: ApiOrganization[];
   total: number;
@@ -146,6 +148,7 @@ export async function getOrganizations(params?: {
   if (params?.max_revenue != null) sp.set('max_revenue', String(params.max_revenue));
   if (params?.min_percentile != null) sp.set('min_percentile', String(params.min_percentile));
   if (params?.min_merit_tier) sp.set('min_merit_tier', params.min_merit_tier);
+  if (params?.hidden_gem) sp.set('hidden_gem', '1');
   return fetchJson(`/api/organizations?${sp.toString()}`);
 }
 

@@ -139,6 +139,7 @@ def list_organizations():
     max_rev = request.args.get('max_revenue', type=float)
     min_pct = request.args.get('min_percentile', type=float)
     min_merit_tier = request.args.get('min_merit_tier', '').strip()
+    hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     sort_by = request.args.get('sort', 'total_revenue')
     order = request.args.get('order', 'desc')
 
@@ -173,6 +174,8 @@ def list_organizations():
     if min_pct is not None:
         where_clauses.append("ntee1_percentile >= ?")
         params.append(min_pct)
+    if hidden_gem:
+        where_clauses.append("is_hidden_gem = 1")
 
     _TIER_HIERARCHY = ['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark']
     if min_merit_tier and min_merit_tier in _TIER_HIERARCHY:
@@ -199,7 +202,7 @@ def list_organizations():
                revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
                merit_tier, merit_score, merit_band,
                months_of_reserve, net_assets, total_expenses,
-               employee_count, ruling_date, zipcode,
+               employee_count, ruling_date, zipcode, is_hidden_gem,
                (mission IS NOT NULL AND mission != '') as has_mission,
                (website IS NOT NULL AND website != '') as has_website
         FROM registry_enriched

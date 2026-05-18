@@ -121,12 +121,14 @@ function FilterRail({
   sortBy,
   revenueFilter,
   scoreTier,
+  hiddenGem,
   onCategoryChange,
   onSubChange,
   onStateChange,
   onSortChange,
   onRevenueChange,
   onScoreTierChange,
+  onHiddenGemChange,
   onClearAll,
   resultCount,
 }: {
@@ -136,16 +138,18 @@ function FilterRail({
   sortBy: string
   revenueFilter: RevenueId
   scoreTier: ScoreTierId
+  hiddenGem: boolean
   onCategoryChange: (id: string) => void
   onSubChange: (code: string) => void
   onStateChange: (s: string) => void
   onSortChange: (s: string) => void
   onRevenueChange: (id: RevenueId) => void
   onScoreTierChange: (id: ScoreTierId) => void
+  onHiddenGemChange: (v: boolean) => void
   onClearAll: () => void
   resultCount: number
 }) {
-  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier
+  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem
   const subcats = NTEE_SUBCATEGORIES[activeCategory] ?? []
 
   return (
@@ -159,6 +163,28 @@ function FilterRail({
             </button>
           )}
         </div>
+
+        {/* Hidden gems — discovery toggle */}
+        <button
+          onClick={() => onHiddenGemChange(!hiddenGem)}
+          className="w-full flex items-start gap-2.5 px-3 py-3 rounded-xl mb-4 border transition-all duration-150 text-left"
+          style={{
+            backgroundColor: hiddenGem ? 'rgba(201,169,110,0.12)' : 'rgba(201,169,110,0.04)',
+            borderColor: hiddenGem ? '#C9A96E' : 'rgba(201,169,110,0.25)',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={hiddenGem ? '#C9A96E' : 'none'} stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          <span>
+            <span className="block font-body text-[13px] font-semibold" style={{ color: hiddenGem ? '#A8853E' : '#6B7280' }}>
+              Hidden gems
+            </span>
+            <span className="block font-body text-[11px] text-cool-grey/70 leading-[1.4] mt-0.5">
+              Small orgs doing exceptional work quietly
+            </span>
+          </span>
+        </button>
 
         {/* Category */}
         <div className="mb-4">
@@ -352,6 +378,7 @@ export default function Directory() {
   const [scoreTier, setScoreTier] = useState<ScoreTierId>(
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
+  const [hiddenGem, setHiddenGem] = useState(searchParams.get('hidden_gem') === '1')
   const [currentPage, setCurrentPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -395,8 +422,9 @@ export default function Directory() {
       min_revenue: revPreset?.min,
       max_revenue: revPreset?.max,
       min_merit_tier: scoreTier || undefined,
+      hidden_gem: hiddenGem || undefined,
     }),
-    [activeFilter, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, itemsPerPage]
+    [activeFilter, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, itemsPerPage]
   )
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -453,6 +481,7 @@ export default function Directory() {
     setSortBy('organization_name')
     setRevenueFilter('')
     setScoreTier('')
+    setHiddenGem(false)
     setCurrentPage(1)
     searchParams.delete('category')
     searchParams.delete('sub')
@@ -643,11 +672,13 @@ export default function Directory() {
             sortBy={sortBy}
             revenueFilter={revenueFilter}
             scoreTier={scoreTier}
+            hiddenGem={hiddenGem}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
             onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
             onRevenueChange={(id) => handleRevenueChange(id as RevenueId)}
             onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
+            onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
             onClearAll={handleClearAll}
             resultCount={total}
           />
@@ -675,12 +706,14 @@ export default function Directory() {
               sortBy={sortBy}
               revenueFilter={revenueFilter}
               scoreTier={scoreTier}
+              hiddenGem={hiddenGem}
               onCategoryChange={handleFilterChange}
               onSubChange={handleSubChange}
               onStateChange={handleStateChange}
               onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
               onRevenueChange={handleRevenueChange}
               onScoreTierChange={handleScoreTierChange}
+              onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
               onClearAll={handleClearAll}
               resultCount={total}
             />

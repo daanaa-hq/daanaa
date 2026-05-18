@@ -33,6 +33,19 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   const isScored = score != null && (org.data_source === 'propublica' || org.data_source === 'irs_soi')
   const sector = getSectorName(org.NTEE1)
 
+  // 0. Hidden gem — small, financially healthy, mission-focused, under the radar.
+  //    Surfaced first when present: this is the discovery moment.
+  if (org.is_hidden_gem === 1) {
+    badges.push({
+      id: 'hidden_gem',
+      label: 'Hidden gem',
+      detail: 'A small organization doing exceptional work quietly — healthy reserves, most of every dollar reaches the mission, and far below most donors’ radar. The kind of org you won’t find on a top-charity list.',
+      source: 'MERIT · revenue, reserves & program-spend analysis',
+      color: 'gold',
+      icon: 'star',
+    })
+  }
+
   // 1. Tax-deductible — every org in our DB is an active 501(c)(3)
   badges.push({
     id: 'tax_deductible',
