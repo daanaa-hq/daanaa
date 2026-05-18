@@ -474,45 +474,99 @@ export default function OrganizationDetail() {
                 ))}
               </div>
 
-              {/* Giving hand-off. The org's own site only when the link is
-                  verified live and on-domain; otherwise the unspoofable
-                  ProPublica/IRS record by EIN, which is always correct and
-                  closes the loop for every org, not just those with a site. */}
-              {(org as any).website && apiOrg!.website_status === 'ok' ? (
-                <div className="mt-5">
-                  <a
-                    href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleGiveClick}
-                    className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
-                  >
-                    Support this organization
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                  </a>
-                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                    Opens their own website. Look for &ldquo;Donate&rdquo; or &ldquo;Give&rdquo;, usually in the top menu. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
-                  </p>
-                  {certainPath}
-                </div>
-              ) : (
-                <div className="mt-5">
-                  <a
-                    href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleGiveClick}
-                    className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
-                  >
-                    View the verified public record
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                  </a>
-                  <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                    We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
-                  </p>
-                  {certainPath}
-                </div>
-              )}
+              {/* Giving hand-off. Priority:
+                  1. donate_url — a direct giving page found on the org's site (Donorbox, etc.)
+                     No hunting needed; skips straight to the form.
+                  2. website_status=ok — org's own homepage, verified live and on-domain.
+                  3. EIN fallback — unspoofable ProPublica/IRS record, works for every org. */}
+              {(() => {
+                const donateUrl  = apiOrg?.donate_url;
+                const donatePlatform = apiOrg?.donate_platform;
+                const platformLabel: Record<string, string> = {
+                  donorbox: 'Donorbox', networkforgood: 'Network for Good',
+                  classy: 'Classy', mightycause: 'Mightycause', paypal: 'PayPal',
+                };
+                const label = donatePlatform ? (platformLabel[donatePlatform] ?? donatePlatform) : null;
+
+                if (donateUrl) {
+                  return (
+                    <div className="mt-5">
+                      <a
+                        href={donateUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleGiveClick}
+                        className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                      >
+                        Give directly
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                      </a>
+                      {label && (
+                        <span className="ml-3 font-body text-[11px] text-muted-cream/50 align-middle">
+                          via {label}
+                        </span>
+                      )}
+                      <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
+                        Takes you straight to their giving page. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
+                      </p>
+                      {(org as any).website && apiOrg!.website_status === 'ok' && (
+                        <p className="mt-1.5 font-body text-[12px] text-muted-cream/40">
+                          Or{' '}
+                          <a
+                            href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline underline-offset-2 hover:text-muted-cream/70 transition-colors"
+                          >
+                            visit their website
+                          </a>
+                        </p>
+                      )}
+                      {certainPath}
+                    </div>
+                  );
+                }
+
+                if ((org as any).website && apiOrg!.website_status === 'ok') {
+                  return (
+                    <div className="mt-5">
+                      <a
+                        href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleGiveClick}
+                        className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                      >
+                        Support this organization
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                      </a>
+                      <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
+                        Opens their own website. Look for &ldquo;Donate&rdquo; or &ldquo;Give&rdquo;, usually in the top menu. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
+                      </p>
+                      {certainPath}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="mt-5">
+                    <a
+                      href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleGiveClick}
+                      className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                    >
+                      View the verified public record
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                    </a>
+                    <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
+                      We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
+                    </p>
+                    {certainPath}
+                  </div>
+                );
+              })()}
 
               {/* Loop-closer: connect the give moment to a private record.
                   Appears under whichever CTA rendered. */}

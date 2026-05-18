@@ -22,7 +22,7 @@ Usage:
 Re-runnable and idempotent. Intended to run weekly via cron.
 """
 
-import sqlite3, argparse, time, datetime
+import re, sqlite3, argparse, time, datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
@@ -33,11 +33,47 @@ DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 UA = ("Mozilla/5.0 (compatible; MeritLinkHealth/1.0; "
       "+https://meritgiving.org/about) link-verification")
 TIMEOUT = 8
-READ_BYTES = 30_000  # only the head of the body is needed for parking signatures
+READ_BYTES = 60_000  # enough to find donate embeds deeper in the page body
 
 # Lowercased substrings that strongly indicate a parked / for-sale / takeover
 # landing page rather than the nonprofit's real site. Not exhaustive — cron
 # re-runs and the EIN fallback make a missed case degrade safely, not danger.
+# Known donation platforms. Patterns match campaign URLs/embeds in page HTML.
+# Fails gracefully — a miss just means no donate_url; the EIN fallback covers it.
+_DONATE_PLATFORMS = [
+    # (platform_key, url_prefix, slug_regex)
+    ('donorbox',       'https://donorbox.org/',         re.compile(r'donorbox\.org/(?:embed/)?([a-z0-9][a-z0-9_-]{1,80})', re.I)),
+    ('networkforgood', 'https://www.networkforgood.org/donate/', re.compile(r'networkforgood\.org/(?:donate/to/)?([a-z0-9][a-z0-9_%\-]{1,80})', re.I)),
+    ('classy',         'https://www.classy.org/give/',  re.compile(r'classy\.org/give/([a-z0-9][a-z0-9_/-]{1,80})', re.I)),
+    ('mightycause',    'https://mightycause.com/organization/', re.compile(r'mightycause\.com/organization/([a-z0-9][a-z0-9_-]{1,80})', re.I)),
+    ('paypal',         '',                              re.compile(r'(?:paypal\.com/donate|paypal\.com/fundraiser/hub)[^\s"\'<>]{0,120}', re.I)),
+]
+# Donorbox nav/utility paths that are NOT campaigns — exclude these from detection.
+_DONORBOX_EXCLUDE = {
+    'help', 'pricing', 'about', 'login', 'signup', 'features', 'blog',
+    'nonprofit', 'nonprofits', 'terms', 'privacy', 'contact', 'demo',
+    'faq', 'api', 'documentation', 'partners', 'careers', 'press',
+}
+
+
+def extract_donate_url(html: str) -> tuple:
+    """Scan page HTML for a known donation-platform link or embed.
+    Returns (donate_url, platform) or (None, None)."""
+    for platform, prefix, pattern in _DONATE_PLATFORMS:
+        m = pattern.search(html)
+        if not m:
+            continue
+        if platform == 'paypal':
+            url = 'https://' + m.group(0).lstrip('htps:/').split('"')[0].split("'")[0]
+            return url, platform
+        slug = m.group(1).rstrip('/"\'> \t\n')
+        if platform == 'donorbox' and slug.lower() in _DONORBOX_EXCLUDE:
+            continue
+        url = prefix + slug
+        return url, platform
+    return None, None
+
+
 PARKING_SIGNATURES = (
     "this domain is for sale", "buy this domain", "domain for sale",
     "the domain may be for sale", "this domain may be for sale",
@@ -58,10 +94,11 @@ def registrable(host: str) -> str:
 
 
 def classify(url: str):
-    """Return (status, final_domain). status in ok|dead|offsite|parked."""
+    """Return (status, final_domain, donate_url, donate_platform).
+    status in ok|dead|offsite|parked."""
     raw = url.strip()
     if not raw:
-        return "dead", ""
+        return "dead", "", None, None
     if not raw.startswith(("http://", "https://")):
         raw = "https://" + raw
     orig_dom = registrable(urlparse(raw).hostname or "")
@@ -73,11 +110,11 @@ def classify(url: str):
         )
         final_dom = registrable(urlparse(resp.url).hostname or "")
         if resp.status_code >= 400:
-            return "dead", final_dom
+            return "dead", final_dom, None, None
         if final_dom and orig_dom and final_dom != orig_dom:
             # Redirected off the original domain. Could be a legit rebrand,
             # but for donor trust we fail closed — the EIN record is shown.
-            return "offsite", final_dom
+            return "offsite", final_dom, None, None
         body = b""
         for chunk in resp.iter_content(8192):
             body += chunk
@@ -85,15 +122,17 @@ def classify(url: str):
                 break
         text = body[:READ_BYTES].decode("utf-8", "ignore").lower()
         if any(sig in text for sig in PARKING_SIGNATURES):
-            return "parked", final_dom
-        return "ok", final_dom
+            return "parked", final_dom, None, None
+        donate_url, donate_platform = extract_donate_url(text)
+        return "ok", final_dom, donate_url, donate_platform
     except requests.exceptions.RequestException:
-        return "dead", ""
+        return "dead", "", None, None
 
 
 def ensure_columns(db: sqlite3.Connection):
     cols = {r[1] for r in db.execute("PRAGMA table_info(registry_enriched)")}
-    for col in ("website_status", "website_checked_at", "website_final_domain"):
+    for col in ("website_status", "website_checked_at", "website_final_domain",
+                "donate_url", "donate_platform"):
         if col not in cols:
             db.execute(f"ALTER TABLE registry_enriched ADD COLUMN {col} TEXT")
     db.commit()
@@ -117,21 +156,26 @@ def run(limit=None, workers=24):
     updates = []
     t0 = time.time()
 
+    donate_found = 0
+
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futs = {pool.submit(classify, w): ein for ein, w in rows}
         for fut in as_completed(futs):
             ein = futs[fut]
             try:
-                status, final_dom = fut.result()
+                status, final_dom, donate_url, donate_platform = fut.result()
             except Exception:
-                status, final_dom = "dead", ""
+                status, final_dom, donate_url, donate_platform = "dead", "", None, None
             counts[status] += 1
-            updates.append((status, now, final_dom, ein))
+            if donate_url:
+                donate_found += 1
+            updates.append((status, now, final_dom, donate_url, donate_platform, ein))
             done += 1
             if len(updates) >= 500:
                 db.executemany(
                     "UPDATE registry_enriched SET website_status=?, "
-                    "website_checked_at=?, website_final_domain=? WHERE EIN=?",
+                    "website_checked_at=?, website_final_domain=?, "
+                    "donate_url=?, donate_platform=? WHERE EIN=?",
                     updates,
                 )
                 db.commit()
@@ -142,12 +186,14 @@ def run(limit=None, workers=24):
                 print(f"  [{done/total*100:5.1f}%] {done:,}/{total:,}  "
                       f"ok={counts['ok']:,} dead={counts['dead']:,} "
                       f"offsite={counts['offsite']:,} parked={counts['parked']:,}  "
+                      f"donate_urls={donate_found:,}  "
                       f"{rate:.0f}/s  ETA {eta:.1f}m", end="\r", flush=True)
 
     if updates:
         db.executemany(
             "UPDATE registry_enriched SET website_status=?, "
-            "website_checked_at=?, website_final_domain=? WHERE EIN=?",
+            "website_checked_at=?, website_final_domain=?, "
+            "donate_url=?, donate_platform=? WHERE EIN=?",
             updates,
         )
         db.commit()
@@ -156,6 +202,7 @@ def run(limit=None, workers=24):
     print(f"\n\nDone in {elapsed:.1f} min")
     for k, v in counts.items():
         print(f"  {k:8} {v:,}  ({v/total*100:.1f}%)" if total else f"  {k}: 0")
+    print(f"\n  donate_urls found: {donate_found:,}")
     print(f"\nOnly website_status='ok' ({counts['ok']:,}) will show the "
           f"'Support this organization' CTA. The rest fall back to the "
           f"unspoofable ProPublica/IRS record by EIN.")

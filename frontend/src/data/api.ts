@@ -57,6 +57,8 @@ export interface ApiOrganization {
   nccs_year: number | null;
   cause_tags?: string[] | null;           // LLM-extracted cause tags (3-5 per org)
   is_hidden_gem?: number | null;          // 1 = small org, healthy reserves, high program spend
+  donate_url?: string | null;             // direct giving page found on org site (Donorbox, etc.)
+  donate_platform?: string | null;        // 'donorbox' | 'networkforgood' | 'classy' | 'mightycause' | 'paypal'
   // Returned by GET /api/organizations/:ein only (SELECT *)
   mission?: string | null;
   website?: string | null;
