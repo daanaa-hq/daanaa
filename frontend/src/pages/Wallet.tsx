@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useWallet, SPLIT_THRESHOLD } from '../hooks/useWallet'
-import { formatCurrency } from '../data/organizations'
+import { formatCurrency, formatEIN } from '../data/organizations'
 import { getOrganizations } from '../data/api'
 import type { ApiOrganization } from '../data/api'
 import type { DonationRecord } from '../hooks/useWallet'
@@ -127,7 +127,7 @@ function DonationForm({ onSubmit, onCancel }: {
             />
             {ein && (
               <span className="absolute right-3 top-1/2 -translate-y-1/2 font-body text-[11px] text-cool-grey/50 select-none pointer-events-none">
-                EIN {ein}
+                EIN {formatEIN(ein)}
               </span>
             )}
           </div>

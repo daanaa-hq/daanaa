@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useGivingList } from '../hooks/useGivingList'
 import { useWallet } from '../hooks/useWallet'
-import { formatCurrency } from '../data/organizations'
+import { formatCurrency, formatEIN } from '../data/organizations'
 import { SPLIT_THRESHOLD, generateReferenceCode } from '../hooks/useWallet'
 import type { DonationRecord } from '../hooks/useWallet'
 import LampMark from '../components/LampMark'
@@ -149,7 +149,7 @@ export default function GivingReview() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                    <span className="font-body text-[11px] text-cool-grey/60">IRS verified · EIN {item.ein}</span>
+                    <span className="font-body text-[11px] text-cool-grey/60">IRS verified · EIN {formatEIN(item.ein)}</span>
                   </div>
 
                   {/* Letter badge */}
