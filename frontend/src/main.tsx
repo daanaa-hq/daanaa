@@ -11,11 +11,13 @@ import './index.css'
 import App from './App.tsx'
 import { GivingListProvider } from './contexts/GivingListContext'
 import GiveConfirmPrompt from './components/GiveConfirmPrompt'
+import ScrollToTop from './components/ScrollToTop'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <GivingListProvider>
+        <ScrollToTop />
         <App />
         <GiveConfirmPrompt />
       </GivingListProvider>
