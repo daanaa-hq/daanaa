@@ -16,6 +16,7 @@ export default function GiveConfirmPrompt() {
   const [show, setShow] = useState(false)
   const [showReasons, setShowReasons] = useState(false)
   const [savedConfirm, setSavedConfirm] = useState(false)
+  const [gaveConfirm, setGaveConfirm] = useState(false)
 
   const maybeShow = useCallback((minAgeMs: number) => {
     if (!pendingGive) { setShow(false); return }
@@ -46,7 +47,11 @@ export default function GiveConfirmPrompt() {
 
   if (!show || !pendingGive) return null
 
-  const yes = () => { confirmGiven(); setShow(false) }
+  const yes = () => {
+    confirmGiven()
+    setGaveConfirm(true)
+    setTimeout(() => { setShow(false); setGaveConfirm(false) }, 1800)
+  }
   const notYet = () => setShowReasons(true)
   const dismiss = () => { dismissPending(); setShow(false); setShowReasons(false); setSavedConfirm(false) }
 
@@ -78,7 +83,14 @@ export default function GiveConfirmPrompt() {
                  rounded-2xl border border-soft-gold/30 bg-deep-navy shadow-2xl
                  px-6 py-5 animate-[fadeIn_0.25s_ease-out]"
     >
-      {savedConfirm ? (
+      {gaveConfirm ? (
+        <div className="flex items-center gap-3">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          <p className="font-display italic text-warm-cream text-[18px] leading-tight">
+            Recorded in your Giving Wallet. Thank you.
+          </p>
+        </div>
+      ) : savedConfirm ? (
         <div className="flex items-center gap-3">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
           <p className="font-display italic text-warm-cream text-[18px] leading-tight">
