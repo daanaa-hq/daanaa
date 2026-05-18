@@ -25,11 +25,14 @@ const SORT_OPTIONS = [
   { id: 'total_revenue', label: 'Revenue' },
 ]
 
+// Small first. This is the mission: the smallest groups are the hardest to find.
 const REVENUE_PRESETS = [
-  { id: 'small', label: 'Under $1M',     min: undefined,    max: 999_999 },
-  { id: 'mid',   label: '$1M – $10M',    min: 1_000_000,    max: 9_999_999 },
-  { id: 'large', label: '$10M – $100M',  min: 10_000_000,   max: 99_999_999 },
-  { id: 'major', label: 'Over $100M',    min: 100_000_000,  max: undefined },
+  { id: 'tiny',        label: 'Tiny (under $50K)',          min: undefined,   max: 49_999 },
+  { id: 'grassroots',  label: 'Grassroots ($50K to $250K)', min: 50_000,      max: 249_999 },
+  { id: 'community',   label: 'Community ($250K to $1M)',   min: 250_000,     max: 999_999 },
+  { id: 'established', label: 'Established ($1M to $10M)',   min: 1_000_000,   max: 9_999_999 },
+  { id: 'large',       label: 'Large ($10M to $100M)',      min: 10_000_000,  max: 99_999_999 },
+  { id: 'national',    label: 'National (over $100M)',      min: 100_000_000, max: undefined },
 ] as const
 
 const SCORE_TIERS: { id: TierName; label: string }[] = [
@@ -122,6 +125,7 @@ function FilterRail({
   revenueFilter,
   scoreTier,
   hiddenGem,
+  cause,
   onCategoryChange,
   onSubChange,
   onStateChange,
@@ -129,6 +133,7 @@ function FilterRail({
   onRevenueChange,
   onScoreTierChange,
   onHiddenGemChange,
+  onCauseChange,
   onClearAll,
   resultCount,
 }: {
@@ -139,6 +144,7 @@ function FilterRail({
   revenueFilter: RevenueId
   scoreTier: ScoreTierId
   hiddenGem: boolean
+  cause: string
   onCategoryChange: (id: string) => void
   onSubChange: (code: string) => void
   onStateChange: (s: string) => void
@@ -146,10 +152,11 @@ function FilterRail({
   onRevenueChange: (id: RevenueId) => void
   onScoreTierChange: (id: ScoreTierId) => void
   onHiddenGemChange: (v: boolean) => void
+  onCauseChange: (v: string) => void
   onClearAll: () => void
   resultCount: number
 }) {
-  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem
+  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem || !!cause
   const subcats = NTEE_SUBCATEGORIES[activeCategory] ?? []
 
   return (
@@ -185,6 +192,29 @@ function FilterRail({
             </span>
           </span>
         </button>
+
+        {/* Cause — free text against the LLM cause tags */}
+        <div className="mb-4">
+          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Cause</p>
+          <div className="relative px-0.5">
+            <input
+              type="text"
+              value={cause}
+              onChange={e => onCauseChange(e.target.value)}
+              placeholder="food bank, mental health…"
+              className="w-full h-[38px] pl-3 pr-8 rounded-lg bg-warm-cream border border-light-grey font-body text-[13px] text-deep-navy outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey/60"
+            />
+            {!!cause && (
+              <button
+                onClick={() => onCauseChange('')}
+                aria-label="Clear cause"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-cool-grey/60 hover:text-deep-navy transition-colors"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Category */}
         <div className="mb-4">
@@ -379,6 +409,8 @@ export default function Directory() {
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
   const [hiddenGem, setHiddenGem] = useState(searchParams.get('hidden_gem') === '1')
+  const [cause, setCause] = useState(searchParams.get('cause') || '')
+  const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -407,6 +439,15 @@ export default function Directory() {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [searchQuery])
 
+  // Debounce cause filter — same 320ms feel as search
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedCause(cause)
+      setCurrentPage(1)
+    }, 320)
+    return () => clearTimeout(t)
+  }, [cause])
+
   // Resolve revenue preset to API params
   const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
@@ -423,8 +464,9 @@ export default function Directory() {
       max_revenue: revPreset?.max,
       min_merit_tier: scoreTier || undefined,
       hidden_gem: hiddenGem || undefined,
+      cause: debouncedCause.trim() || undefined,
     }),
-    [activeFilter, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, itemsPerPage]
+    [activeFilter, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, debouncedCause, itemsPerPage]
   )
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -482,6 +524,8 @@ export default function Directory() {
     setRevenueFilter('')
     setScoreTier('')
     setHiddenGem(false)
+    setCause('')
+    setDebouncedCause('')
     setCurrentPage(1)
     searchParams.delete('category')
     searchParams.delete('sub')
@@ -673,12 +717,14 @@ export default function Directory() {
             revenueFilter={revenueFilter}
             scoreTier={scoreTier}
             hiddenGem={hiddenGem}
+            cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
             onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
             onRevenueChange={(id) => handleRevenueChange(id as RevenueId)}
             onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
             onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
+            onCauseChange={setCause}
             onClearAll={handleClearAll}
             resultCount={total}
           />
@@ -707,6 +753,7 @@ export default function Directory() {
               revenueFilter={revenueFilter}
               scoreTier={scoreTier}
               hiddenGem={hiddenGem}
+              cause={cause}
               onCategoryChange={handleFilterChange}
               onSubChange={handleSubChange}
               onStateChange={handleStateChange}
@@ -714,6 +761,7 @@ export default function Directory() {
               onRevenueChange={handleRevenueChange}
               onScoreTierChange={handleScoreTierChange}
               onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
+              onCauseChange={setCause}
               onClearAll={handleClearAll}
               resultCount={total}
             />

@@ -140,6 +140,7 @@ def list_organizations():
     min_pct = request.args.get('min_percentile', type=float)
     min_merit_tier = request.args.get('min_merit_tier', '').strip()
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
+    cause = request.args.get('cause', '').strip()[:60]
     sort_by = request.args.get('sort', 'total_revenue')
     order = request.args.get('order', 'desc')
 
@@ -176,6 +177,11 @@ def list_organizations():
         params.append(min_pct)
     if hidden_gem:
         where_clauses.append("is_hidden_gem = 1")
+    if cause:
+        where_clauses.append(
+            "EXISTS (SELECT 1 FROM json_each(cause_tags) WHERE value LIKE ?)"
+        )
+        params.append(f'%{cause}%')
 
     _TIER_HIERARCHY = ['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark']
     if min_merit_tier and min_merit_tier in _TIER_HIERARCHY:
@@ -202,7 +208,7 @@ def list_organizations():
                revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
                merit_tier, merit_score, merit_band,
                months_of_reserve, net_assets, total_expenses,
-               employee_count, ruling_date, zipcode, is_hidden_gem,
+               employee_count, ruling_date, zipcode, is_hidden_gem, cause_tags,
                (mission IS NOT NULL AND mission != '') as has_mission,
                (website IS NOT NULL AND website != '') as has_website
         FROM registry_enriched
@@ -217,6 +223,11 @@ def list_organizations():
     for row in rows:
         d = dict(row)
         d['total_revenue_formatted'] = f"${d['total_revenue']:,.0f}" if d['total_revenue'] else None
+        if d.get('cause_tags'):
+            try:
+                d['cause_tags'] = json.loads(d['cause_tags'])
+            except (json.JSONDecodeError, TypeError):
+                d['cause_tags'] = None
         orgs.append(d)
 
     return jsonify({

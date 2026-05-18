@@ -23,11 +23,14 @@ const US_STATES = [
   ['DC','Washington DC'],
 ] as const
 
+// ids must match REVENUE_PRESETS in Directory.tsx (min/max resolved there). Small first.
 const REVENUE_PRESETS = [
-  { id: 'small', label: 'Under $1M' },
-  { id: 'mid',   label: '$1M – $10M' },
-  { id: 'large', label: '$10M – $100M' },
-  { id: 'major', label: 'Over $100M' },
+  { id: 'tiny',        label: 'Tiny (under $50K)' },
+  { id: 'grassroots',  label: 'Grassroots ($50K to $250K)' },
+  { id: 'community',   label: 'Community ($250K to $1M)' },
+  { id: 'established', label: 'Established ($1M to $10M)' },
+  { id: 'large',       label: 'Large ($10M to $100M)' },
+  { id: 'national',    label: 'National (over $100M)' },
 ] as const
 
 const SCORE_TIERS: { id: TierName; label: string }[] = [
@@ -45,21 +48,23 @@ interface FilterSheetProps {
   revenueFilter: string
   scoreTier: string
   hiddenGem?: boolean
+  cause?: string
   onCategoryChange: (id: string) => void
   onStateChange: (state: string) => void
   onSortChange: (sort: string) => void
   onRevenueChange: (id: string) => void
   onScoreTierChange: (id: string) => void
   onHiddenGemChange?: (v: boolean) => void
+  onCauseChange?: (v: string) => void
   onClearAll: () => void
   resultCount: number
 }
 
 export default function FilterSheet({
   open, onClose,
-  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier, hiddenGem = false,
+  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier, hiddenGem = false, cause = '',
   onCategoryChange, onStateChange, onSortChange, onRevenueChange, onScoreTierChange,
-  onHiddenGemChange, onClearAll, resultCount,
+  onHiddenGemChange, onCauseChange, onClearAll, resultCount,
 }: FilterSheetProps) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -74,6 +79,7 @@ export default function FilterSheet({
     !!revenueFilter,
     !!scoreTier,
     hiddenGem,
+    !!cause,
   ].filter(Boolean).length
 
   return (
@@ -128,6 +134,20 @@ export default function FilterSheet({
                 </span>
               </span>
             </button>
+          )}
+
+          {/* Cause — free text against the LLM cause tags */}
+          {onCauseChange && (
+            <div>
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Cause</span>
+              <input
+                type="text"
+                value={cause}
+                onChange={e => onCauseChange(e.target.value)}
+                placeholder="food bank, mental health…"
+                className="w-full h-[46px] px-4 rounded-xl bg-warm-cream border border-light-grey font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey/60"
+              />
+            </div>
           )}
 
           {/* Category */}
