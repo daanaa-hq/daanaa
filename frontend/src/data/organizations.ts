@@ -620,6 +620,11 @@ export function searchOrganizations(query: string): Organization[] {
   );
 }
 
+export function formatEIN(ein: string): string {
+  const d = ein.replace(/\D/g, '')
+  return d.length === 9 ? `${d.slice(0, 2)}-${d.slice(2)}` : ein
+}
+
 export function formatCurrency(value: number): string {
   const trim = (n: number, unit: string) => {
     const s = n.toFixed(1)

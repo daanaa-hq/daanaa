@@ -13,7 +13,7 @@ import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
 import { getOrganization, getScoreHistory, getFinancials } from '../data/api'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord } from '../data/api'
-import { formatCurrency, formatNumber } from '../data/organizations'
+import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 
 // ---- Revenue Bar Chart ----
@@ -334,7 +334,7 @@ export default function OrganizationDetail() {
   const certainPath = (
     <p className="mt-2 font-body text-[12px] text-muted-cream/55 leading-[1.5] max-w-[360px]">
       Can&rsquo;t find their donate page? Give using EIN{' '}
-      <span className="text-muted-cream/80 font-medium">{org.ein}</span> through your bank or donor-advised fund{mailingAddress ? <>, or mail a check to <span className="text-muted-cream/80">{mailingAddress}</span></> : ''}.
+      <span className="text-muted-cream/80 font-medium">{formatEIN(org.ein)}</span> through your bank or donor-advised fund{mailingAddress ? <>, or mail a check to <span className="text-muted-cream/80">{mailingAddress}</span></> : ''}.
     </p>
   )
 
@@ -853,7 +853,7 @@ export default function OrganizationDetail() {
                   <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">DATA SOURCE</span>
                   <div className="mt-4 space-y-2 font-body text-[14px] text-cool-grey">
                     <p>IRS 501(c)(3) verified organization</p>
-                    <p>EIN: {org.ein}</p>
+                    <p>EIN: {formatEIN(org.ein)}</p>
                     <p>NTEE Category: {(org as any).nteecc || org.category || '—'}</p>
                     {(org as any).revenueBand && (
                       <p>Size: {(org as any).revenueBand} nonprofit</p>
@@ -901,7 +901,7 @@ export default function OrganizationDetail() {
                 </svg>
               </div>
               <div>
-                <p className="font-body text-[13px] font-semibold text-deep-navy">EIN {org.ein}</p>
+                <p className="font-body text-[13px] font-semibold text-deep-navy">EIN {formatEIN(org.ein)}</p>
                 <p className="font-body text-[12px] text-cool-grey">Verified against IRS BMF</p>
               </div>
             </div>
