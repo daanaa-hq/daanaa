@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useGivingList } from '../hooks/useGivingList'
 import { formatCurrency } from '../data/organizations'
@@ -121,21 +121,38 @@ export default function GivingListPage() {
             Giving List
           </h1>
           <p className="mt-2 font-body text-[14px] text-muted-cream">
-            {count} organization{count !== 1 ? 's' : ''} · Review before giving
+            {(() => {
+              const g = items.filter(i => i.status === 'given').length
+              const o = count - g
+              if (g && o) return `${o} ongoing · ${g} given`
+              if (g) return `${g} given · your private record`
+              return `${count} organization${count !== 1 ? 's' : ''} · Review before giving`
+            })()}
           </p>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-8 pb-32 md:pb-10 space-y-4">
-        {items.map(item => {
+        {[...items]
+          .sort((a, b) => (a.status === 'given' ? 1 : 0) - (b.status === 'given' ? 1 : 0))
+          .map((item, idx, ordered) => {
           const isLarge = item.amount >= SPLIT_THRESHOLD
           const fullChunks = Math.floor(item.amount / SPLIT_THRESHOLD)
           const remainder = item.amount - fullChunks * SPLIT_THRESHOLD
           const splitCount = fullChunks + (remainder > 0 ? 1 : 0)
           const draft = getDraft(item.ein)
+          const showGivenHeader = item.status === 'given' && (idx === 0 || ordered[idx - 1].status !== 'given')
+          const showOngoingHeader = item.status !== 'given' && idx === 0 && ordered.some(o => o.status === 'given')
 
           return (
-            <div key={item.ein} className="bg-white border border-light-grey rounded-xl overflow-hidden">
+            <Fragment key={item.ein}>
+            {showOngoingHeader && (
+              <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/60 pt-1">Ongoing · plan to give</p>
+            )}
+            {showGivenHeader && (
+              <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-soft-gold pt-3">Given · your private record</p>
+            )}
+            <div className="bg-white border border-light-grey rounded-xl overflow-hidden">
               <div className="p-5">
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div className="flex-1 min-w-0">
@@ -302,6 +319,7 @@ export default function GivingListPage() {
                 />
               )}
             </div>
+            </Fragment>
           )
         })}
 
