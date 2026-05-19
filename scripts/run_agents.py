@@ -44,23 +44,26 @@ log = logging.getLogger("orchestrator")
 # ── Agent registry ────────────────────────────────────────────────────────────
 
 def load_agents():
-    from agents.link_health import LinkHealthAgent
-    from agents.cause_tags  import CauseTagsAgent
-    from agents.enrichment  import EnrichmentAgent
-    from agents.quality     import QualityAgent
+    from agents.link_health     import LinkHealthAgent
+    from agents.cause_tags      import CauseTagsAgent
+    from agents.enrichment      import EnrichmentAgent
+    from agents.quality         import QualityAgent
+    from agents.social_presence import SocialPresenceAgent
     return {
-        "quality":     QualityAgent,
-        "link_health": LinkHealthAgent,
-        "cause_tags":  CauseTagsAgent,
-        "enrichment":  EnrichmentAgent,
+        "quality":          QualityAgent,
+        "link_health":      LinkHealthAgent,
+        "cause_tags":       CauseTagsAgent,
+        "enrichment":       EnrichmentAgent,
+        "social_presence":  SocialPresenceAgent,
     }
 
 # How often each agent should run (hours between runs)
 CADENCE = {
-    "quality":     22,     # daily
-    "link_health": 6 * 24, # weekly
-    "cause_tags":  22,     # daily (skips quickly if nothing to tag)
-    "enrichment":  29 * 24,# monthly
+    "quality":         22,      # daily
+    "link_health":     6 * 24,  # weekly
+    "cause_tags":      22,      # daily (skips quickly if nothing to tag)
+    "enrichment":      29 * 24, # monthly
+    "social_presence": 7 * 24,  # weekly
 }
 
 
