@@ -406,6 +406,63 @@ function WalletSection() {
   )
 }
 
+// ─── Advisor teaser ───────────────────────────────────────────────────────────
+function AdvisorTeaser() {
+  return (
+    <section style={{ background: '#F2EDE8' }} className="border-t border-light-grey py-16">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+        <div className="flex flex-col md:flex-row md:items-center gap-8 md:gap-16">
+
+          {/* Dim lamp mark */}
+          <div
+            className="shrink-0 w-16 h-16 rounded-full flex items-center justify-center mx-auto md:mx-0"
+            style={{ background: 'rgba(201,168,76,0.08)' }}
+          >
+            <svg viewBox="0 0 24 24" width={32} height={32} aria-hidden="true" style={{ display: 'block' }}>
+              <path
+                d="M 12,1.5 C 12.4,1.6 13.8,7.2 13.9,7.4 C 14.6,8.0 19.8,11.5 20,12 C 19.8,12.5 14.6,16.0 13.9,16.6 C 13.7,16.8 12.6,20.5 12,22.5 C 11.4,20.5 10.3,16.8 10.1,16.6 C 9.4,16.0 4.2,12.5 4,12 C 4.2,11.5 9.4,8.0 10.1,7.4 C 10.2,7.2 11.6,1.6 12,1.5 Z"
+                fill="rgba(201,168,76,0.25)"
+              />
+            </svg>
+          </div>
+
+          <div className="flex-1 text-center md:text-left">
+            <p className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase mb-2">
+              MERIT Advisor
+            </p>
+            <h2
+              className="font-display italic text-deep-navy leading-tight tracking-[-0.01em]"
+              style={{ fontSize: 'clamp(24px, 3vw, 38px)' }}
+            >
+              Not sure where to give?
+            </h2>
+            <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.65] max-w-[480px]">
+              Describe what you care about. We'll find verified nonprofits that
+              match — ranked by financial health, backed by IRS data.
+            </p>
+          </div>
+
+          <div className="shrink-0 text-center md:text-right">
+            <Link
+              to="/advisor"
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-full bg-deep-navy text-warm-cream font-body text-[14px] font-bold hover:bg-deep-navy/85 transition-colors"
+            >
+              Try MERIT Advisor
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </Link>
+            <p className="mt-2 font-body text-[11px] text-cool-grey/50">
+              Free · no account
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ─── Footer CTA ───────────────────────────────────────────────────────────────
 function FooterCTA() {
   const { data: stats } = useApi(() => getStats(), [])
@@ -458,6 +515,7 @@ export default function Home() {
       <StatsBar />
       <TiersStrip />
       <WalletSection />
+      <AdvisorTeaser />
       <FooterCTA />
     </div>
   )

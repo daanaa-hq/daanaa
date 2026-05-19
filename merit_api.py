@@ -759,6 +759,238 @@ def admin_waitlist_delete(wid):
     return jsonify({'ok': True})
 
 
+# ── MERIT Advisor ──────────────────────────────────────────────────────────────
+
+_NTEE_LABELS = {
+    'A': 'Arts, Culture & Humanities', 'B': 'Education',
+    'C': 'Environment', 'D': 'Animal-Related',
+    'E': 'Health', 'F': 'Mental Health & Crisis',
+    'G': 'Voluntary Health Associations', 'H': 'Medical Research',
+    'I': 'Crime & Legal-Related', 'J': 'Employment',
+    'K': 'Food, Agriculture & Nutrition', 'L': 'Housing & Shelter',
+    'M': 'Public Safety', 'N': 'Recreation & Sports',
+    'O': 'Youth Development', 'P': 'Human Services',
+    'Q': 'International', 'R': 'Civil Rights & Advocacy',
+    'S': 'Community Improvement', 'T': 'Philanthropy & Voluntarism',
+    'U': 'Science & Technology', 'V': 'Social Science',
+    'W': 'Public & Societal Benefit', 'X': 'Religion-Related',
+    'Y': 'Mutual & Membership', 'Z': 'Unknown',
+}
+
+# Multi-word phrases must come before single words so they match first.
+_NTEE_KEYWORDS: list = [
+    ('K', ['food bank', 'food pantry', 'food shelf', 'meals on wheels']),
+    ('F', ['mental health', 'substance abuse', 'behavioral health', 'behavioral health']),
+    ('L', ['affordable housing', 'homeless shelter', 'housing assistance']),
+    ('O', ['after school', 'youth development', 'big brothers', 'big sisters']),
+    ('P', ['social services', 'family services', 'human services']),
+    ('R', ['civil rights', 'voting rights', 'equal rights']),
+    ('W', ['first responder', 'disaster relief', 'emergency response']),
+    ('A', ['arts', 'art', 'music', 'theater', 'theatre', 'dance', 'culture', 'museum', 'gallery', 'opera', 'symphony', 'film']),
+    ('B', ['education', 'school', 'literacy', 'tutoring', 'learning', 'academic', 'college', 'preschool', 'stem', 'stem']),
+    ('C', ['environment', 'conservation', 'wildlife', 'nature', 'climate', 'ecology', 'forest', 'ocean', 'land trust']),
+    ('D', ['animals', 'animal', 'pets', 'pet', 'humane', 'spca', 'veterinary', 'dog', 'cat']),
+    ('E', ['health', 'medical', 'hospital', 'clinic', 'healthcare', 'disease', 'cancer', 'diabetes', 'heart', 'nursing']),
+    ('G', ['disability', 'disabilities', 'special needs', 'autism', 'blind', 'deaf', 'rehabilitation']),
+    ('J', ['job', 'employment', 'workforce', 'vocational', 'career', 'job training']),
+    ('K', ['food', 'hunger', 'meals', 'pantry', 'nutrition', 'feeding', 'farm', 'farming', 'garden']),
+    ('L', ['housing', 'homeless', 'shelter', 'homelessness', 'affordable']),
+    ('N', ['sports', 'recreation', 'athletic', 'fitness', 'soccer', 'basketball', 'baseball']),
+    ('O', ['youth', 'children', 'kids', 'teen', 'boys', 'girls', 'mentoring', 'mentor', 'child']),
+    ('Q', ['international', 'global', 'overseas', 'developing countries', 'humanitarian']),
+    ('R', ['advocacy', 'justice', 'equality', 'voting', 'policy', 'rights']),
+    ('S', ['community', 'neighborhood', 'civic', 'local development', 'economic development']),
+    ('W', ['veterans', 'military', 'veteran', 'disaster', 'emergency', 'firefighter']),
+    ('X', ['religion', 'faith', 'church', 'religious', 'christian', 'jewish', 'mosque', 'synagogue']),
+]
+
+_STATE_MAP = {
+    'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+    'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+    'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+    'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+    'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+    'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+    'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+    'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
+    'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+    'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+    'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+    'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
+    'wisconsin': 'WI', 'wyoming': 'WY',
+}
+_STATE_ABBRS = set(_STATE_MAP.values()) | {'DC'}
+
+_advisor_table_ready = False
+
+def _log_advisor_event(db, event_type, query=None, ntee=None, state=None, ein=None):
+    global _advisor_table_ready
+    if not _advisor_table_ready:
+        try:
+            db.execute("""
+                CREATE TABLE IF NOT EXISTS advisor_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_type TEXT NOT NULL,
+                    query TEXT,
+                    ntee TEXT,
+                    state TEXT,
+                    ein TEXT,
+                    ts INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+                )
+            """)
+            db.commit()
+            _advisor_table_ready = True
+        except Exception:
+            return
+    try:
+        db.execute(
+            "INSERT INTO advisor_events (event_type, query, ntee, state, ein) VALUES (?, ?, ?, ?, ?)",
+            (event_type, query, ntee, state, ein)
+        )
+        db.commit()
+    except Exception:
+        pass
+
+
+def _parse_advisor_query(query: str) -> dict:
+    import re
+    q = query.lower()
+
+    ntee_match = None
+    for code, keywords in _NTEE_KEYWORDS:
+        for kw in keywords:
+            if kw in q:
+                ntee_match = code
+                break
+        if ntee_match:
+            break
+
+    # Two-word state names first, then single, then abbreviations
+    state_match = None
+    for full, abbr in sorted(_STATE_MAP.items(), key=lambda x: -len(x[0])):
+        if full in q:
+            state_match = abbr
+            break
+    if not state_match:
+        for word in re.findall(r'\b[A-Z]{2}\b', query):
+            if word in _STATE_ABBRS:
+                state_match = word
+                break
+
+    # City: "in <City>" or "near <City>" — strip any trailing state word
+    city_match = None
+    for candidate in re.findall(
+        r'\b(?:in|near|around)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',
+        query,
+        re.IGNORECASE
+    ):
+        parts = [p for p in candidate.strip().split() if p.lower() not in _STATE_MAP]
+        if parts:
+            city_match = ' '.join(parts).upper()
+            break
+
+    prefer_small = any(kw in q for kw in ['small', 'grassroots', 'neighborhood', 'local', 'community-based'])
+
+    return {
+        'ntee': ntee_match,
+        'state': state_match,
+        'city': city_match,
+        'prefer_small': prefer_small,
+    }
+
+
+@app.route('/api/advisor/search', methods=['POST'])
+@limiter.limit("30 per minute")
+def advisor_search():
+    body = request.get_json(silent=True) or {}
+    query = str(body.get('query', '')).strip()[:300]
+    if not query:
+        return jsonify({'error': 'query required'}), 400
+
+    parsed = _parse_advisor_query(query)
+    ntee_match  = parsed['ntee']
+    state_match = parsed['state']
+    city_match  = parsed['city']
+    prefer_small = parsed['prefer_small']
+
+    db = get_db()
+
+    def _build_query(with_donate_filter: bool) -> tuple:
+        wc = list(_DEDUCTIBILITY_FILTER.split(" AND "))
+        p: list = []
+        if ntee_match:
+            wc.append("NTEE1 = ?")
+            p.append(ntee_match)
+        if state_match:
+            wc.append("STATE = ?")
+            p.append(state_match)
+        if city_match:
+            wc.append("CITY LIKE ?")
+            p.append(f'%{city_match}%')
+        if with_donate_filter:
+            wc.append("donate_url IS NOT NULL AND donate_url != ''")
+        ws = " AND ".join(wc)
+        s = f"""
+            SELECT EIN, organization_name, NTEE1, CITY, STATE,
+                   total_revenue, peer_percentile, ntee1_percentile,
+                   merit_tier, merit_score, merit_band,
+                   donate_url, donate_platform, cause_tags
+            FROM registry_enriched
+            WHERE {ws}
+            ORDER BY COALESCE(merit_score, 0) DESC, COALESCE(peer_percentile, 0) DESC
+            LIMIT 8
+        """
+        return s, p
+
+    # Try with donate links first; fall back to all matching orgs
+    sql, params = _build_query(with_donate_filter=True)
+    rows = db.execute(sql, params).fetchall()
+    if not rows:
+        sql, params = _build_query(with_donate_filter=False)
+        rows = db.execute(sql, params).fetchall()
+
+    _log_advisor_event(db, 'search', query[:200], ntee_match, state_match)
+
+    orgs = []
+    for row in rows:
+        d = dict(row)
+        if d.get('cause_tags'):
+            try:
+                d['cause_tags'] = json.loads(d['cause_tags'])
+            except (json.JSONDecodeError, TypeError):
+                d['cause_tags'] = None
+        orgs.append(d)
+
+    context_parts = []
+    if ntee_match:
+        context_parts.append(_NTEE_LABELS.get(ntee_match, ntee_match))
+    if city_match:
+        context_parts.append(f'in {city_match.title()}')
+    elif state_match:
+        context_parts.append(f'in {state_match}')
+    context_str = ', '.join(context_parts) if context_parts else 'all causes'
+
+    return jsonify({
+        'orgs': orgs,
+        'parsed': parsed,
+        'context': context_str,
+        'total': len(orgs),
+    })
+
+
+@app.route('/api/advisor/click', methods=['POST'])
+@limiter.limit("60 per minute")
+def advisor_click():
+    body = request.get_json(silent=True) or {}
+    ein = str(body.get('ein', '')).strip()[:20]
+    query = str(body.get('query', '')).strip()[:200]
+    if not ein:
+        return jsonify({'ok': False, 'error': 'ein required'}), 400
+    db = get_db()
+    _log_advisor_event(db, 'click', query, ein=ein)
+    return jsonify({'ok': True})
+
+
 # ── Frontend static serving ────────────────────────────────────────────────
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
