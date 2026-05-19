@@ -4,10 +4,12 @@ MeritGiving API — Serves registry_enriched to frontend
 """
 import sqlite3, os, json, functools, struct
 import numpy as np
-from flask import Flask, jsonify, request, g, abort
+from flask import Flask, jsonify, request, g, abort, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'dist')
 
 # Scoring methodology version — the formula/algorithm. Changes rarely, and
 # only when the scoring logic itself changes (not on data refreshes). The
@@ -755,6 +757,15 @@ def admin_waitlist_delete(wid):
     db.execute("DELETE FROM waitlist WHERE id = ?", (wid,))
     db.commit()
     return jsonify({'ok': True})
+
+
+# ── Frontend static serving ────────────────────────────────────────────────
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    if path and os.path.exists(os.path.join(FRONTEND_DIST, path)):
+        return send_from_directory(FRONTEND_DIST, path)
+    return send_from_directory(FRONTEND_DIST, 'index.html')
 
 
 if __name__ == '__main__':
