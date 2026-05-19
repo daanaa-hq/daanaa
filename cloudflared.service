@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloudflare Tunnel — MERIT
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=akbar
+ExecStart=/usr/local/bin/cloudflared tunnel run merit-tunnel
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

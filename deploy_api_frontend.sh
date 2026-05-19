@@ -9,33 +9,35 @@ pkill -f "python.*merit_api" 2>/dev/null || true
 pkill -f "flask" 2>/dev/null || true
 sleep 2
 
-# 2. Start new API in screen
-echo "--- Starting API on :5000 ---"
+# 2. Build frontend
+echo "--- Building frontend ---"
 source ~/meritgiving/venv/bin/activate
+cd ~/meritgiving/frontend && npm run build && cd ~/meritgiving
+
+# 3. Start API in screen (serves API + built frontend)
+echo "--- Starting API on :5000 ---"
 screen -S merit_api -X quit 2>/dev/null || true
-screen -S merit_api -d -m bash -c "cd ~/meritgiving && python3 merit_api.py"
+screen -S merit_api -d -m bash -c "cd ~/meritgiving && source venv/bin/activate && python3 merit_api.py"
 sleep 3
 
-# 3. Verify API
+# 4. Verify API + frontend
 echo "--- API Health Check ---"
 curl -s http://localhost:5000/health | python3 -m json.tool 2>/dev/null || echo "API not responding yet"
 
 echo "--- API Stats ---"
 curl -s http://localhost:5000/api/stats | python3 -m json.tool 2>/dev/null || echo "Stats endpoint down"
 
-echo "--- API Orgs (first page) ---"
-curl -s "http://localhost:5000/api/organizations?per_page=3" | python3 -m json.tool 2>/dev/null || echo "Orgs endpoint down"
-
-# 4. Frontend check
-echo ""
-echo "--- Frontend Status ---"
-curl -s -o /dev/null -w "localhost:3000: %{http_code}\n" http://localhost:3000 2>/dev/null || echo "Frontend not running on :3000"
+echo "--- SPA Fallback Check ---"
+curl -s -o /dev/null -w "/:        %{http_code}\n" http://localhost:5000/
+curl -s -o /dev/null -w "/directory: %{http_code}\n" http://localhost:5000/directory
+curl -s -o /dev/null -w "/orgs/test: %{http_code}\n" http://localhost:5000/orgs/test
 
 echo ""
 echo "=========================================="
-echo "Done. API running in screen 'merit_api'"
+echo "Done. API + frontend running in screen 'merit_api'"
 echo "Test links:"
-echo "  http://localhost:5000/health"
-echo "  http://localhost:5000/api/stats"
-echo "  http://localhost:5000/api/organizations?per_page=5"
+echo "  http://localhost:5000/           (home)"
+echo "  http://localhost:5000/directory  (directory)"
+echo "  http://localhost:5000/health     (API health)"
+echo "  http://localhost:5000/api/stats  (API stats)"
 echo "=========================================="
