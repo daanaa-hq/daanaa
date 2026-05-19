@@ -15,6 +15,7 @@ import { getOrganization, getScoreHistory, getFinancials } from '../data/api'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
+import OrgWallPanel from '../components/OrgWallPanel'
 
 // ---- Revenue Bar Chart ----
 function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
@@ -690,9 +691,17 @@ export default function OrganizationDetail() {
         </div>
       )}
 
+      {/* Body: 70/30 grid — main content left, org wall right */}
+      <div className="bg-warm-cream">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-12 md:py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+
+            {/* LEFT COLUMN — main content */}
+            <div className="min-w-0">
+
       {/* Financial Overview */}
-      <div className="bg-warm-cream py-12 md:py-16">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+      <div className="py-0">
+        <div>
 
           {/* Key financial metrics row — shown when ProPublica data is available */}
           {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
@@ -809,8 +818,8 @@ export default function OrganizationDetail() {
       </div>
 
       {/* Mission & Programs */}
-      <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+      <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
+        <div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div>
               <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">MISSION</span>
@@ -879,8 +888,8 @@ export default function OrganizationDetail() {
       </div>
 
       {/* Accountability Strip */}
-      <div className="bg-warm-cream border-t border-light-grey py-8">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+      <div className="border-t border-light-grey py-8">
+        <div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-12">
             <MistakeRegistry compact />
             <div className="flex items-center gap-3">
@@ -923,12 +932,23 @@ export default function OrganizationDetail() {
 
       {/* Score Breakdown (inline, toggled by TrustBadge click or accountability strip) */}
       {showBreakdown && apiOrg && (
-        <div className="bg-warm-cream border-t border-light-grey py-8">
-          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+        <div className="border-t border-light-grey py-8">
+          <div>
             <ScoreBreakdown org={apiOrg} onClose={() => setShowBreakdown(false)} mode="inline" />
           </div>
         </div>
       )}
+
+            </div>{/* end left column */}
+
+            {/* RIGHT COLUMN — organization wall */}
+            <div className="lg:sticky lg:top-24">
+              <OrgWallPanel orgName={org.name} ein={org.ein} />
+            </div>
+
+          </div>{/* end grid */}
+        </div>{/* end max-w container */}
+      </div>{/* end bg-warm-cream */}
 
       {/* Similar Organizations */}
       {similarOrgs.length > 0 && (
