@@ -26,7 +26,8 @@
     "prompt": "In frontend/src/pages/OrganizationDetail.tsx, the RevenueChart component receives historical financials. After the chart, add a one-line 'Revenue Trend' badge: calculate % change from oldest to newest year in the financials array. Show \u2197 +12% (green), \u2198 -5% (red), or \u2192 flat (gray). Handle divide-by-zero and single-year cases. Build: cd frontend && npm run build.",
     "files": [
       "frontend/src/pages/OrganizationDetail.tsx"
-    ]
+    ],
+    "retries": 1
   },
   {
     "id": "p1-stub-banner",
