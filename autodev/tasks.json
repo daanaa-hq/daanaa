@@ -37,7 +37,7 @@
     "files": [
       "frontend/src/pages/OrganizationDetail.tsx"
     ],
-    "retries": 1
+    "retries": 2
   },
   {
     "id": "p1-verify-footer",
