@@ -47,6 +47,6 @@
     "files": [
       "frontend/src/pages/OrganizationDetail.tsx"
     ],
-    "retries": 1
+    "retries": 2
   }
 ]
