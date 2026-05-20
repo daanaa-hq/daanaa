@@ -1,48 +1,47 @@
 [
   {
     "id": "p1-fix-percentile",
-    "title": "Fix percentile grammar (30.3th \u2192 30.3rd)",
+    "title": "Fix percentile ordinal grammar (30.3th → 30.3rd)",
     "status": "pending",
-    "prompt": "Find the percentile formatting function in the MERIT frontend. Fix it so numbers use correct ordinals: 1st, 2nd, 3rd, 4th... 11th, 12th, 13th... 21st, 22nd, 23rd. 30.3 should render as '30.3rd'. Test by rendering the component.",
+    "prompt": "In frontend/src/pages/OrganizationDetail.tsx, find everywhere a peer_percentile or ntee1_percentile is rendered as an ordinal (e.g. '30.3th'). Write a formatOrdinal(n) helper that returns the correct suffix: 1st, 2nd, 3rd, 4th ... 11th, 12th, 13th ... 21st, 22nd, 23rd. Use it for all percentile displays. Build passes with: cd frontend && npm run build.",
     "files": [
-      "frontend/src/components/PercentileBar.jsx"
+      "frontend/src/pages/OrganizationDetail.tsx"
     ]
   },
   {
     "id": "p1-expense-ratio",
-    "title": "Add Program Expense Ratio to snapshot",
+    "title": "Show Program Expense Ratio on org detail",
     "status": "pending",
-    "prompt": "In the Financial Snapshot section, add a new row 'Program Expense Ratio' calculated as (program_service_expenses / total_expenses) * 100. Show as percentage with 0 decimals. Add helper text: 'How much goes to programs vs overhead'. Use data already passed to the component.",
+    "prompt": "In frontend/src/pages/OrganizationDetail.tsx, find the financial metrics section (near months_of_reserve and net_assets). Add a 'Program Expense Ratio' stat using apiOrg.program_expense_pct (already in API response). Display as '72%' with helper text 'Share of spending that goes to programs'. Only show when program_expense_pct is not null. Build: cd frontend && npm run build.",
     "files": [
-      "frontend/src/components/FinancialSnapshot.jsx"
+      "frontend/src/pages/OrganizationDetail.tsx"
     ]
   },
   {
     "id": "p1-revenue-trend",
-    "title": "Add Revenue Trend (3yr)",
+    "title": "Add Revenue Trend arrow to org detail",
     "status": "pending",
-    "prompt": "Add 'Revenue Trend (3yr)' to Financial Snapshot. Calculate ((current_revenue - revenue_3yr_ago) / revenue_3yr_ago) * 100. Display as \u2197 +12% (green), \u2198 -5% (red), or \u2192 0% (gray). Handle divide-by-zero gracefully.",
+    "prompt": "In frontend/src/pages/OrganizationDetail.tsx, the RevenueChart component receives historical financials. After the chart, add a one-line 'Revenue Trend' badge: calculate % change from oldest to newest year in the financials array. Show ↗ +12% (green), ↘ -5% (red), or → flat (gray). Handle divide-by-zero and single-year cases. Build: cd frontend && npm run build.",
     "files": [
-      "frontend/src/components/FinancialSnapshot.jsx"
+      "frontend/src/pages/OrganizationDetail.tsx"
     ]
   },
   {
-    "id": "p1-MERIT-gap",
-    "title": "Add Impact Data Not Available section",
+    "id": "p1-stub-banner",
+    "title": "Add 'Basic listing' banner for stub orgs",
     "status": "pending",
-    "prompt": "Create a new component ImpactGapSection.jsx. It should display: 'We don't have structured MERIT data for this organization yet. The IRS 990 does not require standardized outcome reporting.' Then list 3 questions donors can ask the org. Style as a light blue/gray info box. Import and render it below FinancialSnapshot on the profile page.",
+    "prompt": "In frontend/src/pages/OrganizationDetail.tsx, detect stub orgs: apiOrg.source === 'bmf_stub' AND apiOrg.total_revenue === null. For these, render a soft info banner below the org header: 'This organization is IRS-registered but hasn't filed a full 990. Financial data and a MERIT score aren't available yet.' Use the existing warm-cream / light-grey palette. Do not show the score section or revenue chart for stubs. Build: cd frontend && npm run build.",
     "files": [
-      "frontend/src/components/ImpactGapSection.jsx",
-      "frontend/src/pages/ProfilePage.jsx"
+      "frontend/src/pages/OrganizationDetail.tsx"
     ]
   },
   {
     "id": "p1-verify-footer",
-    "title": "Add Verify This Data / Missing Data footers",
+    "title": "Add Verify This Data footer to org detail",
     "status": "pending",
-    "prompt": "At the bottom of the profile page, add two sections: 1) 'Verify This Data' with external links (IRS search, Form 990 PDF, state registration). 2) 'What We Don't Know' listing missing data points: MERIT metrics, board minutes, staff demographics, volunteer hours. Keep styling neutral and compact.",
+    "prompt": "At the bottom of OrganizationDetail.tsx (before the similar orgs strip), add a compact 'Verify this listing' section with three external links: 1) IRS Tax Exempt Search — https://apps.irs.gov/app/eos/detailsPage?ein={EIN} 2) ProPublica Nonprofit Explorer — https://projects.propublica.org/nonprofits/organizations/{EIN} 3) State charity registry (link to NASCONET: https://www.nasconet.org/resources/state-government/). Style as small grey text links, no visual weight. Build: cd frontend && npm run build.",
     "files": [
-      "frontend/src/pages/ProfilePage.jsx"
+      "frontend/src/pages/OrganizationDetail.tsx"
     ]
   }
 ]

@@ -11,7 +11,7 @@ import MistakeRegistry from '../components/MistakeRegistry'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
-import { getOrganization, getScoreHistory, getFinancials } from '../data/api'
+import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs } from '../data/api'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
@@ -247,6 +247,13 @@ export default function OrganizationDetail() {
     [id]
   )
   const financials: ApiFinancialRecord[] = financialsData?.financials ?? []
+
+  // Semantic similar orgs via bge-large embeddings — falls back to peer-group below
+  const { data: semanticSimilarData } = useApi(
+    () => id ? getSimilarOrgs(id, { limit: 6 }) : Promise.resolve({ results: [], mode: '', diamonds_only: false }),
+    [id]
+  )
+  const semanticSimilarOrgs: ApiOrganization[] = (semanticSimilarData?.results ?? []) as ApiOrganization[]
   const revenueTrend = financials
     .filter(f => f.totrevenue !== null && f.totrevenue > 0)
     .map(f => ({ year: f.tax_prd_yr, amount: f.totrevenue! }))
@@ -257,15 +264,17 @@ export default function OrganizationDetail() {
 
   const org = apiOrg ? adaptOrg(apiOrg) : null
 
-  // similar_organizations is returned directly by GET /api/organizations/:ein
+  // Prefer semantic similar orgs; fall back to peer-group from org response
   const rawSimilarOrgs = useMemo(() => {
+    if (semanticSimilarOrgs.length > 0) return semanticSimilarOrgs.slice(0, 6)
     if (!apiOrg?.similar_organizations) return []
     return (apiOrg.similar_organizations as ApiOrganization[])
       .filter((o) => o.EIN !== apiOrg.EIN)
       .slice(0, 4)
-  }, [apiOrg])
+  }, [apiOrg, semanticSimilarOrgs])
 
   const similarOrgs = useMemo(() => rawSimilarOrgs.map(adaptOrg), [rawSimilarOrgs])
+  const usingSemanticSimilar = semanticSimilarOrgs.length > 0
 
   const inList = isInList(org?.ein || '')
   const hasGiven = givingItems.some(i => i.ein === (org?.ein || '') && i.status === 'given')
@@ -482,7 +491,8 @@ export default function OrganizationDetail() {
                   2. website_status=ok — org's own homepage, verified live and on-domain.
                   3. EIN fallback — unspoofable ProPublica/IRS record, works for every org. */}
               {(() => {
-                const donateUrl  = apiOrg?.donate_url;
+                const donateUrlStatus = apiOrg?.donate_url_status;
+                const donateUrl  = donateUrlStatus === 'dead' ? null : apiOrg?.donate_url;
                 const donatePlatform = apiOrg?.donate_platform;
                 const platformLabel: Record<string, string> = {
                   donorbox:       'Donorbox',
@@ -954,9 +964,11 @@ export default function OrganizationDetail() {
       {similarOrgs.length > 0 && (
         <div className="bg-deep-navy py-16 md:py-24">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">SIMILAR ORGANIZATIONS</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">
+              {usingSemanticSimilar ? 'MORE LIKE THIS' : 'SIMILAR ORGANIZATIONS'}
+            </span>
             <h2 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
-              Others you might consider
+              {usingSemanticSimilar ? 'Organizations doing similar work' : 'Others you might consider'}
             </h2>
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarOrgs.map((o, idx) => {

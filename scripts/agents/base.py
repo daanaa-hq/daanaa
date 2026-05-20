@@ -43,7 +43,9 @@ class BaseAgent:
 
     def db(self) -> sqlite3.Connection:
         if self._db is None:
-            self._db = sqlite3.connect(DB_PATH)
+            self._db = sqlite3.connect(DB_PATH, timeout=60)
+            self._db.execute("PRAGMA journal_mode=WAL")
+            self._db.execute("PRAGMA synchronous=NORMAL")
             self._db.row_factory = sqlite3.Row
             self._ensure_job_log()
         return self._db

@@ -20,7 +20,14 @@ const US_STATES = [
   ['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],
   ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],
   ['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],
-  ['DC','Washington DC'],
+  ['DC','Washington DC'],['PR','Puerto Rico'],
+] as const
+
+const OTHER_TERRITORIES = [
+  ['VI','U.S. Virgin Islands'],
+  ['GU','Guam'],
+  ['MP','Northern Mariana Islands'],
+  ['AS','American Samoa'],
 ] as const
 
 // ids must match REVENUE_PRESETS in Directory.tsx (min/max resolved there). Small first.
@@ -208,10 +215,17 @@ export default function FilterSheet({
                 onChange={e => onStateChange(e.target.value)}
                 className="w-full h-[46px] appearance-none pl-4 pr-10 rounded-xl bg-warm-cream border border-light-grey font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold transition-colors"
               >
-                <option value="">All States</option>
-                {US_STATES.map(([abbr, name]) => (
-                  <option key={abbr} value={abbr}>{abbr} · {name}</option>
-                ))}
+                <option value="">All States &amp; Territories</option>
+                <optgroup label="States &amp; DC &amp; Puerto Rico">
+                  {US_STATES.map(([abbr, name]) => (
+                    <option key={abbr} value={abbr}>{abbr} · {name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Other U.S. Territories">
+                  {OTHER_TERRITORIES.map(([abbr, name]) => (
+                    <option key={abbr} value={abbr}>{abbr} · {name}</option>
+                  ))}
+                </optgroup>
               </select>
               <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
