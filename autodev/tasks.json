@@ -2,12 +2,12 @@
   {
     "id": "p1-fix-percentile",
     "title": "Fix percentile ordinal grammar (30.3th \u2192 30.3rd)",
-    "status": "pending",
+    "status": "failed",
     "prompt": "In frontend/src/pages/OrganizationDetail.tsx, find everywhere a peer_percentile or ntee1_percentile is rendered as an ordinal (e.g. '30.3th'). Write a formatOrdinal(n) helper that returns the correct suffix: 1st, 2nd, 3rd, 4th ... 11th, 12th, 13th ... 21st, 22nd, 23rd. Use it for all percentile displays. Build passes with: cd frontend && npm run build.",
     "files": [
       "frontend/src/pages/OrganizationDetail.tsx"
     ],
-    "retries": 2
+    "retries": 3
   },
   {
     "id": "p1-expense-ratio",
