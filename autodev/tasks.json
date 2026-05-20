@@ -46,6 +46,7 @@
     "prompt": "At the bottom of OrganizationDetail.tsx (before the similar orgs strip), add a compact 'Verify this listing' section with three external links: 1) IRS Tax Exempt Search \u2014 https://apps.irs.gov/app/eos/detailsPage?ein={EIN} 2) ProPublica Nonprofit Explorer \u2014 https://projects.propublica.org/nonprofits/organizations/{EIN} 3) State charity registry (link to NASCONET: https://www.nasconet.org/resources/state-government/). Style as small grey text links, no visual weight. Build: cd frontend && npm run build.",
     "files": [
       "frontend/src/pages/OrganizationDetail.tsx"
-    ]
+    ],
+    "retries": 1
   }
 ]
