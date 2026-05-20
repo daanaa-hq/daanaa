@@ -234,7 +234,7 @@ def list_organizations():
                merit_tier, merit_score, merit_band,
                months_of_reserve, net_assets, total_expenses,
                employee_count, ruling_date, zipcode, is_hidden_gem, cause_tags,
-               donate_url, donate_platform,
+               donate_url, donate_platform, donate_url_status,
                (mission IS NOT NULL AND mission != '') as has_mission,
                (website IS NOT NULL AND website != '') as has_website
         FROM registry_enriched
@@ -934,7 +934,7 @@ def advisor_search():
             SELECT EIN, organization_name, NTEE1, CITY, STATE,
                    total_revenue, peer_percentile, ntee1_percentile,
                    merit_tier, merit_score, merit_band,
-                   donate_url, donate_platform, cause_tags
+                   donate_url, donate_platform, donate_url_status, cause_tags
             FROM registry_enriched
             WHERE {ws}
             ORDER BY COALESCE(merit_score, 0) DESC, COALESCE(peer_percentile, 0) DESC
@@ -989,6 +989,87 @@ def advisor_click():
     db = get_db()
     _log_advisor_event(db, 'click', query, ein=ein)
     return jsonify({'ok': True})
+
+
+@app.route('/api/organizations/<ein>/similar')
+@limiter.limit("60 per minute")
+def similar_organizations(ein):
+    """
+    Returns orgs semantically similar to <ein> using bge-large cosine similarity.
+    Query params:
+        limit    — max results (default 12, max 24)
+        diamonds — if "1", restrict to is_hidden_gem=1 orgs only
+    """
+    ein_clean = ein.replace('-', '').strip()[:20]
+    limit   = min(request.args.get('limit', 12, type=int), 24)
+    diamonds = request.args.get('diamonds', '0') == '1'
+
+    db = get_db()
+
+    # Fetch this org's embedding
+    try:
+        row = db.execute(
+            "SELECT embedding FROM org_embeddings WHERE ein = ?", (ein_clean,)
+        ).fetchone()
+    except Exception:
+        return jsonify({"error": "Embeddings not available"}), 503
+
+    if not row:
+        return jsonify({"results": [], "mode": "semantic_similar", "reason": "no_embedding"})
+
+    vec_bytes = bytes(row["embedding"])
+
+    # KNN — fetch extra to allow for filtering and self-exclusion
+    k_fetch = min((limit + 1) * 4, 100)
+    try:
+        knn_rows = db.execute("""
+            SELECT e.ein, distance
+            FROM org_embeddings e
+            WHERE embedding MATCH ? AND k = ?
+            ORDER BY distance
+        """, (vec_bytes, k_fetch)).fetchall()
+    except Exception as ex:
+        return jsonify({"error": f"Vector search failed: {ex}"}), 500
+
+    # Exclude self
+    knn_rows = [r for r in knn_rows if r["ein"] != ein_clean]
+
+    if not knn_rows:
+        return jsonify({"results": [], "mode": "semantic_similar"})
+
+    eins = [r["ein"] for r in knn_rows]
+    dist_map = {r["ein"]: float(r["distance"]) for r in knn_rows}
+
+    placeholders = ",".join("?" * len(eins))
+    diamond_clause = " AND is_hidden_gem = 1" if diamonds else ""
+    rows = db.execute(f"""
+        SELECT EIN, organization_name, NTEE1, CITY, STATE,
+               total_revenue, ntee1_percentile, peer_percentile,
+               latest_tax_year, merit_tier, merit_score, is_hidden_gem,
+               cause_tags, website, donate_url, donate_url_status
+        FROM registry_enriched
+        WHERE EIN IN ({placeholders}){diamond_clause}
+    """, eins).fetchall()
+
+    results = sorted(
+        [dict(r) for r in rows],
+        key=lambda r: dist_map.get(r["EIN"], 999)
+    )[:limit]
+
+    for r in results:
+        r["similarity_score"] = round(1 - dist_map.get(r["EIN"], 1), 4)
+        if r.get("total_revenue"):
+            r["total_revenue_formatted"] = f"${r['total_revenue']:,.0f}"
+        try:
+            r["cause_tags"] = json.loads(r["cause_tags"]) if r.get("cause_tags") else None
+        except (json.JSONDecodeError, TypeError):
+            r["cause_tags"] = None
+
+    return jsonify({
+        "results": results,
+        "mode":    "semantic_similar",
+        "diamonds_only": diamonds,
+    })
 
 
 # ── Frontend static serving ────────────────────────────────────────────────

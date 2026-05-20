@@ -59,6 +59,7 @@ export interface ApiOrganization {
   is_hidden_gem?: number | null;          // 1 = small org, healthy reserves, high program spend
   donate_url?: string | null;             // direct giving page found on org site (Donorbox, etc.)
   donate_platform?: string | null;        // 'donorbox' | 'networkforgood' | 'classy' | 'mightycause' | 'paypal'
+  donate_url_status?: string | null;      // 'ok' | 'dead' | 'unknown' — null = not yet checked
   // Returned by GET /api/organizations/:ein only (SELECT *)
   mission?: string | null;
   website?: string | null;
@@ -314,4 +315,18 @@ export async function deleteWaitlistEntry(id: number, adminKey: string): Promise
     method: 'DELETE',
     headers: { 'X-Admin-Key': adminKey },
   });
+}
+
+export interface SimilarResult extends ApiOrganization {
+  similarity_score: number;
+}
+
+export async function getSimilarOrgs(ein: string, options?: {
+  limit?: number;
+  diamonds?: boolean;
+}): Promise<{ results: SimilarResult[]; mode: string; diamonds_only: boolean }> {
+  const params = new URLSearchParams();
+  if (options?.limit) params.set('limit', String(options.limit));
+  if (options?.diamonds) params.set('diamonds', '1');
+  return fetchJson(`/api/organizations/${ein}/similar?${params}`);
 }

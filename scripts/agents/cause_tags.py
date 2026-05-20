@@ -92,6 +92,7 @@ class CauseTagsAgent(BaseAgent):
                             "UPDATE registry_enriched SET cause_tags=? WHERE EIN=?",
                             (json.dumps(tags), ein),
                         )
+                        db.commit()  # commit immediately — don't hold lock across LLM calls
                         updated += 1
                     else:
                         errors += 1
@@ -99,7 +100,6 @@ class CauseTagsAgent(BaseAgent):
                 except Exception as e:
                     errors += 1
                     self.log.warning(f"Tag error {ein}: {e}")
-            db.commit()
             self.log.info(
                 f"  {min(i+batch_size, total)}/{total}  "
                 f"updated={updated} errors={errors}"
