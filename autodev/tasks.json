@@ -12,12 +12,12 @@
   {
     "id": "p1-expense-ratio",
     "title": "Show Program Expense Ratio on org detail",
-    "status": "pending",
+    "status": "failed",
     "prompt": "In frontend/src/pages/OrganizationDetail.tsx, find the financial metrics section (near months_of_reserve and net_assets). Add a 'Program Expense Ratio' stat using apiOrg.program_expense_pct (already in API response). Display as '72%' with helper text 'Share of spending that goes to programs'. Only show when program_expense_pct is not null. Build: cd frontend && npm run build.",
     "files": [
       "frontend/src/pages/OrganizationDetail.tsx"
     ],
-    "retries": 2
+    "retries": 3
   },
   {
     "id": "p1-revenue-trend",
