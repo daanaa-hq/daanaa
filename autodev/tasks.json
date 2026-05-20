@@ -36,7 +36,8 @@
     "prompt": "In frontend/src/pages/OrganizationDetail.tsx, detect stub orgs: apiOrg.source === 'bmf_stub' AND apiOrg.total_revenue === null. For these, render a soft info banner below the org header: 'This organization is IRS-registered but hasn't filed a full 990. Financial data and a MERIT score aren't available yet.' Use the existing warm-cream / light-grey palette. Do not show the score section or revenue chart for stubs. Build: cd frontend && npm run build.",
     "files": [
       "frontend/src/pages/OrganizationDetail.tsx"
-    ]
+    ],
+    "retries": 1
   },
   {
     "id": "p1-verify-footer",
