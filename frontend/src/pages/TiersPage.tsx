@@ -15,10 +15,10 @@ const TIERS: {
     pct: '0.9%',
     count: '~5,000',
     criteria: [
-      { label: 'IRS 501(c)(3) registration', met: true },
-      { label: 'Form 990 filed (2022 or later)', met: true },
-      { label: 'Peer-group score assigned', met: true },
-      { label: 'Top-quartile peer score (≥ 75th percentile)', met: true },
+      { label: 'Recognized as a nonprofit by the IRS', met: true },
+      { label: 'Annual financial report on file (2022 or later)', met: true },
+      { label: 'Financial ranking assigned', met: true },
+      { label: 'Top 25% in financial strength among similar nonprofits', met: true },
       { label: 'Mission statement on public record', met: true },
       { label: 'Active website on record', met: true },
     ],
@@ -28,10 +28,10 @@ const TIERS: {
     pct: '1.9%',
     count: '~10,000',
     criteria: [
-      { label: 'IRS 501(c)(3) registration', met: true },
-      { label: 'Form 990 filed (2022 or later)', met: true },
-      { label: 'Peer-group score assigned', met: true },
-      { label: 'Top-quartile peer score (≥ 75th percentile)', met: false },
+      { label: 'Recognized as a nonprofit by the IRS', met: true },
+      { label: 'Annual financial report on file (2022 or later)', met: true },
+      { label: 'Financial ranking assigned', met: true },
+      { label: 'Top 25% in financial strength among similar nonprofits', met: false },
       { label: 'Mission statement on public record', met: true },
       { label: 'Active website on record', met: true },
     ],
@@ -41,10 +41,10 @@ const TIERS: {
     pct: '75.5%',
     count: '~416,000',
     criteria: [
-      { label: 'IRS 501(c)(3) registration', met: true },
-      { label: 'Form 990 filed (2022 or later)', met: true },
-      { label: 'Peer-group score assigned', met: true },
-      { label: 'Top-quartile peer score', met: false },
+      { label: 'Recognized as a nonprofit by the IRS', met: true },
+      { label: 'Annual financial report on file (2022 or later)', met: true },
+      { label: 'Financial ranking assigned', met: true },
+      { label: 'Top 25% in financial strength among similar nonprofits', met: false },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
     ],
@@ -54,10 +54,10 @@ const TIERS: {
     pct: '21.3%',
     count: '~117,000',
     criteria: [
-      { label: 'IRS 501(c)(3) registration', met: true },
-      { label: 'Form 990 filed (2022 or later) or revenue on record', met: true },
-      { label: 'Peer-group score assigned', met: false },
-      { label: 'Top-quartile peer score', met: false },
+      { label: 'Recognized as a nonprofit by the IRS', met: true },
+      { label: 'Annual financial report on file (2022 or later) or revenue on record', met: true },
+      { label: 'Financial ranking assigned', met: false },
+      { label: 'Top 25% in financial strength among similar nonprofits', met: false },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
     ],
@@ -67,10 +67,10 @@ const TIERS: {
     pct: '0.4%',
     count: '~2,000',
     criteria: [
-      { label: 'IRS 501(c)(3) registration', met: true },
-      { label: 'Form 990 filed (2022 or later)', met: false },
+      { label: 'Recognized as a nonprofit by the IRS', met: true },
+      { label: 'Annual financial report on file (2022 or later)', met: false },
       { label: 'Revenue data on record', met: false },
-      { label: 'Peer-group score assigned', met: false },
+      { label: 'Financial ranking assigned', met: false },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
     ],
@@ -108,12 +108,12 @@ export default function TiersPage() {
               ))}
             </div>
             <div className="max-w-[640px]">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Data confidence signal</span>
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How much public data we have</span>
               <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
                 Trust Tiers
               </h1>
               <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">
-                Every nonprofit on MERIT carries a lamp tier, a compact signal of how much public data backs that listing. Tiers reflect what the public record contains, not our opinion of the organization's mission or importance.
+                Every nonprofit on MERIT carries a lamp tier — a simple signal of how much public information we have about it. Tiers reflect what the public record contains, not our opinion of the organization's mission or importance.
               </p>
             </div>
           </div>
@@ -127,10 +127,10 @@ export default function TiersPage() {
           {/* Quick explainer */}
           <div className="max-w-[720px] mb-14">
             <p className="font-body text-[16px] leading-[1.7] text-cool-grey">
-              The IRS makes 990 filings public, but data availability varies widely. Some organizations have years of peer-benchmarked financial data; others appear in the IRS Business Master File with nothing else on record. MERIT's five-tier system makes that gap visible at a glance, so donors can calibrate their research accordingly.
+              The government publishes financial reports from nonprofits, but how much is available varies widely. Some organizations have years of detailed records; others are registered but have nothing else on file. MERIT's five tiers make that gap visible at a glance, so you know what you're working with before you give.
             </p>
             <p className="font-body text-[16px] leading-[1.7] text-cool-grey mt-4">
-              Tiers are computed automatically from public sources (the IRS registration list, ProPublica Nonprofit Explorer, and IRS Statistics of Income data) and updated monthly. No organization can pay to change its tier.
+              Tiers are calculated automatically from public records and updated monthly. No organization can pay to change its tier.
             </p>
           </div>
 

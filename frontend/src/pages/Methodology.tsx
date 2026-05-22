@@ -148,10 +148,10 @@ export default function Methodology() {
             <span className="font-body text-[12px] text-muted-cream">Scoring Methodology</span>
           </div>
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 64px)' }}>
-            Scoring Methodology
+            How we score nonprofits
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
-            The complete formula, openly published. No black boxes. Every input, weight, and design decision is documented here.
+            Every score compares a nonprofit against others doing the same kind of work at a similar size — using public data from IRS annual filings. No black boxes. Everything is documented below.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-4 sm:gap-10">
             <div>
@@ -164,7 +164,7 @@ export default function Methodology() {
             </div>
             <div>
               <p className="font-body text-[10px] font-medium tracking-[0.12em] text-soft-gold/60 uppercase mb-1.5">
-                Data refresh · updates as new 990s are filed
+                Data refresh · updates as new reports come in
               </p>
               <span className="font-mono text-[14px] text-warm-cream bg-white/5 px-3 py-1 rounded-full border border-white/10">
                 Scores last computed: {scoresUpdated}
@@ -183,6 +183,42 @@ export default function Methodology() {
       <div className="bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
+          {/* Plain-English summary — for anyone who doesn't need the full formula */}
+          <div className="py-10 border-b border-light-grey">
+            <div className="max-w-[680px]">
+              <h2 className="font-display italic text-deep-navy leading-tight mb-4" style={{ fontSize: 'clamp(22px, 2.8vw, 30px)' }}>
+                The short version
+              </h2>
+              <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
+                We look at three things for each nonprofit: how many months of savings they carry, what share of their spending actually reaches programs, and whether they bring in more than they spend. Each org is ranked against others doing the same kind of work at a similar size. The score — 0 to 100 — shows where they stand in that group.
+              </p>
+              <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
+                All of this comes from annual IRS filings — the same documents every registered nonprofit is required to submit, and make available to the public.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {[
+                  { label: 'IRS Form 990 filings', href: 'https://projects.propublica.org/nonprofits/', note: 'FY 2019–2024' },
+                  { label: 'IRS Statistics of Income', href: null, note: 'sector benchmarks' },
+                  { label: 'ProPublica Nonprofit Explorer', href: 'https://projects.propublica.org/nonprofits/', note: 'data access' },
+                  { label: 'NCCS', href: null, note: 'supplementary data' },
+                ].map(s => (
+                  <span key={s.label} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-deep-navy/5 border border-deep-navy/10 font-body text-[12px] text-cool-grey">
+                    {s.href ? (
+                      <a href={s.href} target="_blank" rel="noopener noreferrer" className="hover:text-soft-gold transition-colors inline-flex items-center gap-1">
+                        {s.label}
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      </a>
+                    ) : s.label}
+                    <span className="text-cool-grey/50">· {s.note}</span>
+                  </span>
+                ))}
+              </div>
+              <p className="mt-5 font-body text-[13px] text-cool-grey/60">
+                Want to understand exactly how each part is calculated? The sections below walk through every step.
+              </p>
+            </div>
+          </div>
+
           <ScoreFlow />
 
           <Section label="Step 1 · The peer group" title="How we define 'similar'">
@@ -192,7 +228,7 @@ export default function Methodology() {
             <ul className="list-none space-y-2 mt-2">
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">1</span></span>
-                <span><strong className="text-deep-navy font-medium">Kind of work.</strong> The IRS gives every 501(c)(3) a fine mission code (Food Banks, Hospitals, Parent-teacher groups, and 400 more). We match within it.</span>
+                <span><strong className="text-deep-navy font-medium">Kind of work.</strong> The IRS assigns every nonprofit a category (Food Banks, Hospitals, Parent-teacher groups, and 400 more). We match within it.</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">2</span></span>
@@ -277,7 +313,7 @@ export default function Methodology() {
               ))}
             </ul>
             <Callout>
-              A lower financial scale score may reflect organizational structure rather than weakness. Pass through models, federated chapters that consolidate revenue at a national entity, and newly founded organizations regularly score in the lower half. That accurately describes their position in the peer distribution, not their quality or worth.
+              A lower financial scale score may reflect organizational structure rather than weakness. Organizations that pass funding through to other groups, national chapters that report revenue centrally, and newly founded organizations regularly score in the lower half. That accurately describes their position among peers, not their quality or worth.
             </Callout>
             <p>
               Outcome data, the measure donors most want, is not measurable from public filings at sector wide scale. No rating system that claims to measure program effectiveness from 990 data alone should be trusted. MERIT does not make this claim.
@@ -304,7 +340,7 @@ export default function Methodology() {
               Future methodology changes will appear here with a new version tag and a plain-English summary of what changed and why. Score recomputations against fresh IRS data are not methodology changes and do not bump the version.
             </Callout>
             <p className="mt-6">
-              Historical input snapshots are preserved in the <code className="text-[14px] bg-deep-navy/[0.05] px-1.5 py-0.5 rounded">score_snapshots</code> table. When the methodology does change, prior-period inputs can be rescored under the new formula, enabling chain-linked time series — the same approach used for CPI and home price indices.
+              Historical inputs are preserved in our scoring records. When the methodology does change, prior-period inputs can be rescored under the new formula, enabling consistent comparisons over time — the same approach used for CPI and home price indices.
             </p>
           </Section>
 
@@ -314,20 +350,20 @@ export default function Methodology() {
             </p>
             <div className="mt-4">
               <SourceRow
-                source="IRS Business Master File"
-                detail="501(c)(3) registration status, EIN, organization name, state, NTEE code. Updated quarterly by the IRS. MERIT indexes the active 501(c)(3) public charity subset, over 430,000 organizations."
+                source="IRS nonprofit registration list"
+                detail="Nonprofit status, organization name, state, and category code. Updated quarterly by the IRS. MERIT covers the active public charity subset — over 430,000 organizations."
               />
               <SourceRow
-                source="IRS Statistics of Income"
-                detail="Financial data from aggregated 990 filings, including total revenue and total assets. Available for approximately 483,000 organizations with recent IRS extract data."
+                source="IRS published financial data"
+                detail="Financial data from aggregated annual filings, including total revenue and total assets. Available for approximately 483,000 organizations with recent data."
               />
               <SourceRow
                 source="ProPublica Nonprofit Explorer"
-                detail="Mission statements, website URLs, 990 filing detail. Used to supplement IRS SOI data and establish profile completeness for the lamp tier."
+                detail="Mission statements, website URLs, and annual filing detail. Used to fill in financial data and confirm profile completeness for the lamp tier."
               />
               <SourceRow
-                source="NCCS (Urban Institute)"
-                detail="Supplementary NTEE subcategory codes and historical filing data."
+                source="NCCS — Urban Institute"
+                detail="Supplementary category codes and historical filing data."
               />
             </div>
             <Callout>

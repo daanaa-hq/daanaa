@@ -22,7 +22,6 @@ const FAQPage = lazy(() => import('./pages/FAQPage'))
 const Methodology = lazy(() => import('./pages/Methodology'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
-const Advisor = lazy(() => import('./pages/Advisor'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 
 function PageLoader() {
@@ -57,7 +56,6 @@ export default function App() {
             <Route path="/sector-health" element={<SectorHealth />} />
             <Route path="/guides" element={<GuidesPage />} />
             <Route path="/faq" element={<FAQPage />} />
-            <Route path="/advisor" element={<Advisor />} />
           </Route>
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFound />} />

@@ -17,7 +17,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'Who runs MERIT?',
-        a: 'MERIT is an independent civic platform. We are not affiliated with the IRS, the federal government, or any existing nonprofit rating agency. We are not a nonprofit ourselves. We are infrastructure, built to make the charitable sector easier to see clearly.',
+        a: 'MERIT is an independent platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We are not a nonprofit ourselves. We\'re a free research tool that makes it easier to understand and explore the nonprofit sector.',
       },
       {
         q: 'How do you make money?',
@@ -39,7 +39,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
     items: [
       {
         q: 'How is the MERIT score calculated?',
-        a: 'The MERIT score is a place in line among similar organizations, not an absolute grade. We take each organization\'s financial data (primarily total revenue from IRS 990 filings), group it with true peers by category and size, and find where it sits in that group. A score of 72 means the organization is financially larger than 72% of its peers. The score does not measure mission, impact, or goodness of purpose.',
+        a: 'Think of it as a ranking within a group of peers, not a report card. We take each organization\'s revenue, group it with similar nonprofits by cause and size, and find where it ranks. A score of 72 means the organization is financially larger than 72% of its peers. It does not measure mission, impact, or goodness of purpose.',
       },
       {
         q: 'What\'s the difference between the score and the trust tier?',
@@ -56,11 +56,11 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'Why doesn\'t my organization have a score?',
-        a: 'A score requires enough financial data to place an organization among similar ones. If your organization files a 990-N (revenue under $50,000), no financial detail is submitted to the IRS, only a confirmation that you still exist. We can confirm your status but cannot compute a score. As your organization grows and files a full 990, a score will appear automatically on the next data refresh.',
+        a: 'A score needs enough financial data to compare an organization with its peers. Very small nonprofits (under $50,000 in revenue) file only a short confirmation with the government — no financial detail. We can confirm they exist but can\'t rank them. Once they grow and file a full report, a score appears automatically.',
       },
       {
         q: 'Can an organization pay to improve its score?',
-        a: 'No. The MERIT score is computed directly from IRS public filings. It is auditable, reproducible, and cannot be influenced by any payment. Any platform that allows organizations to pay for better scores is not using verifiable public data.',
+        a: 'No. The score comes directly from government public records and cannot be influenced by any payment. Any platform that lets organizations pay for a better score is not using real data.',
       },
       {
         q: 'My organization has a low score but we do great work. Why?',
@@ -75,22 +75,22 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         q: 'Where does MERIT\'s data come from?',
         a: (
           <>
-            All data is sourced from public records: the IRS Business Master File (organization registration), IRS Form 990 XML filings (financial data and mission statements), and ProPublica Nonprofit Explorer (enriched 990 data). We do not create, modify, or supplement source data — we aggregate, normalize, and display it. See our{' '}<Link to="/legal" className="text-soft-gold hover:text-bright-gold transition-colors">full data attribution</Link>.
+            All data comes from public records: the IRS nonprofit registration list, IRS annual financial reports, and ProPublica's nonprofit database. We do not create, modify, or supplement source data — we organize and display it. See our{' '}<Link to="/legal" className="text-soft-gold hover:text-bright-gold transition-colors">full data attribution</Link>.
           </>
         ),
       },
       {
         q: 'How current is the financial data?',
-        a: 'Form 990 filings are typically submitted 6 to 18 months after the fiscal year ends, and the IRS processes them on a rolling basis. The financial data on MERIT usually reflects the most recent 990 filed, which may be 1 to 3 years old depending on the organization. Every profile shows a "FY XXXX · Source" badge so you always know the vintage of the data you\'re looking at.',
+        a: 'Financial reports are usually filed 6 to 18 months after the year ends, and the government processes them gradually. What you see on MERIT is typically 1 to 3 years old depending on the organization. Every profile shows the year the data is from so you always know.',
       },
       {
         q: 'How often is MERIT updated?',
         a: (
           <ul className="space-y-2">
             {[
-              { freq: 'Weekly', what: 'ProPublica enrichment for organizations with new 990 filings' },
-              { freq: 'Monthly', what: 'IRS Statistics of Income extract download and ingestion' },
-              { freq: 'Ongoing', what: 'Peer percentile recomputation after any bulk revenue update' },
+              { freq: 'Weekly', what: 'Detailed financial data refreshed for organizations with new reports' },
+              { freq: 'Monthly', what: 'New financial reports added as the government releases them' },
+              { freq: 'Ongoing', what: 'Rankings updated whenever new data comes in' },
             ].map(({ freq, what }) => (
               <li key={freq} className="flex gap-3">
                 <span className="shrink-0 font-semibold text-soft-gold w-16">{freq}</span>
@@ -123,11 +123,11 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'What can I add to my page once I claim it?',
-        a: 'Claimed pages let organizations add a mission statement, program descriptions, leadership team, impact metrics, annual reports, and eventually events and volunteer opportunities. All self reported content is clearly labeled as such and kept visually separate from IRS data, so donors can always tell which is which.',
+        a: 'Claimed pages let organizations add a mission statement, program descriptions, leadership team, impact numbers, and documents. Everything you add is clearly labeled as written by you and kept visually separate from the government data, so donors always know which is which.',
       },
       {
         q: 'My organization isn\'t listed on MERIT. Why?',
-        a: 'MERIT indexes every 501(c)(3) organization the IRS recognizes. If your organization isn\'t appearing, the most likely reasons are that your IRS recognition is recent (the IRS list updates monthly, so newly recognized orgs may take 30 to 60 days to appear), or your organization\'s status has lapsed. Search by EIN on the IRS Tax Exempt Organization Search to verify your status.',
+        a: 'MERIT lists every nonprofit the IRS recognizes. If your organization isn\'t appearing, the most likely reasons are that your IRS recognition is recent (the IRS list updates monthly, so newly recognized organizations may take 30 to 60 days to appear), or your organization\'s status has lapsed. Search on the IRS Tax Exempt Organization Search to verify your status.',
       },
     ],
   },
@@ -140,7 +140,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'What is the Giving Wallet?',
-        a: 'The Giving Wallet is a private donation log that lives on your device. You record gifts you\'ve made (through any channel), and the wallet stores them for reference at tax time. It\'s not connected to any payment processor. Think of it as a private spreadsheet that lives in your browser, useful for anyone who gives to multiple organizations and wants a single record.',
+        a: 'The Giving Wallet is a private donation tracker stored in your browser. You record gifts you\'ve made (through any channel), and the wallet keeps them for reference at tax time. It\'s not connected to any payment processor. Think of it as a private notebook for anyone who gives to multiple organizations and wants a single record.',
       },
       {
         q: 'What documentation do I need for a tax deduction?',

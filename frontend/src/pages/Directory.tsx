@@ -4,7 +4,6 @@ import { useSearchParams, Link } from 'react-router-dom'
 import OrgCard, { OrgCardRow } from '../components/OrgCard'
 import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
-import SemanticSearch from '../components/SemanticSearch'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { getOrganizations } from '../data/api'
@@ -118,7 +117,7 @@ const US_STATES = [
 // ── Filter Rail (desktop sidebar) ────────────────────────────────────────────
 
 function FilterRail({
-  activeCategory,
+  activeCategories,
   subFilter,
   stateFilter,
   sortBy,
@@ -126,6 +125,7 @@ function FilterRail({
   scoreTier,
   hiddenGem,
   directLink,
+  needsFunding,
   cause,
   onCategoryChange,
   onSubChange,
@@ -135,11 +135,12 @@ function FilterRail({
   onScoreTierChange,
   onHiddenGemChange,
   onDirectLinkChange,
+  onNeedsFundingChange,
   onCauseChange,
   onClearAll,
   resultCount,
 }: {
-  activeCategory: string
+  activeCategories: string[]
   subFilter: string
   stateFilter: string
   sortBy: string
@@ -147,6 +148,7 @@ function FilterRail({
   scoreTier: ScoreTierId
   hiddenGem: boolean
   directLink: boolean
+  needsFunding: boolean
   cause: string
   onCategoryChange: (id: string) => void
   onSubChange: (code: string) => void
@@ -156,12 +158,13 @@ function FilterRail({
   onScoreTierChange: (id: ScoreTierId) => void
   onHiddenGemChange: (v: boolean) => void
   onDirectLinkChange: (v: boolean) => void
+  onNeedsFundingChange: (v: boolean) => void
   onCauseChange: (v: string) => void
   onClearAll: () => void
   resultCount: number
 }) {
-  const hasActive = activeCategory !== 'all' || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || !!cause
-  const subcats = NTEE_SUBCATEGORIES[activeCategory] ?? []
+  const hasActive = activeCategories.length > 0 || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || !!cause
+  const subcats = activeCategories.length === 1 ? (NTEE_SUBCATEGORIES[activeCategories[0]] ?? []) : []
 
   return (
     <aside className="hidden lg:block w-[220px] shrink-0">
@@ -193,6 +196,30 @@ function FilterRail({
             </span>
             <span className="block font-body text-[11px] text-cool-grey/70 leading-[1.4] mt-0.5">
               Small orgs doing exceptional work quietly
+            </span>
+          </span>
+        </button>
+
+        {/* Needs funding soon */}
+        <button
+          onClick={() => onNeedsFundingChange(!needsFunding)}
+          className="w-full flex items-start gap-2.5 px-3 py-3 rounded-xl mb-4 border transition-all duration-150 text-left"
+          style={{
+            backgroundColor: needsFunding ? 'rgba(239,68,68,0.10)' : 'rgba(239,68,68,0.03)',
+            borderColor: needsFunding ? '#EF4444' : 'rgba(239,68,68,0.25)',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={needsFunding ? '#EF4444' : 'none'} stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>
+            <span className="block font-body text-[13px] font-semibold" style={{ color: needsFunding ? '#B91C1C' : '#6B7280' }}>
+              Needs funding soon
+            </span>
+            <span className="block font-body text-[11px] text-cool-grey/70 leading-[1.4] mt-0.5">
+              Less than 6 months of operating reserves
             </span>
           </span>
         </button>
@@ -247,28 +274,31 @@ function FilterRail({
         <div className="mb-4">
           <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Category</p>
           <div className="space-y-0.5">
-            {RAIL_CATEGORIES.map(cat => (
-              <button
-                key={cat.id}
-                onClick={() => onCategoryChange(cat.id)}
-                className="w-full flex items-center justify-between px-2.5 py-[7px] rounded-lg transition-all duration-100 text-left"
-                style={{
-                  backgroundColor: activeCategory === cat.id ? 'rgba(201,169,110,0.10)' : 'transparent',
-                  color: activeCategory === cat.id ? '#C9A96E' : '#6B7280',
-                }}
-              >
-                <span className="flex items-center gap-2 font-body text-[13px]" style={{ fontWeight: activeCategory === cat.id ? '600' : '400' }}>
-                  {cat.emoji && <span className="text-[14px] leading-none">{cat.emoji}</span>}
-                  {cat.label}
-                </span>
-                {activeCategory === cat.id && <span className="w-1.5 h-1.5 rounded-full bg-soft-gold shrink-0" />}
-              </button>
-            ))}
+            {RAIL_CATEGORIES.map(cat => {
+              const isActive = cat.id === 'all' ? activeCategories.length === 0 : activeCategories.includes(cat.id)
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => onCategoryChange(cat.id)}
+                  className="w-full flex items-center justify-between px-2.5 py-[7px] rounded-lg transition-all duration-100 text-left"
+                  style={{
+                    backgroundColor: isActive ? 'rgba(201,169,110,0.10)' : 'transparent',
+                    color: isActive ? '#C9A96E' : '#6B7280',
+                  }}
+                >
+                  <span className="flex items-center gap-2 font-body text-[13px]" style={{ fontWeight: isActive ? '600' : '400' }}>
+                    {cat.emoji && <span className="text-[14px] leading-none">{cat.emoji}</span>}
+                    {cat.label}
+                  </span>
+                  {isActive && <span className="w-1.5 h-1.5 rounded-full bg-soft-gold shrink-0" />}
+                </button>
+              )
+            })}
           </div>
         </div>
 
         {/* Subcategory drill-down — only when a category is selected and has subcats */}
-        {activeCategory !== 'all' && subcats.length > 0 && (
+        {activeCategories.length === 1 && subcats.length > 0 && (
           <div className="mb-4 pl-2.5">
             <p className="font-body text-[10px] font-semibold tracking-[0.08em] uppercase text-cool-grey/40 mb-2">Subcategory</p>
             <div className="flex flex-wrap gap-1.5">
@@ -417,7 +447,7 @@ export default function Directory() {
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
     qParam ? `"${qParam}" · Nonprofits` : 'Nonprofit Directory',
-    'Search 430,000+ IRS-verified 501(c)(3) nonprofits by name, category, location, and MERIT score.'
+    'Search 430,000+ nonprofits recognized by the IRS — by name, category, location, and financial strength.'
   )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
@@ -425,7 +455,11 @@ export default function Directory() {
 
   const [searchQuery, setSearchQuery] = useState(qParam)
   const [debouncedQuery, setDebouncedQuery] = useState(qParam)
-  const [activeFilter, setActiveFilter] = useState(subParam ? subParam[0] : categoryParam)
+  const [activeFilters, setActiveFilters] = useState<string[]>(() => {
+    if (subParam) return [subParam[0]]  // derive category from first char of sub code
+    if (!categoryParam || categoryParam === 'all') return []
+    return categoryParam.split(',').filter(c => c && c !== 'all')
+  })
   const [subFilter, setSubFilter] = useState(subParam)
   const [stateFilter, setStateFilter] = useState(stateParam)
   const [sortBy, setSortBy] = useState('merit_score')
@@ -437,12 +471,13 @@ export default function Directory() {
   )
   const [hiddenGem, setHiddenGem] = useState(searchParams.get('hidden_gem') === '1')
   const [directLink, setDirectLink] = useState(searchParams.get('direct_link') === '1')
+  const [needsFunding, setNeedsFunding] = useState(searchParams.get('needs_funding') === '1')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [searchMode, setSearchMode] = useState<'browse' | 'ai'>('browse')
+  const searchMode = 'browse'
   const { isSaved, toggle: toggleSave } = useSavedOrgs()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -481,7 +516,7 @@ export default function Directory() {
 
   const { data: orgsData, loading: orgsLoading, error: orgsError } = useApi(
     () => getOrganizations({
-      ntee: subFilter ? undefined : (activeFilter === 'all' ? undefined : activeFilter),
+      ntee: subFilter ? undefined : (activeFilters.length === 0 ? undefined : activeFilters.join(',')),
       sub: subFilter || undefined,
       state: stateFilter || undefined,
       q: debouncedQuery || undefined,
@@ -493,22 +528,30 @@ export default function Directory() {
       min_merit_tier: scoreTier || undefined,
       hidden_gem: hiddenGem || undefined,
       direct_link: directLink || undefined,
+      needs_funding: needsFunding || undefined,
       cause: debouncedCause.trim() || undefined,
     }),
-    [activeFilter, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, debouncedCause, itemsPerPage]
+    [activeFilters, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, needsFunding, debouncedCause, itemsPerPage]
   )
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
   const handleFilterChange = (filterId: string) => {
-    setActiveFilter(filterId)
-    setSubFilter('')  // clear sub when major category changes
+    let next: string[]
+    if (filterId === 'all') {
+      next = []
+    } else {
+      const already = activeFilters.includes(filterId)
+      next = already ? activeFilters.filter(f => f !== filterId) : [...activeFilters, filterId]
+    }
+    setActiveFilters(next)
+    if (next.length !== 1) setSubFilter('')  // subcategory only makes sense for a single category
     setCurrentPage(1)
     scrollTop()
-    if (filterId === 'all') {
+    if (next.length === 0) {
       searchParams.delete('category')
     } else {
-      searchParams.set('category', filterId)
+      searchParams.set('category', next.join(','))
     }
     setSearchParams(searchParams)
   }
@@ -546,7 +589,7 @@ export default function Directory() {
   const handleClearAll = () => {
     setSearchQuery('')
     setDebouncedQuery('')
-    setActiveFilter('all')
+    setActiveFilters([])
     setSubFilter('')
     setStateFilter('')
     setSortBy('organization_name')
@@ -554,6 +597,7 @@ export default function Directory() {
     setScoreTier('')
     setHiddenGem(false)
     setDirectLink(false)
+    setNeedsFunding(false)
     setCause('')
     setDebouncedCause('')
     setCurrentPage(1)
@@ -572,7 +616,7 @@ export default function Directory() {
 
   // Readable label for active sub filter
   const subLabel = subFilter
-    ? NTEE_SUBCATEGORIES[activeFilter]?.find(s => s.code === subFilter)?.label ?? subFilter
+    ? NTEE_SUBCATEGORIES[activeFilters[0] ?? '']?.find(s => s.code === subFilter)?.label ?? subFilter
     : ''
 
   // Readable label for active revenue filter
@@ -582,7 +626,7 @@ export default function Directory() {
   const scoreLabel = SCORE_TIERS.find(t => t.id === scoreTier)?.label ?? ''
 
   const activeFilterCount = [
-    activeFilter !== 'all',
+    activeFilters.length > 0,
     !!subFilter,
     !!stateFilter,
     !!revenueFilter,
@@ -607,7 +651,7 @@ export default function Directory() {
             Nonprofit Directory
           </h1>
           <p className="mt-3 font-body text-[16px] leading-[1.6] text-cool-grey">
-            Browse verified 501(c)(3) organizations across the United States
+            Browse verified nonprofits across the United States
           </p>
 
           {/* Search */}
@@ -618,40 +662,6 @@ export default function Directory() {
             placeholder="Search by name, city, or EIN…"
             className="mt-7 max-w-[640px]"
           />
-
-          {/* Search mode toggle */}
-          <div className="mt-3 flex items-center gap-1 max-w-[640px]">
-            <button
-              onClick={() => setSearchMode('browse')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-[12px] font-medium transition-all duration-150 border"
-              style={{
-                backgroundColor: searchMode === 'browse' ? '#0A1628' : 'transparent',
-                color: searchMode === 'browse' ? '#F5F0EB' : '#6B7280',
-                borderColor: searchMode === 'browse' ? '#0A1628' : '#E5E0DB',
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
-              </svg>
-              Browse & filter
-            </button>
-            <button
-              onClick={() => setSearchMode('ai')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-[12px] font-medium transition-all duration-150 border"
-              style={{
-                backgroundColor: searchMode === 'ai' ? '#C9A96E' : 'transparent',
-                color: searchMode === 'ai' ? '#0A1628' : '#6B7280',
-                borderColor: searchMode === 'ai' ? '#C9A96E' : '#E5E0DB',
-              }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/>
-                <path d="M19 17l.75 2.25L22 20l-2.25.75L19 23l-.75-2.25L16 20l2.25-.75z" opacity=".5"/>
-              </svg>
-              AI Search
-              <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-soft-gold/20 text-[9px] font-semibold tracking-wide uppercase" style={{ color: searchMode === 'ai' ? '#0A1628' : '#C9A96E' }}>beta</span>
-            </button>
-          </div>
 
           {/* Mobile: single Filters button */}
           {searchMode === 'browse' && <div className="mt-5 md:hidden flex items-center gap-2">
@@ -689,9 +699,9 @@ export default function Directory() {
                 onClick={() => handleFilterChange(cat.id)}
                 className="px-4 py-[6px] rounded-full font-body text-[12px] tracking-[0.02em] transition-all duration-150 border"
                 style={{
-                  backgroundColor: activeFilter === cat.id ? '#C9A96E' : 'transparent',
-                  color: activeFilter === cat.id ? '#0A1628' : '#4B5563',
-                  borderColor: activeFilter === cat.id ? '#C9A96E' : '#E5E0DB',
+                  backgroundColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? '#C9A96E' : 'transparent',
+                  color: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? '#0A1628' : '#4B5563',
+                  borderColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? '#C9A96E' : '#E5E0DB',
                 }}
               >
                 {'emoji' in cat && cat.emoji ? `${cat.emoji} ` : ''}{cat.label}
@@ -718,9 +728,9 @@ export default function Directory() {
           </div>}
 
           {/* Tablet: subcategory pills when a category is active */}
-          {searchMode === 'browse' && activeFilter !== 'all' && (NTEE_SUBCATEGORIES[activeFilter]?.length ?? 0) > 0 && (
+          {searchMode === 'browse' && activeFilters.length === 1 && (NTEE_SUBCATEGORIES[activeFilters[0]]?.length ?? 0) > 0 && (
             <div className="mt-3 hidden md:flex lg:hidden items-center gap-1.5 flex-wrap">
-              {NTEE_SUBCATEGORIES[activeFilter].map(sub => (
+              {NTEE_SUBCATEGORIES[activeFilters[0]].map(sub => (
                 <button
                   key={sub.code}
                   onClick={() => handleSubChange(subFilter === sub.code ? '' : sub.code)}
@@ -741,13 +751,14 @@ export default function Directory() {
           <FilterSheet
             open={filterSheetOpen}
             onClose={() => setFilterSheetOpen(false)}
-            activeCategory={activeFilter}
+            activeCategory={activeFilters[0] ?? 'all'}
             stateFilter={stateFilter}
             sortBy={sortBy}
             revenueFilter={revenueFilter}
             scoreTier={scoreTier}
             hiddenGem={hiddenGem}
             directLink={directLink}
+            needsFunding={needsFunding}
             cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
@@ -756,6 +767,7 @@ export default function Directory() {
             onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
             onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
             onDirectLinkChange={(v) => { setDirectLink(v); setCurrentPage(1); scrollTop() }}
+            onNeedsFundingChange={(v) => { setNeedsFunding(v); setCurrentPage(1); scrollTop() }}
             onCauseChange={setCause}
             onClearAll={handleClearAll}
             resultCount={total}
@@ -767,18 +779,13 @@ export default function Directory() {
       <div className="bg-warm-cream py-12 md:py-16">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* AI Search mode */}
-          {searchMode === 'ai' && (
-            <SemanticSearch />
-          )}
-
           {/* Browse mode */}
           {searchMode === 'browse' && (
           <div className="lg:flex lg:gap-8 lg:items-start">
 
             {/* Desktop filter rail */}
             <FilterRail
-              activeCategory={activeFilter}
+              activeCategories={activeFilters}
               subFilter={subFilter}
               stateFilter={stateFilter}
               sortBy={sortBy}
@@ -786,6 +793,7 @@ export default function Directory() {
               scoreTier={scoreTier}
               hiddenGem={hiddenGem}
               directLink={directLink}
+              needsFunding={needsFunding}
               cause={cause}
               onCategoryChange={handleFilterChange}
               onSubChange={handleSubChange}
@@ -795,6 +803,7 @@ export default function Directory() {
               onScoreTierChange={handleScoreTierChange}
               onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
               onDirectLinkChange={(v) => { setDirectLink(v); setCurrentPage(1); scrollTop() }}
+              onNeedsFundingChange={(v) => { setNeedsFunding(v); setCurrentPage(1); scrollTop() }}
               onCauseChange={setCause}
               onClearAll={handleClearAll}
               resultCount={total}
@@ -805,25 +814,26 @@ export default function Directory() {
               <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
                 <div>
                   <span className="font-body text-[20px] font-semibold tracking-[-0.02em] text-deep-navy">
-                    {total.toLocaleString()} {searchQuery || activeFilter !== 'all' || stateFilter ? 'results' : 'organizations'}
+                    {total.toLocaleString()} {searchQuery || activeFilters.length > 0 || stateFilter ? 'results' : 'organizations'}
                   </span>
 
                   {/* Active filter chips */}
-                  {(searchQuery || activeFilter !== 'all' || subFilter || stateFilter || revenueFilter || scoreTier) && (
+                  {(searchQuery || activeFilters.length > 0 || subFilter || stateFilter || revenueFilter || scoreTier) && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-[11px]">
                           "{searchQuery}"
                         </span>
                       )}
-                      {!subFilter && activeFilter !== 'all' && (
+                      {!subFilter && activeFilters.map(f => (
                         <button
-                          onClick={() => handleFilterChange('all')}
+                          key={f}
+                          onClick={() => handleFilterChange(f)}
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
-                          {RAIL_CATEGORIES.find(c => c.id === activeFilter)?.label} ×
+                          {RAIL_CATEGORIES.find(c => c.id === f)?.label} ×
                         </button>
-                      )}
+                      ))}
                       {subFilter && (
                         <button
                           onClick={() => { setSubFilter(''); setCurrentPage(1) }}
@@ -860,6 +870,11 @@ export default function Directory() {
                         Clear all
                       </button>
                     </div>
+                  )}
+                  {subFilter === 'X70' && (
+                    <p className="mt-1.5 font-body text-[11px] text-cool-grey">
+                      The IRS classifies Hindu, Sikh, Jain, and other non-Western faith traditions under this code. This reflects official IRS data, not our own categorization.
+                    </p>
                   )}
                 </div>
 

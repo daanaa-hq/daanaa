@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import type { Organization } from '../data/organizations'
 import { formatCurrency, NTEE1_NAMES } from '../data/organizations'
+import { NTEE_SUBCATEGORIES } from '../data/categories'
 import BadgeChip from './BadgeChip'
 import { getTierFromOrg, getInlineVerifiedFact } from './TrustBadge'
 import LampMark from './LampMark'
@@ -20,6 +21,14 @@ interface OrgCardProps {
   hideCompare?: boolean
 }
 
+function getNteeInfo(code: string): { major: string; sub: string | null } {
+  if (!code) return { major: '', sub: null }
+  const letter = code[0].toUpperCase()
+  const major = NTEE1_NAMES[letter] ?? ''
+  const entry = (NTEE_SUBCATEGORIES[letter] ?? []).find(s => s.code === code)
+  return { major, sub: entry?.label ?? null }
+}
+
 function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.MouseEvent) => void }) {
   return (
     <button
@@ -27,9 +36,9 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
       title={inList ? 'Remove from giving list' : 'Add to giving list'}
       className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none"
       style={{
-        backgroundColor: inList ? '#C9A96E' : 'transparent',
-        borderColor: inList ? '#C9A96E' : 'rgba(201,169,110,0.40)',
-        color: inList ? '#0A1628' : '#C9A96E',
+        backgroundColor: inList ? '#2A6B45' : 'transparent',
+        borderColor: inList ? '#2A6B45' : 'rgba(42,107,69,0.40)',
+        color: inList ? '#FFFFFF' : '#2A6B45',
       }}
     >
       {inList ? (
@@ -52,43 +61,47 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
 }
 
 function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; canAdd: boolean; onClick: (e: React.MouseEvent) => void }) {
+  const color = inCompare ? '#C9A96E' : '#A89F94'
   return (
     <button
       onClick={onClick}
       title={inCompare ? 'Remove from comparison' : canAdd ? 'Add to comparison' : 'Comparison full (max 4)'}
       disabled={!inCompare && !canAdd}
-      className="p-1.5 rounded-full transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none disabled:opacity-30 disabled:cursor-not-allowed"
+      className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none disabled:opacity-30 disabled:cursor-not-allowed"
       aria-pressed={inCompare}
     >
       <svg
-        width="14" height="14" viewBox="0 0 24 24"
+        width="15" height="15" viewBox="0 0 24 24"
         fill={inCompare ? '#C9A96E' : 'none'}
-        stroke={inCompare ? '#C9A96E' : '#A89F94'}
+        stroke={color}
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
       >
         <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
         <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
       </svg>
+      <span className="font-body text-[9px] leading-none" style={{ color }}>Compare</span>
     </button>
   )
 }
 
 function BookmarkButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: React.MouseEvent) => void }) {
+  const color = isSaved ? '#C9A96E' : '#A89F94'
   return (
     <button
       onClick={onClick}
       title={isSaved ? 'Remove from saved' : 'Save organization'}
-      className="p-2 rounded-full transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none"
+      className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none"
       aria-pressed={isSaved}
     >
       <svg
-        width="18" height="18" viewBox="0 0 24 24"
+        width="15" height="15" viewBox="0 0 24 24"
         fill={isSaved ? '#C9A96E' : 'none'}
-        stroke={isSaved ? '#C9A96E' : '#A89F94'}
+        stroke={color}
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
       >
         <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
       </svg>
+      <span className="font-body text-[9px] leading-none" style={{ color }}>Save</span>
     </button>
   )
 }
@@ -224,16 +237,13 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
       to={`/org/${org.id}`}
       className="block bg-white border border-light-grey rounded-xl p-5 transition-all duration-200 hover:border-soft-gold/50 hover:-translate-y-[3px] hover:shadow-card"
     >
-      {/* Top row: lamp + name + add button */}
+      {/* Top row: lamp + name (full width, no button crowding it) */}
       <div className="flex items-start gap-3 mb-1.5">
         {lampTier && <LampMark tier={lampTier} size="md" className="mt-0.5 shrink-0" />}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display text-[17px] text-deep-navy leading-tight hover:text-soft-gold transition-colors line-clamp-2 flex-1 min-w-0">
-              {org.name}
-            </h3>
-            <AddButton inList={inList} onClick={handleAddToList} />
-          </div>
+          <h3 className="font-display text-[17px] text-deep-navy leading-tight hover:text-soft-gold transition-colors line-clamp-2">
+            {org.name}
+          </h3>
           {inlineFact && (
             <p className="font-body text-[11px] text-soft-gold mt-0.5 leading-none">{inlineFact}</p>
           )}
@@ -250,14 +260,29 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         </span>
       </div>
 
-      {/* Category */}
-      {org.subcategory && (
-        <div className="mb-3">
-          <span className="inline-block px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-deep-navy/70 font-body text-[11px] font-medium tracking-[0.02em] truncate max-w-[200px]">
-            {org.subcategory}
-          </span>
-        </div>
-      )}
+      {/* Category — human-readable, two-level */}
+      {org.subcategory && (() => {
+        const { major, sub } = getNteeInfo(org.subcategory)
+        const label = sub ?? major
+        if (!label) return null
+        return (
+          <div className="mb-3">
+            <span
+              title={org.subcategory}
+              className="inline-flex flex-col px-2.5 py-1 rounded-lg bg-soft-gold/8 cursor-default"
+            >
+              {major && sub && (
+                <span className="font-body text-[9px] text-cool-grey/50 leading-tight tracking-[0.05em] uppercase">
+                  {major}
+                </span>
+              )}
+              <span className="font-body text-[11px] text-deep-navy/70 font-medium leading-tight">
+                {label}
+              </span>
+            </span>
+          </div>
+        )
+      })()}
 
       {/* Revenue (secondary) */}
       {!compact && scored && (
@@ -270,16 +295,19 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         <p className="font-body text-[12px] text-cool-grey mb-2.5">Revenue: {formatCurrency(org.revenue)}</p>
       )}
 
-      {/* Footer: badges + actions */}
-      <div className="flex items-start justify-between gap-2 mt-3 pt-2.5 border-t border-light-grey/60">
-        <div className="flex flex-wrap gap-1.5">
-          {apiOrg && getCardBadges(apiOrg).map(badge => (
-            <BadgeChip key={badge.id} badge={badge} size="sm" variant="light" />
-          ))}
-        </div>
-        <div className="flex items-center gap-0.5 shrink-0">
+      {/* Footer: badges stacked above action buttons so Add never gets clipped */}
+      <div className="mt-3 pt-2.5 border-t border-light-grey/60">
+        {apiOrg && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {getCardBadges(apiOrg).map(badge => (
+              <BadgeChip key={badge.id} badge={badge} size="sm" variant="light" />
+            ))}
+          </div>
+        )}
+        <div className="flex items-center justify-end gap-1">
           {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
           {onToggleSave && <BookmarkButton isSaved={isSaved} onClick={handleBookmark} />}
+          <AddButton inList={inList} onClick={handleAddToList} />
         </div>
       </div>
     </Link>

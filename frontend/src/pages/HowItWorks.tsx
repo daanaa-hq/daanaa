@@ -76,7 +76,7 @@ export default function HowItWorks() {
               MERIT is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
             </p>
             <p>
-              We index every 501(c)(3) organization in the United States from IRS public records, over 430,000 of them, and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
+              We list every nonprofit the IRS recognizes in the United States — over 430,000 of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
               A high MERIT score means an organization is financially strong relative to similar nonprofits of similar size. It does not measure impact, goodness of purpose, or how efficiently a dollar reaches a beneficiary. Those things matter enormously. They are also much harder to measure, and we won't pretend otherwise.
@@ -87,10 +87,10 @@ export default function HowItWorks() {
             <p>Every organization listing is built from multiple layers of public data:</p>
             <div className="mt-2 space-y-3">
               {[
-                { source: 'IRS Business Master File (BMF)', what: 'Legal name, EIN, NTEE category, state of incorporation, 501(c)(3) status. Updated by the IRS continuously.' },
-                { source: 'IRS 990 XML Filings', what: 'Annual financial returns filed with the IRS. Source of mission statements, program descriptions, leadership, and detailed financials.' },
-                { source: 'IRS Statistics of Income (SOI)', what: 'IRS-published financial extracts covering FY2019–2024. Revenue figures for ~340,000 organizations.' },
-                { source: 'ProPublica Nonprofit Explorer', what: 'Enriched financial data for ~42,000 organizations with verified FY2022–2024 figures.' },
+                { source: 'IRS nonprofit registration list', what: 'Legal name, category, state, and nonprofit status. Updated by the IRS continuously.' },
+                { source: 'Annual financial reports (filed with the government)', what: 'Reports nonprofits file with the IRS each year. Source of mission statements, program descriptions, leadership, and detailed financials.' },
+                { source: 'Government-published financial summaries', what: 'IRS financial data covering 2019–2024. Revenue figures for about 340,000 organizations.' },
+                { source: 'ProPublica nonprofit database (a public interest newsroom)', what: 'Financial data for about 42,000 organizations with verified 2022–2024 figures.' },
               ].map(({ source, what }) => (
                 <div key={source} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey">
                   <div className="shrink-0 w-2 h-2 mt-2 rounded-full bg-soft-gold" />
@@ -102,7 +102,7 @@ export default function HowItWorks() {
               ))}
             </div>
             <p className="mt-4">
-              Every listing shows a data timestamp, like "FY 2023 · Source: IRS", so you always know how recent the information is.
+              Every listing shows when the data is from and where it came from, like "2023 · Source: IRS", so you always know how recent the information is.
             </p>
           </Section>
 
@@ -115,9 +115,9 @@ export default function HowItWorks() {
             </p>
             <div className="mt-2 space-y-3">
               <div className="p-4 bg-white rounded-lg border border-light-grey">
-                <p className="font-body text-[14px] font-semibold text-deep-navy">NTEE Subcategory</p>
+                <p className="font-body text-[14px] font-semibold text-deep-navy">Type of work</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  The IRS assigns each nonprofit an NTEE code. It is a short subcategory within a broader sector. "B24" means Special Education and "E21" means Community Health Centers. We compare within the subcategory, not just the broad sector. A small folk arts museum is not a peer of the Metropolitan Museum of Art.
+                  The IRS assigns each nonprofit a category code. "B24" means Special Education and "E21" means Community Health Centers. We compare within that specific category, not just the broad field. A small folk arts museum is not a fair comparison to the Metropolitan Museum of Art.
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-light-grey">
@@ -154,23 +154,23 @@ export default function HowItWorks() {
               {([
                 {
                   tier: 'Beacon' as TierName,
-                  what: 'In the top quarter for financial scale among similar organizations, with a current 990, mission statement, and active website all verified from public records.',
+                  what: 'Top 25% financially among similar nonprofits, with a current annual report, mission statement, and active website all confirmed from public records.',
                 },
                 {
                   tier: 'Lantern' as TierName,
-                  what: 'Current 990, mission statement, and active website all on public record. Peer score on file.',
+                  what: 'Current annual report, mission statement, and active website all on public record. Financial ranking on file.',
                 },
                 {
                   tier: 'Flame' as TierName,
-                  what: 'Current 990 on file and peer-benchmarked. Mission statement or website not yet in public records.',
+                  what: 'Current annual report on file with a financial ranking. Mission statement or website not yet in public records.',
                 },
                 {
                   tier: 'Ember' as TierName,
-                  what: 'IRS-confirmed 501(c)(3) with some financial data on record. Peer score not yet computable.',
+                  what: 'IRS-confirmed nonprofit with some financial data on record. Not enough data yet to assign a financial ranking.',
                 },
                 {
                   tier: 'Spark' as TierName,
-                  what: 'Registered 501(c)(3) in the IRS master file. No financial detail in our index yet. Many small organizations filing a 990-N postcard (under $50K revenue) fall here.',
+                  what: 'Registered nonprofit in the IRS list. No financial detail in our index yet. Many small organizations filing a simplified annual form (under $50K revenue) fall here.',
                 },
               ] as const).map(({ tier, what }) => (
                 <div key={tier} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">
@@ -183,7 +183,7 @@ export default function HowItWorks() {
               ))}
             </div>
             <Callout>
-              A lower tier is not a negative judgment. It reflects what public data is available, not the organization's character, impact, or importance. A small organization filing a 990-N postcard while doing extraordinary community work will show as Spark. That can change as more data enters the public record.
+              A lower tier is not a negative judgment. It reflects what public data is available, not the organization's character or importance. A small organization filing a simplified annual form while doing extraordinary community work will show as Spark. That can change as more data enters the public record.
             </Callout>
             <div className="mt-6">
               <Link
@@ -203,10 +203,10 @@ export default function HowItWorks() {
               <div className="p-5 bg-white rounded-xl border border-light-grey">
                 <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">MERIT's data</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
-                  Sourced from IRS public records. Objective, auditable, timestamped. Organizations cannot edit this layer.
+                  Sourced from IRS public records. Objective, fact-checked, timestamped. Organizations cannot edit this layer.
                 </p>
                 <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
-                  {['Legal name & EIN', 'NTEE category', 'Revenue from IRS filings', 'MERIT peer score', 'Data source & tax year'].map(i => (
+                  {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'MERIT financial ranking', 'Data source & year'].map(i => (
                     <li key={i} className="flex items-center gap-2">
                       <span className="w-1 h-1 rounded-full bg-cool-grey shrink-0" />{i}
                     </li>
@@ -234,13 +234,13 @@ export default function HowItWorks() {
 
           <Section label="Updates" title="How data stays current">
             <p>
-              We run automated refreshes on a regular cadence:
+              We run automated updates on a regular schedule:
             </p>
             <div className="mt-2 space-y-2">
               {[
-                { freq: 'Weekly', what: 'ProPublica enrichment for organizations with new 990 filings' },
-                { freq: 'Monthly', what: 'IRS SOI extract download and ingestion for newly published tax years' },
-                { freq: 'Ongoing', what: 'Peer percentile recomputation after any bulk revenue update' },
+                { freq: 'Weekly', what: 'ProPublica data for organizations with new financial reports' },
+                { freq: 'Monthly', what: 'IRS financial data update for newly published years' },
+                { freq: 'Ongoing', what: 'Financial rankings recalculated after bulk revenue updates' },
               ].map(({ freq, what }) => (
                 <div key={freq} className="flex gap-4 items-start">
                   <span className="shrink-0 font-body text-[13px] font-semibold text-soft-gold w-20">{freq}</span>
@@ -249,7 +249,7 @@ export default function HowItWorks() {
               ))}
             </div>
             <p className="mt-4">
-              Every organization's detail page shows the data vintage, the tax year and the source, so you're never guessing how old the information is.
+              Every organization's detail page shows when the data is from and where it came from, so you're never guessing how old the information is.
             </p>
           </Section>
 

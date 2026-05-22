@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { submitWaitlist } from '../data/api'
 import { usePageMeta } from '../hooks/usePageMeta'
+import LampMark from '../components/LampMark'
+import { TIER_COLORS } from '../components/TrustBadge'
+import type { TierName } from '../components/TrustBadge'
 
 function StepDot({ n, label }: { n: number; label: string }) {
   return (
@@ -50,7 +53,7 @@ export default function ForNonprofits() {
               Your organization is already listed. Now make it yours.
             </h1>
             <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-              MERIT indexes every 501(c)(3) in the United States from public IRS data. Claim your page to add your mission, programs, leadership, and impact directly, clearly labeled as your own voice.
+              MERIT lists every nonprofit the IRS recognizes in the United States. Claim your page to add your mission, programs, leadership, and impact directly — clearly labeled as your own words.
             </p>
             <a href="#claim" className="mt-8 inline-flex items-center gap-2 px-8 py-[14px] rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors">
               Join the waitlist
@@ -73,17 +76,17 @@ export default function ForNonprofits() {
               {
                 n: 1,
                 title: 'Mission & programs',
-                description: 'Add your mission statement, program descriptions, and the populations you serve, in your words, clearly marked as self reported and separate from IRS data.',
+                description: 'Add your mission statement, program descriptions, and the people you serve — in your words, clearly marked as written by you and separate from government records.',
               },
               {
                 n: 2,
                 title: 'Leadership team',
-                description: 'Introduce your executive director and board. Donors and volunteers want to know who stewards the organization and can\'t find that in a Form 990.',
+                description: 'Introduce your executive director and board. Donors and volunteers want to know who leads the organization — and that\'s not in public IRS records.',
               },
               {
                 n: 3,
                 title: 'Impact metrics',
-                description: 'Share the numbers that matter to you, like meals served, families housed, or students tutored. Context the IRS data alone can\'t provide.',
+                description: 'Share the numbers that matter to you — meals served, families housed, students tutored. Context that no government report can provide.',
               },
               {
                 n: 4,
@@ -100,6 +103,12 @@ export default function ForNonprofits() {
                 n: 6,
                 title: 'Regional connections',
                 description: 'Discover nonprofits doing complementary work nearby. Collaboration, not competition, is how communities thrive.',
+                phase2: true,
+              },
+              {
+                n: 7,
+                title: 'Supplier network',
+                description: 'Access vetted vendors — software, printing, supplies — negotiated at nonprofit rates. Lower your costs so more goes to your mission.',
                 phase2: true,
               },
             ].map(({ n, title, description, phase2 }) => (
@@ -128,13 +137,13 @@ export default function ForNonprofits() {
           <div className="max-w-[680px]">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Trust by design</span>
             <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-6">
-              IRS data and your data, clearly separated
+              Government records and your story, clearly separated
             </h2>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7] mb-4">
               MERIT keeps two distinct layers on every profile. The IRS layer, which covers revenue, category, and tax status, is public data we display but you cannot edit. Your claimed layer, which covers mission, programs, impact, and leadership, is your own voice, clearly labeled.
             </p>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
-              Donors can always tell which is which. That transparency is the foundation of trust on both sides.
+              Donors can always tell which is which. Keeping these two layers separate is how they trust what they read — and how you stay in control of your own story.
             </p>
           </div>
 
@@ -142,7 +151,7 @@ export default function ForNonprofits() {
             <div className="p-5 bg-warm-cream rounded-xl border border-light-grey">
               <p className="font-body text-[11px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-3">IRS public data</p>
               <ul className="space-y-2 font-body text-[13px] text-cool-grey">
-                {['Legal name & EIN', 'NTEE category', 'Revenue from tax filings', 'MERIT peer score', 'Tax year & data source'].map(i => (
+                {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'MERIT financial ranking', 'Year & data source'].map(i => (
                   <li key={i} className="flex items-center gap-2">
                     <span className="w-1 h-1 rounded-full bg-cool-grey/40 shrink-0" />{i}
                   </li>
@@ -159,7 +168,7 @@ export default function ForNonprofits() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 font-body text-[11px] text-cool-grey/60">Labeled "self-reported" · Controlled by you</p>
+              <p className="mt-3 font-body text-[11px] text-cool-grey/60">Labeled "written by you" · Controlled by you</p>
             </div>
           </div>
         </div>
@@ -176,7 +185,7 @@ export default function ForNonprofits() {
             <div className="space-y-5">
               <StepDot n={1} label="Search for your organization in the directory" />
               <StepDot n={2} label="Click 'Claim this page' on your profile" />
-              <StepDot n={3} label="Verify via your organization's EIN and email domain" />
+              <StepDot n={3} label="Verify via your organization's tax ID number and email domain" />
               <StepDot n={4} label="Edit your profile directly. Changes go live immediately" />
             </div>
             <p className="mt-8 font-body text-[14px] text-cool-grey leading-[1.6]">
@@ -185,6 +194,83 @@ export default function ForNonprofits() {
           </div>
         </div>
       </div>
+
+      {/* Raise Your Flame — visibility journey */}
+      {(() => {
+        const STEPS: { tier: TierName; pct: string; description: string; nextStep: string | null }[] = [
+          {
+            tier: 'Spark',
+            pct: '0.4% of all nonprofits',
+            description: "The IRS recognizes you. You're already in our index.",
+            nextStep: 'To reach Ember: file a full annual report with the government. Required for nonprofits earning over $50,000 a year.',
+          },
+          {
+            tier: 'Ember',
+            pct: '21% of all nonprofits',
+            description: 'Financial data is on record, but we need a recent one to rank you among peers.',
+            nextStep: 'To reach Flame: file an annual report dated 2022 or later. This happens automatically once the IRS publishes it — nothing to do with us.',
+          },
+          {
+            tier: 'Flame',
+            pct: '75% of all nonprofits',
+            description: "You have a current annual report and a financial ranking among similar nonprofits. A mission statement or website isn't yet on the public record.",
+            nextStep: 'To reach Lantern: get your mission statement and website into the public record. Claiming your MERIT page is the fastest way.',
+          },
+          {
+            tier: 'Lantern',
+            pct: '2% of all nonprofits',
+            description: 'Your current annual report, mission, and website are all on the public record. A strong, complete picture.',
+            nextStep: 'To reach Beacon: reach the top 25% in financial strength among similar nonprofits. That means healthy reserves and most of your spending going to programs.',
+          },
+          {
+            tier: 'Beacon',
+            pct: '1% of all nonprofits',
+            description: 'Fully lit. Top 25% financially among similar nonprofits, with everything on the public record. The most complete picture donors can see.',
+            nextStep: null,
+          },
+        ]
+        return (
+          <div className="bg-white py-16 border-t border-light-grey">
+            <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Your visibility journey</span>
+              <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-3">
+                Raise your flame
+              </h2>
+              <p className="font-body text-[16px] text-cool-grey leading-[1.7] mb-10 max-w-[580px]">
+                Every nonprofit starts somewhere. Here's what moves you from one tier to the next — no fees, no forms to fill with us, just public data becoming visible.
+              </p>
+              <div className="max-w-[640px] space-y-0">
+                {STEPS.map((step, i) => (
+                  <div key={step.tier} className="flex gap-6">
+                    <div className="flex flex-col items-center shrink-0">
+                      <div className="mt-1">
+                        <LampMark tier={step.tier} size="sm" />
+                      </div>
+                      {i < STEPS.length - 1 && (
+                        <div className="w-px bg-light-grey mt-2 mb-0" style={{ minHeight: '44px' }} />
+                      )}
+                    </div>
+                    <div className="pb-8 last:pb-0 flex-1">
+                      <div className="flex items-center gap-2.5 mb-1.5">
+                        <span className="font-body text-[16px] font-semibold" style={{ fontFamily: 'Cinzel, serif', color: TIER_COLORS[step.tier] }}>
+                          {step.tier}
+                        </span>
+                        <span className="font-body text-[12px] text-cool-grey/50">{step.pct}</span>
+                      </div>
+                      <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{step.description}</p>
+                      {step.nextStep && (
+                        <p className="mt-2 font-body text-[13px] text-deep-navy/70 leading-[1.5]">
+                          {step.nextStep}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Claim interest form */}
       <div id="claim" className="bg-deep-navy py-16 md:py-20">
@@ -212,7 +298,7 @@ export default function ForNonprofits() {
                   Claiming opens soon
                 </h2>
                 <p className="font-body text-[16px] text-muted-cream leading-[1.65] mb-8">
-                  We're rolling out organization accounts in phases. Leave your email and EIN and we'll notify you when your organization can claim its page.
+                  We're rolling out organization accounts in phases. Leave your email and we'll notify you when your organization can claim its page.
                 </p>
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <div>
@@ -227,7 +313,7 @@ export default function ForNonprofits() {
                     />
                   </div>
                   <div>
-                    <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">Organization EIN (optional)</label>
+                    <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">Organization tax ID — EIN (optional)</label>
                     <input
                       type="text"
                       value={ein}
