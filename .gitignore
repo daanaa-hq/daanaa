@@ -70,3 +70,6 @@ static/
 web/
 .gstack/
 .env
+audit_report.csv
+archive/
+frontend/src/data/*.db
