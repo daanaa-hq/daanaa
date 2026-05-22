@@ -1,0 +1,27 @@
+{
+  "confidence_publish_threshold": 90,
+  "confidence_review_threshold": 75,
+  "stop_on_status_codes": [403, 429],
+  "captcha_signals": [
+    "captcha", "just a moment", "cloudflare ray id",
+    "access denied", "bot detection", "human verification",
+    "ddos-guard", "incapsula", "recaptcha", "hcaptcha",
+    "please verify", "prove you are human"
+  ],
+  "url_shorteners": ["bit.ly", "t.co", "ow.ly", "tinyurl.com", "goo.gl", "buff.ly"],
+  "blocked_domain_retry_days": 30,
+  "parking_signatures": [
+    "this domain is for sale", "buy this domain", "domain for sale",
+    "parked free", "is parked", "domain parking", "sedoparking", "hugedomains"
+  ],
+  "rules": {
+    "never_submit_forms": true,
+    "never_bypass_captcha": true,
+    "never_use_proxy": true,
+    "never_create_account": true,
+    "never_test_payment": true,
+    "respect_robots_txt": true,
+    "stop_on_block": true,
+    "evidence_required_before_publish": true
+  }
+}
