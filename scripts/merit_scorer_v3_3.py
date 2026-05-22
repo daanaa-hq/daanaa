@@ -82,11 +82,11 @@ def percentile_rank(value, peer_values, higher_is_better=True):
     return round((below + equal / 2.0) / n * 100, 1)
 
 def score_band(score):
-    if score >= 85: return "Exceptional"
-    elif score >= 70: return "Strong"
-    elif score >= 55: return "Solid"
-    elif score >= 35: return "Mixed"
-    else: return "Concerns"
+    if score >= 85: return "Blazing"
+    elif score >= 70: return "Burning Bright"
+    elif score >= 55: return "Steady Flame"
+    elif score >= 35: return "Growing"
+    else: return "Just Starting"
 
 def calculate_merit(ein, org, peer_groups):
     peer_key = get_peer_key(ein, org)
