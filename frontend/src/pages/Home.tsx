@@ -445,10 +445,10 @@ function AdvisorTeaser() {
 
           <div className="shrink-0 text-center md:text-right">
             <Link
-              to="/advisor"
+              to="/directory"
               className="inline-flex items-center gap-2.5 px-8 py-4 rounded-full bg-deep-navy text-warm-cream font-body text-[14px] font-bold hover:bg-deep-navy/85 transition-colors"
             >
-              Try MERIT Advisor
+              Start Exploring
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
