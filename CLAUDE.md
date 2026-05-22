@@ -1,5 +1,27 @@
 # CLAUDE.md — MeritGiving
 
+## Stewardship Commitment — Read before any work
+
+This project operates under a Founding Stewardship Commitment (see `STEWARDSHIP.md`).
+Every AI agent, contributor, and system operating on this platform is bound by it.
+
+Before contributing any code, data change, copy edit, or system decision, you must:
+1. Have read `STEWARDSHIP.md` in full
+2. Operate in alignment with all 12 principles
+3. Flag any conflict between a requested task and these principles before proceeding
+
+Key rules for AI agents:
+- Trust signals (scores, badges, tiers) must only reflect real, evidence-based data
+- Never present unverified outputs or experimental results as established fact
+- Donor privacy is non-negotiable — no social pressure mechanics, no exposure of giving activity
+- Small orgs must be treated with equal dignity to large ones
+- If a data error is found, correct it and document it — do not hide it
+- All significant decisions must be explainable and traceable
+
+**Signed:** Claude Code (claude-sonnet-4-6) · AI Engineering Agent · 2026-05-20
+
+---
+
 ## What this project is
 
 **MERIT** is a civic nonprofit-discovery platform. It indexes 501(c)(3) organizations from IRS and ProPublica public data, assigns each a 0–100 MERIT score, benchmarks it within its NTEE peer group, and surfaces the results through a searchable directory UI.
@@ -67,42 +89,7 @@ Secondary/legacy: `data/meritgiving.db`, `data/merit_state.db` — do not treat 
 
 ### Data pipeline (`scripts/` + `api/`)
 
-Pipeline stages:
-
-1. **Ingest** — `ingest_bmf_master.py`, `xml_batch_parser.py` (IRS BMF + 990 XML)
-2. **Score** — `merit_scorer_v3_3.py` is the latest scorer (ignore v1–v3.2)
-3. **Enrich** — `enrich_propublica.py`, `enrich_v2.py` (ProPublica API cache)
-4. **Percentiles** — `build_percentiles.py`, `compute_percentiles.py`
-5. **Export** — `export_merit_csv.py`, `rebuild_master.py`
-6. **Orchestrate** — `overnight_pipeline.py`, `autodev/orchestrator.py`
-
----
-
-## Data sources
-
-| Source | Location |
-|--------|----------|
-| IRS BMF (Business Master File) | `data/bmf/`, `data/irs_bmf.csv` |
-| IRS 990 XML filings | `data/xml/` (by year) |
-| ProPublica Nonprofit Explorer | `data/propublica_cache/` (per-EIN JSON) |
-| Master org registry (flat) | `data/master_orgs.csv` |
-| NTEE lookup | `ntee_map.json` (root), `data/ntee_complete_lookup.json` |
-
----
-
-## MERIT scoring
-
-Scores are 0–100, computed per NTEE peer group:
-
-| Range | Badge |
-|-------|-------|
-| 90–100 | Exceptional Impact |
-| 75–89 | High Impact |
-| 60–74 | Solid Performer |
-| 40–59 | Developing |
-| < 40 | Needs Data |
-
-The current scorer is `api/merit_scorer_v3_3.py`. Previous versions (`v1`, `v2`, `v3`, `v3.1`, `v3.3`) are present for reference but should not be used for new scoring runs.
+Current scorer: `api/merit_scorer_v3_3.py`. Orchestration: `overnight_pipeline.py`. Do not extend `app.py` (legacy).
 
 ---
 
@@ -115,6 +102,11 @@ The current scorer is `api/merit_scorer_v3_3.py`. Previous versions (`v1`, `v2`,
 - **venv**: always activate `~/meritgiving/venv` before running any Python in this project.
 - **Ports in use**: API=5000, FastAPI legacy=8081, Vite dev=5173. Check `./check_merit_status.sh` before starting servers.
 
+## Coding discipline
+
+- Before editing any file, read the relevant section first. Before modifying a function, grep for all callers.
+- Research before you edit. If the same approach fails twice, stop and ask.
+
 ## Skill routing
 
 When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
@@ -123,8 +115,8 @@ Key routing rules:
 - Product ideas/brainstorming → invoke /office-hours
 - Strategy/scope → invoke /plan-ceo-review
 - Architecture → invoke /plan-eng-review
-- Design system/plan review → invoke /design-consultation or /plan-design-review
-- Full review pipeline → invoke /autoplan
+- Design system/plan review → invoke /plan-design-review
+- Full review pipeline → invoke /plan-ceo-review then /plan-eng-review
 - Bugs/errors → invoke /investigate
 - QA/testing site behavior → invoke /qa or /qa-only
 - Code review/diff check → invoke /review

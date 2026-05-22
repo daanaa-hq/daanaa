@@ -20,7 +20,7 @@ class QualityAgent(BaseAgent):
     name = "quality"
     local_model = _SUMMARY_MODEL
 
-    def execute(self):
+    def execute(self, **kwargs):
         db = self.db()
         today = datetime.date.today().isoformat()
         findings = []
