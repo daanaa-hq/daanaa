@@ -26,17 +26,8 @@ export default function Navigation({ solid = true }: NavigationProps) {
       >
         <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-0 group py-3">
-            <span className="font-cinzel text-[18px] text-deep-navy tracking-[0.12em] relative">
-              MER
-              <span className="relative inline-block">
-                <span
-                  className="absolute -top-[10px] left-1/2 -translate-x-1/2 w-[2px] h-[6px] bg-soft-gold rounded-full transition-all duration-300 group-hover:h-[8px]"
-                />
-                I
-              </span>
-              T
-            </span>
+          <Link to="/" className="flex items-center py-3">
+            <span className="font-cinzel text-[18px] text-deep-navy tracking-[0.12em]">MERIT</span>
           </Link>
 
           {/* Desktop Nav Links */}
@@ -51,12 +42,12 @@ export default function Navigation({ solid = true }: NavigationProps) {
                 to={item.path}
                 className="relative font-body text-[14px] tracking-[0.02em] transition-colors duration-150 py-3 flex items-center"
                 style={{
-                  color: isActive(item.path) ? '#0A1628' : '#A89F94',
+                  color: isActive(item.path) ? '#0A1628' : '#374151',
                   fontWeight: isActive(item.path) ? '500' : '400',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = '#0A1628')}
                 onMouseLeave={(e) => {
-                  if (!isActive(item.path)) e.currentTarget.style.color = '#A89F94'
+                  if (!isActive(item.path)) e.currentTarget.style.color = '#374151'
                 }}
               >
                 {item.label}

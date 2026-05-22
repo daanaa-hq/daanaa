@@ -16,19 +16,19 @@ export default function GivingListDrawer() {
         onClick={() => setOpen(o => !o)}
         className="hidden md:inline-flex relative items-center gap-1.5 px-4 py-2 rounded-full font-body text-[13px] transition-all duration-150"
         style={{
-          color: open ? '#C9A96E' : 'rgba(245,240,235,0.7)',
-          background: open ? 'rgba(201,169,110,0.1)' : 'transparent',
+          color: open ? '#2A6B45' : '#374151',
+          background: open ? 'rgba(42,107,69,0.08)' : 'transparent',
           border: '1px solid',
-          borderColor: open ? 'rgba(201,169,110,0.4)' : 'rgba(201,169,110,0.25)',
+          borderColor: open ? 'rgba(42,107,69,0.35)' : 'rgba(42,107,69,0.25)',
         }}
         aria-label="Open Giving List"
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill={count > 0 ? '#C9A96E' : 'none'} stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill={count > 0 ? '#C0392B' : 'none'} stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
         </svg>
         Give
         {count > 0 && (
-          <span className="min-w-[16px] h-[16px] flex items-center justify-center bg-soft-gold text-deep-navy text-[10px] font-bold rounded-full px-1">
+          <span className="min-w-[16px] h-[16px] flex items-center justify-center bg-prophetic-green text-white text-[10px] font-bold rounded-full px-1">
             {count}
           </span>
         )}

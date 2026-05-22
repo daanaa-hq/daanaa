@@ -10,11 +10,11 @@ import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
-  { name: 'Beacon',  pct: '0.9%',  blurb: 'Top-quartile score, full profile, current 990' },
-  { name: 'Lantern', pct: '1.9%',  blurb: 'Full profile, peer score, current 990' },
-  { name: 'Flame',   pct: '75.5%', blurb: 'Peer score + current 990 on record' },
+  { name: 'Beacon',  pct: '0.9%',  blurb: 'Top 25% financially, full profile, current filing' },
+  { name: 'Lantern', pct: '1.9%',  blurb: 'Full profile, financial ranking, current filing' },
+  { name: 'Flame',   pct: '75.5%', blurb: 'Financial ranking + current filing on record' },
   { name: 'Ember',   pct: '21.3%', blurb: 'IRS confirmed with financial data' },
-  { name: 'Spark',   pct: '0.4%',  blurb: 'IRS listed, no financials yet' },
+  { name: 'Spark',   pct: '0.4%',  blurb: 'IRS listed, no financial data yet' },
 ]
 
 // Returns the week number anchored to Monday so all users see the same shuffle each week
@@ -58,7 +58,7 @@ function HeroSection() {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-soft-gold/10 border border-soft-gold/20 mb-7">
           <span className="w-1.5 h-1.5 rounded-full bg-soft-gold animate-pulse" />
           <span className="font-body text-[13px] font-medium text-soft-gold tracking-[0.02em]">
-            {orgCount.toLocaleString()}+ IRS-verified nonprofits
+            {orgCount.toLocaleString()}+ nonprofits recognized by the IRS
           </span>
         </div>
 
@@ -82,7 +82,7 @@ function HeroSection() {
             value={query}
             onChange={setQuery}
             onSearch={handleSearch}
-            placeholder="Search by name, city, EIN, or cause…"
+            placeholder="Search by name, city, or cause…"
             dark
           />
         </div>
@@ -184,7 +184,8 @@ function StatsBar() {
   const { data: stats } = useApi(() => getStats(), [])
   const count = stats?.total_organizations ?? 450_000
   const finRecords = stats?.financial_records ?? 1_785_000
-  const atRisk = (stats?.reserve_health?.insolvent ?? 0) + (stats?.reserve_health?.at_risk ?? 0)
+  // at_risk bucket in stats API now covers 0–6 months (matches the directory filter threshold)
+  const needsFundingSoon = (stats?.reserve_health?.insolvent ?? 0) + (stats?.reserve_health?.at_risk ?? 0)
 
   const items: { icon: ReactNode; value: string; label: string; to?: string }[] = [
     {
@@ -203,7 +204,7 @@ function StatsBar() {
         </svg>
       ),
       value: `${Math.floor(finRecords / 1_000_000).toFixed(1)}M+`,
-      label: '990 filings indexed',
+      label: 'financial records indexed',
     },
     {
       icon: (
@@ -211,8 +212,8 @@ function StatsBar() {
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
       ),
-      value: atRisk > 0 ? `${Math.round(atRisk / 1000)}K` : '76K',
-      label: 'orgs under financial stress',
+      value: needsFundingSoon > 0 ? `${Math.round(needsFundingSoon / 1000)}K` : '127K',
+      label: 'orgs that may need funding soon',
       to: '/sector-health',
     },
     {
@@ -222,7 +223,7 @@ function StatsBar() {
         </svg>
       ),
       value: 'Monthly',
-      label: 'IRS BMF updates',
+      label: 'IRS registry updates',
     },
   ]
 
@@ -267,7 +268,7 @@ function TiersStrip() {
               Trust Tiers
             </p>
             <p className="font-body text-[14px] text-cool-grey leading-[1.5]">
-              Every listing carries a data confidence signal.
+              Every listing shows how much public data we have.
             </p>
             <Link
               to="/tiers"
@@ -325,14 +326,14 @@ function WalletSection() {
               Your giving history,<br />private by design
             </h2>
             <p className="mt-5 font-body text-[16px] leading-[1.7]" style={{ color: 'rgba(245,240,235,0.65)' }}>
-              Log every donation you make, through any channel, to any 501(c)(3).
+              Log every donation you make, through any channel, to any nonprofit.
               Records stay on your device only, never our servers.
             </p>
             <ul className="mt-7 space-y-3.5">
               {[
-                'Search 430K+ organizations and auto-fill the EIN',
+                'Search 430K+ organizations and auto-fill the details',
                 'Request an acknowledgment letter for gifts of $250+',
-                'Export by tax year, ready for your CPA',
+                'Export by year, ready for your accountant',
               ].map(item => (
                 <li key={item} className="flex items-start gap-3 font-body text-[15px]" style={{ color: 'rgba(245,240,235,0.75)' }}>
                   <svg className="shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -367,7 +368,7 @@ function WalletSection() {
               <div className="grid grid-cols-3 gap-3 mb-4">
                 {[
                   { label: 'Given all-time', value: '$1,249.95' },
-                  { label: `FY ${new Date().getFullYear()}`, value: '$749.97' },
+                  { label: `This year`, value: '$749.97' },
                   { label: 'Orgs', value: '6' },
                 ].map(s => (
                   <div key={s.label} className="bg-white/5 rounded-xl p-3.5">

@@ -66,6 +66,11 @@ module.exports = {
         'tier-flame':   '#D4B968',
         'tier-ember':   '#D9A876',
         'tier-spark':   '#E8C896',
+        // Islamic influence palette
+        'prophetic-green': '#2A6B45',
+        'sage-green':      '#4A7C3F',
+        'crimson':         '#8B1A1A',
+        'blush':           '#C4849A',
       },
       fontFamily: {
         display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
@@ -84,6 +89,7 @@ module.exports = {
         'card': '0 8px 30px rgba(10, 22, 40, 0.06)',
         'card-hover': '0 12px 40px rgba(10, 22, 40, 0.08)',
         'gold-glow': '0 0 0 3px rgba(201, 169, 110, 0.15)',
+        'green-glow': '0 0 0 3px rgba(42, 107, 69, 0.20)',
       },
       keyframes: {
         "accordion-down": {
