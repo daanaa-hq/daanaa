@@ -2,8 +2,7 @@
 """
 MeritGiving API — Serves registry_enriched to frontend
 """
-import sqlite3, os, json, functools, struct
-import numpy as np
+import sqlite3, os, json, functools, time, hashlib
 from flask import Flask, jsonify, request, g, abort, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -16,30 +15,30 @@ FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fronte
 # score-computation DATE is read dynamically from score_snapshots.
 METHODOLOGY_VERSION = "v1"
 
-# Lazy-loaded semantic search components (only initialised on first use)
-_embed_model = None
-_vec_ready   = None   # True/False/None (None = not yet checked)
+# ── Response cache ─────────────────────────────────────────────────────────────
+# Simple in-process time-keyed cache. Keys are strings, values are (payload, ts).
+# TTLs chosen per endpoint volatility. No external dependency (no Redis).
+_CACHE: dict = {}
+_CACHE_TTL = {
+    'ntee':   7200,   # 2 h — static category list
+    'stats':   900,   # 15 min — aggregate counts
+    'sector': 1800,   # 30 min — reserve health breakdown
+    'search':  300,   # 5 min — directory search results
+    'org':     600,   # 10 min — individual org detail
+}
 
-def _get_embed_model():
-    global _embed_model, _vec_ready
-    if _vec_ready is False:
-        return None
-    if _embed_model is not None:
-        return _embed_model
-    try:
-        import sqlite_vec
-        from sentence_transformers import SentenceTransformer
-        import torch
-        # CPU only: we encode one query sentence per request (~50ms).
-        # GPU would help document embedding (already done at build time) but
-        # causes ROCm multi-process contention across gunicorn workers.
-        _embed_model = SentenceTransformer("BAAI/bge-large-en-v1.5", device="cpu")
-        _vec_ready = True
-        print("[semantic] model loaded on cpu")
-    except Exception as e:
-        print(f"[semantic] not available: {e}")
-        _vec_ready = False
-    return _embed_model
+def _ck(ns: str, *parts) -> str:
+    raw = ns + ':' + ':'.join(str(p) for p in parts)
+    return hashlib.md5(raw.encode()).hexdigest()[:16]
+
+def _cget(key: str, ttl_ns: str):
+    entry = _CACHE.get(key)
+    if entry and (time.time() - entry[1]) < _CACHE_TTL.get(ttl_ns, 300):
+        return entry[0]
+    return None
+
+def _cset(key: str, value):
+    _CACHE[key] = (value, time.time())
 
 app = Flask(__name__)
 
@@ -82,13 +81,6 @@ def get_db():
     if db is None:
         db = g._database = sqlite3.connect(DB_PATH)
         db.row_factory = sqlite3.Row
-        try:
-            import sqlite_vec
-            db.enable_load_extension(True)
-            sqlite_vec.load(db)
-            db.enable_load_extension(False)
-        except Exception:
-            pass
     return db
 
 @app.teardown_appcontext
@@ -150,11 +142,17 @@ def health():
 @app.route('/api/organizations')
 @limiter.limit("100 per minute")
 def list_organizations():
+    # Build cache key from all query params before parsing
+    ck = _ck('orgs', request.query_string.decode())
+    cached = _cget(ck, 'search')
+    if cached: return jsonify(cached)
+
     db = get_db()
     page = max(1, request.args.get('page', 1, type=int))
     per_page = min(request.args.get('per_page', 20, type=int), 100)
     search = request.args.get('q', '').strip()[:200]
-    ntee = request.args.get('ntee', '').strip().upper()[:2]
+    ntee_raw = request.args.get('ntee', '').strip().upper()
+    ntee_list = [x.strip()[:1] for x in ntee_raw.split(',') if x.strip()]
     sub = request.args.get('sub', '').strip().upper()[:4]   # NTEECC subcategory e.g. E21
     state = request.args.get('state', '').strip().upper()[:2]
     min_rev = request.args.get('min_revenue', type=float)
@@ -163,6 +161,7 @@ def list_organizations():
     min_merit_tier = request.args.get('min_merit_tier', '').strip()
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     direct_link = request.args.get('direct_link', '').strip() == '1'
+    needs_funding = request.args.get('needs_funding', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
     sort_by = request.args.get('sort', 'total_revenue')
     order = request.args.get('order', 'desc')
@@ -170,7 +169,7 @@ def list_organizations():
     offset = (page - 1) * per_page
 
     # Always restrict to 501(c)(3) orgs with deductible donations
-    where_clauses = list(_DEDUCTIBILITY_FILTER.split(" AND "))
+    where_clauses = [_DEDUCTIBILITY_FILTER]
     params = []
 
     if search:
@@ -180,9 +179,14 @@ def list_organizations():
         for word in words:
             where_clauses.append("(organization_name LIKE ? OR EIN LIKE ? OR CITY LIKE ?)")
             params.extend([f'%{word}%', f'%{word}%', f'%{word}%'])
-    if ntee:
-        where_clauses.append("NTEE1 = ?")
-        params.append(ntee)
+    if ntee_list:
+        if len(ntee_list) == 1:
+            where_clauses.append("NTEE1 = ?")
+            params.append(ntee_list[0])
+        else:
+            placeholders = ','.join('?' * len(ntee_list))
+            where_clauses.append(f"NTEE1 IN ({placeholders})")
+            params.extend(ntee_list)
     if sub:
         where_clauses.append("NTEECC LIKE ?")
         params.append(sub + '%')
@@ -202,6 +206,8 @@ def list_organizations():
         where_clauses.append("is_hidden_gem = 1")
     if direct_link:
         where_clauses.append("donate_url IS NOT NULL AND donate_url != ''")
+    if needs_funding:
+        where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
     if cause:
         where_clauses.append(
             "EXISTS (SELECT 1 FROM json_each(cause_tags) WHERE value LIKE ?)"
@@ -232,7 +238,8 @@ def list_organizations():
                latest_tax_year, data_source, updated_at,
                revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
                merit_tier, merit_score, merit_band,
-               months_of_reserve, net_assets, total_expenses,
+               CASE WHEN months_of_reserve BETWEEN -120 AND 120 THEN months_of_reserve ELSE NULL END as months_of_reserve,
+               net_assets, total_expenses,
                employee_count, ruling_date, zipcode, is_hidden_gem, cause_tags,
                donate_url, donate_platform, donate_url_status,
                (mission IS NOT NULL AND mission != '') as has_mission,
@@ -256,13 +263,15 @@ def list_organizations():
                 d['cause_tags'] = None
         orgs.append(d)
 
-    return jsonify({
+    payload = {
         "organizations": orgs,
         "total": total,
         "page": page,
         "per_page": per_page,
-        "pages": (total + per_page - 1) // per_page
-    })
+        "pages": (total + per_page - 1) // per_page,
+    }
+    _cset(ck, payload)
+    return jsonify(payload)
 
 @app.route('/api/organizations/<ein>')
 @limiter.limit("60 per minute")
@@ -278,6 +287,10 @@ def get_organization(ein):
         return jsonify({"error": "Not found"}), 404
 
     org = dict(row)
+    # Clamp sentinel values written by the pipeline (-999, 999) to null
+    mor = org.get('months_of_reserve')
+    if mor is not None and not (-120 <= mor <= 120):
+        org['months_of_reserve'] = None
     org['total_revenue_formatted'] = f"${org['total_revenue']:,.0f}" if org['total_revenue'] else None
 
     # Parse JSON text columns → Python lists
@@ -287,35 +300,8 @@ def get_organization(ein):
         except (json.JSONDecodeError, TypeError):
             org['cause_tags'] = None
 
-    # Similar orgs: prefer same NTEECC + revenue_band, fall back to NTEE1
-    peer_group = org.get('peer_group') or ''
-    if ':' in peer_group:
-        # e.g. "B24:Medium" — match subcategory + band
-        nteecc_part, band_part = peer_group.split(':', 1)
-        similar = db.execute("""
-            SELECT EIN, organization_name, CITY, STATE, total_revenue,
-                   ntee1_percentile, peer_percentile, peer_group, revenue_band,
-                   latest_tax_year, data_source, updated_at,
-                   merit_tier, merit_score, merit_band
-            FROM registry_enriched
-            WHERE NTEECC LIKE ? AND revenue_band = ? AND EIN != ?
-            ORDER BY ABS(COALESCE(peer_percentile, 50) - ?) ASC
-            LIMIT 5
-        """, (nteecc_part + '%', band_part, ein_clean,
-              org.get('peer_percentile') or org.get('ntee1_percentile', 50))).fetchall()
-    else:
-        similar = db.execute("""
-            SELECT EIN, organization_name, CITY, STATE, total_revenue,
-                   ntee1_percentile, peer_percentile, peer_group, revenue_band,
-                   latest_tax_year, data_source, updated_at,
-                   merit_tier, merit_score, merit_band
-            FROM registry_enriched
-            WHERE NTEE1 = ? AND EIN != ?
-            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC
-            LIMIT 5
-        """, (org.get('NTEE1'), ein_clean,
-              org.get('peer_percentile') or org.get('ntee1_percentile', 50))).fetchall()
-    org['similar_organizations'] = [dict(r) for r in similar]
+    # Similar orgs: NTEECC+band (specific) → NTEE1+band → NTEE1 only
+    org['similar_organizations'] = _find_similar_orgs(db, ein_clean, org, limit=5)
 
     # Rank within NTEE category (national)
     if org.get('NTEE1'):
@@ -393,6 +379,8 @@ def get_financials(ein):
 @app.route('/api/ntee-categories')
 @limiter.exempt
 def ntee_categories():
+    cached = _cget('ntee_cats', 'ntee')
+    if cached: return jsonify(cached)
     db = get_db()
     rows = db.execute("""
         SELECT NTEE1 as code, COUNT(*) as count,
@@ -424,16 +412,22 @@ def ntee_categories():
         d['name'] = names.get(d['code'], f"Category {d['code']}")
         categories.append(d)
 
-    return jsonify({"categories": categories})
+    payload = {"categories": categories}
+    _cset('ntee_cats', payload)
+    return jsonify(payload)
 
-_DEDUCTIBILITY_FILTER = (
-    "(subsection = '3' OR subsection IS NULL OR subsection = '')"
-    " AND (deductibility != '2' OR deductibility IS NULL OR deductibility = '')"
-)
+# Only confirmed 501(c)(3) public charities where donations are tax-deductible.
+# subsection='3' = 501(c)(3) status per IRS BMF (excludes c4, c6, c7, etc.)
+# deductibility!='2' keeps confirmed-deductible (1), by-treaty (4), and unknown (0)
+# while excluding the 3,379 orgs the IRS has explicitly marked non-deductible.
+# Orgs with null subsection (NCCS-only, unverifiable) are excluded.
+_DEDUCTIBILITY_FILTER = "subsection = '3' AND deductibility != '2'"
 
 @app.route('/api/stats')
 @limiter.exempt
 def stats():
+    cached = _cget('stats', 'stats')
+    if cached: return jsonify(cached)
     db = get_db()
     f = _DEDUCTIBILITY_FILTER
     fin_count = db.execute("SELECT COUNT(*) FROM propublica_financials").fetchone()[0]
@@ -441,12 +435,12 @@ def stats():
         SELECT
             COUNT(CASE WHEN months_of_reserve IS NOT NULL THEN 1 END) as has_reserve,
             COUNT(CASE WHEN months_of_reserve < 0 THEN 1 END) as insolvent,
-            COUNT(CASE WHEN months_of_reserve >= 0 AND months_of_reserve < 3 THEN 1 END) as at_risk,
-            COUNT(CASE WHEN months_of_reserve >= 3 AND months_of_reserve < 12 THEN 1 END) as minimal,
+            COUNT(CASE WHEN months_of_reserve >= 0 AND months_of_reserve < 6 THEN 1 END) as at_risk,
+            COUNT(CASE WHEN months_of_reserve >= 6 AND months_of_reserve < 12 THEN 1 END) as minimal,
             COUNT(CASE WHEN months_of_reserve >= 12 THEN 1 END) as healthy
         FROM registry_enriched WHERE {f}
     """).fetchone()
-    return jsonify({
+    payload = {
         "total_organizations": db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {f}").fetchone()[0],
         "with_revenue": db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {f} AND total_revenue > 0").fetchone()[0],
         "total_revenue_sum": db.execute(f"SELECT ROUND(SUM(total_revenue),0) FROM registry_enriched WHERE {f} AND total_revenue > 0").fetchone()[0],
@@ -467,11 +461,15 @@ def stats():
             "minimal": reserve_stats["minimal"] if reserve_stats else 0,
             "healthy": reserve_stats["healthy"] if reserve_stats else 0,
         },
-    })
+    }
+    _cset('stats', payload)
+    return jsonify(payload)
 
 @app.route('/api/sector-health')
 @limiter.exempt
 def sector_health():
+    cached = _cget('sector_health', 'sector')
+    if cached: return jsonify(cached)
     db = get_db()
     f = _DEDUCTIBILITY_FILTER
     rows = db.execute(f"""
@@ -514,7 +512,9 @@ def sector_health():
         d['at_risk_pct'] = round((d['insolvent'] + d['at_risk']) / d['total_orgs'] * 100, 1)
         result.append(d)
 
-    return jsonify({"sectors": result})
+    payload = {"sectors": result}
+    _cset('sector_health', payload)
+    return jsonify(payload)
 
 @app.route('/api/scoring-runs')
 @limiter.limit("20 per minute")
@@ -544,120 +544,6 @@ def scoring_runs():
                 pass
         runs.append(d)
     return jsonify({"scoring_runs": runs, "count": len(runs)})
-
-
-@app.route('/api/search/semantic')
-@limiter.limit("30 per minute")
-def semantic_search():
-    """
-    Natural-language search across all orgs using BAAI/bge-large-en-v1.5 embeddings.
-    Returns orgs ranked by semantic similarity to the query.
-
-    Query params:
-        q        — required, natural language query (e.g. "food banks helping families in Texas")
-        limit    — max results (default 20, max 50)
-        ntee     — optional NTEE1 filter letter
-        state    — optional two-letter state filter
-    """
-    q = request.args.get('q', '').strip()[:500]
-    if not q:
-        return jsonify({"error": "q is required"}), 400
-
-    limit  = min(request.args.get('limit', 20, type=int), 50)
-    ntee   = request.args.get('ntee', '').strip().upper()[:2]
-    state  = request.args.get('state', '').strip().upper()[:2]
-
-    model = _get_embed_model()
-    if model is None:
-        return jsonify({"error": "Semantic search not yet available — embeddings are still being built."}), 503
-
-    # Check embeddings table exists and has rows
-    db = get_db()
-    try:
-        count = db.execute("SELECT COUNT(*) FROM org_embeddings_meta").fetchone()[0]
-        if count == 0:
-            return jsonify({"error": "Embeddings not yet built. Run scripts/build_embeddings.py first."}), 503
-    except Exception:
-        return jsonify({"error": "Embeddings not yet built. Run scripts/build_embeddings.py first."}), 503
-
-    # Encode query (CPU, ~50ms for one sentence)
-    try:
-        vec = model.encode([q], normalize_embeddings=True)[0]
-        vec_bytes = struct.pack(f"{len(vec)}f", *vec.tolist())
-    except Exception as e:
-        return jsonify({"error": f"Query encoding failed: {e}"}), 500
-
-    # KNN search — fetch more than needed so we can filter by ntee/state
-    k_fetch = min(limit * 5, 250)
-    try:
-        knn_rows = db.execute("""
-            SELECT e.ein, distance
-            FROM org_embeddings e
-            WHERE embedding MATCH ? AND k = ?
-            ORDER BY distance
-        """, (vec_bytes, k_fetch)).fetchall()
-    except Exception as ex:
-        return jsonify({"error": f"Vector search failed: {ex}"}), 500
-
-    if not knn_rows:
-        return jsonify({"results": [], "query": q, "mode": "semantic"})
-
-    # Hydrate with org details and apply optional filters
-    eins = [r["ein"] for r in knn_rows]
-    dist_map = {r["ein"]: float(r["distance"]) for r in knn_rows}
-
-    placeholders = ",".join("?" * len(eins))
-    where_extra = ""
-    extra_params = []
-    if ntee:
-        where_extra += " AND NTEE1 = ?"
-        extra_params.append(ntee)
-    if state:
-        where_extra += " AND STATE = ?"
-        extra_params.append(state)
-
-    rows = db.execute(f"""
-        SELECT EIN, organization_name, NTEE1, CITY, STATE,
-               total_revenue, ntee1_percentile,
-               latest_tax_year, data_source, mission
-        FROM registry_enriched
-        WHERE EIN IN ({placeholders}){where_extra}
-    """, eins + extra_params).fetchall()
-
-    # Sort by vector distance (lower = more similar)
-    results = sorted(
-        [dict(r) for r in rows],
-        key=lambda r: dist_map.get(r["EIN"], 999)
-    )[:limit]
-
-    for r in results:
-        r["similarity_score"] = round(1 - dist_map.get(r["EIN"], 1), 4)
-        r["total_revenue_formatted"] = f"${r['total_revenue']:,.0f}" if r.get("total_revenue") else None
-
-    return jsonify({
-        "results":       results,
-        "query":         q,
-        "mode":          "semantic",
-        "total_indexed": count,
-    })
-
-
-@app.route('/api/search/semantic/status')
-@limiter.exempt
-def semantic_status():
-    """How many orgs are embedded so far."""
-    db = get_db()
-    try:
-        indexed = db.execute("SELECT COUNT(*) FROM org_embeddings_meta").fetchone()[0]
-        total   = db.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]
-        return jsonify({
-            "indexed": indexed,
-            "total":   total,
-            "pct":     round(indexed / total * 100, 1) if total else 0,
-            "ready":   indexed > 10000,
-        })
-    except Exception:
-        return jsonify({"indexed": 0, "total": 0, "pct": 0, "ready": False})
 
 
 _VALID_SOURCES  = {'newsletter', 'claiming'}
@@ -759,317 +645,72 @@ def admin_waitlist_delete(wid):
     return jsonify({'ok': True})
 
 
-# ── MERIT Advisor ──────────────────────────────────────────────────────────────
+def _find_similar_orgs(db, ein_clean, org, limit=6):
+    """Return similar orgs using the most specific match available:
+    NTEECC + revenue_band → NTEE1 + revenue_band → NTEE1 only."""
+    pct = org.get('peer_percentile') or org.get('ntee1_percentile', 50) or 50
+    cols = """EIN, organization_name, CITY, STATE, total_revenue,
+              ntee1_percentile, peer_percentile, peer_group, revenue_band,
+              latest_tax_year, data_source, updated_at,
+              merit_tier, merit_score, merit_band"""
+    nteecc = org.get('NTEECC')
+    band = org.get('revenue_band')
+    ntee1 = org.get('NTEE1')
 
-_NTEE_LABELS = {
-    'A': 'Arts, Culture & Humanities', 'B': 'Education',
-    'C': 'Environment', 'D': 'Animal-Related',
-    'E': 'Health', 'F': 'Mental Health & Crisis',
-    'G': 'Voluntary Health Associations', 'H': 'Medical Research',
-    'I': 'Crime & Legal-Related', 'J': 'Employment',
-    'K': 'Food, Agriculture & Nutrition', 'L': 'Housing & Shelter',
-    'M': 'Public Safety', 'N': 'Recreation & Sports',
-    'O': 'Youth Development', 'P': 'Human Services',
-    'Q': 'International', 'R': 'Civil Rights & Advocacy',
-    'S': 'Community Improvement', 'T': 'Philanthropy & Voluntarism',
-    'U': 'Science & Technology', 'V': 'Social Science',
-    'W': 'Public & Societal Benefit', 'X': 'Religion-Related',
-    'Y': 'Mutual & Membership', 'Z': 'Unknown',
-}
+    if nteecc and band:
+        rows = db.execute(f"""
+            SELECT {cols} FROM registry_enriched
+            WHERE NTEECC = ? AND revenue_band = ? AND EIN != ?
+            ORDER BY ABS(COALESCE(peer_percentile, 50) - ?) ASC
+            LIMIT ?
+        """, (nteecc, band, ein_clean, pct, limit)).fetchall()
+        if len(rows) >= 3:
+            return [dict(r) for r in rows]
 
-# Multi-word phrases must come before single words so they match first.
-_NTEE_KEYWORDS: list = [
-    ('K', ['food bank', 'food pantry', 'food shelf', 'meals on wheels']),
-    ('F', ['mental health', 'substance abuse', 'behavioral health', 'behavioral health']),
-    ('L', ['affordable housing', 'homeless shelter', 'housing assistance']),
-    ('O', ['after school', 'youth development', 'big brothers', 'big sisters']),
-    ('P', ['social services', 'family services', 'human services']),
-    ('R', ['civil rights', 'voting rights', 'equal rights']),
-    ('W', ['first responder', 'disaster relief', 'emergency response']),
-    ('A', ['arts', 'art', 'music', 'theater', 'theatre', 'dance', 'culture', 'museum', 'gallery', 'opera', 'symphony', 'film']),
-    ('B', ['education', 'school', 'literacy', 'tutoring', 'learning', 'academic', 'college', 'preschool', 'stem', 'stem']),
-    ('C', ['environment', 'conservation', 'wildlife', 'nature', 'climate', 'ecology', 'forest', 'ocean', 'land trust']),
-    ('D', ['animals', 'animal', 'pets', 'pet', 'humane', 'spca', 'veterinary', 'dog', 'cat']),
-    ('E', ['health', 'medical', 'hospital', 'clinic', 'healthcare', 'disease', 'cancer', 'diabetes', 'heart', 'nursing']),
-    ('G', ['disability', 'disabilities', 'special needs', 'autism', 'blind', 'deaf', 'rehabilitation']),
-    ('J', ['job', 'employment', 'workforce', 'vocational', 'career', 'job training']),
-    ('K', ['food', 'hunger', 'meals', 'pantry', 'nutrition', 'feeding', 'farm', 'farming', 'garden']),
-    ('L', ['housing', 'homeless', 'shelter', 'homelessness', 'affordable']),
-    ('N', ['sports', 'recreation', 'athletic', 'fitness', 'soccer', 'basketball', 'baseball']),
-    ('O', ['youth', 'children', 'kids', 'teen', 'boys', 'girls', 'mentoring', 'mentor', 'child']),
-    ('Q', ['international', 'global', 'overseas', 'developing countries', 'humanitarian']),
-    ('R', ['advocacy', 'justice', 'equality', 'voting', 'policy', 'rights']),
-    ('S', ['community', 'neighborhood', 'civic', 'local development', 'economic development']),
-    ('W', ['veterans', 'military', 'veteran', 'disaster', 'emergency', 'firefighter']),
-    ('X', ['religion', 'faith', 'church', 'religious', 'christian', 'jewish', 'mosque', 'synagogue']),
-]
+    if ntee1 and band:
+        rows = db.execute(f"""
+            SELECT {cols} FROM registry_enriched
+            WHERE NTEE1 = ? AND revenue_band = ? AND EIN != ?
+            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC
+            LIMIT ?
+        """, (ntee1, band, ein_clean, pct, limit)).fetchall()
+        if len(rows) >= 2:
+            return [dict(r) for r in rows]
 
-_STATE_MAP = {
-    'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
-    'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
-    'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
-    'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
-    'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-    'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
-    'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
-    'new hampshire': 'NH', 'new jersey': 'NJ', 'new mexico': 'NM', 'new york': 'NY',
-    'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
-    'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
-    'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
-    'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV',
-    'wisconsin': 'WI', 'wyoming': 'WY',
-}
-_STATE_ABBRS = set(_STATE_MAP.values()) | {'DC'}
+    if ntee1:
+        rows = db.execute(f"""
+            SELECT {cols} FROM registry_enriched
+            WHERE NTEE1 = ? AND EIN != ?
+            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC
+            LIMIT ?
+        """, (ntee1, ein_clean, pct, limit)).fetchall()
+        return [dict(r) for r in rows]
 
-_advisor_table_ready = False
-
-def _log_advisor_event(db, event_type, query=None, ntee=None, state=None, ein=None):
-    global _advisor_table_ready
-    if not _advisor_table_ready:
-        try:
-            db.execute("""
-                CREATE TABLE IF NOT EXISTS advisor_events (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_type TEXT NOT NULL,
-                    query TEXT,
-                    ntee TEXT,
-                    state TEXT,
-                    ein TEXT,
-                    ts INTEGER NOT NULL DEFAULT (strftime('%s','now'))
-                )
-            """)
-            db.commit()
-            _advisor_table_ready = True
-        except Exception:
-            return
-    try:
-        db.execute(
-            "INSERT INTO advisor_events (event_type, query, ntee, state, ein) VALUES (?, ?, ?, ?, ?)",
-            (event_type, query, ntee, state, ein)
-        )
-        db.commit()
-    except Exception:
-        pass
-
-
-def _parse_advisor_query(query: str) -> dict:
-    import re
-    q = query.lower()
-
-    ntee_match = None
-    for code, keywords in _NTEE_KEYWORDS:
-        for kw in keywords:
-            if kw in q:
-                ntee_match = code
-                break
-        if ntee_match:
-            break
-
-    # Two-word state names first, then single, then abbreviations
-    state_match = None
-    for full, abbr in sorted(_STATE_MAP.items(), key=lambda x: -len(x[0])):
-        if full in q:
-            state_match = abbr
-            break
-    if not state_match:
-        for word in re.findall(r'\b[A-Z]{2}\b', query):
-            if word in _STATE_ABBRS:
-                state_match = word
-                break
-
-    # City: "in <City>" or "near <City>" — strip any trailing state word
-    city_match = None
-    for candidate in re.findall(
-        r'\b(?:in|near|around)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)',
-        query,
-        re.IGNORECASE
-    ):
-        parts = [p for p in candidate.strip().split() if p.lower() not in _STATE_MAP]
-        if parts:
-            city_match = ' '.join(parts).upper()
-            break
-
-    prefer_small = any(kw in q for kw in ['small', 'grassroots', 'neighborhood', 'local', 'community-based'])
-
-    return {
-        'ntee': ntee_match,
-        'state': state_match,
-        'city': city_match,
-        'prefer_small': prefer_small,
-    }
-
-
-@app.route('/api/advisor/search', methods=['POST'])
-@limiter.limit("30 per minute")
-def advisor_search():
-    body = request.get_json(silent=True) or {}
-    query = str(body.get('query', '')).strip()[:300]
-    if not query:
-        return jsonify({'error': 'query required'}), 400
-
-    parsed = _parse_advisor_query(query)
-    ntee_match  = parsed['ntee']
-    state_match = parsed['state']
-    city_match  = parsed['city']
-    prefer_small = parsed['prefer_small']
-
-    db = get_db()
-
-    def _build_query(with_donate_filter: bool) -> tuple:
-        wc = list(_DEDUCTIBILITY_FILTER.split(" AND "))
-        p: list = []
-        if ntee_match:
-            wc.append("NTEE1 = ?")
-            p.append(ntee_match)
-        if state_match:
-            wc.append("STATE = ?")
-            p.append(state_match)
-        if city_match:
-            wc.append("CITY LIKE ?")
-            p.append(f'%{city_match}%')
-        if with_donate_filter:
-            wc.append("donate_url IS NOT NULL AND donate_url != ''")
-        ws = " AND ".join(wc)
-        s = f"""
-            SELECT EIN, organization_name, NTEE1, CITY, STATE,
-                   total_revenue, peer_percentile, ntee1_percentile,
-                   merit_tier, merit_score, merit_band,
-                   donate_url, donate_platform, donate_url_status, cause_tags
-            FROM registry_enriched
-            WHERE {ws}
-            ORDER BY COALESCE(merit_score, 0) DESC, COALESCE(peer_percentile, 0) DESC
-            LIMIT 8
-        """
-        return s, p
-
-    # Try with donate links first; fall back to all matching orgs
-    sql, params = _build_query(with_donate_filter=True)
-    rows = db.execute(sql, params).fetchall()
-    if not rows:
-        sql, params = _build_query(with_donate_filter=False)
-        rows = db.execute(sql, params).fetchall()
-
-    _log_advisor_event(db, 'search', query[:200], ntee_match, state_match)
-
-    orgs = []
-    for row in rows:
-        d = dict(row)
-        if d.get('cause_tags'):
-            try:
-                d['cause_tags'] = json.loads(d['cause_tags'])
-            except (json.JSONDecodeError, TypeError):
-                d['cause_tags'] = None
-        orgs.append(d)
-
-    context_parts = []
-    if ntee_match:
-        context_parts.append(_NTEE_LABELS.get(ntee_match, ntee_match))
-    if city_match:
-        context_parts.append(f'in {city_match.title()}')
-    elif state_match:
-        context_parts.append(f'in {state_match}')
-    context_str = ', '.join(context_parts) if context_parts else 'all causes'
-
-    return jsonify({
-        'orgs': orgs,
-        'parsed': parsed,
-        'context': context_str,
-        'total': len(orgs),
-    })
-
-
-@app.route('/api/advisor/click', methods=['POST'])
-@limiter.limit("60 per minute")
-def advisor_click():
-    body = request.get_json(silent=True) or {}
-    ein = str(body.get('ein', '')).strip()[:20]
-    query = str(body.get('query', '')).strip()[:200]
-    if not ein:
-        return jsonify({'ok': False, 'error': 'ein required'}), 400
-    db = get_db()
-    _log_advisor_event(db, 'click', query, ein=ein)
-    return jsonify({'ok': True})
+    return []
 
 
 @app.route('/api/organizations/<ein>/similar')
 @limiter.limit("60 per minute")
-def similar_organizations(ein):
-    """
-    Returns orgs semantically similar to <ein> using bge-large cosine similarity.
-    Query params:
-        limit    — max results (default 12, max 24)
-        diamonds — if "1", restrict to is_hidden_gem=1 orgs only
-    """
-    ein_clean = ein.replace('-', '').strip()[:20]
-    limit   = min(request.args.get('limit', 12, type=int), 24)
-    diamonds = request.args.get('diamonds', '0') == '1'
+def get_similar_organizations(ein):
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    try:
+        limit = min(int(request.args.get('limit', 6)), 12)
+    except (ValueError, TypeError):
+        limit = 6
 
     db = get_db()
+    row = db.execute("SELECT * FROM registry_enriched WHERE EIN = ?", (ein_clean,)).fetchone()
+    if row is None:
+        return jsonify({"error": "Not found"}), 404
 
-    # Fetch this org's embedding
-    try:
-        row = db.execute(
-            "SELECT embedding FROM org_embeddings WHERE ein = ?", (ein_clean,)
-        ).fetchone()
-    except Exception:
-        return jsonify({"error": "Embeddings not available"}), 503
-
-    if not row:
-        return jsonify({"results": [], "mode": "semantic_similar", "reason": "no_embedding"})
-
-    vec_bytes = bytes(row["embedding"])
-
-    # KNN — fetch extra to allow for filtering and self-exclusion
-    k_fetch = min((limit + 1) * 4, 100)
-    try:
-        knn_rows = db.execute("""
-            SELECT e.ein, distance
-            FROM org_embeddings e
-            WHERE embedding MATCH ? AND k = ?
-            ORDER BY distance
-        """, (vec_bytes, k_fetch)).fetchall()
-    except Exception as ex:
-        return jsonify({"error": f"Vector search failed: {ex}"}), 500
-
-    # Exclude self
-    knn_rows = [r for r in knn_rows if r["ein"] != ein_clean]
-
-    if not knn_rows:
-        return jsonify({"results": [], "mode": "semantic_similar"})
-
-    eins = [r["ein"] for r in knn_rows]
-    dist_map = {r["ein"]: float(r["distance"]) for r in knn_rows}
-
-    placeholders = ",".join("?" * len(eins))
-    diamond_clause = " AND is_hidden_gem = 1" if diamonds else ""
-    rows = db.execute(f"""
-        SELECT EIN, organization_name, NTEE1, CITY, STATE,
-               total_revenue, ntee1_percentile, peer_percentile,
-               latest_tax_year, merit_tier, merit_score, is_hidden_gem,
-               cause_tags, website, donate_url, donate_url_status
-        FROM registry_enriched
-        WHERE EIN IN ({placeholders}){diamond_clause}
-    """, eins).fetchall()
-
-    results = sorted(
-        [dict(r) for r in rows],
-        key=lambda r: dist_map.get(r["EIN"], 999)
-    )[:limit]
-
-    for r in results:
-        r["similarity_score"] = round(1 - dist_map.get(r["EIN"], 1), 4)
-        if r.get("total_revenue"):
-            r["total_revenue_formatted"] = f"${r['total_revenue']:,.0f}"
-        try:
-            r["cause_tags"] = json.loads(r["cause_tags"]) if r.get("cause_tags") else None
-        except (json.JSONDecodeError, TypeError):
-            r["cause_tags"] = None
-
-    return jsonify({
-        "results": results,
-        "mode":    "semantic_similar",
-        "diamonds_only": diamonds,
-    })
+    org = dict(row)
+    results = _find_similar_orgs(db, ein_clean, org, limit=limit)
+    mode = 'nteecc+band' if (org.get('NTEECC') and org.get('revenue_band')) else \
+           'ntee1+band' if org.get('revenue_band') else 'ntee1'
+    return jsonify({'results': results, 'mode': mode, 'diamonds_only': False})
 
 
 # ── Frontend static serving ────────────────────────────────────────────────
