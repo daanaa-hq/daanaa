@@ -37,8 +37,9 @@ export interface ApiOrganization {
   data_source: string | null;        // 'propublica' | 'irs_soi' | 'nccs' | '' etc.
   updated_at: string | null;         // ISO timestamp of last DB write
   merit_tier?: string | null;        // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
-  merit_score?: number | null;       // 0-100 financial-health score (only ~4.7k orgs with full 990 financials)
-  merit_band?: string | null;        // 'Exceptional' | 'Strong' | 'Solid' | 'Mixed' | 'Concerns'
+  merit_score?: number | null;       // 0-100 financial-health score
+  merit_band?: string | null;        // journey band e.g. 'Blazing' | 'Burning Bright' | 'Steady Flame' | 'Growing' | 'Just Starting'
+  score_tier?: string | null;        // 'full' | 'partial' | 'revenue_only' — data confidence level
   has_mission: boolean | null;
   has_website: boolean | null;
   // ProPublica enrichment fields
@@ -133,6 +134,7 @@ export async function getOrganizations(params?: {
   min_merit_tier?: string;    // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
   hidden_gem?: boolean;       // true = only small, healthy, mission-focused orgs
   direct_link?: boolean;      // true = only orgs with a detected donate URL
+  needs_funding?: boolean;    // true = orgs with < 12 months of operating reserves
   cause?: string;             // matches a cause tag (e.g. "food bank", "mental health")
 }): Promise<{
   organizations: ApiOrganization[];
@@ -156,6 +158,7 @@ export async function getOrganizations(params?: {
   if (params?.min_merit_tier) sp.set('min_merit_tier', params.min_merit_tier);
   if (params?.hidden_gem) sp.set('hidden_gem', '1');
   if (params?.direct_link) sp.set('direct_link', '1');
+  if (params?.needs_funding) sp.set('needs_funding', '1');
   if (params?.cause) sp.set('cause', params.cause);
   return fetchJson(`/api/organizations?${sp.toString()}`);
 }
@@ -218,33 +221,6 @@ export async function getCategories(): Promise<{ categories: ApiCategory[] }> {
 // GET /api/stats
 export async function getStats(): Promise<ApiStats> {
   return fetchJson('/api/stats');
-}
-
-// GET /api/search/semantic
-export interface SemanticResult extends ApiOrganization {
-  similarity_score: number;
-  mission: string | null;
-}
-
-export async function semanticSearch(params: {
-  q: string;
-  limit?: number;
-  ntee?: string;
-  state?: string;
-}): Promise<{ results: SemanticResult[]; query: string; total_indexed: number }> {
-  const sp = new URLSearchParams();
-  sp.set('q', params.q);
-  if (params.limit)  sp.set('limit', String(params.limit));
-  if (params.ntee)   sp.set('ntee', params.ntee);
-  if (params.state)  sp.set('state', params.state);
-  return fetchJson(`/api/search/semantic?${sp.toString()}`);
-}
-
-// GET /api/search/semantic/status
-export async function semanticStatus(): Promise<{
-  indexed: number; total: number; pct: number; ready: boolean;
-}> {
-  return fetchJson('/api/search/semantic/status');
 }
 
 // --- Waitlist ---

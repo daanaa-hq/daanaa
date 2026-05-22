@@ -16,6 +16,7 @@ frontend/dist/
 
 # Data (large; sourced from IRS/ProPublica, not version-controlled)
 data/
+!frontend/src/data/
 
 # Logs & runtime state
 *.log

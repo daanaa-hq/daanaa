@@ -81,6 +81,14 @@ function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
 
         <line x1={margin.left} y1={margin.top + innerH} x2={chartW - margin.right} y2={margin.top + innerH} stroke="#E5E0DB" strokeWidth={1} />
 
+        {/* Vertical grid lines between bars */}
+        {data.slice(0, -1).map((_, i) => {
+          const x = margin.left + gap + i * (barWidth + gap) + barWidth + gap / 2
+          return (
+            <line key={`vgrid-${i}`} x1={x} y1={margin.top} x2={x} y2={margin.top + innerH} stroke="#E5E0DB" strokeWidth={1} strokeDasharray="3 3" />
+          )
+        })}
+
         {data.map((d, i) => {
           const barH = (d.amount / maxAmount) * innerH
           const x = margin.left + gap + i * (barWidth + gap)
@@ -163,6 +171,17 @@ function hasKnownDataSource(src: string | null) {
   return src === 'propublica' || src === 'irs_soi'
 }
 
+function formatOrdinal(n: number): string {
+  const r = Math.round(n)
+  const mod100 = r % 100
+  if (mod100 >= 11 && mod100 <= 13) return `${r}th`
+  const mod10 = r % 10
+  if (mod10 === 1) return `${r}st`
+  if (mod10 === 2) return `${r}nd`
+  if (mod10 === 3) return `${r}rd`
+  return `${r}th`
+}
+
 // Decode a peer_group string like "B24:Medium" into a readable label
 function peerGroupLabel(peerGroup: string | null, revenueBand: string | null): string {
   if (!peerGroup) return ''
@@ -172,6 +191,43 @@ function peerGroupLabel(peerGroup: string | null, revenueBand: string | null): s
   }
   const band = revenueBand ? `${revenueBand}-sized ` : ''
   return `${band}${peerGroup} category nonprofits`
+}
+
+function scoreSignals(org: ApiOrganization): { label: string; ok: boolean; warn: boolean }[] {
+  const signals: { label: string; ok: boolean; warn: boolean }[] = []
+
+  if (org.months_of_reserve != null) {
+    const m = org.months_of_reserve
+    signals.push({
+      label: m >= 3 ? 'Healthy financial cushion'
+           : m >= 1 ? 'Thin reserves'
+           : 'Little financial safety net',
+      ok: m >= 3,
+      warn: m < 1,
+    })
+  }
+
+  if (org.total_revenue != null && org.total_expenses != null && org.total_expenses > 0) {
+    const ratio = org.total_revenue / org.total_expenses
+    signals.push({
+      label: ratio >= 1.05 ? 'Bringing in more than they spend'
+           : ratio >= 0.95 ? 'Roughly breaking even'
+           : 'Spending more than they raise',
+      ok: ratio >= 0.95,
+      warn: ratio < 0.95,
+    })
+  }
+
+  return signals
+}
+
+function summaryLine(org: ApiOrganization): string {
+  if (org.months_of_reserve != null) {
+    const m = Math.round(org.months_of_reserve)
+    const feel = m >= 6 ? 'a strong cushion' : m >= 3 ? 'a healthy buffer' : 'limited runway'
+    return `They carry about ${m} months of savings — ${feel}.`
+  }
+  return `Ranked within a peer group of ${org.peer_total ?? '—'} similar nonprofits.`
 }
 
 // ---- Convert API org to local format ----
@@ -229,6 +285,7 @@ export default function OrganizationDetail() {
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
+  const [showScoreExplainer, setShowScoreExplainer] = useState(false)
   const { isInList, items: givingItems, addItem, removeItem, markPending } = useGivingList()
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
@@ -248,12 +305,11 @@ export default function OrganizationDetail() {
   )
   const financials: ApiFinancialRecord[] = financialsData?.financials ?? []
 
-  // Semantic similar orgs via bge-large embeddings — falls back to peer-group below
-  const { data: semanticSimilarData } = useApi(
+  const { data: similarData } = useApi(
     () => id ? getSimilarOrgs(id, { limit: 6 }) : Promise.resolve({ results: [], mode: '', diamonds_only: false }),
     [id]
   )
-  const semanticSimilarOrgs: ApiOrganization[] = (semanticSimilarData?.results ?? []) as ApiOrganization[]
+  const similarApiOrgs: ApiOrganization[] = (similarData?.results ?? []) as ApiOrganization[]
   const revenueTrend = financials
     .filter(f => f.totrevenue !== null && f.totrevenue > 0)
     .map(f => ({ year: f.tax_prd_yr, amount: f.totrevenue! }))
@@ -264,24 +320,22 @@ export default function OrganizationDetail() {
 
   const org = apiOrg ? adaptOrg(apiOrg) : null
 
-  // Prefer semantic similar orgs; fall back to peer-group from org response
   const rawSimilarOrgs = useMemo(() => {
-    if (semanticSimilarOrgs.length > 0) return semanticSimilarOrgs.slice(0, 6)
+    if (similarApiOrgs.length > 0) return similarApiOrgs.slice(0, 6)
     if (!apiOrg?.similar_organizations) return []
     return (apiOrg.similar_organizations as ApiOrganization[])
       .filter((o) => o.EIN !== apiOrg.EIN)
       .slice(0, 4)
-  }, [apiOrg, semanticSimilarOrgs])
+  }, [apiOrg, similarApiOrgs])
 
   const similarOrgs = useMemo(() => rawSimilarOrgs.map(adaptOrg), [rawSimilarOrgs])
-  const usingSemanticSimilar = semanticSimilarOrgs.length > 0
 
   const inList = isInList(org?.ein || '')
   const hasGiven = givingItems.some(i => i.ein === (org?.ein || '') && i.status === 'given')
 
   const metaTitle = apiOrg?.organization_name ?? ''
   const metaDesc = apiOrg
-    ? `${apiOrg.organization_name} is an IRS-verified 501(c)(3) nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. MERIT tier: ${apiOrg.merit_tier ?? 'Flame'}. Financial scale: ${apiOrg.peer_percentile != null ? `${Math.round(apiOrg.peer_percentile)}/100` : 'pending'}.`
+    ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. MERIT tier: ${apiOrg.merit_tier ?? 'Flame'}. Financial scale: ${apiOrg.peer_percentile != null ? `${Math.round(apiOrg.peer_percentile)}/100` : 'pending'}.`
     : ''
   usePageMeta(metaTitle, metaDesc)
 
@@ -412,6 +466,18 @@ export default function OrganizationDetail() {
                 </div>
               </div>
 
+              {/* Stub banner — shown when org is IRS-registered but has no 990 data */}
+              {apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null && (
+                <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-white/8 border border-white/12">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <p className="font-body text-[13px] text-muted-cream/70 leading-[1.55]">
+                    This is a registered US nonprofit. No annual financial report is on file yet, so detailed data and a score aren't available.
+                  </p>
+                </div>
+              )}
+
               {/* Badge row — click any badge to see what earned it */}
               <div className="mt-4 flex flex-wrap gap-2">
                 {badges.map(badge => (
@@ -439,11 +505,12 @@ export default function OrganizationDetail() {
 
               {/* Financial stress indicator */}
               {apiOrg!.months_of_reserve !== null && apiOrg!.months_of_reserve < 3 && (
-                <div className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border ${
-                  apiOrg!.months_of_reserve < 0
-                    ? 'bg-red-500/25 text-red-300 border-red-500/50'
-                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                }`}>
+                <div
+                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border"
+                  style={apiOrg!.months_of_reserve < 0
+                    ? { backgroundColor: 'rgba(139,26,26,0.22)', color: '#D07070', borderColor: 'rgba(139,26,26,0.45)' }
+                    : { backgroundColor: 'rgba(245,158,11,0.18)', color: '#FCD34D', borderColor: 'rgba(245,158,11,0.38)' }}
+                >
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   {apiOrg!.months_of_reserve < 0
                     ? 'Negative net assets. This group owes more than it owns.'
@@ -623,6 +690,7 @@ export default function OrganizationDetail() {
               </div>
             </div>
 
+            {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) && (
             <div className="flex flex-col items-center gap-3 lg:pt-4">
               {/* LampMark lg — tappable, opens TierBreakdown inline */}
               <LampMark
@@ -630,23 +698,28 @@ export default function OrganizationDetail() {
                 size="lg"
                 onClick={() => setShowTierBreakdown(s => !s)}
               />
-              {/* Tier name — connects lamp mark to the /tiers page */}
-              <Link
-                to="/tiers"
-                className="font-body text-[12px] tracking-[0.04em] uppercase hover:text-bright-gold transition-colors"
-                style={{ color: TIER_COLORS[lampTier] }}
-              >
-                {lampTier} tier
-              </Link>
+              {/* Tier name + plain subtitle */}
+              <div className="flex flex-col items-center gap-0.5">
+                <Link
+                  to="/tiers"
+                  className="font-body text-[12px] tracking-[0.04em] uppercase hover:text-bright-gold transition-colors"
+                  style={{ color: TIER_COLORS[lampTier] }}
+                >
+                  {lampTier}
+                </Link>
+                <span className="font-body text-[10px] text-muted-cream/50">
+                  {({'Beacon':'Fully documented','Lantern':'Well documented','Flame':'Basic documentation','Ember':'Limited public data','Spark':'Just registered'} as Record<string,string>)[lampTier]}
+                </span>
+              </div>
               {/* IRS verification — a real, defensible fact for every org */}
               <div className="flex flex-col items-center gap-2 text-center">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-body text-[12px] font-medium">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  IRS-verified 501(c)(3)
+                  Registered US Nonprofit
                 </span>
                 {apiOrg!.latest_tax_year && (
                   <span className="font-body text-[11px] text-muted-cream/60">
-                    Form 990 on file · FY {apiOrg!.latest_tax_year}
+                    Annual report filed · {apiOrg!.latest_tax_year}
                   </span>
                 )}
               </div>
@@ -660,30 +733,85 @@ export default function OrganizationDetail() {
                   }}
                 >
                   <span className="font-body text-[10px] tracking-[0.06em] uppercase text-muted-cream/60">
-                    Financial health · MERIT-verified
+                    Financial health score
                   </span>
                   <span className="font-body text-[14px] font-semibold" style={{ color: PASSING_BANDS.includes(finHealth.band) ? '#4ADE80' : '#F59E0B' }}>
-                    {({ Mixed: 'Mid-range', Concerns: 'Lower range' } as Record<string, string>)[finHealth.band] ?? finHealth.band} · {finHealth.score}/100
+                    {finHealth.band} · {finHealth.score}/100
                   </span>
                   <span className="font-body text-[10px] text-muted-cream/60 text-center leading-[1.4]">
                     Stronger than {finHealth.score}% of similar nonprofits
                   </span>
-                  <span className="font-body text-[10px] text-muted-cream/50">
-                    Based on FY{apiOrg!.latest_tax_year ?? '—'} Form 990
-                  </span>
+                  {/* Behavioral signals */}
+                  {scoreSignals(apiOrg!).map((s, i) => (
+                    <span key={i} className="flex items-center gap-1 text-[11px]">
+                      <span>{s.ok ? '✅' : s.warn ? '⚠️' : '○'}</span>
+                      <span style={{ color: s.ok ? '#5CA878' : s.warn ? '#C87070' : 'rgba(255,248,230,0.35)' }}>
+                        {s.label}
+                      </span>
+                    </span>
+                  ))}
+                  {scoreSignals(apiOrg!).length > 0 && (
+                    <span className="font-body text-[11px] text-muted-cream/70 italic text-center px-1">
+                      "{summaryLine(apiOrg!)}"
+                    </span>
+                  )}
+                  {(['Growing', 'Just Starting'].includes(finHealth.band) && apiOrg!.score_tier === 'full') && (
+                    <span className="font-body text-[10px] text-muted-cream/50 text-center leading-[1.4] px-1">
+                      To improve: aim for 75%+ of spending going directly to programs, with at least 3 months of savings on hand.
+                    </span>
+                  )}
+                  {apiOrg!.score_tier != null && apiOrg!.score_tier !== 'full' && (
+                    <span className="font-body text-[10px] text-muted-cream/40 text-center">
+                      Score based on limited records
+                    </span>
+                  )}
+                  {apiOrg!.latest_tax_year && (
+                    <a
+                      href={`https://projects.propublica.org/nonprofits/organizations/${apiOrg!.EIN.replace(/-/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-body text-[10px] text-muted-cream/50 hover:text-soft-gold transition-colors"
+                    >
+                      Annual report · {apiOrg!.latest_tax_year}
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                  )}
                 </div>
               ) : (
                 <span className="font-body text-[11px] text-muted-cream/50 max-w-[180px] text-center leading-[1.45]">
-                  Detailed financial analysis is not available yet. It needs an itemized Form 990.
+                  Detailed financial analysis is not available yet. It needs a full annual report on file.
                 </span>
               )}
-              <Link
-                to="/methodology"
+              <button
+                onClick={() => setShowScoreExplainer(s => !s)}
                 className="font-body text-[11px] text-muted-cream/40 hover:text-soft-gold transition-colors"
               >
-                How is this scored? →
-              </Link>
+                How is this scored? {showScoreExplainer ? '↑' : '→'}
+              </button>
+              {showScoreExplainer && (
+                <div className="w-full px-3 py-3 rounded-lg bg-white/5 border border-white/10 text-left space-y-2">
+                  {finHealth && (
+                    <p className="font-body text-[11px] text-muted-cream/80 leading-[1.5]">
+                      <strong className="text-muted-cream">{finHealth.band}</strong> means this org ranks stronger than {finHealth.score}% of similar nonprofits financially.
+                    </p>
+                  )}
+                  <p className="font-body text-[11px] text-muted-cream/70 leading-[1.5]">
+                    We compare reserves, program spending, and revenue stability against nonprofits in the same cause area and revenue range. The 0–100 score shows where they stand within that group of {apiOrg!.peer_total ? apiOrg!.peer_total.toLocaleString() : 'similar'} orgs.
+                  </p>
+                  <p className="font-body text-[10px] text-muted-cream/50 leading-[1.5]">
+                    Source: Annual financial reports via ProPublica Nonprofit Explorer
+                    {apiOrg!.latest_tax_year ? ` · FY${apiOrg!.latest_tax_year}` : ''}.
+                  </p>
+                  <Link
+                    to="/methodology"
+                    className="font-body text-[10px] text-soft-gold hover:text-bright-gold transition-colors block"
+                  >
+                    Full methodology →
+                  </Link>
+                </div>
+              )}
             </div>
+            )}{/* end stub score conditional */}
           </div>
         </div>
       </div>
@@ -717,21 +845,19 @@ export default function OrganizationDetail() {
           {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {apiOrg!.months_of_reserve !== null && (
-                <div className={`rounded-xl p-5 border ${
-                  apiOrg!.months_of_reserve < 0
-                    ? 'bg-red-50 border-red-200'
+                <div
+                  className="rounded-xl p-5 border"
+                  style={apiOrg!.months_of_reserve < 0
+                    ? { backgroundColor: 'rgba(139,26,26,0.05)', borderColor: 'rgba(139,26,26,0.20)' }
                     : apiOrg!.months_of_reserve < 3
-                    ? 'bg-amber-50 border-amber-200'
-                    : 'bg-white border-light-grey'
-                }`}>
+                    ? { backgroundColor: '#FFFBF0', borderColor: '#FDE68A' }
+                    : { backgroundColor: '#FFFFFF', borderColor: '#E5E0DB' }}
+                >
                   <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
-                  <span className={`block font-body text-[26px] font-semibold tracking-[-0.02em] ${
-                    apiOrg!.months_of_reserve < 0
-                      ? 'text-red-600'
-                      : apiOrg!.months_of_reserve < 3
-                      ? 'text-amber-600'
-                      : 'text-deep-navy'
-                  }`}>
+                  <span
+                    className="block font-body text-[26px] font-semibold tracking-[-0.02em]"
+                    style={{ color: apiOrg!.months_of_reserve < 0 ? '#8B1A1A' : apiOrg!.months_of_reserve < 3 ? '#92400E' : '#0A1628' }}
+                  >
                     {apiOrg!.months_of_reserve! > 999 ? '999+' : apiOrg!.months_of_reserve! < 0 ? `(${Math.abs(apiOrg!.months_of_reserve!).toFixed(1)})` : apiOrg!.months_of_reserve!.toFixed(1)}
                   </span>
                   <span className="font-body text-[11px] text-cool-grey">
@@ -773,6 +899,31 @@ export default function OrganizationDetail() {
             </div>
           )}
 
+          {(() => {
+            if (revenueTrend.length < 2) return null
+            const first = revenueTrend[0].amount
+            const last = revenueTrend[revenueTrend.length - 1].amount
+            if (first === 0) return null
+            // Cap the trend label at 5 years; full data still shown in chart
+            const trendWindow = revenueTrend.slice(-5)
+            const trendFirst  = trendWindow[0].amount
+            const trendYears  = trendWindow.length - 1
+            const pct = trendFirst === 0 ? 0 : Math.round(((last - trendFirst) / trendFirst) * 100)
+            const isFlat = Math.abs(pct) < 2
+            return (
+              <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border"
+                style={isFlat
+                  ? { background: '#F5F4F2', borderColor: '#D9D4CE', color: '#6B7280' }
+                  : pct > 0
+                  ? { background: '#ECFDF5', borderColor: '#A7F3D0', color: '#065F46' }
+                  : { background: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }
+                }
+              >
+                <span>{isFlat ? '→' : pct > 0 ? '↗' : '↘'}</span>
+                <span>Revenue Trend: {isFlat ? 'Flat' : `${pct > 0 ? '+' : ''}${pct}%`} over {trendYears} year{trendYears !== 1 ? 's' : ''}</span>
+              </div>
+            )
+          })()}
           <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8">
             {revenueTrend.length > 0 ? (
               <RevenueChart data={revenueTrend} />
@@ -784,8 +935,8 @@ export default function OrganizationDetail() {
                 </p>
                 <p className="font-body text-[13px] text-cool-grey mt-2">
                   {org.revenue > 0
-                    ? 'Latest reported annual revenue from IRS public records.'
-                    : 'This organization files a 990-N (postcard return). Full financials are not publicly available.'}
+                    ? 'Latest reported annual revenue from public records.'
+                    : 'This organization files a short annual confirmation with the government. Full financials are not publicly available.'}
                 </p>
               </div>
             )}
@@ -795,12 +946,12 @@ export default function OrganizationDetail() {
                   <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
                   {(lampTier === 'Beacon' || lampTier === 'Lantern') ? (
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      {apiOrg!.organization_name} is a fully verified nonprofit. IRS 501(c)(3), current 990, mission, and website all on public record.
+                      {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, and website all on public record.
                       {lampTier === 'Lantern' && ' Reaching the top quarter for financial scale among similar organizations would light the full Beacon.'}
                     </p>
                   ) : (
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      {apiOrg!.organization_name} is a 501(c)(3) the IRS recognizes. This profile is still lighting up. Adding a mission, website, and financial detail brightens its flame. A lower tier reflects the public data we have, not the organization&rsquo;s quality.
+                      {apiOrg!.organization_name} is a registered US nonprofit. This profile is still lighting up. Adding a mission, website, and financial detail brightens its flame. A lower tier reflects the public data we have, not the organization&rsquo;s quality.
                     </p>
                   )}
                 </div>
@@ -836,7 +987,7 @@ export default function OrganizationDetail() {
               {org.mission ? (
                 <p className="mt-3 font-display italic text-deep-navy text-[18px] leading-[1.6]">&ldquo;{org.mission}&rdquo;</p>
               ) : (
-                <p className="mt-3 font-body text-cool-grey text-[15px]">Mission statement sourced from IRS 990 public records. Extended narrative not yet available for this organization.</p>
+                <p className="mt-3 font-body text-cool-grey text-[15px]">Mission statement sourced from public records. Extended narrative not yet available for this organization.</p>
               )}
               {org.programs.length > 0 && (
                 <>
@@ -871,7 +1022,7 @@ export default function OrganizationDetail() {
                 <div className="pt-2">
                   <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">DATA SOURCE</span>
                   <div className="mt-4 space-y-2 font-body text-[14px] text-cool-grey">
-                    <p>IRS 501(c)(3) verified organization</p>
+                    <p>Registered US nonprofit</p>
                     <p>EIN: {formatEIN(org.ein)}</p>
                     <p>NTEE Category: {(org as any).nteecc || org.category || '—'}</p>
                     {(org as any).revenueBand && (
@@ -909,7 +1060,7 @@ export default function OrganizationDetail() {
                 </svg>
               </div>
               <div>
-                <p className="font-body text-[13px] font-semibold text-deep-navy">IRS 501(c)(3) Active</p>
+                <p className="font-body text-[13px] font-semibold text-deep-navy">US Nonprofit · Active</p>
                 <p className="font-body text-[12px] text-cool-grey">Donations are tax-deductible</p>
               </div>
             </div>
@@ -921,7 +1072,7 @@ export default function OrganizationDetail() {
               </div>
               <div>
                 <p className="font-body text-[13px] font-semibold text-deep-navy">EIN {formatEIN(org.ein)}</p>
-                <p className="font-body text-[12px] text-cool-grey">Verified against IRS BMF</p>
+                <p className="font-body text-[12px] text-cool-grey">Verified by government records</p>
               </div>
             </div>
             <button
@@ -960,15 +1111,39 @@ export default function OrganizationDetail() {
         </div>{/* end max-w container */}
       </div>{/* end bg-warm-cream */}
 
+      {/* Verify This Listing */}
+      <div className="bg-warm-cream border-t border-light-grey py-6">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+          <span className="font-body text-[11px] text-cool-grey">Verify this listing: </span>
+          <a
+            href={`https://apps.irs.gov/app/eos/detailsPage?ein=${org.ein.replace(/-/g, '')}`}
+            target="_blank" rel="noopener noreferrer"
+            className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
+          >IRS Tax Exempt Search</a>
+          <span className="font-body text-[11px] text-cool-grey mx-2">·</span>
+          <a
+            href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+            target="_blank" rel="noopener noreferrer"
+            className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
+          >ProPublica Nonprofit Explorer</a>
+          <span className="font-body text-[11px] text-cool-grey mx-2">·</span>
+          <a
+            href="https://www.nasconet.org/resources/state-government/"
+            target="_blank" rel="noopener noreferrer"
+            className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
+          >State Charity Registry</a>
+        </div>
+      </div>
+
       {/* Similar Organizations */}
       {similarOrgs.length > 0 && (
         <div className="bg-deep-navy py-16 md:py-24">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">
-              {usingSemanticSimilar ? 'MORE LIKE THIS' : 'SIMILAR ORGANIZATIONS'}
+              MORE LIKE THIS
             </span>
             <h2 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
-              {usingSemanticSimilar ? 'Organizations doing similar work' : 'Others you might consider'}
+              Organizations doing similar work
             </h2>
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarOrgs.map((o, idx) => {
@@ -1027,8 +1202,8 @@ export default function OrganizationDetail() {
                             </span>
                           )}
                         </td>
-                        <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{Math.round(snap.rev_pct)}th pct</td>
-                        <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{Math.round(snap.rsv_pct)}th pct</td>
+                        <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{formatOrdinal(snap.rev_pct)} pct</td>
+                        <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{formatOrdinal(snap.rsv_pct)} pct</td>
                         <td className="font-body text-[12px] text-cool-grey py-3 font-mono">{snap.group_key ?? snap.peer_group ?? '—'}</td>
                       </tr>
                     )
@@ -1037,7 +1212,7 @@ export default function OrganizationDetail() {
               </table>
             </div>
             <p className="mt-4 font-body text-[12px] text-cool-grey leading-[1.5]">
-              Scores are recomputed as new IRS 990 filings become available. Each row represents a snapshot of raw financial inputs alongside the resulting score.{' '}
+              Scores are recomputed as new annual reports are filed. Each row represents a snapshot of raw financial inputs alongside the resulting score.{' '}
               <Link to="/methodology" className="text-soft-gold hover:text-bright-gold transition-colors">
                 Methodology →
               </Link>
@@ -1050,7 +1225,7 @@ export default function OrganizationDetail() {
       {financials.length > 0 && (
         <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">990 filings</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Annual filings</span>
             <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
               Financial history
             </h2>
@@ -1063,7 +1238,7 @@ export default function OrganizationDetail() {
                     <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Expenses</th>
                     <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Net Assets</th>
                     <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Contributions</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2">990</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2">Report</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1095,7 +1270,7 @@ export default function OrganizationDetail() {
               </table>
             </div>
             <p className="mt-4 font-body text-[12px] text-cool-grey">
-              Source: ProPublica Nonprofit Explorer · IRS Form 990 public filings
+              Source: ProPublica Nonprofit Explorer · Government annual financial reports
             </p>
           </div>
         </div>

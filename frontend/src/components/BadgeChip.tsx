@@ -10,13 +10,13 @@ interface BadgeChipProps {
 
 const COLOR_STYLES = {
   light: {
-    green: { bg: 'rgba(74,222,128,0.10)', border: 'rgba(74,222,128,0.30)', text: '#16A34A' },
-    blue:  { bg: 'rgba(96,165,250,0.10)', border: 'rgba(96,165,250,0.30)', text: '#3B82F6' },
+    green: { bg: 'rgba(42,107,69,0.08)',   border: 'rgba(42,107,69,0.22)',   text: '#2A6B45' },
+    blue:  { bg: 'rgba(96,165,250,0.10)',  border: 'rgba(96,165,250,0.30)',  text: '#3B82F6' },
     gold:  { bg: 'rgba(201,169,110,0.12)', border: 'rgba(201,169,110,0.35)', text: '#C9A96E' },
   },
   dark: {
-    green: { bg: 'rgba(74,222,128,0.12)', border: 'rgba(74,222,128,0.30)', text: '#4ADE80' },
-    blue:  { bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.30)', text: '#93C5FD' },
+    green: { bg: 'rgba(42,107,69,0.15)',   border: 'rgba(42,107,69,0.35)',   text: '#5CA878' },
+    blue:  { bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.30)',  text: '#93C5FD' },
     gold:  { bg: 'rgba(201,169,110,0.15)', border: 'rgba(201,169,110,0.40)', text: '#C9A96E' },
   },
 }

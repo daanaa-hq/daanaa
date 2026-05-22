@@ -5,12 +5,12 @@ export type TierName = 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
 // Financial bands from merit_scorer_v3_3 (only orgs with full 990 financials,
 // ~4.7k). PASSING_BANDS = the "healthy" bands, used for the green/amber
 // distinction in the financial-health criterion display only.
-export const PASSING_BANDS = ['Exceptional', 'Strong', 'Solid']
+export const PASSING_BANDS = ['Blazing', 'Burning Bright', 'Steady Flame']
 
 // The tier gate is looser than the display: only the bottom band blocks
 // Beacon/Lantern. Since ~99% of orgs have NO band, demoting only clearly-weak
 // financials avoids penalising the minority that happen to have data.
-const GATE_BLOCKING_BANDS = ['Concerns']
+const GATE_BLOCKING_BANDS = ['Just Starting']
 
 /** Real 0-100 financial-health score + band, only where 990 financials exist. */
 export function getFinancialHealth(org: ApiOrganization): { score: number; band: string } | null {
@@ -30,11 +30,11 @@ export const TIER_COLORS: Record<TierName, string> = {
 // Lower tiers get the most generous, explicitly non-judgmental wording —
 // they describe how much public data backs the profile, not the org's worth.
 export const TIER_MICROCOPY: Record<TierName, string> = {
-  Beacon:  'Fully lit. Current 990, mission, website, and verified financial health all on public record. The most complete picture donors can see.',
-  Lantern: 'Brightly lit. Current 990, mission, and website all on the public record.',
-  Flame:   'Lit. A current 990 is on file. Mission or website not yet on the public record, and easily added.',
-  Ember:   'A faint light. This IRS recognized 501(c)(3) has limited public data so far. It reflects data availability, not the quality of its work.',
-  Spark:   'Newly listed. An IRS recognized 501(c)(3) with little public data yet. A starting point, not a judgment. Many excellent community organizations begin here.',
+  Beacon:  'Fully lit. Annual report, mission, website, and verified financial health all on public record. The most complete picture donors can see.',
+  Lantern: 'Brightly lit. Annual report, mission, and website all on the public record.',
+  Flame:   'Lit. An annual report is on file. Mission or website not yet on the public record, and easily added.',
+  Ember:   'A faint light. This registered nonprofit has limited public data so far. It reflects data availability, not the quality of its work.',
+  Spark:   'Newly listed. A registered nonprofit with little public data yet. A starting point, not a judgment. Many excellent community organizations begin here.',
 }
 
 export interface TierCriterion {
@@ -56,21 +56,21 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
     {
       id: 'irs_registered',
       label: 'IRS registration',
-      description: 'Active 501(c)(3) on the IRS Business Master File',
+      description: 'Recognized as a US nonprofit by the government',
       status: org.EIN ? 'met' : 'unavailable',
       shortFact: 'IRS verified',
     },
     {
       id: '990_current',
-      label: '990 filing',
-      description: 'Form 990 filed within the past three tax years',
+      label: 'Annual report',
+      description: 'Annual financial report filed within the past three years',
       status: has990Current ? 'met' : has990Stale ? 'partial' : 'unavailable',
-      shortFact: '990 current',
+      shortFact: 'Report current',
     },
     {
       id: 'revenue_data',
       label: 'Revenue data',
-      description: 'Reported annual revenue from IRS or ProPublica records',
+      description: 'Reported annual revenue from public government or nonprofit records',
       status: hasRevenue ? 'met' : 'unavailable',
       shortFact: 'Revenue on file',
     },
@@ -85,8 +85,8 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
       id: 'financial_health',
       label: 'Financial health',
       description: org.merit_band
-        ? `990-derived score: ${Math.round(org.merit_score ?? 0)}/100 (${org.merit_band})`
-        : 'Computed from 990 expense, revenue, and asset detail when filed',
+        ? `Financial report score: ${Math.round(org.merit_score ?? 0)}/100 (${org.merit_band})`
+        : 'Computed from annual report expense, revenue, and asset detail when filed',
       status: org.merit_band
         ? (PASSING_BANDS.includes(org.merit_band) ? 'met' : 'partial')
         : 'unavailable',
@@ -115,7 +115,7 @@ export function getNextTierPath(tier: TierName): string | null {
     case 'Lantern': return 'Reach the top quarter for financial scale among similar organizations.'
     case 'Flame':   return 'Add a mission statement and website. Once both are on public record, this org qualifies for Lantern.'
     case 'Ember':   return 'A financial scale score is assigned as revenue and asset data accumulates in public records. MERIT updates automatically.'
-    case 'Spark':   return 'A current Form 990 or reported revenue on file moves this org to Ember.'
+    case 'Spark':   return 'An annual financial report or revenue record on file moves this org to Ember.'
   }
 }
 
@@ -155,9 +155,9 @@ export function getTierSummary(tier: TierName, org: ApiOrganization): string {
   const score = org.peer_percentile ?? org.ntee1_percentile
   const has990 = (org.latest_tax_year ?? 0) >= 2022
   const parts: string[] = []
-  if (has990) parts.push('IRS verified · 990 on file')
-  else if (tier !== 'Spark') parts.push('IRS registered')
+  if (has990) parts.push('Registered nonprofit · Annual report on file')
+  else if (tier !== 'Spark') parts.push('Registered nonprofit')
   if (score != null && score >= 60) parts.push(`Top ${Math.max(1, 100 - Math.round(score))}% financial scale`)
   if (org.has_mission && org.has_website) parts.push('Full profile')
-  return parts.slice(0, 2).join(' · ') || 'IRS registered'
+  return parts.slice(0, 2).join(' · ') || 'Registered nonprofit'
 }
