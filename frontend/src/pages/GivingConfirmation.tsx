@@ -112,7 +112,7 @@ export default function GivingConfirmation() {
                   <p className="font-body text-[12px] text-cool-grey leading-[1.5]">
                     {item.orgName} will receive your name
                     {item.donorName ? ` (${item.donorName})` : ''} and this code.
-                    Once they upload your letter, MERIT emails it to{' '}
+                    Once they upload your letter, Daanaa emails it to{' '}
                     <span className="font-medium text-deep-navy">
                       {item.donorEmail ? maskEmail(item.donorEmail) : 'you'}
                     </span>

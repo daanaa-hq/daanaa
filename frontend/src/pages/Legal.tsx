@@ -19,7 +19,7 @@ export default function Legal() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Data Sources</h2>
             <p>
-              MERIT aggregates publicly available data from the following sources. We do not collect,
+              Daanaa aggregates publicly available data from the following sources. We do not collect,
               store, or distribute any information beyond what these sources make available to the public.
             </p>
             <ul className="mt-4 space-y-3 list-none">
@@ -60,18 +60,18 @@ export default function Legal() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Data Accuracy & Freshness</h2>
             <p>
-              Financial figures shown on MERIT are derived from IRS Form 990 filings. The most
+              Financial figures shown on Daanaa are derived from IRS Form 990 filings. The most
               recent filing available for each organization may lag the current fiscal year by
               12–24 months. Revenue and asset figures represent the latest tax year on record.
             </p>
             <p className="mt-3">
               Each organization page displays a <strong className="text-deep-navy">data source</strong> and
               <strong className="text-deep-navy"> fiscal year</strong> badge indicating the vintage of the
-              financial data shown. MERIT automatically refreshes data from ProPublica on a weekly
+              financial data shown. Daanaa automatically refreshes data from ProPublica on a weekly
               schedule and supplements with NCCS extracts as they become available.
             </p>
             <p className="mt-3">
-              MERIT scores and percentile rankings are recalculated within NTEE peer groups whenever
+              Daanaa scores and percentile rankings are recalculated within NTEE peer groups whenever
               the underlying data is updated. Rankings are relative. A score reflects an
               organization's position among its registered peers, not an absolute quality rating.
             </p>
@@ -81,7 +81,7 @@ export default function Legal() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Privacy Policy</h2>
             <p>
-              MERIT is a public directory of tax-exempt organizations. All organization data
+              Daanaa is a public directory of tax-exempt organizations. All organization data
               displayed on this platform originates from IRS public filings and is required to be
               publicly disclosed under 26 U.S.C. § 6104.
             </p>
@@ -91,7 +91,7 @@ export default function Legal() {
               share any user data with third parties.
             </p>
             <p className="mt-3">
-              If your organization's information on MERIT is incorrect, you may request a correction
+              If your organization's information on Daanaa is incorrect, you may request a correction
               by contacting us. In most cases, corrections require updating the underlying IRS 990
               filing, which is the authoritative source.
             </p>
@@ -101,17 +101,17 @@ export default function Legal() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Terms of Use</h2>
             <p>
-              MERIT data is provided for informational and research purposes. You may use organization
-              profiles, MERIT scores, and ranking data freely for personal, academic, journalistic,
-              or nonprofit research purposes with attribution to MERIT (meritgiving.org).
+              Daanaa data is provided for informational and research purposes. You may use organization
+              profiles, Daanaa scores, and ranking data freely for personal, academic, journalistic,
+              or nonprofit research purposes with attribution to Daanaa (daanaa.org).
             </p>
             <p className="mt-3">
-              Commercial redistribution of MERIT data in bulk without written permission is not
+              Commercial redistribution of Daanaa data in bulk without written permission is not
               permitted. Automated scraping at a rate that degrades service for other users is
               prohibited.
             </p>
             <p className="mt-3">
-              MERIT makes no warranties about the completeness or accuracy of data and is not
+              Daanaa makes no warranties about the completeness or accuracy of data and is not
               liable for decisions made based on information provided on this platform.
             </p>
           </section>
@@ -123,7 +123,7 @@ export default function Legal() {
               For data corrections, partnership inquiries, or legal questions, contact us at{' '}
               <a href="mailto:akbar.khowaja@gmail.com"
                  className="text-soft-gold hover:text-bright-gold transition-colors">
-                hello@meritgiving.org
+                hello@daanaa.org
               </a>.
             </p>
           </section>

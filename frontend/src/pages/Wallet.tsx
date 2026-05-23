@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useWallet, SPLIT_THRESHOLD } from '../hooks/useWallet'
 import { formatCurrency, formatEIN } from '../data/organizations'
@@ -45,20 +45,28 @@ function EmptyState({ icon, message }: { icon: React.ReactNode; message: string 
 
 // ── donation log form ─────────────────────────────────────────────────────────
 
-function DonationForm({ onSubmit, onCancel }: {
+function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
   onSubmit: (r: Omit<DonationRecord, 'id' | 'loggedAt'>) => void
   onCancel: () => void
+  prefillEin?: string
+  prefillOrg?: string
 }) {
   const today = new Date().toISOString().split('T')[0]
-  const [orgName, setOrgName] = useState('')
-  const [ein, setEin] = useState('')
+  const [orgName, setOrgName] = useState(prefillOrg ?? '')
+  const [ein, setEin] = useState(prefillEin ?? '')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(today)
   const [hasLetter, setHasLetter] = useState(false)
+  const [occurrences, setOccurrences] = useState(1)
   const [suggestions, setSuggestions] = useState<ApiOrganization[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const amountRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (prefillOrg && amountRef.current) amountRef.current.focus()
+  }, [prefillOrg])
 
   const parsedAmount = Math.round(parseFloat(amount) || 0)
   const needsAcknowledgment = parsedAmount >= IRS_THRESHOLD
@@ -97,15 +105,16 @@ function DonationForm({ onSubmit, onCancel }: {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!orgName.trim() || !parsedAmount || !date) return
-    const status = needsAcknowledgment && hasLetter ? 'acknowledged' : 'self_documented'
-    onSubmit({
+    const status: 'acknowledged' | 'self_documented' = needsAcknowledgment && hasLetter ? 'acknowledged' : 'self_documented'
+    const record = {
       ein: ein || orgName.trim(),
       orgName: orgName.trim(),
       amount: parsedAmount,
       date,
       status,
       letterRequested: needsAcknowledgment ? hasLetter : false,
-    })
+    }
+    for (let i = 0; i < occurrences; i++) onSubmit(record)
     onCancel()
   }
 
@@ -155,6 +164,7 @@ function DonationForm({ onSubmit, onCancel }: {
         <div>
           <label className="block font-body text-[12px] text-cool-grey mb-1">Amount ($) <span className="text-soft-gold">*</span></label>
           <input
+            ref={amountRef}
             value={amount}
             onChange={e => setAmount(e.target.value)}
             required
@@ -178,6 +188,27 @@ function DonationForm({ onSubmit, onCancel }: {
           />
         </div>
 
+      </div>
+
+      {/* Occurrences stepper */}
+      <div className="flex items-center gap-3">
+        <label className="font-body text-[12px] text-cool-grey">Times donated</label>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setOccurrences(n => Math.max(1, n - 1))}
+            className="w-7 h-7 flex items-center justify-center rounded-full border border-light-grey text-cool-grey hover:border-soft-gold/50 transition-colors font-body text-[16px] leading-none">
+            −
+          </button>
+          <span className="font-body text-[15px] text-deep-navy font-medium w-5 text-center">{occurrences}</span>
+          <button type="button" onClick={() => setOccurrences(n => n + 1)}
+            className="w-7 h-7 flex items-center justify-center rounded-full border border-light-grey text-cool-grey hover:border-soft-gold/50 transition-colors font-body text-[16px] leading-none">
+            +
+          </button>
+        </div>
+        {occurrences > 1 && (
+          <span className="font-body text-[12px] text-cool-grey/60">
+            will log {occurrences} × {amount ? `$${amount}` : '…'}
+          </span>
+        )}
       </div>
 
       {/* $250+ acknowledgment notice */}
@@ -218,6 +249,14 @@ function DonationForm({ onSubmit, onCancel }: {
 
 export default function Wallet() {
   const [showDonationForm, setShowDonationForm] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const prefillEin = searchParams.get('ein') ?? undefined
+  const prefillOrg = searchParams.get('org') ?? undefined
+
+  useEffect(() => {
+    if (prefillEin) setShowDonationForm(true)
+  }, [prefillEin])
+
   const { savedOrgs, toggle } = useSavedOrgs()
   const { donations, addDonationDirect, markAcknowledged, removeDonation, totalDonated, totalDonatedThisYear, uniqueEins, pendingLetters } = useWallet()
   const orgsSupported = new Set([...Array.from(uniqueEins), ...savedOrgs.map(o => o.ein)]).size
@@ -324,7 +363,7 @@ export default function Wallet() {
                     {pendingLetters.length} acknowledgment letter{pendingLetters.length !== 1 ? 's' : ''} pending
                   </p>
                   <p className="font-body text-[12px] text-cool-grey leading-relaxed">
-                    Once each nonprofit uploads your letter to MERIT, it will be emailed to you and marked received here.
+                    Once each nonprofit uploads your letter to Daanaa, it will be emailed to you and marked received here.
                   </p>
                 </div>
               </div>
@@ -385,7 +424,12 @@ export default function Wallet() {
 
             {showDonationForm && (
               <div className="mb-4">
-                <DonationForm onSubmit={r => addDonationDirect([r])} onCancel={() => setShowDonationForm(false)} />
+                <DonationForm
+                  onSubmit={r => addDonationDirect([r])}
+                  onCancel={() => { setShowDonationForm(false); if (prefillEin || prefillOrg) setSearchParams({}) }}
+                  prefillEin={prefillEin}
+                  prefillOrg={prefillOrg}
+                />
               </div>
             )}
 
@@ -406,7 +450,7 @@ export default function Wallet() {
                       <span className="font-body text-[12px] text-cool-grey">
                         {new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
-                      {/* Letter status — MERIT-mediated (Giving List flow, has referenceCode) */}
+                      {/* Letter status — Daanaa-mediated (Giving List flow, has referenceCode) */}
                       {d.referenceCode && (
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           {d.status === 'pending_acknowledgment' && (
@@ -464,7 +508,7 @@ export default function Wallet() {
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-light-grey flex items-center gap-2 text-cool-grey/40">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <p className="font-body text-[11px]">Private by design · stored on this device · never shared · MERIT does not process payments or issue tax documents · Letters for gifts of $250+ are delivered once the nonprofit uploads them to MERIT</p>
+          <p className="font-body text-[11px]">Private by design · stored on this device · never shared · Daanaa does not process payments or issue tax documents · Letters for gifts of $250+ are delivered once the nonprofit uploads them to Daanaa</p>
         </div>
 
       </div>

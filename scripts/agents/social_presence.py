@@ -25,7 +25,7 @@ except ImportError:
 
 
 _HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; MERITBot/1.0; +https://meritgiving.com)",
+    "User-Agent": "Mozilla/5.0 (compatible; DaanaaBot/1.0; +https://daanaa.org)",
     "Accept": "text/html",
 }
 

@@ -114,7 +114,7 @@ class RateLimitedClient:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "MERIT-WorkerA-ProPublica-Collector/1.0 (research@meritgiving.org)",
+            "User-Agent": "Daanaa-Worker-ProPublica-Collector/1.0 (contact@daanaa.org)",
             "Accept": "application/json",
         })
         self.last_request_time: float = 0.0

@@ -114,7 +114,7 @@ export function getNextTierPath(tier: TierName): string | null {
     case 'Lantern': return 'Add mission, service area, programs, leadership, and giving path to reach Complete.'
     case 'Flame':   return 'Add a mission statement and website. Once both are on public record, this org qualifies for Lantern.'
     case 'Glow':
-    case 'Ember':   return 'A financial scale score is assigned as revenue and asset data accumulates in public records. MERIT updates automatically.'
+    case 'Ember':   return 'A financial scale score is assigned as revenue and asset data accumulates in public records. Daanaa updates automatically.'
     case 'Spark':   return 'An annual financial report or revenue record on file moves this org to Glow.'
   }
 }

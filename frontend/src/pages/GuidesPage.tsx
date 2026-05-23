@@ -35,7 +35,7 @@ function Tip({ children }: { children: React.ReactNode }) {
 }
 
 export default function GuidesPage() {
-  usePageMeta('Giving Guides', 'Practical guides for informed charitable giving. How to read a MERIT score, document your donations, and research a nonprofit before you give.')
+  usePageMeta('Giving Guides', 'Practical guides for informed charitable giving. How to read a Daanaa score, document your donations, and research a nonprofit before you give.')
 
   return (
     <div className="min-h-[100dvh]">
@@ -62,17 +62,17 @@ export default function GuidesPage() {
 
           <GuideCard
             number="01"
-            title="How to read a MERIT profile"
-            description="A MERIT profile has two independent signals: the score and the tier. Understanding both takes about 60 seconds."
+            title="How to read a Daanaa profile"
+            description="A Daanaa profile has two independent signals: the score and the tier. Understanding both takes about 60 seconds."
           >
             <p>
-              The <strong className="text-deep-navy font-semibold">MERIT score</strong> is a peer percentile — a number from 0 to 100 that shows how this organization compares financially to similar nonprofits doing similar work at similar scale. A score of 80 means it outperforms 80% of its peers. This is not a grade on a curve — it is a ranking within a carefully constructed peer group defined by NTEE subcategory and revenue band.
+              The <strong className="text-deep-navy font-semibold">Daanaa score</strong> is a peer percentile — a number from 0 to 100 that shows how this organization compares financially to similar nonprofits doing similar work at similar scale. A score of 80 means it outperforms 80% of its peers. This is not a grade on a curve — it is a ranking within a carefully constructed peer group defined by NTEE subcategory and revenue band.
             </p>
             <p>
               The <strong className="text-deep-navy font-semibold">trust tier</strong> (Beacon → Spark) reflects how much public data backs the profile today. A Beacon has a current 990 on file, a mission statement, an active website, and a top-quartile peer score. A Spark is an IRS-registered nonprofit with little financial detail yet in public records. The tier is a transparency signal, not a quality verdict.
             </p>
             <Tip>
-              A high MERIT score in a Spark tier means the organization is financially strong next to its peers, but has limited public data. That combination often describes a well run small organization that hasn't filed a full 990. With revenue under $50,000 they file a short 990-N postcard instead.
+              A high Daanaa score in a Spark tier means the organization is financially strong next to its peers, but has limited public data. That combination often describes a well run small organization that hasn't filed a full 990. With revenue under $50,000 they file a short 990-N postcard instead.
             </Tip>
             <p>
               Each profile also shows a <strong className="text-deep-navy font-semibold">data vintage</strong> — the fiscal year and source of the financial figures. A "FY 2022 · IRS" badge means the revenue figure is from the organization's 2022 tax return. Always check the vintage before making a large gift.
@@ -116,22 +116,22 @@ export default function GuidesPage() {
               </table>
             </div>
             <Tip>
-              MERIT's Giving Wallet logs each donation with date, org, EIN, and amount. These are the same fields an accountant or tax preparer needs. Export to CSV at year end and hand it directly to whoever prepares your taxes.
+              Daanaa's Giving Wallet logs each donation with date, org, EIN, and amount. These are the same fields an accountant or tax preparer needs. Export to CSV at year end and hand it directly to whoever prepares your taxes.
             </Tip>
             <p>
-              MERIT does not process payments or issue acknowledgment letters. Those come directly from the organization you give to. If you give online through the organization's own site, they will typically email a receipt that qualifies as the written acknowledgment.
+              Daanaa does not process payments or issue acknowledgment letters. Those come directly from the organization you give to. If you give online through the organization's own site, they will typically email a receipt that qualifies as the written acknowledgment.
             </p>
           </GuideCard>
 
           <GuideCard
             number="03"
             title="Researching a nonprofit before you give"
-            description="Five things worth checking before making a meaningful gift, all findable from a MERIT profile."
+            description="Five things worth checking before making a meaningful gift, all findable from a Daanaa profile."
           >
-            <p><strong className="text-deep-navy font-semibold">1. Verify tax-exempt status.</strong> Every organization on MERIT is a current IRS-recognized 501(c)(3). If an organization is soliciting donations and isn't on MERIT, search the <a href="https://apps.irs.gov/app/eos/" target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:text-bright-gold transition-colors">IRS Tax Exempt Organization Search</a> to confirm status before giving.</p>
+            <p><strong className="text-deep-navy font-semibold">1. Verify tax-exempt status.</strong> Every organization on Daanaa is a current IRS-recognized 501(c)(3). If an organization is soliciting donations and isn't on Daanaa, search the <a href="https://apps.irs.gov/app/eos/" target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:text-bright-gold transition-colors">IRS Tax Exempt Organization Search</a> to confirm status before giving.</p>
             <p><strong className="text-deep-navy font-semibold">2. Check the fiscal year of the revenue figure.</strong> A 990 filed in 2024 typically covers fiscal year 2022 or 2023. Revenue figures that are 2–3 years old can be misleading if an organization has grown or shrunk significantly since then.</p>
-            <p><strong className="text-deep-navy font-semibold">3. Look at the peer score in context.</strong> A score of 55 in the "Special Education" subcategory for a $200K/year organization tells you more than a score of 55 with no peer context. MERIT always shows the peer group — check it.</p>
-            <p><strong className="text-deep-navy font-semibold">4. Read the mission statement.</strong> MERIT shows mission text from IRS 990 filings when available. This is what the organization told the federal government its purpose is — not its marketing copy.</p>
+            <p><strong className="text-deep-navy font-semibold">3. Look at the peer score in context.</strong> A score of 55 in the "Special Education" subcategory for a $200K/year organization tells you more than a score of 55 with no peer context. Daanaa always shows the peer group — check it.</p>
+            <p><strong className="text-deep-navy font-semibold">4. Read the mission statement.</strong> Daanaa shows mission text from IRS 990 filings when available. This is what the organization told the federal government its purpose is — not its marketing copy.</p>
             <p><strong className="text-deep-navy font-semibold">5. Look for a current website.</strong> A Lantern or Beacon tier confirms an active website is in public records. If you can't find one, call the organization directly before writing a large check.</p>
             <Tip>
               For gifts over $1,000, spend 10 minutes on the organization's actual 990 filing, available on ProPublica Nonprofit Explorer. Look at Part IX (Statement of Functional Expenses) to see how much goes to program services versus management versus fundraising.
@@ -145,11 +145,11 @@ export default function GuidesPage() {
           >
             <div className="space-y-3">
               {[
-                { check: 'Confirm the organization is still IRS-recognized', detail: 'Status can change. Search MERIT or the IRS EOS tool before finalizing a gift.' },
+                { check: 'Confirm the organization is still IRS-recognized', detail: 'Status can change. Search Daanaa or the IRS EOS tool before finalizing a gift.' },
                 { check: 'Verify your gift will be completed by December 31', detail: 'Online gifts by card are deductible in the year charged. Checks are deductible when mailed, not when cashed, so mail with tracking.' },
                 { check: 'Save your confirmation email or bank record', detail: 'For gifts under $250, this is your documentation. File it with your tax documents before you need it.' },
                 { check: 'Request an acknowledgment letter for gifts of $250+', detail: 'Some organizations send automatically; others require a request. Ask before year-end, not in April.' },
-                { check: 'Log gifts to your MERIT Giving Wallet', detail: 'One place, all gifts, all years. Export to CSV when tax time comes.' },
+                { check: 'Log gifts to your Daanaa Giving Wallet', detail: 'One place, all gifts, all years. Export to CSV when tax time comes.' },
                 { check: 'Check if your employer matches charitable gifts', detail: 'Many employers match at 1:1 or 2:1. Submit matching requests before the employer\'s cutoff, which is often earlier than December 31.' },
               ].map(({ check, detail }) => (
                 <div key={check} className="flex gap-4 p-4 bg-white rounded-xl border border-light-grey">

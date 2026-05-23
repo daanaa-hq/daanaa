@@ -1,22 +1,22 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useGivingList } from '../hooks/useGivingList'
 import { submitLinkFeedback } from '../data/api'
 
 /**
  * LinkedIn-jobs pattern: after the donor clicks an external give link and
  * comes back, ask "did you give?" — yes moves it to the Given (tax) records,
- * "not yet" leaves it as an ongoing intent. MERIT never sees the money.
+ * "not yet" leaves it as an ongoing intent. Daanaa never sees the money.
  *
- * Mounted once at app root. Triggers when the MERIT tab regains focus (the
+ * Mounted once at app root. Triggers when the Daanaa tab regains focus (the
  * donor returned from the org's site) or on a later visit.
  */
 export default function GiveConfirmPrompt() {
+  const navigate = useNavigate()
   const { pendingGive, confirmGiven, dismissPending } = useGivingList()
   const [show, setShow] = useState(false)
   const [showReasons, setShowReasons] = useState(false)
   const [savedConfirm, setSavedConfirm] = useState(false)
-  const [gaveConfirm, setGaveConfirm] = useState(false)
 
   const maybeShow = useCallback((minAgeMs: number) => {
     if (!pendingGive) { setShow(false); return }
@@ -49,8 +49,8 @@ export default function GiveConfirmPrompt() {
 
   const yes = () => {
     confirmGiven()
-    setGaveConfirm(true)
-    setTimeout(() => { setShow(false); setGaveConfirm(false) }, 1800)
+    setShow(false)
+    navigate(`/wallet?ein=${encodeURIComponent(pendingGive!.ein)}&org=${encodeURIComponent(pendingGive!.orgName)}`)
   }
   const notYet = () => setShowReasons(true)
   const dismiss = () => { dismissPending(); setShow(false); setShowReasons(false); setSavedConfirm(false) }
@@ -83,14 +83,7 @@ export default function GiveConfirmPrompt() {
                  rounded-2xl border border-soft-gold/30 bg-deep-navy shadow-2xl
                  px-6 py-5 animate-[fadeIn_0.25s_ease-out]"
     >
-      {gaveConfirm ? (
-        <div className="flex items-center gap-3">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          <p className="font-display italic text-warm-cream text-[18px] leading-tight">
-            Recorded in your Giving Wallet. Thank you.
-          </p>
-        </div>
-      ) : savedConfirm ? (
+      {savedConfirm ? (
         <div className="flex items-center gap-3">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
           <p className="font-display italic text-warm-cream text-[18px] leading-tight">
@@ -103,7 +96,7 @@ export default function GiveConfirmPrompt() {
             Did you give to {pendingGive.orgName}?
           </p>
           <p className="mt-2 font-body text-[13px] text-muted-cream/70 leading-[1.55]">
-            We&rsquo;ll keep it in your Giving Wallet for your own tax records. MERIT never sees
+            We&rsquo;ll keep it in your Giving Wallet for your own tax records. Daanaa never sees
             the gift and never shares it.
           </p>
           <div className="mt-4 flex items-center gap-3">

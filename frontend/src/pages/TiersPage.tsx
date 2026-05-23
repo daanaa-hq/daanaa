@@ -89,7 +89,7 @@ const CRITERIA_ICON_UNMET = (
 )
 
 export default function TiersPage() {
-  usePageMeta('Visibility Levels', 'Understand the five MERIT visibility levels (Beacon, Lantern, Flame, Glow, and Spark) and what each means for the nonprofits the IRS recognizes.')
+  usePageMeta('Visibility Levels', 'Understand the five Daanaa visibility levels (Beacon, Lantern, Flame, Glow, and Spark) and what each means for the nonprofits the IRS recognizes.')
   return (
     <div className="min-h-[100dvh]">
 

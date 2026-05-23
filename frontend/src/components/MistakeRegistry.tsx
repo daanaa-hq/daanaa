@@ -39,7 +39,7 @@ export default function MistakeRegistry({ compact = false }: MistakeRegistryProp
         </p>
       </div>
       <p className="mt-2 font-body text-[11px] text-cool-grey/55 leading-[1.35]">
-        MERIT flags known incidents of financial misconduct or misleading donor communications. Absence of incidents reflects current data availability, not a clean bill of health.
+        Daanaa flags known incidents of financial misconduct or misleading donor communications. Absence of incidents reflects current data availability, not a clean bill of health.
       </p>
     </div>
   )

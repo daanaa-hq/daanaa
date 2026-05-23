@@ -18,7 +18,7 @@ function StepDot({ n, label }: { n: number; label: string }) {
 }
 
 export default function ForNonprofits() {
-  usePageMeta('For Nonprofits', 'Claim your free MERIT profile. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
+  usePageMeta('For Nonprofits', 'Claim your free Daanaa profile. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
   const [email, setEmail] = useState('')
   const [ein, setEin] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -40,7 +40,7 @@ export default function ForNonprofits() {
     <div className="min-h-[100dvh]">
       {/* Header */}
       <div className="bg-deep-navy pt-[72px]">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-20">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-12 md:pt-12 md:pb-20">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream/50">/</span>
@@ -53,7 +53,7 @@ export default function ForNonprofits() {
               Your public record may already be listed. Add the story only you can tell.
             </h1>
             <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-              MERIT helps donors find public nonprofit records and giving paths. Claim your page for free to add your mission, programs, service area, leadership, impact notes, events, volunteer opportunities, and official giving links.
+              Daanaa helps donors find public nonprofit records and giving paths. Claim your page for free to add your mission, programs, service area, leadership, impact notes, events, volunteer opportunities, and official giving links.
             </p>
             <a href="#claim" className="mt-8 inline-flex items-center gap-2 px-8 py-[14px] rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors">
               Join the waitlist
@@ -64,7 +64,7 @@ export default function ForNonprofits() {
       </div>
 
       {/* What you get */}
-      <div className="bg-warm-cream py-16 md:py-20">
+      <div className="bg-warm-cream py-10 md:py-16 lg:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">What you can add for free</span>
           <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-10">
@@ -132,7 +132,7 @@ export default function ForNonprofits() {
       </div>
 
       {/* Two-layer model explainer */}
-      <div className="bg-white py-16 border-t border-light-grey">
+      <div className="bg-white py-10 md:py-16 border-t border-light-grey">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="max-w-[680px]">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Trust by design</span>
@@ -140,7 +140,7 @@ export default function ForNonprofits() {
               Government records and your story, clearly separated
             </h2>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7] mb-4">
-              MERIT keeps two distinct layers on every profile. The IRS layer, which covers revenue, category, and tax status, is public data we display but you cannot edit. Your claimed layer, which covers mission, programs, impact, and leadership, is your own voice, clearly labeled.
+              Daanaa keeps two distinct layers on every profile. The IRS layer, which covers revenue, category, and tax status, is public data we display but you cannot edit. Your claimed layer, which covers mission, programs, impact, and leadership, is your own voice, clearly labeled.
             </p>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
               Donors can always tell which is which. Keeping these two layers separate is how they trust what they read — and how you stay in control of your own story.
@@ -151,7 +151,7 @@ export default function ForNonprofits() {
             <div className="p-5 bg-warm-cream rounded-xl border border-light-grey">
               <p className="font-body text-[11px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-3">IRS public data</p>
               <ul className="space-y-2 font-body text-[13px] text-cool-grey">
-                {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'MERIT financial ranking', 'Year & data source'].map(i => (
+                {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Daanaa financial ranking', 'Year & data source'].map(i => (
                   <li key={i} className="flex items-center gap-2">
                     <span className="w-1 h-1 rounded-full bg-cool-grey/40 shrink-0" />{i}
                   </li>
@@ -175,7 +175,7 @@ export default function ForNonprofits() {
       </div>
 
       {/* How it works steps */}
-      <div className="bg-warm-cream py-16 border-t border-light-grey">
+      <div className="bg-warm-cream py-10 md:py-16 border-t border-light-grey">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="max-w-[520px]">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How claiming works</span>
@@ -189,7 +189,7 @@ export default function ForNonprofits() {
               <StepDot n={4} label="Edit your profile directly. Changes go live immediately" />
             </div>
             <p className="mt-8 font-body text-[14px] text-cool-grey leading-[1.6]">
-              Claiming is free. MERIT does not charge organizations to be listed, to claim a page, or to update their information. Ever.
+              Claiming is free. Daanaa does not charge organizations to be listed, to claim a page, or to update their information. Ever.
             </p>
           </div>
         </div>
@@ -214,7 +214,7 @@ export default function ForNonprofits() {
             tier: 'Flame',
             pct: '75% of all nonprofits',
             description: "You have a current annual report and a financial ranking among similar nonprofits. A mission statement or website isn't yet on the public record.",
-            nextStep: 'To reach Lantern: get your mission statement and website into the public record. Claiming your MERIT page is the fastest way.',
+            nextStep: 'To reach Lantern: get your mission statement and website into the public record. Claiming your Daanaa page is the fastest way.',
           },
           {
             tier: 'Lantern',
@@ -230,7 +230,7 @@ export default function ForNonprofits() {
           },
         ]
         return (
-          <div className="bg-white py-16 border-t border-light-grey">
+          <div className="bg-white py-10 md:py-16 border-t border-light-grey">
             <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
               <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Your visibility journey</span>
               <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-3">
@@ -273,7 +273,7 @@ export default function ForNonprofits() {
       })()}
 
       {/* Claim interest form */}
-      <div id="claim" className="bg-deep-navy py-16 md:py-20">
+      <div id="claim" className="bg-deep-navy py-10 md:py-16 lg:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="max-w-[520px]">
             {submitted ? (

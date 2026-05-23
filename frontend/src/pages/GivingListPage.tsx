@@ -344,7 +344,7 @@ export default function GivingListPage() {
           </div>
           <p className="font-body text-[12px] text-cool-grey/60">
             {hasLetterItems
-              ? 'Letter-requested gifts will be documented once the nonprofit uploads to MERIT. Others are covered by your bank statement.'
+              ? 'Letter-requested gifts will be documented once the nonprofit uploads to Daanaa. Others are covered by your bank statement.'
               : 'Each contribution is under $250, so your bank statement is the only documentation the IRS requires.'
             }
           </p>

@@ -38,7 +38,7 @@ export function generateReferenceCode(): string {
   const suffix = Array.from({ length: 4 }, () =>
     ALPHABET[Math.floor(Math.random() * ALPHABET.length)]
   ).join('')
-  return `MERIT-${year}-${suffix}`
+  return `DAANAA-${year}-${suffix}`
 }
 
 function uid() {

@@ -40,7 +40,7 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
       id: 'hidden_gem',
       label: 'Hidden gem',
       detail: 'A small organization doing exceptional work quietly — healthy reserves, most of every dollar reaches the mission, and far below most donors’ radar. The kind of org you won’t find on a top-charity list.',
-      source: 'MERIT · revenue, reserves & program-spend analysis',
+      source: 'Daanaa ·revenue, reserves & program-spend analysis',
       color: 'gold',
       icon: 'star',
     })
@@ -126,7 +126,7 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
       id: 'full_profile',
       label: 'Full profile',
       detail: 'This organization publishes its mission statement and maintains an active website. Both are accessible before you give — so you can read about their work, programs, and impact directly.',
-      source: 'MERIT · ProPublica profile data',
+      source: 'Daanaa ·ProPublica profile data',
       color: 'blue',
       icon: 'globe',
     })
@@ -135,7 +135,7 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
       id: 'website_active',
       label: 'Website active',
       detail: 'This organization maintains an active website where you can learn more about their mission, programs, and team before giving.',
-      source: 'MERIT · ProPublica profile data',
+      source: 'Daanaa ·ProPublica profile data',
       color: 'blue',
       icon: 'globe',
     })
@@ -144,7 +144,7 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
       id: 'mission_published',
       label: 'Mission published',
       detail: 'This organization publishes its mission statement publicly — you can read about the work they do before making a gift.',
-      source: 'MERIT · ProPublica profile data',
+      source: 'Daanaa ·ProPublica profile data',
       color: 'blue',
       icon: 'globe',
     })

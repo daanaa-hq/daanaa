@@ -406,7 +406,7 @@ export default function OrganizationDetail() {
     <div className="min-h-[100dvh]">
       {/* Profile Header */}
       <div className="bg-deep-navy pt-[72px] relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, #0A1628 70%, transparent)' }}>
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-12 md:py-16">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 md:py-12 lg:py-16">
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2">
               <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
@@ -605,7 +605,7 @@ export default function OrganizationDetail() {
                         </span>
                       )}
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                        Takes you straight to their giving page. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
+                        Takes you straight to their giving page. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
                       </p>
                       {(org as any).website && apiOrg!.website_status === 'ok' && (
                         <p className="mt-1.5 font-body text-[12px] text-muted-cream/40">
@@ -639,7 +639,7 @@ export default function OrganizationDetail() {
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                       </a>
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                        Opens their own website. Look for &ldquo;Donate&rdquo; or &ldquo;Give&rdquo;, usually in the top menu. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
+                        Opens their own website. Look for &ldquo;Donate&rdquo; or &ldquo;Give&rdquo;, usually in the top menu. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
                       </p>
                       {certainPath}
                     </div>
@@ -659,7 +659,7 @@ export default function OrganizationDetail() {
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </a>
                     <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                      We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. You give directly to the nonprofit. MERIT never receives, holds, or processes your money.
+                      We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
                     </p>
                     {certainPath}
                   </div>

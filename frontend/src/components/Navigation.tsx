@@ -27,7 +27,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
         <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center py-3">
-            <span className="font-cinzel text-[18px] text-deep-navy tracking-[0.12em]">MERIT</span>
+            <span className="font-cinzel text-[18px] text-deep-navy tracking-[0.12em]">Daanaa</span>
           </Link>
 
           {/* Desktop Nav Links */}
