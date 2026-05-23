@@ -41,7 +41,7 @@ function KeyGate({ onKey }: { onKey: (k: string) => void }) {
   return (
     <div className="min-h-[100dvh] bg-deep-navy flex items-center justify-center">
       <div className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-xl">
-        <h1 className="font-display text-[22px] text-deep-navy mb-1">MERIT Admin</h1>
+        <h1 className="font-display text-[22px] text-deep-navy mb-1">Daanaa Admin</h1>
         <p className="font-body text-[13px] text-cool-grey mb-6">Enter your admin key to continue</p>
         <form onSubmit={e => { e.preventDefault(); if (input.trim()) onKey(input.trim()) }}>
           <input
@@ -381,7 +381,7 @@ export default function AdminPage() {
     <div className="min-h-[100dvh] bg-[#F8F6F3]">
       {/* Header */}
       <div className="bg-deep-navy px-6 lg:px-12 py-4 flex items-center justify-between">
-        <span className="font-display italic text-[18px] text-warm-cream tracking-[-0.02em]">MERIT Admin</span>
+        <span className="font-display italic text-[18px] text-warm-cream tracking-[-0.02em]">Daanaa Admin</span>
         <button
           onClick={() => setAdminKey('')}
           className="font-body text-[12px] text-muted-cream/60 hover:text-muted-cream transition-colors"

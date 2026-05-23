@@ -131,7 +131,7 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 export default function Methodology() {
   usePageMeta(
     'How peer financial context is calculated',
-    'The complete formula MERIT uses to calculate peer financial context for 430,000+ nonprofits. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
+    'The complete formula Daanaa uses to calculate peer financial context for 430,000+ nonprofits. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const methodologyVersion = stats?.methodology_version ?? 'v1'
@@ -316,7 +316,7 @@ export default function Methodology() {
               A lower financial scale score may reflect organizational structure rather than weakness. Organizations that pass funding through to other groups, national chapters that report revenue centrally, and newly founded organizations regularly score in the lower half. That accurately describes their position among peers, not their quality or worth.
             </Callout>
             <p>
-              Outcome data, the measure donors most want, is not measurable from public filings at sector wide scale. No rating system that claims to measure program effectiveness from 990 data alone should be trusted. MERIT does not make this claim.
+              Outcome data, the measure donors most want, is not measurable from public filings at sector wide scale. No rating system that claims to measure program effectiveness from 990 data alone should be trusted. Daanaa does not make this claim.
             </p>
           </Section>
 
@@ -346,12 +346,12 @@ export default function Methodology() {
 
           <Section label="Data sources" title="Where the data comes from">
             <p>
-              MERIT draws exclusively from public records. We do not solicit, purchase, or accept data from the organizations we index.
+              Daanaa draws exclusively from public records. We do not solicit, purchase, or accept data from the organizations we index.
             </p>
             <div className="mt-4">
               <SourceRow
                 source="IRS nonprofit registration list"
-                detail="Nonprofit status, organization name, state, and category code. Updated quarterly by the IRS. MERIT covers the active public charity subset — over 430,000 organizations."
+                detail="Nonprofit status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa covers the active public charity subset — over 430,000 organizations."
               />
               <SourceRow
                 source="IRS published financial data"
@@ -367,7 +367,7 @@ export default function Methodology() {
               />
             </div>
             <Callout>
-              Data currency varies by source. The IRS registration list is updated quarterly. 990 financials reflect the most recent filing on record, which may be 1 to 3 years behind the current fiscal year. Score dates reflect when MERIT last processed the available data, not when the organization filed.
+              Data currency varies by source. The IRS registration list is updated quarterly. 990 financials reflect the most recent filing on record, which may be 1 to 3 years behind the current fiscal year. Score dates reflect when Daanaa last processed the available data, not when the organization filed.
             </Callout>
           </Section>
 
@@ -376,7 +376,7 @@ export default function Methodology() {
             <div>
               <p className="font-body text-[13px] text-cool-grey">Questions about the methodology?</p>
               <Link to="/about#contact" className="font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors mt-1 inline-block">
-                Contact the MERIT team →
+                Contact the Daanaa team →
               </Link>
             </div>
             <div className="flex gap-6">

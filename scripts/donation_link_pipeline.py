@@ -41,8 +41,8 @@ import requests
 DB_PATH    = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 CONFIG_DIR = Path(__file__).parent / "config"
 
-UA         = ("Mozilla/5.0 (compatible; MeritLinkVerifier/1.0; "
-              "+https://meritgiving.org/about) link-verification")
+UA         = ("Mozilla/5.0 (compatible; DaanaaLinkVerifier/1.0; "
+              "+https://daanaa.org/about) link-verification")
 TIMEOUT    = 10
 READ_BYTES = 81_920
 

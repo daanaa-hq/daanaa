@@ -30,8 +30,8 @@ import requests
 
 DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 
-UA = ("Mozilla/5.0 (compatible; MeritLinkHealth/1.0; "
-      "+https://meritgiving.org/about) link-verification")
+UA = ("Mozilla/5.0 (compatible; DaanaaLinkHealth/1.0; "
+      "+https://daanaa.org/about) link-verification")
 TIMEOUT = 8
 READ_BYTES = 60_000  # enough to find donate embeds deeper in the page body
 

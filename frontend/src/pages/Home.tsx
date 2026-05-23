@@ -52,10 +52,10 @@ function HeroSection() {
 
   return (
     <section className="bg-deep-navy pt-[72px]">
-      <div className="max-w-[860px] mx-auto px-6 pt-16 pb-20 text-center">
+      <div className="max-w-[860px] mx-auto px-6 pt-10 pb-12 md:pt-16 md:pb-20 text-center">
 
         {/* Eyebrow badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-soft-gold/10 border border-soft-gold/20 mb-7">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-soft-gold/10 border border-soft-gold/20 mb-4 md:mb-7">
           <span className="w-1.5 h-1.5 rounded-full bg-soft-gold animate-pulse" />
           <span className="font-body text-[13px] font-medium text-soft-gold tracking-[0.02em]">
             {orgCount.toLocaleString()}+ nonprofits recognized by the IRS
@@ -118,7 +118,7 @@ function BrowseCauses() {
   }, [catData])
 
   return (
-    <section className="bg-[#F8F5F0] border-t border-b border-light-grey py-16">
+    <section className="bg-[#F8F5F0] border-t border-b border-light-grey py-10 md:py-16">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
         {/* Section header */}
@@ -268,7 +268,7 @@ function TiersStrip() {
               Visibility Levels
             </p>
             <p className="font-body text-[14px] text-cool-grey leading-[1.5]">
-              Some groups have websites, reports, and giving pages. Others are small, local, or offline. MERIT shows what information is available.
+              Some groups have websites, reports, and giving pages. Others are small, local, or offline. Daanaa shows what information is available.
             </p>
             <Link
               to="/tiers"
@@ -311,7 +311,7 @@ function TiersStrip() {
 // ─── Giving Wallet ────────────────────────────────────────────────────────────
 function WalletSection() {
   return (
-    <section className="bg-deep-navy py-20 md:py-28">
+    <section className="bg-deep-navy py-12 md:py-20 lg:py-28">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
 
@@ -410,7 +410,7 @@ function WalletSection() {
 // ─── Advisor teaser ───────────────────────────────────────────────────────────
 function AdvisorTeaser() {
   return (
-    <section style={{ background: '#F2EDE8' }} className="border-t border-light-grey py-16">
+    <section style={{ background: '#F2EDE8' }} className="border-t border-light-grey py-10 md:py-16">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className="flex flex-col md:flex-row md:items-center gap-8 md:gap-16">
 
@@ -473,7 +473,7 @@ function FooterCTA() {
     : '430,000+'
 
   return (
-    <section className="bg-white border-t border-light-grey py-16">
+    <section className="bg-white border-t border-light-grey py-10 md:py-16">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 text-center">
         <h2
           className="font-display italic text-deep-navy leading-tight tracking-[-0.01em]"
@@ -495,7 +495,7 @@ function FooterCTA() {
             to="/how-it-works"
             className="border-2 border-deep-navy/20 text-deep-navy font-body text-[15px] font-medium px-9 py-4 rounded-full hover:border-deep-navy/40 hover:bg-deep-navy/5 transition-all"
           >
-            How MERIT works
+            How Daanaa works
           </Link>
         </div>
         <p className="mt-6 font-body text-[13px] text-cool-grey/50">

@@ -17,7 +17,7 @@ for d in [DATA, RAW, LOGS]:
 STATE_DB = DATA / "merit_state.db"
 RAW_JSONL = RAW / "orgs_raw.jsonl"
 PP_DELAY = 1.1
-HEADERS = {"User-Agent": "MERITGiving-DataBot/1.0 (contact@meritgiving.org)"}
+HEADERS = {"User-Agent": "Daanaa-DataBot/1.0 (contact@daanaa.org)"}
 
 def log(msg):
     ts = datetime.now().isoformat()

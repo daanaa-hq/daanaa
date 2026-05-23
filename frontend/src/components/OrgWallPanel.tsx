@@ -17,7 +17,7 @@ interface OrgWallPanelProps {
 }
 
 export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
-  const mailtoHref = `mailto:hello@meritgiving.com?subject=Raise our flame for ${encodeURIComponent(orgName)}&body=Hi%2C%20I%27d%20like%20to%20claim%20the%20MERIT%20page%20for%20${encodeURIComponent(orgName)}%20(EIN%20${encodeURIComponent(ein)}).%20Please%20help%20us%20get%20started.`
+  const mailtoHref = `mailto:hello@daanaa.org?subject=Claim our page for ${encodeURIComponent(orgName)}&body=Hi%2C%20I%27d%20like%20to%20claim%20the%20Daanaa%20page%20for%20${encodeURIComponent(orgName)}%20(EIN%20${encodeURIComponent(ein)}).%20Please%20help%20us%20get%20started.`
 
   return (
     <div

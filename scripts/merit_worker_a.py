@@ -19,7 +19,7 @@ RAW_JSONL = RAW / "orgs_raw.jsonl"
 
 CANDIDATE_BUCKETS = {"3", "4", "5", "6", "7", "8", "9"}
 PP_DELAY = 1.1
-HEADERS = {"User-Agent": "MERITGiving-DataBot/1.0 (contact@meritgiving.org)"}
+HEADERS = {"User-Agent": "Daanaa-DataBot/1.0 (contact@daanaa.org)"}
 
 IRS_BMF_URLS = [
     "https://www.irs.gov/pub/irs-soi/eo1.csv",

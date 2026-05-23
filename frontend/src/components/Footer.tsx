@@ -26,7 +26,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <Link to="/" className="font-display italic text-[20px] text-warm-cream tracking-[-0.02em]">
-              MERIT
+              Daanaa
             </Link>
             <p className="mt-3 font-body text-[14px] leading-[1.5] tracking-[0.01em] text-muted-cream">
               Find causes. Give clearly. Keep your record private.
@@ -129,7 +129,7 @@ export default function Footer() {
       {/* Bottom Row */}
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-6 border-t border-navy-mid flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey/60">
-          © 2026 MERIT. Data sourced from IRS, NCCS, and ProPublica public records.{' '}
+          © 2026 Daanaa. Data sourced from IRS, NCCS, and ProPublica public records.{' '}
           <Link to="/legal" className="hover:text-warm-cream transition-colors underline underline-offset-2">
             Attribution & Terms
           </Link>

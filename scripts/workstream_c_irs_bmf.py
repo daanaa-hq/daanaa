@@ -92,7 +92,7 @@ def create_session() -> requests.Session:
     adapter = HTTPAdapter(max_retries=retry, pool_connections=5, pool_maxsize=10)
     session.mount("https://", adapter)
     session.headers.update({
-        "User-Agent": "MERIT-DataPipeline/0.1 (contact@meritgiving.org)"
+        "User-Agent": "Daanaa-DataPipeline/0.1 (contact@daanaa.org)"
     })
     return session
 

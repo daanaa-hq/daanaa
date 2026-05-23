@@ -15,7 +15,7 @@ for d in [XML_DIR, LOGS]:
     d.mkdir(parents=True, exist_ok=True)
 
 STATE_DB = DATA / "merit_state.db"
-HEADERS = {"User-Agent": "MERITGiving-DataBot/1.0 (contact@meritgiving.org)"}
+HEADERS = {"User-Agent": "Daanaa-DataBot/1.0 (contact@daanaa.org)"}
 REVENUE_MIN = 50_000
 REVENUE_MAX = 100_000_000
 

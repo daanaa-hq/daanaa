@@ -9,15 +9,15 @@ interface FAQItem {
 
 const FAQS: { section: string; items: FAQItem[] }[] = [
   {
-    section: 'About MERIT',
+    section: 'About Daanaa',
     items: [
       {
-        q: 'Is MERIT free?',
-        a: 'Yes, completely. MERIT is free to search, free to use, and free for nonprofits to claim their page. We do not charge for listings, scores, or access to any feature. We do not accept payments from organizations to influence their score or placement.',
+        q: 'Is Daanaa free?',
+        a: 'Yes, completely. Daanaa is free to search, free to use, and free for nonprofits to claim their page. We do not charge for listings, scores, or access to any feature. We do not accept payments from organizations to influence their score or placement.',
       },
       {
-        q: 'Who runs MERIT?',
-        a: 'MERIT is an independent platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We are not a nonprofit ourselves. We\'re a free research tool that makes it easier to understand and explore the nonprofit sector.',
+        q: 'Who runs Daanaa?',
+        a: 'Daanaa is an independent platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We are not a nonprofit ourselves. We\'re a free research tool that makes it easier to understand and explore the nonprofit sector.',
       },
       {
         q: 'How do you make money?',
@@ -72,7 +72,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
     section: 'Data & Accuracy',
     items: [
       {
-        q: 'Where does MERIT\'s data come from?',
+        q: 'Where does Daanaa\'s data come from?',
         a: (
           <>
             All data comes from public records: the IRS nonprofit registration list, IRS annual financial reports, and ProPublica's nonprofit database. We do not create, modify, or supplement source data — we organize and display it. See our{' '}<Link to="/legal" className="text-soft-gold hover:text-bright-gold transition-colors">full data attribution</Link>.
@@ -81,10 +81,10 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'How current is the financial data?',
-        a: 'Financial reports are usually filed 6 to 18 months after the year ends, and the government processes them gradually. What you see on MERIT is typically 1 to 3 years old depending on the organization. Every profile shows the year the data is from so you always know.',
+        a: 'Financial reports are usually filed 6 to 18 months after the year ends, and the government processes them gradually. What you see on Daanaa is typically 1 to 3 years old depending on the organization. Every profile shows the year the data is from so you always know.',
       },
       {
-        q: 'How often is MERIT updated?',
+        q: 'How often is Daanaa updated?',
         a: (
           <ul className="space-y-2">
             {[
@@ -104,7 +104,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         q: 'The information about my organization is wrong. What can I do?',
         a: (
           <>
-            If the data shown is incorrect, the most likely explanation is that the IRS filing contains the error — in which case the correction needs to happen there first, and MERIT will pick it up on the next refresh. For claims or additions (mission statement, website, programs), you can claim your page when that feature launches. In the meantime, contact us at{' '}<a href="mailto:hello@meritgiving.org" className="text-soft-gold hover:text-bright-gold transition-colors">hello@meritgiving.org</a>.
+            If the data shown is incorrect, the most likely explanation is that the IRS filing contains the error — in which case the correction needs to happen there first, and Daanaa will pick it up on the next refresh. For claims or additions (mission statement, website, programs), you can claim your page when that feature launches. In the meantime, contact us at{' '}<a href="mailto:hello@daanaa.org" className="text-soft-gold hover:text-bright-gold transition-colors">hello@daanaa.org</a>.
           </>
         ),
       },
@@ -126,8 +126,8 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         a: 'Claimed pages let organizations add a mission statement, program descriptions, leadership team, impact numbers, and documents. Everything you add is clearly labeled as written by you and kept visually separate from the government data, so donors always know which is which.',
       },
       {
-        q: 'My organization isn\'t listed on MERIT. Why?',
-        a: 'MERIT lists every nonprofit the IRS recognizes. If your organization isn\'t appearing, the most likely reasons are that your IRS recognition is recent (the IRS list updates monthly, so newly recognized organizations may take 30 to 60 days to appear), or your organization\'s status has lapsed. Search on the IRS Tax Exempt Organization Search to verify your status.',
+        q: 'My organization isn\'t listed on Daanaa. Why?',
+        a: 'Daanaa lists every nonprofit the IRS recognizes. If your organization isn\'t appearing, the most likely reasons are that your IRS recognition is recent (the IRS list updates monthly, so newly recognized organizations may take 30 to 60 days to appear), or your organization\'s status has lapsed. Search on the IRS Tax Exempt Organization Search to verify your status.',
       },
     ],
   },
@@ -135,8 +135,8 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
     section: 'Giving & Donations',
     items: [
       {
-        q: 'Does MERIT process donations?',
-        a: 'No. MERIT is a research and tracking tool that helps you find and research organizations. All actual giving happens directly with the nonprofit through their own website, by check, or by any other method you choose. MERIT logs your intent and keeps your record, but money never flows through us.',
+        q: 'Does Daanaa process donations?',
+        a: 'No. Daanaa is a research and tracking tool that helps you find and research organizations. All actual giving happens directly with the nonprofit through their own website, by check, or by any other method you choose. Daanaa logs your intent and keeps your record, but money never flows through us.',
       },
       {
         q: 'What is the Giving Wallet?',
@@ -146,7 +146,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         q: 'What documentation do I need for a tax deduction?',
         a: (
           <>
-            Under IRS rules: gifts under $250 require only a bank or card statement. Gifts of $250 or more require a written acknowledgment letter from the organization. MERIT\'s Giving Wallet helps you track what you\'ve given and to whom — but the letter must come from the nonprofit directly. See our{' '}<Link to="/guides" className="text-soft-gold hover:text-bright-gold transition-colors">giving guide on documentation</Link> for the full breakdown.
+            Under IRS rules: gifts under $250 require only a bank or card statement. Gifts of $250 or more require a written acknowledgment letter from the organization. Daanaa\'s Giving Wallet helps you track what you\'ve given and to whom — but the letter must come from the nonprofit directly. See our{' '}<Link to="/guides" className="text-soft-gold hover:text-bright-gold transition-colors">giving guide on documentation</Link> for the full breakdown.
           </>
         ),
       },
@@ -183,13 +183,13 @@ function FAQAccordion({ item }: { item: FAQItem }) {
 }
 
 export default function FAQPage() {
-  usePageMeta('FAQ', 'Frequently asked questions about MERIT. How scores work, where data comes from, how to claim your nonprofit page, and how donations are tracked.')
+  usePageMeta('FAQ', 'Frequently asked questions about Daanaa. How scores work, where data comes from, how to claim your nonprofit page, and how donations are tracked.')
 
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
       <div className="bg-deep-navy pt-[72px]">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-10 md:pt-12 md:pb-16">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream/50">/</span>
@@ -199,7 +199,7 @@ export default function FAQPage() {
             Frequently asked questions
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[560px]">
-            Answers to the most common questions about MERIT, our data, and how giving works on this platform.
+            Answers to the most common questions about Daanaa, our data, and how giving works on this platform.
           </p>
         </div>
       </div>
@@ -227,13 +227,13 @@ export default function FAQPage() {
           <div className="mt-14 p-8 bg-deep-navy rounded-2xl text-center">
             <h3 className="font-display italic text-warm-cream text-[24px]">Still have a question?</h3>
             <p className="mt-3 font-body text-[15px] text-muted-cream leading-[1.6] max-w-[400px] mx-auto">
-              We read every email. If something on MERIT doesn't make sense, we want to know.
+              We read every email. If something on Daanaa doesn't make sense, we want to know.
             </p>
             <a
-              href="mailto:hello@meritgiving.org"
+              href="mailto:hello@daanaa.org"
               className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
             >
-              hello@meritgiving.org
+              hello@daanaa.org
             </a>
           </div>
         </div>

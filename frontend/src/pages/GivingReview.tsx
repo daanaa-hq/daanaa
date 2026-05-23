@@ -247,7 +247,7 @@ export default function GivingReview() {
               {!hasLetterItems && !hasSplitItems
                 ? 'Each contribution is under $250. '
                 : ''}
-              MERIT does not process payments or issue tax acknowledgments.
+              Daanaa does not process payments or issue tax acknowledgments.
             </p>
           </div>
 

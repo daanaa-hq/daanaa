@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const SITE = 'MERIT'
+const SITE = 'Daanaa'
 
 function setMeta(selector: string, attr: string, value: string) {
   let el = document.querySelector<HTMLMetaElement>(selector)

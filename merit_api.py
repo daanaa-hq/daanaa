@@ -48,8 +48,8 @@ _ALLOWED_ORIGINS = [
     "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:5173",
-    "https://meritgiving.org",
-    "https://www.meritgiving.org",
+    "https://daanaa.org",
+    "https://www.daanaa.org",
 ]
 CORS(app, origins=_ALLOWED_ORIGINS, supports_credentials=False)
 

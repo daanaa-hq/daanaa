@@ -6,7 +6,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 
 function Section({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="py-14 md:py-20 border-b border-light-grey last:border-0">
+    <div className="py-10 md:py-14 lg:py-20 border-b border-light-grey last:border-0">
       <div className="max-w-[760px]">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-6 h-px bg-soft-gold/50" />
@@ -47,19 +47,19 @@ function TierRow({ score, label, description }: { score: string; label: string; 
 }
 
 export default function HowItWorks() {
-  usePageMeta('How It Works', 'Learn how MERIT scores 430,000+ nonprofits using IRS data, peer-group benchmarking, and real Form 990 financials.')
+  usePageMeta('How It Works', 'Learn how Daanaa scores 430,000+ nonprofits using IRS data, peer-group benchmarking, and real Form 990 financials.')
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
       <div className="bg-deep-navy pt-[72px]">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-10 md:pt-12 md:pb-16">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream/50">/</span>
             <span className="font-body text-[12px] text-muted-cream">How It Works</span>
           </div>
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 64px)' }}>
-            How MERIT Works
+            How Daanaa Works
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
             We don't score nonprofits on our opinion. We surface publicly available data, place each organization alongside its true peers, and let you decide.
@@ -71,15 +71,15 @@ export default function HowItWorks() {
       <div className="bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          <Section label="Our foundation" title="What MERIT is, and what it isn't">
+          <Section label="Our foundation" title="What Daanaa is, and what it isn't">
             <p>
-              MERIT is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
+              Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
             </p>
             <p>
               We list every nonprofit the IRS recognizes in the United States — over 430,000 of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
-              Peer financial context (0–100) compares financial footprint and reserve position relative to similar groups. It does not measure impact, leadership, community trust, or whether a group deserves support. MERIT is not a charity rating agency.
+              Peer financial context (0–100) compares financial footprint and reserve position relative to similar groups. It does not measure impact, leadership, community trust, or whether a group deserves support. Daanaa is not a charity rating agency.
             </Callout>
           </Section>
 
@@ -148,7 +148,7 @@ export default function HowItWorks() {
 
           <Section label="Visibility levels" title="Visibility levels: how much information is available">
             <p>
-              Every listing displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a profile <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built MERIT for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
+              Every listing displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a profile <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
             </p>
             <div className="mt-4 space-y-3">
               {([
@@ -201,12 +201,12 @@ export default function HowItWorks() {
             </p>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-5 bg-white rounded-xl border border-light-grey">
-                <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">MERIT's data</p>
+                <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Daanaa's data</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
                   Sourced from IRS public records. Objective, fact-checked, timestamped. Organizations cannot edit this layer.
                 </p>
                 <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
-                  {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'MERIT financial ranking', 'Data source & year'].map(i => (
+                  {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Daanaa financial ranking', 'Data source & year'].map(i => (
                     <li key={i} className="flex items-center gap-2">
                       <span className="w-1 h-1 rounded-full bg-cool-grey shrink-0" />{i}
                     </li>
@@ -261,7 +261,7 @@ export default function HowItWorks() {
                 If you represent a listed organization and want to update or claim your page, or if you spot an error in our data, we want to hear from you.
               </p>
               <a
-                href="mailto:hello@meritgiving.org"
+                href="mailto:hello@daanaa.org"
                 className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
               >
                 Contact us

@@ -79,7 +79,7 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
             ))}
           </ul>
           <p className="mt-3 font-body text-[10px] text-cool-grey/50 leading-[1.5]">
-            These gaps reflect data we haven't collected yet, not red flags. Governance and impact data will be added as MERIT expands.
+            These gaps reflect data we haven't collected yet, not red flags. Governance and impact data will be added as Daanaa expands.
           </p>
         </div>
       </div>
@@ -88,7 +88,7 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
       <div className="px-5 py-3 border-t border-light-grey shrink-0 flex items-start justify-between gap-3">
         <p className="font-body text-[10px] text-cool-grey/50 leading-[1.5]">
           Data sourced from {sourceLabel} and the IRS Business Master File.
-          MERIT does not process donations or independently audit organizations.
+          Daanaa does not process donations or independently audit organizations.
         </p>
         <Link
           to="/methodology"

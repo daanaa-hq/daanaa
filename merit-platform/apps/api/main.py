@@ -12,9 +12,9 @@ import sqlite3
 from contextlib import contextmanager
 
 app = FastAPI(
-    title="MERIT API",
+    title="Daanaa API",
     version="0.1.0",
-    description="Serves MERIT nonprofit data.",
+    description="Serves Daanaa nonprofit data.",
 )
 
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3003").split(",")
