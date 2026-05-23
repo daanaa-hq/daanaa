@@ -17,10 +17,10 @@ const TIERS: {
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
-      { label: 'Financial ranking assigned', met: true },
-      { label: 'Top 25% in financial strength among similar nonprofits', met: true },
+      { label: 'Financial context assigned', met: true },
       { label: 'Mission statement on public record', met: true },
       { label: 'Active website on record', met: true },
+      { label: 'Giving path confirmed', met: true },
     ],
   },
   {
@@ -30,10 +30,10 @@ const TIERS: {
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
-      { label: 'Financial ranking assigned', met: true },
-      { label: 'Top 25% in financial strength among similar nonprofits', met: false },
+      { label: 'Financial context assigned', met: true },
       { label: 'Mission statement on public record', met: true },
       { label: 'Active website on record', met: true },
+      { label: 'Giving path confirmed', met: false },
     ],
   },
   {
@@ -43,23 +43,23 @@ const TIERS: {
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
-      { label: 'Financial ranking assigned', met: true },
-      { label: 'Top 25% in financial strength among similar nonprofits', met: false },
+      { label: 'Financial context assigned', met: true },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
+      { label: 'Giving path confirmed', met: false },
     ],
   },
   {
-    name: 'Ember',
+    name: 'Glow',
     pct: '21.3%',
     count: '~117,000',
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later) or revenue on record', met: true },
-      { label: 'Financial ranking assigned', met: false },
-      { label: 'Top 25% in financial strength among similar nonprofits', met: false },
+      { label: 'Financial context assigned', met: false },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
+      { label: 'Giving path confirmed', met: false },
     ],
   },
   {
@@ -70,7 +70,7 @@ const TIERS: {
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: false },
       { label: 'Revenue data on record', met: false },
-      { label: 'Financial ranking assigned', met: false },
+      { label: 'Financial context assigned', met: false },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
     ],
@@ -89,7 +89,7 @@ const CRITERIA_ICON_UNMET = (
 )
 
 export default function TiersPage() {
-  usePageMeta('Nonprofit Tiers', 'Understand the five MERIT tiers (Beacon, Lantern, Flame, Ember, and Spark) and what each means for the nonprofits the IRS recognizes.')
+  usePageMeta('Visibility Levels', 'Understand the five MERIT visibility levels (Beacon, Lantern, Flame, Glow, and Spark) and what each means for the nonprofits the IRS recognizes.')
   return (
     <div className="min-h-[100dvh]">
 
@@ -99,21 +99,21 @@ export default function TiersPage() {
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream/40">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Trust Tiers</span>
+            <span className="font-body text-[12px] text-muted-cream">Visibility Levels</span>
           </div>
           <div className="flex items-start gap-6">
             <div className="hidden sm:flex flex-col gap-1.5 pt-2 shrink-0">
-              {(['Beacon','Lantern','Flame','Ember','Spark'] as TierName[]).map(t => (
+              {(['Beacon','Lantern','Flame','Glow','Spark'] as TierName[]).map(t => (
                 <LampMark key={t} tier={t} size="xs" />
               ))}
             </div>
             <div className="max-w-[640px]">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How much public data we have</span>
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How much information is available</span>
               <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
-                Trust Tiers
+                Visibility Levels
               </h1>
               <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">
-                Every nonprofit on MERIT carries a lamp tier — a simple signal of how much public information we have about it. Tiers reflect what the public record contains, not our opinion of the organization's mission or importance.
+                Visibility levels show how much helpful information a donor can see today. They are not a grade, endorsement, or measure of impact.
               </p>
             </div>
           </div>
@@ -245,7 +245,7 @@ export default function TiersPage() {
           {/* Disclaimer section */}
           <div className="mt-16 max-w-[720px]">
             <h2 className="font-display italic text-deep-navy leading-[1.1]" style={{ fontSize: 'clamp(22px, 3vw, 34px)' }}>
-              A lower tier is not a grade
+              A lower visibility level is not a grade
             </h2>
             <div className="mt-4 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>

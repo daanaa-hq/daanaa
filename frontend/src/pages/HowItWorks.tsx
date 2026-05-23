@@ -79,7 +79,7 @@ export default function HowItWorks() {
               We list every nonprofit the IRS recognizes in the United States — over 430,000 of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
-              A high MERIT score means an organization is financially strong relative to similar nonprofits of similar size. It does not measure impact, goodness of purpose, or how efficiently a dollar reaches a beneficiary. Those things matter enormously. They are also much harder to measure, and we won't pretend otherwise.
+              Peer financial context (0–100) compares financial footprint and reserve position relative to similar groups. It does not measure impact, leadership, community trust, or whether a group deserves support. MERIT is not a charity rating agency.
             </Callout>
           </Section>
 
@@ -106,7 +106,7 @@ export default function HowItWorks() {
             </p>
           </Section>
 
-          <Section label="The financial picture" title="How the financial number works">
+          <Section label="The financial picture" title="How peer financial context works">
             <p>
               This number sits quietly behind the lamp. It is not a grade and it is not a judgment. It says nothing about the quality of the work, the people, or the good they do. All it does is compare one organization's financial size to other groups doing similar work at a similar scale. The lamp is the journey. This is just one fact along the way.
             </p>
@@ -146,7 +146,7 @@ export default function HowItWorks() {
             </div>
           </Section>
 
-          <Section label="Trust tiers" title="The lamp: a visibility journey, not a grade">
+          <Section label="Visibility levels" title="Visibility levels: how much information is available">
             <p>
               Every listing displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a profile <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built MERIT for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
             </p>
@@ -154,7 +154,7 @@ export default function HowItWorks() {
               {([
                 {
                   tier: 'Beacon' as TierName,
-                  what: 'Top 25% financially among similar nonprofits, with a current annual report, mission statement, and active website all confirmed from public records.',
+                  what: 'Mission, giving path, service area, and public financial data all on record. Complete profile confirmed from public records.',
                 },
                 {
                   tier: 'Lantern' as TierName,
@@ -165,8 +165,8 @@ export default function HowItWorks() {
                   what: 'Current annual report on file with a financial ranking. Mission statement or website not yet in public records.',
                 },
                 {
-                  tier: 'Ember' as TierName,
-                  what: 'IRS-confirmed nonprofit with some financial data on record. Not enough data yet to assign a financial ranking.',
+                  tier: 'Glow' as TierName,
+                  what: 'IRS-confirmed nonprofit with some financial data on record. Not enough data yet to assign a financial context ranking.',
                 },
                 {
                   tier: 'Spark' as TierName,

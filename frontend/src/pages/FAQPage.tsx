@@ -35,22 +35,22 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
     ],
   },
   {
-    section: 'The MERIT Score',
+    section: 'Peer Financial Context',
     items: [
       {
-        q: 'How is the MERIT score calculated?',
-        a: 'Think of it as a ranking within a group of peers, not a report card. We take each organization\'s revenue, group it with similar nonprofits by cause and size, and find where it ranks. A score of 72 means the organization is financially larger than 72% of its peers. It does not measure mission, impact, or goodness of purpose.',
+        q: 'How is peer financial context calculated?',
+        a: 'Peer financial context (0–100) shows how this organization\'s financial footprint compares with similar nonprofits using available public data. A score of 72 means the organization has a larger financial footprint than 72% of comparable groups. It does not measure mission, impact, or goodness of purpose.',
       },
       {
-        q: 'What\'s the difference between the score and the trust tier?',
+        q: 'What\'s the difference between peer financial context and visibility level?',
         a: (
           <>
             <p>They measure different things:</p>
             <ul className="mt-3 space-y-2">
-              <li><strong className="text-deep-navy font-semibold">The MERIT score</strong> (0–100) answers: how does this organization compare financially to similar nonprofits?</li>
-              <li><strong className="text-deep-navy font-semibold">The trust tier</strong> (Beacon → Spark) answers: how much public data backs this profile today?</li>
+              <li><strong className="text-deep-navy font-semibold">Peer financial context</strong> (0–100) answers: how does this organization's financial footprint compare to similar nonprofits?</li>
+              <li><strong className="text-deep-navy font-semibold">Visibility level</strong> (Complete → Listed) answers: how much public data backs this profile today?</li>
             </ul>
-            <p className="mt-3">An organization can have a high score and a low tier (strong finances, but no public mission statement or website on record) — or vice versa. Read the{' '}<Link to="/tiers" className="text-soft-gold hover:text-bright-gold transition-colors">full tier reference</Link> for details.</p>
+            <p className="mt-3">An organization can have a high peer context score and a low visibility level — or vice versa. Read the{' '}<Link to="/tiers" className="text-soft-gold hover:text-bright-gold transition-colors">full visibility level reference</Link> for details.</p>
           </>
         ),
       },

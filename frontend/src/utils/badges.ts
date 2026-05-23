@@ -69,8 +69,8 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
     if (score >= 85) {
       badges.push({
         id: 'standout',
-        label: `Top ${pctBetter}% · ${sector}`,
-        detail: `Financial scale places this org in the top ${pctBetter}% of comparable ${peerLabel} nonprofits — scored on revenue relative to peers (65%) and balance-sheet reserves (35%). ${scoreNote}`,
+        label: `Larger financial footprint · ${sector}`,
+        detail: `Financial context places this org among groups with a larger financial footprint among comparable ${peerLabel} nonprofits — based on revenue relative to peers (65%) and balance-sheet reserves (35%). ${scoreNote}`,
         source: org.data_source === 'propublica' ? 'IRS Form 990 · ProPublica Nonprofit Explorer' : 'IRS SOI Extract · Form 990',
         color: 'gold',
         icon: 'star',
@@ -78,8 +78,8 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
     } else if (score >= 70) {
       badges.push({
         id: 'strong_performer',
-        label: `Top ${pctBetter}% · ${sector}`,
-        detail: `Financial scale ranks this org in the top ${pctBetter}% of comparable ${peerLabel} nonprofits — revenue size within its peer group (65%) combined with a reserve-ratio score measuring balance-sheet strength (35%). ${scoreNote}`,
+        label: `Larger financial footprint · ${sector}`,
+        detail: `Financial context places this org among groups with a larger financial footprint among comparable ${peerLabel} nonprofits — revenue size within its peer group (65%) combined with a reserve-ratio score (35%). ${scoreNote}`,
         source: org.data_source === 'propublica' ? 'IRS Form 990 · ProPublica Nonprofit Explorer' : 'IRS SOI Extract · Form 990',
         color: 'gold',
         icon: 'trending-up',
@@ -87,8 +87,8 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
     } else if (score >= 50) {
       badges.push({
         id: 'peer_reviewed',
-        label: 'Finances reviewed',
-        detail: `Financial data is benchmarked against ${peerLabel} organizations of similar size. Ranked in the ${pctAbove}th percentile — above the median on combined revenue scale and reserves. ${scoreNote}`,
+        label: 'Financial context available',
+        detail: `Financial data is benchmarked against ${peerLabel} organizations of similar size. Ranked in the ${pctAbove}th percentile — typical financial footprint for similar groups. ${scoreNote}`,
         source: org.data_source === 'propublica' ? 'IRS Form 990 · ProPublica Nonprofit Explorer' : 'IRS SOI Extract · Form 990',
         color: 'blue',
         icon: 'trending-up',
@@ -96,7 +96,7 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
     } else {
       badges.push({
         id: 'peer_reviewed',
-        label: 'Finances on file',
+        label: 'Financial data found',
         detail: `Financial data is public and has been benchmarked against peer organizations — ranked in the ${pctAbove}th percentile on financial scale (revenue and reserves). ${scoreNote}`,
         source: org.data_source === 'propublica' ? 'IRS Form 990 · ProPublica Nonprofit Explorer' : 'IRS SOI Extract · Form 990',
         color: 'blue',

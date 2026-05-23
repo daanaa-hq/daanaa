@@ -282,9 +282,9 @@ export default function FilterSheet({
             </div>
           </div>
 
-          {/* Trust tier filter */}
+          {/* Visibility level filter */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Trust Tier</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Visibility Level</span>
             <div className="flex gap-2">
               {SCORE_TIERS.map(tier => (
                 <button

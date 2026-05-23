@@ -33,7 +33,7 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
   return (
     <button
       onClick={onClick}
-      title={inList ? 'Remove from giving list' : 'Add to giving list'}
+      title={inList ? 'Remove from giving list' : 'Save to giving list'}
       className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none"
       style={{
         backgroundColor: inList ? '#2A6B45' : 'transparent',
@@ -46,14 +46,14 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          Added
+          Saved
         </>
       ) : (
         <>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Add
+          Save
         </>
       )}
     </button>
@@ -166,12 +166,19 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
           <span className="font-body text-[12px] text-cool-grey">
             {[org.city, org.state].filter(Boolean).join(', ')}
           </span>
-          {org.subcategory && (
-            <>
-              <span className="text-cool-grey/30">·</span>
-              <span className="font-body text-[11px] text-cool-grey/70 truncate max-w-[160px]">{org.subcategory}</span>
-            </>
-          )}
+          {org.subcategory && (() => {
+            const { major, sub } = getNteeInfo(org.subcategory)
+            const label = sub ?? major
+            if (!label) return null
+            return (
+              <>
+                <span className="text-cool-grey/30">·</span>
+                <span className="font-body text-[11px] text-cool-grey/70 truncate max-w-[200px]">
+                  {major && sub ? `${major} · ${sub}` : label}
+                </span>
+              </>
+            )
+          })()}
         </div>
       </div>
 

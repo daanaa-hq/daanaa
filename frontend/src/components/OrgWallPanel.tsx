@@ -64,7 +64,7 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
             href={mailtoHref}
             className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2"
           >
-            Raise your flame.
+            Claim this page for free.
           </a>
           {' '}It&rsquo;s free.
         </p>
