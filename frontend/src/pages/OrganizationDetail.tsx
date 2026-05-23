@@ -448,7 +448,7 @@ export default function OrganizationDetail() {
               >
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
-              {inList ? 'In giving list' : 'Add to giving list'}
+              {inList ? 'Saved' : 'Save to giving list'}
             </button>
           </div>
 
@@ -655,7 +655,7 @@ export default function OrganizationDetail() {
                       onClick={handleGiveClick}
                       className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
                     >
-                      View the verified public record
+                      View public record
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                     </a>
                     <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
@@ -733,13 +733,13 @@ export default function OrganizationDetail() {
                   }}
                 >
                   <span className="font-body text-[10px] tracking-[0.06em] uppercase text-muted-cream/60">
-                    Financial health score
+                    Peer financial context
                   </span>
                   <span className="font-body text-[14px] font-semibold" style={{ color: PASSING_BANDS.includes(finHealth.band) ? '#4ADE80' : '#F59E0B' }}>
                     {finHealth.band} · {finHealth.score}/100
                   </span>
                   <span className="font-body text-[10px] text-muted-cream/60 text-center leading-[1.4]">
-                    Stronger than {finHealth.score}% of similar nonprofits
+                    Larger financial footprint than {finHealth.score}% of comparable groups
                   </span>
                   {/* Behavioral signals */}
                   {scoreSignals(apiOrg!).map((s, i) => (
@@ -792,7 +792,7 @@ export default function OrganizationDetail() {
                 <div className="w-full px-3 py-3 rounded-lg bg-white/5 border border-white/10 text-left space-y-2">
                   {finHealth && (
                     <p className="font-body text-[11px] text-muted-cream/80 leading-[1.5]">
-                      <strong className="text-muted-cream">{finHealth.band}</strong> means this org ranks stronger than {finHealth.score}% of similar nonprofits financially.
+                      <strong className="text-muted-cream">{finHealth.band}</strong> means this org has a larger financial footprint than {finHealth.score}% of comparable groups. This is not a rating of impact, leadership, or community value.
                     </p>
                   )}
                   <p className="font-body text-[11px] text-muted-cream/70 leading-[1.5]">
@@ -947,11 +947,10 @@ export default function OrganizationDetail() {
                   {(lampTier === 'Beacon' || lampTier === 'Lantern') ? (
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
                       {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, and website all on public record.
-                      {lampTier === 'Lantern' && ' Reaching the top quarter for financial scale among similar organizations would light the full Beacon.'}
                     </p>
                   ) : (
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      {apiOrg!.organization_name} is a registered US nonprofit. This profile is still lighting up. Adding a mission, website, and financial detail brightens its flame. A lower tier reflects the public data we have, not the organization&rsquo;s quality.
+                      This profile is built from public records. The organization can add its own mission, service area, programs, events, volunteer needs, and giving path for free. A lower visibility level means less information is available today, not that the work is less important.
                     </p>
                   )}
                 </div>
@@ -968,7 +967,7 @@ export default function OrganizationDetail() {
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
-                      Claim it free &amp; raise your flame
+                      Claim this page for free
                     </Link>
                   </div>
                 )}
@@ -1143,7 +1142,7 @@ export default function OrganizationDetail() {
               MORE LIKE THIS
             </span>
             <h2 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
-              Organizations doing similar work
+              More groups working in this area
             </h2>
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarOrgs.map((o, idx) => {
@@ -1294,7 +1293,7 @@ export default function OrganizationDetail() {
           >
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
-          {inList ? 'Remove from giving list' : 'Add to giving list'}
+          {inList ? 'Remove from giving list' : 'Save to giving list'}
         </button>
       </div>
     </div>

@@ -130,8 +130,8 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 
 export default function Methodology() {
   usePageMeta(
-    'Scoring Methodology',
-    'The complete formula MERIT uses to score 430,000+ nonprofits. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
+    'How peer financial context is calculated',
+    'The complete formula MERIT uses to calculate peer financial context for 430,000+ nonprofits. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const methodologyVersion = stats?.methodology_version ?? 'v1'
@@ -145,13 +145,13 @@ export default function Methodology() {
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream/50">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Scoring Methodology</span>
+            <span className="font-body text-[12px] text-muted-cream">How peer financial context is calculated</span>
           </div>
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 64px)' }}>
-            How we score nonprofits
+            How peer financial context is calculated
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
-            Every score compares a nonprofit against others doing the same kind of work at a similar size — using public data from IRS annual filings. No black boxes. Everything is documented below.
+            Peer financial context is an optional public-data signal. It does not measure impact, trustworthiness, leadership, governance, program quality, or whether a group deserves support. Every number compares a nonprofit against others doing similar work at a similar size — using public IRS filings. No black boxes. Everything is documented below.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-4 sm:gap-10">
             <div>
@@ -384,7 +384,7 @@ export default function Methodology() {
                 How It Works
               </Link>
               <Link to="/tiers" className="font-body text-[14px] text-cool-grey hover:text-deep-navy transition-colors">
-                Trust Tiers
+                Visibility Levels
               </Link>
             </div>
           </div>

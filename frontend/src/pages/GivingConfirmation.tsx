@@ -18,11 +18,12 @@ function maskEmail(email: string): string {
 }
 
 const VERIFIED_FACTS: Record<string, string> = {
-  Beacon:  'Files public financials annually, top-quartile program ratio, and clean record.',
-  Lantern: 'Strong governance, public financials, and fully IRS-verified.',
-  Flame:   'IRS verified, 990 current, and peer-benchmarked.',
-  Ember:   'Confirmed active 501(c)(3) with current IRS filing.',
-  Spark:   'Registered 501(c)(3) in IRS database.',
+  Beacon:  'Organization-provided profile confirmed. Mission, giving path, and public filing all on record.',
+  Lantern: 'Official giving path confirmed. Mission and public financial filing on record.',
+  Flame:   'Public financial filing on record. Mission found in public data.',
+  Glow:    'Confirmed active 501(c)(3) with public record on file.',
+  Ember:   'Confirmed active 501(c)(3) with public record on file.',
+  Spark:   'Registered 501(c)(3) in public records.',
 }
 
 export default function GivingConfirmation() {

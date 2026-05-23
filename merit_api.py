@@ -173,9 +173,9 @@ def list_organizations():
     params = []
 
     if search:
-        # Split into words — each must appear independently in name, city, or EIN
-        # This makes search word-order-independent and lets users search "Khan Foundation" or "Foundation Khan"
-        words = [w for w in search.split() if w]
+        # Normalize hyphens out of the search term so "74-6086238" matches EIN "746086238"
+        search_normalized = search.replace('-', '')
+        words = [w for w in search_normalized.split() if w]
         for word in words:
             where_clauses.append("(organization_name LIKE ? OR EIN LIKE ? OR CITY LIKE ?)")
             params.extend([f'%{word}%', f'%{word}%', f'%{word}%'])

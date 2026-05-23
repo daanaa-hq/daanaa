@@ -29,7 +29,7 @@ export default function Footer() {
               MERIT
             </Link>
             <p className="mt-3 font-body text-[14px] leading-[1.5] tracking-[0.01em] text-muted-cream">
-              Nonprofit intelligence for informed giving
+              Find causes. Give clearly. Keep your record private.
             </p>
           </div>
 
@@ -41,7 +41,7 @@ export default function Footer() {
             <ul className="space-y-3">
               {[
                 { label: 'Directory', to: '/directory' },
-                { label: 'Giving Wallet', to: '/wallet' },
+                { label: 'Private Giving Record', to: '/wallet' },
                 { label: 'For Nonprofits', to: '/for-nonprofits' },
               ].map(({ label, to }) => (
                 <li key={label}>
@@ -61,8 +61,8 @@ export default function Footer() {
             <ul className="space-y-3">
               {[
                 { label: 'How It Works', to: '/how-it-works' },
-                { label: 'Trust Tiers', to: '/tiers' },
-                { label: 'Scoring Methodology', to: '/methodology' },
+                { label: 'Visibility Levels', to: '/tiers' },
+                { label: 'Financial Context', to: '/methodology' },
                 { label: 'Sector Health', to: '/sector-health' },
                 { label: 'Guides', to: '/guides' },
                 { label: 'FAQ', to: '/faq' },

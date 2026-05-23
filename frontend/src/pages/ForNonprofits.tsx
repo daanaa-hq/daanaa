@@ -50,10 +50,10 @@ export default function ForNonprofits() {
           <div className="max-w-[680px]">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">For organizations</span>
             <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
-              Your organization is already listed. Now make it yours.
+              Your public record may already be listed. Add the story only you can tell.
             </h1>
             <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-              MERIT lists every nonprofit the IRS recognizes in the United States. Claim your page to add your mission, programs, leadership, and impact directly — clearly labeled as your own words.
+              MERIT helps donors find public nonprofit records and giving paths. Claim your page for free to add your mission, programs, service area, leadership, impact notes, events, volunteer opportunities, and official giving links.
             </p>
             <a href="#claim" className="mt-8 inline-flex items-center gap-2 px-8 py-[14px] rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors">
               Join the waitlist
@@ -66,7 +66,7 @@ export default function ForNonprofits() {
       {/* What you get */}
       <div className="bg-warm-cream py-16 md:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-          <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">What claiming unlocks</span>
+          <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">What you can add for free</span>
           <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-10">
             Tell your story in your own words
           </h2>
@@ -202,10 +202,10 @@ export default function ForNonprofits() {
             tier: 'Spark',
             pct: '0.4% of all nonprofits',
             description: "The IRS recognizes you. You're already in our index.",
-            nextStep: 'To reach Ember: file a full annual report with the government. Required for nonprofits earning over $50,000 a year.',
+            nextStep: 'To reach Glow: file a full annual report with the government. Required for nonprofits earning over $50,000 a year.',
           },
           {
-            tier: 'Ember',
+            tier: 'Glow',
             pct: '21% of all nonprofits',
             description: 'Financial data is on record, but we need a recent one to rank you among peers.',
             nextStep: 'To reach Flame: file an annual report dated 2022 or later. This happens automatically once the IRS publishes it — nothing to do with us.',
@@ -220,12 +220,12 @@ export default function ForNonprofits() {
             tier: 'Lantern',
             pct: '2% of all nonprofits',
             description: 'Your current annual report, mission, and website are all on the public record. A strong, complete picture.',
-            nextStep: 'To reach Beacon: reach the top 25% in financial strength among similar nonprofits. That means healthy reserves and most of your spending going to programs.',
+            nextStep: 'To reach Beacon: add mission, service area, programs, leadership, and giving path. Visibility improves as your profile becomes more complete.',
           },
           {
             tier: 'Beacon',
             pct: '1% of all nonprofits',
-            description: 'Fully lit. Top 25% financially among similar nonprofits, with everything on the public record. The most complete picture donors can see.',
+            description: 'Complete profile. Mission, giving path, service area, programs, and leadership all on public record. The most complete picture donors can see.',
             nextStep: null,
           },
         ]
@@ -234,10 +234,10 @@ export default function ForNonprofits() {
             <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
               <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Your visibility journey</span>
               <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-3">
-                Raise your flame
+                Improve your visibility
               </h2>
               <p className="font-body text-[16px] text-cool-grey leading-[1.7] mb-10 max-w-[580px]">
-                Every nonprofit starts somewhere. Here's what moves you from one tier to the next — no fees, no forms to fill with us, just public data becoming visible.
+                Visibility is not a grade. It shows how much helpful information a donor can see today. Every group can improve visibility for free, regardless of size, revenue, staffing, or filing type.
               </p>
               <div className="max-w-[640px] space-y-0">
                 {STEPS.map((step, i) => (

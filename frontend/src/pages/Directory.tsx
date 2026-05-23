@@ -19,7 +19,7 @@ const FILTER_CATEGORIES = [
 ]
 
 const SORT_OPTIONS = [
-  { id: 'merit_score', label: 'MERIT Score' },
+  { id: 'merit_score', label: 'Peer Financial Context' },
   { id: 'organization_name', label: 'Name A to Z' },
   { id: 'total_revenue', label: 'Revenue' },
 ]
@@ -379,7 +379,7 @@ function FilterRail({
 
         {/* Trust tier filter */}
         <div className="mb-4">
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Trust Tier</p>
+          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Visibility Level</p>
           <div className="space-y-0.5">
             {SCORE_TIERS.map(tier => (
               <button
@@ -446,8 +446,8 @@ export default function Directory() {
   const subParam      = searchParams.get('sub') || ''
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
-    qParam ? `"${qParam}" · Nonprofits` : 'Nonprofit Directory',
-    'Search 430,000+ nonprofits recognized by the IRS — by name, category, location, and financial strength.'
+    qParam ? `"${qParam}" · Causes & Giving Paths` : 'Explore Causes & Giving Paths',
+    'Search 430,000+ nonprofits recognized by the IRS — by cause, category, location, and giving path.'
   )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
@@ -476,7 +476,7 @@ export default function Directory() {
   const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const searchMode = 'browse'
   const { isSaved, toggle: toggleSave } = useSavedOrgs()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -648,10 +648,10 @@ export default function Directory() {
           </div>
 
           <h1 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}>
-            Nonprofit Directory
+            Explore Causes &amp; Giving Paths
           </h1>
           <p className="mt-3 font-body text-[16px] leading-[1.6] text-cool-grey">
-            Browse verified nonprofits across the United States
+            Search public records, cause tags, locations, and giving paths across the United States.
           </p>
 
           {/* Search */}
@@ -659,7 +659,7 @@ export default function Directory() {
             value={searchQuery}
             onChange={v => { setSearchQuery(v); setCurrentPage(1) }}
             onSearch={q => { setSearchQuery(q); setDebouncedQuery(q); setCurrentPage(1) }}
-            placeholder="Search by name, city, or EIN…"
+            placeholder="Search by cause, city, community, name, or EIN…"
             className="mt-7 max-w-[640px]"
           />
 

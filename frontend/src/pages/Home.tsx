@@ -10,11 +10,11 @@ import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
-  { name: 'Beacon',  pct: '0.9%',  blurb: 'Top 25% financially, full profile, current filing' },
-  { name: 'Lantern', pct: '1.9%',  blurb: 'Full profile, financial ranking, current filing' },
-  { name: 'Flame',   pct: '75.5%', blurb: 'Financial ranking + current filing on record' },
-  { name: 'Ember',   pct: '21.3%', blurb: 'IRS confirmed with financial data' },
-  { name: 'Spark',   pct: '0.4%',  blurb: 'IRS listed, no financial data yet' },
+  { name: 'Beacon',  pct: '0.9%',  blurb: 'Complete profile: mission, giving path, and public financial data on record' },
+  { name: 'Lantern', pct: '1.9%',  blurb: 'Giving path, public filing, and mission all on record' },
+  { name: 'Flame',   pct: '75.5%', blurb: 'Public filing on record. Mission and giving path not yet confirmed' },
+  { name: 'Glow',    pct: '21.3%', blurb: 'Public record found. Limited information available' },
+  { name: 'Spark',   pct: '0.4%',  blurb: 'Public record found. No additional data yet' },
 ]
 
 // Returns the week number anchored to Monday so all users see the same shuffle each week
@@ -67,13 +67,12 @@ function HeroSection() {
           className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.025em]"
           style={{ fontSize: 'clamp(42px, 6vw, 72px)' }}
         >
-          Find an organization<br />you believe in
+          Find the cause that<br />resonates with you
         </h1>
 
         {/* Subtitle */}
         <p className="mt-6 font-body text-[18px] leading-[1.7] max-w-[540px] mx-auto" style={{ color: 'rgba(245,240,235,0.65)' }}>
-          Every nonprofit the IRS recognizes, including the small local ones
-          the big sites never show you. Always free, no account.
+          Search the causes, communities, and people you care about. Find groups doing the work, give through official paths when available, and keep your giving history private.
         </p>
 
         {/* Search */}
@@ -82,7 +81,7 @@ function HeroSection() {
             value={query}
             onChange={setQuery}
             onSearch={handleSearch}
-            placeholder="Search by name, city, or cause…"
+            placeholder="Search a cause, city, community, or name…"
             dark
           />
         </div>
@@ -90,9 +89,10 @@ function HeroSection() {
         {/* Trust signals */}
         <div className="mt-6 flex items-center justify-center gap-7 flex-wrap">
           {[
-            'IRS verified',
-            'Free to search',
-            'No account required',
+            'Public records checked',
+            'Direct giving paths',
+            'Private by design',
+            'Free to use',
           ].map(text => (
             <span key={text} className="flex items-center gap-1.5 font-body text-[13px]" style={{ color: 'rgba(245,240,235,0.5)' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -131,7 +131,7 @@ function BrowseCauses() {
               className="font-display italic text-deep-navy leading-tight tracking-[-0.015em]"
               style={{ fontSize: 'clamp(28px, 3.5vw, 44px)' }}
             >
-              What cause do you<br />care about?
+              Start with what<br />you care about
             </h2>
           </div>
           <Link
@@ -265,10 +265,10 @@ function TiersStrip() {
           {/* Label column */}
           <div className="md:w-[200px] shrink-0">
             <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
-              Trust Tiers
+              Visibility Levels
             </p>
             <p className="font-body text-[14px] text-cool-grey leading-[1.5]">
-              Every listing shows how much public data we have.
+              Some groups have websites, reports, and giving pages. Others are small, local, or offline. MERIT shows what information is available.
             </p>
             <Link
               to="/tiers"
@@ -317,7 +317,7 @@ function WalletSection() {
 
           <div>
             <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase">
-              Giving Wallet
+              Your giving, kept private
             </span>
             <h2
               className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]"
@@ -429,7 +429,7 @@ function AdvisorTeaser() {
 
           <div className="flex-1 text-center md:text-left">
             <p className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase mb-2">
-              MERIT Advisor
+              Cause Finder
             </p>
             <h2
               className="font-display italic text-deep-navy leading-tight tracking-[-0.01em]"
@@ -439,7 +439,7 @@ function AdvisorTeaser() {
             </h2>
             <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.65] max-w-[480px]">
               Describe what you care about. We'll find verified nonprofits that
-              match — ranked by financial health, backed by IRS data.
+              match — matched by cause, location, giving path, and available public data.
             </p>
           </div>
 

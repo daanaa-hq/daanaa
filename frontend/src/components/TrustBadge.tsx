@@ -1,11 +1,8 @@
 import type { ApiOrganization } from '../data/api'
 
-export type TierName = 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
+export type TierName = 'Beacon' | 'Lantern' | 'Flame' | 'Glow' | 'Ember' | 'Spark'
 
-// Financial bands from merit_scorer_v3_3 (only orgs with full 990 financials,
-// ~4.7k). PASSING_BANDS = the "healthy" bands, used for the green/amber
-// distinction in the financial-health criterion display only.
-export const PASSING_BANDS = ['Blazing', 'Burning Bright', 'Steady Flame']
+export const PASSING_BANDS = ['Blazing', 'Financial context available', 'Steady Flame']
 
 // The tier gate is looser than the display: only the bottom band blocks
 // Beacon/Lantern. Since ~99% of orgs have NO band, demoting only clearly-weak
@@ -22,6 +19,7 @@ export const TIER_COLORS: Record<TierName, string> = {
   Beacon:  '#B8902F',
   Lantern: '#C9A84C',
   Flame:   '#D4B968',
+  Glow:    '#D9A876',
   Ember:   '#D9A876',
   Spark:   '#E8C896',
 }
@@ -30,11 +28,12 @@ export const TIER_COLORS: Record<TierName, string> = {
 // Lower tiers get the most generous, explicitly non-judgmental wording —
 // they describe how much public data backs the profile, not the org's worth.
 export const TIER_MICROCOPY: Record<TierName, string> = {
-  Beacon:  'Fully lit. Annual report, mission, website, and verified financial health all on public record. The most complete picture donors can see.',
-  Lantern: 'Brightly lit. Annual report, mission, and website all on the public record.',
-  Flame:   'Lit. An annual report is on file. Mission or website not yet on the public record, and easily added.',
-  Ember:   'A faint light. This registered nonprofit has limited public data so far. It reflects data availability, not the quality of its work.',
-  Spark:   'Newly listed. A registered nonprofit with little public data yet. A starting point, not a judgment. Many excellent community organizations begin here.',
+  Beacon:  'Complete public picture. Mission, giving path, service area, and public financial data all on record.',
+  Lantern: 'Official giving path found. Mission, website, and public filing on record.',
+  Flame:   'Public record found. Financial data and filing on record. Mission and giving path not yet confirmed.',
+  Glow:    'Public record found. Limited financial data available. Reflects information availability, not the quality of its work.',
+  Ember:   'Public record found. Limited financial data available. Reflects information availability, not the quality of its work.',
+  Spark:   'Public record found. A registered nonprofit with little information available yet. A starting point, not a judgment.',
 }
 
 export interface TierCriterion {
@@ -58,21 +57,21 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
       label: 'IRS registration',
       description: 'Recognized as a US nonprofit by the government',
       status: org.EIN ? 'met' : 'unavailable',
-      shortFact: 'IRS verified',
+      shortFact: 'Public record found',
     },
     {
       id: '990_current',
       label: 'Annual report',
       description: 'Annual financial report filed within the past three years',
       status: has990Current ? 'met' : has990Stale ? 'partial' : 'unavailable',
-      shortFact: 'Report current',
+      shortFact: 'Recent filing found',
     },
     {
       id: 'revenue_data',
       label: 'Revenue data',
       description: 'Reported annual revenue from public government or nonprofit records',
       status: hasRevenue ? 'met' : 'unavailable',
-      shortFact: 'Revenue on file',
+      shortFact: 'Financial data found',
     },
     {
       id: 'peer_score',
@@ -112,10 +111,11 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
 export function getNextTierPath(tier: TierName): string | null {
   switch (tier) {
     case 'Beacon':  return null
-    case 'Lantern': return 'Reach the top quarter for financial scale among similar organizations.'
+    case 'Lantern': return 'Add mission, service area, programs, leadership, and giving path to reach Complete.'
     case 'Flame':   return 'Add a mission statement and website. Once both are on public record, this org qualifies for Lantern.'
+    case 'Glow':
     case 'Ember':   return 'A financial scale score is assigned as revenue and asset data accumulates in public records. MERIT updates automatically.'
-    case 'Spark':   return 'An annual financial report or revenue record on file moves this org to Ember.'
+    case 'Spark':   return 'An annual financial report or revenue record on file moves this org to Glow.'
   }
 }
 
@@ -126,7 +126,7 @@ export function getInlineVerifiedFact(org: ApiOrganization): string {
   return facts.slice(0, 2).join(' · ')
 }
 
-const _TIER_NAMES = new Set<string>(['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark'])
+const _TIER_NAMES = new Set<string>(['Beacon', 'Lantern', 'Flame', 'Glow', 'Ember', 'Spark'])
 
 export function getTierFromOrg(org: ApiOrganization): TierName {
   if (org.merit_tier && _TIER_NAMES.has(org.merit_tier)) return org.merit_tier as TierName
@@ -157,7 +157,7 @@ export function getTierSummary(tier: TierName, org: ApiOrganization): string {
   const parts: string[] = []
   if (has990) parts.push('Registered nonprofit · Annual report on file')
   else if (tier !== 'Spark') parts.push('Registered nonprofit')
-  if (score != null && score >= 60) parts.push(`Top ${Math.max(1, 100 - Math.round(score))}% financial scale`)
+  if (score != null && score >= 60) parts.push(`Larger financial footprint than ${Math.round(score)}% of comparable groups`)
   if (org.has_mission && org.has_website) parts.push('Full profile')
   return parts.slice(0, 2).join(' · ') || 'Registered nonprofit'
 }

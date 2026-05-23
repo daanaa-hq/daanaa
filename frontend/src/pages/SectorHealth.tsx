@@ -39,8 +39,8 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 
 export default function SectorHealth() {
   usePageMeta(
-    'Sector Financial Health',
-    'Financial health across all 26 nonprofit sectors. Reserve levels, at risk rates, and program spending for 430,000+ organizations the IRS recognizes.'
+    'What public filings suggest about the sector',
+    'A look at available public financial filings across 26 nonprofit sectors. Reserve levels, filing rates, and program spending for 430,000+ organizations the IRS recognizes.'
   )
 
   const navigate = useNavigate()
@@ -114,13 +114,13 @@ export default function SectorHealth() {
             Where the sector stands
           </h1>
           <p className="font-body text-[18px] text-muted-cream/80 max-w-[580px] leading-[1.65]">
-            A financial health picture of {totalOrgs.toLocaleString()} nonprofits the IRS recognizes, across 26 sectors. Savings levels, financial stress, and how much goes to programs.
+            A look at available public financial filings across 26 sectors. Many small or simplified filers do not report detailed financials, so this view reflects patterns in available data, not a complete picture of every group.
           </p>
 
           {/* Key stat chips */}
           <div className="mt-10 flex flex-wrap gap-4">
             {[
-              { value: `${Math.round(totalAtRisk / 1000)}K`, label: 'organizations under financial stress', color: '#F59E0B' },
+              { value: `${Math.round(totalAtRisk / 1000)}K`, label: 'organizations with limited reserve cushion in public filings', color: '#F59E0B' },
               { value: `${Math.round(totalAtRisk / totalOrgs * 100)}%`, label: 'of all nonprofits with limited savings', color: '#F59E0B' },
               { value: '84%', label: 'of all orgs have reserve data', color: '#60A5FA' },
             ].map(stat => (
