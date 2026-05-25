@@ -388,7 +388,8 @@ def get_organization(ein):
             org['cause_tags'] = None
 
     # Similar orgs: NTEECC+band (specific) → NTEE1+band → NTEE1 only
-    org['similar_organizations'] = _find_similar_orgs(db, ein_clean, org, limit=5)
+    _sim_results, _ = _find_similar_orgs(db, ein_clean, org, limit=5)
+    org['similar_organizations'] = _sim_results
 
     # Rank within NTEE category (national)
     if org.get('NTEE1'):
