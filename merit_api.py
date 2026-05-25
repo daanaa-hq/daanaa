@@ -812,14 +812,19 @@ def get_similar_organizations(ein):
     except (ValueError, TypeError):
         limit = 6
 
+    diamonds_only = request.args.get('diamonds', '').strip() == '1'
+
     db = get_db()
     row = db.execute("SELECT * FROM registry_enriched WHERE EIN = ?", (ein_clean,)).fetchone()
     if row is None:
         return jsonify({"error": "Not found"}), 404
 
     org = dict(row)
-    results, mode = _find_similar_orgs(db, ein_clean, org, limit=limit)
-    return jsonify({'results': results, 'mode': mode, 'diamonds_only': False})
+    fetch_limit = limit * 3 if diamonds_only else limit
+    results, mode = _find_similar_orgs(db, ein_clean, org, limit=fetch_limit)
+    if diamonds_only:
+        results = [r for r in results if r.get('is_hidden_gem')][:limit]
+    return jsonify({'results': results, 'mode': mode, 'diamonds_only': diamonds_only})
 
 
 # ── Semantic search ────────────────────────────────────────────────────────────
