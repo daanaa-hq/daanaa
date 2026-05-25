@@ -53,6 +53,8 @@ from donation_link_pipeline import (
     block_domain,
     domain_of,
     _now,
+    cache_page,
+    init_schema,
 )
 
 
@@ -208,6 +210,7 @@ def _worker_process(worker_id: int, n_threads: int, stop_event, progress_queue):
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA journal_mode=WAL")
     db.execute("PRAGMA synchronous=NORMAL")
+    init_schema(db)  # ensure page_cache table exists
 
     wid = f"worker-{worker_id}-{os.getpid()}"
     blocked_set = {r[0] for r in db.execute("SELECT domain FROM blocked_domains")}
@@ -331,6 +334,15 @@ def _worker_process(worker_id: int, n_threads: int, stop_event, progress_queue):
                                        notes=f"confidence {res['confidence']} < 75")
                     db.commit()
                     stats["no_link"] += 1
+
+                # Store fetched page HTML for future pipeline reuse (volunteering etc.)
+                for pg_url, pg_body, pg_status in res.get("cached_pages", []):
+                    try:
+                        cache_page(db, res["ein"], pg_url, pg_body, pg_status)
+                    except Exception:
+                        pass  # non-critical — never fail a batch over caching
+                if res.get("cached_pages"):
+                    db.commit()
 
                 completed_eins.append(res["ein"])
 
@@ -488,6 +500,8 @@ def main():
                         help="populate queue only, don't run workers")
     parser.add_argument("--status",     action="store_true",
                         help="print queue status and exit")
+    parser.add_argument("--max-links",  type=int, default=500,
+                        help="Max links to release per --release run (default 500, 0=unlimited)")
     parser.add_argument("--release",    action="store_true",
                         help="promote pending_review links (conf>=90) to live")
     args = parser.parse_args()
@@ -503,7 +517,8 @@ def main():
         return
 
     if args.release:
-        phase2_release(db, max_links=500)
+        cap = args.max_links if args.max_links > 0 else 999_999
+        phase2_release(db, max_links=cap)
         db.close()
         return
 

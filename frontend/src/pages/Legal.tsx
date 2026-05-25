@@ -121,10 +121,21 @@ export default function Legal() {
             <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Contact</h2>
             <p>
               For data corrections, partnership inquiries, or legal questions, contact us at{' '}
-              <a href="mailto:akbar.khowaja@gmail.com"
+              <a href="mailto:hello@daanaa.org"
                  className="text-soft-gold hover:text-bright-gold transition-colors">
                 hello@daanaa.org
               </a>.
+            </p>
+          </section>
+
+          {/* Entity disclosure — required before public launch */}
+          <section>
+            <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Who operates Daanaa</h2>
+            <p>
+              Daanaa is operated by <strong>EcoMargins Consulting LLC</strong>, a for-profit company. Daanaa is not a 501(c)(3) charity or a nonprofit organization. We are not affiliated with the IRS or any government agency.
+            </p>
+            <p className="mt-3">
+              Daanaa does not receive, hold, solicit, or process charitable gifts. We are a public-data directory. All giving happens directly between donors and the nonprofits they choose. We never touch the money.
             </p>
           </section>
 

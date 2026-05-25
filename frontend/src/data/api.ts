@@ -1,4 +1,4 @@
-// API client for MERIT backend — maps to merit_api.py (Flask, port 5000)
+// API client for Daanaa backend — maps to daanaa_api.py (Flask, port 5000)
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
@@ -13,7 +13,7 @@ async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json();
 }
 
-// Matches registry_enriched columns returned by merit_api.py
+// Matches registry_enriched columns returned by daanaa_api.py
 export interface ApiOrganization {
   EIN: string;
   organization_name: string;
@@ -131,7 +131,7 @@ export async function getOrganizations(params?: {
   min_revenue?: number;
   max_revenue?: number;
   min_percentile?: number;    // legacy — filter by ntee1_percentile >= value
-  min_merit_tier?: string;    // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
+  min_tier?: string;          // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
   hidden_gem?: boolean;       // true = only small, healthy, mission-focused orgs
   direct_link?: boolean;      // true = only orgs with a detected donate URL
   needs_funding?: boolean;    // true = orgs with < 12 months of operating reserves
@@ -155,7 +155,7 @@ export async function getOrganizations(params?: {
   if (params?.min_revenue != null) sp.set('min_revenue', String(params.min_revenue));
   if (params?.max_revenue != null) sp.set('max_revenue', String(params.max_revenue));
   if (params?.min_percentile != null) sp.set('min_percentile', String(params.min_percentile));
-  if (params?.min_merit_tier) sp.set('min_merit_tier', params.min_merit_tier);
+  if (params?.min_tier) sp.set('min_tier', params.min_tier);
   if (params?.hidden_gem) sp.set('hidden_gem', '1');
   if (params?.direct_link) sp.set('direct_link', '1');
   if (params?.needs_funding) sp.set('needs_funding', '1');
@@ -166,6 +166,17 @@ export async function getOrganizations(params?: {
 // GET /api/organizations/:ein
 export async function getOrganization(ein: string): Promise<ApiOrganization> {
   return fetchJson(`/api/organizations/${ein}`);
+}
+
+// GET /api/search/semantic — vector similarity search
+export async function getSemanticOrganizations(q: string, limit = 25): Promise<{
+  results: ApiOrganization[];
+  query: string;
+  mode: string;
+  total: number;
+}> {
+  const sp = new URLSearchParams({ q, limit: String(limit) });
+  return fetchJson(`/api/search/semantic?${sp.toString()}`);
 }
 
 // GET /api/organizations/:ein/financials

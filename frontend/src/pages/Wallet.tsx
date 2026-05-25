@@ -323,13 +323,13 @@ export default function Wallet() {
             <StatCard label="Orgs supported" value={String(orgsSupported)} sub="donated + saved" />
           </div>
 
-          {/* Saved organizations */}
+          {/* Favorites */}
           <div>
-            <SectionHeader title="Saved Organizations" count={savedOrgs.length} />
+            <SectionHeader title="Favorites" count={savedOrgs.length} />
             {savedOrgs.length === 0 ? (
               <EmptyState
-                icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>}
-                message="Bookmark organizations from the directory to save them here"
+                icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
+                message="Star organizations from the directory, or give to one — they'll appear here automatically"
               />
             ) : (
               <div className="space-y-2">

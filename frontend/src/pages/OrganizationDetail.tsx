@@ -335,7 +335,7 @@ export default function OrganizationDetail() {
 
   const metaTitle = apiOrg?.organization_name ?? ''
   const metaDesc = apiOrg
-    ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. MERIT tier: ${apiOrg.merit_tier ?? 'Flame'}. Financial scale: ${apiOrg.peer_percentile != null ? `${Math.round(apiOrg.peer_percentile)}/100` : 'pending'}.`
+    ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. Tier: ${apiOrg.merit_tier ?? 'Flame'}. Financial scale: ${apiOrg.peer_percentile != null ? `${Math.round(apiOrg.peer_percentile)}/100` : 'pending'}.`
     : ''
   usePageMeta(metaTitle, metaDesc)
 

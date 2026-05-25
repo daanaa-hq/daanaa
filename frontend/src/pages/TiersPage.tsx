@@ -127,7 +127,7 @@ export default function TiersPage() {
           {/* Quick explainer */}
           <div className="max-w-[720px] mb-14">
             <p className="font-body text-[16px] leading-[1.7] text-cool-grey">
-              The government publishes financial reports from nonprofits, but how much is available varies widely. Some organizations have years of detailed records; others are registered but have nothing else on file. MERIT's five tiers make that gap visible at a glance, so you know what you're working with before you give.
+              The government publishes financial reports from nonprofits, but how much is available varies widely. Some organizations have years of detailed records; others are registered but have nothing else on file. Daanaa's five tiers make that gap visible at a glance, so you know what you're working with before you give.
             </p>
             <p className="font-body text-[16px] leading-[1.7] text-cool-grey mt-4">
               Tiers are calculated automatically from public records and updated monthly. No organization can pay to change its tier.
@@ -170,7 +170,7 @@ export default function TiersPage() {
                     </div>
 
                     <Link
-                      to={name === 'Spark' ? '/directory' : `/directory?min_merit_tier=${name}`}
+                      to={name === 'Spark' ? '/directory' : `/directory?min_tier=${name}`}
                       className="hidden md:inline-flex items-center gap-1.5 shrink-0 font-body text-[13px] font-semibold px-4 py-2 rounded-full border transition-all duration-150 hover:bg-soft-gold/10"
                       style={{ borderColor: `${color}50`, color }}
                     >
@@ -230,7 +230,7 @@ export default function TiersPage() {
                   {/* Mobile browse link */}
                   <div className="md:hidden px-6 pb-5">
                     <Link
-                      to={name === 'Spark' ? '/directory' : `/directory?min_merit_tier=${name}`}
+                      to={name === 'Spark' ? '/directory' : `/directory?min_tier=${name}`}
                       className="inline-flex items-center gap-1.5 font-body text-[13px] font-semibold"
                       style={{ color }}
                     >

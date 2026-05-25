@@ -31,7 +31,7 @@ export default function GivingConfirmation() {
 
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem('merit_last_giving')
+      const stored = sessionStorage.getItem('daanaa_last_giving')
       if (stored) setItems(JSON.parse(stored))
     } catch { /* empty */ }
     window.scrollTo(0, 0)

@@ -33,8 +33,8 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
   return (
     <button
       onClick={onClick}
-      title={inList ? 'Remove from giving list' : 'Save to giving list'}
-      className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none"
+      title={inList ? 'Remove from giving list' : 'Add to giving list'}
+      className="shrink-0 inline-flex items-center gap-1 px-3 py-3 md:py-1.5 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none"
       style={{
         backgroundColor: inList ? '#2A6B45' : 'transparent',
         borderColor: inList ? '#2A6B45' : 'rgba(42,107,69,0.40)',
@@ -46,14 +46,14 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          Saved
+          In List
         </>
       ) : (
         <>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
-          Save
+          + Give
         </>
       )}
     </button>
@@ -84,12 +84,12 @@ function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; can
   )
 }
 
-function BookmarkButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: React.MouseEvent) => void }) {
+function FavoriteButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: React.MouseEvent) => void }) {
   const color = isSaved ? '#C9A96E' : '#A89F94'
   return (
     <button
       onClick={onClick}
-      title={isSaved ? 'Remove from saved' : 'Save organization'}
+      title={isSaved ? 'Remove from favorites' : 'Add to favorites'}
       className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none"
       aria-pressed={isSaved}
     >
@@ -99,9 +99,9 @@ function BookmarkButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: R
         stroke={color}
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
       >
-        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
       </svg>
-      <span className="font-body text-[9px] leading-none" style={{ color }}>Save</span>
+      <span className="font-body text-[9px] leading-none" style={{ color }}>Fav</span>
     </button>
   )
 }
@@ -193,8 +193,9 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
 
       {/* Actions */}
       <div className="flex items-center gap-1.5 shrink-0">
-        {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
-        {onToggleSave && <BookmarkButton isSaved={isSaved} onClick={handleBookmark} />}
+        {/* Compare hidden on mobile — too small to be useful */}
+        {!hideCompare && <span className="hidden md:contents"><CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} /></span>}
+        {onToggleSave && <FavoriteButton isSaved={isSaved} onClick={handleBookmark} />}
         <AddButton inList={inList} onClick={handleAddToList} />
       </div>
     </Link>
@@ -313,7 +314,7 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         )}
         <div className="flex items-center justify-end gap-1">
           {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
-          {onToggleSave && <BookmarkButton isSaved={isSaved} onClick={handleBookmark} />}
+          {onToggleSave && <FavoriteButton isSaved={isSaved} onClick={handleBookmark} />}
           <AddButton inList={inList} onClick={handleAddToList} />
         </div>
       </div>

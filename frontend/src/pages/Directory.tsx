@@ -6,7 +6,7 @@ import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
-import { getOrganizations } from '../data/api'
+import { getOrganizations, getSemanticOrganizations } from '../data/api'
 import type { ApiOrganization } from '../data/api'
 import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
 import LampMark from '../components/LampMark'
@@ -451,7 +451,7 @@ export default function Directory() {
   )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
-  const tierParam     = searchParams.get('min_merit_tier') || ''
+  const tierParam     = searchParams.get('min_tier') || ''
 
   const [searchQuery, setSearchQuery] = useState(qParam)
   const [debouncedQuery, setDebouncedQuery] = useState(qParam)
@@ -514,6 +514,11 @@ export default function Directory() {
   // Resolve revenue preset to API params
   const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
+  // Semantic mode: multi-word natural language query with no active filters
+  const hasAnyFilter = activeFilters.length > 0 || !!subFilter || !!stateFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || !!debouncedCause.trim()
+  const queryWords = debouncedQuery.trim().split(/\s+/).filter(Boolean)
+  const isSemanticMode = !hasAnyFilter && queryWords.length >= 3
+
   const { data: orgsData, loading: orgsLoading, error: orgsError } = useApi(
     () => getOrganizations({
       ntee: subFilter ? undefined : (activeFilters.length === 0 ? undefined : activeFilters.join(',')),
@@ -525,13 +530,18 @@ export default function Directory() {
       per_page: itemsPerPage,
       min_revenue: revPreset?.min,
       max_revenue: revPreset?.max,
-      min_merit_tier: scoreTier || undefined,
+      min_tier: scoreTier || undefined,
       hidden_gem: hiddenGem || undefined,
       direct_link: directLink || undefined,
       needs_funding: needsFunding || undefined,
       cause: debouncedCause.trim() || undefined,
     }),
     [activeFilters, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, needsFunding, debouncedCause, itemsPerPage]
+  )
+
+  const { data: semanticData, loading: semanticLoading } = useApi(
+    () => isSemanticMode ? getSemanticOrganizations(debouncedQuery, 25) : Promise.resolve(null),
+    [debouncedQuery, isSemanticMode]
   )
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -582,7 +592,7 @@ export default function Directory() {
     setScoreTier(id)
     setCurrentPage(1)
     scrollTop()
-    if (id) { searchParams.set('min_merit_tier', id) } else { searchParams.delete('min_merit_tier') }
+    if (id) { searchParams.set('min_tier', id) } else { searchParams.delete('min_tier') }
     setSearchParams(searchParams)
   }
 
@@ -606,13 +616,18 @@ export default function Directory() {
     searchParams.delete('q')
     searchParams.delete('state')
     searchParams.delete('revenue')
-    searchParams.delete('min_merit_tier')
+    searchParams.delete('min_tier')
     setSearchParams(searchParams)
   }
 
-  const organizations = orgsData?.organizations || []
-  const total = orgsData?.total || 0
-  const totalPages = orgsData?.pages || 1
+  // Use semantic results when available in semantic mode, fall back to keyword
+  const semanticResults = semanticData?.results
+  const useSemanticResults = isSemanticMode && !!semanticResults && semanticResults.length >= 3
+  const organizations = useSemanticResults ? semanticResults : (orgsData?.organizations || [])
+  const total = useSemanticResults ? semanticResults.length : (orgsData?.total || 0)
+  const totalPages = useSemanticResults ? 1 : (orgsData?.pages || 1)
+  const activeLoading = useSemanticResults ? semanticLoading : orgsLoading
+  const activeError = useSemanticResults ? null : orgsError
 
   // Readable label for active sub filter
   const subLabel = subFilter
@@ -825,6 +840,11 @@ export default function Directory() {
                           "{searchQuery}"
                         </span>
                       )}
+                      {useSemanticResults && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-soft-gold font-body text-[11px]" title="Results ranked by meaning, not just keywords">
+                          Smart search
+                        </span>
+                      )}
                       {!subFilter && activeFilters.map(f => (
                         <button
                           key={f}
@@ -920,7 +940,7 @@ export default function Directory() {
               </div>
 
               {/* Results grid / list */}
-              {orgsLoading ? (
+              {activeLoading ? (
                 viewMode === 'list' ? (
                   <div className="flex flex-col gap-2">
                     {Array.from({ length: 10 }).map((_, i) => (
@@ -957,7 +977,7 @@ export default function Directory() {
                     ))}
                   </div>
                 )
-              ) : orgsError ? (
+              ) : activeError ? (
                 <div className="text-center py-16">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.5" className="mx-auto mb-4">
                     <circle cx="12" cy="12" r="10" />
