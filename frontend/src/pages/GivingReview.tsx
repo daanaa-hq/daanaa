@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useGivingList } from '../hooks/useGivingList'
 import { useWallet } from '../hooks/useWallet'
+import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { formatCurrency, formatEIN } from '../data/organizations'
 import { SPLIT_THRESHOLD, generateReferenceCode } from '../hooks/useWallet'
 import type { DonationRecord } from '../hooks/useWallet'
@@ -11,6 +12,7 @@ import { TIER_COLORS } from '../components/TrustBadge'
 export default function GivingReview() {
   const { items, total, count, clearList, updateAmount } = useGivingList()
   const { addDonationDirect } = useWallet()
+  const { addFavorite } = useSavedOrgs()
   const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
   const [editing, setEditing] = useState<{ ein: string; value: string } | null>(null)
@@ -99,13 +101,18 @@ export default function GivingReview() {
 
     addDonationDirect(records)
 
+    // Auto-favorite every org you give to
+    for (const item of items.filter(i => i.amount > 0)) {
+      addFavorite(item.ein, { name: item.orgName })
+    }
+
     // Enrich items with reference codes / split counts for confirmation screen
     const enriched = items.map(item => ({
       ...item,
       referenceCode: refCodeMap[item.ein],
       splitCount: splitCountMap[item.ein],
     }))
-    sessionStorage.setItem('merit_last_giving', JSON.stringify(enriched))
+    sessionStorage.setItem('daanaa_last_giving', JSON.stringify(enriched))
     clearList()
     navigate('/giving-list/confirmation')
   }
@@ -239,7 +246,7 @@ export default function GivingReview() {
           <div className="border-t border-white/10 pt-3">
             <p className="font-body text-[12px] text-muted-cream/60">
               {hasLetterItems
-                ? 'Letter-requested gifts will be documented once the nonprofit uploads to MERIT. '
+                ? 'Letter-requested gifts will be documented once the nonprofit uploads to Daanaa. '
                 : ''}
               {hasSplitItems
                 ? 'Gifts over $249.99 without a letter will be logged as multiple bank-statement entries. '

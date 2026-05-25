@@ -107,6 +107,20 @@ _DONATE_PLATFORMS = [
 
     ('cashapp',        '',
      re.compile(r'cash\.app/\$([a-z0-9][a-z0-9_-]{2,40})', re.I)),
+
+    # --- Enterprise / institutional platforms ---
+    ('neoncrm',      'https://app.neoncrm.com/np/clients/',
+     re.compile(r'app\.neoncrm\.com/np/clients/([A-Za-z0-9][A-Za-z0-9_-]{2,60})', re.I)),
+
+    ('bloomerang',   'https://crm.bloomerang.co/',
+     re.compile(r'crm\.bloomerang\.co/([A-Za-z0-9][A-Za-z0-9_-]{2,60})', re.I)),
+
+    ('salsa',        '',
+     re.compile(r'app\.salsalabs\.org/donate/[^\s"\'<>]{5,80}', re.I)),
+
+    # Blackbaud shared giving domain (custom subdomains handled by subdomain fallback)
+    ('blackbaud',    'https://give.blackbaud.com/',
+     re.compile(r'(?:give|donate)\.blackbaud\.com/([A-Za-z0-9][A-Za-z0-9_-]{2,80})', re.I)),
 ]
 
 # Per-platform nav slugs that are NOT campaigns.
@@ -123,7 +137,7 @@ _PLATFORM_EXCLUDE: dict = {
 }
 
 # Full-URL platforms where m.group(0) IS the canonical path (no slug extraction).
-_FULL_URL_PLATFORMS = {'paypal', 'venmo', 'cashapp'}
+_FULL_URL_PLATFORMS = {'paypal', 'venmo', 'cashapp', 'salsa'}
 
 
 def extract_donate_url(html: str) -> tuple:

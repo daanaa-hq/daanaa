@@ -97,6 +97,11 @@ export default function SearchBar({
           </svg>
           <input
             type="text"
+            inputMode="search"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
             value={value}
             onChange={e => onChange(e.target.value)}
             onFocus={() => { if (suggestions.length > 0) setOpen(true) }}

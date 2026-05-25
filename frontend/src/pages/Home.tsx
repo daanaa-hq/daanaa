@@ -278,13 +278,14 @@ function TiersStrip() {
             </Link>
           </div>
 
-          {/* Five tier cells */}
-          <div className="flex-1 grid grid-cols-5 md:border-l md:border-light-grey md:ml-10 md:pl-10">
+          {/* Five tier cells — horizontal scroll on mobile, fixed 5-col grid on md+ */}
+          <div className="flex-1 md:border-l md:border-light-grey md:ml-10 md:pl-10">
+            <div className="flex overflow-x-auto md:grid md:grid-cols-5 snap-x snap-mandatory scrollbar-none -mx-6 px-6 md:mx-0 md:px-0 gap-0">
             {TIER_STRIP.map(({ name, pct, blurb }) => (
               <Link
                 key={name}
-                to={`/directory?min_merit_tier=${name}`}
-                className="flex flex-col items-center gap-1.5 px-2 py-3 border-r border-light-grey last:border-r-0 hover:bg-warm-cream/60 transition-colors group"
+                to={`/directory?min_tier=${name}`}
+                className="snap-start shrink-0 w-[88px] md:w-auto flex flex-col items-center gap-1.5 px-2 py-3 border-r border-light-grey last:border-r-0 hover:bg-warm-cream/60 transition-colors group"
               >
                 <LampMark tier={name} size="sm" />
                 <span
@@ -301,6 +302,7 @@ function TiersStrip() {
                 </span>
               </Link>
             ))}
+            </div>
           </div>
         </div>
       </div>

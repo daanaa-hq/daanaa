@@ -7,7 +7,7 @@ Every AI agent, contributor, and system operating on this platform is bound by i
 
 Before contributing any code, data change, copy edit, or system decision, you must:
 1. Have read `STEWARDSHIP.md` in full
-2. Operate in alignment with all 12 principles
+2. Operate in alignment with all 11 principles
 3. Flag any conflict between a requested task and these principles before proceeding
 
 Key rules for AI agents:
@@ -24,7 +24,7 @@ Key rules for AI agents:
 
 ## What this project is
 
-**MERIT** is a civic nonprofit-discovery platform. It indexes 501(c)(3) organizations from IRS and ProPublica public data, assigns each a 0–100 MERIT score, benchmarks it within its NTEE peer group, and surfaces the results through a searchable directory UI.
+**Daanaa** (daanaa.org) is a civic nonprofit-discovery platform. It indexes 501(c)(3) organizations from IRS and ProPublica public data, assigns each a 0–100 peer financial context score, benchmarks it within its NTEE peer group, and surfaces the results through a searchable directory UI.
 
 ---
 
@@ -35,7 +35,7 @@ Key rules for AI agents:
 source ~/meritgiving/venv/bin/activate
 python3 merit_api.py          # port 5000
 # or use the restart script:
-./restart_merit_api.sh
+./restart_api.sh
 ```
 
 ### Frontend (React/Vite)
@@ -61,11 +61,12 @@ npm run build                 # builds to frontend/dist/
 
 ### Which backend is canonical
 
-There are **three** backend files — use `merit_api.py` as the canonical one:
+There are **three** backend files — use `daanaa_api.py` as the entry point (imports from `merit_api.py`):
 
 | File | Framework | Port | Data source | Status |
 |------|-----------|------|-------------|--------|
-| `merit_api.py` | Flask + SQLite | 5000 | `data/merit_registry.db` | **Active / canonical** |
+| `daanaa_api.py` | Flask + SQLite | 5000 | `data/merit_registry.db` | **Active entry point** |
+| `merit_api.py` | Flask + SQLite | 5000 | `data/merit_registry.db` | Canonical logic — rename pending Phase 3 |
 | `api/main.py` | FastAPI + SQLite | varies | `data/merit_registry.db` | Secondary / specialist endpoints |
 | `app.py` | FastAPI + flat CSV | 8081 | `data/master_orgs.csv` (in-memory) | Legacy — do not extend |
 

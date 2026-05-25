@@ -29,7 +29,7 @@ Usage:
     python3 scripts/donation_link_pipeline.py --phase 1 --orgs 10 --dry-run
 """
 
-import re, sqlite3, json, time, random, argparse, sys, uuid, threading
+import re, sqlite3, json, time, random, argparse, sys, uuid, threading, zlib
 import datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -224,6 +224,15 @@ CREATE TABLE IF NOT EXISTS blocked_domains (
     blocked_at          TEXT,
     do_not_retry_before TEXT
 );
+CREATE TABLE IF NOT EXISTS page_cache (
+    url         TEXT PRIMARY KEY,
+    ein         TEXT,
+    fetched_at  TEXT,
+    status_code INTEGER,
+    html_gz     BLOB,
+    content_len INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_pc_ein ON page_cache(ein);
 """
 
 _NEW_REGISTRY_COLUMNS = [
@@ -242,6 +251,15 @@ def init_schema(db: sqlite3.Connection):
         if col not in existing:
             db.execute(f"ALTER TABLE registry_enriched ADD COLUMN {col} {typ}")
     db.commit()
+
+
+def cache_page(db: sqlite3.Connection, ein: str, url: str, body: bytes, status_code: int):
+    """Store compressed HTML in page_cache for future pipeline reuse."""
+    compressed = zlib.compress(body, level=6)
+    db.execute("""
+        INSERT OR REPLACE INTO page_cache (url, ein, fetched_at, status_code, html_gz, content_len)
+        VALUES (?,?,?,?,?,?)
+    """, (url, ein, _now(), status_code, compressed, len(body)))
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -524,6 +542,103 @@ _PRIORITY_PATHS = [
     "/ways-to-give", "/get-involved", "/giving", "/contribute",
 ]
 
+# Subdomains tried as a fallback when main site yields nothing.
+# Only donate/give — specific enough to avoid false positives.
+_DONATE_SUBDOMAIN_PREFIXES = ("donate", "give")
+
+
+def _root_domain(site: str) -> str:
+    """Strip scheme + www/donate/give prefix → bare root domain."""
+    netloc = urlparse(site if site.startswith("http") else "https://" + site).netloc.lower()
+    for strip in ("www.", "donate.", "give.", "giving."):
+        if netloc.startswith(strip):
+            netloc = netloc[len(strip):]
+            break
+    return netloc
+
+
+def _try_donate_subdomains(site: str, name: str, city: str, state: str,
+                            blocked_set: set) -> dict | None:
+    """
+    Fallback: probe donate.{domain} and give.{domain} when the main site
+    had no detectable link. Efficient — HEAD first to skip non-existent
+    subdomains, GET only when HEAD succeeds. Returns partial result or None.
+    """
+    root = _root_domain(site)
+    if not root:
+        return None
+
+    for prefix in _DONATE_SUBDOMAIN_PREFIXES:
+        dom = f"{prefix}.{root}"
+        sub_url = f"https://{dom}/"
+
+        if dom in blocked_set:
+            continue
+
+        # Fast existence probe — skip GET entirely if subdomain doesn't resolve
+        rate_limit(dom, min_s=1.0, max_s=2.0)
+        try:
+            head = requests.head(sub_url, timeout=5, allow_redirects=True,
+                                 headers={"User-Agent": UA})
+        except Exception:
+            continue  # DNS miss or connection refused — subdomain doesn't exist
+
+        if head.status_code in (403, 429):
+            blocked_set.add(dom)
+            continue
+        if head.status_code >= 400:
+            continue  # subdomain not found
+
+        # Subdomain is live — fetch it
+        rate_limit(dom, min_s=2.0, max_s=3.0)
+        try:
+            resp = requests.get(sub_url, timeout=TIMEOUT, allow_redirects=True,
+                                headers={"User-Agent": UA, "Accept": "text/html,*/*"},
+                                stream=True)
+            body = b""
+            for chunk in resp.iter_content(8192):
+                body += chunk
+                if len(body) >= READ_BYTES:
+                    break
+            text = body.decode("utf-8", "ignore")
+        except Exception:
+            continue
+
+        if is_blocked(resp.status_code, text):
+            blocked_set.add(dom)
+            continue
+
+        # Look for an embedded platform link first; fall back to the subdomain URL itself
+        donate_url, donate_platform = extract_donate_url(text)
+        if not donate_url:
+            donate_url = resp.url          # subdomain IS the donate page (Blackbaud etc.)
+            donate_platform = "subdomain_direct"
+
+        match_level, _ = identity_match(name, text)
+        page_lower = text.lower()
+
+        confidence = score_confidence({
+            "found_on_official_website":  True,
+            "processor_recognized":       donate_platform != "subdomain_direct",
+            "website_confidence_90":      True,
+            "nonprofit_name_visible":     match_level in ("exact", "strong"),
+            "no_suspicious_redirects":    True,
+            "link_works":                 True,
+            "city_state_match":           bool(
+                city and city.lower() in page_lower
+                and state and state.lower() in page_lower
+            ),
+            "name_mismatch":              match_level == "mismatch",
+            "no_visible_name":            match_level in ("weak", "unknown"),
+            "processor_unknown":          donate_platform == "subdomain_direct",
+        })
+
+        if confidence < 55:
+            continue  # too weak — try next prefix
+
+        return dict(donate_url=donate_url, donate_platform=donate_platform,
+                    source_page=resp.url, match_level=match_level, confidence=confidence)
+
 
 def _discover_one(row, blocked_set: set) -> dict:
     ein    = row["EIN"]
@@ -535,7 +650,8 @@ def _discover_one(row, blocked_set: set) -> dict:
     out = dict(ein=ein, name=name, website=site,
                decision=None, match_level="unknown", confidence=0,
                donate_url=None, donate_platform=None, source_page=None,
-               notes="", blocked=False, blocked_reason="")
+               notes="", blocked=False, blocked_reason="",
+               cached_pages=[])  # list of (url, body_bytes, status_code)
 
     if not site:
         out["decision"] = "skipped_no_website"
@@ -585,10 +701,18 @@ def _discover_one(row, blocked_set: set) -> dict:
                            decision="blocked_or_restricted")
                 return out
 
+            # Cache homepage and any page where we find a link
+            if path == "/":
+                out["cached_pages"].append((resp.url, body, resp.status_code))
+
             donate_url, donate_platform = extract_donate_url(text)
             if not donate_url:
                 rate_limit(dom, min_s=1.5, max_s=3.0)
                 continue
+
+            # Cache the winning page if it's different from the homepage
+            if path != "/":
+                out["cached_pages"].append((resp.url, body, resp.status_code))
 
             # Found a candidate — score it
             match_level, _ratio = identity_match(name, text)
@@ -638,7 +762,20 @@ def _discover_one(row, blocked_set: set) -> dict:
             continue
 
     if not out["decision"]:
-        out["decision"] = "no_donate_link_found"
+        # Main site found nothing — try donate./give. subdomains (Blackbaud, enterprise)
+        sub = _try_donate_subdomains(site, name, city, state, blocked_set)
+        if sub:
+            out.update(donate_url=sub["donate_url"], donate_platform=sub["donate_platform"],
+                       source_page=sub["source_page"], match_level=sub["match_level"],
+                       confidence=sub["confidence"])
+            if sub["confidence"] >= 90:
+                out["decision"] = "new_candidate_verified"
+            elif sub["confidence"] >= 75:
+                out["decision"] = "human_review_required"
+            else:
+                out["decision"] = "rejected_low_confidence"
+        else:
+            out["decision"] = "no_donate_link_found"
     return out
 
 

@@ -57,40 +57,45 @@ export default function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-merit-cream"
+      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxShadow: '0 -4px 24px rgba(10,22,40,0.08)',
+        boxShadow: '0 -1px 0 rgba(229,224,219,0.9), 0 -8px 24px rgba(10,22,40,0.06)',
       }}
     >
-      <div className="flex items-center py-1">
+      <div className="flex items-stretch">
         {items.map(item => {
           const isActive = item.exact ? p === item.path : p.startsWith(item.path)
           return (
             <Link
               key={item.path}
               to={item.path}
-              className="flex-1 flex items-center justify-center py-1"
+              className="relative flex-1 flex flex-col items-center justify-center gap-[4px] min-h-[56px] pt-2 pb-1 transition-colors duration-150"
+              aria-label={item.label}
             >
+              {/* Active indicator bar */}
               <div
-                className="flex flex-col items-center gap-[3px] px-5 py-2 rounded-2xl transition-all duration-200"
-                style={{ backgroundColor: isActive ? 'rgba(201,169,110,0.12)' : 'transparent' }}
-              >
-                <div className="relative">
-                  {item.icon(isActive)}
-                  {item.badge != null && item.badge > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-soft-gold text-deep-navy text-[9px] font-bold rounded-full px-1">
-                      {item.badge > 9 ? '9+' : item.badge}
-                    </span>
-                  )}
-                </div>
-                <span
-                  className="font-body text-[10px] tracking-[0.03em]"
-                  style={{ color: isActive ? '#C9A96E' : '#A89F94' }}
-                >
-                  {item.label}
-                </span>
+                className="absolute top-0 left-1/2 -translate-x-1/2 rounded-b-full transition-all duration-200"
+                style={{
+                  width: isActive ? '24px' : '0px',
+                  height: '2px',
+                  backgroundColor: '#C9A96E',
+                }}
+              />
+              <div className="relative">
+                {item.icon(isActive)}
+                {item.badge != null && item.badge > 0 && (
+                  <span className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] flex items-center justify-center bg-soft-gold text-deep-navy text-[8px] font-bold rounded-full px-[3px]">
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
               </div>
+              <span
+                className="font-body text-[11px] tracking-[0.02em] leading-none"
+                style={{ color: isActive ? '#C9A96E' : '#9CA3AF' }}
+              >
+                {item.label}
+              </span>
             </Link>
           )
         })}

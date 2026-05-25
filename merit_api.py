@@ -2,7 +2,9 @@
 """
 MeritGiving API — Serves registry_enriched to frontend
 """
-import sqlite3, os, json, functools, time, hashlib
+import sqlite3, os, json, functools, time, hashlib, threading
+import numpy as np
+import requests as _http
 from flask import Flask, jsonify, request, g, abort, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -40,6 +42,85 @@ def _cget(key: str, ttl_ns: str):
 def _cset(key: str, value):
     _CACHE[key] = (value, time.time())
 
+# ── Embedding index (lazy-loaded, module-level singleton) ──────────────────────
+# Loaded once on first use. ~1.6 GB for 545K orgs × 768-dim float32.
+# Falls back gracefully when the build job hasn't completed yet.
+_emb_matrix: np.ndarray | None = None   # (N, 768) L2-normalised float32
+_emb_eins:   list | None       = None   # parallel EIN list, index = row
+_emb_index:  dict | None       = None   # EIN → row index
+_emb_lock = threading.Lock()
+_emb_loaded = False
+
+OLLAMA_EMBED_URL = "http://localhost:11434/api/embed"
+OLLAMA_EMBED_MODEL = "nomic-embed-text"
+_NTEE_LABELS = {
+    "A":"arts culture humanities","B":"education","C":"environment",
+    "D":"animal welfare","E":"health care","F":"mental health",
+    "G":"disease medical","H":"medical research","I":"crime legal",
+    "J":"employment job training","K":"food agriculture nutrition",
+    "L":"housing shelter","M":"public safety disaster","N":"recreation sports",
+    "O":"youth development","P":"human services family",
+    "Q":"international","R":"civil rights advocacy","S":"community improvement",
+    "T":"philanthropy grantmaking","U":"science technology","V":"social science",
+    "W":"public benefit","X":"religion faith","Y":"mutual benefit",
+}
+
+def _load_embeddings():
+    global _emb_matrix, _emb_eins, _emb_index, _emb_loaded
+    with _emb_lock:
+        if _emb_loaded:
+            return
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=10)
+            rows = conn.execute(
+                "SELECT ein, vector FROM org_embeddings ORDER BY rowid"
+            ).fetchall()
+            conn.close()
+            if not rows:
+                return
+            eins = [r[0] for r in rows]
+            mat  = np.frombuffer(
+                b"".join(r[1] for r in rows), dtype=np.float32
+            ).reshape(len(rows), -1)
+            _emb_eins   = eins
+            _emb_index  = {e: i for i, e in enumerate(eins)}
+            _emb_matrix = mat
+            _emb_loaded = True
+            print(f"[embeddings] loaded {len(eins):,} vectors ({mat.shape[1]}-dim)", flush=True)
+        except Exception as e:
+            print(f"[embeddings] load failed: {e}", flush=True)
+
+def _get_org_vec(ein: str) -> np.ndarray | None:
+    if not _emb_loaded:
+        _load_embeddings()
+    if _emb_index is None:
+        return None
+    idx = _emb_index.get(ein)
+    return _emb_matrix[idx] if idx is not None else None
+
+def _embed_query(text: str) -> np.ndarray | None:
+    try:
+        r = _http.post(OLLAMA_EMBED_URL,
+                       json={"model": OLLAMA_EMBED_MODEL, "input": [text]},
+                       timeout=10)
+        r.raise_for_status()
+        vec = np.array(r.json()["embeddings"][0], dtype=np.float32)
+        norm = np.linalg.norm(vec)
+        return vec / norm if norm > 0 else vec
+    except Exception:
+        return None
+
+def _vec_similar(query_vec: np.ndarray, exclude_ein: str, limit: int) -> list[str]:
+    """Cosine similarity search. Returns top-N EINs (excluding the query org)."""
+    scores = _emb_matrix @ query_vec          # dot product = cosine (L2-normed)
+    excl   = _emb_index.get(exclude_ein, -1)
+    if excl >= 0:
+        scores[excl] = -1.0
+    top_idx = np.argpartition(scores, -limit)[-limit:]
+    top_idx = top_idx[np.argsort(scores[top_idx])[::-1]]
+    return [_emb_eins[i] for i in top_idx]
+
+
 app = Flask(__name__)
 
 # Restrict CORS to known origins; add production domain when deploying
@@ -48,6 +129,12 @@ _ALLOWED_ORIGINS = [
     "http://localhost:3001",
     "http://localhost:3002",
     "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://100.74.118.100:3000",
+    "http://100.74.118.100:5173",
+    "http://100.74.118.100:5174",
+    "http://100.74.118.100:5175",
     "https://daanaa.org",
     "https://www.daanaa.org",
 ]
@@ -158,7 +245,7 @@ def list_organizations():
     min_rev = request.args.get('min_revenue', type=float)
     max_rev = request.args.get('max_revenue', type=float)
     min_pct = request.args.get('min_percentile', type=float)
-    min_merit_tier = request.args.get('min_merit_tier', '').strip()
+    min_tier = request.args.get('min_tier', '').strip()
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     direct_link = request.args.get('direct_link', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
@@ -215,8 +302,8 @@ def list_organizations():
         params.append(f'%{cause}%')
 
     _TIER_HIERARCHY = ['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark']
-    if min_merit_tier and min_merit_tier in _TIER_HIERARCHY:
-        idx = _TIER_HIERARCHY.index(min_merit_tier)
+    if min_tier and min_tier in _TIER_HIERARCHY:
+        idx = _TIER_HIERARCHY.index(min_tier)
         included = _TIER_HIERARCHY[:idx + 1]
         placeholders = ','.join('?' * len(included))
         where_clauses.append(f'merit_tier IN ({placeholders})')
@@ -645,48 +732,69 @@ def admin_waitlist_delete(wid):
     return jsonify({'ok': True})
 
 
-def _find_similar_orgs(db, ein_clean, org, limit=6):
-    """Return similar orgs using the most specific match available:
-    NTEECC + revenue_band → NTEE1 + revenue_band → NTEE1 only."""
-    pct = org.get('peer_percentile') or org.get('ntee1_percentile', 50) or 50
+def _fetch_orgs_by_eins(db, eins: list[str]) -> list[dict]:
+    if not eins:
+        return []
     cols = """EIN, organization_name, CITY, STATE, total_revenue,
               ntee1_percentile, peer_percentile, peer_group, revenue_band,
               latest_tax_year, data_source, updated_at,
               merit_tier, merit_score, merit_band"""
+    placeholders = ",".join("?" * len(eins))
+    rows = db.execute(
+        f"SELECT {cols} FROM registry_enriched WHERE EIN IN ({placeholders})", eins
+    ).fetchall()
+    order = {e: i for i, e in enumerate(eins)}
+    return sorted([dict(r) for r in rows], key=lambda r: order.get(r["EIN"], 999))
+
+
+def _find_similar_orgs(db, ein_clean, org, limit=6):
+    """Similar orgs: vector cosine similarity when available, SQL bucket fallback."""
+    cols = """EIN, organization_name, CITY, STATE, total_revenue,
+              ntee1_percentile, peer_percentile, peer_group, revenue_band,
+              latest_tax_year, data_source, updated_at,
+              merit_tier, merit_score, merit_band"""
+
+    # ── Vector path ────────────────────────────────────────────────────────────
+    vec = _get_org_vec(ein_clean)
+    if vec is not None and _emb_matrix is not None:
+        top_eins = _vec_similar(vec, ein_clean, limit)
+        results  = _fetch_orgs_by_eins(db, top_eins)
+        if len(results) >= 3:
+            return results, 'vector'
+
+    # ── SQL fallback ───────────────────────────────────────────────────────────
+    pct   = org.get('peer_percentile') or org.get('ntee1_percentile', 50) or 50
     nteecc = org.get('NTEECC')
-    band = org.get('revenue_band')
-    ntee1 = org.get('NTEE1')
+    band   = org.get('revenue_band')
+    ntee1  = org.get('NTEE1')
 
     if nteecc and band:
         rows = db.execute(f"""
             SELECT {cols} FROM registry_enriched
             WHERE NTEECC = ? AND revenue_band = ? AND EIN != ?
-            ORDER BY ABS(COALESCE(peer_percentile, 50) - ?) ASC
-            LIMIT ?
+            ORDER BY ABS(COALESCE(peer_percentile, 50) - ?) ASC LIMIT ?
         """, (nteecc, band, ein_clean, pct, limit)).fetchall()
         if len(rows) >= 3:
-            return [dict(r) for r in rows]
+            return [dict(r) for r in rows], 'nteecc+band'
 
     if ntee1 and band:
         rows = db.execute(f"""
             SELECT {cols} FROM registry_enriched
             WHERE NTEE1 = ? AND revenue_band = ? AND EIN != ?
-            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC
-            LIMIT ?
+            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC LIMIT ?
         """, (ntee1, band, ein_clean, pct, limit)).fetchall()
         if len(rows) >= 2:
-            return [dict(r) for r in rows]
+            return [dict(r) for r in rows], 'ntee1+band'
 
     if ntee1:
         rows = db.execute(f"""
             SELECT {cols} FROM registry_enriched
             WHERE NTEE1 = ? AND EIN != ?
-            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC
-            LIMIT ?
+            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC LIMIT ?
         """, (ntee1, ein_clean, pct, limit)).fetchall()
-        return [dict(r) for r in rows]
+        return [dict(r) for r in rows], 'ntee1'
 
-    return []
+    return [], 'none'
 
 
 @app.route('/api/organizations/<ein>/similar')
@@ -707,10 +815,35 @@ def get_similar_organizations(ein):
         return jsonify({"error": "Not found"}), 404
 
     org = dict(row)
-    results = _find_similar_orgs(db, ein_clean, org, limit=limit)
-    mode = 'nteecc+band' if (org.get('NTEECC') and org.get('revenue_band')) else \
-           'ntee1+band' if org.get('revenue_band') else 'ntee1'
+    results, mode = _find_similar_orgs(db, ein_clean, org, limit=limit)
     return jsonify({'results': results, 'mode': mode, 'diamonds_only': False})
+
+
+# ── Semantic search ────────────────────────────────────────────────────────────
+@app.route('/api/search/semantic')
+@limiter.limit("30 per minute")
+def semantic_search():
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify({"error": "q param required"}), 400
+    try:
+        limit = min(int(request.args.get('limit', 10)), 25)
+    except (ValueError, TypeError):
+        limit = 10
+
+    if not _emb_loaded:
+        _load_embeddings()
+    if _emb_matrix is None or len(_emb_matrix) == 0:
+        return jsonify({"error": "embeddings not ready yet", "results": []}), 503
+
+    vec = _embed_query(q)
+    if vec is None:
+        return jsonify({"error": "embedding service unavailable"}), 503
+
+    top_eins = _vec_similar(vec, exclude_ein="", limit=limit)
+    db = get_db()
+    results  = _fetch_orgs_by_eins(db, top_eins)
+    return jsonify({"results": results, "query": q, "mode": "semantic", "total": len(results)})
 
 
 # ── Frontend static serving ────────────────────────────────────────────────

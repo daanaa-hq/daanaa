@@ -258,7 +258,7 @@ function PipelineTab({ adminKey }: { adminKey: string }) {
   useEffect(() => {
     async function load() {
       const [orgRes, waitlistRes] = await Promise.all([
-        getOrganizations({ min_merit_tier: 'Lantern', per_page: 50, sort: 'ntee1_percentile' }),
+        getOrganizations({ min_tier: 'Lantern', per_page: 50, sort: 'ntee1_percentile' }),
         getAdminWaitlist(adminKey, { source: 'claiming' }).catch(() => ({ entries: [], total: 0 })),
       ])
       setOrgs(orgRes.organizations)
