@@ -136,7 +136,7 @@ function BrowseCauses() {
           </div>
           <Link
             to="/directory"
-            className="shrink-0 inline-flex items-center gap-2 font-body text-[14px] text-cool-grey hover:text-deep-navy transition-colors"
+            className="shrink-0 inline-flex items-center gap-2 min-h-[44px] px-2 font-body text-[14px] text-cool-grey hover:text-deep-navy transition-colors"
           >
             View all
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -284,7 +284,7 @@ function TiersStrip() {
             {TIER_STRIP.map(({ name, pct, blurb }) => (
               <Link
                 key={name}
-                to={`/directory?min_tier=${name}`}
+                to={name === 'Glow' || name === 'Spark' ? '/directory' : `/directory?min_tier=${name}`}
                 className="snap-start shrink-0 w-[88px] md:w-auto flex flex-col items-center gap-1.5 px-2 py-3 border-r border-light-grey last:border-r-0 hover:bg-warm-cream/60 transition-colors group"
               >
                 <LampMark tier={name} size="sm" />

@@ -19,7 +19,7 @@ const FILTER_CATEGORIES = [
 ]
 
 const SORT_OPTIONS = [
-  { id: 'merit_score', label: 'Peer Financial Context' },
+  { id: 'merit_score', label: 'Financial Health' },
   { id: 'organization_name', label: 'Name A to Z' },
   { id: 'total_revenue', label: 'Revenue' },
 ]
@@ -249,7 +249,7 @@ function FilterRail({
 
         {/* Cause — free text against the LLM cause tags */}
         <div className="mb-4">
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Cause</p>
+          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/75 mb-2 px-2.5">Cause</p>
           <div className="relative px-0.5">
             <input
               type="text"
@@ -272,7 +272,7 @@ function FilterRail({
 
         {/* Category */}
         <div className="mb-4">
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Category</p>
+          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/75 mb-2 px-2.5">Category</p>
           <div className="space-y-0.5">
             {RAIL_CATEGORIES.map(cat => {
               const isActive = cat.id === 'all' ? activeCategories.length === 0 : activeCategories.includes(cat.id)
@@ -300,7 +300,7 @@ function FilterRail({
         {/* Subcategory drill-down — only when a category is selected and has subcats */}
         {activeCategories.length === 1 && subcats.length > 0 && (
           <div className="mb-4 pl-2.5">
-            <p className="font-body text-[10px] font-semibold tracking-[0.08em] uppercase text-cool-grey/40 mb-2">Subcategory</p>
+            <p className="font-body text-[10px] font-semibold tracking-[0.08em] uppercase text-cool-grey/65 mb-2">Subcategory</p>
             <div className="flex flex-wrap gap-1.5">
               {subcats.map(sub => {
                 const active = subFilter === sub.code
@@ -327,7 +327,7 @@ function FilterRail({
 
         {/* State */}
         <div className="mb-4">
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">State</p>
+          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/75 mb-2 px-2.5">State</p>
           <div className="relative">
             <select
               value={stateFilter}
@@ -349,7 +349,7 @@ function FilterRail({
 
         {/* Revenue range */}
         <div className="mb-4">
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Annual Revenue</p>
+          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/75 mb-2 px-2.5">Annual Revenue</p>
           <div className="space-y-0.5">
             {REVENUE_PRESETS.map(preset => (
               <button
@@ -379,7 +379,7 @@ function FilterRail({
 
         {/* Trust tier filter */}
         <div className="mb-4">
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Visibility Level</p>
+          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/75 mb-2 px-2.5">Visibility Level</p>
           <div className="space-y-0.5">
             {SCORE_TIERS.map(tier => (
               <button
@@ -404,7 +404,7 @@ function FilterRail({
 
         {/* Sort */}
         <div className="mb-5">
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/50 mb-2 px-2.5">Sort by</p>
+          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey/75 mb-2 px-2.5">Sort by</p>
           <div className="space-y-0.5">
             {SORT_OPTIONS.map(opt => (
               <button

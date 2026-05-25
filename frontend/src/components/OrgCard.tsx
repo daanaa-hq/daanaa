@@ -34,7 +34,7 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
     <button
       onClick={onClick}
       title={inList ? 'Remove from giving list' : 'Add to giving list'}
-      className="shrink-0 inline-flex items-center gap-1 px-3 py-3 md:py-1.5 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none"
+      className="shrink-0 inline-flex items-center gap-1 px-3 py-2.5 md:py-2 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold/70 focus-visible:ring-offset-1"
       style={{
         backgroundColor: inList ? '#2A6B45' : 'transparent',
         borderColor: inList ? '#2A6B45' : 'rgba(42,107,69,0.40)',
@@ -67,7 +67,7 @@ function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; can
       onClick={onClick}
       title={inCompare ? 'Remove from comparison' : canAdd ? 'Add to comparison' : 'Comparison full (max 4)'}
       disabled={!inCompare && !canAdd}
-      className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none disabled:opacity-30 disabled:cursor-not-allowed"
+      className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold/70 focus-visible:ring-offset-1 disabled:opacity-30 disabled:cursor-not-allowed"
       aria-pressed={inCompare}
     >
       <svg
@@ -79,7 +79,7 @@ function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; can
         <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
         <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
       </svg>
-      <span className="font-body text-[9px] leading-none" style={{ color }}>Compare</span>
+      <span className="font-body text-[10px] leading-none" style={{ color }}>Compare</span>
     </button>
   )
 }
@@ -90,7 +90,7 @@ function FavoriteButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: R
     <button
       onClick={onClick}
       title={isSaved ? 'Remove from favorites' : 'Add to favorites'}
-      className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none"
+      className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold/70 focus-visible:ring-offset-1"
       aria-pressed={isSaved}
     >
       <svg
@@ -101,7 +101,7 @@ function FavoriteButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: R
       >
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
       </svg>
-      <span className="font-body text-[9px] leading-none" style={{ color }}>Fav</span>
+      <span className="font-body text-[10px] leading-none" style={{ color }}>Fav</span>
     </button>
   )
 }
