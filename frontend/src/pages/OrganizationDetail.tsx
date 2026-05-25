@@ -21,10 +21,12 @@ import OrgWallPanel from '../components/OrgWallPanel'
 function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
   const [hoveredBar, setHoveredBar] = useState<number | null>(null)
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
-  const [revealed, setRevealed] = useState(false)
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const [revealed, setRevealed] = useState(prefersReducedMotion)
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
+    if (prefersReducedMotion) return
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -103,7 +105,7 @@ function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
                 width={barWidth} height={revealed ? barH : 0}
                 rx={8}
                 fill={hoveredBar === i ? '#D4B87A' : '#C9A96E'}
-                style={{ transition: `all 1s ease-out ${i * 0.1}s` }}
+                style={{ transition: prefersReducedMotion ? 'none' : `all 1s ease-out ${i * 0.1}s` }}
               />
               <text x={x + barWidth / 2} y={margin.top + innerH + 24} textAnchor="middle" fill="#6B7280" fontSize="12" fontFamily="Inter, sans-serif">
                 {d.year}

@@ -246,6 +246,8 @@ def list_organizations():
     max_rev = request.args.get('max_revenue', type=float)
     min_pct = request.args.get('min_percentile', type=float)
     min_tier = request.args.get('min_tier', '').strip()
+    if min_tier == 'Glow':  # frontend alias for DB name Ember
+        min_tier = 'Ember'
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     direct_link = request.args.get('direct_link', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
