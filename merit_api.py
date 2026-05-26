@@ -381,6 +381,8 @@ def get_organization(ein):
     if mor is not None and not (-120 <= mor <= 120):
         org['months_of_reserve'] = None
     org['total_revenue_formatted'] = f"${org['total_revenue']:,.0f}" if org['total_revenue'] else None
+    org['has_mission'] = bool(org.get('mission') and str(org['mission']).strip())
+    org['has_website'] = bool(org.get('website') and str(org['website']).strip())
 
     # Parse JSON text columns → Python lists
     if org.get('cause_tags'):
