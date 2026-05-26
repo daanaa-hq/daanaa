@@ -10,11 +10,11 @@ import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
-  { name: 'Beacon',  pct: '0.9%',  blurb: 'Complete profile: mission, giving path, and public financial data on record' },
-  { name: 'Lantern', pct: '1.9%',  blurb: 'Giving path, public filing, and mission all on record' },
-  { name: 'Flame',   pct: '75.5%', blurb: 'Public filing on record. Mission and giving path not yet confirmed' },
-  { name: 'Glow',    pct: '21.3%', blurb: 'Public record found. Limited information available' },
-  { name: 'Spark',   pct: '0.4%',  blurb: 'Public record found. No additional data yet' },
+  { name: 'Beacon',  pct: '0.7%',  blurb: 'Top-quartile financial score, mission, website, and current 990 on record' },
+  { name: 'Lantern', pct: '1.5%',  blurb: 'Mission, website, financial context, and current 990 on record' },
+  { name: 'Flame',   pct: '27.0%', blurb: 'Public filing on record. Mission or website not yet confirmed' },
+  { name: 'Glow',    pct: '40.6%', blurb: 'Public record found. Limited information available' },
+  { name: 'Spark',   pct: '30.2%', blurb: 'Public record found. No additional data yet' },
 ]
 
 // Returns the week number anchored to Monday so all users see the same shuffle each week

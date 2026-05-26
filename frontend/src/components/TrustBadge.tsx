@@ -28,9 +28,9 @@ export const TIER_COLORS: Record<TierName, string> = {
 // Lower tiers get the most generous, explicitly non-judgmental wording —
 // they describe how much public data backs the profile, not the org's worth.
 export const TIER_MICROCOPY: Record<TierName, string> = {
-  Beacon:  'Complete public picture. Mission, giving path, service area, and public financial data all on record.',
-  Lantern: 'Official giving path found. Mission, website, and public filing on record.',
-  Flame:   'Public record found. Financial data and filing on record. Mission and giving path not yet confirmed.',
+  Beacon:  'Most complete public picture. Top-quartile financial score, mission, website, and current 990 all on record.',
+  Lantern: 'Strong public picture. Mission, website, financial context, and current 990 on record.',
+  Flame:   'Public record found. Financial data and filing on record. Mission or website not yet confirmed.',
   Glow:    'Public record found. Limited financial data available. Reflects information availability, not the quality of its work.',
   Ember:   'Public record found. Limited financial data available. Reflects information availability, not the quality of its work.',
   Spark:   'Public record found. A registered nonprofit with little information available yet. A starting point, not a judgment.',
@@ -111,7 +111,7 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
 export function getNextTierPath(tier: TierName): string | null {
   switch (tier) {
     case 'Beacon':  return null
-    case 'Lantern': return 'Add mission, service area, programs, leadership, and giving path to reach Complete.'
+    case 'Lantern': return 'A top-quartile financial context score (75th percentile or higher) qualifies this org for Beacon.'
     case 'Flame':   return 'Add a mission statement and website. Once both are on public record, this org qualifies for Lantern.'
     case 'Glow':
     case 'Ember':   return 'A financial scale score is assigned as revenue and asset data accumulates in public records. Daanaa updates automatically.'
