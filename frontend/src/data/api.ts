@@ -61,6 +61,9 @@ export interface ApiOrganization {
   donate_url?: string | null;             // direct giving page found on org site (Donorbox, etc.)
   donate_platform?: string | null;        // 'donorbox' | 'networkforgood' | 'classy' | 'mightycause' | 'paypal'
   donate_url_status?: string | null;      // 'ok' | 'dead' | 'unknown' — null = not yet checked
+  // Fused search annotation (from /api/search only)
+  match_sources?: ('keyword' | 'semantic')[] | null;
+  rrf_score?: number | null;
   // Returned by GET /api/organizations/:ein only (SELECT *)
   mission?: string | null;
   website?: string | null;
@@ -177,6 +180,17 @@ export async function getSemanticOrganizations(q: string, limit = 25): Promise<{
 }> {
   const sp = new URLSearchParams({ q, limit: String(limit) });
   return fetchJson(`/api/search/semantic?${sp.toString()}`);
+}
+
+// GET /api/search — RRF-fused keyword + semantic search with match_sources
+export async function getFusedSearch(q: string): Promise<{
+  results: ApiOrganization[];
+  query: string;
+  mode: string;
+  total: number;
+}> {
+  const sp = new URLSearchParams({ q });
+  return fetchJson(`/api/search?${sp.toString()}`);
 }
 
 // GET /api/organizations/:ein/financials

@@ -53,13 +53,20 @@ This is a 6-month plan, not a typical quarterly plan, because Phase 0 is one coh
 
 ## Objective 5: Secure the resources
 
-**Description:** Credits, sponsors, early traction signals to support Phase 1.
+**Description:** Credits, sponsors, early traction signals to support Phase 1. Current burn is near-zero (owned hardware). Sequence: ship → live site → fundraise against something real.
 
+**Bootstrap milestones (no cash required, do these first):**
+- [ ] Soft launch live (DNS + HTTPS working)
+- [ ] Attorney consult completed via pro bono path (law school clinic / state bar)
+- [ ] All 5 credit applications submitted (Day 1 of OKR period)
+- [ ] First grant application drafted with live site URL as proof point
+
+**Standard KRs:**
 - **KR 5.1:** 3+ credit programs approved (out of 5 applied)
 - **KR 5.2:** Total credit value > $10K secured
 - **KR 5.3:** Monthly burn maintained < $300
 - **KR 5.4:** At least 1 sponsor relationship initiated (mission-aligned)
-- **KR 5.5:** 2+ grant applications drafted (Shuttleworth, Code for America, others)
+- **KR 5.5:** 2+ grant applications drafted (Knight, Mozilla, local community foundations as Round 1; Omidyar, Schmidt, McGovern as Round 2 post-sector-report)
 
 ---
 

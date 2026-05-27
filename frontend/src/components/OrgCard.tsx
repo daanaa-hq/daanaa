@@ -156,6 +156,15 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
         <h3 className="font-display text-[16px] text-deep-navy hover:text-soft-gold transition-colors truncate mb-0.5">
           {org.name}
         </h3>
+        {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
+          <p className="font-body text-[10px] text-cool-grey/50 mb-0.5 leading-none">
+            {apiOrg.match_sources.includes('keyword') && apiOrg.match_sources.includes('semantic')
+              ? 'Matched by name and meaning'
+              : apiOrg.match_sources.includes('semantic')
+              ? 'Matched by meaning'
+              : 'Matched by name'}
+          </p>
+        )}
         <div className="flex items-center gap-2 flex-wrap">
           {inlineFact && (
             <span className="font-body text-[11px] text-soft-gold">{inlineFact}</span>
@@ -254,6 +263,15 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
           </h3>
           {inlineFact && (
             <p className="font-body text-[11px] text-soft-gold mt-0.5 leading-none">{inlineFact}</p>
+          )}
+          {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
+            <p className="font-body text-[10px] text-cool-grey/50 mt-0.5 leading-none">
+              {apiOrg.match_sources.includes('keyword') && apiOrg.match_sources.includes('semantic')
+                ? 'Matched by name and meaning'
+                : apiOrg.match_sources.includes('semantic')
+                ? 'Matched by meaning'
+                : 'Matched by name'}
+            </p>
           )}
         </div>
       </div>

@@ -13,7 +13,7 @@ echo "=== STARTING DAANAA API (gunicorn) ==="
 source ~/meritgiving/venv/bin/activate
 cd ~/meritgiving
 [ -f .env ] && export $(grep -v '^#' .env | xargs)
-gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 \
+gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 --preload \
   --access-logfile logs/gunicorn_access.log \
   --error-logfile logs/daanaa_api.log \
   --pid logs/merit_api.pid \
