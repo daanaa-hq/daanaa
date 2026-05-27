@@ -4,6 +4,78 @@
 
 ---
 
+## Bootstrap Phase (Pre-credit-approval, current state)
+
+### The zero-burn reality
+
+The platform runs on owned hardware (Ryzen 9700X server). There is no cloud bill, no SaaS subscription blocking progress, and no headcount. True monthly burn is effectively $0 until credit cards or grants are needed for external services.
+
+**What this means:** every milestone on the gate chart can be reached without spending money. The constraint is time, not capital.
+
+### Immediate sequence (no cash required)
+
+| Step | Action | Cost |
+|------|--------|------|
+| 1 | Soft launch (DNS + HTTPS on local server) | $0 |
+| 2 | Attorney consult via pro bono path (see below) | $0–$50 |
+| 3 | Submit all 5 credit applications (Day 1 task) | $0 |
+| 4 | Write first grant application with live site as proof | $0 |
+
+**Order matters:** ship the site first, then fundraise against something real. A working live directory dramatically improves grant conversion vs. a slide deck.
+
+### Pro bono attorney path (covers Gate 1 legal review)
+
+Do not wait for cash to get legal questions answered. These free paths cover the Gate 1 attorney requirement:
+
+1. **Law school clinics** — most cities with a law school have a nonprofit law or small business clinic; they do initial consults free or sliding scale. Search "[your city] law school nonprofit clinic."
+2. **State bar pro bono programs** — every state bar has a referral program. Civic tech + public interest = high priority for matching. Search "[your state] state bar pro bono."
+3. **Volunteer Lawyers for the Arts (VLA)** — exists in most major metros; serves public-interest tech projects.
+4. **SCORE** — free mentorship from retired executives; can help frame questions before the attorney call to make that hour more efficient.
+
+**Bring to the attorney session:** STEWARDSHIP.md, mission-lock.md, the About page draft, and the four questions from the strategy doc:
+- Does linking donors to nonprofit pages constitute "solicitation" under state statutes?
+- Which states require registration given the platform model?
+- Does CC BY-NC-ND (ProPublica) restrict a future revenue model?
+- LLC vs. 501(c)(3) for the funder thesis we're pursuing?
+
+### Charitable solicitation registration — state exposure map
+
+~41 states require registration. Priority order for Daanaa:
+
+**Act first (large population + active enforcement):**
+- California — AG's Registry of Charitable Trusts; broadest "facilitation" definition
+- New York — Charities Bureau CHAR500; most aggressive enforcement in the country
+- Pennsylvania — Bureau of Charitable Organizations
+- Illinois — Charitable Trust Act
+
+**Medium priority:**
+- Florida, Virginia, Washington, Massachusetts, Ohio, Michigan, Maryland, Connecticut, New Jersey, Georgia
+
+**Safe harbors (no registration required):**
+Idaho, Indiana, Iowa, Montana, Nebraska, Nevada, South Dakota, Texas, Vermont, Wyoming
+
+**Key question for attorney:** does linking (not requesting) constitute solicitation? If yes, use the **Unified Registration Statement (URS)** — one form accepted by ~37 states.
+
+### Grant strategy at zero budget
+
+Apply to civic tech funders once the site is live. A working product beats a pitch deck every time.
+
+**Round 1 targets (apply immediately post-launch):**
+- Knight Foundation — journalism + civic information infrastructure
+- Mozilla Foundation — open web + public data
+- Local community foundations — they care about local nonprofits being visible; pitch the local angle
+
+**Round 2 targets (after first sector report is published):**
+- Omidyar Network — transparency + accountability
+- Schmidt Futures — public data infrastructure
+- Patrick J. McGovern Foundation — data + AI for good
+
+**Grant pitch (one sentence):** "1.8 million nonprofits. Most are invisible to donors. We fix that with IRS public data, zero fees to nonprofits, and no custody of funds."
+
+Expected range for early civic tech grants: $10–50K. That covers the attorney, a year of operating costs, and time to keep building.
+
+---
+
 ## Year 1 (Months 1–12): Credits, tips, small grants
 
 ### Self-funded foundation

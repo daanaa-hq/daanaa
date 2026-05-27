@@ -2,7 +2,7 @@
 """
 MeritGiving API — Serves registry_enriched to frontend
 """
-import sqlite3, os, json, functools, time, hashlib, threading
+import sqlite3, os, json, functools, time, hashlib, threading, re
 import numpy as np
 import requests as _http
 from flask import Flask, jsonify, request, g, abort, send_from_directory
@@ -42,17 +42,46 @@ def _cget(key: str, ttl_ns: str):
 def _cset(key: str, value):
     _CACHE[key] = (value, time.time())
 
-# ── Embedding index (lazy-loaded, module-level singleton) ──────────────────────
-# Loaded once on first use. ~1.6 GB for 545K orgs × 768-dim float32.
-# Falls back gracefully when the build job hasn't completed yet.
+# ── Embedding index (eager-loaded at startup, module-level singleton) ──────────
+# Loaded once in gunicorn master (--preload) then CoW-shared across workers.
+# ~7.4 GB for 1.8M orgs × 1024-dim float32. Falls back gracefully if missing.
 _emb_matrix: np.ndarray | None = None   # (N, 768) L2-normalised float32
 _emb_eins:   list | None       = None   # parallel EIN list, index = row
 _emb_index:  dict | None       = None   # EIN → row index
 _emb_lock = threading.Lock()
 _emb_loaded = False
 
-OLLAMA_EMBED_URL = "http://localhost:11434/api/embed"
-OLLAMA_EMBED_MODEL = "nomic-embed-text"
+VULKAN_EMBED_URL  = "http://127.0.0.1:11436/v1/embeddings"   # llama-server Vulkan1 (primary)
+OLLAMA_EMBED_URL  = "http://localhost:11434/api/embed"         # Ollama fallback
+OLLAMA_EMBED_MODEL = "mxbai-embed-large"
+
+# ── FTS5 full-text search ───────────────────────────────────────────────────────
+# Set True once we confirm org_fts exists. Checked at first search request.
+_fts_available: bool | None = None  # None = not yet checked
+
+_FTS5_STRIP = re.compile(r'[*"^(){}|<>&~\[\]]')
+
+def _sanitize_fts_query(text: str) -> str:
+    """Convert a donor query string to FTS5 MATCH syntax.
+    Each word becomes a prefix token (cancer* matches cancer, cancers).
+    Multiple words are implicitly ANDed by FTS5."""
+    clean = _FTS5_STRIP.sub(' ', text)
+    words = [w.strip() for w in clean.split() if len(w.strip()) >= 2]
+    if not words:
+        return '""'
+    return ' '.join(f'{w}*' for w in words)
+
+def _check_fts(db: sqlite3.Connection) -> bool:
+    global _fts_available
+    if _fts_available is not None:
+        return _fts_available
+    try:
+        db.execute("SELECT COUNT(*) FROM org_fts LIMIT 1")
+        _fts_available = True
+    except Exception:
+        _fts_available = False
+    return _fts_available
+
 _NTEE_LABELS = {
     "A":"arts culture humanities","B":"education","C":"environment",
     "D":"animal welfare","E":"health care","F":"mental health",
@@ -66,27 +95,44 @@ _NTEE_LABELS = {
 }
 
 def _load_embeddings():
+    """Load scored-org embeddings into RAM.
+
+    Scoped to orgs with a merit_score (~546K) to keep peak RAM under 3 GB.
+    Pre-allocates the numpy matrix and streams the cursor row-by-row to avoid
+    the double-peak that fetchall() causes (raw bytes + array simultaneously).
+    """
     global _emb_matrix, _emb_eins, _emb_index, _emb_loaded
     with _emb_lock:
         if _emb_loaded:
             return
         try:
-            conn = sqlite3.connect(DB_PATH, timeout=10)
-            rows = conn.execute(
-                "SELECT ein, vector FROM org_embeddings ORDER BY rowid"
-            ).fetchall()
-            conn.close()
-            if not rows:
+            conn = sqlite3.connect(DB_PATH, timeout=30)
+            # Count first so we can pre-allocate
+            n, dim = conn.execute(
+                "SELECT COUNT(*), MAX(dim) FROM org_embeddings e "
+                "JOIN registry_enriched r ON e.ein = r.EIN "
+                "WHERE r.merit_score IS NOT NULL"
+            ).fetchone()
+            if not n:
+                conn.close()
                 return
-            eins = [r[0] for r in rows]
-            mat  = np.frombuffer(
-                b"".join(r[1] for r in rows), dtype=np.float32
-            ).reshape(len(rows), -1)
+            mat  = np.empty((n, dim), dtype=np.float32)
+            eins = []
+            cur  = conn.execute(
+                "SELECT e.ein, e.vector FROM org_embeddings e "
+                "JOIN registry_enriched r ON e.ein = r.EIN "
+                "WHERE r.merit_score IS NOT NULL "
+                "ORDER BY e.rowid"
+            )
+            for i, (ein, vec) in enumerate(cur):
+                mat[i] = np.frombuffer(vec, dtype=np.float32)
+                eins.append(ein)
+            conn.close()
             _emb_eins   = eins
             _emb_index  = {e: i for i, e in enumerate(eins)}
             _emb_matrix = mat
             _emb_loaded = True
-            print(f"[embeddings] loaded {len(eins):,} vectors ({mat.shape[1]}-dim)", flush=True)
+            print(f"[embeddings] loaded {len(eins):,} scored vectors ({dim}-dim)", flush=True)
         except Exception as e:
             print(f"[embeddings] load failed: {e}", flush=True)
 
@@ -99,6 +145,19 @@ def _get_org_vec(ein: str) -> np.ndarray | None:
     return _emb_matrix[idx] if idx is not None else None
 
 def _embed_query(text: str) -> np.ndarray | None:
+    """Embed a query string via llama-server Vulkan1, falling back to Ollama."""
+    # Primary: llama-server on port 11436 (mxbai-embed-large, Vulkan1 / R9700)
+    try:
+        r = _http.post(VULKAN_EMBED_URL,
+                       json={"model": "mxbai-embed-large", "input": text},
+                       timeout=5)
+        r.raise_for_status()
+        vec = np.array(r.json()["data"][0]["embedding"], dtype=np.float32)
+        norm = np.linalg.norm(vec)
+        return vec / norm if norm > 0 else vec
+    except Exception:
+        pass
+    # Fallback: Ollama
     try:
         r = _http.post(OLLAMA_EMBED_URL,
                        json={"model": OLLAMA_EMBED_MODEL, "input": [text]},
@@ -252,7 +311,7 @@ def list_organizations():
     direct_link = request.args.get('direct_link', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
-    sort_by = request.args.get('sort', 'total_revenue')
+    sort_by = request.args.get('sort', 'merit_score')
     order = request.args.get('order', 'desc')
 
     offset = (page - 1) * per_page
@@ -262,12 +321,25 @@ def list_organizations():
     params = []
 
     if search:
-        # Normalize hyphens out of the search term so "74-6086238" matches EIN "746086238"
-        search_normalized = search.replace('-', '')
-        words = [w for w in search_normalized.split() if w]
-        for word in words:
-            where_clauses.append("(organization_name LIKE ? OR EIN LIKE ? OR CITY LIKE ?)")
-            params.extend([f'%{word}%', f'%{word}%', f'%{word}%'])
+        search_normalized = search.replace('-', '').strip()
+        # EIN lookup: pure digits → direct EIN prefix match, skip FTS
+        is_ein = bool(search_normalized) and search_normalized.isdigit()
+        if is_ein:
+            where_clauses.append("EIN LIKE ?")
+            params.append(f'{search_normalized}%')
+        elif _check_fts(db):
+            # FTS5 path: match on org content, join back via EIN (rowid misaligns)
+            fts_q = _sanitize_fts_query(search)
+            where_clauses.append(
+                "EIN IN (SELECT ein FROM org_fts WHERE org_fts MATCH ? LIMIT 2000)"
+            )
+            params.append(fts_q)
+        else:
+            # Fallback: name-only LIKE (city field excluded to avoid false matches)
+            words = [w for w in search_normalized.split() if w]
+            for word in words:
+                where_clauses.append("organization_name LIKE ?")
+                params.append(f'%{word}%')
     if ntee_list:
         if len(ntee_list) == 1:
             where_clauses.append("NTEE1 = ?")
@@ -313,7 +385,7 @@ def list_organizations():
 
     allowed_sorts = ['total_revenue', 'organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']
     if sort_by not in allowed_sorts:
-        sort_by = 'total_revenue'
+        sort_by = 'merit_score'
     if order not in ['asc', 'desc']:
         order = 'desc'
 
@@ -856,6 +928,117 @@ def semantic_search():
     return jsonify({"results": results, "query": q, "mode": "semantic", "total": len(results)})
 
 
+# ── Fused search (RRF: FTS5 keyword + semantic vector) ─────────────────────────
+@app.route('/api/search')
+@limiter.limit("60 per minute")
+def fused_search():
+    """Reciprocal Rank Fusion of FTS5 keyword + semantic vector search.
+
+    Returns top results with match_sources=['keyword','semantic'] per org,
+    enabling honest "why this appeared" labels in the UI.
+
+    RRF formula: score(d) = Σ 1/(60 + rank_i(d)) across paths.
+    k=60 is the standard constant; documents in both paths rank highest.
+    """
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify({"error": "q param required"}), 400
+
+    ck = _ck('fused', q)
+    cached = _cget(ck, 'search')
+    if cached:
+        return jsonify(cached)
+
+    RRF_K   = 60
+    CAND_N  = 100   # candidates from each path before fusion
+    RESULT_N = 20   # final fused results
+
+    db = get_db()
+
+    # ── Path 1: FTS5 keyword ─────────────────────────────────────────────────
+    kw_eins: list[str] = []
+    if _check_fts(db):
+        try:
+            fts_q = _sanitize_fts_query(q)
+            rows = db.execute(
+                "SELECT ein FROM org_fts WHERE org_fts MATCH ? LIMIT ?",
+                (fts_q, CAND_N)
+            ).fetchall()
+            kw_eins = [r[0] for r in rows]
+        except Exception:
+            kw_eins = []
+
+    # ── Path 2: Semantic vector ───────────────────────────────────────────────
+    sem_eins: list[str] = []
+    if not _emb_loaded:
+        _load_embeddings()
+    if _emb_matrix is not None and len(_emb_matrix) > 0:
+        vec = _embed_query(q)
+        if vec is not None:
+            sem_eins = _vec_similar(vec, exclude_ein="", limit=CAND_N)
+
+    # ── RRF fusion ────────────────────────────────────────────────────────────
+    rrf: dict[str, float] = {}
+    kw_set  = set(kw_eins)
+    sem_set = set(sem_eins)
+
+    for rank, ein in enumerate(kw_eins, 1):
+        rrf[ein] = rrf.get(ein, 0.0) + 1.0 / (RRF_K + rank)
+    for rank, ein in enumerate(sem_eins, 1):
+        rrf[ein] = rrf.get(ein, 0.0) + 1.0 / (RRF_K + rank)
+
+    fused_eins = sorted(rrf, key=lambda e: rrf[e], reverse=True)
+
+    # ── Fetch org details (deductible 501c3s only) ────────────────────────────
+    fetch_n = min(RESULT_N * 3, len(fused_eins))
+    if not fused_eins:
+        return jsonify({"results": [], "query": q, "mode": "fused", "total": 0})
+
+    placeholders = ",".join("?" * fetch_n)
+    cols = """EIN, organization_name, NTEE1, CITY, STATE, total_revenue,
+              ntee1_percentile, peer_percentile, peer_group, revenue_band,
+              latest_tax_year, data_source, merit_tier, merit_score, merit_band,
+              CASE WHEN months_of_reserve BETWEEN -120 AND 120
+                   THEN months_of_reserve ELSE NULL END as months_of_reserve,
+              net_assets, is_hidden_gem, cause_tags,
+              donate_url, donate_platform, donate_url_status,
+              (mission IS NOT NULL AND mission != '') as has_mission,
+              (website  IS NOT NULL AND website  != '') as has_website"""
+    rows = db.execute(
+        f"SELECT {cols} FROM registry_enriched "
+        f"WHERE EIN IN ({placeholders}) AND {_DEDUCTIBILITY_FILTER}",
+        fused_eins[:fetch_n]
+    ).fetchall()
+
+    org_map = {dict(r)['EIN']: dict(r) for r in rows}
+
+    results = []
+    for ein in fused_eins:
+        if len(results) >= RESULT_N:
+            break
+        org = org_map.get(ein)
+        if org is None:
+            continue
+        # Annotate match sources for "why this appeared" UI label
+        sources = []
+        if ein in kw_set:
+            sources.append('keyword')
+        if ein in sem_set:
+            sources.append('semantic')
+        org['match_sources'] = sources
+        org['rrf_score']     = round(rrf[ein], 6)
+        if org.get('cause_tags'):
+            try:
+                org['cause_tags'] = json.loads(org['cause_tags'])
+            except (json.JSONDecodeError, TypeError):
+                org['cause_tags'] = None
+        results.append(org)
+
+    out = {"results": results, "query": q, "mode": "fused", "total": len(results)}
+    _cset(ck, out)
+    return jsonify(out)
+
+
 # ── Frontend static serving ────────────────────────────────────────────────
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -864,6 +1047,10 @@ def serve_frontend(path):
         return send_from_directory(FRONTEND_DIST, path)
     return send_from_directory(FRONTEND_DIST, 'index.html')
 
+
+# Eager load so gunicorn --preload populates the matrix in the master process
+# before forking workers. Workers inherit via CoW without re-reading the DB.
+_load_embeddings()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

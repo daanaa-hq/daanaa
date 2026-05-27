@@ -39,11 +39,18 @@ A public, read-only IRS-grounded nonprofit directory with deterministic badge sc
 - Business bank account opened (or in process)
 - Mission lock language drafted for operating agreement
 - Attorney + CPA intro calls completed
+  - *No cash? Use law school clinic, state bar pro bono, or VLA (see funding-strategy.md → Bootstrap Phase)*
+  - *Priority questions: solicitation registration exposure, ProPublica license (CC BY-NC-ND NC clause), LLC vs. 501(c)(3)*
 
 **Gate 2 (Week 4): Credits & Infrastructure**
 - 5 credit applications submitted
 - At least 2 approvals received
-- All core accounts active: GitHub, Vercel, Cloudflare, Neon, Clerk, Sentry, PostHog, Resend, 1Password
+- Core accounts active (see `state/launch-blockers.md` for detail + sequencing):
+  - Cloudflare — DNS for daanaa.org
+  - GitHub — daanaa-org/daanaa repo created, code pushed, CI wired
+  - Google Workspace — akbar@daanaa.org live
+  - DBA "Daanaa" filed under EcoMargins LLC
+  - Twitter/X — @daanaa claimed
 - Local dev environment reproducible
 - `.mcp.json` working in Claude Code
 
@@ -70,6 +77,11 @@ A public, read-only IRS-grounded nonprofit directory with deterministic badge sc
 - Status page live
 - Mobile experience polished
 - Accessibility WCAG 2.1 AA verified
+- Observability stack live:
+  - Plausible site ID wired (send ID → Claude wires snippet)
+  - Sentry DSN wired (send DSN → Claude wires SDK)
+  - UptimeRobot monitor on daanaa.org/health
+- LinkedIn — Daanaa company page active
 
 **Gate 6 (Week 20): Pre-Launch Readiness**
 - Tech E&O / Cyber policy bound
