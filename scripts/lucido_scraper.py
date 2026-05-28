@@ -291,7 +291,7 @@ def run_scrape(ein_map: dict[str, str], rate: float, limit: int, dry_run: bool, 
                     else:
                         if mission and not dry_run:
                             db.execute(
-                                "UPDATE registry_enriched SET mission = ? WHERE EIN = ? AND (mission IS NULL OR mission = '')",
+                                "UPDATE registry_enriched SET mission = ?, mission_source = 'lucido' WHERE EIN = ? AND (mission IS NULL OR mission = '')",
                                 (mission, ein)
                             )
                             db.commit()

@@ -539,7 +539,7 @@ export default function OrganizationDetail() {
                   org.founded > 0 && { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>), label: 'Founded', value: String(org.founded) },
                   org.revenue > 0 && { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>), label: `Revenue${(org as any).latestTaxYear ? ` FY${(org as any).latestTaxYear}` : ''}`, value: formatCurrency(org.revenue) },
                   (apiOrg!.employee_count ?? 0) > 0 && { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>), label: 'Employees', value: formatNumber(apiOrg!.employee_count!) },
-                  { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>), label: 'EIN', value: org.ein },
+                  { icon: (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>), label: 'EIN', value: formatEIN(org.ein) },
                 ].filter(Boolean).map((stat, i, arr) => (
                   <div key={(stat as {label: string}).label} className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
@@ -609,6 +609,14 @@ export default function OrganizationDetail() {
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
                         Takes you straight to their giving page. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
                       </p>
+                      {apiOrg?.data_badges?.donate === 'beta' && (
+                        <p className="mt-1.5 font-body text-[11px] text-cool-grey/70 flex items-center gap-1.5">
+                          <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">β auto-discovered</span>
+                          <span>·</span>
+                          <span>Not confirmed by the organization.</span>
+                          <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Is this your org?</Link>
+                        </p>
+                      )}
                       {(org as any).website && apiOrg!.website_status === 'ok' && (
                         <p className="mt-1.5 font-body text-[12px] text-muted-cream/40">
                           Or{' '}
@@ -722,6 +730,17 @@ export default function OrganizationDetail() {
                 {apiOrg!.latest_tax_year && (
                   <span className="font-body text-[11px] text-muted-cream/60">
                     Annual report filed · {apiOrg!.latest_tax_year}
+                  </span>
+                )}
+                {/* Claimed / Unclaimed badge — Yelp-style */}
+                {apiOrg!.claim_status === 'active' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-soft-gold/50 text-soft-gold font-body text-[11px] font-medium">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    Claimed
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-cool-grey/30 text-cool-grey font-body text-[11px]">
+                    Unclaimed
                   </span>
                 )}
               </div>
@@ -956,23 +975,33 @@ export default function OrganizationDetail() {
                     </p>
                   )}
                 </div>
-                {lampTier !== 'Beacon' && lampTier !== 'Lantern' && (
-                  <div className="border-t border-light-grey pt-4">
-                    <p className="font-body text-[13px] text-cool-grey mb-3">
-                      Is this your nonprofit?
+                <div className="border-t border-light-grey pt-4">
+                  {apiOrg!.claim_status === 'active' ? (
+                    <p className="font-body text-[12px] text-cool-grey text-center leading-[1.5]">
+                      This page is managed by the organization.
                     </p>
-                    <Link
-                      to="/for-nonprofits"
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                      Claim this page for free
-                    </Link>
-                  </div>
-                )}
+                  ) : apiOrg!.claim_status === 'letter_sent' ? (
+                    <p className="font-body text-[12px] text-cool-grey text-center leading-[1.5]">
+                      Claim in progress — verification letter sent.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="font-body text-[13px] text-cool-grey mb-3">
+                        Is this your nonprofit?
+                      </p>
+                      <Link
+                        to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Claim this page for free
+                      </Link>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -984,7 +1013,22 @@ export default function OrganizationDetail() {
         <div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div>
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">MISSION</span>
+              <div className="flex items-center gap-2">
+                <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">MISSION</span>
+                {apiOrg?.data_badges?.mission === 'ai_ntee' && (
+                  <span
+                    className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
+                    title="AI-generated from sector and location — not confirmed by the organization"
+                  >
+                    β ai-generated
+                  </span>
+                )}
+                {apiOrg?.data_badges?.mission === 'claimed' && (
+                  <span className="border border-soft-gold/30 text-soft-gold rounded text-[10px] px-1.5 py-0.5">
+                    ✓ by organization
+                  </span>
+                )}
+              </div>
               {org.mission ? (
                 <p className="mt-3 font-display italic text-deep-navy text-[18px] leading-[1.6]">&ldquo;{org.mission}&rdquo;</p>
               ) : (
