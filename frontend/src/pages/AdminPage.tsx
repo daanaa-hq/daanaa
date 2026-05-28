@@ -6,6 +6,7 @@ import {
 } from '../data/api'
 import LampMark from '../components/LampMark'
 import { getTierFromOrg } from '../components/TrustBadge'
+import { formatEIN } from '../data/organizations'
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 
@@ -321,7 +322,7 @@ function PipelineTab({ adminKey }: { adminKey: string }) {
                       </a>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-body text-[12px] text-cool-grey">{org.EIN}</td>
+                  <td className="px-4 py-3 font-body text-[12px] text-cool-grey">{formatEIN(org.EIN)}</td>
                   <td className="px-4 py-3 font-body text-[12px] text-cool-grey">
                     {[org.CITY, org.STATE].filter(Boolean).join(', ') || '—'}
                   </td>

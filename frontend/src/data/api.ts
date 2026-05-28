@@ -66,8 +66,17 @@ export interface ApiOrganization {
   rrf_score?: number | null;
   // Returned by GET /api/organizations/:ein only (SELECT *)
   mission?: string | null;
+  mission_source?: string | null;        // 'ai_ntee' | 'scraped' | 'claimed' | null
   website?: string | null;
   website_status?: string | null;        // 'ok' = verified live & on-domain; else fall back to EIN record
+  // Data provenance — which fields are AI-generated vs verified
+  data_badges?: {
+    mission?: string | null;   // 'ai_ntee' | 'scraped' | 'claimed' | null
+    donate?: string | null;    // 'beta' | 'provider' | 'claimed' | null
+    website?: string | null;   // 'ok' | 'redirected' | null
+  } | null;
+  // Claim status — 'pending' | 'letter_sent' | 'verified' | 'active' | null
+  claim_status?: string | null;
   similar_organizations?: ApiOrganization[];
   category_rank?: number;
   category_total?: number;

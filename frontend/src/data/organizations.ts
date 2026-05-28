@@ -622,7 +622,13 @@ export function searchOrganizations(query: string): Organization[] {
 
 export function formatEIN(ein: string): string {
   const d = ein.replace(/\D/g, '')
-  return d.length === 9 ? `${d.slice(0, 2)}-${d.slice(2)}` : ein
+  return d.length >= 2 ? `${d.slice(0, 2)}-${d.slice(2)}` : d
+}
+
+// For controlled EIN inputs: formats as XX-XXXXXXX while typing, returns raw digits for API calls
+export function formatEINInput(raw: string): string {
+  const d = raw.replace(/\D/g, '').slice(0, 9)
+  return d.length > 2 ? `${d.slice(0, 2)}-${d.slice(2)}` : d
 }
 
 export function formatCurrency(value: number): string {

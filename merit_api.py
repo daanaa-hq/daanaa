@@ -2,7 +2,7 @@
 """
 MeritGiving API — Serves registry_enriched to frontend
 """
-import sqlite3, os, json, functools, time, hashlib, threading, re
+import sqlite3, os, json, functools, time, hashlib, threading, re, secrets
 import numpy as np
 import requests as _http
 from flask import Flask, jsonify, request, g, abort, send_from_directory
@@ -456,6 +456,22 @@ def get_organization(ein):
     org['has_mission'] = bool(org.get('mission') and str(org['mission']).strip())
     org['has_website'] = bool(org.get('website') and str(org['website']).strip())
 
+    # Data provenance badges — tells the frontend which fields are AI-generated vs verified
+    org['data_badges'] = {
+        'mission': org.get('mission_source'),    # 'ai_ntee' | 'scraped' | 'claimed' | None
+        'donate':  org.get('donate_url_status'), # 'beta' | 'provider' | 'claimed' | None
+        'website': org.get('website_status'),    # 'ok' | 'redirected' | None
+    }
+
+    # Claim status — check org_claims table (graceful fallback if table not yet created)
+    try:
+        claim_row = db.execute(
+            "SELECT claim_status FROM org_claims WHERE ein = ?", (ein_clean,)
+        ).fetchone()
+        org['claim_status'] = claim_row['claim_status'] if claim_row else None
+    except Exception:
+        org['claim_status'] = None
+
     # Parse JSON text columns → Python lists
     if org.get('cause_tags'):
         try:
@@ -807,6 +823,167 @@ def admin_waitlist_delete(wid):
     db.execute("DELETE FROM waitlist WHERE id = ?", (wid,))
     db.commit()
     return jsonify({'ok': True})
+
+
+# ── Claim flow ────────────────────────────────────────────────────────────────
+
+@app.route('/api/claim/start', methods=['POST'])
+@limiter.limit("3 per hour")
+def claim_start():
+    data = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    email = (data.get('email') or '').strip()[:254]
+
+    if not ein or not email or '@' not in email:
+        return jsonify({"error": "EIN and valid email are required"}), 400
+
+    db  = get_db()
+    row = db.execute(
+        "SELECT EIN, organization_name, address, CITY, STATE, zipcode FROM registry_enriched WHERE EIN = ?",
+        (ein,)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "Organization not found"}), 404
+
+    org_name    = row['organization_name']
+    irs_address = f"{row['address'] or ''}, {row['CITY'] or ''}, {row['STATE'] or ''} {row['zipcode'] or ''}".strip(", ")
+
+    if not row['address']:
+        return jsonify({"error": "No mailing address on file for this organization"}), 422
+
+    # Block if already active/letter_sent in last 30 days
+    existing = db.execute(
+        "SELECT claim_status, created_at FROM org_claims WHERE ein = ?", (ein,)
+    ).fetchone()
+    if existing and existing['claim_status'] in ('active', 'verified'):
+        return jsonify({"error": "This organization has already been claimed"}), 409
+    if existing and existing['claim_status'] == 'letter_sent':
+        return jsonify({"error": "A verification letter was already sent. Check your mail or contact hello@daanaa.org to resend."}), 409
+
+    pin            = str(secrets.randbelow(900000) + 100000)
+    pin_expires_at = db.execute("SELECT datetime('now', '+30 days')").fetchone()[0]
+
+    db.execute("""
+        INSERT INTO org_claims (ein, email, irs_address, pin, pin_expires_at, claim_status)
+        VALUES (?, ?, ?, ?, ?, 'pending')
+        ON CONFLICT(ein) DO UPDATE SET
+            email=excluded.email, pin=excluded.pin,
+            pin_expires_at=excluded.pin_expires_at,
+            claim_status='pending', letter_sent_at=NULL, lob_letter_id=NULL
+    """, (ein, email, irs_address, pin, pin_expires_at))
+    db.commit()
+
+    # Send letter (Lob or log fallback)
+    try:
+        import sys
+        sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent / 'scripts'))
+        from send_claim_letter import send_claim_letter
+        address = {'street': row['address'] or '', 'city': row['CITY'] or '',
+                   'state': row['STATE'] or '', 'zip': row['zipcode'] or ''}
+        letter_id = send_claim_letter(ein, org_name, address, pin)
+        db.execute(
+            "UPDATE org_claims SET claim_status='letter_sent', letter_sent_at=datetime('now'), lob_letter_id=? WHERE ein=?",
+            (letter_id, ein)
+        )
+        db.commit()
+    except Exception as e:
+        app.logger.error(f"send_claim_letter failed for {ein}: {e}")
+
+    # Friendly address preview (first line only for privacy)
+    preview = f"{row['address']}, {row['CITY']}, {row['STATE']}" if row['address'] else irs_address
+    return jsonify({"status": "letter_sent", "org_name": org_name, "address_preview": preview})
+
+
+@app.route('/api/claim/verify', methods=['POST'])
+@limiter.limit("10 per minute")
+def claim_verify():
+    data = request.get_json(silent=True) or {}
+    ein  = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    pin  = ''.join(c for c in (data.get('pin') or '') if c.isdigit())[:6]
+
+    if not ein or not pin:
+        return jsonify({"error": "EIN and PIN are required"}), 400
+
+    db  = get_db()
+    row = db.execute(
+        "SELECT * FROM org_claims WHERE ein = ?", (ein,)
+    ).fetchone()
+
+    if not row:
+        return jsonify({"error": "No claim found for this EIN. Start at daanaa.org/claim"}), 404
+    if row['pin'] != pin:
+        return jsonify({"error": "Incorrect PIN"}), 401
+    if row['claim_status'] == 'active':
+        return jsonify({"error": "Already claimed"}), 409
+
+    # Check expiry
+    expired = db.execute(
+        "SELECT datetime('now') > ? as expired", (row['pin_expires_at'],)
+    ).fetchone()
+    if expired and expired['expired']:
+        return jsonify({"error": "PIN has expired. Please request a new letter."}), 410
+
+    db.execute(
+        "UPDATE org_claims SET claim_status='verified', verified_at=datetime('now') WHERE ein=?",
+        (ein,)
+    )
+    db.commit()
+
+    org = db.execute(
+        "SELECT organization_name, mission, donate_url FROM registry_enriched WHERE EIN=?", (ein,)
+    ).fetchone()
+
+    return jsonify({
+        "status": "verified",
+        "ein": ein,
+        "org_name": org['organization_name'] if org else "",
+        "current_mission": org['mission'] if org else None,
+        "current_donate_url": org['donate_url'] if org else None,
+        "irs_address": row['irs_address'],
+    })
+
+
+@app.route('/api/claim/profile', methods=['PATCH'])
+@limiter.limit("20 per minute")
+def claim_profile_update():
+    data = request.get_json(silent=True) or {}
+    ein  = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    pin  = ''.join(c for c in (data.get('pin') or '') if c.isdigit())[:6]
+
+    if not ein or not pin:
+        return jsonify({"error": "EIN and PIN are required"}), 400
+
+    db  = get_db()
+    row = db.execute("SELECT * FROM org_claims WHERE ein=?", (ein,)).fetchone()
+    if not row or row['pin'] != pin or row['claim_status'] not in ('verified', 'active'):
+        return jsonify({"error": "Not authorized — verify your PIN first"}), 403
+
+    custom_mission      = (data.get('custom_mission') or '').strip()[:1000] or None
+    custom_description  = (data.get('custom_description') or '').strip()[:2000] or None
+    donate_confirmed    = 1 if data.get('donate_confirmed') else 0
+    processor_auth      = 1 if data.get('processor_auth') else 0
+
+    db.execute("""
+        UPDATE org_claims
+        SET custom_mission=?, custom_description=?, donate_confirmed=?,
+            processor_auth=?, claim_status='active'
+        WHERE ein=?
+    """, (custom_mission, custom_description, donate_confirmed, processor_auth, ein))
+
+    if donate_confirmed:
+        db.execute(
+            "UPDATE registry_enriched SET donate_url_status='claimed' WHERE EIN=?", (ein,)
+        )
+
+    # Write custom mission to registry_enriched with source = 'claimed'
+    if custom_mission:
+        db.execute(
+            "UPDATE registry_enriched SET mission=?, mission_source='claimed' WHERE EIN=?",
+            (custom_mission, ein)
+        )
+
+    db.commit()
+    return jsonify({"status": "updated"})
 
 
 def _fetch_orgs_by_eins(db, eins: list[str]) -> list[dict]:

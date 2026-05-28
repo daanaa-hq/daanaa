@@ -6,6 +6,7 @@ import type { ApiOrganization } from '../data/api'
 import { getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
 import LampMark from '../components/LampMark'
 import { NTEE_CATEGORIES } from '../data/ntee'
+import { formatEIN } from '../data/organizations'
 
 function formatCurrency(n: number | null): string {
   if (!n) return '—'
@@ -43,7 +44,7 @@ function OrgColumn({ ein }: { ein: string }) {
   const cat = NTEE_CATEGORIES.find(c => c.id === org.NTEE1)
 
   const rows: { label: string; value: React.ReactNode }[] = [
-    { label: 'EIN', value: org.EIN },
+    { label: 'EIN', value: formatEIN(org.EIN) },
     { label: 'Location', value: [org.CITY, org.STATE].filter(Boolean).join(', ') || '—' },
     { label: 'Category', value: cat?.name ?? org.NTEE1 ?? '—' },
     { label: 'Subcategory', value: org.NTEECC ?? '—' },

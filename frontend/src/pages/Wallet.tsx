@@ -153,7 +153,7 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
                     <p className="font-body text-[13px] text-deep-navy font-medium truncate">{org.organization_name}</p>
                     <p className="font-body text-[11px] text-cool-grey">{[org.CITY, org.STATE].filter(Boolean).join(', ')}</p>
                   </div>
-                  <span className="ml-3 shrink-0 font-body text-[10px] text-cool-grey/50">{org.EIN}</span>
+                  <span className="ml-3 shrink-0 font-body text-[10px] text-cool-grey/50">{formatEIN(org.EIN)}</span>
                 </button>
               ))}
             </div>
