@@ -466,7 +466,10 @@ def list_organizations():
     if hidden_gem:
         where_clauses.append("is_hidden_gem = 1")
     if direct_link:
-        where_clauses.append("donate_url IS NOT NULL AND donate_url != ''")
+        where_clauses.append(
+            "donate_url IS NOT NULL AND donate_url != '' "
+            "AND donate_url_status IN ('ok','beta','live','claimed','blocked_or_restricted')"
+        )
     if needs_funding:
         where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
     if cause:
