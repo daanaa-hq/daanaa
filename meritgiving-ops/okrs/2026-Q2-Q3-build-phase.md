@@ -8,6 +8,20 @@ This is a 6-month plan, not a typical quarterly plan, because Phase 0 is one coh
 
 ---
 
+## Board-reviewed decisions (2026-05-29)
+
+- **Volunteer matching (GPO-style)** → moved to 2027. Not in Phase 0 scope.
+- **GPO integration** → moved to 2027. Phase 2 feature.
+- **Volunteer discovery (lightweight)** → added to 2026 Q3. Discovery-only via VolunteerMatch/Idealist API. No accounts needed. Uses existing `give_time` seam in GivingListContext.tsx.
+- **EcoMargins ESG portal** → Oct 2026. First B2B revenue event. Must not slip — credit card APR deadline is March 2027.
+- **Claim portal** → Sep 2026 (post-launch pilot, 20 nonprofits). Requires 4-layer verification built before portal UI.
+- **Donate link milestone** → ✅ ALREADY MET. 1,820 verified high-confidence donate URLs as of 2026-05-29. Pipeline continues expanding.
+- **Credits** → apply immediately (AWS, Google, Microsoft, Anthropic Startup Program). Cloudflare waits for live URL.
+
+---
+
+---
+
 ## Objective 1: Ship Phase 0 publicly
 
 **Description:** Public launch of meritgiving.org with 100% of IRS-listed 501(c)(3) orgs in the directory.
