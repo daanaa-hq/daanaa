@@ -29,6 +29,9 @@ export interface GivingListItem {
   letterRequested?: boolean
   donorName?: string
   donorEmail?: string
+  donateUrl?: string
+  // Civic action type — 'give_money' now; 'give_time' reserved for volunteering (Phase 3)
+  actionType?: 'give_money' | 'give_time'
 }
 
 // Set when the donor clicks an external give CTA; the app asks "did you give?"

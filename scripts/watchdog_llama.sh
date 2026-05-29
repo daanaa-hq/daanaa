@@ -8,7 +8,7 @@ start_server() {
     -m "$MODEL" \
     --port 11437 --host 127.0.0.1 \
     -ngl 99 --device Vulkan1 \
-    --ctx-size 12288 --batch-size 2048 -np 3 \
+    --ctx-size 20480 --batch-size 2048 -np 5 \
     >> "$LOG" 2>&1 &
   echo "[$(date)] Watchdog: started llama-server PID $!" >> "$LOG"
 }

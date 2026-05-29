@@ -1,0 +1,43 @@
+# Rebrand Scan — 2026-05-28
+# rg -i 'merit|meritgiving' (active code only, excluding docs/reviews/legacy)
+
+## ACTIVE CODE — items requiring a change
+
+### HIGH — user-visible in production
+frontend/src/components/OrgList.tsx:27  "MeritGiving Organizations"
+  → Replace with "Daanaa Organizations" or just remove the heading
+
+### HIGH — env var (breaking rename; coordinate with .env + deployment)
+merit_api.py:212-214  MERIT_ADMIN_KEY  →  DAANAA_ADMIN_KEY
+  (Plan 0.2c also replaces the compare with hmac.compare_digest)
+
+### HIGH — overnight pipeline writes to dead DB (P0 data correctness)
+scripts/overnight_pipeline.py:9  meritgiving.db  →  merit_registry.db
+
+### MEDIUM — legacy scripts still pointing at dead DB (not run by scheduler)
+scripts/rebuild_fixed.py:8, rebuild_simple.py:9, compute_scores.py:15,
+analyze_data_gaps.py:15, ntee_benchmark.py:5, update_schema_v21.py:5,
+search_orgs.py:6, rescore_trigger.py:7, ingest_core_2019.py:5,
+merge_corepcf.py:12, generate_embeddings.py:4
+  → All point at meritgiving.db. Not scheduled; fix or delete per 0.5 cleanup.
+
+### MEDIUM — file header comment
+merit_api.py:3  "MeritGiving API"  →  "Daanaa API"
+
+### LOW — root package-lock.json name
+package-lock.json:2  "name": "meritgiving"
+  → "name": "daanaa-web" (also update frontend/package.json per plan 0.5)
+
+### LOW — test file old port reference
+tests/merit.spec.js  — check for port 8081 + "MeritGiving" string
+
+## CLEAN — no action needed
+frontend/index.html  — all OG/twitter tags say "Daanaa" ✓
+frontend/package.json  — "name": "my-app" (scaffold default; plan 0.5 renames)
+merit_api.py CORS  — allowlist is daanaa.org only ✓
+DB column names (merit_score, merit_tier, merit_band) — internal data schema,
+  not user-facing; rename is a future migration concern, not a rebrand blocker
+
+## LEGACY DIRECTORIES (confirmed dead, deletion in 0.5)
+merit-platform/  — earlier incarnation project
+nonprofit-explorer/  — earlier incarnation project

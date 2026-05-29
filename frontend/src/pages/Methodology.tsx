@@ -131,7 +131,7 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 export default function Methodology() {
   usePageMeta(
     'How peer financial context is calculated',
-    'The complete formula Daanaa uses to calculate peer financial context for 430,000+ nonprofits. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
+    'The complete formula Daanaa uses to calculate peer financial context for 1.6 million nonprofits. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const methodologyVersion = stats?.methodology_version ?? 'v1'
@@ -351,7 +351,7 @@ export default function Methodology() {
             <div className="mt-4">
               <SourceRow
                 source="IRS nonprofit registration list"
-                detail="Nonprofit status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa covers the active public charity subset — over 430,000 organizations."
+                detail="Nonprofit status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa covers the full active registry — over 1.6 million organizations."
               />
               <SourceRow
                 source="IRS published financial data"

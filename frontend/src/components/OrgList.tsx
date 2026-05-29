@@ -24,7 +24,7 @@ export default function OrgList() {
 
   return (
     <div style={{ padding: 20, fontFamily: 'sans-serif' }}>
-      <h1>MeritGiving Organizations</h1>
+      <h1>Daanaa Organizations</h1>
       <p>{total.toLocaleString()} nonprofits in database</p>
       
       <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>

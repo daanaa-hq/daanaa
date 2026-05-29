@@ -73,6 +73,20 @@ def _ensure_column(conn: sqlite3.Connection):
         conn.commit()
 
 
+_BOILERPLATE_RE = re.compile(
+    r'^welcome\b|official (website|site|page)|home ?page|'
+    r'^this (website|site|page)\b|^copyright\b|'
+    r'^\s*[\w\s]+\s*\|\s*[\w\s]+\s*\|',  # nav breadcrumb "Home | About | Contact"
+    re.IGNORECASE,
+)
+
+def _is_boilerplate(text: str) -> bool:
+    """Return True if the snippet is CMS filler rather than org mission context."""
+    if len(text) < 50:
+        return True
+    return bool(_BOILERPLATE_RE.search(text))
+
+
 def _extract_web_context(html_bytes: bytes, max_chars: int = 500) -> str:
     """Extract best text snippet from compressed HTML for LLM context."""
     try:
@@ -90,12 +104,14 @@ def _extract_web_context(html_bytes: bytes, max_chars: int = 500) -> str:
         m = re.search(pattern, html, re.IGNORECASE)
         if m:
             text = re.sub(r'\s+', ' ', m.group(1)).strip()
-            if len(text) >= 30:
+            if len(text) >= 30 and not _is_boilerplate(text):
                 return text[:max_chars]
-    # Body text fallback
+    # Body text fallback — strip chrome, take first meaningful paragraph
     body = re.sub(r'<(script|style|nav|footer|header)[^>]*>.*?</\1>', '', html, flags=re.DOTALL | re.IGNORECASE)
     body = re.sub(r'<[^>]+>', ' ', body)
     body = re.sub(r'\s+', ' ', body).strip()
+    if _is_boilerplate(body[:200]):
+        return ""
     return body[:max_chars]
 
 
@@ -150,7 +166,7 @@ Rules:
 - One sentence, present tense.
 - Do NOT start the sentence with the org name or any part of it — not even "The [Name]...".
 - Do NOT use the words "likely", "probably", "presumably", or "appears to".
-- Do NOT use: "is dedicated to", "strives to", "committed to", "passionate about".
+- Do NOT use: "is dedicated to", "strives to", "committed to", "passionate about", "aims to", "works to provide", "seeks to", "focuses on providing", "is a nonprofit", "was founded", "makes a difference", "serves the community of".
 - Do NOT invent specific statistics, dollar amounts, or named programs.
 - If the name is just a person's name or acronym, infer from sector + location.
 - If the name restates an obvious fact (e.g. "Community Food Bank"), describe the WORK, not the name.
@@ -166,11 +182,12 @@ def _build_prompt(batch: list[dict], web_ctx: dict[str, str]) -> str:
         ein = org["EIN"]
         ctx = web_ctx.get(ein, "")
         ctx_field = f', "website_context": "{ctx[:400].replace(chr(34), chr(39))}"' if ctx else ""
+        city = (org.get("CITY") or "").title()  # DB stores cities in ALL CAPS
         lines.append(
             f'  {{"ein": "{ein}", '
             f'"name": "{org["organization_name"]}", '
             f'"sector": "{ntee_label}", '
-            f'"location": "{org.get("CITY","")}, {org.get("STATE","")}", '
+            f'"location": "{city}, {org.get("STATE","")}", '
             f'"size": "{size}"{ctx_field}}}'
         )
     orgs_json = "[\n" + ",\n".join(lines) + "\n]"
@@ -183,11 +200,9 @@ def _build_prompt(batch: list[dict], web_ctx: dict[str, str]) -> str:
     )
 
 
-def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> tuple[dict[str, str], str]:
-    """Returns ({ein: mission_text}, mission_source) for the batch."""
-    source = "ai_web" if web_ctx else "ai_ntee"
+def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> dict[str, str]:
+    """Returns {ein: mission_text} for the batch. Source is tracked per-org in _write_batch."""
     prompt = _build_prompt(batch, web_ctx)
-    # Smaller batches when context is present (larger prompt per org)
     effective_batch = len(batch)
     payload = {
         "model": MODEL,
@@ -211,17 +226,17 @@ def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> tuple[dict[str, str
         elif isinstance(parsed, dict):
             items = next((v for v in parsed.values() if isinstance(v, list)), [])
         else:
-            return {}, source
-        return (
-            {item["ein"]: item["mission"].strip() for item in items
-             if "ein" in item and "mission" in item and item["mission"].strip()},
-            source,
-        )
+            return {}
+        return {
+            item["ein"]: item["mission"].strip() for item in items
+            if "ein" in item and "mission" in item and item["mission"].strip()
+        }
     except Exception:
-        return {}, source
+        return {}
 
 
-def _write_batch(results: dict[str, str], conn: sqlite3.Connection, source: str):
+def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dict[str, str]):
+    """Write missions with per-org source: ai_web if that org had web context, else ai_ntee."""
     global _written, _errors
     if not results:
         _errors += BATCH_SIZE
@@ -229,7 +244,10 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, source: str)
     with _write_lock:
         conn.executemany(
             "UPDATE registry_enriched SET mission=?, mission_source=? WHERE EIN=?",
-            [(mission, source, ein) for ein, mission in results.items()]
+            [
+                (mission, "ai_web" if ein in web_ctx else "ai_ntee", ein)
+                for ein, mission in results.items()
+            ]
         )
         conn.commit()
         _written += len(results)
@@ -241,12 +259,17 @@ def run(limit=None, workers=1, all_orgs=False):
     conn.row_factory = sqlite3.Row
     _ensure_column(conn)
 
-    scope = "" if all_orgs else "AND merit_score IS NOT NULL"
+    scope = "" if all_orgs else "AND re.merit_score IS NOT NULL"
+    # Prioritise orgs that already have a cached web page: web_context yields
+    # far better missions (ai_web) than NTEE-only inference (ai_ntee). Process
+    # those first so GPU time produces the highest-quality missions up front.
     query = f"""
-        SELECT EIN, organization_name, NTEE1, CITY, STATE, total_revenue
-        FROM registry_enriched
-        WHERE (mission IS NULL OR mission = '') {scope}
-        ORDER BY merit_score DESC NULLS LAST
+        SELECT re.EIN, re.organization_name, re.NTEE1, re.CITY, re.STATE, re.total_revenue
+        FROM registry_enriched re
+        LEFT JOIN (SELECT DISTINCT ein FROM page_cache WHERE html_gz IS NOT NULL) pc
+          ON pc.ein = re.EIN
+        WHERE (re.mission IS NULL OR re.mission = '') {scope}
+        ORDER BY (pc.ein IS NULL), re.merit_score DESC NULLS LAST
         {'LIMIT ' + str(limit) if limit else ''}
     """
     rows = [dict(r) for r in conn.execute(query)]
@@ -266,8 +289,8 @@ def run(limit=None, workers=1, all_orgs=False):
     def process(batch):
         eins = [o["EIN"] for o in batch]
         web_ctx = _get_web_context(eins, conn)
-        results, source = _call_llm(batch, web_ctx)
-        _write_batch(results, conn, source)
+        results = _call_llm(batch, web_ctx)
+        _write_batch(results, conn, web_ctx)
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futs = [pool.submit(process, b) for b in batches]

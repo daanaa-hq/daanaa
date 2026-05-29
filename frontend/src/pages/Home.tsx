@@ -42,7 +42,7 @@ function seededShuffle<T>(arr: T[], seed: number): T[] {
 // ─── Hero ────────────────────────────────────────────────────────────────────
 function HeroSection() {
   const { data: stats } = useApi(() => getStats(), [])
-  const orgCount = stats?.total_organizations ?? 450_000
+  const orgCount = stats?.total_organizations ?? 1_600_000
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
 
@@ -182,7 +182,7 @@ function BrowseCauses() {
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 function StatsBar() {
   const { data: stats } = useApi(() => getStats(), [])
-  const count = stats?.total_organizations ?? 450_000
+  const count = stats?.total_organizations ?? 1_600_000
   const finRecords = stats?.financial_records ?? 1_785_000
   // at_risk bucket in stats API now covers 0–6 months (matches the directory filter threshold)
   const needsFundingSoon = (stats?.reserve_health?.insolvent ?? 0) + (stats?.reserve_health?.at_risk ?? 0)
@@ -333,7 +333,7 @@ function WalletSection() {
             </p>
             <ul className="mt-7 space-y-3.5">
               {[
-                'Search 430K+ organizations and auto-fill the details',
+                'Search 1.6M+ organizations and auto-fill the details',
                 'Request an acknowledgment letter for gifts of $250+',
                 'Export by year, ready for your accountant',
               ].map(item => (
@@ -472,7 +472,7 @@ function FooterCTA() {
   const orgCount = stats?.total_organizations
   const countLabel = orgCount != null
     ? `${(Math.floor(orgCount / 1000) * 1000).toLocaleString()}+`
-    : '430,000+'
+    : '1,600,000+'
 
   return (
     <section className="bg-white border-t border-light-grey py-10 md:py-16">
@@ -510,7 +510,7 @@ function FooterCTA() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
-  usePageMeta('', 'Discover IRS-verified 501(c)(3) nonprofits scored by financial health and transparency. 430,000+ organizations, free to search.')
+  usePageMeta('', 'Discover IRS-verified 501(c)(3) nonprofits scored by financial health and transparency. 1.6 million searchable organizations, free to use.')
   return (
     <div>
       <HeroSection />
