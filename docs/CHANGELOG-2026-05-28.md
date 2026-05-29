@@ -35,6 +35,27 @@
 - `data/merit_state.db` — purpose unclear; inspect before deletion
 - `data/merit_registry_backup.db` — backup of canonical DB; keep until next clean backup cycle
 
+## Phase 1 — PWA + Seam Design (2026-05-28)
+
+| file | what | principle(s) | severity |
+|------|------|--------------|----------|
+| frontend/public/manifest.json | Web App Manifest — name, icons, theme, standalone display | P2,P9 | MEDIUM |
+| frontend/public/sw.js | Service worker — offline app shell; cache-first navigation, stale-while-revalidate assets, never cache /api/* | P2,P9 | MEDIUM |
+| frontend/index.html | Add manifest link, theme-color, apple-mobile-web-app meta tags | P9 | LOW |
+| frontend/src/main.tsx | Register service worker in PROD only (import.meta.env.PROD guard) | P9 | LOW |
+| frontend/src/contexts/GivingListContext.tsx | Add `actionType?: 'give_money' \| 'give_time'` to GivingListItem — civic action generalization for Phase 3 volunteering seam | P9 | LOW |
+| frontend/src/lib/platform.ts | New: platform isolation layer — apiUrl(), isNative(), openExternalUrl(); swap point for Capacitor native | P9 | LOW |
+| frontend/.env.development / .env.production | VITE_ENABLE_SCORES flag — when false, hides Financial Health sort option | P9 | LOW |
+| frontend/src/pages/Directory.tsx | Read VITE_ENABLE_SCORES flag; hide merit_score sort option when off; default sort falls back to total_revenue | P7 | LOW |
+| merit_api.py | Add ENABLE_SCORES flag; _strip_scores() helper; applied to list/detail/search/similar/semantic endpoints | P7 | LOW |
+| merit_api.py | Add api_v1 Blueprint at /api/v1/ with /api/v1/health endpoint (seam for future native clients) | P9 | LOW |
+| merit_api.py | Add Blueprint import | P9 | LOW |
+| docs/PWA_NOTES.md | iOS Safari limitations, caching strategy, Gate 1 checklist, Capacitor swap points | P9 | — |
+
+### Phase 1 embedding status
+All 1,811,930 org embeddings updated (overwrite pass complete as of session start).
+reembed_watchdog.py running idle (PID 508345).
+
 ### ▶ MILESTONE GATE 0 — CLOSED 2026-05-28
 All criteria met:
 - ✅ All P0 security fixes merged (PR-0a + PR-0b)
