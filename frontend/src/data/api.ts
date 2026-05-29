@@ -64,9 +64,8 @@ export interface ApiOrganization {
   // Fused search annotation (from /api/search only)
   match_sources?: ('keyword' | 'semantic')[] | null;
   rrf_score?: number | null;
-  // Returned by GET /api/organizations/:ein only (SELECT *)
-  mission?: string | null;
-  mission_source?: string | null;        // 'ai_ntee' | 'scraped' | 'claimed' | null
+  mission?: string | null;               // truncated at 300 chars in list view; full text in detail
+  mission_source?: string | null;        // 'ai_ntee'|'ai_haiku'|'ai_web'|'lucido'|'claimed'|null
   website?: string | null;
   website_status?: string | null;        // 'ok' = verified live & on-domain; else fall back to EIN record
   // Data provenance — which fields are AI-generated vs verified

@@ -312,14 +312,21 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         )
       })()}
 
+      {/* Mission snippet */}
+      {!compact && org.mission && (
+        <p className="font-body text-[12px] text-cool-grey/80 leading-[1.55] line-clamp-2 mb-2.5 -mt-1">
+          {org.mission}
+        </p>
+      )}
+
       {/* Revenue (secondary) */}
-      {!compact && scored && (
+      {!compact && !org.mission && scored && (
         <p className="font-body text-[12px] text-cool-grey mb-2.5">
           {org.latestTaxYear && <span className="text-soft-gold font-medium mr-1.5">FY {org.latestTaxYear}</span>}
           Revenue: {formatCurrency(org.revenue)}
         </p>
       )}
-      {!compact && !scored && org.revenue > 0 && (
+      {!compact && !org.mission && !scored && org.revenue > 0 && (
         <p className="font-body text-[12px] text-cool-grey mb-2.5">Revenue: {formatCurrency(org.revenue)}</p>
       )}
 
