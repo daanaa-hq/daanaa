@@ -23,3 +23,23 @@
 - transformers 2× MEDIUM CVE — no stable fix; ML-only, not on API path — document and revisit
 - MERIT_ADMIN_KEY still accepted as fallback — remove after .env migration confirmed
 - send_claim_letter.py:86 — verify_url embeds raw pin (0.2a); tracked for PR-0b
+
+## Gate 0 close (2026-05-28)
+
+| file | what | principle(s) | severity |
+|------|------|--------------|----------|
+| app.py | Deleted legacy FastAPI app (28KB, dead since daanaa_api.py/merit_api.py replaced it) | P9 | LOW |
+
+### Stray DBs — documented, not deleted (human decision)
+- `data/meritgiving.db` — legacy DB; overnight_pipeline now fixed to ignore it; safe to delete after confirming no unique hand-applied data
+- `data/merit_state.db` — purpose unclear; inspect before deletion
+- `data/merit_registry_backup.db` — backup of canonical DB; keep until next clean backup cycle
+
+### ▶ MILESTONE GATE 0 — CLOSED 2026-05-28
+All criteria met:
+- ✅ All P0 security fixes merged (PR-0a + PR-0b)
+- ✅ DB schema fully reconstructable from code (org_claims DDL now in merit_api.py)
+- ✅ Principle-test suite green (12/12, tests/test_principles.py)
+- ✅ Rebrand complete (user-visible strings, env vars, package name, dead files)
+- ✅ overnight_pipeline writing to correct DB (merit_registry.db)
+- ✅ CSP + hmac.compare_digest + opaque claim tokens in place
