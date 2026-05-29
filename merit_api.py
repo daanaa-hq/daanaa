@@ -5,7 +5,7 @@ Daanaa API — Serves registry_enriched to frontend
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
 import numpy as np
 import requests as _http
-from flask import Flask, jsonify, request, g, abort, send_from_directory
+from flask import Flask, jsonify, request, g, abort, send_from_directory, Blueprint
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -209,6 +209,22 @@ limiter = Limiter(
 
 DB_PATH = os.path.expanduser("~/meritgiving/data/merit_registry.db")
 
+# ── Feature flags ─────────────────────────────────────────────────────────────
+# ENABLE_SCORES=false → null out merit_score / merit_tier / merit_band in all
+# org responses. Allows a clean no-scores preview of the directory.
+# Default: true (scores are on). Toggle: ENABLE_SCORES=false python3 merit_api.py
+ENABLE_SCORES: bool = os.environ.get("ENABLE_SCORES", "true").lower() == "true"
+
+_SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
+
+def _strip_scores(org: dict) -> dict:
+    """Null out score fields in an org dict when ENABLE_SCORES is false."""
+    if ENABLE_SCORES:
+        return org
+    return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 # Claim verification — opaque HMAC token so raw PIN never appears in URLs.
 # Set DAANAA_CLAIM_SECRET in production; falls back to admin key then dev default.
 _CLAIM_SECRET = (
@@ -342,6 +358,25 @@ def set_security_headers(response):
 @limiter.exempt
 def health():
     return jsonify({"status": "ok", "db_exists": os.path.exists(DB_PATH)})
+
+# ── API v1 seam ───────────────────────────────────────────────────────────────
+# /api/v1/ is the versioning anchor for future native (Capacitor) clients.
+# Full v1 migration of all endpoints is scheduled for Gate 2.
+# For now, /api/v1/health establishes the contract shape:
+#   { "version": "1", "data": <payload>, "meta": {} }
+api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
+
+@api_v1.route('/health')
+@limiter.exempt
+def v1_health():
+    return jsonify({
+        "version": "1",
+        "data": {"status": "ok", "db_exists": os.path.exists(DB_PATH)},
+        "meta": {}
+    })
+
+app.register_blueprint(api_v1)
+# ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/organizations')
 @limiter.limit("100 per minute")
@@ -480,7 +515,7 @@ def list_organizations():
                 d['cause_tags'] = json.loads(d['cause_tags'])
             except (json.JSONDecodeError, TypeError):
                 d['cause_tags'] = None
-        orgs.append(d)
+        orgs.append(_strip_scores(d))
 
     payload = {
         "organizations": orgs,
@@ -563,7 +598,7 @@ def get_organization(ein):
             org['state_category_rank'] = state_rank['higher_in_state'] + 1
             org['state_category_total'] = state_rank['total_in_state']
 
-    return jsonify(org)
+    return jsonify(_strip_scores(org))
 
 @app.route('/api/organizations/<ein>/score-history')
 @limiter.limit("60 per minute")
@@ -1145,7 +1180,7 @@ def get_similar_organizations(ein):
     results, mode = _find_similar_orgs(db, ein_clean, org, limit=fetch_limit)
     if diamonds_only:
         results = [r for r in results if r.get('is_hidden_gem')][:limit]
-    return jsonify({'results': results, 'mode': mode, 'diamonds_only': diamonds_only})
+    return jsonify({'results': [_strip_scores(r) for r in results], 'mode': mode, 'diamonds_only': diamonds_only})
 
 
 # ── Semantic search ────────────────────────────────────────────────────────────
@@ -1171,7 +1206,7 @@ def semantic_search():
 
     top_eins = _vec_similar(vec, exclude_ein="", limit=limit)
     db = get_db()
-    results  = _fetch_orgs_by_eins(db, top_eins)
+    results  = [_strip_scores(r) for r in _fetch_orgs_by_eins(db, top_eins)]
     return jsonify({"results": results, "query": q, "mode": "semantic", "total": len(results)})
 
 
@@ -1279,7 +1314,7 @@ def fused_search():
                 org['cause_tags'] = json.loads(org['cause_tags'])
             except (json.JSONDecodeError, TypeError):
                 org['cause_tags'] = None
-        results.append(org)
+        results.append(_strip_scores(org))
 
     out = {"results": results, "query": q, "mode": "fused", "total": len(results)}
     _cset(ck, out)
