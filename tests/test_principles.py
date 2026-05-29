@@ -16,6 +16,7 @@ ROOT    = Path(__file__).parent.parent
 API     = ROOT / "merit_api.py"
 SCRIPTS = ROOT / "scripts"
 FE_SRC  = ROOT / "frontend" / "src"
+LOGS    = ROOT / "logs"
 
 
 def _api_src() -> str:
@@ -191,4 +192,55 @@ def test_overnight_pipeline_db():
     )
     assert "merit_registry.db" in pipeline, (
         "P9 violation: overnight_pipeline.py does not reference merit_registry.db"
+    )
+
+
+# ── P2 — No donor PII in operational logs ─────────────────────────────────────
+
+# Columns that would represent donor PII. The platform never stores donor
+# identity or giving amounts server-side (wallet lives in localStorage), so
+# log-generating scripts must never SELECT or print these.
+_PII_TOKENS = [
+    "donor_name", "donor_email", "donor_id",
+    "gift_amount", "donation_amount", "card_", "ssn",
+]
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+
+
+@pytest.mark.principle
+def test_log_scripts_no_pii_columns():
+    """Log-generating scripts must not query donor PII columns."""
+    for script in ("morning_brief.py", "pipeline_check.py"):
+        path = SCRIPTS / script
+        if not path.exists():
+            continue
+        src = path.read_text().lower()
+        for tok in _PII_TOKENS:
+            assert tok not in src, (
+                f"P2 violation: '{script}' references PII token '{tok}'. "
+                "Operational logs must contain only aggregate, non-PII data."
+            )
+
+
+@pytest.mark.principle
+def test_generated_logs_have_no_emails():
+    """Any generated brief/status logs on disk must contain no email addresses.
+
+    Donor email is never collected; a stray address in a log would signal a
+    leak from some other surface. Allow the operator's own contact domains.
+    """
+    if not LOGS.exists():
+        pytest.skip("no logs/ directory")
+    allow_domains = ("daanaa.org", "ecomargins")
+    offenders = []
+    for f in list(LOGS.glob("morning_brief_*.md")) + list(LOGS.glob("pipeline_status.log")):
+        try:
+            text = f.read_text(errors="ignore")
+        except OSError:
+            continue
+        for match in _EMAIL_RE.findall(text):
+            if not any(d in match.lower() for d in allow_domains):
+                offenders.append(f"{f.name}: {match}")
+    assert not offenders, (
+        f"P2 violation: email addresses found in operational logs: {offenders[:5]}"
     )

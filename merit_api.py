@@ -338,19 +338,25 @@ def set_security_headers(response):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     # CSP: load-bearing for wallet privacy — blocks XSS from reading localStorage.
     # 'unsafe-inline' on style-src only (Tailwind class-based; React may inject style attrs).
-    # connect-src includes localhost ports for dev; production deploy should tighten this.
+    is_prod = bool(os.environ.get("DAANAA_PROD"))
+    # In prod, connect-src is HTTPS origins only; localhost is dev-only.
+    connect_src = (
+        "connect-src 'self' https://daanaa.org https://www.daanaa.org; "
+        if is_prod else
+        "connect-src 'self' http://localhost:5000 https://daanaa.org https://www.daanaa.org; "
+    )
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self'; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: https:; "
         "font-src 'self' data:; "
-        "connect-src 'self' http://localhost:5000 https://daanaa.org https://www.daanaa.org; "
+        + connect_src +
         "frame-ancestors 'none'; "
         "base-uri 'self'; "
         "form-action 'self';"
     )
-    if os.environ.get("DAANAA_PROD"):
+    if is_prod:
         response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
 
