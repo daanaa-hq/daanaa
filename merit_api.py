@@ -506,6 +506,7 @@ def list_organizations():
                net_assets, total_expenses,
                employee_count, ruling_date, zipcode, is_hidden_gem, cause_tags,
                donate_url, donate_platform, donate_url_status,
+               SUBSTR(mission, 1, 300) as mission, mission_source,
                (mission IS NOT NULL AND mission != '') as has_mission,
                (website IS NOT NULL AND website != '') as has_website
         FROM registry_enriched
@@ -561,7 +562,7 @@ def get_organization(ein):
 
     # Data provenance badges — tells the frontend which fields are AI-generated vs verified
     org['data_badges'] = {
-        'mission': org.get('mission_source'),    # 'ai_ntee' | 'scraped' | 'claimed' | None
+        'mission': org.get('mission_source'),    # 'ai_ntee'|'ai_haiku'|'ai_web'|'lucido'|'claimed'|None
         'donate':  org.get('donate_url_status'), # 'beta' | 'provider' | 'claimed' | None
         'website': org.get('website_status'),    # 'ok' | 'redirected' | None
     }
@@ -1295,6 +1296,7 @@ def fused_search():
                    THEN months_of_reserve ELSE NULL END as months_of_reserve,
               net_assets, is_hidden_gem, cause_tags,
               donate_url, donate_platform, donate_url_status,
+              SUBSTR(mission, 1, 300) as mission, mission_source,
               (mission IS NOT NULL AND mission != '') as has_mission,
               (website  IS NOT NULL AND website  != '') as has_website"""
     rows = db.execute(

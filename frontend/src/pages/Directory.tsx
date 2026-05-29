@@ -81,7 +81,7 @@ function OrgCardApi({
     assets: 0,
     employees: 0,
     founded: 0,
-    mission: '',
+    mission: org.mission || '',
     programs: [] as string[],
     leadership: [] as { name: string; title: string; initials: string }[],
     boardSize: 0,

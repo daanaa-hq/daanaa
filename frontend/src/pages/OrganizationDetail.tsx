@@ -1016,12 +1016,20 @@ export default function OrganizationDetail() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">MISSION</span>
-                {apiOrg?.data_badges?.mission === 'ai_ntee' && (
+                {['ai_ntee', 'ai_haiku', 'ai_web'].includes(apiOrg?.data_badges?.mission ?? '') && (
                   <span
                     className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
-                    title="AI-generated from sector and location — not confirmed by the organization"
+                    title="AI-generated from public records — not confirmed by the organization"
                   >
                     β ai-generated
+                  </span>
+                )}
+                {apiOrg?.data_badges?.mission === 'lucido' && (
+                  <span
+                    className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
+                    title="Sourced from public IRS filings — not confirmed by the organization"
+                  >
+                    from public records
                   </span>
                 )}
                 {apiOrg?.data_badges?.mission === 'claimed' && (
