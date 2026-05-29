@@ -430,7 +430,8 @@ def list_organizations():
             # FTS5 path: match on org content, join back via EIN (rowid misaligns)
             fts_q = _sanitize_fts_query(search)
             where_clauses.append(
-                "EIN IN (SELECT ein FROM org_fts WHERE org_fts MATCH ? LIMIT 2000)"
+                "EIN IN (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+                "ORDER BY bm25(org_fts, 10, 5, 1, 1) LIMIT 2000)"
             )
             params.append(fts_q)
         else:
@@ -1249,7 +1250,8 @@ def fused_search():
         try:
             fts_q = _sanitize_fts_query(q)
             rows = db.execute(
-                "SELECT ein FROM org_fts WHERE org_fts MATCH ? LIMIT ?",
+                "SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+                "ORDER BY bm25(org_fts, 10, 5, 1, 1) LIMIT ?",
                 (fts_q, CAND_N)
             ).fetchall()
             kw_eins = [r[0] for r in rows]
