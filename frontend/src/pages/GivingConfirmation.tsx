@@ -9,6 +9,7 @@ import { TIER_COLORS } from '../components/TrustBadge'
 interface ConfirmItem extends GivingListItem {
   referenceCode?: string
   splitCount?: number
+  donateUrl?: string
 }
 
 function maskEmail(email: string): string {
@@ -110,13 +111,9 @@ export default function GivingConfirmation() {
                     {item.referenceCode}
                   </p>
                   <p className="font-body text-[12px] text-cool-grey leading-[1.5]">
-                    {item.orgName} will receive your name
-                    {item.donorName ? ` (${item.donorName})` : ''} and this code.
-                    Once they upload your letter, Daanaa emails it to{' '}
-                    <span className="font-medium text-deep-navy">
-                      {item.donorEmail ? maskEmail(item.donorEmail) : 'you'}
-                    </span>
-                    {' '}and stores it in your wallet.
+                    Request a receipt directly from {item.orgName} using this reference code.
+                    Provide your name{item.donorName ? ` (${item.donorName})` : ''} and the
+                    amount when you contact them.
                   </p>
                 </div>
               )}
@@ -128,14 +125,20 @@ export default function GivingConfirmation() {
                 </p>
               )}
 
-              <a
-                href={`https://www.google.com/search?q=${encodeURIComponent(item.orgName + ' donate')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 flex items-center gap-2 font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors"
-              >
-                Complete your gift to {item.orgName} →
-              </a>
+              {item.donateUrl ? (
+                <a
+                  href={item.donateUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 flex items-center gap-2 font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors"
+                >
+                  Complete your gift to {item.orgName} →
+                </a>
+              ) : (
+                <p className="mt-4 font-body text-[12px] text-cool-grey/60">
+                  Visit {item.orgName}'s website to complete your gift.
+                </p>
+              )}
             </div>
           )
         })}

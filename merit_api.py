@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-MeritGiving API — Serves registry_enriched to frontend
+Daanaa API — Serves registry_enriched to frontend
 """
-import sqlite3, os, json, functools, time, hashlib, threading, re, secrets
+import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
 import numpy as np
 import requests as _http
-from flask import Flask, jsonify, request, g, abort, send_from_directory
+from flask import Flask, jsonify, request, g, abort, send_from_directory, Blueprint
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -209,15 +209,43 @@ limiter = Limiter(
 
 DB_PATH = os.path.expanduser("~/meritgiving/data/merit_registry.db")
 
-# Admin key — set MERIT_ADMIN_KEY env var before starting the API.
+# ── Feature flags ─────────────────────────────────────────────────────────────
+# ENABLE_SCORES=false → null out merit_score / merit_tier / merit_band in all
+# org responses. Allows a clean no-scores preview of the directory.
+# Default: true (scores are on). Toggle: ENABLE_SCORES=false python3 merit_api.py
+ENABLE_SCORES: bool = os.environ.get("ENABLE_SCORES", "true").lower() == "true"
+
+_SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
+
+def _strip_scores(org: dict) -> dict:
+    """Null out score fields in an org dict when ENABLE_SCORES is false."""
+    if ENABLE_SCORES:
+        return org
+    return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
+
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Claim verification — opaque HMAC token so raw PIN never appears in URLs.
+# Set DAANAA_CLAIM_SECRET in production; falls back to admin key then dev default.
+_CLAIM_SECRET = (
+    os.environ.get("DAANAA_CLAIM_SECRET")
+    or os.environ.get("DAANAA_ADMIN_KEY")
+    or "daanaa-dev-claim-secret"
+).encode()
+
+def _make_verify_token(ein: str, pin: str) -> str:
+    """Return HMAC-SHA256 hex token for the given EIN + PIN pair."""
+    return hmac.new(_CLAIM_SECRET, f"{ein}:{pin}".encode(), hashlib.sha256).hexdigest()
+
+# Admin key — set DAANAA_ADMIN_KEY env var before starting the API.
 # Any endpoint decorated with @require_admin_key will return 401 if it's missing or wrong.
-_ADMIN_KEY = os.environ.get("MERIT_ADMIN_KEY", "")
+_ADMIN_KEY = os.environ.get("DAANAA_ADMIN_KEY", "") or os.environ.get("MERIT_ADMIN_KEY", "")
 
 def require_admin_key(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         provided = request.headers.get("X-Admin-Key", "")
-        if not _ADMIN_KEY or provided != _ADMIN_KEY:
+        if not _ADMIN_KEY or not hmac.compare_digest(provided, _ADMIN_KEY):
             abort(401)
         return f(*args, **kwargs)
     return wrapper
@@ -270,6 +298,36 @@ def _init_link_feedback_table():
 
 _init_link_feedback_table()
 
+
+def _init_org_claims_table():
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS org_claims (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                ein              TEXT NOT NULL UNIQUE,
+                email            TEXT NOT NULL,
+                irs_address      TEXT NOT NULL,
+                pin              TEXT NOT NULL,
+                pin_expires_at   TEXT NOT NULL,
+                letter_sent_at   TEXT,
+                lob_letter_id    TEXT,
+                claim_status     TEXT DEFAULT 'pending',
+                verified_at      TEXT,
+                custom_mission   TEXT,
+                custom_description TEXT,
+                donate_confirmed INTEGER DEFAULT 0,
+                processor_auth   INTEGER DEFAULT 0,
+                created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
+                revoked_at       TEXT,
+                revoke_reason    TEXT
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_ein ON org_claims(ein)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_status ON org_claims(claim_status)")
+        db.commit()
+
+_init_org_claims_table()
+
 # Prevent absurdly large payloads on any endpoint
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # 64 KB
 
@@ -278,12 +336,53 @@ def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # CSP: load-bearing for wallet privacy — blocks XSS from reading localStorage.
+    # 'unsafe-inline' on style-src only (Tailwind class-based; React may inject style attrs).
+    is_prod = bool(os.environ.get("DAANAA_PROD"))
+    # In prod, connect-src is HTTPS origins only; localhost is dev-only.
+    connect_src = (
+        "connect-src 'self' https://daanaa.org https://www.daanaa.org; "
+        if is_prod else
+        "connect-src 'self' http://localhost:5000 https://daanaa.org https://www.daanaa.org; "
+    )
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data:; "
+        + connect_src +
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
+    )
+    if is_prod:
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
 
 @app.route('/health')
 @limiter.exempt
 def health():
     return jsonify({"status": "ok", "db_exists": os.path.exists(DB_PATH)})
+
+# ── API v1 seam ───────────────────────────────────────────────────────────────
+# /api/v1/ is the versioning anchor for future native (Capacitor) clients.
+# Full v1 migration of all endpoints is scheduled for Gate 2.
+# For now, /api/v1/health establishes the contract shape:
+#   { "version": "1", "data": <payload>, "meta": {} }
+api_v1 = Blueprint('api_v1', __name__, url_prefix='/api/v1')
+
+@api_v1.route('/health')
+@limiter.exempt
+def v1_health():
+    return jsonify({
+        "version": "1",
+        "data": {"status": "ok", "db_exists": os.path.exists(DB_PATH)},
+        "meta": {}
+    })
+
+app.register_blueprint(api_v1)
+# ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/organizations')
 @limiter.limit("100 per minute")
@@ -422,7 +521,7 @@ def list_organizations():
                 d['cause_tags'] = json.loads(d['cause_tags'])
             except (json.JSONDecodeError, TypeError):
                 d['cause_tags'] = None
-        orgs.append(d)
+        orgs.append(_strip_scores(d))
 
     payload = {
         "organizations": orgs,
@@ -505,7 +604,7 @@ def get_organization(ein):
             org['state_category_rank'] = state_rank['higher_in_state'] + 1
             org['state_category_total'] = state_rank['total_in_state']
 
-    return jsonify(org)
+    return jsonify(_strip_scores(org))
 
 @app.route('/api/organizations/<ein>/score-history')
 @limiter.limit("60 per minute")
@@ -613,9 +712,9 @@ def stats():
     fin_count = db.execute("SELECT COUNT(*) FROM propublica_financials").fetchone()[0]
     reserve_stats = db.execute(f"""
         SELECT
-            COUNT(CASE WHEN months_of_reserve IS NOT NULL THEN 1 END) as has_reserve,
-            COUNT(CASE WHEN months_of_reserve < 0 THEN 1 END) as insolvent,
-            COUNT(CASE WHEN months_of_reserve >= 0 AND months_of_reserve < 6 THEN 1 END) as at_risk,
+            COUNT(CASE WHEN months_of_reserve BETWEEN -120 AND 120 THEN 1 END) as has_reserve,
+            COUNT(CASE WHEN months_of_reserve BETWEEN -120 AND 0 THEN 1 END) as insolvent,
+            COUNT(CASE WHEN months_of_reserve > 0 AND months_of_reserve < 6 THEN 1 END) as at_risk,
             COUNT(CASE WHEN months_of_reserve >= 6 AND months_of_reserve < 12 THEN 1 END) as minimal,
             COUNT(CASE WHEN months_of_reserve >= 12 THEN 1 END) as healthy
         FROM registry_enriched WHERE {f}
@@ -874,6 +973,7 @@ def claim_start():
     db.commit()
 
     # Send letter (Lob or log fallback)
+    letter_status = "log_only"
     try:
         import sys
         sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent / 'scripts'))
@@ -881,9 +981,11 @@ def claim_start():
         address = {'street': row['address'] or '', 'city': row['CITY'] or '',
                    'state': row['STATE'] or '', 'zip': row['zipcode'] or ''}
         letter_id = send_claim_letter(ein, org_name, address, pin)
+        if letter_id and not letter_id.startswith("log:"):
+            letter_status = "letter_sent"
         db.execute(
-            "UPDATE org_claims SET claim_status='letter_sent', letter_sent_at=datetime('now'), lob_letter_id=? WHERE ein=?",
-            (letter_id, ein)
+            "UPDATE org_claims SET claim_status=?, letter_sent_at=datetime('now'), lob_letter_id=? WHERE ein=?",
+            (letter_status, letter_id, ein)
         )
         db.commit()
     except Exception as e:
@@ -891,18 +993,19 @@ def claim_start():
 
     # Friendly address preview (first line only for privacy)
     preview = f"{row['address']}, {row['CITY']}, {row['STATE']}" if row['address'] else irs_address
-    return jsonify({"status": "letter_sent", "org_name": org_name, "address_preview": preview})
+    return jsonify({"status": letter_status, "org_name": org_name, "address_preview": preview})
 
 
 @app.route('/api/claim/verify', methods=['POST'])
 @limiter.limit("10 per minute")
 def claim_verify():
-    data = request.get_json(silent=True) or {}
-    ein  = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
-    pin  = ''.join(c for c in (data.get('pin') or '') if c.isdigit())[:6]
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('token') or '').strip()[:64]   # new: opaque HMAC token
+    pin   = ''.join(c for c in (data.get('pin') or '') if c.isdigit())[:6]  # legacy fallback
 
-    if not ein or not pin:
-        return jsonify({"error": "EIN and PIN are required"}), 400
+    if not ein or (not token and not pin):
+        return jsonify({"error": "EIN and token (or PIN) are required"}), 400
 
     db  = get_db()
     row = db.execute(
@@ -911,8 +1014,16 @@ def claim_verify():
 
     if not row:
         return jsonify({"error": "No claim found for this EIN. Start at daanaa.org/claim"}), 404
-    if row['pin'] != pin:
-        return jsonify({"error": "Incorrect PIN"}), 401
+
+    if token:
+        expected = _make_verify_token(ein, row['pin'])
+        if not hmac.compare_digest(token, expected):
+            return jsonify({"error": "Invalid verification token"}), 401
+    else:
+        # Legacy PIN path — for letters sent before token rollout
+        if not hmac.compare_digest(pin, row['pin']):
+            return jsonify({"error": "Incorrect PIN"}), 401
+
     if row['claim_status'] == 'active':
         return jsonify({"error": "Already claimed"}), 409
 
@@ -1075,7 +1186,7 @@ def get_similar_organizations(ein):
     results, mode = _find_similar_orgs(db, ein_clean, org, limit=fetch_limit)
     if diamonds_only:
         results = [r for r in results if r.get('is_hidden_gem')][:limit]
-    return jsonify({'results': results, 'mode': mode, 'diamonds_only': diamonds_only})
+    return jsonify({'results': [_strip_scores(r) for r in results], 'mode': mode, 'diamonds_only': diamonds_only})
 
 
 # ── Semantic search ────────────────────────────────────────────────────────────
@@ -1101,7 +1212,7 @@ def semantic_search():
 
     top_eins = _vec_similar(vec, exclude_ein="", limit=limit)
     db = get_db()
-    results  = _fetch_orgs_by_eins(db, top_eins)
+    results  = [_strip_scores(r) for r in _fetch_orgs_by_eins(db, top_eins)]
     return jsonify({"results": results, "query": q, "mode": "semantic", "total": len(results)})
 
 
@@ -1209,7 +1320,7 @@ def fused_search():
                 org['cause_tags'] = json.loads(org['cause_tags'])
             except (json.JSONDecodeError, TypeError):
                 org['cause_tags'] = None
-        results.append(org)
+        results.append(_strip_scores(org))
 
     out = {"results": results, "query": q, "mode": "fused", "total": len(results)}
     _cset(ck, out)

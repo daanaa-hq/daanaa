@@ -11,9 +11,19 @@ Production mode (LOB_API_KEY set): sends via Lob.com API (prints + mails same da
 Called by the /api/claim/start endpoint in merit_api.py.
 """
 
-import os, io, base64, json, logging
+import os, io, base64, json, logging, hmac as _hmac, hashlib
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Must match merit_api.py _CLAIM_SECRET derivation.
+_CLAIM_SECRET = (
+    os.environ.get("DAANAA_CLAIM_SECRET")
+    or os.environ.get("DAANAA_ADMIN_KEY")
+    or "daanaa-dev-claim-secret"
+).encode()
+
+def _make_verify_token(ein: str, pin: str) -> str:
+    return _hmac.new(_CLAIM_SECRET, f"{ein}:{pin}".encode(), hashlib.sha256).hexdigest()
 
 LOG_PATH = Path(__file__).parent.parent / "logs" / "claim_letters.log"
 
@@ -83,7 +93,8 @@ def send_claim_letter(ein: str, org_name: str, address: dict, pin: str) -> str |
 
     address: dict with keys: street, city, state, zip
     """
-    verify_url = f"https://daanaa.org/claim/verify?ein={ein}&pin={pin}"
+    verify_token = _make_verify_token(ein, pin)
+    verify_url = f"https://daanaa.org/claim/verify?ein={ein}&token={verify_token}"
 
     # Generate QR code
     try:
@@ -140,7 +151,7 @@ def send_claim_letter(ein: str, org_name: str, address: dict, pin: str) -> str |
         "ein": ein,
         "org_name": org_name,
         "to_address": irs_address_str,
-        "pin": pin,
+        "pin_hash": hashlib.sha256(pin.encode()).hexdigest()[:16],
         "verify_url": verify_url,
         "status": "log_only",
     }

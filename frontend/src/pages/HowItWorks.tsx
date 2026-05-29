@@ -47,7 +47,7 @@ function TierRow({ score, label, description }: { score: string; label: string; 
 }
 
 export default function HowItWorks() {
-  usePageMeta('How It Works', 'Learn how Daanaa scores 430,000+ nonprofits using IRS data, peer-group benchmarking, and real Form 990 financials.')
+  usePageMeta('How It Works', 'Learn how Daanaa scores 1.6 million nonprofits using IRS data, peer-group benchmarking, and real Form 990 financials.')
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
@@ -76,7 +76,7 @@ export default function HowItWorks() {
               Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
             </p>
             <p>
-              We list every nonprofit the IRS recognizes in the United States — over 430,000 of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
+              We list every nonprofit the IRS recognizes in the United States — over 1.6 million of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
               Peer financial context (0–100) compares financial footprint and reserve position relative to similar groups. It does not measure impact, leadership, community trust, or whether a group deserves support. Daanaa is not a charity rating agency.

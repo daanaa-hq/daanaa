@@ -18,8 +18,10 @@ const FILTER_CATEGORIES = [
   ...ALL_CATEGORIES.filter(c => ['B','E','A','C','P','S','D','Q','X','K'].includes(c.id)),
 ]
 
+const SCORES_ENABLED = import.meta.env.VITE_ENABLE_SCORES !== 'false'
+
 const SORT_OPTIONS = [
-  { id: 'merit_score', label: 'Financial Health' },
+  ...(SCORES_ENABLED ? [{ id: 'merit_score', label: 'Financial Health' }] : []),
   { id: 'organization_name', label: 'Name A to Z' },
   { id: 'total_revenue', label: 'Revenue' },
 ]
@@ -163,7 +165,8 @@ function FilterRail({
   onClearAll: () => void
   resultCount: number
 }) {
-  const hasActive = activeCategories.length > 0 || !!stateFilter || sortBy !== 'merit_score' || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || !!cause
+  const defaultSort = SCORES_ENABLED ? 'merit_score' : 'total_revenue'
+  const hasActive = activeCategories.length > 0 || !!stateFilter || sortBy !== defaultSort || !!subFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || !!cause
   const subcats = activeCategories.length === 1 ? (NTEE_SUBCATEGORIES[activeCategories[0]] ?? []) : []
 
   return (
@@ -462,7 +465,7 @@ export default function Directory() {
   })
   const [subFilter, setSubFilter] = useState(subParam)
   const [stateFilter, setStateFilter] = useState(stateParam)
-  const [sortBy, setSortBy] = useState('merit_score')
+  const [sortBy, setSortBy] = useState(SCORES_ENABLED ? 'merit_score' : 'total_revenue')
   const [revenueFilter, setRevenueFilter] = useState<RevenueId>(
     REVENUE_PRESETS.some(p => p.id === revenueParam) ? revenueParam as RevenueId : ''
   )
@@ -645,7 +648,7 @@ export default function Directory() {
     !!stateFilter,
     !!revenueFilter,
     !!scoreTier,
-    sortBy !== 'merit_score',
+    sortBy !== (SCORES_ENABLED ? 'merit_score' : 'total_revenue'),
   ].filter(Boolean).length
 
   return (
