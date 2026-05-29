@@ -29,6 +29,7 @@ export interface GivingListItem {
   letterRequested?: boolean
   donorName?: string
   donorEmail?: string
+  donateUrl?: string
 }
 
 // Set when the donor clicks an external give CTA; the app asks "did you give?"

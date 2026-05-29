@@ -377,6 +377,7 @@ export default function OrganizationDetail() {
     amount: 0,
     trustTier: lampTier,
     trustSummary,
+    donateUrl: (apiOrg?.donate_url_status !== 'dead' && apiOrg?.donate_url) ? apiOrg.donate_url : undefined,
   }
 
   const handleGiveToggle = () => {

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-MeritGiving API — Serves registry_enriched to frontend
+Daanaa API — Serves registry_enriched to frontend
 """
-import sqlite3, os, json, functools, time, hashlib, threading, re, secrets
+import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
 import numpy as np
 import requests as _http
 from flask import Flask, jsonify, request, g, abort, send_from_directory
@@ -209,15 +209,15 @@ limiter = Limiter(
 
 DB_PATH = os.path.expanduser("~/meritgiving/data/merit_registry.db")
 
-# Admin key — set MERIT_ADMIN_KEY env var before starting the API.
+# Admin key — set DAANAA_ADMIN_KEY env var before starting the API.
 # Any endpoint decorated with @require_admin_key will return 401 if it's missing or wrong.
-_ADMIN_KEY = os.environ.get("MERIT_ADMIN_KEY", "")
+_ADMIN_KEY = os.environ.get("DAANAA_ADMIN_KEY", "") or os.environ.get("MERIT_ADMIN_KEY", "")
 
 def require_admin_key(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         provided = request.headers.get("X-Admin-Key", "")
-        if not _ADMIN_KEY or provided != _ADMIN_KEY:
+        if not _ADMIN_KEY or not hmac.compare_digest(provided, _ADMIN_KEY):
             abort(401)
         return f(*args, **kwargs)
     return wrapper
@@ -270,6 +270,36 @@ def _init_link_feedback_table():
 
 _init_link_feedback_table()
 
+
+def _init_org_claims_table():
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS org_claims (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                ein              TEXT NOT NULL UNIQUE,
+                email            TEXT NOT NULL,
+                irs_address      TEXT NOT NULL,
+                pin              TEXT NOT NULL,
+                pin_expires_at   TEXT NOT NULL,
+                letter_sent_at   TEXT,
+                lob_letter_id    TEXT,
+                claim_status     TEXT DEFAULT 'pending',
+                verified_at      TEXT,
+                custom_mission   TEXT,
+                custom_description TEXT,
+                donate_confirmed INTEGER DEFAULT 0,
+                processor_auth   INTEGER DEFAULT 0,
+                created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
+                revoked_at       TEXT,
+                revoke_reason    TEXT
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_ein ON org_claims(ein)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_status ON org_claims(claim_status)")
+        db.commit()
+
+_init_org_claims_table()
+
 # Prevent absurdly large payloads on any endpoint
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # 64 KB
 
@@ -278,6 +308,22 @@ def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # CSP: load-bearing for wallet privacy — blocks XSS from reading localStorage.
+    # 'unsafe-inline' on style-src only (Tailwind class-based; React may inject style attrs).
+    # connect-src includes localhost ports for dev; production deploy should tighten this.
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self' http://localhost:5000 https://daanaa.org https://www.daanaa.org; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
+    )
+    if os.environ.get("DAANAA_PROD"):
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
 
 @app.route('/health')
@@ -613,9 +659,9 @@ def stats():
     fin_count = db.execute("SELECT COUNT(*) FROM propublica_financials").fetchone()[0]
     reserve_stats = db.execute(f"""
         SELECT
-            COUNT(CASE WHEN months_of_reserve IS NOT NULL THEN 1 END) as has_reserve,
-            COUNT(CASE WHEN months_of_reserve < 0 THEN 1 END) as insolvent,
-            COUNT(CASE WHEN months_of_reserve >= 0 AND months_of_reserve < 6 THEN 1 END) as at_risk,
+            COUNT(CASE WHEN months_of_reserve BETWEEN -120 AND 120 THEN 1 END) as has_reserve,
+            COUNT(CASE WHEN months_of_reserve BETWEEN -120 AND 0 THEN 1 END) as insolvent,
+            COUNT(CASE WHEN months_of_reserve > 0 AND months_of_reserve < 6 THEN 1 END) as at_risk,
             COUNT(CASE WHEN months_of_reserve >= 6 AND months_of_reserve < 12 THEN 1 END) as minimal,
             COUNT(CASE WHEN months_of_reserve >= 12 THEN 1 END) as healthy
         FROM registry_enriched WHERE {f}
@@ -874,6 +920,7 @@ def claim_start():
     db.commit()
 
     # Send letter (Lob or log fallback)
+    letter_status = "log_only"
     try:
         import sys
         sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent / 'scripts'))
@@ -881,9 +928,11 @@ def claim_start():
         address = {'street': row['address'] or '', 'city': row['CITY'] or '',
                    'state': row['STATE'] or '', 'zip': row['zipcode'] or ''}
         letter_id = send_claim_letter(ein, org_name, address, pin)
+        if letter_id and not letter_id.startswith("log:"):
+            letter_status = "letter_sent"
         db.execute(
-            "UPDATE org_claims SET claim_status='letter_sent', letter_sent_at=datetime('now'), lob_letter_id=? WHERE ein=?",
-            (letter_id, ein)
+            "UPDATE org_claims SET claim_status=?, letter_sent_at=datetime('now'), lob_letter_id=? WHERE ein=?",
+            (letter_status, letter_id, ein)
         )
         db.commit()
     except Exception as e:
@@ -891,7 +940,7 @@ def claim_start():
 
     # Friendly address preview (first line only for privacy)
     preview = f"{row['address']}, {row['CITY']}, {row['STATE']}" if row['address'] else irs_address
-    return jsonify({"status": "letter_sent", "org_name": org_name, "address_preview": preview})
+    return jsonify({"status": letter_status, "org_name": org_name, "address_preview": preview})
 
 
 @app.route('/api/claim/verify', methods=['POST'])

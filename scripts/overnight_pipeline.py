@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
-DB = Path.home() / 'meritgiving' / 'data' / 'meritgiving.db'
+DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 LOG = Path.home() / 'meritgiving' / 'logs' / 'overnight.log'
 
 def log(msg):
