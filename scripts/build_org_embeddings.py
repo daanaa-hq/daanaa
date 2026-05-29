@@ -93,6 +93,9 @@ def _build_text(row: dict) -> str:
         except (json.JSONDecodeError, TypeError):
             if tags_raw.strip():
                 parts.append(tags_raw.strip()[:120])
+    mission = (row.get("mission") or "").strip()
+    if mission and len(mission) > 10:
+        parts.append(mission[:400])
     city  = (row.get("CITY") or "").strip()
     state = (row.get("STATE") or "").strip()
     if city and state:
@@ -170,18 +173,18 @@ def run(limit=None, workers=6, model=MODEL, dim=DIM, overwrite=False, vulkan=Fal
 
     if all_orgs:
         rows = db.execute("""
-            SELECT EIN, organization_name, NTEE1, cause_tags, CITY, STATE
+            SELECT EIN, organization_name, NTEE1, cause_tags, CITY, STATE, mission
             FROM registry_enriched
             ORDER BY ROWID
         """).fetchall()
     else:
         rows = db.execute("""
-            SELECT EIN, organization_name, NTEE1, cause_tags, CITY, STATE
+            SELECT EIN, organization_name, NTEE1, cause_tags, CITY, STATE, mission
             FROM registry_enriched
             WHERE merit_score IS NOT NULL AND merit_score > 0
             ORDER BY merit_score DESC
         """).fetchall()
-    cols = ["EIN", "organization_name", "NTEE1", "cause_tags", "CITY", "STATE"]
+    cols = ["EIN", "organization_name", "NTEE1", "cause_tags", "CITY", "STATE", "mission"]
     rows = [dict(zip(cols, r)) for r in rows if r[0] not in already]
 
     if limit:

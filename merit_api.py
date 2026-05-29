@@ -209,6 +209,18 @@ limiter = Limiter(
 
 DB_PATH = os.path.expanduser("~/meritgiving/data/merit_registry.db")
 
+# Claim verification — opaque HMAC token so raw PIN never appears in URLs.
+# Set DAANAA_CLAIM_SECRET in production; falls back to admin key then dev default.
+_CLAIM_SECRET = (
+    os.environ.get("DAANAA_CLAIM_SECRET")
+    or os.environ.get("DAANAA_ADMIN_KEY")
+    or "daanaa-dev-claim-secret"
+).encode()
+
+def _make_verify_token(ein: str, pin: str) -> str:
+    """Return HMAC-SHA256 hex token for the given EIN + PIN pair."""
+    return hmac.new(_CLAIM_SECRET, f"{ein}:{pin}".encode(), hashlib.sha256).hexdigest()
+
 # Admin key — set DAANAA_ADMIN_KEY env var before starting the API.
 # Any endpoint decorated with @require_admin_key will return 401 if it's missing or wrong.
 _ADMIN_KEY = os.environ.get("DAANAA_ADMIN_KEY", "") or os.environ.get("MERIT_ADMIN_KEY", "")
@@ -946,12 +958,13 @@ def claim_start():
 @app.route('/api/claim/verify', methods=['POST'])
 @limiter.limit("10 per minute")
 def claim_verify():
-    data = request.get_json(silent=True) or {}
-    ein  = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
-    pin  = ''.join(c for c in (data.get('pin') or '') if c.isdigit())[:6]
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('token') or '').strip()[:64]   # new: opaque HMAC token
+    pin   = ''.join(c for c in (data.get('pin') or '') if c.isdigit())[:6]  # legacy fallback
 
-    if not ein or not pin:
-        return jsonify({"error": "EIN and PIN are required"}), 400
+    if not ein or (not token and not pin):
+        return jsonify({"error": "EIN and token (or PIN) are required"}), 400
 
     db  = get_db()
     row = db.execute(
@@ -960,8 +973,16 @@ def claim_verify():
 
     if not row:
         return jsonify({"error": "No claim found for this EIN. Start at daanaa.org/claim"}), 404
-    if row['pin'] != pin:
-        return jsonify({"error": "Incorrect PIN"}), 401
+
+    if token:
+        expected = _make_verify_token(ein, row['pin'])
+        if not hmac.compare_digest(token, expected):
+            return jsonify({"error": "Invalid verification token"}), 401
+    else:
+        # Legacy PIN path — for letters sent before token rollout
+        if not hmac.compare_digest(pin, row['pin']):
+            return jsonify({"error": "Incorrect PIN"}), 401
+
     if row['claim_status'] == 'active':
         return jsonify({"error": "Already claimed"}), 409
 
