@@ -40,7 +40,7 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 export default function SectorHealth() {
   usePageMeta(
     'What public filings suggest about the sector',
-    'A look at available public financial filings across 26 nonprofit sectors. Reserve levels, filing rates, and program spending for 430,000+ organizations the IRS recognizes.'
+    'A look at available public financial filings across 26 nonprofit sectors. Reserve levels, filing rates, and program spending for 1.6 million+ organizations the IRS recognizes.'
   )
 
   const navigate = useNavigate()

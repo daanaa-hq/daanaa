@@ -26,7 +26,7 @@ export default function About() {
               Civic infrastructure for informed giving
             </h1>
             <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-              Daanaa aims to index every active 501(c)(3) nonprofit in the United States — over 432,000 organizations — from public IRS data. Our goal is to give each one a score against its true peers and make that intelligence freely available to any donor who wants to give with confidence.
+              Daanaa aims to index every active 501(c)(3) nonprofit in the United States — over 1.6 million organizations — from public IRS data. Our goal is to give each one a score against its true peers and make that intelligence freely available to any donor who wants to give with confidence.
             </p>
           </div>
         </div>
@@ -34,6 +34,25 @@ export default function About() {
 
       <div className="bg-warm-cream py-10 md:py-16 lg:py-20">
         <div className="max-w-[800px] mx-auto px-6 lg:px-12 space-y-16">
+
+          {/* Name */}
+          <div>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Our name</span>
+            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(24px, 3.5vw, 40px)' }}>
+              Giving should be as wise as it is generous
+            </h2>
+            <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+              <p>
+                Daanaa means "wise." We focus on helping you give intentionally.
+              </p>
+              <p>
+                Instead of handling donations, we connect you directly to nonprofits and help you track your impact in a secure donor wallet.
+              </p>
+              <p>
+                Because real wisdom isn't just in what we give. It's in how we share it.
+              </p>
+            </div>
+          </div>
 
           {/* Mission */}
           <div>

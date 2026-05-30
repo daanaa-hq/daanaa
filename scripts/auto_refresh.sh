@@ -6,7 +6,10 @@
 #   1. ProPublica backfill — updates revenue/assets/mission for cached EINs
 #   2. IRS SOI ingest — pulls latest available year from data/irs_soi/
 #      (run scripts/download_irs_soi.sh first to refresh the source files)
-#   3. Recomputes NTEE + state peer-group percentiles
+#   3. Recomputes peer groups + provisional revenue percentiles
+#   4. Composite scorer — upgrades peer_percentile to the documented
+#      0.65 revenue / 0.35 reserve formula within regional peer groups.
+#      MUST run after step 3 (it reads the peer_group that step 3 writes).
 #
 # Typical schedule (set via:  crontab -e):
 #   Weekly full refresh — every Sunday at 2 AM:
@@ -36,11 +39,11 @@ source "$VENV"
 cd "$BASE"
 
 echo ""
-echo "[1/3] ProPublica backfill..."
+echo "[1/4] ProPublica backfill..."
 python3 scripts/propublica_backfill.py
 
 echo ""
-echo "[2/3] IRS SOI ingest (latest year only)..."
+echo "[2/4] IRS SOI ingest (latest year only)..."
 LATEST_YEAR=$(ls data/irs_soi/*eoextract990.zip 2>/dev/null | sort -r | head -1 | grep -oP '(?<=soi/)\d{2}' | head -1)
 if [ -n "$LATEST_YEAR" ]; then
     python3 scripts/ingest_irs_soi.py --year $((2000 + LATEST_YEAR))
@@ -49,8 +52,12 @@ else
 fi
 
 echo ""
-echo "[3/3] Recomputing percentiles..."
+echo "[3/4] Recomputing peer groups + provisional percentiles..."
 python3 scripts/recompute_percentiles.py
+
+echo ""
+echo "[4/4] Composite score (0.65 revenue / 0.35 reserve, regional peer groups)..."
+python3 scripts/compute_composite_score.py
 
 echo ""
 echo "Refresh complete — $STAMP"
