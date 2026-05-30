@@ -707,6 +707,34 @@ def ntee_categories():
 # Orgs with null subsection (NCCS-only, unverifiable) are excluded.
 _DEDUCTIBILITY_FILTER = "subsection = '3' AND deductibility != '2'"
 
+@app.route('/api/ntee-coverage')
+@limiter.exempt
+def ntee_coverage():
+    """Per-category visibility coverage for qualified orgs — drives the
+    light-reveal visual. Returns real counts so brightness reflects true data."""
+    cached = _cget('ntee_coverage', 'ntee')
+    if cached: return jsonify(cached)
+    db = get_db()
+    rows = db.execute(f"""
+        SELECT NTEE1 as code,
+               COUNT(*) as total,
+               SUM(CASE WHEN mission IS NOT NULL THEN 1 ELSE 0 END) as with_mission,
+               SUM(CASE WHEN merit_score IS NOT NULL THEN 1 ELSE 0 END) as scored,
+               SUM(CASE WHEN mission IS NOT NULL AND merit_score IS NOT NULL THEN 1 ELSE 0 END) as visible
+        FROM registry_enriched
+        WHERE {_DEDUCTIBILITY_FILTER} AND NTEE1 IS NOT NULL
+        GROUP BY NTEE1
+    """).fetchall()
+    categories = []
+    for row in rows:
+        d = dict(row)
+        total = d['total'] or 0
+        d['coverage'] = round(d['visible'] / total, 4) if total else 0.0
+        categories.append(d)
+    payload = {"categories": categories}
+    _cset('ntee_coverage', payload)
+    return jsonify(payload)
+
 @app.route('/api/stats')
 @limiter.exempt
 def stats():
@@ -714,9 +742,13 @@ def stats():
     if cached: return jsonify(cached)
     db = get_db()
     f = _DEDUCTIBILITY_FILTER
-    fin_count = db.execute("SELECT COUNT(*) FROM propublica_financials").fetchone()[0]
-    reserve_stats = db.execute(f"""
+    # Single pass over registry_enriched for all aggregate stats
+    agg = db.execute(f"""
         SELECT
+            COUNT(*) as total,
+            COUNT(CASE WHEN total_revenue > 0 THEN 1 END) as with_revenue,
+            ROUND(SUM(CASE WHEN total_revenue > 0 THEN total_revenue ELSE 0 END), 0) as revenue_sum,
+            ROUND(AVG(CASE WHEN total_revenue > 0 THEN total_revenue END), 0) as avg_revenue,
             COUNT(CASE WHEN months_of_reserve BETWEEN -120 AND 120 THEN 1 END) as has_reserve,
             COUNT(CASE WHEN months_of_reserve BETWEEN -120 AND 0 THEN 1 END) as insolvent,
             COUNT(CASE WHEN months_of_reserve > 0 AND months_of_reserve < 6 THEN 1 END) as at_risk,
@@ -724,26 +756,27 @@ def stats():
             COUNT(CASE WHEN months_of_reserve >= 12 THEN 1 END) as healthy
         FROM registry_enriched WHERE {f}
     """).fetchone()
+    top_states = [dict(r) for r in db.execute(f"""
+        SELECT STATE, COUNT(*) as count FROM registry_enriched
+        WHERE {f} AND STATE IS NOT NULL GROUP BY STATE ORDER BY count DESC LIMIT 5
+    """).fetchall()]
     payload = {
-        "total_organizations": db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {f}").fetchone()[0],
-        "with_revenue": db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {f} AND total_revenue > 0").fetchone()[0],
-        "total_revenue_sum": db.execute(f"SELECT ROUND(SUM(total_revenue),0) FROM registry_enriched WHERE {f} AND total_revenue > 0").fetchone()[0],
-        "avg_revenue": db.execute(f"SELECT ROUND(AVG(total_revenue),0) FROM registry_enriched WHERE {f} AND total_revenue > 0").fetchone()[0],
-        "top_states": [dict(r) for r in db.execute(f"""
-            SELECT STATE, COUNT(*) as count FROM registry_enriched
-            WHERE {f} AND STATE IS NOT NULL GROUP BY STATE ORDER BY count DESC LIMIT 5
-        """).fetchall()],
+        "total_organizations": agg["total"],
+        "with_revenue": agg["with_revenue"],
+        "total_revenue_sum": agg["revenue_sum"],
+        "avg_revenue": agg["avg_revenue"],
+        "top_states": top_states,
         "methodology_version": METHODOLOGY_VERSION,
         "scores_last_updated": db.execute(
             "SELECT MAX(snapshot_date) FROM score_snapshots"
         ).fetchone()[0],
-        "financial_records": fin_count,
-        "with_reserve_data": reserve_stats["has_reserve"] if reserve_stats else 0,
+        "financial_records": db.execute("SELECT COUNT(*) FROM propublica_financials").fetchone()[0],
+        "with_reserve_data": agg["has_reserve"],
         "reserve_health": {
-            "insolvent": reserve_stats["insolvent"] if reserve_stats else 0,
-            "at_risk": reserve_stats["at_risk"] if reserve_stats else 0,
-            "minimal": reserve_stats["minimal"] if reserve_stats else 0,
-            "healthy": reserve_stats["healthy"] if reserve_stats else 0,
+            "insolvent": agg["insolvent"],
+            "at_risk": agg["at_risk"],
+            "minimal": agg["minimal"],
+            "healthy": agg["healthy"],
         },
     }
     _cset('stats', payload)

@@ -503,6 +503,14 @@ function FooterCTA() {
         <p className="mt-6 font-body text-[13px] text-cool-grey/50">
           Free forever · No account required · Data updated monthly
         </p>
+        <p className="mt-5 font-body text-[14px]">
+          <Link
+            to="/the-invisible-97"
+            className="text-soft-gold hover:text-bright-gold transition-colors"
+          >
+            See the invisible 97% →
+          </Link>
+        </p>
       </div>
     </section>
   )

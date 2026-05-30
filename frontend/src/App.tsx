@@ -25,6 +25,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
+const InvisibleLight = lazy(() => import('./pages/InvisibleLight'))
 
 function PageLoader() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="/guides" element={<GuidesPage />} />
             <Route path="/faq" element={<FAQPage />} />
           </Route>
+          <Route path="/the-invisible-97" element={<InvisibleLight />} />
           <Route path="/claim/verify" element={<ClaimVerify />} />
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/admin" element={<AdminPage />} />
