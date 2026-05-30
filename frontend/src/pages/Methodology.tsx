@@ -190,7 +190,7 @@ export default function Methodology() {
                 The short version
               </h2>
               <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
-                We look at three things for each nonprofit: how many months of savings they carry, what share of their spending actually reaches programs, and whether they bring in more than they spend. Each org is ranked against others doing the same kind of work at a similar size. The score — 0 to 100 — shows where they stand in that group.
+                We look at two things for each nonprofit: its financial scale, and how much of a cushion it keeps in reserve. Scale counts for most of the score, because size is the clearest public signal of reach. Reserves count for the rest, because a thin balance sheet is a real risk that size alone hides. Both are measured against peers doing the same kind of work, at a similar size, in the same region. The score, 0 to 100, shows where the organization stands in that group.
               </p>
               <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
                 All of this comes from annual IRS filings — the same documents every registered nonprofit is required to submit, and make available to the public.

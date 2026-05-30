@@ -450,7 +450,7 @@ export default function Directory() {
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
     qParam ? `"${qParam}" · Causes & Giving Paths` : 'Explore Causes & Giving Paths',
-    'Search 430,000+ nonprofits recognized by the IRS — by cause, category, location, and giving path.'
+    'Search 1.6 million+ nonprofits recognized by the IRS — by cause, category, location, and giving path.'
   )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
