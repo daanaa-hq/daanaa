@@ -256,6 +256,20 @@ export async function getStats(): Promise<ApiStats> {
   return fetchJson('/api/stats');
 }
 
+export interface NteeCoverage {
+  code: string;
+  total: number;
+  with_mission: number;
+  scored: number;
+  visible: number;
+  coverage: number;
+}
+
+// GET /api/ntee-coverage
+export async function getNteeCoverage(): Promise<{ categories: NteeCoverage[] }> {
+  return fetchJson('/api/ntee-coverage');
+}
+
 // --- Waitlist ---
 
 export interface WaitlistEntry {
