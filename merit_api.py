@@ -562,9 +562,10 @@ def get_organization(ein):
 
     # Data provenance badges — tells the frontend which fields are AI-generated vs verified
     org['data_badges'] = {
-        'mission': org.get('mission_source'),    # 'ai_ntee'|'ai_haiku'|'ai_web'|'lucido'|'claimed'|None
-        'donate':  org.get('donate_url_status'), # 'beta' | 'provider' | 'claimed' | None
-        'website': org.get('website_status'),    # 'ok' | 'redirected' | None
+        'mission': org.get('mission_source'),       # 'ai_ntee'|'ai_haiku'|'ai_web'|'lucido'|'claimed'|None
+        'donate':  org.get('donate_url_status'),    # 'beta' | 'provider' | 'claimed' | None
+        'website': org.get('website_status'),       # 'ok' | 'redirected' | None
+        'tags':    org.get('cause_tags_source'),    # 'ai_generated' (beta) | 'claimed' | None
     }
 
     # Claim status — check org_claims table (graceful fallback if table not yet created)

@@ -503,11 +503,14 @@ def phase0_audit_existing(db: sqlite3.Connection, dry_run=False, workers=16):
                 db.commit()
 
             elif dec == "existing_verified_active":
+                # Scraper-discovered links publish as 'beta' (machine-found, not
+                # org-confirmed) so the UI shows a Beta badge. Never downgrade a
+                # link the org itself claimed or a processor confirmed.
                 db.execute("""
                     UPDATE registry_enriched
-                    SET donate_url_status='ok',
+                    SET donate_url_status='beta',
                         donate_identity_match=?, donate_confidence=?, donate_checked_at=?
-                    WHERE EIN=?
+                    WHERE EIN=? AND COALESCE(donate_url_status,'') NOT IN ('claimed','provider')
                 """, (res["match_level"], res["confidence"], now, res["ein"]))
                 write_evidence(db, ein=res["ein"], legal_name=res["name"],
                                official_website=res["website"],
@@ -792,7 +795,7 @@ def phase1_discover_new(db: sqlite3.Connection, max_orgs=200, dry_run=False, wor
           AND (donate_url IS NULL OR TRIM(donate_url) = '')
           AND (donate_url_status IS NULL
                OR donate_url_status NOT IN (
-                   'ok', 'blocked_or_restricted', 'pending_review',
+                   'ok', 'beta', 'blocked_or_restricted', 'pending_review',
                    'human_review', 'no_link_found', 'rejected'
                ))
         ORDER BY RANDOM()
@@ -988,11 +991,12 @@ def phase2_release_batch(db: sqlite3.Connection, max_links=50, dry_run=False):
             published += 1
             continue
 
-        # Publish — set status to 'ok', mark evidence as published
+        # Publish — set status to 'beta' (scraper-discovered, shows a Beta badge);
+        # never downgrade an org-claimed or processor-confirmed link.
         db.execute("""
             UPDATE registry_enriched
-            SET donate_url_status='ok', donate_checked_at=?
-            WHERE EIN=?
+            SET donate_url_status='beta', donate_checked_at=?
+            WHERE EIN=? AND COALESCE(donate_url_status,'') NOT IN ('claimed','provider')
         """, (now, ein))
         db.execute("""
             UPDATE donation_link_evidence

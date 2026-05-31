@@ -73,6 +73,7 @@ export interface ApiOrganization {
     mission?: string | null;   // 'ai_ntee' | 'scraped' | 'claimed' | null
     donate?: string | null;    // 'beta' | 'provider' | 'claimed' | null
     website?: string | null;   // 'ok' | 'redirected' | null
+    tags?: string | null;      // 'ai_generated' (beta) | 'claimed' | null
   } | null;
   // Claim status — 'pending' | 'letter_sent' | 'verified' | 'active' | null
   claim_status?: string | null;
