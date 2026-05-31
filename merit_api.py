@@ -299,6 +299,27 @@ def _init_link_feedback_table():
 _init_link_feedback_table()
 
 
+def _init_donate_handoffs_table():
+    # Anonymous, aggregate-only impact signal: a daily per-org tally of "give"
+    # hand-offs. NO donor identity, NO IP, NO amount, NO link to any wallet —
+    # just a count of how often a donate hand-off was initiated. INTERNAL ONLY:
+    # never surface per-org counts publicly (that would create popularity /
+    # social-pressure mechanics — STEWARDSHIP principles 2 and 5). Used only for
+    # aggregate realized-impact measurement.
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS donate_handoffs (
+                ein    TEXT NOT NULL,
+                day    TEXT NOT NULL,
+                count  INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (ein, day)
+            )
+        """)
+        db.commit()
+
+_init_donate_handoffs_table()
+
+
 def _init_org_claims_table():
     with sqlite3.connect(DB_PATH) as db:
         db.execute("""
@@ -904,6 +925,26 @@ def link_feedback_submit():
     db.execute(
         "INSERT INTO link_feedback (EIN, reason) VALUES (?, ?)",
         (ein, reason),
+    )
+    db.commit()
+    return ('', 204)
+
+
+@app.route('/api/handoff', methods=['POST'])
+def donate_handoff():
+    # Anonymous realized-impact signal. We accept ONLY an EIN and increment a
+    # daily count. No identity, no IP, no amount, no wallet link. This records
+    # that a give hand-off happened, never who did it or what they gave.
+    data = request.get_json(silent=True) or {}
+    ein  = ''.join(c for c in str(data.get('ein', '')) if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'ein required'}), 400
+    day = time.strftime('%Y-%m-%d')
+    db = get_db()
+    db.execute(
+        "INSERT INTO donate_handoffs (ein, day, count) VALUES (?, ?, 1) "
+        "ON CONFLICT(ein, day) DO UPDATE SET count = count + 1",
+        (ein, day),
     )
     db.commit()
     return ('', 204)
