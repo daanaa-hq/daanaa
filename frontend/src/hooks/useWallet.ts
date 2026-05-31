@@ -66,6 +66,48 @@ export function splitDonation(
   ]
 }
 
+const BACKUP_VERSION = 1
+const LAST_BACKUP_KEY = 'merit_wallet_last_backup'
+
+export interface WalletBackup {
+  app: 'daanaa'
+  version: number
+  exportedAt: string
+  donations: DonationRecord[]
+  volunteerHours: VolunteerRecord[]
+}
+
+// ── Optional client-side encryption (AES-GCM, PBKDF2). Key never leaves the device. ──
+const b64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)))
+function unb64(s: string): Uint8Array {
+  const bin = atob(s)
+  const out = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+  return out
+}
+
+async function deriveKey(passphrase: string, salt: BufferSource): Promise<CryptoKey> {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(passphrase), 'PBKDF2', false, ['deriveKey'])
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+  )
+}
+
+async function encryptPayload(plaintext: string, passphrase: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16))
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const key = await deriveKey(passphrase, salt as BufferSource)
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv as BufferSource }, key, new TextEncoder().encode(plaintext))
+  return JSON.stringify({ app: 'daanaa', encrypted: true, salt: b64(salt.buffer as ArrayBuffer), iv: b64(iv.buffer as ArrayBuffer), ct: b64(ct) })
+}
+
+async function decryptPayload(obj: { salt: string; iv: string; ct: string }, passphrase: string): Promise<string> {
+  const key = await deriveKey(passphrase, unb64(obj.salt) as BufferSource)
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(obj.iv) as BufferSource }, key, unb64(obj.ct) as BufferSource)
+  return new TextDecoder().decode(pt)
+}
+
 export function useWallet() {
   const [donations, setDonations] = useState<DonationRecord[]>(() => load(DONATIONS_KEY))
   const [volunteerHours, setVolunteerHours] = useState<VolunteerRecord[]>(() => load(VOLUNTEER_KEY))
@@ -105,9 +147,98 @@ export function useWallet() {
 
   const thisYear = new Date().getFullYear().toString()
 
+  // ── Backup: device-driven only. No server, no account, no PII leaves the device. ──
+
+  // Download the wallet as a file the user keeps in their own Files / cloud drive.
+  // If a passphrase is given, the file is encrypted client-side (we never see the key).
+  const exportBackup = useCallback(async (passphrase?: string) => {
+    const payload: WalletBackup = {
+      app: 'daanaa',
+      version: BACKUP_VERSION,
+      exportedAt: new Date().toISOString(),
+      donations: load(DONATIONS_KEY),
+      volunteerHours: load(VOLUNTEER_KEY),
+    }
+    const plain = JSON.stringify(payload, null, 2)
+    const out = passphrase ? await encryptPayload(plain, passphrase) : plain
+    const blob = new Blob([out], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `daanaa-giving-backup-${new Date().toISOString().slice(0, 10)}${passphrase ? '.enc' : ''}.json`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    try { localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString()) } catch { /* ignore */ }
+  }, [])
+
+  // Restore from a backup file the user picks. Replaces current wallet contents.
+  // If the file is encrypted, the passphrase is required.
+  const importBackup = useCallback(async (raw: string, passphrase?: string): Promise<{ ok: boolean; error?: string; needsPassphrase?: boolean }> => {
+    try {
+      let obj = JSON.parse(raw) as Record<string, unknown>
+      if (obj.encrypted === true) {
+        if (!passphrase) return { ok: false, needsPassphrase: true }
+        try {
+          obj = JSON.parse(await decryptPayload(obj as { salt: string; iv: string; ct: string }, passphrase))
+        } catch {
+          return { ok: false, error: 'Wrong password, or the file is damaged.' }
+        }
+      }
+      const parsed = obj as unknown as WalletBackup
+      if (parsed.app !== 'daanaa' || !Array.isArray(parsed.donations)) {
+        return { ok: false, error: 'This does not look like a Daanaa backup file.' }
+      }
+      persist(DONATIONS_KEY, parsed.donations)
+      persist(VOLUNTEER_KEY, parsed.volunteerHours || [])
+      setDonations(parsed.donations)
+      setVolunteerHours(parsed.volunteerHours || [])
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Could not read that file.' }
+    }
+  }, [])
+
+  // A short summary the user can text to themselves (opens their own Messages app).
+  const buildSummaryText = useCallback(() => {
+    const yr = donations.filter(d => d.date.startsWith(thisYear))
+    const total = yr.reduce((s, d) => s + d.amount, 0)
+    const orgs = new Set(yr.map(d => d.ein)).size
+    const lines = [
+      `My Daanaa giving record (${thisYear})`,
+      `Total given: $${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+      `Organizations supported: ${orgs}`,
+      '',
+      ...yr.slice(0, 12).map(d => `- ${d.orgName}: $${d.amount.toLocaleString()} (${d.date})`),
+      yr.length > 12 ? `...and ${yr.length - 12} more` : '',
+      '',
+      'Kept on my device. daanaa.org',
+    ].filter(Boolean)
+    return lines.join('\n')
+  }, [donations, thisYear])
+
+  // sms: deep link — opens the user's Messages app pre-filled; they send to themselves.
+  const selfTextHref = `sms:?&body=${encodeURIComponent(buildSummaryText())}`
+
+  const lastBackupAt = (() => {
+    try { return localStorage.getItem(LAST_BACKUP_KEY) } catch { return null }
+  })()
+  // Nudge a backup if it has been 90+ days (or never).
+  const backupDueDays = lastBackupAt
+    ? Math.floor((Date.now() - new Date(lastBackupAt).getTime()) / 86400000)
+    : null
+  const backupOverdue = donations.length > 0 && (backupDueDays === null || backupDueDays >= 90)
+
   return {
     donations,
     volunteerHours,
+    exportBackup,
+    importBackup,
+    buildSummaryText,
+    selfTextHref,
+    lastBackupAt,
+    backupOverdue,
     addDonation,
     addDonationDirect,
     removeDonation,

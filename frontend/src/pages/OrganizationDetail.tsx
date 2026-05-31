@@ -8,6 +8,7 @@ import ScoreBreakdown from '../components/ScoreBreakdown'
 import LampMark from '../components/LampMark'
 import TierBreakdown from '../components/TierBreakdown'
 import MistakeRegistry from '../components/MistakeRegistry'
+import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
@@ -288,6 +289,7 @@ export default function OrganizationDetail() {
   const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
   const [showScoreExplainer, setShowScoreExplainer] = useState(false)
+  const [showVolunteer, setShowVolunteer] = useState(false)
   const { isInList, items: givingItems, addItem, removeItem, markPending } = useGivingList()
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
@@ -521,9 +523,9 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* Cause tags — LLM-extracted from mission statement */}
+              {/* Cause tags — AI-generated (beta) until the organization sets its own */}
               {Array.isArray(apiOrg!.cause_tags) && apiOrg!.cause_tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   {(apiOrg!.cause_tags as string[]).map((tag) => (
                     <span
                       key={tag}
@@ -532,6 +534,14 @@ export default function OrganizationDetail() {
                       {tag}
                     </span>
                   ))}
+                  {apiOrg?.data_badges?.tags === 'ai_generated' && (
+                    <span
+                      title="These search tags were suggested by AI from public records. The organization can set its own once it claims this page."
+                      className="inline-flex items-center px-2 py-0.5 rounded-full font-body text-[10px] tracking-[0.04em] uppercase text-soft-gold/80 border border-soft-gold/30"
+                    >
+                      AI · beta
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -610,6 +620,14 @@ export default function OrganizationDetail() {
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
                         Takes you straight to their giving page. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
                       </p>
+                      {(org as any).website && (
+                        <button
+                          onClick={() => setShowVolunteer(true)}
+                          className="mt-3 inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
+                        >
+                          Or volunteer your time
+                        </button>
+                      )}
                       {apiOrg?.data_badges?.donate === 'beta' && (
                         <p className="mt-1.5 font-body text-[11px] text-cool-grey/70 flex items-center gap-1.5">
                           <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">β auto-discovered</span>
@@ -1003,6 +1021,32 @@ export default function OrganizationDetail() {
                     </>
                   )}
                 </div>
+
+                {/* Preview of the spaces the org can fill once it claims this page */}
+                {apiOrg!.claim_status !== 'active' && (
+                  <div className="border-t border-light-grey pt-4">
+                    <p className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-3">
+                      Spaces this organization can fill
+                    </p>
+                    <div className="space-y-2.5">
+                      {[
+                        { t: 'Ways to help', d: 'Donate, volunteer, and in-kind needs links' },
+                        { t: 'What we need right now', d: 'A specific, time-bound ask donors can act on' },
+                        { t: 'In our words', d: 'The mission and story in the org’s own voice' },
+                        { t: 'Updates', d: 'Short, dated notes from the organization' },
+                        { t: 'Photo & 5 search tags', d: 'Identity and how donors find them' },
+                      ].map(s => (
+                        <div key={s.t} className="rounded-lg border border-dashed border-light-grey bg-cream/40 px-3 py-2.5">
+                          <p className="font-body text-[13px] font-medium text-deep-navy">{s.t}</p>
+                          <p className="font-body text-[12px] text-cool-grey/70">{s.d}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-3 font-body text-[11px] text-cool-grey/60 leading-[1.5]">
+                      Until the organization claims its page, these are empty or AI-suggested (beta). Claiming is free and replaces them with verified, org-provided information.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1351,6 +1395,14 @@ export default function OrganizationDetail() {
           {inList ? 'Remove from giving list' : 'Save to giving list'}
         </button>
       </div>
+
+      {showVolunteer && apiOrg && (
+        <VolunteerInterest
+          orgName={apiOrg.organization_name}
+          website={(org as any).website}
+          onClose={() => setShowVolunteer(false)}
+        />
+      )}
     </div>
   )
 }

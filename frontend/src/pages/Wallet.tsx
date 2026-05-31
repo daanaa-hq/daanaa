@@ -258,7 +258,31 @@ export default function Wallet() {
   }, [prefillEin])
 
   const { savedOrgs, toggle } = useSavedOrgs()
-  const { donations, addDonationDirect, markAcknowledged, removeDonation, totalDonated, totalDonatedThisYear, uniqueEins, pendingLetters } = useWallet()
+  const { donations, addDonationDirect, markAcknowledged, removeDonation, totalDonated, totalDonatedThisYear, uniqueEins, pendingLetters,
+          exportBackup, importBackup, selfTextHref, backupOverdue, lastBackupAt } = useWallet()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const onSaveBackup = async () => {
+    const pass = window.prompt('Set a password to encrypt this backup (recommended). Leave blank to save without a password — keep the file private.')
+    if (pass === null) return // cancelled
+    await exportBackup(pass.trim() || undefined)
+  }
+  const onRestoreFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = async () => {
+      const raw = String(reader.result)
+      let res = await importBackup(raw)
+      if (res.needsPassphrase) {
+        const pass = window.prompt('This backup is encrypted. Enter its password:')
+        if (pass === null) { e.target.value = ''; return }
+        res = await importBackup(raw, pass)
+      }
+      alert(res.ok ? 'Giving record restored.' : (res.error || 'Could not restore.'))
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
   const orgsSupported = new Set([...Array.from(uniqueEins), ...savedOrgs.map(o => o.ein)]).size
 
   const thisYear = new Date().getFullYear()
@@ -322,6 +346,50 @@ export default function Wallet() {
             <StatCard label={`Given in ${thisYear}`} value={formatCurrency(totalDonatedThisYear)} />
             <StatCard label="Orgs supported" value={String(orgsSupported)} sub="donated + saved" />
           </div>
+
+          {/* Backup — device-driven, no account, nothing leaves your device to us */}
+          {donations.length > 0 && (
+            <div className={`rounded-xl border p-5 ${backupOverdue ? 'border-soft-gold/60 bg-soft-gold/5' : 'border-light-grey bg-white'}`}>
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <h3 className="font-display text-[17px] text-deep-navy">Keep a backup</h3>
+                  <p className="mt-1 font-body text-[13px] text-cool-grey">
+                    Your record lives only on this device. Save a copy so you never lose it.{' '}
+                    {lastBackupAt
+                      ? `Last backed up ${new Date(lastBackupAt).toLocaleDateString()}.`
+                      : 'You have not backed up yet.'}
+                  </p>
+                </div>
+                {backupOverdue && (
+                  <span className="font-body text-[11px] font-semibold uppercase tracking-[0.04em] text-soft-gold">Backup due</span>
+                )}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a
+                  href={selfTextHref}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-deep-navy px-4 py-2 font-body text-[13px] font-medium text-warm-cream hover:bg-deep-navy/90 transition-colors"
+                >
+                  Text it to myself
+                </a>
+                <button
+                  onClick={onSaveBackup}
+                  className="rounded-full border border-deep-navy/20 px-4 py-2 font-body text-[13px] font-medium text-deep-navy hover:bg-deep-navy/5 transition-colors"
+                >
+                  Save a backup file
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-full border border-deep-navy/20 px-4 py-2 font-body text-[13px] font-medium text-deep-navy hover:bg-deep-navy/5 transition-colors"
+                >
+                  Restore from file
+                </button>
+                <input ref={fileInputRef} type="file" accept="application/json,.json" onChange={onRestoreFile} className="hidden" />
+              </div>
+              <p className="mt-3 font-body text-[11px] text-cool-grey/60">
+                The text opens your own Messages app. The file saves to your device or your own cloud drive. Daanaa never receives it.
+              </p>
+            </div>
+          )}
 
           {/* Favorites */}
           <div>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!-- Rough wireframe (a sketch, not final design) of the org-editable "claimed" profile.
+     Aesthetic target: a warm public record the org can personalize. No social graph,
+     no like counts, no donor activity. Every field shows provenance. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daanaa — Claimed Profile Wireframe</title>
+<style>
+  :root{ --ink:#1f2a37; --muted:#6b7480; --line:#d9d4cc; --cream:#f6f2ec; --gold:#9a7b3f;
+         --beta:#9a7b3f; --verified:#2f7d4f; --record:#5b6470; }
+  *{box-sizing:border-box}
+  body{font:15px/1.55 system-ui,Segoe UI,Roboto,sans-serif;color:var(--ink);background:#efece6;margin:0;padding:24px}
+  .page{max-width:880px;margin:0 auto}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:14px}
+  .prov{display:inline-block;font-size:10px;letter-spacing:.05em;text-transform:uppercase;
+        padding:1px 7px;border-radius:20px;border:1px solid;vertical-align:middle}
+  .beta{color:var(--beta);border-color:var(--beta)}
+  .verified{color:var(--verified);border-color:var(--verified)}
+  .record{color:var(--record);border-color:var(--record)}
+  .edit{float:right;font-size:12px;color:var(--gold);border:1px dashed var(--gold);border-radius:6px;padding:2px 8px;cursor:pointer}
+  h1{font-size:24px;margin:.2em 0}
+  h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+  .row{display:flex;gap:14px}
+  .col{flex:1}
+  .photo{width:96px;height:96px;border:2px dashed var(--line);border-radius:10px;display:flex;
+         align-items:center;justify-content:center;color:var(--muted);font-size:11px;text-align:center;flex:0 0 96px}
+  .logo{width:44px;height:44px;border:2px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:9px}
+  .tag{display:inline-block;border:1px solid var(--line);border-radius:20px;padding:2px 10px;margin:3px 4px 0 0;font-size:12px}
+  .help{display:flex;gap:10px;flex-wrap:wrap}
+  .help a{flex:1;min-width:160px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;text-decoration:none;color:var(--ink)}
+  .help small{display:block;color:var(--muted);font-size:11px}
+  .need{background:var(--cream);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:10px 12px}
+  .update{border-left:2px solid var(--line);padding:2px 0 2px 12px;margin:8px 0}
+  .update .when{font-size:11px;color:var(--muted)}
+  .muted{color:var(--muted);font-size:12px}
+  .note{background:#fbf8f2;border:1px dashed var(--gold);border-radius:8px;padding:8px 12px;font-size:12px;color:#6a5a36;margin-top:6px}
+  .key{font-size:11px;color:var(--muted);margin:6px 0 18px}
+  .key span{margin-right:14px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="key">
+    Provenance keys, shown on every field:
+    <span class="prov record">from IRS records</span>
+    <span class="prov beta">AI / auto · beta</span>
+    <span class="prov verified">verified by org</span>
+  </div>
+
+  <!-- HEADER -->
+  <div class="card">
+    <div class="row">
+      <div class="photo">cover / hero photo<br>(org adds)</div>
+      <div class="col">
+        <div class="row" style="align-items:center">
+          <div class="logo">logo</div>
+          <div>
+            <h1>Crescendo Music Incorporated <span class="prov record">from IRS records</span></h1>
+            <div class="muted">Menasha, WI · Arts &amp; Culture · EIN 39-1559213 · Founded 1998 · ✓ Claimed by the organization</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MISSION -->
+  <div class="card">
+    <span class="edit">edit</span>
+    <h2>Mission</h2>
+    <p>We bring live music education and free community concerts to the Fox Valley, with a focus on
+       students who can't afford private lessons. <span class="prov verified">verified by org</span></p>
+    <div class="note">Before claiming, this read: "Promotes music education and performances through workshops and concerts in Menasha, WI." <span class="prov beta">AI · beta</span> — the org replaced it.</div>
+  </div>
+
+  <!-- SEARCH TAGS (LinkedIn-style, org sets 5) -->
+  <div class="card">
+    <span class="edit">edit (up to 5)</span>
+    <h2>Search tags <span class="prov verified">verified by org</span></h2>
+    <span class="tag">music education</span><span class="tag">youth scholarships</span>
+    <span class="tag">free concerts</span><span class="tag">Fox Valley</span><span class="tag">choral</span>
+    <div class="note">Unclaimed orgs show AI-suggested tags instead <span class="prov beta">AI · beta</span>, replaced when the org sets its own.</div>
+  </div>
+
+  <!-- WAYS TO HELP (not just donate) -->
+  <div class="card">
+    <h2>Ways to help</h2>
+    <div class="help">
+      <a href="#">Donate →<small>opens the org's own page · we never touch the money <span class="prov verified">verified by org</span></small></a>
+      <a href="#">Volunteer →<small>org's signup link</small></a>
+      <a href="#">In-kind needs →<small>instruments, sheet music</small></a>
+    </div>
+  </div>
+
+  <!-- CURRENT NEED -->
+  <div class="card">
+    <span class="edit">edit</span>
+    <h2>What we need right now</h2>
+    <div class="need"><strong>30 gently-used violins</strong> for our fall student program, by Sept 30. <span class="muted">Posted Aug 12</span></div>
+  </div>
+
+  <div class="row">
+    <!-- OPEN SPACE / IN OUR WORDS -->
+    <div class="card col">
+      <span class="edit">edit</span>
+      <h2>In our words</h2>
+      <p class="muted">Free-text space for the org to tell their story, history, and what makes them
+         different. No fabricated stats — their voice, marked as org-provided.</p>
+    </div>
+    <!-- ORG UPDATES (the good part of retro-FB: a wall, org-voice only) -->
+    <div class="card col">
+      <span class="edit">post update</span>
+      <h2>Updates</h2>
+      <div class="update"><div class="when">Aug 1, 2026</div>We served our 10,000th student this summer.</div>
+      <div class="update"><div class="when">Jun 9, 2026</div>Spring recital raised funds for 12 scholarships.</div>
+      <p class="muted">Dated notes in the org's own voice. No comments, likes, or followers.</p>
+    </div>
+  </div>
+
+  <!-- TRUST / SOURCES FOOTER ON PROFILE -->
+  <div class="card">
+    <h2>About this data</h2>
+    <p class="muted">Financial figures and registration <span class="prov record">from IRS records</span> (latest 990, FY2023).
+       Mission, tags, and links the org has not set are <span class="prov beta">AI / auto · beta</span> and may be inaccurate.
+       Daanaa is a public-data directory operated by EcoMargins LLC; it never receives or processes donations.
+       Found an error? Report it.</p>
+  </div>
+
+</div>
+</body>
+</html>
