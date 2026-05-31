@@ -2,17 +2,27 @@ import type { ApiOrganization } from '../data/api'
 
 export type TierName = 'Beacon' | 'Lantern' | 'Flame' | 'Glow' | 'Ember' | 'Spark'
 
-export const PASSING_BANDS = ['Blazing', 'Financial context available', 'Steady Flame']
+export const PASSING_BANDS = ['Blazing', 'Burning Bright', 'Steady Flame']
 
 // The tier gate is looser than the display: only the bottom band blocks
 // Beacon/Lantern. Since ~99% of orgs have NO band, demoting only clearly-weak
 // financials avoids penalising the minority that happen to have data.
 const GATE_BLOCKING_BANDS = ['Just Starting']
 
-/** Real 0-100 financial-health score + band, only where 990 financials exist. */
+// The headline score IS the documented composite (0.65 revenue + 0.35 reserve),
+// i.e. peer_percentile — the same number shown in the methodology and the score-history
+// table. Falls back to the revenue-only NTEE rank when no composite exists. Never use
+// the legacy merit_score here; it diverges from the published methodology.
 export function getFinancialHealth(org: ApiOrganization): { score: number; band: string } | null {
-  if (org.merit_score == null || org.merit_band == null) return null
-  return { score: Math.round(org.merit_score), band: org.merit_band }
+  const pct = org.peer_percentile ?? org.ntee1_percentile
+  if (pct == null) return null
+  const score = Math.round(pct)
+  const band =
+    score >= 85 ? 'Blazing' :
+    score >= 70 ? 'Burning Bright' :
+    score >= 55 ? 'Steady Flame' :
+    score >= 35 ? 'Growing' : 'Just Starting'
+  return { score, band }
 }
 
 export const TIER_COLORS: Record<TierName, string> = {

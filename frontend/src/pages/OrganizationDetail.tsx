@@ -779,7 +779,7 @@ export default function OrganizationDetail() {
                     {finHealth.band} · {finHealth.score}/100
                   </span>
                   <span className="font-body text-[10px] text-muted-cream/60 text-center leading-[1.4]">
-                    Larger financial footprint than {finHealth.score}% of comparable groups
+                    Ranks above {finHealth.score}% of similar nonprofits on financial scale and reserves
                   </span>
                   {/* Behavioral signals */}
                   {scoreSignals(apiOrg!).map((s, i) => (
