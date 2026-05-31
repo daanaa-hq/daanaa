@@ -1,0 +1,12 @@
+[Unit]
+Description=Cap AMD R9700 power limit (reduce heat)
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/akbar/meritgiving/scripts/set_gpu_power_cap.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

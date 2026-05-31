@@ -27,8 +27,10 @@ from threading import Lock
 
 DB_PATH    = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 GEN_URL    = "http://127.0.0.1:11437/v1/chat/completions"
-MODEL      = "Qwen2.5-32B-Instruct-Q4_K_M"
-BATCH_SIZE = 20
+MODEL      = "Qwen2.5-14B-Instruct-Q4_K_M"
+BATCH_SIZE      = 20   # orgs per LLM call (no web context)
+BATCH_SIZE_WEB  = 8    # smaller batch when web context is included (longer prompts)
+TOKENS_PER_ORG  = 100  # output token budget per org (web context = longer missions)
 MISSION_SOURCE = "ai_ntee"   # marks generated vs scraped missions
 
 _NTEE_LABELS = {
@@ -203,7 +205,7 @@ def _build_prompt(batch: list[dict], web_ctx: dict[str, str]) -> str:
 def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> dict[str, str]:
     """Returns {ein: mission_text} for the batch. Source is tracked per-org in _write_batch."""
     prompt = _build_prompt(batch, web_ctx)
-    effective_batch = len(batch)
+    n = len(batch)
     payload = {
         "model": MODEL,
         "messages": [
@@ -211,7 +213,7 @@ def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> dict[str, str]:
             {"role": "user", "content": prompt},
         ],
         "temperature": 0.1,
-        "max_tokens": max(600, 70 * effective_batch),
+        "max_tokens": max(400, TOKENS_PER_ORG * n),
     }
     try:
         r = requests.post(GEN_URL, json=payload, timeout=180)
@@ -235,11 +237,11 @@ def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> dict[str, str]:
         return {}
 
 
-def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dict[str, str]):
+def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dict[str, str], batch_size: int):
     """Write missions with per-org source: ai_web if that org had web context, else ai_ntee."""
     global _written, _errors
     if not results:
-        _errors += BATCH_SIZE
+        _errors += batch_size
         return
     with _write_lock:
         conn.executemany(
@@ -251,7 +253,7 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dic
         )
         conn.commit()
         _written += len(results)
-        _errors  += BATCH_SIZE - len(results)
+        _errors  += batch_size - len(results)
 
 
 def run(limit=None, workers=1, all_orgs=False):
@@ -281,20 +283,47 @@ def run(limit=None, workers=1, all_orgs=False):
         return
 
     scope_label = "all orgs" if all_orgs else "scored orgs"
-    print(f"Generating missions for {total:,} {scope_label}  model={MODEL}  batch={BATCH_SIZE}  workers={workers}", flush=True)
+    print(f"Generating missions for {total:,} {scope_label}  model={MODEL}  workers={workers}", flush=True)
 
-    batches = [rows[i:i+BATCH_SIZE] for i in range(0, total, BATCH_SIZE)]
-    start   = time.time()
+    # Pre-check which EINs have cached pages so we can use smaller batches for those
+    cached_eins = set(
+        r[0] for r in conn.execute(
+            "SELECT DISTINCT ein FROM page_cache WHERE html_gz IS NOT NULL"
+        ).fetchall()
+    )
+
+    # Build batches with adaptive sizing: smaller batches for web-context orgs
+    batches = []
+    i = 0
+    while i < total:
+        # If this org has a cached page, use smaller batch
+        bs = BATCH_SIZE_WEB if rows[i]["EIN"] in cached_eins else BATCH_SIZE
+        batches.append(rows[i:i+bs])
+        i += bs
+
+    conn.close()  # main thread conn done; each worker opens its own
+    start = time.time()
 
     def process(batch):
-        eins = [o["EIN"] for o in batch]
-        web_ctx = _get_web_context(eins, conn)
-        results = _call_llm(batch, web_ctx)
-        _write_batch(results, conn, web_ctx)
+        # Each thread needs its own connection — sharing one across threads
+        # causes SQLITE_MISUSE even with check_same_thread=False.
+        tconn = sqlite3.connect(DB_PATH, timeout=30)
+        tconn.row_factory = sqlite3.Row
+        try:
+            eins = [o["EIN"] for o in batch]
+            web_ctx = _get_web_context(eins, tconn)
+            results = _call_llm(batch, web_ctx)
+            _write_batch(results, tconn, web_ctx, len(batch))
+        finally:
+            tconn.close()
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futs = [pool.submit(process, b) for b in batches]
-        for i, _ in enumerate(as_completed(futs), 1):
+        for i, fut in enumerate(as_completed(futs), 1):
+            try:
+                fut.result()  # surface exceptions instead of silently losing them
+            except Exception as exc:
+                print(f"\n  [batch error] {exc}", flush=True)
             elapsed  = time.time() - start
             rate     = _written / elapsed if elapsed > 0 else 0
             pct      = (_written + _errors) / total * 100
