@@ -13,8 +13,12 @@ echo "=== STARTING DAANAA API (gunicorn) ==="
 source ~/meritgiving/venv/bin/activate
 cd ~/meritgiving
 [ -f .env ] && export $(grep -v '^#' .env | xargs)
+# Privacy: access log omits the client IP (%(h)). We keep request method/path/
+# status for ops visibility but never persist visitor IPs. Aligns with
+# STEWARDSHIP principle 2 (minimize data collection/retention).
 gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 --preload \
   --access-logfile logs/gunicorn_access.log \
+  --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \
   --error-logfile logs/daanaa_api.log \
   --pid logs/merit_api.pid \
   daanaa_api:app &
