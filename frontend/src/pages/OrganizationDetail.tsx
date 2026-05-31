@@ -392,7 +392,20 @@ export default function OrganizationDetail() {
 
   // Donor clicked an external give link — track it and ask "did you give?"
   // when they return (LinkedIn-jobs pattern).
-  const handleGiveClick = () => markPending(givePayload)
+  const handleGiveClick = () => {
+    // Anonymous realized-impact ping: records only that a give hand-off happened
+    // (EIN + a count). No identity, no amount, no wallet link. sendBeacon survives
+    // the navigation to the org's giving page.
+    try {
+      const body = JSON.stringify({ ein: apiOrg!.EIN })
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon('/api/handoff', new Blob([body], { type: 'application/json' }))
+      } else {
+        fetch('/api/handoff', { method: 'POST', body, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(() => {})
+      }
+    } catch { /* ignore */ }
+    markPending(givePayload)
+  }
 
   // The always-available certain path. A verified website is not the same as
   // a findable donate page, so this is shown under every CTA, not just on
