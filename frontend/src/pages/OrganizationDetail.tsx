@@ -472,9 +472,18 @@ export default function OrganizationDetail() {
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
             <div>
-              <h1 className="font-display italic text-warm-cream leading-[0.95] tracking-[-0.02em]" style={{ fontSize: 'clamp(36px, 6vw, 72px)' }}>
-                {org.name}
-              </h1>
+              <div className="flex items-start gap-4 sm:gap-5">
+                {/* Logo slot — placeholder (org initials) until the organization uploads
+                    its logo on claim (B4). Reserves a clean, defined identity space. */}
+                <div className="shrink-0 mt-1.5 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border border-white/15 bg-white/[0.06]">
+                  <span className="font-display text-[22px] sm:text-[26px] text-soft-gold leading-none tracking-tight">
+                    {org.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
+                  </span>
+                </div>
+                <h1 className="font-display italic text-warm-cream leading-[0.95] tracking-[-0.02em]" style={{ fontSize: 'clamp(34px, 5.5vw, 66px)' }}>
+                  {org.name}
+                </h1>
+              </div>
               <div className="flex items-center gap-3 mt-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
