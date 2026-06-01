@@ -88,13 +88,24 @@ tail -20 autodev/logs/refresh.log  # last weekly refresh + rescore
 ---
 
 ## OPS / INFRA
-- [ ] **Git remote set up + push** (task #10) — BLOCKED on `gh auth login` (founder action);
-      6+ local commits waiting. Repo verified secret-free, `.env` gitignored.
+- [x] **Git remote set up + push** — `github.com/daanaa-hq/daanaa` (private). All commits pushed 2026-06-01.
+- [x] **9 daanaa.org email aliases live** — Google Groups, all forward to hello@ecomargins.com.
+      Send-as aliases configured. Email triage agent (daily 7:30am cron) classifying + drafting.
+- [x] **accounts@daanaa.org mailbox** — entity-owned login vault, external recovery, never AI-touched.
+- [ ] **DNS** — daanaa.org not yet pointed at server. See `docs/dns-setup.md` for exact records.
+      Need: A record → server IP, SPF TXT, DKIM TXT (from Google Workspace), DMARC TXT, MX records.
+- [ ] **Minova disclosure + written consent** — before any public-facing actions
+      (LinkedIn, press, daanaa.org public launch). Task #20. Requires ~$300-500 Colorado
+      employment lawyer review. Civic/non-competing/personal-time facts are strongly in founder's favor.
 - [ ] Native-backup story documented for users ("your giving rides your phone backup")
 - [ ] Pre-launch full privacy + stewardship compliance review
-- [x] Mission generation running (14B overnight + Haiku in daytime once API credits restored)
+- [x] Mission generation running (14B overnight + Haiku in daytime once Anthropic credits approved)
+- [~] **Anthropic Startup Program** — application filed 2026-06-01. ~2 week review. Unlocks
+      Haiku daytime mission generation for remaining 61K mission backlog.
 
 ---
 
-_Last updated: 2026-05-31 (evening). Manually maintained — the launch gate of record. Update
-when items land. Companion docs: `docs/JOURNEY.md` (milestones), `PRIVACY-INVARIANTS.md` (enforced)._
+_Last updated: 2026-06-01. Manually maintained — the launch gate of record. Update
+when items land. Companion docs: `docs/JOURNEY.md` (milestones), `PRIVACY-INVARIANTS.md` (enforced),
+`docs/dns-setup.md` (DNS records), `meritgiving-ops/email-agent-routing.md` (email architecture),
+`meritgiving-ops/credits-applications.md` (startup credits)._

@@ -1465,6 +1465,16 @@ def fused_search():
     return jsonify(out)
 
 
+# ── Well-known / security ──────────────────────────────────────────────────
+@app.route('/.well-known/security.txt')
+def security_txt():
+    return app.response_class(
+        response="""Contact: mailto:security@daanaa.org\nPreferred-Languages: en\nPolicy: https://daanaa.org/legal\nExpires: 2027-06-01T00:00:00.000Z\n""",
+        status=200,
+        mimetype='text/plain',
+    )
+
+
 # ── Frontend static serving ────────────────────────────────────────────────
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')

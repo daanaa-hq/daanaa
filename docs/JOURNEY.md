@@ -77,7 +77,36 @@ cooler local 14B model, run on an overnight GPU schedule to manage heat.
 
 ---
 
-## AI-impact snapshot (as of 2026-05-31)
+## 2026-06-01 — Infrastructure, operations, and the AI team comes online
+
+**2026-06-01 — The operational layer is built.**
+The platform acquires real operational infrastructure for the first time:
+
+- **9 role-addressed email aliases** (`hello@`, `orgs@`, `legal@`, `trust@`, `contact@`,
+  `security@`, `privacy@`, `partners@`, `verify@` at daanaa.org) — each with a defined
+  department owner, autonomy tier (high/medium/low), and Stewardship-aligned guardrail
+  (no AI auto-send on legal, security, privacy, or verification channels).
+- **AI email triage agent** (`scripts/email_agent/`) — reads the single receiving inbox,
+  classifies by `To:` alias, labels by department, creates Gmail Drafts for reply. No
+  auto-send yet; a human reviews every draft. Templates are deterministic (no LLM in the
+  loop), available 24/7, and carry an AI-disclosure footer per the Stewardship commitment.
+  Daily cron at 7:30am.
+- **GitHub org `daanaa-hq`** — the first external code repository. Private. All commits
+  pushed. The platform has version control outside the local machine for the first time.
+- **Anthropic Startup Program application filed** — seeking API credits to accelerate
+  mission generation (currently 61,200 scored orgs still without a mission statement).
+- **Site email routing** — claim/verify flows → `orgs@`, legal section → `legal@`/`trust@`/
+  `privacy@`/`partners@`, FAQ data-error → `trust@`, footer "Report a data issue" link
+  added. The Stewardship correction channel is now a real, routable address.
+
+This milestone marks the shift from a one-person technical build to a functioning
+operational entity: a real org identity (daanaa.org email addresses), a real code home
+(GitHub), an AI team member for email (the triage agent), and the first formal
+relationship with Anthropic as a partner.
+
+---
+
+## AI-impact snapshot (as of 2026-06-01)
 
 What the AI has done, with one founder and local + API compute. Honest framing: this is
 *enabling* impact (a discoverable, described, scored profile for orgs that were opaque in
@@ -87,16 +116,18 @@ raw filings). *Realized* human impact — real donors giving to orgs they'd neve
 | Metric | Count |
 |---|---|
 | Nonprofits indexed from raw IRS data | 1,811,930 |
-| Given an AI-written plain-language mission (had none on file) | 324,110 |
+| Given an AI-written plain-language mission (had none on file) | 569,262 |
 | Made searchable by cause (AI tags) | 1,811,707 |
 | Given a peer-context financial score (~650K full composite) | ~1.8M ranked |
 | Small "hidden gem" orgs surfaced | 825 |
-| Donate paths discovered + verified | 544 |
+| Donate paths discovered + verified (confidence ≥90) | 375 |
+| Websites verified live | 114,295 |
 
-Counterfactual: the AI-written missions alone represent roughly **67 person-years** of
-analyst work (324K filings × ~25 min each), produced in weeks for a few thousand dollars.
+Counterfactual: the AI-written missions alone represent roughly **118 person-years** of
+analyst work (569K filings × ~25 min each), produced in weeks for a few thousand dollars.
 
 ---
 
-_Next milestones to watch: first real donor-facilitated gift to a sub-$100K org; first
-org self-claim; public launch (see `LAUNCH-CHECKLIST.md` gates); the native app._
+_Next milestones to watch: Anthropic startup credits approved; first real donor-facilitated
+gift to a sub-$100K org; first org self-claim; DNS pointed + daanaa.org live; public launch
+(see `LAUNCH-CHECKLIST.md` gates); the native app._
