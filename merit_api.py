@@ -1093,7 +1093,7 @@ def claim_start():
     if existing and existing['claim_status'] in ('active', 'verified'):
         return jsonify({"error": "This organization has already been claimed"}), 409
     if existing and existing['claim_status'] == 'letter_sent':
-        return jsonify({"error": "A verification letter was already sent. Check your mail or contact hello@daanaa.org to resend."}), 409
+        return jsonify({"error": "A verification letter was already sent. Check your mail or contact orgs@daanaa.org to resend."}), 409
 
     pin            = str(secrets.randbelow(900000) + 100000)
     pin_expires_at = db.execute("SELECT datetime('now', '+30 days')").fetchone()[0]
