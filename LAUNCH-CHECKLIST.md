@@ -30,28 +30,39 @@ Automated gate already enforced: `scripts/privacy_check.sh` runs on every commit
 - [x] AI provenance/beta for missions, donate links, and cause tags (`data_badges`)
 - [x] AI/scraper disclaimer (Legal page + footer)
 - [x] Claimed-profile wireframe + on-page empty-state preview of claimable spaces
-- [x] Wallet backup: self-text + file export/import + 90-day nudge
+- [x] Wallet backup: self-text + passphrase-encrypted (AES-GCM/PBKDF2) export/import + 90-day nudge
 - [x] Privacy: IP-free access logs, `PRIVACY-INVARIANTS.md`, `privacy_check.sh`, pre-commit hook
 - [x] Governance charter draft (from STEWARDSHIP)
+- [x] **Scoring trust fix** — org headline now shows the documented composite (peer_percentile),
+      consistent with the methodology + score-history (was showing the stale merit_score)
+- [x] **Impact tracking (privacy-safe)** — weekly `impact_snapshot.py` time-series; anonymous
+      `/api/handoff` give-click counter; `docs/JOURNEY.md` milestone log (AI-labeled)
+- [x] **Donor-intent signal** — anonymous "I'd give / volunteer here" on unclaimed orgs
+      (`/api/interest`); the demand shows to the org in the claim editor. Org-only, never public.
+- [x] **Revenue section slimmed** — no big empty card for orgs without financials
+- [x] **Overnight GPU/CPU scheduling** — `gpu_night.sh` (10pm-6am, heat-safe), 14B mission model
 
 ### In progress / next
-- [x] **B1. Backup file encryption** — passphrase-based AES-GCM (PBKDF2) client-side; key never leaves device
-- [~] **B2. Capacitor native wrapper** — `frontend/capacitor.config.ts` + `docs/native-app-setup.md`
-      ready. Remaining is FOUNDER ACTION: Apple Developer + Google Play accounts, Mac/Xcode,
-      run the documented install + publish.
-- [~] **B3. Volunteer flow** — `VolunteerInterest` component built (anonymous/named + age-range
-      toggle, device-send, nothing stored), wired into the org profile. Full reach pending B4
-      (org-provided volunteer contact/link).
-- [ ] **B4. Claim-and-edit flow** — let claimed orgs actually set mission, 5 tags, ways-to-help,
-      needs, updates, photo (the wireframe, made real).
+- [x] **B1. Backup file encryption** — done (passphrase AES-GCM, key never leaves device)
+- [~] **B2. Capacitor native wrapper** — config + `docs/native-app-setup.md` ready. Remaining is
+      FOUNDER ACTION: Apple Developer + Google Play accounts, Mac/Xcode, run the documented publish.
+- [~] **B3. Volunteer flow** — `VolunteerInterest` (device-send) + the anonymous intent signal
+      shipped. Full reach pending B4 (org-provided volunteer contact/link).
+- [ ] **B4. Claim-and-edit flow** — claim editor exists and now shows accumulated demand; still
+      to build: org sets mission, 5 tags, ways-to-help, needs, updates, photo (the wireframe made real).
 - [ ] **B5. Fiscal sponsorship** field — donations routed through a sponsor with a different EIN.
 - [ ] **B6. Site alignment pass** — provenance/beta consistency across all pages.
+- [ ] **B7. Opt-in "donate a statistic"** wallet button (Tier-3 aggregate impact; needs a small
+      invariant amendment to permit explicit opt-in aggregate).
 
 ## OPS / INFRA
-- [ ] Git remote set up + push (task #10)
+- [ ] **Git remote set up + push** (task #10) — BLOCKED on `gh auth login` (founder action);
+      6+ local commits waiting. Repo verified secret-free, `.env` gitignored.
 - [ ] Native-backup story documented for users ("your giving rides your phone backup")
 - [ ] Pre-launch full privacy + stewardship compliance review
+- [x] Mission generation running (14B overnight + Haiku in daytime once API credits restored)
 
 ---
 
-_Last updated: 2026-05-31. Update this file as items land; it is the launch gate of record._
+_Last updated: 2026-05-31 (evening). Manually maintained — the launch gate of record. Update
+when items land. Companion docs: `docs/JOURNEY.md` (milestones), `PRIVACY-INVARIANTS.md` (enforced)._
