@@ -207,7 +207,7 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
-DB_PATH = os.path.expanduser("~/meritgiving/data/merit_registry.db")
+DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
 
 # ── Feature flags ─────────────────────────────────────────────────────────────
 # ENABLE_SCORES=false → null out merit_score / merit_tier / merit_band in all
