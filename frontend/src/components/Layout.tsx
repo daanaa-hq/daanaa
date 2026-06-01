@@ -3,6 +3,7 @@ import Navigation from './Navigation'
 import Footer from './Footer'
 import BottomNav from './BottomNav'
 import CompareBar from './CompareBar'
+import BetaBanner from './BetaBanner'
 
 export default function Layout() {
   const location = useLocation()
@@ -12,8 +13,9 @@ export default function Layout() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col">
+      <BetaBanner />
       <Navigation solid />
-      <main className="flex-1 pb-[60px] md:pb-0">
+      <main className="flex-1 pb-[60px] md:pb-0 pt-[36px]">
         <Outlet />
       </main>
       {!hideFooter && <Footer />}
