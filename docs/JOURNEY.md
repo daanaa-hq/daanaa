@@ -128,6 +128,15 @@ analyst work (569K filings × ~25 min each), produced in weeks for a few thousan
 
 ---
 
-_Next milestones to watch: Anthropic startup credits approved; first real donor-facilitated
-gift to a sub-$100K org; first org self-claim; DNS pointed + daanaa.org live; public launch
-(see `LAUNCH-CHECKLIST.md` gates); the native app._
+**2026-06-01 (evening) — daanaa.org deployed to production.**
+DigitalOcean Droplet (NYC2, $8/mo) running gunicorn on port 80. Lean 1.7GB DB (stripped from
+19GB full DB — ML tables excluded, web tables preserved). 2GB swap, UFW firewall, fail2ban,
+log rotation, auto security updates. Daily rsync cron syncs fresh data from the home Ryzen
+pipeline to the cloud server every morning at 7am. Beta banner live. One founder action
+remaining: flip Cloudflare A records to Proxied → daanaa.org goes public.
+
+---
+
+_Next milestones to watch: daanaa.org public (Cloudflare proxy flip); first visitor;
+first feedback email; Anthropic startup credits approved; first real donor-facilitated
+gift to a sub-$100K org; first org self-claim; the native app._

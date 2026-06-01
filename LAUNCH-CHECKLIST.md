@@ -92,8 +92,9 @@ tail -20 autodev/logs/refresh.log  # last weekly refresh + rescore
 - [x] **9 daanaa.org email aliases live** — Google Groups, all forward to hello@ecomargins.com.
       Send-as aliases configured. Email triage agent (daily 7:30am cron) classifying + drafting.
 - [x] **accounts@daanaa.org mailbox** — entity-owned login vault, external recovery, never AI-touched.
-- [ ] **DNS** — daanaa.org not yet pointed at server. See `docs/dns-setup.md` for exact records.
-      Need: A record → server IP, SPF TXT, DKIM TXT (from Google Workspace), DMARC TXT, MX records.
+- [~] **DNS** — Cloudflare configured, A records point to DigitalOcean droplet (162.243.97.179).
+      FOUNDER ACTION: flip both A records to Proxied (orange cloud) in Cloudflare DNS + set SSL/TLS → Flexible.
+      After that: daanaa.org is live. DKIM still needed (Google Workspace Admin → Gmail → Authenticate email).
 - [ ] **Minova disclosure + written consent** — before any public-facing actions
       (LinkedIn, press, daanaa.org public launch). Task #20. Requires ~$300-500 Colorado
       employment lawyer review. Civic/non-competing/personal-time facts are strongly in founder's favor.
@@ -102,6 +103,9 @@ tail -20 autodev/logs/refresh.log  # last weekly refresh + rescore
 - [x] Mission generation running (14B overnight + Haiku in daytime once Anthropic credits approved)
 - [~] **Anthropic Startup Program** — application filed 2026-06-01. ~2 week review. Unlocks
       Haiku daytime mission generation for remaining 61K mission backlog.
+- [x] **DigitalOcean droplet live** — daanaa-web, NYC2, $8/mo, 162.243.97.179. Gunicorn on port 80,
+      2GB swap, UFW firewall, fail2ban, log rotation, auto security updates. Daily DB sync cron 7am.
+- [x] **Beta banner** — dismissable, links to hello@daanaa.org for feedback. Ships with full app.
 
 ---
 
