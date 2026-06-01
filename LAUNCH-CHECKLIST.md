@@ -55,6 +55,38 @@ Automated gate already enforced: `scripts/privacy_check.sh` runs on every commit
 - [ ] **B7. Opt-in "donate a statistic"** wallet button (Tier-3 aggregate impact; needs a small
       invariant amendment to permit explicit opt-in aggregate).
 
+## DATA REFRESH CADENCE (when new data lands)
+
+Automated via cron (`crontab -l`). All times local. Edit `scripts/auto_refresh.sh`
+or the crontab to change cadence.
+
+| When | What | Source | Why it matters |
+|---|---|---|---|
+| **1st of month, 1 AM** | `download_irs_soi.sh` — pulls latest IRS Statistics of Income extract | IRS SOI bulk | Authoritative annual revenue/asset figures |
+| **Every Sunday, 1 AM** | `gt990_refresh` — pulls latest 990 XML index from the IRS S3 datalake | AWS S3 (IRS) | Tells us which orgs have new 990 filings to ingest |
+| **Every Sunday, 2 AM** | `auto_refresh.sh` 4-stage pipeline: (1) ProPublica backfill → (2) ingest latest SOI year → (3) recompute peer groups + provisional percentiles → (4) **composite scorer** (0.65 revenue / 0.35 reserve) | ProPublica + IRS | This is THE weekly score refresh; rescore reflects the week's new data |
+| **Every Sunday, 2 AM** | `backfill_stubs.py --phase 1` — fills in missing fields on partial orgs | NCCS / ProPublica | Improves coverage for data-dark small orgs |
+| **Sun + every Mon-Sat, 3 AM** | `backfill_stubs.py --phase 2 --limit 300` — incremental gap-fill | same | Slow trickle, no spike |
+| **Every Sunday, 3 AM** | `merit_daemon.sh` weekly orchestrator | various | Catch-all weekly housekeeping |
+| **Every 2 hours** | `auto_ingest.py` — small batched ingestion of queued orgs | ProPublica cache | Keeps the queue moving without spikes |
+| **Daily, 10 PM → 6 AM** | `gpu_night.sh` — mission generation on the local 14B GPU model | Local inference | Heat-safe overnight window (cron-enforced) |
+| **Every Monday, 5 AM** | `impact_snapshot.py` — privacy-safe weekly impact metrics | own DB | Time-series for JOURNEY.md + future public impact page |
+
+**To verify the schedule is actually firing:**
+```bash
+crontab -l | grep -viE '^(#|$|VENV=|SCRIPT=|LOGDIR=)'
+tail -20 logs/impact.log         # last weekly impact snapshot
+tail -20 autodev/logs/refresh.log  # last weekly refresh + rescore
+```
+
+**Manual data refresh (out of cycle):**
+```bash
+./scripts/auto_refresh.sh                                  # full Sunday-style refresh now
+./scripts/download_irs_soi.sh && ./scripts/auto_refresh.sh # monthly SOI + refresh
+```
+
+---
+
 ## OPS / INFRA
 - [ ] **Git remote set up + push** (task #10) — BLOCKED on `gh auth login` (founder action);
       6+ local commits waiting. Repo verified secret-free, `.env` gitignored.
