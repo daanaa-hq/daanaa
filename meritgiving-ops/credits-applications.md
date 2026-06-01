@@ -30,7 +30,7 @@ outcomes for organizations that had zero online presence before.
 
 ## 1. Anthropic — API Credits
 
-**Status:** ☐
+**Status:** ⏳ Submitted 2026-06-01
 **Why first:** Fixes the starved Haiku key. Daytime mission generation resumes.
 **Apply at:** anthropic.com/startups (or the "Contact sales" / credits form)
 **Account to use:** accounts@daanaa.org
@@ -151,12 +151,19 @@ outcomes for organizations that had zero online presence before.
 
 ## Submission order (recommended)
 
-1. **Anthropic** — fixes the Haiku pipeline today
-2. **GitHub for Startups** — 5 min, repo is live and ready
-3. **Microsoft for Startups** — Copilot useful immediately for solo dev
-4. **Google for Startups** — longer review but high value
-5. **AWS Activate** — parallel with Google
-6. **Stripe** — when B2B revenue track starts
+**Reality check (researched 2026-06-01):** As a bootstrapped, pre-revenue, solo-founder
+startup with no outside funding, we qualify for the *entry tiers* of each program. The
+larger tiers ($150K Azure, $350K GCP) gate on investor backing — open later if we raise.
+**GitHub for Startups** is skipped: it requires a partner affiliation AND outside
+funding (we have neither).
+
+1. **Anthropic Startup Program** — $25K–$100K credits, Airtable form, ~2 wk rolling review. Fixes Haiku pipeline if approved
+2. **Google Cloud bootstrap tier** — $2K credits explicitly for "not yet backed with startup equity funding", ~3–5 day review
+3. **Microsoft Founders Hub** — $1K initial → $5K after business verification, self-serve, no validation needed
+4. **AWS Activate (Builders)** — $1K–$10K self-serve tier
+5. **Stripe** — when B2B revenue track starts (later)
+
+⏭️ **GitHub for Startups** — skip until we raise or get a partner affiliation
 
 ---
 
