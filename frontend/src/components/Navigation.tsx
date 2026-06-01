@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import GivingListDrawer from './GivingListDrawer'
 
@@ -9,10 +9,24 @@ interface NavigationProps {
 
 export default function Navigation({ solid = true }: NavigationProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [headerQuery, setHeaderQuery] = useState('')
   const location = useLocation()
+  const navigate = useNavigate()
   const { count: savedCount } = useSavedOrgs()
 
   const isActive = (path: string) => location.pathname === path
+
+  // Skip the header search on pages that already have a primary search of their
+  // own (the hero on Home, the page-level bar on Directory) to avoid duplicates.
+  const showHeaderSearch = !['/', '/directory'].includes(location.pathname)
+
+  const submitHeaderSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    const q = headerQuery.trim()
+    navigate(q ? `/directory?q=${encodeURIComponent(q)}` : '/directory')
+    setHeaderQuery('')
+    setMobileOpen(false)
+  }
 
   return (
     <>
@@ -57,6 +71,26 @@ export default function Navigation({ solid = true }: NavigationProps) {
               </Link>
             ))}
           </div>
+
+          {/* Persistent header search — hidden on pages that have their own primary search */}
+          {showHeaderSearch && (
+            <form onSubmit={submitHeaderSearch} className="hidden md:flex flex-1 max-w-[320px] mx-6">
+              <div className="relative w-full">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                     className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  type="search"
+                  value={headerQuery}
+                  onChange={e => setHeaderQuery(e.target.value)}
+                  placeholder="Search nonprofits…"
+                  aria-label="Search nonprofits"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white border border-light-grey font-body text-[13px] text-deep-navy placeholder:text-cool-grey/60 outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors"
+                />
+              </div>
+            </form>
+          )}
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center gap-3">
@@ -107,7 +141,18 @@ export default function Navigation({ solid = true }: NavigationProps) {
               <line x1="20" y1="4" x2="4" y2="20" />
             </svg>
           </button>
-          <div className="flex flex-col items-center gap-5">
+          <div className="flex flex-col items-center gap-5 w-full max-w-[320px] px-6">
+            <form onSubmit={submitHeaderSearch} className="w-full opacity-0 animate-[fadeIn_0.4s_ease-out_forwards]">
+              <input
+                type="search"
+                value={headerQuery}
+                onChange={e => setHeaderQuery(e.target.value)}
+                placeholder="Search nonprofits…"
+                aria-label="Search nonprofits"
+                autoFocus
+                className="w-full px-4 py-3 rounded-full bg-white/10 border border-white/15 font-body text-[15px] text-warm-cream placeholder:text-warm-cream/50 outline-none focus:border-soft-gold focus:bg-white/15 transition-colors"
+              />
+            </form>
             {[
               { label: 'Directory', path: '/directory' },
               { label: 'For Nonprofits', path: '/for-nonprofits' },
