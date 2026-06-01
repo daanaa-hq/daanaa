@@ -150,10 +150,22 @@ export default function Legal() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Contact</h2>
             <p>
-              For data corrections, partnership inquiries, or legal questions, contact us at{' '}
-              <a href="mailto:hello@daanaa.org"
+              Legal questions and takedown requests:{' '}
+              <a href="mailto:legal@daanaa.org"
                  className="text-soft-gold hover:text-bright-gold transition-colors">
-                hello@daanaa.org
+                legal@daanaa.org
+              </a>. Data corrections:{' '}
+              <a href="mailto:trust@daanaa.org"
+                 className="text-soft-gold hover:text-bright-gold transition-colors">
+                trust@daanaa.org
+              </a>. Privacy and data requests:{' '}
+              <a href="mailto:privacy@daanaa.org"
+                 className="text-soft-gold hover:text-bright-gold transition-colors">
+                privacy@daanaa.org
+              </a>. Partnerships:{' '}
+              <a href="mailto:partners@daanaa.org"
+                 className="text-soft-gold hover:text-bright-gold transition-colors">
+                partners@daanaa.org
               </a>.
             </p>
           </section>

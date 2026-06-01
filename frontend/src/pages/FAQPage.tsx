@@ -104,7 +104,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         q: 'The information about my organization is wrong. What can I do?',
         a: (
           <>
-            If the data shown is incorrect, the most likely explanation is that the IRS filing contains the error — in which case the correction needs to happen there first, and Daanaa will pick it up on the next refresh. For claims or additions (mission statement, website, programs), you can claim your page when that feature launches. In the meantime, contact us at{' '}<a href="mailto:hello@daanaa.org" className="text-soft-gold hover:text-bright-gold transition-colors">hello@daanaa.org</a>.
+            If the data shown is incorrect, the most likely explanation is that the IRS filing contains the error — in which case the correction needs to happen there first, and Daanaa will pick it up on the next refresh. For claims or additions (mission statement, website, programs), you can claim your page when that feature launches. In the meantime, report a data issue at{' '}<a href="mailto:trust@daanaa.org" className="text-soft-gold hover:text-bright-gold transition-colors">trust@daanaa.org</a>.
           </>
         ),
       },
