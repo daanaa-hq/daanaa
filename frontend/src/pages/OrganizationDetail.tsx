@@ -977,21 +977,12 @@ export default function OrganizationDetail() {
               </div>
             )
           })()}
-          <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8">
-            {revenueTrend.length > 0 ? (
+          {/* When there's no multi-year revenue chart, don't reserve a big empty
+              column — the revenue number already lives in the header badges. Let
+              the About / claim column reflow to fill the space. */}
+          <div className={revenueTrend.length > 0 ? "grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8" : ""}>
+            {revenueTrend.length > 0 && (
               <RevenueChart data={revenueTrend} />
-            ) : (
-              <div className="bg-white border border-light-grey rounded-xl p-6 flex flex-col justify-center">
-                <h4 className="font-display text-deep-navy text-[20px] mb-2">Revenue</h4>
-                <p className="font-body text-[32px] font-semibold tracking-[-0.02em] text-deep-navy">
-                  {org.revenue > 0 ? formatCurrency(org.revenue) : '—'}
-                </p>
-                <p className="font-body text-[13px] text-cool-grey mt-2">
-                  {org.revenue > 0
-                    ? 'Latest reported annual revenue from public records.'
-                    : 'This organization files a short annual confirmation with the government. Full financials are not publicly available.'}
-                </p>
-              </div>
             )}
             <div className="flex flex-col gap-4">
               <div className="bg-white border border-light-grey rounded-xl p-6 flex flex-col gap-4">

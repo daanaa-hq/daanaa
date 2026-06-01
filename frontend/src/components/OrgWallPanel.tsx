@@ -11,6 +11,8 @@ const LAMP_PATH = [
   'Z',
 ].join(' ')
 
+import SupportIntent from './SupportIntent'
+
 interface OrgWallPanelProps {
   orgName: string
   ein: string
@@ -68,6 +70,10 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
           </a>
           {' '}It&rsquo;s free.
         </p>
+
+        <div className="w-full pt-4 mt-1 border-t" style={{ borderColor: '#E5E0DB' }}>
+          <SupportIntent orgName={orgName} ein={ein} />
+        </div>
       </div>
 
       {/* Phase 2 teaser */}

@@ -320,6 +320,26 @@ def _init_donate_handoffs_table():
 _init_donate_handoffs_table()
 
 
+def _init_org_interest_table():
+    # Anonymous demand signal: how many people expressed intent to DONATE or
+    # VOLUNTEER for an org (especially unclaimed ones). Aggregate count only —
+    # NO donor identity, NO IP, NO contact info. Shown ONLY to the organization
+    # when it claims its page (a reason to claim + a starting point), never
+    # publicly (avoids social-pressure / popularity mechanics, principles 2 & 5).
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS org_interest (
+                ein    TEXT NOT NULL,
+                kind   TEXT NOT NULL,
+                count  INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (ein, kind)
+            )
+        """)
+        db.commit()
+
+_init_org_interest_table()
+
+
 def _init_org_claims_table():
     with sqlite3.connect(DB_PATH) as db:
         db.execute("""
@@ -948,6 +968,42 @@ def donate_handoff():
     )
     db.commit()
     return ('', 204)
+
+
+@app.route('/api/interest', methods=['POST'])
+def org_interest_signal():
+    # Anonymous demand signal toward an org. Accept ONLY an EIN and a kind.
+    # No identity, no contact, no IP. The org sees the tally only on claim.
+    data = request.get_json(silent=True) or {}
+    ein  = ''.join(c for c in str(data.get('ein', '')) if c.isdigit())[:10]
+    kind = str(data.get('kind', '')).strip().lower()
+    if not ein or kind not in ('donate', 'volunteer'):
+        return jsonify({'error': "ein and kind ('donate'|'volunteer') required"}), 400
+    db = get_db()
+    db.execute(
+        "INSERT INTO org_interest (ein, kind, count) VALUES (?, ?, 1) "
+        "ON CONFLICT(ein, kind) DO UPDATE SET count = count + 1",
+        (ein, kind),
+    )
+    db.commit()
+    return ('', 204)
+
+
+@app.route('/api/interest/<ein>')
+def org_interest_counts(ein):
+    # Readback of the anonymous demand tally for an org, for the claim flow to
+    # show the organization ("3 people wanted to give, 1 to volunteer"). Counts
+    # only — never who. Intentionally not joined into public org responses.
+    ein = ''.join(c for c in str(ein) if c.isdigit())[:10]
+    db = get_db()
+    rows = db.execute(
+        "SELECT kind, count FROM org_interest WHERE ein = ?", (ein,)
+    ).fetchall()
+    out = {'donate': 0, 'volunteer': 0}
+    for r in rows:
+        if r['kind'] in out:
+            out[r['kind']] = r['count']
+    return jsonify(out)
 
 
 @app.route('/api/admin/waitlist', methods=['GET'])

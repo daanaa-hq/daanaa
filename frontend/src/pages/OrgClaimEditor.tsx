@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { formatEIN } from '../data/organizations'
@@ -26,6 +26,12 @@ export default function OrgClaimEditor() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  // Anonymous demand the org accumulated before claiming — their reason to start.
+  const [interest, setInterest] = useState<{ donate: number; volunteer: number } | null>(null)
+  useEffect(() => {
+    if (!state?.ein) return
+    fetch(`/api/interest/${state.ein}`).then(r => r.ok ? r.json() : null).then(setInterest).catch(() => {})
+  }, [state?.ein])
 
   if (!state?.ein || !state?.pin) {
     return (
@@ -135,6 +141,18 @@ export default function OrgClaimEditor() {
           {state.org_name}
         </h1>
         <p className="font-body text-[13px] text-cool-grey mb-8">EIN {formatEIN(state.ein)} · {state.irs_address}</p>
+
+        {interest && (interest.donate > 0 || interest.volunteer > 0) && (
+          <div className="mb-8 rounded-xl border border-soft-gold/30 bg-soft-gold/5 px-5 py-4">
+            <p className="font-body text-[13px] text-deep-navy leading-[1.6]">
+              <strong>People were already looking for you.</strong>{' '}
+              {interest.donate > 0 && `${interest.donate} ${interest.donate === 1 ? 'person' : 'people'} signaled they'd give here`}
+              {interest.donate > 0 && interest.volunteer > 0 && ', and '}
+              {interest.volunteer > 0 && `${interest.volunteer} ${interest.volunteer === 1 ? 'person' : 'people'} would volunteer`}
+              {' '}— anonymously, before you even claimed. Fill in the pieces below and they'll have a way to act.
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSave} className="space-y-6">
           {/* Mission */}
