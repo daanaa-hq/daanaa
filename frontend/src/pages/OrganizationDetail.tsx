@@ -952,38 +952,10 @@ export default function OrganizationDetail() {
             </div>
           )}
 
-          {(() => {
-            if (revenueTrend.length < 2) return null
-            const first = revenueTrend[0].amount
-            const last = revenueTrend[revenueTrend.length - 1].amount
-            if (first === 0) return null
-            // Cap the trend label at 5 years; full data still shown in chart
-            const trendWindow = revenueTrend.slice(-5)
-            const trendFirst  = trendWindow[0].amount
-            const trendYears  = trendWindow.length - 1
-            const pct = trendFirst === 0 ? 0 : Math.round(((last - trendFirst) / trendFirst) * 100)
-            const isFlat = Math.abs(pct) < 2
-            return (
-              <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border"
-                style={isFlat
-                  ? { background: '#F5F4F2', borderColor: '#D9D4CE', color: '#6B7280' }
-                  : pct > 0
-                  ? { background: '#ECFDF5', borderColor: '#A7F3D0', color: '#065F46' }
-                  : { background: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }
-                }
-              >
-                <span>{isFlat ? '→' : pct > 0 ? '↗' : '↘'}</span>
-                <span>Revenue Trend: {isFlat ? 'Flat' : `${pct > 0 ? '+' : ''}${pct}%`} over {trendYears} year{trendYears !== 1 ? 's' : ''}</span>
-              </div>
-            )
-          })()}
-          {/* When there's no multi-year revenue chart, don't reserve a big empty
-              column — the revenue number already lives in the header badges. Let
-              the About / claim column reflow to fill the space. */}
-          <div className={revenueTrend.length > 0 ? "grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8" : ""}>
-            {revenueTrend.length > 0 && (
-              <RevenueChart data={revenueTrend} />
-            )}
+          {/* About this listing + the org's claimable spaces get the full width
+              and are clearly defined. The wide revenue trend chart moves to its
+              own full-width block below this (see "Revenue Trend" section). */}
+          <div>
             <div className="flex flex-col gap-4">
               <div className="bg-white border border-light-grey rounded-xl p-6 flex flex-col gap-4">
                 <div>
@@ -1056,6 +1028,38 @@ export default function OrganizationDetail() {
           </div>
         </div>
       </div>
+
+      {/* Revenue Trend — its own full-width block, below the About / claim space.
+          Wide and clearly defined so it's easy to read for anyone learning more. */}
+      {revenueTrend.length >= 2 && (() => {
+        const first = revenueTrend[0].amount
+        const last = revenueTrend[revenueTrend.length - 1].amount
+        const trendWindow = revenueTrend.slice(-5)
+        const trendFirst  = trendWindow[0].amount
+        const trendYears  = trendWindow.length - 1
+        const pct = (first === 0 || trendFirst === 0) ? 0 : Math.round(((last - trendFirst) / trendFirst) * 100)
+        const isFlat = Math.abs(pct) < 2
+        return (
+          <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
+            <div className="flex items-center gap-3 mb-5 flex-wrap">
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Revenue over time</span>
+              {first !== 0 && (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border"
+                  style={isFlat
+                    ? { background: '#F5F4F2', borderColor: '#D9D4CE', color: '#6B7280' }
+                    : pct > 0
+                    ? { background: '#ECFDF5', borderColor: '#A7F3D0', color: '#065F46' }
+                    : { background: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
+                >
+                  <span>{isFlat ? '→' : pct > 0 ? '↗' : '↘'}</span>
+                  <span>{isFlat ? 'Flat' : `${pct > 0 ? '+' : ''}${pct}%`} over {trendYears} year{trendYears !== 1 ? 's' : ''}</span>
+                </span>
+              )}
+            </div>
+            <RevenueChart data={revenueTrend} />
+          </div>
+        )
+      })()}
 
       {/* Mission & Programs */}
       <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
