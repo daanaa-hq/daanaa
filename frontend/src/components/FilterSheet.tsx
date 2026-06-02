@@ -282,29 +282,6 @@ export default function FilterSheet({
             </div>
           </div>
 
-          {/* Visibility level filter */}
-          <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Visibility Level</span>
-            <div className="flex gap-2">
-              {SCORE_TIERS.map(tier => (
-                <button
-                  key={tier.id}
-                  onClick={() => onScoreTierChange(scoreTier === tier.id ? '' : tier.id)}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl font-body text-[13px] border transition-all"
-                  style={{
-                    backgroundColor: scoreTier === tier.id ? 'rgba(201,169,110,0.10)' : '#F5F0EB',
-                    color: scoreTier === tier.id ? TIER_COLORS[tier.id] : '#6B7280',
-                    borderColor: scoreTier === tier.id ? TIER_COLORS[tier.id] : 'transparent',
-                    fontWeight: scoreTier === tier.id ? '600' : '400',
-                  }}
-                >
-                  <LampMark tier={tier.id} size="xs" />
-                  {tier.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Sort */}
           <div>
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Sort By</span>
