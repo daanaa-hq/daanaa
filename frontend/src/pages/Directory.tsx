@@ -15,7 +15,7 @@ import { RAIL_CATEGORIES, ALL_CATEGORIES, NTEE_SUBCATEGORIES } from '../data/cat
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All' },
-  ...ALL_CATEGORIES.filter(c => ['B','E','A','C','P','S','D','Q','X','K'].includes(c.id)),
+  ...ALL_CATEGORIES,
 ]
 
 const SCORES_ENABLED = import.meta.env.VITE_ENABLE_SCORES !== 'false'
@@ -114,6 +114,11 @@ const US_STATES = [
   ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],
   ['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],
   ['DC','Washington DC'],
+  // U.S. territories
+  ['PR','Puerto Rico'],['GU','Guam'],['VI','U.S. Virgin Islands'],
+  ['AS','American Samoa'],['MP','Northern Mariana Islands'],
+  // Military (APO/FPO/DPO)
+  ['AA','Armed Forces Americas'],['AE','Armed Forces Europe'],['AP','Armed Forces Pacific'],
 ] as const
 
 // ── Filter Rail (desktop sidebar) ────────────────────────────────────────────
@@ -759,23 +764,46 @@ export default function Directory() {
                 {'emoji' in cat && cat.emoji ? `${cat.emoji} ` : ''}{cat.label}
               </button>
             ))}
-            <div className="relative ml-auto">
-              <select
-                value={stateFilter}
-                onChange={e => handleStateChange(e.target.value)}
-                className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
-                style={{
-                  backgroundColor: stateFilter ? '#C9A96E' : 'transparent',
-                  color: stateFilter ? '#0A1628' : '#4B5563',
-                  borderColor: stateFilter ? '#C9A96E' : '#E5E0DB',
-                }}
-              >
-                <option value="">All States</option>
-                {US_STATES.map(([abbr, name]) => (
-                  <option key={abbr} value={abbr}>{abbr} · {name}</option>
-                ))}
-              </select>
-              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            <div className="ml-auto flex items-center gap-2">
+              {/* Revenue band */}
+              <div className="relative">
+                <select
+                  value={revenueFilter}
+                  onChange={e => handleRevenueChange((e.target.value || '') as RevenueId)}
+                  title="Filter by the organization's annual revenue size"
+                  className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
+                  style={{
+                    backgroundColor: revenueFilter ? '#C9A96E' : 'transparent',
+                    color: revenueFilter ? '#0A1628' : '#4B5563',
+                    borderColor: revenueFilter ? '#C9A96E' : '#E5E0DB',
+                  }}
+                >
+                  <option value="">Any size</option>
+                  {REVENUE_PRESETS.map(p => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+                <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              {/* State */}
+              <div className="relative">
+                <select
+                  value={stateFilter}
+                  onChange={e => handleStateChange(e.target.value)}
+                  className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
+                  style={{
+                    backgroundColor: stateFilter ? '#C9A96E' : 'transparent',
+                    color: stateFilter ? '#0A1628' : '#4B5563',
+                    borderColor: stateFilter ? '#C9A96E' : '#E5E0DB',
+                  }}
+                >
+                  <option value="">All States</option>
+                  {US_STATES.map(([abbr, name]) => (
+                    <option key={abbr} value={abbr}>{abbr} · {name}</option>
+                  ))}
+                </select>
+                <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
             </div>
           </div>}
 
