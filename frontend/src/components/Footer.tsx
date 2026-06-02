@@ -29,7 +29,7 @@ export default function Footer() {
               Daanaa
             </Link>
             <p className="mt-2 font-body text-[14px] leading-[1.5] tracking-[0.01em] text-muted-cream">
-              Find causes. Give clearly. Keep your record private.
+              See the overlooked. Give wisely. Stay private.
             </p>
           </div>
 
