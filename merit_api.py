@@ -936,6 +936,13 @@ def stats():
         SELECT STATE, COUNT(*) as count FROM registry_enriched
         WHERE {f} AND STATE IS NOT NULL GROUP BY STATE ORDER BY count DESC LIMIT 5
     """).fetchall()]
+    # propublica_financials is excluded from the lean web DB (kept only on the
+    # home/full instance). Fall back to the count of orgs with financial data so
+    # the stats endpoint never 500s on the production droplet.
+    try:
+        financial_records = db.execute("SELECT COUNT(*) FROM propublica_financials").fetchone()[0]
+    except sqlite3.OperationalError:
+        financial_records = agg["with_revenue"]
     payload = {
         "total_organizations": agg["total"],
         "with_revenue": agg["with_revenue"],
@@ -946,7 +953,7 @@ def stats():
         "scores_last_updated": db.execute(
             "SELECT MAX(snapshot_date) FROM score_snapshots"
         ).fetchone()[0],
-        "financial_records": db.execute("SELECT COUNT(*) FROM propublica_financials").fetchone()[0],
+        "financial_records": financial_records,
         "with_reserve_data": agg["has_reserve"],
         "reserve_health": {
             "insolvent": agg["insolvent"],
