@@ -78,8 +78,9 @@ NTEE_HINT = {
 
 SYSTEM = (
     "You tag U.S. nonprofits by cause. You are given an organization's mission and you "
-    "choose the tags that best describe what it does. You MUST return at least 5 tags "
-    "(5 to 7) for search coverage; if the mission is narrow, add the closest broader tags. "
+    "choose the tags that genuinely describe what it does. Aim for about 5 tags for good "
+    "search coverage, but only use tags that truly fit: use 3 or 4 if that is all that "
+    "applies, and up to 7. Never add a weak or irrelevant tag just to reach a number. "
     "Choose ONLY from the provided tag list. Prefer the mission over the IRS "
     "category hint when they disagree. Order the tags most-relevant first. "
     "Output ONLY a JSON array of tag strings, nothing else."
@@ -94,7 +95,7 @@ def _build_prompt(org: dict) -> str:
         f"IRS category hint (may be wrong): {hint or 'unknown'}\n"
         f"Mission: {mission}\n\n"
         f"Allowed tags: {', '.join(VOCAB)}\n\n"
-        f"Return a JSON array of at least 5 (up to 7) best-fitting tags from the allowed list, most relevant first."
+        f"Return a JSON array of the genuinely fitting tags (aim for ~5, but 3 to 7 is fine), most relevant first."
     )
 
 
