@@ -149,7 +149,7 @@ export default function OrgClaimEditor() {
               {interest.donate > 0 && `${interest.donate} ${interest.donate === 1 ? 'person' : 'people'} signaled they'd give here`}
               {interest.donate > 0 && interest.volunteer > 0 && ', and '}
               {interest.volunteer > 0 && `${interest.volunteer} ${interest.volunteer === 1 ? 'person' : 'people'} would volunteer`}
-              {' '}— anonymously, before you even claimed. Fill in the pieces below and they'll have a way to act.
+              {', '}anonymously, before you even claimed. Fill in the pieces below and they'll have a way to act.
             </p>
           </div>
         )}
@@ -160,7 +160,7 @@ export default function OrgClaimEditor() {
             <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">
               Mission statement
               <span className="ml-2 border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5 font-normal">
-                {state.current_mission ? 'β ai-generated — update it' : 'optional'}
+                {state.current_mission ? 'β ai-generated, update it' : 'optional'}
               </span>
             </label>
             <textarea

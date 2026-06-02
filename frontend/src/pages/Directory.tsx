@@ -245,7 +245,7 @@ function FilterRail({
               Direct link available
             </span>
             <span className="block font-body text-[11px] text-cool-grey/70 leading-[1.4] mt-0.5">
-              Give directly — no hunting for a donate page
+              Give directly, no hunting for a donate page
             </span>
           </span>
         </button>
@@ -450,7 +450,7 @@ export default function Directory() {
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
     qParam ? `"${qParam}" · Causes & Giving Paths` : 'Explore Causes & Giving Paths',
-    'Search 1.6 million+ nonprofits recognized by the IRS — by cause, category, location, and giving path.'
+    'Search 1.6 million+ nonprofits recognized by the IRS, by cause, category, location, and giving path.'
   )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
@@ -843,7 +843,7 @@ export default function Directory() {
                         </span>
                       )}
                       {useFusedResults && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-soft-gold font-body text-[11px]" title="Results ranked by combining keyword matching and meaning — not by size or revenue">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-soft-gold font-body text-[11px]" title="Results ranked by combining keyword matching and meaning, not by size or revenue">
                           Name + meaning
                         </span>
                       )}

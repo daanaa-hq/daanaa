@@ -66,7 +66,7 @@ export default function GuidesPage() {
             description="A Daanaa profile has two independent signals: the score and the tier. Understanding both takes about 60 seconds."
           >
             <p>
-              The <strong className="text-deep-navy font-semibold">Daanaa score</strong> is a peer percentile — a number from 0 to 100 that shows how this organization compares financially to similar nonprofits doing similar work at similar scale. A score of 80 means it outperforms 80% of its peers. This is not a grade on a curve — it is a ranking within a carefully constructed peer group defined by NTEE subcategory and revenue band.
+              The <strong className="text-deep-navy font-semibold">Daanaa score</strong> is a peer percentile, a number from 0 to 100 that shows how this organization compares financially to similar nonprofits doing similar work at similar scale. A score of 80 means it outperforms 80% of its peers. This is not a grade on a curve. It is a ranking within a carefully constructed peer group defined by NTEE subcategory and revenue band.
             </p>
             <p>
               The <strong className="text-deep-navy font-semibold">trust tier</strong> (Beacon → Spark) reflects how much public data backs the profile today. A Beacon has a current 990 on file, a mission statement, an active website, and a top-quartile peer score. A Spark is an IRS-registered nonprofit with little financial detail yet in public records. The tier is a transparency signal, not a quality verdict.
@@ -75,7 +75,7 @@ export default function GuidesPage() {
               A high Daanaa score in a Spark tier means the organization is financially strong next to its peers, but has limited public data. That combination often describes a well run small organization that hasn't filed a full 990. With revenue under $50,000 they file a short 990-N postcard instead.
             </Tip>
             <p>
-              Each profile also shows a <strong className="text-deep-navy font-semibold">data vintage</strong> — the fiscal year and source of the financial figures. A "FY 2022 · IRS" badge means the revenue figure is from the organization's 2022 tax return. Always check the vintage before making a large gift.
+              Each profile also shows a <strong className="text-deep-navy font-semibold">data vintage</strong>, the fiscal year and source of the financial figures. A "FY 2022 · IRS" badge means the revenue figure is from the organization's 2022 tax return. Always check the vintage before making a large gift.
             </p>
           </GuideCard>
 
@@ -130,8 +130,8 @@ export default function GuidesPage() {
           >
             <p><strong className="text-deep-navy font-semibold">1. Verify tax-exempt status.</strong> Every organization on Daanaa is a current IRS-recognized 501(c)(3). If an organization is soliciting donations and isn't on Daanaa, search the <a href="https://apps.irs.gov/app/eos/" target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:text-bright-gold transition-colors">IRS Tax Exempt Organization Search</a> to confirm status before giving.</p>
             <p><strong className="text-deep-navy font-semibold">2. Check the fiscal year of the revenue figure.</strong> A 990 filed in 2024 typically covers fiscal year 2022 or 2023. Revenue figures that are 2–3 years old can be misleading if an organization has grown or shrunk significantly since then.</p>
-            <p><strong className="text-deep-navy font-semibold">3. Look at the peer score in context.</strong> A score of 55 in the "Special Education" subcategory for a $200K/year organization tells you more than a score of 55 with no peer context. Daanaa always shows the peer group — check it.</p>
-            <p><strong className="text-deep-navy font-semibold">4. Read the mission statement.</strong> Daanaa shows mission text from IRS 990 filings when available. This is what the organization told the federal government its purpose is — not its marketing copy.</p>
+            <p><strong className="text-deep-navy font-semibold">3. Look at the peer score in context.</strong> A score of 55 in the "Special Education" subcategory for a $200K/year organization tells you more than a score of 55 with no peer context. Daanaa always shows the peer group, so check it.</p>
+            <p><strong className="text-deep-navy font-semibold">4. Read the mission statement.</strong> Daanaa shows mission text from IRS 990 filings when available. This is what the organization told the federal government its purpose is, not its marketing copy.</p>
             <p><strong className="text-deep-navy font-semibold">5. Look for a current website.</strong> A Lantern or Beacon tier confirms an active website is in public records. If you can't find one, call the organization directly before writing a large check.</p>
             <Tip>
               For gifts over $1,000, spend 10 minutes on the organization's actual 990 filing, available on ProPublica Nonprofit Explorer. Look at Part IX (Statement of Functional Expenses) to see how much goes to program services versus management versus fundraising.

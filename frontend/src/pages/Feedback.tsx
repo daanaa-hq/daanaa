@@ -105,7 +105,7 @@ export default function Feedback() {
 
             <div>
               <label className="block font-body text-[13px] font-medium text-deep-navy mb-2">
-                Email <span className="text-cool-grey font-normal">(optional — only if you want a reply)</span>
+                Email <span className="text-cool-grey font-normal">(optional, only if you want a reply)</span>
               </label>
               <input
                 type="email"
