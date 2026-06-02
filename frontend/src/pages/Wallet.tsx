@@ -331,7 +331,7 @@ export default function Wallet() {
             Your Giving Wallet
           </h1>
           <p className="mt-3 font-body text-[14px] text-muted-cream">
-            Your complete giving record. Gifts under $250 are self-documented. Letters are required for gifts of $250+ if you itemize.
+            A private record of every gift you make. Small gifts need only your own note. For $250 and up, the nonprofit's acknowledgment letter is required if you itemize, and we help you request it.
           </p>
         </div>
       </div>
