@@ -1,0 +1,28 @@
+# Daanaa — daanaa.org
+# Public directory pages are indexable. API endpoints and user-flow pages are not.
+
+User-agent: *
+Allow: /
+Allow: /directory
+Allow: /category/
+Allow: /org/
+Allow: /about
+Allow: /how-it-works
+Allow: /methodology
+Allow: /the-invisible-97
+Allow: /guides
+Allow: /faq
+Allow: /for-nonprofits
+
+# API, admin, and user-account paths — no value indexing these
+Disallow: /api/
+Disallow: /admin/
+Disallow: /giving-list/
+Disallow: /wallet
+Disallow: /compare
+Disallow: /claim/
+
+# Crawl slowly — this is a small droplet
+Crawl-delay: 2
+
+Sitemap: https://daanaa.org/sitemap.xml
