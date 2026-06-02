@@ -1232,7 +1232,7 @@ export default function OrganizationDetail() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <span className="font-body text-[11px] text-cool-grey">Verify this listing: </span>
           <a
-            href={`https://apps.irs.gov/app/eos/detailsPage?ein=${org.ein.replace(/-/g, '')}`}
+            href="https://apps.irs.gov/app/eos/"
             target="_blank" rel="noopener noreferrer"
             className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
           >IRS Tax Exempt Search</a>

@@ -680,8 +680,9 @@ export default function Directory() {
             className="mt-7 max-w-[640px]"
           />
 
-          {/* Mobile: single Filters button */}
-          {searchMode === 'browse' && <div className="mt-5 md:hidden flex items-center gap-2">
+          {/* Mobile + tablet: single Filters button (opens full-filter drawer).
+              Desktop uses the sticky FilterRail instead. */}
+          {searchMode === 'browse' && <div className="mt-5 lg:hidden flex items-center gap-2">
             <button
               onClick={() => setFilterSheetOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all duration-150"
