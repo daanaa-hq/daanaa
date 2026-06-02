@@ -10,7 +10,7 @@ export default function BetaBanner() {
 
   return (
     <div
-      className="relative z-[60] flex items-center justify-center gap-3 px-4 py-2 text-center"
+      className="fixed top-[72px] left-0 right-0 z-40 flex items-center justify-center gap-3 px-4 py-2 text-center"
       style={{ backgroundColor: '#0A1628', borderBottom: '1px solid rgba(201,169,110,0.2)' }}
     >
       <span
@@ -20,7 +20,7 @@ export default function BetaBanner() {
         Beta
       </span>
       <p className="font-body text-[12px] text-muted-cream">
-        Daanaa is in early access — data is real, some features are still being refined.{' '}
+        Daanaa is in early access. The data is real, and some features are still being refined.{' '}
         <Link
           to="/feedback"
           className="underline underline-offset-2 hover:text-warm-cream transition-colors"
