@@ -10,6 +10,16 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+def _real_ip() -> str:
+    # Cloudflare sets CF-Connecting-IP; fall back to X-Forwarded-For, then REMOTE_ADDR.
+    # Without this, every request appears to come from Cloudflare's IP and rate limiting
+    # is useless (all visitors share one bucket).
+    return (
+        request.headers.get('CF-Connecting-IP') or
+        request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or
+        get_remote_address()
+    )
+
 FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'frontend', 'dist')
 
 # Scoring methodology version — the formula/algorithm. Changes rarely, and
@@ -201,7 +211,7 @@ CORS(app, origins=_ALLOWED_ORIGINS, supports_credentials=False)
 
 # Rate limiting — backs off abusive callers without blocking normal use
 limiter = Limiter(
-    key_func=get_remote_address,
+    key_func=_real_ip,
     app=app,
     default_limits=["200 per minute", "2000 per hour"],
     storage_uri="memory://",
@@ -890,7 +900,7 @@ def _is_revoked(db, ein):
         return False  # table missing → fail OPEN on revocation only; basic gate still applies
 
 @app.route('/api/ntee-coverage')
-@limiter.exempt
+@limiter.limit("30 per minute")
 def ntee_coverage():
     """Per-category visibility coverage for qualified orgs — drives the
     light-reveal visual. Returns real counts so brightness reflects true data."""
@@ -918,7 +928,7 @@ def ntee_coverage():
     return jsonify(payload)
 
 @app.route('/api/stats')
-@limiter.exempt
+@limiter.limit("60 per minute")
 def stats():
     cached = _cget('stats', 'stats')
     if cached: return jsonify(cached)
@@ -972,7 +982,7 @@ def stats():
     return jsonify(payload)
 
 @app.route('/api/sector-health')
-@limiter.exempt
+@limiter.limit("30 per minute")
 def sector_health():
     cached = _cget('sector_health', 'sector')
     if cached: return jsonify(cached)
@@ -1056,6 +1066,7 @@ _VALID_SOURCES  = {'newsletter', 'claiming'}
 _VALID_STATUSES = {'new', 'contacted', 'converted', 'dismissed'}
 
 @app.route('/api/waitlist', methods=['POST'])
+@limiter.limit("5 per minute; 20 per hour")
 def waitlist_submit():
     data  = request.get_json(silent=True) or {}
     email = str(data.get('email', '')).strip().lower()[:200]
@@ -1098,6 +1109,7 @@ def link_feedback_submit():
 
 
 @app.route('/api/handoff', methods=['POST'])
+@limiter.limit("20 per minute")
 def donate_handoff():
     # Anonymous realized-impact signal. We accept ONLY an EIN and increment a
     # daily count. No identity, no IP, no amount, no wallet link. This records
@@ -1118,6 +1130,7 @@ def donate_handoff():
 
 
 @app.route('/api/interest', methods=['POST'])
+@limiter.limit("20 per minute")
 def org_interest_signal():
     # Anonymous demand signal toward an org. Accept ONLY an EIN and a kind.
     # No identity, no contact, no IP. The org sees the tally only on claim.
@@ -1168,6 +1181,7 @@ def _normalize_path(p: str) -> str:
 
 
 @app.route('/api/feedback', methods=['POST'])
+@limiter.limit("5 per minute; 20 per hour")
 def submit_feedback():
     # Anonymous site feedback. message required; email OPTIONAL (only if the
     # visitor wants to be kept posted). No IP, no tracking, no identity.
@@ -1195,6 +1209,7 @@ _EVENT_TYPES = {'pageview', 'search', 'give_click', 'save_org', 'compare', 'wall
 
 
 @app.route('/api/event', methods=['POST'])
+@limiter.limit("60 per minute")
 def track_event():
     # First-party, aggregate-only analytics. We count events, never people.
     # No cookie, no IP, no persistent ID, no individual session row. Fired via
