@@ -354,3 +354,12 @@ export async function getSimilarOrgs(ein: string, options?: {
   if (options?.diamonds) params.set('diamonds', '1');
   return fetchJson(`/api/organizations/${ein}/similar?${params}`);
 }
+
+export async function submitFeedback(message: string, email?: string, page?: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, email: email || '', page: page || '' }),
+  });
+  if (!res.ok && res.status !== 204) throw new Error('feedback failed');
+}

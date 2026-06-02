@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 export default function BetaBanner() {
   const [dismissed, setDismissed] = useState(() =>
@@ -20,13 +21,13 @@ export default function BetaBanner() {
       </span>
       <p className="font-body text-[12px] text-muted-cream">
         Daanaa is in early access — data is real, some features are still being refined.{' '}
-        <a
-          href="mailto:hello@daanaa.org?subject=Daanaa feedback"
+        <Link
+          to="/feedback"
           className="underline underline-offset-2 hover:text-warm-cream transition-colors"
           style={{ color: '#C9A96E' }}
         >
           Share feedback
-        </a>
+        </Link>
       </p>
       <button
         onClick={() => {

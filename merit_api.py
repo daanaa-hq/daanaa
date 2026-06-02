@@ -209,6 +209,15 @@ limiter = Limiter(
 
 DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
 
+# User-generated / write-path data lives in a SEPARATE database so the daily
+# catalog sync (which overwrites DB_PATH from the home pipeline) never wipes it.
+# On the droplet LIVE_DB_PATH points to data/daanaa_live.db; locally it defaults
+# to DB_PATH (single-file, no split). When the two differ, get_db() ATTACHes the
+# live DB as `live` and bare table names resolve there (the catalog must NOT
+# contain these tables — the sync drops them). No per-query rewrites needed.
+LIVE_DB_PATH = os.environ.get("LIVE_DB_PATH", DB_PATH)
+_LIVE_SPLIT = os.path.abspath(LIVE_DB_PATH) != os.path.abspath(DB_PATH)
+
 # ── Feature flags ─────────────────────────────────────────────────────────────
 # ENABLE_SCORES=false → null out merit_score / merit_tier / merit_band in all
 # org responses. Allows a clean no-scores preview of the directory.
@@ -255,6 +264,8 @@ def get_db():
     if db is None:
         db = g._database = sqlite3.connect(DB_PATH)
         db.row_factory = sqlite3.Row
+        if _LIVE_SPLIT:
+            db.execute("ATTACH DATABASE ? AS live", (LIVE_DB_PATH,))
     return db
 
 @app.teardown_appcontext
@@ -264,7 +275,7 @@ def close_connection(exception):
         db.close()
 
 def _init_waitlist_table():
-    with sqlite3.connect(DB_PATH) as db:
+    with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
             CREATE TABLE IF NOT EXISTS waitlist (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -285,7 +296,7 @@ def _init_link_feedback_table():
     # Anonymous org-findability feedback: EIN + reason + timestamp only.
     # No donor identity, no PII, no link to any wallet. This records whether
     # an organization was reachable, never that a donor intended to give.
-    with sqlite3.connect(DB_PATH) as db:
+    with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
             CREATE TABLE IF NOT EXISTS link_feedback (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -306,7 +317,7 @@ def _init_donate_handoffs_table():
     # never surface per-org counts publicly (that would create popularity /
     # social-pressure mechanics — STEWARDSHIP principles 2 and 5). Used only for
     # aggregate realized-impact measurement.
-    with sqlite3.connect(DB_PATH) as db:
+    with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
             CREATE TABLE IF NOT EXISTS donate_handoffs (
                 ein    TEXT NOT NULL,
@@ -326,7 +337,7 @@ def _init_org_interest_table():
     # NO donor identity, NO IP, NO contact info. Shown ONLY to the organization
     # when it claims its page (a reason to claim + a starting point), never
     # publicly (avoids social-pressure / popularity mechanics, principles 2 & 5).
-    with sqlite3.connect(DB_PATH) as db:
+    with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
             CREATE TABLE IF NOT EXISTS org_interest (
                 ein    TEXT NOT NULL,
@@ -341,7 +352,7 @@ _init_org_interest_table()
 
 
 def _init_org_claims_table():
-    with sqlite3.connect(DB_PATH) as db:
+    with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
             CREATE TABLE IF NOT EXISTS org_claims (
                 id               INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -368,6 +379,66 @@ def _init_org_claims_table():
         db.commit()
 
 _init_org_claims_table()
+
+
+def _init_feedback_table():
+    # Site feedback: a free-text message, an OPTIONAL email (only if the visitor
+    # wants to be kept posted), and the page they were on. No IP, no tracking, no
+    # identity. Anonymous by default. Lives in the live DB (survives catalog sync).
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS feedback (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                message     TEXT NOT NULL,
+                email       TEXT,
+                page        TEXT,
+                status      TEXT NOT NULL DEFAULT 'new',
+                created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.commit()
+
+_init_feedback_table()
+
+
+def _init_analytics_tables():
+    # Privacy-first, FIRST-PARTY, AGGREGATE-ONLY analytics. No cookies, no IP, no
+    # persistent ID, no individual session record. We count events, never people.
+    #   analytics_daily  — per-day per-path event counts + summed dwell seconds
+    #   analytics_search — per-day search-term counts (what people look for)
+    #   visit_counter    — a single hidden (admin-only) running tally; "sessions"
+    #                      is incremented once per browser session via a
+    #                      sessionStorage flag (no server-side identity at all).
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS analytics_daily (
+                day          TEXT NOT NULL,
+                path         TEXT NOT NULL,
+                event_type   TEXT NOT NULL,
+                count        INTEGER NOT NULL DEFAULT 0,
+                dwell_secs   INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (day, path, event_type)
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS analytics_search (
+                day    TEXT NOT NULL,
+                term   TEXT NOT NULL,
+                count  INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (day, term)
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS visit_counter (
+                metric  TEXT PRIMARY KEY,
+                count   INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('pageviews', 0)")
+        db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('sessions', 0)")
+        db.commit()
+
+_init_analytics_tables()
 
 # Prevent absurdly large payloads on any endpoint
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # 64 KB
@@ -1004,6 +1075,119 @@ def org_interest_counts(ein):
         if r['kind'] in out:
             out[r['kind']] = r['count']
     return jsonify(out)
+
+
+import re as _re
+_ID_SEG = _re.compile(r'/(\d{2,}|[0-9a-f]{8,})(?=/|$)', _re.I)
+
+def _normalize_path(p: str) -> str:
+    # Collapse high-cardinality IDs to a route shape so analytics_daily stays
+    # small and never stores a specific org/EIN as a per-row key.
+    #   /org/123456789 -> /org/:id   ;  /category/A -> /category/:id
+    if not p.startswith('/'):
+        p = '/' + p
+    p = p.split('?')[0].split('#')[0]
+    p = _ID_SEG.sub('/:id', p)
+    return p[:120] or '/'
+
+
+@app.route('/api/feedback', methods=['POST'])
+def submit_feedback():
+    # Anonymous site feedback. message required; email OPTIONAL (only if the
+    # visitor wants to be kept posted). No IP, no tracking, no identity.
+    data    = request.get_json(silent=True) or {}
+    message = str(data.get('message', '')).strip()[:4000]
+    email   = str(data.get('email', '')).strip()[:200] or None
+    page    = str(data.get('page', '')).strip()[:300] or None
+    if not message:
+        return jsonify({'error': 'message required'}), 400
+    if email and ('@' not in email or '.' not in email.split('@')[-1]):
+        return jsonify({'error': 'invalid email'}), 400
+    db = get_db()
+    db.execute(
+        "INSERT INTO feedback (message, email, page) VALUES (?, ?, ?)",
+        (message, email, page),
+    )
+    db.commit()
+    return ('', 204)
+
+
+# Bounded allow-list so the analytics beacon can't be used to write arbitrary
+# high-cardinality data. Paths are normalized to route shapes, not raw URLs.
+_EVENT_TYPES = {'pageview', 'search', 'give_click', 'save_org', 'compare', 'wallet_export'}
+
+
+@app.route('/api/event', methods=['POST'])
+def track_event():
+    # First-party, aggregate-only analytics. We count events, never people.
+    # No cookie, no IP, no persistent ID, no individual session row. Fired via
+    # sendBeacon. A 'session' flag (sessionStorage) lets the client mark one
+    # session-start per browser session — still no server-side identity.
+    data  = request.get_json(silent=True) or {}
+    etype = str(data.get('type', '')).strip().lower()
+    if etype not in _EVENT_TYPES:
+        return ('', 204)  # silently ignore unknown types; never error a beacon
+    day  = time.strftime('%Y-%m-%d')
+    path = _normalize_path(str(data.get('path', '/'))[:120])
+    dwell = data.get('dwell')
+    dwell = int(dwell) if isinstance(dwell, (int, float)) and 0 <= dwell <= 86400 else 0
+    db = get_db()
+    db.execute(
+        "INSERT INTO analytics_daily (day, path, event_type, count, dwell_secs) "
+        "VALUES (?, ?, ?, 1, ?) "
+        "ON CONFLICT(day, path, event_type) DO UPDATE SET "
+        "count = count + 1, dwell_secs = dwell_secs + excluded.dwell_secs",
+        (day, path, etype, dwell),
+    )
+    if etype == 'pageview':
+        db.execute("UPDATE visit_counter SET count = count + 1 WHERE metric = 'pageviews'")
+        if data.get('new_session'):
+            db.execute("UPDATE visit_counter SET count = count + 1 WHERE metric = 'sessions'")
+    if etype == 'search':
+        term = str(data.get('term', '')).strip().lower()[:80]
+        if term:
+            db.execute(
+                "INSERT INTO analytics_search (day, term, count) VALUES (?, ?, 1) "
+                "ON CONFLICT(day, term) DO UPDATE SET count = count + 1",
+                (day, term),
+            )
+    db.commit()
+    return ('', 204)
+
+
+@app.route('/api/admin/analytics', methods=['GET'])
+@require_admin_key
+def admin_analytics():
+    # Hidden (admin-only) aggregate dashboard data. Never exposed publicly.
+    db = get_db()
+    totals = {r['metric']: r['count'] for r in
+              db.execute("SELECT metric, count FROM visit_counter").fetchall()}
+    top_pages = [dict(r) for r in db.execute(
+        "SELECT path, SUM(count) AS views, SUM(dwell_secs) AS dwell "
+        "FROM analytics_daily WHERE event_type='pageview' "
+        "GROUP BY path ORDER BY views DESC LIMIT 25").fetchall()]
+    top_searches = [dict(r) for r in db.execute(
+        "SELECT term, SUM(count) AS n FROM analytics_search "
+        "GROUP BY term ORDER BY n DESC LIMIT 30").fetchall()]
+    last_14 = [dict(r) for r in db.execute(
+        "SELECT day, SUM(count) AS views FROM analytics_daily "
+        "WHERE event_type='pageview' GROUP BY day ORDER BY day DESC LIMIT 14").fetchall()]
+    return jsonify({
+        'totals': totals,
+        'top_pages': top_pages,
+        'top_searches': top_searches,
+        'daily_pageviews': last_14,
+    })
+
+
+@app.route('/api/admin/feedback', methods=['GET'])
+@require_admin_key
+def admin_feedback():
+    db = get_db()
+    rows = [dict(r) for r in db.execute(
+        "SELECT id, message, email, page, status, created_at "
+        "FROM feedback ORDER BY created_at DESC LIMIT 200").fetchall()]
+    return jsonify({'feedback': rows, 'total': len(rows)})
 
 
 @app.route('/api/admin/waitlist', methods=['GET'])

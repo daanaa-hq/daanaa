@@ -95,6 +95,11 @@ export default function Footer() {
                 </li>
               ))}
               <li>
+                <Link to="/feedback" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-3">
+                  Share feedback
+                </Link>
+              </li>
+              <li>
                 <a href="mailto:trust@daanaa.org" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-3">
                   Report a data issue
                 </a>
