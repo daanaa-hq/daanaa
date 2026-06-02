@@ -132,18 +132,6 @@ export default function Footer() {
             Attribution & Terms
           </Link>
         </p>
-        <div className="flex items-center gap-4">
-          {/* LinkedIn */}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-warm-cream transition-colors cursor-pointer">
-            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-            <rect x="2" y="9" width="4" height="12" />
-            <circle cx="4" cy="4" r="2" />
-          </svg>
-          {/* Twitter/X */}
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="hover:stroke-warm-cream transition-colors cursor-pointer">
-            <path d="M4 4l6.5 8L4 20h2l5.5-6.5L16 20h4l-6.8-8.8L20 4h-2l-5.2 6L8 4H4z" />
-          </svg>
-        </div>
       </div>
     </footer>
   )
