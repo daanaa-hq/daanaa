@@ -5,7 +5,15 @@ import { useWallet, SPLIT_THRESHOLD } from '../hooks/useWallet'
 import { formatCurrency, formatEIN } from '../data/organizations'
 import { getOrganizations } from '../data/api'
 import type { ApiOrganization } from '../data/api'
-import type { DonationRecord } from '../hooks/useWallet'
+import type { DonationRecord, DonationType } from '../hooks/useWallet'
+
+const GIFT_TYPES: { id: DonationType; label: string }[] = [
+  { id: 'cash',    label: 'Cash, check, or card' },
+  { id: 'goods',   label: 'Goods / in-kind' },
+  { id: 'stock',   label: 'Stocks / securities' },
+  { id: 'vehicle', label: 'Vehicle' },
+  { id: 'other',   label: 'Other' },
+]
 
 const IRS_THRESHOLD = 250
 
@@ -56,6 +64,7 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
   const [ein, setEin] = useState(prefillEin ?? '')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(today)
+  const [giftType, setGiftType] = useState<DonationType>('cash')
   const [hasLetter, setHasLetter] = useState(false)
   const [occurrences, setOccurrences] = useState(1)
   const [suggestions, setSuggestions] = useState<ApiOrganization[]>([])
@@ -70,6 +79,16 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
 
   const parsedAmount = Math.round(parseFloat(amount) || 0)
   const needsAcknowledgment = parsedAmount >= IRS_THRESHOLD
+
+  // Type-aware IRS substantiation guidance (general info, not tax advice —
+  // copy pending review by a tax professional before launch).
+  const typeNotes: string[] = []
+  if (giftType === 'vehicle') typeNotes.push('For a donated vehicle, the organization issues IRS Form 1098-C, and your deduction is usually limited to what the charity sells it for.')
+  if ((giftType === 'goods' || giftType === 'other') && parsedAmount >= 500) typeNotes.push('Non-cash gifts over $500 also require IRS Form 8283 with your tax return.')
+  if ((giftType === 'goods' || giftType === 'other') && parsedAmount >= 5000) typeNotes.push('Gifts over $5,000 generally need a qualified appraisal (publicly traded securities are exempt).')
+  if (giftType === 'stock' && parsedAmount >= 500) typeNotes.push('Securities gifts over $500 require IRS Form 8283 (no appraisal is needed for publicly traded stock).')
+  const showLetterCheckbox = needsAcknowledgment && giftType !== 'vehicle'
+  const showNotice = needsAcknowledgment || typeNotes.length > 0
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -113,6 +132,7 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
       date,
       status,
       letterRequested: needsAcknowledgment ? hasLetter : false,
+      donationType: giftType,
     }
     for (let i = 0; i < occurrences; i++) onSubmit(record)
     onCancel()
@@ -158,6 +178,20 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Gift type */}
+        <div className="col-span-2">
+          <label className="block font-body text-[12px] text-cool-grey mb-1">Type</label>
+          <select
+            value={giftType}
+            onChange={e => setGiftType(e.target.value as DonationType)}
+            className="w-full border border-light-grey rounded-lg px-3 py-2 font-body text-[14px] text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors cursor-pointer"
+          >
+            {GIFT_TYPES.map(t => (
+              <option key={t.id} value={t.id}>{t.label}</option>
+            ))}
+          </select>
         </div>
 
         {/* Amount */}
@@ -211,29 +245,39 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
         )}
       </div>
 
-      {/* $250+ acknowledgment notice */}
-      {needsAcknowledgment && (
+      {/* Substantiation notice — tailored to the gift type */}
+      {showNotice && (
         <div className="rounded-lg bg-soft-gold/5 border border-soft-gold/20 px-4 py-3 space-y-2.5">
-          <p className="font-body text-[12px] text-cool-grey leading-relaxed">
-            Gifts of $250 or more require a written acknowledgment from the organization to claim a charitable deduction.{' '}
-            <a
-              href="https://www.irs.gov/pub/irs-pdf/p1771.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-soft-gold hover:text-bright-gold underline underline-offset-2"
-            >
-              IRS Publication 1771
-            </a>
+          {needsAcknowledgment && (
+            <p className="font-body text-[12px] text-cool-grey leading-relaxed">
+              Gifts of $250 or more require a written acknowledgment from the organization to claim a charitable deduction.{' '}
+              <a
+                href="https://www.irs.gov/pub/irs-pdf/p1771.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-soft-gold hover:text-bright-gold underline underline-offset-2"
+              >
+                IRS Publication 1771
+              </a>
+            </p>
+          )}
+          {typeNotes.map((note, i) => (
+            <p key={i} className="font-body text-[12px] text-cool-grey leading-relaxed">{note}</p>
+          ))}
+          {showLetterCheckbox && (
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasLetter}
+                onChange={e => setHasLetter(e.target.checked)}
+                className="w-4 h-4 rounded accent-soft-gold cursor-pointer"
+              />
+              <span className="font-body text-[13px] text-deep-navy">I have a written acknowledgment letter for this gift</span>
+            </label>
+          )}
+          <p className="font-body text-[11px] text-cool-grey/60 leading-relaxed">
+            General information, not tax advice. Confirm details with a tax professional.
           </p>
-          <label className="flex items-center gap-2.5 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hasLetter}
-              onChange={e => setHasLetter(e.target.checked)}
-              className="w-4 h-4 rounded accent-soft-gold cursor-pointer"
-            />
-            <span className="font-body text-[13px] text-deep-navy">I have a written acknowledgment letter for this gift</span>
-          </label>
         </div>
       )}
 
@@ -295,12 +339,13 @@ export default function Wallet() {
 
   function exportCSV() {
     const rows = [
-      ['Date', 'Organization', 'EIN', 'Amount', 'Status', 'Reference'],
+      ['Date', 'Organization', 'EIN', 'Amount', 'Type', 'Status', 'Reference'],
       ...visibleDonations.map(d => [
         d.date,
         `"${d.orgName.replace(/"/g, '""')}"`,
         d.ein,
         d.amount.toFixed(2),
+        d.donationType || 'cash',
         d.status,
         d.referenceCode || '',
       ]),
