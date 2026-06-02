@@ -1,10 +1,14 @@
 // Daanaa Service Worker — offline app shell
 // Cache strategy:
-//   - App shell (HTML + Vite assets): cache-first, stale-while-revalidate
+//   - HTML navigations: NETWORK-FIRST so new deploys reach users immediately,
+//     fall back to the cached shell only when offline
+//   - Static Vite assets (content-hashed JS/CSS): stale-while-revalidate
 //   - /api/* requests: network-only (never cache live data)
 //   - Google Fonts: network-first with long-TTL cache
+// Bump CACHE_NAME on any caching-behavior change so the activate handler
+// purges the stale shell from previous versions.
 
-const CACHE_NAME = 'daanaa-shell-v1';
+const CACHE_NAME = 'daanaa-shell-v2';
 
 // Minimal static shell — Vite hashes the JS/CSS filenames so we can't
 // pre-cache them by name here. Instead we intercept navigations and
@@ -65,11 +69,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For HTML navigation requests: serve app shell from cache, fall back to
-  // network. This gives offline app-shell behavior without stale API data.
+  // HTML navigations: network-first. Always try to fetch the freshest
+  // index.html (which references the current hashed bundle), and refresh the
+  // cached shell for offline use. Fall back to cache only when the network
+  // fails. This is what lets new deploys reach returning visitors immediately.
   if (request.mode === 'navigate') {
     event.respondWith(
-      caches.match('/').then((cached) => cached || fetch(request))
+      fetch(request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('/', copy));
+          return response;
+        })
+        .catch(() => caches.match('/'))
     );
     return;
   }
