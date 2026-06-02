@@ -1,0 +1,8 @@
+{
+  "_comment": "Featured NTEE category rotation. One category highlighted per fortnight. Runtime source of truth lives in frontend/src/data/featuredCategory.ts (the banner reads it directly); this file documents the schedule. The launch category (B — Education) shows until first_change_date, then the banner advances one step every cadence_days through whichever categories have a processed logo in frontend/public/categories/.",
+  "first_change_date": "2026-06-21",
+  "cadence_days": 14,
+  "launch_category": "B",
+  "available": ["A", "B", "C", "D"],
+  "order": ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
+}

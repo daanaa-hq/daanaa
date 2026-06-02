@@ -228,9 +228,9 @@ function summaryLine(org: ApiOrganization): string {
   if (org.months_of_reserve != null) {
     const m = Math.round(org.months_of_reserve)
     const feel = m >= 6 ? 'a strong cushion' : m >= 3 ? 'a healthy buffer' : 'limited runway'
-    return `They carry about ${m} months of savings — ${feel}.`
+    return `They carry about ${m} months of savings -- ${feel}.`
   }
-  return `Ranked within a peer group of ${org.peer_total ?? '—'} similar nonprofits.`
+  return `Ranked within a peer group of ${org.peer_total ?? '--'} similar nonprofits.`
 }
 
 // ---- Convert API org to local format ----
@@ -390,7 +390,7 @@ export default function OrganizationDetail() {
     }
   }
 
-  // Donor clicked an external give link — track it and ask "did you give?"
+  // Donor clicked an external give link -- track it and ask "did you give?"
   // when they return (LinkedIn-jobs pattern).
   const handleGiveClick = () => {
     // Anonymous realized-impact ping: records only that a give hand-off happened
@@ -473,7 +473,7 @@ export default function OrganizationDetail() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
             <div>
               <div className="flex items-start gap-4 sm:gap-5">
-                {/* Logo slot — placeholder (org initials) until the organization uploads
+                {/* Logo slot -- placeholder (org initials) until the organization uploads
                     its logo on claim (B4). Reserves a clean, defined identity space. */}
                 <div className="shrink-0 mt-1.5 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border border-white/15 bg-white/[0.06]">
                   <span className="font-display text-[22px] sm:text-[26px] text-soft-gold leading-none tracking-tight">
@@ -493,7 +493,7 @@ export default function OrganizationDetail() {
                 </div>
               </div>
 
-              {/* Stub banner — shown when org is IRS-registered but has no 990 data */}
+              {/* Stub banner -- shown when org is IRS-registered but has no 990 data */}
               {apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null && (
                 <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-white/8 border border-white/12">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
@@ -505,7 +505,7 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* Badge row — click any badge to see what earned it */}
+              {/* Badge row -- click any badge to see what earned it */}
               <div className="mt-4 flex flex-wrap gap-2">
                 {badges.map(badge => (
                   <BadgeChip
@@ -519,7 +519,7 @@ export default function OrganizationDetail() {
                 ))}
               </div>
 
-              {/* Inline badge detail — appears below the row when a badge is selected */}
+              {/* Inline badge detail -- appears below the row when a badge is selected */}
               {selectedBadge && (() => {
                 const b = badges.find(x => x.id === selectedBadge)
                 return b ? (
@@ -545,7 +545,7 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* Cause tags — AI-generated (beta) until the organization sets its own */}
+              {/* Cause tags -- AI-generated (beta) until the organization sets its own */}
               {Array.isArray(apiOrg!.cause_tags) && apiOrg!.cause_tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {(apiOrg!.cause_tags as string[]).map((tag) => (
@@ -588,10 +588,10 @@ export default function OrganizationDetail() {
               </div>
 
               {/* Giving hand-off. Priority:
-                  1. donate_url — a direct giving page found on the org's site (Donorbox, etc.)
+                  1. donate_url -- a direct giving page found on the org's site (Donorbox, etc.)
                      No hunting needed; skips straight to the form.
-                  2. website_status=ok — org's own homepage, verified live and on-domain.
-                  3. EIN fallback — unspoofable ProPublica/IRS record, works for every org. */}
+                  2. website_status=ok -- org's own homepage, verified live and on-domain.
+                  3. EIN fallback -- unspoofable ProPublica/IRS record, works for every org. */}
               {(() => {
                 const donateUrlStatus = apiOrg?.donate_url_status;
                 const donateUrl  = donateUrlStatus === 'dead' ? null : apiOrg?.donate_url;
@@ -743,7 +743,7 @@ export default function OrganizationDetail() {
 
             {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) && (
             <div className="flex flex-col items-center gap-3 lg:pt-4">
-              {/* LampMark lg — tappable, opens TierBreakdown inline */}
+              {/* LampMark lg -- tappable, opens TierBreakdown inline */}
               <LampMark
                 tier={lampTier}
                 size="lg"
@@ -762,7 +762,7 @@ export default function OrganizationDetail() {
                   {({'Beacon':'Fully documented','Lantern':'Well documented','Flame':'Basic documentation','Ember':'Limited public data','Spark':'Just registered'} as Record<string,string>)[lampTier]}
                 </span>
               </div>
-              {/* IRS verification — a real, defensible fact for every org */}
+              {/* IRS verification -- a real, defensible fact for every org */}
               <div className="flex flex-col items-center gap-2 text-center">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-body text-[12px] font-medium">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -773,7 +773,7 @@ export default function OrganizationDetail() {
                     Annual report filed · {apiOrg!.latest_tax_year}
                   </span>
                 )}
-                {/* Claimed / Unclaimed badge — Yelp-style */}
+                {/* Claimed / Unclaimed badge -- Yelp-style */}
                 {apiOrg!.claim_status === 'active' ? (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-soft-gold/50 text-soft-gold font-body text-[11px] font-medium">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
@@ -785,7 +785,7 @@ export default function OrganizationDetail() {
                   </span>
                 )}
               </div>
-              {/* Independently-verified financial health — only where real 990 analysis exists */}
+              {/* Independently-verified financial health -- only where real 990 analysis exists */}
               {finHealth ? (
                 <div
                   className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg border"
@@ -858,7 +858,7 @@ export default function OrganizationDetail() {
                     </p>
                   )}
                   <p className="font-body text-[11px] text-muted-cream/70 leading-[1.5]">
-                    We compare reserves, program spending, and revenue stability against nonprofits in the same cause area and revenue range. The 0–100 score shows where they stand within that group of {apiOrg!.peer_total ? apiOrg!.peer_total.toLocaleString() : 'similar'} orgs.
+                    We compare reserves, program spending, and revenue stability against nonprofits in the same cause area and revenue range. The 0-100 score shows where they stand within that group of {apiOrg!.peer_total ? apiOrg!.peer_total.toLocaleString() : 'similar'} orgs.
                   </p>
                   <p className="font-body text-[10px] text-muted-cream/50 leading-[1.5]">
                     Source: Annual financial reports via ProPublica Nonprofit Explorer
@@ -878,7 +878,7 @@ export default function OrganizationDetail() {
         </div>
       </div>
 
-      {/* Tier Breakdown — inline, no navigation */}
+      {/* Tier Breakdown -- inline, no navigation */}
       {showTierBreakdown && (
         <div className="bg-deep-navy border-t border-white/8 py-8">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
@@ -891,19 +891,19 @@ export default function OrganizationDetail() {
         </div>
       )}
 
-      {/* Body: 70/30 grid — main content left, org wall right */}
+      {/* Body: 70/30 grid -- main content left, org wall right */}
       <div className="bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-12 md:py-16">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
 
-            {/* LEFT COLUMN — main content */}
+            {/* LEFT COLUMN -- main content */}
             <div className="min-w-0">
 
       {/* Financial Overview */}
       <div className="py-0">
         <div>
 
-          {/* Key financial metrics row — shown when ProPublica data is available */}
+          {/* Key financial metrics row -- shown when ProPublica data is available */}
           {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {apiOrg!.months_of_reserve !== null && (
@@ -966,79 +966,66 @@ export default function OrganizationDetail() {
               own full-width block below this (see "Revenue Trend" section). */}
           <div>
             <div className="flex flex-col gap-4">
-              <div className="bg-white border border-light-grey rounded-xl p-6 flex flex-col gap-4">
-                <div>
-                  <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
-                  {(lampTier === 'Beacon' || lampTier === 'Lantern') ? (
-                    <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, and website all on public record.
-                    </p>
-                  ) : (
-                    <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      This profile is built from public records. The organization can add its own mission, service area, programs, events, volunteer needs, and giving path for free. A lower visibility level means less information is available today, not that the work is less important.
-                    </p>
-                  )}
-                </div>
-                <div className="border-t border-light-grey pt-4">
-                  {apiOrg!.claim_status === 'active' ? (
-                    <p className="font-body text-[12px] text-cool-grey text-center leading-[1.5]">
-                      This page is managed by the organization.
-                    </p>
-                  ) : apiOrg!.claim_status === 'letter_sent' ? (
-                    <p className="font-body text-[12px] text-cool-grey text-center leading-[1.5]">
-                      Claim in progress — verification letter sent.
-                    </p>
-                  ) : (
-                    <>
-                      <p className="font-body text-[13px] text-cool-grey mb-3">
-                        Is this your nonprofit?
-                      </p>
-                      <Link
-                        to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                        Claim this page for free
-                      </Link>
-                    </>
-                  )}
-                </div>
-
-                {/* Preview of the spaces the org can fill once it claims this page */}
-                {apiOrg!.claim_status !== 'active' && (
-                  <div className="border-t border-light-grey pt-4">
-                    <p className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-3">
-                      Spaces this organization can fill
-                    </p>
-                    <div className="space-y-2.5">
-                      {[
-                        { t: 'Ways to help', d: 'Donate, volunteer, and in-kind needs links' },
-                        { t: 'What we need right now', d: 'A specific, time-bound ask donors can act on' },
-                        { t: 'In our words', d: 'The mission and story in the org’s own voice' },
-                        { t: 'Updates', d: 'Short, dated notes from the organization' },
-                        { t: 'Photo & 5 search tags', d: 'Identity and how donors find them' },
-                      ].map(s => (
-                        <div key={s.t} className="rounded-lg border border-dashed border-light-grey bg-cream/40 px-3 py-2.5">
-                          <p className="font-body text-[13px] font-medium text-deep-navy">{s.t}</p>
-                          <p className="font-body text-[12px] text-cool-grey/70">{s.d}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="mt-3 font-body text-[11px] text-cool-grey/60 leading-[1.5]">
-                      Until the organization claims its page, these are empty or AI-suggested (beta). Claiming is free and replaces them with verified, org-provided information.
-                    </p>
-                  </div>
+              {/* About this listing -- informational only */}
+              <div className="bg-white border border-light-grey rounded-xl px-6 py-5">
+                <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
+                {(lampTier === 'Beacon' || lampTier === 'Lantern') ? (
+                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
+                    {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, and website all on public record.
+                  </p>
+                ) : (
+                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
+                    This profile is built from public records. The organization can add its own mission, service area, programs, events, volunteer needs, and giving path for free. A lower visibility level means less information is available today, not that the work is less important.
+                  </p>
+                )}
+                {apiOrg!.claim_status === 'active' && (
+                  <p className="mt-3 font-body text-[12px] text-cool-grey">This page is managed by the organization.</p>
+                )}
+                {apiOrg!.claim_status === 'letter_sent' && (
+                  <p className="mt-3 font-body text-[12px] text-cool-grey">Claim in progress -- verification letter sent.</p>
                 )}
               </div>
+
+              {/* Claim CTA + spaces preview -- only for unclaimed pages */}
+              {apiOrg!.claim_status !== 'active' && apiOrg!.claim_status !== 'letter_sent' && (
+                <div className="rounded-xl border border-dashed border-soft-gold/30 bg-soft-gold/[0.03] px-6 py-5">
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="font-body text-[13px] font-medium text-deep-navy">Is this your nonprofit?</p>
+                      <p className="font-body text-[12px] text-cool-grey mt-0.5">Add your mission, donation link, and updates -- free.</p>
+                    </div>
+                    <Link
+                      to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
+                      className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/50 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      Claim this page
+                    </Link>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {[
+                      { t: 'Ways to help', d: 'Donate, volunteer, and in-kind needs' },
+                      { t: 'What we need now', d: 'A specific ask donors can act on' },
+                      { t: 'In our words', d: "Mission in the org's own voice" },
+                      { t: 'Updates & events', d: 'Short, dated notes from the org' },
+                    ].map(s => (
+                      <div key={s.t} className="rounded-lg border border-dashed border-light-grey bg-white/60 px-3 py-2">
+                        <p className="font-body text-[12px] font-medium text-deep-navy">{s.t}</p>
+                        <p className="font-body text-[11px] text-cool-grey/70">{s.d}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Revenue Trend — its own full-width block, below the About / claim space.
+      {/* Revenue Trend -- its own full-width block, below the About / claim space.
           Wide and clearly defined so it's easy to read for anyone learning more. */}
       {revenueTrend.length >= 2 && (() => {
         const first = revenueTrend[0].amount
@@ -1080,7 +1067,7 @@ export default function OrganizationDetail() {
                 {['ai_ntee', 'ai_haiku', 'ai_web'].includes(apiOrg?.data_badges?.mission ?? '') && (
                   <span
                     className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
-                    title="AI-generated from public records — not confirmed by the organization"
+                    title="AI-generated from public records -- not confirmed by the organization"
                   >
                     β ai-generated
                   </span>
@@ -1088,7 +1075,7 @@ export default function OrganizationDetail() {
                 {apiOrg?.data_badges?.mission === 'lucido' && (
                   <span
                     className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
-                    title="Sourced from public IRS filings — not confirmed by the organization"
+                    title="Sourced from public IRS filings -- not confirmed by the organization"
                   >
                     from public records
                   </span>
@@ -1100,7 +1087,7 @@ export default function OrganizationDetail() {
                 )}
               </div>
               {org.mission ? (
-                <p className="mt-3 font-display italic text-deep-navy text-[18px] leading-[1.6]">&ldquo;{org.mission}&rdquo;</p>
+                <p className="mt-3 font-display italic text-deep-navy text-[18px] leading-[1.6]">&ldquo;{org.mission.replace(/^["\s]+|["\s]+$/g, '')}&rdquo;</p>
               ) : (
                 <p className="mt-3 font-body text-cool-grey text-[15px]">Mission statement sourced from public records. Extended narrative not yet available for this organization.</p>
               )}
@@ -1136,26 +1123,40 @@ export default function OrganizationDetail() {
               ) : (
                 <div className="pt-2">
                   <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">DATA SOURCE</span>
-                  <div className="mt-4 space-y-2 font-body text-[14px] text-cool-grey">
-                    <p>Registered US nonprofit</p>
-                    <p>EIN: {formatEIN(org.ein)}</p>
-                    <p>NTEE Category: {(org as any).nteecc || org.category || '—'}</p>
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 font-body text-[13px] text-cool-grey">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey/60 mb-0.5">Type</p>
+                      <p className="text-deep-navy font-medium">Registered US nonprofit</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey/60 mb-0.5">EIN</p>
+                      <p className="text-deep-navy font-medium">{formatEIN(org.ein)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey/60 mb-0.5">NTEE Category</p>
+                      <p className="text-deep-navy font-medium">{(org as any).nteecc || org.category || '--'}</p>
+                    </div>
                     {(org as any).revenueBand && (
-                      <p>Size: {(org as any).revenueBand} nonprofit</p>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey/60 mb-0.5">Size</p>
+                        <p className="text-deep-navy font-medium">{(org as any).revenueBand} nonprofit</p>
+                      </div>
                     )}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <DataFreshnessBadge
                       taxYear={(org as any).latestTaxYear}
                       dataSource={(org as any).dataSource}
                       updatedAt={(org as any).updatedAt}
                     />
-                    <p className="mt-4">
-                      <a href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
-                         target="_blank" rel="noopener noreferrer"
-                         className="text-soft-gold hover:text-bright-gold transition-colors">
-                        View on ProPublica Nonprofit Explorer →
-                      </a>
-                    </p>
                   </div>
+                  <p className="mt-3">
+                    <a href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                       target="_blank" rel="noopener noreferrer"
+                       className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors">
+                      View on ProPublica Nonprofit Explorer →
+                    </a>
+                  </p>
                 </div>
               )}
             </div>
@@ -1217,7 +1218,7 @@ export default function OrganizationDetail() {
 
             </div>{/* end left column */}
 
-            {/* RIGHT COLUMN — organization wall */}
+            {/* RIGHT COLUMN -- organization wall */}
             <div className="lg:sticky lg:top-24">
               <OrgWallPanel orgName={org.name} ein={org.ein} />
             </div>
@@ -1319,7 +1320,7 @@ export default function OrganizationDetail() {
                         </td>
                         <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{formatOrdinal(snap.rev_pct)} pct</td>
                         <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{formatOrdinal(snap.rsv_pct)} pct</td>
-                        <td className="font-body text-[12px] text-cool-grey py-3 font-mono">{snap.group_key ?? snap.peer_group ?? '—'}</td>
+                        <td className="font-body text-[12px] text-cool-grey py-3 font-mono">{snap.group_key ?? snap.peer_group ?? '--'}</td>
                       </tr>
                     )
                   })}
@@ -1360,12 +1361,12 @@ export default function OrganizationDetail() {
                   {[...financials].reverse().map((f) => (
                     <tr key={f.tax_prd_yr} className="border-b border-light-grey/50 hover:bg-white/50 transition-colors">
                       <td className="font-body text-[13px] font-medium text-deep-navy py-3 pr-4">{f.tax_prd_yr}</td>
-                      <td className="font-body text-[13px] text-deep-navy py-3 pr-4">{f.totrevenue != null ? formatCurrency(f.totrevenue) : '—'}</td>
-                      <td className="font-body text-[13px] text-cool-grey py-3 pr-4">{f.totfuncexpns != null ? formatCurrency(f.totfuncexpns) : '—'}</td>
+                      <td className="font-body text-[13px] text-deep-navy py-3 pr-4">{f.totrevenue != null ? formatCurrency(f.totrevenue) : '--'}</td>
+                      <td className="font-body text-[13px] text-cool-grey py-3 pr-4">{f.totfuncexpns != null ? formatCurrency(f.totfuncexpns) : '--'}</td>
                       <td className={`font-body text-[13px] py-3 pr-4 ${(f.totnetassetend ?? 0) < 0 ? 'text-amber-600' : 'text-cool-grey'}`}>
-                        {f.totnetassetend != null ? formatCurrency(f.totnetassetend) : '—'}
+                        {f.totnetassetend != null ? formatCurrency(f.totnetassetend) : '--'}
                       </td>
-                      <td className="font-body text-[13px] text-cool-grey py-3 pr-4">{f.totcntrbgfts != null ? formatCurrency(f.totcntrbgfts) : '—'}</td>
+                      <td className="font-body text-[13px] text-cool-grey py-3 pr-4">{f.totcntrbgfts != null ? formatCurrency(f.totcntrbgfts) : '--'}</td>
                       <td className="py-3">
                         {f.pdf_url ? (
                           <a
@@ -1377,7 +1378,7 @@ export default function OrganizationDetail() {
                             PDF
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                           </a>
-                        ) : '—'}
+                        ) : '--'}
                       </td>
                     </tr>
                   ))}
