@@ -40,7 +40,7 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 export default function SectorHealth() {
   usePageMeta(
     'What public filings suggest about the sector',
-    'A look at available public financial filings across 26 nonprofit sectors. Reserve levels, filing rates, and program spending for 1.6 million+ organizations the IRS recognizes.'
+    'A look at available public financial filings across 26 sectors of tax-deductible 501(c)(3) nonprofits. Reserve levels, filing rates, and program spending for 1.6 million+ organizations.'
   )
 
   const navigate = useNavigate()
@@ -121,7 +121,7 @@ export default function SectorHealth() {
           <div className="mt-10 flex flex-wrap gap-4">
             {[
               { value: `${Math.round(totalAtRisk / 1000)}K`, label: 'organizations with limited reserve cushion in public filings', color: '#F59E0B' },
-              { value: `${Math.round(totalAtRisk / totalOrgs * 100)}%`, label: 'of all nonprofits with limited savings', color: '#F59E0B' },
+              { value: `${Math.round(totalAtRisk / totalOrgs * 100)}%`, label: 'of indexed 501(c)(3)s with limited savings', color: '#F59E0B' },
               { value: '84%', label: 'of all orgs have reserve data', color: '#60A5FA' },
             ].map(stat => (
               <div key={stat.label} className="flex items-baseline gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
@@ -161,7 +161,7 @@ export default function SectorHealth() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-light-grey">
-                    <Th label="Sector" sortBy="name" tip="A broad category the IRS assigns to every nonprofit. Click a row to see the organizations in it." />
+                    <Th label="Sector" sortBy="name" tip="A broad category the IRS assigns to every 501(c)(3). Click a row to see the organizations in it." />
                     <Th label="Orgs" sortBy="total_orgs" right tip="How many active nonprofits the IRS recognizes in this category." />
                     <Th label="At risk %" sortBy="at_risk_pct" right tip="Share of organizations with fewer than 3 months of savings if revenue stopped. Based on the most recent 990 on file, which may be 1 to 3 years old." />
                     <Th label="Avg reserves (mo)" sortBy="avg_months_reserve" right tip="On average, how many months an organization in this category could keep operating if revenue stopped, among those with reserve data." />

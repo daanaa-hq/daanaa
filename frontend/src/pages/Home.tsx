@@ -396,7 +396,7 @@ function WalletSection() {
             </p>
             <ul className="mt-7 space-y-3.5">
               {[
-                'Search 1.6M+ organizations and auto-fill the details',
+                'Search 1.6M+ tax-deductible nonprofits and auto-fill the details',
                 'Request an acknowledgment letter for gifts of $250+',
                 'Export by year, ready for your accountant',
               ].map(item => (
@@ -581,7 +581,7 @@ function FooterCTA() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
-  usePageMeta('', 'Discover IRS-verified 501(c)(3) nonprofits scored by financial health and transparency. 1.6 million searchable organizations, free to use.')
+  usePageMeta('', 'Discover tax-deductible 501(c)(3) nonprofits scored by financial health and transparency. 1.6 million searchable organizations, free to use.')
   return (
     <div>
       <HeroSection />

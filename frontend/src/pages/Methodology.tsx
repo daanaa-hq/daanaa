@@ -131,7 +131,7 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 export default function Methodology() {
   usePageMeta(
     'How peer financial context is calculated',
-    'The complete formula Daanaa uses to calculate peer financial context for 1.6 million nonprofits. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
+    'The complete formula Daanaa uses to calculate peer financial context for 1.6 million tax-deductible 501(c)(3) organizations. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const methodologyVersion = stats?.methodology_version ?? 'v1'
@@ -228,7 +228,7 @@ export default function Methodology() {
             <ul className="list-none space-y-2 mt-2">
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">1</span></span>
-                <span><strong className="text-deep-navy font-medium">Kind of work.</strong> The IRS assigns every nonprofit a category (Food Banks, Hospitals, Parent-teacher groups, and 400 more). We match within it.</span>
+                <span><strong className="text-deep-navy font-medium">Kind of work.</strong> The IRS assigns every 501(c)(3) a category (Food Banks, Hospitals, Parent-teacher groups, and 400 more). We match within it.</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">2</span></span>
@@ -351,7 +351,7 @@ export default function Methodology() {
             <div className="mt-4">
               <SourceRow
                 source="IRS nonprofit registration list"
-                detail="Nonprofit status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa covers the full active registry, more than 1.6 million organizations."
+                detail="Tax-exempt status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa covers all active 501(c)(3) organizations where donations are tax-deductible, more than 1.6 million."
               />
               <SourceRow
                 source="IRS published financial data"

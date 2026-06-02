@@ -28,7 +28,7 @@ export default function About() {
                 Civic infrastructure for informed giving
               </h1>
               <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-                Daanaa aims to index every active 501(c)(3) nonprofit in the United States, more than 1.6 million of them, all from public IRS data. We score each one against its true peers and make that picture free for any donor who wants to give with confidence.
+                Daanaa aims to index every active 501(c)(3) organization in the United States, more than 1.6 million whose donations are tax-deductible, all from public IRS data. We score each one against its true peers and make that picture free for any donor who wants to give with confidence.
               </p>
             </div>
             {/* Logo — right */}

@@ -76,7 +76,7 @@ export default function InvisibleLight() {
           to="/directory"
           className="inline-block rounded-full bg-soft-gold px-6 py-2.5 font-body text-[14px] font-semibold text-deep-navy transition-colors hover:bg-bright-gold"
         >
-          Explore every nonprofit →
+          Explore the directory →
         </Link>
       </div>
     </div>
