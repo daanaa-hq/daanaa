@@ -2,6 +2,9 @@ import { useState, useCallback } from 'react'
 
 export type DonationStatus = 'self_documented' | 'pending_acknowledgment' | 'acknowledged'
 
+// Gift type drives IRS substantiation rules (Pub 526 / 1771 / Form 8283).
+export type DonationType = 'cash' | 'goods' | 'stock' | 'vehicle' | 'other'
+
 export interface DonationRecord {
   id: string
   ein: string
@@ -15,6 +18,7 @@ export interface DonationRecord {
   referenceCode?: string
   donorName?: string
   donorEmail?: string
+  donationType?: DonationType
 }
 
 export interface VolunteerRecord {
