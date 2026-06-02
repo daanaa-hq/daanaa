@@ -686,6 +686,7 @@ export default function Directory() {
           {searchMode === 'browse' && <div className="mt-6 flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setFilterSheetOpen(true)}
+              title="Open all filters — cause, state, revenue size, financial tier, sort, and more"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all duration-150"
               style={{
                 backgroundColor: activeFilterCount > 0 ? '#C9A96E' : 'transparent',
@@ -704,22 +705,33 @@ export default function Directory() {
               )}
             </button>
 
-            {/* Discovery toggles — the brand's reason to exist, surfaced up front */}
+            {/* Discovery toggles — each keeps its own color (even when off) + a tooltip */}
             {[
-              { key: 'hg', label: 'Hidden gems', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628', toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
-              { key: 'nf', label: 'Needs funding soon', on: needsFunding, color: '#EF4444', textOn: '#FFFFFF', toggle: () => { setNeedsFunding(!needsFunding); setCurrentPage(1); scrollTop() } },
-              { key: 'dl', label: 'Direct donate link', on: directLink, color: '#16A34A', textOn: '#FFFFFF', toggle: () => { setDirectLink(!directLink); setCurrentPage(1); scrollTop() } },
+              { key: 'hg', label: 'Hidden gems', tip: 'Small organizations doing exceptional work quietly', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
+                icon: <path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/>,
+                toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
+              { key: 'nf', label: 'Needs funding soon', tip: 'Less than 6 months of operating reserves on record', on: needsFunding, color: '#EF4444', textOn: '#FFFFFF',
+                icon: <><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+                toggle: () => { setNeedsFunding(!needsFunding); setCurrentPage(1); scrollTop() } },
+              { key: 'dl', label: 'Direct donate link', tip: 'Give directly, no hunting for a donate page', on: directLink, color: '#16A34A', textOn: '#FFFFFF',
+                icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>,
+                toggle: () => { setDirectLink(!directLink); setCurrentPage(1); scrollTop() } },
             ].map(t => (
               <button
                 key={t.key}
                 onClick={t.toggle}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full font-body text-[12px] font-medium border transition-all duration-150"
+                title={t.tip}
+                aria-pressed={t.on}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-body text-[12.5px] font-medium border transition-all duration-150"
                 style={{
-                  backgroundColor: t.on ? t.color : 'transparent',
-                  color: t.on ? t.textOn : '#4B5563',
-                  borderColor: t.on ? t.color : '#E5E0DB',
+                  backgroundColor: t.on ? t.color : `${t.color}12`,
+                  color: t.on ? t.textOn : '#374151',
+                  borderColor: t.on ? t.color : `${t.color}59`,
                 }}
               >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.on ? t.textOn : t.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {t.icon}
+                </svg>
                 {t.label}
               </button>
             ))}
