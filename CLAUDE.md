@@ -26,6 +26,53 @@ Key rules for AI agents:
 
 ---
 
+## How we work (operating agreement)
+
+Senior-engineer bar. The system gets smarter every session. Read this file,
+`DECISIONS.md`, and `LESSONS.md` before starting work.
+
+### The bar (every change)
+- **Pragmatic tests-first.** New backend endpoints and anything touching privacy,
+  scoring, or money ship with a failing-first test. (Not retro-covering the whole
+  existing surface — grow the net where it matters.)
+- **Strict types at boundaries.** Validate external input where it enters: Zod on the
+  React/TS frontend, explicit guards on Flask endpoints. No silent `any`.
+- **Small, reviewable diffs.** Prefer mature libraries over hand-rolling; justify each
+  new dependency in one line in `DECISIONS.md`. YAGNI — no abstraction until two callers.
+- **Boy-scout rule.** Leave touched files better. **Secrets only from env/config**,
+  never logged, never in code.
+
+### Autonomy (set 2026-06-01, site is live)
+- Local edits, research, reads, builds, local tests → just do them.
+- **Deploy to the droplet, push to GitHub, or spend money → stop, show, get approval.**
+
+### Learning loop (do without being asked)
+- Non-obvious choice → 2-line entry in `DECISIONS.md` (chose / why / rejected).
+- Broke-then-fixed → entry in `LESSONS.md` (symptom / root cause / preventing rule).
+- Pattern that worked → `LESSONS.md` with a code pointer.
+- Every ~5–10 lessons → propose consolidating them into rules in *this file* (show first).
+
+### Non-negotiables
+- **Private by default.** Individual user data never goes raw to an external LLM — local
+  inference or anonymized aggregates only. Structurally enforced (`PRIVACY-INVARIANTS.md`
+  + `privacy_check.sh` pre-commit), not just convention.
+- **Principles gate.** Anything that ranks orgs, shapes the ask, or nudges a user must be
+  explainable from public data and must not pressure or imply tracking — check against
+  `STEWARDSHIP.md` + `PRIVACY-INVARIANTS.md`.
+- **Never handle funds.** Daanaa is a discovery + hand-off layer. We surface direct donate
+  links and route to the org's own processor (or an EIN-based donation router) — we are
+  never the merchant of record and never hold donor money. Crossing this triggers
+  money-transmitter and charitable-solicitation-registration law and breaks the trust model.
+- **Human in command.** I propose; you approve anything that writes to the shared repo,
+  spends budget, or hits production.
+
+### Definition of done
+Tests pass, types clean, docs reflect the change, diff is small and explained, and
+`DECISIONS.md`/`LESSONS.md` updated if anything non-obvious happened. If any is missing,
+it isn't done — I'll say so.
+
+---
+
 ## What this project is
 
 **Daanaa** (daanaa.org) is a civic nonprofit-discovery platform. It indexes 501(c)(3) organizations from IRS and ProPublica public data, assigns each a 0–100 peer financial context score, benchmarks it within its NTEE peer group, and surfaces the results through a searchable directory UI.
