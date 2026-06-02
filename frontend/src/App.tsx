@@ -25,7 +25,6 @@ const AdminPage = lazy(() => import('./pages/AdminPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
-const InvisibleLight = lazy(() => import('./pages/InvisibleLight'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
 
@@ -63,7 +62,7 @@ export default function App() {
             <Route path="/faq" element={<FAQPage />} />
             <Route path="/feedback" element={<Feedback />} />
           </Route>
-          <Route path="/the-invisible-97" element={<InvisibleLight />} />
+          <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />
           <Route path="/claim/verify" element={<ClaimVerify />} />
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
