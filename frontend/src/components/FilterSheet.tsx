@@ -24,10 +24,11 @@ const US_STATES = [
 ] as const
 
 const OTHER_TERRITORIES = [
-  ['VI','U.S. Virgin Islands'],
-  ['GU','Guam'],
-  ['MP','Northern Mariana Islands'],
-  ['AS','American Samoa'],
+  ['AS','American Samoa'],['GU','Guam'],['MP','Northern Mariana Islands'],['VI','U.S. Virgin Islands'],
+] as const
+
+const MILITARY_STATES = [
+  ['AA','Armed Forces Americas'],['AE','Armed Forces Europe'],['AP','Armed Forces Pacific'],
 ] as const
 
 // ids must match REVENUE_PRESETS in Directory.tsx (min/max resolved there). Small first.
@@ -252,6 +253,11 @@ export default function FilterSheet({
                 </optgroup>
                 <optgroup label="Other U.S. Territories">
                   {OTHER_TERRITORIES.map(([abbr, name]) => (
+                    <option key={abbr} value={abbr}>{abbr} · {name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Armed Forces">
+                  {MILITARY_STATES.map(([abbr, name]) => (
                     <option key={abbr} value={abbr}>{abbr} · {name}</option>
                   ))}
                 </optgroup>

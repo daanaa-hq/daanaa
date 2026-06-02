@@ -102,6 +102,7 @@ function OrgCardApi({
   return listView ? <OrgCardRow {...props} /> : <OrgCard {...props} />
 }
 
+// 50 states + DC + PR as flat options; remaining territories + military as optgroups
 const US_STATES = [
   ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
   ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],
@@ -114,10 +115,14 @@ const US_STATES = [
   ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],
   ['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],
   ['DC','Washington DC'],
-  // U.S. territories
-  ['PR','Puerto Rico'],['GU','Guam'],['VI','U.S. Virgin Islands'],
-  ['AS','American Samoa'],['MP','Northern Mariana Islands'],
-  // Military (APO/FPO/DPO)
+  ['PR','Puerto Rico'],
+] as const
+
+const US_TERRITORIES = [
+  ['AS','American Samoa'],['GU','Guam'],['MP','Northern Mariana Islands'],['VI','U.S. Virgin Islands'],
+] as const
+
+const US_MILITARY = [
   ['AA','Armed Forces Americas'],['AE','Armed Forces Europe'],['AP','Armed Forces Pacific'],
 ] as const
 
@@ -342,10 +347,20 @@ function FilterRail({
               onChange={e => onStateChange(e.target.value)}
               className="w-full appearance-none h-[36px] pl-3 pr-8 rounded-lg font-body text-[13px] border border-light-grey bg-white text-deep-navy outline-none cursor-pointer focus:border-soft-gold transition-colors"
             >
-              <option value="">All States</option>
+              <option value="">All States & Territories</option>
               {US_STATES.map(([abbr, name]) => (
                 <option key={abbr} value={abbr}>{abbr} · {name}</option>
               ))}
+              <optgroup label="Other Territories">
+                {US_TERRITORIES.map(([abbr, name]) => (
+                  <option key={abbr} value={abbr}>{abbr} · {name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Armed Forces">
+                {US_MILITARY.map(([abbr, name]) => (
+                  <option key={abbr} value={abbr}>{abbr} · {name}</option>
+                ))}
+              </optgroup>
             </select>
             <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2.5">
               <polyline points="6 9 12 15 18 9"/>
@@ -797,10 +812,20 @@ export default function Directory() {
                     borderColor: stateFilter ? '#C9A96E' : '#E5E0DB',
                   }}
                 >
-                  <option value="">All States</option>
+                  <option value="">All States & Territories</option>
                   {US_STATES.map(([abbr, name]) => (
                     <option key={abbr} value={abbr}>{abbr} · {name}</option>
                   ))}
+                  <optgroup label="Other Territories">
+                    {US_TERRITORIES.map(([abbr, name]) => (
+                      <option key={abbr} value={abbr}>{abbr} · {name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Armed Forces">
+                    {US_MILITARY.map(([abbr, name]) => (
+                      <option key={abbr} value={abbr}>{abbr} · {name}</option>
+                    ))}
+                  </optgroup>
                 </select>
                 <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
