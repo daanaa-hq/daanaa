@@ -40,7 +40,14 @@ export default function Navigation({ solid = true }: NavigationProps) {
       >
         <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center py-3">
+          <Link to="/" className="flex items-center gap-2.5 py-3">
+            <img
+              src="/logo.png"
+              alt="Daanaa"
+              className="h-7 w-7 object-contain"
+              width={28}
+              height={28}
+            />
             <span className="font-cinzel text-[18px] text-deep-navy tracking-[0.12em]">Daanaa</span>
           </Link>
 

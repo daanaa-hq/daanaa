@@ -9,39 +9,78 @@ import { usePageMeta } from '../hooks/usePageMeta'
 
 const FAMOUS = ['American Red Cross', 'St. Jude', 'Habitat for Humanity', 'Salvation Army', 'Feeding America']
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
 function RevealCard({ org, i }: { org: ApiOrganization; i: number }) {
   const place = [org.CITY, org.STATE].filter(Boolean).join(', ')
   const mission = (org.mission || '').replace(/^[“"\s]+|[”"\s]+$/g, '')
   return (
-    <Link
-      to={`/org/${org.EIN}`}
-      className="block rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.07] hover:border-soft-gold/40 transition-all p-6 opacity-0 animate-[fadeUp_0.6s_ease-out_forwards]"
+    <div
+      className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] hover:border-soft-gold/40 transition-all p-6 opacity-0 animate-[fadeUp_0.6s_ease-out_forwards]"
       style={{ animationDelay: `${(i % 6) * 0.08}s` }}
     >
-      <p className="font-display text-warm-cream text-[19px] leading-tight">{org.organization_name}</p>
-      {place && <p className="font-body text-[12px] text-soft-gold/70 mt-1 tracking-[0.02em]">{place}</p>}
-      {mission && (
-        <p className="font-body text-[14px] text-muted-cream/85 leading-[1.6] mt-3 line-clamp-3">{mission}</p>
-      )}
-      <span className="inline-flex items-center gap-1 font-body text-[12px] text-soft-gold mt-4">
-        See their page
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-      </span>
-    </Link>
+      <Link to={`/org/${org.EIN}`} className="block group">
+        <p className="font-display text-warm-cream text-[19px] leading-tight group-hover:text-soft-gold transition-colors">{org.organization_name}</p>
+        {place && <p className="font-body text-[12px] text-soft-gold/70 mt-1 tracking-[0.02em]">{place}</p>}
+        {mission && (
+          <p className="font-body text-[14px] text-muted-cream/85 leading-[1.6] mt-3 line-clamp-3">{mission}</p>
+        )}
+      </Link>
+      <div className="flex items-center gap-3 mt-auto pt-5 border-t border-white/5">
+        {org.donate_url && (
+          <a
+            href={org.donate_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-soft-gold text-deep-navy font-body text-[13px] font-bold hover:bg-bright-gold transition-colors"
+          >
+            Give directly
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+          </a>
+        )}
+        <Link to={`/org/${org.EIN}`} className="inline-flex items-center gap-1 font-body text-[12px] text-soft-gold/80 hover:text-soft-gold ml-auto">
+          See their page
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </Link>
+      </div>
+    </div>
   )
 }
 
 export default function MeetInvisible() {
   usePageMeta(
     'The Invisible 97% — Daanaa',
-    'Of 1.6 million American nonprofits, you have heard of almost none. Meet the small ones doing real good, finally findable.',
+    'Of 1.6 million American nonprofits, you have heard of almost none. Meet the ones doing real work, finally findable and ready to support.',
   )
   const [orgs, setOrgs] = useState<ApiOrganization[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Only orgs with a verified, working donate link — so every card here leads
+  // to a giving page that actually works. Rotate across the pool by pulling a
+  // random page each visit, then shuffle, so repeat visitors meet new orgs.
   useEffect(() => {
-    getOrganizations({ hidden_gem: true, per_page: 18, sort: 'total_revenue', order: 'asc' })
-      .then(d => setOrgs((d.organizations || []).filter(o => o.mission)))
+    const base = { direct_link: true, per_page: 48, sort: 'total_revenue', order: 'asc' } as const
+    const pick = (batch: { organizations?: ApiOrganization[] }) =>
+      shuffle((batch.organizations || []).filter(o => o.mission && o.donate_url)).slice(0, 18)
+    getOrganizations({ ...base, page: 1 })
+      .then(async first => {
+        const pages = first.pages || 1
+        let batch = first
+        if (pages > 1) {
+          const r = 1 + Math.floor(Math.random() * pages)
+          if (r !== 1) { try { batch = await getOrganizations({ ...base, page: r }) } catch { /* keep first */ } }
+        }
+        let chosen = pick(batch)
+        if (chosen.length < 6 && batch !== first) chosen = pick(first) // fallback if the random page was thin
+        setOrgs(chosen)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
@@ -58,7 +97,7 @@ export default function MeetInvisible() {
         </h1>
         <p className="font-body text-[17px] text-muted-cream leading-[1.7] mt-6 max-w-[560px] mx-auto">
           There are 1.6 million nonprofits in America. A handful are household names.
-          The rest do real, quiet good, close to home and far from the headlines.
+          The rest do real work, close to home and far from the headlines.
         </p>
       </section>
 
@@ -76,7 +115,7 @@ export default function MeetInvisible() {
       <div className="max-w-[820px] mx-auto px-6 py-14 text-center">
         <div className="w-px h-12 bg-gradient-to-b from-transparent via-soft-gold/40 to-transparent mx-auto mb-4" />
         <p className="font-display italic text-warm-cream text-[26px]">And the ones doing the quiet work</p>
-        <p className="font-body text-[14px] text-muted-cream/70 mt-2">Real organizations. Real missions. Ready to be found.</p>
+        <p className="font-body text-[14px] text-muted-cream/70 mt-2">Real organizations. Real missions. Ready to be found and supported.</p>
       </div>
 
       {/* Real invisible orgs */}

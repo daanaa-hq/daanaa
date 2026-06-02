@@ -8,6 +8,7 @@ import { getStats, getCategories } from '../data/api'
 import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
+import { getFeaturedCategory } from '../data/featuredCategory'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
   { name: 'Beacon',  pct: '0.7%',  blurb: 'Top-quartile financial score, mission, website, and current 990 on record' },
@@ -101,6 +102,68 @@ function HeroSection() {
               {text}
             </span>
           ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── Featured cause banner (bi-weekly rotation) ───────────────────────────────
+function FeaturedCause() {
+  const featured = useMemo(() => getFeaturedCategory(), [])
+  const cat = NTEE_CATEGORIES.find(c => c.id === featured.id)
+  if (!cat) return null
+  return (
+    <section className="bg-deep-navy border-b border-white/10">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-9 md:py-12">
+        <div className="flex flex-col md:flex-row items-center gap-7 md:gap-11">
+          {/* Diamond logo */}
+          <Link to={`/category/${cat.id}`} className="shrink-0">
+            <img
+              src={featured.logo}
+              alt={`${cat.name} cause`}
+              className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-[0_6px_24px_rgba(201,169,110,0.28)]"
+            />
+          </Link>
+
+          {/* Copy */}
+          <div className="flex-1 min-w-0 text-center md:text-left">
+            <p className="font-body text-[12px] font-semibold tracking-[0.12em] text-soft-gold uppercase mb-2">
+              Featured cause
+            </p>
+            <h2
+              className="font-display italic text-warm-cream leading-tight tracking-[-0.015em]"
+              style={{ fontSize: 'clamp(26px, 3.2vw, 40px)' }}
+            >
+              {cat.name}
+            </h2>
+            <p className="font-display italic text-pale-gold/90 mt-2 text-[17px] md:text-[19px]">
+              {featured.tagline}
+            </p>
+            {featured.focus && (
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-4">
+                {featured.focus.map(f => (
+                  <span
+                    key={f}
+                    className="font-body text-[12px] px-3 py-1 rounded-full bg-soft-gold/10 border border-soft-gold/25 text-pale-gold"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* CTA */}
+          <Link
+            to={`/category/${cat.id}`}
+            className="shrink-0 inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-bold hover:bg-bright-gold transition-colors shadow-lg"
+          >
+            Explore {cat.name}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Link>
         </div>
       </div>
     </section>
@@ -522,6 +585,7 @@ export default function Home() {
   return (
     <div>
       <HeroSection />
+      <FeaturedCause />
       <BrowseCauses />
       <StatsBar />
       <TiersStrip />
