@@ -17,22 +17,27 @@ const SLIDES: Slide[] = [
   {
     tag: 'Welcome',
     title: 'Daanaa means wise',
-    body: 'Giving should be as wise as it is generous. We index every one of the 1.8 million nonprofits in the United States — the well-known ones, and the 97% you have never heard of.',
+    body: `A wise person doesn't hold on to kindness. They pass it on. That is what Daanaa is here to help you do, with giving that is as thoughtful as it is generous.`,
   },
   {
     tag: 'Discover',
     title: 'Find the invisible 97%',
-    body: 'Search by cause, place, or plain language. Most of these organizations had no online presence before Daanaa gave them a clear page, a mission, and a way to be found.',
+    body: `There are 1.8 million nonprofits in America, and almost none are ones you have heard of. Search by cause, by place, or in plain words, like 'after school reading help in Austin', and meet the small ones doing real good.`,
   },
   {
-    tag: 'Understand',
-    title: 'Financial context, not a verdict',
-    body: 'Each organization is placed in the context of its peers — by cause, size, and region. It is a starting point for your own judgement, never a score that decides for you.',
+    tag: 'How it works',
+    title: 'Every nonprofit gets a voice',
+    body: `Most of these had no description anywhere, so we use public records and AI to write a clear mission for each one, just so it can be found. When a nonprofit claims its page, it makes those words its own.`,
   },
   {
-    tag: 'Private',
-    title: 'Your giving stays yours',
-    body: 'No accounts. No tracking. Your giving record lives only on your device, never on our servers. Privacy is not a setting here — it is the foundation.',
+    tag: 'Give',
+    title: 'From finding to giving, in a few clicks',
+    body: `When you are ready, we send you straight to the nonprofit's own donation page. Daanaa never touches your money. We just keep the path short and the destination trustworthy.`,
+  },
+  {
+    tag: 'Yours',
+    title: 'Your giving stays with you',
+    body: `Keep a private record of everything you give, ready for when it is time to itemize deductions. It lives on your device, never on our servers. No accounts, no tracking, no one watching where your generosity goes.`,
   },
 ]
 

@@ -21,31 +21,31 @@ export default function Footer() {
   return (
     <footer className="bg-deep-navy border-t border-navy-mid">
       {/* Top Row */}
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-16 pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
           {/* Brand */}
-          <div>
+          <div className="col-span-2 lg:col-span-1">
             <Link to="/" className="font-display italic text-[20px] text-warm-cream tracking-[-0.02em]">
               Daanaa
             </Link>
-            <p className="mt-3 font-body text-[14px] leading-[1.5] tracking-[0.01em] text-muted-cream">
+            <p className="mt-2 font-body text-[14px] leading-[1.5] tracking-[0.01em] text-muted-cream">
               Find causes. Give clearly. Keep your record private.
             </p>
           </div>
 
           {/* Platform */}
           <div>
-            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
+            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
               Platform
             </p>
-            <ul className="space-y-3">
+            <ul className="space-y-1">
               {[
                 { label: 'Directory', to: '/directory' },
-                { label: 'Private Giving Record', to: '/wallet' },
+                { label: 'Wallet', to: '/wallet' },
                 { label: 'For Nonprofits', to: '/for-nonprofits' },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-3">
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5">
                     {label}
                   </Link>
                 </li>
@@ -55,20 +55,18 @@ export default function Footer() {
 
           {/* Resources */}
           <div>
-            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
+            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
               Resources
             </p>
-            <ul className="space-y-3">
+            <ul className="space-y-1">
               {[
                 { label: 'How It Works', to: '/how-it-works' },
-                { label: 'Visibility Levels', to: '/tiers' },
-                { label: 'Financial Context', to: '/methodology' },
+                { label: 'How We Score', to: '/methodology' },
                 { label: 'Sector Health', to: '/sector-health' },
-                { label: 'Guides', to: '/guides' },
                 { label: 'FAQ', to: '/faq' },
               ].map(({ label, to }) => (
                 <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-3">
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">
                     {label}
                   </Link>
                 </li>
@@ -78,31 +76,21 @@ export default function Footer() {
 
           {/* Company */}
           <div>
-            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-4">
+            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
               Company
             </p>
-            <ul className="space-y-3">
-              {[
-                { label: 'About', to: '/about' },
-                { label: 'Contact', to: '/about#contact' },
-                { label: 'Legal & Data Attribution', to: '/legal' },
-                { label: 'Privacy', to: '/legal' },
-              ].map(({ label, to }) => (
-                <li key={label}>
-                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-3">
-                    {label}
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-1">
               <li>
-                <Link to="/feedback" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-3">
-                  Share feedback
-                </Link>
+                <Link to="/about" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">About</Link>
               </li>
               <li>
-                <a href="mailto:trust@daanaa.org" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-3">
-                  Report a data issue
-                </a>
+                <Link to="/legal" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Legal &amp; Privacy</Link>
+              </li>
+              <li>
+                <Link to="/feedback" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Share feedback</Link>
+              </li>
+              <li>
+                <a href="mailto:trust@daanaa.org" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Report a data issue</a>
               </li>
             </ul>
           </div>
@@ -110,7 +98,7 @@ export default function Footer() {
       </div>
 
       {/* Middle Row - Newsletter */}
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 border-t border-navy-mid">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-6 border-t border-navy-mid">
         <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream">
             Get nonprofit insights weekly
