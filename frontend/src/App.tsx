@@ -26,6 +26,7 @@ const NotFound = lazy(() => import('./pages/NotFound'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
 const InvisibleLight = lazy(() => import('./pages/InvisibleLight'))
+const Feedback = lazy(() => import('./pages/Feedback'))
 
 function PageLoader() {
   return (
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="/sector-health" element={<SectorHealth />} />
             <Route path="/guides" element={<GuidesPage />} />
             <Route path="/faq" element={<FAQPage />} />
+            <Route path="/feedback" element={<Feedback />} />
           </Route>
           <Route path="/the-invisible-97" element={<InvisibleLight />} />
           <Route path="/claim/verify" element={<ClaimVerify />} />
