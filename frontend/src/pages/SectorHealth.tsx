@@ -146,7 +146,7 @@ export default function SectorHealth() {
               while Human Services, the largest sector by organization count, has 18% of its organizations at risk.
             </p>
             <p className="mt-3 font-body text-[13px] text-cool-grey">
-              By contrast, Philanthropy (110 months avg) and Mutual Benefit (113 months avg) sectors hold the largest savings —
+              By contrast, Philanthropy (110 months avg) and Mutual Benefit (113 months avg) sectors hold the largest savings,
               reflecting long-term investment fund support rather than hands-on community delivery.
             </p>
           </div>
@@ -254,7 +254,7 @@ export default function SectorHealth() {
           {/* Methodology note */}
           <div className="mt-12 pt-8 border-t border-light-grey">
             <p className="font-body text-[13px] text-cool-grey/70 leading-[1.6] max-w-[680px]">
-              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12 — the same formula Charity Navigator uses.
+              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12, the same formula Charity Navigator uses.
               At-risk means fewer than 3 months of reserves. Average program % may be lower for sectors with many pass-through or foundation-style organizations.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">

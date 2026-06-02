@@ -259,10 +259,10 @@ export default function Wallet() {
 
   const { savedOrgs, toggle } = useSavedOrgs()
   const { donations, addDonationDirect, markAcknowledged, removeDonation, totalDonated, totalDonatedThisYear, uniqueEins, pendingLetters,
-          exportBackup, importBackup, selfTextHref, backupOverdue, lastBackupAt } = useWallet()
+          exportBackup, importBackup, backupOverdue, lastBackupAt } = useWallet()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const onSaveBackup = async () => {
-    const pass = window.prompt('Set a password to encrypt this backup (recommended). Leave blank to save without a password — keep the file private.')
+    const pass = window.prompt('Set a password to encrypt this backup (recommended). Leave blank to save without a password. Keep the file private.')
     if (pass === null) return // cancelled
     await exportBackup(pass.trim() || undefined)
   }
@@ -365,12 +365,16 @@ export default function Wallet() {
                 )}
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
-                <a
-                  href={selfTextHref}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-deep-navy px-4 py-2 font-body text-[13px] font-medium text-warm-cream hover:bg-deep-navy/90 transition-colors"
+                <button
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  title="Coming soon"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-deep-navy/40 px-4 py-2 font-body text-[13px] font-medium text-warm-cream/70 cursor-not-allowed"
                 >
                   Text it to myself
-                </a>
+                  <span className="rounded-full bg-warm-cream/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em]">Soon</span>
+                </button>
                 <button
                   onClick={onSaveBackup}
                   className="rounded-full border border-deep-navy/20 px-4 py-2 font-body text-[13px] font-medium text-deep-navy hover:bg-deep-navy/5 transition-colors"
@@ -386,7 +390,7 @@ export default function Wallet() {
                 <input ref={fileInputRef} type="file" accept="application/json,.json" onChange={onRestoreFile} className="hidden" />
               </div>
               <p className="mt-3 font-body text-[11px] text-cool-grey/60">
-                The text opens your own Messages app. The file saves to your device or your own cloud drive. Daanaa never receives it.
+                Texting a backup to yourself is coming soon. For now, the file saves to your device or your own cloud drive. Daanaa never receives it.
               </p>
             </div>
           )}
@@ -397,7 +401,7 @@ export default function Wallet() {
             {savedOrgs.length === 0 ? (
               <EmptyState
                 icon={<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
-                message="Star organizations from the directory, or give to one — they'll appear here automatically"
+                message="Star organizations from the directory, or give to one, and they'll appear here automatically"
               />
             ) : (
               <div className="space-y-2">

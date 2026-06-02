@@ -194,7 +194,7 @@ function BrowseCauses() {
               className="font-display italic text-deep-navy leading-tight tracking-[-0.015em]"
               style={{ fontSize: 'clamp(28px, 3.5vw, 44px)' }}
             >
-              Start with what<br />you care about
+              Start with what you care about
             </h2>
           </div>
           <Link
