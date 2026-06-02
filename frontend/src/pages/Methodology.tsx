@@ -151,7 +151,7 @@ export default function Methodology() {
             How peer financial context is calculated
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
-            Peer financial context is an optional public-data signal. It does not measure impact, trustworthiness, leadership, governance, program quality, or whether a group deserves support. Every number compares a nonprofit against others doing similar work at a similar size — using public IRS filings. No black boxes. Everything is documented below.
+            Peer financial context is an optional public-data signal. It does not measure impact, trustworthiness, leadership, governance, program quality, or whether a group deserves support. Every number compares a nonprofit against others doing similar work at a similar size, using public IRS filings. No black boxes. Everything is documented below.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-4 sm:gap-10">
             <div>
@@ -193,7 +193,7 @@ export default function Methodology() {
                 We look at two things for each nonprofit: its financial scale, and how much of a cushion it keeps in reserve. Scale counts for most of the score, because size is the clearest public signal of reach. Reserves count for the rest, because a thin balance sheet is a real risk that size alone hides. Both are measured against peers doing the same kind of work, at a similar size, in the same region. The score, 0 to 100, shows where the organization stands in that group.
               </p>
               <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
-                All of this comes from annual IRS filings — the same documents every registered nonprofit is required to submit, and make available to the public.
+                All of this comes from annual IRS filings, the same documents every registered nonprofit is required to submit, and make available to the public.
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 {[
@@ -340,7 +340,7 @@ export default function Methodology() {
               Future methodology changes will appear here with a new version tag and a plain-English summary of what changed and why. Score recomputations against fresh IRS data are not methodology changes and do not bump the version.
             </Callout>
             <p className="mt-6">
-              Historical inputs are preserved in our scoring records. When the methodology does change, prior-period inputs can be rescored under the new formula, enabling consistent comparisons over time — the same approach used for CPI and home price indices.
+              Historical inputs are preserved in our scoring records. When the methodology does change, prior-period inputs can be rescored under the new formula, enabling consistent comparisons over time, the same approach used for CPI and home price indices.
             </p>
           </Section>
 
@@ -351,7 +351,7 @@ export default function Methodology() {
             <div className="mt-4">
               <SourceRow
                 source="IRS nonprofit registration list"
-                detail="Nonprofit status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa covers the full active registry — over 1.6 million organizations."
+                detail="Nonprofit status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa covers the full active registry, more than 1.6 million organizations."
               />
               <SourceRow
                 source="IRS published financial data"
@@ -362,7 +362,7 @@ export default function Methodology() {
                 detail="Mission statements, website URLs, and annual filing detail. Used to fill in financial data and confirm profile completeness for the lamp tier."
               />
               <SourceRow
-                source="NCCS — Urban Institute"
+                source="NCCS (Urban Institute)"
                 detail="Supplementary category codes and historical filing data."
               />
             </div>

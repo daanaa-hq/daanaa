@@ -504,7 +504,7 @@ function AdvisorTeaser() {
             </h2>
             <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.65] max-w-[480px]">
               Describe what you care about. We'll find verified nonprofits that
-              match — matched by cause, location, giving path, and available public data.
+              match, by cause, location, giving path, and available public data.
             </p>
           </div>
 

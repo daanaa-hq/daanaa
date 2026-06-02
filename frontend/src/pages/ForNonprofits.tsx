@@ -66,7 +66,7 @@ export default function ForNonprofits() {
     } catch {
       // Fallback: log locally so we don't lose the lead
       try { await submitWaitlist(email.trim(), 'claiming', ein.replace(/\D/g, '') || undefined) } catch {}
-      setError('Could not reach the server. Your request has been saved — we will follow up.')
+      setError('Could not reach the server. Your request has been saved, and we will follow up.')
     } finally {
       setSubmitting(false)
     }
@@ -112,17 +112,17 @@ export default function ForNonprofits() {
               {
                 n: 1,
                 title: 'Mission & programs',
-                description: 'Add your mission statement, program descriptions, and the people you serve — in your words, clearly marked as written by you and separate from government records.',
+                description: 'Add your mission statement, program descriptions, and the people you serve, in your words, clearly marked as written by you and separate from government records.',
               },
               {
                 n: 2,
                 title: 'Leadership team',
-                description: 'Introduce your executive director and board. Donors and volunteers want to know who leads the organization — and that\'s not in public IRS records.',
+                description: 'Introduce your executive director and board. Donors and volunteers want to know who leads the organization, and that\'s not in public IRS records.',
               },
               {
                 n: 3,
                 title: 'Impact metrics',
-                description: 'Share the numbers that matter to you — meals served, families housed, students tutored. Context that no government report can provide.',
+                description: 'Share the numbers that matter to you: meals served, families housed, students tutored. Context that no government report can provide.',
               },
               {
                 n: 4,
@@ -144,7 +144,7 @@ export default function ForNonprofits() {
               {
                 n: 7,
                 title: 'Supplier network',
-                description: 'Access vetted vendors — software, printing, supplies — negotiated at nonprofit rates. Lower your costs so more goes to your mission.',
+                description: 'Access vetted vendors for software, printing, and supplies, negotiated at nonprofit rates. Lower your costs so more goes to your mission.',
                 phase2: true,
               },
             ].map(({ n, title, description, phase2 }) => (
@@ -179,7 +179,7 @@ export default function ForNonprofits() {
               Daanaa keeps two distinct layers on every profile. The IRS layer, which covers revenue, category, and tax status, is public data we display but you cannot edit. Your claimed layer, which covers mission, programs, impact, and leadership, is your own voice, clearly labeled.
             </p>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
-              Donors can always tell which is which. Keeping these two layers separate is how they trust what they read — and how you stay in control of your own story.
+              Donors can always tell which is which. Keeping these two layers separate is how they trust what they read, and how you stay in control of your own story.
             </p>
           </div>
 
@@ -219,7 +219,7 @@ export default function ForNonprofits() {
                 <p className="font-body text-[13px] text-cool-grey leading-[1.65]">
                   Before you claim your page, Daanaa shows a best-guess mission statement inferred from your sector and location.
                   It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">β ai-generated</span> so donors know it is a starting point, not your own words.
-                  When you claim your page, you replace it with the mission statement you actually want donors to see — and the label is removed.
+                  When you claim your page, you replace it with the mission statement you actually want donors to see, and the label is removed.
                 </p>
               </div>
             </div>
@@ -237,7 +237,7 @@ export default function ForNonprofits() {
             </h2>
             <div className="space-y-5">
               <StepDot n={1} label="Find your organization in the directory and click 'Claim this page'" />
-              <StepDot n={2} label="Enter your EIN and email — we look up your IRS-registered address" />
+              <StepDot n={2} label="Enter your EIN and email, and we look up your IRS-registered address" />
               <StepDot n={3} label="Receive a verification letter at that address in 3–5 business days" />
               <StepDot n={4} label="Scan the QR code (or enter your 6-digit PIN) to unlock your profile editor" />
             </div>
@@ -261,7 +261,7 @@ export default function ForNonprofits() {
             tier: 'Glow',
             pct: '21% of all nonprofits',
             description: 'Financial data is on record, but we need a recent one to rank you among peers.',
-            nextStep: 'To reach Flame: file an annual report dated 2022 or later. This happens automatically once the IRS publishes it — nothing to do with us.',
+            nextStep: 'To reach Flame: file an annual report dated 2022 or later. This happens automatically once the IRS publishes it. Nothing for you to do.',
           },
           {
             tier: 'Flame',
@@ -367,7 +367,7 @@ export default function ForNonprofits() {
                   {orgName ? orgName : 'Is this your nonprofit?'}
                 </h2>
                 <p className="font-body text-[16px] text-muted-cream leading-[1.65] mb-6">
-                  We'll mail a verification letter to your IRS-registered address. The letter includes a QR code and PIN — scan it to claim your page in seconds.
+                  We'll mail a verification letter to your IRS-registered address. The letter includes a QR code and PIN. Scan it to claim your page in seconds.
                 </p>
 
                 {irsAddress && (
@@ -381,7 +381,7 @@ export default function ForNonprofits() {
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <div>
                     <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">
-                      Organization tax ID — EIN <span className="text-soft-gold">*</span>
+                      Organization tax ID (EIN) <span className="text-soft-gold">*</span>
                     </label>
                     <input
                       type="text"
@@ -444,7 +444,7 @@ export default function ForNonprofits() {
                   </button>
                 </form>
                 <p className="mt-4 font-body text-[11px] text-muted-cream/40 leading-[1.5]">
-                  We mail a letter to your IRS-registered address — the same way Google verifies businesses. No cost to you.
+                  We mail a letter to your IRS-registered address, the same way Google verifies businesses. No cost to you.
                 </p>
               </>
             )}

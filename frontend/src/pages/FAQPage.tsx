@@ -50,13 +50,13 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
               <li><strong className="text-deep-navy font-semibold">Peer financial context</strong> (0–100) answers: how does this organization's financial footprint compare to similar nonprofits?</li>
               <li><strong className="text-deep-navy font-semibold">Visibility level</strong> (Complete → Listed) answers: how much public data backs this profile today?</li>
             </ul>
-            <p className="mt-3">An organization can have a high peer context score and a low visibility level — or vice versa. Read the{' '}<Link to="/tiers" className="text-soft-gold hover:text-bright-gold transition-colors">full visibility level reference</Link> for details.</p>
+            <p className="mt-3">An organization can have a high peer context score and a low visibility level, or vice versa. Read the{' '}<Link to="/tiers" className="text-soft-gold hover:text-bright-gold transition-colors">full visibility level reference</Link> for details.</p>
           </>
         ),
       },
       {
         q: 'Why doesn\'t my organization have a score?',
-        a: 'A score needs enough financial data to compare an organization with its peers. Very small nonprofits (under $50,000 in revenue) file only a short confirmation with the government — no financial detail. We can confirm they exist but can\'t rank them. Once they grow and file a full report, a score appears automatically.',
+        a: 'A score needs enough financial data to compare an organization with its peers. Very small nonprofits (under $50,000 in revenue) file only a short confirmation with the government, with no financial detail. We can confirm they exist but can\'t rank them. Once they grow and file a full report, a score appears automatically.',
       },
       {
         q: 'Can an organization pay to improve its score?',
@@ -75,7 +75,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         q: 'Where does Daanaa\'s data come from?',
         a: (
           <>
-            All data comes from public records: the IRS nonprofit registration list, IRS annual financial reports, and ProPublica's nonprofit database. We do not create, modify, or supplement source data — we organize and display it. See our{' '}<Link to="/legal" className="text-soft-gold hover:text-bright-gold transition-colors">full data attribution</Link>.
+            All data comes from public records: the IRS nonprofit registration list, IRS annual financial reports, and ProPublica's nonprofit database. We do not create, modify, or supplement source data. We organize and display it. See our{' '}<Link to="/legal" className="text-soft-gold hover:text-bright-gold transition-colors">full data attribution</Link>.
           </>
         ),
       },
@@ -104,7 +104,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         q: 'The information about my organization is wrong. What can I do?',
         a: (
           <>
-            If the data shown is incorrect, the most likely explanation is that the IRS filing contains the error — in which case the correction needs to happen there first, and Daanaa will pick it up on the next refresh. For claims or additions (mission statement, website, programs), you can claim your page when that feature launches. In the meantime, report a data issue at{' '}<a href="mailto:trust@daanaa.org" className="text-soft-gold hover:text-bright-gold transition-colors">trust@daanaa.org</a>.
+            If the data shown is incorrect, the most likely explanation is that the IRS filing contains the error, in which case the correction needs to happen there first, and Daanaa will pick it up on the next refresh. For claims or additions (mission statement, website, programs), you can claim your page when that feature launches. In the meantime, report a data issue at{' '}<a href="mailto:trust@daanaa.org" className="text-soft-gold hover:text-bright-gold transition-colors">trust@daanaa.org</a>.
           </>
         ),
       },
@@ -146,7 +146,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         q: 'What documentation do I need for a tax deduction?',
         a: (
           <>
-            Under IRS rules: gifts under $250 require only a bank or card statement. Gifts of $250 or more require a written acknowledgment letter from the organization. Daanaa\'s Giving Wallet helps you track what you\'ve given and to whom — but the letter must come from the nonprofit directly. See our{' '}<Link to="/guides" className="text-soft-gold hover:text-bright-gold transition-colors">giving guide on documentation</Link> for the full breakdown.
+            Under IRS rules: gifts under $250 require only a bank or card statement. Gifts of $250 or more require a written acknowledgment letter from the organization. Daanaa\'s Giving Wallet helps you track what you\'ve given and to whom, but the letter must come from the nonprofit directly. See our{' '}<Link to="/guides" className="text-soft-gold hover:text-bright-gold transition-colors">giving guide on documentation</Link> for the full breakdown.
           </>
         ),
       },

@@ -76,7 +76,7 @@ export default function HowItWorks() {
               Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
             </p>
             <p>
-              We list every nonprofit the IRS recognizes in the United States — over 1.6 million of them — and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
+              We list every nonprofit the IRS recognizes in the United States, more than 1.6 million of them, and give donors a searchable, honest view of the sector. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
               Peer financial context (0–100) compares financial footprint and reserve position relative to similar groups. It does not measure impact, leadership, community trust, or whether a group deserves support. Daanaa is not a charity rating agency.
