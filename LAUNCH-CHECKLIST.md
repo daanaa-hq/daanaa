@@ -49,7 +49,11 @@ Automated gate already enforced: `scripts/privacy_check.sh` runs on every commit
 - [~] **B3. Volunteer flow** — `VolunteerInterest` (device-send) + the anonymous intent signal
       shipped. Full reach pending B4 (org-provided volunteer contact/link).
 - [ ] **B4. Claim-and-edit flow** — claim editor exists and now shows accumulated demand; still
-      to build: org sets mission, 5 tags, ways-to-help, needs, updates, photo (the wireframe made real).
+      to build: org sets mission, 5 tags, ways-to-help, needs, updates, photo (the wireframe made real),
+      and **official links the org provides on claim — LinkedIn, website, donate URL**. This is the
+      honest, consented way to capture the data that lives on LinkedIn for orgs with no website
+      (many small/newer nonprofits): invite them to bring it, never scrape it (LinkedIn ToS + the
+      official-sources-only posture). Org-provided links flip to verified/official on claim.
 - [ ] **B5. Fiscal sponsorship** field — donations routed through a sponsor with a different EIN.
 - [ ] **B6. Site alignment pass** — provenance/beta consistency across all pages.
 - [ ] **B7. Opt-in "donate a statistic"** wallet button (Tier-3 aggregate impact; needs a small
