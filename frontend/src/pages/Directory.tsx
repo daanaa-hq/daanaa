@@ -680,9 +680,10 @@ export default function Directory() {
             className="mt-7 max-w-[640px]"
           />
 
-          {/* Mobile + tablet: single Filters button (opens full-filter drawer).
-              Desktop uses the sticky FilterRail instead. */}
-          {searchMode === 'browse' && <div className="mt-5 lg:hidden flex items-center gap-2">
+          {/* Top filter toolbar — all breakpoints. Full filter set lives in the
+              drawer (Filters button); the discovery toggles are surfaced here
+              because they're the point of the directory. */}
+          {searchMode === 'browse' && <div className="mt-6 flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setFilterSheetOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all duration-150"
@@ -695,22 +696,43 @@ export default function Directory() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
               </svg>
-              Filters
+              All filters
               {activeFilterCount > 0 && (
                 <span className="min-w-[16px] h-4 flex items-center justify-center bg-deep-navy text-soft-gold text-[10px] font-bold rounded-full px-1">
                   {activeFilterCount}
                 </span>
               )}
             </button>
+
+            {/* Discovery toggles — the brand's reason to exist, surfaced up front */}
+            {[
+              { key: 'hg', label: 'Hidden gems', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628', toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
+              { key: 'nf', label: 'Needs funding soon', on: needsFunding, color: '#EF4444', textOn: '#FFFFFF', toggle: () => { setNeedsFunding(!needsFunding); setCurrentPage(1); scrollTop() } },
+              { key: 'dl', label: 'Direct donate link', on: directLink, color: '#16A34A', textOn: '#FFFFFF', toggle: () => { setDirectLink(!directLink); setCurrentPage(1); scrollTop() } },
+            ].map(t => (
+              <button
+                key={t.key}
+                onClick={t.toggle}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full font-body text-[12px] font-medium border transition-all duration-150"
+                style={{
+                  backgroundColor: t.on ? t.color : 'transparent',
+                  color: t.on ? t.textOn : '#4B5563',
+                  borderColor: t.on ? t.color : '#E5E0DB',
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+
             {activeFilterCount > 0 && (
-              <button onClick={handleClearAll} className="font-body text-[12px] text-cool-grey/60 hover:text-cool-grey transition-colors">
-                Clear
+              <button onClick={handleClearAll} className="font-body text-[12px] text-cool-grey/60 hover:text-cool-grey transition-colors ml-1">
+                Clear all
               </button>
             )}
           </div>}
 
-          {/* Tablet: category pills + state dropdown */}
-          {searchMode === 'browse' && <div className="mt-5 hidden md:flex lg:hidden items-center gap-2 flex-wrap">
+          {/* Category quick-pills + state — all breakpoints */}
+          {searchMode === 'browse' && <div className="mt-3 flex items-center gap-2 flex-wrap">
             {FILTER_CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
@@ -745,9 +767,9 @@ export default function Directory() {
             </div>
           </div>}
 
-          {/* Tablet: subcategory pills when a category is active */}
+          {/* Subcategory pills when a single category is active — all breakpoints */}
           {searchMode === 'browse' && activeFilters.length === 1 && (NTEE_SUBCATEGORIES[activeFilters[0]]?.length ?? 0) > 0 && (
-            <div className="mt-3 hidden md:flex lg:hidden items-center gap-1.5 flex-wrap">
+            <div className="mt-3 flex items-center gap-1.5 flex-wrap">
               {NTEE_SUBCATEGORIES[activeFilters[0]].map(sub => (
                 <button
                   key={sub.code}
@@ -797,35 +819,9 @@ export default function Directory() {
       <div className="bg-warm-cream py-12 md:py-16">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* Browse mode */}
+          {/* Browse mode — filters now live in the top toolbar, results full-width */}
           {searchMode === 'browse' && (
-          <div className="lg:flex lg:gap-8 lg:items-start">
-
-            {/* Desktop filter rail */}
-            <FilterRail
-              activeCategories={activeFilters}
-              subFilter={subFilter}
-              stateFilter={stateFilter}
-              sortBy={sortBy}
-              revenueFilter={revenueFilter}
-              scoreTier={scoreTier}
-              hiddenGem={hiddenGem}
-              directLink={directLink}
-              needsFunding={needsFunding}
-              cause={cause}
-              onCategoryChange={handleFilterChange}
-              onSubChange={handleSubChange}
-              onStateChange={handleStateChange}
-              onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
-              onRevenueChange={handleRevenueChange}
-              onScoreTierChange={handleScoreTierChange}
-              onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
-              onDirectLinkChange={(v) => { setDirectLink(v); setCurrentPage(1); scrollTop() }}
-              onNeedsFundingChange={(v) => { setNeedsFunding(v); setCurrentPage(1); scrollTop() }}
-              onCauseChange={setCause}
-              onClearAll={handleClearAll}
-              resultCount={total}
-            />
+          <div>
 
             {/* Results column */}
             <div className="flex-1 min-w-0">
@@ -902,8 +898,8 @@ export default function Directory() {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  {/* Sort — tablet only */}
-                  <div className="hidden md:flex lg:hidden items-center gap-2">
+                  {/* Sort — all breakpoints (rail removed) */}
+                  <div className="hidden sm:flex items-center gap-2">
                     <span className="font-body text-[14px] text-cool-grey">Sort:</span>
                     <select
                       value={sortBy}
