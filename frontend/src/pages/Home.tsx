@@ -258,7 +258,7 @@ function StatsBar() {
         </svg>
       ),
       value: `${count.toLocaleString()}+`,
-      label: 'verified nonprofits',
+      label: 'recognized nonprofits',
     },
     {
       icon: (
@@ -266,7 +266,7 @@ function StatsBar() {
           <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
         </svg>
       ),
-      value: `${Math.floor(finRecords / 1_000_000).toFixed(1)}M+`,
+      value: `${(finRecords / 1_000_000).toFixed(1)}M+`,
       label: 'financial records indexed',
     },
     {
@@ -433,7 +433,7 @@ function WalletSection() {
               <div className="grid grid-cols-3 gap-3 mb-4">
                 {[
                   { label: 'Given all-time', value: '$1,249.95' },
-                  { label: `This year`, value: '$749.97' },
+                  { label: `This year`, value: '$999.98' },
                   { label: 'Orgs', value: '6' },
                 ].map(s => (
                   <div key={s.label} className="bg-white/5 rounded-xl p-3.5">
@@ -503,7 +503,7 @@ function AdvisorTeaser() {
               Not sure where to give?
             </h2>
             <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.65] max-w-[480px]">
-              Describe what you care about. We'll find verified nonprofits that
+              Describe what you care about. We'll find recognized nonprofits that
               match, by cause, location, giving path, and available public data.
             </p>
           </div>
