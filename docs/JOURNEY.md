@@ -154,3 +154,22 @@ One founder. AI agents. Roughly two months from first commit to public civic inf
 
 The journey from here is realized human impact: the first donor who finds an organization
 they'd never have discovered, and gives.
+
+---
+
+## 2026-06-02 — Every scored nonprofit now has a voice
+
+Overnight, on the local 14B GPU model (heat-safe 10pm-6am window), the mission backlog for
+scored organizations went from **61,200 to 225**. ~61,000 plain-language missions generated
+in one night, bringing the total to **630,237**. The 225 that remain are orgs with too
+little usable source data to describe honestly, not a backlog.
+
+What this means: every nonprofit that has enough data to be scored and surfaced now also
+has a clear mission a donor can read, where most had nothing before. The "find the invisible
+97%" promise is no longer aspirational for the scored set; it is done. Counterfactual: the
+missions alone now represent roughly **131 person-years** of analyst work (630K filings x
+~25 min each), produced in weeks on a single desktop GPU for the cost of electricity.
+
+Honest framing (Stewardship 3): this is *enabling* impact, a readable, scored, findable
+profile for orgs that were opaque in raw IRS filings. *Realized* impact, a donor giving to
+one of these because they finally could, is still ahead.
