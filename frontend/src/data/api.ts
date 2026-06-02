@@ -355,11 +355,19 @@ export async function getSimilarOrgs(ein: string, options?: {
   return fetchJson(`/api/organizations/${ein}/similar?${params}`);
 }
 
-export async function submitFeedback(message: string, email?: string, page?: string): Promise<void> {
+export async function submitFeedback(
+  message: string,
+  opts?: { email?: string; page?: string; category?: string },
+): Promise<void> {
   const res = await fetch(`${API_BASE}/api/feedback`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message, email: email || '', page: page || '' }),
+    body: JSON.stringify({
+      message,
+      email: opts?.email || '',
+      page: opts?.page || '',
+      category: opts?.category || '',
+    }),
   });
   if (!res.ok && res.status !== 204) throw new Error('feedback failed');
 }
