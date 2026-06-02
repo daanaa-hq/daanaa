@@ -30,3 +30,15 @@ is surveillance and off-brand. Rejected: any third-party analytics or session re
 Chose Flexible SSL (HTTPS to visitor, HTTP Cloudflare→origin on :80). Why: simplest path
 to HTTPS with no origin cert management during beta. Rejected (for now): Full(strict) with
 an origin cert — REVISIT before any heavy/public launch push for true end-to-end TLS.
+
+## 2026-06-01 — Donate paths: official sources only, or fail closed
+Chose to only present a donate path as authoritative when it traces to an OFFICIAL source —
+(1) the org confirmed it on claim, (2) an IRS-EIN-keyed authoritative router (Every.org,
+PayPal Giving Fund), or (3) a high-confidence donate URL on the org's own verified domain.
+Scraped/AI-found links stay "beta"-labeled (never authoritative); revoked/not-in-good-
+standing orgs are withheld entirely. Why: protects Daanaa and donors from routing money to
+wrong/fraudulent/outdated destinations; aligns with the fail-closed trust posture and
+Stewardship "trust signals reflect real data." Key consequence: the EIN router is
+official-by-construction (keyed on the authoritative IRS EIN, not a guessed URL), so it's
+the SAFEST give path — no need to discover an invisible org's page to give them a protected
+one. Rejected: presenting any high-confidence scraped link as a committed donate path.

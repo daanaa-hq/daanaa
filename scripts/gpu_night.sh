@@ -52,6 +52,17 @@ start() {
     echo "[$(ts)] start: launching cpu_night donate loop"
     nohup bash "$BASE/scripts/cpu_night.sh" >> "$LOG_DIR/cpu_night.log" 2>&1 &
   fi
+
+  # Re-embed orgs whose mission was (re)written so semantic search stays current.
+  # The watchdog runs its own embed server on :11436 (separate from the mission
+  # model on :11437) and re-embeds once enough missions are stale, then idles.
+  if pgrep -f "scripts/reembed_watchdog.py" >/dev/null; then
+    echo "[$(ts)] start: reembed_watchdog already running — skipping"
+  else
+    echo "[$(ts)] start: launching reembed_watchdog (re-embeds stale/new missions)"
+    nohup "$BASE/venv/bin/python3" "$BASE/scripts/reembed_watchdog.py" \
+      --threshold 5000 --interval 1800 >> "$LOG_DIR/reembed_watchdog.log" 2>&1 &
+  fi
   echo "[$(ts)] start: done"
 }
 
@@ -62,6 +73,10 @@ stop() {
   echo "[$(ts)] stop: halting generate_missions"
   pkill -f "scripts/generate_missions.py" 2>/dev/null
   sleep 2
+  echo "[$(ts)] stop: halting reembed_watchdog + embed server"
+  pkill -f "scripts/reembed_watchdog.py" 2>/dev/null
+  pkill -f "llama-server.*mxbai" 2>/dev/null
+  fuser -k 11436/tcp 2>/dev/null
   echo "[$(ts)] stop: halting llama-server"
   pkill -f "llama-server.*$(basename "$MODEL")" 2>/dev/null
   sleep 2

@@ -440,6 +440,26 @@ def _init_analytics_tables():
 
 _init_analytics_tables()
 
+
+def _init_revoked_eins_table():
+    # IRS Automatic Revocation of Exemption list. An org here has LOST its tax-
+    # exempt status — we must NEVER present a donate path for it (G2 gate). This
+    # is CATALOG/reference data (lives in DB_PATH, synced from the home pipeline
+    # by scripts/ingest_auto_revocation.py), NOT user-write data — so it is not
+    # in the live-DB split. Empty until the ingestion script populates it.
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS revoked_eins (
+                ein                     TEXT PRIMARY KEY,
+                revocation_date         TEXT,
+                revocation_posting_date TEXT,
+                source                  TEXT DEFAULT 'irs_auto_revocation'
+            )
+        """)
+        db.commit()
+
+_init_revoked_eins_table()
+
 # Prevent absurdly large payloads on any endpoint
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # 64 KB
 
@@ -617,7 +637,7 @@ def list_organizations():
                CASE WHEN months_of_reserve BETWEEN -120 AND 120 THEN months_of_reserve ELSE NULL END as months_of_reserve,
                net_assets, total_expenses,
                employee_count, ruling_date, zipcode, is_hidden_gem, cause_tags,
-               donate_url, donate_platform, donate_url_status,
+               donate_url, donate_platform, donate_url_status, subsection, deductibility,
                SUBSTR(mission, 1, 300) as mission, mission_source,
                (mission IS NOT NULL AND mission != '') as has_mission,
                (website IS NOT NULL AND website != '') as has_website
@@ -633,6 +653,14 @@ def list_organizations():
     for row in rows:
         d = dict(row)
         d['total_revenue_formatted'] = f"${d['total_revenue']:,.0f}" if d['total_revenue'] else None
+        # Official-sources gate on the card's give affordance (cheap check; the
+        # per-EIN revocation lookup runs on the org-detail page, not the list).
+        if not _donate_eligible_basic(d.get('subsection'), d.get('deductibility'))[0]:
+            d['donate_url'] = None
+            d['donate_platform'] = None
+            d['donate_url_status'] = None
+        d.pop('subsection', None)
+        d.pop('deductibility', None)
         if d.get('cause_tags'):
             try:
                 d['cause_tags'] = json.loads(d['cause_tags'])
@@ -671,6 +699,18 @@ def get_organization(ein):
     org['total_revenue_formatted'] = f"${org['total_revenue']:,.0f}" if org['total_revenue'] else None
     org['has_mission'] = bool(org.get('mission') and str(org['mission']).strip())
     org['has_website'] = bool(org.get('website') and str(org['website']).strip())
+
+    # G2 / official-sources gate: never present a donate path for a non-deductible,
+    # non-501(c)(3), or IRS-auto-revoked org. Fail closed — null the donate fields
+    # so the frontend can't render a "give" affordance, and record why.
+    eligible, reason = _donate_eligible_basic(org.get('subsection'), org.get('deductibility'))
+    if eligible and _is_revoked(db, ein_clean):
+        eligible, reason = False, 'irs_auto_revoked'
+    if not eligible:
+        org['donate_url'] = None
+        org['donate_platform'] = None
+        org['donate_url_status'] = None
+        org['donate_ineligible_reason'] = reason
 
     # Data provenance badges — tells the frontend which fields are AI-generated vs verified
     org['data_badges'] = {
@@ -819,6 +859,29 @@ def ntee_categories():
 # while excluding the 3,379 orgs the IRS has explicitly marked non-deductible.
 # Orgs with null subsection (NCCS-only, unverifiable) are excluded.
 _DEDUCTIBILITY_FILTER = "subsection = '3' AND deductibility != '2'"
+
+
+def _donate_eligible_basic(subsection, deductibility):
+    # Official-sources-only gate (cheap, no DB). A donate path may only be
+    # presented as authoritative for a confirmed, tax-deductible 501(c)(3).
+    # Fail closed on anything else. Returns (eligible: bool, reason: str|None).
+    if str(subsection or '') != '3':
+        return False, 'not_501c3'
+    if str(deductibility or '') == '2':
+        return False, 'not_tax_deductible'
+    return True, None
+
+
+def _is_revoked(db, ein):
+    # True if the EIN is on the IRS Automatic Revocation list (G2). Indexed
+    # primary-key lookup; safe to call per org-detail request.
+    ein = ''.join(c for c in str(ein or '') if c.isdigit())[:10]
+    if not ein:
+        return False
+    try:
+        return db.execute("SELECT 1 FROM revoked_eins WHERE ein = ?", (ein,)).fetchone() is not None
+    except Exception:
+        return False  # table missing → fail OPEN on revocation only; basic gate still applies
 
 @app.route('/api/ntee-coverage')
 @limiter.exempt
