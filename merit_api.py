@@ -389,6 +389,7 @@ def _init_feedback_table():
         db.execute("""
             CREATE TABLE IF NOT EXISTS feedback (
                 id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                category    TEXT,
                 message     TEXT NOT NULL,
                 email       TEXT,
                 page        TEXT,
@@ -396,6 +397,11 @@ def _init_feedback_table():
                 created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        # Migration for feedback tables created before `category` existed.
+        try:
+            db.execute("ALTER TABLE feedback ADD COLUMN category TEXT")
+        except sqlite3.OperationalError:
+            pass  # column already present
         db.commit()
 
 _init_feedback_table()
@@ -1165,18 +1171,19 @@ def _normalize_path(p: str) -> str:
 def submit_feedback():
     # Anonymous site feedback. message required; email OPTIONAL (only if the
     # visitor wants to be kept posted). No IP, no tracking, no identity.
-    data    = request.get_json(silent=True) or {}
-    message = str(data.get('message', '')).strip()[:4000]
-    email   = str(data.get('email', '')).strip()[:200] or None
-    page    = str(data.get('page', '')).strip()[:300] or None
+    data     = request.get_json(silent=True) or {}
+    message  = str(data.get('message', '')).strip()[:4000]
+    email    = str(data.get('email', '')).strip()[:200] or None
+    page     = str(data.get('page', '')).strip()[:300] or None
+    category = str(data.get('category', '')).strip().lower()[:40] or None
     if not message:
         return jsonify({'error': 'message required'}), 400
     if email and ('@' not in email or '.' not in email.split('@')[-1]):
         return jsonify({'error': 'invalid email'}), 400
     db = get_db()
     db.execute(
-        "INSERT INTO feedback (message, email, page) VALUES (?, ?, ?)",
-        (message, email, page),
+        "INSERT INTO feedback (category, message, email, page) VALUES (?, ?, ?, ?)",
+        (category, message, email, page),
     )
     db.commit()
     return ('', 204)
@@ -1255,7 +1262,7 @@ def admin_analytics():
 def admin_feedback():
     db = get_db()
     rows = [dict(r) for r in db.execute(
-        "SELECT id, message, email, page, status, created_at "
+        "SELECT id, category, message, email, page, status, created_at "
         "FROM feedback ORDER BY created_at DESC LIMIT 200").fetchall()]
     return jsonify({'feedback': rows, 'total': len(rows)})
 

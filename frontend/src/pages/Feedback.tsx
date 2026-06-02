@@ -2,15 +2,30 @@ import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { submitFeedback } from '../data/api'
 
+const CATEGORIES: { value: string; label: string; hint: string }[] = [
+  { value: 'general', label: 'General feedback', hint: "What's on your mind?" },
+  { value: 'data-issue', label: 'Report a data issue', hint: 'Which organization, and what looks wrong? Include the name or EIN if you can.' },
+  { value: 'org', label: 'Claim or correct my organization', hint: "Tell us your organization's name and EIN, and what you'd like updated." },
+  { value: 'bug', label: "Something's broken", hint: 'What were you doing, and what happened? A link or page helps.' },
+  { value: 'other', label: 'Something else', hint: "What's on your mind?" },
+]
+
 export default function Feedback() {
   const location = useLocation()
+  const params = new URLSearchParams(location.search)
+  const referrer = params.get('from') || ''
+  const initialType = params.get('type') || ''
+
+  const [category, setCategory] = useState(
+    CATEGORIES.some(c => c.value === initialType) ? initialType : 'general'
+  )
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
-  const referrer = new URLSearchParams(location.search).get('from') || ''
+  const activeCat = CATEGORIES.find(c => c.value === category) || CATEGORIES[0]
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -18,7 +33,11 @@ export default function Feedback() {
     setSending(true)
     setError('')
     try {
-      await submitFeedback(message.trim(), email.trim() || undefined, referrer || undefined)
+      await submitFeedback(message.trim(), {
+        email: email.trim() || undefined,
+        page: referrer || undefined,
+        category,
+      })
       setDone(true)
     } catch {
       setError('Something went wrong. Please try again, or email hello@daanaa.org.')
@@ -47,14 +66,31 @@ export default function Feedback() {
             Tell us what you think
           </h1>
           <p className="font-body text-[15px] text-cool-grey leading-[1.6] mb-8">
-            Daanaa is in early access. What worked, what felt off, what you wish it did —
-            it all helps. You can stay anonymous, or leave an email if you'd like us to follow up.
+            Daanaa is in early access. Found wrong data, want to fix your organization's page,
+            or just have a thought? Pick what fits below. You can stay anonymous, or leave an
+            email if you'd like us to follow up.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block font-body text-[13px] font-medium text-deep-navy mb-2">
-                Your feedback
+                What's this about?
+              </label>
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-white border border-light-grey font-body text-[15px] text-deep-navy outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors appearance-none cursor-pointer"
+                style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%236B7280\' stroke-width=\'2\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center' }}
+              >
+                {CATEGORIES.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-body text-[13px] font-medium text-deep-navy mb-2">
+                {category === 'data-issue' ? 'What looks wrong?' : 'Your feedback'}
               </label>
               <textarea
                 value={message}
@@ -62,7 +98,7 @@ export default function Feedback() {
                 rows={6}
                 required
                 maxLength={4000}
-                placeholder="What's on your mind?"
+                placeholder={activeCat.hint}
                 className="w-full px-4 py-3 rounded-xl bg-white border border-light-grey font-body text-[15px] text-deep-navy placeholder:text-cool-grey/50 outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors resize-y"
               />
             </div>
@@ -87,7 +123,7 @@ export default function Feedback() {
               disabled={sending || !message.trim()}
               className="inline-flex items-center justify-center px-7 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
             >
-              {sending ? 'Sending…' : 'Send feedback'}
+              {sending ? 'Sending…' : 'Send'}
             </button>
 
             <p className="font-body text-[12px] text-cool-grey/70 leading-[1.5] pt-2">
