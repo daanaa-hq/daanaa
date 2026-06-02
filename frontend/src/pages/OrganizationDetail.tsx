@@ -444,7 +444,7 @@ export default function OrganizationDetail() {
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill={isSaved(org.ein) ? '#C9A96E' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
               {isSaved(org.ein) ? 'Saved' : 'Save'}
             </button>
@@ -460,11 +460,11 @@ export default function OrganizationDetail() {
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24"
-                fill={inList ? 'none' : '#0A1628'}
+                fill="none"
                 stroke={inList ? '#C9A96E' : '#0A1628'}
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
               </svg>
               {inList ? 'On your list' : 'Add to giving list'}
             </button>
@@ -1404,11 +1404,11 @@ export default function OrganizationDetail() {
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24"
-            fill={inList ? '#C9A96E' : '#0A1628'}
+            fill="none"
             stroke={inList ? '#C9A96E' : '#0A1628'}
             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
           >
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
           </svg>
           {inList ? 'Remove from giving list' : 'Add to giving list'}
         </button>
