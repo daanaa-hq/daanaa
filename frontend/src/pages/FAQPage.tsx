@@ -127,7 +127,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
       },
       {
         q: 'My organization isn\'t listed on Daanaa. Why?',
-        a: 'Daanaa lists every nonprofit the IRS recognizes. If your organization isn\'t appearing, the most likely reasons are that your IRS recognition is recent (the IRS list updates monthly, so newly recognized organizations may take 30 to 60 days to appear), or your organization\'s status has lapsed. Search on the IRS Tax Exempt Organization Search to verify your status.',
+        a: 'Daanaa lists every tax-deductible 501(c)(3) organization the IRS recognizes. If your organization isn\'t appearing, the most likely reasons are that your IRS recognition is recent (the IRS list updates monthly, so newly recognized organizations may take 30 to 60 days to appear), or your organization\'s status has lapsed. Daanaa does not list 501(c)(4), 501(c)(6), or other nonprofit types where donations are not tax-deductible. Search on the IRS Tax Exempt Organization Search to verify your status.',
       },
     ],
   },

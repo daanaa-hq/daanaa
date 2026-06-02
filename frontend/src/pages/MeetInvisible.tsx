@@ -57,7 +57,7 @@ function RevealCard({ org, i }: { org: ApiOrganization; i: number }) {
 export default function MeetInvisible() {
   usePageMeta(
     'The Invisible 97% — Daanaa',
-    'Of 1.6 million American nonprofits, you have heard of almost none. Meet the ones doing real work, finally findable and ready to support.',
+    'Of 1.6 million tax-deductible American nonprofits, you have heard of almost none. Meet the ones doing real work, finally findable and ready to support.',
   )
   const [orgs, setOrgs] = useState<ApiOrganization[]>([])
   const [loading, setLoading] = useState(true)
@@ -96,7 +96,7 @@ export default function MeetInvisible() {
           You have heard of almost none of them
         </h1>
         <p className="font-body text-[17px] text-muted-cream leading-[1.7] mt-6 max-w-[560px] mx-auto">
-          There are 1.6 million nonprofits in America. A handful are household names.
+          There are 1.6 million tax-deductible nonprofits in America. A handful are household names.
           The rest do real work, close to home and far from the headlines.
         </p>
       </section>
@@ -134,7 +134,7 @@ export default function MeetInvisible() {
       {/* CTA */}
       <section className="max-w-[820px] mx-auto px-6 pb-32 text-center">
         <p className="font-display italic text-warm-cream leading-[1.15]" style={{ fontSize: 'clamp(26px, 4vw, 40px)' }}>
-          1.6 million of them, each doing real work.<br />Most are just waiting to be found.
+          1.6 million tax-deductible nonprofits, each doing real work.<br />Most are just waiting to be found.
         </p>
         <Link
           to="/directory"
