@@ -3,11 +3,13 @@ import sqlite3
 import requests
 import time
 import sys
+import csv
 from pathlib import Path
 from datetime import datetime
 
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 LOG = Path.home() / 'meritgiving' / 'logs' / 'overnight.log'
+SUBMISSIONS_FILE = Path.home() / 'meritgiving' / 'data' / 'manual_link_submissions.csv'
 
 def log(msg):
     t = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -19,6 +21,50 @@ def log(msg):
 
 def get_db():
     return sqlite3.connect(str(DB))
+
+def process_manual_submissions():
+    """Ingest manual link submissions from CSV, update DB, clear file."""
+    if not SUBMISSIONS_FILE.exists():
+        return 0
+
+    conn = get_db()
+    c = conn.cursor()
+    processed = 0
+
+    try:
+        with open(SUBMISSIONS_FILE, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if not row or not row.get('EIN'):
+                    continue
+                ein = row['EIN'].strip()
+                website = row.get('website_url', '').strip() or None
+                donate = row.get('donate_url', '').strip() or None
+
+                if not (website or donate):
+                    continue
+
+                # Update registry with submitted links (marked as beta/unverified)
+                if website:
+                    c.execute('UPDATE registry_enriched SET website = ?, website_status = "beta" WHERE EIN = ? AND (website IS NULL OR website = "")',
+                             (website, ein))
+                if donate:
+                    c.execute('UPDATE registry_enriched SET donate_url = ?, donate_confidence = 75, donate_url_status = "beta_unverified" WHERE EIN = ?',
+                             (donate, ein))
+                processed += 1
+
+        conn.commit()
+        if processed > 0:
+            log(f'Processed {processed} manual submissions')
+            # Clear the submissions file (keep header)
+            with open(SUBMISSIONS_FILE, 'w') as f:
+                f.write('EIN,website_url,donate_url,submission_date\n')
+    except Exception as e:
+        log(f'Error processing submissions: {str(e)[:100]}')
+    finally:
+        conn.close()
+
+    return processed
 
 def enrich_batch(size=1000):
     conn = get_db()
@@ -74,6 +120,7 @@ def main():
     log('=' * 60)
     log('Overnight Pipeline Started')
     log('=' * 60)
+    process_manual_submissions()
     total = 0
     errs = 0
     batches = 0
