@@ -480,7 +480,7 @@ export default function Wallet() {
                     {pendingLetters.length} acknowledgment letter{pendingLetters.length !== 1 ? 's' : ''} pending
                   </p>
                   <p className="font-body text-[12px] text-cool-grey leading-relaxed">
-                    Once each nonprofit uploads your letter to Daanaa, it will be emailed to you and marked received here.
+                    For gifts of $250 or more, contact the nonprofit directly to request a written acknowledgment letter. Keep it with your tax records.
                   </p>
                 </div>
               </div>
@@ -625,7 +625,7 @@ export default function Wallet() {
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-light-grey flex items-center gap-2 text-cool-grey/40">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <p className="font-body text-[11px]">Private by design · stored on this device · never shared · Daanaa does not process payments or issue tax documents · Letters for gifts of $250+ are delivered once the nonprofit uploads them to Daanaa</p>
+          <p className="font-body text-[11px]">Private by design · stored on this device · never shared · Daanaa does not process payments or issue tax documents · For gifts of $250+, contact the nonprofit directly to request a written acknowledgment letter</p>
         </div>
 
       </div>

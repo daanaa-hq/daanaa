@@ -157,7 +157,7 @@ export default function TiersPage() {
                           className="font-body text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
                           style={{ backgroundColor: `${color}15`, color }}
                         >
-                          {pct} of all organizations · {count}
+                          {pct} of indexed 501(c)(3)s · {count}
                         </span>
                       </div>
                       <p className="mt-2.5 font-body text-[15px] leading-[1.6] text-cool-grey max-w-[560px]">
