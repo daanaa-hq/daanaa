@@ -1466,6 +1466,84 @@ def claim_verify():
     })
 
 
+@app.route('/api/claim/update', methods=['POST'])
+def claim_update():
+    """Update claimed org profile — mission, description, cause tags, donate URL."""
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db  = get_db()
+    row = db.execute('SELECT * FROM org_claims WHERE ein = ?', (ein,)).fetchone()
+    if not row:
+        return jsonify({'error': 'No claim found for this EIN. Start at /for-nonprofits'}), 404
+    if row['claim_status'] == 'revoked':
+        return jsonify({'error': 'This claim has been revoked'}), 403
+
+    # Verify token matches stored pin (HMAC or legacy PIN)
+    stored_pin  = row['pin']
+    valid_token = (token == stored_pin) or (token == _make_verify_token(ein, stored_pin))
+    if not valid_token:
+        return jsonify({'error': 'Verification token is invalid or expired'}), 403
+
+    custom_mission     = (data.get('custom_mission') or '').strip()[:300]
+    custom_description = (data.get('custom_description') or '').strip()[:500]
+    cause_tags_json    = (data.get('cause_tags_json') or '[]').strip()
+    donate_confirmed   = bool(data.get('donate_confirmed', False))
+    donate_url         = (data.get('donate_url') or '').strip()[:500]
+
+    # Validate donate URL if provided
+    if donate_url and not donate_url.startswith(('http://', 'https://')):
+        donate_url = ''
+
+    try:
+        # Update org_claims record
+        db.execute("""
+            UPDATE org_claims
+            SET claim_status     = 'verified',
+                verified_at      = datetime('now'),
+                custom_mission   = ?,
+                custom_description = ?,
+                donate_confirmed = ?
+            WHERE ein = ?
+        """, (custom_mission or None, custom_description or None, int(donate_confirmed), ein))
+
+        # Write custom fields to registry_enriched
+        if custom_mission:
+            db.execute("""
+                UPDATE registry_enriched
+                SET mission = ?, mission_source = 'claimed'
+                WHERE EIN = ?
+            """, (custom_mission, ein))
+
+        if donate_url and donate_confirmed:
+            db.execute("""
+                UPDATE registry_enriched
+                SET donate_url = ?, donate_confidence = 95, donate_url_status = 'claimed'
+                WHERE EIN = ?
+            """, (donate_url, ein))
+
+        if cause_tags_json and cause_tags_json != '[]':
+            db.execute("""
+                UPDATE registry_enriched
+                SET cause_tags = ?, cause_tags_source = 'claimed'
+                WHERE EIN = ?
+            """, (cause_tags_json, ein))
+
+        db.commit()
+        # Evict org cache entries for this EIN
+        stale = [k for k in _CACHE if ein in k]
+        for k in stale:
+            _CACHE.pop(k, None)
+        return jsonify({'success': True, 'message': 'Profile updated'}), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Update failed: {str(e)[:80]}'}), 500
+
+
 @app.route('/api/claim/profile', methods=['PATCH'])
 @limiter.limit("20 per minute")
 def claim_profile_update():

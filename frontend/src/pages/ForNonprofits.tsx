@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams, useNavigate } from 'react-router-dom'
 import { submitWaitlist, getOrganization } from '../data/api'
 import { usePageMeta } from '../hooks/usePageMeta'
 import LampMark from '../components/LampMark'
@@ -21,6 +21,7 @@ function StepDot({ n, label }: { n: number; label: string }) {
 export default function ForNonprofits() {
   usePageMeta('For Nonprofits', 'Claim your free Daanaa profile. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [ein, setEin] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -63,6 +64,15 @@ export default function ForNonprofits() {
       setAddressPreview(body.address_preview || irsAddress)
       if (body.org_name) setOrgName(body.org_name)
       setSubmitted(true)
+      // After brief confirmation flash, route to PIN verification page
+      const params = new URLSearchParams({
+        ein: ein.replace(/\D/g, '').slice(0, 9),
+        email: email.trim(),
+      })
+      if (body.org_name) params.set('orgName', body.org_name)
+      setTimeout(() => {
+        navigate(`/claim/verify?${params.toString()}`)
+      }, 800)
     } catch {
       // Fallback: log locally so we don't lose the lead
       try { await submitWaitlist(email.trim(), 'claiming', ein.replace(/\D/g, '') || undefined) } catch {}
