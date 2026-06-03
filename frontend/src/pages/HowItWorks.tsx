@@ -260,12 +260,12 @@ export default function HowItWorks() {
               <p className="mt-3 font-body text-[16px] text-muted-cream max-w-[480px] mx-auto leading-[1.6]">
                 If you represent a listed organization and want to update or claim your page, or if you spot an error in our data, we want to hear from you.
               </p>
-              <a
-                href="mailto:hello@daanaa.org"
+              <Link
+                to="/feedback"
                 className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
               >
                 Contact us
-              </a>
+              </Link>
               <div className="mt-6 flex items-center justify-center gap-6">
                 <Link to="/directory" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
                   Browse the directory →

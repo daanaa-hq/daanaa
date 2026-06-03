@@ -375,7 +375,7 @@ export default function Methodology() {
           <div className="py-14 flex flex-col sm:flex-row items-start sm:items-center gap-6 justify-between">
             <div>
               <p className="font-body text-[13px] text-cool-grey">Questions about the methodology?</p>
-              <Link to="/about#contact" className="font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors mt-1 inline-block">
+              <Link to="/feedback" className="font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors mt-1 inline-block">
                 Contact the Daanaa team →
               </Link>
             </div>

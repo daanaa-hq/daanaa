@@ -118,9 +118,9 @@ export default function ClaimVerify() {
 
         <p className="mt-6 font-body text-[12px] text-cool-grey leading-[1.5]">
           Don't have your letter yet? It usually arrives in 3–5 business days.{' '}
-          <a href="mailto:orgs@daanaa.org" className="underline underline-offset-2 hover:text-deep-navy transition-colors">
+          <Link to="/feedback?type=org" className="underline underline-offset-2 hover:text-deep-navy transition-colors">
             Contact us
-          </a>{' '}
+          </Link>{' '}
           if you need help.
         </p>
       </div>

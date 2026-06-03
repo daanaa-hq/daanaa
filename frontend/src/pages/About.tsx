@@ -136,11 +136,15 @@ export default function About() {
               Get in touch
             </h2>
             <div className="mt-5 space-y-3 font-body text-[16px] text-cool-grey leading-[1.7]">
-              <p>For data corrections, organization disputes, or press inquiries:</p>
-              <a href="mailto:hello@daanaa.org" className="inline-flex items-center gap-2 text-soft-gold hover:text-bright-gold transition-colors font-medium">
-                hello@daanaa.org
+              <p>For data corrections, organization disputes, feedback, or press inquiries:</p>
+              <Link to="/feedback" className="inline-flex items-center gap-2 text-soft-gold hover:text-bright-gold transition-colors font-medium">
+                Send us a message
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-              </a>
+              </Link>
+              <p className="text-[14px]">
+                Or email directly at{' '}
+                <a href="mailto:hello@daanaa.org" className="text-soft-gold hover:text-bright-gold transition-colors">hello@daanaa.org</a>
+              </p>
               <p className="text-[14px]">
                 For organizations wanting to claim or update their profile:
                 <Link to="/for-nonprofits" className="ml-1 text-soft-gold hover:text-bright-gold transition-colors">
