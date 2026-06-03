@@ -131,7 +131,7 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 export default function Methodology() {
   usePageMeta(
     'How peer financial context is calculated',
-    'Daanaa scores 501(c)(3) tax-deductible nonprofits on peer financial context. Every organization is compared only against true peers — same operating model, same revenue size. 1.6 million organizations indexed. Full methodology documented here.'
+    'Daanaa scores nonprofits on peer financial context. Every organization is compared only against true peers with the same operating model and revenue size. 1.6 million organizations indexed. Full methodology documented here.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const methodologyVersion = stats?.methodology_version ?? 'v1'
@@ -151,7 +151,7 @@ export default function Methodology() {
             How peer financial context is calculated
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
-            Peer financial context is an optional public-data signal. It does not measure impact, trustworthiness, leadership, governance, program quality, or whether a group deserves support. Every number compares a nonprofit against others doing similar work at a similar size, using public IRS filings. No black boxes. Everything is documented below.
+            Peer financial context is a public data signal. It does not measure impact, trustworthiness, leadership, governance, program quality, or whether a group deserves support. Every number compares a nonprofit against others doing similar work at a similar size, using public IRS filings. No black boxes. Everything is documented below.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-4 sm:gap-10">
             <div>
@@ -228,7 +228,7 @@ export default function Methodology() {
             <ul className="list-none space-y-2 mt-2">
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">1</span></span>
-                <span><strong className="text-deep-navy font-medium">Operating model.</strong> How the organization actually runs — whether it spends everything on direct service delivery, owns physical assets central to its mission, or holds long-term capital. Four groups, described below.</span>
+                <span><strong className="text-deep-navy font-medium">Operating model.</strong> How the organization actually runs — whether it spends everything on direct service delivery, owns physical assets central to its mission, or holds capital over many years. Four groups, described below.</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">2</span></span>
@@ -242,7 +242,7 @@ export default function Methodology() {
 
           <Section label="Step 1 · Operating models" title="Four groups, not one size fits all">
             <p>
-              We analyzed 356,000 tax-deductible nonprofits with complete financial filings and found four statistically distinct operating models (ANOVA F = 9,781, p &lt; 0.001, η² = 9.2%). Each group has a different relationship between reserves, assets, and program spending — so each group gets its own benchmarks.
+              We analyzed 356,000 nonprofits with complete financial filings and found four statistically distinct operating models (ANOVA F = 9,781, p &lt; 0.001, η² = 9.2%). Each group has a different relationship between reserves, assets, and program spending — so each group gets its own benchmarks.
             </p>
 
             <div className="mt-6 space-y-4">
@@ -369,7 +369,7 @@ export default function Methodology() {
             </p>
             <ul className="space-y-2 mt-3 list-none">
               {[
-                'Program quality, outcomes, or real-world impact',
+                'Program quality, outcomes, or actual impact in the community',
                 'Governance, board composition, or leadership quality',
                 'Community trust or local reputation',
                 'Overhead ratio — the sector formally retired this metric in 2013 (GuideStar, Charity Navigator, BBB Wise Giving Alliance joint letter)',
@@ -426,7 +426,7 @@ export default function Methodology() {
                 {
                   tier: 'Visible',
                   count: '~1.1 million organizations',
-                  desc: 'IRS-recognized 501(c)(3), tax-deductible. No financial filing data available — most file a 990-N postcard (under $50K gross receipts) or are churches exempt from 990 filing. Shown with IRS standing, cause type, and profile information. No financial score.',
+                  desc: 'IRS recognized and donation eligible. No detailed financial filing data available — most are small organizations that file a simplified postcard return, or churches that are not required to file. Shown with IRS standing, cause type, and profile information. No financial score.',
                   color: 'border-cool-grey/30 bg-warm-cream',
                 },
               ].map(t => (
@@ -444,33 +444,19 @@ export default function Methodology() {
             </Callout>
           </Section>
 
-          <Section label="Version history" title="Scorer versioning and backward consistency">
+          <Section label="How we built this" title="The research behind the peer groups">
             <p>
-              Every time the scoring methodology changes, a new version is tagged. Raw inputs (total revenue, total assets, peer group, and region) are stored alongside each score, so any prior period can be recomputed under a newer formula.
+              The four operating model groups did not come from assumption. We looked at 356,000 nonprofits with complete financial filings and measured their actual financial behavior across three dimensions: how many months of expenses their reserves would cover, how much of their balance sheet is tied up in assets relative to revenue, and how much of their spending goes directly to programs.
             </p>
-            <div className="mt-4">
-              <div className="flex items-start gap-4 py-2 border-b border-light-grey">
-                <span className="shrink-0 w-20 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Version</span>
-                <span className="shrink-0 w-28 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Date</span>
-                <span className="font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">What it is</span>
-              </div>
-              <VersionRow
-                version="v2.0"
-                date="2026-06-03"
-                description="Live. Four operating model groups (Direct Service, Mission Infrastructure, Asset Stewards, Endowment & Capital) × six revenue bands = 24 peer cells. Group-specific metric weights. Universe: tax-deductible 501(c)(3)s only, auto-revoked orgs excluded. 458,383 orgs scored."
-              />
-              <VersionRow
-                version="v1.0"
-                date="2026-05-20"
-                description="Initial scoring. NTEE category + revenue band peer groups. Formula: 0.65 × revenue percentile + 0.35 × reserve ratio. Included non-deductible orgs."
-              />
-            </div>
+            <p>
+              The data clustered naturally into four groups with statistically distinct financial profiles. A one-way analysis of variance across the groups produced an F statistic of 9,781 with p below 0.001, confirming that the differences between groups are real and not the result of chance. The groups explain about 9 percent of the total variation in reserve behavior across the sector — meaningful for a classification built entirely from financial ratios.
+            </p>
+            <p>
+              Each cause type was assigned to the group whose financial fingerprint it most closely matched. Where a cause spans multiple models by size (a small volunteer fire department looks very different from a large professional emergency service), the revenue band captures that within the group. The assignment is based on data, not editorial judgment.
+            </p>
             <Callout>
-              Future methodology changes will appear here with a new version tag and a plain-English summary of what changed and why. Score recomputations against fresh IRS data are not methodology changes and do not bump the version.
+              This methodology will be reviewed quarterly as IRS data refreshes. If the financial fingerprint of a cause type shifts meaningfully over time, its group assignment will be updated and all affected scores recomputed. The goal is that the peer groups always reflect how organizations actually operate, not how we expect them to.
             </Callout>
-            <p className="mt-6">
-              Historical inputs are preserved in our scoring records. When the methodology does change, prior-period inputs can be rescored under the new formula, enabling consistent comparisons over time, the same approach used for CPI and home price indices.
-            </p>
           </Section>
 
           <Section label="Data sources" title="Where the data comes from">
@@ -480,7 +466,7 @@ export default function Methodology() {
             <div className="mt-4">
               <SourceRow
                 source="IRS nonprofit registration list"
-                detail="Tax-exempt status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa indexes all active 501(c)(3) organizations where donations are tax-deductible — 1.63 million organizations. Non-deductible 501(c)(4), (c)(6), and other subsections are excluded from scoring."
+                detail="Tax-exempt status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa indexes 1.63 million active nonprofits where donations are eligible for a tax deduction. Organizations in other categories are not included in scoring."
               />
               <SourceRow
                 source="IRS published financial data"
