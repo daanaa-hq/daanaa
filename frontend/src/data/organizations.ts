@@ -638,7 +638,7 @@ export function formatCurrency(value: number): string {
   }
   if (value >= 1e9) return trim(value / 1e9, 'B')
   if (value >= 1e6) return trim(value / 1e6, 'M')
-  if (value >= 100_000) return trim(value / 1_000, 'K')
+  if (value >= 1_000) return trim(value / 1_000, 'K')
   return `$${value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
