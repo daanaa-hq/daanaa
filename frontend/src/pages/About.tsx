@@ -8,7 +8,7 @@ function formatCount(n: number): string {
 }
 
 export default function About() {
-  usePageMeta('About', 'Daanaa is a civic nonprofit-discovery platform. We aim to index every IRS 501(c)(3) organization and make that information freely available to any donor who wants to give with confidence.')
+  usePageMeta('About', 'Daanaa is a civic nonprofit-discovery platform. We index tax-deductible 501(c)(3) organizations and make that information freely available to any donor who wants to give with confidence.')
   const { data: stats } = useApi(() => getStats(), [])
 
   return (

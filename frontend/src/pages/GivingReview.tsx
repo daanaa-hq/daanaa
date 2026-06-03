@@ -246,7 +246,7 @@ export default function GivingReview() {
           <div className="border-t border-white/10 pt-3">
             <p className="font-body text-[12px] text-muted-cream/60">
               {hasLetterItems
-                ? 'Letter-requested gifts will be documented once the nonprofit uploads to Daanaa. '
+                ? 'For gifts of $250 or more, contact the nonprofit directly to request a written acknowledgment letter for your records. '
                 : ''}
               {hasSplitItems
                 ? 'Gifts over $249.99 without a letter will be logged as multiple bank-statement entries. '
