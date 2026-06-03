@@ -7,6 +7,44 @@ import type { ApiSectorHealth } from '../data/api'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../components/ui/tooltip'
 
 type SortKey = 'name' | 'total_orgs' | 'at_risk_pct' | 'avg_months_reserve' | 'avg_program_pct'
+type GroupFilter = 'all' | 'direct_service' | 'mission_infrastructure' | 'asset_stewards' | 'endowment_capital'
+
+// NTEE major code → operating model group
+const NTEE_GROUP: Record<string, GroupFilter> = {
+  D: 'direct_service',   // Animal-Related
+  F: 'direct_service',   // Mental Health
+  I: 'direct_service',   // Crime & Legal
+  J: 'direct_service',   // Employment
+  K: 'direct_service',   // Food, Agriculture
+  N: 'direct_service',   // Recreation, Sports
+  O: 'direct_service',   // Youth Development
+  P: 'direct_service',   // Human Services
+  Q: 'direct_service',   // International
+  R: 'direct_service',   // Civil Rights
+  X: 'direct_service',   // Religion
+  A: 'mission_infrastructure', // Arts, Culture
+  B: 'mission_infrastructure', // Education
+  C: 'mission_infrastructure', // Environment
+  E: 'mission_infrastructure', // Health Care
+  S: 'mission_infrastructure', // Community Improvement
+  U: 'mission_infrastructure', // Science & Technology
+  V: 'mission_infrastructure', // Social Science
+  W: 'mission_infrastructure', // Public Benefit
+  L: 'asset_stewards',   // Housing, Shelter
+  M: 'asset_stewards',   // Public Safety
+  Y: 'asset_stewards',   // Mutual Benefit
+  G: 'endowment_capital', // Disease Research
+  H: 'endowment_capital', // Medical Research
+  T: 'endowment_capital', // Philanthropy, Voluntarism
+}
+
+const GROUP_META: Record<GroupFilter, { label: string; color: string; dot: string; bg: string; border: string; badge: string }> = {
+  all:                   { label: 'All sectors', color: 'text-deep-navy', dot: '#0A1628', bg: '', border: '', badge: 'bg-deep-navy/10 text-deep-navy' },
+  direct_service:        { label: 'Direct Service', color: 'text-emerald-700', dot: '#059669', bg: 'bg-emerald-50/40', border: 'border-l-4 border-l-emerald-400', badge: 'bg-emerald-100 text-emerald-700' },
+  mission_infrastructure:{ label: 'Mission Infrastructure', color: 'text-blue-700', dot: '#2563EB', bg: 'bg-blue-50/40', border: 'border-l-4 border-l-blue-400', badge: 'bg-blue-100 text-blue-700' },
+  asset_stewards:        { label: 'Asset Stewards', color: 'text-amber-700', dot: '#D97706', bg: 'bg-amber-50/40', border: 'border-l-4 border-l-amber-400', badge: 'bg-amber-100 text-amber-700' },
+  endowment_capital:     { label: 'Endowment & Capital', color: 'text-purple-700', dot: '#7C3AED', bg: 'bg-purple-50/40', border: 'border-l-4 border-l-purple-400', badge: 'bg-purple-100 text-purple-700' },
+}
 
 function formatMonths(v: number | null) {
   if (v === null) return '—'
@@ -47,10 +85,15 @@ export default function SectorHealth() {
   const { data, loading } = useApi(() => getSectorHealth(), [])
   const [sortKey, setSortKey] = useState<SortKey>('at_risk_pct')
   const [sortAsc, setSortAsc] = useState(false)
+  const [groupFilter, setGroupFilter] = useState<GroupFilter>('all')
 
   const sectors: ApiSectorHealth[] = data?.sectors ?? []
 
-  const sorted = [...sectors].sort((a, b) => {
+  const filtered = groupFilter === 'all'
+    ? sectors
+    : sectors.filter(s => NTEE_GROUP[s.code] === groupFilter)
+
+  const sorted = [...filtered].sort((a, b) => {
     const av = a[sortKey] ?? (sortKey === 'name' ? '' : 0)
     const bv = b[sortKey] ?? (sortKey === 'name' ? '' : 0)
     if (typeof av === 'string' && typeof bv === 'string') {
@@ -223,6 +266,35 @@ export default function SectorHealth() {
             </p>
           </div>
 
+          {/* Group filter tabs */}
+          <div className="mb-6 flex flex-wrap gap-2">
+            {(Object.keys(GROUP_META) as GroupFilter[]).map(g => {
+              const meta = GROUP_META[g]
+              const active = groupFilter === g
+              return (
+                <button
+                  key={g}
+                  onClick={() => setGroupFilter(g)}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all ${
+                    active
+                      ? `${meta.badge} border-transparent shadow-sm`
+                      : 'bg-white text-cool-grey border-light-grey hover:border-cool-grey/40'
+                  }`}
+                >
+                  {g !== 'all' && (
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: meta.dot }} />
+                  )}
+                  {meta.label}
+                  {g !== 'all' && (
+                    <span className="text-[11px] opacity-60">
+                      {sectors.filter(s => NTEE_GROUP[s.code] === g).length}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
           {/* Table */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -245,6 +317,8 @@ export default function SectorHealth() {
                     const stressed = sector.at_risk_pct >= 20
                     const elevated = !stressed && sector.at_risk_pct >= 15
                     const thinReserves = (sector.avg_months_reserve ?? 999) < 36
+                    const sectorGroup = NTEE_GROUP[sector.code] ?? 'direct_service'
+                    const groupMeta = GROUP_META[sectorGroup]
                     return (
                       <tr
                         key={sector.code}
@@ -259,21 +333,23 @@ export default function SectorHealth() {
                         }}
                         aria-label={`See ${sector.name} organizations`}
                         title={`See ${sector.name} organizations`}
-                        className={`group border-b border-light-grey/60 hover:bg-soft-gold/4 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold focus-visible:ring-inset transition-colors cursor-pointer ${
-                          stressed ? 'bg-amber-50/60' : elevated ? 'bg-amber-50/30' : ''
-                        }`}
+                        className={`group border-b border-light-grey/60 hover:bg-soft-gold/4 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold focus-visible:ring-inset transition-colors cursor-pointer ${groupMeta.bg}`}
                       >
-                        <td className="py-4 pr-6">
-                          <div className="flex items-center gap-2">
-                            {stressed && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                            )}
-                            <div>
+                        <td className={`py-4 pr-6 ${groupMeta.border}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="flex flex-col">
                               <div className="font-body text-[14px] font-medium text-deep-navy group-hover:text-soft-gold transition-colors inline-flex items-center gap-1.5">
+                                {stressed && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
                                 {sector.name}
                                 <span className="opacity-0 group-hover:opacity-100 transition-opacity text-soft-gold" aria-hidden="true">→</span>
                               </div>
-                              <div className="font-body text-[11px] text-cool-grey/60 mt-0.5">{sector.total_orgs.toLocaleString()} total · {sector.has_reserve.toLocaleString()} with reserve data</div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`inline-flex items-center gap-1 font-body text-[10px] font-medium px-1.5 py-0.5 rounded-full ${groupMeta.badge}`}>
+                                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: groupMeta.dot }} />
+                                  {groupMeta.label}
+                                </span>
+                                <span className="font-body text-[11px] text-cool-grey/50">{sector.total_orgs.toLocaleString()} total · {sector.has_reserve.toLocaleString()} with reserve data</span>
+                              </div>
                             </div>
                           </div>
                         </td>
