@@ -87,6 +87,7 @@ export default function Footer() {
                 <Link to="/legal" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Legal &amp; Privacy</Link>
               </li>
               <li>
+                <Link to="/feedback" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Contact us</Link>
                 <Link to="/feedback" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Share feedback</Link>
               </li>
               <li>
