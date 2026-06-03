@@ -40,7 +40,7 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 export default function SectorHealth() {
   usePageMeta(
     'What public filings suggest about the sector',
-    'A look at available public financial filings across 26 sectors of tax-deductible 501(c)(3) nonprofits. Reserve levels, filing rates, and program spending for 1.6 million+ organizations.'
+    'A look at available public financial filings across four operating model groups and 47 cause types of tax-deductible 501(c)(3) nonprofits. Reserve levels, filing rates, and program spending — based on 356,000 organizations with complete financial data.'
   )
 
   const navigate = useNavigate()
@@ -137,17 +137,89 @@ export default function SectorHealth() {
       <div className="bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-16">
 
+          {/* Operating Model Groups */}
+          <div className="mb-10">
+            <h2 className="font-display italic text-deep-navy leading-tight mb-2" style={{ fontSize: 'clamp(22px, 2.8vw, 32px)' }}>
+              Four operating models, four different pictures of health
+            </h2>
+            <p className="font-body text-[15px] text-cool-grey leading-[1.7] mb-6 max-w-[680px]">
+              Financial health means different things depending on how an organization actually operates. A food bank with thin reserves may be deploying every dollar into its mission. A land trust with 40 months of reserves is holding the capital that makes conservation possible. We compare organizations within their operating model, not across all nonprofits.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                {
+                  name: 'Direct Service',
+                  orgs: '157,816',
+                  reserve: '9.7 mo',
+                  prog: '48%',
+                  desc: 'Human services, food, employment, mental health, youth, recreation',
+                  color: 'border-emerald-200 bg-emerald-50',
+                  badge: 'text-emerald-700 bg-emerald-100',
+                  note: 'Thin reserves = mission deployment',
+                },
+                {
+                  name: 'Mission Infrastructure',
+                  orgs: '133,369',
+                  reserve: '13 mo',
+                  prog: '39%',
+                  desc: 'Education, health, arts, environment, community development, science',
+                  color: 'border-blue-200 bg-blue-50',
+                  badge: 'text-blue-700 bg-blue-100',
+                  note: 'Moderate reserves, asset-supported programs',
+                },
+                {
+                  name: 'Asset Stewards',
+                  orgs: '51,627',
+                  reserve: '30 mo',
+                  prog: '36%',
+                  desc: 'Housing, public safety, libraries, museums, cultural heritage, sports',
+                  color: 'border-amber-200 bg-amber-50',
+                  badge: 'text-amber-700 bg-amber-100',
+                  note: 'Physical assets are the mission infrastructure',
+                },
+                {
+                  name: 'Endowment & Capital',
+                  orgs: '13,396',
+                  reserve: '39+ mo',
+                  prog: '19%',
+                  desc: 'Grantmaking, conservation, scholarships, historical preservation',
+                  color: 'border-purple-200 bg-purple-50',
+                  badge: 'text-purple-700 bg-purple-100',
+                  note: 'Hold and deploy capital — different benchmarks apply',
+                },
+              ].map(g => (
+                <div key={g.name} className={`p-4 rounded-xl border ${g.color}`}>
+                  <span className={`inline-block font-body text-[11px] font-semibold px-2 py-0.5 rounded-full mb-2 ${g.badge}`}>{g.name}</span>
+                  <p className="font-body text-[12px] text-cool-grey leading-[1.5] mb-3">{g.desc}</p>
+                  <p className="font-body text-[10px] font-medium text-cool-grey/50 italic mb-2">{g.note}</p>
+                  <div className="flex gap-3 flex-wrap">
+                    <div>
+                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase">Orgs</p>
+                      <p className="font-body text-[13px] font-semibold text-deep-navy">{g.orgs}</p>
+                    </div>
+                    <div>
+                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase">Med reserve</p>
+                      <p className="font-body text-[13px] font-semibold text-deep-navy">{g.reserve}</p>
+                    </div>
+                    <div>
+                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase">Prog spend</p>
+                      <p className="font-body text-[13px] font-semibold text-deep-navy">{g.prog}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Lead finding */}
           <div className="mb-12 p-6 rounded-2xl bg-amber-50 border border-amber-200/80">
             <p className="font-body text-[15px] text-deep-navy leading-[1.7]">
-              <strong>The sectors doing the most critical social safety-net work carry the least financial cushion.</strong>{' '}
-              Housing & Shelter has the highest at risk rate of any sector. Nearly 1 in 3 organizations operates with fewer than 3 months of reserves.
-              Mental Health has the lowest average reserves of any major sector at just 27.8 months,
-              while Human Services, the largest sector by organization count, has 18% of its organizations at risk.
+              <strong>Among organizations with complete public filings, direct service organizations tend to show thinner financial cushions.</strong>{' '}
+              Direct Service organizations — human services, food banks, mental health, youth development — show a median 9.7 months of reserves in available IRS data.
+              Asset Steward organizations show 30 months. Endowment and capital organizations show 39 or more.
             </p>
             <p className="mt-3 font-body text-[13px] text-cool-grey">
-              By contrast, Philanthropy (110 months avg) and Mutual Benefit (113 months avg) sectors hold the largest savings,
-              reflecting long-term investment fund support rather than hands-on community delivery.
+              These patterns may reflect operating model differences rather than management quality. Reserve levels that look thin for one type of organization may be appropriate for another — a food bank spending every dollar on meals and a land trust holding conservation property operate under completely different financial structures. This data covers 356,000 organizations with complete filings. It does not represent all 1.63 million indexed nonprofits.
             </p>
           </div>
 
@@ -163,7 +235,7 @@ export default function SectorHealth() {
                   <tr className="border-b border-light-grey">
                     <Th label="Sector" sortBy="name" tip="A broad category the IRS assigns to every 501(c)(3). Click a row to see the organizations in it." />
                     <Th label="Orgs" sortBy="total_orgs" right tip="How many active nonprofits the IRS recognizes in this category." />
-                    <Th label="At risk %" sortBy="at_risk_pct" right tip="Share of organizations with fewer than 3 months of savings if revenue stopped. Based on the most recent 990 on file, which may be 1 to 3 years old." />
+                    <Th label="At risk %" sortBy="at_risk_pct" right tip="Share of organizations showing fewer than 3 months of operating reserves in their most recent public filing. The 3-month threshold follows the Nonprofit Finance Fund standard for operating reserve adequacy. Filings may be 1 to 3 years old. This is an indicator from available data, not a judgment of organizational health." />
                     <Th label="Avg reserves (mo)" sortBy="avg_months_reserve" right tip="On average, how many months an organization in this category could keep operating if revenue stopped, among those with reserve data." />
                     <Th label="Avg program %" sortBy="avg_program_pct" right tip="On average, the share of spending that goes directly to the mission rather than overhead." />
                   </tr>
@@ -254,8 +326,7 @@ export default function SectorHealth() {
           {/* Methodology note */}
           <div className="mt-12 pt-8 border-t border-light-grey">
             <p className="font-body text-[13px] text-cool-grey/70 leading-[1.6] max-w-[680px]">
-              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12, the same formula Charity Navigator uses.
-              At-risk means fewer than 3 months of reserves. Average program % may be lower for sectors with many pass-through or foundation-style organizations.
+              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only tax-deductible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data — approximately 23.7% of the 1.63 million tax-deductible nonprofits Daanaa indexes. The remaining 76.3% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
               <span className="inline-flex items-center gap-1.5 font-body text-[12px] text-cool-grey/60">

@@ -74,12 +74,12 @@ function ScoreFlow() {
           <FlowStep
             kicker="Step 1 · Group"
             title="Find its true peers"
-            detail="Same kind of work, similar size, same part of the country."
+            detail="Same operating model (Direct Service, Mission Infrastructure, Asset Stewards, or Endowment & Capital) plus similar revenue size."
           />
           <FlowStep
             kicker="Step 2 · Weigh"
             title="Measure financial scale"
-            detail="Revenue rank ×0.65  +  reserve strength ×0.35, all within that peer group."
+            detail="Reserve strength and program spending, weighted by operating model. What counts as healthy reserves for a food bank differs from what counts for a land trust."
           />
           <FlowStep
             kicker="Step 3 · Place"
@@ -131,7 +131,7 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 export default function Methodology() {
   usePageMeta(
     'How peer financial context is calculated',
-    'The complete formula Daanaa uses to calculate peer financial context for 1.6 million tax-deductible 501(c)(3) organizations. Peer groups, regional benchmarks, reserve ratio, and scorer versioning. Openly published.'
+    'Daanaa scores 501(c)(3) tax-deductible nonprofits on peer financial context. Every organization is compared only against true peers — same operating model, same revenue size. 1.6 million organizations indexed. Full methodology documented here.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const methodologyVersion = stats?.methodology_version ?? 'v1'
@@ -190,11 +190,17 @@ export default function Methodology() {
                 The short version
               </h2>
               <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
-                We look at two things for each nonprofit: its financial scale, and how much of a cushion it keeps in reserve. Scale counts for most of the score, because size is the clearest public signal of reach. Reserves count for the rest, because a thin balance sheet is a real risk that size alone hides. Both are measured against peers doing the same kind of work, at a similar size, in the same region. The score, 0 to 100, shows where the organization stands in that group.
+                Each nonprofit is scored only against organizations doing similar work at a similar size, using public IRS filings. The score, 0 to 100, shows where an organization stands within that peer group — not against all nonprofits.
               </p>
               <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
-                All of this comes from annual IRS filings, the same documents every registered nonprofit is required to submit, and make available to the public.
+                All of this comes from annual IRS filings — the same public documents every registered 501(c)(3) submits. Organizations without detailed filing data are shown without a score. We never fabricate what we cannot measure.
               </p>
+              <div className="mt-4 p-4 rounded-xl bg-deep-navy/5 border border-deep-navy/10">
+                <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
+                  <strong className="text-deep-navy">Current scoring (v1.0):</strong> Peer groups use IRS NTEE category and revenue band. Formula: 0.65 × revenue percentile + 0.35 × reserve ratio, within each peer group.
+                  <strong className="text-deep-navy ml-2">Coming in v2.0:</strong> Cause-aware operating model groups replace NTEE-only grouping. The four groups documented on this page reflect our research and planned methodology — not the live scorer.
+                </p>
+              </div>
               <div className="mt-5 flex flex-wrap gap-2">
                 {[
                   { label: 'IRS Form 990 filings', href: 'https://projects.propublica.org/nonprofits/', note: 'FY 2019–2024' },
@@ -228,20 +234,91 @@ export default function Methodology() {
             <ul className="list-none space-y-2 mt-2">
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">1</span></span>
-                <span><strong className="text-deep-navy font-medium">Kind of work.</strong> The IRS assigns every 501(c)(3) a category (Food Banks, Hospitals, Parent-teacher groups, and 400 more). We match within it.</span>
+                <span><strong className="text-deep-navy font-medium">Operating model.</strong> How the organization actually runs — whether it spends everything on direct service, owns physical assets central to its mission, or holds long-term capital. Four groups, described below.</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">2</span></span>
-                <span><strong className="text-deep-navy font-medium">Size.</strong> One of six revenue bands (below). A $40K group and a $40M one live in different worlds.</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">3</span></span>
-                <span><strong className="text-deep-navy font-medium">Region.</strong> One of four US Census regions. Cost of living and giving culture vary by region.</span>
+                <span><strong className="text-deep-navy font-medium">Revenue size.</strong> One of six bands, from Nano (under $25K) to Major ($50M+). A grassroots group and a regional hospital live in different worlds even when they serve the same cause.</span>
               </li>
             </ul>
-            <p>
-              A regional group needs at least 30 organizations to be meaningful. If it is too thin, the national group for that work and size is used instead. About 88% of organizations are scored against a regional peer group.
+            <p className="mt-4">
+              Together these create 24 peer cells. A peer cell needs at least 30 organizations to be statistically meaningful. Cells that are too thin fall back to the operating model group without a size constraint.
             </p>
+          </Section>
+
+          <Section label="Step 1 · Operating models" title="Four groups, not one size fits all">
+            <p>
+              We analyzed 356,000 tax-deductible nonprofits with complete financial filings and found four statistically distinct operating models (ANOVA F = 9,781, p &lt; 0.001, η² = 9.2%). Each group has a different relationship between reserves, assets, and program spending — so each group gets its own benchmarks.
+            </p>
+
+            <div className="mt-6 space-y-4">
+              {[
+                {
+                  name: 'Direct Service',
+                  orgs: '157,816',
+                  reserve: '9.7 months',
+                  prog: '48%',
+                  ai: '0.96×',
+                  desc: 'Human services, food, mental health, employment, international, recreation, youth development, religion. These organizations earn and spend — thin reserves are a feature of the model, not a weakness. A food bank with minimal savings may be deploying every dollar into its mission.',
+                  color: 'bg-emerald-50 border-emerald-200',
+                  badge: 'text-emerald-700 bg-emerald-100',
+                },
+                {
+                  name: 'Mission Infrastructure',
+                  orgs: '133,369',
+                  reserve: '13 months',
+                  prog: '39%',
+                  ai: '1.33×',
+                  desc: 'Education, health, arts, environment, community development, science. Moderate assets support program delivery — a school owns classrooms, a clinic owns equipment. Reserves sit in the middle range.',
+                  color: 'bg-blue-50 border-blue-200',
+                  badge: 'text-blue-700 bg-blue-100',
+                },
+                {
+                  name: 'Asset Stewards',
+                  orgs: '51,627',
+                  reserve: '29.9 months',
+                  prog: '36%',
+                  ai: '3.03×',
+                  desc: 'Housing, public safety (fire departments, EMS), cultural heritage, libraries, museums, animal welfare, sports, higher education. Physical assets — land, buildings, equipment — are central to mission delivery. Higher asset intensity and reserves are normal for this model.',
+                  color: 'bg-amber-50 border-amber-200',
+                  badge: 'text-amber-700 bg-amber-100',
+                },
+                {
+                  name: 'Endowment & Capital',
+                  orgs: '13,396',
+                  reserve: '39+ months',
+                  prog: '19%',
+                  ai: '3.57×',
+                  desc: 'Grantmaking foundations, conservation land trusts, scholarship funds, historical preservation, disease research. These organizations hold and deploy capital. Their low program spending percentage reflects their model — grants going out are their program. Reserve comparisons use net asset growth rather than a fixed-month benchmark.',
+                  color: 'bg-purple-50 border-purple-200',
+                  badge: 'text-purple-700 bg-purple-100',
+                },
+              ].map(g => (
+                <div key={g.name} className={`p-5 rounded-xl border ${g.color}`}>
+                  <div className="flex flex-wrap items-center gap-3 mb-3">
+                    <span className={`font-body text-[12px] font-semibold px-2 py-0.5 rounded-full ${g.badge}`}>{g.name}</span>
+                    <span className="font-body text-[12px] text-cool-grey">{g.orgs} organizations</span>
+                  </div>
+                  <p className="font-body text-[14px] text-cool-grey leading-[1.6] mb-3">{g.desc}</p>
+                  <div className="flex flex-wrap gap-4">
+                    {[
+                      { label: 'Median reserve', value: g.reserve },
+                      { label: 'Program spend', value: g.prog },
+                      { label: 'Asset intensity', value: g.ai },
+                    ].map(stat => (
+                      <div key={stat.label}>
+                        <p className="font-body text-[10px] font-medium tracking-[0.08em] text-cool-grey/60 uppercase">{stat.label}</p>
+                        <p className="font-body text-[14px] font-semibold text-deep-navy">{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Callout>
+              Cause types are assigned to operating model groups based on their statistical financial fingerprint, not just their name. Where a cause type's financial behavior differs by size (for example, a small community health clinic vs. a major hospital system), the revenue band captures that difference within the group.
+            </Callout>
           </Section>
 
           <Section label="Step 1 · Size bands" title="The six revenue bands">
@@ -255,30 +332,35 @@ export default function Methodology() {
                 <span className="shrink-0 w-28 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Orgs</span>
                 <span className="font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Notes</span>
               </div>
-              <BandRow band="Nano"   range="< $25K"         orgs="77,486"   note="grassroots, newly formed" />
-              <BandRow band="Micro"  range="$25K to $100K"  orgs="139,419"  />
-              <BandRow band="Small"  range="$100K to $500K" orgs="168,323"  />
-              <BandRow band="Medium" range="$500K to $5M"   orgs="119,943"  />
-              <BandRow band="Large"  range="$5M to $50M"    orgs="37,992"   />
-              <BandRow band="Major"  range="$50M+"          orgs="8,220"    note="hospitals, universities" />
+              <BandRow band="Nano"   range="< $25K"         orgs="111,158"  note="grassroots, newly formed — many file 990-N postcards" />
+              <BandRow band="Micro"  range="$25K to $100K"  orgs="164,502"  />
+              <BandRow band="Small"  range="$100K to $500K" orgs="205,133"  />
+              <BandRow band="Medium" range="$500K to $5M"   orgs="133,733"  />
+              <BandRow band="Large"  range="$5M to $50M"    orgs="40,186"   />
+              <BandRow band="Major"  range="$50M+"          orgs="8,605"    note="hospitals, universities, major foundations" />
             </div>
             <Callout>
-              Nano and Micro are kept separate so a $5K volunteer group and a $90K community organization are not treated as the same kind of operation.
+              Nano and Micro are kept separate so a $5K volunteer group and a $90K community organization are not treated as the same kind of operation. Organizations in the Nano band filing a 990-N postcard (under $50K) may not have detailed financial data available — they are indexed and visible, but scored only when full filing data exists.
             </Callout>
           </Section>
 
           <Section label="Step 2 · The formula" title="Two rankings, one number">
+            <p className="font-body text-[13px] text-cool-grey/70 italic mb-4">Current live formula (v1.0). See version history below for planned v2.0 changes.</p>
             <FormulaBlock>
-              <div className="text-deep-navy/80">composite = <span className="text-deep-navy font-semibold">0.65</span> × revenue_percentile</div>
-              <div className="text-deep-navy/80 ml-[80px]">+ <span className="text-deep-navy font-semibold">0.35</span> × reserve_percentile</div>
+              <div className="text-deep-navy/80">score = <span className="text-deep-navy font-semibold">0.65</span> × revenue_percentile</div>
+              <div className="text-deep-navy/80 ml-[54px]">+ <span className="text-deep-navy font-semibold">0.35</span> × reserve_percentile</div>
               <div className="mt-3 text-[13px] text-cool-grey/70">
-                revenue_percentile is rank by total annual revenue within the peer group (0 = smallest, 100 = largest)<br />
-                reserve_percentile is rank by reserve ratio within the peer group (0 = thinnest reserves, 100 = strongest)
+                revenue_percentile: rank by total annual revenue within peer group (0 = smallest, 100 = largest)<br />
+                reserve_percentile: rank by total assets ÷ total revenue within peer group (0 = thinnest, 100 = strongest)<br />
+                Both computed within the peer group — NTEE category + revenue band.
               </div>
             </FormulaBlock>
             <p>
-              Revenue carries more weight because scale is the clearest signal of reach. Reserves carry the rest because a thin balance sheet is a real risk that revenue alone hides. Both rankings are computed inside the peer group, so the middle organization in every group scores 50, and a 75 means the same thing for a food bank as for a hospital: top quarter of its peers.
+              The middle organization in every peer group scores 50. A 75 means the same thing for a food bank as for a hospital system: top quarter of its peers. Revenue carries more weight because scale is the clearest signal of reach. Reserves carry the rest because a thin balance sheet is a real risk that revenue alone hides.
             </p>
+            <Callout>
+              In the planned v2.0 methodology, weights will vary by operating model group — Direct Service organizations will have reserves weighted differently than Endowment organizations, reflecting that thin reserves in a food bank and thin reserves in a land trust mean different things. The four operating model groups on this page document that research. Scores will be recomputed when v2.0 is deployed.
+            </Callout>
           </Section>
 
           <Section label="Step 2 · The reserve half" title="Why reserves count">
@@ -291,6 +373,37 @@ export default function Methodology() {
             <Callout>
               The exact working capital ratio needs liability data filed by only about 4,700 organizations. The version using total assets is available for all 542,000+ scored organizations and tracks closely for the vast majority. Negative net worth is treated as zero, and reserves are capped at the group maximum so no one is penalized for having a lot.
             </Callout>
+          </Section>
+
+          <Section label="What we don't yet measure" title="Known dimensions not yet in the score">
+            <p>
+              Financial filings are a narrow window. They tell us about revenue, assets, and spending — not about people, impact, or community presence. Several important dimensions exist outside what IRS data can show. We document them here so donors can weigh them independently.
+            </p>
+            <ul className="space-y-4 mt-4 list-none">
+              {[
+                {
+                  label: 'Volunteer labor',
+                  detail: 'IRS Form 990 Part I asks for the number of volunteers. For the organizations where this is reported, volunteer hours represent a form of donated labor equivalent in economic value to cash giving. The Independent Sector values a volunteer hour at $31.80 (2023). A food pantry with 300 volunteers giving 80 hours each contributes an estimated $763,200 in community labor — often several times its cash budget. We will surface this as a supplemental display once broader 990 data coverage allows it.',
+                },
+                {
+                  label: 'Program outcomes and impact',
+                  detail: 'IRS filings require financial disclosure, not impact measurement. No rating system that claims to measure program effectiveness from 990 data alone should be trusted. Daanaa does not make this claim.',
+                },
+                {
+                  label: 'Governance and leadership',
+                  detail: 'Board composition, term limits, conflict-of-interest policies, and leadership quality are not in IRS filings at scale. Some is available in 990 Part VI for larger filers.',
+                },
+                {
+                  label: 'Community trust',
+                  detail: 'Local reputation, relationships, and the depth of community roots are not measurable from public records. A highly trusted neighborhood organization may score modestly on financial metrics while doing irreplaceable work.',
+                },
+              ].map(item => (
+                <li key={item.label} className="flex gap-3 items-start">
+                  <span className="shrink-0 mt-[6px] w-1.5 h-1.5 rounded-full bg-soft-gold/50" />
+                  <span><strong className="text-deep-navy font-medium">{item.label}.</strong> {item.detail}</span>
+                </li>
+              ))}
+            </ul>
           </Section>
 
           <Section label="Scope and limits" title="What the score does not measure">
@@ -320,6 +433,45 @@ export default function Methodology() {
             </p>
           </Section>
 
+          <Section label="Score availability" title="Three levels of data — three levels of display">
+            <p>
+              Not every organization has the same amount of public financial data. Daanaa displays what exists — and only what exists.
+            </p>
+            <div className="mt-4 space-y-3">
+              {[
+                {
+                  tier: 'Scored',
+                  count: '386,000 organizations',
+                  desc: 'Complete IRS 990 filing data. Full 0–100 peer financial context score, operating model group, and reserve profile.',
+                  color: 'border-emerald-300 bg-emerald-50',
+                },
+                {
+                  tier: 'Revenue-placed',
+                  count: '~115,000 organizations',
+                  desc: 'IRS BMF summary revenue data only. Revenue band and operating model shown. No financial health score — detailed filing data is not available.',
+                  color: 'border-amber-300 bg-amber-50',
+                },
+                {
+                  tier: 'Visible',
+                  count: '~1.1 million organizations',
+                  desc: 'IRS-recognized 501(c)(3), tax-deductible. No financial filing data available — most file a 990-N postcard (under $50K gross receipts) or are churches exempt from 990 filing. Shown with IRS standing, cause type, and profile information. No financial score.',
+                  color: 'border-cool-grey/30 bg-warm-cream',
+                },
+              ].map(t => (
+                <div key={t.tier} className={`flex gap-4 p-4 rounded-xl border ${t.color}`}>
+                  <div className="shrink-0 w-28">
+                    <p className="font-body text-[13px] font-semibold text-deep-navy">{t.tier}</p>
+                    <p className="font-body text-[11px] text-cool-grey/70 mt-0.5">{t.count}</p>
+                  </div>
+                  <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{t.desc}</p>
+                </div>
+              ))}
+            </div>
+            <Callout>
+              The absence of a score is not a negative signal. Most nonprofits in the United States are small volunteer-run organizations that file a postcard return. They are real, IRS-recognized, tax-deductible, and doing real work. Daanaa shows them — it just does not pretend to measure what it cannot see.
+            </Callout>
+          </Section>
+
           <Section label="Version history" title="Scorer versioning and backward consistency">
             <p>
               Every time the scoring methodology changes, a new version is tagged. Raw inputs (total revenue, total assets, peer group, and region) are stored alongside each score, so any prior period can be recomputed under a newer formula.
@@ -331,9 +483,14 @@ export default function Methodology() {
                 <span className="font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">What it is</span>
               </div>
               <VersionRow
-                version={methodologyVersion}
-                date={scoresUpdated}
-                description="Initial public methodology. Regional peer groups (NTEE subcategory plus revenue band plus US Census region), six revenue bands (Nano through Major), and a 0.65 revenue / 0.35 reserve composite computed within each peer group."
+                version="v2.0"
+                date="2026-06-03"
+                description="Cause-aware peer groups. Four operating model groups (Direct Service, Mission Infrastructure, Asset Stewards, Endowment & Capital) × six revenue bands = 24 peer cells. Universe restricted to tax-deductible 501(c)(3)s only. Corrected band counts from deductible-only population. Volunteer human capital acknowledged as future signal."
+              />
+              <VersionRow
+                version="v1.0"
+                date="2026-05-20"
+                description="Initial public methodology. NTEE subcategory plus revenue band peer groups. Six revenue bands (Nano through Major). 0.65 revenue / 0.35 reserve composite."
               />
             </div>
             <Callout>
@@ -351,7 +508,7 @@ export default function Methodology() {
             <div className="mt-4">
               <SourceRow
                 source="IRS nonprofit registration list"
-                detail="Tax-exempt status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa covers all active 501(c)(3) organizations where donations are tax-deductible, more than 1.6 million."
+                detail="Tax-exempt status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa indexes all active 501(c)(3) organizations where donations are tax-deductible — 1.63 million organizations. Non-deductible 501(c)(4), (c)(6), and other subsections are excluded from scoring."
               />
               <SourceRow
                 source="IRS published financial data"
