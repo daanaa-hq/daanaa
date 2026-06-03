@@ -139,6 +139,7 @@ def run(limit=None, workers=6, sample=None, dry_run=False):
         FROM registry_enriched
         WHERE mission IS NOT NULL AND mission != ''
           AND COALESCE(cause_tags_source,'') != 'ai_mission'
+        ORDER BY (merit_score IS NULL) ASC, merit_score DESC
     """
     if n:
         q += f" LIMIT {int(n)}"

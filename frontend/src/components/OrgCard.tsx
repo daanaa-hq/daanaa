@@ -154,7 +154,7 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
 
       {/* Name + fact + location */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-display text-[16px] text-deep-navy hover:text-soft-gold transition-colors truncate mb-0.5">
+        <h3 className="font-display text-[16px] text-deep-navy hover:text-soft-gold transition-colors line-clamp-2 mb-0.5">
           {org.name}
         </h3>
         {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (

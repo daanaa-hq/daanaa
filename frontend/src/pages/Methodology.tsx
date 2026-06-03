@@ -190,17 +190,11 @@ export default function Methodology() {
                 The short version
               </h2>
               <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
-                Each nonprofit is scored only against organizations doing similar work at a similar size, using public IRS filings. The score, 0 to 100, shows where an organization stands within that peer group — not against all nonprofits.
+                Each nonprofit is scored only against organizations with the same operating model and similar revenue size. A food bank is measured against other food banks — not hospitals. A conservation land trust is measured against other land trusts — not community centers. The score, 0 to 100, shows where an organization stands within that peer group.
               </p>
               <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
-                All of this comes from annual IRS filings — the same public documents every registered 501(c)(3) submits. Organizations without detailed filing data are shown without a score. We never fabricate what we cannot measure.
+                All data comes from annual IRS filings — the same public documents every registered 501(c)(3) submits. Organizations without detailed filing data are shown without a score. We never fabricate what we cannot measure.
               </p>
-              <div className="mt-4 p-4 rounded-xl bg-deep-navy/5 border border-deep-navy/10">
-                <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
-                  <strong className="text-deep-navy">Current scoring (v1.0):</strong> Peer groups use IRS NTEE category and revenue band. Formula: 0.65 × revenue percentile + 0.35 × reserve ratio, within each peer group.
-                  <strong className="text-deep-navy ml-2">Coming in v2.0:</strong> Cause-aware operating model groups replace NTEE-only grouping. The four groups documented on this page reflect our research and planned methodology — not the live scorer.
-                </p>
-              </div>
               <div className="mt-5 flex flex-wrap gap-2">
                 {[
                   { label: 'IRS Form 990 filings', href: 'https://projects.propublica.org/nonprofits/', note: 'FY 2019–2024' },
@@ -229,20 +223,20 @@ export default function Methodology() {
 
           <Section label="Step 1 · The peer group" title="How we define 'similar'">
             <p>
-              We never compare a food bank to a hospital. Every nonprofit is scored only against organizations doing the same kind of work, at a similar size, in the same part of the country. A peer group is three things:
+              We never compare a food bank to a hospital, or a grassroots group to a major university. Every nonprofit is scored only against organizations with the same operating model at a similar size. A peer group is two things:
             </p>
             <ul className="list-none space-y-2 mt-2">
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">1</span></span>
-                <span><strong className="text-deep-navy font-medium">Operating model.</strong> How the organization actually runs — whether it spends everything on direct service, owns physical assets central to its mission, or holds long-term capital. Four groups, described below.</span>
+                <span><strong className="text-deep-navy font-medium">Operating model.</strong> How the organization actually runs — whether it spends everything on direct service delivery, owns physical assets central to its mission, or holds long-term capital. Four groups, described below.</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">2</span></span>
-                <span><strong className="text-deep-navy font-medium">Revenue size.</strong> One of six bands, from Nano (under $25K) to Major ($50M+). A grassroots group and a regional hospital live in different worlds even when they serve the same cause.</span>
+                <span><strong className="text-deep-navy font-medium">Revenue size.</strong> One of six bands from Nano (under $25K) to Major ($50M+). A $20K volunteer group and a $20M healthcare network are not financial peers even if they serve the same community.</span>
               </li>
             </ul>
             <p className="mt-4">
-              Together these create 24 peer cells. A peer cell needs at least 30 organizations to be statistically meaningful. Cells that are too thin fall back to the operating model group without a size constraint.
+              Together these create 24 peer cells. Every cell has at least 30 organizations — in practice most have thousands. Cells that are too thin use the operating model group as fallback.
             </p>
           </Section>
 
@@ -344,80 +338,41 @@ export default function Methodology() {
             </Callout>
           </Section>
 
-          <Section label="Step 2 · The formula" title="Two rankings, one number">
-            <p className="font-body text-[13px] text-cool-grey/70 italic mb-4">Current live formula (v1.0). See version history below for planned v2.0 changes.</p>
+          <Section label="Step 2 · The formula" title="How the score is built">
+            <p>
+              Each org receives up to four percentile ranks within its peer cell — how it compares to its peers on revenue, reserves, assets, and program spending. These are combined into a single 0–100 score using weights that vary by operating model.
+            </p>
             <FormulaBlock>
-              <div className="text-deep-navy/80">score = <span className="text-deep-navy font-semibold">0.65</span> × revenue_percentile</div>
-              <div className="text-deep-navy/80 ml-[54px]">+ <span className="text-deep-navy font-semibold">0.35</span> × reserve_percentile</div>
-              <div className="mt-3 text-[13px] text-cool-grey/70">
-                revenue_percentile: rank by total annual revenue within peer group (0 = smallest, 100 = largest)<br />
-                reserve_percentile: rank by total assets ÷ total revenue within peer group (0 = thinnest, 100 = strongest)<br />
-                Both computed within the peer group — NTEE category + revenue band.
-              </div>
+              <div className="text-deep-navy/80 mb-2 text-[13px] font-semibold text-cool-grey/60 uppercase tracking-wider">Metrics used</div>
+              <div className="text-deep-navy/80">revenue_rank     — total annual revenue within peer cell</div>
+              <div className="text-deep-navy/80">reserve_rank     — operating reserves (months of expenses covered)</div>
+              <div className="text-deep-navy/80">asset_rank       — total assets relative to revenue</div>
+              <div className="text-deep-navy/80">program_rank     — share of spending that goes to programs</div>
+              <div className="mt-4 text-[13px] text-cool-grey/70 font-semibold uppercase tracking-wider mb-2">Weights by operating model</div>
+              <div className="text-[13px] text-cool-grey/80">Direct Service      revenue 30%  reserve 25%  assets 10%  programs 35%</div>
+              <div className="text-[13px] text-cool-grey/80">Mission Infra.      revenue 30%  reserve 35%  assets 10%  programs 25%</div>
+              <div className="text-[13px] text-cool-grey/80">Asset Stewards      revenue 30%  reserve 15%  assets 40%  programs 15%</div>
+              <div className="text-[13px] text-cool-grey/80">Endowment &amp; Capital revenue 30%  reserve  0%  assets 55%  programs 15%</div>
+              <div className="mt-3 text-[12px] text-cool-grey/50">Reserve excluded from Endowment & Capital scoring — the IRS data caps reserves at 120 months, masking the true depth of endowment holdings.</div>
             </FormulaBlock>
             <p>
-              The middle organization in every peer group scores 50. A 75 means the same thing for a food bank as for a hospital system: top quarter of its peers. Revenue carries more weight because scale is the clearest signal of reach. Reserves carry the rest because a thin balance sheet is a real risk that revenue alone hides.
+              The middle organization in every peer cell scores 50. A 75 means the same thing across all groups: top quarter of true peers. Weights reflect what financial health actually means for each model — a food bank with thin reserves may be doing exactly what it should, while a land trust with thin reserves may have a real problem.
             </p>
             <Callout>
-              In the planned v2.0 methodology, weights will vary by operating model group — Direct Service organizations will have reserves weighted differently than Endowment organizations, reflecting that thin reserves in a food bank and thin reserves in a land trust mean different things. The four operating model groups on this page document that research. Scores will be recomputed when v2.0 is deployed.
+              When program spending data is unavailable for an org (not all 990 filings include this breakdown), its weight is redistributed across the other metrics. The score is always based only on data that actually exists.
             </Callout>
           </Section>
 
-          <Section label="Step 2 · The reserve half" title="Why reserves count">
-            <FormulaBlock>
-              reserve_ratio = total_assets ÷ total_revenue
-            </FormulaBlock>
+          <Section label="Scope and limits" title="What the score does and doesn't measure">
             <p>
-              This stands in for the working capital ratio, which the research consistently names as the best single indicator of nonprofit financial health (Tuckman & Chang 1991, Bowman 2011, Calabrese 2013). It answers one question: could this organization survive a year where the money stopped? A low ratio means thin coverage. A high one usually means a large endowment, which is a legitimate model, not a flaw, so organizations with big endowments are ranked against each other.
+              The score is a narrow measure of financial resources relative to true peers — nothing more. It does not measure, and should not be used to judge:
             </p>
-            <Callout>
-              The exact working capital ratio needs liability data filed by only about 4,700 organizations. The version using total assets is available for all 542,000+ scored organizations and tracks closely for the vast majority. Negative net worth is treated as zero, and reserves are capped at the group maximum so no one is penalized for having a lot.
-            </Callout>
-          </Section>
-
-          <Section label="What we don't yet measure" title="Known dimensions not yet in the score">
-            <p>
-              Financial filings are a narrow window. They tell us about revenue, assets, and spending — not about people, impact, or community presence. Several important dimensions exist outside what IRS data can show. We document them here so donors can weigh them independently.
-            </p>
-            <ul className="space-y-4 mt-4 list-none">
+            <ul className="space-y-2 mt-3 list-none">
               {[
-                {
-                  label: 'Volunteer labor',
-                  detail: 'IRS Form 990 Part I asks for the number of volunteers. For the organizations where this is reported, volunteer hours represent a form of donated labor equivalent in economic value to cash giving. The Independent Sector values a volunteer hour at $31.80 (2023). A food pantry with 300 volunteers giving 80 hours each contributes an estimated $763,200 in community labor — often several times its cash budget. We will surface this as a supplemental display once broader 990 data coverage allows it.',
-                },
-                {
-                  label: 'Program outcomes and impact',
-                  detail: 'IRS filings require financial disclosure, not impact measurement. No rating system that claims to measure program effectiveness from 990 data alone should be trusted. Daanaa does not make this claim.',
-                },
-                {
-                  label: 'Governance and leadership',
-                  detail: 'Board composition, term limits, conflict-of-interest policies, and leadership quality are not in IRS filings at scale. Some is available in 990 Part VI for larger filers.',
-                },
-                {
-                  label: 'Community trust',
-                  detail: 'Local reputation, relationships, and the depth of community roots are not measurable from public records. A highly trusted neighborhood organization may score modestly on financial metrics while doing irreplaceable work.',
-                },
-              ].map(item => (
-                <li key={item.label} className="flex gap-3 items-start">
-                  <span className="shrink-0 mt-[6px] w-1.5 h-1.5 rounded-full bg-soft-gold/50" />
-                  <span><strong className="text-deep-navy font-medium">{item.label}.</strong> {item.detail}</span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-
-          <Section label="Scope and limits" title="What the score does not measure">
-            <p>
-              The financial scale score is a narrow measure of financial resources relative to peer organizations. It does not measure, and should not be interpreted as measuring:
-            </p>
-            <ul className="space-y-2 mt-2 list-none">
-              {[
-                'Program quality or impact',
-                'Governance practices or board composition',
-                'Fundraising efficiency or donor retention',
-                'Leadership quality or organizational culture',
-                'Overhead ratio (see the 2013 Overhead Myth letter signed by GuideStar, Charity Navigator, and the BBB Wise Giving Alliance)',
+                'Program quality, outcomes, or real-world impact',
+                'Governance, board composition, or leadership quality',
                 'Community trust or local reputation',
+                'Overhead ratio — the sector formally retired this metric in 2013 (GuideStar, Charity Navigator, BBB Wise Giving Alliance joint letter)',
               ].map(item => (
                 <li key={item} className="flex gap-3 items-start">
                   <span className="shrink-0 mt-[7px] w-1.5 h-1.5 rounded-full bg-soft-gold/50" />
@@ -426,11 +381,28 @@ export default function Methodology() {
               ))}
             </ul>
             <Callout>
-              A lower financial scale score may reflect organizational structure rather than weakness. Organizations that pass funding through to other groups, national chapters that report revenue centrally, and newly founded organizations regularly score in the lower half. That accurately describes their position among peers, not their quality or worth.
+              A lower score may reflect how an organization is built, not how well it serves its mission. Pass-through funders, national chapters reporting revenue centrally, and newly formed organizations regularly score in the lower half. That is an accurate description of their position among peers — not a judgment of their worth.
             </Callout>
-            <p>
-              Outcome data, the measure donors most want, is not measurable from public filings at sector wide scale. No rating system that claims to measure program effectiveness from 990 data alone should be trusted. Daanaa does not make this claim.
+            <p className="mt-4">
+              Several important dimensions exist that IRS data cannot capture. We plan to surface them as supplemental signals over time:
             </p>
+            <ul className="space-y-3 mt-3 list-none">
+              {[
+                {
+                  label: 'Volunteer labor',
+                  detail: 'IRS 990 Part I reports volunteer counts. The Independent Sector values a volunteer hour at $31.80 (2023). A food pantry with 300 volunteers giving 80 hours each contributes an estimated $763,200 in community labor — often several times its cash budget.',
+                },
+                {
+                  label: 'Community trust and local relationships',
+                  detail: 'Not measurable from public records. A deeply trusted neighborhood organization may score modestly on financial metrics while doing irreplaceable work.',
+                },
+              ].map(item => (
+                <li key={item.label} className="flex gap-3 items-start">
+                  <span className="shrink-0 mt-[6px] w-1.5 h-1.5 rounded-full bg-soft-gold/30" />
+                  <span><strong className="text-deep-navy font-medium">{item.label}.</strong> {item.detail}</span>
+                </li>
+              ))}
+            </ul>
           </Section>
 
           <Section label="Score availability" title="Three levels of data — three levels of display">
@@ -441,8 +413,8 @@ export default function Methodology() {
               {[
                 {
                   tier: 'Scored',
-                  count: '386,000 organizations',
-                  desc: 'Complete IRS 990 filing data. Full 0–100 peer financial context score, operating model group, and reserve profile.',
+                  count: '458,000 organizations',
+                  desc: 'Complete IRS 990 filing data. Full 0–100 peer financial context score, operating model group, and financial profile.',
                   color: 'border-emerald-300 bg-emerald-50',
                 },
                 {
@@ -485,12 +457,12 @@ export default function Methodology() {
               <VersionRow
                 version="v2.0"
                 date="2026-06-03"
-                description="Cause-aware peer groups. Four operating model groups (Direct Service, Mission Infrastructure, Asset Stewards, Endowment & Capital) × six revenue bands = 24 peer cells. Universe restricted to tax-deductible 501(c)(3)s only. Corrected band counts from deductible-only population. Volunteer human capital acknowledged as future signal."
+                description="Live. Four operating model groups (Direct Service, Mission Infrastructure, Asset Stewards, Endowment & Capital) × six revenue bands = 24 peer cells. Group-specific metric weights. Universe: tax-deductible 501(c)(3)s only, auto-revoked orgs excluded. 458,383 orgs scored."
               />
               <VersionRow
                 version="v1.0"
                 date="2026-05-20"
-                description="Initial public methodology. NTEE subcategory plus revenue band peer groups. Six revenue bands (Nano through Major). 0.65 revenue / 0.35 reserve composite."
+                description="Initial scoring. NTEE category + revenue band peer groups. Formula: 0.65 × revenue percentile + 0.35 × reserve ratio. Included non-deductible orgs."
               />
             </div>
             <Callout>
