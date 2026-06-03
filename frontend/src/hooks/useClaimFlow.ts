@@ -57,7 +57,8 @@ export function useClaimFlow() {
       }))
       return true
     } catch (e) {
-      setState(s => ({ ...s, error: 'Network error. Please try again.', loading: false }))
+      const msg = e instanceof Error ? e.message : 'Network error. Please try again.'
+      setState(s => ({ ...s, error: msg, loading: false }))
       return false
     }
   }
@@ -86,7 +87,8 @@ export function useClaimFlow() {
       setState(s => ({ ...s, ...fields, loading: false }))
       return true
     } catch (e) {
-      setState(s => ({ ...s, error: 'Network error. Please try again.', loading: false }))
+      const msg = e instanceof Error ? e.message : 'Network error. Please try again.'
+      setState(s => ({ ...s, error: msg, loading: false }))
       return false
     }
   }
