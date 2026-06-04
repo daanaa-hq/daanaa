@@ -7,7 +7,7 @@ const TIER_COMPAT: Record<string, TierName> = {
   Transparent: 'Lantern',
   Accountable: 'Flame',
   Verified:    'Ember',
-  Listed:      'Spark',
+  Listed:      'Seed',
 }
 
 // 'intent' = saved / clicked to give but not confirmed.

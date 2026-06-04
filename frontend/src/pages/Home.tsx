@@ -11,11 +11,11 @@ import { NTEE_CATEGORIES } from '../data/ntee'
 import { getFeaturedCategory } from '../data/featuredCategory'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
-  { name: 'Beacon',  pct: '0.7%',  blurb: 'Top-quartile financial score, mission, website, and current 990 on record' },
-  { name: 'Lantern', pct: '1.5%',  blurb: 'Mission, website, financial context, and current 990 on record' },
-  { name: 'Flame',   pct: '27.0%', blurb: 'Public filing on record. Mission or website not yet confirmed' },
-  { name: 'Glow',    pct: '40.6%', blurb: 'Public record found. Limited information available' },
-  { name: 'Spark',   pct: '30.2%', blurb: 'Public record found. No additional data yet' },
+  { name: 'Beacon',  pct: '0.7%',  blurb: 'Complete public data: financial filings, mission, website, and current 990 on record' },
+  { name: 'Lantern', pct: '1.5%',  blurb: 'Strong public data: mission, website, financial context, and current 990 on record' },
+  { name: 'Flame',   pct: '27.0%', blurb: 'Public filing on record. Mission or website pending verification' },
+  { name: 'Glow',    pct: '40.6%', blurb: 'Public record found in IRS database. Limited additional data available' },
+  { name: 'Seed',    pct: '30.2%', blurb: 'Public record found. No additional data discovered yet' },
 ]
 
 // Returns the week number anchored to Monday so all users see the same shuffle each week
@@ -60,21 +60,21 @@ function HeroSection() {
           className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.025em]"
           style={{ fontSize: 'clamp(48px, 7vw, 80px)' }}
         >
-          What causes<br />matter to you?
+          Discover nonprofits<br />with clarity, not pressure
         </h1>
 
         {/* Subtitle */}
         <p className="mt-6 font-body text-[18px] leading-[1.7] max-w-[560px] mx-auto" style={{ color: 'rgba(245,240,235,0.70)' }}>
-          Nonprofits around you are making real change. We help you find the ones doing work you believe in, understand their finances, and give with confidence.
+          Daanaa helps you find IRS-recognized nonprofits, understand their public records, and give directly through the organization's own giving path when available.
         </p>
 
         {/* Trust signals */}
         <div className="mt-9 flex items-center justify-center gap-6 flex-wrap">
           {[
-            'Transparent data',
-            'Fair comparison',
+            'No paid rankings',
+            'No donation processing',
+            'Public records first',
             'Your privacy protected',
-            'Free forever',
           ].map(text => (
             <span key={text} className="flex items-center gap-2 font-body text-[13px]" style={{ color: 'rgba(245,240,235,0.55)' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -336,10 +336,10 @@ function TiersStrip() {
           {/* Label column */}
           <div className="md:w-[200px] shrink-0">
             <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
-              Visibility Levels
+              Public Data Completeness
             </p>
             <p className="font-body text-[14px] text-cool-grey leading-[1.5]">
-              Some groups have websites, reports, and giving pages. Others are small, local, or offline. Daanaa shows what information is available.
+              Some organizations have published websites, Form 990s, and giving pages. Others are small, local, or online-only. Each tier reflects what public records are available.
             </p>
             <Link
               to="/tiers"
@@ -355,7 +355,7 @@ function TiersStrip() {
             {TIER_STRIP.map(({ name, pct, blurb }) => (
               <Link
                 key={name}
-                to={name === 'Glow' || name === 'Spark' ? '/directory' : `/directory?min_tier=${name}`}
+                to={name === 'Glow' || name === 'Seed' ? '/directory' : `/directory?min_tier=${name}`}
                 className="snap-start shrink-0 w-[88px] md:w-auto flex flex-col items-center gap-1.5 px-2 py-3 border-r border-light-grey last:border-r-0 hover:bg-warm-cream/60 transition-colors group"
               >
                 <LampMark tier={name} size="sm" />

@@ -74,7 +74,7 @@ function ScoreFlow() {
           <FlowStep
             kicker="Scale 1 · Visibility"
             title="Public prominence"
-            detail="How well-known is this organization? Ranges from Spark to Beacon (most visible). This tier is about discovery — helps you find orgs you didn't know about."
+            detail="How well-known is this organization? Ranges from Seed to Beacon (most visible). This tier is about discovery — helps you find orgs you didn't know about."
           />
           <FlowStep
             kicker="Scale 2 · Financial Health"

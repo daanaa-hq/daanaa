@@ -786,7 +786,7 @@ export default function OrganizationDetail() {
                   {lampTier}
                 </Link>
                 <span className="font-body text-[10px] text-muted-cream/50">
-                  {({'Beacon':'Fully documented','Lantern':'Well documented','Flame':'Basic documentation','Ember':'Limited public data','Spark':'Just registered'} as Record<string,string>)[lampTier]}
+                  {({'Beacon':'Fully documented','Lantern':'Well documented','Flame':'Basic documentation','Ember':'Limited public data','Seed':'Just registered'} as Record<string,string>)[lampTier]}
                 </span>
               </div>
               {/* IRS verification -- a real, defensible fact for every org */}

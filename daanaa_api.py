@@ -832,11 +832,21 @@ def get_organization(ein):
     ).fetchone())
 
     if has_v4_scores:
+        # Use subquery to avoid column name conflicts between registry_enriched and v4_scores
         sql = """SELECT r.*,
-                        v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-                        v4.peer_cell_size, v4.metrics_json, v4.percentiles_json
+                        v4_data.visibility_tier,
+                        v4_data.financial_health,
+                        v4_data.operating_model,
+                        v4_data.revenue_band as v4_revenue_band,
+                        v4_data.peer_cell_size,
+                        v4_data.metrics_json,
+                        v4_data.percentiles_json
                  FROM registry_enriched r
-                 LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+                 LEFT JOIN (
+                    SELECT EIN, visibility_tier, financial_health, operating_model,
+                           revenue_band, peer_cell_size, metrics_json, percentiles_json
+                    FROM v4_scores
+                 ) v4_data ON r.EIN = v4_data.EIN
                  WHERE r.EIN = ?"""
     else:
         sql = """SELECT r.*,

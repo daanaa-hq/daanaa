@@ -1,6 +1,6 @@
 import type { ApiOrganization } from '../data/api'
 
-export type TierName = 'Beacon' | 'Lantern' | 'Flame' | 'Glow' | 'Ember' | 'Spark'
+export type TierName = 'Beacon' | 'Lantern' | 'Flame' | 'Glow' | 'Ember' | 'Seed'
 
 export const PASSING_BANDS = ['Blazing', 'Burning Bright', 'Steady Flame']
 
@@ -46,7 +46,7 @@ export const TIER_COLORS: Record<TierName, string> = {
   Flame:   '#D4B968',
   Glow:    '#D9A876',
   Ember:   '#D9A876',
-  Spark:   '#E8C896',
+  Seed:    '#E8C896',
 }
 
 // Microcopy frames the lamp as a VISIBILITY JOURNEY, never a quality verdict.
@@ -58,7 +58,7 @@ export const TIER_MICROCOPY: Record<TierName, string> = {
   Flame:   'Public record found. Financial data and filing on record. Mission or website not yet confirmed.',
   Glow:    'Public record found. Limited financial data available. Reflects information availability, not the quality of its work.',
   Ember:   'Public record found. Limited financial data available. Reflects information availability, not the quality of its work.',
-  Spark:   'Public record found. A registered nonprofit with little information available yet. A starting point, not a judgment.',
+  Seed:    'Public record found. A registered nonprofit with minimal information available yet. A starting point, not a judgment.',
 }
 
 export interface TierCriterion {
@@ -140,7 +140,7 @@ export function getNextTierPath(tier: TierName): string | null {
     case 'Flame':   return 'Add a mission statement and website. Once both are on public record, this org qualifies for Lantern.'
     case 'Glow':
     case 'Ember':   return 'A financial scale score is assigned as revenue and asset data accumulates in public records. Daanaa updates automatically.'
-    case 'Spark':   return 'An annual financial report or revenue record on file moves this org to Glow.'
+    case 'Seed':    return 'An annual financial report or revenue record on file moves this org to Glow.'
   }
 }
 
@@ -151,7 +151,7 @@ export function getInlineVerifiedFact(org: ApiOrganization): string {
   return facts.slice(0, 2).join(' · ')
 }
 
-const _TIER_NAMES = new Set<string>(['Beacon', 'Lantern', 'Flame', 'Glow', 'Ember', 'Spark'])
+const _TIER_NAMES = new Set<string>(['Beacon', 'Lantern', 'Flame', 'Glow', 'Ember', 'Seed'])
 
 export function getTierFromOrg(org: ApiOrganization): TierName {
   if (org.merit_tier && _TIER_NAMES.has(org.merit_tier)) return org.merit_tier as TierName
@@ -164,15 +164,15 @@ export function getTierFromOrg(org: ApiOrganization): TierName {
   const hasWebsite = !!org.has_website
   const bandOk     = org.merit_band == null || !GATE_BLOCKING_BANDS.includes(org.merit_band)
 
-  if (!hasEin)                 return 'Spark'
-  if (!has990 && !posRevenue)  return 'Spark'
+  if (!hasEin)                 return 'Seed'
+  if (!has990 && !posRevenue)  return 'Seed'
 
   if (hasScore && (org.peer_percentile ?? org.ntee1_percentile ?? 0) >= 75 && hasMission && hasWebsite && has990 && posRevenue && bandOk) return 'Beacon'
   if (hasScore && hasMission && hasWebsite && has990 && posRevenue && bandOk) return 'Lantern'
   if (hasScore && has990 && posRevenue) return 'Flame'
   if (has990 || posRevenue)    return 'Ember'
 
-  return 'Spark'
+  return 'Seed'
 }
 
 /** Dynamic trust summary for use in the giving flow — 2 facts max */
@@ -181,7 +181,7 @@ export function getTierSummary(tier: TierName, org: ApiOrganization): string {
   const has990 = (org.latest_tax_year ?? 0) >= 2022
   const parts: string[] = []
   if (has990) parts.push('Registered nonprofit · Annual report on file')
-  else if (tier !== 'Spark') parts.push('Registered nonprofit')
+  else if (tier !== 'Seed') parts.push('Registered nonprofit')
   if (score != null && score >= 60) parts.push(`Larger financial footprint than ${Math.round(score)}% of comparable groups`)
   if (org.has_mission && org.has_website) parts.push('Full profile')
   return parts.slice(0, 2).join(' · ') || 'Registered nonprofit'

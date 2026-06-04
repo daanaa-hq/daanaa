@@ -262,7 +262,7 @@ export default function ForNonprofits() {
       {(() => {
         const STEPS: { tier: TierName; pct: string; description: string; nextStep: string | null }[] = [
           {
-            tier: 'Spark',
+            tier: 'Seed',
             pct: '0.4% of tax-deductible 501(c)(3)s',
             description: "The IRS recognizes you. You're already in our index.",
             nextStep: 'To reach Glow: file a full annual report with the government. Required for nonprofits earning over $50,000 a year.',

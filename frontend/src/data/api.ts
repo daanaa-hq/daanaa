@@ -36,7 +36,7 @@ export interface ApiOrganization {
   latest_tax_year: number | null;
   data_source: string | null;        // 'propublica' | 'irs_soi' | 'nccs' | '' etc.
   updated_at: string | null;         // ISO timestamp of last DB write
-  merit_tier?: string | null;        // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
+  merit_tier?: string | null;        // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Seed'
   merit_score?: number | null;       // 0-100 financial-health score
   merit_band?: string | null;        // journey band e.g. 'Blazing' | 'Burning Bright' | 'Steady Flame' | 'Growing' | 'Just Starting'
   score_tier?: string | null;        // 'full' | 'partial' | 'revenue_only' — data confidence level
@@ -150,7 +150,7 @@ export async function getOrganizations(params?: {
   min_revenue?: number;
   max_revenue?: number;
   min_percentile?: number;    // legacy — filter by ntee1_percentile >= value
-  min_tier?: string;          // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Spark'
+  min_tier?: string;          // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Seed'
   hidden_gem?: boolean;       // true = only small, healthy, mission-focused orgs
   direct_link?: boolean;      // true = only orgs with a detected donate URL
   needs_funding?: boolean;    // true = orgs with < 12 months of operating reserves
