@@ -183,7 +183,7 @@ export default function HowItWorks() {
               ))}
             </div>
             <Callout>
-              A lower tier is not a negative judgment. It reflects what public data is available, not the organization's character or importance. A small organization filing a simplified annual form while doing extraordinary community work will show as Spark. That can change as more data enters the public record.
+              A lower tier is not a negative judgment. It reflects what public data is available, not the organization's character or importance. A small organization filing a simplified annual form while doing extraordinary community work will show as Seed. That can change as more data enters the public record.
             </Callout>
             <div className="mt-6">
               <Link
