@@ -284,8 +284,12 @@ def _make_verify_token(ein: str, pin: str) -> str:
     return hmac.new(_CLAIM_SECRET, f"{ein}:{pin}".encode(), hashlib.sha256).hexdigest()
 
 # Admin key — set DAANAA_ADMIN_KEY env var before starting the API.
+# Backward compatible with old MERIT_ADMIN_KEY env var name.
 # Any endpoint decorated with @require_admin_key will return 401 if it's missing or wrong.
-_ADMIN_KEY = os.environ.get("DAANAA_ADMIN_KEY", "") or os.environ.get("DAANAA_ADMIN_KEY", "")
+_ADMIN_KEY = (
+    os.environ.get("DAANAA_ADMIN_KEY", "")
+    or os.environ.get("MERIT_ADMIN_KEY", "")  # backward compat
+)
 
 def require_admin_key(f):
     @functools.wraps(f)
