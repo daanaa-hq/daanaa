@@ -622,7 +622,10 @@ def list_organizations():
     search = request.args.get('q', '').strip()[:200]
     ntee_raw = request.args.get('ntee', '').strip().upper()
     ntee_list = [x.strip()[:1] for x in ntee_raw.split(',') if x.strip()]
-    sub = request.args.get('sub', '').strip().upper()[:4]   # NTEECC subcategory e.g. E21
+    # NTEECC subcategories, comma-separated e.g. "E21,A82". Combined with the
+    # category list using OR (any ticked category or subcategory matches).
+    sub_raw = request.args.get('sub', '').strip().upper()
+    sub_list = [s.strip()[:4] for s in sub_raw.split(',') if s.strip()][:40]
     state = request.args.get('state', '').strip().upper()[:2]
     min_rev = request.args.get('min_revenue', type=float)
     max_rev = request.args.get('max_revenue', type=float)
@@ -667,17 +670,20 @@ def list_organizations():
             for word in words:
                 where_clauses.append("organization_name LIKE ?")
                 params.append(f'%{word}%')
-    if ntee_list:
-        if len(ntee_list) == 1:
-            where_clauses.append("NTEE1 = ?")
-            params.append(ntee_list[0])
-        else:
-            placeholders = ','.join('?' * len(ntee_list))
-            where_clauses.append(f"NTEE1 IN ({placeholders})")
-            params.extend(ntee_list)
-    if sub:
-        where_clauses.append("NTEECC LIKE ?")
-        params.append(sub + '%')
+    # Category + subcategory scope: match orgs in ANY ticked NTEE1 category OR
+    # ANY ticked NTEECC subcategory (single combined OR group).
+    if ntee_list or sub_list:
+        scope_parts, scope_params = [], []
+        if ntee_list:
+            ph = ','.join('?' * len(ntee_list))
+            scope_parts.append(f"NTEE1 IN ({ph})")
+            scope_params.extend(ntee_list)
+        if sub_list:
+            likes = ' OR '.join(['NTEECC LIKE ?'] * len(sub_list))
+            scope_parts.append(f"({likes})")
+            scope_params.extend([s + '%' for s in sub_list])
+        where_clauses.append('(' + ' OR '.join(scope_parts) + ')')
+        params.extend(scope_params)
     if state:
         where_clauses.append("STATE = ?")
         params.append(state)

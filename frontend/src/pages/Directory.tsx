@@ -27,13 +27,17 @@ const SORT_OPTIONS = [
 ]
 
 // Small first. This is the mission: the smallest groups are the hardest to find.
+// Eight donor-facing size bands (mirrors the methodology's eight-band thinking
+// with simple, universal dollar breakpoints).
 const REVENUE_PRESETS = [
-  { id: 'tiny',        label: 'Tiny (under $50K)',          min: undefined,   max: 49_999 },
-  { id: 'grassroots',  label: 'Grassroots ($50K to $250K)', min: 50_000,      max: 249_999 },
-  { id: 'community',   label: 'Community ($250K to $1M)',   min: 250_000,     max: 999_999 },
-  { id: 'established', label: 'Established ($1M to $10M)',   min: 1_000_000,   max: 9_999_999 },
-  { id: 'large',       label: 'Large ($10M to $100M)',      min: 10_000_000,  max: 99_999_999 },
-  { id: 'national',    label: 'National (over $100M)',      min: 100_000_000, max: undefined },
+  { id: 'b1', label: 'Under $50K',     min: undefined,   max: 49_999 },
+  { id: 'b2', label: '$50K – $100K',   min: 50_000,      max: 99_999 },
+  { id: 'b3', label: '$100K – $250K',  min: 100_000,     max: 249_999 },
+  { id: 'b4', label: '$250K – $1M',    min: 250_000,     max: 999_999 },
+  { id: 'b5', label: '$1M – $5M',      min: 1_000_000,   max: 4_999_999 },
+  { id: 'b6', label: '$5M – $25M',     min: 5_000_000,   max: 24_999_999 },
+  { id: 'b7', label: '$25M – $100M',   min: 25_000_000,  max: 99_999_999 },
+  { id: 'b8', label: 'Over $100M',     min: 100_000_000, max: undefined },
 ] as const
 
 const SCORE_TIERS: { id: TierName; label: string }[] = [
@@ -143,12 +147,14 @@ export default function Directory() {
 
   const [searchQuery, setSearchQuery] = useState(qParam)
   const [debouncedQuery, setDebouncedQuery] = useState(qParam)
+  const subParamList = subParam.split(',').map(s => s.trim()).filter(Boolean)
   const [activeFilters, setActiveFilters] = useState<string[]>(() => {
-    if (subParam) return [subParam[0]]  // derive category from first char of sub code
-    if (!categoryParam || categoryParam === 'all') return []
-    return categoryParam.split(',').filter(c => c && c !== 'all')
+    // Categories = explicit ?category= plus the parent letter of any ?sub= code
+    const fromCats = (!categoryParam || categoryParam === 'all') ? [] : categoryParam.split(',').filter(c => c && c !== 'all')
+    const fromSubs = subParamList.map(s => s[0])
+    return Array.from(new Set([...fromCats, ...fromSubs]))
   })
-  const [subFilter, setSubFilter] = useState(subParam)
+  const [subFilters, setSubFilters] = useState<string[]>(subParamList)
   const [stateFilter, setStateFilter] = useState(stateParam)
   const [sortBy, setSortBy] = useState(SCORES_ENABLED ? 'merit_score' : 'total_revenue')
   const [revenueFilter, setRevenueFilter] = useState<RevenueId>(
@@ -206,13 +212,18 @@ export default function Directory() {
   const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
   // Fused search mode: any meaningful query with no active structured filters
-  const hasAnyFilter = activeFilters.length > 0 || !!subFilter || !!stateFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || hasWebsite || recent || !!debouncedCause.trim()
+  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || hasWebsite || recent || !!debouncedCause.trim()
   const isFusedMode = !hasAnyFilter && debouncedQuery.trim().length >= 2
+
+  // Categories the user drilled into (picked specific subcats) are represented by
+  // those subcats; remaining selected categories are sent whole. Backend ORs them.
+  const catsWithSubs = new Set(subFilters.map(s => s[0]))
+  const nteeToSend = activeFilters.filter(c => !catsWithSubs.has(c))
 
   const { data: orgsData, loading: orgsLoading, error: orgsError } = useApi(
     () => getOrganizations({
-      ntee: subFilter ? undefined : (activeFilters.length === 0 ? undefined : activeFilters.join(',')),
-      sub: subFilter || undefined,
+      ntee: nteeToSend.length ? nteeToSend.join(',') : undefined,
+      sub: subFilters.length ? subFilters.join(',') : undefined,
       state: stateFilter || undefined,
       q: debouncedQuery || undefined,
       sort: sortBy,
@@ -228,7 +239,7 @@ export default function Directory() {
       recent: recent || undefined,
       cause: debouncedCause.trim() || undefined,
     }),
-    [activeFilters, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, needsFunding, hasWebsite, recent, debouncedCause, itemsPerPage]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, needsFunding, hasWebsite, recent, debouncedCause, itemsPerPage]
   )
 
   const { data: fusedData, loading: fusedLoading } = useApi(
@@ -247,7 +258,12 @@ export default function Directory() {
       next = already ? activeFilters.filter(f => f !== filterId) : [...activeFilters, filterId]
     }
     setActiveFilters(next)
-    if (next.length !== 1) setSubFilter('')  // subcategory only makes sense for a single category
+    // Drop any selected subcategories whose parent category is no longer active
+    const prunedSubs = subFilters.filter(s => next.includes(s[0]))
+    if (prunedSubs.length !== subFilters.length) {
+      setSubFilters(prunedSubs)
+      if (prunedSubs.length) searchParams.set('sub', prunedSubs.join(',')); else searchParams.delete('sub')
+    }
     setCurrentPage(1)
     scrollTop()
     if (next.length === 0) {
@@ -259,7 +275,10 @@ export default function Directory() {
   }
 
   const handleSubChange = (code: string) => {
-    setSubFilter(code)
+    const next = subFilters.includes(code) ? subFilters.filter(s => s !== code) : [...subFilters, code]
+    setSubFilters(next)
+    if (next.length) searchParams.set('sub', next.join(',')); else searchParams.delete('sub')
+    setSearchParams(searchParams)
     setCurrentPage(1)
     scrollTop()
   }
@@ -292,7 +311,7 @@ export default function Directory() {
     setSearchQuery('')
     setDebouncedQuery('')
     setActiveFilters([])
-    setSubFilter('')
+    setSubFilters([])
     setStateFilter('')
     setSortBy('organization_name')
     setRevenueFilter('')
@@ -328,10 +347,14 @@ export default function Directory() {
   const activeLoading = useFusedResults ? fusedLoading : orgsLoading
   const activeError = useFusedResults ? null : orgsError
 
-  // Readable label for active sub filter
-  const subLabel = subFilter
-    ? NTEE_SUBCATEGORIES[activeFilters[0] ?? '']?.find(s => s.code === subFilter)?.label ?? subFilter
-    : ''
+  // Readable label for any subcategory code (searches across all categories)
+  const subLabelOf = (code: string): string => {
+    for (const arr of Object.values(NTEE_SUBCATEGORIES)) {
+      const m = arr.find(s => s.code === code)
+      if (m) return m.label
+    }
+    return code
+  }
 
   // Readable label for active revenue filter
   const revLabel = revPreset?.label ?? ''
@@ -341,7 +364,7 @@ export default function Directory() {
 
   const activeFilterCount = [
     activeFilters.length > 0,
-    !!subFilter,
+    subFilters.length > 0,
     !!stateFilter,
     !!revenueFilter,
     !!scoreTier,
@@ -547,22 +570,32 @@ export default function Directory() {
           </div>}
           </div>
 
-          {/* Subcategory pills when a single category is active — all breakpoints */}
-          {searchMode === 'browse' && activeFilters.length === 1 && (NTEE_SUBCATEGORIES[activeFilters[0]]?.length ?? 0) > 0 && (
-            <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-              {NTEE_SUBCATEGORIES[activeFilters[0]].map(sub => (
-                <button
-                  key={sub.code}
-                  onClick={() => handleSubChange(subFilter === sub.code ? '' : sub.code)}
-                  className="px-3 py-1 rounded-full font-body text-[11px] transition-all duration-150 border"
-                  style={{
-                    backgroundColor: subFilter === sub.code ? '#0A1628' : 'transparent',
-                    color: subFilter === sub.code ? '#F5F0EB' : '#6B7280',
-                    borderColor: subFilter === sub.code ? '#0A1628' : '#E5E0DB',
-                  }}
-                >
-                  {sub.label}
-                </button>
+          {/* Subcategory pills — appear for every selected category, multi-select */}
+          {searchMode === 'browse' && activeFilters.some(c => (NTEE_SUBCATEGORIES[c]?.length ?? 0) > 0) && (
+            <div className="mt-3 space-y-2">
+              {activeFilters.filter(c => (NTEE_SUBCATEGORIES[c]?.length ?? 0) > 0).map(catId => (
+                <div key={catId} className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-body text-[10px] uppercase tracking-[0.06em] text-cool-grey/50 mr-1 shrink-0">
+                    {FILTER_CATEGORIES.find(c => c.id === catId)?.label ?? catId}
+                  </span>
+                  {NTEE_SUBCATEGORIES[catId].map(sub => {
+                    const on = subFilters.includes(sub.code)
+                    return (
+                      <button
+                        key={sub.code}
+                        onClick={() => handleSubChange(sub.code)}
+                        className="px-3 py-1 rounded-full font-body text-[11px] transition-all duration-150 border"
+                        style={{
+                          backgroundColor: on ? '#0A1628' : 'transparent',
+                          color: on ? '#F5F0EB' : '#6B7280',
+                          borderColor: on ? '#0A1628' : '#E5E0DB',
+                        }}
+                      >
+                        {sub.label}
+                      </button>
+                    )
+                  })}
+                </div>
               ))}
             </div>
           )}
@@ -612,7 +645,7 @@ export default function Directory() {
                   </span>
 
                   {/* Active filter chips */}
-                  {(searchQuery || activeFilters.length > 0 || subFilter || stateFilter || revenueFilter || scoreTier) && (
+                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier) && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-[11px]">
@@ -624,7 +657,7 @@ export default function Directory() {
                           Name + meaning
                         </span>
                       )}
-                      {!subFilter && activeFilters.map(f => (
+                      {activeFilters.map(f => (
                         <button
                           key={f}
                           onClick={() => handleFilterChange(f)}
@@ -633,14 +666,15 @@ export default function Directory() {
                           {RAIL_CATEGORIES.find(c => c.id === f)?.label} ×
                         </button>
                       ))}
-                      {subFilter && (
+                      {subFilters.map(code => (
                         <button
-                          onClick={() => { setSubFilter(''); setCurrentPage(1) }}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          key={code}
+                          onClick={() => handleSubChange(code)}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-deep-navy/8 text-deep-navy font-body text-[11px] hover:bg-deep-navy/15 transition-colors"
                         >
-                          {subLabel} ×
+                          {subLabelOf(code)} ×
                         </button>
-                      )}
+                      ))}
                       {stateFilter && (
                         <button
                           onClick={() => handleStateChange('')}
@@ -670,7 +704,7 @@ export default function Directory() {
                       </button>
                     </div>
                   )}
-                  {subFilter === 'X70' && (
+                  {subFilters.includes('X70') && (
                     <p className="mt-1.5 font-body text-[11px] text-cool-grey">
                       The IRS classifies Hindu, Sikh, Jain, and other non-Western faith traditions under this code. This reflects official IRS data, not our own categorization.
                     </p>
