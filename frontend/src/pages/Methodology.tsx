@@ -343,8 +343,42 @@ export default function Methodology() {
               Revenue bands are now model-specific. Each operating model gets its own eight revenue breakpoints based on its natural distribution. This means a "Small" food bank is sized appropriately compared to other food banks — not forced into brackets built for hospitals.
             </p>
             <p className="mt-3">
-              For example, Direct Service bands range from under $27.5K to over $1.47M. Foundations bands range from under $23.7K to over $692K. Different sectors, different natural breaking points. Same principle: organizations are grouped only with true peers.
+              Different sectors, different natural breaking points. Same principle: organizations are grouped only with true peers. Here are the eight bands for two example models — notice how the breakpoints differ:
             </p>
+
+            <div className="mt-6 overflow-x-auto rounded-xl border border-light-grey bg-white">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-light-grey">
+                    <th className="py-3 px-4 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Band</th>
+                    <th className="py-3 px-4 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Direct Service</th>
+                    <th className="py-3 px-4 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Foundations</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { band: '1 · Smallest', ds: 'under $27.5K', fn: 'under $23.7K' },
+                    { band: '2', ds: '$27.5K – $51K', fn: '$23.7K – $44K' },
+                    { band: '3', ds: '$51K – $75K', fn: '$44K – $64K' },
+                    { band: '4', ds: '$75K – $112K', fn: '$64K – $93K' },
+                    { band: '5', ds: '$112K – $176K', fn: '$93K – $146K' },
+                    { band: '6', ds: '$176K – $369K', fn: '$146K – $271K' },
+                    { band: '7', ds: '$369K – $1.47M', fn: '$271K – $693K' },
+                    { band: '8 · Largest', ds: 'over $1.47M', fn: 'over $693K' },
+                  ].map(r => (
+                    <tr key={r.band} className="border-b border-light-grey last:border-0">
+                      <td className="py-2.5 px-4 font-body text-[13px] font-medium text-deep-navy whitespace-nowrap">{r.band}</td>
+                      <td className="py-2.5 px-4 font-body text-[13px] text-cool-grey whitespace-nowrap">{r.ds}</td>
+                      <td className="py-2.5 px-4 font-body text-[13px] text-cool-grey whitespace-nowrap">{r.fn}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 font-body text-[13px] text-cool-grey/70">
+              Each of the eight operating models has its own eight-band table, derived from that model's own revenue distribution. A $1M Foundation sits in the top band; a $1M Direct Service org sits in band 7.
+            </p>
+
             <Callout>
               All revenue bands are octile-based (8 equal percentiles in log-revenue space). This ensures:
               <ul className="list-none mt-2 space-y-1">
