@@ -41,7 +41,7 @@ UNSCORED_DISCLOSURE = (
     "🔍 No Financial Data Available: This organization lacks revenue/expense data in IRS records. "
     "This does NOT indicate unhealthiness. Verify directly: check IRS.gov 501(c)(3) status, "
     "ask for Form 990, or contact them. "
-    "Help us score them: Submit financial data at daanaa.org/submit"
+    "Help us score them: claim a page and add financial data at daanaa.org/for-nonprofits"
 )
 
 SELF_REPORTED_DISCLAIMER = (
@@ -1536,7 +1536,7 @@ def unscored_search():
         "results": results,
         "count": len(results),
         "disclosure": UNSCORED_DISCLOSURE,
-        "call_to_action": "Help us score unscored organizations: Submit financial data at daanaa.org/submit-data"
+        "call_to_action": "Help us score unscored organizations: claim a page and add financial data at daanaa.org/for-nonprofits"
     }), 200
 
 
@@ -1718,7 +1718,7 @@ def claim_verify():
     ).fetchone()
 
     if not row:
-        return jsonify({"error": "No claim found for this EIN. Start at daanaa.org/claim"}), 404
+        return jsonify({"error": "No claim found for this EIN. Start at daanaa.org/for-nonprofits"}), 404
 
     if token:
         expected = _make_verify_token(ein, row['pin'])

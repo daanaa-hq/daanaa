@@ -360,9 +360,9 @@ export default function ForNonprofits() {
                   </p>
                 )}
                 <p className="font-body text-[14px] text-muted-cream leading-[1.6] mb-6">
-                  The letter contains a QR code and a 6-digit PIN. Once it arrives (usually 3–5 business days), scan the QR code or visit{' '}
-                  <span className="text-soft-gold">daanaa.org/claim</span>{' '}
-                  and enter your PIN to complete the process.
+                  The letter contains a QR code and a 6-digit PIN. Once it arrives (usually 3–5 business days), scan the QR code, or return to{' '}
+                  <span className="text-soft-gold">daanaa.org/for-nonprofits</span>{' '}
+                  and start the claim again to enter your PIN.
                 </p>
                 <Link to="/directory" className="inline-block font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
                   Browse the directory →
