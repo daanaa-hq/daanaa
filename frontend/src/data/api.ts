@@ -40,6 +40,13 @@ export interface ApiOrganization {
   merit_score?: number | null;       // 0-100 financial-health score
   merit_band?: string | null;        // journey band e.g. 'Blazing' | 'Burning Bright' | 'Steady Flame' | 'Growing' | 'Just Starting'
   score_tier?: string | null;        // 'full' | 'partial' | 'revenue_only' — data confidence level
+  // v4.0 Financial Health — separate scale from visibility
+  financial_health?: 'Strong' | 'Stable' | 'Inspiring' | null;  // relative to peer model+band
+  operating_model?: string | null;   // 'Direct_Service' | 'Mission_Infrastructure' | etc. (8 models)
+  peer_cell_size?: number | null;    // number of orgs in peer cell for ranking
+  v4_revenue_band?: number | null;   // numeric band 0-7 (model-specific)
+  v4_metrics?: Record<string, unknown> | null;        // detailed metrics (optional)
+  v4_percentiles?: Record<string, unknown> | null;    // percentile data (optional)
   has_mission: boolean | null;
   has_website: boolean | null;
   // ProPublica enrichment fields

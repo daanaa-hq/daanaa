@@ -25,6 +25,21 @@ export function getFinancialHealth(org: ApiOrganization): { score: number; band:
   return { score, band }
 }
 
+// v4.0 Financial Health — separate scale from visibility.
+// Represents financial health relative to peer group (model + revenue band).
+export function getV4FinancialHealth(org: ApiOrganization): {
+  tier: 'Strong' | 'Stable' | 'Inspiring' | null;
+  operatingModel: string | null;
+  peerCellSize: number | null;
+} | null {
+  const tier = (org.financial_health as 'Strong' | 'Stable' | 'Inspiring' | null) || null
+  const model = org.operating_model || null
+  const peerSize = org.peer_cell_size || null
+
+  if (tier == null) return null
+  return { tier, operatingModel: model, peerCellSize: peerSize }
+}
+
 export const TIER_COLORS: Record<TierName, string> = {
   Beacon:  '#B8902F',
   Lantern: '#C9A84C',
