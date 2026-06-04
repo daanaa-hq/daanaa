@@ -8,148 +8,155 @@ function formatCount(n: number): string {
 }
 
 export default function About() {
-  usePageMeta('About', 'Daanaa is a civic nonprofit-discovery platform. We index tax-deductible 501(c)(3) organizations and make that information freely available to any donor who wants to give with confidence.')
+  usePageMeta('About', 'Daanaa is a nonprofit discovery platform built on transparency and fairness. We help donors find organizations doing real work and understand their financial standing.')
   const { data: stats } = useApi(() => getStats(), [])
 
   return (
     <div className="min-h-[100dvh]">
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-10 md:pt-12 md:pb-16">
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-8">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream/50">/</span>
             <span className="font-body text-[12px] text-muted-cream">About</span>
           </div>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
-            {/* Copy — left */}
-            <div className="max-w-[560px]">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">About Daanaa</span>
-              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
-                Civic infrastructure for informed giving
-              </h1>
-              <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-                Daanaa aims to index every active 501(c)(3) organization in the United States, more than 1.6 million whose donations are tax-deductible, all from public IRS data. We score each one against its true peers and make that picture free for any donor who wants to give with confidence.
-              </p>
-            </div>
-            {/* Logo — right */}
-            <div className="shrink-0 flex justify-center md:justify-end">
-              <img
-                src="/logo.png"
-                alt="Daanaa"
-                className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]"
-              />
-            </div>
+          <div className="max-w-[720px]">
+            <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-3">Our Mission</p>
+            <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>
+              Mission driven. Impacting lives around us.
+            </h1>
+            <p className="mt-6 font-body text-[18px] leading-[1.7] text-muted-cream max-w-[620px]">
+              Nonprofits do the work that shouldn't have to wait for profit. We exist to help donors find them and give with confidence.
+            </p>
           </div>
         </div>
       </div>
 
-      <div className="bg-warm-cream py-10 md:py-16 lg:py-20">
-        <div className="max-w-[800px] mx-auto px-6 lg:px-12 space-y-16">
+      <div className="bg-warm-cream py-12 md:py-18 lg:py-24">
+        <div className="max-w-[800px] mx-auto px-6 lg:px-12 space-y-18">
 
-          {/* Name */}
+          {/* What we believe */}
           <div className="border-l-2 border-soft-gold/30 pl-6 md:pl-8">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Our name</span>
-            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(24px, 3.5vw, 40px)' }}>
-              Giving should be as wise as it is generous
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">What we believe</span>
+            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 44px)' }}>
+              Nonprofits deserve fair visibility
             </h2>
             <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                Daanaa means "wise." We focus on helping you give intentionally.
+                A food bank isn't a scholarship program. A health clinic isn't a research institute. Yet donors often judge them all by the same rules. We believe every nonprofit deserves to be seen fairly—compared to organizations doing similar work, with the same financial rigor.
               </p>
               <p>
-                Instead of handling donations, we connect you directly to nonprofits and help you track your impact in a secure donor wallet.
-              </p>
-              <p>
-                Because real wisdom isn't just in what we give. It's in how we share it.
+                Transparency matters because it shows stewardship. Small organizations are never penalized just for being small. Different operating models are never invisible. Data is always explained. Trust is earned through openness, not hidden algorithms.
               </p>
             </div>
           </div>
 
-          {/* Mission */}
+          {/* How we work */}
           <div className="border-l-2 border-soft-gold/30 pl-6 md:pl-8">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Why we built this</span>
-            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(24px, 3.5vw, 40px)' }}>
-              Giving should not require a research degree
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How we work</span>
+            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 44px)' }}>
+              Built on public records and peer comparison
             </h2>
             <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                The IRS makes 990 filings public. ProPublica makes them searchable. But turning a 30 page tax return into a clear answer takes hours most donors don't have. Is the organization doing what it says? Is it financially healthy? Is it who it claims to be?
+                All our data comes from the IRS. We gather Form 990 filings, check them against their peers, and show you the financial picture in a form you can understand in seconds. Every score is a percentile rank—showing where an organization stands compared to others doing the same work.
               </p>
               <p>
-                Daanaa does that work. We read the filings, compare each organization to its peers, and show the result in a form you can read in seconds. The score doesn't replace your judgment. It informs it.
+                We do not create rankings or judge impact. We do not handle donations or ask you for anything. We show you the data, explain what it means, and let you decide.
               </p>
-              <p>
-                We are not a charity, and we never ask for donations on behalf of organizations. We are infrastructure, built to make the charitable sector easier to see clearly.
+              <p className="pt-2">
+                Want the technical details? Read our{' '}
+                <Link to="/methodology" className="text-soft-gold hover:text-bright-gold transition-colors font-medium">
+                  methodology
+                </Link>
+                {' '}for the complete scoring approach and limitations.
               </p>
             </div>
           </div>
 
-          {/* Data */}
+          {/* The data */}
           <div className="border-l-2 border-soft-gold/30 pl-6 md:pl-8">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">The data</span>
-            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(24px, 3.5vw, 40px)' }}>
-              Built on public records
+            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 44px)' }}>
+              Public, verifiable, always current
             </h2>
             <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                Every organization on Daanaa comes from the IRS Business Master File, the official list of active 501(c)(3) tax exempt organizations in the United States. Financial data comes from IRS Statistics of Income extracts and ProPublica Nonprofit Explorer, both of which republish Form 990 filings.
+                Every organization and every number on Daanaa comes from official IRS sources. We do not invent data or make assumptions. If an organization is missing from our database, it's because public financial records don't exist yet—usually because they're new or below the IRS filing threshold.
               </p>
               <p>
-                We do not create or change the source data. We gather it, clean it up, score it, and show it. The raw sources, IRS filings and registration records, are public, so anyone can check our work.
+                Organizations can claim their profile and keep it current. Donors can trust what they see because it's directly sourced from public filings.
               </p>
             </div>
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: stats ? formatCount(stats.total_organizations) : '—', sub: 'organizations indexed' },
-                { label: '26', sub: 'NTEE major categories' },
-                { label: '2020 to 2024', sub: 'financial data range' },
-                { label: 'Monthly', sub: 'IRS update cadence' },
+                { label: stats ? formatCount(stats.total_organizations) : '—', sub: 'organizations' },
+                { label: '538,000+', sub: 'with financial data' },
+                { label: '8', sub: 'operating models' },
+                { label: 'IRS public data', sub: 'sole source' },
               ].map(s => (
-                <div key={s.sub} className="bg-white border border-light-grey rounded-xl p-5">
-                  <p className="font-display text-[22px] text-deep-navy leading-tight">{s.label}</p>
-                  <p className="font-body text-[13px] text-cool-grey mt-1.5">{s.sub}</p>
+                <div key={s.sub} className="bg-white border border-light-grey rounded-xl p-4">
+                  <p className="font-display text-[20px] text-deep-navy leading-tight">{s.label}</p>
+                  <p className="font-body text-[12px] text-cool-grey mt-2">{s.sub}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Score */}
+          {/* What we don't do */}
           <div className="border-l-2 border-soft-gold/30 pl-6 md:pl-8">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Peer financial context</span>
-            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(24px, 3.5vw, 40px)' }}>
-              A peer percentile, not a grade
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">What we don't do</span>
+            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 44px)' }}>
+              Clear about our limits
+            </h2>
+            <div className="mt-5 space-y-3 font-body text-[16px] text-cool-grey leading-[1.7]">
+              <div className="flex gap-3">
+                <span className="text-soft-gold font-bold">•</span>
+                <p><strong>We don't measure impact.</strong> Financial health shows stewardship. It doesn't show whether an organization is effectively solving problems. That requires on-the-ground research only you can do.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-soft-gold font-bold">•</span>
+                <p><strong>We don't handle donations.</strong> We show you where to give. You decide how much and when. Your wallet is entirely yours.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-soft-gold font-bold">•</span>
+                <p><strong>We don't track your giving.</strong> Daanaa sees what you choose to share. Your donation history is yours alone.</p>
+              </div>
+              <div className="flex gap-3">
+                <span className="text-soft-gold font-bold">•</span>
+                <p><strong>We don't rank nonprofits.</strong> We show you peer comparisons. A higher percentile is different from "better." Context matters.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* The name */}
+          <div className="border-l-2 border-soft-gold/30 pl-6 md:pl-8">
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">The name</span>
+            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 44px)' }}>
+              Daanaa means wise
             </h2>
             <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                A peer financial context score of 87 means this organization has a larger financial footprint than 87% of nonprofits in its peer group. It is not an absolute judgment. A score of 60 in a highly competitive peer group may represent stronger practice than a 90 in a sparse one.
-              </p>
-              <p>
-                Every score is explainable. Each organization also carries a visibility level (Beacon, Lantern, Flame, Glow, or Spark) reflecting how much public information is available. Click any lamp mark on any profile to see the exact criteria and what's needed to reach the next level. There are no black boxes.
+                Generous giving is easy. Wise giving takes work. We exist to make that work simpler—to help you understand where organizations stand, so you can give with both heart and clarity.
               </p>
             </div>
           </div>
 
           {/* Contact */}
           <div className="border-t border-light-grey pt-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Contact</span>
-            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(22px, 3vw, 36px)' }}>
-              Get in touch
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Get in touch</span>
+            <h2 className="font-display italic text-deep-navy mt-3 leading-[1.05]" style={{ fontSize: 'clamp(24px, 3vw, 40px)' }}>
+              Questions or feedback
             </h2>
             <div className="mt-5 space-y-3 font-body text-[16px] text-cool-grey leading-[1.7]">
-              <p>For data corrections, organization disputes, feedback, or press inquiries:</p>
+              <p>Found a data issue? Want to claim an organization? Have an idea for us?</p>
               <Link to="/feedback" className="inline-flex items-center gap-2 text-soft-gold hover:text-bright-gold transition-colors font-medium">
                 Send us a message
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
               </Link>
               <p className="text-[14px]">
-                Or email directly at{' '}
+                Or email{' '}
                 <a href="mailto:hello@daanaa.org" className="text-soft-gold hover:text-bright-gold transition-colors">hello@daanaa.org</a>
-              </p>
-              <p className="text-[14px]">
-                For organizations wanting to claim or update their profile:
-                <Link to="/for-nonprofits" className="ml-1 text-soft-gold hover:text-bright-gold transition-colors">
-                  For Nonprofits →
-                </Link>
               </p>
             </div>
           </div>

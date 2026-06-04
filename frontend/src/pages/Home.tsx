@@ -53,55 +53,58 @@ function HeroSection() {
 
   return (
     <section className="bg-deep-navy pt-[72px]">
-      <div className="max-w-[860px] mx-auto px-6 pt-10 pb-12 md:pt-16 md:pb-20 text-center">
-
-        {/* Eyebrow badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-soft-gold/10 border border-soft-gold/20 mb-4 md:mb-7">
-          <span className="w-1.5 h-1.5 rounded-full bg-soft-gold animate-pulse" />
-          <span className="font-body text-[13px] font-medium text-soft-gold tracking-[0.02em]">
-            {orgCount.toLocaleString()}+ nonprofits recognized by the IRS
-          </span>
-        </div>
+      <div className="max-w-[860px] mx-auto px-6 pt-10 pb-16 md:pt-16 md:pb-24 text-center">
 
         {/* Headline */}
         <h1
           className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.025em]"
-          style={{ fontSize: 'clamp(42px, 6vw, 72px)' }}
+          style={{ fontSize: 'clamp(48px, 7vw, 80px)' }}
         >
-          Find the cause that<br />resonates with you
+          What causes<br />matter to you?
         </h1>
 
         {/* Subtitle */}
-        <p className="mt-6 font-body text-[18px] leading-[1.7] max-w-[540px] mx-auto" style={{ color: 'rgba(245,240,235,0.65)' }}>
-          Search the causes, communities, and people you care about. Find groups doing the work, give through official paths when available, and keep your giving history private.
+        <p className="mt-6 font-body text-[18px] leading-[1.7] max-w-[560px] mx-auto" style={{ color: 'rgba(245,240,235,0.70)' }}>
+          Nonprofits around you are making real change. We help you find the ones doing work you believe in, understand their finances, and give with confidence.
         </p>
 
-        {/* Search */}
-        <div className="mt-9 max-w-[620px] mx-auto">
-          <SearchBar
-            value={query}
-            onChange={setQuery}
-            onSearch={handleSearch}
-            placeholder="Search a cause, city, community, or name…"
-            dark
-          />
-        </div>
-
         {/* Trust signals */}
-        <div className="mt-6 flex items-center justify-center gap-7 flex-wrap">
+        <div className="mt-9 flex items-center justify-center gap-6 flex-wrap">
           {[
-            'Public records checked',
-            'Direct giving paths',
-            'Private by design',
-            'Free to use',
+            'Transparent data',
+            'Fair comparison',
+            'Your privacy protected',
+            'Free forever',
           ].map(text => (
-            <span key={text} className="flex items-center gap-1.5 font-body text-[13px]" style={{ color: 'rgba(245,240,235,0.5)' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <span key={text} className="flex items-center gap-2 font-body text-[13px]" style={{ color: 'rgba(245,240,235,0.55)' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
               {text}
             </span>
           ))}
+        </div>
+
+        {/* Secondary search (smaller, for those who want it) */}
+        <div className="mt-10 max-w-[520px] mx-auto">
+          <p className="font-body text-[12px] text-muted-cream/60 mb-3 tracking-[0.04em]">
+            OR SEARCH BY NAME, LOCATION, ORGANIZATION
+          </p>
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            onSearch={handleSearch}
+            placeholder="Search…"
+            dark
+          />
+        </div>
+
+        {/* Org count badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-soft-gold/10 border border-soft-gold/20 mt-8">
+          <span className="w-1.5 h-1.5 rounded-full bg-soft-gold animate-pulse" />
+          <span className="font-body text-[12px] font-medium text-soft-gold tracking-[0.02em]">
+            {orgCount.toLocaleString()}+ organizations in our database
+          </span>
         </div>
       </div>
     </section>
@@ -170,7 +173,7 @@ function FeaturedCause() {
   )
 }
 
-// ─── Browse by Cause tiles ────────────────────────────────────────────────────
+// ─── Find Causes ──────────────────────────────────────────────────────────────
 function BrowseCauses() {
   const cats = useMemo(() => seededShuffle(NTEE_CATEGORIES, weekSeed()), [])
   const { data: catData } = useApi(() => getCategories(), [])
@@ -181,31 +184,23 @@ function BrowseCauses() {
   }, [catData])
 
   return (
-    <section className="bg-[#F8F5F0] border-t border-b border-light-grey py-10 md:py-16">
+    <section className="bg-[#F8F5F0] border-t border-light-grey py-14 md:py-20">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
         {/* Section header */}
-        <div className="flex items-end justify-between gap-4 mb-10 flex-wrap">
-          <div>
-            <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-2">
-              Browse by Cause
-            </p>
-            <h2
-              className="font-display italic text-deep-navy leading-tight tracking-[-0.015em]"
-              style={{ fontSize: 'clamp(28px, 3.5vw, 44px)' }}
-            >
-              Start with what you care about
-            </h2>
-          </div>
-          <Link
-            to="/directory"
-            className="shrink-0 inline-flex items-center gap-2 min-h-[44px] px-2 font-body text-[14px] text-cool-grey hover:text-deep-navy transition-colors"
+        <div className="mb-12">
+          <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-2">
+            Find by Cause
+          </p>
+          <h2
+            className="font-display italic text-deep-navy leading-tight tracking-[-0.015em]"
+            style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}
           >
-            View all
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </Link>
+            Organizations making change
+          </h2>
+          <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.6] max-w-[640px]">
+            Choose a cause that matters to you. See the nonprofits working on it, understand their financial standing, and find where to give.
+          </p>
         </div>
 
         {/* Cause grid — 2 cols mobile · 3 cols tablet · 4 cols desktop */}
@@ -216,8 +211,8 @@ function BrowseCauses() {
               <Link
                 key={cat.id}
                 to={`/category/${cat.id}`}
-                className="group flex flex-col justify-between bg-white border border-light-grey rounded-xl px-5 py-4 hover:border-soft-gold hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
-                style={{ minHeight: '90px' }}
+                className="group flex flex-col justify-between bg-white border border-light-grey rounded-xl px-5 py-5 hover:border-soft-gold/40 hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
+                style={{ minHeight: '100px' }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-body text-[15px] font-semibold text-deep-navy leading-snug tracking-[0.01em] group-hover:text-soft-gold transition-colors duration-150">
@@ -225,17 +220,30 @@ function BrowseCauses() {
                   </span>
                   <svg
                     width="8" height="12" viewBox="0 0 8 12"
-                    className="shrink-0 mt-[3px] opacity-20 group-hover:opacity-70 transition-opacity duration-200"
+                    className="shrink-0 mt-[3px] opacity-25 group-hover:opacity-100 transition-opacity duration-200"
                   >
-                    <polygon points="4,0 8,6 4,12 0,6" fill="#C9A84C"/>
+                    <polygon points="4,0 8,6 4,12 0,6" fill="#C9A96E"/>
                   </svg>
                 </div>
-                <span className="font-body text-[12px] text-cool-grey mt-2">
+                <span className="font-body text-[13px] text-cool-grey/70 mt-3">
                   {count != null ? `${count.toLocaleString()} organizations` : `${cat.subs.length} subcategories`}
                 </span>
               </Link>
             )
           })}
+        </div>
+
+        {/* Link to see all */}
+        <div className="mt-10 text-center">
+          <Link
+            to="/directory"
+            className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
+          >
+            See all causes and search organizations
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </Link>
         </div>
       </div>
     </section>

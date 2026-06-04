@@ -165,6 +165,7 @@ export default function Directory() {
   const [currentPage, setCurrentPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
   const searchMode = 'browse'
   const { isSaved, toggle: toggleSave } = useSavedOrgs()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -365,10 +366,41 @@ export default function Directory() {
             className="mt-7 max-w-[640px]"
           />
 
-          {/* Top filter toolbar — all breakpoints. Full filter set lives in the
-              drawer (Filters button); the discovery toggles are surfaced here
-              because they're the point of the directory. */}
-          {searchMode === 'browse' && <div className="mt-6 flex items-center gap-2 flex-wrap">
+          {/* Filters collapse/expand toggle */}
+          {searchMode === 'browse' && (
+            <button
+              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              className="mt-7 inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all duration-150"
+              style={{
+                backgroundColor: filtersExpanded || activeFilterCount > 0 ? '#F8F5F0' : 'transparent',
+                borderColor: filtersExpanded || activeFilterCount > 0 ? '#E5E0DB' : '#E5E0DB',
+                color: '#0A1628',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="min-w-[16px] h-4 flex items-center justify-center bg-deep-navy text-soft-gold text-[10px] font-bold rounded-full px-1">
+                  {activeFilterCount}
+                </span>
+              )}
+              <svg
+                width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                style={{ transform: filtersExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 150ms' }}
+              >
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+          )}
+
+          {/* Filters section — collapsible */}
+          <div className={`overflow-hidden transition-all duration-300 ${filtersExpanded ? 'max-h-[500px] mt-4' : 'max-h-0 mt-0'}`}>
+            {/* Top filter toolbar — all breakpoints. Full filter set lives in the
+                drawer (Filters button); the discovery toggles are surfaced here
+                because they're the point of the directory. */}
+            {searchMode === 'browse' && <div className="flex items-center gap-2 flex-wrap pb-4">
             <button
               onClick={() => setFilterSheetOpen(true)}
               title="Open all filters — cause, state, revenue size, financial tier, sort, and more"
@@ -496,6 +528,7 @@ export default function Directory() {
               </div>
             </div>
           </div>}
+          </div>
 
           {/* Subcategory pills when a single category is active — all breakpoints */}
           {searchMode === 'browse' && activeFilters.length === 1 && (NTEE_SUBCATEGORIES[activeFilters[0]]?.length ?? 0) > 0 && (
