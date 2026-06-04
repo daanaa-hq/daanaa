@@ -63,6 +63,7 @@ export default function Footer() {
                 { label: 'How It Works', to: '/how-it-works' },
                 { label: 'How We Score', to: '/methodology' },
                 { label: 'Sector Health', to: '/sector-health' },
+                { label: 'Guides', to: '/guides' },
                 { label: 'FAQ', to: '/faq' },
               ].map(({ label, to }) => (
                 <li key={label}>
