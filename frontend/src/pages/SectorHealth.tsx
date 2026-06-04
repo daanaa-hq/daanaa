@@ -7,7 +7,7 @@ import type { ApiSectorHealth } from '../data/api'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../components/ui/tooltip'
 
 type SortKey = 'name' | 'total_orgs' | 'at_risk_pct' | 'avg_months_reserve' | 'avg_program_pct'
-type GroupFilter = 'all' | 'direct_service' | 'mission_infrastructure' | 'asset_stewards' | 'endowment_capital'
+type GroupFilter = 'all' | 'direct_service' | 'mission_infrastructure' | 'research_academia' | 'foundations' | 'membership_advocacy' | 'religion_spiritual' | 'international_development' | 'asset_stewards'
 
 // NTEE major code → operating model group
 const NTEE_GROUP: Record<string, GroupFilter> = {
@@ -19,31 +19,35 @@ const NTEE_GROUP: Record<string, GroupFilter> = {
   N: 'direct_service',   // Recreation, Sports
   O: 'direct_service',   // Youth Development
   P: 'direct_service',   // Human Services
-  Q: 'direct_service',   // International
+  Q: 'international_development', // International
   R: 'direct_service',   // Civil Rights
-  X: 'direct_service',   // Religion
   A: 'mission_infrastructure', // Arts, Culture
   B: 'mission_infrastructure', // Education
   C: 'mission_infrastructure', // Environment
   E: 'mission_infrastructure', // Health Care
   S: 'mission_infrastructure', // Community Improvement
-  U: 'mission_infrastructure', // Science & Technology
-  V: 'mission_infrastructure', // Social Science
+  U: 'research_academia', // Science & Technology
+  V: 'research_academia', // Social Science
   W: 'mission_infrastructure', // Public Benefit
   L: 'asset_stewards',   // Housing, Shelter
   M: 'asset_stewards',   // Public Safety
   Y: 'asset_stewards',   // Mutual Benefit
-  G: 'endowment_capital', // Disease Research
-  H: 'endowment_capital', // Medical Research
-  T: 'endowment_capital', // Philanthropy, Voluntarism
+  G: 'research_academia', // Disease Research
+  H: 'research_academia', // Medical Research
+  T: 'foundations', // Philanthropy, Voluntarism
+  X: 'religion_spiritual', // Religion
 }
 
 const GROUP_META: Record<GroupFilter, { label: string; color: string; dot: string; bg: string; border: string; badge: string }> = {
-  all:                   { label: 'All sectors', color: 'text-deep-navy', dot: '#0A1628', bg: '', border: '', badge: 'bg-deep-navy/10 text-deep-navy' },
-  direct_service:        { label: 'Direct Service', color: 'text-emerald-700', dot: '#059669', bg: 'bg-emerald-50/40', border: 'border-l-4 border-l-emerald-400', badge: 'bg-emerald-100 text-emerald-700' },
-  mission_infrastructure:{ label: 'Mission Infrastructure', color: 'text-blue-700', dot: '#2563EB', bg: 'bg-blue-50/40', border: 'border-l-4 border-l-blue-400', badge: 'bg-blue-100 text-blue-700' },
-  asset_stewards:        { label: 'Asset Stewards', color: 'text-amber-700', dot: '#D97706', bg: 'bg-amber-50/40', border: 'border-l-4 border-l-amber-400', badge: 'bg-amber-100 text-amber-700' },
-  endowment_capital:     { label: 'Endowment & Capital', color: 'text-purple-700', dot: '#7C3AED', bg: 'bg-purple-50/40', border: 'border-l-4 border-l-purple-400', badge: 'bg-purple-100 text-purple-700' },
+  all:                      { label: 'All sectors', color: 'text-deep-navy', dot: '#0A1628', bg: '', border: '', badge: 'bg-deep-navy/10 text-deep-navy' },
+  direct_service:           { label: 'Direct Service', color: 'text-emerald-700', dot: '#059669', bg: 'bg-emerald-50/40', border: 'border-l-4 border-l-emerald-400', badge: 'bg-emerald-100 text-emerald-700' },
+  mission_infrastructure:   { label: 'Mission Infrastructure', color: 'text-blue-700', dot: '#2563EB', bg: 'bg-blue-50/40', border: 'border-l-4 border-l-blue-400', badge: 'bg-blue-100 text-blue-700' },
+  research_academia:        { label: 'Research & Academia', color: 'text-indigo-700', dot: '#4F46E5', bg: 'bg-indigo-50/40', border: 'border-l-4 border-l-indigo-400', badge: 'bg-indigo-100 text-indigo-700' },
+  foundations:              { label: 'Foundations', color: 'text-purple-700', dot: '#7C3AED', bg: 'bg-purple-50/40', border: 'border-l-4 border-l-purple-400', badge: 'bg-purple-100 text-purple-700' },
+  membership_advocacy:      { label: 'Membership & Advocacy', color: 'text-rose-700', dot: '#E11D48', bg: 'bg-rose-50/40', border: 'border-l-4 border-l-rose-400', badge: 'bg-rose-100 text-rose-700' },
+  religion_spiritual:       { label: 'Religion & Spiritual', color: 'text-amber-700', dot: '#B45309', bg: 'bg-amber-50/40', border: 'border-l-4 border-l-amber-400', badge: 'bg-amber-100 text-amber-700' },
+  international_development: { label: 'International Development', color: 'text-cyan-700', dot: '#0891B2', bg: 'bg-cyan-50/40', border: 'border-l-4 border-l-cyan-400', badge: 'bg-cyan-100 text-cyan-700' },
+  asset_stewards:           { label: 'Asset Stewards', color: 'text-orange-700', dot: '#EA580C', bg: 'bg-orange-50/40', border: 'border-l-4 border-l-orange-400', badge: 'bg-orange-100 text-orange-700' },
 }
 
 function formatMonths(v: number | null) {
@@ -183,52 +187,92 @@ export default function SectorHealth() {
           {/* Operating Model Groups */}
           <div className="mb-10">
             <h2 className="font-display italic text-deep-navy leading-tight mb-2" style={{ fontSize: 'clamp(22px, 2.8vw, 32px)' }}>
-              Four operating models, four different peer contexts
+              Eight operating models, eight different peer contexts
             </h2>
             <p className="font-body text-[15px] text-cool-grey leading-[1.7] mb-6 max-w-[680px]">
-              Peer financial context means different things depending on how an organization operates. A food bank with thin reserves may be deploying every dollar into direct service. A land trust holding 40 months of reserves is maintaining capital for long-term conservation. We compare organizations within their operating model to show meaningful peer context, not across all nonprofits.
+              Peer financial context means different things depending on how an organization operates. A food bank with thin reserves may be deploying every dollar into direct service. A foundation holding capital deploys strategically over years. We compare organizations within their operating model to show meaningful peer context, not across all nonprofits.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 {
                   name: 'Direct Service',
-                  orgs: '157,816',
-                  reserve: '9.7 mo',
-                  prog: '48%',
-                  desc: 'Human services, food, employment, mental health, youth, recreation',
+                  orgs: '22,916',
+                  reserve: '10.3 mo',
+                  prog: '37.3%',
+                  desc: 'Food banks, job training, animal rescue, emergency response, mental health',
                   color: 'border-emerald-200 bg-emerald-50',
                   badge: 'text-emerald-700 bg-emerald-100',
-                  note: 'Thin reserves = mission deployment',
+                  note: 'Lean by design, high program efficiency',
                 },
                 {
                   name: 'Mission Infrastructure',
-                  orgs: '133,369',
-                  reserve: '13 mo',
-                  prog: '39%',
-                  desc: 'Education, health, arts, environment, community development, science',
+                  orgs: '26,413',
+                  reserve: '13.4 mo',
+                  prog: '40.4%',
+                  desc: 'Schools, hospitals, health systems, arts organizations, libraries',
                   color: 'border-blue-200 bg-blue-50',
                   badge: 'text-blue-700 bg-blue-100',
-                  note: 'Moderate reserves, programs backed by physical assets',
+                  note: 'Assets support program delivery',
+                },
+                {
+                  name: 'Research & Academia',
+                  orgs: '10,729',
+                  reserve: '8.8 mo',
+                  prog: '66.1%',
+                  desc: 'Universities, medical research, scientific institutions',
+                  color: 'border-indigo-200 bg-indigo-50',
+                  badge: 'text-indigo-700 bg-indigo-100',
+                  note: 'Program-heavy with grant passthrough',
+                },
+                {
+                  name: 'Foundations',
+                  orgs: '3,266',
+                  reserve: '34.3 mo',
+                  prog: '34.2%',
+                  desc: 'Grantmakers, endowments, philanthropies',
+                  color: 'border-purple-200 bg-purple-50',
+                  badge: 'text-purple-700 bg-purple-100',
+                  note: 'Hold and deploy capital strategically',
+                },
+                {
+                  name: 'Membership & Advocacy',
+                  orgs: '2,940',
+                  reserve: '8.4 mo',
+                  prog: '33.1%',
+                  desc: 'Member organizations, advocacy networks, voluntarism centers',
+                  color: 'border-rose-200 bg-rose-50',
+                  badge: 'text-rose-700 bg-rose-100',
+                  note: 'Revenue driven by membership support',
+                },
+                {
+                  name: 'Religion & Spiritual',
+                  orgs: '3,764',
+                  reserve: '20.2 mo',
+                  prog: '14.2%',
+                  desc: 'Faith communities, congregations, spiritual organizations',
+                  color: 'border-amber-200 bg-amber-50',
+                  badge: 'text-amber-700 bg-amber-100',
+                  note: 'Often volunteer-heavy with community focus',
+                },
+                {
+                  name: 'International Development',
+                  orgs: '601',
+                  reserve: '9.5 mo',
+                  prog: '27.2%',
+                  desc: 'Cross-border development, humanitarian aid, international relief',
+                  color: 'border-cyan-200 bg-cyan-50',
+                  badge: 'text-cyan-700 bg-cyan-100',
+                  note: 'Efficient cross-border operations',
                 },
                 {
                   name: 'Asset Stewards',
-                  orgs: '51,627',
-                  reserve: '30 mo',
-                  prog: '36%',
-                  desc: 'Housing, public safety, libraries, museums, cultural heritage, sports',
-                  color: 'border-amber-200 bg-amber-50',
-                  badge: 'text-amber-700 bg-amber-100',
-                  note: 'Physical assets are the mission infrastructure',
-                },
-                {
-                  name: 'Endowment & Capital',
-                  orgs: '13,396',
-                  reserve: '39+ mo',
-                  prog: '19%',
-                  desc: 'Grantmaking, conservation, scholarships, historical preservation',
-                  color: 'border-purple-200 bg-purple-50',
-                  badge: 'text-purple-700 bg-purple-100',
-                  note: 'Hold and deploy capital — different benchmarks apply',
+                  orgs: '844',
+                  reserve: '11.4 mo',
+                  prog: '42.3%',
+                  desc: 'Nursing homes, hospitals, facilities with physical infrastructure',
+                  color: 'border-orange-200 bg-orange-50',
+                  badge: 'text-orange-700 bg-orange-100',
+                  note: 'Physical assets central to mission',
                 },
               ].map(g => (
                 <div key={g.name} className={`p-4 rounded-xl border ${g.color}`}>
@@ -257,12 +301,11 @@ export default function SectorHealth() {
           {/* Lead finding */}
           <div className="mb-12 p-6 rounded-2xl bg-amber-50 border border-amber-200/80">
             <p className="font-body text-[15px] text-deep-navy leading-[1.7]">
-              <strong>Among organizations with complete public filings, direct service organizations tend to show thinner financial cushions.</strong>{' '}
-              Direct Service organizations — human services, food banks, mental health, youth development — show a median 9.7 months of reserves in available IRS data.
-              Asset Steward organizations show 30 months. Endowment and capital organizations show 39 or more.
+              <strong>Financial patterns differ dramatically by operating model.</strong>{' '}
+              Direct Service organizations average 10.3 months of reserves. Research & Academia averages 8.8 months — they're grant-heavy and spend the money on programs. Foundations average 34.3 months because they hold capital for strategic deployment. Religion & Spiritual organizations average 20.2 months. These differences reflect how organizations are structured, not how well they're managed.
             </p>
             <p className="mt-3 font-body text-[13px] text-cool-grey">
-              These patterns may reflect operating model differences rather than management quality. Reserve levels that look thin for one type of organization may be appropriate for another — a food bank spending every dollar on meals and a land trust holding conservation property operate under completely different financial structures. This data covers 356,000 organizations with complete filings. It does not represent all 1.63 million indexed nonprofits.
+              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. This data covers 71,473 organizations with complete financial filings. It does not represent all 1.63 million indexed nonprofits. Patterns in the data reflect organizations with detailed filings — many small and simplified filers report less financial detail.
             </p>
           </div>
 
