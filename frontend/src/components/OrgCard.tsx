@@ -206,7 +206,6 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
         {/* Compare hidden on mobile — too small to be useful */}
         {!hideCompare && <span className="hidden md:contents"><CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} /></span>}
         {onToggleSave && <FavoriteButton isSaved={isSaved} onClick={handleBookmark} />}
-        <AddButton inList={inList} onClick={handleAddToList} />
       </div>
     </Link>
   )
@@ -342,7 +341,6 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         <div className="flex items-center justify-end gap-1">
           {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
           {onToggleSave && <FavoriteButton isSaved={isSaved} onClick={handleBookmark} />}
-          <AddButton inList={inList} onClick={handleAddToList} />
         </div>
       </div>
     </Link>

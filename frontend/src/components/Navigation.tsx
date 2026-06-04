@@ -101,7 +101,6 @@ export default function Navigation({ solid = true }: NavigationProps) {
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center gap-3">
-            <GivingListDrawer />
             <Link
               to="/wallet"
               className="relative inline-flex items-center gap-1.5 px-4 py-[11px] rounded-full font-body text-[13px] transition-all duration-150"

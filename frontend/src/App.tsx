@@ -13,9 +13,9 @@ const HowItWorks = lazy(() => import('./pages/HowItWorks'))
 const Wallet = lazy(() => import('./pages/Wallet'))
 const ForNonprofits = lazy(() => import('./pages/ForNonprofits'))
 const About = lazy(() => import('./pages/About'))
-const GivingListPage = lazy(() => import('./pages/GivingListPage'))
-const GivingReview = lazy(() => import('./pages/GivingReview'))
-const GivingConfirmation = lazy(() => import('./pages/GivingConfirmation'))
+// const GivingListPage = lazy(() => import('./pages/GivingListPage'))  // Giving List feature hidden
+// const GivingReview = lazy(() => import('./pages/GivingReview'))  // Giving List feature hidden
+// const GivingConfirmation = lazy(() => import('./pages/GivingConfirmation'))  // Giving List feature hidden
 const TiersPage = lazy(() => import('./pages/TiersPage'))
 const GuidesPage = lazy(() => import('./pages/GuidesPage'))
 const FAQPage = lazy(() => import('./pages/FAQPage'))
@@ -53,9 +53,9 @@ export default function App() {
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
             <Route path="/about" element={<About />} />
-            <Route path="/giving-list" element={<GivingListPage />} />
-            <Route path="/giving-list/review" element={<GivingReview />} />
-            <Route path="/giving-list/confirmation" element={<GivingConfirmation />} />
+            {/* <Route path="/giving-list" element={<GivingListPage />} /> */}
+            {/* <Route path="/giving-list/review" element={<GivingReview />} /> */}
+            {/* <Route path="/giving-list/confirmation" element={<GivingConfirmation />} /> */}
             <Route path="/tiers" element={<TiersPage />} />
             <Route path="/methodology" element={<Methodology />} />
             <Route path="/sector-health" element={<SectorHealth />} />
