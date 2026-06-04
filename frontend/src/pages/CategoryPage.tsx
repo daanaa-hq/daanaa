@@ -18,29 +18,29 @@ export default function CategoryPage() {
       {/* Header */}
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-8">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream/50">/</span>
-            <Link to="/directory" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Directory</Link>
+            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Causes</Link>
             <span className="text-muted-cream/50">/</span>
             <span className="font-body text-[12px] text-muted-cream">{category.name}</span>
           </div>
           <div className="max-w-[640px]">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-6 h-px bg-soft-gold/50" />
-              <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Category</span>
+              <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Cause</span>
             </div>
             <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
               {category.name}
             </h1>
-            <p className="mt-3 font-body text-[16px] text-muted-cream">
-              {category.subs.length} subcategories · IRS NTEE category {category.id}
+            <p className="mt-4 font-body text-[17px] leading-[1.6] text-muted-cream max-w-[560px]">
+              Organizations working in this area. Find one that aligns with your values, understand their financial standing, and give where it matters to you.
             </p>
             <Link
               to={`/directory?category=${category.id}`}
-              className="mt-7 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+              className="mt-8 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
             >
-              Browse all {category.name} nonprofits
+              View organizations in {category.name}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
@@ -54,13 +54,13 @@ export default function CategoryPage() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-6 h-px bg-soft-gold/50" />
-            <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Subcategories</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Focus Areas</span>
           </div>
           <h2
             className="font-display italic text-deep-navy mb-8"
             style={{ fontSize: 'clamp(20px, 3vw, 30px)' }}
           >
-            Explore by subcategory
+            Narrow your focus
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

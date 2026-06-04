@@ -93,11 +93,10 @@ export default function MeetInvisible() {
           The invisible 97%
         </span>
         <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(34px, 6vw, 68px)' }}>
-          You have heard of almost none of them
+          Many are doing real work. Most are just invisible.
         </h1>
         <p className="font-body text-[17px] text-muted-cream leading-[1.7] mt-6 max-w-[560px] mx-auto">
-          There are 1.6 million tax-deductible nonprofits in America. A handful are household names.
-          The rest do real work, close to home and far from the headlines.
+          Of 1.6 million tax-deductible nonprofits in America, most operate without the visibility of household names. Many simply haven't published financial data yet. That doesn't make their work less real. Let's change that.
         </p>
       </section>
 
@@ -114,8 +113,8 @@ export default function MeetInvisible() {
       {/* The divider line */}
       <div className="max-w-[820px] mx-auto px-6 py-14 text-center">
         <div className="w-px h-12 bg-gradient-to-b from-transparent via-soft-gold/40 to-transparent mx-auto mb-4" />
-        <p className="font-display italic text-warm-cream text-[26px]">And the ones doing the quiet work</p>
-        <p className="font-body text-[14px] text-muted-cream/70 mt-2">Real organizations. Real missions. Ready to be found and supported.</p>
+        <p className="font-display italic text-warm-cream text-[26px]">The rest of the story</p>
+        <p className="font-body text-[14px] text-muted-cream/70 mt-2">Organizations that deserve to be found and supported.</p>
       </div>
 
       {/* Real invisible orgs */}
@@ -134,13 +133,13 @@ export default function MeetInvisible() {
       {/* CTA */}
       <section className="max-w-[820px] mx-auto px-6 pb-32 text-center">
         <p className="font-display italic text-warm-cream leading-[1.15]" style={{ fontSize: 'clamp(26px, 4vw, 40px)' }}>
-          1.6 million tax-deductible nonprofits, each doing real work.<br />Most are just waiting to be found.
+          1.6 million nonprofits doing the work.<br />You just discovered 18 of them.
         </p>
         <Link
           to="/directory"
           className="inline-flex items-center gap-2 mt-8 px-9 py-4 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold hover:bg-bright-gold transition-colors"
         >
-          Start exploring
+          Explore more
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </Link>
       </section>

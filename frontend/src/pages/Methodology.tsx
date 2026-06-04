@@ -429,33 +429,39 @@ export default function Methodology() {
             </ul>
           </Section>
 
-          <Section label="Data completeness" title="Three tiers of data — three levels of display">
+          <Section label="Data completeness" title="Three scoring tiers — transparency about data quality">
             <p>
-              Not every organization has the same amount of public financial data. Daanaa displays what exists — and only what exists. No fabrication.
+              Not every organization has the same amount of public financial data. Daanaa scores what exists — and only what exists. No fabrication. Three tiers reflect actual data availability:
             </p>
             <div className="mt-4 space-y-3">
               {[
                 {
-                  tier: 'Fully Scored',
+                  tier: 'Tier A: Complete Data',
                   count: '71,473 organizations',
-                  desc: 'Complete financial fingerprint: revenue, expenses, assets, net assets, reserves, and program %. Full two-scale assessment: Visibility tier + Financial Health tier, operating model, peer cell size. Ready for decisions.',
+                  desc: 'Full financial fingerprint from IRS Form 990: revenue, expenses, assets, net assets, reserves, program spending %. All metrics present. Scored with maximum confidence across all four dimensions.',
                   color: 'border-emerald-300 bg-emerald-50',
                 },
                 {
-                  tier: 'Partially Scored',
-                  count: '~425,000 organizations',
-                  desc: 'Revenue and some financials, but missing program expense breakdown. Can show: revenue band, visibility tier, operating model. Cannot show: Financial Health tier (requires complete data). Future work: derive missing program % to expand full-score coverage.',
+                  tier: 'Tier B: Deductible, Partial Data',
+                  count: '308,517 organizations',
+                  desc: 'Revenue + expenses from IRS Form 990, but program expense breakdown missing. Program % derived from sector benchmarks (NTEE-level defaults). Donor-deductible. Fair peer-based Financial Health tier within operating model + revenue band.',
                   color: 'border-amber-300 bg-amber-50',
                 },
                 {
-                  tier: 'Indexed',
-                  count: '~1.1 million organizations',
-                  desc: 'IRS recognized and donation eligible. No financial filing data. Shown with: name, location, cause type, IRS standing. No financial score. Most are small volunteer organizations filing simplified postcard returns.',
+                  tier: 'Tier C: Non-Deductible, Partial Data',
+                  count: '158,243 organizations',
+                  desc: 'Revenue + expenses present, but not donor-deductible (unions, professional associations, health plans, mutual benefit orgs). Program % derived from sector benchmarks. Same peer-based methodology as Tier B. Scored fairly within non-deductible peer groups.',
+                  color: 'border-rose-300 bg-rose-50',
+                },
+                {
+                  tier: 'Unscored: No Financial Data',
+                  count: '~1.2 million organizations',
+                  desc: 'Indexed by IRS but lacking revenue/expense data. Shown with: name, location, mission, cause type. Can submit financial data to get scored (self-reporting). Users encouraged to verify directly with organization.',
                   color: 'border-cool-grey/30 bg-warm-cream',
                 },
               ].map(t => (
                 <div key={t.tier} className={`flex gap-4 p-4 rounded-xl border ${t.color}`}>
-                  <div className="shrink-0 w-28">
+                  <div className="shrink-0 w-48">
                     <p className="font-body text-[13px] font-semibold text-deep-navy">{t.tier}</p>
                     <p className="font-body text-[11px] text-cool-grey/70 mt-0.5">{t.count}</p>
                   </div>
@@ -464,8 +470,11 @@ export default function Methodology() {
               ))}
             </div>
             <Callout>
-              <strong>The absence of a score is not a negative signal.</strong> Partial data is labeled honestly — you know what you're looking at. A fully scored org is more trustworthy than a partially scored one (more data = more confidence). But partial is always better than fabricated. We show what we know, not what we guess.
+              <strong>The absence of a score is honest, not negative.</strong> Tier A is more confident than Tier B/C (fewer estimates). Tier B/C are more confident than unscored (at least we have revenue data). Unscored is always better than fabricated. We show what we know, label what we estimate, and never invent what we don't have.
             </Callout>
+            <p className="mt-4">
+              <strong>Help us score the unscored:</strong> Organizations in the unscored group can submit their financial data at daanaa.org/submit-data. Once verified (5–7 days), they receive a Financial Health tier and appear in scored search results.
+            </p>
           </Section>
 
           <Section label="How we built this" title="The research behind eight operating models">
@@ -525,6 +534,34 @@ export default function Methodology() {
             </div>
             <Callout>
               Data currency varies by source. The IRS registration list is updated quarterly. 990 financials reflect the most recent filing on record, which may be 1 to 3 years behind the current fiscal year. Score dates reflect when Daanaa last processed the available data, not when the organization filed.
+            </Callout>
+          </Section>
+
+          <Section label="Future: Interactive discovery" title="Visualizations we're planning">
+            <p>
+              The methodology behind peer groups is powerful but abstract. We're exploring interactive visualizations that make the structure tangible:
+            </p>
+            <div className="mt-6 space-y-4">
+              {[
+                {
+                  name: '8×8 Discovery Matrix',
+                  desc: 'An interactive grid where each cell is an (operating model × revenue band) peer group. Hover to see peer group size. Click to explore orgs in that cell. Highlighted squares show where searches cluster. Visual proof that small and large orgs exist in every quadrant.',
+                  color: 'text-emerald-700',
+                },
+                {
+                  name: 'Manhattan-Style 3D Visualization',
+                  desc: 'Each operating model is a "building neighborhood" in 3D space. Floors represent revenue bands. "Tenants" (organizations) are parcels on each floor sized by revenue. Click a floor to see all orgs in that peer group. Rotate the neighborhood to compare models. Shows simultaneously: peer group structure, org size, distribution, and density.',
+                  color: 'text-blue-700',
+                },
+              ].map(v => (
+                <div key={v.name} className="p-5 rounded-xl border border-soft-gold/20 bg-soft-gold/5">
+                  <p className={`font-body text-[14px] font-semibold ${v.color} mb-2`}>{v.name}</p>
+                  <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{v.desc}</p>
+                </div>
+              ))}
+            </div>
+            <Callout>
+              Both visualizations serve the same purpose: make peer groups visible and queryable. The methodology is defensible; the visualization is what makes it intuitive. We're building these so users can explore the structure themselves instead of reading about it.
             </Callout>
           </Section>
 
