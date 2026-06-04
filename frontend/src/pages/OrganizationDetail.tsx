@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
-import { getTierSummary, getTierFromOrg, getFinancialHealth, getV4FinancialHealth, PASSING_BANDS, TIER_COLORS } from '../components/TrustBadge'
+import { getTierSummary, getTierFromOrg, getV4FinancialHealth, TIER_COLORS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
 import LampMark from '../components/LampMark'
@@ -367,7 +367,6 @@ export default function OrganizationDetail() {
 
   const lampTier     = getTierFromOrg(apiOrg!)
   const trustSummary = getTierSummary(lampTier, apiOrg!)
-  const finHealth    = getFinancialHealth(apiOrg!)
   const v4Health     = getV4FinancialHealth(apiOrg!)
   const badges = getOrgBadges(apiOrg!)
 
@@ -807,65 +806,6 @@ export default function OrganizationDetail() {
                   )}
                 </div>
               )}
-              {/* Independently-verified financial health -- only where real 990 analysis exists */}
-              {finHealth ? (
-                <div
-                  className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg border"
-                  style={{
-                    borderColor: PASSING_BANDS.includes(finHealth.band) ? 'rgba(74,222,128,0.35)' : 'rgba(245,158,11,0.35)',
-                    background:  PASSING_BANDS.includes(finHealth.band) ? 'rgba(74,222,128,0.10)' : 'rgba(245,158,11,0.10)',
-                  }}
-                >
-                  <span className="font-body text-[10px] tracking-[0.06em] uppercase text-muted-cream/60">
-                    Peer financial context
-                  </span>
-                  <span className="font-body text-[14px] font-semibold" style={{ color: PASSING_BANDS.includes(finHealth.band) ? '#4ADE80' : '#F59E0B' }}>
-                    {finHealth.band} · {finHealth.score}/100
-                  </span>
-                  <span className="font-body text-[10px] text-muted-cream/60 text-center leading-[1.4]">
-                    Ranks above {finHealth.score}% of similar nonprofits on financial scale and reserves
-                  </span>
-                  {/* Behavioral signals */}
-                  {scoreSignals(apiOrg!).map((s, i) => (
-                    <span key={i} className="flex items-center gap-1 text-[11px]">
-                      <span>{s.ok ? '✅' : s.warn ? '⚠️' : '○'}</span>
-                      <span style={{ color: s.ok ? '#5CA878' : s.warn ? '#C87070' : 'rgba(255,248,230,0.35)' }}>
-                        {s.label}
-                      </span>
-                    </span>
-                  ))}
-                  {scoreSignals(apiOrg!).length > 0 && (
-                    <span className="font-body text-[11px] text-muted-cream/70 italic text-center px-1">
-                      "{summaryLine(apiOrg!)}"
-                    </span>
-                  )}
-                  {(['Growing', 'Just Starting'].includes(finHealth.band) && apiOrg!.score_tier === 'full') && (
-                    <span className="font-body text-[10px] text-muted-cream/50 text-center leading-[1.4] px-1">
-                      To improve: aim for 75%+ of spending going directly to programs, with at least 3 months of savings on hand.
-                    </span>
-                  )}
-                  {apiOrg!.score_tier != null && apiOrg!.score_tier !== 'full' && (
-                    <span className="font-body text-[10px] text-muted-cream/40 text-center">
-                      Score based on limited records
-                    </span>
-                  )}
-                  {apiOrg!.latest_tax_year && (
-                    <a
-                      href={`https://projects.propublica.org/nonprofits/organizations/${apiOrg!.EIN.replace(/-/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-body text-[10px] text-muted-cream/50 hover:text-soft-gold transition-colors"
-                    >
-                      Annual report · {apiOrg!.latest_tax_year}
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                    </a>
-                  )}
-                </div>
-              ) : (
-                <span className="font-body text-[11px] text-muted-cream/50 max-w-[180px] text-center leading-[1.45]">
-                  Detailed financial analysis is not available yet. It needs a full annual report on file.
-                </span>
-              )}
               <button
                 onClick={() => setShowScoreExplainer(s => !s)}
                 className="font-body text-[11px] text-muted-cream/40 hover:text-soft-gold transition-colors"
@@ -874,11 +814,6 @@ export default function OrganizationDetail() {
               </button>
               {showScoreExplainer && (
                 <div className="w-full px-3 py-3 rounded-lg bg-white/5 border border-white/10 text-left space-y-2">
-                  {finHealth && (
-                    <p className="font-body text-[11px] text-muted-cream/80 leading-[1.5]">
-                      <strong className="text-muted-cream">{finHealth.band}</strong> means this org has a larger financial footprint than {finHealth.score}% of comparable groups. This is not a rating of impact, leadership, or community value.
-                    </p>
-                  )}
                   <p className="font-body text-[11px] text-muted-cream/70 leading-[1.5]">
                     We compare reserves, program spending, and revenue stability against nonprofits in the same cause area and revenue range. The 0-100 score shows where they stand within that group of {apiOrg!.peer_total ? apiOrg!.peer_total.toLocaleString() : 'similar'} orgs.
                   </p>

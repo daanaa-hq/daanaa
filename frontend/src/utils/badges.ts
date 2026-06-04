@@ -33,18 +33,10 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   const isScored = score != null && (org.data_source === 'propublica' || org.data_source === 'irs_soi')
   const sector = getSectorName(org.NTEE1)
 
-  // 0. Hidden gem — small, financially healthy, mission-focused, under the radar.
-  //    Surfaced first when present: this is the discovery moment.
-  if (org.is_hidden_gem === 1) {
-    badges.push({
-      id: 'hidden_gem',
-      label: 'Hidden gem',
-      detail: 'A small organization doing exceptional work quietly — healthy reserves, most of every dollar reaches the mission, and far below most donors’ radar. The kind of org you won’t find on a top-charity list.',
-      source: 'Daanaa ·revenue, reserves & program-spend analysis',
-      color: 'gold',
-      icon: 'star',
-    })
-  }
+  // 0. Hidden gem — hidden for now until we can explain clearly to average donors
+  // if (org.is_hidden_gem === 1) {
+  //   badges.push({ ... })
+  // }
 
   // 1. Tax-deductible — every org in our DB is an active 501(c)(3)
   badges.push({
@@ -56,54 +48,9 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
     icon: 'check-shield',
   })
 
-  // 2. Financial performance badges (scored orgs)
-  if (isScored && score != null) {
-    const pctAbove = Math.round(score)
-    const pctBetter = Math.max(1, 100 - pctAbove)
-    const peerLabel = org.peer_group
-      ? (org.revenue_band ? `${org.revenue_band.toLowerCase()}-budget ${sector}` : sector)
-      : sector
-
-    const scoreNote = 'Financial scale compares revenue size and balance-sheet reserves against similar nonprofits — not program quality or governance. A lower score may reflect organizational structure (e.g. endowment-funded, pass-through) rather than weakness.'
-
-    if (score >= 85) {
-      badges.push({
-        id: 'standout',
-        label: `Larger financial footprint · ${sector}`,
-        detail: `Financial context places this org among groups with a larger financial footprint among comparable ${peerLabel} nonprofits — based on revenue relative to peers (65%) and balance-sheet reserves (35%). ${scoreNote}`,
-        source: org.data_source === 'propublica' ? 'IRS Form 990 · ProPublica Nonprofit Explorer' : 'IRS SOI Extract · Form 990',
-        color: 'gold',
-        icon: 'star',
-      })
-    } else if (score >= 70) {
-      badges.push({
-        id: 'strong_performer',
-        label: `Larger financial footprint · ${sector}`,
-        detail: `Financial context places this org among groups with a larger financial footprint among comparable ${peerLabel} nonprofits — revenue size within its peer group (65%) combined with a reserve-ratio score (35%). ${scoreNote}`,
-        source: org.data_source === 'propublica' ? 'IRS Form 990 · ProPublica Nonprofit Explorer' : 'IRS SOI Extract · Form 990',
-        color: 'gold',
-        icon: 'trending-up',
-      })
-    } else if (score >= 50) {
-      badges.push({
-        id: 'peer_reviewed',
-        label: 'Financial context available',
-        detail: `Financial data is benchmarked against ${peerLabel} organizations of similar size. Ranked in the ${pctAbove}th percentile — typical financial footprint for similar groups. ${scoreNote}`,
-        source: org.data_source === 'propublica' ? 'IRS Form 990 · ProPublica Nonprofit Explorer' : 'IRS SOI Extract · Form 990',
-        color: 'blue',
-        icon: 'trending-up',
-      })
-    } else {
-      badges.push({
-        id: 'peer_reviewed',
-        label: 'Financial data found',
-        detail: `Financial data is public and has been benchmarked against peer organizations — ranked in the ${pctAbove}th percentile on financial scale (revenue and reserves). ${scoreNote}`,
-        source: org.data_source === 'propublica' ? 'IRS Form 990 · ProPublica Nonprofit Explorer' : 'IRS SOI Extract · Form 990',
-        color: 'blue',
-        icon: 'file-text',
-      })
-    }
-  }
+  // 2. Financial performance — moved to detail page "How is this scored?" section
+  // Card shows only lamp tier (primary signal). Financial Health details available on demand.
+  // if (isScored && score != null) { ... }
 
   // 3. 990 filing badge
   if (taxYear != null) {

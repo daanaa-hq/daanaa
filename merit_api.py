@@ -50,6 +50,18 @@ SELF_REPORTED_DISCLAIMER = (
     "Daanaa assumes no liability for accuracy."
 )
 
+BETA_WEBSITE_DISCLOSURE = (
+    "🔍 Website discovered via heuristic search and verified to exist, but NOT confirmed by the organization. "
+    "Always verify on their official channels before using. "
+    "Organizations can claim and update their information at daanaa.org/for-nonprofits"
+)
+
+BETA_DONATION_LINK_DISCLOSURE = (
+    "🔍 Donation link discovered automatically and NOT verified by the organization. "
+    "Always confirm this link on their official website before giving. "
+    "Help us verify: claim your profile at daanaa.org/for-nonprofits"
+)
+
 # ── Response cache ─────────────────────────────────────────────────────────────
 # Simple in-process time-keyed cache. Keys are strings, values are (payload, ts).
 # TTLs chosen per endpoint volatility. No external dependency (no Redis).
@@ -1014,7 +1026,7 @@ def ntee_categories():
 # deductibility!='2' keeps confirmed-deductible (1), by-treaty (4), and unknown (0)
 # while excluding the 3,379 orgs the IRS has explicitly marked non-deductible.
 # Orgs with null subsection (NCCS-only, unverifiable) are excluded.
-_DEDUCTIBILITY_FILTER = "subsection = '3' AND deductibility != '2'"
+_DEDUCTIBILITY_FILTER = "subsection = '3' AND deductibility = '1'"  # Only active tax-deductible 501(c)(3)
 
 
 def _donate_eligible_basic(subsection, deductibility):
