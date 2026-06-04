@@ -928,6 +928,14 @@ def get_organization(ein):
     else:
         disclosures['unscored_disclosure'] = UNSCORED_DISCLOSURE
 
+    # Beta disclosure: website discovered via heuristic, not org-verified
+    if org.get('website_status') == 'beta':
+        disclosures['website_disclosure'] = BETA_WEBSITE_DISCLOSURE
+
+    # Beta disclosure: donation link discovered via heuristic, not org-verified
+    if org.get('donate_url_status') == 'beta':
+        disclosures['donate_link_disclosure'] = BETA_DONATION_LINK_DISCLOSURE
+
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)

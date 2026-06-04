@@ -676,6 +676,33 @@ export default function OrganizationDetail() {
                   );
                 }
 
+                if ((org as any).website && apiOrg!.website_status === 'beta') {
+                  return (
+                    <div className="mt-5">
+                      <a
+                        href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={handleGiveClick}
+                        className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                      >
+                        Visit website
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                      </a>
+                      <p className="mt-1.5 font-body text-[11px] text-cool-grey/70 flex items-center gap-1.5">
+                        <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">⚠️ discovered</span>
+                        <span>·</span>
+                        <span>Not confirmed by the organization.</span>
+                        <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Verify</Link>
+                      </p>
+                      <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
+                        Always confirm on their official channels before donating. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
+                      </p>
+                      {certainPath}
+                    </div>
+                  );
+                }
+
                 if ((org as any).website && apiOrg!.website_status === 'ok') {
                   return (
                     <div className="mt-5">
