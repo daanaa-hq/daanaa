@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# CLAUDE.md — MeritGiving
+# CLAUDE.md — Daanaa
 
 ## Stewardship Commitment — Read before any work
 
