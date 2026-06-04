@@ -33,6 +33,8 @@ rsync -avz -e "ssh -i $SSH_KEY" \
   --exclude='.env' \
   --exclude='*.db.gz' \
   --exclude='venv' \
+  --exclude='data/*' \
+  --exclude='logs/*' \
   "$REPO_DIR/" "root@$DROPLET_IP:/opt/daanaa/" >> "$LOG_FILE" 2>&1 || {
   log "ERROR: Rsync to droplet failed"
   exit 1
