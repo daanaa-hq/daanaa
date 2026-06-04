@@ -122,6 +122,8 @@ def main():
             processed += 1
             if processed % 50 == 0:
                 log(f"  Progress: {processed}/{len(rows)} orgs ({_stats['found']} websites found)")
+                if not args.dry_run:
+                    conn.commit()  # Commit every 50 orgs to preserve progress
 
     if not args.dry_run:
         conn.commit()
