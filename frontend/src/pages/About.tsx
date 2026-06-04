@@ -20,14 +20,24 @@ export default function About() {
             <span className="text-muted-cream/50">/</span>
             <span className="font-body text-[12px] text-muted-cream">About</span>
           </div>
-          <div className="max-w-[720px]">
-            <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-3">Our Mission</p>
-            <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>
-              Mission driven. Impacting lives around us.
-            </h1>
-            <p className="mt-6 font-body text-[18px] leading-[1.7] text-muted-cream max-w-[620px]">
-              Nonprofits do the work that shouldn't have to wait for profit. We exist to help donors find them and give with confidence.
-            </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
+            <div className="max-w-[620px]">
+              <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-3">Our Mission</p>
+              <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(36px, 5vw, 64px)' }}>
+                Mission driven. Impacting lives around us.
+              </h1>
+              <p className="mt-6 font-body text-[18px] leading-[1.7] text-muted-cream max-w-[620px]">
+                Nonprofits do the work that shouldn't have to wait for profit. We exist to help donors find them and give with confidence.
+              </p>
+            </div>
+            {/* Logo — right */}
+            <div className="shrink-0 flex justify-center md:justify-end">
+              <img
+                src="/logo.png"
+                alt="Daanaa"
+                className="w-48 h-48 md:w-56 md:h-56 lg:w-72 lg:h-72 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]"
+              />
+            </div>
           </div>
         </div>
       </div>

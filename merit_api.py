@@ -633,6 +633,8 @@ def list_organizations():
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     direct_link = request.args.get('direct_link', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
+    has_website = request.args.get('has_website', '').strip() == '1'
+    recent = request.args.get('recent', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
     sort_by = request.args.get('sort', 'merit_score')
     order = request.args.get('order', 'desc')
@@ -696,6 +698,10 @@ def list_organizations():
         )
     if needs_funding:
         where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
+    if has_website:
+        where_clauses.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
+    if recent:
+        where_clauses.append("latest_tax_year IS NOT NULL AND latest_tax_year >= 2022")
     if cause:
         where_clauses.append(
             "EXISTS (SELECT 1 FROM json_each(cause_tags) WHERE value LIKE ?)"

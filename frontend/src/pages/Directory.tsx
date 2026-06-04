@@ -160,6 +160,8 @@ export default function Directory() {
   const [hiddenGem, setHiddenGem] = useState(searchParams.get('hidden_gem') === '1')
   const [directLink, setDirectLink] = useState(searchParams.get('direct_link') === '1')
   const [needsFunding, setNeedsFunding] = useState(searchParams.get('needs_funding') === '1')
+  const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
+  const [recent, setRecent] = useState(searchParams.get('recent') === '1')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
@@ -204,7 +206,7 @@ export default function Directory() {
   const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
   // Fused search mode: any meaningful query with no active structured filters
-  const hasAnyFilter = activeFilters.length > 0 || !!subFilter || !!stateFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || !!debouncedCause.trim()
+  const hasAnyFilter = activeFilters.length > 0 || !!subFilter || !!stateFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || hasWebsite || recent || !!debouncedCause.trim()
   const isFusedMode = !hasAnyFilter && debouncedQuery.trim().length >= 2
 
   const { data: orgsData, loading: orgsLoading, error: orgsError } = useApi(
@@ -222,9 +224,11 @@ export default function Directory() {
       hidden_gem: hiddenGem || undefined,
       direct_link: directLink || undefined,
       needs_funding: needsFunding || undefined,
+      has_website: hasWebsite || undefined,
+      recent: recent || undefined,
       cause: debouncedCause.trim() || undefined,
     }),
-    [activeFilters, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, needsFunding, debouncedCause, itemsPerPage]
+    [activeFilters, subFilter, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, needsFunding, hasWebsite, recent, debouncedCause, itemsPerPage]
   )
 
   const { data: fusedData, loading: fusedLoading } = useApi(
@@ -296,6 +300,8 @@ export default function Directory() {
     setHiddenGem(false)
     setDirectLink(false)
     setNeedsFunding(false)
+    setHasWebsite(false)
+    setRecent(false)
     setCause('')
     setDebouncedCause('')
     setCurrentPage(1)
@@ -305,6 +311,11 @@ export default function Directory() {
     searchParams.delete('state')
     searchParams.delete('revenue')
     searchParams.delete('min_tier')
+    searchParams.delete('hidden_gem')
+    searchParams.delete('direct_link')
+    searchParams.delete('needs_funding')
+    searchParams.delete('has_website')
+    searchParams.delete('recent')
     setSearchParams(searchParams)
   }
 
@@ -433,6 +444,12 @@ export default function Directory() {
               { key: 'dl', label: 'Direct donate link', tip: 'Give directly, no hunting for a donate page', on: directLink, color: '#16A34A', textOn: '#FFFFFF',
                 icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>,
                 toggle: () => { setDirectLink(!directLink); setCurrentPage(1); scrollTop() } },
+              { key: 'hw', label: 'Has a website', tip: 'A working website you can visit to learn more', on: hasWebsite, color: '#0EA5E9', textOn: '#FFFFFF',
+                icon: <><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></>,
+                toggle: () => { setHasWebsite(!hasWebsite); setCurrentPage(1); scrollTop() } },
+              { key: 'rc', label: 'Recently active', tip: 'Most recent public filing is from 2022 or later', on: recent, color: '#7C3AED', textOn: '#FFFFFF',
+                icon: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+                toggle: () => { setRecent(!recent); setCurrentPage(1); scrollTop() } },
             ].map(t => (
               <button
                 key={t.key}

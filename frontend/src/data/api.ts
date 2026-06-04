@@ -154,6 +154,8 @@ export async function getOrganizations(params?: {
   hidden_gem?: boolean;       // true = only small, healthy, mission-focused orgs
   direct_link?: boolean;      // true = only orgs with a detected donate URL
   needs_funding?: boolean;    // true = orgs with < 12 months of operating reserves
+  has_website?: boolean;      // true = only orgs with a verified, live website
+  recent?: boolean;           // true = only orgs whose latest filing is 2022 or later
   cause?: string;             // matches a cause tag (e.g. "food bank", "mental health")
 }): Promise<{
   organizations: ApiOrganization[];
@@ -178,6 +180,8 @@ export async function getOrganizations(params?: {
   if (params?.hidden_gem) sp.set('hidden_gem', '1');
   if (params?.direct_link) sp.set('direct_link', '1');
   if (params?.needs_funding) sp.set('needs_funding', '1');
+  if (params?.has_website) sp.set('has_website', '1');
+  if (params?.recent) sp.set('recent', '1');
   if (params?.cause) sp.set('cause', params.cause);
   return fetchJson(`/api/organizations?${sp.toString()}`);
 }
