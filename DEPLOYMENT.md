@@ -2,11 +2,12 @@
 
 ## Overview
 
-Daanaa now has three automated deployment pipelines:
+Daanaa now has **four automated pipelines**:
 
 1. **On-Push Deployment** — Auto-deploy to droplet when you push to `master`
 2. **Nightly Web Discovery Pipeline** — Runs at 11 PM, discovers websites and donation links
-3. **Nightly Database Sync** — Runs after pipeline, syncs updated database to droplet
+3. **Nightly Database Sync to Droplet** — Runs after pipeline (~11:45 PM), syncs database to public site
+4. **Early Morning Sync to Localhost** — Runs at 2 AM, pulls latest database from droplet so localhost matches public site
 
 ---
 
@@ -81,6 +82,30 @@ bash ~/meritgiving/scripts/deploy.sh
 
 **Logs:**
 - `~/meritgiving/logs/db_sync.log` — sync progress and status
+
+---
+
+## 4. Early Morning Sync to Localhost (Automatic)
+
+**When:** Every day at 2 AM (02:00)
+
+**What happens:**
+1. Pulls latest database from droplet (www.daanaa.org)
+2. Backs up current localhost database
+3. Restarts localhost API with new database
+4. Verifies both sites match (same org count, same scores date)
+
+**Why:** Keeps localhost in sync with public site so you're always testing against production data
+
+**Timeline:**
+- 11:00 PM — Web discovery pipeline starts
+- 11:30 PM — Database syncs TO droplet
+- 2:00 AM — Database syncs FROM droplet to localhost ← You wake up with fresh data
+- Throughout the day — You develop/test against production data
+
+**Logs:**
+- `~/meritgiving/logs/db_sync_from_droplet.log` — sync from droplet
+- Includes verification that both sites match
 
 ---
 
