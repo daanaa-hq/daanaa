@@ -7,7 +7,7 @@ LEAN_DB="/tmp/daanaa_web_sync.db"
 SRC_DB="/home/akbar/meritgiving/data/merit_registry.db"
 # Dropped from the synced catalog: ML/pipeline-only tables PLUS all user-write
 # tables (those live in daanaa_live.db on the droplet and must never be
-# overwritten by the catalog sync — see merit_api.py LIVE_DB_PATH split).
+# overwritten by the catalog sync — see daanaa_api.py LIVE_DB_PATH split).
 DROP_TABLES="org_embeddings propublica_financials donate_work_queue nccs_core_2019 page_cache donation_link_evidence human_review_queue release_batches agent_job_log scoring_runs waitlist link_feedback donate_handoffs org_interest org_claims feedback analytics_daily analytics_search visit_counter"
 LIVE_BACKUP_DIR="/home/akbar/meritgiving/backups"
 

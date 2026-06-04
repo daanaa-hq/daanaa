@@ -7,7 +7,7 @@ non-deductible, non-501(c)(3), or IRS-auto-revoked org. Fail closed.
 import sqlite3
 import pytest
 
-from merit_api import _donate_eligible_basic, _is_revoked
+from daanaa_api import _donate_eligible_basic, _is_revoked
 
 
 # --- basic gate (subsection + deductibility), no DB ---

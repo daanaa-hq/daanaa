@@ -61,5 +61,5 @@ echo ""
 
 echo "=========================================="
 echo "Done. If API shows FAIL, start it with:"
-echo "  screen -S merit_api -d -m python3 merit_app.py"
+echo "  screen -S daanaa_api -d -m python3 merit_app.py"
 echo "=========================================="

@@ -29,7 +29,7 @@ cat >> "$TMPFILE" <<'EOF'
 0 1 1 * *  /home/akbar/meritgiving/scripts/download_irs_soi.sh >> /home/akbar/meritgiving/autodev/logs/soi_download.log 2>&1
 
 # MERIT_AUTO: ensure API is running — every 15 minutes
-*/15 * * * *  pgrep -f merit_api.py > /dev/null || (source /home/akbar/meritgiving/venv/bin/activate && cd /home/akbar/meritgiving && python3 merit_api.py &) >> /home/akbar/meritgiving/autodev/logs/watchdog.log 2>&1
+*/15 * * * *  pgrep -f daanaa_api.py > /dev/null || (source /home/akbar/meritgiving/venv/bin/activate && cd /home/akbar/meritgiving && python3 daanaa_api.py &) >> /home/akbar/meritgiving/autodev/logs/watchdog.log 2>&1
 EOF
 
 crontab "$TMPFILE"

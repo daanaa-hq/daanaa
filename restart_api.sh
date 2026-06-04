@@ -2,7 +2,7 @@
 echo "=== KILLING EVERYTHING ON PORT 5000 / 8880 ==="
 fuser -k 5000/tcp 2>/dev/null || true
 fuser -k 8880/tcp 2>/dev/null || true
-pkill -9 -f "python.*merit_api\|python.*daanaa_api" 2>/dev/null || true
+pkill -9 -f "python.*daanaa_api\|python.*daanaa_api" 2>/dev/null || true
 pkill -9 -f "uvicorn" 2>/dev/null || true
 pkill -9 -f "flask" 2>/dev/null || true
 sleep 2
@@ -23,7 +23,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload \
   --access-logfile logs/gunicorn_access.log \
   --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \
   --error-logfile logs/daanaa_api.log \
-  --pid logs/merit_api.pid \
+  --pid logs/daanaa_api.pid \
   daanaa_api:app &
 API_PID=$!
 echo "API PID: $API_PID (gunicorn master)"
@@ -36,4 +36,4 @@ echo "=== STATS CHECK ==="
 curl -s http://localhost:5000/api/stats | python3 -m json.tool
 
 echo ""
-echo "Done. PID saved to logs/merit_api.pid"
+echo "Done. PID saved to logs/daanaa_api.pid"

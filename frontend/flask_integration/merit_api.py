@@ -3,7 +3,7 @@ MERIT API Blueprint for Flask
 ==============================
 Drop this file into your Flask project and register the blueprint.
 
-    from flask_integration.merit_api import merit_api_bp
+    from flask_integration.merit_api import daanaa_api_bp
     app.register_blueprint(merit_api_bp, url_prefix='/api')
 
 This connects your existing database to the MERIT React frontend.

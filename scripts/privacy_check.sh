@@ -29,7 +29,7 @@ if grep -rqnE "access-logformat" restart_api.sh 2>/dev/null; then
 fi
 
 # 4. CSP must stay strict — no unsafe-eval, no wildcard script/connect-src.
-if grep -nE "Content-Security-Policy|script-src|connect-src" merit_api.py | grep -qE "unsafe-eval|script-src[^;]*\*|connect-src[^;]*\*"; then
+if grep -nE "Content-Security-Policy|script-src|connect-src" daanaa_api.py | grep -qE "unsafe-eval|script-src[^;]*\*|connect-src[^;]*\*"; then
   note "CSP weakened (unsafe-eval or wildcard in script-src/connect-src)"
 fi
 

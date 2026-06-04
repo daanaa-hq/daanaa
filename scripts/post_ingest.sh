@@ -44,11 +44,11 @@ python3 scripts/recompute_percentiles.py
 echo ""
 
 echo "--- Step 3: Restart API ---"
-if [ -f restart_merit_api.sh ]; then
-    bash restart_merit_api.sh
+if [ -f restart_daanaa_api.sh ]; then
+    bash restart_daanaa_api.sh
     echo "API restarted."
 else
-    echo "No restart script found — restart merit_api.py manually."
+    echo "No restart script found — restart daanaa_api.py manually."
 fi
 echo ""
 
