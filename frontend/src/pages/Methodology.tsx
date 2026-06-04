@@ -74,7 +74,7 @@ function ScoreFlow() {
           <FlowStep
             kicker="Scale 1 · Visibility"
             title="Public prominence"
-            detail="How well-known is this organization? Ranges from Just Starting to Blazing (most visible). This tier is about discovery — helps you find orgs you didn't know about."
+            detail="How well-known is this organization? Ranges from Spark to Beacon (most visible). This tier is about discovery — helps you find orgs you didn't know about."
           />
           <FlowStep
             kicker="Scale 2 · Financial Health"
@@ -220,7 +220,7 @@ export default function Methodology() {
             </p>
           </Section>
 
-          <Section label="Step 2 · Operating models" title="Eight groups: sector-specific peer context">
+          <Section label="Step 2a · Operating models" title="Eight groups: sector-specific peer context">
             <p>
               We analyzed 71,473 nonprofits with complete financial filings and found eight statistically distinct operating models. Each group has its own financial fingerprint — reserves, program spending, asset intensity all differ by type of work.
             </p>
@@ -338,7 +338,7 @@ export default function Methodology() {
             </Callout>
           </Section>
 
-          <Section label="Step 2 · Revenue bands" title="Eight model-specific bands, not universal sizes">
+          <Section label="Step 2b · Revenue bands" title="Eight model-specific bands, not universal sizes">
             <p>
               Revenue bands are now model-specific. Each operating model gets its own eight revenue breakpoints based on its natural distribution. This means a "Small" food bank is sized appropriately compared to other food banks — not forced into brackets built for hospitals.
             </p>
@@ -470,7 +470,8 @@ export default function Methodology() {
               <strong>The absence of a score is honest, not negative.</strong> Tier A is more confident than Tier B/C (fewer estimates). Tier B/C are more confident than unscored (at least we have revenue data). Unscored is always better than fabricated. We show what we know, label what we estimate, and never invent what we don't have.
             </Callout>
             <p className="mt-4">
-              <strong>Help us score the unscored:</strong> Organizations in the unscored group can submit their financial data at daanaa.org/submit-data. Once verified (5–7 days), they receive a Financial Health tier and appear in scored search results.
+              <strong>Help us score the unscored:</strong> Organizations in the unscored group can{' '}
+              <Link to="/for-nonprofits" className="text-soft-gold hover:text-bright-gold transition-colors font-medium">claim their page and add financial data</Link>. Once verified, they receive a Financial Health tier and appear in scored search results.
             </p>
           </Section>
 
