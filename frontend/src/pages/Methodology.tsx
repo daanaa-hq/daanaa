@@ -208,15 +208,15 @@ export default function Methodology() {
             <ul className="list-none space-y-2 mt-2">
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">1</span></span>
-                <span><strong className="text-deep-navy font-medium">Operating model.</strong> How the organization actually runs — whether it spends everything on direct service delivery, owns physical assets central to its mission, or holds capital over many years. Four groups, described below.</span>
+                <span><strong className="text-deep-navy font-medium">Operating model.</strong> How the organization actually runs — whether it spends everything on direct service delivery, owns physical assets central to its mission, or holds capital over many years. Eight groups, described below.</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">2</span></span>
-                <span><strong className="text-deep-navy font-medium">Revenue size.</strong> One of six bands from Nano (under $25K) to Major ($50M+). A $20K volunteer group and a $20M healthcare network are not financial peers even if they serve the same community.</span>
+                <span><strong className="text-deep-navy font-medium">Revenue size.</strong> One of eight revenue bands, set separately for each operating model from its own distribution. A $20K volunteer group and a $20M healthcare network are not financial peers even if they serve the same community.</span>
               </li>
             </ul>
             <p className="mt-4">
-              Together these create 24 peer cells. Every cell has at least 30 organizations — in practice most have thousands. Cells that are too thin use the operating model group as fallback.
+              Together these create 64 peer cells. Every cell has at least 75 organizations — in practice most have thousands. Cells that are too thin use the operating model group as fallback.
             </p>
           </Section>
 
@@ -353,9 +353,6 @@ export default function Methodology() {
                 <li className="flex gap-2 text-[14px]"><span>•</span> <span>Sector-specific breakpoints (sector realities, not artificial)</span></li>
               </ul>
             </Callout>
-            <p className="mt-4">
-              See <Link to="/" className="text-soft-gold hover:text-bright-gold transition-colors">Operating-Models-V4.md</Link> documentation for complete band tables per model.
-            </p>
           </Section>
 
           <Section label="Step 3 · The formula" title="Percentile rank to Financial Health tiers">
@@ -372,15 +369,15 @@ export default function Methodology() {
               <div className="text-[13px] text-cool-grey/80">reserves_ratio   — months of operating reserves (capped at 100)</div>
               <div className="text-[13px] text-cool-grey/80">revenue_ratio    — revenue vs. expenses (sustainability)</div>
               <div className="text-[13px] text-cool-grey/80">asset_intensity  — total assets relative to revenue (capped at 100)</div>
-              <div className="mt-4 text-[13px] text-cool-grey/70 font-semibold uppercase tracking-wider mb-2">Weights by operating model</div>
-              <div className="text-[13px] text-cool-grey/80">Direct Service        program 35%  reserve 25%  revenue 20%  assets 20%</div>
-              <div className="text-[13px] text-cool-grey/80">Mission Infrastructure program 35%  reserve 25%  revenue 20%  assets 20%</div>
-              <div className="text-[13px] text-cool-grey/80">Research / Academia   program 35%  reserve 25%  revenue 20%  assets 20%</div>
-              <div className="text-[13px] text-cool-grey/80">All other models      program 35%  reserve 25%  revenue 20%  assets 20%</div>
-              <div className="mt-3 text-[12px] text-cool-grey/50">Weights are consistent across all models. Peer-relative percentiles ensure that a "Strong" tier always means top-third within that org's true peers.</div>
+              <div className="mt-4 text-[13px] text-cool-grey/70 font-semibold uppercase tracking-wider mb-2">Metric weights</div>
+              <div className="text-[13px] text-cool-grey/80">program_ratio    35%</div>
+              <div className="text-[13px] text-cool-grey/80">reserves_ratio   25%</div>
+              <div className="text-[13px] text-cool-grey/80">revenue_ratio    20%</div>
+              <div className="text-[13px] text-cool-grey/80">asset_intensity  20%</div>
+              <div className="mt-3 text-[12px] text-cool-grey/50">Weights are the same for every operating model. What changes is the peer group: each org is ranked only against true peers, so a "Strong" tier always means top-third within that org's own model and revenue band.</div>
             </FormulaBlock>
             <p className="mt-4">
-              The key insight: <strong>percentile ranks are outlier-proof.</strong> A food bank with $200K in revenue compares only to other $100K–$500K food banks. The top quarter of that peer group gets "Strong" — regardless of absolute revenue size. A $100M hospital follows the same logic: top quarter of its peer group gets "Strong."
+              The key insight: <strong>percentile ranks are outlier-proof.</strong> A food bank with $200K in revenue compares only to other food banks in its revenue band. The top third of that peer group gets "Strong" — regardless of absolute revenue size. A $100M hospital follows the same logic: top third of its peer group gets "Strong."
             </p>
             <Callout>
               <strong>What about the 0–100 number you might see?</strong> That's a percentile rank (0–100 scale) for technical purposes. The human-facing tiers are Strong / Stable / Inspiring. Both show the same information — one is granular, one is simplified.
@@ -429,9 +426,9 @@ export default function Methodology() {
             </ul>
           </Section>
 
-          <Section label="Data completeness" title="Three scoring tiers — transparency about data quality">
+          <Section label="Data completeness" title="Four data tiers — transparency about data quality">
             <p>
-              Not every organization has the same amount of public financial data. Daanaa scores what exists — and only what exists. No fabrication. Three tiers reflect actual data availability:
+              Not every organization has the same amount of public financial data. Daanaa scores what exists — and only what exists. No fabrication. Three scoring tiers, plus an unscored group, reflect actual data availability:
             </p>
             <div className="mt-4 space-y-3">
               {[
@@ -521,11 +518,11 @@ export default function Methodology() {
               />
               <SourceRow
                 source="IRS published financial data"
-                detail="Financial data from aggregated annual filings, including total revenue and total assets. Available for approximately 483,000 organizations with recent data."
+                detail="Financial data from aggregated annual filings, including total revenue and total assets. Available for approximately 471,000 organizations with recent data."
               />
               <SourceRow
                 source="ProPublica Nonprofit Explorer"
-                detail="Mission statements, website URLs, and annual filing detail. Used to fill in financial data and confirm profile completeness for the lamp tier."
+                detail="Mission statements, website URLs, and annual filing detail. Used to fill in financial data and confirm profile completeness for the visibility tier."
               />
               <SourceRow
                 source="NCCS (Urban Institute)"
