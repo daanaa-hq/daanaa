@@ -77,8 +77,8 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 
 export default function SectorHealth() {
   usePageMeta(
-    'What public filings suggest about the sector',
-    'A look at available public financial filings across four operating model groups and 47 cause types of donation eligible 501(c)(3) nonprofits. Reserve levels, filing rates, and program spending — based on 356,000 organizations with complete financial data.'
+    'Peer financial context by sector',
+    'Understand public financial patterns across operating models and cause areas. How organizations in different sectors compare to their peers — based on available public records and financial filings.'
   )
 
   const navigate = useNavigate()
@@ -157,7 +157,7 @@ export default function SectorHealth() {
             Where the sector stands
           </h1>
           <p className="font-body text-[18px] text-muted-cream/80 max-w-[580px] leading-[1.65]">
-            A look at available public financial filings across 26 sectors. Many small or simplified filers do not report detailed financials, so this view reflects patterns in available data, not a complete picture of every group.
+            How nonprofit sectors compare by operating model. Peer financial context: reserve levels, expense ratios, and filing frequency. Many small or simplified filers don't report full financials, so this reflects patterns in available public records, not every organization.
           </p>
 
           {/* Key stat chips */}
@@ -183,10 +183,10 @@ export default function SectorHealth() {
           {/* Operating Model Groups */}
           <div className="mb-10">
             <h2 className="font-display italic text-deep-navy leading-tight mb-2" style={{ fontSize: 'clamp(22px, 2.8vw, 32px)' }}>
-              Four operating models, four different pictures of health
+              Four operating models, four different peer contexts
             </h2>
             <p className="font-body text-[15px] text-cool-grey leading-[1.7] mb-6 max-w-[680px]">
-              Financial health means different things depending on how an organization actually operates. A food bank with thin reserves may be deploying every dollar into its mission. A land trust with 40 months of reserves is holding the capital that makes conservation possible. We compare organizations within their operating model, not across all nonprofits.
+              Peer financial context means different things depending on how an organization operates. A food bank with thin reserves may be deploying every dollar into direct service. A land trust holding 40 months of reserves is maintaining capital for long-term conservation. We compare organizations within their operating model to show meaningful peer context, not across all nonprofits.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
