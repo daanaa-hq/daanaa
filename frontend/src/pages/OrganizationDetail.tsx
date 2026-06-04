@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
-import { getTierSummary, getTierFromOrg, getFinancialHealth, PASSING_BANDS, TIER_COLORS } from '../components/TrustBadge'
+import { getTierSummary, getTierFromOrg, getFinancialHealth, getV4FinancialHealth, PASSING_BANDS, TIER_COLORS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
 import LampMark from '../components/LampMark'
@@ -368,6 +368,7 @@ export default function OrganizationDetail() {
   const lampTier     = getTierFromOrg(apiOrg!)
   const trustSummary = getTierSummary(lampTier, apiOrg!)
   const finHealth    = getFinancialHealth(apiOrg!)
+  const v4Health     = getV4FinancialHealth(apiOrg!)
   const badges = getOrgBadges(apiOrg!)
 
   const givePayload = {
@@ -785,6 +786,27 @@ export default function OrganizationDetail() {
                   </span>
                 )}
               </div>
+              {/* v4.0 Financial Health — model-specific peer comparison (when available) */}
+              {v4Health && (
+                <div className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg border border-soft-gold/40 bg-soft-gold/8">
+                  <span className="font-body text-[10px] tracking-[0.06em] uppercase text-muted-cream/60">
+                    Financial health
+                  </span>
+                  <span className="font-body text-[14px] font-semibold text-soft-gold">
+                    {v4Health.tier}
+                  </span>
+                  {v4Health.operatingModel && (
+                    <span className="font-body text-[10px] text-muted-cream/70 text-center leading-[1.4]">
+                      Among {v4Health.operatingModel?.replace(/_/g, ' ')} nonprofits
+                    </span>
+                  )}
+                  {v4Health.peerCellSize && (
+                    <span className="font-body text-[9px] text-muted-cream/50">
+                      Peer group: {v4Health.peerCellSize.toLocaleString()} orgs
+                    </span>
+                  )}
+                </div>
+              )}
               {/* Independently-verified financial health -- only where real 990 analysis exists */}
               {finHealth ? (
                 <div
