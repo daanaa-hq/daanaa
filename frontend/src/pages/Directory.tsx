@@ -21,7 +21,7 @@ const FILTER_CATEGORIES = [
 const SCORES_ENABLED = import.meta.env.VITE_ENABLE_SCORES !== 'false'
 
 const SORT_OPTIONS = [
-  ...(SCORES_ENABLED ? [{ id: 'merit_score', label: 'Financial Health' }] : []),
+  ...(SCORES_ENABLED ? [{ id: 'merit_score', label: 'Peer Financial Context' }] : []),
   { id: 'organization_name', label: 'Name A to Z' },
   { id: 'total_revenue', label: 'Revenue' },
 ]

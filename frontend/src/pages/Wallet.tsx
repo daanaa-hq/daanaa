@@ -378,6 +378,11 @@ export default function Wallet() {
           <p className="mt-3 font-body text-[14px] text-muted-cream">
             A private record of every gift you make. Small gifts need only your own note. For $250 and up, the nonprofit's acknowledgment letter is required if you itemize, and we help you request it.
           </p>
+          <div className="mt-6 p-4 rounded-xl bg-white/10 border border-white/20">
+            <p className="font-body text-[12px] text-warm-cream/80 leading-[1.6]">
+              <strong className="text-warm-cream">Important:</strong> The Giving Wallet is a private note-taking tool on your device. It is not a bank account, payment account, stored-value wallet, or donation processor. You remain in control of all your data. Daanaa never processes, holds, or redirects any funds.
+            </p>
+          </div>
         </div>
       </div>
 
