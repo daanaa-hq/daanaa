@@ -25,6 +25,8 @@ LOG_PATH = Path.home() / "meritgiving/logs/web_verification.log"
 _log_lock = threading.Lock()
 _stats = {"checked": 0, "found": 0, "timeout": 0, "notfound": 0}
 _stats_lock = threading.Lock()
+_updates = []  # List of (ein, domain) tuples to update
+_updates_lock = threading.Lock()
 
 def log(msg: str):
     ts = datetime.now(timezone.utc).isoformat()
@@ -105,11 +107,8 @@ def main():
             if found:
                 log(f"✓ {cand} — {info}")
                 if not args.dry_run:
-                    c.execute("""
-                        UPDATE registry_enriched
-                        SET website = ?, website_status = 'beta', website_checked_at = datetime('now')
-                        WHERE EIN = ?
-                    """, (cand, ein))
+                    with _updates_lock:
+                        _updates.append((cand, ein))
                 return cand  # Found one, return
 
         return None
@@ -122,11 +121,30 @@ def main():
             processed += 1
             if processed % 50 == 0:
                 log(f"  Progress: {processed}/{len(rows)} orgs ({_stats['found']} websites found)")
-                if not args.dry_run:
-                    conn.commit()  # Commit every 50 orgs to preserve progress
+                if not args.dry_run and _updates:
+                    # Batch update the database every 50 orgs
+                    with _updates_lock:
+                        for website, ein in _updates:
+                            c.execute("""
+                                UPDATE registry_enriched
+                                SET website = ?, website_status = 'beta', website_checked_at = datetime('now')
+                                WHERE EIN = ?
+                            """, (website, ein))
+                        _updates.clear()
+                    conn.commit()
 
-    if not args.dry_run:
+    # Final batch of updates
+    if not args.dry_run and _updates:
+        with _updates_lock:
+            for website, ein in _updates:
+                c.execute("""
+                    UPDATE registry_enriched
+                    SET website = ?, website_status = 'beta', website_checked_at = datetime('now')
+                    WHERE EIN = ?
+                """, (website, ein))
+            _updates.clear()
         conn.commit()
+
     conn.close()
 
     log(f"\n━ Summary ━")
