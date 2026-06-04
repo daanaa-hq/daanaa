@@ -1,0 +1,58 @@
+================================================================================
+                     METHODOLOGY PAGE — UPDATED FOR v4.0
+================================================================================
+
+The frontend Methodology page (frontend/src/pages/Methodology.tsx) has been 
+completely updated to explain v4.0 to users.
+
+KEY UPDATES:
+
+✅ Two-scale system explained
+   - Scale 1: Visibility (public prominence)
+   - Scale 2: Financial Health (peer context)
+
+✅ Eight operating models (not 4)
+   - Direct Service (22,916 orgs)
+   - Mission Infrastructure (26,413 orgs)
+   - Research & Academia (10,729 orgs)
+   - Foundations (3,266 orgs)
+   - Membership & Advocacy (2,940 orgs)
+   - Religion & Spiritual (3,764 orgs)
+   - International Development (601 orgs)
+   - Asset Stewards (844 orgs)
+
+✅ Model-specific Financial Health meanings
+   - Each model has custom definitions of Strong/Stable/Inspiring
+   - Food bank "Strong" ≠ Foundation "Strong"
+   - Honors how organizations actually work
+
+✅ Model-specific revenue bands
+   - 8 bands per model (not universal 6)
+   - Octile-based in log-revenue space
+   - Outlier-proof, sector-specific breakpoints
+
+✅ Three-tier data completeness
+   - Tier A (71,473): Fully scored
+   - Tier B (~425K): Partially scored
+   - Tier C (~1.1M): Indexed only
+
+✅ Transparent methodology
+   - Explains peer cell concept
+   - Shows metric weights
+   - Explains why percentile ranks matter
+   - Clarifies what the scores do/don't measure
+
+✅ Fair language
+   - "Inspiring" never used pejoratively
+   - Explains why small orgs aren't disadvantaged
+   - Emphasizes peer-relative measurement
+
+STATUS: Ready for founder review
+
+NEXT: 
+  1. Founder reads Methodology page in browser
+  2. Confirms messaging matches values
+  3. Approves deployment
+  4. Publish methodology page live with v4.0 data
+
+================================================================================

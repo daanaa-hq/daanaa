@@ -65,31 +65,31 @@ function ScoreFlow() {
           <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">The whole picture</span>
         </div>
         <h2 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em] mb-2" style={{ fontSize: 'clamp(26px, 3.5vw, 42px)' }}>
-          How a score is made
+          How the two scales work
         </h2>
         <p className="font-body text-[16px] text-cool-grey leading-[1.7] mb-9">
-          Four steps. Every detail below this is just a closer look at one of them.
+          Visibility shows prominence. Financial Health shows peer context. Together they give a complete picture.
         </p>
         <div className="flex flex-col items-center">
           <FlowStep
-            kicker="Step 1 · Group"
+            kicker="Scale 1 · Visibility"
+            title="Public prominence"
+            detail="How well-known is this organization? Ranges from Just Starting to Blazing (most visible). This tier is about discovery — helps you find orgs you didn't know about."
+          />
+          <FlowStep
+            kicker="Scale 2 · Financial Health"
             title="Find its true peers"
-            detail="Same operating model (Direct Service, Mission Infrastructure, Asset Stewards, or Endowment & Capital) plus similar revenue size."
+            detail="Same operating model (Food bank, School, Hospital, Foundation, etc.) plus similar revenue size. Creates peer groups where comparison actually makes sense."
           />
           <FlowStep
-            kicker="Step 2 · Weigh"
-            title="Measure financial scale"
-            detail="Reserve strength and program spending, weighted by operating model. What counts as healthy reserves for a food bank differs from what counts for a land trust."
+            kicker="Scale 2 · Measure"
+            title="Within-group position"
+            detail="Strong = top third of peer group. Stable = middle third. Inspiring = bottom third — doing remarkable work within constraints. Meaning depends on the model."
           />
           <FlowStep
-            kicker="Step 3 · Place"
-            title="A score from 0 to 100"
-            detail="Where it sits among its true peers. 50 is the middle of every group."
-          />
-          <FlowStep
-            kicker="Step 4 · Light"
-            title="It feeds the lamp"
-            detail="One quiet signal on the visibility journey. Never a grade, never a verdict."
+            kicker="Together"
+            title="Context, not verdict"
+            detail="A famous org that's struggling. An overlooked org that's thriving. Two scales show both sides."
             last
           />
         </div>
@@ -140,7 +140,7 @@ export default function Methodology() {
             How peer financial context is calculated
           </h1>
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
-            Peer financial context is a public data signal. It does not measure impact, trustworthiness, leadership, governance, program quality, or whether a group deserves support. Every number compares a nonprofit against others doing similar work at a similar size, using public IRS filings. No black boxes. Everything is documented below.
+            Every nonprofit is measured only against its true peers — organizations with the same operating model and similar revenue size. A food bank is compared to food banks, not hospitals. A foundation is compared to foundations. Financial Health tiers reflect where each org stands within its actual peer group. No universal yardstick. Everything is based on IRS public data.
           </p>
           <div className="mt-7">
             <p className="font-body text-[10px] font-medium tracking-[0.12em] text-soft-gold/60 uppercase mb-1.5">
@@ -167,7 +167,10 @@ export default function Methodology() {
                 The short version
               </h2>
               <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
-                Each nonprofit is scored only against organizations with the same operating model and similar revenue size. A food bank is measured against other food banks — not hospitals. A conservation land trust is measured against other land trusts — not community centers. The score, 0 to 100, shows where an organization stands within that peer group.
+                Every nonprofit gets two independent scales. The first (Visibility) shows public prominence. The second (Financial Health) shows where it stands within its peer group.
+              </p>
+              <p className="mt-3 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <strong className="text-deep-navy font-medium">Financial Health tiers</strong> have model-specific meanings. For a food bank, "Strong" means high program efficiency and resource leverage. For a foundation, "Strong" means active, sustained grant deployment. Same word, different context — because the organizations are genuinely different.
               </p>
               <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
                 All data comes from annual IRS filings — the same public documents every registered 501(c)(3) submits. Organizations without detailed filing data are shown without a score. We never fabricate what we cannot measure.
@@ -217,52 +220,95 @@ export default function Methodology() {
             </p>
           </Section>
 
-          <Section label="Step 1 · Operating models" title="Four groups, not one size fits all">
+          <Section label="Step 2 · Operating models" title="Eight groups: sector-specific peer context">
             <p>
-              We analyzed 356,000 nonprofits with complete financial filings and found four statistically distinct operating models (ANOVA F = 9,781, p &lt; 0.001, η² = 9.2%). Each group has a different relationship between reserves, assets, and program spending — so each group gets its own benchmarks.
+              We analyzed 71,473 nonprofits with complete financial filings and found eight statistically distinct operating models. Each group has its own financial fingerprint — reserves, program spending, asset intensity all differ by type of work.
+            </p>
+            <p className="mt-3">
+              Within each operating model, Financial Health tiers have model-specific meanings. This means the system honors how organizations actually work, not how we might assume they should work.
             </p>
 
             <div className="mt-6 space-y-4">
               {[
                 {
                   name: 'Direct Service',
-                  orgs: '157,816',
-                  reserve: '9.7 months',
-                  prog: '48%',
-                  ai: '0.96×',
-                  desc: 'Human services, food, mental health, employment, international, recreation, youth development, religion. These organizations earn and spend — thin reserves are a feature of the model, not a weakness. A food bank with minimal savings may be deploying every dollar into its mission.',
+                  orgs: '22,916',
+                  reserve: '10.3 mo',
+                  prog: '37.3%',
+                  desc: 'Food banks, job training, animal rescue, emergency response, mental health services. Lean by design — deploys resources directly into programs. Strong means high program efficiency. Inspiring means doing remarkable work within constraints.',
                   color: 'bg-emerald-50 border-emerald-200',
                   badge: 'text-emerald-700 bg-emerald-100',
+                  strong: 'High program efficiency, resource leverage',
                 },
                 {
                   name: 'Mission Infrastructure',
-                  orgs: '133,369',
-                  reserve: '13 months',
-                  prog: '39%',
-                  ai: '1.33×',
-                  desc: 'Education, health, arts, environment, community development, science. Moderate assets support program delivery — a school owns classrooms, a clinic owns equipment. Reserves sit in the middle range.',
+                  orgs: '26,413',
+                  reserve: '13.4 mo',
+                  prog: '40.4%',
+                  desc: 'Schools, hospitals, health systems, arts organizations, libraries. Assets support program delivery. Strong means reserves supporting stable operations. Inspiring means visionary impact within constraints.',
                   color: 'bg-blue-50 border-blue-200',
                   badge: 'text-blue-700 bg-blue-100',
+                  strong: 'Reserves support stable operations',
+                },
+                {
+                  name: 'Research & Academia',
+                  orgs: '10,729',
+                  reserve: '8.8 mo',
+                  prog: '66.1%',
+                  desc: 'Universities, medical research, scientific institutions. Program-heavy (includes grant passthrough). Strong means well-funded pipelines. Inspiring means innovative work on limited resources.',
+                  color: 'bg-indigo-50 border-indigo-200',
+                  badge: 'text-indigo-700 bg-indigo-100',
+                  strong: 'Well-funded pipelines, stable base',
+                },
+                {
+                  name: 'Foundations',
+                  orgs: '3,266',
+                  reserve: '34.3 mo',
+                  prog: '34.2%',
+                  desc: 'Grantmakers, endowments, philanthropies. Hold and deploy capital. Strong means active, sustained grant deployment. Inspiring means emerging foundations building capacity.',
+                  color: 'bg-purple-50 border-purple-200',
+                  badge: 'text-purple-700 bg-purple-100',
+                  strong: 'Active, sustained grant deployment',
+                },
+                {
+                  name: 'Membership & Advocacy',
+                  orgs: '2,940',
+                  reserve: '8.4 mo',
+                  prog: '33.1%',
+                  desc: 'Member organizations, advocacy networks, voluntarism centers. Revenue driven by membership support. Strong means healthy member-revenue base. Inspiring means growing member engagement.',
+                  color: 'bg-rose-50 border-rose-200',
+                  badge: 'text-rose-700 bg-rose-100',
+                  strong: 'Healthy member-revenue base',
+                },
+                {
+                  name: 'Religion & Spiritual',
+                  orgs: '3,764',
+                  reserve: '20.2 mo',
+                  prog: '14.2%',
+                  desc: 'Faith communities, congregations, spiritual organizations. Often volunteer-heavy. Strong means strong financial reserves and impact. Inspiring means growing congregation and mission.',
+                  color: 'bg-amber-50 border-amber-200',
+                  badge: 'text-amber-700 bg-amber-100',
+                  strong: 'Strong financial reserves, impact',
+                },
+                {
+                  name: 'International Development',
+                  orgs: '601',
+                  reserve: '9.5 mo',
+                  prog: '27.2%',
+                  desc: 'Cross-border development, humanitarian aid, international relief. Strong means efficient cross-border delivery. Inspiring means scaling operations with vision.',
+                  color: 'bg-cyan-50 border-cyan-200',
+                  badge: 'text-cyan-700 bg-cyan-100',
+                  strong: 'Efficient cross-border delivery',
                 },
                 {
                   name: 'Asset Stewards',
-                  orgs: '51,627',
-                  reserve: '29.9 months',
-                  prog: '36%',
-                  ai: '3.03×',
-                  desc: 'Housing, public safety (fire departments, EMS), cultural heritage, libraries, museums, animal welfare, sports, higher education. Physical assets — land, buildings, equipment — are central to mission delivery. Higher asset intensity and reserves are normal for this model.',
-                  color: 'bg-amber-50 border-amber-200',
-                  badge: 'text-amber-700 bg-amber-100',
-                },
-                {
-                  name: 'Endowment & Capital',
-                  orgs: '13,396',
-                  reserve: '39+ months',
-                  prog: '19%',
-                  ai: '3.57×',
-                  desc: 'Grantmaking foundations, conservation land trusts, scholarship funds, historical preservation, disease research. These organizations hold and deploy capital. Their low program spending percentage reflects their model — grants going out are their program. Reserve comparisons use net asset growth rather than a fixed-month benchmark.',
-                  color: 'bg-purple-50 border-purple-200',
-                  badge: 'text-purple-700 bg-purple-100',
+                  orgs: '844',
+                  reserve: '11.4 mo',
+                  prog: '42.3%',
+                  desc: 'Nursing homes, hospitals, facilities. Physical assets are central. Strong means well-maintained assets and healthy reserves. Inspiring means growing asset base with impact.',
+                  color: 'bg-orange-50 border-orange-200',
+                  badge: 'text-orange-700 bg-orange-100',
+                  strong: 'Assets well-maintained, healthy reserves',
                 },
               ].map(g => (
                 <div key={g.name} className={`p-5 rounded-xl border ${g.color}`}>
@@ -275,11 +321,11 @@ export default function Methodology() {
                     {[
                       { label: 'Median reserve', value: g.reserve },
                       { label: 'Program spend', value: g.prog },
-                      { label: 'Asset intensity', value: g.ai },
+                      { label: 'Strong means', value: g.strong, wide: true },
                     ].map(stat => (
-                      <div key={stat.label}>
+                      <div key={stat.label} className={stat.wide ? 'flex-grow' : ''}>
                         <p className="font-body text-[10px] font-medium tracking-[0.08em] text-cool-grey/60 uppercase">{stat.label}</p>
-                        <p className="font-body text-[14px] font-semibold text-deep-navy">{stat.value}</p>
+                        <p className="font-body text-[13px] text-deep-navy">{stat.value}</p>
                       </div>
                     ))}
                   </div>
@@ -288,55 +334,56 @@ export default function Methodology() {
             </div>
 
             <Callout>
-              Cause types are assigned to operating model groups based on their statistical financial fingerprint, not just their name. Where a cause type's financial behavior differs by size (for example, a small community health clinic vs. a major hospital system), the revenue band captures that difference within the group.
+              Financial Health is always peer-relative. An organization's tier shows how it compares to others in its exact group. An "Inspiring" food bank doing $100K in revenue is within its true peers — not being judged against hospitals. This is how fairness works.
             </Callout>
           </Section>
 
-          <Section label="Step 1 · Size bands" title="The six revenue bands">
+          <Section label="Step 2 · Revenue bands" title="Eight model-specific bands, not universal sizes">
             <p>
-              Size comes from the most recent annual revenue on file. The six bands:
+              Revenue bands are now model-specific. Each operating model gets its own eight revenue breakpoints based on its natural distribution. This means a "Small" food bank is sized appropriately compared to other food banks — not forced into brackets built for hospitals.
             </p>
-            <div className="mt-4">
-              <div className="flex items-start gap-4 py-2 border-b border-light-grey">
-                <span className="shrink-0 w-20 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Band</span>
-                <span className="shrink-0 w-40 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Revenue range</span>
-                <span className="shrink-0 w-28 font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Orgs</span>
-                <span className="font-body text-[11px] font-semibold tracking-[0.06em] text-cool-grey/60 uppercase">Notes</span>
-              </div>
-              <BandRow band="Nano"   range="< $25K"         orgs="111,158"  note="grassroots, newly formed — many file 990-N postcards" />
-              <BandRow band="Micro"  range="$25K to $100K"  orgs="164,502"  />
-              <BandRow band="Small"  range="$100K to $500K" orgs="205,133"  />
-              <BandRow band="Medium" range="$500K to $5M"   orgs="133,733"  />
-              <BandRow band="Large"  range="$5M to $50M"    orgs="40,186"   />
-              <BandRow band="Major"  range="$50M+"          orgs="8,605"    note="hospitals, universities, major foundations" />
-            </div>
+            <p className="mt-3">
+              For example, Direct Service bands range from under $27.5K to over $1.47M. Foundations bands range from under $23.7K to over $692K. Different sectors, different natural breaking points. Same principle: organizations are grouped only with true peers.
+            </p>
             <Callout>
-              Nano and Micro are kept separate so a $5K volunteer group and a $90K community organization are not treated as the same kind of operation. Organizations in the Nano band filing a 990-N postcard (under $50K) may not have detailed financial data available — they are indexed and visible, but scored only when full filing data exists.
+              All revenue bands are octile-based (8 equal percentiles in log-revenue space). This ensures:
+              <ul className="list-none mt-2 space-y-1">
+                <li className="flex gap-2 text-[14px]"><span>•</span> <span>Roughly 12.5% of orgs per band (balanced peer cells)</span></li>
+                <li className="flex gap-2 text-[14px]"><span>•</span> <span>Outliers don't distort boundaries (log-space math)</span></li>
+                <li className="flex gap-2 text-[14px]"><span>•</span> <span>Sector-specific breakpoints (sector realities, not artificial)</span></li>
+              </ul>
             </Callout>
+            <p className="mt-4">
+              See <Link to="/" className="text-soft-gold hover:text-bright-gold transition-colors">Operating-Models-V4.md</Link> documentation for complete band tables per model.
+            </p>
           </Section>
 
-          <Section label="Step 2 · The formula" title="How the score is built">
+          <Section label="Step 3 · The formula" title="Percentile rank to Financial Health tiers">
             <p>
-              Each org receives up to four percentile ranks within its peer cell — how it compares to its peers on revenue, reserves, assets, and program spending. These are combined into a single 0–100 score using weights that vary by operating model.
+              Each organization receives a percentile rank within its exact peer cell (operating model + revenue band). This percentile is then mapped to a Financial Health tier:
             </p>
             <FormulaBlock>
-              <div className="text-deep-navy/80 mb-2 text-[13px] font-semibold text-cool-grey/60 uppercase tracking-wider">Metrics used</div>
-              <div className="text-deep-navy/80">revenue_rank     — total annual revenue within peer cell</div>
-              <div className="text-deep-navy/80">reserve_rank     — operating reserves (months of expenses covered)</div>
-              <div className="text-deep-navy/80">asset_rank       — total assets relative to revenue</div>
-              <div className="text-deep-navy/80">program_rank     — share of spending that goes to programs</div>
+              <div className="text-deep-navy/80 mb-3 text-[13px] font-semibold text-cool-grey/60 uppercase tracking-wider">Financial Health tiers</div>
+              <div className="text-[13px] text-cool-grey/80 mb-2"><strong>Top third (67–100th percentile):</strong> Strong</div>
+              <div className="text-[13px] text-cool-grey/80 mb-2"><strong>Middle third (33–67th percentile):</strong> Stable</div>
+              <div className="text-[13px] text-cool-grey/80"><strong>Bottom third (0–33rd percentile):</strong> Inspiring</div>
+              <div className="mt-4 text-[13px] text-cool-grey/70 font-semibold uppercase tracking-wider mb-2">Metrics used</div>
+              <div className="text-[13px] text-cool-grey/80">program_ratio    — program expenses as % of total spending</div>
+              <div className="text-[13px] text-cool-grey/80">reserves_ratio   — months of operating reserves (capped at 100)</div>
+              <div className="text-[13px] text-cool-grey/80">revenue_ratio    — revenue vs. expenses (sustainability)</div>
+              <div className="text-[13px] text-cool-grey/80">asset_intensity  — total assets relative to revenue (capped at 100)</div>
               <div className="mt-4 text-[13px] text-cool-grey/70 font-semibold uppercase tracking-wider mb-2">Weights by operating model</div>
-              <div className="text-[13px] text-cool-grey/80">Direct Service      revenue 30%  reserve 25%  assets 10%  programs 35%</div>
-              <div className="text-[13px] text-cool-grey/80">Mission Infra.      revenue 30%  reserve 35%  assets 10%  programs 25%</div>
-              <div className="text-[13px] text-cool-grey/80">Asset Stewards      revenue 30%  reserve 15%  assets 40%  programs 15%</div>
-              <div className="text-[13px] text-cool-grey/80">Endowment &amp; Capital revenue 30%  reserve  0%  assets 55%  programs 15%</div>
-              <div className="mt-3 text-[12px] text-cool-grey/50">Reserve excluded from Endowment & Capital scoring — the IRS data caps reserves at 120 months, masking the true depth of endowment holdings.</div>
+              <div className="text-[13px] text-cool-grey/80">Direct Service        program 35%  reserve 25%  revenue 20%  assets 20%</div>
+              <div className="text-[13px] text-cool-grey/80">Mission Infrastructure program 35%  reserve 25%  revenue 20%  assets 20%</div>
+              <div className="text-[13px] text-cool-grey/80">Research / Academia   program 35%  reserve 25%  revenue 20%  assets 20%</div>
+              <div className="text-[13px] text-cool-grey/80">All other models      program 35%  reserve 25%  revenue 20%  assets 20%</div>
+              <div className="mt-3 text-[12px] text-cool-grey/50">Weights are consistent across all models. Peer-relative percentiles ensure that a "Strong" tier always means top-third within that org's true peers.</div>
             </FormulaBlock>
-            <p>
-              The middle organization in every peer cell scores 50. A 75 means the same thing across all groups: top quarter of true peers. Weights reflect what financial health actually means for each model — a food bank with thin reserves may be doing exactly what it should, while a land trust with thin reserves may have a real problem.
+            <p className="mt-4">
+              The key insight: <strong>percentile ranks are outlier-proof.</strong> A food bank with $200K in revenue compares only to other $100K–$500K food banks. The top quarter of that peer group gets "Strong" — regardless of absolute revenue size. A $100M hospital follows the same logic: top quarter of its peer group gets "Strong."
             </p>
             <Callout>
-              When program spending data is unavailable for an org (not all 990 filings include this breakdown), its weight is redistributed across the other metrics. The score is always based only on data that actually exists.
+              <strong>What about the 0–100 number you might see?</strong> That's a percentile rank (0–100 scale) for technical purposes. The human-facing tiers are Strong / Stable / Inspiring. Both show the same information — one is granular, one is simplified.
             </Callout>
           </Section>
 
@@ -382,28 +429,28 @@ export default function Methodology() {
             </ul>
           </Section>
 
-          <Section label="Score availability" title="Three levels of data — three levels of display">
+          <Section label="Data completeness" title="Three tiers of data — three levels of display">
             <p>
-              Not every organization has the same amount of public financial data. Daanaa displays what exists — and only what exists.
+              Not every organization has the same amount of public financial data. Daanaa displays what exists — and only what exists. No fabrication.
             </p>
             <div className="mt-4 space-y-3">
               {[
                 {
-                  tier: 'Scored',
-                  count: '458,000 organizations',
-                  desc: 'Complete IRS 990 filing data. Full 0–100 peer financial context score, operating model group, and financial profile.',
+                  tier: 'Fully Scored',
+                  count: '71,473 organizations',
+                  desc: 'Complete financial fingerprint: revenue, expenses, assets, net assets, reserves, and program %. Full two-scale assessment: Visibility tier + Financial Health tier, operating model, peer cell size. Ready for decisions.',
                   color: 'border-emerald-300 bg-emerald-50',
                 },
                 {
-                  tier: 'Revenue-placed',
-                  count: '~115,000 organizations',
-                  desc: 'IRS BMF summary revenue data only. Revenue band and operating model shown. No financial health score — detailed filing data is not available.',
+                  tier: 'Partially Scored',
+                  count: '~425,000 organizations',
+                  desc: 'Revenue and some financials, but missing program expense breakdown. Can show: revenue band, visibility tier, operating model. Cannot show: Financial Health tier (requires complete data). Future work: derive missing program % to expand full-score coverage.',
                   color: 'border-amber-300 bg-amber-50',
                 },
                 {
-                  tier: 'Visible',
+                  tier: 'Indexed',
                   count: '~1.1 million organizations',
-                  desc: 'IRS recognized and donation eligible. No detailed financial filing data available — most are small organizations that file a simplified postcard return, or churches that are not required to file. Shown with IRS standing, cause type, and profile information. No financial score.',
+                  desc: 'IRS recognized and donation eligible. No financial filing data. Shown with: name, location, cause type, IRS standing. No financial score. Most are small volunteer organizations filing simplified postcard returns.',
                   color: 'border-cool-grey/30 bg-warm-cream',
                 },
               ].map(t => (
@@ -417,22 +464,40 @@ export default function Methodology() {
               ))}
             </div>
             <Callout>
-              The absence of a score is not a negative signal. Most nonprofits in the United States are small volunteer-run organizations that file a postcard return. They are real, IRS-recognized, tax-deductible, and doing real work. Daanaa shows them — it just does not pretend to measure what it cannot see.
+              <strong>The absence of a score is not a negative signal.</strong> Partial data is labeled honestly — you know what you're looking at. A fully scored org is more trustworthy than a partially scored one (more data = more confidence). But partial is always better than fabricated. We show what we know, not what we guess.
             </Callout>
           </Section>
 
-          <Section label="How we built this" title="The research behind the peer groups">
+          <Section label="How we built this" title="The research behind eight operating models">
             <p>
-              The four operating model groups did not come from assumption. We looked at 356,000 nonprofits with complete financial filings and measured their actual financial behavior across three dimensions: how many months of expenses their reserves would cover, how much of their balance sheet is tied up in assets relative to revenue, and how much of their spending goes directly to programs.
+              The eight operating model groups were discovered, not invented. We analyzed 71,473 nonprofits with complete financial filings — the most complete set available — and measured their actual financial behavior.
             </p>
             <p>
-              The data clustered naturally into four groups with statistically distinct financial profiles. A one-way analysis of variance across the groups produced an F statistic of 9,781 with p below 0.001, confirming that the differences between groups are real and not the result of chance. The groups explain about 9 percent of the total variation in reserve behavior across the sector — meaningful for a classification built entirely from financial ratios.
+              The methodology is rigorous and transparent:
             </p>
-            <p>
-              Each cause type was assigned to the group whose financial fingerprint it most closely matched. Where a cause spans multiple models by size (a small volunteer fire department looks very different from a large professional emergency service), the revenue band captures that within the group. The assignment is based on data, not editorial judgment.
+            <ul className="list-none space-y-3 mt-3">
+              <li className="flex gap-3">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">1</span></span>
+                <span><strong>Operating models:</strong> We identified eight distinct groups based on their financial fingerprints (reserves, program spending, asset intensity).</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">2</span></span>
+                <span><strong>Revenue bands:</strong> Within each model, we created eight revenue breakpoints (octiles in log-revenue space). This ensures balanced peer cells and prevents outliers from distorting boundaries.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">3</span></span>
+                <span><strong>Peer cells:</strong> Each (model, band) combination is a peer cell. All 64 cells have at least 75 organizations — enough to make percentile ranks meaningful and stable.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-soft-gold/20 flex items-center justify-center mt-[2px]"><span className="text-[10px] font-semibold text-soft-gold">4</span></span>
+                <span><strong>Financial Health tiers:</strong> Percentile ranks within peer cells are mapped to terciles (thirds): top third = Strong, middle = Stable, bottom = Inspiring. This ensures fair, honest tier distribution.</span>
+              </li>
+            </ul>
+            <p className="mt-4">
+              <strong>Why this matters:</strong> A small food bank (Inspiring tier) is inspiring because it's in the bottom third of food bank financial profiles — doing remarkable work within real constraints. A $2 million food bank can be Strong (top third of its peers) without diminishing the smaller one.  No universal yardstick. Context for every org.
             </p>
             <Callout>
-              This methodology will be reviewed quarterly as IRS data refreshes. If the financial fingerprint of a cause type shifts meaningfully over time, its group assignment will be updated and all affected scores recomputed. The goal is that the peer groups always reflect how organizations actually operate, not how we expect them to.
+              <strong>Fairness is structural in this design.</strong> Every organization is measured only against true peers. No sector dominates the tiers. No size band is pushed to the bottom. The system honors how organizations actually work, not how we might assume they should work.
             </Callout>
           </Section>
 

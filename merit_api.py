@@ -234,13 +234,39 @@ _LIVE_SPLIT = os.path.abspath(LIVE_DB_PATH) != os.path.abspath(DB_PATH)
 # Default: true (scores are on). Toggle: ENABLE_SCORES=false python3 merit_api.py
 ENABLE_SCORES: bool = os.environ.get("ENABLE_SCORES", "true").lower() == "true"
 
+# ENABLE_V4_SCORES=true → include v4.0 financial health scores (financial_health,
+# operating_model, revenue_band, peer_cell_size) in org responses.
+# Default: true (v4 scores enabled). Toggle: ENABLE_V4_SCORES=false python3 merit_api.py
+ENABLE_V4_SCORES: bool = os.environ.get("ENABLE_V4_SCORES", "true").lower() == "true"
+
+# ENABLE_V4_METRICS=true → include detailed metrics_json and percentiles_json
+# in v4 responses (transparency/audit trail). Default: false.
+ENABLE_V4_METRICS: bool = os.environ.get("ENABLE_V4_METRICS", "false").lower() == "true"
+
 _SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
+_V4_FIELDS = ("financial_health", "operating_model", "revenue_band", "peer_cell_size")
 
 def _strip_scores(org: dict) -> dict:
     """Null out score fields in an org dict when ENABLE_SCORES is false."""
     if ENABLE_SCORES:
         return org
     return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
+
+def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
+    """Attach v4.0 financial health scores to org response if available and enabled."""
+    if not ENABLE_V4_SCORES or v4_row is None:
+        return org
+    v4 = dict(v4_row)
+    org['financial_health'] = v4.get('financial_health')
+    org['operating_model'] = v4.get('operating_model')
+    org['revenue_band'] = v4.get('revenue_band')
+    org['peer_cell_size'] = v4.get('peer_cell_size')
+    if ENABLE_V4_METRICS and v4.get('metrics_json'):
+        try:
+            org['v4_metrics'] = json.loads(v4['metrics_json'])
+        except (json.JSONDecodeError, TypeError):
+            pass
+    return org
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -667,19 +693,22 @@ def list_organizations():
     total = db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {where_sql}", params).fetchone()[0]
 
     sql = f"""
-        SELECT EIN, organization_name, NTEE1, NTEECC, CITY, STATE,
-               total_revenue, ntee1_percentile, ntee1_total_orgs, source,
-               latest_tax_year, data_source, updated_at,
-               revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
-               merit_tier, merit_score, merit_band,
-               CASE WHEN months_of_reserve BETWEEN -120 AND 120 THEN months_of_reserve ELSE NULL END as months_of_reserve,
-               net_assets, total_expenses,
-               employee_count, ruling_date, zipcode, is_hidden_gem, cause_tags,
-               donate_url, donate_platform, donate_url_status, subsection, deductibility,
-               SUBSTR(mission, 1, 300) as mission, mission_source,
-               (mission IS NOT NULL AND mission != '') as has_mission,
-               (website IS NOT NULL AND website != '') as has_website
-        FROM registry_enriched
+        SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
+               r.total_revenue, r.ntee1_percentile, r.ntee1_total_orgs, r.source,
+               r.latest_tax_year, r.data_source, r.updated_at,
+               r.revenue_band, r.peer_percentile, r.peer_rank, r.peer_total, r.peer_group,
+               r.merit_tier, r.merit_score, r.merit_band,
+               CASE WHEN r.months_of_reserve BETWEEN -120 AND 120 THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
+               r.net_assets, r.total_expenses,
+               r.employee_count, r.ruling_date, r.zipcode, r.is_hidden_gem, r.cause_tags,
+               r.donate_url, r.donate_platform, r.donate_url_status, r.subsection, r.deductibility,
+               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
+               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
+               (r.website IS NOT NULL AND r.website != '') as has_website,
+               v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json
+        FROM registry_enriched r
+        LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
         WHERE {where_sql}
         ORDER BY {sort_by} {order}
         LIMIT ? OFFSET ?
@@ -690,6 +719,7 @@ def list_organizations():
     orgs = []
     for row in rows:
         d = dict(row)
+        d = _attach_v4_scores(d, row)
         d['total_revenue_formatted'] = f"${d['total_revenue']:,.0f}" if d['total_revenue'] else None
         # Official-sources gate on the card's give affordance (cheap check; the
         # per-EIN revocation lookup runs on the org-detail page, not the list).
@@ -725,11 +755,18 @@ def get_organization(ein):
         return jsonify({"error": "Invalid EIN"}), 400
 
     db = get_db()
-    row = db.execute("SELECT * FROM registry_enriched WHERE EIN = ?", (ein_clean,)).fetchone()
+    row = db.execute(
+        """SELECT r.*,
+                  v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+                  v4.peer_cell_size, v4.metrics_json, v4.percentiles_json
+           FROM registry_enriched r
+           LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+           WHERE r.EIN = ?""", (ein_clean,)).fetchone()
     if row is None:
         return jsonify({"error": "Not found"}), 404
 
     org = dict(row)
+    org = _attach_v4_scores(org, row)
     # Clamp sentinel values written by the pipeline (-999, 999) to null
     mor = org.get('months_of_reserve')
     if mor is not None and not (-120 <= mor <= 120):
@@ -1613,24 +1650,35 @@ def claim_profile_update():
 def _fetch_orgs_by_eins(db, eins: list[str]) -> list[dict]:
     if not eins:
         return []
-    cols = """EIN, organization_name, CITY, STATE, total_revenue,
-              ntee1_percentile, peer_percentile, peer_group, revenue_band,
-              latest_tax_year, data_source, updated_at,
-              merit_tier, merit_score, merit_band"""
+    cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
+              r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
+              r.latest_tax_year, r.data_source, r.updated_at,
+              r.merit_tier, r.merit_score, r.merit_band,
+              v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
     placeholders = ",".join("?" * len(eins))
     rows = db.execute(
-        f"SELECT {cols} FROM registry_enriched WHERE EIN IN ({placeholders})", eins
+        f"""SELECT {cols} FROM registry_enriched r
+            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+            WHERE r.EIN IN ({placeholders})""", eins
     ).fetchall()
     order = {e: i for i, e in enumerate(eins)}
-    return sorted([dict(r) for r in rows], key=lambda r: order.get(r["EIN"], 999))
+    result = []
+    for r in rows:
+        org = dict(r)
+        org = _attach_v4_scores(org, r)
+        result.append(org)
+    return sorted(result, key=lambda r: order.get(r["EIN"], 999))
 
 
 def _find_similar_orgs(db, ein_clean, org, limit=6):
     """Similar orgs: vector cosine similarity when available, SQL bucket fallback."""
-    cols = """EIN, organization_name, CITY, STATE, total_revenue,
-              ntee1_percentile, peer_percentile, peer_group, revenue_band,
-              latest_tax_year, data_source, updated_at,
-              merit_tier, merit_score, merit_band"""
+    cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
+              r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
+              r.latest_tax_year, r.data_source, r.updated_at,
+              r.merit_tier, r.merit_score, r.merit_band,
+              v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
 
     # ── Vector path ────────────────────────────────────────────────────────────
     vec = _get_org_vec(ein_clean)
@@ -1648,29 +1696,32 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
 
     if nteecc and band:
         rows = db.execute(f"""
-            SELECT {cols} FROM registry_enriched
-            WHERE NTEECC = ? AND revenue_band = ? AND EIN != ?
-            ORDER BY ABS(COALESCE(peer_percentile, 50) - ?) ASC LIMIT ?
+            SELECT {cols} FROM registry_enriched r
+            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+            WHERE r.NTEECC = ? AND r.revenue_band = ? AND r.EIN != ?
+            ORDER BY ABS(COALESCE(r.peer_percentile, 50) - ?) ASC LIMIT ?
         """, (nteecc, band, ein_clean, pct, limit)).fetchall()
         if len(rows) >= 3:
-            return [dict(r) for r in rows], 'nteecc+band'
+            return [_attach_v4_scores(dict(r), r) for r in rows], 'nteecc+band'
 
     if ntee1 and band:
         rows = db.execute(f"""
-            SELECT {cols} FROM registry_enriched
-            WHERE NTEE1 = ? AND revenue_band = ? AND EIN != ?
-            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC LIMIT ?
+            SELECT {cols} FROM registry_enriched r
+            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+            WHERE r.NTEE1 = ? AND r.revenue_band = ? AND r.EIN != ?
+            ORDER BY ABS(COALESCE(r.peer_percentile, r.ntee1_percentile, 50) - ?) ASC LIMIT ?
         """, (ntee1, band, ein_clean, pct, limit)).fetchall()
         if len(rows) >= 2:
-            return [dict(r) for r in rows], 'ntee1+band'
+            return [_attach_v4_scores(dict(r), r) for r in rows], 'ntee1+band'
 
     if ntee1:
         rows = db.execute(f"""
-            SELECT {cols} FROM registry_enriched
-            WHERE NTEE1 = ? AND EIN != ?
-            ORDER BY ABS(COALESCE(peer_percentile, ntee1_percentile, 50) - ?) ASC LIMIT ?
+            SELECT {cols} FROM registry_enriched r
+            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+            WHERE r.NTEE1 = ? AND r.EIN != ?
+            ORDER BY ABS(COALESCE(r.peer_percentile, r.ntee1_percentile, 50) - ?) ASC LIMIT ?
         """, (ntee1, ein_clean, pct, limit)).fetchall()
-        return [dict(r) for r in rows], 'ntee1'
+        return [_attach_v4_scores(dict(r), r) for r in rows], 'ntee1'
 
     return [], 'none'
 
@@ -1828,23 +1879,26 @@ def fused_search():
         return jsonify({"results": [], "query": q, "mode": "fused", "total": 0})
 
     placeholders = ",".join("?" * fetch_n)
-    cols = """EIN, organization_name, NTEE1, CITY, STATE, total_revenue,
-              ntee1_percentile, peer_percentile, peer_group, revenue_band,
-              latest_tax_year, data_source, merit_tier, merit_score, merit_band,
-              CASE WHEN months_of_reserve BETWEEN -120 AND 120
-                   THEN months_of_reserve ELSE NULL END as months_of_reserve,
-              net_assets, is_hidden_gem, cause_tags,
-              donate_url, donate_platform, donate_url_status,
-              SUBSTR(mission, 1, 300) as mission, mission_source,
-              (mission IS NOT NULL AND mission != '') as has_mission,
-              (website  IS NOT NULL AND website  != '') as has_website"""
+    cols = """r.EIN, r.organization_name, r.NTEE1, r.CITY, r.STATE, r.total_revenue,
+              r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
+              r.latest_tax_year, r.data_source, r.merit_tier, r.merit_score, r.merit_band,
+              CASE WHEN r.months_of_reserve BETWEEN -120 AND 120
+                   THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
+              r.net_assets, r.is_hidden_gem, r.cause_tags,
+              r.donate_url, r.donate_platform, r.donate_url_status,
+              SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
+              (r.mission IS NOT NULL AND r.mission != '') as has_mission,
+              (r.website  IS NOT NULL AND r.website  != '') as has_website,
+              v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
     rows = db.execute(
-        f"SELECT {cols} FROM registry_enriched "
-        f"WHERE EIN IN ({placeholders}) AND {_DEDUCTIBILITY_FILTER}",
+        f"""SELECT {cols} FROM registry_enriched r
+            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+            WHERE r.EIN IN ({placeholders}) AND {_DEDUCTIBILITY_FILTER}""",
         fused_eins[:fetch_n]
     ).fetchall()
 
-    org_map = {dict(r)['EIN']: dict(r) for r in rows}
+    org_map = {dict(r)['EIN']: _attach_v4_scores(dict(r), r) for r in rows}
 
     results = []
     for ein in fused_eins:
