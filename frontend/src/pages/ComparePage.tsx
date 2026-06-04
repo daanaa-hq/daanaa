@@ -16,6 +16,38 @@ function formatCurrency(n: number | null): string {
   return `$${n.toLocaleString()}`
 }
 
+// Turn an NTEECC subcategory code (e.g. "A82") into human words. Prefer the IRS
+// description's specific part (after the "—", since Category already shows the
+// major group), then an exact code match, then the raw code.
+function subcategoryName(org: ApiOrganization): string {
+  const code = org.NTEECC
+  const desc = (org as { ntee_description?: string | null }).ntee_description
+  if (desc) {
+    const parts = desc.split('—')
+    return parts[parts.length - 1].trim()
+  }
+  if (!code) return '—'
+  for (const cat of NTEE_CATEGORIES) {
+    const exact = cat.subs.find(s => s.code === code)
+    if (exact) return exact.name
+  }
+  return code
+}
+
+// Colors for the peer Financial Health tier. Inspiring is framed as positive
+// (remarkable work within constraints) — never a penalty.
+const HEALTH_COLORS: Record<string, string> = {
+  Strong: '#2F855A',
+  Stable: '#B7791F',
+  Inspiring: '#9C6BC9',
+}
+
+function rulingYear(ruling: string | null): string {
+  if (!ruling) return '—'
+  const m = ruling.match(/\d{4}/)
+  return m ? m[0] : '—'
+}
+
 function OrgColumn({ ein }: { ein: string }) {
   const { data: org, loading, error } = useApi(() => getOrganization(ein), [ein])
 
@@ -42,15 +74,33 @@ function OrgColumn({ ein }: { ein: string }) {
 
   const lampTier = getTierFromOrg(org)
   const cat = NTEE_CATEGORIES.find(c => c.id === org.NTEE1)
+  const health = org.financial_health
+  const reserve = org.months_of_reserve
+  const websiteOk = org.website && org.website_status === 'ok'
+  const donateOk = org.donate_url && org.donate_url_status !== 'dead'
 
   const rows: { label: string; value: React.ReactNode }[] = [
     { label: 'EIN', value: formatEIN(org.EIN) },
     { label: 'Location', value: [org.CITY, org.STATE].filter(Boolean).join(', ') || '—' },
     { label: 'Category', value: cat?.name ?? org.NTEE1 ?? '—' },
-    { label: 'Subcategory', value: org.NTEECC ?? '—' },
+    { label: 'Focus area', value: subcategoryName(org) },
     { label: 'Revenue', value: formatCurrency(org.total_revenue) },
     {
-      label: 'Trust tier',
+      label: 'Financial health',
+      value: health ? (
+        <span className="font-semibold" style={{ color: HEALTH_COLORS[health] }}>{health}</span>
+      ) : (
+        <span className="text-cool-grey/60 font-normal">Not yet scored</span>
+      ),
+    },
+    {
+      label: 'Reserves',
+      value: reserve == null ? '—'
+        : reserve >= 120 ? '120+ mo'
+        : `${reserve % 1 === 0 ? reserve.toFixed(0) : reserve.toFixed(1)} mo`,
+    },
+    {
+      label: 'Visibility',
       value: (
         <span className="inline-flex items-center gap-1.5">
           <LampMark tier={lampTier} size="xs" />
@@ -58,13 +108,14 @@ function OrgColumn({ ein }: { ein: string }) {
         </span>
       ),
     },
+    { label: 'Founded', value: rulingYear(org.ruling_date) },
     { label: 'Tax Year', value: org.latest_tax_year ? String(org.latest_tax_year) : '—' },
     { label: 'Data Source', value: org.data_source ?? '—' },
   ]
 
   return (
     <div className="flex-1 min-w-0">
-      <Link to={`/org/${ein}`} className="block group mb-5">
+      <Link to={`/org/${ein}`} className="block group mb-3">
         <h2 className="font-display text-[18px] text-deep-navy group-hover:text-soft-gold transition-colors leading-snug">
           {org.organization_name}
         </h2>
@@ -72,6 +123,12 @@ function OrgColumn({ ein }: { ein: string }) {
           {[org.CITY, org.STATE].filter(Boolean).join(', ')}
         </p>
       </Link>
+
+      {org.mission && (
+        <p className="font-body text-[12.5px] text-cool-grey/90 leading-[1.5] mb-5 line-clamp-3">
+          {org.mission.replace(/^[“"\s]+|[”"\s]+$/g, '')}
+        </p>
+      )}
 
       <div className="space-y-2">
         {rows.map(row => (
@@ -82,9 +139,35 @@ function OrgColumn({ ein }: { ein: string }) {
         ))}
       </div>
 
+      {/* Action links — give directly or visit the org's own site when we have them */}
+      {(donateOk || websiteOk) && (
+        <div className="mt-5 flex flex-wrap gap-2">
+          {donateOk && (
+            <a
+              href={org.donate_url!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 min-w-[100px] py-2.5 rounded-full bg-soft-gold text-deep-navy font-body text-[13px] font-semibold text-center hover:bg-bright-gold transition-colors"
+            >
+              Give directly →
+            </a>
+          )}
+          {websiteOk && (
+            <a
+              href={org.website!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 min-w-[100px] py-2.5 rounded-full border border-soft-gold/40 text-soft-gold font-body text-[13px] font-semibold text-center hover:bg-soft-gold/10 transition-colors"
+            >
+              Website ↗
+            </a>
+          )}
+        </div>
+      )}
+
       <Link
         to={`/org/${ein}`}
-        className="mt-5 block w-full py-2.5 rounded-full border border-soft-gold/40 text-soft-gold font-body text-[13px] font-semibold text-center hover:bg-soft-gold/10 transition-colors"
+        className="mt-2.5 block w-full py-2.5 rounded-full border border-light-grey text-cool-grey font-body text-[13px] font-semibold text-center hover:border-soft-gold/40 hover:text-soft-gold transition-colors"
       >
         View full profile →
       </Link>
