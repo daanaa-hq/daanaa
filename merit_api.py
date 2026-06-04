@@ -650,13 +650,14 @@ def list_organizations():
         # EIN lookup: pure digits → direct EIN prefix match, skip FTS
         is_ein = bool(search_normalized) and search_normalized.isdigit()
         if is_ein:
-            where_clauses.append("EIN LIKE ?")
+            # Qualify EIN — the v4_scores LEFT JOIN makes a bare EIN ambiguous
+            where_clauses.append("r.EIN LIKE ?")
             params.append(f'{search_normalized}%')
         elif _check_fts(db):
             # FTS5 path: match on org content, join back via EIN (rowid misaligns)
             fts_q = _sanitize_fts_query(search)
             where_clauses.append(
-                "EIN IN (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+                "r.EIN IN (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
                 "ORDER BY bm25(org_fts, 10, 5, 1, 1) LIMIT 2000)"
             )
             params.append(fts_q)
@@ -729,7 +730,8 @@ def list_organizations():
 
     where_sql = " AND ".join(where_clauses)
 
-    total = db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {where_sql}", params).fetchone()[0]
+    # Alias as r so qualified columns (r.EIN) in where_sql resolve here too
+    total = db.execute(f"SELECT COUNT(*) FROM registry_enriched r WHERE {where_sql}", params).fetchone()[0]
 
     # Check if v4_scores table exists (production might not have it)
     has_v4_scores = bool(db.execute(
