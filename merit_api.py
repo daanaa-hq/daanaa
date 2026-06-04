@@ -35,8 +35,8 @@ _CACHE_TTL = {
     'ntee':   7200,   # 2 h — static category list
     'stats':   900,   # 15 min — aggregate counts
     'sector': 1800,   # 30 min — reserve health breakdown
-    'search':  300,   # 5 min — directory search results
-    'org':     600,   # 10 min — individual org detail
+    'search': 1800,   # 30 min — directory search results (was 5m; search patterns repeat frequently)
+    'org':    1800,   # 30 min — individual org detail (was 10m)
 }
 
 def _ck(ns: str, *parts) -> str:
@@ -533,6 +533,28 @@ app.register_blueprint(api_v1)
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/organizations')
+@app.route('/api/log/search', methods=['POST'])
+@limiter.limit("500 per minute")
+def log_search():
+    """Log a search query for surge detection. Called by frontend after search."""
+    data = request.get_json(silent=True) or {}
+    query = (data.get('q') or '').strip()[:200]
+    clicked_ein = (data.get('clicked_ein') or '').strip()[:10]
+    donated = bool(data.get('donated', False))
+
+    if not query:
+        return jsonify({"error": "q required"}), 400
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO search_events (query, clicked_ein, donated) VALUES (?, ?, ?)",
+        (query, clicked_ein or None, donated)
+    )
+    db.commit()
+
+    return jsonify({"status": "logged"})
+
+
 @limiter.limit("100 per minute")
 def list_organizations():
     # Build cache key from all query params before parsing
@@ -1463,6 +1485,7 @@ def claim_verify():
         "current_mission": org['mission'] if org else None,
         "current_donate_url": org['donate_url'] if org else None,
         "irs_address": row['irs_address'],
+        "verification_token": _make_verify_token(ein, row['pin']),
     })
 
 
@@ -1747,14 +1770,18 @@ def fused_search():
         except Exception:
             kw_eins = []
 
-    # ── Path 2: Semantic vector ───────────────────────────────────────────────
+    # ── FAST PATH: If FTS has enough results, skip semantic (avoid GPU) ─────────
     sem_eins: list[str] = []
-    if not _emb_loaded:
-        _load_embeddings()
-    if _emb_matrix is not None and len(_emb_matrix) > 0:
-        vec = _embed_query(q)
-        if vec is not None:
-            sem_eins = _vec_similar(vec, exclude_ein="", limit=CAND_N)
+    use_fast_path = len(kw_eins) >= RESULT_N  # If FTS has 20+, skip semantic
+
+    if not use_fast_path:
+        # ── Path 2: Semantic vector ───────────────────────────────────────────
+        if not _emb_loaded:
+            _load_embeddings()
+        if _emb_matrix is not None and len(_emb_matrix) > 0:
+            vec = _embed_query(q)
+            if vec is not None:
+                sem_eins = _vec_similar(vec, exclude_ein="", limit=CAND_N)
 
     # ── RRF fusion ────────────────────────────────────────────────────────────
     rrf: dict[str, float] = {}
@@ -1767,6 +1794,33 @@ def fused_search():
         rrf[ein] = rrf.get(ein, 0.0) + 1.0 / (RRF_K + rank)
 
     fused_eins = sorted(rrf, key=lambda e: rrf[e], reverse=True)
+
+    # ── Apply surge boosts (event-driven: add relevant orgs even if not in keyword/semantic) ─────────────
+    # Check if there are active boosts for this query's detected event
+    active_boosts = db.execute("""
+        SELECT DISTINCT b.ein, b.relevance_score, s.event_type
+        FROM surge_boosts b
+        JOIN surge_detections s ON b.surge_id = s.id
+        WHERE b.status = 'active'
+          AND b.expires_at > datetime('now')
+          AND (? LIKE '%' || s.query || '%' OR s.query LIKE '%' || ? || '%')
+    """, (q, q)).fetchall()
+
+    boost_eins = {dict(b)['ein']: dict(b) for b in active_boosts}
+
+    if boost_eins:
+        # ADD boosted orgs to results (not just re-rank existing ones)
+        # This is critical for event-driven discovery: during "hurricane", boost disaster relief orgs
+        existing_boosted = [e for e in fused_eins if e in boost_eins]
+        new_boosted = [e for e in boost_eins if e not in fused_eins]
+        # Add synthetic RRF score for new boosted orgs (higher than typical RRF to sort first)
+        for ein in new_boosted:
+            rrf[ein] = 0.05  # Synthetic boost score (higher than most RRF results)
+        # Put existing boosted first, then new boosted, then unboosted
+        unboosted = [e for e in fused_eins if e not in boost_eins]
+        fused_eins = existing_boosted + new_boosted + unboosted
+        # Log that boosts were applied
+        app.logger.info(f"search_surge_boost: q='{q}' existing={len(existing_boosted)} new={len(new_boosted)} event_types={set(b['event_type'] for b in boost_eins.values())}")
 
     # ── Fetch org details (deductible 501c3s only) ────────────────────────────
     fetch_n = min(RESULT_N * 3, len(fused_eins))
@@ -1807,6 +1861,10 @@ def fused_search():
             sources.append('semantic')
         org['match_sources'] = sources
         org['rrf_score']     = round(rrf[ein], 6)
+        # Add surge boost indicator if applicable
+        if ein in boost_eins:
+            org['surge_boosted'] = True
+            org['surge_reason'] = boost_eins[ein].get('event_type', 'event-driven')
         if org.get('cause_tags'):
             try:
                 org['cause_tags'] = json.loads(org['cause_tags'])
@@ -1814,7 +1872,9 @@ def fused_search():
                 org['cause_tags'] = None
         results.append(_strip_scores(org))
 
-    out = {"results": results, "query": q, "mode": "fused", "total": len(results)}
+    # Set mode indicator: fts-only (fast path) or fused (semantic included)
+    mode = "fts-only" if use_fast_path else "fused"
+    out = {"results": results, "query": q, "mode": mode, "total": len(results)}
     _cset(ck, out)
     return jsonify(out)
 
@@ -1827,6 +1887,44 @@ def security_txt():
         status=200,
         mimetype='text/plain',
     )
+
+
+# ── Admin: Surge monitoring (human oversight of AI agent actions) ──────────────
+@app.route('/api/admin/surge-boosts', methods=['GET'])
+@limiter.exempt
+def admin_surge_boosts():
+    """[ADMIN ONLY] View active surge boosts and metrics. Principle #6/#10: oversight."""
+    provided = request.headers.get('X-Admin-Key', '')
+    if not _ADMIN_KEY or not hmac.compare_digest(provided, _ADMIN_KEY):
+        return jsonify({"error": "Unauthorized"}), 401
+    db = get_db()
+    boosts = db.execute("""
+        SELECT b.id, b.ein, s.query, s.event_type, b.relevance_reason,
+               b.boosted_at, b.expires_at, b.status, b.clicks, b.donations, r.organization_name
+        FROM surge_boosts b
+        JOIN surge_detections s ON b.surge_id = s.id
+        LEFT JOIN registry_enriched r ON b.ein = r.EIN
+        ORDER BY b.boosted_at DESC LIMIT 100
+    """).fetchall()
+    return jsonify({"boosts": [dict(b) for b in boosts], "count": len(boosts)})
+
+@app.route('/api/admin/surge-boosts/<int:boost_id>/override', methods=['POST'])
+@limiter.exempt
+def admin_override_boost(boost_id):
+    """[ADMIN ONLY] Pause/override a surge boost. Principle #6: correct mistakes quickly."""
+    provided = request.headers.get('X-Admin-Key', '')
+    if not _ADMIN_KEY or not hmac.compare_digest(provided, _ADMIN_KEY):
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    reason = (data.get('reason') or 'admin override').strip()[:200]
+    db = get_db()
+    db.execute(
+        "UPDATE surge_boosts SET status='overridden', overridden_at=datetime('now'), override_reason=? WHERE id=?",
+        (reason, boost_id)
+    )
+    db.commit()
+    app.logger.info(f"admin_override_boost: id={boost_id} reason={reason}")
+    return jsonify({"status": "overridden", "boost_id": boost_id})
 
 
 # ── Frontend static serving ────────────────────────────────────────────────

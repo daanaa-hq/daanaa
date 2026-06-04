@@ -109,16 +109,6 @@ function BandRow({ band, range, orgs, note }: { band: string; range: string; org
   )
 }
 
-function VersionRow({ version, date, description }: { version: string; date: string; description: string }) {
-  return (
-    <div className="flex items-start gap-4 py-3 border-b border-light-grey last:border-0">
-      <span className="shrink-0 w-20 font-mono text-[13px] font-medium text-deep-navy">{version}</span>
-      <span className="shrink-0 w-28 font-body text-[13px] text-cool-grey">{date}</span>
-      <span className="font-body text-[14px] text-cool-grey">{description}</span>
-    </div>
-  )
-}
-
 function SourceRow({ source, detail }: { source: string; detail: string }) {
   return (
     <div className="flex items-start gap-4 py-3 border-b border-light-grey last:border-0">
@@ -134,7 +124,6 @@ export default function Methodology() {
     'Daanaa scores nonprofits on peer financial context. Every organization is compared only against true peers with the same operating model and revenue size. 1.6 million organizations indexed. Full methodology documented here.'
   )
   const { data: stats } = useApi(() => getStats(), [])
-  const methodologyVersion = stats?.methodology_version ?? 'v1'
   const scoresUpdated = stats?.scores_last_updated ?? '—'
 
   return (
@@ -153,28 +142,16 @@ export default function Methodology() {
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
             Peer financial context is a public data signal. It does not measure impact, trustworthiness, leadership, governance, program quality, or whether a group deserves support. Every number compares a nonprofit against others doing similar work at a similar size, using public IRS filings. No black boxes. Everything is documented below.
           </p>
-          <div className="mt-7 flex flex-col sm:flex-row gap-4 sm:gap-10">
-            <div>
-              <p className="font-body text-[10px] font-medium tracking-[0.12em] text-soft-gold/60 uppercase mb-1.5">
-                Formula version · changes rarely
-              </p>
-              <span className="font-mono text-[14px] text-warm-cream bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                Methodology {methodologyVersion}
-              </span>
-            </div>
-            <div>
-              <p className="font-body text-[10px] font-medium tracking-[0.12em] text-soft-gold/60 uppercase mb-1.5">
-                Data refresh · updates as new reports come in
-              </p>
-              <span className="font-mono text-[14px] text-warm-cream bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                Scores last computed: {scoresUpdated}
-              </span>
-            </div>
+          <div className="mt-7">
+            <p className="font-body text-[10px] font-medium tracking-[0.12em] text-soft-gold/60 uppercase mb-1.5">
+              Scores last computed
+            </p>
+            <span className="font-mono text-[14px] text-warm-cream bg-white/5 px-3 py-1 rounded-full border border-white/10">
+              {scoresUpdated}
+            </span>
           </div>
           <p className="mt-5 font-body text-[13px] leading-[1.6] text-muted-cream/70 max-w-[620px]">
-            The methodology is the formula. It is versioned and changes rarely. Scores are
-            recomputed as new IRS filings become available. A new score date does not mean
-            the formula changed.
+            Scores are recomputed as new IRS filings become available. A new score date reflects fresh data, not a formula change.
           </p>
         </div>
       </div>

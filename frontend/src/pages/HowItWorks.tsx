@@ -47,7 +47,7 @@ function TierRow({ score, label, description }: { score: string; label: string; 
 }
 
 export default function HowItWorks() {
-  usePageMeta('How It Works', 'Learn how Daanaa scores 1.6 million tax-deductible 501(c)(3) organizations using IRS data, peer-group benchmarking, and real Form 990 financials.')
+  usePageMeta('How It Works', 'Learn how Daanaa scores nonprofits using IRS data and peer group benchmarking across four operating model groups and six revenue bands.')
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
@@ -76,7 +76,7 @@ export default function HowItWorks() {
               Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
             </p>
             <p>
-              We list every tax-deductible 501(c)(3) organization the IRS recognizes in the United States, more than 1.6 million of them, and give donors a searchable, honest view of the charitable sector. Our role is to surface information, not to judge missions.
+              We list every nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.6 million of them. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
               Peer financial context (0–100) compares financial footprint and reserve position relative to similar groups. It does not measure impact, leadership, community trust, or whether a group deserves support. Daanaa is not a charity rating agency.
@@ -117,7 +117,7 @@ export default function HowItWorks() {
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">Type of work</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  The IRS assigns each nonprofit a category code. "B24" means Special Education and "E21" means Community Health Centers. We compare within that specific category, not just the broad field. A small folk arts museum is not a fair comparison to the Metropolitan Museum of Art.
+                  Each nonprofit is placed in one of four operating model groups based on how it actually runs: Direct Service, Mission Infrastructure, Asset Stewards, or Endowment and Capital. Then it is placed in a revenue band based on size. A food bank is compared to other food banks at the same scale, not to hospitals or land trusts.
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-light-grey">
@@ -128,7 +128,7 @@ export default function HowItWorks() {
               </div>
             </div>
             <p className="mt-4">
-              If a subcategory + size group has fewer than 30 organizations nationally, we step up to the broader sector. If that's still too small, we use the full sector with no size filter. You'll always see which peer group the score reflects.
+              Each peer cell needs at least 30 organizations to be meaningful. In practice, most cells have thousands. The metrics that matter differ by group: reserves are weighted less for food banks (where thin savings means mission delivery) and more for land trusts (where reserves are the mission).
             </p>
 
             <div className="mt-6">
@@ -216,7 +216,7 @@ export default function HowItWorks() {
               <div className="p-5 bg-white rounded-xl border-2 border-dashed border-soft-gold/30">
                 <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Organization's data</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
-                  Added directly by the organization. Clearly labeled as self reported. Coming soon: claim your page.
+                  Added directly by the organization. Clearly labeled as self reported. Claim your page to update this information.
                 </p>
                 <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
                   {['Mission statement', 'Program descriptions', 'Leadership team', 'Photos & annual reports', 'Impact metrics'].map(i => (
