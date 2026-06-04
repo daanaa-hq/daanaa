@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Daanaa API — Serves registry_enriched to frontend
+Daanaa API — Peer-context nonprofit directory backend
+Serves registry_enriched + v4 scores to frontend
 """
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
 import numpy as np
@@ -284,7 +285,7 @@ def _make_verify_token(ein: str, pin: str) -> str:
 
 # Admin key — set DAANAA_ADMIN_KEY env var before starting the API.
 # Any endpoint decorated with @require_admin_key will return 401 if it's missing or wrong.
-_ADMIN_KEY = os.environ.get("DAANAA_ADMIN_KEY", "") or os.environ.get("MERIT_ADMIN_KEY", "")
+_ADMIN_KEY = os.environ.get("DAANAA_ADMIN_KEY", "") or os.environ.get("DAANAA_ADMIN_KEY", "")
 
 def require_admin_key(f):
     @functools.wraps(f)
