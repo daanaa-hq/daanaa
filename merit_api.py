@@ -28,6 +28,28 @@ FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fronte
 # score-computation DATE is read dynamically from score_snapshots.
 METHODOLOGY_VERSION = "v1"
 
+# ── Legal Disclosures ──────────────────────────────────────────────────────────
+# Attached to all responses containing scores
+SCORE_DISCLAIMER = (
+    "⚠️ Financial Health is a peer-group ranking relative to similar organizations. "
+    "It does NOT evaluate mission impact, program quality, governance, or legitimacy. "
+    "Always verify information independently before donating. "
+    "See daanaa.org/methodology for full limitations."
+)
+
+UNSCORED_DISCLOSURE = (
+    "🔍 No Financial Data Available: This organization lacks revenue/expense data in IRS records. "
+    "This does NOT indicate unhealthiness. Verify directly: check IRS.gov 501(c)(3) status, "
+    "ask for Form 990, or contact them. "
+    "Help us score them: Submit financial data at daanaa.org/submit"
+)
+
+SELF_REPORTED_DISCLAIMER = (
+    "⚠️ Self-Reported Data: This financial information was submitted by the organization. "
+    "We have NOT independently verified these figures. Recommend requesting Form 990 directly. "
+    "Daanaa assumes no liability for accuracy."
+)
+
 # ── Response cache ─────────────────────────────────────────────────────────────
 # Simple in-process time-keyed cache. Keys are strings, values are (payload, ts).
 # TTLs chosen per endpoint volatility. No external dependency (no Redis).
@@ -258,6 +280,7 @@ def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
     if not ENABLE_V4_SCORES or v4_row is None:
         return org
     v4 = dict(v4_row)
+    org['visibility_tier'] = v4.get('visibility_tier')
     org['financial_health'] = v4.get('financial_health')
     org['operating_model'] = v4.get('operating_model')
     org['revenue_band'] = v4.get('revenue_band')
@@ -563,7 +586,6 @@ def v1_health():
 app.register_blueprint(api_v1)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@app.route('/api/organizations')
 @app.route('/api/log/search', methods=['POST'])
 @limiter.limit("500 per minute")
 def log_search():
@@ -586,6 +608,7 @@ def log_search():
     return jsonify({"status": "logged"})
 
 
+@app.route('/api/organizations')
 @limiter.limit("100 per minute")
 def list_organizations():
     # Build cache key from all query params before parsing
@@ -693,6 +716,11 @@ def list_organizations():
     if order not in ['asc', 'desc']:
         order = 'desc'
 
+    # Prefix sort_by with table alias to avoid ambiguity in JOINs
+    sort_col = f"r.{sort_by}"
+    if sort_by in ['total_revenue', 'organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']:
+        sort_col = f"r.{sort_by}"
+
     where_sql = " AND ".join(where_clauses)
 
     total = db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {where_sql}", params).fetchone()[0]
@@ -710,12 +738,12 @@ def list_organizations():
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
                (r.website IS NOT NULL AND r.website != '') as has_website,
-               v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+               v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
                v4.peer_cell_size, v4.metrics_json, v4.percentiles_json
         FROM registry_enriched r
         LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
         WHERE {where_sql}
-        ORDER BY {sort_by} {order}
+        ORDER BY {sort_col} {order}
         LIMIT ? OFFSET ?
     """
     params.extend([per_page, offset])
@@ -762,7 +790,7 @@ def get_organization(ein):
     db = get_db()
     row = db.execute(
         """SELECT r.*,
-                  v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+                  v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
                   v4.peer_cell_size, v4.metrics_json, v4.percentiles_json
            FROM registry_enriched r
            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
@@ -842,7 +870,16 @@ def get_organization(ein):
             org['state_category_rank'] = state_rank['higher_in_state'] + 1
             org['state_category_total'] = state_rank['total_in_state']
 
-    return jsonify(_strip_scores(org))
+    # Add appropriate disclosures based on org's scoring status
+    disclosures = {}
+    if org.get('financial_health'):
+        disclosures['score_disclaimer'] = SCORE_DISCLAIMER
+    else:
+        disclosures['unscored_disclosure'] = UNSCORED_DISCLOSURE
+
+    result = _strip_scores(org)
+    result['_disclosures'] = disclosures
+    return jsonify(result)
 
 @app.route('/api/organizations/<ein>/score-history')
 @limiter.limit("60 per minute")
@@ -1311,6 +1348,173 @@ def track_event():
     return ('', 204)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ORG SELF-REPORTING: Unscored orgs submit financial data to get scored
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/api/org/submit-financial-data', methods=['POST'])
+@limiter.limit("10 per hour")
+def org_submit_data():
+    """Org submits its revenue + expenses to get scored via Tier D (self-reported)."""
+    data = request.get_json(silent=True) or {}
+    ein = str(data.get('ein', '')).strip()
+    revenue = data.get('revenue')
+    expenses = data.get('expenses')
+    email = str(data.get('email', '')).strip()
+    org_name = str(data.get('organization_name', '')).strip()
+
+    # Validate inputs
+    if not ein or not ein.isdigit():
+        return jsonify({"error": "Invalid EIN"}), 400
+    if not revenue or not expenses:
+        return jsonify({"error": "Revenue and expenses required"}), 400
+    try:
+        revenue = float(revenue)
+        expenses = float(expenses)
+        if revenue <= 0 or expenses <= 0:
+            return jsonify({"error": "Revenue and expenses must be positive"}), 400
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid numeric values"}), 400
+
+    db = get_db()
+
+    # Check org exists in registry
+    org = db.execute(
+        "SELECT EIN, organization_name FROM registry_enriched WHERE EIN = ?",
+        (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({"error": "Organization not found in registry"}), 404
+
+    # Check already scored
+    scored = db.execute(
+        "SELECT EIN FROM v4_scores WHERE EIN = ?", (ein,)
+    ).fetchone()
+    if scored:
+        return jsonify({"error": "Organization already has v4 score"}), 409
+
+    # Insert submission
+    try:
+        db.execute(
+            """INSERT OR REPLACE INTO org_submissions
+               (EIN, organization_name, submitted_revenue, submitted_expenses,
+                submitter_email, submitted_at, status)
+               VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, 'pending')""",
+            (ein, org_name or org['organization_name'], revenue, expenses, email)
+        )
+        db.commit()
+        return jsonify({
+            "status": "submitted",
+            "message": "Thank you! We'll review and score your organization soon.",
+            "ein": ein
+        }), 201
+    except Exception as e:
+        return jsonify({"error": f"Submission failed: {str(e)}"}), 500
+
+
+@app.route('/api/org/<ein>/submission-status', methods=['GET'])
+@limiter.limit("60 per minute")
+def org_submission_status(ein):
+    """Check if org has submitted data and when it will be scored."""
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    db = get_db()
+
+    # Check if already scored
+    scored = db.execute(
+        "SELECT visibility_tier, financial_health FROM v4_scores WHERE EIN = ?",
+        (ein_clean,)
+    ).fetchone()
+    if scored:
+        return jsonify({
+            "status": "scored",
+            "visibility_tier": scored['visibility_tier'],
+            "financial_health": scored['financial_health']
+        }), 200
+
+    # Check submission status
+    submission = db.execute(
+        """SELECT submitted_at, status, submitted_revenue, submitted_expenses
+           FROM org_submissions WHERE EIN = ?""",
+        (ein_clean,)
+    ).fetchone()
+
+    if submission:
+        return jsonify({
+            "status": submission['status'],
+            "submitted_at": submission['submitted_at'],
+            "next_action": "We review submissions weekly and score them using our fair peer-based methodology."
+        }), 200
+
+    # Not submitted yet
+    return jsonify({
+        "status": "not_submitted",
+        "message": "Organization hasn't submitted financial data yet. Visit /org/<ein>/claim to submit."
+    }), 200
+
+
+@app.route('/api/unscored-search', methods=['GET'])
+@limiter.limit("60 per minute")
+def unscored_search():
+    """Search for unscored orgs by name/location to include in results with 'unscored' marker."""
+    query = request.args.get('q', '').strip()
+    ntee1 = request.args.get('ntee1', '').upper().strip()
+    state = request.args.get('state', '').upper().strip()
+    limit = min(int(request.args.get('limit', 20)), 50)
+
+    if not query and not ntee1 and not state:
+        return jsonify({"error": "Provide search terms (q, ntee1, or state)"}), 400
+
+    db = get_db()
+    where_parts = ["r.EIN NOT IN (SELECT EIN FROM v4_scores)"]
+    params = []
+
+    if query:
+        where_parts.append("(r.organization_name LIKE ? OR r.website LIKE ?)")
+        q_wild = f"%{query}%"
+        params.extend([q_wild, q_wild])
+    if ntee1:
+        where_parts.append("r.NTEE1 = ?")
+        params.append(ntee1)
+    if state:
+        where_parts.append("r.STATE = ?")
+        params.append(state)
+
+    where_sql = " AND ".join(where_parts)
+    rows = db.execute(
+        f"""SELECT r.EIN, r.organization_name, r.CITY, r.STATE, r.NTEE1,
+                  r.total_revenue, r.website, r.mission
+           FROM registry_enriched r
+           WHERE {where_sql}
+           LIMIT ?""",
+        params + [limit]
+    ).fetchall()
+
+    results = []
+    for row in rows:
+        results.append({
+            "EIN": row['EIN'],
+            "organization_name": row['organization_name'],
+            "location": f"{row['CITY']}, {row['STATE']}",
+            "NTEE1": row['NTEE1'],
+            "revenue": row['total_revenue'],
+            "website": row['website'],
+            "mission": row['mission'],
+            "visibility_tier": "Unscored",
+            "financial_health": None,
+            "marker": "No financial data available in IRS records"
+        })
+
+    return jsonify({
+        "results": results,
+        "count": len(results),
+        "disclosure": UNSCORED_DISCLOSURE,
+        "call_to_action": "Help us score unscored organizations: Submit financial data at daanaa.org/submit-data"
+    }), 200
+
+
 @app.route('/api/admin/analytics', methods=['GET'])
 @require_admin_key
 def admin_analytics():
@@ -1659,7 +1863,7 @@ def _fetch_orgs_by_eins(db, eins: list[str]) -> list[dict]:
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
               r.latest_tax_year, r.data_source, r.updated_at,
               r.merit_tier, r.merit_score, r.merit_band,
-              v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
     placeholders = ",".join("?" * len(eins))
     rows = db.execute(
@@ -1682,7 +1886,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
               r.latest_tax_year, r.data_source, r.updated_at,
               r.merit_tier, r.merit_score, r.merit_band,
-              v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
 
     # ── Vector path ────────────────────────────────────────────────────────────
@@ -1894,7 +2098,7 @@ def fused_search():
               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
               (r.website  IS NOT NULL AND r.website  != '') as has_website,
-              v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
     rows = db.execute(
         f"""SELECT {cols} FROM registry_enriched r
