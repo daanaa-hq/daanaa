@@ -42,3 +42,25 @@ Stewardship "trust signals reflect real data." Key consequence: the EIN router i
 official-by-construction (keyed on the authoritative IRS EIN, not a guessed URL), so it's
 the SAFEST give path — no need to discover an invisible org's page to give them a protected
 one. Rejected: presenting any high-confidence scraped link as a committed donate path.
+
+## 2026-06-04 — Search: fused-mode result count confusion — REVIEW NEEDED
+**Issue:** Fused search (semantic + keyword, no filters) caps at RESULT_N=20 with totalPages=1.
+When any filter is added, isFusedMode flips false → standard FTS fires → result count jumps from
+20 to potentially thousands. Users see "20 results," add a filter, see 1,000+. Confusing.
+**Also:** Cold fused search latency is ~1 second (query embedding + 546K vector cosine scan + FTS + RRF).
+**Options to review:**
+- A) Show "Top 20 smart matches" label + "Show all text results" button in fused mode
+- B) Increase RESULT_N to 50 and add pagination to fused results
+- C) Make fused mode trigger the standard search simultaneously and show a max count
+- D) Cache query embeddings more aggressively to reduce cold latency
+**Not fixed yet:** this is a product decision. Logged for review.
+
+## 2026-06-04 — Autonomous event-driven search boosting via agents (fully logged, human-overrideable)
+Chose to implement two autonomous agents: (1) Surge Monitor detects search spikes (3x baseline) and classifies
+events (hurricane → disaster, unemployment → employment), (2) Outcome Analyzer measures boost effectiveness
+(clicks, donations). Boosts are fully auditable, expire after 48h, and can be paused by humans via admin endpoint.
+Why: Search by event name (e.g., "hurricane") won't match org names ("Red Cross"); semantic boosting + human oversight
+honors principles #3 (evidence-based), #6 (correct mistakes), #9 (explainable), #10 (AI as tool, not replacement).
+All agent actions logged to `agent_actions` table; every boost is overrideable via `/api/admin/surge-boosts/<id>/override`.
+Event classification rules documented in `EVENT_RULES` and extensible. Crons run hourly (surge) + nightly (outcome analysis).
+See `docs/AGENT-SYSTEM.md` for full architecture. Rejected: static search, opaque agent decisions, permanent boosts.

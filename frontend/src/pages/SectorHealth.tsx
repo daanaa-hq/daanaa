@@ -78,7 +78,7 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 export default function SectorHealth() {
   usePageMeta(
     'What public filings suggest about the sector',
-    'A look at available public financial filings across four operating model groups and 47 cause types of tax-deductible 501(c)(3) nonprofits. Reserve levels, filing rates, and program spending — based on 356,000 organizations with complete financial data.'
+    'A look at available public financial filings across four operating model groups and 47 cause types of donation eligible 501(c)(3) nonprofits. Reserve levels, filing rates, and program spending — based on 356,000 organizations with complete financial data.'
   )
 
   const navigate = useNavigate()
@@ -208,7 +208,7 @@ export default function SectorHealth() {
                   desc: 'Education, health, arts, environment, community development, science',
                   color: 'border-blue-200 bg-blue-50',
                   badge: 'text-blue-700 bg-blue-100',
-                  note: 'Moderate reserves, asset-supported programs',
+                  note: 'Moderate reserves, programs backed by physical assets',
                 },
                 {
                   name: 'Asset Stewards',
@@ -402,7 +402,7 @@ export default function SectorHealth() {
           {/* Methodology note */}
           <div className="mt-12 pt-8 border-t border-light-grey">
             <p className="font-body text-[13px] text-cool-grey/70 leading-[1.6] max-w-[680px]">
-              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only tax-deductible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data — approximately 23.7% of the 1.63 million tax-deductible nonprofits Daanaa indexes. The remaining 76.3% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
+              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data — approximately 23.7% of the 1.63 million donation eligible nonprofits Daanaa indexes. The remaining 76.3% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
               <span className="inline-flex items-center gap-1.5 font-body text-[12px] text-cool-grey/60">

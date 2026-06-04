@@ -344,5 +344,11 @@ if __name__ == "__main__":
     ap.add_argument("--limit",    type=int, help="Test run limit")
     ap.add_argument("--workers",  type=int, default=1)
     ap.add_argument("--all-orgs", action="store_true", help="Include unscored orgs too")
+    ap.add_argument("--url",      type=str, help="Override inference endpoint URL")
+    ap.add_argument("--model",    type=str, help="Override model name")
     args = ap.parse_args()
+    if args.url:
+        GEN_URL = args.url
+    if args.model:
+        MODEL = args.model
     run(limit=args.limit, workers=args.workers, all_orgs=args.all_orgs)
