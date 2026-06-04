@@ -725,6 +725,18 @@ def list_organizations():
 
     total = db.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {where_sql}", params).fetchone()[0]
 
+    # Check if v4_scores table exists (production might not have it)
+    has_v4_scores = bool(db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='v4_scores' LIMIT 1"
+    ).fetchone())
+
+    if has_v4_scores:
+        v4_cols = ", v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band, v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"
+        join_clause = "LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN"
+    else:
+        v4_cols = ", NULL as visibility_tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band, NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json"
+        join_clause = ""
+
     sql = f"""
         SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
                r.total_revenue, r.ntee1_percentile, r.ntee1_total_orgs, r.source,
@@ -737,11 +749,10 @@ def list_organizations():
                r.donate_url, r.donate_platform, r.donate_url_status, r.subsection, r.deductibility,
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
-               (r.website IS NOT NULL AND r.website != '') as has_website,
-               v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json
+               (r.website IS NOT NULL AND r.website != '') as has_website
+               {v4_cols}
         FROM registry_enriched r
-        LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+        {join_clause}
         WHERE {where_sql}
         ORDER BY {sort_col} {order}
         LIMIT ? OFFSET ?
@@ -788,13 +799,27 @@ def get_organization(ein):
         return jsonify({"error": "Invalid EIN"}), 400
 
     db = get_db()
-    row = db.execute(
-        """SELECT r.*,
-                  v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-                  v4.peer_cell_size, v4.metrics_json, v4.percentiles_json
-           FROM registry_enriched r
-           LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
-           WHERE r.EIN = ?""", (ein_clean,)).fetchone()
+
+    # Check if v4_scores table exists
+    has_v4_scores = bool(db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='v4_scores' LIMIT 1"
+    ).fetchone())
+
+    if has_v4_scores:
+        sql = """SELECT r.*,
+                        v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+                        v4.peer_cell_size, v4.metrics_json, v4.percentiles_json
+                 FROM registry_enriched r
+                 LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+                 WHERE r.EIN = ?"""
+    else:
+        sql = """SELECT r.*,
+                        NULL as visibility_tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band,
+                        NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json
+                 FROM registry_enriched r
+                 WHERE r.EIN = ?"""
+
+    row = db.execute(sql, (ein_clean,)).fetchone()
     if row is None:
         return jsonify({"error": "Not found"}), 404
 
