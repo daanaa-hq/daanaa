@@ -125,9 +125,20 @@ function OrgColumn({ ein }: { ein: string }) {
       </Link>
 
       {org.mission && (
-        <p className="font-body text-[12.5px] text-cool-grey/90 leading-[1.5] mb-5 line-clamp-3">
-          {org.mission.replace(/^[“"\s]+|[”"\s]+$/g, '')}
-        </p>
+        <div className="mb-5">
+          <p className="font-body text-[12.5px] text-cool-grey/90 leading-[1.5] line-clamp-3">
+            {org.mission.replace(/^[“"\s]+|[”"\s]+$/g, '')}
+          </p>
+          {(org.mission_source || '').startsWith('ai') && (
+            <span
+              className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-body text-cool-grey/55"
+              title="AI-generated from public records — not confirmed by the organization"
+            >
+              <span className="w-1 h-1 rounded-full bg-cool-grey/40" />
+              AI generated
+            </span>
+          )}
+        </div>
       )}
 
       <div className="space-y-2">
