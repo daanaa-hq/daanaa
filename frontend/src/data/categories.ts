@@ -132,9 +132,11 @@ export const NTEE_SUBCATEGORIES: Record<string, Array<{ code: string; label: str
   O: [
     { code: 'O20', label: 'Youth Centers & Clubs' },
     { code: 'O23', label: 'Boys & Girls Clubs' },
-    { code: 'O30', label: 'Scouting' },
-    { code: 'O40', label: 'Big Brothers / Big Sisters' },
-    { code: 'O50', label: 'Youth Development Programs' },
+    { code: 'O31', label: 'Big Brothers / Big Sisters' },
+    { code: 'O41', label: 'Scouting' },
+    { code: 'O50', label: 'Youth Development (General)' },
+    { code: 'O51', label: 'Youth Development (Recreation)' },
+    { code: 'O52', label: 'Youth Services' },
   ],
   F: [
     { code: 'F20', label: 'Substance Abuse Prevention' },
