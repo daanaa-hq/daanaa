@@ -157,6 +157,15 @@ export default function Directory() {
   const [subFilters, setSubFilters] = useState<string[]>(subParamList)
   const [stateFilter, setStateFilter] = useState(stateParam)
   const [sortBy, setSortBy] = useState(SCORES_ENABLED ? 'merit_score' : 'total_revenue')
+
+  // Sync filter state with URL params whenever they change
+  useEffect(() => {
+    const newFromCats = (!categoryParam || categoryParam === 'all') ? [] : categoryParam.split(',').filter(c => c && c !== 'all')
+    const newFromSubs = subParamList.map(s => s[0])
+    setActiveFilters(Array.from(new Set([...newFromCats, ...newFromSubs])))
+    setSubFilters(subParamList)
+    setStateFilter(stateParam)
+  }, [categoryParam, subParam, stateParam])
   const [revenueFilter, setRevenueFilter] = useState<RevenueId>(
     REVENUE_PRESETS.some(p => p.id === revenueParam) ? revenueParam as RevenueId : ''
   )
