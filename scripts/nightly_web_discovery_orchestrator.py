@@ -78,22 +78,26 @@ def main():
         new_donations = donations_after - donations_before
         log(f"🔗 Phase 3 result: +{new_donations} donation links ({donations_after} total)")
 
-    # Phase 4: GPU semantic verification (optional, requires embedding server)
-    # Check if embedding server is available on port 11436
-    import socket
+    # Phase 4: GPU semantic verification (waits for embedding server to be ready)
+    # The run_phase4.sh wrapper ensures the embedding server is healthy before starting.
+    log("🔍 Phase 4: GPU Semantic Verification (waiting for embed server...)")
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex(('127.0.0.1', 11436))
-        sock.close()
-
-        if result == 0:
-            log("📡 Embedding server detected on port 11436")
-            if run_phase("Phase 4: GPU Semantic Verification", "web_finder_agent.py", 3600):
-                log("✅ Phase 4 GPU verification completed")
+        result = subprocess.run(
+            ['bash', str(SCRIPT_DIR / 'run_phase4.sh'), '300'],
+            capture_output=True,
+            text=True,
+            timeout=14400  # 4 hours max
+        )
+        if result.returncode == 0:
+            log("✅ Phase 4 GPU verification completed")
         else:
-            log("⚠️  Embedding server not available on port 11436 - skipping Phase 4")
+            log(f"⚠️  Phase 4 did not complete (embed server unavailable or timeout)")
+            if "Embed server failed to start" in result.stdout:
+                log("   Embedding server failed to start within timeout")
+    except subprocess.TimeoutExpired:
+        log("⏱️  Phase 4 timed out after 4 hours (may still be running)")
     except Exception as e:
-        log(f"⚠️  Could not check embedding server: {e}")
+        log(f"⚠️  Phase 4 error: {e}")
 
     websites_final, donations_final = get_counts()
     log("")

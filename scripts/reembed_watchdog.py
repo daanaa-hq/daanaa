@@ -163,24 +163,43 @@ def start_embed_server() -> subprocess.Popen:
     return None
 
 
-def run_reembed():
+def run_reembed(max_retries: int = 5):
+    """Run embedding job with exponential backoff retry on database locks."""
     log("Launching build_org_embeddings.py --all-orgs --overwrite ...")
-    result = subprocess.run(
-        [
-            str(VENV_PYTHON),
-            str(EMBED_SCRIPT),
-            "--all-orgs",
-            "--model", "mxbai-embed-large",
-            "--dim", "1024",
-            "--workers", "2",
-            "--vulkan",
-            "--overwrite",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    last_lines = "\n".join((result.stdout + result.stderr).strip().splitlines()[-5:])
-    log(f"Embed job finished:\n{last_lines}")
+
+    for attempt in range(1, max_retries + 1):
+        result = subprocess.run(
+            [
+                str(VENV_PYTHON),
+                str(EMBED_SCRIPT),
+                "--all-orgs",
+                "--model", "mxbai-embed-large",
+                "--dim", "1024",
+                "--workers", "2",
+                "--vulkan",
+                "--overwrite",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        output = result.stdout + result.stderr
+        last_lines = "\n".join(output.strip().splitlines()[-5:])
+
+        # Check if database was locked
+        if "database is locked" in output.lower():
+            if attempt < max_retries:
+                wait_time = 2 ** attempt  # 2, 4, 8, 16, 32 seconds
+                log(f"Attempt {attempt}: database locked — retrying in {wait_time}s")
+                time.sleep(wait_time)
+            else:
+                log(f"Attempt {attempt}/{max_retries}: database locked (giving up)")
+                log(f"Embed job output:\n{last_lines}")
+                return False
+        else:
+            log(f"Embed job finished:\n{last_lines}")
+            return result.returncode == 0
+
+    return False
 
 
 def main(threshold: int, interval: int):
@@ -200,16 +219,19 @@ def main(threshold: int, interval: int):
             if not server_was_running:
                 server_proc = start_embed_server()
                 if server_proc is None:
-                    log("Skipping this cycle — embed server failed to start")
+                    log("ERROR: embed server failed to start")
                     time.sleep(interval)
                     continue
 
-            run_reembed()
+            # Run reembed (with retries for database locks).
+            # Server stays running even if reembed fails — Phase 4 still needs it.
+            success = run_reembed(max_retries=5)
+
+            if not success:
+                log("WARNING: Embed job did not complete successfully, but keeping server running for Phase 4")
 
             if server_proc is not None:
-                log("Stopping embed server (started by watchdog)...")
-                server_proc.terminate()
-                server_proc.wait(timeout=10)
+                log("Embed server will continue running (managed by gpu_night.sh)")
         else:
             log(f"Below threshold — sleeping {interval}s")
 

@@ -20,6 +20,11 @@ GEN_LOG="$LOG_DIR/generate_missions_32b.log"
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
 start() {
+  # Start independent embed server first — Phase 4 (web_finder_agent) depends on it.
+  # This runs separately from mission generation so reembed issues don't block embeddings.
+  echo "[$(ts)] start: launching embed_server (mxbai-embed-large on :11436)"
+  bash "$BASE/scripts/embed_server.sh" start
+
   if pgrep -f "llama-server.*$(basename "$MODEL")" >/dev/null; then
     echo "[$(ts)] start: llama-server already running — skipping"
   else
@@ -73,20 +78,26 @@ stop() {
   echo "[$(ts)] stop: halting generate_missions"
   pkill -f "scripts/generate_missions.py" 2>/dev/null
   sleep 2
-  echo "[$(ts)] stop: halting reembed_watchdog + embed server"
+  echo "[$(ts)] stop: halting reembed_watchdog"
   pkill -f "scripts/reembed_watchdog.py" 2>/dev/null
-  pkill -f "llama-server.*mxbai" 2>/dev/null
-  fuser -k 11436/tcp 2>/dev/null
-  echo "[$(ts)] stop: halting llama-server"
+  echo "[$(ts)] stop: halting llama-server (mission generation)"
   pkill -f "llama-server.*$(basename "$MODEL")" 2>/dev/null
   sleep 2
-  # belt-and-suspenders: free the port if anything still holds it
+  # belt-and-suspenders: free the mission port
   fuser -k "${PORT}/tcp" 2>/dev/null
-  echo "[$(ts)] stop: done (GPU freed)"
+  # NOTE: embed_server (port 11436) is kept running until Phase 4 completes.
+  # Phase 4 may run until 07:00+. See stop_embed_server() cron job (runs at 08:00).
+  echo "[$(ts)] stop: done (GPU freed, embed_server still running for Phase 4)"
+}
+
+stop_embed_server() {
+  echo "[$(ts)] stop_embed_server: halting embed_server (used by Phase 4)"
+  bash "$BASE/scripts/embed_server.sh" stop
 }
 
 case "${1:-}" in
-  start) start ;;
-  stop)  stop ;;
-  *) echo "usage: $0 {start|stop}" >&2; exit 1 ;;
+  start)              start ;;
+  stop)               stop ;;
+  stop_embed_server)  stop_embed_server ;;
+  *) echo "usage: $0 {start|stop|stop_embed_server}" >&2; exit 1 ;;
 esac
