@@ -64,7 +64,6 @@ export interface ApiOrganization {
   program_expense_pct: number | null; // program revenue as % of total expenses
   nccs_year: number | null;
   cause_tags?: string[] | null;           // LLM-extracted cause tags (3-5 per org)
-  is_hidden_gem?: number | null;          // 1 = small org, healthy reserves, high program spend
   donate_url?: string | null;             // direct giving page found on org site (Donorbox, etc.)
   donate_platform?: string | null;        // 'donorbox' | 'networkforgood' | 'classy' | 'mightycause' | 'paypal'
   donate_url_status?: string | null;      // 'ok' | 'dead' | 'unknown' — null = not yet checked
@@ -151,9 +150,7 @@ export async function getOrganizations(params?: {
   max_revenue?: number;
   min_percentile?: number;    // legacy — filter by ntee1_percentile >= value
   min_tier?: string;          // 'Beacon' | 'Lantern' | 'Flame' | 'Ember' | 'Seed'
-  hidden_gem?: boolean;       // true = only small, healthy, mission-focused orgs
   direct_link?: boolean;      // true = only orgs with a detected donate URL
-  needs_funding?: boolean;    // true = orgs with < 12 months of operating reserves
   has_website?: boolean;      // true = only orgs with a verified, live website
   recent?: boolean;           // true = only orgs whose latest filing is 2022 or later
   cause?: string;             // matches a cause tag (e.g. "food bank", "mental health")
@@ -177,9 +174,7 @@ export async function getOrganizations(params?: {
   if (params?.max_revenue != null) sp.set('max_revenue', String(params.max_revenue));
   if (params?.min_percentile != null) sp.set('min_percentile', String(params.min_percentile));
   if (params?.min_tier) sp.set('min_tier', params.min_tier);
-  if (params?.hidden_gem) sp.set('hidden_gem', '1');
   if (params?.direct_link) sp.set('direct_link', '1');
-  if (params?.needs_funding) sp.set('needs_funding', '1');
   if (params?.has_website) sp.set('has_website', '1');
   if (params?.recent) sp.set('recent', '1');
   if (params?.cause) sp.set('cause', params.cause);

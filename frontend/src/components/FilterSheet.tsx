@@ -55,18 +55,14 @@ interface FilterSheetProps {
   sortBy: string
   revenueFilter: string
   scoreTier: string
-  hiddenGem?: boolean
   directLink?: boolean
-  needsFunding?: boolean
   cause?: string
   onCategoryChange: (id: string) => void
   onStateChange: (state: string) => void
   onSortChange: (sort: string) => void
   onRevenueChange: (id: string) => void
   onScoreTierChange: (id: string) => void
-  onHiddenGemChange?: (v: boolean) => void
   onDirectLinkChange?: (v: boolean) => void
-  onNeedsFundingChange?: (v: boolean) => void
   onCauseChange?: (v: string) => void
   onClearAll: () => void
   resultCount: number
@@ -74,9 +70,9 @@ interface FilterSheetProps {
 
 export default function FilterSheet({
   open, onClose,
-  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier, hiddenGem = false, directLink = false, needsFunding = false, cause = '',
+  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier, directLink = false, cause = '',
   onCategoryChange, onStateChange, onSortChange, onRevenueChange, onScoreTierChange,
-  onHiddenGemChange, onDirectLinkChange, onNeedsFundingChange, onCauseChange, onClearAll, resultCount,
+  onDirectLinkChange, onCauseChange, onClearAll, resultCount,
 }: FilterSheetProps) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
@@ -90,9 +86,7 @@ export default function FilterSheet({
     !!stateFilter,
     !!revenueFilter,
     !!scoreTier,
-    hiddenGem,
     directLink,
-    needsFunding,
     !!cause,
   ].filter(Boolean).length
 
@@ -125,56 +119,6 @@ export default function FilterSheet({
 
         {/* Scrollable body */}
         <div className="overflow-y-auto flex-1 px-5 py-4 space-y-6">
-
-          {/* Hidden gems — discovery toggle */}
-          {onHiddenGemChange && (
-            <button
-              onClick={() => onHiddenGemChange(!hiddenGem)}
-              className="w-full flex items-start gap-3 px-4 py-3.5 rounded-xl border text-left transition-all"
-              style={{
-                backgroundColor: hiddenGem ? 'rgba(201,169,110,0.12)' : 'rgba(201,169,110,0.04)',
-                borderColor: hiddenGem ? '#C9A96E' : 'rgba(201,169,110,0.25)',
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill={hiddenGem ? '#C9A96E' : 'none'} stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
-              <span>
-                <span className="block font-body text-[14px] font-semibold" style={{ color: hiddenGem ? '#A8853E' : '#0A1628' }}>
-                  Hidden gems
-                </span>
-                <span className="block font-body text-[12px] text-cool-grey/70 leading-[1.4] mt-0.5">
-                  Small orgs doing exceptional work quietly
-                </span>
-              </span>
-            </button>
-          )}
-
-          {/* Needs funding soon */}
-          {onNeedsFundingChange && (
-            <button
-              onClick={() => onNeedsFundingChange(!needsFunding)}
-              className="w-full flex items-start gap-3 px-4 py-3.5 rounded-xl border text-left transition-all"
-              style={{
-                backgroundColor: needsFunding ? 'rgba(239,68,68,0.10)' : 'rgba(239,68,68,0.03)',
-                borderColor: needsFunding ? '#EF4444' : 'rgba(239,68,68,0.25)',
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill={needsFunding ? '#EF4444' : 'none'} stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              <span>
-                <span className="block font-body text-[14px] font-semibold" style={{ color: needsFunding ? '#B91C1C' : '#0A1628' }}>
-                  Needs funding soon
-                </span>
-                <span className="block font-body text-[12px] text-cool-grey/70 leading-[1.4] mt-0.5">
-                  Less than 6 months of operating reserves
-                </span>
-              </span>
-            </button>
-          )}
 
           {/* Direct link available */}
           {onDirectLinkChange && (

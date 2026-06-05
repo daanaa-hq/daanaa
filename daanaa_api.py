@@ -645,9 +645,7 @@ def list_organizations():
     min_tier = request.args.get('min_tier', '').strip()
     if min_tier == 'Glow':  # frontend alias for DB name Ember
         min_tier = 'Ember'
-    hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     direct_link = request.args.get('direct_link', '').strip() == '1'
-    needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
     recent = request.args.get('recent', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
@@ -708,15 +706,11 @@ def list_organizations():
     if min_pct is not None:
         where_clauses.append("ntee1_percentile >= ?")
         params.append(min_pct)
-    if hidden_gem:
-        where_clauses.append("is_hidden_gem = 1")
     if direct_link:
         where_clauses.append(
             "donate_url IS NOT NULL AND donate_url != '' "
             "AND donate_url_status IN ('ok','beta','live','claimed','blocked_or_restricted')"
         )
-    if needs_funding:
-        where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
     if has_website:
         where_clauses.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
     if recent:
@@ -771,7 +765,7 @@ def list_organizations():
                r.merit_tier, r.merit_score, r.merit_band,
                CASE WHEN r.months_of_reserve BETWEEN -120 AND 120 THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
                r.net_assets, r.total_expenses,
-               r.employee_count, r.ruling_date, r.zipcode, r.is_hidden_gem, r.cause_tags,
+               r.employee_count, r.ruling_date, r.zipcode, r.cause_tags,
                r.donate_url, r.donate_platform, r.donate_url_status, r.subsection, r.deductibility,
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
@@ -2016,19 +2010,14 @@ def get_similar_organizations(ein):
     except (ValueError, TypeError):
         limit = 6
 
-    diamonds_only = request.args.get('diamonds', '').strip() == '1'
-
     db = get_db()
     row = db.execute("SELECT * FROM registry_enriched WHERE EIN = ?", (ein_clean,)).fetchone()
     if row is None:
         return jsonify({"error": "Not found"}), 404
 
     org = dict(row)
-    fetch_limit = limit * 3 if diamonds_only else limit
-    results, mode = _find_similar_orgs(db, ein_clean, org, limit=fetch_limit)
-    if diamonds_only:
-        results = [r for r in results if r.get('is_hidden_gem')][:limit]
-    return jsonify({'results': [_strip_scores(r) for r in results], 'mode': mode, 'diamonds_only': diamonds_only})
+    results, mode = _find_similar_orgs(db, ein_clean, org, limit=limit)
+    return jsonify({'results': [_strip_scores(r) for r in results], 'mode': mode})
 
 
 # ── Semantic search ────────────────────────────────────────────────────────────
@@ -2162,7 +2151,7 @@ def fused_search():
               r.latest_tax_year, r.data_source, r.merit_tier, r.merit_score, r.merit_band,
               CASE WHEN r.months_of_reserve BETWEEN -120 AND 120
                    THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
-              r.net_assets, r.is_hidden_gem, r.cause_tags,
+              r.net_assets, r.cause_tags,
               r.donate_url, r.donate_platform, r.donate_url_status,
               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
@@ -2334,7 +2323,7 @@ def organizations_fast():
             r.EIN, r.organization_name, r.NTEE1, r.CITY, r.STATE,
             r.total_revenue, r.merit_tier, r.merit_score, r.merit_band,
             SUBSTR(r.mission, 1, 200) AS mission, r.donate_url, r.donate_platform,
-            r.donate_url_status, r.is_hidden_gem, r.latest_tax_year,
+            r.donate_url_status, r.latest_tax_year,
             r.net_assets, r.revenue_band, r.data_source, r.cause_tags, r.peer_group
         FROM registry_enriched r
         WHERE {where_clause}

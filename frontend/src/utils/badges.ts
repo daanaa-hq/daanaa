@@ -33,11 +33,6 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   const isScored = score != null && (org.data_source === 'propublica' || org.data_source === 'irs_soi')
   const sector = getSectorName(org.NTEE1)
 
-  // 0. Hidden gem — hidden for now until we can explain clearly to average donors
-  // if (org.is_hidden_gem === 1) {
-  //   badges.push({ ... })
-  // }
-
   // 1. Tax-deductible — every org in our DB is an active 501(c)(3)
   badges.push({
     id: 'tax_deductible',

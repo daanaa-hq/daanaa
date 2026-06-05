@@ -172,9 +172,7 @@ export default function Directory() {
   const [scoreTier, setScoreTier] = useState<ScoreTierId>(
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
-  const [hiddenGem, setHiddenGem] = useState(searchParams.get('hidden_gem') === '1')
   const [directLink, setDirectLink] = useState(searchParams.get('direct_link') === '1')
-  const [needsFunding, setNeedsFunding] = useState(searchParams.get('needs_funding') === '1')
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
   const [recent, setRecent] = useState(searchParams.get('recent') === '1')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
@@ -221,7 +219,7 @@ export default function Directory() {
   const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
   // Fused search mode: any meaningful query with no active structured filters
-  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || hiddenGem || directLink || needsFunding || hasWebsite || recent || !!debouncedCause.trim()
+  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || directLink || hasWebsite || recent || !!debouncedCause.trim()
   const isFusedMode = !hasAnyFilter && debouncedQuery.trim().length >= 2
 
   // Categories the user drilled into (picked specific subcats) are represented by
@@ -241,14 +239,12 @@ export default function Directory() {
       min_revenue: revPreset?.min,
       max_revenue: revPreset?.max,
       min_tier: scoreTier || undefined,
-      hidden_gem: hiddenGem || undefined,
       direct_link: directLink || undefined,
-      needs_funding: needsFunding || undefined,
       has_website: hasWebsite || undefined,
       recent: recent || undefined,
       cause: debouncedCause.trim() || undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hiddenGem, directLink, needsFunding, hasWebsite, recent, debouncedCause, itemsPerPage]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, directLink, hasWebsite, recent, debouncedCause, itemsPerPage]
   )
 
   const { data: fusedData, loading: fusedLoading } = useApi(
@@ -325,9 +321,7 @@ export default function Directory() {
     setSortBy('organization_name')
     setRevenueFilter('')
     setScoreTier('')
-    setHiddenGem(false)
     setDirectLink(false)
-    setNeedsFunding(false)
     setHasWebsite(false)
     setRecent(false)
     setCause('')
@@ -339,9 +333,7 @@ export default function Directory() {
     searchParams.delete('state')
     searchParams.delete('revenue')
     searchParams.delete('min_tier')
-    searchParams.delete('hidden_gem')
     searchParams.delete('direct_link')
-    searchParams.delete('needs_funding')
     searchParams.delete('has_website')
     searchParams.delete('recent')
     setSearchParams(searchParams)
@@ -467,12 +459,6 @@ export default function Directory() {
 
             {/* Discovery toggles — each keeps its own color (even when off) + a tooltip */}
             {[
-              { key: 'hg', label: 'Hidden gems', tip: 'Small organizations doing exceptional work quietly', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
-                icon: <path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"/>,
-                toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
-              { key: 'nf', label: 'Needs funding soon', tip: 'Less than 6 months of operating reserves on record', on: needsFunding, color: '#EF4444', textOn: '#FFFFFF',
-                icon: <><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
-                toggle: () => { setNeedsFunding(!needsFunding); setCurrentPage(1); scrollTop() } },
               { key: 'dl', label: 'Direct donate link', tip: 'Give directly, no hunting for a donate page', on: directLink, color: '#16A34A', textOn: '#FFFFFF',
                 icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>,
                 toggle: () => { setDirectLink(!directLink); setCurrentPage(1); scrollTop() } },
@@ -618,18 +604,14 @@ export default function Directory() {
             sortBy={sortBy}
             revenueFilter={revenueFilter}
             scoreTier={scoreTier}
-            hiddenGem={hiddenGem}
             directLink={directLink}
-            needsFunding={needsFunding}
             cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
             onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
             onRevenueChange={(id) => handleRevenueChange(id as RevenueId)}
             onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
-            onHiddenGemChange={(v) => { setHiddenGem(v); setCurrentPage(1); scrollTop() }}
             onDirectLinkChange={(v) => { setDirectLink(v); setCurrentPage(1); scrollTop() }}
-            onNeedsFundingChange={(v) => { setNeedsFunding(v); setCurrentPage(1); scrollTop() }}
             onCauseChange={setCause}
             onClearAll={handleClearAll}
             resultCount={total}
