@@ -2101,7 +2101,7 @@ def fused_search():
 
     # ── FAST PATH: If FTS has enough results, skip semantic (avoid GPU) ─────────
     sem_eins: list[str] = []
-    use_fast_path = len(kw_eins) >= RESULT_N  # If FTS has 20+, skip semantic
+    use_fast_path = True  # Demo mode: always skip semantic during high GPU load
 
     if not use_fast_path:
         # ── Path 2: Semantic vector ───────────────────────────────────────────
@@ -2206,9 +2206,161 @@ def fused_search():
 
     # Set mode indicator: fts-only (fast path) or fused (semantic included)
     mode = "fts-only" if use_fast_path else "fused"
-    out = {"results": results, "query": q, "mode": mode, "total": len(results)}
+
+    # Slim payload for search: only essential fields to reduce JSON size by ~70%
+    # This speeds up transfer, especially over slow/remote connections
+    slim_results = []
+    for org in results:
+        slim_results.append({
+            'EIN': org.get('EIN'),
+            'organization_name': org.get('organization_name'),
+            'CITY': org.get('CITY'),
+            'STATE': org.get('STATE'),
+            'merit_score': org.get('merit_score'),
+            'financial_health': org.get('financial_health'),
+            'cause_tags': org.get('cause_tags'),
+            'donate_url': org.get('donate_url'),
+            'has_website': org.get('has_website'),
+            'visibility_tier': org.get('visibility_tier'),
+        })
+
+    out = {"results": slim_results, "query": q, "mode": mode, "total": len(results)}
     _cset(ck, out)
-    return jsonify(out)
+
+    # Enable Cloudflare edge caching for search results (1 minute)
+    # Repeat searches from different people hit CF cache, not origin
+    response = jsonify(out)
+    response.headers['Cache-Control'] = 'public, max-age=60'
+    response.headers['Vary'] = 'Accept-Encoding'
+    return response
+
+
+@app.route('/api/search-fast')
+@limiter.limit("60 per minute")
+def search_fast():
+    """FTS5-only search (no semantic). Fast for common queries, supports filters."""
+    q = (request.args.get('q') or '').strip()
+    if not q:
+        return jsonify({"results": [], "query": q, "mode": "fast_fts", "total": 0})
+
+    state = (request.args.get('state') or '').strip().upper()
+    category = (request.args.get('category') or '').strip()
+
+    db = get_db()
+    fts_q = _sanitize_fts_query(q)
+
+    where_parts = ["org_fts MATCH ?"]
+    params = [fts_q]
+
+    if state:
+        where_parts.append("r.STATE = ?")
+        params.append(state)
+
+    if category:
+        cats = [c.strip().upper() for c in category.split(",") if c.strip()]
+        if cats:
+            where_parts.append("(" + " OR ".join(["r.NTEE1 = ?"] * len(cats)) + ")")
+            params.extend(cats)
+
+    where_clause = " AND ".join(where_parts)
+
+    rows = db.execute(f"""
+        SELECT
+            r.EIN,
+            r.organization_name,
+            r.NTEE1,
+            r.CITY,
+            r.STATE,
+            r.total_revenue,
+            r.merit_tier,
+            r.merit_score,
+            r.merit_band,
+            SUBSTR(r.mission, 1, 300) AS mission,
+            r.donate_url,
+            r.donate_platform,
+            r.donate_url_status
+        FROM org_fts f
+        JOIN registry_enriched r ON r.EIN = f.ein
+        WHERE {where_clause}
+        ORDER BY bm25(org_fts, 10, 5, 1, 1)
+        LIMIT 20
+    """, params).fetchall()
+
+    results = [dict(r) for r in rows]
+    return jsonify({
+        "results": results,
+        "query": q,
+        "mode": "fast_fts",
+        "total": len(results)
+    })
+
+
+@app.route('/api/organizations-fast')
+@limiter.limit("60 per minute")
+def organizations_fast():
+    """Directory listing with optional state/category filters. Calculates total count."""
+    db = get_db()
+    limit = min(int(request.args.get("limit", 20) or 20), 100)
+    offset = int(request.args.get("offset", 0) or 0)
+
+    state = (request.args.get("state") or "").strip().upper()
+    category = (request.args.get("category") or "").strip()
+
+    where = ["1=1"]
+    params = []
+
+    if state:
+        where.append("r.STATE = ?")
+        params.append(state)
+
+    if category:
+        cats = [c.strip().upper() for c in category.split(",") if c.strip()]
+        if cats:
+            # Determine if we're filtering by NTEE1 (single letter) or NTEECC (full code)
+            # If category contains a digit, it's a full code (e.g., 'O23'), filter on NTEECC
+            # Otherwise, it's a single letter (e.g., 'O'), filter on NTEE1
+            use_nteecc = any(c[0].isalpha() and len(c) > 1 for c in cats)
+            col = "r.NTEECC" if use_nteecc else "r.NTEE1"
+            where.append("(" + " OR ".join([f"{col} = ?"] * len(cats)) + ")")
+            params.extend(cats)
+
+    where_clause = " AND ".join(where)
+
+    count_result = db.execute(f"SELECT COUNT(*) as cnt FROM registry_enriched r WHERE {where_clause}", params).fetchone()
+    total = count_result['cnt'] if count_result else 0
+
+    rows = db.execute(f"""
+        SELECT
+            r.EIN, r.organization_name, r.NTEE1, r.CITY, r.STATE,
+            r.total_revenue, r.merit_tier, r.merit_score, r.merit_band,
+            SUBSTR(r.mission, 1, 200) AS mission, r.donate_url, r.donate_platform,
+            r.donate_url_status, r.is_hidden_gem, r.latest_tax_year,
+            r.net_assets, r.revenue_band, r.data_source, r.cause_tags, r.peer_group
+        FROM registry_enriched r
+        WHERE {where_clause}
+        ORDER BY r.total_revenue DESC NULLS LAST
+        LIMIT ? OFFSET ?
+    """, params + [limit, offset]).fetchall()
+
+    organizations = [dict(r) for r in rows]
+    for org in organizations:
+        if org.get('cause_tags'):
+            try:
+                org['cause_tags'] = json.loads(org['cause_tags'])
+            except (json.JSONDecodeError, TypeError):
+                org['cause_tags'] = None
+
+    has_more = (offset + limit) < total
+
+    return jsonify({
+        "organizations": organizations,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": has_more,
+        "mode": "fast_directory",
+        "results": organizations
+    })
 
 
 # ── Well-known / security ──────────────────────────────────────────────────

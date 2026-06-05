@@ -64,3 +64,9 @@ honors principles #3 (evidence-based), #6 (correct mistakes), #9 (explainable), 
 All agent actions logged to `agent_actions` table; every boost is overrideable via `/api/admin/surge-boosts/<id>/override`.
 Event classification rules documented in `EVENT_RULES` and extensible. Crons run hourly (surge) + nightly (outcome analysis).
 See `docs/AGENT-SYSTEM.md` for full architecture. Rejected: static search, opaque agent decisions, permanent boosts.
+
+## 2026-06-05 — Dual-column NTEE filtering (NTEE1 single-letter + NTEECC full-code)
+Chose to detect category parameter format and filter on NTEE1 (single letter like 'O') or NTEECC (full code like 'O23').
+In `organizations_fast()`: if category contains a digit, filter NTEECC; otherwise filter NTEE1. Why: frontend sends
+both formats (directory URL `?sub=O23` → NTEECC, search page category toggles → NTEE1). Single endpoint detects intent.
+Rejected: separate endpoints for each format, or forcing frontend to always send one format (would require UI changes).
