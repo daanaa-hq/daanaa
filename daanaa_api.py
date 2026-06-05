@@ -2420,9 +2420,10 @@ def serve_frontend(path):
     return send_from_directory(FRONTEND_DIST, 'index.html')
 
 
-# Eager load so gunicorn --preload populates the matrix in the master process
-# before forking workers. Workers inherit via CoW without re-reading the DB.
-_load_embeddings()
+# Lazy-load embeddings only when semantic search is called.
+# Eager loading on startup slowed directory page to 10+ seconds on 1GB droplet.
+# Directory endpoint (/api/organizations) doesn't use embeddings, so defer to on-demand.
+# _load_embeddings()  # Disabled: lazy-load on first semantic search instead
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
