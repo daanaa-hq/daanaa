@@ -17,6 +17,7 @@ import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord } from '../data
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 import OrgWallPanel from '../components/OrgWallPanel'
+import AiBadge from '../components/AiBadge'
 
 // ---- Revenue Bar Chart ----
 function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
@@ -557,12 +558,7 @@ export default function OrganizationDetail() {
                     </span>
                   ))}
                   {(apiOrg?.data_badges?.tags === 'ai_generated' || apiOrg?.mission_source === 'ai_ntee' || apiOrg?.mission_source === 'ai_generated') && (
-                    <span
-                      title="These search tags were suggested by AI from public records. The organization can set its own once it claims this page."
-                      className="inline-flex items-center px-2 py-0.5 rounded-full font-body text-[10px] tracking-[0.04em] uppercase text-soft-gold/80 border border-soft-gold/30"
-                    >
-                      AI · beta
-                    </span>
+                    <AiBadge title="These search tags were suggested by AI from public records. The organization can set its own once it claims this page." />
                   )}
                 </div>
               )}
@@ -652,7 +648,7 @@ export default function OrganizationDetail() {
                       )}
                       {apiOrg?.data_badges?.donate === 'beta' && (
                         <p className="mt-1.5 font-body text-[11px] text-cool-grey/70 flex items-center gap-1.5">
-                          <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">β auto-discovered</span>
+                          <AiBadge title="Donate link auto-discovered — not confirmed by the organization" />
                           <span>·</span>
                           <span>Not confirmed by the organization.</span>
                           <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Is this your org?</Link>
@@ -1056,12 +1052,7 @@ export default function OrganizationDetail() {
                 <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">MISSION</span>
                 {['ai_ntee', 'ai_haiku', 'ai_web', 'ai_generated'].includes(
                   apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? '') && (
-                  <span
-                    className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
-                    title="AI-generated from public records -- not confirmed by the organization"
-                  >
-                    β ai-generated
-                  </span>
+                  <AiBadge />
                 )}
                 {apiOrg?.data_badges?.mission === 'lucido' && (
                   <span
