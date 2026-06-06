@@ -595,6 +595,18 @@ export default function Directory() {
             </div>
           )}
 
+          {/* Clear all — always visible when any filter is active */}
+          {activeFilterCount > 0 && (
+            <div className="mt-2">
+              <button
+                onClick={handleClearAll}
+                className="font-body text-[12px] text-cool-grey/60 hover:text-cool-grey transition-colors"
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
+
           {/* FilterSheet — mobile only */}
           <FilterSheet
             open={filterSheetOpen}

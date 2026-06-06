@@ -60,7 +60,7 @@ function HeroSection() {
           className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.025em]"
           style={{ fontSize: 'clamp(48px, 7vw, 80px)' }}
         >
-          Discover nonprofits<br />with clarity, not pressure
+          Discover nonprofits<br />with clarity
         </h1>
 
         {/* Subtitle */}

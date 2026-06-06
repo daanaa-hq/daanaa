@@ -645,7 +645,9 @@ def list_organizations():
     min_tier = request.args.get('min_tier', '').strip()
     if min_tier == 'Glow':  # frontend alias for DB name Ember
         min_tier = 'Ember'
+    hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     direct_link = request.args.get('direct_link', '').strip() == '1'
+    needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
     recent = request.args.get('recent', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
@@ -706,11 +708,15 @@ def list_organizations():
     if min_pct is not None:
         where_clauses.append("ntee1_percentile >= ?")
         params.append(min_pct)
+    if hidden_gem:
+        where_clauses.append("is_hidden_gem = 1")
     if direct_link:
         where_clauses.append(
             "donate_url IS NOT NULL AND donate_url != '' "
             "AND donate_url_status IN ('ok','beta','live','claimed','blocked_or_restricted')"
         )
+    if needs_funding:
+        where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
     if has_website:
         where_clauses.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
     if recent:
@@ -765,7 +771,7 @@ def list_organizations():
                r.merit_tier, r.merit_score, r.merit_band,
                CASE WHEN r.months_of_reserve BETWEEN -120 AND 120 THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
                r.net_assets, r.total_expenses,
-               r.employee_count, r.ruling_date, r.zipcode, r.cause_tags,
+               r.employee_count, r.ruling_date, r.zipcode, r.is_hidden_gem, r.cause_tags,
                r.donate_url, r.donate_platform, r.donate_url_status, r.subsection, r.deductibility,
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
@@ -2010,14 +2016,19 @@ def get_similar_organizations(ein):
     except (ValueError, TypeError):
         limit = 6
 
+    diamonds_only = request.args.get('diamonds', '').strip() == '1'
+
     db = get_db()
     row = db.execute("SELECT * FROM registry_enriched WHERE EIN = ?", (ein_clean,)).fetchone()
     if row is None:
         return jsonify({"error": "Not found"}), 404
 
     org = dict(row)
-    results, mode = _find_similar_orgs(db, ein_clean, org, limit=limit)
-    return jsonify({'results': [_strip_scores(r) for r in results], 'mode': mode})
+    fetch_limit = limit * 3 if diamonds_only else limit
+    results, mode = _find_similar_orgs(db, ein_clean, org, limit=fetch_limit)
+    if diamonds_only:
+        results = [r for r in results if r.get('is_hidden_gem')][:limit]
+    return jsonify({'results': [_strip_scores(r) for r in results], 'mode': mode, 'diamonds_only': diamonds_only})
 
 
 # ── Semantic search ────────────────────────────────────────────────────────────
@@ -2090,7 +2101,7 @@ def fused_search():
 
     # ── FAST PATH: If FTS has enough results, skip semantic (avoid GPU) ─────────
     sem_eins: list[str] = []
-    use_fast_path = True  # Demo mode: always skip semantic during high GPU load
+    use_fast_path = len(kw_eins) >= RESULT_N  # If FTS has 20+, skip semantic
 
     if not use_fast_path:
         # ── Path 2: Semantic vector ───────────────────────────────────────────
@@ -2151,7 +2162,7 @@ def fused_search():
               r.latest_tax_year, r.data_source, r.merit_tier, r.merit_score, r.merit_band,
               CASE WHEN r.months_of_reserve BETWEEN -120 AND 120
                    THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
-              r.net_assets, r.cause_tags,
+              r.net_assets, r.is_hidden_gem, r.cause_tags,
               r.donate_url, r.donate_platform, r.donate_url_status,
               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
@@ -2195,161 +2206,9 @@ def fused_search():
 
     # Set mode indicator: fts-only (fast path) or fused (semantic included)
     mode = "fts-only" if use_fast_path else "fused"
-
-    # Slim payload for search: only essential fields to reduce JSON size by ~70%
-    # This speeds up transfer, especially over slow/remote connections
-    slim_results = []
-    for org in results:
-        slim_results.append({
-            'EIN': org.get('EIN'),
-            'organization_name': org.get('organization_name'),
-            'CITY': org.get('CITY'),
-            'STATE': org.get('STATE'),
-            'merit_score': org.get('merit_score'),
-            'financial_health': org.get('financial_health'),
-            'cause_tags': org.get('cause_tags'),
-            'donate_url': org.get('donate_url'),
-            'has_website': org.get('has_website'),
-            'visibility_tier': org.get('visibility_tier'),
-        })
-
-    out = {"results": slim_results, "query": q, "mode": mode, "total": len(results)}
+    out = {"results": results, "query": q, "mode": mode, "total": len(results)}
     _cset(ck, out)
-
-    # Enable Cloudflare edge caching for search results (1 minute)
-    # Repeat searches from different people hit CF cache, not origin
-    response = jsonify(out)
-    response.headers['Cache-Control'] = 'public, max-age=60'
-    response.headers['Vary'] = 'Accept-Encoding'
-    return response
-
-
-@app.route('/api/search-fast')
-@limiter.limit("60 per minute")
-def search_fast():
-    """FTS5-only search (no semantic). Fast for common queries, supports filters."""
-    q = (request.args.get('q') or '').strip()
-    if not q:
-        return jsonify({"results": [], "query": q, "mode": "fast_fts", "total": 0})
-
-    state = (request.args.get('state') or '').strip().upper()
-    category = (request.args.get('category') or '').strip()
-
-    db = get_db()
-    fts_q = _sanitize_fts_query(q)
-
-    where_parts = ["org_fts MATCH ?"]
-    params = [fts_q]
-
-    if state:
-        where_parts.append("r.STATE = ?")
-        params.append(state)
-
-    if category:
-        cats = [c.strip().upper() for c in category.split(",") if c.strip()]
-        if cats:
-            where_parts.append("(" + " OR ".join(["r.NTEE1 = ?"] * len(cats)) + ")")
-            params.extend(cats)
-
-    where_clause = " AND ".join(where_parts)
-
-    rows = db.execute(f"""
-        SELECT
-            r.EIN,
-            r.organization_name,
-            r.NTEE1,
-            r.CITY,
-            r.STATE,
-            r.total_revenue,
-            r.merit_tier,
-            r.merit_score,
-            r.merit_band,
-            SUBSTR(r.mission, 1, 300) AS mission,
-            r.donate_url,
-            r.donate_platform,
-            r.donate_url_status
-        FROM org_fts f
-        JOIN registry_enriched r ON r.EIN = f.ein
-        WHERE {where_clause}
-        ORDER BY bm25(org_fts, 10, 5, 1, 1)
-        LIMIT 20
-    """, params).fetchall()
-
-    results = [dict(r) for r in rows]
-    return jsonify({
-        "results": results,
-        "query": q,
-        "mode": "fast_fts",
-        "total": len(results)
-    })
-
-
-@app.route('/api/organizations-fast')
-@limiter.limit("60 per minute")
-def organizations_fast():
-    """Directory listing with optional state/category filters. Calculates total count."""
-    db = get_db()
-    limit = min(int(request.args.get("limit", 20) or 20), 100)
-    offset = int(request.args.get("offset", 0) or 0)
-
-    state = (request.args.get("state") or "").strip().upper()
-    category = (request.args.get("category") or "").strip()
-
-    where = ["1=1"]
-    params = []
-
-    if state:
-        where.append("r.STATE = ?")
-        params.append(state)
-
-    if category:
-        cats = [c.strip().upper() for c in category.split(",") if c.strip()]
-        if cats:
-            # Determine if we're filtering by NTEE1 (single letter) or NTEECC (full code)
-            # If category contains a digit, it's a full code (e.g., 'O23'), filter on NTEECC
-            # Otherwise, it's a single letter (e.g., 'O'), filter on NTEE1
-            use_nteecc = any(c[0].isalpha() and len(c) > 1 for c in cats)
-            col = "r.NTEECC" if use_nteecc else "r.NTEE1"
-            where.append("(" + " OR ".join([f"{col} = ?"] * len(cats)) + ")")
-            params.extend(cats)
-
-    where_clause = " AND ".join(where)
-
-    count_result = db.execute(f"SELECT COUNT(*) as cnt FROM registry_enriched r WHERE {where_clause}", params).fetchone()
-    total = count_result['cnt'] if count_result else 0
-
-    rows = db.execute(f"""
-        SELECT
-            r.EIN, r.organization_name, r.NTEE1, r.CITY, r.STATE,
-            r.total_revenue, r.merit_tier, r.merit_score, r.merit_band,
-            SUBSTR(r.mission, 1, 200) AS mission, r.donate_url, r.donate_platform,
-            r.donate_url_status, r.latest_tax_year,
-            r.net_assets, r.revenue_band, r.data_source, r.cause_tags, r.peer_group
-        FROM registry_enriched r
-        WHERE {where_clause}
-        ORDER BY r.total_revenue DESC NULLS LAST
-        LIMIT ? OFFSET ?
-    """, params + [limit, offset]).fetchall()
-
-    organizations = [dict(r) for r in rows]
-    for org in organizations:
-        if org.get('cause_tags'):
-            try:
-                org['cause_tags'] = json.loads(org['cause_tags'])
-            except (json.JSONDecodeError, TypeError):
-                org['cause_tags'] = None
-
-    has_more = (offset + limit) < total
-
-    return jsonify({
-        "organizations": organizations,
-        "total": total,
-        "limit": limit,
-        "offset": offset,
-        "has_more": has_more,
-        "mode": "fast_directory",
-        "results": organizations
-    })
+    return jsonify(out)
 
 
 # ── Well-known / security ──────────────────────────────────────────────────
@@ -2409,10 +2268,9 @@ def serve_frontend(path):
     return send_from_directory(FRONTEND_DIST, 'index.html')
 
 
-# Lazy-load embeddings only when semantic search is called.
-# Eager loading on startup slowed directory page to 10+ seconds on 1GB droplet.
-# Directory endpoint (/api/organizations) doesn't use embeddings, so defer to on-demand.
-# _load_embeddings()  # Disabled: lazy-load on first semantic search instead
+# Eager load so gunicorn --preload populates the matrix in the master process
+# before forking workers. Workers inherit via CoW without re-reading the DB.
+_load_embeddings()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

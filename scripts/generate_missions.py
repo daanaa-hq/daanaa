@@ -28,9 +28,9 @@ from threading import Lock
 DB_PATH    = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 GEN_URL    = "http://127.0.0.1:11437/v1/chat/completions"
 MODEL      = "Qwen2.5-14B-Instruct-Q4_K_M"
-BATCH_SIZE      = 20   # orgs per LLM call (no web context)
+BATCH_SIZE      = 20   # orgs per LLM call — 20 fits within 4096 tok/slot (-np 5, ctx 20480)
 BATCH_SIZE_WEB  = 8    # smaller batch when web context is included (longer prompts)
-TOKENS_PER_ORG  = 100  # output token budget per org (web context = longer missions)
+TOKENS_PER_ORG  = 80   # output token budget per org
 MISSION_SOURCE = "ai_ntee"   # marks generated vs scraped missions
 
 _NTEE_LABELS = {
@@ -216,7 +216,7 @@ def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> dict[str, str]:
         "max_tokens": max(400, TOKENS_PER_ORG * n),
     }
     try:
-        r = requests.post(GEN_URL, json=payload, timeout=180)
+        r = requests.post(GEN_URL, json=payload, timeout=600)
         r.raise_for_status()
         msg = r.json()["choices"][0]["message"]
         content = msg.get("content") or msg.get("reasoning_content") or ""
@@ -271,6 +271,7 @@ def run(limit=None, workers=1, all_orgs=False):
         LEFT JOIN (SELECT DISTINCT ein FROM page_cache WHERE html_gz IS NOT NULL) pc
           ON pc.ein = re.EIN
         WHERE (re.mission IS NULL OR re.mission = '') {scope}
+          AND re.source NOT IN ('IRS_BMF', 'bmf_stub')
         ORDER BY (pc.ein IS NULL), re.merit_score DESC NULLS LAST
         {'LIMIT ' + str(limit) if limit else ''}
     """

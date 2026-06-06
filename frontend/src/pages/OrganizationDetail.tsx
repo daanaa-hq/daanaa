@@ -556,7 +556,7 @@ export default function OrganizationDetail() {
                       {tag}
                     </span>
                   ))}
-                  {apiOrg?.data_badges?.tags === 'ai_generated' && (
+                  {(apiOrg?.data_badges?.tags === 'ai_generated' || apiOrg?.mission_source === 'ai_ntee' || apiOrg?.mission_source === 'ai_generated') && (
                     <span
                       title="These search tags were suggested by AI from public records. The organization can set its own once it claims this page."
                       className="inline-flex items-center px-2 py-0.5 rounded-full font-body text-[10px] tracking-[0.04em] uppercase text-soft-gold/80 border border-soft-gold/30"
