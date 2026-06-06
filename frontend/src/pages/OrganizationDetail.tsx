@@ -1054,7 +1054,8 @@ export default function OrganizationDetail() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">MISSION</span>
-                {['ai_ntee', 'ai_haiku', 'ai_web'].includes(apiOrg?.data_badges?.mission ?? '') && (
+                {['ai_ntee', 'ai_haiku', 'ai_web', 'ai_generated'].includes(
+                  apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? '') && (
                   <span
                     className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
                     title="AI-generated from public records -- not confirmed by the organization"
