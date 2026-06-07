@@ -121,7 +121,7 @@ function SourceRow({ source, detail }: { source: string; detail: string }) {
 export default function Methodology() {
   usePageMeta(
     'How peer financial context is calculated',
-    'Daanaa scores nonprofits on peer financial context. Every organization is compared only against true peers with the same operating model and revenue size. 1.6 million organizations indexed. Full methodology documented here.'
+    'Daanaa scores nonprofits on peer financial context. Every organization is compared only against true peers with the same operating model and revenue size. 1.8 million organizations indexed. Full methodology documented here.'
   )
   const { data: stats } = useApi(() => getStats(), [])
   const scoresUpdated = stats?.scores_last_updated ?? '—'
@@ -222,7 +222,7 @@ export default function Methodology() {
 
           <Section label="Step 2a · Operating models" title="Eight groups: sector-specific peer context">
             <p>
-              We analyzed 71,473 nonprofits with complete financial filings and found eight statistically distinct operating models. Each group has its own financial fingerprint — reserves, program spending, asset intensity all differ by type of work.
+              We analyzed 75,733 tax-deductible nonprofits with complete financial filings and found eight statistically distinct operating models. Each group has its own financial fingerprint — reserves, program spending, asset intensity all differ by type of work.
             </p>
             <p className="mt-3">
               Within each operating model, Financial Health tiers have model-specific meanings. This means the system honors how organizations actually work, not how we might assume they should work.
@@ -232,9 +232,9 @@ export default function Methodology() {
               {[
                 {
                   name: 'Direct Service',
-                  orgs: '22,916',
-                  reserve: '10.3 mo',
-                  prog: '37.3%',
+                  orgs: '24,519',
+                  reserve: '10.4 mo',
+                  prog: '37.7%',
                   desc: 'Food banks, job training, animal rescue, emergency response, mental health services. Lean by design — deploys resources directly into programs. Strong means high program efficiency. Inspiring means doing remarkable work within constraints.',
                   color: 'bg-emerald-50 border-emerald-200',
                   badge: 'text-emerald-700 bg-emerald-100',
@@ -242,9 +242,9 @@ export default function Methodology() {
                 },
                 {
                   name: 'Mission Infrastructure',
-                  orgs: '26,413',
-                  reserve: '13.4 mo',
-                  prog: '40.4%',
+                  orgs: '27,818',
+                  reserve: '13.3 mo',
+                  prog: '39.1%',
                   desc: 'Schools, hospitals, health systems, arts organizations, libraries. Assets support program delivery. Strong means reserves supporting stable operations. Inspiring means visionary impact within constraints.',
                   color: 'bg-blue-50 border-blue-200',
                   badge: 'text-blue-700 bg-blue-100',
@@ -252,8 +252,8 @@ export default function Methodology() {
                 },
                 {
                   name: 'Research & Academia',
-                  orgs: '10,729',
-                  reserve: '8.8 mo',
+                  orgs: '11,224',
+                  reserve: '8.9 mo',
                   prog: '66.1%',
                   desc: 'Universities, medical research, scientific institutions. Program-heavy (includes grant passthrough). Strong means well-funded pipelines. Inspiring means innovative work on limited resources.',
                   color: 'bg-indigo-50 border-indigo-200',
@@ -262,8 +262,8 @@ export default function Methodology() {
                 },
                 {
                   name: 'Foundations',
-                  orgs: '3,266',
-                  reserve: '34.3 mo',
+                  orgs: '3,427',
+                  reserve: '33.0 mo',
                   prog: '34.2%',
                   desc: 'Grantmakers, endowments, philanthropies. Hold and deploy capital. Strong means active, sustained grant deployment. Inspiring means emerging foundations building capacity.',
                   color: 'bg-purple-50 border-purple-200',
@@ -272,9 +272,9 @@ export default function Methodology() {
                 },
                 {
                   name: 'Membership & Advocacy',
-                  orgs: '2,940',
-                  reserve: '8.4 mo',
-                  prog: '33.1%',
+                  orgs: '3,106',
+                  reserve: '8.7 mo',
+                  prog: '33.8%',
                   desc: 'Member organizations, advocacy networks, voluntarism centers. Revenue driven by membership support. Strong means healthy member-revenue base. Inspiring means growing member engagement.',
                   color: 'bg-rose-50 border-rose-200',
                   badge: 'text-rose-700 bg-rose-100',
@@ -282,9 +282,9 @@ export default function Methodology() {
                 },
                 {
                   name: 'Religion & Spiritual',
-                  orgs: '3,764',
-                  reserve: '20.2 mo',
-                  prog: '14.2%',
+                  orgs: '3,935',
+                  reserve: '20.1 mo',
+                  prog: '14.4%',
                   desc: 'Faith communities, congregations, spiritual organizations. Often volunteer-heavy. Strong means strong financial reserves and impact. Inspiring means growing congregation and mission.',
                   color: 'bg-amber-50 border-amber-200',
                   badge: 'text-amber-700 bg-amber-100',
@@ -292,9 +292,9 @@ export default function Methodology() {
                 },
                 {
                   name: 'International Development',
-                  orgs: '601',
-                  reserve: '9.5 mo',
-                  prog: '27.2%',
+                  orgs: '658',
+                  reserve: '9.4 mo',
+                  prog: '27.3%',
                   desc: 'Cross-border development, humanitarian aid, international relief. Strong means efficient cross-border delivery. Inspiring means scaling operations with vision.',
                   color: 'bg-cyan-50 border-cyan-200',
                   badge: 'text-cyan-700 bg-cyan-100',
@@ -302,9 +302,9 @@ export default function Methodology() {
                 },
                 {
                   name: 'Asset Stewards',
-                  orgs: '844',
-                  reserve: '11.4 mo',
-                  prog: '42.3%',
+                  orgs: '914',
+                  reserve: '11.7 mo',
+                  prog: '43.3%',
                   desc: 'Nursing homes, hospitals, facilities. Physical assets are central. Strong means well-maintained assets and healthy reserves. Inspiring means growing asset base with impact.',
                   color: 'bg-orange-50 border-orange-200',
                   badge: 'text-orange-700 bg-orange-100',
@@ -467,27 +467,21 @@ export default function Methodology() {
             <div className="mt-4 space-y-3">
               {[
                 {
-                  tier: 'Tier A: Complete Data',
-                  count: '71,473 organizations',
-                  desc: 'Full financial fingerprint from IRS Form 990: revenue, expenses, assets, net assets, reserves, program spending %. All metrics present. Scored with maximum confidence across all four dimensions.',
+                  tier: 'Scored: Complete Data',
+                  count: '75,733 organizations',
+                  desc: 'Full financial fingerprint from IRS Form 990: revenue, expenses, assets, net assets, reserves, program spending %. All four metrics present. Financial Health tier assigned with full confidence. All are tax-deductible 501(c)(3) organizations.',
                   color: 'border-emerald-300 bg-emerald-50',
                 },
                 {
-                  tier: 'Tier B: Deductible, Partial Data',
-                  count: '308,517 organizations',
-                  desc: 'Revenue + expenses from IRS Form 990, but program expense breakdown missing. Program % derived from sector benchmarks (NTEE-level defaults). Donor-deductible. Fair peer-based Financial Health tier within operating model + revenue band.',
+                  tier: 'In Pipeline: Partial Data',
+                  count: '~496,000 organizations',
+                  desc: 'Revenue and expense data on file from IRS records, but not yet run through the scoring pipeline. All are tax-deductible 501(c)(3) organizations. Scoring is ongoing — these organizations will receive a Financial Health tier as the pipeline processes them.',
                   color: 'border-amber-300 bg-amber-50',
                 },
                 {
-                  tier: 'Tier C: Non-Deductible, Partial Data',
-                  count: '158,243 organizations',
-                  desc: 'Revenue + expenses present, but not donor-deductible (unions, professional associations, health plans, mutual benefit orgs). Program % derived from sector benchmarks. Same peer-based methodology as Tier B. Scored fairly within non-deductible peer groups.',
-                  color: 'border-rose-300 bg-rose-50',
-                },
-                {
                   tier: 'Unscored: No Financial Data',
-                  count: '~1.2 million organizations',
-                  desc: 'Indexed by IRS but lacking revenue/expense data. Shown with: name, location, mission, cause type. Can submit financial data to get scored (self-reporting). Users encouraged to verify directly with organization.',
+                  count: '~1.25 million organizations',
+                  desc: 'Indexed by IRS but lacking revenue and expense data. Shown with name, location, mission, and cause type. No Financial Health tier is assigned — we never fabricate what we cannot measure. Organizations can claim their page and add financial data to get scored.',
                   color: 'border-cool-grey/30 bg-warm-cream',
                 },
               ].map(t => (
@@ -511,7 +505,7 @@ export default function Methodology() {
 
           <Section label="How we built this" title="The research behind eight operating models">
             <p>
-              The eight operating model groups were discovered, not invented. We analyzed 71,473 nonprofits with complete financial filings — the most complete set available — and measured their actual financial behavior.
+              The eight operating model groups were discovered, not invented. We analyzed 75,733 tax-deductible nonprofits with complete financial filings — the most complete set available — and measured their actual financial behavior.
             </p>
             <p>
               The methodology is rigorous and transparent:
