@@ -338,6 +338,29 @@ def _multi_state_page(ntee1, nteecc_filter, page, per_page):
                     'page': page, 'per_page': per_page, 'pages': pages})
 
 
+_real_total_cache: dict = {}
+
+def _get_real_total(state: str = '') -> int:
+    """Return the true org count from search.db, cached indefinitely per state."""
+    key = state or '_all'
+    if key in _real_total_cache:
+        return _real_total_cache[key]
+    conn = get_search_db()
+    if not conn:
+        return 0
+    try:
+        if state:
+            n = conn.execute("SELECT COUNT(*) FROM orgs WHERE STATE = ?", (state,)).fetchone()[0]
+        else:
+            n = conn.execute("SELECT COUNT(*) FROM orgs").fetchone()[0]
+        _real_total_cache[key] = n
+        return n
+    except Exception:
+        return 0
+    finally:
+        conn.close()
+
+
 def _multi_category_page(state, page, per_page):
     cache_key = f"mc:{state}"
     if cache_key not in _multi_cache:
@@ -356,9 +379,10 @@ def _multi_category_page(state, page, per_page):
                         orgs.extend(_load_state_page1(ntee1, s))
             orgs_lists.append(orgs)
         _multi_cache[cache_key] = orgs_lists
-    orgs_page, total, pages = _merge_orgs(_multi_cache[cache_key], per_page, page)
-    return jsonify({'organizations': orgs_page, 'total': total,
-                    'page': page, 'per_page': per_page, 'pages': pages})
+    orgs_page, _sample_total, _sample_pages = _merge_orgs(_multi_cache[cache_key], per_page, page)
+    real_total = _get_real_total(state)
+    return jsonify({'organizations': orgs_page, 'total': real_total,
+                    'page': 1, 'per_page': per_page, 'pages': 1})
 
 
 def _filtered_orgs(ntee1, state, nteecc_filter, page, per_page):
