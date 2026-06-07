@@ -142,6 +142,9 @@ export default function Methodology() {
           <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
             Every nonprofit is measured only against its true peers — organizations with the same operating model and similar revenue size. A food bank is compared to food banks, not hospitals. A foundation is compared to foundations. Financial Health tiers reflect where each org stands within its actual peer group. No universal yardstick. Everything is based on IRS public data.
           </p>
+          <p className="mt-3 font-body text-[13px] leading-[1.6] text-soft-gold/80 max-w-[620px] font-medium tracking-[0.01em]">
+            Daanaa covers only 501(c)(3) organizations where donor contributions are tax-deductible. Every organization, score, and statistic on this page reflects that universe exclusively.
+          </p>
           <div className="mt-7">
             <p className="font-body text-[10px] font-medium tracking-[0.12em] text-soft-gold/60 uppercase mb-1.5">
               Scores last computed
@@ -543,7 +546,7 @@ export default function Methodology() {
             <div className="mt-4">
               <SourceRow
                 source="IRS nonprofit registration list"
-                detail="Tax-exempt status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa indexes 1.63 million active nonprofits where donations are eligible for a tax deduction. Organizations in other categories are not included in scoring."
+                detail="Tax-exempt status, organization name, state, and category code. Updated quarterly by the IRS. Daanaa indexes 1.8 million active 501(c)(3) nonprofits where donor contributions are tax-deductible. Organizations in any other tax-exempt category are not included."
               />
               <SourceRow
                 source="IRS published financial data"
