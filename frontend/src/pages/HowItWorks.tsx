@@ -47,7 +47,7 @@ function TierRow({ score, label, description }: { score: string; label: string; 
 }
 
 export default function HowItWorks() {
-  usePageMeta('How It Works', 'Learn how Daanaa scores nonprofits using IRS data and peer group benchmarking across four operating model groups and six revenue bands.')
+  usePageMeta('How It Works', 'Learn how Daanaa scores nonprofits using IRS data and peer group benchmarking across eight operating model groups and eight revenue bands. All organizations are tax-deductible 501(c)(3) nonprofits.')
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
@@ -76,7 +76,7 @@ export default function HowItWorks() {
               Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
             </p>
             <p>
-              We list every nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.6 million of them. Our role is to surface information, not to judge missions.
+              We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.8 million of them. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
               Peer financial context (0–100) compares financial footprint and reserve position relative to similar groups. It does not measure impact, leadership, community trust, or whether a group deserves support. Daanaa is not a charity rating agency.
@@ -89,7 +89,7 @@ export default function HowItWorks() {
               {[
                 { source: 'IRS nonprofit registration list', what: 'Legal name, category, state, and nonprofit status. Updated by the IRS continuously.' },
                 { source: 'Annual financial reports (filed with the government)', what: 'Reports nonprofits file with the IRS each year. Source of mission statements, program descriptions, leadership, and detailed financials.' },
-                { source: 'Government-published financial summaries', what: 'IRS financial data covering 2019–2024. Revenue figures for about 340,000 organizations.' },
+                { source: 'Government-published financial summaries', what: 'IRS financial data covering 2019–2024. Revenue and expense figures for about 530,000 organizations.' },
                 { source: 'ProPublica nonprofit database (a public interest newsroom)', what: 'Financial data for about 42,000 organizations with verified 2022–2024 figures.' },
               ].map(({ source, what }) => (
                 <div key={source} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey">
@@ -117,13 +117,13 @@ export default function HowItWorks() {
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">Type of work</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  Each nonprofit is placed in one of four operating model groups based on how it actually runs: Direct Service, Mission Infrastructure, Asset Stewards, or Endowment and Capital. Then it is placed in a revenue band based on size. A food bank is compared to other food banks at the same scale, not to hospitals or land trusts.
+                  Each nonprofit is placed in one of eight operating model groups based on how it actually runs: Direct Service, Mission Infrastructure, Research and Academia, Foundations, Membership and Advocacy, Religion and Spiritual, International Development, or Asset Stewards. A food bank is compared to other food banks at the same scale, not to hospitals or land trusts.
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">Revenue Band</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. We group organizations into six revenue bands (Nano, Micro, Small, Medium, Large, and Major) and score within each band. Your $80K community garden is ranked against other community gardens of a similar size.
+                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. Each operating model has its own eight revenue bands derived from that model's actual distribution — so a small food bank is sized against other small food banks, not against small hospitals. Your $80K community garden is ranked against other community gardens of a similar size.
                 </p>
               </div>
             </div>
