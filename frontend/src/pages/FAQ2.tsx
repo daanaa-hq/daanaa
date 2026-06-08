@@ -46,8 +46,15 @@ export default function FAQ() {
             <span className="text-muted-cream/40">/</span>
             <span className="font-body text-[12px] text-muted-cream">FAQ</span>
           </div>
-          <h1 className="font-display italic text-warm-cream mt-3 text-[48px] md:text-[60px] leading-[1.05]">FAQ</h1>
-          <p className="mt-6 font-body text-[17px] text-muted-cream max-w-[720px]">Common questions about Daanaa, public records, discovery, and giving.</p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
+            <div className="max-w-[720px]">
+              <h1 className="font-display italic text-warm-cream mt-3 text-[48px] md:text-[60px] leading-[1.05]">FAQ</h1>
+              <p className="mt-6 font-body text-[17px] text-muted-cream">Common questions about Daanaa, public records, discovery, and giving.</p>
+            </div>
+            <div className="shrink-0 hidden md:flex justify-end">
+              <img src="/logo.png" alt="Daanaa" className="w-44 h-44 lg:w-52 lg:h-52 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
+            </div>
+          </div>
         </div>
       </div>
 

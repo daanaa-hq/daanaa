@@ -12,13 +12,10 @@ const Legal = lazy(() => import('./pages/Legal'))
 const HowItWorks = lazy(() => import('./pages/HowItWorks'))
 const Wallet = lazy(() => import('./pages/Wallet'))
 const ForNonprofits = lazy(() => import('./pages/ForNonprofits'))
-const About = lazy(() => import('./pages/About'))
 // const GivingListPage = lazy(() => import('./pages/GivingListPage'))  // Giving List feature hidden
 // const GivingReview = lazy(() => import('./pages/GivingReview'))  // Giving List feature hidden
 // const GivingConfirmation = lazy(() => import('./pages/GivingConfirmation'))  // Giving List feature hidden
 const TiersPage = lazy(() => import('./pages/TiersPage'))
-const GuidesPage = lazy(() => import('./pages/GuidesPage'))
-const FAQPage = lazy(() => import('./pages/FAQPage'))
 const Methodology = lazy(() => import('./pages/Methodology2'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))

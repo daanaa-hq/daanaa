@@ -14,12 +14,19 @@ export default function Methodology() {
             <span className="text-muted-cream/40">/</span>
             <span className="font-body text-[12px] text-muted-cream">Methodology</span>
           </div>
-          <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(40px, 5vw, 60px)' }}>
-            Methodology
-          </h1>
-          <p className="mt-6 font-body text-[17px] leading-[1.65] text-muted-cream max-w-[720px]">
-            Daanaa does not rank human worth. We organize public information so people can make more thoughtful giving decisions.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
+            <div className="max-w-[720px]">
+              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(40px, 5vw, 60px)' }}>
+                Methodology
+              </h1>
+              <p className="mt-6 font-body text-[17px] leading-[1.65] text-muted-cream">
+                Daanaa does not rank human worth. We organize public information so people can make more thoughtful giving decisions.
+              </p>
+            </div>
+            <div className="shrink-0 hidden md:flex justify-end">
+              <img src="/logo.png" alt="Daanaa" className="w-44 h-44 lg:w-52 lg:h-52 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
+            </div>
+          </div>
         </div>
       </div>
 

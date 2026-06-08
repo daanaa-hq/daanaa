@@ -93,18 +93,23 @@ export default function ForNonprofits() {
             <span className="font-body text-[12px] text-muted-cream">For Nonprofits</span>
           </div>
 
-          <div className="max-w-[680px]">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">For organizations</span>
-            <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
-              Your public record may already be listed. Add the story only you can tell.
-            </h1>
-            <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
-              Daanaa helps donors find public nonprofit records and giving paths. Claim your page for free to add your mission, programs, service area, leadership, impact notes, events, volunteer opportunities, and official giving links.
-            </p>
-            <a href="#claim" className="mt-8 inline-flex items-center gap-2 px-8 py-[14px] rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors">
-              Claim your page free
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </a>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-16">
+            <div className="max-w-[680px]">
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">For organizations</span>
+              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
+                Your public record may already be listed. Add the story only you can tell.
+              </h1>
+              <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">
+                Daanaa helps donors find public nonprofit records and giving paths. Claim your page for free to add your mission, programs, service area, leadership, impact notes, events, volunteer opportunities, and official giving links.
+              </p>
+              <a href="#claim" className="mt-8 inline-flex items-center gap-2 px-8 py-[14px] rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors">
+                Claim your page free
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </a>
+            </div>
+            <div className="shrink-0 hidden md:flex justify-end">
+              <img src="/logo.png" alt="Daanaa" className="w-48 h-48 lg:w-56 lg:h-56 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
+            </div>
           </div>
         </div>
       </div>

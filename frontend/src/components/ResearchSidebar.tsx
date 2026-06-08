@@ -21,7 +21,16 @@ export default function ResearchSidebar({
   return (
     <aside className="w-64 bg-deep-navy text-warm-cream sticky top-0 h-screen overflow-y-auto border-r border-soft-gold/20 p-6">
       <div className="mb-8">
-        <h2 className="text-2xl font-display text-soft-gold mb-2">Research</h2>
+        <div className="flex items-center gap-3 mb-3">
+          <img
+            src="/logo.png"
+            alt="Daanaa"
+            className="h-8 w-8 object-contain"
+            width={32}
+            height={32}
+          />
+          <h2 className="text-2xl font-display text-soft-gold">Research</h2>
+        </div>
         <p className="text-xs text-cool-grey">Advisor & academic guide</p>
       </div>
 

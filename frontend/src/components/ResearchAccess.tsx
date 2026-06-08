@@ -37,13 +37,14 @@ export default function ResearchAccess({ onSuccess }: ResearchAccessProps) {
   return (
     <div className="fixed inset-0 z-[100] bg-deep-navy/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-warm-cream rounded-2xl shadow-xl p-8 max-w-md w-full">
-        {/* Logo */}
         <div className="mb-8 flex justify-center">
-          <svg width="120" height="32" viewBox="0 0 120 32" fill="none">
-            <text x="0" y="24" font-family="Georgia, serif" font-size="24" fill="#0d1628" font-weight="bold">
-              Daanaa
-            </text>
-          </svg>
+          <img
+            src="/logo.png"
+            alt="Daanaa"
+            className="h-10 w-10 object-contain"
+            width={40}
+            height={40}
+          />
         </div>
 
         <h1 className="font-display text-2xl text-deep-navy mb-2 text-center">

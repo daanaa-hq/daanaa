@@ -65,9 +65,11 @@ export default function ResearchSpending({
         Program Spending by Operating Model
       </h2>
 
-      <p className="text-cool-grey mb-8 max-w-2xl">
-        Median percentage of revenue spent directly on programs (vs. admin/overhead) for each operating model.
-        The middle-50% range shows how organizations within each model spread out around that median.
+      <p className="text-cool-grey mb-4 max-w-2xl">
+        Median percentage of revenue spent directly on programs (vs. administration or fundraising) for each operating model.
+      </p>
+      <p className="text-cool-grey/70 text-sm mb-8 max-w-2xl">
+        The "middle 50%" is the interquartile range: half of all organizations in that model fall within this band. Values outside it are not unusual, just less common. All figures are derived from the most recent IRS filings available.
       </p>
 
       {loading ? (

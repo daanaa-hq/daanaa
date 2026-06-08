@@ -14,10 +14,15 @@ export default function WhyDaanaa() {
             <span className="text-muted-cream/40">/</span>
             <span className="font-body text-[12px] text-muted-cream">Why Daanaa</span>
           </div>
-          <div className="max-w-[720px]">
-            <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(48px, 6vw, 72px)' }}>
-              Why Daanaa Exists
-            </h1>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
+            <div className="max-w-[720px]">
+              <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(48px, 6vw, 72px)' }}>
+                Why Daanaa Exists
+              </h1>
+            </div>
+            <div className="shrink-0 hidden md:flex justify-end">
+              <img src="/logo.png" alt="Daanaa" className="w-48 h-48 lg:w-56 lg:h-56 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
+            </div>
           </div>
         </div>
       </div>

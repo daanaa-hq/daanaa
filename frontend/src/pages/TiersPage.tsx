@@ -85,20 +85,25 @@ export default function TiersPage() {
             <span className="text-muted-cream/40">/</span>
             <span className="font-body text-[12px] text-muted-cream">Visibility Levels</span>
           </div>
-          <div className="flex items-start gap-6">
-            <div className="hidden sm:flex flex-col gap-1.5 pt-2 shrink-0">
-              {(['Beacon','Torch','Candle','Spark'] as TierName[]).map(t => (
-                <LampMark key={t} tier={t} size="xs" />
-              ))}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-16">
+            <div className="flex items-start gap-6">
+              <div className="hidden sm:flex flex-col gap-1.5 pt-2 shrink-0">
+                {(['Beacon','Torch','Candle','Spark'] as TierName[]).map(t => (
+                  <LampMark key={t} tier={t} size="xs" />
+                ))}
+              </div>
+              <div className="max-w-[640px]">
+                <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How much information is available</span>
+                <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
+                  Visibility Levels
+                </h1>
+                <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">
+                  Visibility levels show how much helpful information a donor can see today. They are not a grade, endorsement, or measure of impact.
+                </p>
+              </div>
             </div>
-            <div className="max-w-[640px]">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How much information is available</span>
-              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
-                Visibility Levels
-              </h1>
-              <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">
-                Visibility levels show how much helpful information a donor can see today. They are not a grade, endorsement, or measure of impact.
-              </p>
+            <div className="shrink-0 hidden md:flex justify-end">
+              <img src="/logo.png" alt="Daanaa" className="w-48 h-48 lg:w-56 lg:h-56 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
             </div>
           </div>
         </div>

@@ -58,12 +58,19 @@ export default function HowItWorks() {
             <span className="text-muted-cream/50">/</span>
             <span className="font-body text-[12px] text-muted-cream">How It Works</span>
           </div>
-          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 64px)' }}>
-            How Daanaa Works
-          </h1>
-          <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream max-w-[640px]">
-            We don't score nonprofits on our opinion. We surface publicly available data, place each organization alongside its true peers, and let you decide.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
+            <div className="max-w-[640px]">
+              <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 64px)' }}>
+                How Daanaa Works
+              </h1>
+              <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream">
+                We don't score nonprofits on our opinion. We surface publicly available data, place each organization alongside its true peers, and let you decide.
+              </p>
+            </div>
+            <div className="shrink-0 hidden md:flex justify-end">
+              <img src="/logo.png" alt="Daanaa" className="w-48 h-48 lg:w-56 lg:h-56 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
+            </div>
+          </div>
         </div>
       </div>
 
