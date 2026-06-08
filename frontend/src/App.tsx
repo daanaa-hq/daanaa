@@ -28,6 +28,8 @@ const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
 const ClaimSuccess = lazy(() => import('./pages/ClaimSuccess'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
+const Governance = lazy(() => import('./pages/Governance'))
+const WhyDaanaa = lazy(() => import('./pages/WhyDaanaa'))
 
 function PageLoader() {
   return (
@@ -53,6 +55,8 @@ export default function App() {
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
             <Route path="/about" element={<About />} />
+            <Route path="/governance" element={<Governance />} />
+            <Route path="/why-daanaa-exists" element={<WhyDaanaa />} />
             {/* <Route path="/giving-list" element={<GivingListPage />} /> */}
             {/* <Route path="/giving-list/review" element={<GivingReview />} /> */}
             {/* <Route path="/giving-list/confirmation" element={<GivingConfirmation />} /> */}

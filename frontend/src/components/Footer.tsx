@@ -22,7 +22,7 @@ export default function Footer() {
     <footer className="bg-deep-navy border-t border-navy-mid">
       {/* Top Row */}
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-x-6 gap-y-8">
           {/* Brand */}
           <div className="col-span-2 lg:col-span-1">
             <Link to="/" className="font-display italic text-[20px] text-warm-cream tracking-[-0.02em]">
@@ -65,6 +65,27 @@ export default function Footer() {
                 { label: 'Sector Health', to: '/sector-health' },
                 { label: 'Guides', to: '/guides' },
                 { label: 'FAQ', to: '/faq' },
+              ].map(({ label, to }) => (
+                <li key={label}>
+                  <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Our Story */}
+          <div>
+            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
+              Our Story
+            </p>
+            <ul className="space-y-1">
+              {[
+                { label: 'Why Daanaa Exists', to: '/why-daanaa-exists' },
+                { label: 'Governance', to: '/governance' },
+                { label: 'Visibility Levels', to: '/tiers' },
+                { label: 'The Invisible 97%', to: '/the-invisible-97' },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">

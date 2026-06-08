@@ -12,8 +12,8 @@ import { getFeaturedCategory } from '../data/featuredCategory'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
   { name: 'Beacon',  pct: '0.6%',  blurb: 'Complete public data: top-quartile financial score, mission, website, and current 990 on record' },
-  { name: 'Torch',   pct: '17.5%', blurb: 'Peer-comparable nonprofit. Current 990 and financial ranking on record' },
-  { name: 'Candle',  pct: '26.7%', blurb: 'Financial data on record. Recent filing helps improve peer ranking' },
+  { name: 'Torch',   pct: '15.6%', blurb: 'Peer-comparable nonprofit. Current 990 and financial ranking on record' },
+  { name: 'Candle',  pct: '28.7%', blurb: 'Financial data on record. Recent filing helps improve peer ranking' },
   { name: 'Spark',   pct: '55.1%', blurb: 'Registered nonprofit. No financial data on public record yet' },
 ]
 
@@ -61,6 +61,19 @@ function HeroSection() {
         >
           Discover nonprofits<br />with clarity
         </h1>
+
+        {/* Founder's tagline */}
+        <p className="mt-4 font-body text-[17px] leading-[1.6] max-w-[560px] mx-auto" style={{ color: 'rgba(245,240,235,0.85)' }}>
+          People want to help. We help them understand.
+        </p>
+
+        {/* Governance link */}
+        <Link
+          to="/governance"
+          className="inline-block mt-2 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+        >
+          How we're governed →
+        </Link>
 
         {/* Subtitle */}
         <p className="mt-6 font-body text-[18px] leading-[1.7] max-w-[560px] mx-auto" style={{ color: 'rgba(245,240,235,0.70)' }}>
