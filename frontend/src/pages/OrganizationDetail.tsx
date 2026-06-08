@@ -291,6 +291,7 @@ export default function OrganizationDetail() {
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
   const [showScoreExplainer, setShowScoreExplainer] = useState(false)
   const [showVolunteer, setShowVolunteer] = useState(false)
+  const [showResources, setShowResources] = useState(false)
   const { isInList, items: givingItems, addItem, removeItem, markPending } = useGivingList()
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
@@ -467,7 +468,7 @@ export default function OrganizationDetail() {
               >
                 <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
               </svg>
-              {inList ? 'On your list' : 'Add to giving list'}
+              {inList ? 'Saved to Wallet' : 'Save to Wallet'}
             </button>
           </div>
 
@@ -542,7 +543,7 @@ export default function OrganizationDetail() {
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   {apiOrg!.months_of_reserve < 0
                     ? 'Negative net assets. This group owes more than it owns.'
-                    : `Only ${apiOrg!.months_of_reserve.toFixed(1)} months of savings if donations stopped`}
+                    : `Net assets cover only ${apiOrg!.months_of_reserve.toFixed(1)} months of costs`}
                 </div>
               )}
 
@@ -782,7 +783,7 @@ export default function OrganizationDetail() {
                   {lampTier}
                 </Link>
                 <span className="font-body text-[10px] text-muted-cream/50">
-                  {({'Beacon':'Fully documented','Lantern':'Well documented','Flame':'Basic documentation','Ember':'Limited public data','Seed':'Just registered'} as Record<string,string>)[lampTier]}
+                  {({'Beacon':'Fully documented','Lantern':'Well documented','Flame':'Financials on record','Ember':'IRS registered','Seed':'IRS registered','Spark':'IRS registered','Glow':'IRS registered'} as Record<string,string>)[lampTier] ?? 'IRS registered'}
                 </span>
               </div>
               {/* IRS verification -- a real, defensible fact for every org */}
@@ -906,8 +907,8 @@ export default function OrganizationDetail() {
                     {apiOrg!.months_of_reserve < 0
                       ? 'months, negative net assets'
                       : apiOrg!.months_of_reserve < 3
-                      ? 'months of savings remaining'
-                      : 'months if revenue stopped today'}
+                      ? 'months net assets cover costs'
+                      : 'months net assets cover costs'}
                   </span>
                 </div>
               )}
@@ -947,6 +948,114 @@ export default function OrganizationDetail() {
             </div>
           )}
 
+          {/* How They Manage Resources -- financial health context, collapsed by default */}
+          {apiOrg!.financial_health && (
+            <div className="mb-8">
+              <button
+                onClick={() => setShowResources(s => !s)}
+                className="w-full flex items-center justify-between px-5 py-4 bg-white border border-light-grey rounded-xl hover:border-soft-gold/50 transition-colors group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium shrink-0">How they manage resources</span>
+                  <span className={`shrink-0 inline-block px-2.5 py-0.5 rounded font-body text-[11px] font-semibold ${
+                    apiOrg!.financial_health === 'Strong'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : apiOrg!.financial_health === 'Stable'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  }`}>
+                    {apiOrg!.financial_health}
+                  </span>
+                  {!showResources && apiOrg!.peer_total && (
+                    <span className="font-body text-[12px] text-cool-grey truncate hidden md:block">
+                      among {apiOrg!.peer_total.toLocaleString()} similar organizations
+                    </span>
+                  )}
+                </div>
+                <svg
+                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  className={`shrink-0 text-cool-grey group-hover:text-soft-gold transition-transform duration-200 ${showResources ? 'rotate-180' : ''}`}
+                >
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+
+              {showResources && (
+                <div className="mt-1 bg-white border border-light-grey border-t-0 rounded-b-xl px-5 pb-5 pt-4 space-y-4">
+                  {(() => {
+                    const HEALTH_MEANINGS: Record<string, Record<string, string>> = {
+                      Clinical_Reimbursement: { Strong: 'Strong reimbursement coverage and healthy operating reserves', Stable: 'Consistent patient revenue, steady program delivery', Inspiring: 'Committed to care within tight reimbursement margins' },
+                      Direct_Delivery: { Strong: 'Solid program efficiency and financial runway for the mission', Stable: 'Reliable service delivery with predictable funding', Inspiring: 'High-impact direct service within resource constraints' },
+                      Activity_Programming: { Strong: 'Broad programming reach, strong participation-driven revenue', Stable: 'Consistent activity base, steady community engagement', Inspiring: 'Vibrant programming with lean operational means' },
+                      Community_Human_Services: { Strong: 'Program efficiency, financial resilience across service lines', Stable: 'Reliable community delivery, predictable operational base', Inspiring: 'Remarkable community service within tight constraints' },
+                      Emergency_Logistics: { Strong: 'Strong surge capacity and reserve depth for response cycles', Stable: 'Reliable response readiness, steady logistics funding', Inspiring: 'Committed frontline response with limited reserves' },
+                      Cause_Advocacy_Research: { Strong: 'Well-resourced mission and strong organizational staying power', Stable: 'Consistent advocacy funding, steady research operations', Inspiring: 'Impactful advocacy and research within lean resources' },
+                      Intermediary_Public_Benefit: { Strong: 'Effective grant deployment with strong organizational reserves', Stable: 'Consistent intermediary function, reliable grant flow', Inspiring: 'High-leverage public benefit work with constrained capital' },
+                      Faith_Community: { Strong: 'Mission vitality supported by sustained congregational giving', Stable: 'Steady congregational support, predictable ministry funding', Inspiring: 'Growing faith mission within meaningful financial constraints' },
+                      Membership_Mutual_Benefit: { Strong: 'Active member-driven revenue and long-term reserve depth', Stable: 'Stable membership base, consistent mutual support model', Inspiring: 'Growing member community building toward long-term stability' },
+                    }
+                    const model = apiOrg!.operating_model as string | null
+                    const tier = apiOrg!.financial_health as string
+                    const meaning = model ? (HEALTH_MEANINGS[model]?.[tier] ?? '') : ''
+                    const modelLabel = model ? model.replace(/_/g, ' ') : null
+
+                    return (
+                      <>
+                        {meaning && (
+                          <p className="font-body text-[14px] text-deep-navy leading-[1.6]">{meaning}</p>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {apiOrg!.program_expense_pct != null && apiOrg!.program_expense_pct > 0 && (
+                            <div className="rounded-lg bg-warm-cream px-4 py-3">
+                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Programs</span>
+                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
+                                {apiOrg!.program_expense_pct.toFixed(0)}¢
+                              </span>
+                              <span className="block font-body text-[11px] text-cool-grey">of every dollar spent on programs</span>
+                            </div>
+                          )}
+                          {apiOrg!.months_of_reserve != null && (
+                            <div className="rounded-lg bg-warm-cream px-4 py-3">
+                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
+                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
+                                {apiOrg!.months_of_reserve > 999 ? '99+' : apiOrg!.months_of_reserve.toFixed(0)} mo
+                              </span>
+                              <span className="block font-body text-[11px] text-cool-grey">months net assets cover costs</span>
+                            </div>
+                          )}
+                          {apiOrg!.total_revenue != null && apiOrg!.total_expenses != null && apiOrg!.total_expenses > 0 && (
+                            <div className="rounded-lg bg-warm-cream px-4 py-3">
+                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Revenue vs costs</span>
+                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
+                                {apiOrg!.total_revenue >= apiOrg!.total_expenses ? '+' : ''}
+                                {(((apiOrg!.revenue_3yr_avg ?? apiOrg!.total_revenue) - apiOrg!.total_expenses) / apiOrg!.total_expenses * 100).toFixed(0)}%
+                              </span>
+                              <span className="block font-body text-[11px] text-cool-grey">
+                                {apiOrg!.revenue_3yr_avg ? '3-year average vs costs' : 'revenue vs costs'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <p className="font-body text-[11px] text-cool-grey">
+                            Compared to {apiOrg!.peer_total?.toLocaleString() ?? 'similar'} {modelLabel ?? 'similar'} organizations
+                            {apiOrg!.peer_rank && apiOrg!.peer_total ? ` · ranked #${apiOrg!.peer_rank.toLocaleString()} of ${apiOrg!.peer_total.toLocaleString()}` : ''}
+                          </p>
+                          <Link to="/methodology" className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors shrink-0 ml-3">
+                            How we score →
+                          </Link>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* About this listing + the org's claimable spaces get the full width
               and are clearly defined. The wide revenue trend chart moves to its
               own full-width block below this (see "Revenue Trend" section). */}
@@ -955,20 +1064,34 @@ export default function OrganizationDetail() {
               {/* About this listing -- informational only */}
               <div className="bg-white border border-light-grey rounded-xl px-6 py-5">
                 <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
-                {(lampTier === 'Beacon' || lampTier === 'Lantern') ? (
+                {lampTier === 'Beacon' ? (
                   <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, and website all on public record.
+                    {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, website, and top-quartile financial context all on public record.
+                  </p>
+                ) : lampTier === 'Torch' ? (
+                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
+                    {apiOrg!.organization_name} is a federally recognized nonprofit with financial filings on public record. They hold federal tax-exempt status as a charitable organization. This profile will grow as more data becomes available.
                   </p>
                 ) : (
-                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    This profile is built from public records. The organization can add its own mission, service area, programs, events, volunteer needs, and giving path for free. A lower visibility level means less information is available today, not that the work is less important.
-                  </p>
+                  <>
+                    <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
+                      {apiOrg!.organization_name} is a federally recognized nonprofit holding federal tax-exempt status. The IRS has recognized them as a charitable organization.
+                    </p>
+                    <p className="mt-2 font-body text-[13px] text-cool-grey leading-[1.6]">
+                      Financial data isn't on public record yet for this organization. That's a data availability question, not a reflection of their work. Donors often learn about organizations like this through their community, the people behind them, and what they actually do.
+                    </p>
+                  </>
                 )}
                 {apiOrg!.claim_status === 'active' && (
                   <p className="mt-3 font-body text-[12px] text-cool-grey">This page is managed by the organization.</p>
                 )}
                 {apiOrg!.claim_status === 'letter_sent' && (
                   <p className="mt-3 font-body text-[12px] text-cool-grey">Claim in progress -- verification letter sent.</p>
+                )}
+                {apiOrg!.irs_status_verified_at && (
+                  <p className="mt-3 font-body text-[11px] text-cool-grey/70">
+                    IRS status verified {new Date(apiOrg!.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </p>
                 )}
               </div>
 
@@ -1392,7 +1515,7 @@ export default function OrganizationDetail() {
           >
             <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
           </svg>
-          {inList ? 'Remove from giving list' : 'Add to giving list'}
+          {inList ? 'Remove from Wallet' : 'Save to Wallet'}
         </button>
       </div>
 

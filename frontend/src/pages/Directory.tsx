@@ -42,8 +42,8 @@ const REVENUE_PRESETS = [
 
 const SCORE_TIERS: { id: TierName; label: string }[] = [
   { id: 'Beacon',  label: 'Beacon' },
-  { id: 'Lantern', label: 'Lantern +' },
-  { id: 'Flame',   label: 'Flame +' },
+  { id: 'Torch',   label: 'Torch +' },
+  { id: 'Candle',  label: 'Candle +' },
 ]
 
 type RevenueId = typeof REVENUE_PRESETS[number]['id'] | ''

@@ -4,10 +4,10 @@ import type { TierName } from '../components/TrustBadge'
 // Map old TrustTier names (pre-Week-1) to new TierName — runs once at localStorage load
 const TIER_COMPAT: Record<string, TierName> = {
   Exemplary:   'Beacon',
-  Transparent: 'Lantern',
-  Accountable: 'Flame',
-  Verified:    'Ember',
-  Listed:      'Seed',
+  Transparent: 'Torch',
+  Accountable: 'Torch',
+  Verified:    'Candle',
+  Listed:      'Spark',
 }
 
 // 'intent' = saved / clicked to give but not confirmed.

@@ -11,11 +11,10 @@ import { NTEE_CATEGORIES } from '../data/ntee'
 import { getFeaturedCategory } from '../data/featuredCategory'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
-  { name: 'Beacon',  pct: '0.7%',  blurb: 'Complete public data: financial filings, mission, website, and current 990 on record' },
-  { name: 'Lantern', pct: '1.5%',  blurb: 'Strong public data: mission, website, financial context, and current 990 on record' },
-  { name: 'Flame',   pct: '27.0%', blurb: 'Public filing on record. Mission or website pending verification' },
-  { name: 'Glow',    pct: '40.6%', blurb: 'Public record found in IRS database. Limited additional data available' },
-  { name: 'Seed',    pct: '30.2%', blurb: 'Public record found. No additional data discovered yet' },
+  { name: 'Beacon',  pct: '0.6%',  blurb: 'Complete public data: top-quartile financial score, mission, website, and current 990 on record' },
+  { name: 'Torch',   pct: '17.5%', blurb: 'Peer-comparable nonprofit. Current 990 and financial ranking on record' },
+  { name: 'Candle',  pct: '26.7%', blurb: 'Financial data on record. Recent filing helps improve peer ranking' },
+  { name: 'Spark',   pct: '55.1%', blurb: 'Registered nonprofit. No financial data on public record yet' },
 ]
 
 // Returns the week number anchored to Monday so all users see the same shuffle each week
@@ -355,7 +354,7 @@ function TiersStrip() {
             {TIER_STRIP.map(({ name, pct, blurb }) => (
               <Link
                 key={name}
-                to={name === 'Glow' || name === 'Seed' ? '/directory' : `/directory?min_tier=${name}`}
+                to={name === 'Spark' ? '/directory' : `/directory?min_tier=${name}`}
                 className="snap-start shrink-0 w-[88px] md:w-auto flex flex-col items-center gap-1.5 px-2 py-3 border-r border-light-grey last:border-r-0 hover:bg-warm-cream/60 transition-colors group"
               >
                 <LampMark tier={name} size="sm" />
@@ -392,12 +391,15 @@ function WalletSection() {
             <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase">
               Your giving, kept private
             </span>
-            <h2
-              className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]"
-              style={{ fontSize: 'clamp(30px, 4vw, 50px)' }}
-            >
-              Your giving history,<br />private by design
-            </h2>
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <h2
+                className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]"
+                style={{ fontSize: 'clamp(30px, 4vw, 50px)' }}
+              >
+                Your giving history,<br />private by design
+              </h2>
+              <span className="inline-flex items-center self-start mt-2 px-2 py-0.5 rounded-full bg-soft-gold/15 border border-soft-gold/30 font-body text-[10px] font-semibold tracking-[0.06em] text-soft-gold uppercase">β Beta</span>
+            </div>
             <p className="mt-5 font-body text-[16px] leading-[1.7]" style={{ color: 'rgba(245,240,235,0.65)' }}>
               Log every donation you make, through any channel, to any nonprofit.
               Records stay on your device only, never our servers.

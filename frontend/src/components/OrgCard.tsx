@@ -33,7 +33,7 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
   return (
     <button
       onClick={onClick}
-      title={inList ? 'Remove from giving list' : 'Add to giving list'}
+      title={inList ? 'Remove from Wallet' : 'Save to Wallet'}
       className="shrink-0 inline-flex items-center gap-1 px-3 py-2.5 md:py-2 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold/70 focus-visible:ring-offset-1"
       style={{
         backgroundColor: inList ? '#2A6B45' : 'transparent',
@@ -46,7 +46,7 @@ function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.Mo
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          In List
+          Saved
         </>
       ) : (
         <>
@@ -131,7 +131,7 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
         state: org.state || undefined,
         ntee1: org.category || undefined,
         amount: 0,
-        trustTier: lampTier || 'Seed',
+        trustTier: lampTier || 'Spark',
         trustSummary: trustSummary || 'IRS registered',
         donateUrl: (['ok','beta','live','claimed','blocked_or_restricted'].includes(apiOrg?.donate_url_status ?? '') && apiOrg?.donate_url) ? apiOrg.donate_url : undefined,
       })
@@ -237,7 +237,7 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         state: org.state || undefined,
         ntee1: org.category || undefined,
         amount: 0,
-        trustTier: lampTier || 'Seed',
+        trustTier: lampTier || 'Spark',
         trustSummary: trustSummary || 'IRS registered',
         donateUrl: (['ok','beta','live','claimed','blocked_or_restricted'].includes(apiOrg?.donate_url_status ?? '') && apiOrg?.donate_url) ? apiOrg.donate_url : undefined,
       })

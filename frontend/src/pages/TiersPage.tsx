@@ -12,8 +12,8 @@ const TIERS: {
 }[] = [
   {
     name: 'Beacon',
-    pct: '0.7%',
-    count: '~13,500',
+    pct: '0.6%',
+    count: '~12,000',
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
@@ -23,21 +23,9 @@ const TIERS: {
     ],
   },
   {
-    name: 'Lantern',
-    pct: '1.5%',
-    count: '~28,000',
-    criteria: [
-      { label: 'Recognized as a nonprofit by the IRS', met: true },
-      { label: 'Annual financial report on file (2022 or later)', met: true },
-      { label: 'Financial context score assigned', met: true },
-      { label: 'Mission statement on public record', met: true },
-      { label: 'Active website on record', met: true },
-    ],
-  },
-  {
-    name: 'Flame',
-    pct: '26.9%',
-    count: '~487,000',
+    name: 'Torch',
+    pct: '17.5%',
+    count: '~319,000',
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
@@ -47,9 +35,9 @@ const TIERS: {
     ],
   },
   {
-    name: 'Glow',
-    pct: '40.6%',
-    count: '~736,000',
+    name: 'Candle',
+    pct: '26.7%',
+    count: '~486,000',
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later) or revenue on record', met: true },
@@ -59,9 +47,9 @@ const TIERS: {
     ],
   },
   {
-    name: 'Seed',
-    pct: '30.2%',
-    count: '~546,000',
+    name: 'Spark',
+    pct: '55.1%',
+    count: '~1,002,000',
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: false },
@@ -85,7 +73,7 @@ const CRITERIA_ICON_UNMET = (
 )
 
 export default function TiersPage() {
-  usePageMeta('Visibility Levels', 'Understand the five Daanaa visibility levels (Beacon, Lantern, Flame, Glow, and Spark) and what each means for the nonprofits the IRS recognizes.')
+  usePageMeta('Visibility Levels', 'Understand the four Daanaa visibility levels (Beacon, Torch, Candle, and Spark) and what each means for the nonprofits the IRS recognizes.')
   return (
     <div className="min-h-[100dvh]">
 
@@ -99,7 +87,7 @@ export default function TiersPage() {
           </div>
           <div className="flex items-start gap-6">
             <div className="hidden sm:flex flex-col gap-1.5 pt-2 shrink-0">
-              {(['Beacon','Lantern','Flame','Glow','Seed'] as TierName[]).map(t => (
+              {(['Beacon','Torch','Candle','Spark'] as TierName[]).map(t => (
                 <LampMark key={t} tier={t} size="xs" />
               ))}
             </div>
@@ -166,7 +154,7 @@ export default function TiersPage() {
                     </div>
 
                     <Link
-                      to={name === 'Seed' ? '/directory' : `/directory?min_tier=${name}`}
+                      to={name === 'Spark' ? '/directory' : `/directory?min_tier=${name}`}
                       className="hidden md:inline-flex items-center gap-1.5 shrink-0 font-body text-[13px] font-semibold px-4 py-2 rounded-full border transition-all duration-150 hover:bg-soft-gold/10"
                       style={{ borderColor: `${color}50`, color }}
                     >
@@ -226,7 +214,7 @@ export default function TiersPage() {
                   {/* Mobile browse link */}
                   <div className="md:hidden px-6 pb-5">
                     <Link
-                      to={name === 'Seed' ? '/directory' : `/directory?min_tier=${name}`}
+                      to={name === 'Spark' ? '/directory' : `/directory?min_tier=${name}`}
                       className="inline-flex items-center gap-1.5 font-body text-[13px] font-semibold"
                       style={{ color }}
                     >
@@ -245,7 +233,7 @@ export default function TiersPage() {
             </h2>
             <div className="mt-4 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
               <p>
-                A tiny organization running an extraordinary neighborhood pantry on a 990-N postcard will show as Seed or Ember. That reflects what the IRS collects. A 990-N reports only that the organization exists, not its financials. It says nothing about their effectiveness, their importance to the communities they serve, or whether they deserve your support.
+                A tiny organization running an extraordinary neighborhood pantry on a 990-N postcard will show as Spark or Candle. That reflects what the IRS collects. A 990-N reports only that the organization exists, not its financials. It says nothing about their effectiveness, their importance to the communities they serve, or whether they deserve your support.
               </p>
               <p>
                 Tiers answer one question: <em>how much public data backs this listing?</em> They are a starting point for research, not a verdict. Use them to calibrate how much additional due diligence to apply, not to rank organizations against each other.

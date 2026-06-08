@@ -262,33 +262,27 @@ export default function ForNonprofits() {
       {(() => {
         const STEPS: { tier: TierName; pct: string; description: string; nextStep: string | null }[] = [
           {
-            tier: 'Seed',
-            pct: '0.4% of tax-deductible 501(c)(3)s',
+            tier: 'Spark',
+            pct: '~55% of tax-deductible 501(c)(3)s',
             description: "The IRS recognizes you. You're already in our index.",
-            nextStep: 'To reach Glow: file a full annual report with the government. Required for nonprofits earning over $50,000 a year.',
+            nextStep: 'To reach Candle: file a full annual report with the government. Required for nonprofits earning over $50,000 a year.',
           },
           {
-            tier: 'Glow',
-            pct: '21% of tax-deductible 501(c)(3)s',
+            tier: 'Candle',
+            pct: '~27% of tax-deductible 501(c)(3)s',
             description: 'Financial data is on record, but we need a recent one to rank you among peers.',
-            nextStep: 'To reach Flame: file an annual report dated 2022 or later. This happens automatically once the IRS publishes it. Nothing for you to do.',
+            nextStep: 'To reach Torch: file an annual report dated 2022 or later. This happens automatically once the IRS publishes it. Nothing for you to do.',
           },
           {
-            tier: 'Flame',
-            pct: '75% of tax-deductible 501(c)(3)s',
-            description: "You have a current annual report and a financial ranking among similar nonprofits. A mission statement or website isn't yet on the public record.",
-            nextStep: 'To reach Lantern: get your mission statement and website into the public record. Claiming your Daanaa page is the fastest way.',
-          },
-          {
-            tier: 'Lantern',
-            pct: '2% of tax-deductible 501(c)(3)s',
-            description: 'Your current annual report, mission, and website are all on the public record. A strong, complete picture.',
-            nextStep: 'To reach Beacon: add mission, service area, programs, leadership, and giving path. Visibility improves as your profile becomes more complete.',
+            tier: 'Torch',
+            pct: '~17.5% of tax-deductible 501(c)(3)s',
+            description: 'You have a current annual report and a financial ranking among similar nonprofits. Add a mission statement and website to your public record for greater visibility.',
+            nextStep: 'To reach Beacon: achieve a top-quartile financial score within your peer group and ensure mission, website, and current annual report are all on the public record.',
           },
           {
             tier: 'Beacon',
-            pct: '1% of tax-deductible 501(c)(3)s',
-            description: 'Complete profile. Mission, giving path, service area, programs, and leadership all on public record. The most complete picture donors can see.',
+            pct: '~0.6% of tax-deductible 501(c)(3)s',
+            description: 'Complete profile. Top-quartile financial score, current annual report, mission, and website all on public record. The most complete picture donors can see.',
             nextStep: null,
           },
         ]

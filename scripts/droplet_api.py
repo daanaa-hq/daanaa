@@ -10,6 +10,7 @@ Detail:  precomputed org file → fallback to search.db orgs table
 import gzip
 import json
 import os
+import re
 import sqlite3
 from pathlib import Path
 
@@ -18,6 +19,15 @@ from flask_cors import CORS
 
 app = Flask(__name__, static_folder=None)
 CORS(app)
+
+
+@app.after_request
+def set_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 
 DATA_DIR     = Path(os.environ.get('PRECOMPUTE_DIR', '/data/precompute/v1'))
 CLAIMS_DIR   = Path(os.environ.get('CLAIMS_DIR', '/data/claims'))
@@ -59,6 +69,20 @@ def get_search_db():
     conn = sqlite3.connect(str(fts_path), timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _fts_where(q: str, state: str = '', ntee: str = '') -> tuple:
+    """Build base FTS WHERE conditions and params for q, state, ntee filters."""
+    fts_q = ' '.join(f'{w}*' for w in q.split() if w)
+    conditions: list = ["s.ein = o.EIN", "org_search MATCH ?"]
+    params: list = [fts_q]
+    if state:
+        conditions.append("o.STATE = ?")
+        params.append(state)
+    if ntee and len(ntee) >= 1:
+        conditions.append("o.NTEE1 = ?")
+        params.append(ntee[0])
+    return conditions, params
 
 
 def _row_to_org(row) -> dict:
@@ -142,8 +166,11 @@ def get_organizations():
     state    = request.args.get('state', '').strip().upper()
     q        = request.args.get('q', '').strip()
     sort     = request.args.get('sort', '').strip()
-    page     = max(1, int(request.args.get('page', 1)))
-    per_page = min(100, max(1, int(request.args.get('per_page', PER_PAGE_DEFAULT))))
+    try:
+        page     = max(1, int(request.args.get('page', 1)))
+        per_page = min(100, max(1, int(request.args.get('per_page', PER_PAGE_DEFAULT))))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'invalid page or per_page parameter'}), 400
     hidden_gem    = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website   = request.args.get('has_website', '').strip() == '1'
@@ -223,9 +250,8 @@ def _db_filter_browse(ntee, state, sort, page, per_page,
             conditions.append("donate_url IS NOT NULL AND donate_url != ''")
 
         where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
-        order = "merit_score DESC NULLS LAST"
-        if sort == 'name':
-            order = "organization_name ASC"
+        _SORT_MAP = {'name': 'organization_name ASC'}
+        order = _SORT_MAP.get(sort, 'merit_score DESC NULLS LAST')
 
         total = conn.execute(f"SELECT COUNT(*) FROM orgs {where}", params).fetchone()[0]
         offset = (page - 1) * per_page
@@ -253,16 +279,8 @@ def _fts_directory(q, ntee, state, sort, page, per_page,
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
                         'page': page, 'per_page': per_page, 'search_type': 'fts'})
     try:
-        fts_q = ' '.join(f'"{w}"*' for w in q.split() if w)
-        conditions = ["s.ein = o.EIN", "org_search MATCH ?"]
-        params: list = [fts_q]
+        conditions, params = _fts_where(q, state, ntee)
 
-        if state:
-            conditions.append("o.STATE = ?")
-            params.append(state)
-        if ntee and len(ntee) >= 1:
-            conditions.append("o.NTEE1 = ?")
-            params.append(ntee[0])
         if hidden_gem:
             conditions.append("o.is_hidden_gem = 1")
         if needs_funding:
@@ -381,8 +399,9 @@ def _multi_category_page(state, page, per_page):
         _multi_cache[cache_key] = orgs_lists
     orgs_page, _sample_total, _sample_pages = _merge_orgs(_multi_cache[cache_key], per_page, page)
     real_total = _get_real_total(state)
+    real_pages = max(1, (real_total + per_page - 1) // per_page)
     return jsonify({'organizations': orgs_page, 'total': real_total,
-                    'page': 1, 'per_page': per_page, 'pages': 1})
+                    'page': page, 'per_page': per_page, 'pages': real_pages})
 
 
 def _filtered_orgs(ntee1, state, nteecc_filter, page, per_page):
@@ -403,9 +422,13 @@ def _filtered_orgs(ntee1, state, nteecc_filter, page, per_page):
                     'total': total, 'page': page, 'per_page': per_page, 'pages': pages})
 
 
+_EIN_RE = re.compile(r'^\d{9}$')
+
 @app.route('/api/organizations/<ein>')
 def get_organization(ein):
     ein = ein.strip().upper()
+    if not _EIN_RE.match(ein):
+        return jsonify({'error': 'invalid ein'}), 400
     org_data = load_org_detail(ein)
     if not org_data:
         return jsonify({'error': 'org not found'}), 404
@@ -416,7 +439,10 @@ def get_organization(ein):
 @app.route('/api/organizations/<ein>/similar')
 def get_similar_orgs(ein):
     ein = ein.strip().upper()
-    limit = min(12, int(request.args.get('limit', 9)))
+    try:
+        limit = min(12, int(request.args.get('limit', 9)))
+    except (ValueError, TypeError):
+        limit = 9
     org_data = load_org_detail(ein)
     if not org_data:
         return jsonify({'results': [], 'mode': 'precomputed', 'diamonds_only': False})
@@ -448,7 +474,10 @@ def get_score_history(ein):
 def search():
     """Quick-search endpoint (header search bar)."""
     query = request.args.get('q', '').strip()
-    limit = min(50, int(request.args.get('limit', 25)))
+    try:
+        limit = min(50, int(request.args.get('limit', 25)))
+    except (ValueError, TypeError):
+        limit = 25
     ntee  = request.args.get('ntee', '').strip().upper()
     state = request.args.get('state', '').strip().upper()
 
@@ -460,18 +489,10 @@ def search():
         return jsonify({'results': [], 'query': query, 'total': 0, 'mode': 'unavailable'})
 
     try:
-        fts_q = ' '.join(f'"{w}"*' for w in query.split() if w)
-        conditions = ["org_search MATCH ?"]
-        params: list = [fts_q]
-        if state:
-            conditions.append("STATE = ?")
-            params.append(state)
-        if ntee and len(ntee) == 1:
-            conditions.append("NTEE1 = ?")
-            params.append(ntee)
+        conditions, params = _fts_where(query, state, ntee)
         params.append(limit)
-        sql = (f"SELECT ein, organization_name, NTEE1, NTEECC, CITY, STATE, mission, merit_score "
-               f"FROM org_search WHERE {' AND '.join(conditions)} LIMIT ?")
+        sql = (f"SELECT o.EIN as ein, o.organization_name, o.NTEE1, o.NTEECC, o.CITY, o.STATE, o.mission, o.merit_score "
+               f"FROM org_search s, orgs o WHERE {' AND '.join(conditions)} LIMIT ?")
         rows = conn.execute(sql, params).fetchall()
         results = [dict(r) for r in rows]
         return jsonify({'results': results, 'query': query,
@@ -489,8 +510,11 @@ def fused_search():
     q      = request.args.get('q', '').strip()
     ntee   = request.args.get('ntee', '').strip().upper()
     state  = request.args.get('state', '').strip().upper()
-    limit  = min(50, int(request.args.get('limit', 20)))
-    page   = max(1, int(request.args.get('page', 1)))
+    try:
+        limit = min(50, int(request.args.get('limit', 20)))
+        page  = max(1, int(request.args.get('page', 1)))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'invalid limit or page parameter'}), 400
 
     per_page = limit
     if not q or len(q) < 2:
@@ -503,15 +527,7 @@ def fused_search():
                         'page': page, 'per_page': per_page, 'search_type': 'unavailable'})
 
     try:
-        fts_q = ' '.join(f'"{w}"*' for w in q.split() if w)
-        conditions = ["s.ein = o.EIN", "org_search MATCH ?"]
-        params: list = [fts_q]
-        if state:
-            conditions.append("o.STATE = ?")
-            params.append(state)
-        if ntee and len(ntee) == 1:
-            conditions.append("o.NTEE1 = ?")
-            params.append(ntee)
+        conditions, params = _fts_where(q, state, ntee)
 
         total = conn.execute(
             f"SELECT COUNT(*) FROM org_search s, orgs o WHERE {' AND '.join(conditions)}", params

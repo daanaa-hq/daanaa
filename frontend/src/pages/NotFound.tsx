@@ -8,7 +8,7 @@ export default function NotFound() {
     <div className="min-h-[100dvh] bg-warm-cream flex items-center justify-center px-6">
       <div className="text-center max-w-[420px]">
         <div className="flex justify-center mb-6 opacity-30">
-          <LampMark size="xl" tier="Seed" />
+          <LampMark size="xl" tier="Spark" />
         </div>
         <h1 className="font-display italic text-deep-navy leading-[1.05]" style={{ fontSize: 'clamp(28px, 5vw, 44px)' }}>
           Page not found
