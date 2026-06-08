@@ -2287,17 +2287,32 @@ def admin_override_boost(boost_id):
 
 RESEARCH_PASSCODE = os.getenv('RESEARCH_PASSCODE', 'daanaa2026')  # Hardcoded for testing
 RESEARCH_SESSION_TTL = 8 * 3600  # 8 hours in seconds
-_RESEARCH_SESSIONS = {}  # token → {created_at, expires_at}
+def _ensure_research_sessions_table(db):
+    """Create research_sessions table if it doesn't exist."""
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS research_sessions (
+            token TEXT PRIMARY KEY,
+            created_at REAL,
+            expires_at REAL
+        )
+    """)
+    db.commit()
 
 def _check_research_auth(session_token: str) -> bool:
     """Validate research session token. Purge expired sessions."""
-    now = time.time()
-    # Purge expired sessions
-    expired = [k for k, v in _RESEARCH_SESSIONS.items() if v['expires_at'] < now]
-    for k in expired:
-        del _RESEARCH_SESSIONS[k]
-    session = _RESEARCH_SESSIONS.get(session_token)
-    return session is not None
+    db = sqlite3.connect('data/merit_registry.db')
+    db.row_factory = sqlite3.Row
+    try:
+        now = time.time()
+        # Purge expired sessions
+        db.execute("DELETE FROM research_sessions WHERE expires_at < ?", (now,))
+        db.commit()
+        # Check if token exists and is valid
+        session = db.execute("SELECT * FROM research_sessions WHERE token = ? AND expires_at > ?",
+                           (session_token, now)).fetchone()
+        return session is not None
+    finally:
+        db.close()
 
 @app.route('/api/research/auth', methods=['POST'])
 @limiter.exempt
@@ -2310,14 +2325,21 @@ def research_auth():
     if not passcode or not hmac.compare_digest(passcode, RESEARCH_PASSCODE):
         return jsonify({"error": "Invalid access code"}), 401
 
+    db = sqlite3.connect('data/merit_registry.db')
+    _ensure_research_sessions_table(db)
+
     session_token = secrets.token_urlsafe(32)
     now = time.time()
-    _RESEARCH_SESSIONS[session_token] = {
-        'created_at': now,
-        'expires_at': now + RESEARCH_SESSION_TTL
-    }
+    try:
+        db.execute("""
+            INSERT INTO research_sessions (token, created_at, expires_at)
+            VALUES (?, ?, ?)
+        """, (session_token, now, now + RESEARCH_SESSION_TTL))
+        db.commit()
+        app.logger.info(f"research_auth: new session, expires in {RESEARCH_SESSION_TTL}s")
+    finally:
+        db.close()
 
-    app.logger.info(f"research_auth: new session, expires in {RESEARCH_SESSION_TTL}s")
     return jsonify({
         'session_token': session_token,
         'expires_in': RESEARCH_SESSION_TTL
@@ -2343,9 +2365,9 @@ def research_operating_models():
         'chart_type': 'bar',
         'data': [
             {
-                'model': r['operating_model'],
+                'operating_model': r['operating_model'],
                 'count': r['count'],
-                'pct': round(r['pct_of_total'], 1),
+                'pct_of_total': round(r['pct_of_total'], 1),
                 'avg_revenue': r['avg_revenue'],
                 'median_peer_percentile': r['median_peer_percentile']
             }
@@ -2357,27 +2379,29 @@ def research_operating_models():
 @app.route('/api/research/summary/revenue-bands')
 @limiter.exempt
 def research_revenue_bands():
-    """Revenue band distribution."""
+    """Revenue band matrix by operating model."""
     token = request.headers.get('X-Research-Session', '')
     if not _check_research_auth(token):
         return jsonify({"error": "Unauthorized"}), 401
 
     db = get_db()
     rows = db.execute("""
-        SELECT revenue_band, count, pct_of_total, avg_peer_percentile, period
+        SELECT operating_model, revenue_band_number, count, pct_of_total, avg_peer_percentile, avg_months_reserve, period
         FROM research_revenue_band_summary
         WHERE period = (SELECT MAX(period) FROM research_revenue_band_summary)
-        ORDER BY count DESC
+        ORDER BY operating_model, revenue_band_number
     """).fetchall()
 
     return jsonify({
-        'chart_type': 'bar',
+        'chart_type': 'matrix',
         'data': [
             {
-                'band': r['revenue_band'],
+                'operating_model': r['operating_model'],
+                'revenue_band_number': r['revenue_band_number'],
                 'count': r['count'],
-                'pct': round(r['pct_of_total'], 1),
-                'avg_peer_percentile': r['avg_peer_percentile']
+                'pct_of_total': round(r['pct_of_total'], 2),
+                'avg_peer_percentile': r['avg_peer_percentile'],
+                'avg_months_reserve': r['avg_months_reserve']
             }
             for r in rows
         ],
@@ -2411,9 +2435,9 @@ def research_lamp_tiers():
         'chart_type': 'pie',
         'data': [
             {
-                'tier': r['merit_tier'],
+                'merit_tier': r['merit_tier'],
                 'count': r['count'],
-                'pct': round(r['pct_of_total'], 1),
+                'pct_of_total': round(r['pct_of_total'], 1),
                 'avg_revenue': r['avg_revenue'],
                 'score': r['avg_financial_health_score'],
                 'web_pct': r['pct_with_website'],
@@ -2444,10 +2468,10 @@ def research_data_coverage():
         'chart_type': 'bar',
         'data': [
             {
-                'field': r['data_type'],
-                'total': r['total_orgs'],
-                'covered': r['has_data'],
-                'pct': round(r['pct_covered'], 1)
+                'data_type': r['data_type'],
+                'total_orgs': r['total_orgs'],
+                'has_data': r['has_data'],
+                'pct_covered': round(r['pct_covered'], 1)
             }
             for r in rows
         ],
@@ -2476,17 +2500,15 @@ def research_categories():
         'data': [
             {
                 'ntee1': r['ntee1'],
-                'label': r['ntee_label'],
+                'ntee_label': r['ntee_label'],
                 'count': r['count'],
-                'pct': round(r['pct_of_total'], 1),
+                'pct_of_total': round(r['pct_of_total'], 1),
                 'avg_revenue': r['avg_revenue'],
                 'avg_peer_percentile': r['avg_peer_percentile'],
-                'tier_dist': {
-                    'beacon': r['pct_beacon'],
-                    'torch': r['pct_torch'],
-                    'candle': r['pct_candle'],
-                    'spark': r['pct_spark']
-                }
+                'pct_beacon': r['pct_beacon'],
+                'pct_torch': r['pct_torch'],
+                'pct_candle': r['pct_candle'],
+                'pct_spark': r['pct_spark']
             }
             for r in rows
         ],

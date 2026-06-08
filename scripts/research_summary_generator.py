@@ -19,34 +19,65 @@ now = datetime.now()
 last_monday = (now - timedelta(days=now.weekday() + 7)).replace(hour=0, minute=0, second=0, microsecond=0)
 PERIOD = last_monday.strftime("%Y-%m-%d")
 
-# NTEE1 → Operating Model mapping
-OPERATING_MODEL_MAP = {
-    "B": "Education & Workforce",
-    "J": "Education & Workforce",
-    "U": "Education & Workforce",
-    "E": "Health Care & Medical",
-    "F": "Health Care & Medical",
-    "G": "Health Care & Medical",
-    "H": "Health Care & Medical",
-    "K": "Community Services",
-    "L": "Community Services",
-    "P": "Community Services",
-    "S": "Community Services",
-    "O": "Youth & Development",
-    "D": "Youth & Development",
-    "N": "Youth & Development",
-    "A": "Arts & Culture",
-    "C": "Arts & Culture",
-    "W": "Arts & Culture",
-    "I": "Civil Society & Advocacy",
-    "R": "Civil Society & Advocacy",
-    "V": "Civil Society & Advocacy",
-    "Q": "International & Development",
-    "X": "Religion & Spirituality",
-    "Y": "Religion & Spirituality",
-    "T": "Religion & Spirituality",
-    "M": "Religion & Spirituality",
+# Operating models from merit_scorer_v4_0.py with revenue band thresholds
+OPERATING_MODELS = [
+    'Clinical_Reimbursement',
+    'Direct_Delivery',
+    'Activity_Programming',
+    'Community_Human_Services',
+    'Emergency_Logistics',
+    'Cause_Advocacy_Research',
+    'Intermediary_Public_Benefit',
+    'Faith_Community',
+    'Membership_Mutual_Benefit',
+]
+
+REVENUE_BANDS = {
+    'Clinical_Reimbursement': [
+        (0, 57574), (57574, 137822), (137822, 356219), (356219, 1859828),
+        (1859828, float('inf'))
+    ],
+    'Direct_Delivery': [
+        (0, 46941), (46941, 83998), (83998, 134978), (134978, 228936),
+        (228936, 416113), (416113, 903911), (903911, 2255466), (2255466, float('inf'))
+    ],
+    'Activity_Programming': [
+        (0, 27249), (27249, 52819), (52819, 76834), (76834, 110281),
+        (110281, 165472), (165472, 284527), (284527, 828352), (828352, float('inf'))
+    ],
+    'Community_Human_Services': [
+        (0, 31190), (31190, 61908), (61908, 100883), (100883, 162333),
+        (162333, 271640), (271640, 514120), (514120, 1382545), (1382545, float('inf'))
+    ],
+    'Emergency_Logistics': [
+        (0, 60297), (60297, 106948), (106948, 187162), (187162, 459258),
+        (459258, float('inf'))
+    ],
+    'Cause_Advocacy_Research': [
+        (0, 42742), (42742, 91647), (91647, 173159), (173159, 460190),
+        (460190, float('inf'))
+    ],
+    'Intermediary_Public_Benefit': [
+        (0, 50310), (50310, 117090), (117090, 278734), (278734, 1335713),
+        (1335713, float('inf'))
+    ],
+    'Faith_Community': [
+        (0, 47539), (47539, 92415), (92415, 157757), (157757, 373778),
+        (373778, float('inf'))
+    ],
+    'Membership_Mutual_Benefit': [
+        (0, 45548), (45548, 100165), (100165, 258066), (258066, 1540726),
+        (1540726, float('inf'))
+    ],
 }
+
+def get_revenue_band_number(revenue: float, operating_model: str) -> int:
+    """Find which revenue band this org falls into."""
+    bands = REVENUE_BANDS.get(operating_model, REVENUE_BANDS['Community_Human_Services'])
+    for i, (low, high) in enumerate(bands):
+        if low <= revenue < high:
+            return i
+    return len(bands) - 1
 
 NTEE_LABELS = {
     "A": "Arts, Culture, Humanities",
@@ -88,70 +119,37 @@ def get_db():
         conn.close()
 
 
-def infer_operating_model(ntee1: str) -> str:
-    """Map NTEE1 code → operating model."""
-    return OPERATING_MODEL_MAP.get(ntee1, "Other")
-
-
 def compute_operating_model_summary(db: sqlite3.Connection, period: str) -> int:
-    """Compute operating model distribution. Returns count inserted."""
+    """Compute operating model distribution from v4_scores. Returns count inserted."""
     print(f"  Computing operating model summary for {period}...")
 
-    # Clear old data for this period (allow re-runs)
     db.execute("DELETE FROM research_operating_model_summary WHERE period = ?", [period])
 
-    # Get total org count
-    total_orgs = db.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]
+    total_orgs = db.execute("SELECT COUNT(*) FROM v4_scores").fetchone()[0]
 
-    # Group by NTEE1 first, then roll up to operating model
+    # Group by operating_model from v4_scores, join with registry_enriched for metrics
     rows = db.execute("""
         SELECT
-            NTEE1,
+            v.operating_model,
             COUNT(*) as cnt,
-            AVG(CAST(total_revenue AS FLOAT)) as avg_rev,
-            AVG(CAST(months_of_reserve AS FLOAT)) as avg_res,
-            AVG(CAST(peer_percentile AS FLOAT)) as avg_peer
-        FROM registry_enriched
-        WHERE NTEE1 IS NOT NULL AND NTEE1 != ''
-        GROUP BY NTEE1
+            AVG(CAST(r.total_revenue AS FLOAT)) as avg_rev,
+            AVG(CAST(r.months_of_reserve AS FLOAT)) as avg_res,
+            AVG(CAST(r.peer_percentile AS FLOAT)) as avg_peer
+        FROM v4_scores v
+        LEFT JOIN registry_enriched r ON v.EIN = r.EIN
+        WHERE v.operating_model IS NOT NULL AND v.operating_model != ''
+        GROUP BY v.operating_model
     """).fetchall()
 
-    model_stats = {}
-    for row in rows:
-        model = infer_operating_model(row["NTEE1"])
-        if model not in model_stats:
-            model_stats[model] = {"count": 0, "revenues": [], "reserves": [], "peers": []}
-        model_stats[model]["count"] += row["cnt"]
-        if row["avg_rev"]:
-            model_stats[model]["revenues"].append(row["avg_rev"] * row["cnt"])
-        if row["avg_res"]:
-            model_stats[model]["reserves"].append(row["avg_res"])
-        if row["avg_peer"]:
-            model_stats[model]["peers"].append(row["avg_peer"])
-
     count_inserted = 0
-    for model, stats in model_stats.items():
-        pct = (stats["count"] / total_orgs * 100) if total_orgs else 0
-
-        # Calculate averages
-        avg_revenue = None
-        if stats["revenues"]:
-            avg_revenue = sum(stats["revenues"]) / stats["count"]
-
-        avg_reserves = None
-        if stats["reserves"]:
-            avg_reserves = sum(stats["reserves"]) / len(stats["reserves"])
-
-        median_peer = None
-        if stats["peers"]:
-            sorted_peers = sorted(stats["peers"])
-            median_peer = sorted_peers[len(sorted_peers) // 2]
+    for row in rows:
+        pct = (row["cnt"] / total_orgs * 100) if total_orgs else 0
 
         db.execute("""
             INSERT INTO research_operating_model_summary
             (operating_model, count, pct_of_total, avg_revenue, avg_reserves, median_peer_percentile, period, computed_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, [model, stats["count"], pct, avg_revenue, avg_reserves, median_peer, period, datetime.now().isoformat()])
+        """, [row["operating_model"], row["cnt"], pct, row["avg_rev"], row["avg_res"], row["avg_peer"], period, datetime.now().isoformat()])
         count_inserted += 1
 
     db.commit()
@@ -159,36 +157,46 @@ def compute_operating_model_summary(db: sqlite3.Connection, period: str) -> int:
 
 
 def compute_revenue_band_summary(db: sqlite3.Connection, period: str) -> int:
-    """Compute revenue band distribution. Returns count inserted."""
+    """Compute revenue band distribution per operating model (matrix data). Returns count inserted."""
     print(f"  Computing revenue band summary for {period}...")
 
     db.execute("DELETE FROM research_revenue_band_summary WHERE period = ?", [period])
 
-    total_orgs = db.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]
+    total_orgs = db.execute("SELECT COUNT(*) FROM v4_scores").fetchone()[0]
 
+    # Get counts per operating_model + revenue_band combination from v4_scores
+    # Join with registry_enriched to get peer_percentile and reserves
     rows = db.execute("""
         SELECT
-            revenue_band,
+            v.operating_model,
+            v.revenue_band,
             COUNT(*) as cnt,
-            AVG(CAST(peer_percentile AS FLOAT)) as avg_peer,
-            COUNT(CASE WHEN months_of_reserve IS NOT NULL THEN 1 END) as cnt_reserve,
-            AVG(CAST(months_of_reserve AS FLOAT)) as avg_res
-        FROM registry_enriched
-        WHERE revenue_band IS NOT NULL AND revenue_band != ''
-        GROUP BY revenue_band
+            AVG(CAST(r.peer_percentile AS FLOAT)) as avg_peer,
+            AVG(CAST(r.months_of_reserve AS FLOAT)) as avg_res
+        FROM v4_scores v
+        LEFT JOIN registry_enriched r ON v.EIN = r.EIN
+        WHERE v.operating_model IS NOT NULL AND v.operating_model != ''
+          AND v.revenue_band IS NOT NULL AND v.revenue_band != ''
+        GROUP BY v.operating_model, v.revenue_band
     """).fetchall()
 
     count_inserted = 0
     for row in rows:
         pct = (row["cnt"] / total_orgs * 100) if total_orgs else 0
+
         db.execute("""
             INSERT INTO research_revenue_band_summary
-            (revenue_band, count, pct_of_total, avg_peer_percentile, median_peer_percentile,
-             orgs_with_reserve_data, avg_months_reserve, period, computed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (operating_model, revenue_band_number, count, pct_of_total, avg_peer_percentile, avg_months_reserve, period, computed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, [
-            row["revenue_band"], row["cnt"], pct, row["avg_peer"], row["avg_peer"],
-            row["cnt_reserve"], row["avg_res"], period, datetime.now().isoformat()
+            row["operating_model"],
+            row["revenue_band"],  # numeric band (0-7)
+            row["cnt"],
+            pct,
+            row["avg_peer"],
+            row["avg_res"],
+            period,
+            datetime.now().isoformat()
         ])
         count_inserted += 1
 

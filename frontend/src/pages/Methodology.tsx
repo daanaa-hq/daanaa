@@ -622,8 +622,8 @@ export default function Methodology() {
             <div className="mt-5 space-y-3">
               {[
                 {
-                  what: 'Lamp tier (Seed to Beacon)',
-                  means: 'How much public data backs this profile today. A higher lamp means more records are on file — mission, financials, website. It is a journey signal, not a quality verdict. A Seed doing vital community work is still a Seed because the public record hasn\'t caught up yet.',
+                  what: 'Lamp tier (Beacon, Torch, Candle, Spark)',
+                  means: 'How much public data backs this profile today. Beacon = complete (financials, mission, website, current 990). Torch = strong public data (financials, recent filings). Candle = moderate data (some financial info, organizational records). Spark = recognized nonprofit with minimal public records. It is a journey signal, not a quality verdict.',
                 },
                 {
                   what: 'Financial Health tier (Strong / Stable / Inspiring)',
