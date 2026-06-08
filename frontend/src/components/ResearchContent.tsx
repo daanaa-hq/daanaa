@@ -9,7 +9,7 @@ import ResearchPeerContext from './research/ResearchPeerContext'
 import ResearchLampTiers from './research/ResearchLampTiers'
 import ResearchCoverage from './research/ResearchCoverage'
 import ResearchFindings from './research/ResearchFindings'
-import ResearchLimitations from './research/ResearchLimitations'
+import ResearchSpending from './research/ResearchSpending'
 
 interface ResearchContentProps {
   sessionToken: string
@@ -47,7 +47,7 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
     { id: 'operating-models', component: ResearchOperatingModels },
     { id: 'peer-context', component: ResearchPeerContext },
     { id: 'findings', component: ResearchFindings },
-    { id: 'limitations', component: ResearchLimitations },
+    { id: 'spending', component: ResearchSpending },
   ]
 
   return (

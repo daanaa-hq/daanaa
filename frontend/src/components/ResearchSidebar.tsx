@@ -11,7 +11,7 @@ const SECTIONS = [
   { id: 'operating-models', label: 'Operating Models & Bands', icon: '⚙️' },
   { id: 'peer-context', label: 'Peer Financial Context', icon: '💰' },
   { id: 'findings', label: 'Research Findings', icon: '📚' },
-  { id: 'limitations', label: 'Limitations & Future', icon: '🗺️' },
+  { id: 'spending', label: 'Program Spending', icon: '💸' },
 ]
 
 export default function ResearchSidebar({

@@ -2353,13 +2353,37 @@ def research_operating_models():
     if not _check_research_auth(token):
         return jsonify({"error": "Unauthorized"}), 401
 
+    valid_models = [
+        'Activity_Programming',
+        'Direct_Delivery',
+        'Community_Human_Services',
+        'Clinical_Reimbursement',
+        'Emergency_Logistics',
+        'Cause_Advocacy_Research',
+        'Intermediary_Public_Benefit',
+        'Faith_Community',
+        'Membership_Mutual_Benefit',
+    ]
+
     db = get_db()
     rows = db.execute("""
         SELECT operating_model, count, pct_of_total, avg_revenue, median_peer_percentile, period
         FROM research_operating_model_summary
         WHERE period = (SELECT MAX(period) FROM research_operating_model_summary)
-        ORDER BY count DESC
-    """).fetchall()
+          AND operating_model IN ({})
+        ORDER BY
+          CASE operating_model
+            WHEN 'Activity_Programming' THEN 0
+            WHEN 'Direct_Delivery' THEN 1
+            WHEN 'Community_Human_Services' THEN 2
+            WHEN 'Clinical_Reimbursement' THEN 3
+            WHEN 'Emergency_Logistics' THEN 4
+            WHEN 'Cause_Advocacy_Research' THEN 5
+            WHEN 'Intermediary_Public_Benefit' THEN 6
+            WHEN 'Faith_Community' THEN 7
+            WHEN 'Membership_Mutual_Benefit' THEN 8
+          END
+    """.format(','.join(['?']*len(valid_models))), valid_models).fetchall()
 
     return jsonify({
         'chart_type': 'bar',
@@ -2384,13 +2408,38 @@ def research_revenue_bands():
     if not _check_research_auth(token):
         return jsonify({"error": "Unauthorized"}), 401
 
+    valid_models = [
+        'Activity_Programming',
+        'Direct_Delivery',
+        'Community_Human_Services',
+        'Clinical_Reimbursement',
+        'Emergency_Logistics',
+        'Cause_Advocacy_Research',
+        'Intermediary_Public_Benefit',
+        'Faith_Community',
+        'Membership_Mutual_Benefit',
+    ]
+
     db = get_db()
     rows = db.execute("""
         SELECT operating_model, revenue_band_number, count, pct_of_total, avg_peer_percentile, avg_months_reserve, period
         FROM research_revenue_band_summary
         WHERE period = (SELECT MAX(period) FROM research_revenue_band_summary)
-        ORDER BY operating_model, revenue_band_number
-    """).fetchall()
+          AND operating_model IN ({})
+        ORDER BY
+          CASE operating_model
+            WHEN 'Activity_Programming' THEN 0
+            WHEN 'Direct_Delivery' THEN 1
+            WHEN 'Community_Human_Services' THEN 2
+            WHEN 'Clinical_Reimbursement' THEN 3
+            WHEN 'Emergency_Logistics' THEN 4
+            WHEN 'Cause_Advocacy_Research' THEN 5
+            WHEN 'Intermediary_Public_Benefit' THEN 6
+            WHEN 'Faith_Community' THEN 7
+            WHEN 'Membership_Mutual_Benefit' THEN 8
+          END,
+          revenue_band_number
+    """.format(','.join(['?']*len(valid_models))), valid_models).fetchall()
 
     return jsonify({
         'chart_type': 'matrix',
@@ -2544,6 +2593,66 @@ def research_states():
             for r in rows
         ],
         'last_updated': rows[0]['period'] if rows else None
+    })
+
+@app.route('/api/research/summary/spending-by-model')
+@limiter.exempt
+def research_spending_by_model():
+    """Program spending distribution by operating model."""
+    token = request.headers.get('X-Research-Session', '')
+    if not _check_research_auth(token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    valid_models = [
+        'Activity_Programming',
+        'Direct_Delivery',
+        'Community_Human_Services',
+        'Clinical_Reimbursement',
+        'Emergency_Logistics',
+        'Cause_Advocacy_Research',
+        'Intermediary_Public_Benefit',
+        'Faith_Community',
+        'Membership_Mutual_Benefit',
+    ]
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT
+            v.operating_model,
+            COUNT(*) as count,
+            AVG(CAST(r.program_expense_pct AS FLOAT)) as avg_program_spend,
+            MIN(CAST(r.program_expense_pct AS FLOAT)) as min_program_spend,
+            MAX(CAST(r.program_expense_pct AS FLOAT)) as max_program_spend
+        FROM v4_scores v
+        LEFT JOIN registry_enriched r ON v.EIN = r.EIN
+        WHERE v.operating_model IS NOT NULL AND v.operating_model IN ({})
+          AND r.program_expense_pct IS NOT NULL
+        GROUP BY v.operating_model
+        ORDER BY
+          CASE v.operating_model
+            WHEN 'Activity_Programming' THEN 0
+            WHEN 'Direct_Delivery' THEN 1
+            WHEN 'Community_Human_Services' THEN 2
+            WHEN 'Clinical_Reimbursement' THEN 3
+            WHEN 'Emergency_Logistics' THEN 4
+            WHEN 'Cause_Advocacy_Research' THEN 5
+            WHEN 'Intermediary_Public_Benefit' THEN 6
+            WHEN 'Faith_Community' THEN 7
+            WHEN 'Membership_Mutual_Benefit' THEN 8
+          END
+    """.format(','.join(['?']*len(valid_models))), valid_models).fetchall()
+
+    return jsonify({
+        'data': [
+            {
+                'operating_model': r['operating_model'],
+                'count': r['count'],
+                'avg_program_spend': round(r['avg_program_spend'], 1) if r['avg_program_spend'] else None,
+                'min_program_spend': round(r['min_program_spend'], 1) if r['min_program_spend'] else None,
+                'max_program_spend': round(r['max_program_spend'], 1) if r['max_program_spend'] else None,
+            }
+            for r in rows
+        ]
     })
 
 @app.route('/api/research/metadata')
