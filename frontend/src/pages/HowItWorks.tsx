@@ -184,7 +184,7 @@ export default function HowItWorks() {
                   what: 'IRS-confirmed nonprofit with some financial data on record. Not enough data yet to assign a financial context ranking.',
                 },
                 {
-                  tier: 'Seed' as TierName,
+                  tier: 'Spark' as TierName,
                   what: 'Registered nonprofit in the IRS list. No financial detail in our index yet. Many small organizations filing a simplified annual form (under $50K revenue) fall here.',
                 },
               ] as const).map(({ tier, what }) => (

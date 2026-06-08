@@ -92,7 +92,7 @@ export default function GivingConfirmation() {
                     <span className="font-body text-[11px] text-cool-grey">· EIN {item.ein}</span>
                   </div>
                   <p className="font-body text-[12px] text-cool-grey/70 italic leading-[1.5]">
-                    "{VERIFIED_FACTS[item.trustTier] || VERIFIED_FACTS['Seed']}"
+                    "{VERIFIED_FACTS[item.trustTier] || VERIFIED_FACTS['Spark']}"
                   </p>
                 </div>
                 <p className="font-display text-[20px] text-deep-navy shrink-0">{formatCurrency(item.amount)}</p>

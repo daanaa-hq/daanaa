@@ -4,6 +4,7 @@ Daanaa API — Peer-context nonprofit directory backend
 Serves registry_enriched + v4 scores to frontend
 """
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
+from datetime import datetime
 import numpy as np
 import requests as _http
 from flask import Flask, jsonify, request, g, abort, send_from_directory, Blueprint
@@ -2278,6 +2279,270 @@ def admin_override_boost(boost_id):
     db.commit()
     app.logger.info(f"admin_override_boost: id={boost_id} reason={reason}")
     return jsonify({"status": "overridden", "boost_id": boost_id})
+
+
+# ── Research Dashboard API (password-protected advisor presentation) ─────────
+# These endpoints power the /research research presentation dashboard
+# All research endpoints require a valid session token passed as X-Research-Session header
+
+RESEARCH_PASSCODE = os.getenv('RESEARCH_PASSCODE', 'daanaa2026')  # Hardcoded for testing
+RESEARCH_SESSION_TTL = 8 * 3600  # 8 hours in seconds
+_RESEARCH_SESSIONS = {}  # token → {created_at, expires_at}
+
+def _check_research_auth(session_token: str) -> bool:
+    """Validate research session token. Purge expired sessions."""
+    now = time.time()
+    # Purge expired sessions
+    expired = [k for k, v in _RESEARCH_SESSIONS.items() if v['expires_at'] < now]
+    for k in expired:
+        del _RESEARCH_SESSIONS[k]
+    session = _RESEARCH_SESSIONS.get(session_token)
+    return session is not None
+
+@app.route('/api/research/auth', methods=['POST'])
+@limiter.exempt
+def research_auth():
+    """Authenticate with passcode, return 8-hour session token."""
+    data = request.get_json(silent=True) or {}
+    passcode = data.get('passcode', '')
+
+    # Use constant-time comparison to prevent timing attacks
+    if not passcode or not hmac.compare_digest(passcode, RESEARCH_PASSCODE):
+        return jsonify({"error": "Invalid access code"}), 401
+
+    session_token = secrets.token_urlsafe(32)
+    now = time.time()
+    _RESEARCH_SESSIONS[session_token] = {
+        'created_at': now,
+        'expires_at': now + RESEARCH_SESSION_TTL
+    }
+
+    app.logger.info(f"research_auth: new session, expires in {RESEARCH_SESSION_TTL}s")
+    return jsonify({
+        'session_token': session_token,
+        'expires_in': RESEARCH_SESSION_TTL
+    })
+
+@app.route('/api/research/summary/operating-models')
+@limiter.exempt
+def research_operating_models():
+    """Operating model distribution chart data."""
+    token = request.headers.get('X-Research-Session', '')
+    if not _check_research_auth(token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT operating_model, count, pct_of_total, avg_revenue, median_peer_percentile, period
+        FROM research_operating_model_summary
+        WHERE period = (SELECT MAX(period) FROM research_operating_model_summary)
+        ORDER BY count DESC
+    """).fetchall()
+
+    return jsonify({
+        'chart_type': 'bar',
+        'data': [
+            {
+                'model': r['operating_model'],
+                'count': r['count'],
+                'pct': round(r['pct_of_total'], 1),
+                'avg_revenue': r['avg_revenue'],
+                'median_peer_percentile': r['median_peer_percentile']
+            }
+            for r in rows
+        ],
+        'last_updated': rows[0]['period'] if rows else None
+    })
+
+@app.route('/api/research/summary/revenue-bands')
+@limiter.exempt
+def research_revenue_bands():
+    """Revenue band distribution."""
+    token = request.headers.get('X-Research-Session', '')
+    if not _check_research_auth(token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT revenue_band, count, pct_of_total, avg_peer_percentile, period
+        FROM research_revenue_band_summary
+        WHERE period = (SELECT MAX(period) FROM research_revenue_band_summary)
+        ORDER BY count DESC
+    """).fetchall()
+
+    return jsonify({
+        'chart_type': 'bar',
+        'data': [
+            {
+                'band': r['revenue_band'],
+                'count': r['count'],
+                'pct': round(r['pct_of_total'], 1),
+                'avg_peer_percentile': r['avg_peer_percentile']
+            }
+            for r in rows
+        ],
+        'last_updated': rows[0]['period'] if rows else None
+    })
+
+@app.route('/api/research/summary/lamp-tiers')
+@limiter.exempt
+def research_lamp_tiers():
+    """Lamp tier (Beacon/Torch/Candle/Spark) distribution."""
+    token = request.headers.get('X-Research-Session', '')
+    if not _check_research_auth(token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT merit_tier, count, pct_of_total, avg_revenue, avg_financial_health_score,
+               pct_with_website, pct_with_donation_link, avg_peer_percentile, period
+        FROM research_lamp_tier_summary
+        WHERE period = (SELECT MAX(period) FROM research_lamp_tier_summary)
+        ORDER BY
+            CASE merit_tier
+                WHEN 'Beacon' THEN 1
+                WHEN 'Torch' THEN 2
+                WHEN 'Candle' THEN 3
+                WHEN 'Spark' THEN 4
+            END
+    """).fetchall()
+
+    return jsonify({
+        'chart_type': 'pie',
+        'data': [
+            {
+                'tier': r['merit_tier'],
+                'count': r['count'],
+                'pct': round(r['pct_of_total'], 1),
+                'avg_revenue': r['avg_revenue'],
+                'score': r['avg_financial_health_score'],
+                'web_pct': r['pct_with_website'],
+                'donate_pct': r['pct_with_donation_link']
+            }
+            for r in rows
+        ],
+        'last_updated': rows[0]['period'] if rows else None
+    })
+
+@app.route('/api/research/summary/data-coverage')
+@limiter.exempt
+def research_data_coverage():
+    """Data availability across key fields."""
+    token = request.headers.get('X-Research-Session', '')
+    if not _check_research_auth(token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT data_type, total_orgs, has_data, pct_covered, period
+        FROM research_data_coverage_summary
+        WHERE period = (SELECT MAX(period) FROM research_data_coverage_summary)
+        ORDER BY pct_covered DESC
+    """).fetchall()
+
+    return jsonify({
+        'chart_type': 'bar',
+        'data': [
+            {
+                'field': r['data_type'],
+                'total': r['total_orgs'],
+                'covered': r['has_data'],
+                'pct': round(r['pct_covered'], 1)
+            }
+            for r in rows
+        ],
+        'last_updated': rows[0]['period'] if rows else None
+    })
+
+@app.route('/api/research/summary/categories')
+@limiter.exempt
+def research_categories():
+    """NTEE1 category distribution."""
+    token = request.headers.get('X-Research-Session', '')
+    if not _check_research_auth(token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT ntee1, ntee_label, count, pct_of_total, avg_revenue, avg_peer_percentile,
+               pct_beacon, pct_torch, pct_candle, pct_spark, period
+        FROM research_category_summary
+        WHERE period = (SELECT MAX(period) FROM research_category_summary)
+        ORDER BY count DESC
+    """).fetchall()
+
+    return jsonify({
+        'chart_type': 'bar',
+        'data': [
+            {
+                'ntee1': r['ntee1'],
+                'label': r['ntee_label'],
+                'count': r['count'],
+                'pct': round(r['pct_of_total'], 1),
+                'avg_revenue': r['avg_revenue'],
+                'avg_peer_percentile': r['avg_peer_percentile'],
+                'tier_dist': {
+                    'beacon': r['pct_beacon'],
+                    'torch': r['pct_torch'],
+                    'candle': r['pct_candle'],
+                    'spark': r['pct_spark']
+                }
+            }
+            for r in rows
+        ],
+        'last_updated': rows[0]['period'] if rows else None
+    })
+
+@app.route('/api/research/summary/states')
+@limiter.exempt
+def research_states():
+    """State-level distribution."""
+    token = request.headers.get('X-Research-Session', '')
+    if not _check_research_auth(token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = get_db()
+    rows = db.execute("""
+        SELECT state, count, pct_of_total, avg_revenue, avg_peer_percentile, pct_with_website, period
+        FROM research_state_summary
+        WHERE period = (SELECT MAX(period) FROM research_state_summary)
+        ORDER BY count DESC LIMIT 10
+    """).fetchall()
+
+    return jsonify({
+        'chart_type': 'bar',
+        'data': [
+            {
+                'state': r['state'],
+                'count': r['count'],
+                'pct': round(r['pct_of_total'], 1),
+                'avg_revenue': r['avg_revenue'],
+                'avg_peer_percentile': r['avg_peer_percentile']
+            }
+            for r in rows
+        ],
+        'last_updated': rows[0]['period'] if rows else None
+    })
+
+@app.route('/api/research/metadata')
+@limiter.exempt
+def research_metadata():
+    """Metadata about the research dataset."""
+    token = request.headers.get('X-Research-Session', '')
+    if not _check_research_auth(token):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    db = get_db()
+    total_orgs = db.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]
+    period = db.execute("SELECT MAX(period) FROM research_operating_model_summary").fetchone()[0]
+
+    return jsonify({
+        'total_organizations': total_orgs,
+        'data_period': period,
+        'version': 'v1.0',
+        'generated_at': datetime.now().isoformat(),
+        'disclaimer': 'This dashboard reflects public data available to Daanaa at the time of processing. It does not measure impact, quality, worth, trust, or endorsement.'
+    })
 
 
 # ── Frontend static serving ────────────────────────────────────────────────
