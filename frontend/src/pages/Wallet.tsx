@@ -365,12 +365,17 @@ export default function Wallet() {
       {/* Dark header — matches Directory / OrganizationDetail */}
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-12">
-          <div className="flex items-center gap-2 mb-3">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-            </svg>
-            <span className="font-body text-[12px] text-muted-cream/60 tracking-[0.04em]">Private · stored on this device · never shared</span>
+          <div className="flex items-center gap-3 mb-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span className="font-body text-[12px] text-muted-cream/60 tracking-[0.04em]">Private · stored on this device · never shared</span>
+            </div>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-soft-gold/15 border border-soft-gold/30 font-body text-[10px] font-semibold tracking-[0.06em] text-soft-gold uppercase">
+              β Beta
+            </span>
           </div>
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}>
             Your Giving Wallet
@@ -381,6 +386,11 @@ export default function Wallet() {
           <div className="mt-6 p-4 rounded-xl bg-white/10 border border-white/20">
             <p className="font-body text-[12px] text-warm-cream/80 leading-[1.6]">
               <strong className="text-warm-cream">Important:</strong> The Giving Wallet is a private note-taking tool on your device. It is not a bank account, payment account, stored-value wallet, or donation processor. You remain in control of all your data. Daanaa never processes, holds, or redirects any funds.
+            </p>
+          </div>
+          <div className="mt-3 p-4 rounded-xl bg-amber-400/10 border border-amber-400/25">
+            <p className="font-body text-[12px] text-amber-200/90 leading-[1.6]">
+              <strong className="text-amber-200">Data can be lost.</strong> Records live only in this browser. Clearing your browser data, switching browsers, or losing the device will erase them. Save a backup file regularly to protect your record.
             </p>
           </div>
         </div>
@@ -395,6 +405,27 @@ export default function Wallet() {
             <StatCard label="Given all-time" value={formatCurrency(totalDonated)} />
             <StatCard label={`Given in ${thisYear}`} value={formatCurrency(totalDonatedThisYear)} />
             <StatCard label="Orgs supported" value={String(orgsSupported)} sub="donated + saved" />
+          </div>
+
+          {/* Coming soon: account sync */}
+          <div className="rounded-xl border border-dashed border-soft-gold/30 bg-soft-gold/[0.04] p-5">
+            <div className="flex items-start gap-4">
+              <div className="shrink-0 w-9 h-9 rounded-full bg-soft-gold/10 flex items-center justify-center mt-0.5">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-body text-[14px] font-semibold text-deep-navy">Long-term record with a login</p>
+                  <span className="font-body text-[10px] font-semibold px-2 py-0.5 rounded-full bg-deep-navy/8 border border-deep-navy/15 text-cool-grey tracking-[0.04em]">Coming soon</span>
+                </div>
+                <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
+                  A private account will let you keep your giving record across devices and browsers — so nothing is lost if you clear your browser or switch phones. Still no tracking, no sharing. Your record stays yours.
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Backup — device-driven, no account, nothing leaves your device to us */}

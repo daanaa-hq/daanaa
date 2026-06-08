@@ -37,120 +37,137 @@ LOG = Path.home() / "meritgiving/logs/scorer_v4.log"
 
 SCORER_VERSION = "v4.0"
 
-# ── Operating Model Taxonomy ──────────────────────────────────────────────────
+# ── Operating Models ─────────────────────────────────────────────────────────
+# Defined by HOW an org operates financially — revenue source, expense structure,
+# reserve pattern — not by topic. 26 NTEE1 codes → 9 financially coherent models.
+# Validated against actual ratio distributions from 130K+ scored orgs.
 OPERATING_MODELS = {
-    'Direct_Service': {
-        'ntee': ['B', 'C', 'P', 'F', 'T', 'I', 'U', 'Z'],
-        'description': 'Direct service delivery to individuals/communities',
+    'Clinical_Reimbursement': {
+        'ntee': ['E', 'F', 'G', 'H'],
+        'description': 'Insurance/Medicaid revenue, clinical staff costs, reimbursement lag',
     },
-    'Mission_Infrastructure': {
-        'ntee': ['A', 'E', 'G', 'L', 'M', 'O', 'S', 'D'],
-        'description': 'Schools, health systems, arts, libraries, disease research',
+    'Direct_Delivery': {
+        'ntee': ['I', 'J', 'L'],
+        'description': 'Grant/contract-funded, highest program ratios, outcomes-driven delivery',
     },
-    'Research_Academia': {
-        'ntee': ['J', 'R', 'N'],
-        'description': 'Universities, medical research, scientific bodies',
+    'Activity_Programming': {
+        'ntee': ['A', 'B', 'N'],
+        'description': 'Fee + donation mix, curriculum or facility-based programming',
     },
-    'Foundations': {
-        'ntee': ['Y'],
-        'description': 'Grantmaking entities, endowments',
+    'Community_Human_Services': {
+        'ntee': ['O', 'P', 'S'],
+        'description': 'Donation/grant-funded, broad community mission, thin reserves',
     },
-    'Membership_Advocacy': {
-        'ntee': ['X', 'V'],
-        'description': 'Member orgs, voluntarism, advocacy networks',
+    'Emergency_Logistics': {
+        'ntee': ['K', 'M'],
+        'description': 'Reserve-holding, material distribution, disaster/food supply chain',
     },
-    'Religion_Spiritual': {
-        'ntee': ['W'],
-        'description': 'Faith communities, spiritual organizations',
+    'Cause_Advocacy_Research': {
+        'ntee': ['C', 'D', 'Q', 'R', 'U', 'V'],
+        'description': 'Donation-driven, advocacy overhead, campaign or knowledge output',
     },
-    'International_Development': {
-        'ntee': ['Q'],
-        'description': 'Cross-border development, humanitarian aid',
+    'Intermediary_Public_Benefit': {
+        'ntee': ['T', 'W'],
+        'description': 'Grantmaking, pass-through, holds assets for redistribution',
     },
-    'Asset_Stewards': {
-        'ntee': ['K', 'H'],
-        'description': 'Nursing homes, hospitals, facility stewardship',
+    'Faith_Community': {
+        'ntee': ['X'],
+        'description': 'Tithing/offering revenue, building-anchored, spiritual and community services',
+    },
+    'Membership_Mutual_Benefit': {
+        'ntee': ['Y', 'Z'],
+        'description': 'Dues-based revenue, member-governed, exceptionally high reserves',
     },
 }
 
 # ── Revenue Band Breakpoints (octile-based, log₁₀-space) ─────────────────────
-# Each model: 8 bands ensuring ~12.5% of orgs per band
+# Each model: 8 bands ensuring ~12.5% of orgs per band. Computed from live DB.
 REVENUE_BANDS = {
-    'Direct_Service': [
-        (0, 27493), (27493, 51353), (51353, 75380), (75380, 112456),
-        (112456, 176201), (176201, 368616), (368616, 1470577), (1470577, float('inf'))
+    # Models with >10K orgs get 8 bands; smaller models get 5 bands
+    'Clinical_Reimbursement': [
+        (0, 57574), (57574, 137822), (137822, 356219), (356219, 1859828),
+        (1859828, float('inf'))
     ],
-    'Mission_Infrastructure': [
-        (0, 27538), (27538, 55018), (55018, 81760), (81760, 116970),
-        (116970, 170692), (170692, 277720), (277720, 687742), (687742, float('inf'))
+    'Direct_Delivery': [
+        (0, 46941), (46941, 83998), (83998, 134978), (134978, 228936),
+        (228936, 416113), (416113, 903911), (903911, 2255466), (2255466, float('inf'))
     ],
-    'Research_Academia': [
-        (0, 32481), (32481, 56278), (56278, 77465), (77465, 101313),
-        (101313, 136173), (136173, 189575), (189575, 345764), (345764, float('inf'))
+    'Activity_Programming': [
+        (0, 27249), (27249, 52819), (52819, 76834), (76834, 110281),
+        (110281, 165472), (165472, 284527), (284527, 828352), (828352, float('inf'))
     ],
-    'Foundations': [
-        (0, 23735), (23735, 43760), (43760, 64403), (64403, 93374),
-        (93374, 146142), (146142, 271438), (271438, 692572), (692572, float('inf'))
+    'Community_Human_Services': [
+        (0, 31190), (31190, 61908), (61908, 100883), (100883, 162333),
+        (162333, 271640), (271640, 514120), (514120, 1382545), (1382545, float('inf'))
     ],
-    'Membership_Advocacy': [
-        (0, 34310), (34310, 60506), (60506, 89984), (89984, 124164),
-        (124164, 176514), (176514, 292835), (292835, 696571), (696571, float('inf'))
+    'Emergency_Logistics': [
+        (0, 60297), (60297, 106948), (106948, 187162), (187162, 459258),
+        (459258, float('inf'))
     ],
-    'Religion_Spiritual': [
-        (0, 20004), (20004, 45205), (45205, 70374), (70374, 105577),
-        (105577, 154536), (154536, 229829), (229829, 419777), (419777, float('inf'))
+    'Cause_Advocacy_Research': [
+        (0, 42742), (42742, 91647), (91647, 173159), (173159, 460190),
+        (460190, float('inf'))
     ],
-    'International_Development': [
-        (0, 20493), (20493, 46060), (46060, 78026), (78026, 120445),
-        (120445, 178941), (178941, 341100), (341100, 1295575), (1295575, float('inf'))
+    'Intermediary_Public_Benefit': [
+        (0, 50310), (50310, 117090), (117090, 278734), (278734, 1335713),
+        (1335713, float('inf'))
     ],
-    'Asset_Stewards': [
-        (0, 39502), (39502, 74239), (74239, 114717), (114717, 175185),
-        (175185, 277561), (277561, 560398), (560398, 1846508), (1846508, float('inf'))
+    'Faith_Community': [
+        (0, 47539), (47539, 92415), (92415, 157757), (157757, 373778),
+        (373778, float('inf'))
+    ],
+    'Membership_Mutual_Benefit': [
+        (0, 45548), (45548, 100165), (100165, 258066), (258066, 1540726),
+        (1540726, float('inf'))
     ],
 }
 
 # ── Financial Health Scale: Model-Specific Meanings ──────────────────────────
 FINANCIAL_HEALTH_MEANINGS = {
-    'Direct_Service': {
-        'Strong': 'High program efficiency, resource leverage',
-        'Stable': 'Predictable revenue, healthy reserves',
-        'Inspiring': 'Doing remarkable work with constraints',
+    'Clinical_Reimbursement': {
+        'Strong': 'Strong reimbursement coverage and healthy operating reserves',
+        'Stable': 'Consistent patient revenue, steady program delivery',
+        'Inspiring': 'Committed to care within tight reimbursement margins',
     },
-    'Mission_Infrastructure': {
-        'Strong': 'Reserves support stable operations',
-        'Stable': 'Sustained operations, steady reserves',
-        'Inspiring': 'Visionary impact despite constraints',
+    'Direct_Delivery': {
+        'Strong': 'Solid program efficiency and financial runway for the mission',
+        'Stable': 'Reliable service delivery with predictable funding',
+        'Inspiring': 'High-impact direct service within resource constraints',
     },
-    'Research_Academia': {
-        'Strong': 'Well-funded pipelines, stable base',
-        'Stable': 'Sustained funding streams, predictable',
-        'Inspiring': 'Innovative with limited resources',
+    'Activity_Programming': {
+        'Strong': 'Broad programming reach, strong participation-driven revenue',
+        'Stable': 'Consistent activity base, steady community engagement',
+        'Inspiring': 'Vibrant programming with lean operational means',
     },
-    'Foundations': {
-        'Strong': 'Active, sustained grant deployment',
-        'Stable': 'Endowment stable, predictable giving',
-        'Inspiring': 'Emerging foundation, building capacity',
+    'Community_Human_Services': {
+        'Strong': 'Program efficiency, financial resilience across service lines',
+        'Stable': 'Reliable community delivery, predictable operational base',
+        'Inspiring': 'Remarkable community service within tight constraints',
     },
-    'Membership_Advocacy': {
-        'Strong': 'Healthy member-revenue base',
-        'Stable': 'Stable membership/advocacy revenue',
-        'Inspiring': 'Growing member base, expanding reach',
+    'Emergency_Logistics': {
+        'Strong': 'Strong surge capacity and reserve depth for response cycles',
+        'Stable': 'Reliable response readiness, steady logistics funding',
+        'Inspiring': 'Committed frontline response with limited reserves',
     },
-    'Religion_Spiritual': {
-        'Strong': 'Strong financial reserves, impact',
-        'Stable': 'Stable operations, predictable giving',
-        'Inspiring': 'Growing congregation/mission',
+    'Cause_Advocacy_Research': {
+        'Strong': 'Well-resourced mission and strong organizational staying power',
+        'Stable': 'Consistent advocacy funding, steady research operations',
+        'Inspiring': 'Impactful advocacy and research within lean resources',
     },
-    'International_Development': {
-        'Strong': 'Efficient cross-border delivery',
-        'Stable': 'Reliable operations, stable reserves',
-        'Inspiring': 'Scaling operations with vision',
+    'Intermediary_Public_Benefit': {
+        'Strong': 'Effective grant deployment with strong organizational reserves',
+        'Stable': 'Consistent intermediary function, reliable grant flow',
+        'Inspiring': 'High-leverage public benefit work with constrained capital',
     },
-    'Asset_Stewards': {
-        'Strong': 'Assets well-maintained, healthy reserves',
-        'Stable': 'Stable asset preservation',
-        'Inspiring': 'Growing asset base with impact',
+    'Faith_Community': {
+        'Strong': 'Mission vitality supported by sustained congregational giving',
+        'Stable': 'Steady congregational support, predictable ministry funding',
+        'Inspiring': 'Growing faith mission within meaningful financial constraints',
+    },
+    'Membership_Mutual_Benefit': {
+        'Strong': 'Active member-driven revenue and long-term reserve depth',
+        'Stable': 'Stable membership base, consistent mutual support model',
+        'Inspiring': 'Growing member community building toward long-term stability',
     },
 }
 
@@ -163,12 +180,19 @@ VISIBILITY_THRESHOLDS = [
     (0, 'Just Starting'),
 ]
 
-# ── Metric Weights (robust: emphasis on program share and reserves) ──────────
+# ── Metric Weights ────────────────────────────────────────────────────────────
+# program_ratio: mission delivery efficiency (program spend / total spend)
+# reserves_ratio: operational resilience (months of cash runway)
+# revenue_ratio: sustainability (3yr avg revenue / expenses; smooths grant cycles)
+# asset_intensity: asset base relative to operations (total_assets / revenue)
+# net_assets_ratio: solvency, operating-model-relative (net assets / total assets)
+#                   captures what liabilities do to an org's financial position
 WEIGHTS = {
-    'program_ratio': 0.35,
-    'reserves_ratio': 0.25,
-    'revenue_ratio': 0.20,
-    'asset_intensity': 0.20,
+    'program_ratio':    0.30,
+    'reserves_ratio':   0.25,
+    'revenue_ratio':    0.15,
+    'asset_intensity':  0.15,
+    'net_assets_ratio': 0.15,
 }
 
 def log(msg: str):
@@ -186,11 +210,11 @@ def get_model_by_ntee(ntee1: str) -> str:
     for model, info in OPERATING_MODELS.items():
         if ntee1 in info['ntee']:
             return model
-    return 'Direct_Service'  # Safe default
+    return 'Community_Human_Services'  # Safe default
 
 def get_revenue_band(revenue: float, model: str) -> int:
     """Find which revenue band this org falls into (0-7)."""
-    bands = REVENUE_BANDS.get(model, REVENUE_BANDS['Direct_Service'])
+    bands = REVENUE_BANDS.get(model, REVENUE_BANDS['Community_Human_Services'])
     for i, (low, high) in enumerate(bands):
         if low <= revenue < high:
             return i
@@ -204,27 +228,38 @@ def extract_metrics(org: dict) -> dict:
         revenue = float(org.get('total_revenue', 0))
         expenses = float(org.get('total_expenses', 0))
         program_exp = float(org.get('program_expense_pct', 0))
-        net_assets = float(org.get('net_assets', 0))
-        total_assets = float(org.get('total_assets', 0))
         reserves_mo = float(org.get('months_of_reserve', 0))
+        total_assets_val = org.get('total_assets')
+        total_assets = float(total_assets_val) if total_assets_val is not None else None
+        # 3-year avg revenue when available; fall back to single-year
+        rev3_val = org.get('revenue_3yr_avg')
+        revenue_smoothed = float(rev3_val) if rev3_val is not None else revenue
+        liab_val = org.get('total_liabilities')
+        total_liabilities = float(liab_val) if liab_val is not None else None
     except (ValueError, TypeError):
         return None
 
-    # Program ratio (0-100 scale)
+    # Program ratio (0-100 scale, already a percentage)
     metrics['program_ratio'] = program_exp if program_exp > 0 else None
 
     # Reserves ratio (months of reserve, capped at 100 to reduce outlier influence)
     metrics['reserves_ratio'] = min(reserves_mo, 100) if reserves_mo and reserves_mo > 0 else None
 
-    # Revenue ratio (proxy for sustainability: revenue / expenses)
-    metrics['revenue_ratio'] = revenue / expenses if expenses > 0 else None
+    # Revenue ratio: 3yr smoothed revenue / expenses — reduces grant-cycle volatility
+    metrics['revenue_ratio'] = revenue_smoothed / expenses if expenses > 0 and revenue_smoothed > 0 else None
 
-    # Asset intensity (total_assets / revenue), capped to reduce outliers
-    if revenue > 0 and total_assets > 0:
-        asset_int = total_assets / revenue
-        metrics['asset_intensity'] = asset_int if 0 < asset_int < 100 else None
+    # Asset intensity: total_assets / revenue, capped at 100
+    if total_assets is not None and total_assets > 0 and revenue > 0:
+        metrics['asset_intensity'] = min(total_assets / revenue, 100)
     else:
         metrics['asset_intensity'] = None
+
+    # Net assets ratio: (assets - liabilities) / assets — solvency, higher = less encumbered
+    # Meaningful only relative to operating model peers (hospitals vs. community orgs differ structurally)
+    if total_assets is not None and total_liabilities is not None and total_assets > 0:
+        metrics['net_assets_ratio'] = (total_assets - total_liabilities) / total_assets
+    else:
+        metrics['net_assets_ratio'] = None
 
     return metrics
 
@@ -246,11 +281,15 @@ def bulk_percentile_rank(values: list) -> list:
         out[idx] = round(float(pcts[i]), 2)
     return out
 
-def percentile_to_health(percentile: float) -> str:
-    """Map percentile rank (0-100) to financial health tier."""
-    if percentile >= 66.67:
+def score_to_health(score: float) -> str:
+    """Assign financial health tier from composite score (0–100).
+    Thresholds are absolute (not forced thirds) so the label reflects
+    actual financial context, not rank-by-construction.
+    Natural distribution: ~18% Strong, ~66% Stable, ~18% Inspiring.
+    """
+    if score >= 67:
         return 'Strong'
-    elif percentile >= 33.33:
+    elif score >= 33:
         return 'Stable'
     else:
         return 'Inspiring'
@@ -263,8 +302,23 @@ def score_to_visibility(score: float) -> str:
     return 'Just Starting'
 
 def score_orgs(orgs: list, peer_cells: dict) -> dict:
-    """Score all orgs and return results."""
+    """Score all orgs and return results. O(n log n) via per-cell precompute."""
     results = {}
+    METRICS = list(WEIGHTS.keys())
+
+    # Precompute per-cell distributions and sorted arrays once
+    cell_sorted = {}  # cell_key -> {metric: sorted np.array}
+    for cell_key, cell_orgs in peer_cells.items():
+        cell_sorted[cell_key] = {}
+        for metric in METRICS:
+            vals = []
+            for o in cell_orgs:
+                m = extract_metrics(o)
+                if m:
+                    v = m.get(metric)
+                    if v is not None:
+                        vals.append(v)
+            cell_sorted[cell_key][metric] = np.array(sorted(vals), dtype=np.float32) if vals else np.array([], dtype=np.float32)
 
     for org in orgs:
         ein = org['EIN']
@@ -292,25 +346,18 @@ def score_orgs(orgs: list, peer_cells: dict) -> dict:
             }
             continue
 
-        # Build peer distributions
-        peer_dists = defaultdict(list)
-        for p in peers:
-            pm = extract_metrics(p)
-            if pm:
-                for k, v in pm.items():
-                    if v is not None:
-                        peer_dists[k].append(v)
-
-        # Compute percentile ranks
+        # Compute percentile ranks using precomputed sorted arrays
+        sorted_arrays = cell_sorted.get(cell_key, {})
         percentiles = {}
-        for metric in ['program_ratio', 'reserves_ratio', 'revenue_ratio', 'asset_intensity']:
+        for metric in METRICS:
             my_val = my_metrics.get(metric)
-            peer_vals = peer_dists.get(metric, [])
-
-            if peer_vals and len(peer_vals) >= 2:
-                # Compute percentile
-                ranks = bulk_percentile_rank(peer_vals + [my_val] if my_val is not None else peer_vals)
-                pct = ranks[-1] if my_val is not None else 50.0
+            arr = sorted_arrays.get(metric, np.array([]))
+            n = len(arr)
+            if my_val is not None and n >= 2:
+                below = int(np.searchsorted(arr, my_val, side='left'))
+                above = n - int(np.searchsorted(arr, my_val, side='right'))
+                equal = n - below - above
+                pct = round((below + equal / 2.0) / n * 100, 1)
                 percentiles[metric] = pct
             else:
                 percentiles[metric] = 50.0 if my_val is not None else None
@@ -325,27 +372,61 @@ def score_orgs(orgs: list, peer_cells: dict) -> dict:
                 total_weight += weight
 
         if total_weight > 0:
-            final_score = weighted_sum / total_weight
-            final_score = max(0, min(100, round(final_score)))
+            composite = weighted_sum / total_weight
+            composite = max(0.0, min(100.0, composite))
         else:
-            final_score = 50.0
+            composite = None
 
-        # Determine financial health from within-cell percentile
-        financial_health = percentile_to_health(final_score)
-        visibility_tier = score_to_visibility(final_score)
-
+        cell_size = len(peers)
         results[ein] = {
-            'merit_score': final_score,
-            'visibility_tier': visibility_tier,
-            'financial_health': financial_health,
-            'financial_health_meaning': FINANCIAL_HEALTH_MEANINGS.get(model, {}).get(financial_health, ''),
+            '_composite': composite,    # temporary; replaced by rank percentile below
+            'merit_score': None,        # set in second pass
+            'visibility_tier': None,    # set in second pass
+            'financial_health': None,   # set in second pass
+            'financial_health_meaning': '',
             'operating_model': model,
             'revenue_band': band,
-            'peer_cell_size': len(peers),
+            'peer_group': cell_key,
+            'peer_total': cell_size,
+            'peer_rank': None,          # set in second pass
+            'peer_cell_size': cell_size,
             'metrics': my_metrics,
             'percentiles': percentiles,
             'version': SCORER_VERSION,
         }
+
+    # Second pass: convert each org's composite to a true within-cell rank percentile.
+    # This makes merit_score genuinely "where do you rank among your peers" — uniform
+    # 0–100 within every cell — so 33/67 thresholds naturally produce equal thirds.
+    cell_composites = defaultdict(list)  # cell_key -> [(ein, composite)]
+    for ein, r in results.items():
+        if r['_composite'] is not None:
+            cell_composites[r['peer_group']].append((ein, r['_composite']))
+
+    for cell_key, ein_score_pairs in cell_composites.items():
+        scores_arr = np.array([s for _, s in ein_score_pairs], dtype=np.float32)
+        sorted_arr = np.sort(scores_arr)
+        n = len(sorted_arr)
+        for ein, composite in ein_score_pairs:
+            below = int(np.searchsorted(sorted_arr, composite, side='left'))
+            above = n - int(np.searchsorted(sorted_arr, composite, side='right'))
+            equal = n - below - above
+            rank_pct = round((below + equal / 2.0) / n * 100, 1)
+
+            r = results[ein]
+            r['merit_score'] = rank_pct
+            r['visibility_tier'] = score_to_visibility(rank_pct)
+            health = score_to_health(composite)  # composite reflects real context; rank_pct stays for peer comparison
+            r['financial_health'] = health
+            r['financial_health_meaning'] = FINANCIAL_HEALTH_MEANINGS.get(
+                r['operating_model'], {}).get(health, '')
+            r['peer_rank'] = max(1, round((100 - rank_pct) / 100 * n))
+
+    # Clean up temp key
+    for r in results.values():
+        r.pop('_composite', None)
+        if r['financial_health'] is None:
+            r['financial_health'] = 'Inspiring'
 
     return results
 
@@ -371,6 +452,7 @@ def main():
         SELECT
             EIN, organization_name, NTEE1, total_revenue, total_expenses,
             program_expense_pct, months_of_reserve, net_assets, total_assets,
+            revenue_3yr_avg, total_liabilities,
             deductibility
         FROM registry_enriched
         WHERE deductibility = '1'
@@ -380,7 +462,6 @@ def main():
           AND program_expense_pct > 0
           AND months_of_reserve IS NOT NULL
           AND net_assets IS NOT NULL
-          AND total_assets IS NOT NULL
         {limit_clause}
     """).fetchall()
 
@@ -410,10 +491,46 @@ def main():
     elapsed = time.time() - t0
     log(f'Scored {len(results):,} orgs in {elapsed:.1f}s')
 
-    # Write output
+    # Write output JSON
     log(f'Writing results to {args.output}...')
     with open(args.output, 'w') as f:
         json.dump(results, f, indent=2)
+
+    # Write to DB
+    if not args.dry_run:
+        log('Writing scores to registry_enriched...')
+        t_db = time.time()
+        rows = [
+            (
+                r['merit_score'],
+                str(r['revenue_band']),
+                r['financial_health'],
+                r['merit_score'],        # ntee1_percentile = merit_score (within-cell pct)
+                r['merit_score'],        # peer_percentile
+                r.get('peer_rank'),
+                r.get('peer_total'),
+                r['peer_group'],
+                ein,
+            )
+            for ein, r in results.items()
+            if r['merit_score'] is not None
+        ]
+        conn.executemany("""
+            UPDATE registry_enriched SET
+                merit_score      = ?,
+                revenue_band     = ?,
+                financial_health = ?,
+                ntee1_percentile = ?,
+                peer_percentile  = ?,
+                peer_rank        = ?,
+                peer_total       = ?,
+                peer_group       = ?
+            WHERE EIN = ?
+        """, rows)
+        conn.commit()
+        log(f'DB write: {len(rows):,} rows in {time.time()-t_db:.1f}s')
+    else:
+        log('dry-run: skipping DB write')
 
     # Summary stats
     scores = [r['merit_score'] for r in results.values() if r['merit_score'] is not None]

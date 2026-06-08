@@ -87,7 +87,7 @@ export default function GiveConfirmPrompt() {
         <div className="flex items-center gap-3">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
           <p className="font-display italic text-warm-cream text-[18px] leading-tight">
-            Added to your giving list
+            Saved to your Wallet
           </p>
         </div>
       ) : !showReasons ? (

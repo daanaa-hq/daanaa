@@ -52,71 +52,236 @@ function HeroSection() {
 
   return (
     <section className="bg-deep-navy pt-[72px]">
-      <div className="max-w-[860px] mx-auto px-6 pt-10 pb-16 md:pt-16 md:pb-24 text-center">
+      <div className="max-w-[760px] mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-28 text-center">
 
         {/* Headline */}
         <h1
           className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.025em]"
           style={{ fontSize: 'clamp(48px, 7vw, 80px)' }}
         >
-          Discover nonprofits<br />with clarity
+          See the overlooked. Give with heart.
         </h1>
 
-        {/* Founder's tagline */}
-        <p className="mt-4 font-body text-[17px] leading-[1.6] max-w-[560px] mx-auto" style={{ color: 'rgba(245,240,235,0.85)' }}>
-          People want to help. We help them understand.
+        {/* Subheadline */}
+        <p className="mt-8 font-body text-[18px] leading-[1.65] max-w-[720px] mx-auto" style={{ color: 'rgba(245,240,235,0.80)' }}>
+          Daanaa helps people discover causes and organizations using public information presented with context, stewardship, and respect.
         </p>
 
-        {/* Governance link */}
-        <Link
-          to="/governance"
-          className="inline-block mt-2 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
-        >
-          How we're governed →
-        </Link>
+        {/* CTAs */}
+        <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
+          <Link
+            to="/directory"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-bold hover:bg-bright-gold transition-colors shadow-lg"
+          >
+            Start Discovering
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </Link>
+          <Link
+            to="/methodology"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-full border-2 border-soft-gold text-soft-gold font-body text-[15px] font-medium hover:bg-soft-gold/10 transition-colors"
+          >
+            See Methodology
+          </Link>
+        </div>
 
-        {/* Subtitle */}
-        <p className="mt-6 font-body text-[18px] leading-[1.7] max-w-[560px] mx-auto" style={{ color: 'rgba(245,240,235,0.70)' }}>
-          Daanaa helps you find IRS-recognized nonprofits, understand their public records, and give directly through the organization's own giving path when available.
+        {/* Trust line */}
+        <p className="mt-8 font-body text-[14px]" style={{ color: 'rgba(245,240,235,0.60)' }}>
+          Independent. Public-record based. Not a rating agency.
         </p>
+      </div>
+    </section>
+  )
+}
 
-        {/* Trust signals */}
-        <div className="mt-9 flex items-center justify-center gap-6 flex-wrap">
+// ─── What Daanaa Does ────────────────────────────────────────────────────────
+function WhatDaanaaDoesSection() {
+  return (
+    <section className="bg-warm-cream py-16 md:py-20">
+      <div className="max-w-[1120px] mx-auto px-6 md:px-12">
+        <div className="mb-12">
+          <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
+            What Daanaa does
+          </h2>
+          <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
+            Daanaa organizes public nonprofit information so people can discover organizations with more context. It does not rank nonprofits, process donations, or tell people where they must give.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
-            'No paid rankings',
-            'No donation processing',
-            'Public records first',
-            'Your privacy protected',
-          ].map(text => (
-            <span key={text} className="flex items-center gap-2 font-body text-[13px]" style={{ color: 'rgba(245,240,235,0.55)' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-              {text}
-            </span>
+            { title: 'Discover causes', body: 'Search by cause, place, or community need.' },
+            { title: 'Understand context', body: 'View public information with peer-based context instead of one-size-fits-all judgment.' },
+            { title: 'Give directly', body: 'When available, Daanaa points you to the organization\'s own giving page.' },
+          ].map(card => (
+            <div key={card.title} className="bg-white border border-light-grey rounded-2xl p-6 md:p-8">
+              <h3 className="font-display text-deep-navy text-[20px] md:text-[22px]">{card.title}</h3>
+              <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.6]">{card.body}</p>
+            </div>
           ))}
         </div>
+      </div>
+    </section>
+  )
+}
 
-        {/* Secondary search (smaller, for those who want it) */}
-        <div className="mt-10 max-w-[520px] mx-auto">
-          <p className="font-body text-[12px] text-muted-cream/60 mb-3 tracking-[0.04em]">
-            OR SEARCH BY NAME, LOCATION, ORGANIZATION
+// ─── How Discovery Works ──────────────────────────────────────────────────────
+function HowDiscoveryWorks() {
+  return (
+    <section className="bg-white py-16 md:py-20 border-b border-light-grey">
+      <div className="max-w-[1120px] mx-auto px-6 md:px-12">
+        <div className="max-w-[720px]">
+          <h2 className="font-display italic text-deep-navy text-[28px] md:text-[32px] leading-[1.15] tracking-[-0.01em]">
+            Discovery works when you have context
+          </h2>
+          <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65]">
+            The same financial information means something different depending on the organization's size, mission, and peer group. Daanaa shows you that context instead of a single global score.
           </p>
-          <SearchBar
-            value={query}
-            onChange={setQuery}
-            onSearch={handleSearch}
-            placeholder="Search…"
-            dark
-          />
         </div>
+      </div>
+    </section>
+  )
+}
 
-        {/* Org count badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-soft-gold/10 border border-soft-gold/20 mt-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-soft-gold animate-pulse" />
-          <span className="font-body text-[12px] font-medium text-soft-gold tracking-[0.02em]">
-            {orgCount.toLocaleString()}+ organizations in our database
-          </span>
+// ─── Peer Financial Context ───────────────────────────────────────────────────
+function PeerFinancialContextSection() {
+  return (
+    <section className="bg-[#F8F5F0] py-16 md:py-20">
+      <div className="max-w-[1120px] mx-auto px-6 md:px-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
+              Peer Financial Context
+            </h2>
+            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65]">
+              Peer Financial Context shows public financial information within comparable peer groups. It is designed to add context, not to rate, rank, or recommend organizations.
+            </p>
+            <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.65]">
+              This approach respects the fact that a small community organization and a large national nonprofit may both be thriving—they just have different financial profiles.
+            </p>
+            <Link
+              to="/methodology"
+              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
+            >
+              Learn more about methodology →
+            </Link>
+          </div>
+          <div className="bg-white border border-light-grey rounded-2xl p-8">
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <div>
+                  <p className="font-body text-[14px] font-semibold text-deep-navy">Based on public records</p>
+                  <p className="font-body text-[13px] text-cool-grey mt-1">IRS, NCCS, and ProPublica data only</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <div>
+                  <p className="font-body text-[14px] font-semibold text-deep-navy">Peer-group based</p>
+                  <p className="font-body text-[13px] text-cool-grey mt-1">Compared within similar organizations</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <div>
+                  <p className="font-body text-[14px] font-semibold text-deep-navy">Not a rating</p>
+                  <p className="font-body text-[13px] text-cool-grey mt-1">Context, not judgment or endorsement</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── Stewardship ─────────────────────────────────────────────────────────────
+function StewardshipSection() {
+  return (
+    <section className="bg-deep-navy py-16 md:py-20">
+      <div className="max-w-[1120px] mx-auto px-6 md:px-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <h2 className="font-display italic text-warm-cream text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
+              Built on stewardship
+            </h2>
+            <p className="mt-6 font-body text-[16px] leading-[1.65]" style={{ color: 'rgba(245,240,235,0.80)' }}>
+              Stewardship means caring for donors, organizations, and the public record at the same time.
+            </p>
+            <p className="mt-4 font-body text-[16px] leading-[1.65]" style={{ color: 'rgba(245,240,235,0.75)' }}>
+              Daanaa is built to support discovery without turning giving into judgment. We avoid ranking language, welcome corrections, protect privacy, and remain independent.
+            </p>
+            <Link
+              to="/stewardship"
+              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
+            >
+              See our stewardship principles →
+            </Link>
+          </div>
+          <div className="space-y-4">
+            {[
+              'We do not rank nonprofits',
+              'We do not process donations',
+              'We do not sell donor data',
+              'We remain independent',
+              'We welcome corrections',
+              'We protect privacy',
+            ].map(principle => (
+              <div key={principle} className="flex items-start gap-3">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <p className="font-body text-[16px] text-warm-cream leading-[1.5]">{principle}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// ─── Final CTA ────────────────────────────────────────────────────────────────
+function FinalCTA() {
+  const { data: stats } = useApi(() => getStats(), [])
+  const countLabel = stats?.total_organizations
+    ? `${(Math.floor(stats.total_organizations / 1000) * 1000).toLocaleString()}+`
+    : '1,800,000+'
+
+  return (
+    <section className="bg-white border-t border-light-grey py-12 md:py-16">
+      <div className="max-w-[1120px] mx-auto px-6 md:px-12 text-center">
+        <h2
+          className="font-display italic text-deep-navy leading-[1.15] tracking-[-0.01em]"
+          style={{ fontSize: 'clamp(28px, 4vw, 44px)' }}
+        >
+          Ready to discover?
+        </h2>
+        <p className="mt-6 font-body text-[16px] text-cool-grey max-w-[720px] mx-auto leading-[1.65]">
+          Search {countLabel} organizations by cause, place, or public information. Start with something you care about.
+        </p>
+        <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
+          <Link
+            to="/directory"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-bold hover:bg-bright-gold transition-colors shadow-md"
+          >
+            Start Discovering
+          </Link>
+          <Link
+            to="/guides"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-full border-2 border-deep-navy/20 text-deep-navy font-body text-[15px] font-medium hover:border-deep-navy/40 hover:bg-deep-navy/5 transition-all"
+          >
+            See Guides
+          </Link>
         </div>
       </div>
     </section>
@@ -604,17 +769,18 @@ function FooterCTA() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
-  usePageMeta('', 'Discover tax-deductible 501(c)(3) nonprofits scored by financial health and transparency. 1.6 million searchable organizations, free to use.')
+  usePageMeta('Daanaa — Independent Nonprofit Discovery Platform', 'Discover causes and organizations using public nonprofit information presented with context, stewardship, and respect.')
   return (
     <div>
       <HeroSection />
+      <WhatDaanaaDoesSection />
+      <HowDiscoveryWorks />
       <FeaturedCause />
       <BrowseCauses />
-      <StatsBar />
+      <PeerFinancialContextSection />
       <TiersStrip />
-      <WalletSection />
-      <AdvisorTeaser />
-      <FooterCTA />
+      <StewardshipSection />
+      <FinalCTA />
     </div>
   )
 }

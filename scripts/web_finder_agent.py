@@ -30,7 +30,7 @@ import numpy as np
 from html.parser import HTMLParser
 
 DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
-LOG_PATH = Path.home() / "meritgiving/logs/web_finder.log"
+LOG_PATH = Path.home() / "meritgiving/logs/web_finder_50k.log"
 EMBED_URL = "http://127.0.0.1:11436/v1/embeddings"
 EMBED_MODEL = "mxbai-embed-large"
 
@@ -47,7 +47,7 @@ def log(msg: str):
         f.write(line + "\n")
 
 def embed_text(text: str) -> np.ndarray | None:
-    """Get embedding for text via local mxbai-embed-large model."""
+    """Get embedding via fast GPU 0 server."""
     try:
         resp = requests.post(
             EMBED_URL,

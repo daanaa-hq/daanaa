@@ -47,7 +47,7 @@ function TierRow({ score, label, description }: { score: string; label: string; 
 }
 
 export default function HowItWorks() {
-  usePageMeta('How It Works', 'Learn how Daanaa scores nonprofits using IRS data and peer group benchmarking across eight operating model groups and eight revenue bands. All organizations are tax-deductible 501(c)(3) nonprofits.')
+  usePageMeta('How It Works', 'Learn how Daanaa scores nonprofits using IRS data and peer group benchmarking across nine operating model groups. All organizations are tax-deductible 501(c)(3) nonprofits.')
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
@@ -79,7 +79,7 @@ export default function HowItWorks() {
               We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.8 million of them. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
-              Peer financial context (0–100) compares financial footprint and reserve position relative to similar groups. It does not measure impact, leadership, community trust, or whether a group deserves support. Daanaa is not a charity rating agency.
+              Two signals work together on every profile. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The Financial Health tier (Strong, Stable, or Inspiring) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
             </Callout>
           </Section>
 
@@ -117,13 +117,13 @@ export default function HowItWorks() {
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">Type of work</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  Each nonprofit is placed in one of eight operating model groups based on how it actually runs: Direct Service, Mission Infrastructure, Research and Academia, Foundations, Membership and Advocacy, Religion and Spiritual, International Development, or Asset Stewards. A food bank is compared to other food banks at the same scale, not to hospitals or land trusts.
+                  Each nonprofit is placed in one of nine operating model groups based on how it actually runs — Activity and Programming, Direct Delivery, Community and Human Services, Clinical and Health, Emergency and Logistics, Cause and Research, Intermediary and Philanthropy, Faith Community, and Membership and Mutual Benefit. A food bank is compared to other food banks at the same scale, not to universities or hospitals.
                 </p>
               </div>
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">Revenue Band</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. Each operating model has its own eight revenue bands derived from that model's actual distribution — so a small food bank is sized against other small food banks, not against small hospitals. Your $80K community garden is ranked against other community gardens of a similar size.
+                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. Each operating model has five to eight revenue bands, set from that model's own distribution — so a small food bank is sized against other small food banks, not against small hospitals. Your $80K community garden is ranked against other community gardens of a similar size.
                 </p>
               </div>
             </div>
@@ -143,6 +143,21 @@ export default function HowItWorks() {
                 <TierRow score="40 to 59" label="About average in size" description="A normal size for the kind of work it does." />
                 <TierRow score="0 to 39" label="Smaller than most like it" description="One of the smaller groups doing this work. Often newer, or running lean. It says nothing about how good the work is." />
               </div>
+            </div>
+
+            <p className="mt-5 font-body text-[15px] text-cool-grey leading-[1.7]">
+              When you visit a profile, the primary signal you'll see is a <strong className="text-deep-navy font-medium">Financial Health tier</strong> — Strong, Stable, or Inspiring. That is a different measure from the 0–100 number above. The number shows financial scale. The tier shows how well the organization manages its resources within that peer group. A small org can be Strong. A large org can be Inspiring.
+            </p>
+            <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
+              <strong className="text-deep-navy font-medium">Why "Inspiring"?</strong> Constrained financial resources don't mean constrained impact. Organizations working within tight means often do the most essential work in their communities. The name honors that — not a consolation, a recognition.
+            </p>
+            <div className="mt-4">
+              <Link
+                to="/methodology"
+                className="inline-flex items-center gap-1.5 font-body text-[13px] font-semibold text-soft-gold hover:text-bright-gold transition-colors"
+              >
+                Full methodology: how Financial Health tiers are calculated →
+              </Link>
             </div>
           </Section>
 
@@ -238,8 +253,9 @@ export default function HowItWorks() {
             </p>
             <div className="mt-2 space-y-2">
               {[
-                { freq: 'Weekly', what: 'ProPublica data for organizations with new financial reports' },
+                { freq: 'Monthly', what: 'ProPublica data for organizations with new financial reports' },
                 { freq: 'Monthly', what: 'IRS financial data update for newly published years' },
+                { freq: 'Monthly', what: 'IRS tax-exempt status check against the federal auto-revocation list' },
                 { freq: 'Ongoing', what: 'Financial rankings recalculated after bulk revenue updates' },
               ].map(({ freq, what }) => (
                 <div key={freq} className="flex gap-4 items-start">

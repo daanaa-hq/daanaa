@@ -256,12 +256,14 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dic
         _errors  += batch_size - len(results)
 
 
-def run(limit=None, workers=1, all_orgs=False):
+def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False):
     conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     _ensure_column(conn)
 
     scope = "" if all_orgs else "AND re.merit_score IS NOT NULL"
+    mission_filter = "(re.mission IS NULL OR re.mission = '' OR re.mission_source = 'template_ntee')" \
+                     if upgrade_templates else "(re.mission IS NULL OR re.mission = '')"
     # Prioritise orgs that already have a cached web page: web_context yields
     # far better missions (ai_web) than NTEE-only inference (ai_ntee). Process
     # those first so GPU time produces the highest-quality missions up front.
@@ -270,7 +272,7 @@ def run(limit=None, workers=1, all_orgs=False):
         FROM registry_enriched re
         LEFT JOIN (SELECT DISTINCT ein FROM page_cache WHERE html_gz IS NOT NULL) pc
           ON pc.ein = re.EIN
-        WHERE (re.mission IS NULL OR re.mission = '') {scope}
+        WHERE {mission_filter} {scope}
           AND re.source NOT IN ('IRS_BMF', 'bmf_stub')
         ORDER BY (pc.ein IS NULL), re.merit_score DESC NULLS LAST
         {'LIMIT ' + str(limit) if limit else ''}
@@ -283,7 +285,7 @@ def run(limit=None, workers=1, all_orgs=False):
         conn.close()
         return
 
-    scope_label = "all orgs" if all_orgs else "scored orgs"
+    scope_label = "all orgs" if all_orgs else ("template upgrades" if upgrade_templates else "scored orgs")
     print(f"Generating missions for {total:,} {scope_label}  model={MODEL}  workers={workers}", flush=True)
 
     # Pre-check which EINs have cached pages so we can use smaller batches for those
@@ -342,14 +344,16 @@ def run(limit=None, workers=1, all_orgs=False):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--limit",    type=int, help="Test run limit")
-    ap.add_argument("--workers",  type=int, default=1)
-    ap.add_argument("--all-orgs", action="store_true", help="Include unscored orgs too")
-    ap.add_argument("--url",      type=str, help="Override inference endpoint URL")
-    ap.add_argument("--model",    type=str, help="Override model name")
+    ap.add_argument("--limit",             type=int, help="Test run limit")
+    ap.add_argument("--workers",           type=int, default=1)
+    ap.add_argument("--all-orgs",          action="store_true", help="Include unscored orgs too")
+    ap.add_argument("--upgrade-templates", action="store_true", help="Replace template_ntee missions with AI-generated ones")
+    ap.add_argument("--url",               type=str, help="Override inference endpoint URL")
+    ap.add_argument("--model",             type=str, help="Override model name")
     args = ap.parse_args()
     if args.url:
         GEN_URL = args.url
     if args.model:
         MODEL = args.model
-    run(limit=args.limit, workers=args.workers, all_orgs=args.all_orgs)
+    run(limit=args.limit, workers=args.workers, all_orgs=args.all_orgs,
+        upgrade_templates=args.upgrade_templates)

@@ -116,10 +116,28 @@ def enrich_batch(size=1000):
     log('Batch: ' + str(updated) + ' updated, ' + str(errors) + ' errors')
     return updated, errors
 
+def run_revocation_check():
+    """Daily fast check against already-loaded revoked_eins table."""
+    try:
+        import subprocess
+        result = subprocess.run(
+            ['python3', str(Path.home() / 'meritgiving' / 'scripts' / 'sync_irs_revocations.py'), '--check'],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.stdout:
+            for line in result.stdout.strip().splitlines():
+                log(line)
+        if result.returncode != 0:
+            log('Revocation check returned non-zero: ' + (result.stderr or ''))
+    except Exception as e:
+        log('Revocation check error: ' + str(e))
+
+
 def main():
     log('=' * 60)
     log('Overnight Pipeline Started')
     log('=' * 60)
+    run_revocation_check()
     process_manual_submissions()
     total = 0
     errs = 0

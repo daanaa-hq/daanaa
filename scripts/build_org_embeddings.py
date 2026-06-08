@@ -17,7 +17,7 @@ Usage:
     python3 scripts/build_org_embeddings.py --model mxbai-embed-large --dim 1024 --overwrite
 """
 
-import sqlite3, json, time, argparse, sys
+import sqlite3, json, time, argparse, sys, hashlib
 import numpy as np
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -139,7 +139,7 @@ def _write_batch(db: sqlite3.Connection, eins: list[str],
                  vecs: np.ndarray, texts: list[str], now: str):
     rows = [
         (ein, vecs[i].tobytes(), DIM,
-         str(hash(texts[i]) & 0xFFFF_FFFF), now)
+         hashlib.md5(texts[i].encode(), usedforsecurity=False).hexdigest()[:8], now)
         for i, ein in enumerate(eins)
     ]
     with _write_lock:

@@ -33,16 +33,15 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Platform */}
+          {/* Quick Links (per spec order) */}
           <div>
             <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
-              Platform
+              Discover
             </p>
             <ul className="space-y-1">
               {[
-                { label: 'Directory', to: '/directory' },
-                { label: 'Wallet', to: '/wallet' },
-                { label: 'For Nonprofits', to: '/for-nonprofits' },
+                { label: 'Discover Organizations', to: '/directory' },
+                { label: 'Your Wallet', to: '/wallet' },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5">
@@ -53,16 +52,15 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Resources */}
+          {/* Learn */}
           <div>
             <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
-              Resources
+              Learn
             </p>
             <ul className="space-y-1">
               {[
-                { label: 'How It Works', to: '/how-it-works' },
-                { label: 'How We Score', to: '/methodology' },
-                { label: 'Sector Health', to: '/sector-health' },
+                { label: 'Methodology', to: '/methodology' },
+                { label: 'Stewardship', to: '/stewardship' },
                 { label: 'Guides', to: '/guides' },
                 { label: 'FAQ', to: '/faq' },
               ].map(({ label, to }) => (
@@ -75,17 +73,17 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Our Story */}
+          {/* About */}
           <div>
             <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
-              Our Story
+              About
             </p>
             <ul className="space-y-1">
               {[
-                { label: 'Why Daanaa Exists', to: '/why-daanaa-exists' },
-                { label: 'Governance', to: '/governance' },
-                { label: 'Visibility Levels', to: '/tiers' },
-                { label: 'The Invisible 97%', to: '/the-invisible-97' },
+                { label: 'About Daanaa', to: '/about' },
+                { label: 'Privacy', to: '/legal#privacy' },
+                { label: 'Terms', to: '/legal#terms' },
+                { label: 'Contact', to: '/feedback' },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">
@@ -93,28 +91,6 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
-              Company
-            </p>
-            <ul className="space-y-1">
-              <li>
-                <Link to="/about" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">About</Link>
-              </li>
-              <li>
-                <Link to="/legal" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Legal &amp; Privacy</Link>
-              </li>
-              <li>
-                <Link to="/feedback" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Contact us</Link>
-                <Link to="/feedback" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Share feedback</Link>
-              </li>
-              <li>
-                <Link to="/feedback?type=data-issue" className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">Report a data issue</Link>
-              </li>
             </ul>
           </div>
         </div>

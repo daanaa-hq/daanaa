@@ -24,8 +24,8 @@ const TIERS: {
   },
   {
     name: 'Torch',
-    pct: '17.5%',
-    count: '~319,000',
+    pct: '15.6%',
+    count: '~283,000',
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
@@ -36,8 +36,8 @@ const TIERS: {
   },
   {
     name: 'Candle',
-    pct: '26.7%',
-    count: '~486,000',
+    pct: '28.7%',
+    count: '~521,000',
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later) or revenue on record', met: true },
@@ -49,7 +49,7 @@ const TIERS: {
   {
     name: 'Spark',
     pct: '55.1%',
-    count: '~1,002,000',
+    count: '~1,003,000',
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: false },

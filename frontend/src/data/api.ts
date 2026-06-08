@@ -62,6 +62,7 @@ export interface ApiOrganization {
   activ2: string | null;
   activ3: string | null;
   program_expense_pct: number | null; // program revenue as % of total expenses
+  revenue_3yr_avg?: number | null;   // 3-year average revenue (smooths grant cycles)
   nccs_year: number | null;
   cause_tags?: string[] | null;           // LLM-extracted cause tags (3-5 per org)
   donate_url?: string | null;             // direct giving page found on org site (Donorbox, etc.)
@@ -83,6 +84,7 @@ export interface ApiOrganization {
   } | null;
   // Claim status — 'pending' | 'letter_sent' | 'verified' | 'active' | null
   claim_status?: string | null;
+  irs_status_verified_at?: string | null;
   similar_organizations?: ApiOrganization[];
   category_rank?: number;
   category_total?: number;
@@ -115,6 +117,7 @@ export interface ApiStats {
     minimal: number;
     healthy: number;
   } | null;
+  irs_status_verified_at?: string | null;
 }
 
 export interface ApiSectorHealth {

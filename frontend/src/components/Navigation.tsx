@@ -54,9 +54,11 @@ export default function Navigation({ solid = true }: NavigationProps) {
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8">
             {[
-              { label: 'Directory', path: '/directory' },
-              { label: 'For Nonprofits', path: '/for-nonprofits' },
-              { label: 'How It Works', path: '/how-it-works' },
+              { label: 'Discover', path: '/directory' },
+              { label: 'Methodology', path: '/methodology' },
+              { label: 'Stewardship', path: '/stewardship' },
+              { label: 'Guides', path: '/guides' },
+              { label: 'About', path: '/about' },
             ].map((item) => (
               <Link
                 key={item.path}
@@ -115,6 +117,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
                 <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
               </svg>
               Wallet
+              <span className="font-body text-[9px] font-semibold tracking-[0.04em] text-soft-gold/70 leading-none">β</span>
             </Link>
           </div>
 

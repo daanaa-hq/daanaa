@@ -67,8 +67,8 @@ export default function GivingListDrawer() {
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#E5E0DB" strokeWidth="1.5" className="mb-4">
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                   </svg>
-                  <p className="font-body text-[14px] text-cool-grey mb-1">Your giving list is empty</p>
-                  <p className="font-body text-[12px] text-cool-grey/60">Tap <strong>+ Add</strong> on any organization to get started</p>
+                  <p className="font-body text-[14px] text-cool-grey mb-1">Your Wallet is empty</p>
+                  <p className="font-body text-[12px] text-cool-grey/60">Tap <strong>Save to Wallet</strong> on any organization to get started</p>
                   <Link
                     to="/directory"
                     onClick={() => setOpen(false)}

@@ -86,7 +86,7 @@ def _build_text(row: dict) -> str:
 
 
 def _text_hash(text: str) -> str:
-    return str(hash(text) & 0xFFFF_FFFF)
+    return hashlib.md5(text.encode(), usedforsecurity=False).hexdigest()[:8]
 
 
 def count_stale(conn: sqlite3.Connection) -> tuple[int, int]:

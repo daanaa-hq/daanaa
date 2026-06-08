@@ -550,6 +550,11 @@ def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # API responses: no browser caching. Public org data doesn't need it, and
+    # claim_status / irs_status_verified_at are org-specific — should not sit
+    # in a shared browser's HTTP cache.
+    if request.path.startswith('/api/'):
+        response.headers["Cache-Control"] = "no-store"
     # CSP: load-bearing for wallet privacy — blocks XSS from reading localStorage.
     # 'unsafe-inline' on style-src only (Tailwind class-based; React may inject style attrs).
     is_prod = bool(os.environ.get("DAANAA_PROD"))
@@ -753,7 +758,7 @@ def list_organizations():
 
     # Check if v4_scores table exists (production might not have it)
     has_v4_scores = bool(db.execute(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='v4_scores' LIMIT 1"
+        "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name='v4_scores' LIMIT 1"
     ).fetchone())
 
     if has_v4_scores:
@@ -828,7 +833,7 @@ def get_organization(ein):
 
     # Check if v4_scores table exists
     has_v4_scores = bool(db.execute(
-        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='v4_scores' LIMIT 1"
+        "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name='v4_scores' LIMIT 1"
     ).fetchone())
 
     if has_v4_scores:
@@ -945,6 +950,15 @@ def get_organization(ein):
     # Beta disclosure: donation link discovered via heuristic, not org-verified
     if org.get('donate_url_status') == 'beta':
         disclosures['donate_link_disclosure'] = BETA_DONATION_LINK_DISCLOSURE
+
+    # IRS revocation list freshness — tells donors when we last verified status
+    try:
+        irs_row = db.execute(
+            "SELECT synced_at FROM irs_sync_log ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        org['irs_status_verified_at'] = irs_row['synced_at'] if irs_row else None
+    except Exception:
+        org['irs_status_verified_at'] = None
 
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
@@ -1136,9 +1150,11 @@ def stats():
         "avg_revenue": agg["avg_revenue"],
         "top_states": top_states,
         "methodology_version": METHODOLOGY_VERSION,
-        "scores_last_updated": db.execute(
+        "scores_last_updated": (db.execute(
             "SELECT MAX(snapshot_date) FROM score_snapshots"
-        ).fetchone()[0],
+        ).fetchone()[0] if db.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='score_snapshots'"
+        ).fetchone()[0] else None),
         "financial_records": financial_records,
         "with_reserve_data": agg["has_reserve"],
         "reserve_health": {
@@ -1147,6 +1163,11 @@ def stats():
             "minimal": agg["minimal"],
             "healthy": agg["healthy"],
         },
+        "irs_status_verified_at": (lambda r: r["synced_at"] if r else None)(
+            db.execute("SELECT synced_at FROM irs_sync_log ORDER BY id DESC LIMIT 1").fetchone()
+            if db.execute("SELECT 1 FROM sqlite_master WHERE name='irs_sync_log'").fetchone()
+            else None
+        ),
     }
     _cset('stats', payload)
     return jsonify(payload)

@@ -35,6 +35,11 @@ export default function Legal() {
                   url: "https://www.irs.gov/charities-non-profits/form-990-series-downloads",
                 },
                 {
+                  name: "IRS Automatic Revocation List",
+                  detail: "The IRS publishes a list of organizations whose tax-exempt status was automatically revoked for failure to file for three or more consecutive years. Daanaa checks every indexed organization against this list monthly. Organizations with revoked status are removed from donation paths.",
+                  url: "https://apps.irs.gov/pub/epostcard/data-download-revocation.zip",
+                },
+                {
                   name: "NCCS Core Data Files",
                   detail: "Structured extracts of 990 financial data compiled by the National Center for Charitable Statistics at the Urban Institute. Provided for nonprofit research and public benefit.",
                   url: "https://nccs-data.urban.org/",
@@ -67,13 +72,10 @@ export default function Legal() {
             <p className="mt-3">
               Each organization page displays a <strong className="text-deep-navy">data source</strong> and
               <strong className="text-deep-navy"> fiscal year</strong> badge indicating the vintage of the
-              financial data shown. Daanaa automatically refreshes data from ProPublica on a weekly
-              schedule and supplements with NCCS extracts as they become available.
+              financial data shown. Daanaa refreshes data from ProPublica and IRS sources monthly, and supplements with NCCS extracts as they become available.
             </p>
             <p className="mt-3">
-              Daanaa scores and percentile rankings are recalculated within NTEE peer groups whenever
-              the underlying data is updated. Rankings are relative. A score reflects an
-              organization's position among its registered peers, not an absolute quality rating.
+              Daanaa scores and peer group rankings are recalculated whenever the underlying data is updated. Rankings are relative. A score reflects an organization's position among its true peers — same operating model and similar revenue size — not an absolute quality rating.
             </p>
           </section>
 
@@ -116,9 +118,12 @@ export default function Legal() {
               publicly disclosed under 26 U.S.C. § 6104.
             </p>
             <p className="mt-3">
-              <strong className="text-deep-navy">We do not collect personal information from visitors.</strong> We
+              <strong className="text-deep-navy">We do not passively collect personal information from visitors.</strong> We
               do not use cookies for tracking, do not run behavioral analytics, and do not sell or
               share any user data with third parties.
+            </p>
+            <p className="mt-3">
+              When you voluntarily submit information — such as an email address in the claim form, feedback form, or waitlist — we store that information to respond to your request. We do not use it for marketing, share it with third parties, or connect it to your browsing activity.
             </p>
             <p className="mt-3">
               If your organization's information on Daanaa is incorrect, you may request a correction
@@ -182,7 +187,7 @@ export default function Legal() {
           </section>
 
           <p className="text-[12px] text-cool-grey/60 pt-4 border-t border-light-grey">
-            Last updated: May 2026
+            Last updated: June 2026
           </p>
         </div>
       </div>

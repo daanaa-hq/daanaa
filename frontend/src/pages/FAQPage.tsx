@@ -39,18 +39,27 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
     items: [
       {
         q: 'How is peer financial context calculated?',
-        a: 'Peer financial context (0–100) shows how this organization\'s financial footprint compares with similar nonprofits using available public data. A score of 72 means the organization has a larger financial footprint than 72% of comparable groups. It does not measure mission, impact, or goodness of purpose.',
+        a: (
+          <>
+            <p>Two signals together give the full financial picture:</p>
+            <ul className="mt-3 space-y-2">
+              <li><strong className="text-deep-navy font-semibold">Peer rank (0–100)</strong> — financial scale relative to similar organizations. A score of 72 means the organization is financially larger than 72% of comparable groups. It says nothing about how well the organization manages its resources.</li>
+              <li><strong className="text-deep-navy font-semibold">Financial Health tier (Strong / Stable / Inspiring)</strong> — based on a weighted composite of program spending, reserves, revenue sustainability, and asset intensity. Always relative to true peers. An Inspiring organization is doing real work within real constraints — not a failure.</li>
+            </ul>
+            <p className="mt-3">Neither measures mission, impact, or whether an organization deserves support. See the full <Link to="/methodology" className="text-soft-gold hover:text-bright-gold transition-colors">methodology</Link> for the complete formula.</p>
+          </>
+        ),
       },
       {
-        q: 'What\'s the difference between peer financial context and visibility level?',
+        q: 'What\'s the difference between the visibility tier and Financial Health?',
         a: (
           <>
             <p>They measure different things:</p>
             <ul className="mt-3 space-y-2">
-              <li><strong className="text-deep-navy font-semibold">Peer financial context</strong> (0–100) answers: how does this organization's financial footprint compare to similar nonprofits?</li>
-              <li><strong className="text-deep-navy font-semibold">Visibility level</strong> (Complete → Listed) answers: how much public data backs this profile today?</li>
+              <li><strong className="text-deep-navy font-semibold">Visibility tier</strong> (Seed → Beacon) answers: how much public data backs this profile today? It reflects what public records exist — mission, financials, website — not quality of work.</li>
+              <li><strong className="text-deep-navy font-semibold">Financial Health</strong> (Strong / Stable / Inspiring) answers: how does this organization manage its resources compared to true peers — same operating model, similar revenue size?</li>
             </ul>
-            <p className="mt-3">An organization can have a high peer context score and a low visibility level, or vice versa. Read the{' '}<Link to="/tiers" className="text-soft-gold hover:text-bright-gold transition-colors">full visibility level reference</Link> for details.</p>
+            <p className="mt-3">An organization can be a high-visibility Beacon and Inspiring financially. Or a low-visibility Seed and Strong financially. Neither tells you whether the work is good. Read the{' '}<Link to="/tiers" className="text-soft-gold hover:text-bright-gold transition-colors">full visibility tier reference</Link> for details.</p>
           </>
         ),
       },
@@ -63,8 +72,8 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         a: 'No. The score comes directly from government public records and cannot be influenced by any payment. Any platform that lets organizations pay for a better score is not using real data.',
       },
       {
-        q: 'My organization has a low score but we do great work. Why?',
-        a: 'The score measures financial size next to similar organizations, not mission quality, impact, or importance. A neighborhood food pantry operating on $30,000 a year may do extraordinary work in its community and still sit low on financial size. The score is one signal. Read the mission, look at the programs, make your own judgment.',
+        q: 'My organization has an Inspiring Financial Health tier. Why?',
+        a: 'Financial Health reflects where your organization sits on a weighted composite of four metrics — program spending, reserves, revenue sustainability, and asset intensity — compared to true peers at the same operating model and revenue size. Inspiring means constrained resources relative to that peer group. It is not a verdict on your work, your mission, or your community impact. A neighborhood food pantry operating on $30,000 a year may do extraordinary work and still be Inspiring relative to other food pantries in its revenue band. Read the mission. Look at the programs. Make your own judgment.',
       },
     ],
   },
@@ -88,8 +97,8 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         a: (
           <ul className="space-y-2">
             {[
-              { freq: 'Weekly', what: 'Detailed financial data refreshed for organizations with new reports' },
-              { freq: 'Monthly', what: 'New financial reports added as the government releases them' },
+              { freq: 'Monthly', what: 'New financial reports added as the IRS and ProPublica publish them' },
+              { freq: 'Monthly', what: 'IRS tax-exempt status checked against the federal auto-revocation list' },
               { freq: 'Ongoing', what: 'Rankings updated whenever new data comes in' },
             ].map(({ freq, what }) => (
               <li key={freq} className="flex gap-3">
@@ -117,7 +126,7 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
         q: 'How do I claim my organization\'s page?',
         a: (
           <>
-            Claiming is in phased rollout. Join the waitlist on the{' '}<Link to="/for-nonprofits" className="text-soft-gold hover:text-bright-gold transition-colors">For Nonprofits</Link> page and we\'ll notify you when claiming opens for your organization. The process will be free and verification will use your organization\'s EIN and email domain.
+            Claiming is open now and free. Go to your organization's profile, click "Claim this page," enter your EIN and email, and we mail a verification letter to your IRS-registered postal address. The letter contains a QR code and a 6-digit PIN — scan or enter it to unlock your profile editor. The whole process takes 3 to 5 business days for the letter to arrive. Visit the{' '}<Link to="/for-nonprofits" className="text-soft-gold hover:text-bright-gold transition-colors">For Nonprofits</Link> page for details.
           </>
         ),
       },
