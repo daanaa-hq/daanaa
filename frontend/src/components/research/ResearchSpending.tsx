@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { loadResearchSnapshot } from '../../data/researchSnapshot'
 
 interface ResearchSpendingProps {
   sessionToken: string
@@ -26,33 +27,22 @@ export default function ResearchSpending({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/research/summary/spending-by-model', {
-          headers: { 'X-Research-Session': sessionToken },
-        })
-        if (response.ok) {
-          const result = await response.json()
-          setData(
-            result.data.map((item: any) => ({
-              name: item.operating_model.replace(/_/g, ' '),
-              model: item.operating_model,
-              median: item.median_program_spend || 0,
-              p25: item.p25_program_spend || 0,
-              p75: item.p75_program_spend || 0,
-              count: item.count,
-            }))
-          )
-        }
-      } catch (error) {
-        console.error('Failed to load spending data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [sessionToken])
+    loadResearchSnapshot()
+      .then((snap) => {
+        setData(
+          snap.spending.map((item) => ({
+            name: item.operating_model.replace(/_/g, ' '),
+            model: item.operating_model,
+            median: item.median_program_spend || 0,
+            p25: item.p25_program_spend || 0,
+            p75: item.p75_program_spend || 0,
+            count: item.count,
+          }))
+        )
+      })
+      .catch((error) => console.error('Failed to load spending data:', error))
+      .finally(() => setLoading(false))
+  }, [])
 
   const CustomTooltip = (props: any) => {
     if (props.active && props.payload && props.payload[0]) {

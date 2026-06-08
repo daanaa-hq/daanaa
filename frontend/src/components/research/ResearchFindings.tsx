@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { loadResearchSnapshot } from '../../data/researchSnapshot'
 
 interface ResearchFindingsProps {
   sessionToken: string
@@ -20,34 +21,14 @@ export default function ResearchFindings({
   const [hover, setHover] = useState<HoverState>({ categoryId: null, tierLabel: null })
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [stateRes, catRes] = await Promise.all([
-          fetch('/api/research/summary/states', {
-            headers: { 'X-Research-Session': sessionToken },
-          }),
-          fetch('/api/research/summary/categories', {
-            headers: { 'X-Research-Session': sessionToken },
-          }),
-        ])
-
-        if (stateRes.ok) {
-          const result = await stateRes.json()
-          setStateData(result.data || [])
-        }
-        if (catRes.ok) {
-          const result = await catRes.json()
-          setCategoryData(result.data || [])
-        }
-      } catch (error) {
-        console.error('Failed to load findings data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [sessionToken])
+    loadResearchSnapshot()
+      .then((snap) => {
+        setStateData(snap.states || [])
+        setCategoryData(snap.categories || [])
+      })
+      .catch((error) => console.error('Failed to load findings data:', error))
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <div>

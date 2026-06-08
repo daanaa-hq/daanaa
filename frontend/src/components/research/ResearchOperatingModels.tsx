@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { loadResearchSnapshot } from '../../data/researchSnapshot'
 
 interface ResearchOperatingModelsProps {
   sessionToken: string
@@ -98,45 +99,34 @@ export default function ResearchOperatingModels({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/research/summary/revenue-bands', {
-          headers: { 'X-Research-Session': sessionToken },
-        })
-        if (response.ok) {
-          const result = await response.json()
-          // Group data by operating model with revenue range labels
-          const grouped: Record<string, any[]> = {}
-          result.data.forEach((item: any) => {
-            if (!grouped[item.operating_model]) {
-              grouped[item.operating_model] = []
-            }
-            const bandThresholds = OPERATING_MODELS[item.operating_model]?.bands || []
-            const bandIndex = item.revenue_band_number
-            const label = bandIndex === 0
-              ? `Under ${formatRevenue(bandThresholds[0])}`
-              : bandIndex < bandThresholds.length
-              ? `${formatRevenue(bandThresholds[bandIndex - 1])} – ${formatRevenue(bandThresholds[bandIndex])}`
-              : `Over ${formatRevenue(bandThresholds[bandThresholds.length - 1])}`
+    loadResearchSnapshot()
+      .then((snap) => {
+        // Group data by operating model with revenue range labels
+        const grouped: Record<string, any[]> = {}
+        snap.revenue_bands.forEach((item) => {
+          if (!grouped[item.operating_model]) {
+            grouped[item.operating_model] = []
+          }
+          const bandThresholds = OPERATING_MODELS[item.operating_model]?.bands || []
+          const bandIndex = item.revenue_band_number
+          const label = bandIndex === 0
+            ? `Under ${formatRevenue(bandThresholds[0])}`
+            : bandIndex < bandThresholds.length
+            ? `${formatRevenue(bandThresholds[bandIndex - 1])} – ${formatRevenue(bandThresholds[bandIndex])}`
+            : `Over ${formatRevenue(bandThresholds[bandThresholds.length - 1])}`
 
-            grouped[item.operating_model].push({
-              band: item.revenue_band_number,
-              count: item.count,
-              name: label,
-              revenue_range: label,
-            })
+          grouped[item.operating_model].push({
+            band: item.revenue_band_number,
+            count: item.count,
+            name: label,
+            revenue_range: label,
           })
-          setModelData(grouped)
-        }
-      } catch (error) {
-        console.error('Failed to load data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [sessionToken])
+        })
+        setModelData(grouped)
+      })
+      .catch((error) => console.error('Failed to load data:', error))
+      .finally(() => setLoading(false))
+  }, [])
 
   const CustomTooltip = (props: any) => {
     if (props.active && props.payload && props.payload[0]) {

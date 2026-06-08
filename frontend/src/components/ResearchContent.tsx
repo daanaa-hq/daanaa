@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react'
+import { loadResearchSnapshot } from '../data/researchSnapshot'
 import ResearchOverview from './research/ResearchOverview'
 import ResearchAbout from './research/ResearchAbout'
 import ResearchProblem from './research/ResearchProblem'
 import ResearchMethodology from './research/ResearchMethodology'
 import ResearchOperatingModels from './research/ResearchOperatingModels'
-import ResearchRevenueMatrix from './research/ResearchRevenueMatrix'
 import ResearchPeerContext from './research/ResearchPeerContext'
-import ResearchLampTiers from './research/ResearchLampTiers'
-import ResearchCoverage from './research/ResearchCoverage'
 import ResearchFindings from './research/ResearchFindings'
 import ResearchSpending from './research/ResearchSpending'
 
@@ -20,24 +18,11 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchMetadata = async () => {
-      try {
-        const response = await fetch('/api/research/metadata', {
-          headers: { 'X-Research-Session': sessionToken },
-        })
-        if (response.ok) {
-          const data = await response.json()
-          setMetadata(data)
-        }
-      } catch (error) {
-        console.error('Failed to load research metadata:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchMetadata()
-  }, [sessionToken])
+    loadResearchSnapshot()
+      .then((snap) => setMetadata(snap.metadata))
+      .catch((error) => console.error('Failed to load research snapshot:', error))
+      .finally(() => setLoading(false))
+  }, [])
 
   const sections = [
     { id: 'overview', component: ResearchOverview },

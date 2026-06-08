@@ -4,37 +4,34 @@ interface ResearchAccessProps {
   onSuccess: (token: string) => void
 }
 
+// Soft client-side gate. The research page is a flat static page showing only
+// aggregate public IRS data — nothing private — so this passcode is a "please
+// don't share widely yet" gate, not protection of sensitive data. A truly
+// private area would live on the server with real auth.
+const RESEARCH_PASSCODE = 'daanaa2026'
+// 30-day soft session so reviewers don't re-enter the code every visit.
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
+
 export default function ResearchAccess({ onSuccess }: ResearchAccessProps) {
   const [passcode, setPasscode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    try {
-      const response = await fetch('/api/research/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passcode })
-      })
-
-      if (!response.ok) {
-        setError('That access code did not work. Please try again.')
-        setLoading(false)
-        return
-      }
-
-      const data = await response.json()
-      localStorage.setItem('research_session_token', data.session_token)
-      localStorage.setItem('research_session_expiry', String(Date.now() + data.expires_in * 1000))
-      onSuccess(data.session_token)
-    } catch {
-      setError('Connection error. Please try again.')
+    if (passcode.trim() !== RESEARCH_PASSCODE) {
+      setError('That access code did not work. Please try again.')
       setLoading(false)
+      return
     }
+
+    const token = 'unlocked'
+    localStorage.setItem('research_session_token', token)
+    localStorage.setItem('research_session_expiry', String(Date.now() + SESSION_TTL_MS))
+    onSuccess(token)
   }
 
   return (
