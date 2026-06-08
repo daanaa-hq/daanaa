@@ -51,10 +51,10 @@ export const TIER_COLORS: Record<TierName, string> = {
 // Lower tiers get the most generous, explicitly non-judgmental wording —
 // they describe how much public data backs the profile, not the org's worth.
 export const TIER_MICROCOPY: Record<TierName, string> = {
-  Beacon:  'Most complete public picture. Top-quartile financial score, mission, website, and current 990 all on record.',
-  Torch:   'Peer-comparable nonprofit. Mission, website, financial data, and current 990 on public record.',
-  Candle:  'Federally recognized nonprofit with some financial data on record. Peer context develops as filing history builds.',
-  Spark:   'Federally recognized nonprofit. Financial data not yet on public record.',
+  Beacon:  'Complete public data: financial reports, mission statement, website, and current Form 990 on record.',
+  Torch:   'Strong public data: financial context available, recent filings, organizational information on record.',
+  Candle:  'Moderate public data: some financial information and basic organizational records available.',
+  Spark:   'Recognized nonprofit with minimal public information available.',
 }
 
 export interface TierCriterion {
@@ -145,7 +145,7 @@ export function getInlineVerifiedFact(org: ApiOrganization): string {
   return facts.slice(0, 2).join(' · ')
 }
 
-const _TIER_NAMES = new Set<string>(['Beacon', 'Lantern', 'Flame', 'Glow', 'Ember', 'Seed', 'Spark'])
+const _TIER_NAMES = new Set<string>(['Beacon', 'Lantern', 'Flame', 'Glow', 'Ember', 'Seed', 'Spark', 'Torch', 'Candle'])
 const _TIER_NORMALIZE: Record<string, TierName> = {
   'Beacon': 'Beacon',
   'Lantern': 'Torch',
@@ -154,6 +154,8 @@ const _TIER_NORMALIZE: Record<string, TierName> = {
   'Seed': 'Spark',
   'Spark': 'Spark',
   'Glow': 'Candle',
+  'Torch': 'Torch',
+  'Candle': 'Candle',
 }
 
 export function getTierFromOrg(org: ApiOrganization): TierName {

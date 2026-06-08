@@ -11,10 +11,10 @@ import { NTEE_CATEGORIES } from '../data/ntee'
 import { getFeaturedCategory } from '../data/featuredCategory'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
-  { name: 'Beacon',  pct: '0.6%',  blurb: 'Complete public data: top-quartile financial score, mission, website, and current 990 on record' },
-  { name: 'Torch',   pct: '15.6%', blurb: 'Peer-comparable nonprofit. Current 990 and financial ranking on record' },
-  { name: 'Candle',  pct: '28.7%', blurb: 'Financial data on record. Recent filing helps improve peer ranking' },
-  { name: 'Spark',   pct: '55.1%', blurb: 'Registered nonprofit. No financial data on public record yet' },
+  { name: 'Beacon',  pct: '0.6%',  blurb: 'Complete public data: financial reports, mission statement, website, and current Form 990' },
+  { name: 'Torch',   pct: '15.6%', blurb: 'Strong public data: financial context available, recent filings, organizational information' },
+  { name: 'Candle',  pct: '28.7%', blurb: 'Moderate public data: some financial information, basic organizational records' },
+  { name: 'Spark',   pct: '55.1%', blurb: 'Recognized nonprofit with minimal public information available' },
 ]
 
 // Returns the week number anchored to Monday so all users see the same shuffle each week

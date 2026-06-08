@@ -105,10 +105,9 @@ export default function Methodology() {
             <div className="mt-8 space-y-4">
               {[
                 { name: 'Beacon', description: 'Complete public data: financial reports, mission statement, website, current Form 990' },
-                { name: 'Gold', description: 'Strong public data: financial context available, recent filings, organizational information' },
-                { name: 'Silver', description: 'Moderate public data: some financial information, basic organizational records' },
-                { name: 'Ember', description: 'Limited public data: registered nonprofit, minimal financial records' },
-                { name: 'Seed', description: 'Recognized nonprofit with minimal public information available' },
+                { name: 'Torch', description: 'Strong public data: financial context available, recent filings, organizational information' },
+                { name: 'Candle', description: 'Moderate public data: some financial information, basic organizational records' },
+                { name: 'Spark', description: 'Recognized nonprofit with minimal public information available' },
               ].map(tier => (
                 <div key={tier.name} className="p-4 bg-white border border-light-grey rounded-lg">
                   <p className="font-display text-deep-navy text-[18px] font-semibold">{tier.name}</p>

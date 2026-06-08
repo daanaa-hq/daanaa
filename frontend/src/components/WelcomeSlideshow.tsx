@@ -22,22 +22,27 @@ const SLIDES: Slide[] = [
   {
     tag: 'Discover',
     title: 'Find the invisible 97%',
-    body: `Daanaa indexes 1.6 million tax-deductible nonprofits, and almost none are ones you have heard of. Search by cause, by place, or in plain words, like 'after school reading help in Austin', and meet the small ones doing real good.`,
+    body: `Daanaa indexes 1.6 million tax-deductible nonprofits, and almost none are ones you have heard of. Search by cause, by place, or in plain words, like 'after school reading help in Austin', and meet the overlooked ones doing real good.`,
   },
   {
-    tag: 'How it works',
-    title: 'Every nonprofit gets a voice',
-    body: `Most of these had no description anywhere, so we use public records and AI to write a clear mission for each one, just so it can be found. When a nonprofit claims its page, it makes those words its own.`,
+    tag: 'Context',
+    title: 'Peer Financial Context',
+    body: `Financial information is only meaningful in context. We show you how a nonprofit compares within its peer group—same mission type, similar size, same location. Context, not judgment.`,
   },
   {
-    tag: 'Give',
-    title: 'From finding to giving, in a few clicks',
-    body: `When you are ready, we send you straight to the nonprofit's own donation page. Daanaa never touches your money. We just keep the path short and the destination trustworthy.`,
+    tag: 'Trust',
+    title: 'Independence matters',
+    body: `Daanaa accepts no paid placement, partner influence, or revenue sharing. We use only public records from the IRS, NCCS, and ProPublica. Trust is earned through transparency and independence.`,
   },
   {
-    tag: 'Yours',
-    title: 'Your giving stays with you',
-    body: `Keep a private record of everything you give, ready for when it is time to itemize deductions. It lives on your device, never on our servers. No accounts, no tracking, no one watching where your generosity goes.`,
+    tag: 'Wallet',
+    title: 'Your giving stays private',
+    body: `Keep a personal record of everything you give. Use it for itemizing deductions, tracking your impact, or just remembering the causes you care about. It lives on your device only.`,
+  },
+  {
+    tag: 'Privacy',
+    title: 'No accounts. No tracking.',
+    body: `Daanaa doesn't require a login, collect your data, or watch where you give. Your generosity is yours alone. No profiles. No social pressure. Just thoughtful, private discovery.`,
   },
 ]
 
