@@ -56,10 +56,10 @@ const FAQS: { section: string; items: FAQItem[] }[] = [
           <>
             <p>They measure different things:</p>
             <ul className="mt-3 space-y-2">
-              <li><strong className="text-deep-navy font-semibold">Visibility tier</strong> (Seed → Beacon) answers: how much public data backs this profile today? It reflects what public records exist — mission, financials, website — not quality of work.</li>
+              <li><strong className="text-deep-navy font-semibold">Visibility tier</strong> (Spark → Beacon) answers: how much public data backs this profile today? It reflects what public records exist — mission, financials, website — not quality of work.</li>
               <li><strong className="text-deep-navy font-semibold">Financial Health</strong> (Strong / Stable / Inspiring) answers: how does this organization manage its resources compared to true peers — same operating model, similar revenue size?</li>
             </ul>
-            <p className="mt-3">An organization can be a high-visibility Beacon and Inspiring financially. Or a low-visibility Seed and Strong financially. Neither tells you whether the work is good. Read the{' '}<Link to="/tiers" className="text-soft-gold hover:text-bright-gold transition-colors">full visibility tier reference</Link> for details.</p>
+            <p className="mt-3">An organization can be a high-visibility Beacon and Inspiring financially. Or a low-visibility Spark and Strong financially. Neither tells you whether the work is good. Read the{' '}<Link to="/tiers" className="text-soft-gold hover:text-bright-gold transition-colors">full visibility tier reference</Link> for details.</p>
           </>
         ),
       },

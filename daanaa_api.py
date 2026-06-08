@@ -2616,44 +2616,48 @@ def research_spending_by_model():
     ]
 
     db = get_db()
-    rows = db.execute("""
-        SELECT
-            v.operating_model,
-            COUNT(*) as count,
-            AVG(CAST(r.program_expense_pct AS FLOAT)) as avg_program_spend,
-            MIN(CAST(r.program_expense_pct AS FLOAT)) as min_program_spend,
-            MAX(CAST(r.program_expense_pct AS FLOAT)) as max_program_spend
-        FROM v4_scores v
-        LEFT JOIN registry_enriched r ON v.EIN = r.EIN
-        WHERE v.operating_model IS NOT NULL AND v.operating_model IN ({})
-          AND r.program_expense_pct IS NOT NULL
-        GROUP BY v.operating_model
-        ORDER BY
-          CASE v.operating_model
-            WHEN 'Activity_Programming' THEN 0
-            WHEN 'Direct_Delivery' THEN 1
-            WHEN 'Community_Human_Services' THEN 2
-            WHEN 'Clinical_Reimbursement' THEN 3
-            WHEN 'Emergency_Logistics' THEN 4
-            WHEN 'Cause_Advocacy_Research' THEN 5
-            WHEN 'Intermediary_Public_Benefit' THEN 6
-            WHEN 'Faith_Community' THEN 7
-            WHEN 'Membership_Mutual_Benefit' THEN 8
-          END
-    """.format(','.join(['?']*len(valid_models))), valid_models).fetchall()
 
-    return jsonify({
-        'data': [
-            {
-                'operating_model': r['operating_model'],
-                'count': r['count'],
-                'avg_program_spend': round(r['avg_program_spend'], 1) if r['avg_program_spend'] else None,
-                'min_program_spend': round(r['min_program_spend'], 1) if r['min_program_spend'] else None,
-                'max_program_spend': round(r['max_program_spend'], 1) if r['max_program_spend'] else None,
-            }
-            for r in rows
+    def _percentile(sorted_vals, q):
+        """Linear-interpolation percentile (q in 0..1) on a pre-sorted list."""
+        if not sorted_vals:
+            return None
+        if len(sorted_vals) == 1:
+            return sorted_vals[0]
+        pos = q * (len(sorted_vals) - 1)
+        lo = int(pos)
+        hi = min(lo + 1, len(sorted_vals) - 1)
+        frac = pos - lo
+        return sorted_vals[lo] + (sorted_vals[hi] - sorted_vals[lo]) * frac
+
+    data = []
+    for model in valid_models:
+        vals = [
+            row['p'] for row in db.execute(
+                """
+                SELECT CAST(r.program_expense_pct AS FLOAT) as p
+                FROM v4_scores v
+                LEFT JOIN registry_enriched r ON v.EIN = r.EIN
+                WHERE v.operating_model = ?
+                  AND r.program_expense_pct IS NOT NULL
+                ORDER BY r.program_expense_pct
+                """,
+                [model],
+            ).fetchall()
         ]
-    })
+        if not vals:
+            continue
+        median = _percentile(vals, 0.5)
+        p25 = _percentile(vals, 0.25)
+        p75 = _percentile(vals, 0.75)
+        data.append({
+            'operating_model': model,
+            'count': len(vals),
+            'median_program_spend': round(median, 1) if median is not None else None,
+            'p25_program_spend': round(p25, 1) if p25 is not None else None,
+            'p75_program_spend': round(p75, 1) if p75 is not None else None,
+        })
+
+    return jsonify({'data': data})
 
 @app.route('/api/research/metadata')
 @limiter.exempt

@@ -37,9 +37,9 @@ export default function ResearchSpending({
             result.data.map((item: any) => ({
               name: item.operating_model.replace(/_/g, ' '),
               model: item.operating_model,
-              avg: item.avg_program_spend || 0,
-              min: item.min_program_spend || 0,
-              max: item.max_program_spend || 0,
+              median: item.median_program_spend || 0,
+              p25: item.p25_program_spend || 0,
+              p75: item.p75_program_spend || 0,
               count: item.count,
             }))
           )
@@ -60,8 +60,8 @@ export default function ResearchSpending({
       return (
         <div className="bg-deep-navy text-warm-cream p-3 rounded shadow-lg text-sm border border-soft-gold">
           <p className="font-semibold">{item.name}</p>
-          <p className="text-xs text-cool-grey mt-1">Average spending: <span className="text-soft-gold font-bold">{item.avg.toFixed(1)}%</span></p>
-          <p className="text-xs text-cool-grey">Range: {item.min.toFixed(1)}% – {item.max.toFixed(1)}%</p>
+          <p className="text-xs text-cool-grey mt-1">Median spending: <span className="text-soft-gold font-bold">{item.median.toFixed(1)}%</span></p>
+          <p className="text-xs text-cool-grey">Middle 50%: {item.p25.toFixed(1)}% – {item.p75.toFixed(1)}%</p>
           <p className="text-xs text-cool-grey mt-1">{item.count.toLocaleString()} orgs</p>
         </div>
       )
@@ -76,8 +76,8 @@ export default function ResearchSpending({
       </h2>
 
       <p className="text-cool-grey mb-8 max-w-2xl">
-        Average percentage of revenue spent directly on programs (vs. admin/overhead) for each operating model.
-        Range shows the distribution: some organizations in each model spend more on programs, others less.
+        Median percentage of revenue spent directly on programs (vs. admin/overhead) for each operating model.
+        The middle-50% range shows how organizations within each model spread out around that median.
       </p>
 
       {loading ? (
@@ -106,8 +106,8 @@ export default function ResearchSpending({
               <Tooltip content={<CustomTooltip />} />
               <Legend />
               <Bar
-                dataKey="avg"
-                name="Average Spending"
+                dataKey="median"
+                name="Median Program Spending"
                 fill="#D4B968"
                 radius={[8, 8, 0, 0]}
               />
@@ -132,10 +132,10 @@ export default function ResearchSpending({
             </div>
             <div className="space-y-1">
               <p className="text-xs text-cool-grey">
-                <span className="font-semibold text-soft-gold">{item.avg.toFixed(1)}%</span> avg spending
+                <span className="font-semibold text-soft-gold">{item.median.toFixed(1)}%</span> median spending
               </p>
               <p className="text-xs text-cool-grey/70">
-                Range: {item.min.toFixed(1)}% – {item.max.toFixed(1)}%
+                Middle 50%: {item.p25.toFixed(1)}% – {item.p75.toFixed(1)}%
               </p>
               <p className="text-xs text-cool-grey/70">
                 {item.count.toLocaleString()} organizations

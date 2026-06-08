@@ -69,10 +69,10 @@ export default function GuidesPage() {
               The <strong className="text-deep-navy font-semibold">Daanaa score</strong> is a peer percentile, a number from 0 to 100 that shows how this organization compares financially to similar nonprofits doing similar work at similar scale. A score of 80 means it outperforms 80% of its peers. This is not a grade on a curve. It is a ranking within a carefully constructed peer group defined by NTEE subcategory and revenue band.
             </p>
             <p>
-              The <strong className="text-deep-navy font-semibold">visibility tier</strong> (Beacon → Seed) reflects how much public data backs the profile today. A Beacon has a current 990 on file, a mission statement, an active website, and strong peer financial context. A Seed is an IRS-registered nonprofit with little financial detail yet in public records. The tier is a transparency signal, not a quality verdict.
+              The <strong className="text-deep-navy font-semibold">visibility tier</strong> (Beacon → Spark) reflects how much public data backs the profile today. A Beacon has a current 990 on file, a mission statement, an active website, and strong peer financial context. A Spark is an IRS-registered nonprofit with little financial detail yet in public records. The tier is a transparency signal, not a quality verdict.
             </p>
             <Tip>
-              A high Daanaa score in a Seed tier means the organization is financially strong next to its peers, but has limited public data. That combination often describes a well run small organization that hasn't filed a full 990. With revenue under $50,000 they file a short 990-N postcard instead.
+              A high Daanaa score in a Spark tier means the organization is financially strong next to its peers, but has limited public data. That combination often describes a well run small organization that hasn't filed a full 990. With revenue under $50,000 they file a short 990-N postcard instead.
             </Tip>
             <p>
               Each profile also shows a <strong className="text-deep-navy font-semibold">data vintage</strong>, the fiscal year and source of the financial figures. A "FY 2022 · IRS" badge means the revenue figure is from the organization's 2022 tax return. Always check the vintage before making a large gift.

@@ -7,7 +7,7 @@ export default function ResearchAbout() {
         <div>
           <h3 className="text-xl font-semibold text-deep-navy mb-3">Our Mission</h3>
           <p>
-            Daanaa means "wise" in Somali. We help you discover the invisible 97%—the
+            Daanaa means wise. We help you discover the invisible 97%—the
             thousands of effective nonprofits doing world-changing work in quiet corners,
             far from major donors and foundation awareness.
           </p>
