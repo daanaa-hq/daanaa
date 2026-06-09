@@ -1018,19 +1018,34 @@ def get_financials(ein):
         return jsonify({"error": "Invalid EIN"}), 400
 
     db = get_db()
-    rows = db.execute("""
-        SELECT tax_prd_yr, totrevenue, totfuncexpns, totassetsend,
-               totliabend, totnetassetend, totcntrbgfts, totprgmrevnue,
-               compnsatncurrofcr, pdf_url
-        FROM propublica_financials
+    # propublica_financials was removed; serve single-year data from registry_enriched
+    row = db.execute("""
+        SELECT latest_tax_year, total_revenue, total_expenses, total_assets,
+               total_liabilities, net_assets
+        FROM registry_enriched
         WHERE EIN = ?
-        ORDER BY tax_prd_yr ASC
-    """, (ein_clean,)).fetchall()
+        LIMIT 1
+    """, (ein_clean,)).fetchone()
 
+    if not row or row['latest_tax_year'] is None:
+        return jsonify({"ein": ein_clean, "financials": [], "total": 0})
+
+    record = {
+        "tax_prd_yr": row["latest_tax_year"],
+        "totrevenue": row["total_revenue"],
+        "totfuncexpns": row["total_expenses"],
+        "totassetsend": row["total_assets"],
+        "totliabend": row["total_liabilities"],
+        "totnetassetend": row["net_assets"],
+        "totcntrbgfts": None,
+        "totprgmrevnue": None,
+        "compnsatncurrofcr": None,
+        "pdf_url": None,
+    }
     return jsonify({
         "ein": ein_clean,
-        "financials": [dict(r) for r in rows],
-        "total": len(rows),
+        "financials": [record],
+        "total": 1,
     })
 
 @app.route('/api/ntee-categories')
