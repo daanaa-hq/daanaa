@@ -102,3 +102,16 @@ prevents recurrence.** Never make the same mistake twice. Consolidate into
 - **Rule:** When changing a social preview image, change the FILENAME (cache-bust, e.g.
   `og-image-v2.png`), use absolute `https://` URLs in og/twitter tags, and expect the
   preview in an already-shared conversation to lag until its cache expires.
+
+## 2026-06-09 — FAISS index build OOM-killed on a memory-constrained box
+**Symptom:** `build_faiss_index.py` got SIGKILL'd (empty log, no output) building the
+~1.85M-vector index, while :5000 (gunicorn, ~6GB preloaded embeddings) ran and swap was full.
+**Root cause:** it built a Python list of 1.85M arrays then `np.array()`'d it (~3x peak),
+and `fetchall()` pulled all blobs into RAM. Even after switching to a single preallocated
+7.4GB array, that plus gunicorn's 6GB exceeded 30GB RAM with swap already full → OOM.
+**Fix:** stream embeddings into a **disk-backed `np.memmap`** (normalize-on-write), train PQ
+on a 50K sample, add to the index in 100K batches via `np.ascontiguousarray`. Peak RAM ~1GB,
+coexists with :5000. Delete the memmap after build (never ship it). Also: `FAISS_PQ=1`
+(IndexIVFPQ m=64) shrank the index 6.3GB→128MB.
+**Preventing rule:** for any batch job that must run alongside the live :5000 API on this
+30GB box, never hold a full embedding matrix in RAM — memmap it, sample-train, batch-add.

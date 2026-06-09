@@ -4,7 +4,7 @@ from pathlib import Path
 from collections import defaultdict
 
 BASE = Path.home() / "meritgiving"
-DB_PATH = BASE / "data" / "db" / "merit.db"
+DB_PATH = BASE / "data" / "merit_registry.db"  # Fixed: was pointing to abandoned /data/db/merit.db
 PROGRESS_FILE = BASE / "data" / "ingest_progress.json"
 LOG_FILE = BASE / "logs" / "auto_ingest.log"
 

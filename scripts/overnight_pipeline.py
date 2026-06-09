@@ -133,6 +133,37 @@ def run_revocation_check():
         log('Revocation check error: ' + str(e))
 
 
+def run_v4_scorer():
+    """Run merit_scorer_v4_0 to keep scores fresh. Logs but doesn't fail pipeline if scorer errors."""
+    try:
+        import subprocess
+        log('Running merit_scorer_v4_0...')
+        scorer_script = Path.home() / 'meritgiving' / 'scripts' / 'merit_scorer_v4_0.py'
+        scores_file = Path.home() / 'meritgiving' / f'scores_v4_0_{datetime.now().strftime("%Y%m%d")}.json'
+
+        result = subprocess.run(
+            ['python3', str(scorer_script), '--output', str(scores_file)],
+            capture_output=True, text=True, timeout=14400,  # 4 hour timeout
+        )
+
+        if result.returncode == 0 and scores_file.exists():
+            log(f'✅ Scorer completed: {scores_file}')
+            # Load scores into DB
+            load_script = Path.home() / 'meritgiving' / 'scripts' / 'load_v4_scores.py'
+            load_result = subprocess.run(
+                ['python3', str(load_script), str(scores_file)],
+                capture_output=True, text=True, timeout=600,
+            )
+            if load_result.returncode == 0:
+                log('✅ Scores loaded into registry_enriched')
+            else:
+                log(f'⚠️  Scorer loaded but score import failed: {load_result.stderr[:200]}')
+        else:
+            log(f'⚠️  Scorer error (non-fatal, pipeline continues): {result.stderr[:200]}')
+    except Exception as e:
+        log(f'⚠️  Scorer exception (non-fatal): {str(e)[:100]}')
+
+
 def main():
     log('=' * 60)
     log('Overnight Pipeline Started')
@@ -154,6 +185,10 @@ def main():
             log('Progress: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
     log('=' * 60)
     log('Complete: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
+    log('=' * 60)
+    # Re-score with v4.0 if any data changed (non-blocking)
+    log('Running merit_scorer_v4_0 to keep scores fresh...')
+    run_v4_scorer()
     log('=' * 60)
 
 if __name__ == '__main__':

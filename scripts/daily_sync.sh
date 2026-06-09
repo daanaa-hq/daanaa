@@ -1,6 +1,9 @@
 #!/bin/bash
+# RETIRED 2026-06-09 — legacy TiDB pipeline, removed from cron. Credential scrubbed:
+# DATABASE_URL must come from a gitignored .env file, never hardcoded. The old
+# credential was leaked in git history and MUST be rotated in the TiDB/Aliyun console.
 set -e
-export DATABASE_URL="[REDACTED_ROTATED_CREDENTIAL]"
+[ -f "$HOME/meritgiving/.env" ] && set -a && . "$HOME/meritgiving/.env" && set +a
 export PATH="$HOME/.local/bin:$PATH"
 BASE="$HOME/meritgiving"
 LOG="$BASE/logs/sync-$(date +%Y%m%d).log"

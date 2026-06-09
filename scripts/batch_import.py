@@ -1,8 +1,6 @@
-export DATABASE_URL="***REDACTED_ROTATED_CREDENTIAL***"rejectUnauthorized":true}"
-
-cd ~/meritgiving
-python3 scripts/batch_import.py
 #!/usr/bin/env python3
+# Credential scrubbed 2026-06-09. DATABASE_URL now comes only from env or a
+# gitignored .env file (see DB_URL loading below). Legacy TiDB pipeline (retired).
 import os, sys, csv, json, time
 from pathlib import Path
 from datetime import datetime

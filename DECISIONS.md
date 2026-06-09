@@ -85,3 +85,29 @@ normal ~3-4% NTEE ambiguity, not real reclassifications or a pipeline bug. Chose
 by real data changes (new financials from enrichment), not NTEE source noise. Rejected: blindly
 adopting BMF NTEE as "more current" (no evidence it's more correct than the filing code).
 If we ever reconcile NTEE, do it with an explicit source-priority rule, not a blind overwrite.
+
+## 2026-06-09 — Sandboxed, snapshot-based droplet deploy (never ship the live DB)
+Chose `scripts/safe_deploy_droplet.sh`: snapshot the live DB via SQLite's online `.backup`
+API, run `PRAGMA integrity_check` as a hard gate, precompute from the snapshot into a scratch
+sandbox (env vars MERIT_DB_PATH / PRECOMPUTE_OUT), disk-guard the droplet BEFORE transfer, then
+atomic v0/v1 swap with auto-rollback. Why: the 2026-06-06 corruption came from `gzip`-ing the
+live WAL-mode DB file directly (torn snapshot), and the 2026-06-09 lockup came from shipping that
+7GB DB to a droplet that doesn't even use SQLite, filling it to 100%. The droplet serves precompute
+static files only. Rejected: retiring `sync_db_to_droplet.sh` keeps the live-file gzip path around
+(it should be deleted). The new pipeline never disturbs :5000 and never lets corrupt/oversized data reach prod.
+
+## 2026-06-09 — Quantize the semantic index (IVFPQ) to fit the droplet's disk budget
+Chose FAISS_PQ=1 (IndexIVFPQ, ~64 bytes/vector) over the current IndexIVFFlat (4KB/vector fp32):
+shrinks faiss_index.bin ~60x (6.3G -> ~150-300M), dropping the precompute payload from ~12G to ~5G
+so it fits the 33G droplet with room for the atomic v0/v1 backup. Why: an IVFFlat full-precision
+index is overkill for "similar orgs" surfacing; PQ recall loss is negligible at this task. Rejected:
+resizing the droplet (recurring cost) and dropping semantic search (loses a feature). Revisit M if recall feels off.
+
+## 2026-06-09 — Public display = active + tax-deductible only (exclude IRS-revoked)
+Chose to surface only `deductibility=1 AND org_status='active'` (~1.97M of 2.06M) in
+precompute browse/orgs. Why: donating to a revoked org is NOT tax-deductible — showing the
+96,247 IRS-auto-revoked orgs as donatable would mislead donors (fail-closed per stewardship +
+REVOCATION_PROTOCOL). All rows are deductibility=1 & subsection='3', so org_status is the
+operative filter. Similar-org links are auto-safe (validated against the filtered set).
+Rejected: showing revoked orgs flagged-but-visible (donor-confusion risk; revisit later as a
+"status revoked" info page for direct EIN lookups, never in browse).
