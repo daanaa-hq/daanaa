@@ -73,3 +73,15 @@ Rejected: separate endpoints for each format, or forcing frontend to always send
 
 ## 2026-06-05 — Pre-computed static results architecture (replaces live database queries)
 Chose weekly pre-compute pipeline on home server (Sunday 22:00) that generates: (1) browse results for all 26 NTEE × 50 states combos (~100MB), (2) 1.8M org detail pages with similar orgs (~3.2GB), (3) static content pages homepage/methodology/sector-health/guides/faqs/about/legal (~50MB), (4) FAISS approximate NN index from 1.8M embeddings (~300MB). Total ~3.8GB gzipped delivered to droplet Sunday 23:00, atomically swapped (v1→v0, v2→v1) with zero-downtime rollback. Droplet API serves all files as static JSON (50-200ms vs current 2-10s database queries). Why: (1) Eliminates 19GB database sync bottleneck + embeddings reload on every worker restart, (2) 10-20x faster response times, (3) Static files are cache-friendly and require no query optimization, (4) Weekly update cycle matches nonprofit data change frequency (IRS filings ~annual, org updates ~weekly), (5) Simple rollback: v0 kept for 7 days, (6) Daily claims merge on-the-fly for org detail endpoint. Rejected: keeping live database queries (too slow on droplet), daily full pre-compute (excessive compute, nonprofit data doesn't change that fast), FAISS on every server (300MB resident memory × N workers vs one index file).
+
+## 2026-06-08 — Do NOT overwrite SOI-derived NTEE with BMF NTEE (or rescore on it)
+The June BMF disagreed with our existing NTEE1 on 66,569 orgs (45,467 scored). Investigation:
+86% of our existing codes came from irs_soi (the 990 filing extract), only 4% of the BMF "new"
+codes are Z/unknown, and the letter transitions are scattered with no pattern. Conclusion: this
+is IRS-vs-IRS source disagreement (BMF master classification vs 990-filing classification) — the
+normal ~3-4% NTEE ambiguity, not real reclassifications or a pipeline bug. Chose to KEEP the
+298K NTEE *fills* (empty -> BMF code = pure gain) but HOLD the flips and NOT rescore on them
+(would churn ~45K scores by swapping one IRS opinion for another). Rebalancing should be driven
+by real data changes (new financials from enrichment), not NTEE source noise. Rejected: blindly
+adopting BMF NTEE as "more current" (no evidence it's more correct than the filing code).
+If we ever reconcile NTEE, do it with an explicit source-priority rule, not a blind overwrite.
