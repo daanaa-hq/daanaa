@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-06-09T08:02:33.000174+00:00",
+  "generated_at": "2026-06-09T10:30:01.780046+00:00",
   "categories": {
     "A": {
       "id": "A",
       "name": "Arts & Culture",
-      "totalOrgs": 138011,
+      "totalOrgs": 139205,
       "withContext": 33830,
       "topStates": [
         {
           "state": "CA",
-          "count": 16877
+          "count": 17033
         },
         {
           "state": "NY",
-          "count": 12485
+          "count": 12564
         },
         {
           "state": "TX",
-          "count": 8552
+          "count": 8614
         },
         {
           "state": "FL",
-          "count": 6764
+          "count": 6816
         },
         {
           "state": "PA",
-          "count": 5343
+          "count": 5394
         }
       ],
       "featured": [
@@ -55,28 +55,28 @@
     "B": {
       "id": "B",
       "name": "Education",
-      "totalOrgs": 217233,
+      "totalOrgs": 220916,
       "withContext": 51670,
       "topStates": [
         {
           "state": "CA",
-          "count": 24620
+          "count": 24927
         },
         {
           "state": "TX",
-          "count": 19223
+          "count": 19401
         },
         {
           "state": "NY",
-          "count": 12172
+          "count": 12505
         },
         {
           "state": "FL",
-          "count": 11705
+          "count": 11848
         },
         {
           "state": "PA",
-          "count": 8392
+          "count": 8538
         }
       ],
       "featured": [
@@ -106,28 +106,28 @@
     "C": {
       "id": "C",
       "name": "Environment",
-      "totalOrgs": 33489,
+      "totalOrgs": 34416,
       "withContext": 8225,
       "topStates": [
         {
           "state": "CA",
-          "count": 3931
+          "count": 4035
         },
         {
           "state": "NY",
-          "count": 1932
+          "count": 1964
         },
         {
           "state": "FL",
-          "count": 1802
+          "count": 1836
         },
         {
           "state": "TX",
-          "count": 1525
+          "count": 1582
         },
         {
           "state": "MA",
-          "count": 1418
+          "count": 1439
         }
       ],
       "featured": [
@@ -157,28 +157,28 @@
     "D": {
       "id": "D",
       "name": "Animals",
-      "totalOrgs": 45098,
+      "totalOrgs": 45868,
       "withContext": 8550,
       "topStates": [
         {
           "state": "CA",
-          "count": 5119
+          "count": 5208
         },
         {
           "state": "TX",
-          "count": 3526
+          "count": 3579
         },
         {
           "state": "FL",
-          "count": 3416
+          "count": 3444
         },
         {
           "state": "NY",
-          "count": 2142
+          "count": 2178
         },
         {
           "state": "PA",
-          "count": 1663
+          "count": 1705
         }
       ],
       "featured": [
