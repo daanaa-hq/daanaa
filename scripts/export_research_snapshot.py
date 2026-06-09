@@ -20,7 +20,7 @@ import json
 import os
 from datetime import datetime
 
-DB_PATH = "/home/akbar/meritgiving/data/merit_registry.db"
+DB_PATH = os.environ.get("MERIT_DB_PATH", "/home/akbar/meritgiving/data/merit_registry.db")
 OUT_PATH = "/home/akbar/meritgiving/frontend/public/research-snapshot.json"
 
 VALID_MODELS = [

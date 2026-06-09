@@ -2,10 +2,10 @@
 """
 Populate is_hidden_gem on registry_enriched.
 
-Definition (agreed 2026-06-08): a hidden gem is a SMALL org that ranks HIGH among
-its true peers and has enough public data to trust:
+Definition (revised 2026-06-09): a hidden gem is a SMALL org that ranks HIGH among
+its true peers and has verified financial data:
   - merit_score >= 85   (top ~15% within its operating-model + revenue-band cell)
-  - total_revenue < 500000  (small — the "you'd never stumble on it" part)
+  - total_revenue > 0 AND total_revenue < 500000  (small with verified revenue data)
   - mission present  (it has a readable story)
 
 Sizing at definition time: 32,881 gems total, 5,817 in Education. The top picks are
@@ -29,7 +29,7 @@ PY = str(BASE / "venv" / "bin" / "python3")
 STOP_PATTERNS = ["scripts/cpu_night.sh", "scripts/donation_link_pipeline.py",
                  "scripts/web_finder_agent.py", "scripts/reembed_watchdog.py"]
 
-GEM = ("merit_score >= 85 AND total_revenue < 500000 "
+GEM = ("merit_score >= 85 AND total_revenue > 0 AND total_revenue < 500000 "
        "AND mission IS NOT NULL AND TRIM(mission) <> ''")
 
 
