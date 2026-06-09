@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-06-09T01:55:57.498276+00:00",
+  "generated_at": "2026-06-09T08:02:33.000174+00:00",
   "categories": {
     "A": {
       "id": "A",
       "name": "Arts & Culture",
-      "totalOrgs": 138019,
+      "totalOrgs": 138011,
       "withContext": 33830,
       "topStates": [
         {
           "state": "CA",
-          "count": 16878
+          "count": 16877
         },
         {
           "state": "NY",
-          "count": 12486
+          "count": 12485
         },
         {
           "state": "TX",
@@ -25,7 +25,7 @@
         },
         {
           "state": "PA",
-          "count": 5344
+          "count": 5343
         }
       ],
       "featured": [
@@ -34,7 +34,7 @@
           "name": "PARTNERS IN PLAY INC",
           "city": "POWELL",
           "state": "OH",
-          "blurb": "\u201c To help create an environment that builds on the strength of all children and those who care for them and to promote each individuals potential for growth."
+          "blurb": "To help create an environment that builds on the strength of all children and those who care for them and to promote each individuals potential for growth."
         },
         {
           "ein": "020516702",
@@ -55,12 +55,12 @@
     "B": {
       "id": "B",
       "name": "Education",
-      "totalOrgs": 217238,
+      "totalOrgs": 217233,
       "withContext": 51670,
       "topStates": [
         {
           "state": "CA",
-          "count": 24626
+          "count": 24620
         },
         {
           "state": "TX",
@@ -68,15 +68,15 @@
         },
         {
           "state": "NY",
-          "count": 12173
+          "count": 12172
         },
         {
           "state": "FL",
-          "count": 11707
+          "count": 11705
         },
         {
           "state": "PA",
-          "count": 8390
+          "count": 8392
         }
       ],
       "featured": [
@@ -106,7 +106,7 @@
     "C": {
       "id": "C",
       "name": "Environment",
-      "totalOrgs": 33492,
+      "totalOrgs": 33489,
       "withContext": 8225,
       "topStates": [
         {

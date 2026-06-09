@@ -32,6 +32,16 @@ GEM = ("merit_score >= 85 AND total_revenue < 500000 "
 
 FEATURED_PER_CATEGORY = 3
 
+
+def clean_blurb(mission: str, limit: int = 160) -> str:
+    """Tidy a raw mission for display: strip leading quotes/punctuation/space and
+    truncate at a word boundary with an ellipsis (no mid-word cuts)."""
+    s = (mission or "").strip().lstrip("\"'“”‘’ \t").strip()
+    if len(s) <= limit:
+        return s
+    cut = s[:limit].rsplit(" ", 1)[0].rstrip(",.;:")
+    return cut + "…"
+
 NTEE1_NAMES = {
     'A': 'Arts & Culture', 'B': 'Education', 'C': 'Environment', 'D': 'Animals',
     'E': 'Health', 'F': 'Mental Health', 'G': 'Disease & Disorders', 'H': 'Medical Research',
@@ -79,7 +89,7 @@ def main():
             featured.append({
                 "ein": ein, "name": (name or "").strip(),
                 "city": (city or "").strip(), "state": (state or "").strip(),
-                "blurb": (mission or "").strip()[:160],
+                "blurb": clean_blurb(mission),
             })
         out["categories"][c] = {
             "id": c, "name": NTEE1_NAMES.get(c, c),
