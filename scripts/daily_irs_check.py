@@ -131,9 +131,15 @@ def main():
     c.close()
     run([py, "scripts/sandbox_bmf_validate.py", "--sandbox", str(sandbox), "--bmf", str(BMF_CSV)])
 
-    # 3) apply only genuinely-new orgs via stop->apply->restart (the approach that
-    #    actually beats the writer contention; SIGSTOP/retry both starve — see LESSONS)
+    # 3) apply genuinely-new orgs via stop->apply->restart (the approach that actually
+    #    beats the writer contention; SIGSTOP/retry both starve — see LESSONS)
     run([py, "scripts/refresh_bmf_apply.py"])
+
+    # 4) refresh existing orgs non-disruptively: fill missing NTEE, update names, and
+    #    recompute the REVERSIBLE closure flags (irs_revoked / bmf_present). Reinstated
+    #    or re-listed orgs un-flag automatically next run — no rework, nothing deleted.
+    #    (NTEE *changes* on scored orgs are deliberately left for a separate rescore pass.)
+    run([py, "scripts/refresh_bmf_existing.py", "--live"])
 
     # 4) record marker
     state["bmf_last_modified"] = lm_iso
