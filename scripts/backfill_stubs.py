@@ -155,22 +155,25 @@ def _pp_fetch(ein: str) -> dict | None:
         return None
 
 
-def phase2(db, limit=None):
+def phase2(db, limit=None, only_source=None):
     print("[phase 2] ProPublica API → mission, financials, NTEE", flush=True)
+    src_clause = "source = '%s'" % only_source if only_source else "source IN ('bmf_stub', 'IRS_BMF')"
 
-    # Target stubs with older ruling dates — more likely to have 990 filings
-    rows = db.execute("""
+    # Cover both stub conventions: bmf_stub AND IRS_BMF (the daily-watch import
+    # labels new orgs IRS_BMF). The mission-IS-NULL filter naturally targets only
+    # un-missioned stubs, so already-handled orgs are skipped. Oldest-ruling first
+    # (more likely to have 990 financials on file at ProPublica).
+    rows = db.execute(f"""
         SELECT EIN FROM registry_enriched
-        WHERE source='bmf_stub'
+        WHERE {src_clause}
           AND (mission IS NULL OR mission='')
-          AND ruling_date < '2015'
         ORDER BY ruling_date ASC
     """).fetchall()
 
     targets = [r[0] for r in rows]
     if limit:
         targets = targets[:limit]
-    print(f"  {len(targets):,} stubs targeted (ruling before 2015)", flush=True)
+    print(f"  {len(targets):,} stubs targeted ({src_clause}, no mission)", flush=True)
 
     hits = 0
     misses = 0
@@ -201,7 +204,7 @@ def phase2(db, limit=None):
                   total_revenue=CASE WHEN ? IS NOT NULL THEN ? ELSE total_revenue END,
                   total_assets=CASE WHEN ? IS NOT NULL THEN ? ELSE total_assets END,
                   data_source=CASE WHEN ? IS NOT NULL THEN 'propublica' ELSE data_source END
-                WHERE EIN=? AND source='bmf_stub'
+                WHERE EIN=? AND source IN ('bmf_stub', 'IRS_BMF')
             """, (nteecc, nteecc, ntee1, ntee1, mission, mission,
                   website, website, revenue, revenue, assets, assets,
                   mission or website, ein))
@@ -225,6 +228,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--phase", type=int, choices=[1, 2], help="Run only this phase")
     parser.add_argument("--limit", type=int, help="Stop after N stubs per phase")
+    parser.add_argument("--source", help="Restrict to one source label (e.g. IRS_BMF)")
     args = parser.parse_args()
 
     db = connect()
@@ -232,7 +236,7 @@ def main():
     if args.phase in (None, 1):
         phase1(db, limit=args.limit)
     if args.phase in (None, 2):
-        phase2(db, limit=args.limit)
+        phase2(db, limit=args.limit, only_source=args.source)
 
     print("\n[backfill complete]", flush=True)
 
