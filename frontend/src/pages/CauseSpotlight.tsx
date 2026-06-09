@@ -11,6 +11,7 @@ export default function CauseSpotlight() {
   const cat = NTEE_CATEGORIES.find(c => c.id === code)
   const meta = FEATURED_META[code]
   const [data, setData] = useState<SpotlightData | null>(null)
+  const [asOf, setAsOf] = useState<string>('')
   const [loading, setLoading] = useState(true)
 
   usePageMeta(
@@ -20,7 +21,7 @@ export default function CauseSpotlight() {
 
   useEffect(() => {
     loadCauseSpotlights()
-      .then(f => setData(f.categories[code] ?? null))
+      .then(f => { setData(f.categories[code] ?? null); setAsOf(f.generated_at || '') })
       .catch(() => setData(null))
       .finally(() => setLoading(false))
   }, [code])
@@ -114,6 +115,12 @@ export default function CauseSpotlight() {
           <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.7] max-w-[680px]">
             Small {cat.name.toLowerCase()} organizations doing quiet, steady work, far from the spotlight.
           </p>
+          <p className="mt-3 font-body text-[13px] text-cool-grey/70 leading-[1.6] max-w-[680px]">
+            How these are chosen: smaller organizations (under $500K in revenue) that rank near the top
+            of their peer group for financial health, with a public mission on file. It is a starting
+            point for your own research, not a verdict.{' '}
+            <Link to="/methodology" className="text-soft-gold hover:underline">See how we measure this</Link>.
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
             {data.featured.map(org => (
@@ -142,6 +149,12 @@ export default function CauseSpotlight() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
             </Link>
           </div>
+
+          {asOf && (
+            <p className="mt-10 font-body text-[12px] text-cool-grey/60">
+              Based on public IRS data. Figures current as of {new Date(asOf).toLocaleDateString()}.
+            </p>
+          )}
         </div>
       </div>
     </div>

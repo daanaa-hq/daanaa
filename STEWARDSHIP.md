@@ -206,3 +206,4 @@ care, accountability, and humility.
 | Date | Reviewer | Finding | Status |
 |---|---|---|---|
 | 2026-05-20 | Claude Code | Full compliance review — see STEWARDSHIP_REVIEW.md | Completed |
+| 2026-06-09 | Claude Code | Bi-weekly cause spotlight (/causes/:id) review. Strong P4 alignment (it is the cited hidden-gems implementation; fixed rotation gives every cause equal turns). P1/P5/P7/P10 pass (algorithmic selection, additive framing, no curation, deterministic). Gap found on P3+P9: featured "hidden gems" shown without their reviewable basis. Fixed: added on-page selection criteria (small + top peer-group rank + public mission), "starting point, not a verdict" framing, a methodology link, and a data-freshness date. | Completed |
