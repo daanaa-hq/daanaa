@@ -59,6 +59,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
               { label: 'Stewardship', path: '/stewardship' },
               { label: 'Guides', path: '/guides' },
               { label: 'About', path: '/about' },
+              { label: 'For Nonprofits', path: '/for-nonprofits' },
             ].map((item) => (
               <Link
                 key={item.path}
