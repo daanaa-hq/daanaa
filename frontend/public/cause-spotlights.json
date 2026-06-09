@@ -1,0 +1,209 @@
+{
+  "generated_at": "2026-06-09T01:55:57.498276+00:00",
+  "categories": {
+    "A": {
+      "id": "A",
+      "name": "Arts & Culture",
+      "totalOrgs": 138019,
+      "withContext": 33830,
+      "topStates": [
+        {
+          "state": "CA",
+          "count": 16878
+        },
+        {
+          "state": "NY",
+          "count": 12486
+        },
+        {
+          "state": "TX",
+          "count": 8552
+        },
+        {
+          "state": "FL",
+          "count": 6764
+        },
+        {
+          "state": "PA",
+          "count": 5344
+        }
+      ],
+      "featured": [
+        {
+          "ein": "043688436",
+          "name": "PARTNERS IN PLAY INC",
+          "city": "POWELL",
+          "state": "OH",
+          "blurb": "\u201c To help create an environment that builds on the strength of all children and those who care for them and to promote each individuals potential for growth."
+        },
+        {
+          "ein": "020516702",
+          "name": "YEOMANS FUND FOR THE ARTS",
+          "city": "WONALANCET",
+          "state": "NH",
+          "blurb": "Supports and promotes arts and cultural programs in Wonalancet."
+        },
+        {
+          "ein": "043654171",
+          "name": "BRADFORD OHIO RAILROAD MUSEUM INC",
+          "city": "BRADFORD",
+          "state": "OH",
+          "blurb": "Preserves and promotes the history of the Bradford Ohio Railroad through educational programs and exhibits."
+        }
+      ]
+    },
+    "B": {
+      "id": "B",
+      "name": "Education",
+      "totalOrgs": 217238,
+      "withContext": 51670,
+      "topStates": [
+        {
+          "state": "CA",
+          "count": 24626
+        },
+        {
+          "state": "TX",
+          "count": 19223
+        },
+        {
+          "state": "NY",
+          "count": 12173
+        },
+        {
+          "state": "FL",
+          "count": 11707
+        },
+        {
+          "state": "PA",
+          "count": 8390
+        }
+      ],
+      "featured": [
+        {
+          "ein": "363915742",
+          "name": "SUNSET RIDGE SCHOOL DISTRICT 29 FOUNDATION",
+          "city": "NORTHFIELD",
+          "state": "IL",
+          "blurb": "Supports educational programs and facilities in Sunset Ridge School District 29 in Northfield, IL."
+        },
+        {
+          "ein": "030572516",
+          "name": "FRIENDS OF THE FAYETTEVILLE-LINCOLN COUNTY PUBLIC LIBRARY ASSOCIATION",
+          "city": "FAYETTEVILLE",
+          "state": "TN",
+          "blurb": "Supports educational initiatives and activities at Fayetteville-Lincoln County Public Library."
+        },
+        {
+          "ein": "471694019",
+          "name": "LA GRANGE EDUCATION SUPPORT PROGRAM FOUNDATION",
+          "city": "LA GRANGE",
+          "state": "TX",
+          "blurb": "Supports educational programs and initiatives in La Grange, TX."
+        }
+      ]
+    },
+    "C": {
+      "id": "C",
+      "name": "Environment",
+      "totalOrgs": 33492,
+      "withContext": 8225,
+      "topStates": [
+        {
+          "state": "CA",
+          "count": 3931
+        },
+        {
+          "state": "NY",
+          "count": 1932
+        },
+        {
+          "state": "FL",
+          "count": 1802
+        },
+        {
+          "state": "TX",
+          "count": 1525
+        },
+        {
+          "state": "MA",
+          "count": 1418
+        }
+      ],
+      "featured": [
+        {
+          "ein": "043724571",
+          "name": "WEST HARTFORD LAND TRUST INC",
+          "city": "WEST HARTFORD",
+          "state": "CT",
+          "blurb": "Preserves open spaces and natural areas in West Hartford."
+        },
+        {
+          "ein": "066067127",
+          "name": "THE WOODBRIDGE LAND TRUST INCORPORATED",
+          "city": "WOODBRIDGE",
+          "state": "CT",
+          "blurb": "Manages land in Woodbridge, CT, to preserve natural areas and open spaces."
+        },
+        {
+          "ein": "841581860",
+          "name": "HIGH PLAINS FOUNDATION",
+          "city": "LOVELAND",
+          "state": "CO",
+          "blurb": "Promotes sustainable agricultural practices and conservation in Loveland, CO."
+        }
+      ]
+    },
+    "D": {
+      "id": "D",
+      "name": "Animals",
+      "totalOrgs": 45098,
+      "withContext": 8550,
+      "topStates": [
+        {
+          "state": "CA",
+          "count": 5119
+        },
+        {
+          "state": "TX",
+          "count": 3526
+        },
+        {
+          "state": "FL",
+          "count": 3416
+        },
+        {
+          "state": "NY",
+          "count": 2142
+        },
+        {
+          "state": "PA",
+          "count": 1663
+        }
+      ],
+      "featured": [
+        {
+          "ein": "813393657",
+          "name": "PET LOSS RESOURCE CENTER",
+          "city": "MADISON",
+          "state": "WI",
+          "blurb": "Provides resources and support for those experiencing pet loss in Wisconsin."
+        },
+        {
+          "ein": "061757168",
+          "name": "PEPPERMINT PIG ANIMAL RESCUE",
+          "city": "CINCINNATI",
+          "state": "OH",
+          "blurb": "Rescues and provides care for animals in need in Cincinnati and surrounding areas."
+        },
+        {
+          "ein": "561163492",
+          "name": "GASTON HUMANE SOCIETY INC",
+          "city": "GASTONIA",
+          "state": "NC",
+          "blurb": "Offers animal welfare services and care in Gastonia."
+        }
+      ]
+    }
+  }
+}

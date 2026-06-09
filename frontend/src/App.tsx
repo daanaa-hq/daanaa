@@ -16,6 +16,7 @@ const ForNonprofits = lazy(() => import('./pages/ForNonprofits'))
 // const GivingReview = lazy(() => import('./pages/GivingReview'))  // Giving List feature hidden
 // const GivingConfirmation = lazy(() => import('./pages/GivingConfirmation'))  // Giving List feature hidden
 const TiersPage = lazy(() => import('./pages/TiersPage'))
+const CauseSpotlight = lazy(() => import('./pages/CauseSpotlight'))
 const Methodology = lazy(() => import('./pages/Methodology2'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
@@ -50,6 +51,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/directory" element={<Directory />} />
             <Route path="/category/:id" element={<CategoryPage />} />
+            <Route path="/causes/:id" element={<CauseSpotlight />} />
             <Route path="/org/:id" element={<OrganizationDetail />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/legal" element={<Legal />} />

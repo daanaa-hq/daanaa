@@ -298,7 +298,7 @@ function FeaturedCause() {
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-9 md:py-12">
         <div className="flex flex-col md:flex-row items-center gap-7 md:gap-11">
           {/* Diamond logo */}
-          <Link to={`/category/${cat.id}`} className="shrink-0">
+          <Link to={`/causes/${cat.id}`} className="shrink-0">
             <img
               src={featured.logo}
               alt={`${cat.name} cause`}
@@ -336,7 +336,7 @@ function FeaturedCause() {
 
           {/* CTA */}
           <Link
-            to={`/category/${cat.id}`}
+            to={`/causes/${cat.id}`}
             className="shrink-0 inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-bold hover:bg-bright-gold transition-colors shadow-lg"
           >
             Explore {cat.name}
