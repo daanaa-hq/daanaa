@@ -18,6 +18,7 @@ import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
+import FinancialContext from '../components/FinancialContext'
 
 // ---- Revenue Bar Chart ----
 function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
@@ -945,6 +946,13 @@ export default function OrganizationDetail() {
                   <span className="font-body text-[11px] text-cool-grey">W-3 form headcount (NCCS)</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Financial Context Assessment — stewardship-aligned (P3, P4, P5, P6, P9) */}
+          {apiOrg! && (
+            <div className="mb-8">
+              <FinancialContext org={apiOrg!} />
             </div>
           )}
 

@@ -961,6 +961,25 @@ def get_organization(ein):
     except Exception:
         org['irs_status_verified_at'] = None
 
+    # Financial context assessment (stewardship-aligned framework)
+    try:
+        from scripts.financial_context_framework import assess_financial_context
+        fc = assess_financial_context(ein_clean)
+        org['financial_context'] = {
+            'status': fc.status,
+            'confidence': fc.confidence,
+            'months_reserve': fc.months_reserve,
+            'peer_model': fc.peer_model,
+            'peer_baseline': fc.peer_baseline,
+            'peer_healthy_range': fc.peer_healthy_range,
+            'gap_from_baseline': fc.gap_from_baseline,
+            'explanation': fc.explanation,
+            'data_issues': fc.data_issues,
+        }
+    except Exception as e:
+        app.logger.debug(f"Financial context assessment failed for {ein_clean}: {e}")
+        org['financial_context'] = None
+
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)

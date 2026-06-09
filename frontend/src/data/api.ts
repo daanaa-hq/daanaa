@@ -92,6 +92,18 @@ export interface ApiOrganization {
   state_category_total?: number;
   ntee1_rank?: number | null;
   state_ntee1_percentile?: number | null;
+  // Financial context — stewardship-aligned assessment (P3, P4, P5, P6, P9)
+  financial_context?: {
+    status: 'DATA_INCOMPLETE' | 'VERIFIED_HEALTHY' | 'FINANCIAL_NOTE';
+    confidence: 'LOW' | 'MEDIUM' | 'HIGH';
+    months_reserve: number | null;
+    peer_model: string;
+    peer_baseline: number;
+    peer_healthy_range: [number, number];
+    gap_from_baseline: number | null;
+    explanation: string;
+    data_issues: string[];
+  } | null;
 }
 
 export interface ApiCategory {
