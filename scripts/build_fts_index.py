@@ -3,11 +3,13 @@
 scripts/build_fts_index.py
 
 Builds (or rebuilds) the SQLite FTS5 full-text search index over
-registry_enriched. The index covers organization_name, mission,
-city, and state — enabling keyword search that actually matches on
-org content, not accidental substring matches in location fields.
+registry_enriched. The index covers organization name, mission, location,
+category, and cause tags — enabling semantic keyword search that surfaces
+relevant orgs by mission, not just name substring matches.
 
-Run after every IRS sync or when the registry changes significantly.
+Only indexes tax-deductible, active orgs (deductibility=1, org_status='active').
+
+Run after every major data update (IRS sync, re-scoring, enrichment).
 
 Usage:
     source ~/meritgiving/venv/bin/activate
@@ -22,6 +24,7 @@ import time
 from pathlib import Path
 
 DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
+BATCH_SIZE = 50000
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
 log = logging.getLogger(__name__)
@@ -57,34 +60,61 @@ def build(db: sqlite3.Connection, rebuild: bool) -> None:
                 mission,
                 city,
                 state,
+                category,
+                cause_tags,
                 tokenize = "unicode61 remove_diacritics 2"
             )
         """)
         db.commit()
         log.info("FTS5 table created.")
 
-        log.info("Populating from registry_enriched (1.8M rows, ~2 min)...")
+        log.info("Counting tax-deductible, active orgs...")
+        total = db.execute("""
+            SELECT COUNT(*) FROM registry_enriched
+            WHERE organization_name IS NOT NULL AND deductibility = 1 AND org_status = 'active'
+        """).fetchone()[0]
+        log.info(f"Indexing {total:,} orgs in batches of {BATCH_SIZE:,}...")
+
         t0 = time.time()
-        db.execute("""
-            INSERT INTO org_fts (ein, merit_tier, org_name, mission, city, state)
-            SELECT
-                EIN,
-                COALESCE(merit_tier, 'Spark'),
-                organization_name,
-                COALESCE(mission, ''),
-                COALESCE(CITY, ''),
-                COALESCE(STATE, '')
-            FROM registry_enriched
-            WHERE organization_name IS NOT NULL
-        """)
-        db.commit()
-        count = db.execute("SELECT COUNT(*) FROM org_fts").fetchone()[0]
+        offset = 0
+        inserted = 0
+
+        while offset < total:
+            db.execute("""
+                INSERT INTO org_fts (ein, merit_tier, org_name, mission, city, state, category, cause_tags)
+                SELECT
+                    EIN,
+                    COALESCE(merit_tier, 'Spark'),
+                    organization_name,
+                    COALESCE(mission, ''),
+                    COALESCE(CITY, ''),
+                    COALESCE(STATE, ''),
+                    NTEECC,
+                    COALESCE(cause_tags, '{}')
+                FROM registry_enriched
+                WHERE organization_name IS NOT NULL
+                  AND deductibility = 1
+                  AND org_status = 'active'
+                ORDER BY EIN
+                LIMIT ? OFFSET ?
+            """, (BATCH_SIZE, offset))
+            db.commit()
+
+            inserted += BATCH_SIZE
+            elapsed = time.time() - t0
+            rate = inserted / elapsed if elapsed > 0 else 0
+            eta_sec = (total - inserted) / rate if rate > 0 else 0
+            pct = 100.0 * inserted / total
+            log.info(f"  [{pct:5.1f}%] {inserted:,}/{total:,} — {rate:.0f} orgs/sec, ETA {eta_sec/60:.1f}min")
+
+            offset += BATCH_SIZE
+
         elapsed = time.time() - t0
-        log.info(f"Indexed {count:,} orgs in {elapsed:.0f}s")
+        count = db.execute("SELECT COUNT(*) FROM org_fts").fetchone()[0]
+        log.info(f"Indexed {count:,} orgs in {elapsed:.0f}s ({elapsed/60:.1f}min)")
     else:
         log.info("org_fts already exists. Use --rebuild to recreate.")
 
-    # Optimise the index
     log.info("Optimising FTS5 index...")
     db.execute("INSERT INTO org_fts(org_fts) VALUES('optimize')")
     db.commit()

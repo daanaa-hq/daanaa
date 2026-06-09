@@ -8,11 +8,12 @@ Runs on home server weekly; outputs ~50MB.
 import sqlite3
 import json
 import gzip
+import os
 from pathlib import Path
 from datetime import datetime
 
-DB_PATH = "data/merit_registry.db"
-OUTPUT_DIR = "precompute_output/content"
+DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
+OUTPUT_DIR = os.path.join(os.environ.get("PRECOMPUTE_OUT", "precompute_output"), "content")
 
 
 # NTEE categories for homepage stats
@@ -272,8 +273,8 @@ def main():
             at_risk_pct = (row['at_risk'] / row['has_reserve']) * 100
 
         sector = {
-            'code': row['NTEE1'],
-            'name': dict(CATEGORIES)[row['NTEE1']],
+            'code': row['NTEE1'] or 'UNKNOWN',
+            'name': dict(CATEGORIES).get(row['NTEE1'], 'Uncategorized') if row['NTEE1'] else 'Uncategorized',
             'total_orgs': row['total_orgs'],
             'has_reserve': row['has_reserve'],
             'avg_months_reserve': row['avg_months_reserve'],

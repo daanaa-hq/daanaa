@@ -8,6 +8,7 @@ Resumes from where it left off — skips existing files.
 import sqlite3
 import json
 import gzip
+import os
 import numpy as np
 from pathlib import Path
 from datetime import datetime
@@ -20,10 +21,11 @@ except ImportError:
     HAS_FAISS = False
     print("WARNING: faiss not installed — similar_orgs will be empty")
 
-DB_PATH = "data/merit_registry.db"
-FAISS_INDEX_PATH = "precompute_output/faiss_index.bin"
-EIN_MAP_PATH = "precompute_output/ein_map.json.gz"
-OUTPUT_DIR = "precompute_output/orgs"
+DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
+_OUT = os.environ.get("PRECOMPUTE_OUT", "precompute_output")
+FAISS_INDEX_PATH = os.path.join(_OUT, "faiss_index.bin")
+EIN_MAP_PATH = os.path.join(_OUT, "ein_map.json.gz")
+OUTPUT_DIR = os.path.join(_OUT, "orgs")
 SIMILAR_COUNT = 12
 BATCH_SIZE = 10000   # Process N orgs per FAISS batch search
 
@@ -91,15 +93,17 @@ def main():
         SELECT
             EIN, organization_name, NTEE1, NTEECC, CITY, STATE,
             total_revenue, ntee1_percentile, ntee1_total_orgs, source,
-            zipcode, address, revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
+            zipcode, NULL as address, revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
             latest_tax_year, data_source, updated_at, merit_tier, merit_score,
             merit_band, financial_health, months_of_reserve, net_assets,
             total_expenses, total_liabilities, employee_count, program_expense_pct,
-            ruling_date, nccs_year, mission, mission_source, website, website_status,
+            ruling_date, NULL as nccs_year, mission, mission_source, website, website_status,
             cause_tags, donate_url, donate_platform, donate_url_status,
-            activ1, activ2, activ3
+            NULL as activ1, NULL as activ2, NULL as activ3
         FROM registry_enriched
-        WHERE EIN IS NOT NULL AND deductibility = 1
+        -- Only generate pages for orgs where donating is currently tax-deductible:
+        -- deductible 501(c)(3) AND not IRS-revoked. Fail closed on revocation.
+        WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN
     """)
     all_rows = cursor.fetchall()
@@ -129,6 +133,13 @@ def main():
         try:
             index = faiss.read_index(FAISS_INDEX_PATH)
             index.nprobe = 32
+            # IVFPQ/IVFFlat need a direct map for reconstruct() (used to fetch each
+            # org's own vector). Without this, the quantized index falls back to
+            # empty similar_orgs. Harmless if already present.
+            try:
+                index.make_direct_map()
+            except Exception:
+                pass
             with gzip.open(EIN_MAP_PATH, 'rt') as f:
                 ein_map = json.load(f)  # {str(idx): ein}
             # Build position lookup: ein → faiss position

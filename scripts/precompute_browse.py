@@ -11,8 +11,8 @@ import os
 from pathlib import Path
 from datetime import datetime
 
-DB_PATH = "data/merit_registry.db"
-OUTPUT_DIR = "precompute_output/browse"
+DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
+OUTPUT_DIR = os.path.join(os.environ.get("PRECOMPUTE_OUT", "precompute_output"), "browse")
 PAGE_SIZE = 25
 
 # NTEE categories from frontend
@@ -130,7 +130,9 @@ def main():
                     mission, mission_source, website, website_status, cause_tags,
                     donate_url, donate_platform, donate_url_status
                 FROM registry_enriched
-                WHERE NTEE1 = ? AND STATE = ?
+                -- Only surface orgs where donating is currently tax-deductible:
+                -- deductible 501(c)(3) AND not IRS-revoked. Fail closed on revocation.
+                WHERE NTEE1 = ? AND STATE = ? AND deductibility = 1 AND org_status = 'active'
                 ORDER BY
                     CASE WHEN peer_percentile IS NOT NULL THEN peer_percentile ELSE ntee1_percentile END DESC NULLS LAST,
                     total_revenue DESC NULLS LAST,
@@ -190,7 +192,8 @@ def main():
                 mission, mission_source, website, website_status, cause_tags,
                 donate_url, donate_platform, donate_url_status
             FROM registry_enriched
-            WHERE NTEE1 = ?
+            -- Only surface orgs where donating is currently tax-deductible (see above).
+            WHERE NTEE1 = ? AND deductibility = 1 AND org_status = 'active'
             ORDER BY
                 CASE WHEN peer_percentile IS NOT NULL THEN peer_percentile ELSE ntee1_percentile END DESC NULLS LAST,
                 total_revenue DESC NULLS LAST,
