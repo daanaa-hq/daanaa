@@ -10,7 +10,7 @@
 set -u
 
 BASE="$HOME/meritgiving"
-MODEL="$HOME/models/Qwen2.5-14B-Instruct-Q4_K_M.gguf"   # faster + cooler than 32B; quality validated for missions
+MODEL="$HOME/models/Qwen2.5-32B-Instruct-Q4_K_M.gguf"   # 14B GGUF symlink went stale (ollama GC'd the blob); 32B is present, higher quality, and pushes GPU harder (good for cold-room overnight runs)
 SERVER_BIN="$HOME/llama-vulkan/build/bin/llama-server"
 PORT=11437
 LOG_DIR="$BASE/logs"

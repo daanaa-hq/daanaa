@@ -5,13 +5,32 @@ These are 501(c)(3) orgs in the IRS data with no precomputed enrichment.
 Only imports SUBSECTION=3 (501c3), DEDUCTIBILITY=1 orgs.
 Inserts with INSERT OR IGNORE so precomputed orgs are never overwritten.
 """
-import csv, sqlite3, sys
+import csv, sqlite3, sys, time
 from pathlib import Path
 from datetime import datetime
 
 BMF_CSV = Path("data/bmf.csv")
 DB_PATH  = Path("data/merit_registry.db")
 BATCH    = 10_000
+
+
+def commit_batch(con, rows, retries=40, base=0.5):
+    """executemany + commit, retrying on transient 'database is locked'.
+
+    The live DB has many concurrent writers (web_finder, reembed, cause_tags,
+    auto_ingest). WAL allows one writer at a time, so a bulk insert must wait
+    its turn — busy_timeout alone proved insufficient under heavy contention,
+    so we retry the whole batch with capped exponential backoff.
+    """
+    for attempt in range(retries):
+        try:
+            con.executemany(INSERT_SQL, rows)
+            con.commit()
+            return
+        except sqlite3.OperationalError as e:
+            if "locked" not in str(e).lower() or attempt == retries - 1:
+                raise
+            time.sleep(min(base * (2 ** attempt), 10.0))
 
 INSERT_SQL = """
 INSERT OR IGNORE INTO registry_enriched (
@@ -36,6 +55,9 @@ def main():
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("PRAGMA synchronous=NORMAL")
     con.execute("PRAGMA cache_size=-64000")
+    # Wait for the write lock instead of failing instantly — overnight writers
+    # (web_finder UPDATEs, reembed, cause_tags) hold the single WAL writer slot.
+    con.execute("PRAGMA busy_timeout=120000")
 
     inserted = 0
     skipped = 0
@@ -68,8 +90,7 @@ def main():
             ))
 
             if len(batch) >= BATCH:
-                con.executemany(INSERT_SQL, batch)
-                con.commit()
+                commit_batch(con, batch)
                 inserted += len(batch)
                 batch = []
 
@@ -77,8 +98,7 @@ def main():
                 print(f"  [{datetime.now():%H:%M:%S}] {i+1:,} rows read | inserted: {inserted:,}", flush=True)
 
     if batch:
-        con.executemany(INSERT_SQL, batch)
-        con.commit()
+        commit_batch(con, batch)
         inserted += len(batch)
 
     after = con.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]

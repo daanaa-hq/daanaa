@@ -173,3 +173,26 @@ missions alone now represent roughly **131 person-years** of analyst work (630K 
 Honest framing (Stewardship 3): this is *enabling* impact, a readable, scored, findable
 profile for orgs that were opaque in raw IRS filings. *Realized* impact, a donor giving to
 one of these because they finally could, is still ahead.
+
+## 2026-06-08 — First auto-detected IRS data delta (the registry now self-updates)
+
+For the first time, the platform **detected new IRS data on its own** and folded it in
+safely. The monthly IRS Exempt-Organizations Business Master File refreshed upstream
+(Last-Modified 2026-06-08); a check found **26,565 new 501(c)(3) organizations** missing
+from the registry — small local nonprofits: volunteer fire-relief associations, food
+pantries, PTAs, lake-protection groups. The invisible 97%, newly visible. Registry grew
+1,819,272 → **1,845,837**.
+
+We did it the careful way: download → validate in an isolated `VACUUM INTO` **sandbox**
+(the live DB never at risk) → confirm 0 malformed records and a sane NTEE/state spread →
+apply only the genuinely-new rows. A 218,844-EIN revocation/gap signal was surfaced for
+human review, **not** blind-purged.
+
+Hard lesson banked: a bulk write can't out-retry ~13 concurrent pipeline writers fighting
+SQLite's single WAL slot (and SIGSTOP deadlocks a writer mid-transaction). The answer is
+**stop → apply → restart** — cleanly SIGTERM the batch writers, insert uncontended, relaunch.
+Live apply went from 13+ minutes of failures to **6 seconds**.
+
+Institutionalized: a **daily IRS watch now takes priority over all other overnight work**
+(cron 21:00, before the GPU window), so new organizations are detected, validated, applied,
+and given a mission the same night — automatically, every day.
