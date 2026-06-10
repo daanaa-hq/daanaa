@@ -10,7 +10,7 @@ Usage:
     python3 scripts/generate_missions_irs_bmf.py --limit 100 --workers 2
 """
 
-import sqlite3, json, time, argparse, sys, re, zlib
+import sqlite3, json, time, argparse, sys, re
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path

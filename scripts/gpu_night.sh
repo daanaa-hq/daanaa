@@ -25,7 +25,8 @@ start() {
   echo "[$(ts)] start: launching embed_server (mxbai-embed-large on :11436)"
   bash "$BASE/scripts/embed_server.sh" start
 
-  if pgrep -f "llama-server.*$(basename "$MODEL")" >/dev/null; then
+  # match by port, not model basename — survives model swaps between edits
+  if pgrep -f "llama-server.*--port ${PORT}" >/dev/null; then
     echo "[$(ts)] start: llama-server already running — skipping"
   else
     echo "[$(ts)] start: launching llama-server $(basename "$MODEL") (6 slots, continuous batching)"
@@ -93,7 +94,9 @@ stop() {
   echo "[$(ts)] stop: halting reembed_watchdog"
   pkill -f "scripts/reembed_watchdog.py" 2>/dev/null
   echo "[$(ts)] stop: halting llama-server (mission generation)"
-  pkill -f "llama-server.*$(basename "$MODEL")" 2>/dev/null
+  # by port, not model basename — if MODEL was edited since start, the
+  # basename match would miss the running server and leave the GPU busy
+  pkill -f "llama-server.*--port ${PORT}" 2>/dev/null
   sleep 2
   # belt-and-suspenders: free the mission port
   fuser -k "${PORT}/tcp" 2>/dev/null
