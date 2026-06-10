@@ -173,3 +173,16 @@ all 73 (reversible — pipeline re-discovers links if an org is reinstated). Als
 crontab (6 agent jobs were scheduled twice, running 2x daily) and added T5 traction-brief
 + T7 stewardship-audit weekly agents per TEAMS_AND_MILESTONES.md. Rejected: leaving the
 links visible-but-flagged (donor-confusion risk, violates 2026-06-09 fail-closed decision).
+
+## 2026-06-10 — Nightly enrichment: align to gpu_night.sh, not a new orchestrator
+- **Chose:** `gpu_night.sh` stays the single nightly orchestrator; added `web_night.sh` (website discovery loop) as its third worker; deleted the 4 new `nightly_*` scripts written earlier the same day.
+- **Why:** gpu_night.sh already launches missions + donate-link loop + reembed watchdog; the new orchestrator duplicated all of it, and its stubs used nonexistent columns (`ntee1`, `data_is_stale`) and a wrong `--batch` flag — it would have crashed on first cron fire.
+- **Rejected:** keeping both (double work, two sources of truth), Python rewrite of gpu_night.sh (working bash, no need).
+
+## 2026-06-10 — web_finder marks failures; finds published as 'beta'
+- **Chose:** failed attempts set `website_status='no_website_found'` + `website_checked_at` (90-day retry window); verified finds set `website_status='beta'` not `'ok'`.
+- **Why:** without a tried-marker every nightly pass re-processed the same top-revenue failures forever; 'beta' per the web-discovery disclosure policy (heuristic + embedding match, no human review).
+
+## 2026-06-10 — Mission model upgrade candidate: Qwen3-30B-A3B-Instruct-2507 (MoE)
+- **Chose:** download standalone Q4_K_M GGUF (not an ollama-blob symlink — ollama GC broke the 14B that way); benchmark vs Qwen2.5-32B before swapping gpu_night.sh MODEL.
+- **Why:** ~5x throughput (MoE A3B ≈146 tok/s vs dense 32B) on 1–2 sentence missions; quality gate first per stewardship (no silent degradation).

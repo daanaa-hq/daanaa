@@ -58,6 +58,15 @@ start() {
     nohup bash "$BASE/scripts/cpu_night.sh" >> "$LOG_DIR/cpu_night.log" 2>&1 &
   fi
 
+  # Website discovery: loop web_finder_agent (CPU crawl + :11436 GPU verification)
+  # so orgs missing websites get filled revenue-DESC; feeds next night's donate loop.
+  if pgrep -f "scripts/web_night.sh" >/dev/null; then
+    echo "[$(ts)] start: web_night discovery loop already running — skipping"
+  else
+    echo "[$(ts)] start: launching web_night discovery loop"
+    nohup bash "$BASE/scripts/web_night.sh" >> "$LOG_DIR/web_night.log" 2>&1 &
+  fi
+
   # Re-embed orgs whose mission was (re)written so semantic search stays current.
   # The watchdog runs its own embed server on :11436 (separate from the mission
   # model on :11437) and re-embeds once enough missions are stale, then idles.
@@ -72,6 +81,9 @@ start() {
 }
 
 stop() {
+  echo "[$(ts)] stop: halting web_night discovery loop"
+  pkill -f "scripts/web_night.sh" 2>/dev/null
+  pkill -f "scripts/web_finder_agent.py" 2>/dev/null
   echo "[$(ts)] stop: halting cpu_night donate loop"
   pkill -f "scripts/cpu_night.sh" 2>/dev/null
   pkill -f "scripts/donation_link_pipeline.py" 2>/dev/null

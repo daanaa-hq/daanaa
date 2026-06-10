@@ -170,7 +170,9 @@ def main():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
-    # Query orgs: have revenue, missing website, ordered by revenue DESC
+    # Query orgs: have revenue, missing website, ordered by revenue DESC.
+    # Skip orgs attempted in the last 90 days so nightly loops advance through
+    # the queue instead of re-trying the same top-revenue failures forever.
     if args.priority == 'high-revenue':
         query = """
             SELECT EIN, organization_name, CITY, STATE, total_revenue
@@ -178,6 +180,8 @@ def main():
             WHERE deductibility = '1'
               AND total_revenue > 100000
               AND (website IS NULL OR website = '')
+              AND (website_checked_at IS NULL
+                   OR website_checked_at < datetime('now', '-90 days'))
             ORDER BY total_revenue DESC
             LIMIT ?
         """
@@ -187,6 +191,8 @@ def main():
             FROM registry_enriched
             WHERE deductibility = '1'
               AND (website IS NULL OR website = '')
+              AND (website_checked_at IS NULL
+                   OR website_checked_at < datetime('now', '-90 days'))
             ORDER BY total_revenue DESC
             LIMIT ?
         """
@@ -221,11 +227,12 @@ def main():
             )
 
             if is_verified:
+                # 'beta' per disclosure policy: heuristically discovered, not human-reviewed
                 log(f"  ✓ Verified! {candidate} (confidence: {confidence:.3f})")
                 if not args.dry_run:
                     c.execute("""
                         UPDATE registry_enriched
-                        SET website = ?, website_status = 'ok', website_checked_at = datetime('now')
+                        SET website = ?, website_status = 'beta', website_checked_at = datetime('now')
                         WHERE EIN = ?
                     """, (candidate, ein))
                     verified += 1
@@ -234,8 +241,17 @@ def main():
 
         if not found:
             log(f"  ✗ No verified website found among candidates")
+            if not args.dry_run:
+                # Mark the attempt so nightly loops move on (re-eligible after 90 days)
+                c.execute("""
+                    UPDATE registry_enriched
+                    SET website_status = 'no_website_found', website_checked_at = datetime('now')
+                    WHERE EIN = ?
+                """, (ein,))
 
         processed += 1
+        if processed % 50 == 0 and not args.dry_run:
+            conn.commit()  # checkpoint so an interrupted night keeps its progress
 
     if not args.dry_run:
         conn.commit()

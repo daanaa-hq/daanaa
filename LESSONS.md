@@ -155,3 +155,13 @@ against BOTH (tests/test_droplet_search.py now covers the droplet); (2) an API t
 cannot honor a filter param must 400, never silently ignore it; (3) ORDER BY on an
 indexed column + selective WHERE → check the plan, SQLite may pick the sort index and
 probe the filter (use COALESCE/expression to force filter-first).
+
+## 2026-06-10 — Built duplicate nightly pipeline before auditing existing cron
+- **Symptom:** Wrote a 6-phase orchestrator + 3 agent stubs; discovered gpu_night.sh + cpu_night.sh + run_agents.py + sync_irs_revocations already covered 5 of 6 phases. Stubs also used nonexistent DB columns and would have corrupted cause_tags format (objects vs flat strings).
+- **Root cause:** Designed from the vision statement instead of inventorying what already runs (`crontab -l` + scripts/ + gpu_night.sh).
+- **Rule:** Before writing any scheduler/orchestrator, read the full crontab AND every script it references. The night stack's entry point is gpu_night.sh — extend it, don't parallel it.
+
+## 2026-06-10 — `git add -A` in repo with deploy scratch dirs staged 1.02M files
+- **Symptom:** Commit d5319e68c6d ballooned with 1,025,796 `.deploy_scratch/precompute/` files; had to redo HEAD.
+- **Root cause:** `.deploy_scratch/`, `.backups/`, `scores_v4_0_*.json` were never gitignored.
+- **Rule:** Any scratch/output dir created by a deploy or pipeline gets a .gitignore entry in the same change that creates it. Never `git add -A` without checking `git status --short | head` first.
