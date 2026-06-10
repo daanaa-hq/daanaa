@@ -1,12 +1,25 @@
 // API client for Daanaa backend — maps to daanaa_api.py (Flask, port 5000)
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+// Hard cap on every request: a slow or hung backend must surface as an error
+// the UI can show, never an indefinite blank loading state.
+const REQUEST_TIMEOUT_MS = 10_000;
+
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const { headers: extraHeaders, ...rest } = options ?? {};
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(extraHeaders ?? {}) },
-    ...rest,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json', ...(extraHeaders ?? {}) },
+      ...rest,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (err) {
+    if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+      throw new Error('The server is taking too long to respond. Please try again.');
+    }
+    throw err;
+  }
   if (!response.ok) {
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }

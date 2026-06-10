@@ -111,3 +111,65 @@ REVOCATION_PROTOCOL). All rows are deductibility=1 & subsection='3', so org_stat
 operative filter. Similar-org links are auto-safe (validated against the filtered set).
 Rejected: showing revoked orgs flagged-but-visible (donor-confusion risk; revisit later as a
 "status revoked" info page for direct EIN lookups, never in browse).
+
+## 2026-06-09 — API browse filter now also excludes revoked (audit Session 1)
+Chose to extend `_DEDUCTIBILITY_FILTER` in daanaa_api.py with `COALESCE(irs_revoked,0)!=1
+AND COALESCE(org_status,'')!='revoked'` — the :5000 API was still listing 192,501 revoked
+orgs (browse/search/stats/sector-health/fused-search) even after the precompute exclusion
+above covered the droplet. Rows stay in registry_enriched untouched (reversible by removing
+two clauses); direct /api/organizations/<ein> remains accessible and the donate gate fails
+closed independently. Guarded by tests/test_principles.py::test_browse_excludes_revoked_orgs.
+Also fixed: test_principles.py pointed at deleted merit_api.py — the deploy-blocking
+principle suite had been silently dead since the daanaa_api migration.
+Rejected: deleting revoked rows (irreversible; "keep them handy" for a future status page).
+
+## 2026-06-09 — Research dashboard auth removed entirely (audit Session 2)
+Chose to delete the passcode/session machinery (RESEARCH_PASSCODE, /api/research/auth,
+_check_research_auth, X-Research-Session gates on 8 routes, frontend ResearchAccess.tsx)
+rather than harden it. Why: the dashboard serves only aggregate public IRS data, the
+frontend reads a static snapshot (/research-snapshot.json) and never even sent the session
+header, and the passcode was hardcoded in BOTH backend and frontend bundle — a fake lock.
+Also added: _CLAIM_SECRET now refuses to start under DAANAA_PROD without a real secret.
+Guarded by test_no_research_passcode_machinery + test_claim_secret_fails_closed_in_prod.
+Rejected: env-only passcode + rate limit (built first, then discarded — protecting public
+data with a secret adds operational friction for zero privacy gain; re-gate only if any
+non-public field ever lands in these endpoints).
+
+## 2026-06-09 — Fused-search failures degrade, don't alarm (audit Session 3)
+Chose: when the fused (semantic) query fails but the keyword query already returned
+results, show those results silently; show the error state only when there is nothing
+to display. Why: partial degradation beats a scary banner over usable results. Also added
+a 10s AbortSignal.timeout to fetchJson (frontend) so a hung backend becomes a readable
+error instead of minutes of blank loading. Rejected: always surfacing fused errors
+(noise) and per-call timeout overrides (no caller needs one yet — YAGNI).
+
+## 2026-06-09 — Revocation flag derives from the list, sync keeps it current (Session 7)
+Chose: backfilled 218,775 NULL irs_revoked rows from revoked_eins (30,713 → 1, rest → 0;
+verified no browse leakage existed — org_status caught them all), and sync_irs_revocations
+now (a) refuses an IRS file that shrank >20% vs the last load (truncation guard, the list
+is append-only) and (b) updates registry_enriched.irs_revoked after every load so the
+column the browse filter reads can never drift from the list again. Conservative writes
+only: never auto-flips 1→0. Rejected: deriving revocation at query time via JOIN (hot-path
+cost on every browse query) and fixing legacy ingest_bmf_master.py (writes an obsolete
+table; only referenced by a retired setup script — left for the archive sweep).
+
+## 2026-06-09 — Droplet search: full filter parity + indexed (prod 0-results bug)
+Chose: droplet_api now parses comma lists (ntee=R,I / sub=I21,R20) and min/max_revenue,
+routing multi-select or revenue queries to the DB path; added (NTEE1,total_revenue),
+(total_revenue), (NTEECC) indexes + ANALYZE to droplet_search.db and the rebuild script;
+NTEECC uses GLOB not LIKE (case-sensitive → index-driven); ORDER BY uses
+COALESCE(merit_score,-1) DESC instead of NULLS LAST (stops SQLite walking the score
+index probing the filter row-by-row: 6s → 0.2s). Guarded by tests/test_droplet_search.py.
+Why: production directory showed "0 results" for any category combo and silently ignored
+revenue bands — silent wrong results are a trust violation, and speed is part of accuracy.
+Rejected: proxying filters to the home API (droplet must stand alone) and two-step rowid
+pagination (measured slower than the straight query).
+
+## 2026-06-09 — Withheld donate links on 73 revoked orgs (stewardship audit catch)
+The new weekly stewardship audit agent (scripts/agents/stewardship_audit.py) found 73
+IRS-revoked orgs still carrying donate_url_status values like beta/dead/human_review.
+None were 'verified', but fail-closed means withheld outright. Set status='withheld' on
+all 73 (reversible — pipeline re-discovers links if an org is reinstated). Also deduped
+crontab (6 agent jobs were scheduled twice, running 2x daily) and added T5 traction-brief
++ T7 stewardship-audit weekly agents per TEAMS_AND_MILESTONES.md. Rejected: leaving the
+links visible-but-flagged (donor-confusion risk, violates 2026-06-09 fail-closed decision).

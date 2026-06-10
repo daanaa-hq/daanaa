@@ -116,6 +116,14 @@ fi
 echo "  Promoting v2 (staging) → v1 (live)..."
 mv "$STAGING_DIR" "$DATA_DIR/v1"
 
+# Preserve search.db: the precompute payload does not include it (it is built
+# and shipped separately by rebuild_droplet_search_db.py). Without this step
+# every deploy silently killed keyword search until someone re-shipped the DB.
+if [ ! -f "$DATA_DIR/v1/search.db" ] && [ -f "$DATA_DIR/v0/search.db" ]; then
+    echo "  Carrying search.db forward from v0 (payload ships none)..."
+    cp "$DATA_DIR/v0/search.db" "$DATA_DIR/v1/search.db"
+fi
+
 echo "✓ Atomic swap complete"
 echo ""
 

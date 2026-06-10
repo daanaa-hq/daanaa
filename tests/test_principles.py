@@ -13,7 +13,7 @@ import pytest
 from pathlib import Path
 
 ROOT    = Path(__file__).parent.parent
-API     = ROOT / "merit_api.py"
+API     = ROOT / "daanaa_api.py"
 SCRIPTS = ROOT / "scripts"
 FE_SRC  = ROOT / "frontend" / "src"
 LOGS    = ROOT / "logs"
@@ -123,12 +123,13 @@ def test_admin_key_constant_time():
 def test_no_sentinel_in_stats_sql():
     """The /api/stats reserve SQL must exclude -999 sentinel values."""
     src = _api_src()
-    # Find the reserve_stats query block
+    # Find the reserve aggregation block (variable was renamed reserve_stats → agg
+    # in the merit_api → daanaa_api migration; anchor on the SQL itself)
     block = re.search(
-        r"reserve_stats\s*=\s*db\.execute\(.*?fetchone\(\)",
+        r"COUNT\(CASE WHEN months_of_reserve.*?(?:healthy|fetchone\(\))",
         src, re.DOTALL
     )
-    assert block, "Could not find reserve_stats query in merit_api.py"
+    assert block, "Could not find months_of_reserve aggregation in daanaa_api.py"
     query = block.group()
     # Must use BETWEEN or explicit bound, not open-ended < 0
     assert "BETWEEN" in query or "> -" in query, (
@@ -150,6 +151,82 @@ def test_claim_status_honest():
     assert not bad, (
         f"P3 violation: claim_start hardcodes 'letter_sent' status — "
         "use a variable that reflects actual delivery mode"
+    )
+
+
+@pytest.mark.principle
+def test_browse_excludes_revoked_orgs():
+    """The catalog filter must exclude IRS-revoked orgs from browse/search.
+
+    Donations to auto-revoked orgs are not tax-deductible. Listing them as
+    normal 501(c)(3)s (with tier badges) violates P3. Rows stay in
+    registry_enriched untouched — this is a display filter, reversible by
+    removing the clause. (Audit 2026-06-09, Phase 3 finding #1.)
+    """
+    src = _api_src()
+    # Match the assignment whether it's a single string or a parenthesized
+    # multi-line concat; allows one level of nesting for COALESCE(...) calls.
+    block = re.search(
+        r"_DEDUCTIBILITY_FILTER\s*=\s*(?:\((?:[^()]|\([^()]*\))*\)|\"[^\"]*\")", src
+    )
+    assert block, "Could not find _DEDUCTIBILITY_FILTER in daanaa_api.py"
+    f = block.group()
+    assert "irs_revoked" in f, (
+        "P3 violation: _DEDUCTIBILITY_FILTER does not exclude irs_revoked orgs — "
+        "192K+ revoked orgs would appear in browse with tier badges"
+    )
+    assert "org_status" in f, (
+        "P3 violation: _DEDUCTIBILITY_FILTER does not exclude org_status='revoked'"
+    )
+
+
+# ── P2/P7 — Auth hardening (audit 2026-06-09, Phase 1 findings 1–3) ──────────
+
+@pytest.mark.principle
+def test_no_research_passcode_machinery():
+    """The research dashboard serves only aggregate public IRS data — the
+    passcode/session gate was removed (2026-06-09). No passcode may reappear
+    in backend or frontend source (the old one was hardcoded in both)."""
+    src = _api_src()
+    for token in ("daanaa2026", "RESEARCH_PASSCODE", "_check_research_auth"):
+        assert token not in src, (
+            f"P7 violation: research passcode machinery '{token}' reappeared in API — "
+            "research data is public-aggregate; gate it only if PII is ever added"
+        )
+    fe_hits = [
+        str(f.relative_to(ROOT))
+        for f in FE_SRC.rglob("*.tsx")
+        if "daanaa2026" in f.read_text() or "RESEARCH_PASSCODE" in f.read_text()
+    ]
+    assert not fe_hits, f"P7 violation: passcode constant in frontend: {fe_hits}"
+
+
+@pytest.mark.principle
+def test_claim_secret_fails_closed_in_prod():
+    """In prod (DAANAA_PROD), the claim HMAC secret must never fall back to the
+    dev default — forged claim-verify tokens otherwise."""
+    src = _api_src()
+    idx = src.find("_CLAIM_SECRET")
+    assert idx != -1, "Could not find _CLAIM_SECRET"
+    region = src[max(0, idx - 500):idx + 1200]
+    assert "DAANAA_PROD" in region and "raise" in region, (
+        "P7 violation: no prod guard on _CLAIM_SECRET — dev fallback "
+        "'daanaa-dev-claim-secret' would be used in production"
+    )
+
+
+@pytest.mark.principle
+def test_revocation_sync_updates_registry_column():
+    """sync_irs_revocations.py must keep registry_enriched.irs_revoked in step
+    with the revoked_eins list — the browse filter reads the COLUMN, so a list
+    that updates without the column silently re-lists revoked orgs."""
+    src = (SCRIPTS / "sync_irs_revocations.py").read_text()
+    assert "UPDATE registry_enriched SET irs_revoked = 1" in src, (
+        "P3 violation: revocation sync no longer updates the irs_revoked column"
+    )
+    # Shrink guard: never load a truncated IRS file over good data
+    assert "0.8" in src and "RuntimeError" in src, (
+        "P3 violation: revocation sync lost its file-shrink sanity gate"
     )
 
 

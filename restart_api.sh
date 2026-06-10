@@ -35,5 +35,21 @@ curl -s http://localhost:5000/health | python3 -m json.tool
 echo "=== STATS CHECK ==="
 curl -s http://localhost:5000/api/stats | python3 -m json.tool
 
+echo "=== WARMING CACHE (background) ==="
+# Prime the response cache with the most common entry points so the first
+# real visitor after a restart never pays the cold-query cost (~3.7s).
+(
+  for i in $(seq 1 30); do
+    curl -sf -m 2 http://localhost:5000/health > /dev/null 2>&1 && break
+    sleep 1
+  done
+  for q in "food+bank" "animal+shelter" "youth" "veterans" "education" "homeless"; do
+    curl -sf -m 20 "http://localhost:5000/api/search?q=$q" -o /dev/null
+  done
+  curl -sf -m 20 "http://localhost:5000/api/organizations?page=1&per_page=24" -o /dev/null
+  curl -sf -m 20 "http://localhost:5000/api/ntee-categories" -o /dev/null
+  curl -sf -m 20 "http://localhost:5000/api/stats" -o /dev/null
+) > /dev/null 2>&1 &
+
 echo ""
-echo "Done. PID saved to logs/daanaa_api.pid"
+echo "Done. PID saved to logs/daanaa_api.pid (cache warm-up running in background)"

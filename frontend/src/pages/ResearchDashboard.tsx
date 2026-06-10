@@ -1,32 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
-import ResearchAccess from '../components/ResearchAccess'
+import { useState, useRef } from 'react'
 import ResearchSidebar from '../components/ResearchSidebar'
 import ResearchContent from '../components/ResearchContent'
 
+// Public dashboard — aggregate IRS data served from a static snapshot. The
+// passcode gate was removed 2026-06-09 (audit Session 2): nothing private here.
 export default function ResearchDashboard() {
-  const [sessionToken, setSessionToken] = useState<string | null>(null)
   const [currentSection, setCurrentSection] = useState('overview')
   const contentRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const stored = localStorage.getItem('research_session_token')
-    const expiry = localStorage.getItem('research_session_expiry')
-
-    if (stored && expiry) {
-      const expiryTime = parseInt(expiry, 10)
-      if (Date.now() < expiryTime) {
-        setSessionToken(stored)
-        return
-      }
-    }
-
-    localStorage.removeItem('research_session_token')
-    localStorage.removeItem('research_session_expiry')
-  }, [])
-
-  const handleSessionStart = (token: string) => {
-    setSessionToken(token)
-  }
 
   const handleSectionChange = (sectionId: string) => {
     setCurrentSection(sectionId)
@@ -34,10 +14,6 @@ export default function ResearchDashboard() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' })
     }
-  }
-
-  if (!sessionToken) {
-    return <ResearchAccess onSuccess={handleSessionStart} />
   }
 
   return (
@@ -61,7 +37,7 @@ export default function ResearchDashboard() {
           })
         }}
       >
-        <ResearchContent sessionToken={sessionToken} />
+        <ResearchContent sessionToken="" />
       </div>
     </div>
   )

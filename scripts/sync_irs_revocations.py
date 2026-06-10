@@ -110,6 +110,21 @@ def load_into_db() -> dict:
     ''')
     con.commit()
 
+    # Sanity gate: the IRS list only ever grows (we never delete). If the
+    # downloaded file is dramatically smaller than the last successful load,
+    # it's truncated/corrupt — abort rather than half-load it.
+    prev = cur.execute(
+        'SELECT rows_loaded FROM irs_sync_log ORDER BY id DESC LIMIT 1'
+    ).fetchone()
+    if prev and prev[0]:
+        file_rows = sum(1 for _ in open(CACHE, encoding='utf-8-sig', errors='replace'))
+        if file_rows < prev[0] * 0.8:
+            con.close()
+            raise RuntimeError(
+                f'Revocation file has {file_rows:,} rows but last sync loaded '
+                f'{prev[0]:,} — refusing to load a file that shrank >20%.'
+            )
+
     inserted = 0
     updated  = 0
     skipped  = 0
@@ -161,6 +176,21 @@ def load_into_db() -> dict:
             inserted += len(batch)
 
     con.commit()
+
+    # Keep the registry column in step with the list, so the API's browse
+    # filter (which reads irs_revoked) never drifts. Conservative direction
+    # only: the list is append-only, so we set 1 for newly listed orgs and 0
+    # only where the flag was never populated (NULL/'' from partial refreshes).
+    cur.execute('''
+        UPDATE registry_enriched SET irs_revoked = 1
+         WHERE COALESCE(irs_revoked, 0) != 1
+           AND EIN IN (SELECT ein FROM revoked_eins)
+    ''')
+    cur.execute('''
+        UPDATE registry_enriched SET irs_revoked = 0
+         WHERE (irs_revoked IS NULL OR irs_revoked = '')
+           AND EIN NOT IN (SELECT ein FROM revoked_eins)
+    ''')
 
     # Count how many of our indexed orgs are revoked
     cur.execute('''

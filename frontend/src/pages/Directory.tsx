@@ -6,7 +6,7 @@ import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
-import { getOrganizations, getFusedSearch } from '../data/api'
+import { getOrganizations, getFusedSearch, getStats } from '../data/api'
 import type { ApiOrganization } from '../data/api'
 import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
 import LampMark from '../components/LampMark'
@@ -247,10 +247,13 @@ export default function Directory() {
     [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, directLink, hasWebsite, recent, debouncedCause, itemsPerPage]
   )
 
-  const { data: fusedData, loading: fusedLoading } = useApi(
+  const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
     () => isFusedMode ? getFusedSearch(debouncedQuery) : Promise.resolve(null),
     [debouncedQuery, isFusedMode]
   )
+
+  // Data-freshness line under the results count ("last checked <date>")
+  const { data: statsData } = useApi(getStats, [])
 
   const scrollTop = () => window.scrollTo({ top: 0, behavior: 'smooth' })
 
@@ -346,7 +349,11 @@ export default function Directory() {
   const total = useFusedResults ? fusedResults.length : (orgsData?.total || 0)
   const totalPages = useFusedResults ? 1 : (orgsData?.pages || 1)
   const activeLoading = useFusedResults ? fusedLoading : orgsLoading
-  const activeError = useFusedResults ? null : orgsError
+  // Fused failures degrade to the keyword results that already loaded; only
+  // surface an error when there is genuinely nothing to show the user.
+  const activeError = useFusedResults
+    ? null
+    : (orgsError ?? (isFusedMode && fusedError && organizations.length === 0 ? fusedError : null))
 
   // Readable label for any subcategory code (searches across all categories)
   const subLabelOf = (code: string): string => {
@@ -646,6 +653,11 @@ export default function Directory() {
                   <span className="font-body text-[20px] font-semibold tracking-[-0.02em] text-deep-navy">
                     {total.toLocaleString()} {searchQuery || activeFilters.length > 0 || stateFilter ? 'results' : 'organizations'}
                   </span>
+                  {statsData?.irs_status_verified_at && (
+                    <p className="font-body text-[12px] text-cool-grey/70 mt-1">
+                      Built from public IRS data, last checked {new Date(statsData.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  )}
 
                   {/* Active filter chips */}
                   {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier) && (

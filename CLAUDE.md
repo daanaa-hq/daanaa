@@ -85,7 +85,7 @@ it isn't done — I'll say so.
 ```bash
 source ~/meritgiving/venv/bin/activate
 ./restart_api.sh              # production: gunicorn 4-workers, --preload (use this)
-python3 merit_api.py          # dev: single-process Flask (no --preload)
+python3 daanaa_api.py         # dev: single-process Flask (no --preload)
 ```
 
 ### Frontend (React/Vite)
@@ -111,16 +111,12 @@ npm run build                 # builds to frontend/dist/
 
 ### Which backend is canonical
 
-There are **three** backend files — use `daanaa_api.py` as the entry point (imports from `merit_api.py`):
-
-| File | Framework | Port | Data source | Status |
-|------|-----------|------|-------------|--------|
-| `daanaa_api.py` | Flask + SQLite | 5000 | `data/merit_registry.db` | **Active entry point** |
-| `merit_api.py` | Flask + SQLite | 5000 | `data/merit_registry.db` | Canonical logic — rename pending Phase 3 |
-| `api/main.py` | FastAPI + SQLite | varies | `data/merit_registry.db` | Secondary / specialist endpoints |
-| `app.py` | FastAPI + flat CSV | 8081 | `data/master_orgs.csv` (in-memory) | Legacy — do not extend |
-
-`app.py` also has broken Flask route decorators appended at lines 337–354 (`@app.route(...)` on a FastAPI object) — these are dead code left by a previous agent pass. Do not edit that tail block.
+**`daanaa_api.py` is the only backend** (Flask + SQLite, port 5000, ~2,700 lines, all
+routes). The old `merit_api.py` and `app.py` were removed in the daanaa rename; the
+dormant FastAPI specialist (`api/main.py`) was archived to `archive/api_fastapi_20260609/`
+on 2026-06-09 (its endpoints sorted by revenue, violating the no-size-ranking principle).
+If any doc or script still references `merit_api.py`, it is stale — fix it on sight
+(a dead cron watchdog and the principle test suite both broke this way).
 
 ### Database
 
@@ -155,13 +151,15 @@ Secondary/legacy: `data/meritgiving.db`, `data/merit_state.db` — do not treat 
 
 ### Data pipeline (`scripts/`)
 
-Current scorer: `scripts/merit_scorer_v3_3.py`. Orchestration: `scripts/overnight_pipeline.py`. Do not extend `app.py` (legacy).
+Current scorer: `scripts/merit_scorer_v4_0.py` (run by `overnight_pipeline.py`).
+Legacy scorers (v2_0, v3_3, _db, _tier_b/_c, agent2) archived to
+`archive/legacy_scorers_20260609/` — never run those.
 
 Key pipeline scripts:
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/merit_scorer_v3_3.py` | Compute 0–100 peer financial context scores into `registry_enriched` |
+| `scripts/merit_scorer_v4_0.py` | Compute peer financial context scores + v4 tiers (validated by `validate_v4_scores.py`) |
 | `scripts/overnight_pipeline.py` | Nightly orchestrator: score → rebuild FTS → refresh stats |
 | `scripts/build_fts_index.py` | Rebuild the `org_fts` FTS5 full-text search virtual table |
 | `scripts/build_org_embeddings.py` | Generate mxbai-embed-large vectors into `org_embeddings` |
@@ -191,9 +189,8 @@ Do not use cloud APIs for batch ML tasks — route through the local server:
 
 ## Key gotchas
 
-- **Scorer location**: `scripts/merit_scorer_v3_3.py` — not `api/` (that directory only has `main.py`, a secondary FastAPI specialist endpoint).
-- **Root-level debris**: many `fix_*.py`, `app.py.backup.*`, `app.py.broken.*` files exist from iterative development. They are not part of the active codebase — do not import or extend them.
-- **`app.py` tail is broken**: lines 337–354 mix Flask decorators into a FastAPI app. Ignore that block entirely.
+- **Scorer location**: `scripts/merit_scorer_v4_0.py` — legacy scorers live in `archive/legacy_scorers_20260609/`, never run them.
+- **Root-level debris**: stray `fix_*.py` and backup files from iterative development are not part of the active codebase — do not import or extend them.
 - **Two databases**: `merit_registry.db` vs `meritgiving.db`. Only `merit_registry.db` feeds the live API.
 - **Frontend package name**: `frontend/package.json` still says `"name": "my-app"` — scaffold default, never updated; ignore it.
 - **venv**: always activate `~/meritgiving/venv` before running any Python in this project.

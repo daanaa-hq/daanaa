@@ -68,21 +68,48 @@ def get_search_db():
         return None
     conn = sqlite3.connect(str(fts_path), timeout=10)
     conn.row_factory = sqlite3.Row
+    # Serve cold page reads from the OS page cache; big win on filter scans.
+    conn.execute("PRAGMA mmap_size=1073741824")
     return conn
 
 
-def _fts_where(q: str, state: str = '', ntee: str = '') -> tuple:
-    """Build base FTS WHERE conditions and params for q, state, ntee filters."""
+def _fts_where(q: str, state: str = '') -> tuple:
+    """Build base FTS WHERE conditions and params for q + state."""
     fts_q = ' '.join(f'{w}*' for w in q.split() if w)
     conditions: list = ["s.ein = o.EIN", "org_search MATCH ?"]
     params: list = [fts_q]
     if state:
         conditions.append("o.STATE = ?")
         params.append(state)
-    if ntee and len(ntee) >= 1:
-        conditions.append("o.NTEE1 = ?")
-        params.append(ntee[0])
     return conditions, params
+
+
+def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias=''):
+    """Category + revenue WHERE fragments, mirroring the home daanaa_api
+    semantics: any ticked category (NTEE1) or subcategory (NTEECC prefix)
+    matches, AND revenue within [min_rev, max_rev]. The old code took only
+    the first character of the ntee param, so 'R,I' matched nothing and
+    revenue was ignored entirely (0-results bug on production, 2026-06-09)."""
+    conds: list = []
+    params: list = []
+    cat_parts: list = []
+    if ntee_list:
+        cat_parts.append(f"{alias}NTEE1 IN ({','.join('?' * len(ntee_list))})")
+        params.extend(ntee_list)
+    for s in sub_list:
+        # GLOB not LIKE: case-sensitive so SQLite can drive it from the
+        # NTEECC index (values are already uppercase); LIKE forces a scan.
+        cat_parts.append(f"{alias}NTEECC GLOB ?")
+        params.append(s + '*')
+    if cat_parts:
+        conds.append('(' + ' OR '.join(cat_parts) + ')')
+    if min_rev is not None:
+        conds.append(f"{alias}total_revenue >= ?")
+        params.append(min_rev)
+    if max_rev is not None:
+        conds.append(f"{alias}total_revenue <= ?")
+        params.append(max_rev)
+    return conds, params
 
 
 def _row_to_org(row) -> dict:
@@ -175,16 +202,25 @@ def get_organizations():
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website   = request.args.get('has_website', '').strip() == '1'
     direct_link   = request.args.get('direct_link', '').strip() == '1'
+    min_rev = request.args.get('min_revenue', type=float)
+    max_rev = request.args.get('max_revenue', type=float)
+    # Comma-separated multi-select, same contract as the home daanaa_api:
+    # ntee=R,I (category letters) and sub=E21,A82 (NTEECC prefixes), OR-combined.
+    ntee_list = [x.strip()[:1] for x in ntee.split(',') if x.strip()][:26]
+    sub_list  = [x.strip()[:4] for x in sub.split(',') if x.strip()][:40]
 
     # ── Text search: route to FTS ──────────────────────────────────────────
     if q and len(q) >= 2:
-        return _fts_directory(q, ntee or sub, state, sort, page, per_page,
+        return _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
+                              state, sort, page, per_page,
                               hidden_gem, needs_funding, has_website, direct_link)
 
-    # ── Filter-only browse: DB query when any filter flag is active ─────────
+    # ── Filter browse: DB query when flags, revenue, or multi-select used ───
     any_filter = hidden_gem or needs_funding or has_website or direct_link
-    if any_filter:
-        return _db_filter_browse(ntee or sub, state, sort, page, per_page,
+    multi_select = len(ntee_list) > 1 or len(sub_list) > 1 or (ntee_list and sub_list)
+    if any_filter or multi_select or min_rev is not None or max_rev is not None:
+        return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
+                                 state, sort, page, per_page,
                                  hidden_gem, needs_funding, has_website, direct_link)
 
     # ── Browse: precomputed files ──────────────────────────────────────────
@@ -224,7 +260,8 @@ def get_organizations():
                     'page': page, 'per_page': per_page})
 
 
-def _db_filter_browse(ntee, state, sort, page, per_page,
+def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
+                      state, sort, page, per_page,
                       hidden_gem, needs_funding, has_website, direct_link):
     """Query orgs table directly with filter conditions but no FTS match."""
     conn = get_search_db()
@@ -232,14 +269,10 @@ def _db_filter_browse(ntee, state, sort, page, per_page,
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
                         'page': page, 'per_page': per_page})
     try:
-        conditions = []
-        params: list = []
+        conditions, params = _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev)
         if state:
             conditions.append("STATE = ?")
             params.append(state)
-        if ntee and len(ntee) >= 1:
-            conditions.append("NTEE1 = ?")
-            params.append(ntee[0])
         if hidden_gem:
             conditions.append("is_hidden_gem = 1")
         if needs_funding:
@@ -251,7 +284,10 @@ def _db_filter_browse(ntee, state, sort, page, per_page,
 
         where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
         _SORT_MAP = {'name': 'organization_name ASC'}
-        order = _SORT_MAP.get(sort, 'merit_score DESC NULLS LAST')
+        # COALESCE instead of NULLS LAST: same ordering, but the non-indexable
+        # expression stops SQLite walking the score index and probing the
+        # filter row-by-row (6s → 0.2s on OR'd category filters, 2026-06-09).
+        order = _SORT_MAP.get(sort, 'COALESCE(merit_score, -1) DESC')
 
         total = conn.execute(f"SELECT COUNT(*) FROM orgs {where}", params).fetchone()[0]
         offset = (page - 1) * per_page
@@ -271,7 +307,8 @@ def _db_filter_browse(ntee, state, sort, page, per_page,
         conn.close()
 
 
-def _fts_directory(q, ntee, state, sort, page, per_page,
+def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
+                   state, sort, page, per_page,
                    hidden_gem, needs_funding, has_website, direct_link):
     """FTS search against search.db orgs table, returns full org objects."""
     conn = get_search_db()
@@ -279,7 +316,11 @@ def _fts_directory(q, ntee, state, sort, page, per_page,
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
                         'page': page, 'per_page': per_page, 'search_type': 'fts'})
     try:
-        conditions, params = _fts_where(q, state, ntee)
+        conditions, params = _fts_where(q, state)
+        cat_conds, cat_params = _cat_rev_conditions(
+            ntee_list, sub_list, min_rev, max_rev, alias='o.')
+        conditions.extend(cat_conds)
+        params.extend(cat_params)
 
         if hidden_gem:
             conditions.append("o.is_hidden_gem = 1")
@@ -290,7 +331,7 @@ def _fts_directory(q, ntee, state, sort, page, per_page,
         if direct_link:
             conditions.append("o.donate_url IS NOT NULL AND o.donate_url != ''")
 
-        order = "o.merit_score DESC NULLS LAST"
+        order = "COALESCE(o.merit_score, -1) DESC"
         if sort == 'name':
             order = "o.organization_name ASC"
 
@@ -489,7 +530,11 @@ def search():
         return jsonify({'results': [], 'query': query, 'total': 0, 'mode': 'unavailable'})
 
     try:
-        conditions, params = _fts_where(query, state, ntee)
+        conditions, params = _fts_where(query, state)
+        cat_conds, cat_params = _cat_rev_conditions(
+            [x.strip()[:1] for x in ntee.split(',') if x.strip()], [], None, None, alias='o.')
+        conditions.extend(cat_conds)
+        params.extend(cat_params)
         params.append(limit)
         sql = (f"SELECT o.EIN as ein, o.organization_name, o.NTEE1, o.NTEECC, o.CITY, o.STATE, o.mission, o.merit_score "
                f"FROM org_search s, orgs o WHERE {' AND '.join(conditions)} LIMIT ?")
@@ -527,7 +572,11 @@ def fused_search():
                         'page': page, 'per_page': per_page, 'search_type': 'unavailable'})
 
     try:
-        conditions, params = _fts_where(q, state, ntee)
+        conditions, params = _fts_where(q, state)
+        cat_conds, cat_params = _cat_rev_conditions(
+            [x.strip()[:1] for x in ntee.split(',') if x.strip()], [], None, None, alias='o.')
+        conditions.extend(cat_conds)
+        params.extend(cat_params)
 
         total = conn.execute(
             f"SELECT COUNT(*) FROM org_search s, orgs o WHERE {' AND '.join(conditions)}", params
@@ -535,7 +584,7 @@ def fused_search():
         offset = (page - 1) * per_page
         sql = (f"SELECT o.* FROM org_search s, orgs o "
                f"WHERE {' AND '.join(conditions)} "
-               f"ORDER BY o.merit_score DESC NULLS LAST "
+               f"ORDER BY COALESCE(o.merit_score, -1) DESC "
                f"LIMIT ? OFFSET ?")
         rows = conn.execute(sql, params + [per_page, offset]).fetchall()
         orgs = [_row_to_org(r) for r in rows]

@@ -115,3 +115,43 @@ coexists with :5000. Delete the memmap after build (never ship it). Also: `FAISS
 (IndexIVFPQ m=64) shrank the index 6.3GB→128MB.
 **Preventing rule:** for any batch job that must run alongside the live :5000 API on this
 30GB box, never hold a full embedding matrix in RAM — memmap it, sample-train, batch-add.
+
+## 2026-06-09 — Deploy-blocking test suite was silently dead
+Symptom: tests/test_principles.py (the "failing test BLOCKS DEPLOY" suite) crashed with
+FileNotFoundError on every run — nobody noticed because nothing ran it.
+Root cause: suite hardcoded `merit_api.py`, which was deleted in the daanaa_api migration;
+no CI/cron executes pytest, so the failure was invisible.
+Preventing rule: any file rename/deletion must grep tests/ for references; add pytest to
+a scheduled job (or pre-deploy gate) so a dead suite fails loudly, not silently.
+
+## 2026-06-09 — Fused search 500'd in production; latency probes hid it
+Symptom: /api/search returned 500 on every fused query — discovered only because a
+Session 3 smoke test checked the status code.
+Root cause: fused_search queries surge_boosts/surge_detections, which exist only after
+agent_surge_monitor.py runs; the daily catalog sync overwrites merit_registry.db, wiping
+agent-created tables. Earlier audit latency probes used curl -o /dev/null -w time_total
+without checking %{http_code} — fast 500s looked like healthy responses.
+Preventing rules: (1) any API dependency on an agent-created table must tolerate its
+absence (try/except OperationalError, like the has_v4_scores pattern); (2) every curl
+probe in monitoring/audits must assert the status code, not just timing.
+
+## 2026-06-09 — RSS lies for forked workers; use PSS
+Symptom: audit Phase 4 flagged "gunicorn workers 2.2 GB each, CoW sharing may be broken."
+Root cause: ps RSS counts shared pages once per process; smaps_rollup showed PSS 472 MB
+per worker with 2.25 GB Shared_Dirty — the preloaded embedding matrix is shared exactly
+as designed, and the API holds zero swap. The actual swap consumer was Ollama (5.5 GB).
+Preventing rule: judge memory of forked/preloaded services by PSS (/proc/PID/smaps_rollup),
+never ps RSS; find swap culprits via VmSwap in /proc/*/status before blaming the app.
+
+## 2026-06-09 — Frontend filters silently unsupported by the lean droplet API
+Symptom: production directory returned 0 results for multi-category + revenue band;
+single filters looked fine, so it shipped unnoticed.
+Root cause: droplet_api was a lean rewrite of daanaa_api and only implemented part of
+the /api/organizations contract; the frontend sends the full contract. Unsupported
+params were not rejected — they were ignored or mis-parsed ('R,I' treated as one
+NTEECC code), producing silently wrong results.
+Preventing rules: (1) when two backends serve one frontend, contract tests must run
+against BOTH (tests/test_droplet_search.py now covers the droplet); (2) an API that
+cannot honor a filter param must 400, never silently ignore it; (3) ORDER BY on an
+indexed column + selective WHERE → check the plan, SQLite may pick the sort index and
+probe the filter (use COALESCE/expression to force filter-first).

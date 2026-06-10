@@ -73,3 +73,9 @@ web/
 audit_report.csv
 archive/
 frontend/src/data/*.db
+
+# runtime/deploy artifacts (never commit)
+.deploy_scratch/
+.backups/
+.gpu_queue.json
+scores_v4_0_*.json

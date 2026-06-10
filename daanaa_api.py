@@ -88,6 +88,14 @@ def _cget(key: str, ttl_ns: str):
 def _cset(key: str, value):
     _CACHE[key] = (value, time.time())
 
+def _int_arg(name: str, default: int, lo: int = 0, hi: int = 1000) -> int:
+    """Read an int query param, clamped to [lo, hi]; bad input → default
+    (a stray ?limit=abc must never become a bare 500)."""
+    try:
+        return max(lo, min(int(request.args.get(name, default)), hi))
+    except (TypeError, ValueError):
+        return default
+
 # ── Embedding index (eager-loaded at startup, module-level singleton) ──────────
 # Loaded once in gunicorn master (--preload) then CoW-shared across workers.
 # ~7.4 GB for 1.8M orgs × 1024-dim float32. Falls back gracefully if missing.
@@ -309,11 +317,19 @@ def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
 
 # Claim verification — opaque HMAC token so raw PIN never appears in URLs.
 # Set DAANAA_CLAIM_SECRET in production; falls back to admin key then dev default.
-_CLAIM_SECRET = (
+_claim_secret_raw = (
     os.environ.get("DAANAA_CLAIM_SECRET")
     or os.environ.get("DAANAA_ADMIN_KEY")
-    or "daanaa-dev-claim-secret"
-).encode()
+)
+if not _claim_secret_raw:
+    if os.environ.get("DAANAA_PROD"):
+        # Fail closed: a known dev secret in prod = forgeable claim-verify tokens.
+        raise RuntimeError(
+            "DAANAA_PROD is set but neither DAANAA_CLAIM_SECRET nor "
+            "DAANAA_ADMIN_KEY is configured — refusing to start with the dev secret."
+        )
+    _claim_secret_raw = "daanaa-dev-claim-secret"
+_CLAIM_SECRET = _claim_secret_raw.encode()
 
 def _make_verify_token(ein: str, pin: str) -> str:
     """Return HMAC-SHA256 hex token for the given EIN + PIN pair."""
@@ -341,6 +357,11 @@ def get_db():
     if db is None:
         db = g._database = sqlite3.connect(DB_PATH)
         db.row_factory = sqlite3.Row
+        # 9.6 GB catalog: mmap serves cold page reads from the OS page cache
+        # instead of read() syscalls, plus a 64 MB page cache per connection.
+        # Biggest win on first-hit queries after a restart or cache expiry.
+        db.execute("PRAGMA mmap_size=2147483648")
+        db.execute("PRAGMA cache_size=-64000")
         if _LIVE_SPLIT:
             db.execute("ATTACH DATABASE ? AS live", (LIVE_DB_PATH,))
     return db
@@ -1093,7 +1114,16 @@ def ntee_categories():
 # deductibility!='2' keeps confirmed-deductible (1), by-treaty (4), and unknown (0)
 # while excluding the 3,379 orgs the IRS has explicitly marked non-deductible.
 # Orgs with null subsection (NCCS-only, unverifiable) are excluded.
-_DEDUCTIBILITY_FILTER = "subsection = '3' AND deductibility = '1'"  # Only active tax-deductible 501(c)(3)
+# Only active tax-deductible 501(c)(3). Revoked orgs stay in registry_enriched
+# (rows untouched, reversible) but are hidden from browse/search: donations to
+# auto-revoked orgs are not tax-deductible, so listing them with tier badges
+# would violate Principle 3. Direct /api/organizations/<ein> access still works
+# and the donate gate (_is_revoked) independently fails closed.
+_DEDUCTIBILITY_FILTER = (
+    "subsection = '3' AND deductibility = '1' "
+    "AND COALESCE(irs_revoked, 0) != 1 "
+    "AND COALESCE(org_status, '') != 'revoked'"
+)
 
 
 def _donate_eligible_basic(subsection, deductibility):
@@ -1534,7 +1564,8 @@ def org_submit_data():
             "ein": ein
         }), 201
     except Exception as e:
-        return jsonify({"error": f"Submission failed: {str(e)}"}), 500
+        app.logger.exception("financial-data submission failed")
+        return jsonify({"error": "Submission failed. Please try again."}), 500
 
 
 @app.route('/api/org/<ein>/submission-status', methods=['GET'])
@@ -1587,7 +1618,7 @@ def unscored_search():
     query = request.args.get('q', '').strip()
     ntee1 = request.args.get('ntee1', '').upper().strip()
     state = request.args.get('state', '').upper().strip()
-    limit = min(int(request.args.get('limit', 20)), 50)
+    limit = _int_arg('limit', 20, hi=50)
 
     if not query and not ntee1 and not state:
         return jsonify({"error": "Provide search terms (q, ntee1, or state)"}), 400
@@ -1680,8 +1711,8 @@ def admin_feedback():
 def admin_waitlist_list():
     source = request.args.get('source', '').strip()
     status = request.args.get('status', '').strip()
-    limit  = min(int(request.args.get('limit',  200)), 500)
-    offset = max(int(request.args.get('offset', 0)),   0)
+    limit  = _int_arg('limit', 200, hi=500)
+    offset = _int_arg('offset', 0, hi=10_000_000)
     where, params = [], []
     if source in _VALID_SOURCES:
         where.append('source = ?'); params.append(source)
@@ -1935,7 +1966,8 @@ def claim_update():
         return jsonify({'success': True, 'message': 'Profile updated'}), 200
 
     except Exception as e:
-        return jsonify({'error': f'Update failed: {str(e)[:80]}'}), 500
+        app.logger.exception('claim profile update failed')
+        return jsonify({'error': 'Update failed. Please try again.'}), 500
 
 
 @app.route('/api/claim/profile', methods=['PATCH'])
@@ -2068,7 +2100,7 @@ def get_similar_organizations(ein):
         return jsonify({"error": "Invalid EIN"}), 400
 
     try:
-        limit = min(int(request.args.get('limit', 6)), 12)
+        limit = _int_arg('limit', 6, hi=12)
     except (ValueError, TypeError):
         limit = 6
 
@@ -2095,7 +2127,7 @@ def semantic_search():
     if not q:
         return jsonify({"error": "q param required"}), 400
     try:
-        limit = min(int(request.args.get('limit', 10)), 25)
+        limit = _int_arg('limit', 10, hi=25)
     except (ValueError, TypeError):
         limit = 10
 
@@ -2181,15 +2213,20 @@ def fused_search():
     fused_eins = sorted(rrf, key=lambda e: rrf[e], reverse=True)
 
     # ── Apply surge boosts (event-driven: add relevant orgs even if not in keyword/semantic) ─────────────
-    # Check if there are active boosts for this query's detected event
-    active_boosts = db.execute("""
-        SELECT DISTINCT b.ein, b.relevance_score, s.event_type
-        FROM surge_boosts b
-        JOIN surge_detections s ON b.surge_id = s.id
-        WHERE b.status = 'active'
-          AND b.expires_at > datetime('now')
-          AND (? LIKE '%' || s.query || '%' OR s.query LIKE '%' || ? || '%')
-    """, (q, q)).fetchall()
+    # Check if there are active boosts for this query's detected event.
+    # The surge tables exist only after agent_surge_monitor.py has run — search
+    # must work without them (this 500'd every fused search when they were absent).
+    try:
+        active_boosts = db.execute("""
+            SELECT DISTINCT b.ein, b.relevance_score, s.event_type
+            FROM surge_boosts b
+            JOIN surge_detections s ON b.surge_id = s.id
+            WHERE b.status = 'active'
+              AND b.expires_at > datetime('now')
+              AND (? LIKE '%' || s.query || '%' OR s.query LIKE '%' || ? || '%')
+        """, (q, q)).fetchall()
+    except sqlite3.OperationalError:
+        active_boosts = []
 
     boost_eins = {dict(b)['ein']: dict(b) for b in active_boosts}
 
@@ -2315,78 +2352,16 @@ def admin_override_boost(boost_id):
     return jsonify({"status": "overridden", "boost_id": boost_id})
 
 
-# ── Research Dashboard API (password-protected advisor presentation) ─────────
-# These endpoints power the /research research presentation dashboard
-# All research endpoints require a valid session token passed as X-Research-Session header
-
-RESEARCH_PASSCODE = os.getenv('RESEARCH_PASSCODE', 'daanaa2026')  # Hardcoded for testing
-RESEARCH_SESSION_TTL = 8 * 3600  # 8 hours in seconds
-def _ensure_research_sessions_table(db):
-    """Create research_sessions table if it doesn't exist."""
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS research_sessions (
-            token TEXT PRIMARY KEY,
-            created_at REAL,
-            expires_at REAL
-        )
-    """)
-    db.commit()
-
-def _check_research_auth(session_token: str) -> bool:
-    """Validate research session token. Purge expired sessions."""
-    db = sqlite3.connect('data/merit_registry.db')
-    db.row_factory = sqlite3.Row
-    try:
-        now = time.time()
-        # Purge expired sessions
-        db.execute("DELETE FROM research_sessions WHERE expires_at < ?", (now,))
-        db.commit()
-        # Check if token exists and is valid
-        session = db.execute("SELECT * FROM research_sessions WHERE token = ? AND expires_at > ?",
-                           (session_token, now)).fetchone()
-        return session is not None
-    finally:
-        db.close()
-
-@app.route('/api/research/auth', methods=['POST'])
-@limiter.exempt
-def research_auth():
-    """Authenticate with passcode, return 8-hour session token."""
-    data = request.get_json(silent=True) or {}
-    passcode = data.get('passcode', '')
-
-    # Use constant-time comparison to prevent timing attacks
-    if not passcode or not hmac.compare_digest(passcode, RESEARCH_PASSCODE):
-        return jsonify({"error": "Invalid access code"}), 401
-
-    db = sqlite3.connect('data/merit_registry.db')
-    _ensure_research_sessions_table(db)
-
-    session_token = secrets.token_urlsafe(32)
-    now = time.time()
-    try:
-        db.execute("""
-            INSERT INTO research_sessions (token, created_at, expires_at)
-            VALUES (?, ?, ?)
-        """, (session_token, now, now + RESEARCH_SESSION_TTL))
-        db.commit()
-        app.logger.info(f"research_auth: new session, expires in {RESEARCH_SESSION_TTL}s")
-    finally:
-        db.close()
-
-    return jsonify({
-        'session_token': session_token,
-        'expires_in': RESEARCH_SESSION_TTL
-    })
+# ── Research Dashboard API ────────────────────────────────────────────────────
+# These endpoints power the /research presentation dashboard. They serve only
+# aggregate public IRS data (no PII, no donor data), so they are public — the
+# old passcode/session gate was removed 2026-06-09 (audit Session 2): the
+# frontend reads a static snapshot anyway, and the passcode lived in source.
 
 @app.route('/api/research/summary/operating-models')
 @limiter.exempt
 def research_operating_models():
     """Operating model distribution chart data."""
-    token = request.headers.get('X-Research-Session', '')
-    if not _check_research_auth(token):
-        return jsonify({"error": "Unauthorized"}), 401
-
     valid_models = [
         'Activity_Programming',
         'Direct_Delivery',
@@ -2438,10 +2413,6 @@ def research_operating_models():
 @limiter.exempt
 def research_revenue_bands():
     """Revenue band matrix by operating model."""
-    token = request.headers.get('X-Research-Session', '')
-    if not _check_research_auth(token):
-        return jsonify({"error": "Unauthorized"}), 401
-
     valid_models = [
         'Activity_Programming',
         'Direct_Delivery',
@@ -2495,10 +2466,6 @@ def research_revenue_bands():
 @limiter.exempt
 def research_lamp_tiers():
     """Lamp tier (Beacon/Torch/Candle/Spark) distribution."""
-    token = request.headers.get('X-Research-Session', '')
-    if not _check_research_auth(token):
-        return jsonify({"error": "Unauthorized"}), 401
-
     db = get_db()
     rows = db.execute("""
         SELECT merit_tier, count, pct_of_total, avg_revenue, avg_financial_health_score,
@@ -2535,10 +2502,6 @@ def research_lamp_tiers():
 @limiter.exempt
 def research_data_coverage():
     """Data availability across key fields."""
-    token = request.headers.get('X-Research-Session', '')
-    if not _check_research_auth(token):
-        return jsonify({"error": "Unauthorized"}), 401
-
     db = get_db()
     rows = db.execute("""
         SELECT data_type, total_orgs, has_data, pct_covered, period
@@ -2565,10 +2528,6 @@ def research_data_coverage():
 @limiter.exempt
 def research_categories():
     """NTEE1 category distribution."""
-    token = request.headers.get('X-Research-Session', '')
-    if not _check_research_auth(token):
-        return jsonify({"error": "Unauthorized"}), 401
-
     db = get_db()
     rows = db.execute("""
         SELECT ntee1, ntee_label, count, pct_of_total, avg_revenue, avg_peer_percentile,
@@ -2602,10 +2561,6 @@ def research_categories():
 @limiter.exempt
 def research_states():
     """State-level distribution."""
-    token = request.headers.get('X-Research-Session', '')
-    if not _check_research_auth(token):
-        return jsonify({"error": "Unauthorized"}), 401
-
     db = get_db()
     rows = db.execute("""
         SELECT state, count, pct_of_total, avg_revenue, avg_peer_percentile, pct_with_website, period
@@ -2633,10 +2588,6 @@ def research_states():
 @limiter.exempt
 def research_spending_by_model():
     """Program spending distribution by operating model."""
-    token = request.headers.get('X-Research-Session', '')
-    if not _check_research_auth(token):
-        return jsonify({"error": "Unauthorized"}), 401
-
     valid_models = [
         'Activity_Programming',
         'Direct_Delivery',
@@ -2697,10 +2648,6 @@ def research_spending_by_model():
 @limiter.exempt
 def research_metadata():
     """Metadata about the research dataset."""
-    token = request.headers.get('X-Research-Session', '')
-    if not _check_research_auth(token):
-        return jsonify({"error": "Unauthorized"}), 401
-
     db = get_db()
     total_orgs = db.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]
     period = db.execute("SELECT MAX(period) FROM research_operating_model_summary").fetchone()[0]
