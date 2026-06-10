@@ -10,7 +10,7 @@
 set -u
 
 BASE="$HOME/meritgiving"
-MODEL="$HOME/models/Qwen2.5-32B-Instruct-Q4_K_M.gguf"   # 14B GGUF symlink went stale (ollama GC'd the blob); 32B is present, higher quality, and pushes GPU harder (good for cold-room overnight runs)
+MODEL="$HOME/models/qwen3-30b-a3b-2507/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf"  # MoE (3B active) — ~5x throughput of dense 32B at similar quality; benched + 11K-mission supervised run 2026-06-10
 SERVER_BIN="$HOME/llama-vulkan/build/bin/llama-server"
 PORT=11437
 LOG_DIR="$BASE/logs"
@@ -40,14 +40,14 @@ start() {
     done
   fi
 
-  if pgrep -f "scripts/generate_missions.py" >/dev/null; then
-    echo "[$(ts)] start: generate_missions already running — skipping"
+  if pgrep -f "scripts/generate_missions" >/dev/null; then
+    echo "[$(ts)] start: mission generation already running — skipping"
   else
-    echo "[$(ts)] start: launching generate_missions (6 workers, resumable)"
+    echo "[$(ts)] start: launching mission generation (standard scope, then IRS_BMF backlog)"
     # shellcheck disable=SC1091
     source "$BASE/venv/bin/activate"
     cd "$BASE" || exit 1
-    nohup python3 scripts/generate_missions.py --workers 6 >> "$GEN_LOG" 2>&1 &
+    nohup bash -c "python3 scripts/generate_missions.py --workers 6 && python3 scripts/generate_missions_irs_bmf.py --workers 6" >> "$GEN_LOG" 2>&1 &
   fi
 
   # CPU side: loop donate-link discovery/release so the CPU isn't idle (low heat)
@@ -87,8 +87,8 @@ stop() {
   echo "[$(ts)] stop: halting cpu_night donate loop"
   pkill -f "scripts/cpu_night.sh" 2>/dev/null
   pkill -f "scripts/donation_link_pipeline.py" 2>/dev/null
-  echo "[$(ts)] stop: halting generate_missions"
-  pkill -f "scripts/generate_missions.py" 2>/dev/null
+  echo "[$(ts)] stop: halting mission generation"
+  pkill -f "scripts/generate_missions" 2>/dev/null
   sleep 2
   echo "[$(ts)] stop: halting reembed_watchdog"
   pkill -f "scripts/reembed_watchdog.py" 2>/dev/null

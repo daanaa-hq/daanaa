@@ -18,29 +18,38 @@ from threading import Lock
 
 DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 GEN_URL = "http://127.0.0.1:11437/v1/chat/completions"
-MODEL = "Qwen2.5-32B-Instruct-Q4_K_M"
+MODEL = "Qwen3-30B-A3B-Instruct-2507-Q4_K_M"
 BATCH_SIZE = 20
 TOKENS_PER_ORG = 80
 
+# Canonical NTEE major-group labels — must match frontend/src/data/categories.ts
 _NTEE_LABELS = {
-    "A": "arts, culture, and humanities",
-    "B": "education and research",
-    "C": "environment and animals",
-    "D": "health and medicine",
-    "E": "mental health and addiction",
-    "F": "crime and legal",
-    "G": "employment and training",
-    "H": "food, agriculture and nutrition",
-    "I": "housing and shelter",
-    "J": "public safety and relief",
-    "K": "recreation and sports",
-    "L": "youth development",
-    "M": "voluntary organizations",
-    "N": "philanthropy and grantmaking",
-    "O": "public and societal benefit",
-    "P": "religion and faith",
-    "Q": "mutual benefit",
-    "T": "unknown",
+    "A": "arts and culture",
+    "B": "education",
+    "C": "environment",
+    "D": "animals",
+    "E": "health care",
+    "F": "mental health",
+    "G": "disease research and patient support",
+    "H": "medical research",
+    "I": "crime and legal services",
+    "J": "employment",
+    "K": "food and nutrition",
+    "L": "housing and shelter",
+    "M": "public safety and disaster relief",
+    "N": "sports and recreation",
+    "O": "youth development",
+    "P": "human services",
+    "Q": "international",
+    "R": "civil rights and advocacy",
+    "S": "community improvement",
+    "T": "philanthropy and grantmaking",
+    "U": "science and technology",
+    "V": "social science",
+    "W": "public benefit",
+    "X": "faith-based",
+    "Y": "mutual benefit",
+    "Z": "community service",
 }
 
 _FEW_SHOT = """\
@@ -63,12 +72,12 @@ _write_lock = Lock()
 def _build_prompt(batch: list[dict]) -> str:
     lines = []
     for org in batch:
-        ntee = _NTEE_LABELS.get(org.get("NTEE1", "T"), "nonprofit")
+        ntee = _NTEE_LABELS.get(org.get("NTEE1") or "", "community service")
         revenue = org.get("total_revenue")
         size = f"${revenue:,.0f} annual revenue" if revenue else "community-based"
         city = (org.get("CITY") or "").title()
         lines.append(
-            f'  name="{org["organization_name"]}", sector="{ntee}", '
+            f'  ein="{org["EIN"]}", name="{org["organization_name"]}", sector="{ntee}", '
             f'location="{city}, {org.get("STATE", "")}", size="{size}"'
         )
 
@@ -80,7 +89,10 @@ def _build_prompt(batch: list[dict]) -> str:
     )
 
 def _call_llm(batch: list[dict]) -> dict[str, str]:
-    """Returns {ein: mission_text}."""
+    """Returns {ein: mission_text}. Only EINs actually in the batch are accepted —
+    the model must echo back the ein= we gave it; anything else is a hallucination
+    that would UPDATE the wrong org's row."""
+    valid_eins = {org["EIN"] for org in batch}
     prompt = _build_prompt(batch)
     n = len(batch)
     payload = {
@@ -103,7 +115,7 @@ def _call_llm(batch: list[dict]) -> dict[str, str]:
             return {
                 item["ein"]: item["mission"].strip()
                 for item in (parsed if isinstance(parsed, list) else [])
-                if "ein" in item and "mission" in item
+                if item.get("ein") in valid_eins and item.get("mission")
             }
     except Exception as e:
         print(f"LLM error: {e}", flush=True)
@@ -115,13 +127,23 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, batch_size: 
         _errors += batch_size
         return
     with _write_lock:
-        conn.executemany(
-            "UPDATE registry_enriched SET mission=?, mission_source='ai_generated' WHERE EIN=?",
-            [(mission, ein) for ein, mission in results.items()]
-        )
-        conn.commit()
-        _written += len(results)
-        _errors += batch_size - len(results)
+        # Other night workers (reembed_watchdog, donate pipeline) hold write locks
+        # for long stretches — retry with backoff instead of dropping the batch.
+        for attempt in range(6):
+            try:
+                conn.executemany(
+                    "UPDATE registry_enriched SET mission=?, mission_source='ai_generated' WHERE EIN=?",
+                    [(mission, ein) for ein, mission in results.items()]
+                )
+                conn.commit()
+                _written += len(results)
+                _errors += batch_size - len(results)
+                return
+            except sqlite3.OperationalError as e:
+                if "locked" not in str(e).lower() or attempt == 5:
+                    raise
+                conn.rollback()
+                time.sleep(10 * (attempt + 1))
 
 def main(limit=None, workers=1):
     conn = sqlite3.connect(DB_PATH, timeout=30)
@@ -155,10 +177,15 @@ def main(limit=None, workers=1):
     start = time.time()
 
     def process(batch):
-        tconn = sqlite3.connect(DB_PATH, timeout=30)
+        global _errors
+        tconn = sqlite3.connect(DB_PATH, timeout=60)
+        tconn.execute("PRAGMA busy_timeout=60000")
         try:
             results = _call_llm(batch)
             _write_batch(results, tconn, len(batch))
+        except Exception:
+            _errors += len(batch)  # keep progress honest when a batch dies
+            raise
         finally:
             tconn.close()
 

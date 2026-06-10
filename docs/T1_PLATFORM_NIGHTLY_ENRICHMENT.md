@@ -17,7 +17,7 @@ them all in `stop()`. There is no separate Python orchestrator (one was built
 |--------|--------|----------|--------------|
 | Embed server | `embed_server.sh` (:11436) | GPU | mxbai-embed-large — verification + re-embeds |
 | Mission model | llama-server (:11437) | GPU | Mission generation model, 6 slots, cont. batching |
-| Storyteller | `generate_missions.py --workers 6` | GPU via :11437 | AI missions for orgs missing them, resumable |
+| Storyteller | `generate_missions.py` then `generate_missions_irs_bmf.py` (6 workers) | GPU via :11437 | AI missions: standard scope first, then the 245K IRS_BMF backlog (batch 20/call, EIN-validated writes, resumable) |
 | Payment hunter | `cpu_night.sh` → `donation_link_pipeline.py` | CPU + net | Loops Phase 1 (discover 200) + Phase 2 (release ≤50 verified ≥90 conf) all night |
 | Website hunter | `web_night.sh` → `web_finder_agent.py` | CPU + :11436 | Loops 200-org passes, revenue DESC; domain-pattern candidates verified by GPU embeddings (≥0.85); finds marked `beta`, failures marked `no_website_found` (90-day retry) |
 | Re-embedder | `reembed_watchdog.py` | GPU via :11436 | Re-embeds orgs whose mission changed (threshold 5000) |
@@ -46,7 +46,7 @@ daily before anything publishes.
 
 | Task | Model | Where |
 |------|-------|-------|
-| Missions | Qwen2.5-32B-Instruct Q4_K_M (→ evaluating Qwen3-30B-A3B-Instruct-2507 MoE, ~5x throughput) | llama-server :11437, Vulkan1 |
+| Missions | Qwen3-30B-A3B-Instruct-2507 Q4_K_M (MoE, 3B active — switched from dense 32B 2026-06-10 after 11K-mission supervised run, ~7 orgs/sec) | llama-server :11437, Vulkan1 |
 | Embeddings | mxbai-embed-large | llama-server :11436 (Ollama :11434 fallback) |
 | Cause tags | qwen2.5:7b | Ollama :11434 |
 

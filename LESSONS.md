@@ -165,3 +165,18 @@ probe the filter (use COALESCE/expression to force filter-first).
 - **Symptom:** Commit d5319e68c6d ballooned with 1,025,796 `.deploy_scratch/precompute/` files; had to redo HEAD.
 - **Root cause:** `.deploy_scratch/`, `.backups/`, `scores_v4_0_*.json` were never gitignored.
 - **Rule:** Any scratch/output dir created by a deploy or pipeline gets a .gitignore entry in the same change that creates it. Never `git add -A` without checking `git status --short | head` first.
+
+## 2026-06-10: Exception handler crashed on the same bad data that triggered it
+**Symptom:** Donate-link Phase 2 crashed 1,788× overnight (`TypeError: 'NoneType' object is not subscriptable`), blocking every release pass.
+**Root cause:** 4 rows had `pending_review` status but NULL `donate_url`. `requests.head(None)` raised → the `except` handler itself did `durl[:70]` and died, killing the whole batch; the same 4 rows recycled every loop.
+**Rule:** Validate row data before use, and never let an error handler dereference the value whose invariant just failed. A handful of bad rows must skip, not sink the batch.
+
+## 2026-06-10: A verifier that never passes is a config bug — test against known-true pairs
+**Symptom:** web_finder marked 1,800 orgs `no_website_found` in one night, 0 verified — including orgs whose obvious domain was correct (UPMC → upmc.com).
+**Root cause:** Two stacked silent failures: (1) cosine threshold 0.85 unreachable for name-vs-HTML comparison (peaks ~0.7); (2) embed server returned HTTP 500 on >512-token inputs and the client swallowed non-200s without logging.
+**Rule:** Before a verifier runs unattended, feed it pairs known to be true and confirm it can say yes. Log every non-200 from internal services. Marks written by a broken verifier are invalid data — clear them, don't let cooldowns hide the damage.
+
+## 2026-06-10: git filter-branch stomps the working tree — commit before history surgery runs
+**Symptom:** Uncommitted fixes vanished twice mid-session; every tracked file reset atomically (identical mtimes to the nanosecond).
+**Root cause:** A credential-scrub `git filter-branch --tree-filter --force` was running concurrently — it checks out every commit into the working tree, destroying all uncommitted changes repeatedly until it finishes.
+**Rule:** Never leave work uncommitted while any history rewrite (filter-branch/filter-repo) can run. Check `pgrep -f filter-branch` when files revert "by themselves" — identical mtimes across files = one atomic git operation, not a linter.

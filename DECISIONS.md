@@ -186,3 +186,18 @@ links visible-but-flagged (donor-confusion risk, violates 2026-06-09 fail-closed
 ## 2026-06-10 — Mission model upgrade candidate: Qwen3-30B-A3B-Instruct-2507 (MoE)
 - **Chose:** download standalone Q4_K_M GGUF (not an ollama-blob symlink — ollama GC broke the 14B that way); benchmark vs Qwen2.5-32B before swapping gpu_night.sh MODEL.
 - **Why:** ~5x throughput (MoE A3B ≈146 tok/s vs dense 32B) on 1–2 sentence missions; quality gate first per stewardship (no silent degradation).
+
+## 2026-06-10: Generic platform donate URLs fail closed at release
+**Chose:** Regex guard in Phase 2 release rejecting platform landing pages with no org identifier (`paypal.com/donate`, `donorbox.org/widget(s)`, `givebutter.com/embed|latest`, bare `venmo.com`, `crm.bloomerang.co/HostedDonation`) → `human_review`; pulled 46 already-published ones back from `beta`.
+**Why:** Phase 1 scored these at confidence 90 and the HEAD check passes (the generic page is alive), so they published — a false trust signal pointing donors at PayPal's homepage, not the org. Fail-closed beats fixing only upstream scoring.
+**Rejected:** Deleting the URLs (they're evidence for human review); fixing only Phase 1 confidence (release is the last gate — it must be safe regardless).
+
+## 2026-06-10: web_finder verification = name-token gate + embedding floor
+**Chose:** Primary gate ≥70% of meaningful org-name tokens present on the page; embedding similarity ≥0.5 as a secondary floor (was: similarity ≥0.85 alone).
+**Why:** Name-string vs homepage-HTML cosine peaks ~0.7 — the 0.85 bar was mathematically unreachable (0 verified in 1,800 attempts). Token containment is deterministic and explainable from public data.
+**Rejected:** Just lowering the threshold to 0.6 (would admit squatter/wrong-org pages scoring 0.6+ on topic alone).
+
+## 2026-06-10: Qwen3-30B-A3B MoE is the nightly mission model
+**Chose:** Switched gpu_night.sh :11437 model to Qwen3-30B-A3B-Instruct-2507 Q4_K_M (MoE, 3B active params) and chained generate_missions_irs_bmf.py after generate_missions.py.
+**Why:** Supervised run wrote 11,252 EIN-validated missions at ~7 orgs/sec with 0 write errors; dense 32B does ~1.5/sec. Quality spot-checks passed (active voice, correct org, correct sector).
+**Rejected:** Staying on dense 32B (245K backlog would take ~2 weeks of nights vs ~2 nights).

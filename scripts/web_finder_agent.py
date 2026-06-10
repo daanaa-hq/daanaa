@@ -37,7 +37,7 @@ EMBED_MODEL = "mxbai-embed-large"
 # Google search via DuckDuckGo (no API key needed, respects robots.txt)
 SEARCH_TIMEOUT = 10
 FETCH_TIMEOUT = 8
-MIN_CONFIDENCE = 0.85
+MIN_CONFIDENCE = 0.5   # embedding floor; primary gate is the name-token check (≥70%)
 
 def log(msg: str):
     ts = datetime.now(timezone.utc).isoformat()
@@ -52,11 +52,12 @@ def embed_text(text: str) -> np.ndarray | None:
         resp = requests.post(
             EMBED_URL,
             json={"model": EMBED_MODEL, "input": text},
-            timeout=5
+            timeout=30   # embed shares the GPU with mission gen; 5s timed out under load
         )
         if resp.status_code == 200:
             emb = resp.json()["data"][0]["embedding"]
             return np.array(emb, dtype=np.float32)
+        log(f"  Embedding HTTP {resp.status_code}: {resp.text[:120]}")
     except Exception as e:
         log(f"  Embedding error: {e}")
     return None
@@ -108,42 +109,58 @@ def fetch_website_text(url: str) -> str | None:
         if resp.status_code == 200:
             # Extract text from HTML (basic)
             text = resp.text.lower()
+            # Drop script/style bodies — code noise, and it pushed token counts
+            # past the embed server's 512-token batch limit (HTTP 500)
+            text = re.sub(r'<(script|style)[^>]*>.*?</\1>', ' ', text, flags=re.DOTALL)
             # Remove HTML tags
             text = re.sub(r'<[^>]+>', ' ', text)
             # Remove extra whitespace
             text = ' '.join(text.split())
-            return text[:2000]  # First 2000 chars
+            return text[:1200]  # ≤~450 tokens, safely under the embed batch limit
     except Exception as e:
         pass
     return None
 
+def _name_token_ratio(org_name: str, page_text: str) -> float:
+    """Share of meaningful org-name words that appear on the page.
+    Deterministic and explainable: a real org homepage names the org."""
+    stop = {'the', 'inc', 'incorporated', 'corp', 'corporation', 'foundation',
+            'fund', 'assn', 'association', 'and', 'for', 'of'}
+    tokens = [t for t in re.findall(r'[a-z]+', org_name.lower())
+              if len(t) > 2 and t not in stop]
+    if not tokens:
+        return 0.0
+    return sum(1 for t in tokens if t in page_text) / len(tokens)
+
 def verify_website_ownership(org_record: dict, website_url: str) -> tuple[bool, float]:
     """
-    Verify that website belongs to org using semantic similarity.
+    Verify the website belongs to the org. Two signals, both required:
+    1. Name-token check: ≥70% of meaningful org-name words appear on the page
+       (a domain-pattern guess can land on an unrelated squatter/company site).
+    2. Embedding similarity ≥ 0.5 between org identity and page text — a sanity
+       floor only. (Name-vs-HTML cosine peaks ~0.7, so the old 0.85 bar could
+       never pass: 0 verified in 1,800 attempts on 2026-06-10.)
     Returns (is_verified, confidence_score)
     """
-    org_address = f"{org_record['organization_name']} {org_record.get('CITY', '')} {org_record.get('STATE', '')}"
-    org_ein = org_record['EIN']
+    org_name = org_record['organization_name']
 
-    # Embed org identity
-    org_emb = embed_text(org_address)
-    if org_emb is None:
-        return False, 0.0
-
-    # Fetch and embed website content
+    # Fetch page first — cheapest signal
     website_text = fetch_website_text(website_url)
     if website_text is None:
         return False, 0.0
 
-    website_emb = embed_text(website_text)
-    if website_emb is None:
+    name_ratio = _name_token_ratio(org_name, website_text)
+    if name_ratio < 0.7:
+        log(f"    Verified: False (name tokens on page: {name_ratio:.0%})")
         return False, 0.0
 
-    # Compute similarity
+    org_address = f"{org_name} {org_record.get('CITY', '')} {org_record.get('STATE', '')}"
+    org_emb = embed_text(org_address)
+    website_emb = embed_text(website_text)
     similarity = cosine_similarity(org_emb, website_emb)
-    is_verified = similarity >= MIN_CONFIDENCE
 
-    log(f"    Verified: {is_verified} (similarity: {similarity:.3f})")
+    is_verified = similarity >= MIN_CONFIDENCE
+    log(f"    Verified: {is_verified} (name tokens: {name_ratio:.0%}, similarity: {similarity:.3f})")
     return is_verified, similarity
 
 def find_donation_links(website_text: str) -> list[str]:

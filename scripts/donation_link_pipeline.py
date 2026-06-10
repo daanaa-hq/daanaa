@@ -926,6 +926,19 @@ def phase1_discover_new(db: sqlite3.Connection, max_orgs=200, dry_run=False, wor
 
 # ── Phase 2: Release batch ────────────────────────────────────────────────────
 
+# Platform landing pages with no org identifier (no hosted_button_id, slug, or
+# campaign). These never point at a specific org's donate page.
+_GENERIC_DONATE_RE = re.compile(
+    r"^https?://(www\.)?("
+    r"paypal\.com/donate/?(\?cmd=_s-xclick)?"
+    r"|donorbox\.org/widgets?/?"
+    r"|givebutter\.com/(embed|latest)/?"
+    r"|crm\.bloomerang\.co/HostedDonation/?"
+    r"|venmo\.com/?"
+    r")$",
+    re.IGNORECASE,
+)
+
 def phase2_release_batch(db: sqlite3.Connection, max_links=50, dry_run=False):
     print(f"\n=== Phase 2: Release batch (max {max_links} links) ===")
 
@@ -956,6 +969,36 @@ def phase2_release_batch(db: sqlite3.Connection, max_links=50, dry_run=False):
         durl      = row["donate_url"]
         dname     = (row["organization_name"] or "")[:50]
         dconf     = row["donate_confidence"]
+
+        if durl and _GENERIC_DONATE_RE.match(durl.strip()):
+            # Generic platform landing page (paypal.com/donate, donorbox.org/widget...)
+            # — not the org's own donate page. Publishing it would be a false trust
+            # signal; fail closed and route to human review.
+            failed += 1
+            print(f"  SKIP (generic platform URL): {durl[:70]}")
+            if not dry_run:
+                db.execute("""
+                    UPDATE registry_enriched
+                    SET donate_url_status='human_review', donate_human_review=1
+                    WHERE EIN=?
+                """, (ein,))
+                db.commit()
+            continue
+
+        if not durl:
+            # Data inconsistency: pending_review row with no URL. Clear the status
+            # so it stops recycling through every release pass (was crashing the
+            # whole batch on requests.head(None) → durl[:70] in the handler).
+            failed += 1
+            print(f"  SKIP (no URL): {dname}  EIN={ein} — clearing pending_review")
+            if not dry_run:
+                db.execute("""
+                    UPDATE registry_enriched
+                    SET donate_url_status=NULL, donate_confidence=NULL
+                    WHERE EIN=?
+                """, (ein,))
+                db.commit()
+            continue
 
         # Final liveness HEAD check before publishing
         try:
