@@ -8,14 +8,14 @@ The letter contains a QR code + 6-digit PIN so the org can verify ownership.
 MVP mode (no LOB_API_KEY): logs to logs/claim_letters.log for manual printing/mailing.
 Production mode (LOB_API_KEY set): sends via Lob.com API (prints + mails same day).
 
-Called by the /api/claim/start endpoint in merit_api.py.
+Called by the /api/claim/start endpoint in daanaa_api.py.
 """
 
 import os, io, base64, json, logging, hmac as _hmac, hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
-# Must match merit_api.py _CLAIM_SECRET derivation.
+# Must match daanaa_api.py _CLAIM_SECRET derivation.
 _CLAIM_SECRET = (
     os.environ.get("DAANAA_CLAIM_SECRET")
     or os.environ.get("DAANAA_ADMIN_KEY")
