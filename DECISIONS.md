@@ -201,3 +201,13 @@ links visible-but-flagged (donor-confusion risk, violates 2026-06-09 fail-closed
 **Chose:** Switched gpu_night.sh :11437 model to Qwen3-30B-A3B-Instruct-2507 Q4_K_M (MoE, 3B active params) and chained generate_missions_irs_bmf.py after generate_missions.py.
 **Why:** Supervised run wrote 11,252 EIN-validated missions at ~7 orgs/sec with 0 write errors; dense 32B does ~1.5/sec. Quality spot-checks passed (active voice, correct org, correct sector).
 **Rejected:** Staying on dense 32B (245K backlog would take ~2 weeks of nights vs ~2 nights).
+
+## 2026-06-10: Generic platform URLs deducted at scoring time, not just blocked at release
+**Chose:** `generic_platform_url` factor (−40) in `score_confidence`, applied at all three scoring sites (Phase 0 audit, subdomain probe, Phase 1 main). Regex moved next to the scorer; the Phase 2 release guard stays as the last gate.
+**Why:** Root cause of the 46-link incident — no factor asked "does this URL identify the org?", so `paypal.com/donate` scored 90. With −40 a generic URL caps at 65 even with every positive factor: below publish (90) and review (75) bands.
+**Rejected:** Regex-rejecting candidates before scoring (loses the evidence trail in donation_link_evidence; scoring + deduction keeps the decision explainable).
+
+## 2026-06-10: web_finder identifies itself + respects robots.txt (own copy of can_fetch)
+**Chose:** DaanaaWebFinder/1.0 UA on all fetches, RobotFileParser cache (fails open), honest docstring (domain-pattern guessing — there is no search engine), dead `find_donation_links()` deleted.
+**Why:** Stewardship rule 1 (no robots bypass) was claimed in the docstring but not implemented; default python-requests UA hides who we are.
+**Rejected:** Importing `can_fetch` from donation_link_pipeline (pulls that module's heavier deps and module-level state into a script that needs 15 lines).

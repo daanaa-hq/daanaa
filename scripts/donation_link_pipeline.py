@@ -149,6 +149,20 @@ def identity_match(org_name: str, page_text: str) -> tuple[str, float]:
 
 # ── Confidence scorer (spec §15) ──────────────────────────────────────────────
 
+# Platform landing pages with no org identifier (no hosted_button_id, slug, or
+# campaign). These never point at a specific org's donate page — used both as a
+# scoring deduction (Phase 1) and a fail-closed release guard (Phase 2).
+_GENERIC_DONATE_RE = re.compile(
+    r"^https?://(www\.)?("
+    r"paypal\.com/donate/?(\?cmd=_s-xclick)?"
+    r"|donorbox\.org/widgets?/?"
+    r"|givebutter\.com/(embed|latest)/?"
+    r"|crm\.bloomerang\.co/HostedDonation/?"
+    r"|venmo\.com/?"
+    r")$",
+    re.IGNORECASE,
+)
+
 def score_confidence(factors: dict) -> int:
     score = 0
     if factors.get('found_on_official_website'): score += 30
@@ -161,6 +175,7 @@ def score_confidence(factors: dict) -> int:
     if factors.get('link_works'):                score +=  5
     if factors.get('ein_visible'):               score +=  5
     # Deductions
+    if factors.get('generic_platform_url'):      score -= 40  # platform landing page, no org identifier
     if factors.get('name_mismatch'):             score -= 40
     if factors.get('website_not_official'):      score -= 30
     if factors.get('not_from_official_site'):    score -= 25
@@ -385,6 +400,7 @@ def _audit_one(row) -> dict:
             "nonprofit_name_visible":    match_level in ("exact", "strong"),
             "name_mismatch":             match_level == "mismatch",
             "no_visible_name":           match_level in ("weak", "unknown"),
+            "generic_platform_url":      bool(_GENERIC_DONATE_RE.match(durl)),
         }
         confidence = score_confidence(factors)
         out["confidence"] = confidence
@@ -634,6 +650,8 @@ def _try_donate_subdomains(site: str, name: str, city: str, state: str,
             "name_mismatch":              match_level == "mismatch",
             "no_visible_name":            match_level in ("weak", "unknown"),
             "processor_unknown":          donate_platform == "subdomain_direct",
+            "generic_platform_url":       bool(
+                donate_url and _GENERIC_DONATE_RE.match(donate_url.strip())),
         })
 
         if confidence < 55:
@@ -740,6 +758,8 @@ def _discover_one(row, blocked_set: set) -> dict:
                 "name_mismatch":             match_level == "mismatch",
                 "no_visible_name":           match_level in ("weak", "unknown"),
                 "processor_unknown":         not donate_platform,
+                "generic_platform_url":      bool(
+                    donate_url and _GENERIC_DONATE_RE.match(donate_url.strip())),
             }
             confidence = score_confidence(factors)
             out["confidence"] = confidence
@@ -925,19 +945,7 @@ def phase1_discover_new(db: sqlite3.Connection, max_orgs=200, dry_run=False, wor
 
 
 # ── Phase 2: Release batch ────────────────────────────────────────────────────
-
-# Platform landing pages with no org identifier (no hosted_button_id, slug, or
-# campaign). These never point at a specific org's donate page.
-_GENERIC_DONATE_RE = re.compile(
-    r"^https?://(www\.)?("
-    r"paypal\.com/donate/?(\?cmd=_s-xclick)?"
-    r"|donorbox\.org/widgets?/?"
-    r"|givebutter\.com/(embed|latest)/?"
-    r"|crm\.bloomerang\.co/HostedDonation/?"
-    r"|venmo\.com/?"
-    r")$",
-    re.IGNORECASE,
-)
+# (_GENERIC_DONATE_RE lives next to score_confidence — shared with Phase 0/1 scoring)
 
 def phase2_release_batch(db: sqlite3.Connection, max_links=50, dry_run=False):
     print(f"\n=== Phase 2: Release batch (max {max_links} links) ===")

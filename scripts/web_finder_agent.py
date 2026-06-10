@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 """
-Web Finder Agent — GPU-optimized semantic verification for discovering org websites
+Web Finder Agent — discover org websites by domain-pattern guessing,
+verified with name-token matching + GPU embeddings.
 
-Strategy:
-1. Query orgs with revenue data but missing websites (credibility proven, discoverable)
-2. Use Google search to find likely website
-3. Use GPU embeddings + semantic similarity to verify ownership
-4. Cache verified websites
+Strategy (no search engine involved):
+1. Query orgs with revenue data but missing websites, revenue DESC
+2. Guess candidate domains from the org name (orgname.org, firstword.org, ...)
+3. Fetch each candidate (robots.txt respected, identified UA) and verify
+   ownership: ≥70% of org-name tokens on page + embedding similarity ≥ 0.5
+4. Verified finds saved as website_status='beta' (disclosure policy);
+   misses marked 'no_website_found' (re-eligible after 90 days)
 
-GPU: mxbai-embed-large on port 11436 (Vulkan) — batch 50 sites at a time
-CPU: Google search, pattern matching, HTML parsing
+GPU: mxbai-embed-large on port 11436 (Vulkan)
+CPU: candidate fetching, HTML stripping, name-token matching
 
 Run:
     python3 scripts/web_finder_agent.py --limit 100 --dry-run
@@ -18,26 +21,44 @@ Run:
 
 import sqlite3
 import requests
-import json
 import re
-import sys
 import argparse
 from pathlib import Path
 from datetime import datetime, timezone
-from urllib.parse import urlparse, urljoin
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlparse
+from urllib.robotparser import RobotFileParser
 import numpy as np
-from html.parser import HTMLParser
 
 DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
 LOG_PATH = Path.home() / "meritgiving/logs/web_finder_50k.log"
 EMBED_URL = "http://127.0.0.1:11436/v1/embeddings"
 EMBED_MODEL = "mxbai-embed-large"
 
-# Google search via DuckDuckGo (no API key needed, respects robots.txt)
-SEARCH_TIMEOUT = 10
+UA = ("Mozilla/5.0 (compatible; DaanaaWebFinder/1.0; "
+      "+https://daanaa.org/about) website-discovery")
+
 FETCH_TIMEOUT = 8
 MIN_CONFIDENCE = 0.5   # embedding floor; primary gate is the name-token check (≥70%)
+
+# robots.txt cache, one parser per scheme://host (modeled on donation_link_pipeline)
+_robots_cache: dict[str, RobotFileParser] = {}
+
+def can_fetch(url: str) -> bool:
+    """Returns False if robots.txt disallows path. Fails open (True) on error."""
+    try:
+        parsed = urlparse(url)
+        base   = f"{parsed.scheme}://{parsed.netloc}"
+        if base not in _robots_cache:
+            rp = RobotFileParser()
+            rp.set_url(base + "/robots.txt")
+            try:
+                rp.read()
+            except Exception:
+                pass
+            _robots_cache[base] = rp
+        return _robots_cache[base].can_fetch(UA, url)
+    except Exception:
+        return True  # fail open
 
 def log(msg: str):
     ts = datetime.now(timezone.utc).isoformat()
@@ -105,7 +126,11 @@ def fetch_website_text(url: str) -> str | None:
         if not url.startswith(('http://', 'https://')):
             url = f"https://{url}"
 
-        resp = requests.get(url, timeout=FETCH_TIMEOUT, allow_redirects=True)
+        if not can_fetch(url):
+            return None  # robots.txt disallows — respect it
+
+        resp = requests.get(url, timeout=FETCH_TIMEOUT, allow_redirects=True,
+                            headers={"User-Agent": UA, "Accept": "text/html,*/*"})
         if resp.status_code == 200:
             # Extract text from HTML (basic)
             text = resp.text.lower()
@@ -162,17 +187,6 @@ def verify_website_ownership(org_record: dict, website_url: str) -> tuple[bool, 
     is_verified = similarity >= MIN_CONFIDENCE
     log(f"    Verified: {is_verified} (name tokens: {name_ratio:.0%}, similarity: {similarity:.3f})")
     return is_verified, similarity
-
-def find_donation_links(website_text: str) -> list[str]:
-    """Extract donation links from website text."""
-    patterns = [
-        r'href=["\']([^"\']*(?:donate|giving|gift|contribute|sponsor|support)[^"\']*)["\']',
-        r'href=["\']([^"\']*(?:donorbox|paypal|stripe|classy)[^"\']*)["\']',
-    ]
-    links = []
-    for pattern in patterns:
-        links.extend(re.findall(pattern, website_text, re.IGNORECASE))
-    return list(set(links))[:3]  # Return top 3 unique
 
 def main():
     parser = argparse.ArgumentParser()
