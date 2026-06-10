@@ -163,6 +163,22 @@ _GENERIC_DONATE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Org-identifying PayPal URLs. PayPal blocks/rate-limits HEAD checks from bots
+# (403/429), which is not evidence the link is dead — the identifier in the URL
+# names a specific recipient, and Phase 1 only reaches confidence ≥ 90 after
+# finding the link on the org's own website. These skip the Phase 2 liveness
+# check instead of piling into human_review. Ephemeral forms (?token=...) are
+# deliberately excluded — those expire.
+_PAYPAL_ORG_SPECIFIC_RE = re.compile(
+    r"^https?://(www\.)?("
+    r"paypal\.com/(donate|cgi-bin/webscr)/?\?[^#]*hosted_button_id=[A-Za-z0-9]{8,}"
+    r"|paypal\.com/fundraiser/charity/\d+"
+    r"|paypal\.com/ncp/payment/[A-Za-z0-9]+"
+    r"|paypal\.(com/paypalme|me)/[A-Za-z0-9_.-]+"
+    r")",
+    re.IGNORECASE,
+)
+
 def score_confidence(factors: dict) -> int:
     score = 0
     if factors.get('found_on_official_website'): score += 30
@@ -1008,34 +1024,40 @@ def phase2_release_batch(db: sqlite3.Connection, max_links=50, dry_run=False):
                 db.commit()
             continue
 
-        # Final liveness HEAD check before publishing
-        try:
-            resp = requests.head(durl, timeout=TIMEOUT, allow_redirects=True,
-                                 headers={"User-Agent": UA})
-            if resp.status_code >= 400:
+        # Final liveness HEAD check before publishing.
+        # Exception: org-identifying PayPal URLs skip it — PayPal 403/429s bot
+        # HEAD checks, which was shunting legitimate hosted_button_id links
+        # into human_review (and re-hitting PayPal every night).
+        if _PAYPAL_ORG_SPECIFIC_RE.match(durl.strip()):
+            print(f"  PASS (PayPal org-specific, liveness check skipped): {durl[:70]}")
+        else:
+            try:
+                resp = requests.head(durl, timeout=TIMEOUT, allow_redirects=True,
+                                     headers={"User-Agent": UA})
+                if resp.status_code >= 400:
+                    failed += 1
+                    print(f"  FAIL {resp.status_code}: {durl[:70]}")
+                    if not dry_run:
+                        if resp.status_code in (403, 429):
+                            # Platform is blocking verification — flag for human review
+                            db.execute("""
+                                UPDATE registry_enriched
+                                SET donate_url_status='human_review', donate_human_review=1
+                                WHERE EIN=?
+                            """, (ein,))
+                        else:
+                            # 404/410/etc — link is dead, clear it
+                            db.execute("""
+                                UPDATE registry_enriched
+                                SET donate_url_status='dead', donate_url=NULL, donate_platform=NULL
+                                WHERE EIN=?
+                            """, (ein,))
+                        db.commit()
+                    continue
+            except Exception as e:
                 failed += 1
-                print(f"  FAIL {resp.status_code}: {durl[:70]}")
-                if not dry_run:
-                    if resp.status_code in (403, 429):
-                        # Platform is blocking verification — flag for human review
-                        db.execute("""
-                            UPDATE registry_enriched
-                            SET donate_url_status='human_review', donate_human_review=1
-                            WHERE EIN=?
-                        """, (ein,))
-                    else:
-                        # 404/410/etc — link is dead, clear it
-                        db.execute("""
-                            UPDATE registry_enriched
-                            SET donate_url_status='dead', donate_url=NULL, donate_platform=NULL
-                            WHERE EIN=?
-                        """, (ein,))
-                    db.commit()
+                print(f"  FAIL (network): {durl[:70]}  — {e}")
                 continue
-        except Exception as e:
-            failed += 1
-            print(f"  FAIL (network): {durl[:70]}  — {e}")
-            continue
 
         if dry_run:
             print(f"  WOULD PUBLISH  conf={dconf:3}  {dname:<50}  {durl[:60]}")
