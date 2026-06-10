@@ -79,3 +79,10 @@ frontend/src/data/*.db
 .backups/
 .gpu_queue.json
 scores_v4_0_*.json
+
+# Oversized generated artifacts — purged from git history 2026-06-10
+# (GitHub 100MB hard limit; rebuilt by build_faiss_index.py / precompute scripts)
+precompute_output/faiss_index.bin
+precompute_output/faiss_index_dm.bin
+precompute_output/search.db
+precompute_archive/
