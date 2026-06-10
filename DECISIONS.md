@@ -211,3 +211,13 @@ links visible-but-flagged (donor-confusion risk, violates 2026-06-09 fail-closed
 **Chose:** DaanaaWebFinder/1.0 UA on all fetches, RobotFileParser cache (fails open), honest docstring (domain-pattern guessing — there is no search engine), dead `find_donation_links()` deleted.
 **Why:** Stewardship rule 1 (no robots bypass) was claimed in the docstring but not implemented; default python-requests UA hides who we are.
 **Rejected:** Importing `can_fetch` from donation_link_pipeline (pulls that module's heavier deps and module-level state into a script that needs 15 lines).
+
+## 2026-06-10: GPU-queue track retired (3 cron jobs removed, scripts archived)
+**Chose:** Removed crontab entries for gpu_queue_manager.py (*/4), phase4_completion_monitor.py (hourly), gpu_workload_pusher.py (*/15); archived all three to archive/gpu_queue_track_20260610/.
+**Why:** All three were broken (two crashed on missing psutil — 1,446 tracebacks; the pusher used `source` under cron's /bin/sh and never ran once). Had they worked, they'd have spawned the legacy mission_generation_pipeline.py against gpu_night's GPU with no already-running check. gpu_night.sh is the single nightly orchestrator (T1 doc); cause tags stay covered by the 02:35 agent.
+**Rejected:** Installing psutil to "fix" them (would activate an unaudited duplicate orchestrator mid-consolidation).
+
+## 2026-06-10: Credential scrub v2 — surgical index-filter, not filter-repo
+**Chose:** git filter-branch --index-filter swapping only the 2 dirty blobs (batch_import.py, daily_sync.sh) for redacted ones, across all 502 commits incl. backup branches.
+**Why:** git-filter-repo --replace-text OOM-crashed ("stream ends early") loading the 6.5GB FAISS blobs on a 30GB-RAM box; index-filter never streams blob contents. Full pre-scrub bundle at ~/daanaa_prescrub_20260610.bundle.
+**Rejected:** filter-repo with more swap (slow, still risky); tree-filter (stomps the working tree — 2026-06-10 lesson).
