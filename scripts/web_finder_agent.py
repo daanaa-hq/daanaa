@@ -29,6 +29,8 @@ from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
 import numpy as np
 
+from website_normalize import normalize_website
+
 DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
 LOG_PATH = Path.home() / "meritgiving/logs/web_finder_50k.log"
 EMBED_URL = "http://127.0.0.1:11436/v1/embeddings"
@@ -265,7 +267,7 @@ def main():
                         UPDATE registry_enriched
                         SET website = ?, website_status = 'beta', website_checked_at = datetime('now')
                         WHERE EIN = ?
-                    """, (candidate, ein))
+                    """, (normalize_website(candidate), ein))
                     verified += 1
                 found = True
                 break

@@ -180,3 +180,8 @@ probe the filter (use COALESCE/expression to force filter-first).
 **Symptom:** Uncommitted fixes vanished twice mid-session; every tracked file reset atomically (identical mtimes to the nanosecond).
 **Root cause:** A credential-scrub `git filter-branch --tree-filter --force` was running concurrently — it checks out every commit into the working tree, destroying all uncommitted changes repeatedly until it finishes.
 **Rule:** Never leave work uncommitted while any history rewrite (filter-branch/filter-repo) can run. Check `pgrep -f filter-branch` when files revert "by themselves" — identical mtimes across files = one atomic git operation, not a linter.
+
+## 2026-06-10: git-filter-repo OOM on huge blobs; exit code masked by pipe
+**Symptom:** `git filter-repo --replace-text` died mid-run with "fatal: stream ends early" + a fast-import crash report; the failure was invisible at first because `| tail -15` masked the exit code.
+**Root cause:** filter-repo streams every blob through Python — three ~6.5GB FAISS blobs vs 12GB available RAM. Pipes return the LAST command's exit code; the crash looked like success.
+**Preventing rule:** For history scrubs in repos with multi-GB blobs, use `git filter-branch --index-filter` with `git update-index --cacheinfo` blob swaps — it never streams blob contents (502 commits in ~2 min). And never judge a long git command through a pipe; check `${PIPESTATUS[0]}` or run it bare.

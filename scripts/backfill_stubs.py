@@ -24,6 +24,8 @@ Usage:
 import sqlite3, subprocess, csv, io, time, json, argparse, urllib.request, urllib.error
 from pathlib import Path
 
+from website_normalize import normalize_website
+
 DB_PATH   = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 CACHE_DIR = Path.home() / "meritgiving" / "data" / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -101,7 +103,9 @@ def phase1(db, limit=None):
             tax_year = None
 
         prev = updates.get(matched, {})
-        website = website_raw if website_raw and not "@" in website_raw else prev.get("website")
+        # canonical form; emails and junk → None (fall back to prev)
+        website = (normalize_website(website_raw) if website_raw and "@" not in website_raw
+                   else None) or prev.get("website")
         prev_year = prev.get("latest_tax_year", 0) or 0
         latest_year = max(prev_year, tax_year or 0) or None
 
@@ -191,7 +195,7 @@ def phase2(db, limit=None, only_source=None):
             nteecc = org.get("ntee_code") or None
             ntee1  = nteecc[0] if nteecc else None
             mission = (org.get("mission") or "").strip() or None
-            website = (org.get("website") or "").strip() or None
+            website = normalize_website(org.get("website"))
             revenue = org.get("income_amount") or None
             assets  = org.get("asset_amount") or None
 

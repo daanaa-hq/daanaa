@@ -25,6 +25,8 @@ import threading
 from pathlib import Path
 from queue import Queue, Empty
 
+from website_normalize import normalize_website
+
 DB_PATH   = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 GT990_IDX = Path.home() / "meritgiving" / "data" / "cache" / "gt990_index_2026-03-20.csv"
 
@@ -125,13 +127,12 @@ def parse_xml_url(url: str) -> str | None:
         el = irs990.find(f".//{{{NS}}}{tag}")
         if el is not None and el.text:
             raw = el.text.strip()
-            lower = raw.lower()
             if (raw
-                    and lower not in ("n/a", "none", "www.", "na", "http://", "https://", "", "xxx")
-                    and "." in raw          # must contain a dot (domain format)
                     and " " not in raw      # no spaces = not a phrase/name
                     and len(raw) >= 6):     # minimum plausible URL length
-                return raw
+                # canonical form (lowercase bare host, mangled schemes
+                # repaired); None for junk like N/A / www. / xxx
+                return normalize_website(raw)
     return None
 
 

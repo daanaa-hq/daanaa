@@ -7,6 +7,8 @@ import csv
 from pathlib import Path
 from datetime import datetime
 
+from website_normalize import normalize_website
+
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 LOG = Path.home() / 'meritgiving' / 'logs' / 'overnight.log'
 SUBMISSIONS_FILE = Path.home() / 'meritgiving' / 'data' / 'manual_link_submissions.csv'
@@ -38,7 +40,8 @@ def process_manual_submissions():
                 if not row or not row.get('EIN'):
                     continue
                 ein = row['EIN'].strip()
-                website = row.get('website_url', '').strip() or None
+                # canonical form; junk submissions ("n/a", no domain) → None
+                website = normalize_website(row.get('website_url', ''))
                 donate = row.get('donate_url', '').strip() or None
 
                 if not (website or donate):
