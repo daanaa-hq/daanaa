@@ -92,9 +92,8 @@ def org_to_dict(row):
         'website': row[29],
         'website_status': row[30],
         'cause_tags': json.loads(row[31]) if row[31] else None,
-        'donate_url': row[32],
-        'donate_platform': row[33],
-        'donate_url_status': row[34],
+        # donate_* fields intentionally not emitted (2026-06-10): no donation
+        # links on public surfaces — data stays internal for the claim flow.
     }
 
 
@@ -127,8 +126,7 @@ def main():
                     latest_tax_year, data_source, updated_at, merit_tier, merit_score,
                     merit_band, financial_health, months_of_reserve, net_assets,
                     total_expenses, employee_count, program_expense_pct,
-                    mission, mission_source, website, website_status, cause_tags,
-                    donate_url, donate_platform, donate_url_status
+                    mission, mission_source, website, website_status, cause_tags
                 FROM registry_enriched
                 -- Only surface orgs where donating is currently tax-deductible:
                 -- deductible 501(c)(3) AND not IRS-revoked. Fail closed on revocation.
@@ -189,8 +187,7 @@ def main():
                 latest_tax_year, data_source, updated_at, merit_tier, merit_score,
                 merit_band, financial_health, months_of_reserve, net_assets,
                 total_expenses, employee_count, program_expense_pct,
-                mission, mission_source, website, website_status, cause_tags,
-                donate_url, donate_platform, donate_url_status
+                mission, mission_source, website, website_status, cause_tags
             FROM registry_enriched
             -- Only surface orgs where donating is currently tax-deductible (see above).
             WHERE NTEE1 = ? AND deductibility = 1 AND org_status = 'active'

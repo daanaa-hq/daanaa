@@ -19,7 +19,6 @@ import '@fontsource/inter/700.css'
 import './index.css'
 import App from './App.tsx'
 import { GivingListProvider } from './contexts/GivingListContext'
-import GiveConfirmPrompt from './components/GiveConfirmPrompt'
 import ScrollToTop from './components/ScrollToTop'
 
 createRoot(document.getElementById('root')!).render(
@@ -28,7 +27,6 @@ createRoot(document.getElementById('root')!).render(
       <GivingListProvider>
         <ScrollToTop />
         <App />
-        <GiveConfirmPrompt />
       </GivingListProvider>
     </BrowserRouter>
   </StrictMode>,

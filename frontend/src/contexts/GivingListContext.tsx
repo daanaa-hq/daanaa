@@ -29,17 +29,8 @@ export interface GivingListItem {
   letterRequested?: boolean
   donorName?: string
   donorEmail?: string
-  donateUrl?: string
   // Civic action type — 'give_money' now; 'give_time' reserved for volunteering (Phase 3)
   actionType?: 'give_money' | 'give_time'
-}
-
-// Set when the donor clicks an external give CTA; the app asks "did you give?"
-// when they return (LinkedIn-jobs pattern).
-export interface PendingGive {
-  ein: string
-  orgName: string
-  at: string  // ISO — used to ignore an instant tab-switch-back
 }
 
 interface GivingListContextValue {
@@ -53,15 +44,9 @@ interface GivingListContextValue {
   isInList: (ein: string) => boolean
   total: number
   count: number
-  // Give-confirmation flow
-  pendingGive: PendingGive | null
-  markPending: (item: Omit<GivingListItem, 'addedAt' | 'status'>) => void
-  confirmGiven: () => void
-  dismissPending: () => void
 }
 
 const KEY = 'merit_giving_list'
-const PENDING_KEY = 'merit_pending_give'
 
 function load(): GivingListItem[] {
   try {
@@ -76,18 +61,10 @@ function load(): GivingListItem[] {
 function persist(items: GivingListItem[]) {
   localStorage.setItem(KEY, JSON.stringify(items))
 }
-function loadPending(): PendingGive | null {
-  try {
-    const raw = localStorage.getItem(PENDING_KEY)
-    return raw ? JSON.parse(raw) as PendingGive : null
-  } catch { return null }
-}
-
 const GivingListContext = createContext<GivingListContextValue | null>(null)
 
 export function GivingListProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<GivingListItem[]>(load)
-  const [pendingGive, setPendingGive] = useState<PendingGive | null>(loadPending)
 
   const addItem = useCallback((item: Omit<GivingListItem, 'addedAt' | 'status'> & { status?: GiveStatus }) => {
     setItems(prev => {
@@ -143,51 +120,12 @@ export function GivingListProvider({ children }: { children: React.ReactNode }) 
 
   const isInList = useCallback((ein: string) => items.some(i => i.ein === ein), [items])
 
-  // --- Give-confirmation flow (LinkedIn-jobs style) ---
-
-  const markPending = useCallback((item: Omit<GivingListItem, 'addedAt' | 'status'>) => {
-    // Track the click as an 'intent' item if not already saved...
-    setItems(prev => {
-      if (prev.some(i => i.ein === item.ein)) return prev
-      const next = [{ ...item, status: 'intent' as GiveStatus, addedAt: new Date().toISOString() }, ...prev]
-      persist(next)
-      return next
-    })
-    // ...and remember to ask "did you give?" when they come back.
-    const p: PendingGive = { ein: item.ein, orgName: item.orgName, at: new Date().toISOString() }
-    localStorage.setItem(PENDING_KEY, JSON.stringify(p))
-    setPendingGive(p)
-  }, [])
-
-  const confirmGiven = useCallback(() => {
-    setPendingGive(prev => {
-      if (prev) {
-        setItems(items2 => {
-          const next = items2.map(i => i.ein === prev.ein
-            ? { ...i, status: 'given' as GiveStatus, gaveAt: i.gaveAt ?? new Date().toISOString() }
-            : i
-          )
-          persist(next)
-          return next
-        })
-      }
-      localStorage.removeItem(PENDING_KEY)
-      return null
-    })
-  }, [])
-
-  const dismissPending = useCallback(() => {
-    localStorage.removeItem(PENDING_KEY)
-    setPendingGive(null)
-  }, [])
-
   const total = items.reduce((s, i) => s + (i.amount || 0), 0)
 
   return (
     <GivingListContext.Provider value={{
       items, addItem, removeItem, updateAmount, updateLetterInfo, markGiven,
       clearList, isInList, total, count: items.length,
-      pendingGive, markPending, confirmGiven, dismissPending,
     }}>
       {children}
     </GivingListContext.Provider>

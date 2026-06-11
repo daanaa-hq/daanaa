@@ -1,17 +1,18 @@
 import { useState } from 'react'
 
-// An easy, anonymous way for a donor to tell an organization "I'd support you" —
-// to give or to volunteer — even before the org has a donate link or has claimed
-// its page. We store only an aggregate count (no identity, no contact). The org
-// sees the tally when it claims, as a reason to claim and a place to start.
+// An easy, anonymous way for a visitor to tell an organization "I'd volunteer
+// with you" — even before the org has claimed its page. We store only an
+// aggregate count (no identity, no contact). The org sees the tally when it
+// claims, as a reason to claim and a place to start. Giving-intent signals were
+// removed 2026-06-10: Daanaa carries no donation prompts on public surfaces.
 
 export default function SupportIntent({ orgName, ein }: { orgName: string; ein: string }) {
-  const [sent, setSent] = useState<null | 'donate' | 'volunteer'>(null)
+  const [sent, setSent] = useState(false)
 
-  const signal = (kind: 'donate' | 'volunteer') => {
-    setSent(kind)
+  const signal = () => {
+    setSent(true)
     try {
-      const body = JSON.stringify({ ein, kind })
+      const body = JSON.stringify({ ein, kind: 'volunteer' })
       if (navigator.sendBeacon) {
         navigator.sendBeacon('/api/interest', new Blob([body], { type: 'application/json' }))
       } else {
@@ -23,8 +24,8 @@ export default function SupportIntent({ orgName, ein }: { orgName: string; ein: 
   if (sent) {
     return (
       <p className="font-body text-[12px] text-cool-grey leading-[1.5]">
-        Thank you. When {orgName} claims their page, they'll see there's interest in{' '}
-        {sent === 'donate' ? 'giving' : 'volunteering'} — anonymously. We never store who you are.
+        Thank you. When {orgName} claims their page, they'll see there's interest in
+        volunteering — anonymously. We never store who you are.
       </p>
     )
   }
@@ -36,13 +37,7 @@ export default function SupportIntent({ orgName, ein }: { orgName: string; ein: 
       </p>
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => signal('donate')}
-          className="rounded-full border border-soft-gold/40 px-3.5 py-1.5 font-body text-[12px] font-medium text-soft-gold hover:bg-soft-gold/10 transition-colors"
-        >
-          I'd give here
-        </button>
-        <button
-          onClick={() => signal('volunteer')}
+          onClick={signal}
           className="rounded-full border border-soft-gold/40 px-3.5 py-1.5 font-body text-[12px] font-medium text-soft-gold hover:bg-soft-gold/10 transition-colors"
         >
           I'd volunteer here

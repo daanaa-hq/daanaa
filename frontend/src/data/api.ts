@@ -78,9 +78,6 @@ export interface ApiOrganization {
   revenue_3yr_avg?: number | null;   // 3-year average revenue (smooths grant cycles)
   nccs_year: number | null;
   cause_tags?: string[] | null;           // LLM-extracted cause tags (3-5 per org)
-  donate_url?: string | null;             // direct giving page found on org site (Donorbox, etc.)
-  donate_platform?: string | null;        // 'donorbox' | 'networkforgood' | 'classy' | 'mightycause' | 'paypal'
-  donate_url_status?: string | null;      // 'ok' | 'dead' | 'unknown' — null = not yet checked
   // Fused search annotation (from /api/search only)
   match_sources?: ('keyword' | 'semantic')[] | null;
   rrf_score?: number | null;
@@ -91,7 +88,6 @@ export interface ApiOrganization {
   // Data provenance — which fields are AI-generated vs verified
   data_badges?: {
     mission?: string | null;   // 'ai_ntee' | 'scraped' | 'claimed' | null
-    donate?: string | null;    // 'beta' | 'provider' | 'claimed' | null
     website?: string | null;   // 'ok' | 'redirected' | null
     tags?: string | null;      // 'ai_generated' (beta) | 'claimed' | null
   } | null;
@@ -178,7 +174,6 @@ export async function getOrganizations(params?: {
   max_revenue?: number;
   min_percentile?: number;    // legacy — filter by ntee1_percentile >= value
   min_tier?: string;          // 'Beacon' | 'Torch' | 'Candle' | 'Spark'
-  direct_link?: boolean;      // true = only orgs with a detected donate URL
   has_website?: boolean;      // true = only orgs with a verified, live website
   recent?: boolean;           // true = only orgs whose latest filing is 2022 or later
   cause?: string;             // matches a cause tag (e.g. "food bank", "mental health")
@@ -202,7 +197,6 @@ export async function getOrganizations(params?: {
   if (params?.max_revenue != null) sp.set('max_revenue', String(params.max_revenue));
   if (params?.min_percentile != null) sp.set('min_percentile', String(params.min_percentile));
   if (params?.min_tier) sp.set('min_tier', params.min_tier);
-  if (params?.direct_link) sp.set('direct_link', '1');
   if (params?.has_website) sp.set('has_website', '1');
   if (params?.recent) sp.set('recent', '1');
   if (params?.cause) sp.set('cause', params.cause);
@@ -326,22 +320,6 @@ export async function submitWaitlist(
     method: 'POST',
     body: JSON.stringify({ email, source, ein }),
   });
-}
-
-// Anonymous org-findability feedback. Sends ONLY ein + reason. No donor
-// data. Fire-and-forget — a failed beacon must never block the donor.
-export async function submitLinkFeedback(
-  ein: string,
-  reason: 'not_found' | 'broken',
-): Promise<void> {
-  try {
-    await fetch(`${API_BASE}/api/link-feedback`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ein, reason }),
-      keepalive: true,
-    });
-  } catch { /* anonymous best-effort; never surface to the donor */ }
 }
 
 export async function getAdminWaitlist(

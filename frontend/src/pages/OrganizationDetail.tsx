@@ -16,9 +16,11 @@ import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs } from 
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
+import { getPrimaryExternalLink } from '../utils/externalLink'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import FinancialContext from '../components/FinancialContext'
+import V5Context from '../components/V5Context'
 
 // ---- Revenue Bar Chart ----
 function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
@@ -293,7 +295,7 @@ export default function OrganizationDetail() {
   const [showScoreExplainer, setShowScoreExplainer] = useState(false)
   const [showVolunteer, setShowVolunteer] = useState(false)
   const [showResources, setShowResources] = useState(false)
-  const { isInList, items: givingItems, addItem, removeItem, markPending } = useGivingList()
+  const { isInList, items: givingItems, addItem, removeItem } = useGivingList()
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
     () => getOrganization(id || ''),
@@ -382,7 +384,6 @@ export default function OrganizationDetail() {
     amount: 0,
     trustTier: lampTier,
     trustSummary,
-    donateUrl: (apiOrg?.donate_url_status !== 'dead' && apiOrg?.donate_url) ? apiOrg.donate_url : undefined,
   }
 
   const handleGiveToggle = () => {
@@ -392,36 +393,6 @@ export default function OrganizationDetail() {
       addItem(givePayload)
     }
   }
-
-  // Donor clicked an external give link -- track it and ask "did you give?"
-  // when they return (LinkedIn-jobs pattern).
-  const handleGiveClick = () => {
-    // Anonymous realized-impact ping: records only that a give hand-off happened
-    // (EIN + a count). No identity, no amount, no wallet link. sendBeacon survives
-    // the navigation to the org's giving page.
-    try {
-      const body = JSON.stringify({ ein: apiOrg!.EIN })
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon('/api/handoff', new Blob([body], { type: 'application/json' }))
-      } else {
-        fetch('/api/handoff', { method: 'POST', body, headers: { 'Content-Type': 'application/json' }, keepalive: true }).catch(() => {})
-      }
-    } catch { /* ignore */ }
-    markPending(givePayload)
-  }
-
-  // The always-available certain path. A verified website is not the same as
-  // a findable donate page, so this is shown under every CTA, not just on
-  // failure. No org setup, no third party, no funds through MERIT.
-  const mailingAddress = apiOrg!.address
-    ? `${apiOrg!.address}${apiOrg!.CITY ? `, ${apiOrg!.CITY}` : ''}${apiOrg!.STATE ? `, ${apiOrg!.STATE}` : ''}${apiOrg!.zipcode ? ` ${apiOrg!.zipcode}` : ''}`
-    : null
-  const certainPath = (
-    <p className="mt-2 font-body text-[12px] text-muted-cream/55 leading-[1.5] max-w-[360px]">
-      Can&rsquo;t find their donate page? Give using EIN{' '}
-      <span className="text-muted-cream/80 font-medium">{formatEIN(org.ein)}</span> through your bank or donor-advised fund{mailingAddress ? <>, or mail a check to <span className="text-muted-cream/80">{mailingAddress}</span></> : ''}.
-    </p>
-  )
 
   return (
     <div className="min-h-[100dvh]">
@@ -585,139 +556,43 @@ export default function OrganizationDetail() {
                 ))}
               </div>
 
-              {/* Giving hand-off. Priority:
-                  1. donate_url -- a direct giving page found on the org's site (Donorbox, etc.)
-                     No hunting needed; skips straight to the form.
-                  2. website_status=ok -- org's own homepage, verified live and on-domain.
-                  3. EIN fallback -- unspoofable ProPublica/IRS record, works for every org. */}
+              {/* Official external link. Discovery posture (2026-06-10): the
+                  yellow CTA goes to the org's own website when we have one
+                  (verified 'ok' or discovered 'beta'); otherwise a quiet
+                  IRS-backed public-record link. Never a donation page. */}
               {(() => {
-                const donateUrlStatus = apiOrg?.donate_url_status;
-                const donateUrl  = donateUrlStatus === 'dead' ? null : apiOrg?.donate_url;
-                const donatePlatform = apiOrg?.donate_platform;
-                const platformLabel: Record<string, string> = {
-                  donorbox:       'Donorbox',
-                  givelively:     'Give Lively',
-                  givebutter:     'Givebutter',
-                  zeffy:          'Zeffy',
-                  stripe:         'Stripe',
-                  square:         'Square',
-                  classy:         'Classy',
-                  mightycause:    'Mightycause',
-                  gofundme:       'GoFundMe',
-                  fundly:         'Fundly',
-                  causevox:       'CauseVox',
-                  every_org:      'Every.org',
-                  networkforgood: 'Network for Good',
-                  justgiving:     'JustGiving',
-                  idonate:        'iDonate',
-                  flipcause:      'Flipcause',
-                  qgiv:           'Qgiv',
-                  anedot:         'Anedot',
-                  paypal:         'PayPal',
-                  venmo:          'Venmo',
-                  cashapp:        'Cash App',
-                };
-                const label = donatePlatform ? (platformLabel[donatePlatform] ?? donatePlatform) : null;
+                const websiteVerified = apiOrg?.website_status === 'ok' || apiOrg?.website_status === 'beta';
+                const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
 
-                if (donateUrl) {
+                if (link.url) {
                   return (
                     <div className="mt-5">
                       <a
-                        href={donateUrl}
+                        href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={handleGiveClick}
                         className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
                       >
-                        Give directly
+                        {link.label}
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                       </a>
-                      {label && (
-                        <span className="ml-3 font-body text-[11px] text-muted-cream/50 align-middle">
-                          via {label}
-                        </span>
-                      )}
-                      <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                        Takes you straight to their giving page. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
-                      </p>
-                      {(org as any).website && (
-                        <button
-                          onClick={() => setShowVolunteer(true)}
-                          className="mt-3 inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
-                        >
-                          Or volunteer your time
-                        </button>
-                      )}
-                      {apiOrg?.data_badges?.donate === 'beta' && (
+                      {apiOrg!.website_status === 'beta' && (
                         <p className="mt-1.5 font-body text-[11px] text-cool-grey/70 flex items-center gap-1.5">
-                          <AiBadge title="Donate link auto-discovered — not confirmed by the organization" />
+                          <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">⚠️ discovered</span>
                           <span>·</span>
                           <span>Not confirmed by the organization.</span>
-                          <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Is this your org?</Link>
+                          <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Verify</Link>
                         </p>
                       )}
-                      {(org as any).website && apiOrg!.website_status === 'ok' && (
-                        <p className="mt-1.5 font-body text-[12px] text-muted-cream/40">
-                          Or{' '}
-                          <a
-                            href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline underline-offset-2 hover:text-muted-cream/70 transition-colors"
-                          >
-                            visit their website
-                          </a>
-                        </p>
-                      )}
-                      {certainPath}
-                    </div>
-                  );
-                }
-
-                if ((org as any).website && apiOrg!.website_status === 'beta') {
-                  return (
-                    <div className="mt-5">
-                      <a
-                        href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={handleGiveClick}
-                        className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
-                      >
-                        Visit website
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                      </a>
-                      <p className="mt-1.5 font-body text-[11px] text-cool-grey/70 flex items-center gap-1.5">
-                        <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">⚠️ discovered</span>
-                        <span>·</span>
-                        <span>Not confirmed by the organization.</span>
-                        <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Verify</Link>
-                      </p>
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                        Always confirm on their official channels before donating. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
+                        External link. Daanaa does not process donations or collect donor payment information.
                       </p>
-                      {certainPath}
-                    </div>
-                  );
-                }
-
-                if ((org as any).website && apiOrg!.website_status === 'ok') {
-                  return (
-                    <div className="mt-5">
-                      <a
-                        href={(org as any).website.startsWith('http') ? (org as any).website : `https://${(org as any).website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={handleGiveClick}
-                        className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                      <button
+                        onClick={() => setShowVolunteer(true)}
+                        className="mt-3 inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
                       >
-                        Support this organization
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                      </a>
-                      <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                        Opens their own website. Look for &ldquo;Donate&rdquo; or &ldquo;Give&rdquo;, usually in the top menu. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
-                      </p>
-                      {certainPath}
+                        Volunteer your time
+                      </button>
                     </div>
                   );
                 }
@@ -728,16 +603,14 @@ export default function OrganizationDetail() {
                       href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={handleGiveClick}
-                      className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                      className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
                     >
                       View public record
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
                     </a>
                     <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
-                      We could not verify this organization&rsquo;s own website, so we link its IRS-backed record instead. You give directly to the nonprofit. Daanaa never receives, holds, or processes your money.
+                      We could not verify this organization&rsquo;s own website, so we link its IRS-backed public record instead. External link. Daanaa does not process donations or collect donor payment information.
                     </p>
-                    {certainPath}
                   </div>
                 );
               })()}
@@ -949,6 +822,13 @@ export default function OrganizationDetail() {
             </div>
           )}
 
+          {/* v5.0 Peer-based Financial Context (Beta) */}
+          {apiOrg! && (
+            <div className="mb-8">
+              <V5Context org={apiOrg!} />
+            </div>
+          )}
+
           {/* Financial Context Assessment — stewardship-aligned (P3, P4, P5, P6, P9) */}
           {apiOrg! && (
             <div className="mb-8">
@@ -1109,7 +989,7 @@ export default function OrganizationDetail() {
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
                       <p className="font-body text-[13px] font-medium text-deep-navy">Is this your nonprofit?</p>
-                      <p className="font-body text-[12px] text-cool-grey mt-0.5">Add your mission, donation link, and updates -- free.</p>
+                      <p className="font-body text-[12px] text-cool-grey mt-0.5">Add your mission, website, and updates -- free.</p>
                     </div>
                     <Link
                       to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
@@ -1124,7 +1004,7 @@ export default function OrganizationDetail() {
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     {[
-                      { t: 'Ways to help', d: 'Donate, volunteer, and in-kind needs' },
+                      { t: 'Ways to help', d: 'Volunteer and in-kind needs' },
                       { t: 'What we need now', d: 'A specific ask donors can act on' },
                       { t: 'In our words', d: "Mission in the org's own voice" },
                       { t: 'Updates & events', d: 'Short, dated notes from the org' },
@@ -1290,7 +1170,7 @@ export default function OrganizationDetail() {
               </div>
               <div>
                 <p className="font-body text-[13px] font-semibold text-deep-navy">US Nonprofit · Active</p>
-                <p className="font-body text-[12px] text-cool-grey">Donations are tax-deductible</p>
+                <p className="font-body text-[12px] text-cool-grey">IRS-listed as eligible to receive tax-deductible contributions</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

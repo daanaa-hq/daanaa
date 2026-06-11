@@ -7,6 +7,7 @@ import { getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
 import LampMark from '../components/LampMark'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { formatEIN } from '../data/organizations'
+import { getPrimaryExternalLink } from '../utils/externalLink'
 
 function formatCurrency(n: number | null): string {
   if (!n) return '—'
@@ -76,8 +77,9 @@ function OrgColumn({ ein }: { ein: string }) {
   const cat = NTEE_CATEGORIES.find(c => c.id === org.NTEE1)
   const health = org.financial_health
   const reserve = org.months_of_reserve
-  const websiteOk = org.website && org.website_status === 'ok'
-  const donateOk = org.donate_url && org.donate_url_status !== 'dead'
+  const externalLink = (org.website_status === 'ok' || org.website_status === 'beta')
+    ? getPrimaryExternalLink(org)
+    : { url: null, label: null, type: null }
 
   const rows: { label: string; value: React.ReactNode }[] = [
     { label: 'EIN', value: formatEIN(org.EIN) },
@@ -150,29 +152,17 @@ function OrgColumn({ ein }: { ein: string }) {
         ))}
       </div>
 
-      {/* Action links — give directly or visit the org's own site when we have them */}
-      {(donateOk || websiteOk) && (
+      {/* Single official external link — the org's own website when we have it */}
+      {externalLink.url && (
         <div className="mt-5 flex flex-wrap gap-2">
-          {donateOk && (
-            <a
-              href={org.donate_url!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 min-w-[100px] py-2.5 rounded-full bg-soft-gold text-deep-navy font-body text-[13px] font-semibold text-center hover:bg-bright-gold transition-colors"
-            >
-              Give directly →
-            </a>
-          )}
-          {websiteOk && (
-            <a
-              href={org.website!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 min-w-[100px] py-2.5 rounded-full border border-soft-gold/40 text-soft-gold font-body text-[13px] font-semibold text-center hover:bg-soft-gold/10 transition-colors"
-            >
-              Website ↗
-            </a>
-          )}
+          <a
+            href={externalLink.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 min-w-[100px] py-2.5 rounded-full bg-soft-gold text-deep-navy font-body text-[13px] font-semibold text-center hover:bg-bright-gold transition-colors"
+          >
+            {externalLink.label} ↗
+          </a>
         </div>
       )}
 

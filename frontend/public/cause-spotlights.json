@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-06-09T10:30:01.780046+00:00",
+  "generated_at": "2026-06-11T10:30:01.711328+00:00",
   "categories": {
     "A": {
       "id": "A",
       "name": "Arts & Culture",
-      "totalOrgs": 139205,
-      "withContext": 33830,
+      "totalOrgs": 139204,
+      "withContext": 46951,
       "topStates": [
         {
           "state": "CA",
@@ -30,33 +30,33 @@
       ],
       "featured": [
         {
-          "ein": "043688436",
-          "name": "PARTNERS IN PLAY INC",
-          "city": "POWELL",
-          "state": "OH",
-          "blurb": "To help create an environment that builds on the strength of all children and those who care for them and to promote each individuals potential for growth."
+          "ein": "462772524",
+          "name": "LAKE SUPERIOR RAILROAD MUSEUM FOUNDATION",
+          "city": "DULUTH",
+          "state": "MN",
+          "blurb": "Preserves and promotes the history of the Lake Superior Railroad in Duluth."
         },
         {
-          "ein": "020516702",
-          "name": "YEOMANS FUND FOR THE ARTS",
-          "city": "WONALANCET",
-          "state": "NH",
-          "blurb": "Supports and promotes arts and cultural programs in Wonalancet."
+          "ein": "311810009",
+          "name": "ZARATHUSHTI CULTURAL CENTER OF DELAWARE VALLEY INC",
+          "city": "HADDONFIELD",
+          "state": "NJ",
+          "blurb": "To acquire a site to use as a Zarathushti Culture and religious center to promote religious and cultutral awareness."
         },
         {
-          "ein": "043654171",
-          "name": "BRADFORD OHIO RAILROAD MUSEUM INC",
-          "city": "BRADFORD",
-          "state": "OH",
-          "blurb": "Preserves and promotes the history of the Bradford Ohio Railroad through educational programs and exhibits."
+          "ein": "742578892",
+          "name": "VETERANS WAR MEMORIAL FOUNDATION OF TEXAS",
+          "city": "MCALLEN",
+          "state": "TX",
+          "blurb": "Honors veterans through memorials and educational programs in McAllen."
         }
       ]
     },
     "B": {
       "id": "B",
       "name": "Education",
-      "totalOrgs": 220916,
-      "withContext": 51670,
+      "totalOrgs": 220917,
+      "withContext": 78230,
       "topStates": [
         {
           "state": "CA",
@@ -68,7 +68,7 @@
         },
         {
           "state": "NY",
-          "count": 12505
+          "count": 12506
         },
         {
           "state": "FL",
@@ -81,25 +81,25 @@
       ],
       "featured": [
         {
-          "ein": "363915742",
-          "name": "SUNSET RIDGE SCHOOL DISTRICT 29 FOUNDATION",
-          "city": "NORTHFIELD",
-          "state": "IL",
-          "blurb": "Supports educational programs and facilities in Sunset Ridge School District 29 in Northfield, IL."
+          "ein": "811585020",
+          "name": "TOLEDO AIR SHOW FOUNDATION INC",
+          "city": "TOLEDO",
+          "state": "OH",
+          "blurb": "Organizes and promotes the Toledo Air Show to educate and entertain the community."
         },
         {
-          "ein": "030572516",
-          "name": "FRIENDS OF THE FAYETTEVILLE-LINCOLN COUNTY PUBLIC LIBRARY ASSOCIATION",
-          "city": "FAYETTEVILLE",
-          "state": "TN",
-          "blurb": "Supports educational initiatives and activities at Fayetteville-Lincoln County Public Library."
+          "ein": "383472995",
+          "name": "JAMES D MELLISH FOUNDATION",
+          "city": "STERLING HTS",
+          "state": "MI",
+          "blurb": "Supports educational initiatives and scholarships in Sterling Heights."
         },
         {
-          "ein": "471694019",
-          "name": "LA GRANGE EDUCATION SUPPORT PROGRAM FOUNDATION",
-          "city": "LA GRANGE",
-          "state": "TX",
-          "blurb": "Supports educational programs and initiatives in La Grange, TX."
+          "ein": "132879769",
+          "name": "CV STARR RESEARCH FOUNDATION AT THE COOPER UNION FOR THE ADVANCEMENT",
+          "city": "NEW YORK",
+          "state": "NY",
+          "blurb": "Supports research and education initiatives at The Cooper Union for the Advancement in New York, NY."
         }
       ]
     },
@@ -107,7 +107,7 @@
       "id": "C",
       "name": "Environment",
       "totalOrgs": 34416,
-      "withContext": 8225,
+      "withContext": 11187,
       "topStates": [
         {
           "state": "CA",
@@ -146,11 +146,11 @@
           "blurb": "Manages land in Woodbridge, CT, to preserve natural areas and open spaces."
         },
         {
-          "ein": "841581860",
-          "name": "HIGH PLAINS FOUNDATION",
-          "city": "LOVELAND",
-          "state": "CO",
-          "blurb": "Promotes sustainable agricultural practices and conservation in Loveland, CO."
+          "ein": "472620839",
+          "name": "NISQUALLY COMMUNITY FOREST",
+          "city": "LACEY",
+          "state": "WA",
+          "blurb": "Manages and conserves forest lands for community benefit in Lacey."
         }
       ]
     },
@@ -158,7 +158,7 @@
       "id": "D",
       "name": "Animals",
       "totalOrgs": 45868,
-      "withContext": 8550,
+      "withContext": 12748,
       "topStates": [
         {
           "state": "CA",
@@ -183,25 +183,25 @@
       ],
       "featured": [
         {
-          "ein": "813393657",
-          "name": "PET LOSS RESOURCE CENTER",
-          "city": "MADISON",
-          "state": "WI",
-          "blurb": "Provides resources and support for those experiencing pet loss in Wisconsin."
+          "ein": "453357947",
+          "name": "RESCUE ME CLIFFORD INC",
+          "city": "PARIS",
+          "state": "IL",
+          "blurb": "Rescues and cares for animals in Paris, IL."
         },
         {
-          "ein": "061757168",
-          "name": "PEPPERMINT PIG ANIMAL RESCUE",
-          "city": "CINCINNATI",
-          "state": "OH",
-          "blurb": "Rescues and provides care for animals in need in Cincinnati and surrounding areas."
+          "ein": "593468228",
+          "name": "ZOOWORLD ZOOLOGICAL AND BOTANICAL CONSERVATORY INC",
+          "city": "PANAMA CITY BEACH",
+          "state": "FL",
+          "blurb": "Maintains a zoo and botanical conservatory to promote animal welfare and education in Panama City Beach."
         },
         {
-          "ein": "561163492",
-          "name": "GASTON HUMANE SOCIETY INC",
-          "city": "GASTONIA",
-          "state": "NC",
-          "blurb": "Offers animal welfare services and care in Gastonia."
+          "ein": "272957238",
+          "name": "BLACK BEAR SOLAR INSTITUTE CORPORATION",
+          "city": "PIGEON FORGE",
+          "state": "TN",
+          "blurb": "Black Bear Solar Institute is founded to research and demonstrate evolving concepts and technologies through a living laboratory of resilient communities which\u2026"
         }
       ]
     }

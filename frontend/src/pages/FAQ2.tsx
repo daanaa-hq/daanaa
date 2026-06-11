@@ -25,7 +25,7 @@ export default function FAQ() {
     },
     {
       q: 'Does Daanaa process donations?',
-      a: 'No. When available, Daanaa links to an organization\'s own giving page. Donations never pass through our platform.'
+      a: 'No. When available, Daanaa links to an organization\'s own official website. Donations never pass through our platform, and we never collect donor payment information.'
     },
     {
       q: 'Is Daanaa affiliated with the IRS?',

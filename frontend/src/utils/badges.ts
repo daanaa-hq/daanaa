@@ -37,7 +37,7 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   badges.push({
     id: 'tax_deductible',
     label: 'Tax-deductible',
-    detail: 'Confirmed active 501(c)(3) in the IRS Business Master File. Your donation qualifies for a federal income tax deduction — keep your bank statement or request an acknowledgment letter for gifts of $250 or more.',
+    detail: 'Confirmed active 501(c)(3) in the IRS Business Master File, listed as eligible to receive tax-deductible contributions.',
     source: 'IRS Business Master File',
     color: 'green',
     icon: 'check-shield',

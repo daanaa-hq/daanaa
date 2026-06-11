@@ -77,7 +77,7 @@ export default function Governance() {
                   Donations do not pass through Daanaa.
                 </p>
                 <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
-                  When someone chooses to give, they are directed to the nonprofit's own donation page or payment provider.
+                  Daanaa links to an organization's own official website. Anyone who chooses to give deals with the nonprofit directly.
                 </p>
                 <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
                   Daanaa does not hold, process, or transfer charitable funds.

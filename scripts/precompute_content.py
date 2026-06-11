@@ -366,7 +366,7 @@ def main():
             },
             {
                 'q': 'Can I give through Daanaa?',
-                'a': 'No. Daanaa is a discovery tool. When you find an organization, we link you directly to their verified donation page.',
+                'a': 'No. Daanaa is a discovery tool. When you find an organization, we link you to their official website. Daanaa does not process donations or collect donor payment information.',
             },
         ],
     }

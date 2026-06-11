@@ -133,7 +133,6 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
         amount: 0,
         trustTier: lampTier || 'Spark',
         trustSummary: trustSummary || 'IRS registered',
-        donateUrl: (['ok','beta','live','claimed','blocked_or_restricted'].includes(apiOrg?.donate_url_status ?? '') && apiOrg?.donate_url) ? apiOrg.donate_url : undefined,
       })
     }
   }
@@ -239,7 +238,6 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         amount: 0,
         trustTier: lampTier || 'Spark',
         trustSummary: trustSummary || 'IRS registered',
-        donateUrl: (['ok','beta','live','claimed','blocked_or_restricted'].includes(apiOrg?.donate_url_status ?? '') && apiOrg?.donate_url) ? apiOrg.donate_url : undefined,
       })
     }
   }

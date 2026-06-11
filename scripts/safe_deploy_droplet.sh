@@ -138,7 +138,7 @@ precompute() {
   # is ~7G and the disk guard aborts the deploy.
   run_stage "faiss_index"  "$PRECOMPUTE/faiss_index.bin"  env FAISS_PQ=1 python3 scripts/build_faiss_index.py
   python3 scripts/precompute_browse.py  >>"$LOG" 2>&1 || die "browse precompute failed"
-  python3 scripts/precompute_orgs.py    >>"$LOG" 2>&1 || die "orgs precompute failed"
+  SKIP_FAISS=1 python3 scripts/precompute_orgs.py    >>"$LOG" 2>&1 || die "orgs precompute failed"
   python3 scripts/precompute_content.py >>"$LOG" 2>&1 || die "content precompute failed"
 
   # Required artifacts present?

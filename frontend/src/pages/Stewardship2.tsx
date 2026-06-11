@@ -39,7 +39,7 @@ export default function Stewardship() {
               },
               {
                 title: 'We do not process donations',
-                practice: 'Donations never pass through Daanaa. When available, we link to the organization\'s own giving page.'
+                practice: 'Donations never pass through Daanaa. When available, we link to the organization\'s own official website.'
               },
               {
                 title: 'We do not sell donor data',

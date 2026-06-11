@@ -172,7 +172,6 @@ export default function Directory() {
   const [scoreTier, setScoreTier] = useState<ScoreTierId>(
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
-  const [directLink, setDirectLink] = useState(searchParams.get('direct_link') === '1')
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
   const [recent, setRecent] = useState(searchParams.get('recent') === '1')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
@@ -219,7 +218,7 @@ export default function Directory() {
   const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
   // Fused search mode: any meaningful query with no active structured filters
-  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || directLink || hasWebsite || recent || !!debouncedCause.trim()
+  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || hasWebsite || recent || !!debouncedCause.trim()
   const isFusedMode = !hasAnyFilter && debouncedQuery.trim().length >= 2
 
   // Categories the user drilled into (picked specific subcats) are represented by
@@ -239,12 +238,11 @@ export default function Directory() {
       min_revenue: revPreset?.min,
       max_revenue: revPreset?.max,
       min_tier: scoreTier || undefined,
-      direct_link: directLink || undefined,
       has_website: hasWebsite || undefined,
       recent: recent || undefined,
       cause: debouncedCause.trim() || undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, directLink, hasWebsite, recent, debouncedCause, itemsPerPage]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hasWebsite, recent, debouncedCause, itemsPerPage]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
@@ -324,7 +322,6 @@ export default function Directory() {
     setSortBy('organization_name')
     setRevenueFilter('')
     setScoreTier('')
-    setDirectLink(false)
     setHasWebsite(false)
     setRecent(false)
     setCause('')
@@ -336,7 +333,6 @@ export default function Directory() {
     searchParams.delete('state')
     searchParams.delete('revenue')
     searchParams.delete('min_tier')
-    searchParams.delete('direct_link')
     searchParams.delete('has_website')
     searchParams.delete('recent')
     setSearchParams(searchParams)
@@ -466,9 +462,6 @@ export default function Directory() {
 
             {/* Discovery toggles — each keeps its own color (even when off) + a tooltip */}
             {[
-              { key: 'dl', label: 'Direct donate link', tip: 'Give directly, no hunting for a donate page', on: directLink, color: '#16A34A', textOn: '#FFFFFF',
-                icon: <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></>,
-                toggle: () => { setDirectLink(!directLink); setCurrentPage(1); scrollTop() } },
               { key: 'hw', label: 'Has a website', tip: 'A working website you can visit to learn more', on: hasWebsite, color: '#0EA5E9', textOn: '#FFFFFF',
                 icon: <><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></>,
                 toggle: () => { setHasWebsite(!hasWebsite); setCurrentPage(1); scrollTop() } },
@@ -623,14 +616,12 @@ export default function Directory() {
             sortBy={sortBy}
             revenueFilter={revenueFilter}
             scoreTier={scoreTier}
-            directLink={directLink}
             cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
             onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
             onRevenueChange={(id) => handleRevenueChange(id as RevenueId)}
             onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
-            onDirectLinkChange={(v) => { setDirectLink(v); setCurrentPage(1); scrollTop() }}
             onCauseChange={setCause}
             onClearAll={handleClearAll}
             resultCount={total}

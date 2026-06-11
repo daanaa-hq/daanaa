@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getOrganizations, type ApiOrganization } from '../data/api'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { getPrimaryExternalLink } from '../utils/externalLink'
 
 // "Meet the invisible" — the rethought Invisible-97% page. No WebGL. Real
 // organizations, scroll-driven, mobile-native, leads straight to the directory.
@@ -21,6 +22,7 @@ function shuffle<T>(arr: T[]): T[] {
 function RevealCard({ org, i }: { org: ApiOrganization; i: number }) {
   const place = [org.CITY, org.STATE].filter(Boolean).join(', ')
   const mission = (org.mission || '').replace(/^[“"\s]+|[”"\s]+$/g, '')
+  const link = getPrimaryExternalLink(org)
   return (
     <div
       className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] hover:border-soft-gold/40 transition-all p-6 opacity-0 animate-[fadeUp_0.6s_ease-out_forwards]"
@@ -34,14 +36,14 @@ function RevealCard({ org, i }: { org: ApiOrganization; i: number }) {
         )}
       </Link>
       <div className="flex items-center gap-3 mt-auto pt-5 border-t border-white/5">
-        {org.donate_url && (
+        {link.url && (
           <a
-            href={org.donate_url}
+            href={link.url}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-soft-gold text-deep-navy font-body text-[13px] font-bold hover:bg-bright-gold transition-colors"
           >
-            Give directly
+            {link.label}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
           </a>
         )}
@@ -62,13 +64,13 @@ export default function MeetInvisible() {
   const [orgs, setOrgs] = useState<ApiOrganization[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Only orgs with a verified, working donate link — so every card here leads
-  // to a giving page that actually works. Rotate across the pool by pulling a
-  // random page each visit, then shuffle, so repeat visitors meet new orgs.
+  // Only orgs with a verified, live website — so every card here leads to the
+  // org's own official site. Rotate across the pool by pulling a random page
+  // each visit, then shuffle, so repeat visitors meet new orgs.
   useEffect(() => {
-    const base = { direct_link: true, per_page: 48, sort: 'total_revenue', order: 'asc' } as const
+    const base = { has_website: true, per_page: 48, sort: 'total_revenue', order: 'asc' } as const
     const pick = (batch: { organizations?: ApiOrganization[] }) =>
-      shuffle((batch.organizations || []).filter(o => o.mission && o.donate_url)).slice(0, 18)
+      shuffle((batch.organizations || []).filter(o => o.mission && o.website)).slice(0, 18)
     getOrganizations({ ...base, page: 1 })
       .then(async first => {
         const pages = first.pages || 1

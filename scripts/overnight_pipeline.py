@@ -25,7 +25,12 @@ def get_db():
     return sqlite3.connect(str(DB))
 
 def process_manual_submissions():
-    """Ingest manual link submissions from CSV, update DB, clear file."""
+    """Ingest manual link submissions from CSV, update DB, clear file.
+
+    NOTE (2026-06-10): Donation URL processing disabled per legal directive.
+    Daanaa is a discovery platform, not a fundraising platform.
+    Only website URLs are now processed.
+    """
     if not SUBMISSIONS_FILE.exists():
         return 0
 
@@ -42,18 +47,20 @@ def process_manual_submissions():
                 ein = row['EIN'].strip()
                 # canonical form; junk submissions ("n/a", no domain) → None
                 website = normalize_website(row.get('website_url', ''))
-                donate = row.get('donate_url', '').strip() or None
+                # DISABLED: donation URL processing (2026-06-10)
+                # donate = row.get('donate_url', '').strip() or None
 
-                if not (website or donate):
+                if not website:
                     continue
 
                 # Update registry with submitted links (marked as beta/unverified)
                 if website:
                     c.execute('UPDATE registry_enriched SET website = ?, website_status = "beta" WHERE EIN = ? AND (website IS NULL OR website = "")',
                              (website, ein))
-                if donate:
-                    c.execute('UPDATE registry_enriched SET donate_url = ?, donate_confidence = 75, donate_url_status = "beta_unverified" WHERE EIN = ?',
-                             (donate, ein))
+                # DISABLED: donation URL processing (2026-06-10)
+                # if donate:
+                #     c.execute('UPDATE registry_enriched SET donate_url = ?, donate_confidence = 75, donate_url_status = "beta_unverified" WHERE EIN = ?',
+                #              (donate, ein))
                 processed += 1
 
         conn.commit()
@@ -70,8 +77,22 @@ def process_manual_submissions():
     return processed
 
 def enrich_batch(size=1000):
+    """
+    NOTE: This function is deprecated (2026-06-10). The registry table was consolidated
+    into registry_enriched. This function would need propublica columns in registry_enriched
+    to work. Currently a no-op to prevent pipeline breakage.
+    """
     conn = get_db()
     c = conn.cursor()
+    # Check if propublica enrichment columns exist in registry_enriched
+    c.execute("PRAGMA table_info(registry_enriched)")
+    cols = {row[1] for row in c.fetchall()}
+
+    if 'propublica_object_id' not in cols:
+        log('ProPublica enrichment columns not in schema. Skipping enrichment batch.')
+        conn.close()
+        return 0, 0
+
     c.execute('SELECT EIN FROM registry_enriched WHERE propublica_object_id IS NULL LIMIT ?', (size,))
     eins = [r[0] for r in c.fetchall()]
     if not eins:
@@ -98,7 +119,7 @@ def enrich_batch(size=1000):
                     pdf = latest.get('pdf_url', '')
                     fdate = latest.get('date_submitted', '')
                     fyear = latest.get('tax_prd_yr', 0)
-                c.execute('UPDATE registry SET propublica_object_id = ?, propublica_pdf_url = ?, propublica_filing_date = ?, propublica_tax_year = ?, last_updated = datetime(\'now\') WHERE EIN = ?', (obj_id, pdf, fdate, fyear, ein))
+                c.execute('UPDATE registry_enriched SET propublica_object_id = ?, propublica_pdf_url = ?, propublica_filing_date = ?, propublica_tax_year = ? WHERE EIN = ?', (obj_id, pdf, fdate, fyear, ein))
                 updated += 1
             elif resp.status_code == 429:
                 log('Rate limited. Waiting 60s...')

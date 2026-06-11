@@ -113,7 +113,7 @@ function WhatDaanaaDoesSection() {
           {[
             { title: 'Discover causes', body: 'Search by cause, place, or community need.' },
             { title: 'Understand context', body: 'View public information with peer-based context instead of one-size-fits-all judgment.' },
-            { title: 'Give directly', body: 'When available, Daanaa points you to the organization\'s own giving page.' },
+            { title: 'Connect directly', body: 'When available, Daanaa points you to the organization\'s own official website.' },
           ].map(card => (
             <div key={card.title} className="bg-white border border-light-grey rounded-2xl p-6 md:p-8">
               <h3 className="font-display text-deep-navy text-[20px] md:text-[22px]">{card.title}</h3>
@@ -516,7 +516,7 @@ function TiersStrip() {
               Public Data Completeness
             </p>
             <p className="font-body text-[14px] text-cool-grey leading-[1.5]">
-              Some organizations have published websites, Form 990s, and giving pages. Others are small, local, or online-only. Each tier reflects what public records are available.
+              Some organizations have published websites and Form 990s. Others are small, local, or online-only. Each tier reflects what public records are available.
             </p>
             <Link
               to="/tiers"

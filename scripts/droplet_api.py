@@ -112,6 +112,24 @@ def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias=''):
     return conds, params
 
 
+# Legal posture (2026-06-10): no donation links on public surfaces. Donate data
+# stays internal; strip it from every payload — including precomputed files
+# generated before the policy change.
+_DONATE_FIELDS = (
+    'donate_url', 'donate_platform', 'donate_url_status', 'donate_confidence',
+    'donate_source_page', 'donate_identity_match', 'donate_human_review',
+    'donate_checked_at',
+)
+
+def _strip_donate(d: dict) -> dict:
+    for k in _DONATE_FIELDS:
+        d.pop(k, None)
+    badges = d.get('data_badges')
+    if isinstance(badges, dict):
+        badges.pop('donate', None)
+    return d
+
+
 def _row_to_org(row) -> dict:
     """Convert a search.db orgs row to the org dict the frontend expects."""
     d = dict(row)
@@ -123,7 +141,7 @@ def _row_to_org(row) -> dict:
             d['cause_tags'] = []
     d['is_hidden_gem'] = bool(d.get('is_hidden_gem'))
     d['data_badges'] = {'mission': d.get('mission_source')}
-    return d
+    return _strip_donate(d)
 
 
 def load_org_detail(ein: str) -> dict | None:
@@ -136,7 +154,7 @@ def load_org_detail(ein: str) -> dict | None:
             data['data_badges'] = {'mission': data.get('mission_source')}
         elif isinstance(data.get('data_badges'), dict) and 'mission' not in data['data_badges']:
             data['data_badges']['mission'] = data.get('mission_source')
-        return data
+        return _strip_donate(data)
 
     # Fallback: serve from search.db orgs table (IRS_BMF / bmf_stub orgs)
     conn = get_search_db()
@@ -201,7 +219,6 @@ def get_organizations():
     hidden_gem    = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website   = request.args.get('has_website', '').strip() == '1'
-    direct_link   = request.args.get('direct_link', '').strip() == '1'
     min_rev = request.args.get('min_revenue', type=float)
     max_rev = request.args.get('max_revenue', type=float)
     # Comma-separated multi-select, same contract as the home daanaa_api:
@@ -213,15 +230,15 @@ def get_organizations():
     if q and len(q) >= 2:
         return _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                               state, sort, page, per_page,
-                              hidden_gem, needs_funding, has_website, direct_link)
+                              hidden_gem, needs_funding, has_website)
 
     # ── Filter browse: DB query when flags, revenue, or multi-select used ───
-    any_filter = hidden_gem or needs_funding or has_website or direct_link
+    any_filter = hidden_gem or needs_funding or has_website
     multi_select = len(ntee_list) > 1 or len(sub_list) > 1 or (ntee_list and sub_list)
     if any_filter or multi_select or min_rev is not None or max_rev is not None:
         return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                                  state, sort, page, per_page,
-                                 hidden_gem, needs_funding, has_website, direct_link)
+                                 hidden_gem, needs_funding, has_website)
 
     # ── Browse: precomputed files ──────────────────────────────────────────
     category = sub if sub else ntee
@@ -262,7 +279,7 @@ def get_organizations():
 
 def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                       state, sort, page, per_page,
-                      hidden_gem, needs_funding, has_website, direct_link):
+                      hidden_gem, needs_funding, has_website):
     """Query orgs table directly with filter conditions but no FTS match."""
     conn = get_search_db()
     if not conn:
@@ -279,8 +296,6 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
             conditions.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
         if has_website:
             conditions.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
-        if direct_link:
-            conditions.append("donate_url IS NOT NULL AND donate_url != ''")
 
         where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
         _SORT_MAP = {'name': 'organization_name ASC'}
@@ -309,7 +324,7 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
 
 def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                    state, sort, page, per_page,
-                   hidden_gem, needs_funding, has_website, direct_link):
+                   hidden_gem, needs_funding, has_website):
     """FTS search against search.db orgs table, returns full org objects."""
     conn = get_search_db()
     if not conn:
@@ -328,8 +343,6 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
             conditions.append("o.months_of_reserve IS NOT NULL AND o.months_of_reserve < 6")
         if has_website:
             conditions.append("o.website IS NOT NULL AND o.website != '' AND o.website_status = 'ok'")
-        if direct_link:
-            conditions.append("o.donate_url IS NOT NULL AND o.donate_url != ''")
 
         order = "COALESCE(o.merit_score, -1) DESC"
         if sort == 'name':

@@ -70,12 +70,11 @@ def org_to_dict(row):
         'website': row[34],
         'website_status': row[35],
         'cause_tags': json.loads(row[36]) if row[36] else None,
-        'donate_url': row[37],
-        'donate_platform': row[38],
-        'donate_url_status': row[39],
-        'activ1': row[40],
-        'activ2': row[41],
-        'activ3': row[42],
+        # donate_* fields intentionally not emitted (2026-06-10): no donation
+        # links on public surfaces — data stays internal for the claim flow.
+        'activ1': row[37],
+        'activ2': row[38],
+        'activ3': row[39],
     }
 
 
@@ -87,8 +86,22 @@ def main():
     timestamp = datetime.now().isoformat()
     print(f"[{timestamp}] Pre-computing org detail pages...")
 
-    # Load all org data from DB
-    print("  Loading org data...")
+    # Check existing files FIRST (before loading all orgs into memory)
+    print("  Checking existing files...")
+    existing = {f.stem for f in Path(OUTPUT_DIR).rglob('*.json.gz')}
+    print(f"  Existing files: {len(existing)}")
+
+    # Count total orgs (without loading them all)
+    print("  Counting tax-deductible orgs...")
+    cursor.execute("""
+        SELECT COUNT(*) FROM registry_enriched
+        WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
+    """)
+    total_orgs = cursor.fetchone()[0]
+    print(f"  Total: {total_orgs} tax-deductible orgs")
+
+    # Stream orgs directly without loading all into memory
+    print(f"  Streaming {total_orgs} orgs (skipping {len(existing)} existing)...")
     cursor.execute("""
         SELECT
             EIN, organization_name, NTEE1, NTEECC, CITY, STATE,
@@ -98,81 +111,32 @@ def main():
             merit_band, financial_health, months_of_reserve, net_assets,
             total_expenses, total_liabilities, employee_count, program_expense_pct,
             ruling_date, NULL as nccs_year, mission, mission_source, website, website_status,
-            cause_tags, donate_url, donate_platform, donate_url_status,
+            cause_tags,
             NULL as activ1, NULL as activ2, NULL as activ3
         FROM registry_enriched
-        -- Only generate pages for orgs where donating is currently tax-deductible:
-        -- deductible 501(c)(3) AND not IRS-revoked. Fail closed on revocation.
         WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN
     """)
-    all_rows = cursor.fetchall()
-    org_dict = {row[0]: row for row in all_rows}
-    total_orgs = len(all_rows)
-    print(f"  Loaded {total_orgs} tax-deductible orgs")
-    conn.close()
 
-    # Check existing files
-    existing = {f.stem for f in Path(OUTPUT_DIR).rglob('*.json.gz')}
-    print(f"  Existing files: {len(existing)}")
-
-    orgs_to_process = [row for row in all_rows if row[0] not in existing]
-    print(f"  To process: {len(orgs_to_process)}")
-
-    if not orgs_to_process:
-        print("  All orgs already processed!")
-        return
-
-    # Load FAISS index + EIN map for similar orgs
-    faiss_ok = False
-    index = None
-    ein_map = None
-
-    if HAS_FAISS and Path(FAISS_INDEX_PATH).exists() and Path(EIN_MAP_PATH).exists():
-        print("  Loading FAISS index...")
-        try:
-            index = faiss.read_index(FAISS_INDEX_PATH)
-            index.nprobe = 32
-            # IVFPQ/IVFFlat need a direct map for reconstruct() (used to fetch each
-            # org's own vector). Without this, the quantized index falls back to
-            # empty similar_orgs. Harmless if already present.
-            try:
-                index.make_direct_map()
-            except Exception:
-                pass
-            with gzip.open(EIN_MAP_PATH, 'rt') as f:
-                ein_map = json.load(f)  # {str(idx): ein}
-            # Build position lookup: ein → faiss position
-            ein_to_pos = {ein: int(i) for i, ein in ein_map.items()}
-            faiss_ok = True
-            print(f"  FAISS ready: {index.ntotal} vectors")
-
-            # Try reconstruct to verify
-            try:
-                test_vec = np.zeros(1024, dtype=np.float32)
-                index.reconstruct(0, test_vec)
-                print("  Vector reconstruction: supported")
-            except Exception:
-                # IVFFlat without store_pairs — reconstruct not available
-                print("  Vector reconstruction: not supported, will use batch queries")
-                faiss_ok = False
-        except Exception as e:
-            print(f"  FAISS load error: {e}")
-
+    # Stream and process without FAISS (cursor iteration, not fetchall)
     processed = 0
-    no_similar = 0
+    for row in cursor:
+        ein = row[0]
+        if ein in existing:
+            continue
 
-    if faiss_ok:
-        # Reconstruct-based: get each org's vector from FAISS
-        _process_with_reconstruction(orgs_to_process, org_dict, index, ein_map, ein_to_pos)
-    else:
-        # No reconstruction: write org files with empty similar_orgs
-        # (still correct — all org data present, similar_orgs = [])
-        print("  Writing org files without similar orgs (FAISS reconstruct unavailable)")
-        _process_without_similar(orgs_to_process, org_dict, existing, total_orgs)
+        org_data = org_to_dict(row)
+        org_data['similar_organizations'] = []
+        _write_org(org_data)
 
+        processed += 1
+        if processed % 100000 == 0:
+            pct = (len(existing) + processed) / total_orgs * 100
+            print(f"  Processed {processed}/{total_orgs} ({pct:.1f}%)")
+
+    conn.close()
     total_files = len(list(Path(OUTPUT_DIR).rglob('*.json.gz')))
-    print(f"\n[{datetime.now().isoformat()}] Done! Total org files: {total_files}")
+    print(f"\n[{datetime.now().isoformat()}] Done! {processed} new files. Total: {total_files}")
     total_size = sum(f.stat().st_size for f in Path(OUTPUT_DIR).rglob('*') if f.is_file())
     print(f"  Disk usage: {total_size / 1024 / 1024:.1f} MB")
 

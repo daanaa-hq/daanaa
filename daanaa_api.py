@@ -57,12 +57,6 @@ BETA_WEBSITE_DISCLOSURE = (
     "Organizations can claim and update their information at daanaa.org/for-nonprofits"
 )
 
-BETA_DONATION_LINK_DISCLOSURE = (
-    "🔍 Donation link discovered automatically and NOT verified by the organization. "
-    "Always confirm this link on their official website before giving. "
-    "Help us verify: claim your profile at daanaa.org/for-nonprofits"
-)
-
 # ── Response cache ─────────────────────────────────────────────────────────────
 # Simple in-process time-keyed cache. Keys are strings, values are (payload, ts).
 # TTLs chosen per endpoint volatility. No external dependency (no Redis).
@@ -290,8 +284,21 @@ ENABLE_V4_METRICS: bool = os.environ.get("ENABLE_V4_METRICS", "false").lower() =
 _SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
 _V4_FIELDS = ("financial_health", "operating_model", "revenue_band", "peer_cell_size")
 
+# Legal posture (2026-06-10): Daanaa is a discovery platform, not a fundraising
+# platform. Donation link data is internal-only (claim flow + admin) and must
+# never appear in a public response. Enforced here at the serialization choke
+# point so SELECT * routes can't leak it. Guarded by tests/test_no_public_donation_fields.py.
+_DONATE_FIELDS = (
+    "donate_url", "donate_platform", "donate_url_status", "donate_confidence",
+    "donate_source_page", "donate_identity_match", "donate_human_review",
+    "donate_checked_at", "donate_ineligible_reason", "donate_confirmed",
+)
+
 def _strip_scores(org: dict) -> dict:
-    """Null out score fields in an org dict when ENABLE_SCORES is false."""
+    """Public-response scrub: drop internal donate fields always; null score
+    fields when ENABLE_SCORES is false. Applied to every public org payload."""
+    for k in _DONATE_FIELDS:
+        org.pop(k, None)
     if ENABLE_SCORES:
         return org
     return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
@@ -673,7 +680,6 @@ def list_organizations():
     if min_tier == 'Glow':  # frontend alias for DB name Ember
         min_tier = 'Ember'
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
-    direct_link = request.args.get('direct_link', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
     recent = request.args.get('recent', '').strip() == '1'
@@ -737,11 +743,7 @@ def list_organizations():
         params.append(min_pct)
     if hidden_gem:
         where_clauses.append("is_hidden_gem = 1")
-    if direct_link:
-        where_clauses.append(
-            "donate_url IS NOT NULL AND donate_url != '' "
-            "AND donate_url_status IN ('ok','beta','live','claimed','blocked_or_restricted')"
-        )
+    # direct_link filter removed 2026-06-10: no public donate affordances (legal posture).
     if needs_funding:
         where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
     if has_website:
@@ -799,7 +801,7 @@ def list_organizations():
                CASE WHEN r.months_of_reserve BETWEEN -120 AND 120 THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
                r.net_assets, r.total_expenses,
                r.employee_count, r.ruling_date, r.zipcode, r.is_hidden_gem, r.cause_tags,
-               r.donate_url, r.donate_platform, r.donate_url_status, r.subsection, r.deductibility,
+               r.website, r.website_status,
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
                (r.website IS NOT NULL AND r.website != '') as has_website
@@ -818,14 +820,6 @@ def list_organizations():
         d = dict(row)
         d = _attach_v4_scores(d, row)
         d['total_revenue_formatted'] = f"${d['total_revenue']:,.0f}" if d['total_revenue'] else None
-        # Official-sources gate on the card's give affordance (cheap check; the
-        # per-EIN revocation lookup runs on the org-detail page, not the list).
-        if not _donate_eligible_basic(d.get('subsection'), d.get('deductibility'))[0]:
-            d['donate_url'] = None
-            d['donate_platform'] = None
-            d['donate_url_status'] = None
-        d.pop('subsection', None)
-        d.pop('deductibility', None)
         if d.get('cause_tags'):
             try:
                 d['cause_tags'] = json.loads(d['cause_tags'])
@@ -896,22 +890,13 @@ def get_organization(ein):
     org['has_mission'] = bool(org.get('mission') and str(org['mission']).strip())
     org['has_website'] = bool(org.get('website') and str(org['website']).strip())
 
-    # G2 / official-sources gate: never present a donate path for a non-deductible,
-    # non-501(c)(3), or IRS-auto-revoked org. Fail closed — null the donate fields
-    # so the frontend can't render a "give" affordance, and record why.
-    eligible, reason = _donate_eligible_basic(org.get('subsection'), org.get('deductibility'))
-    if eligible and _is_revoked(db, ein_clean):
-        eligible, reason = False, 'irs_auto_revoked'
-    if not eligible:
-        org['donate_url'] = None
-        org['donate_platform'] = None
-        org['donate_url_status'] = None
-        org['donate_ineligible_reason'] = reason
+    # Donate fields are never serialized publicly (see _DONATE_FIELDS); the G2
+    # eligibility gate (_donate_eligible_basic/_is_revoked) still protects the
+    # claim flow, where donate data remains in use.
 
     # Data provenance badges — tells the frontend which fields are AI-generated vs verified
     org['data_badges'] = {
         'mission': org.get('mission_source'),       # 'ai_ntee'|'ai_haiku'|'ai_web'|'lucido'|'claimed'|None
-        'donate':  org.get('donate_url_status'),    # 'beta' | 'provider' | 'claimed' | None
         'website': org.get('website_status'),       # 'ok' | 'redirected' | None
         'tags':    org.get('cause_tags_source'),    # 'ai_generated' (beta) | 'claimed' | None
     }
@@ -969,10 +954,6 @@ def get_organization(ein):
     if org.get('website_status') == 'beta':
         disclosures['website_disclosure'] = BETA_WEBSITE_DISCLOSURE
 
-    # Beta disclosure: donation link discovered via heuristic, not org-verified
-    if org.get('donate_url_status') == 'beta':
-        disclosures['donate_link_disclosure'] = BETA_DONATION_LINK_DISCLOSURE
-
     # IRS revocation list freshness — tells donors when we last verified status
     try:
         irs_row = db.execute(
@@ -1000,6 +981,16 @@ def get_organization(ein):
     except Exception as e:
         app.logger.debug(f"Financial context assessment failed for {ein_clean}: {e}")
         org['financial_context'] = None
+
+    # v5.0 peer-based taxonomy context (beta testing alongside v4 scores)
+    try:
+        from scripts.enrich_api_responses import get_v5_context
+        v5_ctx = get_v5_context(ein_clean)
+        if v5_ctx:
+            org['v5_context'] = v5_ctx
+    except Exception as e:
+        app.logger.debug(f"v5 context enrichment failed for {ein_clean}: {e}")
+        org['v5_context'] = None
 
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
@@ -2256,7 +2247,6 @@ def fused_search():
               CASE WHEN r.months_of_reserve BETWEEN -120 AND 120
                    THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
               r.net_assets, r.is_hidden_gem, r.cause_tags,
-              r.donate_url, r.donate_platform, r.donate_url_status,
               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
               (r.website  IS NOT NULL AND r.website  != '') as has_website,
@@ -2469,7 +2459,7 @@ def research_lamp_tiers():
     db = get_db()
     rows = db.execute("""
         SELECT merit_tier, count, pct_of_total, avg_revenue, avg_financial_health_score,
-               pct_with_website, pct_with_donation_link, avg_peer_percentile, period
+               pct_with_website, avg_peer_percentile, period
         FROM research_lamp_tier_summary
         WHERE period = (SELECT MAX(period) FROM research_lamp_tier_summary)
         ORDER BY
@@ -2490,8 +2480,7 @@ def research_lamp_tiers():
                 'pct_of_total': round(r['pct_of_total'], 1),
                 'avg_revenue': r['avg_revenue'],
                 'score': r['avg_financial_health_score'],
-                'web_pct': r['pct_with_website'],
-                'donate_pct': r['pct_with_donation_link']
+                'web_pct': r['pct_with_website']
             }
             for r in rows
         ],
@@ -2672,7 +2661,9 @@ def serve_frontend(path):
 
 # Eager load so gunicorn --preload populates the matrix in the master process
 # before forking workers. Workers inherit via CoW without re-reading the DB.
-_load_embeddings()
+# DAANAA_SKIP_EMBEDDINGS=1 (tests) avoids the ~2 GB load on import.
+if not os.environ.get("DAANAA_SKIP_EMBEDDINGS"):
+    _load_embeddings()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

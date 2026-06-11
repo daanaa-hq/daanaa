@@ -36,7 +36,7 @@ export default function Legal() {
                 },
                 {
                   name: "IRS Automatic Revocation List",
-                  detail: "The IRS publishes a list of organizations whose tax-exempt status was automatically revoked for failure to file for three or more consecutive years. Daanaa checks every indexed organization against this list monthly. Organizations with revoked status are removed from donation paths.",
+                  detail: "The IRS publishes a list of organizations whose tax-exempt status was automatically revoked for failure to file for three or more consecutive years. Daanaa checks every indexed organization against this list monthly. Organizations with revoked status are flagged and removed from browse and search.",
                   url: "https://apps.irs.gov/pub/epostcard/data-download-revocation.zip",
                 },
                 {
@@ -95,12 +95,12 @@ export default function Legal() {
               statement of its mission.
             </p>
             <p className="mt-3">
-              <strong className="text-deep-navy">Automatically-collected links.</strong> Some website and
-              donation links are discovered by automated search of public web pages, not provided by the
+              <strong className="text-deep-navy">Automatically-collected links.</strong> Some website
+              links are discovered by automated search of public web pages, not provided by the
               organization. These also carry a <strong className="text-deep-navy">beta</strong> label. We
               run basic checks that a link is live and appears to match the organization, but a beta label
-              is not an endorsement. Confirm you are on the correct organization's official page before
-              giving. Daanaa never receives or processes any donation.
+              is not an endorsement. Confirm you are on the correct organization's official page.
+              Daanaa never receives or processes any donation, and never collects donor payment information.
             </p>
             <p className="mt-3">
               An organization can claim its page to replace AI-generated text and automatically-collected

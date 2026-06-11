@@ -27,7 +27,7 @@ export default function ResearchMethodology() {
             </li>
             <li>
               <strong className="text-deep-navy">Organization websites:</strong> Mission
-              statements, leadership, and donation links verified via direct outreach.
+              statements, leadership, and official websites verified via direct outreach.
             </li>
           </ul>
         </div>
