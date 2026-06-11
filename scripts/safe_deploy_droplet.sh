@@ -171,6 +171,9 @@ package() {
 # ============================================================
 ship() {
   log "===== STAGE 4: Disk-guarded ship ====="
+  # Purge the previous backup (v0) before checking disk — v0 is only a same-deploy
+  # rollback aid; once we're about to ship a new payload it's safe to drop.
+  $SSH "rm -rf /data/precompute/v0 /opt/daanaa/staging/precompute_payload.tar.gz /tmp/tmp.* 2>/dev/null || true"
   # Uncompressed footprint the droplet must hold transiently (staging extract).
   local need_gb free_gb
   need_gb=$(du -BG "$PRECOMPUTE" | tail -1 | awk '{gsub(/G/,"",$1); print $1}')
