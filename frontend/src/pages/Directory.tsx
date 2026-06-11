@@ -199,7 +199,11 @@ export default function Directory() {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
-      setDebouncedQuery(searchQuery)
+      // Normalize EIN format: "46-3120432" → "463120432" so the API matches
+      const normalized = /^\d{2}-\d{7}$/.test(searchQuery.trim())
+        ? searchQuery.replace(/-/g, '')
+        : searchQuery
+      setDebouncedQuery(normalized)
       setCurrentPage(1)
     }, 320)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }

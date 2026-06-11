@@ -41,7 +41,8 @@ export default function SearchBar({
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
       try {
-        const result = await getOrganizations({ q: value, per_page: 6, sort: 'organization_name' })
+        const q = /^\d{2}-\d{7}$/.test(value.trim()) ? value.replace(/-/g, '') : value
+        const result = await getOrganizations({ q, per_page: 6, sort: 'organization_name' })
         setSuggestions(result.organizations)
         setOpen(result.organizations.length > 0)
       } catch {
