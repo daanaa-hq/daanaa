@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+@STEWARDSHIP.md
+
 # CLAUDE.md — Daanaa
 
 ## Stewardship Commitment — Read before any work
