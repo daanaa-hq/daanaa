@@ -38,7 +38,7 @@ export default function CauseSpotlight() {
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-12 pb-14">
           <div className="flex items-center gap-2 mb-8">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/40">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Featured cause</span>
           </div>
 
@@ -115,7 +115,7 @@ export default function CauseSpotlight() {
           <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.7] max-w-[680px]">
             Small {cat.name.toLowerCase()} organizations doing quiet, steady work, far from the spotlight.
           </p>
-          <p className="mt-3 font-body text-[13px] text-cool-grey/70 leading-[1.6] max-w-[680px]">
+          <p className="mt-3 font-body text-[13px] text-cool-grey leading-[1.6] max-w-[680px]">
             How these are chosen: smaller organizations (under $500K in revenue) that rank near the top
             of their peer group for financial health, with a public mission on file. It is a starting
             point for your own research, not a verdict.{' '}
@@ -151,7 +151,7 @@ export default function CauseSpotlight() {
           </div>
 
           {asOf && (
-            <p className="mt-10 font-body text-[12px] text-cool-grey/60">
+            <p className="mt-10 font-body text-[12px] text-cool-grey">
               Based on public IRS data. Figures current as of {new Date(asOf).toLocaleDateString()}.
             </p>
           )}

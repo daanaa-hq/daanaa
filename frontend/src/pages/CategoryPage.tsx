@@ -20,9 +20,9 @@ export default function CategoryPage() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <div className="flex items-center gap-2 mb-8">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/50">/</span>
+            <span className="text-muted-cream">/</span>
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Causes</Link>
-            <span className="text-muted-cream/50">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">{category.name}</span>
           </div>
           <div className="max-w-[640px]">
@@ -77,7 +77,7 @@ export default function CategoryPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-body text-[13px] font-medium text-deep-navy leading-snug group-hover:text-soft-gold transition-colors">{sub.name}</p>
-                  <p className="font-body text-[11px] text-cool-grey/50 mt-0.5">{sub.code}</p>
+                  <p className="font-body text-[11px] text-cool-grey mt-0.5">{sub.code}</p>
                 </div>
                 <svg
                   className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -92,7 +92,7 @@ export default function CategoryPage() {
           {/* Other categories */}
           <div className="mt-14 pt-8 border-t border-light-grey">
             <div className="flex items-center justify-between mb-5">
-              <p className="font-body text-[12px] font-semibold tracking-[0.06em] text-cool-grey/50 uppercase">
+              <p className="font-body text-[12px] font-semibold tracking-[0.06em] text-cool-grey uppercase">
                 Other categories
               </p>
               <Link to="/directory" className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors">

@@ -385,7 +385,7 @@ export default function AdminPage() {
         <span className="font-display italic text-[18px] text-warm-cream tracking-[-0.02em]">Daanaa Admin</span>
         <button
           onClick={() => setAdminKey('')}
-          className="font-body text-[12px] text-muted-cream/60 hover:text-muted-cream transition-colors"
+          className="font-body text-[12px] text-muted-cream hover:text-muted-cream transition-colors"
         >
           Sign out
         </button>

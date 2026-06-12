@@ -52,7 +52,7 @@ export default function ResearchSidebar({
       </nav>
 
       <div className="mt-8 pt-6 border-t border-soft-gold/20">
-        <p className="text-xs text-cool-grey/60">
+        <p className="text-xs text-cool-grey">
           This research area is intended for advisor, academic, nonprofit, and
           foundation review.
         </p>

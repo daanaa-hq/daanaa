@@ -404,9 +404,9 @@ export default function OrganizationDetail() {
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2">
               <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-              <span className="text-muted-cream/50">/</span>
+              <span className="text-muted-cream">/</span>
               <Link to="/directory" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Directory</Link>
-              <span className="text-muted-cream/50">/</span>
+              <span className="text-muted-cream">/</span>
               <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream truncate max-w-[200px]">{org.name}</span>
             </div>
             <button
@@ -475,7 +475,7 @@ export default function OrganizationDetail() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
                     <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  <p className="font-body text-[13px] text-muted-cream/70 leading-[1.55]">
+                  <p className="font-body text-[13px] text-muted-cream leading-[1.55]">
                     This is a registered US nonprofit. No annual financial report is on file yet, so detailed data and a score aren't available.
                   </p>
                 </div>
@@ -501,7 +501,7 @@ export default function OrganizationDetail() {
                 return b ? (
                   <div className="mt-3 max-w-[520px] bg-white/8 border border-white/12 rounded-xl px-4 py-3">
                     <p className="font-body text-[13px] text-warm-cream/85 leading-[1.65]">{b.detail}</p>
-                    <p className="mt-2 font-body text-[10px] text-muted-cream/40 tracking-[0.01em]">{b.source}</p>
+                    <p className="mt-2 font-body text-[10px] text-muted-cream tracking-[0.01em]">{b.source}</p>
                   </div>
                 ) : null
               })()}
@@ -579,14 +579,14 @@ export default function OrganizationDetail() {
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                       </a>
                       {apiOrg!.website_status === 'beta' && (
-                        <p className="mt-1.5 font-body text-[11px] text-cool-grey/70 flex items-center gap-1.5">
+                        <p className="mt-1.5 font-body text-[11px] text-cool-grey flex items-center gap-1.5">
                           <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">⚠️ discovered</span>
                           <span>·</span>
                           <span>Not confirmed by the organization.</span>
                           <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Verify</Link>
                         </p>
                       )}
-                      <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
+                      <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
                         External link. Daanaa does not process donations or collect donor payment information.
                       </p>
                       <button
@@ -610,7 +610,7 @@ export default function OrganizationDetail() {
                       View public record
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
                     </a>
-                    <p className="mt-2.5 font-body text-[12px] text-muted-cream/60 leading-[1.5] max-w-[360px]">
+                    <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
                       We could not verify this organization&rsquo;s own website, so we link its IRS-backed public record instead. External link. Daanaa does not process donations or collect donor payment information.
                     </p>
                   </div>
@@ -635,7 +635,7 @@ export default function OrganizationDetail() {
                     Keep a private record of this gift
                   </button>
                 )}
-                <p className="mt-1.5 font-body text-[11px] text-muted-cream/40 leading-[1.5] max-w-[340px]">
+                <p className="mt-1.5 font-body text-[11px] text-muted-cream leading-[1.5] max-w-[340px]">
                   Saved on your device only, for your tax records. Never shared, never tracked.
                 </p>
               </div>
@@ -658,7 +658,7 @@ export default function OrganizationDetail() {
                 >
                   {lampTier}
                 </Link>
-                <span className="font-body text-[10px] text-muted-cream/50">
+                <span className="font-body text-[10px] text-muted-cream">
                   {({'Beacon':'Fully documented','Torch':'Well documented','Candle':'Financials on record','Ember':'IRS registered','Spark':'IRS registered','Glow':'IRS registered'} as Record<string,string>)[lampTier] ?? 'IRS registered'}
                 </span>
               </div>
@@ -669,7 +669,7 @@ export default function OrganizationDetail() {
                   Registered US Nonprofit
                 </span>
                 {apiOrg!.latest_tax_year && (
-                  <span className="font-body text-[11px] text-muted-cream/60">
+                  <span className="font-body text-[11px] text-muted-cream">
                     Annual report filed · {apiOrg!.latest_tax_year}
                   </span>
                 )}
@@ -688,19 +688,19 @@ export default function OrganizationDetail() {
               {/* v4.0 Financial Health — model-specific peer comparison (when available) */}
               {v4Health && (
                 <div className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg border border-soft-gold/40 bg-soft-gold/8">
-                  <span className="font-body text-[10px] tracking-[0.06em] uppercase text-muted-cream/60">
+                  <span className="font-body text-[10px] tracking-[0.06em] uppercase text-muted-cream">
                     Financial health
                   </span>
                   <span className="font-body text-[14px] font-semibold text-soft-gold">
                     {v4Health.tier}
                   </span>
                   {v4Health.operatingModel && (
-                    <span className="font-body text-[10px] text-muted-cream/70 text-center leading-[1.4]">
+                    <span className="font-body text-[10px] text-muted-cream text-center leading-[1.4]">
                       Among {v4Health.operatingModel?.replace(/_/g, ' ')} nonprofits
                     </span>
                   )}
                   {v4Health.peerCellSize && (
-                    <span className="font-body text-[9px] text-muted-cream/50">
+                    <span className="font-body text-[9px] text-muted-cream">
                       Peer group: {v4Health.peerCellSize.toLocaleString()} orgs
                     </span>
                   )}
@@ -708,16 +708,16 @@ export default function OrganizationDetail() {
               )}
               <button
                 onClick={() => setShowScoreExplainer(s => !s)}
-                className="font-body text-[11px] text-muted-cream/40 hover:text-soft-gold transition-colors"
+                className="font-body text-[11px] text-muted-cream hover:text-soft-gold transition-colors"
               >
                 How is this scored? {showScoreExplainer ? '↑' : '→'}
               </button>
               {showScoreExplainer && (
                 <div className="w-full px-3 py-3 rounded-lg bg-white/5 border border-white/10 text-left space-y-2">
-                  <p className="font-body text-[11px] text-muted-cream/70 leading-[1.5]">
+                  <p className="font-body text-[11px] text-muted-cream leading-[1.5]">
                     We compare reserves, program spending, and revenue stability against nonprofits in the same cause area and revenue range. The 0-100 score shows where they stand within that group of {apiOrg!.peer_total ? apiOrg!.peer_total.toLocaleString() : 'similar'} orgs.
                   </p>
-                  <p className="font-body text-[10px] text-muted-cream/50 leading-[1.5]">
+                  <p className="font-body text-[10px] text-muted-cream leading-[1.5]">
                     Source: Annual financial reports via ProPublica Nonprofit Explorer
                     {apiOrg!.latest_tax_year ? ` · FY${apiOrg!.latest_tax_year}` : ''}.
                   </p>
@@ -796,7 +796,7 @@ export default function OrganizationDetail() {
                   </span>
                   <span className="font-body text-[11px] text-cool-grey">
                     Assets minus liabilities
-                    {apiOrg!.latest_tax_year && <span className="ml-1.5 text-cool-grey/50">· FY {apiOrg!.latest_tax_year}</span>}
+                    {apiOrg!.latest_tax_year && <span className="ml-1.5 text-cool-grey">· FY {apiOrg!.latest_tax_year}</span>}
                   </span>
                 </div>
               )}
@@ -808,7 +808,7 @@ export default function OrganizationDetail() {
                   </span>
                   <span className="font-body text-[11px] text-cool-grey">
                     Total functional expenses
-                    {apiOrg!.latest_tax_year && <span className="ml-1.5 text-cool-grey/50">· FY {apiOrg!.latest_tax_year}</span>}
+                    {apiOrg!.latest_tax_year && <span className="ml-1.5 text-cool-grey">· FY {apiOrg!.latest_tax_year}</span>}
                   </span>
                 </div>
               )}
@@ -979,7 +979,7 @@ export default function OrganizationDetail() {
                   <p className="mt-3 font-body text-[12px] text-cool-grey">Claim in progress -- verification letter sent.</p>
                 )}
                 {apiOrg!.irs_status_verified_at && (
-                  <p className="mt-3 font-body text-[11px] text-cool-grey/70">
+                  <p className="mt-3 font-body text-[11px] text-cool-grey">
                     IRS status verified {new Date(apiOrg!.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </p>
                 )}
@@ -1013,7 +1013,7 @@ export default function OrganizationDetail() {
                     ].map(s => (
                       <div key={s.t} className="rounded-lg border border-dashed border-light-grey bg-white/60 px-3 py-2">
                         <p className="font-body text-[12px] font-medium text-deep-navy">{s.t}</p>
-                        <p className="font-body text-[11px] text-cool-grey/70">{s.d}</p>
+                        <p className="font-body text-[11px] text-cool-grey">{s.d}</p>
                       </div>
                     ))}
                   </div>
@@ -1120,20 +1120,20 @@ export default function OrganizationDetail() {
                   <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">DATA SOURCE</span>
                   <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 font-body text-[13px] text-cool-grey">
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey/60 mb-0.5">Type</p>
+                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">Type</p>
                       <p className="text-deep-navy font-medium">Registered US nonprofit</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey/60 mb-0.5">EIN</p>
+                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">EIN</p>
                       <p className="text-deep-navy font-medium">{formatEIN(org.ein)}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey/60 mb-0.5">NTEE Category</p>
+                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">NTEE Category</p>
                       <p className="text-deep-navy font-medium">{(org as any).nteecc || org.category || '--'}</p>
                     </div>
                     {(org as any).revenueBand && (
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey/60 mb-0.5">Size</p>
+                        <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">Size</p>
                         <p className="text-deep-navy font-medium">{(org as any).revenueBand} nonprofit</p>
                       </div>
                     )}

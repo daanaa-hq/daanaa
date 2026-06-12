@@ -126,7 +126,7 @@ export default function SectorHealth() {
         {tip && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <button type="button" aria-label={`What ${label} means`} className="text-cool-grey/50 hover:text-soft-gold transition-colors leading-none">
+              <button type="button" aria-label={`What ${label} means`} className="text-cool-grey hover:text-soft-gold transition-colors leading-none">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               </button>
             </TooltipTrigger>
@@ -147,7 +147,7 @@ export default function SectorHealth() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-16 md:py-24">
           <div className="flex items-center gap-2 mb-8">
             <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/50">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream">Sector Health</span>
           </div>
 
@@ -173,7 +173,7 @@ export default function SectorHealth() {
             ].map(stat => (
               <div key={stat.label} className="flex items-baseline gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
                 <span className="font-display text-[28px] font-medium" style={{ color: stat.color }}>{stat.value}</span>
-                <span className="font-body text-[13px] text-muted-cream/60">{stat.label}</span>
+                <span className="font-body text-[13px] text-muted-cream">{stat.label}</span>
               </div>
             ))}
           </div>
@@ -278,18 +278,18 @@ export default function SectorHealth() {
                 <div key={g.name} className={`p-4 rounded-xl border ${g.color}`}>
                   <span className={`inline-block font-body text-[11px] font-semibold px-2 py-0.5 rounded-full mb-2 ${g.badge}`}>{g.name}</span>
                   <p className="font-body text-[12px] text-cool-grey leading-[1.5] mb-3">{g.desc}</p>
-                  <p className="font-body text-[10px] font-medium text-cool-grey/50 italic mb-2">{g.note}</p>
+                  <p className="font-body text-[10px] font-medium text-cool-grey italic mb-2">{g.note}</p>
                   <div className="flex gap-3 flex-wrap">
                     <div>
-                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase">Orgs</p>
+                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey uppercase">Orgs</p>
                       <p className="font-body text-[13px] font-semibold text-deep-navy">{g.orgs}</p>
                     </div>
                     <div>
-                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase">Med reserve</p>
+                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey uppercase">Med reserve</p>
                       <p className="font-body text-[13px] font-semibold text-deep-navy">{g.reserve}</p>
                     </div>
                     <div>
-                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase">Prog spend</p>
+                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey uppercase">Prog spend</p>
                       <p className="font-body text-[13px] font-semibold text-deep-navy">{g.prog}</p>
                     </div>
                   </div>
@@ -391,7 +391,7 @@ export default function SectorHealth() {
                                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: groupMeta.dot }} />
                                   {groupMeta.label}
                                 </span>
-                                <span className="font-body text-[11px] text-cool-grey/50">{sector.total_orgs.toLocaleString()} total · {sector.has_reserve.toLocaleString()} with reserve data</span>
+                                <span className="font-body text-[11px] text-cool-grey">{sector.total_orgs.toLocaleString()} total · {sector.has_reserve.toLocaleString()} with reserve data</span>
                               </div>
                             </div>
                           </div>
@@ -444,11 +444,11 @@ export default function SectorHealth() {
 
           {/* Methodology note */}
           <div className="mt-12 pt-8 border-t border-light-grey">
-            <p className="font-body text-[13px] text-cool-grey/70 leading-[1.6] max-w-[680px]">
+            <p className="font-body text-[13px] text-cool-grey leading-[1.6] max-w-[680px]">
               <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data — approximately 23.7% of the 1.63 million donation eligible nonprofits Daanaa indexes. The remaining 76.3% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="inline-flex items-center gap-1.5 font-body text-[12px] text-cool-grey/60">
+              <span className="inline-flex items-center gap-1.5 font-body text-[12px] text-cool-grey">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 IRS Statistics of Income · FY 2019–2024
               </span>
@@ -456,12 +456,12 @@ export default function SectorHealth() {
                 href="https://projects.propublica.org/nonprofits/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-body text-[12px] text-cool-grey/60 hover:text-soft-gold transition-colors"
+                className="inline-flex items-center gap-1 font-body text-[12px] text-cool-grey hover:text-soft-gold transition-colors"
               >
                 ProPublica Nonprofit Explorer
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               </a>
-              <span className="font-body text-[12px] text-cool-grey/60">NCCS</span>
+              <span className="font-body text-[12px] text-cool-grey">NCCS</span>
             </div>
             <div className="mt-4 flex items-center gap-4">
               <Link to="/methodology" className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors">

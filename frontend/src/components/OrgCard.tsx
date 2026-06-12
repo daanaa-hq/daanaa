@@ -157,7 +157,7 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
           {org.name}
         </h3>
         {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
-          <p className="font-body text-[10px] text-cool-grey/50 mb-0.5 leading-none">
+          <p className="font-body text-[10px] text-cool-grey mb-0.5 leading-none">
             {apiOrg.match_sources.includes('keyword') && apiOrg.match_sources.includes('semantic')
               ? 'Matched by name and meaning'
               : apiOrg.match_sources.includes('semantic')
@@ -182,7 +182,7 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
             return (
               <>
                 <span className="text-cool-grey/30">·</span>
-                <span className="font-body text-[11px] text-cool-grey/70 truncate max-w-[200px]">
+                <span className="font-body text-[11px] text-cool-grey truncate max-w-[200px]">
                   {major && sub ? `${major} · ${sub}` : label}
                 </span>
               </>
@@ -264,7 +264,7 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
             <p className="font-body text-[11px] text-soft-gold mt-0.5 leading-none">{inlineFact}</p>
           )}
           {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
-            <p className="font-body text-[10px] text-cool-grey/50 mt-0.5 leading-none">
+            <p className="font-body text-[10px] text-cool-grey mt-0.5 leading-none">
               {apiOrg.match_sources.includes('keyword') && apiOrg.match_sources.includes('semantic')
                 ? 'Matched by name and meaning'
                 : apiOrg.match_sources.includes('semantic')
@@ -297,7 +297,7 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
               className="inline-flex flex-col px-2.5 py-1 rounded-lg bg-soft-gold/8 cursor-default"
             >
               {major && sub && (
-                <span className="font-body text-[9px] text-cool-grey/50 leading-tight tracking-[0.05em] uppercase">
+                <span className="font-body text-[9px] text-cool-grey leading-tight tracking-[0.05em] uppercase">
                   {major}
                 </span>
               )}

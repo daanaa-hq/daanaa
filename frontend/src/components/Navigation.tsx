@@ -96,7 +96,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
                   onChange={e => setHeaderQuery(e.target.value)}
                   placeholder="Search nonprofits…"
                   aria-label="Search nonprofits"
-                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white border border-light-grey font-body text-[13px] text-deep-navy placeholder:text-cool-grey/60 outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white border border-light-grey font-body text-[13px] text-deep-navy placeholder:text-cool-grey outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors"
                 />
               </div>
             </form>

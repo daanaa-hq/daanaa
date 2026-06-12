@@ -99,7 +99,7 @@ export default function Feedback() {
                 required
                 maxLength={4000}
                 placeholder={activeCat.hint}
-                className="w-full px-4 py-3 rounded-xl bg-white border border-light-grey font-body text-[15px] text-deep-navy placeholder:text-cool-grey/50 outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors resize-y"
+                className="w-full px-4 py-3 rounded-xl bg-white border border-light-grey font-body text-[15px] text-deep-navy placeholder:text-cool-grey outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors resize-y"
               />
             </div>
 
@@ -112,7 +112,7 @@ export default function Feedback() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-xl bg-white border border-light-grey font-body text-[15px] text-deep-navy placeholder:text-cool-grey/50 outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors"
+                className="w-full px-4 py-3 rounded-xl bg-white border border-light-grey font-body text-[15px] text-deep-navy placeholder:text-cool-grey outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors"
               />
             </div>
 
@@ -126,7 +126,7 @@ export default function Feedback() {
               {sending ? 'Sending…' : 'Send'}
             </button>
 
-            <p className="font-body text-[12px] text-cool-grey/70 leading-[1.5] pt-2">
+            <p className="font-body text-[12px] text-cool-grey leading-[1.5] pt-2">
               We never collect your IP, never track you, and store nothing beyond this
               message and the email you choose to share. Private by design.
             </p>

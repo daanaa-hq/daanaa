@@ -92,7 +92,7 @@ function OrgColumn({ ein }: { ein: string }) {
       value: health ? (
         <span className="font-semibold" style={{ color: HEALTH_COLORS[health] }}>{health}</span>
       ) : (
-        <span className="text-cool-grey/60 font-normal">Not yet scored</span>
+        <span className="text-cool-grey font-normal">Not yet scored</span>
       ),
     },
     {

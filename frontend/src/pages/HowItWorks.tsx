@@ -55,7 +55,7 @@ export default function HowItWorks() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-10 md:pt-12 md:pb-16">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/50">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">How It Works</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">

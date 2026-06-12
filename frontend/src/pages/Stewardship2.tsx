@@ -10,7 +10,7 @@ export default function Stewardship() {
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-16 pb-12">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/40">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Stewardship</span>
           </div>
           <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(40px, 5vw, 60px)' }}>
@@ -66,7 +66,7 @@ export default function Stewardship() {
           </div>
 
           <div className="mt-16 pt-12 border-t border-light-grey">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase mb-4">Related</p>
+            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">Related</p>
             <div className="flex flex-wrap gap-4">
               <Link to="/methodology" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">Methodology →</Link>
               <Link to="/privacy" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">Privacy →</Link>

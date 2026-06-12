@@ -68,7 +68,7 @@ export default function ResearchSpending({
       <p className="text-cool-grey mb-4 max-w-2xl">
         Median percentage of revenue spent directly on programs (vs. administration or fundraising) for each operating model.
       </p>
-      <p className="text-cool-grey/70 text-sm mb-8 max-w-2xl">
+      <p className="text-cool-grey text-sm mb-8 max-w-2xl">
         The "middle 50%" is the interquartile range: half of all organizations in that model fall within this band. Values outside it are not unusual, just less common. All figures are derived from the most recent IRS filings available.
       </p>
 
@@ -126,10 +126,10 @@ export default function ResearchSpending({
               <p className="text-xs text-cool-grey">
                 <span className="font-semibold text-soft-gold">{item.median.toFixed(1)}%</span> median spending
               </p>
-              <p className="text-xs text-cool-grey/70">
+              <p className="text-xs text-cool-grey">
                 Middle 50%: {item.p25.toFixed(1)}% – {item.p75.toFixed(1)}%
               </p>
-              <p className="text-xs text-cool-grey/70">
+              <p className="text-xs text-cool-grey">
                 {item.count.toLocaleString()} organizations
               </p>
             </div>

@@ -186,7 +186,7 @@ export default function Legal() {
             </p>
           </section>
 
-          <p className="text-[12px] text-cool-grey/60 pt-4 border-t border-light-grey">
+          <p className="text-[12px] text-cool-grey pt-4 border-t border-light-grey">
             Last updated: June 2026
           </p>
         </div>

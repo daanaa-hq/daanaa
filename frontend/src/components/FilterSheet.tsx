@@ -126,7 +126,7 @@ export default function FilterSheet({
                 value={cause}
                 onChange={e => onCauseChange(e.target.value)}
                 placeholder="food bank, mental health…"
-                className="w-full h-[46px] px-4 rounded-xl bg-warm-cream border border-light-grey font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey/60"
+                className="w-full h-[46px] px-4 rounded-xl bg-warm-cream border border-light-grey font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
               />
             </div>
           )}

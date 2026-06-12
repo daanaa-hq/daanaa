@@ -11,7 +11,7 @@ export default function Methodology() {
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-16 pb-12">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/40">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Methodology</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
@@ -211,7 +211,7 @@ export default function Methodology() {
 
           {/* Related links */}
           <div className="mt-20 pt-12 border-t border-light-grey">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase mb-4">Related</p>
+            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">Related</p>
             <div className="flex flex-wrap gap-4">
               <Link to="/stewardship" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
                 Stewardship →

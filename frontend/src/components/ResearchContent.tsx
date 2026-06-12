@@ -56,7 +56,7 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
           <p>
             Total organizations indexed: {metadata.total_orgs?.toLocaleString()}
           </p>
-          <p className="mt-4 text-cool-grey/60">{metadata.disclaimer}</p>
+          <p className="mt-4 text-cool-grey">{metadata.disclaimer}</p>
         </footer>
       )}
     </div>

@@ -81,7 +81,7 @@ export default function TierBreakdown({ org, tier, onClose }: TierBreakdownProps
                 <span className="font-body text-[13px] font-medium text-deep-navy">{c.label}</span>
                 <span className="font-body text-[11px] text-cool-grey">{STATUS_LABEL[c.status]}</span>
               </div>
-              <p className="font-body text-[12px] text-cool-grey/75 mt-0.5 leading-[1.4]">{c.description}</p>
+              <p className="font-body text-[12px] text-cool-grey mt-0.5 leading-[1.4]">{c.description}</p>
             </div>
           </div>
         ))}

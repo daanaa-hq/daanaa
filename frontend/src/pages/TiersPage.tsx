@@ -82,7 +82,7 @@ export default function TiersPage() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/40">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Visibility Levels</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-16">
@@ -174,7 +174,7 @@ export default function TiersPage() {
                   <div className="border-t border-light-grey px-6 md:px-8 py-5 flex flex-col md:flex-row gap-6 md:gap-10 bg-warm-cream/40">
                     {/* Criteria list */}
                     <div className="flex-1">
-                      <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase mb-3">
+                      <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-3">
                         Criteria at this tier
                       </p>
                       <div className="space-y-2">
@@ -196,7 +196,7 @@ export default function TiersPage() {
                     <div className="md:w-[280px] shrink-0">
                       {nextPath ? (
                         <>
-                          <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase mb-3">
+                          <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-3">
                             Path to next tier
                           </p>
                           <p className="font-body text-[13px] leading-[1.6] text-cool-grey">

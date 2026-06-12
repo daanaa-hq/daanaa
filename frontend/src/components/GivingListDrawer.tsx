@@ -68,7 +68,7 @@ export default function GivingListDrawer() {
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                   </svg>
                   <p className="font-body text-[14px] text-cool-grey mb-1">Your Wallet is empty</p>
-                  <p className="font-body text-[12px] text-cool-grey/60">Tap <strong>Save to Wallet</strong> on any organization to get started</p>
+                  <p className="font-body text-[12px] text-cool-grey">Tap <strong>Save to Wallet</strong> on any organization to get started</p>
                   <Link
                     to="/directory"
                     onClick={() => setOpen(false)}
@@ -89,7 +89,7 @@ export default function GivingListDrawer() {
                             <span className="font-body text-[11px] font-medium" style={{ color: TIER_COLORS[item.trustTier] }}>{item.trustTier}</span>
                           </div>
                           {item.trustSummary && (
-                            <p className="font-body text-[11px] text-cool-grey/70 mt-1 leading-[1.4]">{item.trustSummary}</p>
+                            <p className="font-body text-[11px] text-cool-grey mt-1 leading-[1.4]">{item.trustSummary}</p>
                           )}
                         </div>
                         <button
@@ -127,7 +127,7 @@ export default function GivingListDrawer() {
                   <span className="font-body text-[13px] text-cool-grey">Total</span>
                   <span className="font-display text-[20px] text-deep-navy">{formatCurrency(total)}</span>
                 </div>
-                <p className="font-body text-[11px] text-cool-grey/50">Gifts of $250+ — choose letter or anonymous on the next screen</p>
+                <p className="font-body text-[11px] text-cool-grey">Gifts of $250+ — choose letter or anonymous on the next screen</p>
                 <Link
                   to="/giving-list/review"
                   onClick={() => setOpen(false)}

@@ -11,7 +11,7 @@ export default function WhyDaanaa() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/40">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Why Daanaa</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
@@ -106,7 +106,7 @@ export default function WhyDaanaa() {
 
           {/* Story links */}
           <div className="mt-20 pt-12 border-t border-light-grey">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey/50 uppercase mb-6">
+            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-6">
               The full story
             </p>
 

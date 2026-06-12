@@ -78,7 +78,7 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
 
       {/* Phase 2 teaser */}
       <div className="px-5 py-4 border-t" style={{ borderColor: '#E5E0DB' }}>
-        <p className="font-body text-[11px] text-cool-grey/70 leading-[1.55] text-center">
+        <p className="font-body text-[11px] text-cool-grey leading-[1.55] text-center">
           When they join: their updates, upcoming events, and what they need most right now.
         </p>
       </div>

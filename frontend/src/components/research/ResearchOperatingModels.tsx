@@ -195,7 +195,7 @@ export default function ResearchOperatingModels({
                   </h3>
                 </div>
                 <p className="text-cool-grey text-sm mb-2">{selectedConfig.desc}</p>
-                <div className="flex gap-6 text-xs text-cool-grey/70">
+                <div className="flex gap-6 text-xs text-cool-grey">
                   <span>{selectedConfig.ntee}</span>
                   <span>{selectedConfig.orgs.toLocaleString()} organizations total</span>
                 </div>
@@ -203,7 +203,7 @@ export default function ResearchOperatingModels({
 
               {/* Revenue Band Chart */}
               <div className="bg-deep-navy/[0.02] rounded-lg p-6">
-                <p className="text-xs font-semibold text-cool-grey/60 uppercase tracking-wide mb-4">
+                <p className="text-xs font-semibold text-cool-grey uppercase tracking-wide mb-4">
                   Distribution across revenue bands
                 </p>
                 <ResponsiveContainer width="100%" height={400}>
@@ -259,7 +259,7 @@ export default function ResearchOperatingModels({
                     </div>
                   </div>
                   <p className="text-xs text-cool-grey mb-2">{config.desc}</p>
-                  <p className="text-xs text-cool-grey/60 font-mono">{config.ntee}</p>
+                  <p className="text-xs text-cool-grey font-mono">{config.ntee}</p>
                 </div>
               ))}
             </div>

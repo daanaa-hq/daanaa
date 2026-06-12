@@ -38,7 +38,7 @@ export default function Guides() {
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-16 pb-12">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] text-muted-cream">Home</Link>
-            <span className="text-muted-cream/40">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Guides</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">

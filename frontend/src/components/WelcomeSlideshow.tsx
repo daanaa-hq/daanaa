@@ -76,7 +76,7 @@ export default function WelcomeSlideshow() {
         <button
           onClick={close}
           aria-label="Skip intro"
-          className="absolute top-4 right-4 p-1.5 text-cool-grey/60 hover:text-deep-navy transition-colors"
+          className="absolute top-4 right-4 p-1.5 text-cool-grey hover:text-deep-navy transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="4" y1="4" x2="20" y2="20" /><line x1="20" y1="4" x2="4" y2="20" />

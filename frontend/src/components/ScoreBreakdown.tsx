@@ -55,7 +55,7 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
                 <p className="font-body text-[12px] text-cool-grey leading-[1.6]">
                   {badge.detail}
                 </p>
-                <p className="font-body text-[10px] text-cool-grey/45 mt-1.5 tracking-[0.01em]">
+                <p className="font-body text-[10px] text-cool-grey mt-1.5 tracking-[0.01em]">
                   {badge.source}{taxYear && badge.id.includes('filing') ? ` · FY ${taxYear}` : ''}
                 </p>
               </div>
@@ -73,12 +73,12 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
               'Program outcome and impact data',
             ].map(item => (
               <li key={item} className="flex items-start gap-2 font-body text-[11px] text-cool-grey">
-                <span className="mt-0.5 shrink-0 text-cool-grey/40">›</span>
+                <span className="mt-0.5 shrink-0 text-cool-grey">›</span>
                 {item}
               </li>
             ))}
           </ul>
-          <p className="mt-3 font-body text-[10px] text-cool-grey/50 leading-[1.5]">
+          <p className="mt-3 font-body text-[10px] text-cool-grey leading-[1.5]">
             These gaps reflect data we haven't collected yet, not red flags. Governance and impact data will be added as Daanaa expands.
           </p>
         </div>
@@ -86,7 +86,7 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
 
       {/* Footer */}
       <div className="px-5 py-3 border-t border-light-grey shrink-0 flex items-start justify-between gap-3">
-        <p className="font-body text-[10px] text-cool-grey/50 leading-[1.5]">
+        <p className="font-body text-[10px] text-cool-grey leading-[1.5]">
           Data sourced from {sourceLabel} and the IRS Business Master File.
           Daanaa does not process donations or independently audit organizations.
         </p>

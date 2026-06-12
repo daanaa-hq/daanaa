@@ -143,10 +143,10 @@ export default function Footer() {
 
       {/* Bottom Row */}
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-6 border-t border-navy-mid flex flex-col gap-4">
-        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey/60">
+        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
           Daanaa.org is an independent nonprofit discovery platform. It is not affiliated with the IRS, the federal government, or any nonprofit rating agency.
         </p>
-        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey/60">
+        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
           © 2026 Daanaa. Data sourced from IRS, NCCS, and ProPublica public records. Some descriptions and links are AI-generated or auto-collected and labeled beta.{' '}
           <Link to="/legal" className="hover:text-warm-cream transition-colors underline underline-offset-2">
             Attribution & Terms

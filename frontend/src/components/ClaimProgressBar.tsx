@@ -22,12 +22,12 @@ export function ClaimProgressBar({ currentStep }: ClaimProgressBarProps) {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center font-body text-[13px] font-bold transition-colors ${
                 idx < currentIndex ? 'bg-soft-gold text-deep-navy' :
                 idx === currentIndex ? 'bg-deep-navy text-warm-cream' :
-                'bg-light-cream text-muted-cream'
+                'bg-navy-mid text-cool-grey'
               }`}>
                 {idx < currentIndex ? '✓' : idx + 1}
               </div>
               <span className={`mt-1 font-body text-[11px] whitespace-nowrap ${
-                idx === currentIndex ? 'text-deep-navy font-semibold' : 'text-muted-cream'
+                idx === currentIndex ? 'text-warm-cream font-semibold' : 'text-cool-grey'
               }`}>{step.label}</span>
             </div>
             {idx < STEPS.length - 1 && (

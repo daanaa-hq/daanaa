@@ -120,7 +120,7 @@ export default function ResearchFindings({
                                 <p className="font-semibold" style={{ color: tier.color }}>{tier.label}</p>
                                 <p className="text-cool-grey mt-1">{tier.desc}</p>
                                 <p className="text-soft-gold mt-2 font-bold">{(tier.count || 0).toLocaleString()} orgs</p>
-                                <p className="text-cool-grey/70 mt-1">{(tier.pct || 0).toFixed(1)}% of {item.ntee_label}</p>
+                                <p className="text-cool-grey mt-1">{(tier.pct || 0).toFixed(1)}% of {item.ntee_label}</p>
                               </div>
                             )
                           }

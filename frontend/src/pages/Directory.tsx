@@ -388,7 +388,7 @@ export default function Directory() {
             <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-cool-grey hover:text-deep-navy transition-colors">
               Home
             </Link>
-            <span className="text-cool-grey/40">/</span>
+            <span className="text-cool-grey">/</span>
             <span className="font-body text-[12px] tracking-[0.02em] text-deep-navy">Directory</span>
           </div>
 
@@ -493,7 +493,7 @@ export default function Directory() {
             ))}
 
             {activeFilterCount > 0 && (
-              <button onClick={handleClearAll} className="font-body text-[12px] text-cool-grey/60 hover:text-cool-grey transition-colors ml-1">
+              <button onClick={handleClearAll} className="font-body text-[12px] text-cool-grey hover:text-cool-grey transition-colors ml-1">
                 Clear all
               </button>
             )}
@@ -574,7 +574,7 @@ export default function Directory() {
             <div className="mt-3 space-y-2">
               {activeFilters.filter(c => (NTEE_SUBCATEGORIES[c]?.length ?? 0) > 0).map(catId => (
                 <div key={catId} className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-body text-[10px] uppercase tracking-[0.06em] text-cool-grey/50 mr-1 shrink-0">
+                  <span className="font-body text-[10px] uppercase tracking-[0.06em] text-cool-grey mr-1 shrink-0">
                     {FILTER_CATEGORIES.find(c => c.id === catId)?.label ?? catId}
                   </span>
                   {NTEE_SUBCATEGORIES[catId].map(sub => {
@@ -604,7 +604,7 @@ export default function Directory() {
             <div className="mt-2">
               <button
                 onClick={handleClearAll}
-                className="font-body text-[12px] text-cool-grey/60 hover:text-cool-grey transition-colors"
+                className="font-body text-[12px] text-cool-grey hover:text-cool-grey transition-colors"
               >
                 Clear all filters
               </button>
@@ -649,7 +649,7 @@ export default function Directory() {
                     {total.toLocaleString()} {searchQuery || activeFilters.length > 0 || stateFilter ? 'results' : 'organizations'}
                   </span>
                   {statsData?.irs_status_verified_at && (
-                    <p className="font-body text-[12px] text-cool-grey/70 mt-1">
+                    <p className="font-body text-[12px] text-cool-grey mt-1">
                       Built from public IRS data, last checked {new Date(statsData.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
                   )}

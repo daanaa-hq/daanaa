@@ -89,7 +89,7 @@ export default function ForNonprofits() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-12 md:pt-12 md:pb-20">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-            <span className="text-muted-cream/50">/</span>
+            <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">For Nonprofits</span>
           </div>
 
@@ -208,7 +208,7 @@ export default function ForNonprofits() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 font-body text-[11px] text-cool-grey/60">Not editable · Always shown</p>
+              <p className="mt-3 font-body text-[11px] text-cool-grey">Not editable · Always shown</p>
             </div>
             <div className="p-5 rounded-xl border-2 border-dashed border-soft-gold/30">
               <p className="font-body text-[11px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-3">Your claimed content</p>
@@ -219,7 +219,7 @@ export default function ForNonprofits() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 font-body text-[11px] text-cool-grey/60">Labeled "written by you" · Controlled by you</p>
+              <p className="mt-3 font-body text-[11px] text-cool-grey">Labeled "written by you" · Controlled by you</p>
             </div>
           </div>
 
@@ -317,7 +317,7 @@ export default function ForNonprofits() {
                         <span className="font-body text-[16px] font-semibold" style={{ fontFamily: 'Cinzel, serif', color: TIER_COLORS[step.tier] }}>
                           {step.tier}
                         </span>
-                        <span className="font-body text-[12px] text-cool-grey/50">{step.pct}</span>
+                        <span className="font-body text-[12px] text-cool-grey">{step.pct}</span>
                       </div>
                       <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{step.description}</p>
                       {step.nextStep && (
@@ -375,15 +375,15 @@ export default function ForNonprofits() {
 
                 {irsAddress && (
                   <div className="mb-6 p-4 rounded-xl border border-soft-gold/20 bg-navy-mid/50">
-                    <p className="font-body text-[11px] text-muted-cream/50 uppercase tracking-[0.06em] mb-1">IRS-registered address on file</p>
+                    <p className="font-body text-[11px] text-muted-cream uppercase tracking-[0.06em] mb-1">IRS-registered address on file</p>
                     <p className="font-body text-[14px] text-warm-cream">{irsAddress}</p>
-                    <p className="font-body text-[11px] text-muted-cream/40 mt-1">IRS-registered address · public record</p>
+                    <p className="font-body text-[11px] text-muted-cream mt-1">IRS-registered address · public record</p>
                   </div>
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <div>
-                    <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">
+                    <label className="block font-body text-[12px] text-muted-cream mb-1.5">
                       Organization tax ID (EIN) <span className="text-soft-gold">*</span>
                     </label>
                     <input
@@ -410,7 +410,7 @@ export default function ForNonprofits() {
                   </div>
 
                   <div>
-                    <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">
+                    <label className="block font-body text-[12px] text-muted-cream mb-1.5">
                       Your title / role <span className="text-soft-gold">*</span>
                     </label>
                     <input
@@ -424,7 +424,7 @@ export default function ForNonprofits() {
                   </div>
 
                   <div>
-                    <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">
+                    <label className="block font-body text-[12px] text-muted-cream mb-1.5">
                       Your email <span className="text-soft-gold">*</span>
                     </label>
                     <input
@@ -438,7 +438,7 @@ export default function ForNonprofits() {
                   </div>
 
                   <div>
-                    <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">
+                    <label className="block font-body text-[12px] text-muted-cream mb-1.5">
                       Phone number <span className="text-soft-gold">*</span>
                     </label>
                     <input
@@ -449,7 +449,7 @@ export default function ForNonprofits() {
                       placeholder="(555) 000-0000"
                       className="w-full h-[48px] bg-navy-mid border border-soft-gold/20 text-warm-cream px-4 rounded-xl font-body text-[15px] outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
                     />
-                    <p className="mt-1.5 font-body text-[11px] text-muted-cream/40">
+                    <p className="mt-1.5 font-body text-[11px] text-muted-cream">
                       We will call this number to verify your identity before activating your page. Not shared publicly.
                     </p>
                   </div>
@@ -461,17 +461,17 @@ export default function ForNonprofits() {
                     <p className="font-body text-[12px] font-semibold text-warm-cream">
                       Before you sign, here is who we are and what happens with this form.
                     </p>
-                    <p className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                    <p className="font-body text-[12px] text-muted-cream leading-[1.6]">
                       Daanaa is a free public directory of nonprofits built from IRS records.
                       We are not affiliated with the IRS or any government agency. We never
                       handle donations and we never charge organizations for anything.
                     </p>
-                    <p className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                    <p className="font-body text-[12px] text-muted-cream leading-[1.6]">
                       We use your phone number and email only to verify that you represent
                       this organization. A member of our team calls you, confirms your role,
                       and gives you a PIN that unlocks your page. Neither is shown publicly.
                     </p>
-                    <p className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                    <p className="font-body text-[12px] text-muted-cream leading-[1.6]">
                       We keep a record of this submission, including the statements you check
                       below and the time you checked them, so our verification process can
                       stand up to review. Claiming a page gives you control over how this
@@ -489,7 +489,7 @@ export default function ForNonprofits() {
                       onChange={e => setAttested(e.target.checked)}
                       className="mt-0.5 h-4 w-4 rounded border-soft-gold/30 text-soft-gold focus:ring-soft-gold shrink-0"
                     />
-                    <span className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                    <span className="font-body text-[12px] text-muted-cream leading-[1.6]">
                       I am an authorized representative of <strong className="text-warm-cream">{orgName || 'this organization'}</strong> and have the authority to manage its public presence on third-party platforms.
                     </span>
                   </label>
@@ -503,7 +503,7 @@ export default function ForNonprofits() {
                       onChange={e => setAttestedLegal(e.target.checked)}
                       className="mt-0.5 h-4 w-4 rounded border-soft-gold/30 text-soft-gold focus:ring-soft-gold shrink-0"
                     />
-                    <span className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                    <span className="font-body text-[12px] text-muted-cream leading-[1.6]">
                       I understand that submitting false or misleading information is a federal offense under{' '}
                       <strong className="text-warm-cream">18 U.S.C. § 1001</strong> and may result in permanent removal from Daanaa and referral to relevant authorities.
                     </span>
@@ -521,7 +521,7 @@ export default function ForNonprofits() {
                     {submitting ? 'Submitting…' : 'Submit claim request'}
                   </button>
                 </form>
-                <p className="mt-4 font-body text-[11px] text-muted-cream/40 leading-[1.5]">
+                <p className="mt-4 font-body text-[11px] text-muted-cream leading-[1.5]">
                   A member of the Daanaa team will call the number you provided to verify your identity. Once confirmed, your page goes live. No cost to you.
                 </p>
               </>

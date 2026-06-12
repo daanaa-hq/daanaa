@@ -44,7 +44,7 @@ function SectionHeader({ title, count }: { title: string; count?: number }) {
 
 function EmptyState({ icon, message }: { icon: React.ReactNode; message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-10 text-cool-grey/50">
+    <div className="flex flex-col items-center justify-center py-10 text-cool-grey">
       <div className="mb-3">{icon}</div>
       <p className="font-body text-[13px]">{message}</p>
     </div>
@@ -155,7 +155,7 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
               className="w-full border border-light-grey rounded-lg px-3 py-2 font-body text-[14px] text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors"
             />
             {ein && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 font-body text-[11px] text-cool-grey/50 select-none pointer-events-none">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 font-body text-[11px] text-cool-grey select-none pointer-events-none">
                 EIN {formatEIN(ein)}
               </span>
             )}
@@ -173,7 +173,7 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
                     <p className="font-body text-[13px] text-deep-navy font-medium truncate">{org.organization_name}</p>
                     <p className="font-body text-[11px] text-cool-grey">{[org.CITY, org.STATE].filter(Boolean).join(', ')}</p>
                   </div>
-                  <span className="ml-3 shrink-0 font-body text-[10px] text-cool-grey/50">{formatEIN(org.EIN)}</span>
+                  <span className="ml-3 shrink-0 font-body text-[10px] text-cool-grey">{formatEIN(org.EIN)}</span>
                 </button>
               ))}
             </div>
@@ -239,7 +239,7 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
           </button>
         </div>
         {occurrences > 1 && (
-          <span className="font-body text-[12px] text-cool-grey/60">
+          <span className="font-body text-[12px] text-cool-grey">
             will log {occurrences} × {amount ? `$${amount}` : '…'}
           </span>
         )}
@@ -275,7 +275,7 @@ function DonationForm({ onSubmit, onCancel, prefillEin, prefillOrg }: {
               <span className="font-body text-[13px] text-deep-navy">I have a written acknowledgment letter for this gift</span>
             </label>
           )}
-          <p className="font-body text-[11px] text-cool-grey/60 leading-relaxed">
+          <p className="font-body text-[11px] text-cool-grey leading-relaxed">
             General information, not tax advice. Confirm details with a tax professional.
           </p>
         </div>
@@ -371,7 +371,7 @@ export default function Wallet() {
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              <span className="font-body text-[12px] text-muted-cream/60 tracking-[0.04em]">Private · stored on this device · never shared</span>
+              <span className="font-body text-[12px] text-muted-cream tracking-[0.04em]">Private · stored on this device · never shared</span>
             </div>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-soft-gold/15 border border-soft-gold/30 font-body text-[10px] font-semibold tracking-[0.06em] text-soft-gold uppercase">
               β Beta
@@ -470,7 +470,7 @@ export default function Wallet() {
                 </button>
                 <input ref={fileInputRef} type="file" accept="application/json,.json" onChange={onRestoreFile} className="hidden" />
               </div>
-              <p className="mt-3 font-body text-[11px] text-cool-grey/60">
+              <p className="mt-3 font-body text-[11px] text-cool-grey">
                 Texting a backup to yourself is coming soon. For now, the file saves to your device or your own cloud drive. Daanaa never receives it.
               </p>
             </div>
@@ -495,7 +495,7 @@ export default function Wallet() {
                       )}
                     </Link>
                     <button onClick={() => toggle(org.ein)} title="Remove from saved"
-                      className="ml-4 p-1.5 rounded-full text-cool-grey/40 hover:text-cool-grey hover:bg-light-grey/40 transition-colors flex-shrink-0">
+                      className="ml-4 p-1.5 rounded-full text-cool-grey hover:text-cool-grey hover:bg-light-grey/40 transition-colors flex-shrink-0">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   </div>
@@ -566,7 +566,7 @@ export default function Wallet() {
             {/* Year total + deductibility note */}
             {visibleDonations.length > 0 && (
               <div className="flex items-baseline justify-between mb-3">
-                <p className="font-body text-[11px] text-cool-grey/60">
+                <p className="font-body text-[11px] text-cool-grey">
                   Deductible if you itemize · gifts under $250 documented by bank statement
                 </p>
                 <span className="font-display text-[15px] text-deep-navy shrink-0 ml-4">
@@ -620,7 +620,7 @@ export default function Wallet() {
                               Letter received
                             </span>
                           )}
-                          <span className="font-body text-[10px] text-cool-grey/40 tracking-[0.04em]">{d.referenceCode}</span>
+                          <span className="font-body text-[10px] text-cool-grey tracking-[0.04em]">{d.referenceCode}</span>
                         </div>
                       )}
                       {/* Acknowledgment status — manual log entries */}
@@ -647,7 +647,7 @@ export default function Wallet() {
                       )}
                     </div>
                     <button onClick={() => removeDonation(d.id)} title="Remove entry"
-                      className="ml-4 p-1.5 rounded-full text-cool-grey/40 hover:text-cool-grey hover:bg-light-grey/40 transition-colors flex-shrink-0">
+                      className="ml-4 p-1.5 rounded-full text-cool-grey hover:text-cool-grey hover:bg-light-grey/40 transition-colors flex-shrink-0">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                   </div>
@@ -659,7 +659,7 @@ export default function Wallet() {
         </div>
 
         {/* Footer */}
-        <div className="mt-12 pt-6 border-t border-light-grey flex items-center gap-2 text-cool-grey/40">
+        <div className="mt-12 pt-6 border-t border-light-grey flex items-center gap-2 text-cool-grey">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <p className="font-body text-[11px]">Private by design · stored on this device · never shared · Daanaa does not process payments or issue tax documents · For gifts of $250+, contact the nonprofit directly to request a written acknowledgment letter</p>
         </div>

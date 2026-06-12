@@ -402,7 +402,7 @@ function BrowseCauses() {
                     <polygon points="4,0 8,6 4,12 0,6" fill="#C9A96E"/>
                   </svg>
                 </div>
-                <span className="font-body text-[13px] text-cool-grey/70 mt-3">
+                <span className="font-body text-[13px] text-cool-grey mt-3">
                   {count != null ? `${count.toLocaleString()} organizations` : `${cat.subs.length} subcategories`}
                 </span>
               </Link>
@@ -542,10 +542,10 @@ function TiersStrip() {
                 >
                   {name}
                 </span>
-                <span className="font-body text-[10px] text-cool-grey/50 text-center leading-tight hidden lg:block">
+                <span className="font-body text-[10px] text-cool-grey text-center leading-tight hidden lg:block">
                   {pct}
                 </span>
-                <span className="font-body text-[10px] text-cool-grey/40 text-center leading-tight hidden xl:block">
+                <span className="font-body text-[10px] text-cool-grey text-center leading-tight hidden xl:block">
                   {blurb}
                 </span>
               </Link>
@@ -706,7 +706,7 @@ function AdvisorTeaser() {
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </Link>
-            <p className="mt-2 font-body text-[11px] text-cool-grey/50">
+            <p className="mt-2 font-body text-[11px] text-cool-grey">
               Free · no account
             </p>
           </div>
@@ -751,7 +751,7 @@ function FooterCTA() {
             How Daanaa works
           </Link>
         </div>
-        <p className="mt-6 font-body text-[13px] text-cool-grey/50">
+        <p className="mt-6 font-body text-[13px] text-cool-grey">
           Free forever · No account required · Data updated monthly
         </p>
         <p className="mt-5 font-body text-[14px]">
