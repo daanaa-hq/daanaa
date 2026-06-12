@@ -2191,6 +2191,55 @@ def claim_start():
     return jsonify({"status": claim_status, "org_name": org_name, "address_preview": preview})
 
 
+@app.route('/api/claim/login', methods=['POST'])
+@limiter.limit("5 per hour")
+def claim_login():
+    """Re-entry magic link for a verified claimant who lost their edit link.
+    Security properties: the link only ever goes to the email on file from the
+    verified claim (never the address the requester typed), unverified claims
+    get nothing, and the response is identical whether or not a claim exists
+    so this endpoint cannot probe which orgs are claimed."""
+    data  = request.get_json(silent=True) or {}
+    value = (data.get('ein_or_email') or '').strip()[:254]
+    # One response for every outcome — never confirm or deny a claim exists.
+    neutral = {"status": "sent",
+               "message": "If this matches a claimed page, the edit link is on its way to the email on file."}
+    if not value:
+        return jsonify(neutral)
+
+    digits = ''.join(c for c in value if c.isdigit())
+    db = get_db()
+    if len(digits) >= 9:
+        row = db.execute(
+            "SELECT ein, email, pin, rep_name FROM org_claims "
+            "WHERE ein = ? AND claim_status IN ('verified', 'active')", (digits[:10],)).fetchone()
+    else:
+        row = db.execute(
+            "SELECT ein, email, pin, rep_name FROM org_claims "
+            "WHERE lower(email) = lower(?) AND claim_status IN ('verified', 'active')", (value,)).fetchone()
+    if not row:
+        return jsonify(neutral)
+
+    org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN = ?",
+                     (row['ein'],)).fetchone()
+    org_name = org['organization_name'] if org else 'your organization'
+    first = (row['rep_name'] or '').split(' ')[0]
+    token = _make_verify_token(row['ein'], row['pin'])
+    _send_daanaa_email(
+        row['email'],
+        f"Your Daanaa edit link for {org_name}",
+        f"Hello{' ' + first if first else ''},\n\n"
+        f"Here is your link to edit the {org_name} page on Daanaa:\n\n"
+        f"https://daanaa.org/claim/edit?ein={row['ein']}&token={token}\n\n"
+        f"This link is personal to your claim. If you did not ask for it, you can "
+        f"ignore this email and nothing changes.\n\n"
+        f"Warmly,\nThe Daanaa team\nverify@daanaa.org · daanaa.org\n",
+        from_addr="Daanaa <verify@daanaa.org>",
+    )
+    _log_org_activity(row['ein'], 'login_link_sent', f"edit link emailed to {row['email']}", actor='org')
+    return jsonify(neutral)
+
+
 @app.route('/api/claim/verify', methods=['POST'])
 @limiter.limit("10 per minute")
 def claim_verify():

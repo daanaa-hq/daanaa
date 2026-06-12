@@ -10,8 +10,26 @@ export default function ClaimVerify() {
   const [pin, setPin] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [linkInput, setLinkInput] = useState('')
+  const [linkSent, setLinkSent] = useState(false)
+  const [linkSending, setLinkSending] = useState(false)
 
   const ein = searchParams.get('ein') || ''
+
+  async function handleEmailLink(e: React.FormEvent) {
+    e.preventDefault()
+    if (!linkInput.trim()) return
+    setLinkSending(true)
+    try {
+      await fetch('/api/claim/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ein_or_email: linkInput.trim() }),
+      })
+    } catch { /* neutral confirmation either way — never reveal claim state */ }
+    setLinkSent(true)
+    setLinkSending(false)
+  }
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()
@@ -85,6 +103,40 @@ export default function ClaimVerify() {
             </button>
           </p>
         </form>
+
+        {/* Re-entry for verified claimants who lost their edit link */}
+        <div className="mt-6 bg-white rounded-2xl shadow-sm border border-light-cream p-6">
+          {linkSent ? (
+            <p className="font-body text-[14px] text-cool-grey text-center">
+              If that matches a claimed page, the edit link is on its way to the email on file.
+            </p>
+          ) : (
+            <form onSubmit={handleEmailLink}>
+              <p className="font-body text-[14px] font-medium text-deep-navy mb-1">
+                Already verified your page?
+              </p>
+              <p className="font-body text-[13px] text-cool-grey mb-3">
+                Enter your EIN or the email you claimed with and we will send your edit link.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={linkInput}
+                  onChange={e => setLinkInput(e.target.value)}
+                  placeholder="EIN or email"
+                  className="flex-1 px-4 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                />
+                <button
+                  type="submit"
+                  disabled={linkSending || !linkInput.trim()}
+                  className="px-4 py-2.5 border border-soft-gold/40 text-deep-navy font-body text-[13px] font-semibold rounded-xl hover:bg-soft-gold/10 disabled:opacity-40 transition-colors"
+                >
+                  {linkSending ? 'Sending…' : 'Email my link'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   )
