@@ -1,4 +1,5 @@
 import type { ApiOrganization } from '../data/api'
+import V5FeedbackForm from './V5FeedbackForm'
 
 interface V5ContextData {
   archetype: {
@@ -118,9 +119,14 @@ export default function V5Context({ org }: V5ContextProps) {
         {/* Beta note */}
         <div className="pt-3 border-t border-current/20">
           <p className="text-xs opacity-70 italic">
-            This is a new peer-based financial comparison system. We're testing it and would appreciate feedback on how clear this is to you.
+            This is a new peer-based financial comparison system. We're testing it with a small group and would appreciate your feedback.
           </p>
         </div>
+      </div>
+
+      {/* Feedback form */}
+      <div className="mt-6">
+        <V5FeedbackForm org={org} archetype={v5.archetype.label} />
       </div>
     </div>
   )

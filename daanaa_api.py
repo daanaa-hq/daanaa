@@ -1460,6 +1460,37 @@ def submit_feedback():
     return ('', 204)
 
 
+@app.route('/api/v5_feedback', methods=['POST'])
+@limiter.limit("10 per minute; 50 per hour")
+def submit_v5_feedback():
+    # Week 3 beta feedback collection: structured form for v5 peer taxonomy.
+    # All fields are optional except clarity and preference, which are booleans.
+    # No identity tracking; anonymous aggregation only.
+    data = request.get_json(silent=True) or {}
+    ein = str(data.get('ein', '')).strip()[:20]
+    org_name = str(data.get('org_name', '')).strip()[:200]
+    archetype = str(data.get('archetype', '')).strip()[:80]
+    clarity = data.get('clarity')  # boolean: true = clear, false = not clear
+    clarity_reason = str(data.get('clarity_reason', '')).strip()[:1000] or None
+    preference = data.get('preference')  # boolean: true = prefer peer, false = prefer single
+    ntee_funding = str(data.get('ntee_funding', '')).strip()[:100] or None
+    other_feedback = str(data.get('other_feedback', '')).strip()[:2000] or None
+    timestamp = str(data.get('timestamp', '')).strip()[:50] or None
+
+    if clarity is None or preference is None:
+        return jsonify({'error': 'clarity and preference required'}), 400
+
+    db = get_db()
+    db.execute(
+        """INSERT INTO v5_feedback (ein, org_name, archetype, clarity, clarity_reason,
+           preference, ntee_funding, other_feedback, timestamp)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (ein, org_name, archetype, clarity, clarity_reason, preference, ntee_funding, other_feedback, timestamp),
+    )
+    db.commit()
+    return ('', 204)
+
+
 # Bounded allow-list so the analytics beacon can't be used to write arbitrary
 # high-cardinality data. Paths are normalized to route shapes, not raw URLs.
 _EVENT_TYPES = {'pageview', 'search', 'give_click', 'save_org', 'compare', 'wallet_export'}
