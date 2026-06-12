@@ -5,7 +5,6 @@ import Footer from './Footer'
 import BottomNav from './BottomNav'
 import CompareBar from './CompareBar'
 import BetaBanner from './BetaBanner'
-import WelcomeSlideshow from './WelcomeSlideshow'
 import { trackPageview, trackDwell } from '../lib/analytics'
 
 export default function Layout() {
@@ -22,7 +21,6 @@ export default function Layout() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col">
-      <WelcomeSlideshow />
       <BetaBanner />
       <Navigation solid />
       <main className="flex-1 pb-[60px] md:pb-0 pt-[36px]">

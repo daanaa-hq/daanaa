@@ -59,7 +59,8 @@ export default function Footer() {
             </p>
             <ul className="space-y-1">
               {[
-                { label: 'Claim Your Profile', to: '/for-nonprofits' },
+                { label: 'Claim your page', to: '/for-nonprofits' },
+                { label: 'Partner with us', to: '/partners' },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5">

@@ -20,6 +20,7 @@ const CauseSpotlight = lazy(() => import('./pages/CauseSpotlight'))
 const Methodology = lazy(() => import('./pages/Methodology2'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
+const Partners = lazy(() => import('./pages/Partners'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Learn = lazy(() => import('./pages/Learn'))
 const About = lazy(() => import('./pages/About'))
@@ -72,6 +73,7 @@ export default function App() {
             <Route path="/guides" element={<Learn />} />
             <Route path="/faq" element={<Learn />} />
             <Route path="/feedback" element={<Feedback />} />
+            <Route path="/partners" element={<Partners />} />
           </Route>
           <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />

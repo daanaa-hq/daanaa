@@ -19,7 +19,7 @@ function StepDot({ n, label }: { n: number; label: string }) {
 }
 
 export default function ForNonprofits() {
-  usePageMeta('For Nonprofits', 'Claim your free Daanaa profile. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
+  usePageMeta('For Nonprofits', 'Claim your free Daanaa page. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [ein, setEin] = useState('')
@@ -31,6 +31,7 @@ export default function ForNonprofits() {
   const [attested, setAttested] = useState(false)
   const [attestedLegal, setAttestedLegal] = useState(false)
   const [phone, setPhone] = useState('')
+  const [repName, setRepName] = useState('')
   const [title, setTitle] = useState('')
 
   // Prefill EIN from URL param and look up org info
@@ -58,6 +59,7 @@ export default function ForNonprofits() {
           ein: ein.replace(/\D/g, '').slice(0, 9),
           email: email.trim(),
           phone: phone.trim(),
+          name: repName.trim(),
           title: title.trim(),
           attested_authority: attested,
           attested_legal: attestedLegal,
@@ -191,7 +193,7 @@ export default function ForNonprofits() {
               Government records and your story, clearly separated
             </h2>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7] mb-4">
-              Daanaa keeps two distinct layers on every profile. The IRS layer, which covers revenue, category, and tax status, is public data we display but you cannot edit. Your claimed layer, which covers mission, programs, impact, and leadership, is your own voice, clearly labeled.
+              Daanaa keeps two distinct layers on every page. The IRS layer, which covers revenue, category, and tax status, is public data we display but you cannot edit. Your claimed layer, which covers mission, programs, impact, and leadership, is your own voice, clearly labeled.
             </p>
             <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
               Donors can always tell which is which. Keeping these two layers separate is how they trust what they read, and how you stay in control of your own story.
@@ -230,7 +232,7 @@ export default function ForNonprofits() {
                 <span className="inline-block border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5 font-body">β ai-generated</span>
               </div>
               <div>
-                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the β label means on your profile</p>
+                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the β label means on your page</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.65]">
                   Before you claim your page, Daanaa shows a best-guess mission statement inferred from your sector and location.
                   It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">β ai-generated</span> so donors know it is a starting point, not your own words.
@@ -252,9 +254,9 @@ export default function ForNonprofits() {
             </h2>
             <div className="space-y-5">
               <StepDot n={1} label="Find your organization in the directory and click 'Claim this page'" />
-              <StepDot n={2} label="Submit the claim form with your role, email, and phone number" />
+              <StepDot n={2} label="Submit the claim form with your name, role, email, and phone number" />
               <StepDot n={3} label="A member of the Daanaa team calls you to verify your identity" />
-              <StepDot n={4} label="Enter the 6-digit PIN we give you on the call to unlock your profile editor" />
+              <StepDot n={4} label="Enter the 6-digit PIN we give you on the call to unlock your page" />
             </div>
             <p className="mt-8 font-body text-[14px] text-cool-grey leading-[1.6]">
               Claiming is free and open now. Daanaa does not charge organizations to be listed, to claim a page, or to update their information. Ever.
@@ -287,7 +289,7 @@ export default function ForNonprofits() {
           {
             tier: 'Beacon',
             pct: '~0.6% of tax-deductible 501(c)(3)s',
-            description: 'Complete profile. Top-quartile financial score, current annual report, mission, and website all on public record. The most complete picture donors can see.',
+            description: 'Complete page. Top-quartile financial score, current annual report, mission, and website all on public record. The most complete picture donors can see.',
             nextStep: null,
           },
         ]
@@ -355,7 +357,7 @@ export default function ForNonprofits() {
                 <p className="font-body text-[14px] text-muted-cream leading-[1.6] mb-6">
                   On the call we give you a 6-digit PIN. Enter it at{' '}
                   <span className="text-soft-gold">daanaa.org/claim/verify</span>{' '}
-                  to unlock your profile editor.
+                  to unlock your page.
                 </p>
                 <Link to="/directory" className="inline-block font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
                   Browse the directory →
@@ -364,7 +366,7 @@ export default function ForNonprofits() {
             ) : (
               <>
                 <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">
-                  {orgName ? 'Claim your page' : 'Claim your organization'}
+                  Claim your page
                 </span>
                 <h2 className="font-display italic text-warm-cream mt-3 text-[32px] leading-[1.1] mb-3">
                   {orgName ? orgName : 'Is this your nonprofit?'}
@@ -405,6 +407,20 @@ export default function ForNonprofits() {
                         }
                       }}
                       placeholder="12-3456789"
+                      className="w-full h-[48px] bg-navy-mid border border-soft-gold/20 text-warm-cream px-4 rounded-xl font-body text-[15px] outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-body text-[12px] text-muted-cream mb-1.5">
+                      Your name <span className="text-soft-gold">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={repName}
+                      onChange={e => setRepName(e.target.value)}
+                      placeholder="First and last name"
                       className="w-full h-[48px] bg-navy-mid border border-soft-gold/20 text-warm-cream px-4 rounded-xl font-body text-[15px] outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
                     />
                   </div>

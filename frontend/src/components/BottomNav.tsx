@@ -31,7 +31,7 @@ export default function BottomNav() {
     },
     {
       path: '/wallet',
-      label: 'Wallet β',
+      label: 'Wallet',
       exact: false,
       badge: savedCount > 0 ? savedCount : 0,
       icon: (active: boolean) => (

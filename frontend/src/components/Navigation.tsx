@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
-import GivingListDrawer from './GivingListDrawer'
 
 interface NavigationProps {
   solid?: boolean
@@ -14,7 +13,12 @@ export default function Navigation({ solid = true }: NavigationProps) {
   const navigate = useNavigate()
   const { count: savedCount } = useSavedOrgs()
 
-  const isActive = (path: string) => location.pathname === path
+  // Discover stays lit while browsing anything reached from the directory
+  const discoverPrefixes = ['/directory', '/org/', '/category/', '/causes/']
+  const isActive = (path: string) =>
+    path === '/directory'
+      ? discoverPrefixes.some(pre => location.pathname === pre || location.pathname.startsWith(pre))
+      : location.pathname === path
 
   // Skip the header search on pages that already have a primary search of their
   // own (the hero on Home, the page-level bar on Directory) to avoid duplicates.
@@ -55,11 +59,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
           <div className="hidden md:flex items-center gap-8">
             {[
               { label: 'Discover', path: '/directory' },
-              { label: 'Methodology', path: '/methodology' },
-              { label: 'Stewardship', path: '/stewardship' },
-              { label: 'Guides', path: '/guides' },
-              { label: 'About', path: '/about' },
-              { label: 'For Nonprofits', path: '/for-nonprofits' },
+              { label: 'Claim your page', path: '/for-nonprofits' },
             ].map((item) => (
               <Link
                 key={item.path}
@@ -82,9 +82,13 @@ export default function Navigation({ solid = true }: NavigationProps) {
             ))}
           </div>
 
-          {/* Persistent header search — hidden on pages that have their own primary search */}
-          {showHeaderSearch && (
-            <form onSubmit={submitHeaderSearch} className="hidden md:flex flex-1 max-w-[320px] mx-6">
+          {/* Persistent header search — kept in the layout on every page so the
+              nav never shifts; visually hidden where the page owns a primary search */}
+          <form
+            onSubmit={submitHeaderSearch}
+            className={`hidden md:flex flex-1 max-w-[320px] mx-6 ${showHeaderSearch ? '' : 'invisible pointer-events-none'}`}
+            aria-hidden={!showHeaderSearch}
+          >
               <div className="relative w-full">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                      className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -100,7 +104,6 @@ export default function Navigation({ solid = true }: NavigationProps) {
                 />
               </div>
             </form>
-          )}
 
           {/* Right Actions */}
           <div className="hidden md:flex items-center gap-3">
@@ -118,7 +121,6 @@ export default function Navigation({ solid = true }: NavigationProps) {
                 <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
               </svg>
               Wallet
-              <span className="font-body text-[9px] font-semibold tracking-[0.04em] text-soft-gold/70 leading-none">β</span>
             </Link>
           </div>
 
@@ -164,10 +166,8 @@ export default function Navigation({ solid = true }: NavigationProps) {
               />
             </form>
             {[
-              { label: 'Directory', path: '/directory' },
-              { label: 'For Nonprofits', path: '/for-nonprofits' },
-              { label: 'How It Works', path: '/how-it-works' },
-              { label: 'Wallet', path: '/wallet' },
+              { label: 'Discover', path: '/directory' },
+              { label: 'Claim your page', path: '/for-nonprofits' },
             ].map((item, i) => (
               <Link
                 key={item.path}
@@ -181,16 +181,26 @@ export default function Navigation({ solid = true }: NavigationProps) {
             ))}
             <div
               className="w-12 h-px bg-white/10 my-2 opacity-0 animate-[fadeIn_0.4s_ease-out_forwards]"
-              style={{ animationDelay: '0.3s' }}
+              style={{ animationDelay: '0.2s' }}
             />
-            <Link
-              to="/directory"
-              onClick={() => setMobileOpen(false)}
-              className="font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-9 py-3.5 rounded-full opacity-0 animate-[fadeIn_0.4s_ease-out_forwards] hover:bg-bright-gold transition-colors"
-              style={{ animationDelay: '0.35s' }}
+            <div
+              className="flex items-center gap-5 opacity-0 animate-[fadeIn_0.4s_ease-out_forwards]"
+              style={{ animationDelay: '0.25s' }}
             >
-              Browse Directory
-            </Link>
+              {[
+                { label: 'How it works', path: '/how-it-works' },
+                { label: 'About', path: '/about' },
+              ].map(item => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMobileOpen(false)}
+                  className="font-body text-[14px] text-warm-cream/60 hover:text-soft-gold transition-colors"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}

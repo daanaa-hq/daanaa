@@ -65,6 +65,7 @@ def _start(client, **overrides):
         "ein": "111000111",
         "email": "director@testhelpers.org",
         "phone": "(512) 555-0142",
+        "name": "Maria Alvarez",
         "title": "Executive Director",
         "attested_authority": True,
         "attested_legal": True,
@@ -88,6 +89,21 @@ def test_missing_phone_rejected(client):
 def test_short_phone_rejected(client):
     res = _start(client, phone="555-0142")  # 7 digits — not a full US number
     assert res.status_code == 400
+
+
+def test_missing_name_rejected(client):
+    # Industry practice (Google Business Profile, Candid): an attested claim
+    # is signed by a named person, not an anonymous email address.
+    res = _start(client, name="")
+    assert res.status_code == 400
+    assert "name" in res.get_json()["error"].lower()
+
+
+def test_claim_stores_rep_name(client):
+    assert _start(client).status_code == 200
+    row = _claims_db(client).execute(
+        "SELECT rep_name FROM org_claims WHERE ein='111000111'").fetchone()
+    assert row[0] == "Maria Alvarez"
 
 
 def test_missing_title_rejected(client):

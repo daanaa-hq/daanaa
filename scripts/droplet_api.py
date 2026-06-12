@@ -12,6 +12,8 @@ import json
 import os
 import re
 import sqlite3
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 from flask import Flask, request, jsonify, send_file, send_from_directory
@@ -640,6 +642,43 @@ def methodology():
 @app.route('/api/guides')
 def guides():
     return jsonify(load_json_gz(DATA_DIR / 'content/guides.json.gz') or {'articles': []})
+
+
+# ── Claim flow proxy ─────────────────────────────────────────────────────────
+# This API is read-only by design (precompute files, no registry DB). The
+# claim endpoints need the writable DB and mail sender on the home server, so
+# /api/claim/* is forwarded through a reverse SSH tunnel the home box opens to
+# 127.0.0.1:5001 here (unit: daanaa-claim-tunnel on the home box). The SPA
+# stays same-origin; if the tunnel is down only claiming degrades (503).
+
+CLAIM_UPSTREAM = os.environ.get('CLAIM_UPSTREAM', 'http://127.0.0.1:5001')
+CLAIM_MAX_BODY = 65536  # claim payloads are small JSON; cap before forwarding
+
+
+@app.route('/api/claim/<path:subpath>', methods=['GET', 'POST', 'PATCH'])
+@app.route('/api/partner/<path:subpath>', methods=['POST'])
+def claim_proxy(subpath):
+    if request.content_length and request.content_length > CLAIM_MAX_BODY:
+        return jsonify({"error": "Request too large"}), 413
+    url = f"{CLAIM_UPSTREAM}{request.path}"
+    if request.query_string:
+        url += '?' + request.query_string.decode()
+    headers = {'Content-Type': request.headers.get('Content-Type', 'application/json')}
+    # Forward the real visitor IP so the home API's rate limiter buckets per
+    # visitor instead of lumping all claims into one droplet bucket.
+    real_ip = request.headers.get('CF-Connecting-IP') or request.remote_addr
+    if real_ip:
+        headers['CF-Connecting-IP'] = real_ip
+    body = request.get_data() if request.method in ('POST', 'PATCH') else None
+    req = urllib.request.Request(url, data=body, headers=headers, method=request.method)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read(), resp.status, {'Content-Type': resp.headers.get('Content-Type', 'application/json')}
+    except urllib.error.HTTPError as e:
+        # Upstream 4xx/5xx are real answers (bad PIN, cooldown) — pass through
+        return e.read(), e.code, {'Content-Type': e.headers.get('Content-Type', 'application/json')}
+    except Exception:
+        return jsonify({"error": "Claiming is briefly unavailable. Please try again in a few minutes."}), 503
 
 
 # ── Frontend SPA ─────────────────────────────────────────────────────────────

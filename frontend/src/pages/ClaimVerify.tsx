@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { ClaimProgressBar } from '../components/ClaimProgressBar'
 
 export default function ClaimVerify() {
-  usePageMeta('Verify Claim', 'Enter the PIN we gave you over the phone to claim your nonprofit profile.')
+  usePageMeta('Verify Claim', 'Enter the PIN we gave you over the phone to claim your nonprofit page.')
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [pin, setPin] = useState('')
@@ -12,11 +12,6 @@ export default function ClaimVerify() {
   const [error, setError] = useState<string | null>(null)
 
   const ein = searchParams.get('ein') || ''
-  const email = searchParams.get('email') || ''
-
-  useEffect(() => {
-    if (!ein || !email) navigate('/for-nonprofits', { replace: true })
-  }, [ein, email, navigate])
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()

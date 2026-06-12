@@ -10,7 +10,7 @@ const CAUSE_TAGS = [
 ]
 
 export default function OrgClaimEditor() {
-  usePageMeta('Edit Your Profile', 'Add your mission, donation link, and impact areas.')
+  usePageMeta('Edit Your Page', 'Add your mission, donation link, and impact areas.')
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [mission, setMission] = useState('')

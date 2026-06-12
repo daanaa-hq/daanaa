@@ -484,7 +484,10 @@ def _init_org_claims_table():
             )
         """)
         # Migration for org_claims tables created before phone verification.
-        for col in ("phone TEXT", "rep_title TEXT", "attested_at TEXT", "attestation_version TEXT"):
+        # called_at/call_notes are the audit trail that the verification call
+        # actually happened — written from the admin claims queue.
+        for col in ("phone TEXT", "rep_title TEXT", "attested_at TEXT", "attestation_version TEXT",
+                    "called_at TEXT", "call_notes TEXT", "rep_name TEXT"):
             try:
                 db.execute(f"ALTER TABLE org_claims ADD COLUMN {col}")
             except sqlite3.OperationalError:
@@ -494,6 +497,40 @@ def _init_org_claims_table():
         db.commit()
 
 _init_org_claims_table()
+
+
+def _init_org_activity_table():
+    # The ops backbone: one append-only timeline per EIN. Every claim event,
+    # call, and admin action lands here so any decision is explainable later
+    # (STEWARDSHIP.md P9) and future automation has structured events to read.
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS org_activity (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                ein        TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                detail     TEXT,
+                actor      TEXT NOT NULL DEFAULT 'system',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_org_activity_ein ON org_activity(ein, created_at)")
+        db.commit()
+
+_init_org_activity_table()
+
+
+def _log_org_activity(ein: str, event_type: str, detail: str = '', actor: str = 'system'):
+    """Append to the org timeline. Never raises — a logging failure must not
+    break the user-facing action it describes."""
+    try:
+        db = get_db()
+        db.execute(
+            "INSERT INTO org_activity (ein, event_type, detail, actor) VALUES (?, ?, ?, ?)",
+            (ein, event_type, (detail or '')[:500], actor))
+        db.commit()
+    except Exception as e:
+        app.logger.error(f"org_activity log failed for {ein}/{event_type}: {e}")
 
 
 def _init_feedback_table():
@@ -1703,6 +1740,108 @@ def unscored_search():
     }), 200
 
 
+# ── Admin: claims queue ────────────────────────────────────────────────────
+# The founder's phone-verification worklist. Everything here is PII and stays
+# behind the admin key. mark_called writes the audit trail that the identity
+# call happened; revoke requires a written reason and starts the 45-day
+# cooldown via revoked_at (enforced in claim_start).
+
+_CLAIM_STATUSES = {'pending', 'verified', 'active', 'revoked', 'letter_sent'}
+
+
+@app.route('/api/admin/today', methods=['GET'])
+@require_admin_key
+def admin_today():
+    """The daily worklist — the system says what needs attention so nothing
+    is scanned for or remembered. Buckets: claims waiting for the
+    verification call, and called claims whose PIN expires within 7 days."""
+    db = get_db()
+    to_call = [dict(r) for r in db.execute("""
+        SELECT c.ein, r.organization_name, c.rep_name, c.rep_title, c.phone, c.created_at,
+               CAST(julianday('now') - julianday(c.created_at) AS INTEGER) AS days_waiting
+        FROM org_claims c LEFT JOIN registry_enriched r ON r.EIN = c.ein
+        WHERE c.claim_status = 'pending' AND c.called_at IS NULL
+        ORDER BY c.created_at ASC""").fetchall()]
+    pin_expiring = [dict(r) for r in db.execute("""
+        SELECT c.ein, r.organization_name, c.rep_name, c.email, c.pin_expires_at,
+               CAST(julianday(c.pin_expires_at) - julianday('now') AS INTEGER) AS days_left
+        FROM org_claims c LEFT JOIN registry_enriched r ON r.EIN = c.ein
+        WHERE c.claim_status = 'pending' AND c.called_at IS NOT NULL
+          AND datetime(c.pin_expires_at) < datetime('now', '+7 days')
+        ORDER BY c.pin_expires_at ASC""").fetchall()]
+    return jsonify({
+        'to_call': to_call,
+        'pin_expiring': pin_expiring,
+        'counts': {'to_call': len(to_call), 'pin_expiring': len(pin_expiring)},
+    })
+
+
+@app.route('/api/admin/activity/<ein>', methods=['GET'])
+@require_admin_key
+def admin_org_activity(ein):
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    db = get_db()
+    rows = db.execute(
+        "SELECT event_type, detail, actor, created_at FROM org_activity "
+        "WHERE ein = ? ORDER BY created_at DESC LIMIT 100", (ein,)).fetchall()
+    return jsonify({'activity': [dict(r) for r in rows]})
+
+
+@app.route('/api/admin/claims', methods=['GET'])
+@require_admin_key
+def admin_claims_list():
+    status = request.args.get('status', '').strip()
+    where, params = '', []
+    if status in _CLAIM_STATUSES:
+        where = 'WHERE c.claim_status = ?'
+        params.append(status)
+    db = get_db()
+    rows = db.execute(
+        f"""SELECT c.ein, c.email, c.phone, c.rep_name, c.rep_title, c.pin, c.pin_expires_at,
+                   c.claim_status, c.created_at, c.attested_at, c.attestation_version,
+                   c.verified_at, c.called_at, c.call_notes, c.revoked_at, c.revoke_reason,
+                   r.organization_name, r.CITY, r.STATE
+            FROM org_claims c
+            LEFT JOIN registry_enriched r ON r.EIN = c.ein
+            {where}
+            ORDER BY c.created_at DESC LIMIT 200""", params).fetchall()
+    return jsonify({'claims': [dict(r) for r in rows], 'total': len(rows)})
+
+
+@app.route('/api/admin/claims/<ein>', methods=['PATCH'])
+@require_admin_key
+def admin_claims_update(ein):
+    data   = request.get_json(silent=True) or {}
+    action = (data.get('action') or '').strip()
+    ein    = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+    if not db.execute("SELECT 1 FROM org_claims WHERE ein = ?", (ein,)).fetchone():
+        return jsonify({"error": "No claim found for this EIN"}), 404
+
+    if action == 'mark_called':
+        notes = (data.get('notes') or '').strip()[:1000]
+        db.execute(
+            "UPDATE org_claims SET called_at = datetime('now'), call_notes = ? WHERE ein = ?",
+            (notes, ein))
+        db.commit()
+        _log_org_activity(ein, 'call_logged', notes, actor='admin')
+        return jsonify({"status": "called"})
+
+    if action == 'revoke':
+        reason = (data.get('reason') or '').strip()[:500]
+        if not reason:
+            return jsonify({"error": "A written reason is required to revoke a claim"}), 400
+        db.execute(
+            "UPDATE org_claims SET claim_status = 'revoked', revoked_at = datetime('now'), "
+            "revoke_reason = ? WHERE ein = ?", (reason, ein))
+        db.commit()
+        _log_org_activity(ein, 'claim_revoked', reason, actor='admin')
+        return jsonify({"status": "revoked"})
+
+    return jsonify({"error": "Unknown action. Use mark_called or revoke."}), 400
+
+
 @app.route('/api/admin/analytics', methods=['GET'])
 @require_admin_key
 def admin_analytics():
@@ -1838,7 +1977,8 @@ def _format_phone(phone: str) -> str:
     return phone
 
 
-def _notify_admin_new_claim(ein: str, org_name: str, email: str, phone: str, title: str, pin: str):
+def _notify_admin_new_claim(ein: str, org_name: str, email: str, phone: str, title: str, pin: str,
+                            rep_name: str = ''):
     """Email the admin when a claim comes in. Phase 1 verification is a phone
     call, so the email carries everything needed to make it — including the
     PIN to read out once identity is confirmed."""
@@ -1849,6 +1989,7 @@ def _notify_admin_new_claim(ein: str, org_name: str, email: str, phone: str, tit
         f"New page claim — call to verify, then read them the PIN.\n\n"
         f"Organization: {org_name}\n"
         f"EIN:          {ein}\n"
+        f"Name:         {rep_name or '(not given)'}\n"
         f"Contact:      {email}\n"
         f"Phone:        {_format_phone(phone)}\n"
         f"Title/role:   {title}\n"
@@ -1858,18 +1999,19 @@ def _notify_admin_new_claim(ein: str, org_name: str, email: str, phone: str, tit
     )
 
 
-def _claim_received_email_body(org_name: str, ein: str, phone: str) -> str:
+def _claim_received_email_body(org_name: str, ein: str, phone: str, rep_name: str = '') -> str:
     """Plain-text part of the confirmation the claiming org receives. No PIN
     here — the PIN is given on the verification call, which is the whole point
     of the call. Copy rules: human voice, no hyphens, no dashes."""
+    first = rep_name.split()[0] if rep_name.strip() else ''
     return (
-        f"Hello,\n\n"
+        f"Hello{' ' + first if first else ''},\n\n"
         f"Thank you for claiming {org_name} (EIN {ein}) on Daanaa.\n\n"
         f"Here is what happens next. A member of our team will call you at "
         f"{_format_phone(phone)} within a few business days to confirm that you represent the "
         f"organization. On that call we will give you a 6 digit PIN.\n\n"
         f"When you have your PIN, enter it at https://daanaa.org/claim/verify?ein={ein} "
-        f"and your profile editor opens up. The PIN stays good for 30 days.\n\n"
+        f"and your page opens for editing. The PIN stays good for 30 days.\n\n"
         f"A couple of things worth knowing. Daanaa is a free public directory of "
         f"nonprofits built from IRS records. We never charge organizations and we "
         f"never handle donations. Your phone number and email are used only for "
@@ -1881,7 +2023,7 @@ def _claim_received_email_body(org_name: str, ein: str, phone: str) -> str:
     )
 
 
-def _claim_received_email_html(org_name: str, ein: str, phone: str) -> str:
+def _claim_received_email_html(org_name: str, ein: str, phone: str, rep_name: str = '') -> str:
     """Rich HTML part. Brand: deep navy, soft gold, Georgia serif, hosted logo.
     Inline styles only — email clients strip everything else."""
     verify_url = f"https://daanaa.org/claim/verify?ein={ein}"
@@ -1894,7 +2036,7 @@ def _claim_received_email_html(org_name: str, ein: str, phone: str) -> str:
     steps = [
         f"A member of our team calls you at <strong>{_format_phone(phone)}</strong> within a few business days.",
         "On the call we confirm your role and give you a 6 digit PIN.",
-        f"You enter the PIN at <a href=\"{verify_url}\" style=\"color:{gold};\">daanaa.org/claim/verify</a> and your profile editor opens up.",
+        f"You enter the PIN at <a href=\"{verify_url}\" style=\"color:{gold};\">daanaa.org/claim/verify</a> and your page opens for editing.",
     ]
     steps_html = "".join(
         f"<tr><td style='vertical-align:top;padding:8px 0;'><span style='{step_style}'>{i}</span></td>"
@@ -1915,7 +2057,7 @@ def _claim_received_email_html(org_name: str, ein: str, phone: str) -> str:
       <p style="font-size:16px;color:{navy};margin:0 0 4px;"><strong>{org_name}</strong></p>
       <p style="font-size:13px;color:{grey};margin:0 0 24px;">EIN {ein}</p>
       <p style="font-size:15px;line-height:1.65;color:{navy};margin:0 0 20px;">
-        Hello, and thank you for claiming your page. Here is what happens next.
+        Hello{' ' + rep_name.split()[0] if rep_name.strip() else ''}, and thank you for claiming your page. Here is what happens next.
       </p>
       <table style="border-collapse:collapse;margin:0 0 24px;">{steps_html}</table>
       <p style="font-size:13px;line-height:1.65;color:{grey};margin:0 0 8px;">
@@ -1939,10 +2081,11 @@ def _claim_received_email_html(org_name: str, ein: str, phone: str) -> str:
 </body></html>"""
 
 
-def _send_claim_received_email(ein: str, org_name: str, email: str, phone: str):
+def _send_claim_received_email(ein: str, org_name: str, email: str, phone: str, rep_name: str = ''):
     _send_daanaa_email(email, f"We received your claim for {org_name}",
-                       _claim_received_email_body(org_name, ein, phone),
-                       html=_claim_received_email_html(org_name, ein, phone))
+                       _claim_received_email_body(org_name, ein, phone, rep_name),
+                       html=_claim_received_email_html(org_name, ein, phone, rep_name),
+                       from_addr="Daanaa <verify@daanaa.org>")
 
 
 @app.route('/api/claim/start', methods=['POST'])
@@ -1952,12 +2095,15 @@ def claim_start():
     ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
     email = (data.get('email') or '').strip()[:254]
     phone = (data.get('phone') or '').strip()[:30]
+    name  = (data.get('name') or '').strip()[:120]
     title = (data.get('title') or '').strip()[:100]
 
     if not ein or not email or '@' not in email:
         return jsonify({"error": "EIN and valid email are required"}), 400
     if len(''.join(c for c in phone if c.isdigit())) < 10:
         return jsonify({"error": "A valid phone number is required. We call it to verify your claim."}), 400
+    if not name:
+        return jsonify({"error": "Your name is required. The attestations below are signed by a person."}), 400
     if not title:
         return jsonify({"error": "Your title or role at the organization is required"}), 400
     # Attestations are a legal requirement — enforced here, not just by the form
@@ -2000,21 +2146,23 @@ def claim_start():
 
     db.execute("""
         INSERT INTO org_claims (ein, email, irs_address, pin, pin_expires_at, claim_status,
-                                phone, rep_title, attested_at, attestation_version)
-        VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'), ?)
+                                phone, rep_name, rep_title, attested_at, attestation_version)
+        VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, datetime('now'), ?)
         ON CONFLICT(ein) DO UPDATE SET
             email=excluded.email, pin=excluded.pin,
             pin_expires_at=excluded.pin_expires_at,
-            phone=excluded.phone, rep_title=excluded.rep_title,
+            phone=excluded.phone, rep_name=excluded.rep_name,
+            rep_title=excluded.rep_title,
             attested_at=excluded.attested_at,
             attestation_version=excluded.attestation_version,
             claim_status='pending', letter_sent_at=NULL, lob_letter_id=NULL,
             revoked_at=NULL, revoke_reason=NULL
-    """, (ein, email, irs_address, pin, pin_expires_at, phone, title, CLAIM_ATTESTATION_VERSION))
+    """, (ein, email, irs_address, pin, pin_expires_at, phone, name, title, CLAIM_ATTESTATION_VERSION))
     db.commit()
 
-    _notify_admin_new_claim(ein, org_name, email, phone, title, pin)
-    _send_claim_received_email(ein, org_name, email, phone)
+    _log_org_activity(ein, 'claim_submitted', f"{name} ({title}), {email}", actor='org')
+    _notify_admin_new_claim(ein, org_name, email, phone, title, pin, rep_name=name)
+    _send_claim_received_email(ein, org_name, email, phone, rep_name=name)
 
     # Phase 2 (postal verification via Lob) only runs once a Lob key is
     # configured AND the org has a street address. Phase 1: the claim stays
@@ -2086,6 +2234,7 @@ def claim_verify():
         (ein,)
     )
     db.commit()
+    _log_org_activity(ein, 'pin_verified', 'PIN entered, page unlocked for editing', actor='org')
 
     org = db.execute(
         "SELECT organization_name, mission, donate_url FROM registry_enriched WHERE EIN=?", (ein,)
@@ -2301,6 +2450,53 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
         return [_attach_v4_scores(dict(r), r) for r in rows], 'ntee1'
 
     return [], 'none'
+
+
+# ── Partner inquiries ──────────────────────────────────────────────────────
+# Vendors, payment processors, and foundations reach us via /partners. The
+# inquiry is mail, not data: nothing is stored server side, it routes to the
+# partners@ alias and we reply by hand. Independence rule (STEWARDSHIP.md P7):
+# nothing about this path may ever touch scores, rankings, or visibility.
+
+_PARTNER_TYPES = {
+    "Payment processing", "Services for nonprofits",
+    "Community foundation or network", "Other",
+}
+
+
+@app.route('/api/partner/contact', methods=['POST'])
+@limiter.limit("5 per hour")
+def partner_contact():
+    data = request.get_json(silent=True) or {}
+    org_name = (data.get('org_name') or '').strip()[:200]
+    name     = (data.get('name') or '').strip()[:120]
+    email    = (data.get('email') or '').strip()[:254]
+    ptype    = (data.get('partner_type') or 'Other').strip()
+    message  = (data.get('message') or '').strip()
+
+    if not name:
+        return jsonify({"error": "Please tell us your name"}), 400
+    if not email or '@' not in email or '.' not in email.split('@')[-1]:
+        return jsonify({"error": "A valid email is required so we can reply"}), 400
+    if not message:
+        return jsonify({"error": "Please include a short message"}), 400
+    if len(message) > 5000:
+        return jsonify({"error": "Please keep the message under 5000 characters"}), 400
+    if ptype not in _PARTNER_TYPES:
+        ptype = "Other"
+
+    _send_daanaa_email(
+        "partners@daanaa.org",
+        f"[Partner inquiry] {org_name or name} ({ptype})",
+        f"New partner inquiry from daanaa.org/partners\n\n"
+        f"Organization: {org_name or '(not given)'}\n"
+        f"Name:         {name}\n"
+        f"Email:        {email}\n"
+        f"Type:         {ptype}\n\n"
+        f"Message:\n{message}\n",
+        from_addr="Daanaa <partners@daanaa.org>",
+    )
+    return jsonify({"status": "received"})
 
 
 @app.route('/api/organizations/<ein>/similar')

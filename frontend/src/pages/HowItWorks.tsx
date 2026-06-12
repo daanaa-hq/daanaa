@@ -86,7 +86,7 @@ export default function HowItWorks() {
               We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.8 million of them. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
-              Two signals work together on every profile. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The Financial Health tier (Strong, Stable, or Inspiring) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
+              Two signals work together on every page. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The Financial Health tier (Strong, Stable, or Inspiring) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
             </Callout>
           </Section>
 
@@ -153,7 +153,7 @@ export default function HowItWorks() {
             </div>
 
             <p className="mt-5 font-body text-[15px] text-cool-grey leading-[1.7]">
-              When you visit a profile, the primary signal you'll see is a <strong className="text-deep-navy font-medium">Financial Health tier</strong> — Strong, Stable, or Inspiring. That is a different measure from the 0–100 number above. The number shows financial scale. The tier shows how well the organization manages its resources within that peer group. A small org can be Strong. A large org can be Inspiring.
+              When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">Financial Health tier</strong> — Strong, Stable, or Inspiring. That is a different measure from the 0–100 number above. The number shows financial scale. The tier shows how well the organization manages its resources within that peer group. A small org can be Strong. A large org can be Inspiring.
             </p>
             <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
               <strong className="text-deep-navy font-medium">Why "Inspiring"?</strong> Constrained financial resources don't mean constrained impact. Organizations working within tight means often do the most essential work in their communities. The name honors that — not a consolation, a recognition.
@@ -170,13 +170,13 @@ export default function HowItWorks() {
 
           <Section label="Visibility levels" title="Visibility levels: how much information is available">
             <p>
-              Every listing displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a profile <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
+              Every listing displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a page <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
             </p>
             <div className="mt-4 space-y-3">
               {([
                 {
                   tier: 'Beacon' as TierName,
-                  what: 'Mission, giving path, service area, and public financial data all on record. Complete profile confirmed from public records.',
+                  what: 'Mission, giving path, service area, and public financial data all on record. Complete page confirmed from public records.',
                 },
                 {
                   tier: 'Lantern' as TierName,

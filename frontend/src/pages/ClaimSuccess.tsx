@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { ClaimProgressBar } from '../components/ClaimProgressBar'
 
 export default function ClaimSuccess() {
-  usePageMeta('Profile Claimed', 'Your nonprofit profile is now live on Daanaa.')
+  usePageMeta('Page Claimed', 'Your nonprofit page is now live on Daanaa.')
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const ein = searchParams.get('ein') || ''
@@ -20,10 +20,10 @@ export default function ClaimSuccess() {
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-full bg-soft-gold text-deep-navy mx-auto mb-5 flex items-center justify-center text-2xl font-bold">✓</div>
           <h1 className="font-display italic text-deep-navy mb-3" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
-            Your profile is live
+            Your page is live
           </h1>
           <p className="font-body text-[16px] text-cool-grey">
-            Thank you for claiming your Daanaa profile. Your mission and giving links are now visible to donors.
+            Thank you for claiming your Daanaa page. Your mission and giving links are now visible to donors.
           </p>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-light-cream p-8 space-y-4">
@@ -31,7 +31,7 @@ export default function ClaimSuccess() {
             to={`/org/${ein}`}
             className="block w-full px-4 py-3 bg-soft-gold text-deep-navy font-body text-[15px] font-semibold rounded-xl hover:bg-bright-gold transition-colors text-center"
           >
-            View your profile →
+            View your page →
           </Link>
           <Link
             to="/"
