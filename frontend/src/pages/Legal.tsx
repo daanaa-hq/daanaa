@@ -126,6 +126,26 @@ export default function Legal() {
               When you voluntarily submit information — such as an email address in the claim form, feedback form, or waitlist — we store that information to respond to your request. We do not use it for marketing, share it with third parties, or connect it to your browsing activity.
             </p>
             <p className="mt-3">
+              <strong className="text-deep-navy">When you claim your organization's page</strong>, we collect your
+              name, title, email address, and phone number. We use them for one purpose: to verify by
+              phone that you represent the organization before your page goes live. None of this
+              information is ever shown publicly. We keep a record of your claim, the statements you
+              agreed to, and our verification call, because claiming a page carries legal weight and
+              both sides benefit from a clear record. To correct or remove your claim information,
+              email <a href="mailto:privacy@daanaa.org" className="text-soft-gold hover:underline">privacy@daanaa.org</a>.
+            </p>
+            <p className="mt-3">
+              <strong className="text-deep-navy">The Giving Wallet lives on your device.</strong> Organizations you
+              save are stored in your own browser, not on our servers. We cannot see your wallet, and
+              no giving activity is tracked, stored, or shared by us. If we add an optional sign in for
+              syncing your wallet across devices, it will stay exactly that: optional, private, never
+              shown publicly, never used for outreach, and deletable in full at any time.
+            </p>
+            <p className="mt-3">
+              <strong className="text-deep-navy">Partner inquiries</strong> sent through our partners page go to our
+              inbox as email so we can reply. We do not add you to any list.
+            </p>
+            <p className="mt-3">
               If your organization's information on Daanaa is incorrect, you may request a correction
               by contacting us. In most cases, corrections require updating the underlying IRS 990
               filing, which is the authoritative source.

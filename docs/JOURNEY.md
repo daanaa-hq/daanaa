@@ -196,3 +196,31 @@ Live apply went from 13+ minutes of failures to **6 seconds**.
 Institutionalized: a **daily IRS watch now takes priority over all other overnight work**
 (cron 21:00, before the GPU window), so new organizations are detected, validated, applied,
 and given a mission the same night — automatically, every day.
+
+---
+
+## 2026-06-12 — The day organizations could take the pen
+
+The claim flow went **live on daanaa.org end to end**: a nonprofit leader finds their
+page, signs two attestations with their name on them, gets a branded DKIM-authenticated
+email, takes our verification call, enters the PIN, and their page opens for editing.
+The last mile took detective work — production wasn't serving our fixes because the
+droplet, not the home box, serves daanaa.org; the claim API now reaches home through a
+**reverse SSH tunnel** the droplet proxies into, so the registry and every secret stay
+in the house.
+
+Around the flow, a whole operating company grew in one day: an **admin Claims queue**
+with a Today worklist and call checklist, an append-only **org_activity timeline**
+behind every event, a **/partners page** and a payment-processor pitch built on the
+number nobody else has (only 1,391 of 2,064,613 orgs have a known giving link), the
+header cut to two links with **"Claim your page"** front and center, one word — *page* —
+made true site-wide, and STEWARDSHIP **P2 revised in the open** (founder-signed) to
+allow optional sign-in for wallet sync, bookmarks and intent only.
+
+By night's end the platform watches itself: a **watchdog** probes the full claim path
+every five minutes and emails on state change, **nightly backups** capture the
+irreplaceable tables, a **morning digest** delivers the day's worklist, and a one-time
+**PIN nudge** keeps slow claims alive. The strategy is written down too: the page is
+the product, win a neighborhood not the nation, free giving-infrastructure setup as
+the claim magnet, and the quiet verified room as the moat. First real claimant: still
+ahead — and now everything is ready for them.
