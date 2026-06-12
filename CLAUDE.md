@@ -8,21 +8,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stewardship Commitment — Read before any work
 
-This project operates under a Founding Stewardship Commitment (see `STEWARDSHIP.md`).
-Every AI agent, contributor, and system operating on this platform is bound by it.
+This project operates under a **Founding Stewardship Commitment** (full text: `STEWARDSHIP.md`).
+Every AI agent and contributor is bound by these 11 principles:
 
-Before contributing any code, data change, copy edit, or system decision, you must:
-1. Have read `STEWARDSHIP.md` in full
-2. Operate in alignment with all 11 principles
-3. Flag any conflict between a requested task and these principles before proceeding
+**Three non-negotiables:**
+1. **Trust signals are evidence-based** (scores, badges = real data only)
+2. **Donor privacy is structural** (no tracking, no exposure of giving activity)
+3. **Independence is protected** (no paid placement, no partner influence)
 
-Key rules for AI agents:
-- Trust signals (scores, badges, tiers) must only reflect real, evidence-based data
-- Never present unverified outputs or experimental results as established fact
-- Donor privacy is non-negotiable — no social pressure mechanics, no exposure of giving activity
-- Small orgs must be treated with equal dignity to large ones
-- If a data error is found, correct it and document it — do not hide it
-- All significant decisions must be explainable and traceable
+**Key rules for all work:**
+- Never present unverified outputs or experiments as established fact
+- Small orgs treated with equal dignity to large ones
+- Errors are corrected and documented (never hidden)
+- All significant decisions are explainable and traceable
+- Anything ranking orgs, shaping asks, or nudging users must check against `STEWARDSHIP.md` + `PRIVACY-INVARIANTS.md`
+
+**Before working:** Read `STEWARDSHIP.md` in full. Flag conflicts immediately.
 
 **Signed:** Claude Code (claude-sonnet-4-6) · AI Engineering Agent · 2026-05-20
 
