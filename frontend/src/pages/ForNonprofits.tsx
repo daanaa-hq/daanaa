@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { submitWaitlist, getOrganization } from '../data/api'
 import { usePageMeta } from '../hooks/usePageMeta'
 import LampMark from '../components/LampMark'
@@ -21,7 +21,6 @@ function StepDot({ n, label }: { n: number; label: string }) {
 export default function ForNonprofits() {
   usePageMeta('For Nonprofits', 'Claim your free Daanaa profile. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
   const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [ein, setEin] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -29,8 +28,10 @@ export default function ForNonprofits() {
   const [error, setError] = useState<string | null>(null)
   const [orgName, setOrgName] = useState<string | null>(null)
   const [irsAddress, setIrsAddress] = useState<string | null>(null)
-  const [addressPreview, setAddressPreview] = useState<string | null>(null)
   const [attested, setAttested] = useState(false)
+  const [attestedLegal, setAttestedLegal] = useState(false)
+  const [phone, setPhone] = useState('')
+  const [title, setTitle] = useState('')
 
   // Prefill EIN from URL param and look up org info
   useEffect(() => {
@@ -39,7 +40,7 @@ export default function ForNonprofits() {
     setEin(formatEINInput(einParam))
     getOrganization(einParam).then(org => {
       setOrgName(org.organization_name)
-      const addr = [org.address, org.CITY, org.STATE, org.zipcode].filter(Boolean).join(', ')
+      const addr = [org.street_address, org.CITY, org.STATE, org.zipcode].filter(Boolean).join(', ')
       setIrsAddress(addr || null)
     }).catch(() => {})
   }, [searchParams])
@@ -53,7 +54,14 @@ export default function ForNonprofits() {
       const res = await fetch('/api/claim/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ein: ein.replace(/\D/g, '').slice(0, 9), email: email.trim() }),
+        body: JSON.stringify({
+          ein: ein.replace(/\D/g, '').slice(0, 9),
+          email: email.trim(),
+          phone: phone.trim(),
+          title: title.trim(),
+          attested_authority: attested,
+          attested_legal: attestedLegal,
+        }),
       })
       const body = await res.json()
       if (!res.ok) {
@@ -61,18 +69,10 @@ export default function ForNonprofits() {
         setSubmitting(false)
         return
       }
-      setAddressPreview(body.address_preview || irsAddress)
       if (body.org_name) setOrgName(body.org_name)
+      // Stay on the confirmation: the PIN arrives later, on the verification
+      // call, so routing to the PIN page now would dead-end the user.
       setSubmitted(true)
-      // After brief confirmation flash, route to PIN verification page
-      const params = new URLSearchParams({
-        ein: ein.replace(/\D/g, '').slice(0, 9),
-        email: email.trim(),
-      })
-      if (body.org_name) params.set('orgName', body.org_name)
-      setTimeout(() => {
-        navigate(`/claim/verify?${params.toString()}`)
-      }, 800)
     } catch {
       // Fallback: log locally so we don't lose the lead
       try { await submitWaitlist(email.trim(), 'claiming', ein.replace(/\D/g, '') || undefined) } catch {}
@@ -252,9 +252,9 @@ export default function ForNonprofits() {
             </h2>
             <div className="space-y-5">
               <StepDot n={1} label="Find your organization in the directory and click 'Claim this page'" />
-              <StepDot n={2} label="Enter your EIN and email, and we look up your IRS-registered address" />
-              <StepDot n={3} label="Receive a verification letter at that address in 3–5 business days" />
-              <StepDot n={4} label="Scan the QR code (or enter your 6-digit PIN) to unlock your profile editor" />
+              <StepDot n={2} label="Submit the claim form with your role, email, and phone number" />
+              <StepDot n={3} label="A member of the Daanaa team calls you to verify your identity" />
+              <StepDot n={4} label="Enter the 6-digit PIN we give you on the call to unlock your profile editor" />
             </div>
             <p className="mt-8 font-body text-[14px] text-cool-grey leading-[1.6]">
               Claiming is free and open now. Daanaa does not charge organizations to be listed, to claim a page, or to update their information. Ever.
@@ -342,26 +342,20 @@ export default function ForNonprofits() {
               <div className="py-8">
                 <div className="w-12 h-12 rounded-full bg-soft-gold/20 flex items-center justify-center mb-4">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 13V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h9"/>
-                    <polyline points="22 6 12 13 2 6"/>
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                   </svg>
                 </div>
                 <h3 className="font-display italic text-warm-cream text-[28px] mb-3">
-                  Your letter is on the way
+                  Claim received — we'll call you
                   {orgName && <span className="block text-soft-gold text-[20px] mt-1">{orgName}</span>}
                 </h3>
                 <p className="font-body text-[15px] text-muted-cream leading-[1.6] mb-4">
-                  We're mailing a verification letter to your organization's IRS-registered address.
+                  A member of the Daanaa team will call the number you provided, usually within a few business days, to verify your identity.
                 </p>
-                {addressPreview && (
-                  <p className="font-body text-[13px] text-muted-cream/60 leading-[1.5] mb-6 pl-3 border-l border-soft-gold/30">
-                    {addressPreview}
-                  </p>
-                )}
                 <p className="font-body text-[14px] text-muted-cream leading-[1.6] mb-6">
-                  The letter contains a QR code and a 6-digit PIN. Once it arrives (usually 3–5 business days), scan the QR code, or return to{' '}
-                  <span className="text-soft-gold">daanaa.org/for-nonprofits</span>{' '}
-                  and start the claim again to enter your PIN.
+                  On the call we give you a 6-digit PIN. Enter it at{' '}
+                  <span className="text-soft-gold">daanaa.org/claim/verify</span>{' '}
+                  to unlock your profile editor.
                 </p>
                 <Link to="/directory" className="inline-block font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
                   Browse the directory →
@@ -376,12 +370,12 @@ export default function ForNonprofits() {
                   {orgName ? orgName : 'Is this your nonprofit?'}
                 </h2>
                 <p className="font-body text-[16px] text-muted-cream leading-[1.65] mb-6">
-                  We'll mail a verification letter to your IRS-registered address. The letter includes a QR code and PIN. Scan it to claim your page in seconds.
+                  Submit the form below and a member of the Daanaa team will call you to verify your identity. Once confirmed, your page is yours to update.
                 </p>
 
                 {irsAddress && (
                   <div className="mb-6 p-4 rounded-xl border border-soft-gold/20 bg-navy-mid/50">
-                    <p className="font-body text-[11px] text-muted-cream/50 uppercase tracking-[0.06em] mb-1">Letter will be mailed to</p>
+                    <p className="font-body text-[11px] text-muted-cream/50 uppercase tracking-[0.06em] mb-1">IRS-registered address on file</p>
                     <p className="font-body text-[14px] text-warm-cream">{irsAddress}</p>
                     <p className="font-body text-[11px] text-muted-cream/40 mt-1">IRS-registered address · public record</p>
                   </div>
@@ -405,7 +399,7 @@ export default function ForNonprofits() {
                         if (digits.length === 9) {
                           getOrganization(digits).then(org => {
                             setOrgName(org.organization_name)
-                            const addr = [org.address, org.CITY, org.STATE, org.zipcode].filter(Boolean).join(', ')
+                            const addr = [org.street_address, org.CITY, org.STATE, org.zipcode].filter(Boolean).join(', ')
                             setIrsAddress(addr || null)
                           }).catch(() => {})
                         }
@@ -414,6 +408,21 @@ export default function ForNonprofits() {
                       className="w-full h-[48px] bg-navy-mid border border-soft-gold/20 text-warm-cream px-4 rounded-xl font-body text-[15px] outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
                     />
                   </div>
+
+                  <div>
+                    <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">
+                      Your title / role <span className="text-soft-gold">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                      placeholder="Executive Director, President, Board Chair…"
+                      className="w-full h-[48px] bg-navy-mid border border-soft-gold/20 text-warm-cream px-4 rounded-xl font-body text-[15px] outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
+                    />
+                  </div>
+
                   <div>
                     <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">
                       Your email <span className="text-soft-gold">*</span>
@@ -423,12 +432,56 @@ export default function ForNonprofits() {
                       required
                       value={email}
                       onChange={e => setEmail(e.target.value)}
-                      placeholder="you@organization.org"
+                      placeholder="you@yourorg.org"
                       className="w-full h-[48px] bg-navy-mid border border-soft-gold/20 text-warm-cream px-4 rounded-xl font-body text-[15px] outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
                     />
                   </div>
-                  {/* Attestation */}
-                  <label className="flex items-start gap-3 cursor-pointer pt-1">
+
+                  <div>
+                    <label className="block font-body text-[12px] text-muted-cream/70 mb-1.5">
+                      Phone number <span className="text-soft-gold">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="(555) 000-0000"
+                      className="w-full h-[48px] bg-navy-mid border border-soft-gold/20 text-warm-cream px-4 rounded-xl font-body text-[15px] outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
+                    />
+                    <p className="mt-1.5 font-body text-[11px] text-muted-cream/40">
+                      We will call this number to verify your identity before activating your page. Not shared publicly.
+                    </p>
+                  </div>
+
+                  {/* Disclosure — who we are and what happens with this form.
+                      Text is versioned in docs/CLAIM-ATTESTATIONS.md; if it
+                      changes, bump CLAIM_ATTESTATION_VERSION in daanaa_api.py. */}
+                  <div className="mt-2 p-4 rounded-xl border border-soft-gold/20 bg-navy-mid/50 space-y-2.5">
+                    <p className="font-body text-[12px] font-semibold text-warm-cream">
+                      Before you sign, here is who we are and what happens with this form.
+                    </p>
+                    <p className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                      Daanaa is a free public directory of nonprofits built from IRS records.
+                      We are not affiliated with the IRS or any government agency. We never
+                      handle donations and we never charge organizations for anything.
+                    </p>
+                    <p className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                      We use your phone number and email only to verify that you represent
+                      this organization. A member of our team calls you, confirms your role,
+                      and gives you a PIN that unlocks your page. Neither is shown publicly.
+                    </p>
+                    <p className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                      We keep a record of this submission, including the statements you check
+                      below and the time you checked them, so our verification process can
+                      stand up to review. Claiming a page gives you control over how this
+                      organization appears to donors, which is why we ask you to confirm the
+                      two statements below before submitting.
+                    </p>
+                  </div>
+
+                  {/* Attestation 1 — authority */}
+                  <label className="flex items-start gap-3 cursor-pointer pt-2">
                     <input
                       type="checkbox"
                       required
@@ -437,23 +490,39 @@ export default function ForNonprofits() {
                       className="mt-0.5 h-4 w-4 rounded border-soft-gold/30 text-soft-gold focus:ring-soft-gold shrink-0"
                     />
                     <span className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
-                      I am an authorized representative of this organization and confirm that the information I submit is accurate. I understand that submitting false or misleading claims may constitute fraud under 18 U.S.C. § 1001 and may result in permanent removal from Daanaa.
+                      I am an authorized representative of <strong className="text-warm-cream">{orgName || 'this organization'}</strong> and have the authority to manage its public presence on third-party platforms.
+                    </span>
+                  </label>
+
+                  {/* Attestation 2 — legal weight */}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      required
+                      checked={attestedLegal}
+                      onChange={e => setAttestedLegal(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-soft-gold/30 text-soft-gold focus:ring-soft-gold shrink-0"
+                    />
+                    <span className="font-body text-[12px] text-muted-cream/70 leading-[1.6]">
+                      I understand that submitting false or misleading information is a federal offense under{' '}
+                      <strong className="text-warm-cream">18 U.S.C. § 1001</strong> and may result in permanent removal from Daanaa and referral to relevant authorities.
                     </span>
                   </label>
 
                   {error && (
                     <p className="font-body text-[13px] text-red-400 leading-[1.5]">{error}</p>
                   )}
+
                   <button
                     type="submit"
-                    disabled={submitting || !attested}
+                    disabled={submitting || !attested || !attestedLegal}
                     className="w-full h-[48px] bg-soft-gold text-deep-navy font-body text-[14px] font-semibold rounded-full hover:bg-bright-gold transition-colors disabled:opacity-60"
                   >
-                    {submitting ? 'Sending…' : 'Send my verification letter'}
+                    {submitting ? 'Submitting…' : 'Submit claim request'}
                   </button>
                 </form>
                 <p className="mt-4 font-body text-[11px] text-muted-cream/40 leading-[1.5]">
-                  We mail a letter to your IRS-registered address, the same way Google verifies businesses. No cost to you.
+                  A member of the Daanaa team will call the number you provided to verify your identity. Once confirmed, your page goes live. No cost to you.
                 </p>
               </>
             )}

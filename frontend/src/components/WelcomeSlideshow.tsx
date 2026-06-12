@@ -27,7 +27,7 @@ const SLIDES: Slide[] = [
   {
     tag: 'Context',
     title: 'Peer Financial Context',
-    body: `Financial information is only meaningful in context. We show you how a nonprofit compares within its peer group—same mission type, similar size, same location. Context, not judgment.`,
+    body: `Financial information is only meaningful in context. We show you how a nonprofit compares within its peer group: same mission type, similar size, same location. Context, not judgment.`,
   },
   {
     tag: 'Trust',

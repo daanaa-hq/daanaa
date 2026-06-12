@@ -476,9 +476,19 @@ def _init_org_claims_table():
                 processor_auth   INTEGER DEFAULT 0,
                 created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
                 revoked_at       TEXT,
-                revoke_reason    TEXT
+                revoke_reason    TEXT,
+                phone            TEXT,
+                rep_title        TEXT,
+                attested_at      TEXT,
+                attestation_version TEXT
             )
         """)
+        # Migration for org_claims tables created before phone verification.
+        for col in ("phone TEXT", "rep_title TEXT", "attested_at TEXT", "attestation_version TEXT"):
+            try:
+                db.execute(f"ALTER TABLE org_claims ADD COLUMN {col}")
+            except sqlite3.OperationalError:
+                pass  # column already present
         db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_ein ON org_claims(ein)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_status ON org_claims(claim_status)")
         db.commit()
@@ -1753,74 +1763,253 @@ def admin_waitlist_delete(wid):
 
 # ── Claim flow ────────────────────────────────────────────────────────────────
 
+# Version tag for the attestation text the claimant agreed to. The full text of
+# each version is recorded in docs/CLAIM-ATTESTATIONS.md — bump this whenever
+# that text changes so every stored claim is traceable to the exact wording.
+CLAIM_ATTESTATION_VERSION = "2026-06-11.v1"
+
+
+def _send_daanaa_email(to_addr: str, subject: str, body: str,
+                       html: str | None = None, from_addr: str = "verify@daanaa.org"):
+    """Send platform email via the email_agent Gmail token, in a daemon thread
+    so callers never block or fail on mail problems. All communication stays
+    within daanaa.org (founder directive 2026-06-11): from_addr must be one of
+    the 9 live send-as aliases. `body` is the plain-text part; pass `html` for
+    a rich alternative (org-facing mail should always include one)."""
+    def _send():
+        try:
+            import base64
+            from email.message import EmailMessage
+            from scripts.email_agent.oauth import gmail_service
+            msg = EmailMessage()
+            msg["From"] = from_addr
+            msg["To"] = to_addr
+            msg["Subject"] = subject
+            msg.set_content(body)
+            if html:
+                msg.add_alternative(html, subtype="html")
+            raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+            gmail_service().users().messages().send(userId="me", body={"raw": raw}).execute()
+        except Exception as e:
+            app.logger.error(f"daanaa email to {to_addr} failed: {e}")
+
+    threading.Thread(target=_send, daemon=True).start()
+
+
+def _format_phone(phone: str) -> str:
+    """Render a US phone number as (XXX) XXX-XXXX for display; anything that
+    isn't 10 digits (or 11 with a leading 1) passes through as entered."""
+    digits = ''.join(c for c in phone if c.isdigit())
+    if len(digits) == 11 and digits.startswith('1'):
+        digits = digits[1:]
+    if len(digits) == 10:
+        return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
+    return phone
+
+
+def _notify_admin_new_claim(ein: str, org_name: str, email: str, phone: str, title: str, pin: str):
+    """Email the admin when a claim comes in. Phase 1 verification is a phone
+    call, so the email carries everything needed to make it — including the
+    PIN to read out once identity is confirmed."""
+    to_addr = os.environ.get("DAANAA_ADMIN_NOTIFY_EMAIL", "orgs@daanaa.org")
+    _send_daanaa_email(
+        to_addr,
+        f"[Daanaa claim] {org_name} ({ein})",
+        f"New page claim — call to verify, then read them the PIN.\n\n"
+        f"Organization: {org_name}\n"
+        f"EIN:          {ein}\n"
+        f"Contact:      {email}\n"
+        f"Phone:        {_format_phone(phone)}\n"
+        f"Title/role:   {title}\n"
+        f"PIN:          {pin}  (expires in 30 days)\n\n"
+        f"Org page:     https://daanaa.org/org/{ein}\n"
+        f"They enter the PIN at https://daanaa.org/claim/verify?ein={ein}&email={email}\n",
+    )
+
+
+def _claim_received_email_body(org_name: str, ein: str, phone: str) -> str:
+    """Plain-text part of the confirmation the claiming org receives. No PIN
+    here — the PIN is given on the verification call, which is the whole point
+    of the call. Copy rules: human voice, no hyphens, no dashes."""
+    return (
+        f"Hello,\n\n"
+        f"Thank you for claiming {org_name} (EIN {ein}) on Daanaa.\n\n"
+        f"Here is what happens next. A member of our team will call you at "
+        f"{_format_phone(phone)} within a few business days to confirm that you represent the "
+        f"organization. On that call we will give you a 6 digit PIN.\n\n"
+        f"When you have your PIN, enter it at https://daanaa.org/claim/verify?ein={ein} "
+        f"and your profile editor opens up. The PIN stays good for 30 days.\n\n"
+        f"A couple of things worth knowing. Daanaa is a free public directory of "
+        f"nonprofits built from IRS records. We never charge organizations and we "
+        f"never handle donations. Your phone number and email are used only for "
+        f"this verification and neither is shown publicly.\n\n"
+        f"If you did not submit this claim, reply to this email and we will cancel it.\n\n"
+        f"Warmly,\n"
+        f"The Daanaa team\n"
+        f"verify@daanaa.org · daanaa.org\n"
+    )
+
+
+def _claim_received_email_html(org_name: str, ein: str, phone: str) -> str:
+    """Rich HTML part. Brand: deep navy, soft gold, Georgia serif, hosted logo.
+    Inline styles only — email clients strip everything else."""
+    verify_url = f"https://daanaa.org/claim/verify?ein={ein}"
+    gold, navy, grey = "#C9A96E", "#1a1a2e", "#5a6472"
+    step_style = (
+        f"display:inline-block;width:26px;height:26px;line-height:26px;border-radius:50%;"
+        f"background:{gold};color:{navy};font-weight:bold;text-align:center;"
+        f"font-size:14px;margin-right:12px;"
+    )
+    steps = [
+        f"A member of our team calls you at <strong>{_format_phone(phone)}</strong> within a few business days.",
+        "On the call we confirm your role and give you a 6 digit PIN.",
+        f"You enter the PIN at <a href=\"{verify_url}\" style=\"color:{gold};\">daanaa.org/claim/verify</a> and your profile editor opens up.",
+    ]
+    steps_html = "".join(
+        f"<tr><td style='vertical-align:top;padding:8px 0;'><span style='{step_style}'>{i}</span></td>"
+        f"<td style='vertical-align:middle;padding:8px 0;font-size:15px;line-height:1.6;color:{navy};'>{s}</td></tr>"
+        for i, s in enumerate(steps, 1)
+    )
+    return f"""<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#F4EFE4;font-family:Georgia,'Times New Roman',serif;">
+  <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
+    <div style="background:{navy};border-radius:16px 16px 0 0;text-align:center;padding:32px 24px 24px;">
+      <img src="https://daanaa.org/logo.png" alt="Daanaa" width="72" height="72" style="display:block;margin:0 auto 12px;">
+      <div style="color:{gold};font-size:26px;letter-spacing:0.06em;">Daanaa</div>
+      <div style="color:#b8bfc9;font-size:12px;margin-top:4px;">A public directory of nonprofits, built from IRS records</div>
+    </div>
+    <div style="height:3px;background:linear-gradient(90deg,transparent,{gold} 30%,#D4B87A 50%,{gold} 70%,transparent);"></div>
+    <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:36px 36px 28px;">
+      <h1 style="font-size:22px;font-style:italic;color:{navy};margin:0 0 6px;">We received your claim</h1>
+      <p style="font-size:16px;color:{navy};margin:0 0 4px;"><strong>{org_name}</strong></p>
+      <p style="font-size:13px;color:{grey};margin:0 0 24px;">EIN {ein}</p>
+      <p style="font-size:15px;line-height:1.65;color:{navy};margin:0 0 20px;">
+        Hello, and thank you for claiming your page. Here is what happens next.
+      </p>
+      <table style="border-collapse:collapse;margin:0 0 24px;">{steps_html}</table>
+      <p style="font-size:13px;line-height:1.65;color:{grey};margin:0 0 8px;">
+        The PIN stays good for 30 days. Your phone number and email are used only
+        for this verification and neither is shown publicly.
+      </p>
+      <p style="font-size:13px;line-height:1.65;color:{grey};margin:0 0 24px;">
+        Daanaa is free for organizations. We never charge for a listing or a claim
+        and we never handle donations.
+      </p>
+      <p style="font-size:14px;line-height:1.6;color:{navy};margin:0;">
+        Warmly,<br>The Daanaa team
+      </p>
+    </div>
+    <p style="text-align:center;font-size:11px;color:{grey};margin:20px 0 0;line-height:1.6;">
+      You are receiving this because a claim for {org_name} was submitted at daanaa.org.<br>
+      If that was not you, reply to this email and we will cancel it.<br>
+      <a href="https://daanaa.org" style="color:{gold};">daanaa.org</a> · verify@daanaa.org
+    </p>
+  </div>
+</body></html>"""
+
+
+def _send_claim_received_email(ein: str, org_name: str, email: str, phone: str):
+    _send_daanaa_email(email, f"We received your claim for {org_name}",
+                       _claim_received_email_body(org_name, ein, phone),
+                       html=_claim_received_email_html(org_name, ein, phone))
+
+
 @app.route('/api/claim/start', methods=['POST'])
 @limiter.limit("3 per hour")
 def claim_start():
-    data = request.get_json(silent=True) or {}
+    data  = request.get_json(silent=True) or {}
     ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
     email = (data.get('email') or '').strip()[:254]
+    phone = (data.get('phone') or '').strip()[:30]
+    title = (data.get('title') or '').strip()[:100]
 
     if not ein or not email or '@' not in email:
         return jsonify({"error": "EIN and valid email are required"}), 400
+    if len(''.join(c for c in phone if c.isdigit())) < 10:
+        return jsonify({"error": "A valid phone number is required. We call it to verify your claim."}), 400
+    if not title:
+        return jsonify({"error": "Your title or role at the organization is required"}), 400
+    # Attestations are a legal requirement — enforced here, not just by the form
+    if not (data.get('attested_authority') is True and data.get('attested_legal') is True):
+        return jsonify({"error": "Both attestations are required to submit a claim"}), 400
 
     db  = get_db()
     row = db.execute(
-        "SELECT EIN, organization_name, address, CITY, STATE, zipcode FROM registry_enriched WHERE EIN = ?",
+        "SELECT EIN, organization_name, street_address, CITY, STATE, zipcode FROM registry_enriched WHERE EIN = ?",
         (ein,)
     ).fetchone()
     if not row:
         return jsonify({"error": "Organization not found"}), 404
 
     org_name    = row['organization_name']
-    irs_address = f"{row['address'] or ''}, {row['CITY'] or ''}, {row['STATE'] or ''} {row['zipcode'] or ''}".strip(", ")
+    street      = row['street_address'] or ''
+    irs_address = f"{street}, {row['CITY'] or ''}, {row['STATE'] or ''} {row['zipcode'] or ''}".strip(", ")
 
-    if not row['address']:
-        return jsonify({"error": "No mailing address on file for this organization"}), 422
-
-    # Block if already active/letter_sent in last 30 days
     existing = db.execute(
-        "SELECT claim_status, created_at FROM org_claims WHERE ein = ?", (ein,)
+        "SELECT claim_status, revoked_at FROM org_claims WHERE ein = ?", (ein,)
     ).fetchone()
     if existing and existing['claim_status'] in ('active', 'verified'):
         return jsonify({"error": "This organization has already been claimed"}), 409
     if existing and existing['claim_status'] == 'letter_sent':
         return jsonify({"error": "A verification letter was already sent. Check your mail or contact orgs@daanaa.org to resend."}), 409
+    if existing and existing['claim_status'] == 'revoked':
+        # Legal review requirement: a revoked claim sits out 45 days before
+        # the EIN can be claimed again.
+        in_cooldown = db.execute(
+            "SELECT datetime('now') < datetime(?, '+45 days') AS cooling",
+            (existing['revoked_at'],)
+        ).fetchone()
+        if existing['revoked_at'] and in_cooldown['cooling']:
+            return jsonify({"error": "A previous claim on this organization was revoked. "
+                                     "New claims are accepted 45 days after revocation — "
+                                     "contact orgs@daanaa.org if you believe this is an error."}), 403
 
     pin            = str(secrets.randbelow(900000) + 100000)
     pin_expires_at = db.execute("SELECT datetime('now', '+30 days')").fetchone()[0]
 
     db.execute("""
-        INSERT INTO org_claims (ein, email, irs_address, pin, pin_expires_at, claim_status)
-        VALUES (?, ?, ?, ?, ?, 'pending')
+        INSERT INTO org_claims (ein, email, irs_address, pin, pin_expires_at, claim_status,
+                                phone, rep_title, attested_at, attestation_version)
+        VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'), ?)
         ON CONFLICT(ein) DO UPDATE SET
             email=excluded.email, pin=excluded.pin,
             pin_expires_at=excluded.pin_expires_at,
-            claim_status='pending', letter_sent_at=NULL, lob_letter_id=NULL
-    """, (ein, email, irs_address, pin, pin_expires_at))
+            phone=excluded.phone, rep_title=excluded.rep_title,
+            attested_at=excluded.attested_at,
+            attestation_version=excluded.attestation_version,
+            claim_status='pending', letter_sent_at=NULL, lob_letter_id=NULL,
+            revoked_at=NULL, revoke_reason=NULL
+    """, (ein, email, irs_address, pin, pin_expires_at, phone, title, CLAIM_ATTESTATION_VERSION))
     db.commit()
 
-    # Send letter (Lob or log fallback)
-    letter_status = "log_only"
-    try:
-        import sys
-        sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent / 'scripts'))
-        from send_claim_letter import send_claim_letter
-        address = {'street': row['address'] or '', 'city': row['CITY'] or '',
-                   'state': row['STATE'] or '', 'zip': row['zipcode'] or ''}
-        letter_id = send_claim_letter(ein, org_name, address, pin)
-        if letter_id and not letter_id.startswith("log:"):
-            letter_status = "letter_sent"
-        db.execute(
-            "UPDATE org_claims SET claim_status=?, letter_sent_at=datetime('now'), lob_letter_id=? WHERE ein=?",
-            (letter_status, letter_id, ein)
-        )
-        db.commit()
-    except Exception as e:
-        app.logger.error(f"send_claim_letter failed for {ein}: {e}")
+    _notify_admin_new_claim(ein, org_name, email, phone, title, pin)
+    _send_claim_received_email(ein, org_name, email, phone)
+
+    # Phase 2 (postal verification via Lob) only runs once a Lob key is
+    # configured AND the org has a street address. Phase 1: the claim stays
+    # 'pending' and the admin verifies by phone.
+    claim_status = "pending"
+    if os.environ.get("LOB_API_KEY") and street:
+        try:
+            import sys
+            sys.path.insert(0, str(__import__('pathlib').Path(__file__).parent / 'scripts'))
+            from send_claim_letter import send_claim_letter
+            address = {'street': street, 'city': row['CITY'] or '',
+                       'state': row['STATE'] or '', 'zip': row['zipcode'] or ''}
+            letter_id = send_claim_letter(ein, org_name, address, pin)
+            if letter_id and not letter_id.startswith("log:"):
+                claim_status = "letter_sent"
+                db.execute(
+                    "UPDATE org_claims SET claim_status=?, letter_sent_at=datetime('now'), lob_letter_id=? WHERE ein=?",
+                    (claim_status, letter_id, ein)
+                )
+                db.commit()
+        except Exception as e:
+            app.logger.error(f"send_claim_letter failed for {ein}: {e}")
 
     # Friendly address preview (first line only for privacy)
-    preview = f"{row['address']}, {row['CITY']}, {row['STATE']}" if row['address'] else irs_address
-    return jsonify({"status": letter_status, "org_name": org_name, "address_preview": preview})
+    preview = f"{street}, {row['CITY']}, {row['STATE']}" if street else irs_address
+    return jsonify({"status": claim_status, "org_name": org_name, "address_preview": preview})
 
 
 @app.route('/api/claim/verify', methods=['POST'])
@@ -1859,7 +2048,7 @@ def claim_verify():
         "SELECT datetime('now') > ? as expired", (row['pin_expires_at'],)
     ).fetchone()
     if expired and expired['expired']:
-        return jsonify({"error": "PIN has expired. Please request a new letter."}), 410
+        return jsonify({"error": "PIN has expired. Please submit a new claim request at daanaa.org/for-nonprofits."}), 410
 
     db.execute(
         "UPDATE org_claims SET claim_status='verified', verified_at=datetime('now') WHERE ein=?",

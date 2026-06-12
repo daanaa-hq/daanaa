@@ -1,5 +1,10 @@
 # DNS Setup — daanaa.org
 
+Status (2026-06-11): Steps 1, 2, 4, 5 are live. **Step 3 (DKIM) is NOT done** —
+`google._domainkey.daanaa.org` is empty, so all mail sent as @daanaa.org fails
+DMARC and our own p=quarantine policy sends it to spam (observed with claim
+confirmation emails). Complete Step 3 before any org-facing email goes out.
+
 Current state (2026-06-01): daanaa.org resolves to 192.64.119.16 (registrar parking).
 Target: point to the Ryzen server + configure email authentication.
 

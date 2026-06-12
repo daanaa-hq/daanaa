@@ -185,3 +185,8 @@ probe the filter (use COALESCE/expression to force filter-first).
 **Symptom:** `git filter-repo --replace-text` died mid-run with "fatal: stream ends early" + a fast-import crash report; the failure was invisible at first because `| tail -15` masked the exit code.
 **Root cause:** filter-repo streams every blob through Python — three ~6.5GB FAISS blobs vs 12GB available RAM. Pipes return the LAST command's exit code; the crash looked like success.
 **Preventing rule:** For history scrubs in repos with multi-GB blobs, use `git filter-branch --index-filter` with `git update-index --cacheinfo` blob swaps — it never streams blob contents (502 commits in ~2 min). And never judge a long git command through a pipe; check `${PIPESTATUS[0]}` or run it bare.
+
+## 2026-06-11: claim_start referenced a column that never existed — schema drift between code and DB
+**Symptom:** /api/claim/start would 500 on every call: `SELECT ... address ... FROM registry_enriched` — no `address` column exists (only CITY/STATE/zipcode).
+**Root cause:** The endpoint was written against an assumed schema and shipped without a test that executes its SQL; CLAUDE.md also listed an `irs_bmf` table that doesn't exist, so docs reinforced the wrong mental model.
+**Rule:** Any endpoint's SQL must run in a test against a fixture built from the real schema (tests/test_claim_flow.py is the pattern: temp DB + monkeypatched DB_PATH). When CLAUDE.md names a table, verify with PRAGMA before trusting it — fix stale docs on sight.

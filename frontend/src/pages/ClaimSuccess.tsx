@@ -40,7 +40,7 @@ export default function ClaimSuccess() {
             Return home
           </Link>
           <p className="text-center font-body text-[12px] text-muted-cream pt-2">
-            Questions? <a href="mailto:support@daanaa.org" className="text-soft-gold hover:underline">support@daanaa.org</a>
+            Questions? <a href="mailto:orgs@daanaa.org" className="text-soft-gold hover:underline">orgs@daanaa.org</a>
           </p>
         </div>
       </div>

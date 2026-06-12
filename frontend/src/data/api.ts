@@ -70,7 +70,7 @@ export interface ApiOrganization {
   employee_count: number | null;      // W-3 form employee count (NCCS)
   ruling_date: string | null;         // IRS ruling date for tax-exempt status
   zipcode: string | null;
-  address: string | null;
+  street_address: string | null;
   activ1: string | null;              // NTEE activity code 1 (NCCS)
   activ2: string | null;
   activ3: string | null;

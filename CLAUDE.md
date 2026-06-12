@@ -137,8 +137,9 @@ Key columns of note (beyond the obvious name/location fields):
 | `is_hidden_gem` | Boolean flag for small but high-performing orgs |
 | `donate_url` / `donate_confidence` / `donate_url_status` | Verified donation link pipeline output |
 | `website` / `website_status` / `website_final_domain` | Website health check fields |
+| `street_address` | Backfilled from `data/bmf.csv` (95.7% coverage) by `scripts/backfill_street_addresses.py` |
 
-Other tables in `merit_registry.db`: `org_fts` (FTS5 search index), `org_embeddings` (vector store), `score_snapshots`, `scoring_runs`, `org_claims`, `waitlist`, `irs_bmf`.
+Other tables in `merit_registry.db`: `org_fts` (FTS5 search index), `org_embeddings` (vector store), `score_snapshots`, `scoring_runs`, `org_claims` (claim flow + versioned attestations — see `docs/CLAIM-ATTESTATIONS.md`), `waitlist`. (There is no `irs_bmf` table — the BMF lives at `data/bmf.csv`.)
 
 Secondary/legacy: `data/meritgiving.db`, `data/merit_state.db` — do not treat as authoritative.
 

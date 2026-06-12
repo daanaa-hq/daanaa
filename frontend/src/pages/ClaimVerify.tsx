@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { ClaimProgressBar } from '../components/ClaimProgressBar'
 
 export default function ClaimVerify() {
-  usePageMeta('Verify Claim', 'Enter the PIN from your verification email to claim your nonprofit profile.')
+  usePageMeta('Verify Claim', 'Enter the PIN we gave you over the phone to claim your nonprofit profile.')
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [pin, setPin] = useState('')
@@ -49,10 +49,11 @@ export default function ClaimVerify() {
         <ClaimProgressBar currentStep="verify" />
         <div className="text-center mb-8">
           <h1 className="font-display italic text-deep-navy mb-3" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
-            Check your email
+            Enter your PIN
           </h1>
           <p className="font-body text-[16px] text-cool-grey">
-            We sent a 6-digit PIN to <strong className="text-deep-navy">{email}</strong>
+            A member of the Daanaa team gives you a 6-digit PIN when we call to verify your claim.
+            Enter it below to finish.
           </p>
         </div>
         <form onSubmit={handleVerify} className="bg-white rounded-2xl shadow-sm border border-light-cream p-8">
@@ -83,9 +84,9 @@ export default function ClaimVerify() {
             {loading ? 'Verifying...' : 'Verify PIN'}
           </button>
           <p className="mt-5 font-body text-[13px] text-muted-cream text-center">
-            Didn't get it? Check spam or{' '}
+            Haven't heard from us yet? We call within a few business days, or{' '}
             <button type="button" onClick={() => navigate('/for-nonprofits')} className="text-soft-gold hover:underline">
-              try again
+              start over
             </button>
           </p>
         </form>

@@ -5,7 +5,7 @@ export interface ClaimProgressBarProps {
 }
 
 const STEPS = [
-  { key: 'email', label: 'Email' },
+  { key: 'email', label: 'Submit' },
   { key: 'verify', label: 'Verify PIN' },
   { key: 'edit', label: 'Edit Profile' },
   { key: 'success', label: 'Done' },
