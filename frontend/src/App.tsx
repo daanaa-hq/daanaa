@@ -21,17 +21,14 @@ const Methodology = lazy(() => import('./pages/Methodology2'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
-const Stewardship = lazy(() => import('./pages/Stewardship2'))
-const FAQ2 = lazy(() => import('./pages/FAQ2'))
-const About2 = lazy(() => import('./pages/About2'))
-const Guides2 = lazy(() => import('./pages/Guides2'))
+const Learn = lazy(() => import('./pages/Learn'))
+const About = lazy(() => import('./pages/About'))
+const Principles = lazy(() => import('./pages/Principles'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
 const ClaimSuccess = lazy(() => import('./pages/ClaimSuccess'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
-const Governance = lazy(() => import('./pages/Governance'))
-const WhyDaanaa = lazy(() => import('./pages/WhyDaanaa'))
 const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
 
 function PageLoader() {
@@ -58,18 +55,22 @@ export default function App() {
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/wallet" element={<Wallet />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
-            <Route path="/about" element={<About2 />} />
-            <Route path="/governance" element={<Governance />} />
-            <Route path="/why-daanaa-exists" element={<WhyDaanaa />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/principles" element={<Principles />} />
+            {/* Legacy routes for backward compatibility */}
+            <Route path="/governance" element={<Principles />} />
+            <Route path="/stewardship" element={<Principles />} />
+            <Route path="/why-daanaa-exists" element={<About />} />
             {/* <Route path="/giving-list" element={<GivingListPage />} /> */}
             {/* <Route path="/giving-list/review" element={<GivingReview />} /> */}
             {/* <Route path="/giving-list/confirmation" element={<GivingConfirmation />} /> */}
             <Route path="/tiers" element={<TiersPage />} />
             <Route path="/methodology" element={<Methodology />} />
-            <Route path="/stewardship" element={<Stewardship />} />
             <Route path="/sector-health" element={<SectorHealth />} />
-            <Route path="/guides" element={<Guides2 />} />
-            <Route path="/faq" element={<FAQ2 />} />
+            <Route path="/learn" element={<Learn />} />
+            {/* Legacy routes for backward compatibility */}
+            <Route path="/guides" element={<Learn />} />
+            <Route path="/faq" element={<Learn />} />
             <Route path="/feedback" element={<Feedback />} />
           </Route>
           <Route path="/the-invisible-97" element={<MeetInvisible />} />

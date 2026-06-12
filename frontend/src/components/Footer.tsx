@@ -40,8 +40,8 @@ export default function Footer() {
             </p>
             <ul className="space-y-1">
               {[
-                { label: 'Discover Organizations', to: '/directory' },
-                { label: 'Your Wallet', to: '/wallet' },
+                { label: 'Directory', to: '/directory' },
+                { label: 'Wallet', to: '/wallet' },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5">
@@ -77,10 +77,9 @@ export default function Footer() {
             </p>
             <ul className="space-y-1">
               {[
+                { label: 'Guides & Questions', to: '/learn' },
                 { label: 'Methodology', to: '/methodology' },
-                { label: 'Stewardship', to: '/stewardship' },
-                { label: 'Guides', to: '/guides' },
-                { label: 'FAQ', to: '/faq' },
+                { label: 'Principles', to: '/principles' },
               ].map(({ label, to }) => (
                 <li key={label}>
                   <Link to={to} className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors block py-1.5">
@@ -98,7 +97,7 @@ export default function Footer() {
             </p>
             <ul className="space-y-1">
               {[
-                { label: 'About Daanaa', to: '/about' },
+                { label: 'About Us', to: '/about' },
                 { label: 'Privacy', to: '/legal#privacy' },
                 { label: 'Terms', to: '/legal#terms' },
                 { label: 'Contact', to: '/feedback' },
