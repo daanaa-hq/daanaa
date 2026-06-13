@@ -27,11 +27,10 @@ try:
     missions = conn.execute("SELECT COUNT(*) FROM registry_enriched WHERE mission IS NOT NULL AND mission != ''").fetchone()[0]
     ai_web   = conn.execute("SELECT COUNT(*) FROM registry_enriched WHERE mission_source='ai_web'").fetchone()[0]
     donate   = conn.execute("SELECT COUNT(*) FROM registry_enriched WHERE donate_url IS NOT NULL AND donate_confidence >= 90").fetchone()[0]
-    q_pend   = conn.execute("SELECT COUNT(*) FROM donate_work_queue WHERE completed_at IS NULL").fetchone()[0]
+    evidence = conn.execute("SELECT COUNT(DISTINCT ein) FROM donation_link_evidence").fetchone()[0]
     conn.close()
     lines.append(f"Missions   : {missions:,} / {total:,} ({missions/total*100:.1f}%)  ai_web={ai_web:,}")
-    lines.append(f"Donate URLs: {donate:,} verified (≥90 conf)")
-    lines.append(f"Link queue : {q_pend:,} pending")
+    lines.append(f"Donate URLs: {donate:,} verified (≥90 conf)  evidence={evidence:,} candidates")
 except Exception as e:
     lines.append(f"DB error: {e}")
 
