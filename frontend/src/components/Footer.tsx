@@ -143,6 +143,24 @@ export default function Footer() {
 
       {/* Bottom Row */}
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-6 border-t border-navy-mid flex flex-col gap-4">
+        {import.meta.env.VITE_SUPPORT_URL && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream">
+              Daanaa is free for everyone. Support the work:
+            </span>
+            <a
+              href={import.meta.env.VITE_SUPPORT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block font-body text-[13px] font-medium text-pale-gold border border-pale-gold/40 px-4 py-1.5 rounded-full hover:bg-pale-gold/10 transition-colors"
+            >
+              Support Daanaa
+            </a>
+            <span className="font-body text-[11px] text-cool-grey">
+              Not tax-deductible. Funds EcoMargins LLC, which operates Daanaa.
+            </span>
+          </div>
+        )}
         <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
           Daanaa.org is an independent nonprofit discovery platform. It is not affiliated with the IRS, the federal government, or any nonprofit rating agency.
         </p>

@@ -153,6 +153,26 @@ export default function About() {
             </div>
           </div>
 
+          {import.meta.env.VITE_SUPPORT_URL && (
+            <div className="mt-10 pt-8 border-t border-light-grey">
+              <h2 className="font-display text-deep-navy text-[20px] font-semibold mb-3">Support the work</h2>
+              <p className="font-body text-[15px] text-cool-grey mb-4 max-w-xl">
+                Daanaa is free for everyone. If you find it useful, you can support the team behind it. Contributions go to EcoMargins LLC, which operates Daanaa.
+              </p>
+              <a
+                href={import.meta.env.VITE_SUPPORT_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block font-body text-[14px] font-semibold bg-soft-gold text-deep-navy px-6 py-2.5 rounded-lg hover:bg-bright-gold transition-colors"
+              >
+                Support Daanaa
+              </a>
+              <p className="mt-3 font-body text-[12px] text-cool-grey">
+                Not tax-deductible. This supports EcoMargins LLC, not a nonprofit.
+              </p>
+            </div>
+          )}
+
           <div className="mt-10 pt-8 border-t border-light-grey text-center">
             <p className="font-body text-[14px] text-cool-grey">
               Questions? <Link to="/feedback" className="text-soft-gold hover:text-bright-gold font-semibold">Get in touch</Link>.
