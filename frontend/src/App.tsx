@@ -29,6 +29,8 @@ const Principles = lazy(() => import('./pages/Principles'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
 const ClaimSuccess = lazy(() => import('./pages/ClaimSuccess'))
+const ForVendors = lazy(() => import('./pages/ForVendors'))
+const GuildReferral = lazy(() => import('./pages/GuildReferral'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
 const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
@@ -76,6 +78,8 @@ export default function App() {
             <Route path="/faq" element={<Learn />} />
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/partners" element={<Partners />} />
+            <Route path="/for-vendors" element={<ForVendors />} />
+            <Route path="/guild/:slug" element={<GuildReferral />} />
           </Route>
           <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />

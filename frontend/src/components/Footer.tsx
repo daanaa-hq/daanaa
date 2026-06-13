@@ -55,11 +55,12 @@ export default function Footer() {
           {/* For Nonprofits */}
           <div>
             <p className="font-body text-[12px] font-medium tracking-[0.08em] text-pale-gold uppercase mb-3">
-              For Nonprofits
+              Get Involved
             </p>
             <ul className="space-y-1">
               {[
                 { label: 'Claim your page', to: '/for-nonprofits' },
+                { label: 'Join as a vendor', to: '/for-vendors' },
                 { label: 'Partner with us', to: '/partners' },
               ].map(({ label, to }) => (
                 <li key={label}>
