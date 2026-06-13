@@ -24,36 +24,44 @@ def log(msg):
 def phase1_dedupe(conn):
     log("=== PHASE 1: DEDUPE registry_enriched ===")
     c = conn.cursor()
-    
-    # Count before
+
     c.execute("SELECT COUNT(*) FROM registry_enriched")
-    before = c.fetchone()[0]
-    log(f"Before dedupe: {before:,} rows")
-    
-    # Create deduped table: keep highest revenue per EIN, tiebreak by highest percentile
-    c.execute("DROP TABLE IF EXISTS registry_deduped")
+    total = c.fetchone()[0]
+    log(f"Total rows: {total:,}")
+
+    # EIN has a UNIQUE constraint so true duplicates cannot accumulate via normal
+    # upserts. Check fast; skip the expensive table-swap if nothing to do.
     c.execute("""
-        CREATE TABLE registry_deduped AS
-        SELECT * FROM registry_enriched re1
-        WHERE re1.rowid = (
-            SELECT re2.rowid FROM registry_enriched re2
-            WHERE re2.EIN = re1.EIN
-            ORDER BY re2.total_revenue DESC, re2.ntee1_percentile DESC
-            LIMIT 1
+        SELECT COUNT(*) FROM (
+            SELECT EIN FROM registry_enriched GROUP BY EIN HAVING COUNT(*) > 1
         )
     """)
-    
-    c.execute("SELECT COUNT(*) FROM registry_deduped")
-    after = c.fetchone()[0]
-    dups = before - after
-    log(f"After dedupe: {after:,} rows | Removed {dups:,} duplicates")
-    
-    # Swap tables
-    c.execute("DROP TABLE registry_enriched")
-    c.execute("ALTER TABLE registry_deduped RENAME TO registry_enriched")
+    dup_eins = c.fetchone()[0]
+
+    if dup_eins == 0:
+        log("Phase 1 skipped: no duplicate EINs found")
+        return total
+
+    log(f"Found {dup_eins:,} EINs with duplicates — removing lower-revenue rows")
+    # Delete duplicate rowids, keeping the one with highest revenue per EIN.
+    # Safe in-place DELETE; never drops the main table.
+    c.execute("""
+        DELETE FROM registry_enriched
+        WHERE rowid NOT IN (
+            SELECT MIN(rowid) FROM (
+                SELECT rowid, EIN,
+                       ROW_NUMBER() OVER (PARTITION BY EIN
+                                          ORDER BY total_revenue DESC,
+                                                   ntee1_percentile DESC) AS rn
+                FROM registry_enriched
+            ) WHERE rn = 1
+        )
+    """)
+    removed = c.rowcount
     conn.commit()
-    log("Phase 1 complete: registry_enriched is now deduped")
-    return after
+    log(f"Phase 1 complete: removed {removed:,} duplicate rows")
+    c.execute("SELECT COUNT(*) FROM registry_enriched")
+    return c.fetchone()[0]
 
 def phase2_merge_990s(conn):
     log("=== PHASE 2: MERGE IRS 990 DOWNLOADS ===")
@@ -234,41 +242,9 @@ def phase3_recalc_percentiles(conn):
     log(f"Recalculated percentiles for {len(percentile_updates):,} orgs across {len(ntee_groups)} NTEE categories")
 
 def phase4_patch_api():
-    log("=== PHASE 4: PATCH API TO USE registry_enriched ===")
-    
-    api_files = [
-        os.path.expanduser("~/meritgiving/app.py"),
-        os.path.expanduser("~/meritgiving/merit_app.py"),
-    ]
-    
-    # Also search for any other .py files that query 'registry'
-    for root, dirs, files in os.walk(os.path.expanduser("~/meritgiving")):
-        for f in files:
-            if f.endswith('.py') and f not in ['overnight_sync.py']:
-                api_files.append(os.path.join(root, f))
-    
-    api_files = list(dict.fromkeys(api_files))  # dedupe preserve order
-    
-    patched = 0
-    for fpath in api_files:
-        if not os.path.exists(fpath):
-            continue
-        with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
-            content = f.read()
-        
-        original = content
-        # Replace 'FROM registry' and 'INTO registry' but not 'registry_enriched'
-        content = re.sub(r'FROM\s+registry\b(?!\w)', 'FROM registry_enriched', content, flags=re.IGNORECASE)
-        content = re.sub(r'INTO\s+registry\b(?!\w)', 'INTO registry_enriched', content, flags=re.IGNORECASE)
-        content = re.sub(r'TABLE\s+registry\b(?!\w)', 'TABLE registry_enriched', content, flags=re.IGNORECASE)
-        
-        if content != original:
-            with open(fpath, 'w', encoding='utf-8') as f:
-                f.write(content)
-            log(f"Patched: {fpath}")
-            patched += 1
-    
-    log(f"Phase 4 complete: Patched {patched} API files")
+    # Legacy phase: patched app.py / merit_app.py which no longer exist.
+    # daanaa_api.py already queries registry_enriched directly; nothing to patch.
+    log("=== PHASE 4: PATCH API — skipped (daanaa_api.py needs no patching) ===")
 
 def main():
     log("=" * 60)

@@ -92,6 +92,14 @@ def get_search_volume_24h(db, keyword) -> int:
 
 def detect_surges(db) -> list:
     """Detect keyword surges above threshold."""
+    # search_events is populated by the API's search logging middleware.
+    # If the table doesn't exist yet, there's nothing to detect.
+    has_table = db.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='search_events'"
+    ).fetchone()
+    if not has_table:
+        return []
+
     surges = []
 
     for event_name, config in EVENT_RULES.items():
