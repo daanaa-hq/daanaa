@@ -12,7 +12,6 @@ import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
-import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs } from '../data/api'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
@@ -298,7 +297,6 @@ export default function OrganizationDetail() {
   const [showVolunteer, setShowVolunteer] = useState(false)
   const [showResources, setShowResources] = useState(false)
   const { isInList, items: givingItems, addItem, removeItem } = useGivingList()
-  const showV5Beta = useFeatureFlag('v5_peer_taxonomy', 1)
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
     () => getOrganization(id || ''),
@@ -825,8 +823,9 @@ export default function OrganizationDetail() {
             </div>
           )}
 
-          {/* v5.0 Peer-based Financial Context (Beta) — 1% of users */}
-          {apiOrg! && showV5Beta && (
+          {/* v5.0 Peer-based Financial Context — shown whenever the org has a
+              peer-based assessment of its own. */}
+          {apiOrg! && apiOrg!.v5_context && (
             <div className="mb-8">
               <V5Context org={apiOrg!} />
             </div>

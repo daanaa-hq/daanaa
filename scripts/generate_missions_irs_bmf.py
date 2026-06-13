@@ -57,7 +57,7 @@ Write 1-2 sentence mission descriptions. Use org NAME first, then sector and loc
 - Start with what they do, not what they are.
 - Present tense, active voice.
 - No flowery language ("dedicated to", "strives to", "passionate about").
-- Use revenue/size context if available.
+- Use size context to gauge scale (local vs. national) but NEVER quote dollar amounts or revenue figures in the output.
 
 Examples:
 - Meals on Wheels: "Delivers hot meals and support to homebound seniors across the region."

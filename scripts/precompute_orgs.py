@@ -26,9 +26,10 @@ except ImportError:
 # not the live API) can show it. Lookup is a cached dict read — cheap per org.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
-    from enrich_api_responses import get_cohort_context
+    from enrich_api_responses import get_cohort_context, build_v5_context
 except Exception:
     get_cohort_context = None
+    build_v5_context = None
 
 DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
 _OUT = os.environ.get("PRECOMPUTE_OUT", "precompute_output")
@@ -85,12 +86,27 @@ def org_to_dict(row):
         'activ2': row[38],
         'activ3': row[39],
     }
+    # v5.0 peer-based financial context. Built from the org's own v5 fields
+    # (archetype=row[40], labels/band/score/health/peer at row[41..47],
+    # months_of_reserve=row[24]). build_v5_context returns None when there is no
+    # archetype, so scored orgs get the card and unscored orgs don't.
+    v5 = None
+    if build_v5_context and row[40] is not None:
+        try:
+            v5 = build_v5_context(
+                row[40], row[41], row[42], row[43],
+                row[44], row[45], row[46], row[47], row[24],
+            )
+        except Exception:
+            v5 = None
+    d['v5_context'] = v5
+
     # Cause-cohort context: only when this org has NO financial assessment of
-    # its own (no v5 archetype at row[40], no v4 financial_health at row[23]),
-    # so it fills a genuinely blank financial section and never competes with a
-    # real score (Stewardship P3/P4). NTEE1=row[2], NTEECC=row[3].
+    # its own (no v5_context above, no v4 financial_health at row[23]), so it
+    # fills a genuinely blank financial section and never competes with a real
+    # score (Stewardship P3/P4). NTEE1=row[2], NTEECC=row[3].
     cohort = None
-    if get_cohort_context and row[40] is None and row[23] is None:
+    if get_cohort_context and v5 is None and row[23] is None:
         try:
             cohort = get_cohort_context(row[3], row[2])
         except Exception:
@@ -134,7 +150,10 @@ def main():
             ruling_date, NULL as nccs_year, mission, mission_source, website, website_status,
             cause_tags,
             NULL as activ1, NULL as activ2, NULL as activ3,
-            merit_archetype_v5
+            merit_archetype_v5,
+            merit_archetype_v5_label, merit_band_v5, merit_band_v5_label,
+            merit_score_v5, merit_health_signal_v5, merit_peer_group_v5,
+            merit_peer_count_v5
         FROM registry_enriched
         WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN

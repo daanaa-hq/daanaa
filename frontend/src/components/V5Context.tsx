@@ -1,5 +1,4 @@
 import type { ApiOrganization } from '../data/api'
-import V5FeedbackForm from './V5FeedbackForm'
 
 interface V5ContextData {
   archetype: {
@@ -53,7 +52,7 @@ export default function V5Context({ org }: V5ContextProps) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="font-body text-xs tracking-widest uppercase font-semibold opacity-70">
-              Financial Context (Beta)
+              Financial Context
             </h3>
             <p className={`font-body text-lg font-semibold mt-2 ${colors.text}`}>
               {v5.archetype.label}
@@ -116,17 +115,13 @@ export default function V5Context({ org }: V5ContextProps) {
           {v5.donor_explanation}
         </p>
 
-        {/* Beta note */}
+        {/* Method note — honest disclosure of what this is and isn't (P3) */}
         <div className="pt-3 border-t border-current/20">
           <p className="text-xs opacity-70 italic">
-            This is a new peer-based financial comparison system. We're testing it with a small group and would appreciate your feedback.
+            This compares the organization to financially similar peers, not to all
+            nonprofits. It is context from public IRS data, not a rating.
           </p>
         </div>
-      </div>
-
-      {/* Feedback form */}
-      <div className="mt-6">
-        <V5FeedbackForm org={org} archetype={v5.archetype.label} />
       </div>
     </div>
   )

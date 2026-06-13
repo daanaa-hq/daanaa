@@ -123,14 +123,24 @@ def get_v5_context(ein: str) -> dict | None:
     if not row:
         return None
 
-    (archetype_key, archetype_label, band_key, band_label,
-     score, health_signal, peer_group, peer_count, reserves_mo) = row
+    return build_v5_context(*row)
 
-    # Get benchmarks
+
+def build_v5_context(archetype_key, archetype_label, band_key, band_label,
+                     score, health_signal, peer_group, peer_count, reserves_mo):
+    """Pure builder: assemble the v5_context dict from already-fetched fields.
+
+    No DB access — so it can be called per-row during precompute over the full
+    registry without opening a connection per org. `get_v5_context` (single-EIN
+    live lookup) and `precompute_orgs` (bulk static export) share this so the
+    two surfaces can never drift. Returns None if the org has no archetype.
+    """
+    if not archetype_key:
+        return None
+
     bench = BENCHMARKS.get((archetype_key, band_key), {})
 
-    # Build response
-    context = {
+    return {
         'archetype': {
             'key': archetype_key,
             'label': archetype_label,
@@ -144,7 +154,7 @@ def get_v5_context(ein: str) -> dict | None:
             'org_count': peer_count,
         },
         'score': {
-            'percentile': int(score),
+            'percentile': int(score) if score is not None else 0,
             'health_signal': health_signal,
         },
         'benchmarks': {
@@ -161,8 +171,6 @@ def get_v5_context(ein: str) -> dict | None:
             reserves_mo, bench.get('reserves_p50', 0), peer_count
         ),
     }
-
-    return context
 
 def generate_donor_copy(archetype: str, band: str, health: str,
                         reserves_mo: float, p50: float, peer_count: int) -> str:
