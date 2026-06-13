@@ -1043,7 +1043,7 @@ def get_organization(ein):
     # of our own for this org, show the *typical* financial shape of its NTEE
     # cause-cohort (drawn from scored orgs) — framed as "about this cause area,
     # not this org" (Stewardship P3/P4). Never overrides real v5_context.
-    if not org.get('v5_context'):
+    if not org.get('v5_context') and not org.get('financial_health'):
         try:
             from scripts.enrich_api_responses import get_cohort_context
             org['cohort_context'] = get_cohort_context(

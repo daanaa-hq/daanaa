@@ -21,6 +21,15 @@ except ImportError:
     HAS_FAISS = False
     print("WARNING: faiss not installed — similar_orgs will be empty")
 
+# Cause-cohort context for orgs with no financial assessment of their own.
+# Baked into the static org JSON so the droplet (which serves precompute files,
+# not the live API) can show it. Lookup is a cached dict read — cheap per org.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from enrich_api_responses import get_cohort_context
+except Exception:
+    get_cohort_context = None
+
 DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
 _OUT = os.environ.get("PRECOMPUTE_OUT", "precompute_output")
 FAISS_INDEX_PATH = os.path.join(_OUT, "faiss_index.bin")
@@ -31,7 +40,7 @@ BATCH_SIZE = 10000   # Process N orgs per FAISS batch search
 
 
 def org_to_dict(row):
-    return {
+    d = {
         'EIN': row[0],
         'organization_name': row[1],
         'NTEE1': row[2],
@@ -76,6 +85,18 @@ def org_to_dict(row):
         'activ2': row[38],
         'activ3': row[39],
     }
+    # Cause-cohort context: only when this org has NO financial assessment of
+    # its own (no v5 archetype at row[40], no v4 financial_health at row[23]),
+    # so it fills a genuinely blank financial section and never competes with a
+    # real score (Stewardship P3/P4). NTEE1=row[2], NTEECC=row[3].
+    cohort = None
+    if get_cohort_context and row[40] is None and row[23] is None:
+        try:
+            cohort = get_cohort_context(row[3], row[2])
+        except Exception:
+            cohort = None
+    d['cohort_context'] = cohort
+    return d
 
 
 def main():
@@ -112,7 +133,8 @@ def main():
             total_expenses, total_liabilities, employee_count, program_expense_pct,
             ruling_date, NULL as nccs_year, mission, mission_source, website, website_status,
             cause_tags,
-            NULL as activ1, NULL as activ2, NULL as activ3
+            NULL as activ1, NULL as activ2, NULL as activ3,
+            merit_archetype_v5
         FROM registry_enriched
         WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN
