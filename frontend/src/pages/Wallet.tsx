@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useWallet, SPLIT_THRESHOLD } from '../hooks/useWallet'
+import { useAuth } from '../contexts/AuthContext'
+import { GoogleSignInButton, MagicLinkForm } from '../components/GoogleSignInButton'
 import { formatCurrency, formatEIN } from '../data/organizations'
 import { getOrganizations } from '../data/api'
 import type { ApiOrganization } from '../data/api'
@@ -302,8 +304,23 @@ export default function Wallet() {
   }, [prefillEin])
 
   const { savedOrgs, toggle } = useSavedOrgs()
-  const { donations, addDonationDirect, markAcknowledged, removeDonation, totalDonated, totalDonatedThisYear, uniqueEins, pendingLetters,
-          exportBackup, importBackup, backupOverdue, lastBackupAt } = useWallet()
+  const { user, loading: authLoading, signOut, getIdToken } = useAuth()
+  const { donations, volunteerHours: _vh, addDonationDirect, markAcknowledged, removeDonation,
+          totalDonated, totalDonatedThisYear, uniqueEins, pendingLetters,
+          exportBackup, importBackup, backupOverdue, lastBackupAt,
+          syncToServer, loadFromServer } = useWallet()
+  const [magicLinkSent, setMagicLinkSent] = useState(false)
+  const [showEmailForm, setShowEmailForm] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+
+  // On sign-in: merge remote records into local, then push merged back up
+  useEffect(() => {
+    if (!user) return
+    setSyncing(true)
+    loadFromServer(getIdToken)
+      .then(() => syncToServer(getIdToken))
+      .finally(() => setSyncing(false))
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
   const fileInputRef = useRef<HTMLInputElement>(null)
   const onSaveBackup = async () => {
     const pass = window.prompt('Set a password to encrypt this backup (recommended). Leave blank to save without a password. Keep the file private.')
@@ -407,26 +424,66 @@ export default function Wallet() {
             <StatCard label="Orgs supported" value={String(orgsSupported)} sub="donated + saved" />
           </div>
 
-          {/* Coming soon: account sync */}
-          <div className="rounded-xl border border-dashed border-soft-gold/30 bg-soft-gold/[0.04] p-5">
-            <div className="flex items-start gap-4">
-              <div className="shrink-0 w-9 h-9 rounded-full bg-soft-gold/10 flex items-center justify-center mt-0.5">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="font-body text-[14px] font-semibold text-deep-navy">Long-term record with a login</p>
-                  <span className="font-body text-[10px] font-semibold px-2 py-0.5 rounded-full bg-deep-navy/8 border border-deep-navy/15 text-cool-grey tracking-[0.04em]">Coming soon</span>
+          {/* Account sync */}
+          {!authLoading && !user && (
+            <div className="rounded-xl border border-dashed border-soft-gold/30 bg-soft-gold/[0.04] p-5">
+              <div className="flex items-start gap-4">
+                <div className="shrink-0 w-9 h-9 rounded-full bg-soft-gold/10 flex items-center justify-center mt-0.5">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
                 </div>
-                <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
-                  A private account will let you keep your giving record across devices and browsers — so nothing is lost if you clear your browser or switch phones. Still no tracking, no sharing. Your record stays yours.
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">Keep your record across devices</p>
+                  <p className="font-body text-[13px] text-cool-grey leading-[1.6] mb-4">
+                    Sign in to save your giving record — so it's there on every browser and device. No tracking, no sharing. Your record stays yours.
+                  </p>
+                  {!showEmailForm && !magicLinkSent && (
+                    <div className="flex flex-col gap-3">
+                      <GoogleSignInButton />
+                      <button
+                        onClick={() => setShowEmailForm(true)}
+                        className="font-body text-[13px] text-soft-gold hover:text-bright-gold underline underline-offset-2 transition-colors w-fit"
+                      >
+                        Use email link instead
+                      </button>
+                    </div>
+                  )}
+                  {showEmailForm && !magicLinkSent && (
+                    <MagicLinkForm onSent={() => { setMagicLinkSent(true); setShowEmailForm(false) }} />
+                  )}
+                  {magicLinkSent && (
+                    <p className="font-body text-[13px] text-cool-grey">
+                      Check your email for a sign-in link. It expires in 1 hour.
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {user && (
+            <div className="rounded-xl border border-light-grey bg-white p-5">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  {user.photoURL && <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />}
+                  <div>
+                    <p className="font-body text-[14px] font-medium text-deep-navy">{user.displayName || user.email}</p>
+                    <p className="font-body text-[12px] text-cool-grey">
+                      {syncing ? 'Syncing…' : 'Record synced across your devices'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="font-body text-[12px] text-cool-grey hover:text-deep-navy underline underline-offset-2 transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Backup — device-driven, no account, nothing leaves your device to us */}
           {donations.length > 0 && (
