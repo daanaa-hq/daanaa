@@ -589,6 +589,22 @@ def _init_analytics_tables():
     #   visit_counter    — a single hidden (admin-only) running tally; "sessions"
     #                      is incremented once per browser session via a
     #                      sessionStorage flag (no server-side identity at all).
+    # NOTE: wallet_sync is excluded here — it is created lazily on first use so
+    # startup never needs a write lock for it (pipeline writes can block for minutes).
+
+    # Fast read-only check: if all analytics tables exist, skip DDL entirely.
+    _REQUIRED = {"analytics_daily", "analytics_search", "visit_counter"}
+    try:
+        with sqlite3.connect(LIVE_DB_PATH, timeout=5) as _rc:
+            _existing = {
+                r[0] for r in
+                _rc.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+            }
+        if _REQUIRED.issubset(_existing):
+            return  # all tables present — nothing to write
+    except Exception:
+        pass  # fall through to the DDL path
+
     import time as _time
     for _attempt in range(30):
         try:
@@ -620,14 +636,6 @@ def _init_analytics_tables():
                 """)
                 db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('pageviews', 0)")
                 db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('sessions', 0)")
-                db.execute("""
-                    CREATE TABLE IF NOT EXISTS wallet_sync (
-                        firebase_uid   TEXT PRIMARY KEY,
-                        donations_json TEXT NOT NULL DEFAULT '[]',
-                        volunteer_json TEXT NOT NULL DEFAULT '[]',
-                        updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
-                    )
-                """)
                 db.commit()
             return
         except sqlite3.OperationalError as _e:
@@ -637,6 +645,18 @@ def _init_analytics_tables():
                 raise
 
 _init_analytics_tables()
+
+
+def _ensure_wallet_sync_table(db: sqlite3.Connection) -> None:
+    """Create wallet_sync lazily — called inside each wallet endpoint instead of at startup."""
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS wallet_sync (
+            firebase_uid   TEXT PRIMARY KEY,
+            donations_json TEXT NOT NULL DEFAULT '[]',
+            volunteer_json TEXT NOT NULL DEFAULT '[]',
+            updated_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 
 
 def _init_revoked_eins_table():
@@ -3179,6 +3199,7 @@ def wallet_get():
     uid = _require_firebase_user()
     with sqlite3.connect(DB_PATH) as db:
         db.row_factory = sqlite3.Row
+        _ensure_wallet_sync_table(db)
         row = db.execute(
             'SELECT donations_json, volunteer_json FROM wallet_sync WHERE firebase_uid = ?', (uid,)
         ).fetchone()
@@ -3199,9 +3220,10 @@ def wallet_put():
     if not isinstance(donations, list) or not isinstance(volunteer, list):
         return jsonify({'error': 'donations and volunteerHours must be arrays'}), 400
     with sqlite3.connect(DB_PATH) as db:
+        _ensure_wallet_sync_table(db)
         db.execute("""
             INSERT INTO wallet_sync (firebase_uid, donations_json, volunteer_json, updated_at)
-            VALUES (?, ?, ?, datetime('now'))
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(firebase_uid) DO UPDATE SET
                 donations_json = excluded.donations_json,
                 volunteer_json = excluded.volunteer_json,
@@ -3215,6 +3237,7 @@ def wallet_delete():
     """GDPR-compliant: wipe all stored wallet data for this user."""
     uid = _require_firebase_user()
     with sqlite3.connect(DB_PATH) as db:
+        _ensure_wallet_sync_table(db)
         db.execute('DELETE FROM wallet_sync WHERE firebase_uid = ?', (uid,))
     return jsonify({'ok': True})
 
