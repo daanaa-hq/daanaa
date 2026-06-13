@@ -9,10 +9,51 @@ Adds to any org dict:
 - donor_context_v5: Explanatory copy for donors
 """
 
+import json
 import sqlite3
 from pathlib import Path
 
 DB = Path.home() / "meritgiving/data/merit_registry.db"
+COHORT_PATH = Path.home() / "meritgiving/precompute_output/cohort_context.json"
+
+# Loaded once, cached in-process. Small file (a few hundred keys).
+_COHORT_CACHE = None
+
+
+def _load_cohort():
+    global _COHORT_CACHE
+    if _COHORT_CACHE is None:
+        try:
+            _COHORT_CACHE = json.loads(COHORT_PATH.read_text())
+        except Exception:
+            _COHORT_CACHE = {'by_nteecc': {}, 'by_ntee1': {}}
+    return _COHORT_CACHE
+
+
+def get_cohort_context(nteecc: str | None, ntee1: str | None) -> dict | None:
+    """
+    Cause-cohort financial context for an UNSCORED org.
+
+    Returns the *typical* financial shape of organizations in this org's cause
+    area, drawn from the scored population — explicitly NOT a statement about
+    this org's own finances. Caller must only attach this when the org has no
+    v5_context (no real financials of its own).
+
+    Prefers the narrow NTEE subcategory (NTEECC); falls back to the broad NTEE1
+    bucket; returns None if neither has a large enough sample (suppressed in the
+    precompute step). The returned dict carries `n` so the UI can always show
+    what the typical rests on, and `level` so the UI can word it honestly.
+    """
+    data = _load_cohort()
+    if nteecc:
+        b = data.get('by_nteecc', {}).get(nteecc)
+        if b:
+            return {**b, 'level': 'subcategory', 'ntee_code': nteecc}
+    if ntee1:
+        b = data.get('by_ntee1', {}).get(ntee1)
+        if b:
+            return {**b, 'level': 'broad', 'ntee_code': ntee1}
+    return None
 
 BENCHMARKS = {
     ('donation_funded', 'micro'): {

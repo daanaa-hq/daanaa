@@ -22,6 +22,7 @@ import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import FinancialContext from '../components/FinancialContext'
 import V5Context from '../components/V5Context'
+import CohortContext from '../components/CohortContext'
 
 // ---- Revenue Bar Chart ----
 function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
@@ -828,6 +829,16 @@ export default function OrganizationDetail() {
           {apiOrg! && showV5Beta && (
             <div className="mb-8">
               <V5Context org={apiOrg!} />
+            </div>
+          )}
+
+          {/* Cause-cohort context — UNSCORED orgs only. Backend sets
+              cohort_context only when the org has no v5_context of its own, so
+              this fills the blank financial section with honest cause-area
+              context (P3/P4) without ever competing with real scores. */}
+          {apiOrg! && apiOrg!.cohort_context && (
+            <div className="mb-8">
+              <CohortContext org={apiOrg!} />
             </div>
           )}
 

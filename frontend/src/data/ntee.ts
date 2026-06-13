@@ -334,3 +334,14 @@ export const NTEE_CATEGORIES: NteeMajor[] = [
 export function getNteeCategory(id: string): NteeMajor | undefined {
   return NTEE_CATEGORIES.find(c => c.id === id)
 }
+
+// Friendly cause-area label for an NTEE code. Accepts a full subcategory code
+// ("S21") or a broad major id ("S"). Prefers the specific subcategory name,
+// falls back to the major category name, then to the raw code.
+export function getNteeLabel(code: string | null | undefined): string {
+  if (!code) return 'this cause area'
+  const major = NTEE_CATEGORIES.find(c => c.id === code[0])
+  if (!major) return 'this cause area'
+  const sub = major.subs.find(s => s.code === code)
+  return sub ? sub.name : major.name
+}

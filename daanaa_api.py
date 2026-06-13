@@ -1039,6 +1039,20 @@ def get_organization(ein):
         app.logger.debug(f"v5 context enrichment failed for {ein_clean}: {e}")
         org['v5_context'] = None
 
+    # Cause-cohort context for UNSCORED orgs only. When we have no 990 financials
+    # of our own for this org, show the *typical* financial shape of its NTEE
+    # cause-cohort (drawn from scored orgs) — framed as "about this cause area,
+    # not this org" (Stewardship P3/P4). Never overrides real v5_context.
+    if not org.get('v5_context'):
+        try:
+            from scripts.enrich_api_responses import get_cohort_context
+            org['cohort_context'] = get_cohort_context(
+                org.get('NTEECC'), org.get('NTEE1')
+            )
+        except Exception as e:
+            app.logger.debug(f"cohort context enrichment failed for {ein_clean}: {e}")
+            org['cohort_context'] = None
+
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)

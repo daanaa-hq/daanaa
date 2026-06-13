@@ -188,6 +188,27 @@ def run_v4_scorer():
         log(f'⚠️  Scorer exception (non-fatal): {str(e)[:100]}')
 
 
+def run_cohort_context():
+    """Rebuild cause-cohort financial context for unscored orgs. Runs after
+    scoring so it aggregates fresh scores. Non-fatal if it errors."""
+    try:
+        import subprocess
+        log('Rebuilding cohort_context.json (cause-cohort context for unscored orgs)...')
+        script = Path.home() / 'meritgiving' / 'scripts' / 'precompute_cohort_context.py'
+        result = subprocess.run(
+            ['python3', str(script)],
+            capture_output=True, text=True, timeout=600,
+            cwd=str(Path.home() / 'meritgiving'),
+        )
+        if result.returncode == 0:
+            for line in (result.stdout or '').strip().splitlines():
+                log(line)
+        else:
+            log(f'⚠️  cohort_context rebuild failed (non-fatal): {result.stderr[:200]}')
+    except Exception as e:
+        log(f'⚠️  cohort_context exception (non-fatal): {str(e)[:100]}')
+
+
 def main():
     log('=' * 60)
     log('Overnight Pipeline Started')
@@ -213,6 +234,8 @@ def main():
     # Re-score with v4.0 if any data changed (non-blocking)
     log('Running merit_scorer_v4_0 to keep scores fresh...')
     run_v4_scorer()
+    # Rebuild cause-cohort context from fresh scores (non-blocking)
+    run_cohort_context()
     log('=' * 60)
 
 if __name__ == '__main__':
