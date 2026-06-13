@@ -12,25 +12,65 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-import firebase_admin
-from firebase_admin import auth as fb_auth, credentials as fb_creds
+# Firebase token verification using public keys — no service account file required.
+# Firebase publishes its signing certs at a well-known URL; cached for 1 hour.
+import jwt as _pyjwt
 
-_fb_app = None
-_FIREBASE_SA_PATH = os.environ.get('FIREBASE_SERVICE_ACCOUNT_PATH', '')
-if _FIREBASE_SA_PATH and os.path.exists(_FIREBASE_SA_PATH):
-    _fb_cred = fb_creds.Certificate(_FIREBASE_SA_PATH)
-    _fb_app = firebase_admin.initialize_app(_fb_cred)
+_FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID', 'daanaa-af9c2')
+_FIREBASE_PUBKEYS_URL = (
+    'https://www.googleapis.com/robot/v1/metadata/x509/'
+    'securetoken@system.gserviceaccount.com'
+)
+_firebase_pubkeys: dict = {}
+_firebase_pubkeys_expires: float = 0.0
+
+
+def _get_firebase_pubkeys() -> dict:
+    global _firebase_pubkeys, _firebase_pubkeys_expires
+    if time.time() < _firebase_pubkeys_expires and _firebase_pubkeys:
+        return _firebase_pubkeys
+    try:
+        resp = _http.get(_FIREBASE_PUBKEYS_URL, timeout=5)
+        resp.raise_for_status()
+        _firebase_pubkeys = resp.json()
+        cc = resp.headers.get('Cache-Control', '')
+        max_age = 3600
+        for part in cc.split(','):
+            part = part.strip()
+            if part.startswith('max-age='):
+                try: max_age = int(part.split('=')[1])
+                except ValueError: pass
+        _firebase_pubkeys_expires = time.time() + max_age
+    except Exception:
+        pass
+    return _firebase_pubkeys
 
 
 def _require_firebase_user() -> str:
-    """Verify Firebase ID token from Authorization header. Returns firebase_uid or aborts 401."""
+    """Verify Firebase ID token via Firebase public certs. Returns firebase_uid or aborts 401."""
     auth_header = request.headers.get('Authorization', '')
     if not auth_header.startswith('Bearer '):
         abort(401)
     token = auth_header[7:]
     try:
-        decoded = fb_auth.verify_id_token(token, check_revoked=False)
-        return decoded['uid']
+        from cryptography.x509 import load_pem_x509_certificate
+        header = _pyjwt.get_unverified_header(token)
+        kid = header.get('kid', '')
+        pubkeys = _get_firebase_pubkeys()
+        if kid not in pubkeys:
+            abort(401)
+        cert = load_pem_x509_certificate(pubkeys[kid].encode())
+        pub_key = cert.public_key()
+        decoded = _pyjwt.decode(
+            token, pub_key,
+            algorithms=['RS256'],
+            audience=_FIREBASE_PROJECT_ID,
+            issuer=f'https://securetoken.google.com/{_FIREBASE_PROJECT_ID}',
+        )
+        uid = decoded.get('sub', '')
+        if not uid:
+            abort(401)
+        return uid
     except Exception:
         abort(401)
 
@@ -417,6 +457,44 @@ def _init_waitlist_table():
         db.commit()
 
 _init_waitlist_table()
+
+
+def _init_guild_tables():
+    """
+    vendor_codes  — active discount codes published to all guild members
+    vendor_spend  — monthly spend reports from vendors; drives threshold checks
+    """
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS vendor_codes (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                vendor_name     TEXT NOT NULL,
+                category        TEXT NOT NULL,
+                code            TEXT NOT NULL,
+                description     TEXT NOT NULL,
+                discount_label  TEXT NOT NULL,
+                website_url     TEXT,
+                how_to_use      TEXT,
+                milestone_tier  INTEGER NOT NULL DEFAULT 1,
+                is_active       INTEGER NOT NULL DEFAULT 1,
+                created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS vendor_spend (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                vendor_code_id  INTEGER NOT NULL REFERENCES vendor_codes(id),
+                report_month    TEXT NOT NULL,
+                spend_usd       REAL NOT NULL DEFAULT 0,
+                cumulative_usd  REAL NOT NULL DEFAULT 0,
+                notes           TEXT,
+                created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.commit()
+
+_init_guild_tables()
 
 
 def _init_link_feedback_table():
@@ -2576,6 +2654,135 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
 
 
 # ── Partner inquiries ──────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Guild: vendor discount codes + spend tracking
+# Public endpoint returns active codes for the member dashboard.
+# Admin endpoints manage codes and log monthly spend reports.
+# Independence rule (P7): codes are published equally; no vendor can pay for
+# better placement. The market decides which vendor members use.
+# ---------------------------------------------------------------------------
+
+@app.route('/api/guild/benefits')
+@limiter.limit("120 per minute")
+def guild_benefits():
+    """Active vendor discount codes — public; powers the member dashboard."""
+    db = get_db()
+    rows = db.execute(
+        "SELECT id, vendor_name, category, code, description, discount_label, "
+        "website_url, how_to_use, milestone_tier "
+        "FROM vendor_codes WHERE is_active=1 ORDER BY category, vendor_name"
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/admin/guild/codes', methods=['GET'])
+def admin_guild_codes_list():
+    require_admin()
+    db = get_db()
+    rows = db.execute(
+        "SELECT vc.*, "
+        "  (SELECT SUM(spend_usd) FROM vendor_spend vs WHERE vs.vendor_code_id=vc.id) AS total_spend "
+        "FROM vendor_codes vc ORDER BY vc.category, vc.vendor_name"
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/admin/guild/codes', methods=['POST'])
+def admin_guild_codes_create():
+    require_admin()
+    data = request.get_json(silent=True) or {}
+    required = ('vendor_name', 'category', 'code', 'description', 'discount_label')
+    for f in required:
+        if not (data.get(f) or '').strip():
+            return jsonify({"error": f"Missing required field: {f}"}), 400
+    db = get_db()
+    cur = db.execute(
+        "INSERT INTO vendor_codes (vendor_name, category, code, description, "
+        "discount_label, website_url, how_to_use, milestone_tier, is_active) "
+        "VALUES (?,?,?,?,?,?,?,?,?)",
+        (
+            data['vendor_name'].strip()[:200],
+            data['category'].strip()[:100],
+            data['code'].strip()[:100],
+            data['description'].strip()[:500],
+            data['discount_label'].strip()[:100],
+            (data.get('website_url') or '').strip()[:500],
+            (data.get('how_to_use') or '').strip()[:500],
+            int(data.get('milestone_tier', 1)),
+            1 if data.get('is_active', True) else 0,
+        )
+    )
+    db.commit()
+    row = db.execute("SELECT * FROM vendor_codes WHERE id=?", (cur.lastrowid,)).fetchone()
+    return jsonify(dict(row)), 201
+
+
+@app.route('/api/admin/guild/codes/<int:code_id>', methods=['PATCH'])
+def admin_guild_codes_update(code_id):
+    require_admin()
+    data = request.get_json(silent=True) or {}
+    allowed = ('vendor_name', 'category', 'code', 'description', 'discount_label',
+               'website_url', 'how_to_use', 'milestone_tier', 'is_active')
+    sets, params = [], []
+    for f in allowed:
+        if f in data:
+            sets.append(f"{f}=?")
+            params.append(data[f])
+    if not sets:
+        return jsonify({"error": "Nothing to update"}), 400
+    sets.append("updated_at=CURRENT_TIMESTAMP")
+    params.append(code_id)
+    db = get_db()
+    db.execute(f"UPDATE vendor_codes SET {', '.join(sets)} WHERE id=?", params)
+    db.commit()
+    row = db.execute("SELECT * FROM vendor_codes WHERE id=?", (code_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(dict(row))
+
+
+@app.route('/api/admin/guild/codes/<int:code_id>/spend', methods=['POST'])
+def admin_guild_spend_report(code_id):
+    """Log a vendor's monthly spend report and check milestone thresholds."""
+    require_admin()
+    data = request.get_json(silent=True) or {}
+    month   = (data.get('report_month') or '').strip()[:7]   # YYYY-MM
+    spend   = float(data.get('spend_usd', 0))
+    notes   = (data.get('notes') or '').strip()[:500]
+    if not month or spend < 0:
+        return jsonify({"error": "report_month (YYYY-MM) and spend_usd are required"}), 400
+
+    db = get_db()
+    row = db.execute("SELECT * FROM vendor_codes WHERE id=?", (code_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Vendor code not found"}), 404
+
+    prev = db.execute(
+        "SELECT COALESCE(MAX(cumulative_usd), 0) AS cum FROM vendor_spend WHERE vendor_code_id=?",
+        (code_id,)
+    ).fetchone()['cum']
+    cumulative = prev + spend
+
+    db.execute(
+        "INSERT INTO vendor_spend (vendor_code_id, report_month, spend_usd, cumulative_usd, notes) "
+        "VALUES (?,?,?,?,?)",
+        (code_id, month, spend, cumulative, notes)
+    )
+    db.commit()
+    return jsonify({
+        "vendor_code_id": code_id,
+        "report_month": month,
+        "spend_usd": spend,
+        "cumulative_usd": cumulative,
+        "current_tier": row['milestone_tier'],
+        "note": "Update milestone_tier via PATCH /api/admin/guild/codes/<id> when threshold is reached.",
+    })
+
+
+# ---------------------------------------------------------------------------
+# Partner / vendor inquiry (existing — vendors and payment processors)
+# ---------------------------------------------------------------------------
+
 # Vendors, payment processors, and foundations reach us via /partners. The
 # inquiry is mail, not data: nothing is stored server side, it routes to the
 # partners@ alias and we reply by hand. Independence rule (STEWARDSHIP.md P7):
@@ -2584,6 +2791,9 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
 _PARTNER_TYPES = {
     "Payment processing", "Services for nonprofits",
     "Community foundation or network", "Other",
+    # Guild vendor categories (from /for-vendors page)
+    "Insurance", "Printing and marketing", "Travel and fuel",
+    "Food and catering", "Software and technology", "Office supplies and shipping",
 }
 
 
@@ -2596,6 +2806,7 @@ def partner_contact():
     email    = (data.get('email') or '').strip()[:254]
     ptype    = (data.get('partner_type') or 'Other').strip()
     message  = (data.get('message') or '').strip()
+    source   = (data.get('source') or 'partners').strip()[:40]
 
     if not name:
         return jsonify({"error": "Please tell us your name"}), 400
@@ -2608,10 +2819,11 @@ def partner_contact():
     if ptype not in _PARTNER_TYPES:
         ptype = "Other"
 
+    page_label = "vendor guild (/for-vendors)" if source == "vendor_guild" else "partners (/partners)"
     _send_daanaa_email(
         "partners@daanaa.org",
-        f"[Partner inquiry] {org_name or name} ({ptype})",
-        f"New partner inquiry from daanaa.org/partners\n\n"
+        f"[{'Vendor guild' if source == 'vendor_guild' else 'Partner'} inquiry] {org_name or name} ({ptype})",
+        f"New inquiry from daanaa.org — source: {page_label}\n\n"
         f"Organization: {org_name or '(not given)'}\n"
         f"Name:         {name}\n"
         f"Email:        {email}\n"
