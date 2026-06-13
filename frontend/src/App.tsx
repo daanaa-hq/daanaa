@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import { CompareProvider } from './contexts/CompareContext'
+import { AuthProvider } from './contexts/AuthContext'
 
 const Home = lazy(() => import('./pages/Home'))
 const Directory = lazy(() => import('./pages/Directory'))
@@ -42,6 +43,7 @@ function PageLoader() {
 
 export default function App() {
   return (
+    <AuthProvider>
     <CompareProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -86,5 +88,6 @@ export default function App() {
         </Routes>
       </Suspense>
     </CompareProvider>
+    </AuthProvider>
   )
 }
