@@ -39,7 +39,7 @@ procs = subprocess.run(["pgrep", "-af", "python3"], capture_output=True, text=Tr
 checks = {
     "generate_missions" : "Mission gen",
     "donation_link"     : "Donate links",
-    "fetch_org_websites": "Web crawler",
+    "web_finder_agent"  : "Web crawler",
     "lucido_scraper"    : "Lucido",
 }
 running = []
@@ -70,8 +70,8 @@ if link_logs:
 
 # ── Alerts ───────────────────────────────────────────────────
 alerts = []
-if "Mission gen" in stopped:
-    alerts.append("ALERT: generate_missions.py not running — restart if < 100%")
+if "Mission gen" in stopped and missions < total * 0.999:
+    alerts.append(f"ALERT: generate_missions.py not running — {missions/total*100:.1f}% complete")
 if "Donate links" in stopped:
     alerts.append("ALERT: donation_link_workers.py not running")
 if alerts:
