@@ -200,7 +200,10 @@ def main():
     log("━" * 70)
     log(f"Web Finder Agent — Priority: {args.priority}")
 
-    conn = sqlite3.connect(DB_PATH)
+    # isolation_level=None = autocommit; each UPDATE is its own transaction.
+    # This prevents web_finder from holding a write lock for 50 HTTP requests
+    # at a time (the default behavior with implicit transactions).
+    conn = sqlite3.connect(DB_PATH, isolation_level=None, timeout=30)
     c = conn.cursor()
 
     # Query orgs: have revenue, missing website, ordered by revenue DESC.
@@ -283,11 +286,7 @@ def main():
                 """, (ein,))
 
         processed += 1
-        if processed % 50 == 0 and not args.dry_run:
-            conn.commit()  # checkpoint so an interrupted night keeps its progress
 
-    if not args.dry_run:
-        conn.commit()
     conn.close()
 
     log(f"\n━ Summary ━")
