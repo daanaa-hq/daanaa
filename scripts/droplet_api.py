@@ -681,6 +681,34 @@ def claim_proxy(subpath):
         return jsonify({"error": "Claiming is briefly unavailable. Please try again in a few minutes."}), 503
 
 
+# ── Wallet sync proxy ────────────────────────────────────────────────────────
+# Wallet auth (Firebase JWT verification) and SQLite storage live on the home
+# server. The same reverse SSH tunnel used by claims forwards to :5001 here.
+
+WALLET_UPSTREAM = os.environ.get('WALLET_UPSTREAM', 'http://127.0.0.1:5001')
+WALLET_MAX_BODY = 65536
+
+
+@app.route('/api/wallet', methods=['GET', 'PUT', 'DELETE'])
+def wallet_proxy():
+    if request.content_length and request.content_length > WALLET_MAX_BODY:
+        return jsonify({"error": "Request too large"}), 413
+    url = f"{WALLET_UPSTREAM}/api/wallet"
+    headers = {'Content-Type': request.headers.get('Content-Type', 'application/json')}
+    auth = request.headers.get('Authorization')
+    if auth:
+        headers['Authorization'] = auth
+    body = request.get_data() if request.method == 'PUT' else None
+    req = urllib.request.Request(url, data=body, headers=headers, method=request.method)
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read(), resp.status, {'Content-Type': resp.headers.get('Content-Type', 'application/json')}
+    except urllib.error.HTTPError as e:
+        return e.read(), e.code, {'Content-Type': e.headers.get('Content-Type', 'application/json')}
+    except Exception:
+        return jsonify({"error": "Wallet sync is briefly unavailable."}), 503
+
+
 # ── Frontend SPA ─────────────────────────────────────────────────────────────
 
 @app.route('/', defaults={'path': ''})
