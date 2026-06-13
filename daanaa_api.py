@@ -589,42 +589,52 @@ def _init_analytics_tables():
     #   visit_counter    — a single hidden (admin-only) running tally; "sessions"
     #                      is incremented once per browser session via a
     #                      sessionStorage flag (no server-side identity at all).
-    with sqlite3.connect(LIVE_DB_PATH) as db:
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS analytics_daily (
-                day          TEXT NOT NULL,
-                path         TEXT NOT NULL,
-                event_type   TEXT NOT NULL,
-                count        INTEGER NOT NULL DEFAULT 0,
-                dwell_secs   INTEGER NOT NULL DEFAULT 0,
-                PRIMARY KEY (day, path, event_type)
-            )
-        """)
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS analytics_search (
-                day    TEXT NOT NULL,
-                term   TEXT NOT NULL,
-                count  INTEGER NOT NULL DEFAULT 0,
-                PRIMARY KEY (day, term)
-            )
-        """)
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS visit_counter (
-                metric  TEXT PRIMARY KEY,
-                count   INTEGER NOT NULL DEFAULT 0
-            )
-        """)
-        db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('pageviews', 0)")
-        db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('sessions', 0)")
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS wallet_sync (
-                firebase_uid   TEXT PRIMARY KEY,
-                donations_json TEXT NOT NULL DEFAULT '[]',
-                volunteer_json TEXT NOT NULL DEFAULT '[]',
-                updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        db.commit()
+    import time as _time
+    for _attempt in range(30):
+        try:
+            with sqlite3.connect(LIVE_DB_PATH, timeout=10) as db:
+                db.execute("PRAGMA journal_mode=WAL")
+                db.execute("""
+                    CREATE TABLE IF NOT EXISTS analytics_daily (
+                        day          TEXT NOT NULL,
+                        path         TEXT NOT NULL,
+                        event_type   TEXT NOT NULL,
+                        count        INTEGER NOT NULL DEFAULT 0,
+                        dwell_secs   INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (day, path, event_type)
+                    )
+                """)
+                db.execute("""
+                    CREATE TABLE IF NOT EXISTS analytics_search (
+                        day    TEXT NOT NULL,
+                        term   TEXT NOT NULL,
+                        count  INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (day, term)
+                    )
+                """)
+                db.execute("""
+                    CREATE TABLE IF NOT EXISTS visit_counter (
+                        metric  TEXT PRIMARY KEY,
+                        count   INTEGER NOT NULL DEFAULT 0
+                    )
+                """)
+                db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('pageviews', 0)")
+                db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('sessions', 0)")
+                db.execute("""
+                    CREATE TABLE IF NOT EXISTS wallet_sync (
+                        firebase_uid   TEXT PRIMARY KEY,
+                        donations_json TEXT NOT NULL DEFAULT '[]',
+                        volunteer_json TEXT NOT NULL DEFAULT '[]',
+                        updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+                    )
+                """)
+                db.commit()
+            return
+        except sqlite3.OperationalError as _e:
+            if "locked" in str(_e).lower() and _attempt < 29:
+                _time.sleep(3)
+            else:
+                raise
 
 _init_analytics_tables()
 
