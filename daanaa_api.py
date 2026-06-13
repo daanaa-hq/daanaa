@@ -12,6 +12,28 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+import firebase_admin
+from firebase_admin import auth as fb_auth, credentials as fb_creds
+
+_fb_app = None
+_FIREBASE_SA_PATH = os.environ.get('FIREBASE_SERVICE_ACCOUNT_PATH', '')
+if _FIREBASE_SA_PATH and os.path.exists(_FIREBASE_SA_PATH):
+    _fb_cred = fb_creds.Certificate(_FIREBASE_SA_PATH)
+    _fb_app = firebase_admin.initialize_app(_fb_cred)
+
+
+def _require_firebase_user() -> str:
+    """Verify Firebase ID token from Authorization header. Returns firebase_uid or aborts 401."""
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        abort(401)
+    token = auth_header[7:]
+    try:
+        decoded = fb_auth.verify_id_token(token, check_revoked=False)
+        return decoded['uid']
+    except Exception:
+        abort(401)
+
 def _real_ip() -> str:
     # Cloudflare sets CF-Connecting-IP; fall back to X-Forwarded-For, then REMOTE_ADDR.
     # Without this, every request appears to come from Cloudflare's IP and rate limiting
@@ -594,6 +616,14 @@ def _init_analytics_tables():
         """)
         db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('pageviews', 0)")
         db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('sessions', 0)")
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS wallet_sync (
+                firebase_uid   TEXT PRIMARY KEY,
+                donations_json TEXT NOT NULL DEFAULT '[]',
+                volunteer_json TEXT NOT NULL DEFAULT '[]',
+                updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
         db.commit()
 
 _init_analytics_tables()
@@ -3130,6 +3160,55 @@ def research_metadata():
 
 
 # ── Frontend static serving ────────────────────────────────────────────────
+# ── Donor wallet sync ────────────────────────────────────────────────────────
+# One row per firebase_uid. Donations and volunteer hours stored as JSON blobs.
+# No PII beyond what the donor explicitly logged. GDPR delete via DELETE.
+
+@app.route('/api/wallet', methods=['GET'])
+def wallet_get():
+    uid = _require_firebase_user()
+    with sqlite3.connect(DB_PATH) as db:
+        db.row_factory = sqlite3.Row
+        row = db.execute(
+            'SELECT donations_json, volunteer_json FROM wallet_sync WHERE firebase_uid = ?', (uid,)
+        ).fetchone()
+    if not row:
+        return jsonify({'donations': [], 'volunteerHours': []})
+    return jsonify({
+        'donations':      json.loads(row['donations_json']),
+        'volunteerHours': json.loads(row['volunteer_json']),
+    })
+
+
+@app.route('/api/wallet', methods=['PUT'])
+def wallet_put():
+    uid = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+    donations = data.get('donations', [])
+    volunteer = data.get('volunteerHours', [])
+    if not isinstance(donations, list) or not isinstance(volunteer, list):
+        return jsonify({'error': 'donations and volunteerHours must be arrays'}), 400
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute("""
+            INSERT INTO wallet_sync (firebase_uid, donations_json, volunteer_json, updated_at)
+            VALUES (?, ?, ?, datetime('now'))
+            ON CONFLICT(firebase_uid) DO UPDATE SET
+                donations_json = excluded.donations_json,
+                volunteer_json = excluded.volunteer_json,
+                updated_at     = excluded.updated_at
+        """, (uid, json.dumps(donations), json.dumps(volunteer)))
+    return jsonify({'ok': True})
+
+
+@app.route('/api/wallet', methods=['DELETE'])
+def wallet_delete():
+    """GDPR-compliant: wipe all stored wallet data for this user."""
+    uid = _require_firebase_user()
+    with sqlite3.connect(DB_PATH) as db:
+        db.execute('DELETE FROM wallet_sync WHERE firebase_uid = ?', (uid,))
+    return jsonify({'ok': True})
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
