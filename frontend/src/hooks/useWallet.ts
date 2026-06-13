@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react'
 
+const API_BASE = (import.meta.env.VITE_API_URL as string) || 'http://localhost:5000'
+
 export type DonationStatus = 'self_documented' | 'pending_acknowledgment' | 'acknowledged'
 
 // Gift type drives IRS substantiation rules (Pub 526 / 1771 / Form 8283).
@@ -149,6 +151,44 @@ export function useWallet() {
     setVolunteerHours(prev => { const next = prev.filter(v => v.id !== id); persist(VOLUNTEER_KEY, next); return next })
   }, [])
 
+  const syncToServer = useCallback(async (getToken: () => Promise<string | null>) => {
+    const token = await getToken()
+    if (!token) return
+    await fetch(`${API_BASE}/api/wallet`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({
+        donations: load<DonationRecord>(DONATIONS_KEY),
+        volunteerHours: load<VolunteerRecord>(VOLUNTEER_KEY),
+      }),
+    })
+  }, [])
+
+  const loadFromServer = useCallback(async (getToken: () => Promise<string | null>) => {
+    const token = await getToken()
+    if (!token) return
+    const res = await fetch(`${API_BASE}/api/wallet`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+    if (!res.ok) return
+    const remote = await res.json() as { donations: DonationRecord[]; volunteerHours: VolunteerRecord[] }
+    // Union by id — local record wins on conflict, remote-only records are added
+    const localDonations = load<DonationRecord>(DONATIONS_KEY)
+    const localVolunteer = load<VolunteerRecord>(VOLUNTEER_KEY)
+    const mergedDonations = [...localDonations]
+    for (const rd of remote.donations) {
+      if (!mergedDonations.find(d => d.id === rd.id)) mergedDonations.push(rd)
+    }
+    const mergedVolunteer = [...localVolunteer]
+    for (const rv of remote.volunteerHours) {
+      if (!mergedVolunteer.find(v => v.id === rv.id)) mergedVolunteer.push(rv)
+    }
+    persist(DONATIONS_KEY, mergedDonations)
+    persist(VOLUNTEER_KEY, mergedVolunteer)
+    setDonations(mergedDonations)
+    setVolunteerHours(mergedVolunteer)
+  }, [])
+
   const thisYear = new Date().getFullYear().toString()
 
   // ── Backup: device-driven only. No server, no account, no PII leaves the device. ──
@@ -237,6 +277,8 @@ export function useWallet() {
   return {
     donations,
     volunteerHours,
+    syncToServer,
+    loadFromServer,
     exportBackup,
     importBackup,
     buildSummaryText,
