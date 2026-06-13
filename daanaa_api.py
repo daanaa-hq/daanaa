@@ -461,8 +461,9 @@ _init_waitlist_table()
 
 def _init_guild_tables():
     """
-    vendor_codes  — active discount codes published to all guild members
-    vendor_spend  — monthly spend reports from vendors; drives threshold checks
+    vendor_codes        — active discount codes published to all guild members
+    vendor_spend        — monthly spend reports from vendors; drives threshold checks
+    vendor_nominations  — nonprofits nominating vendors they already work with
     """
     with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
@@ -475,12 +476,18 @@ def _init_guild_tables():
                 discount_label  TEXT NOT NULL,
                 website_url     TEXT,
                 how_to_use      TEXT,
+                referral_slug   TEXT UNIQUE,
                 milestone_tier  INTEGER NOT NULL DEFAULT 1,
                 is_active       INTEGER NOT NULL DEFAULT 1,
                 created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        # Add referral_slug column to existing installs that predate this change
+        try:
+            db.execute("ALTER TABLE vendor_codes ADD COLUMN referral_slug TEXT UNIQUE")
+        except Exception:
+            pass
         db.execute("""
             CREATE TABLE IF NOT EXISTS vendor_spend (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -489,6 +496,20 @@ def _init_guild_tables():
                 spend_usd       REAL NOT NULL DEFAULT 0,
                 cumulative_usd  REAL NOT NULL DEFAULT 0,
                 notes           TEXT,
+                created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS vendor_nominations (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                vendor_name     TEXT NOT NULL,
+                category        TEXT NOT NULL,
+                vendor_contact  TEXT,
+                nominator_org   TEXT NOT NULL,
+                nominator_ein   TEXT,
+                nominator_email TEXT,
+                why             TEXT,
+                status          TEXT NOT NULL DEFAULT 'new',
                 created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -780,11 +801,17 @@ def set_security_headers(response):
     )
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self'; "
-        "style-src 'self' 'unsafe-inline'; "
+        # Firebase Google Sign-In popup requires apis.google.com scripts
+        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "img-src 'self' data: https:; "
-        "font-src 'self' data:; "
-        + connect_src +
+        "font-src 'self' data: https://fonts.gstatic.com; "
+        # Firebase auth needs to connect to Google/Firebase endpoints
+        + connect_src.rstrip('; ') +
+        " https://identitytoolkit.googleapis.com"
+        " https://securetoken.googleapis.com"
+        " https://www.googleapis.com; "
+        "frame-src https://accounts.google.com https://daanaa-af9c2.firebaseapp.com; "
         "frame-ancestors 'none'; "
         "base-uri 'self'; "
         "form-action 'self';"
@@ -2777,6 +2804,97 @@ def admin_guild_spend_report(code_id):
         "current_tier": row['milestone_tier'],
         "note": "Update milestone_tier via PATCH /api/admin/guild/codes/<id> when threshold is reached.",
     })
+
+
+@app.route('/api/guild/nominate', methods=['POST'])
+@limiter.limit("10 per hour")
+def guild_nominate():
+    """
+    Nonprofit members nominate vendors they already work with.
+    Sends a warm-lead email to partners@ with the org's name as social proof,
+    then stores the nomination for follow-up tracking.
+    """
+    data = request.get_json(silent=True) or {}
+    vendor_name    = (data.get('vendor_name') or '').strip()[:200]
+    category       = (data.get('category') or 'Other').strip()[:100]
+    vendor_contact = (data.get('vendor_contact') or '').strip()[:254]
+    nominator_org  = (data.get('nominator_org') or '').strip()[:200]
+    nominator_ein  = (data.get('nominator_ein') or '').strip()[:20]
+    nominator_email= (data.get('nominator_email') or '').strip()[:254]
+    why            = (data.get('why') or '').strip()[:1000]
+
+    if not vendor_name:
+        return jsonify({"error": "Vendor name is required"}), 400
+    if not nominator_org:
+        return jsonify({"error": "Your organization name is required"}), 400
+
+    db = get_db()
+    db.execute(
+        "INSERT INTO vendor_nominations "
+        "(vendor_name, category, vendor_contact, nominator_org, nominator_ein, nominator_email, why) "
+        "VALUES (?,?,?,?,?,?,?)",
+        (vendor_name, category, vendor_contact, nominator_org, nominator_ein, nominator_email, why)
+    )
+    db.commit()
+
+    _send_daanaa_email(
+        "partners@daanaa.org",
+        f"[Guild nomination] {vendor_name} ({category}) — recommended by {nominator_org}",
+        f"A Daanaa guild member has nominated a vendor.\n\n"
+        f"Vendor:          {vendor_name}\n"
+        f"Category:        {category}\n"
+        f"Vendor contact:  {vendor_contact or '(not provided)'}\n\n"
+        f"Nominated by:    {nominator_org}\n"
+        f"EIN:             {nominator_ein or '(not provided)'}\n"
+        f"Their email:     {nominator_email or '(not provided)'}\n\n"
+        f"Why they recommend them:\n{why or '(not provided)'}\n",
+        from_addr="Daanaa <partners@daanaa.org>",
+    )
+    return jsonify({"status": "received"})
+
+
+@app.route('/api/guild/referral/<slug>')
+@limiter.limit("120 per minute")
+def guild_referral_page(slug):
+    """
+    Vendor referral endpoint — returns the vendor's deal info so the
+    frontend can render a co-branded landing page at /guild/<slug>.
+    Vendors share this URL with their nonprofit customers.
+    """
+    slug = slug.lower().strip()[:80]
+    db = get_db()
+    row = db.execute(
+        "SELECT id, vendor_name, category, description, discount_label, website_url, how_to_use "
+        "FROM vendor_codes WHERE referral_slug=? AND is_active=1",
+        (slug,)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(dict(row))
+
+
+@app.route('/api/admin/guild/nominations', methods=['GET'])
+def admin_guild_nominations():
+    require_admin()
+    db = get_db()
+    rows = db.execute(
+        "SELECT * FROM vendor_nominations ORDER BY created_at DESC LIMIT 200"
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/admin/guild/nominations/<int:nom_id>', methods=['PATCH'])
+def admin_guild_nomination_update(nom_id):
+    require_admin()
+    data = request.get_json(silent=True) or {}
+    status = (data.get('status') or '').strip()
+    if status not in ('new', 'contacted', 'joined', 'declined'):
+        return jsonify({"error": "status must be one of: new, contacted, joined, declined"}), 400
+    db = get_db()
+    db.execute("UPDATE vendor_nominations SET status=? WHERE id=?", (status, nom_id))
+    db.commit()
+    row = db.execute("SELECT * FROM vendor_nominations WHERE id=?", (nom_id,)).fetchone()
+    return jsonify(dict(row))
 
 
 # ---------------------------------------------------------------------------
