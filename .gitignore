@@ -86,3 +86,11 @@ precompute_output/faiss_index.bin
 precompute_output/faiss_index_dm.bin
 precompute_output/search.db
 precompute_archive/
+
+# Precomputed per-org and browse static files (1.97M + 136K files; rebuilt by precompute_orgs.py / precompute_browse.py)
+precompute_output/orgs/
+precompute_output/browse/
+
+# Firebase service account (private key — never commit)
+firebase-service-account.json
+firebase-service-account.json.odt
