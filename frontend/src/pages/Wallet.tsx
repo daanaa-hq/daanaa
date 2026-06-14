@@ -307,13 +307,13 @@ export default function Wallet() {
   const { user, loading: authLoading, signOut, getIdToken } = useAuth()
   const { donations, volunteerHours: _vh, addDonationDirect, markAcknowledged, removeDonation,
           totalDonated, totalDonatedThisYear, uniqueEins, pendingLetters,
-          exportBackup, importBackup, backupOverdue, lastBackupAt,
+          exportBackup, importBackup, lastBackupAt: _lastBackupAt,
           syncToServer, loadFromServer } = useWallet()
   const [magicLinkSent, setMagicLinkSent] = useState(false)
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
-  // On sign-in: merge remote records into local, then push merged back up
+  // On sign-in: load from server (merges any local cache), then push merged state back up
   useEffect(() => {
     if (!user) return
     setSyncing(true)
@@ -321,6 +321,20 @@ export default function Wallet() {
       .then(() => syncToServer(getIdToken))
       .finally(() => setSyncing(false))
   }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-sync after every mutation — fire-and-forget, never blocks UI
+  const addAndSync = (record: Parameters<typeof addDonationDirect>[0]) => {
+    addDonationDirect(record)
+    syncToServer(getIdToken)
+  }
+  const removeAndSync = (id: string) => {
+    removeDonation(id)
+    syncToServer(getIdToken)
+  }
+  const acknowledgeAndSync = (id: string) => {
+    markAcknowledged(id)
+    syncToServer(getIdToken)
+  }
   const fileInputRef = useRef<HTMLInputElement>(null)
   const onSaveBackup = async () => {
     const pass = window.prompt('Set a password to encrypt this backup (recommended). Leave blank to save without a password. Keep the file private.')
@@ -377,6 +391,75 @@ export default function Wallet() {
     URL.revokeObjectURL(url)
   }
 
+  // Auth gate — wallet requires an account
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-warm-cream flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-soft-gold border-t-transparent animate-spin" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-warm-cream">
+        <div className="bg-deep-navy pt-[72px]">
+          <div className="max-w-3xl mx-auto px-6 pt-10 pb-12">
+            <div className="flex items-center gap-2 mb-3">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span className="font-body text-[12px] text-muted-cream tracking-[0.04em]">Private · synced to your account · never shared</span>
+            </div>
+            <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}>
+              Your Giving Wallet
+            </h1>
+            <p className="mt-3 font-body text-[14px] text-muted-cream">
+              A private record of every gift you make. Sign in to get started.
+            </p>
+          </div>
+        </div>
+        <div className="max-w-3xl mx-auto px-6 py-12">
+          <div className="max-w-sm mx-auto rounded-2xl border border-light-grey bg-white p-8">
+            <div className="w-12 h-12 rounded-full bg-soft-gold/10 flex items-center justify-center mx-auto mb-5">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <h2 className="font-display italic text-deep-navy text-[22px] text-center mb-2">Sign in to continue</h2>
+            <p className="font-body text-[13px] text-cool-grey text-center leading-[1.6] mb-6">
+              Your giving record is synced to your account — private, never shared, deletable at any time.
+            </p>
+            {!showEmailForm && !magicLinkSent && (
+              <div className="flex flex-col gap-3">
+                <GoogleSignInButton />
+                <button
+                  onClick={() => setShowEmailForm(true)}
+                  className="font-body text-[13px] text-soft-gold hover:text-bright-gold underline underline-offset-2 transition-colors w-fit mx-auto"
+                >
+                  Use email link instead
+                </button>
+              </div>
+            )}
+            {showEmailForm && !magicLinkSent && (
+              <MagicLinkForm onSent={() => { setMagicLinkSent(true); setShowEmailForm(false) }} />
+            )}
+            {magicLinkSent && (
+              <p className="font-body text-[13px] text-cool-grey text-center">
+                Check your email for a sign-in link. It expires in 1 hour.
+              </p>
+            )}
+          </div>
+          <p className="mt-8 font-body text-[11px] text-cool-grey text-center">
+            Daanaa does not process payments or issue tax documents · For gifts of $250+, contact the nonprofit directly for a written acknowledgment letter
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-warm-cream">
       {/* Dark header — matches Directory / OrganizationDetail */}
@@ -388,7 +471,7 @@ export default function Wallet() {
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              <span className="font-body text-[12px] text-muted-cream tracking-[0.04em]">Private · stored on this device · never shared</span>
+              <span className="font-body text-[12px] text-muted-cream tracking-[0.04em]">Private · synced to your account · never shared</span>
             </div>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-soft-gold/15 border border-soft-gold/30 font-body text-[10px] font-semibold tracking-[0.06em] text-soft-gold uppercase">
               β Beta
@@ -402,12 +485,7 @@ export default function Wallet() {
           </p>
           <div className="mt-6 p-4 rounded-xl bg-white/10 border border-white/20">
             <p className="font-body text-[12px] text-warm-cream/80 leading-[1.6]">
-              <strong className="text-warm-cream">Important:</strong> The Giving Wallet is a private note-taking tool on your device. It is not a bank account, payment account, stored-value wallet, or donation processor. You remain in control of all your data. Daanaa never processes, holds, or redirects any funds.
-            </p>
-          </div>
-          <div className="mt-3 p-4 rounded-xl bg-amber-400/10 border border-amber-400/25">
-            <p className="font-body text-[12px] text-amber-200/90 leading-[1.6]">
-              <strong className="text-amber-200">Data can be lost.</strong> Records live only in this browser. Clearing your browser data, switching browsers, or losing the device will erase them. Save a backup file regularly to protect your record.
+              <strong className="text-warm-cream">Important:</strong> The Giving Wallet is a private record-keeping tool. It is not a bank account, payment account, or donation processor. Daanaa never processes, holds, or redirects any funds. Your record is yours — we never share it.
             </p>
           </div>
         </div>
@@ -424,83 +502,37 @@ export default function Wallet() {
             <StatCard label="Orgs supported" value={String(orgsSupported)} sub="donated + saved" />
           </div>
 
-          {/* Account sync */}
-          {!authLoading && !user && (
-            <div className="rounded-xl border border-dashed border-soft-gold/30 bg-soft-gold/[0.04] p-5">
-              <div className="flex items-start gap-4">
-                <div className="shrink-0 w-9 h-9 rounded-full bg-soft-gold/10 flex items-center justify-center mt-0.5">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">Keep your record across devices</p>
-                  <p className="font-body text-[13px] text-cool-grey leading-[1.6] mb-4">
-                    Sign in to save your giving record — so it's there on every browser and device. No tracking, no sharing. Your record stays yours.
+          {/* Account status */}
+          <div className="rounded-xl border border-light-grey bg-white p-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                {user.photoURL && <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />}
+                <div>
+                  <p className="font-body text-[14px] font-medium text-deep-navy">{user.displayName || user.email}</p>
+                  <p className="font-body text-[12px] text-cool-grey">
+                    {syncing ? 'Syncing…' : 'Record synced to your account'}
                   </p>
-                  {!showEmailForm && !magicLinkSent && (
-                    <div className="flex flex-col gap-3">
-                      <GoogleSignInButton />
-                      <button
-                        onClick={() => setShowEmailForm(true)}
-                        className="font-body text-[13px] text-soft-gold hover:text-bright-gold underline underline-offset-2 transition-colors w-fit"
-                      >
-                        Use email link instead
-                      </button>
-                    </div>
-                  )}
-                  {showEmailForm && !magicLinkSent && (
-                    <MagicLinkForm onSent={() => { setMagicLinkSent(true); setShowEmailForm(false) }} />
-                  )}
-                  {magicLinkSent && (
-                    <p className="font-body text-[13px] text-cool-grey">
-                      Check your email for a sign-in link. It expires in 1 hour.
-                    </p>
-                  )}
                 </div>
               </div>
+              <button
+                onClick={signOut}
+                className="font-body text-[12px] text-cool-grey hover:text-deep-navy underline underline-offset-2 transition-colors"
+              >
+                Sign out
+              </button>
             </div>
-          )}
+          </div>
 
-          {user && (
-            <div className="rounded-xl border border-light-grey bg-white p-5">
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-3">
-                  {user.photoURL && <img src={user.photoURL} alt="" className="w-8 h-8 rounded-full" />}
-                  <div>
-                    <p className="font-body text-[14px] font-medium text-deep-navy">{user.displayName || user.email}</p>
-                    <p className="font-body text-[12px] text-cool-grey">
-                      {syncing ? 'Syncing…' : 'Record synced across your devices'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={signOut}
-                  className="font-body text-[12px] text-cool-grey hover:text-deep-navy underline underline-offset-2 transition-colors"
-                >
-                  Sign out
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Backup — device-driven, no account, nothing leaves your device to us */}
+          {/* Export — data portability */}
           {donations.length > 0 && (
-            <div className={`rounded-xl border p-5 ${backupOverdue ? 'border-soft-gold/60 bg-soft-gold/5' : 'border-light-grey bg-white'}`}>
+            <div className="rounded-xl border border-light-grey bg-white p-5">
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div>
-                  <h3 className="font-display text-[17px] text-deep-navy">Keep a backup</h3>
+                  <h3 className="font-display text-[17px] text-deep-navy">Export your records</h3>
                   <p className="mt-1 font-body text-[13px] text-cool-grey">
-                    Your record lives only on this device. Save a copy so you never lose it.{' '}
-                    {lastBackupAt
-                      ? `Last backed up ${new Date(lastBackupAt).toLocaleDateString()}.`
-                      : 'You have not backed up yet.'}
+                    Download a copy of your giving record for your own files or tax records.
                   </p>
                 </div>
-                {backupOverdue && (
-                  <span className="font-body text-[11px] font-semibold uppercase tracking-[0.04em] text-soft-gold">Backup due</span>
-                )}
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <button
@@ -528,7 +560,7 @@ export default function Wallet() {
                 <input ref={fileInputRef} type="file" accept="application/json,.json" onChange={onRestoreFile} className="hidden" />
               </div>
               <p className="mt-3 font-body text-[11px] text-cool-grey">
-                Texting a backup to yourself is coming soon. For now, the file saves to your device or your own cloud drive. Daanaa never receives it.
+                The exported file saves to your device. Daanaa never receives it.
               </p>
             </div>
           )}
@@ -635,7 +667,7 @@ export default function Wallet() {
             {showDonationForm && (
               <div className="mb-4">
                 <DonationForm
-                  onSubmit={r => addDonationDirect([r])}
+                  onSubmit={r => addAndSync([r])}
                   onCancel={() => { setShowDonationForm(false); if (prefillEin || prefillOrg) setSearchParams({}) }}
                   prefillEin={prefillEin}
                   prefillOrg={prefillOrg}
@@ -695,7 +727,7 @@ export default function Wallet() {
                             No acknowledgment on file
                           </span>
                           <button
-                            onClick={() => markAcknowledged(d.id)}
+                            onClick={() => acknowledgeAndSync(d.id)}
                             className="font-body text-[10px] text-soft-gold hover:text-bright-gold underline underline-offset-2 transition-colors"
                           >
                             Mark acknowledged
@@ -703,7 +735,7 @@ export default function Wallet() {
                         </div>
                       )}
                     </div>
-                    <button onClick={() => removeDonation(d.id)} title="Remove entry"
+                    <button onClick={() => removeAndSync(d.id)} title="Remove entry"
                       className="ml-4 p-1.5 rounded-full text-cool-grey hover:text-cool-grey hover:bg-light-grey/40 transition-colors flex-shrink-0">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
@@ -718,7 +750,7 @@ export default function Wallet() {
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-light-grey flex items-center gap-2 text-cool-grey">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          <p className="font-body text-[11px]">Private by design · stored on this device · never shared · Daanaa does not process payments or issue tax documents · For gifts of $250+, contact the nonprofit directly to request a written acknowledgment letter</p>
+          <p className="font-body text-[11px]">Private by design · synced to your account · never shared · Daanaa does not process payments or issue tax documents · For gifts of $250+, contact the nonprofit directly to request a written acknowledgment letter</p>
         </div>
 
       </div>
