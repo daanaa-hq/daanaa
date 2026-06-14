@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-export function GoogleSignInButton({ onSuccess }: { onSuccess?: () => void }) {
+export function GoogleSignInButton({ onSuccess, compact }: { onSuccess?: () => void; compact?: boolean }) {
   const { signInWithGoogle } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -26,7 +26,10 @@ export function GoogleSignInButton({ onSuccess }: { onSuccess?: () => void }) {
       <button
         onClick={handleClick}
         disabled={loading}
-        className="inline-flex items-center gap-3 rounded-xl border border-light-grey bg-white px-5 py-3 font-body text-[14px] font-medium text-deep-navy shadow-sm hover:border-soft-gold/40 hover:bg-warm-cream/30 transition-colors disabled:opacity-50"
+        className={compact
+          ? "inline-flex items-center gap-2 rounded-lg border border-light-grey bg-white px-4 py-2 font-body text-[13px] font-medium text-deep-navy hover:border-soft-gold/40 transition-colors disabled:opacity-50"
+          : "inline-flex items-center gap-3 rounded-xl border border-light-grey bg-white px-5 py-3 font-body text-[14px] font-medium text-deep-navy shadow-sm hover:border-soft-gold/40 hover:bg-warm-cream/30 transition-colors disabled:opacity-50"
+        }
       >
         {/* Google G logo */}
         <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">

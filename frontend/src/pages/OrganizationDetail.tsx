@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import { getTierSummary, getTierFromOrg, getV4FinancialHealth, TIER_COLORS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
@@ -12,13 +12,15 @@ import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
-import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea } from '../data/api'
+import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 import { getPrimaryExternalLink } from '../utils/externalLink'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
+import { useAuth } from '../contexts/AuthContext'
+import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import FinancialContext from '../components/FinancialContext'
 import V5Context from '../components/V5Context'
 import CohortContext from '../components/CohortContext'
@@ -289,8 +291,12 @@ function adaptOrg(apiOrg: ApiOrganization) {
 // ---- Main Page ----
 export default function OrganizationDetail() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const { user, getIdToken } = useAuth()
   const { isSaved, toggle: toggleSave } = useSavedOrgs()
   const [showBreakdown, setShowBreakdown] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
+  const [portalError, setPortalError]     = useState<string | null>(null)
   const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
   const [showScoreExplainer, setShowScoreExplainer] = useState(false)
@@ -1005,13 +1011,53 @@ export default function OrganizationDetail() {
                 )}
               </div>
 
-              {/* Claim CTA + spaces preview -- only for unclaimed pages */}
-              {apiOrg!.claim_status !== 'active' && apiOrg!.claim_status !== 'letter_sent' && (
+              {/* Manage / Claim CTA */}
+              {apiOrg!.claim_status === 'active' ? (
+                /* Claimed — show "Edit this page" for the org rep */
+                <div className="rounded-xl border border-soft-gold/30 bg-soft-gold/[0.04] px-5 py-4">
+                  <p className="font-body text-[13px] font-medium text-deep-navy mb-1">Is this your organization?</p>
+                  {!user ? (
+                    <>
+                      <p className="font-body text-[12px] text-cool-grey mb-3">Sign in to edit your page.</p>
+                      <GoogleSignInButton compact />
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <button
+                        onClick={async () => {
+                          setPortalLoading(true); setPortalError(null)
+                          try {
+                            const idToken = await getIdToken()
+                            if (!idToken) throw new Error('no token')
+                            const ein = (apiOrg!.EIN || '').replace(/\D/g, '')
+                            const token = await getPortalToken(ein, idToken)
+                            navigate(`/claim/edit?ein=${encodeURIComponent(ein)}&token=${encodeURIComponent(token)}`)
+                          } catch {
+                            setPortalError("Your account isn't linked to this page yet. Go to for-nonprofits to claim it.")
+                          } finally {
+                            setPortalLoading(false)
+                          }
+                        }}
+                        disabled={portalLoading}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold disabled:opacity-40 transition-colors"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        {portalLoading ? 'Opening…' : 'Edit this page'}
+                      </button>
+                      {portalError && <p className="font-body text-[12px] text-red-500">{portalError}</p>}
+                    </div>
+                  )}
+                </div>
+              ) : apiOrg!.claim_status !== 'letter_sent' && (
+                /* Unclaimed — show claim CTA */
                 <div className="rounded-xl border border-dashed border-soft-gold/30 bg-soft-gold/[0.03] px-6 py-5">
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
                       <p className="font-body text-[13px] font-medium text-deep-navy">Is this your nonprofit?</p>
-                      <p className="font-body text-[12px] text-cool-grey mt-0.5">Add your mission, website, and updates -- free.</p>
+                      <p className="font-body text-[12px] text-cool-grey mt-0.5">Add your mission, website, and updates — free.</p>
                     </div>
                     <Link
                       to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
