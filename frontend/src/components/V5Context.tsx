@@ -43,7 +43,14 @@ export default function V5Context({ org }: V5ContextProps) {
     'CAUTION': { text: 'text-amber-700', bg: 'bg-amber-50', badge: 'bg-amber-100 text-amber-700' },
   }
 
+  const healthLabel = {
+    'HEALTHY': 'Healthy',
+    'STABLE': 'Stable',
+    'CAUTION': 'Needs Support',
+  }
+
   const colors = healthColor[v5.score.health_signal]
+  const label = healthLabel[v5.score.health_signal]
 
   return (
     <div className={`rounded-lg border p-6 ${colors.bg}`}>
@@ -59,7 +66,7 @@ export default function V5Context({ org }: V5ContextProps) {
             </p>
           </div>
           <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${colors.badge}`}>
-            {v5.score.health_signal}
+            {label}
           </span>
         </div>
 

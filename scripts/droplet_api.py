@@ -573,7 +573,7 @@ def search():
         conditions.extend(cat_conds)
         params.extend(cat_params)
         params.append(limit)
-        sql = (f"SELECT o.EIN as ein, o.organization_name, o.NTEE1, o.NTEECC, o.CITY, o.STATE, o.mission, o.merit_score "
+        sql = (f"SELECT o.EIN, o.organization_name, o.NTEE1, o.NTEECC, o.CITY, o.STATE, o.mission, o.merit_score "
                f"FROM org_search s, orgs o WHERE {' AND '.join(conditions)} LIMIT ?")
         rows = conn.execute(sql, params).fetchall()
         results = [dict(r) for r in rows]
