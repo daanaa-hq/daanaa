@@ -14,6 +14,7 @@ const SECTIONS = [
   { id: 'peer-context', label: 'Peer Financial Context', icon: '💰' },
   { id: 'findings', label: 'Research Findings', icon: '📚' },
   { id: 'spending', label: 'Program Spending', icon: '💸' },
+  { id: 'data-movement', label: "What's Changed", icon: '📋' },
 ]
 
 export default function ResearchSidebar({

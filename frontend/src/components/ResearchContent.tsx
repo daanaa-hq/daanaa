@@ -10,6 +10,7 @@ import ResearchEntityTypes from './research/ResearchEntityTypes'
 import ResearchPeerContext from './research/ResearchPeerContext'
 import ResearchFindings from './research/ResearchFindings'
 import ResearchSpending from './research/ResearchSpending'
+import ResearchDataMovement from './research/ResearchDataMovement'
 
 interface ResearchContentProps {
   sessionToken: string
@@ -37,6 +38,7 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
     { id: 'peer-context', component: ResearchPeerContext },
     { id: 'findings', component: ResearchFindings },
     { id: 'spending', component: ResearchSpending },
+    { id: 'data-movement', component: ResearchDataMovement },
   ]
 
   return (
