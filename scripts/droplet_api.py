@@ -713,6 +713,70 @@ def wallet_proxy():
         return jsonify({"error": "Wallet sync is briefly unavailable."}), 503
 
 
+
+# ── Live-backend proxy: volunteer events, guild, service area, zip, impact ───
+# Routes that require the full SQLite backend are forwarded through the same
+# reverse SSH tunnel on :5001 used by claims and wallet.
+
+LIVE_UPSTREAM = os.environ.get('CLAIM_UPSTREAM', 'http://127.0.0.1:5001')
+
+
+def _live_proxy(path: str):
+    """Generic transparent proxy to the home-server backend on :5001."""
+    url = f"{LIVE_UPSTREAM}{path}"
+    if request.query_string:
+        url += '?' + request.query_string.decode('utf-8', errors='replace')
+    headers = {}
+    for hdr in ('Authorization', 'Content-Type', 'X-Admin-Key'):
+        val = request.headers.get(hdr)
+        if val:
+            headers[hdr] = val
+    body = request.get_data() or None
+    req = urllib.request.Request(url, data=body, headers=headers, method=request.method)
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            return resp.read(), resp.status, {
+                'Content-Type': resp.headers.get('Content-Type', 'application/json')
+            }
+    except urllib.error.HTTPError as e:
+        return e.read(), e.code, {
+            'Content-Type': e.headers.get('Content-Type', 'application/json')
+        }
+    except Exception:
+        return jsonify({'error': 'Service temporarily unavailable.'}), 503
+
+
+@app.route('/api/volunteer-events', methods=['GET'])
+@app.route('/api/volunteer-events/<int:event_id>', methods=['PATCH', 'DELETE'])
+def volunteer_events_proxy(event_id=None):
+    path = f"/api/volunteer-events/{event_id}" if event_id else "/api/volunteer-events"
+    return _live_proxy(path)
+
+
+@app.route('/api/org/<ein>/volunteer-events', methods=['GET', 'POST'])
+def org_volunteer_events_proxy(ein):
+    return _live_proxy(f"/api/org/{ein}/volunteer-events")
+
+
+@app.route('/api/org/<ein>/service-area', methods=['GET', 'PUT'])
+def service_area_proxy(ein):
+    return _live_proxy(f"/api/org/{ein}/service-area")
+
+
+@app.route('/api/zip/<zip_code>', methods=['GET'])
+def zip_proxy(zip_code):
+    return _live_proxy(f"/api/zip/{zip_code}")
+
+
+@app.route('/api/impact', methods=['GET'])
+def impact_proxy():
+    return _live_proxy("/api/impact")
+
+
+@app.route('/api/guild/<path:subpath>', methods=['GET', 'POST', 'PATCH'])
+def guild_proxy(subpath):
+    return _live_proxy(f"/api/guild/{subpath}")
+
 # ── Frontend SPA ─────────────────────────────────────────────────────────────
 
 @app.route('/', defaults={'path': ''})
