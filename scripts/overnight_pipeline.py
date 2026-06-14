@@ -157,13 +157,13 @@ def run_revocation_check():
         log('Revocation check error: ' + str(e))
 
 
-def run_v4_scorer():
-    """Run merit_scorer_v4_0 to keep scores fresh. Logs but doesn't fail pipeline if scorer errors."""
+def run_v5_scorer():
+    """Run merit_scorer_v5_0 to keep v5 financial context scores fresh. Logs but doesn't fail pipeline if scorer errors."""
     try:
         import subprocess
-        log('Running merit_scorer_v4_0...')
-        scorer_script = Path.home() / 'meritgiving' / 'scripts' / 'merit_scorer_v4_0.py'
-        scores_file = Path.home() / 'meritgiving' / f'scores_v4_0_{datetime.now().strftime("%Y%m%d")}.json'
+        log('Running merit_scorer_v5_0...')
+        scorer_script = Path.home() / 'meritgiving' / 'scripts' / 'merit_scorer_v5_0.py'
+        scores_file = Path.home() / 'meritgiving' / f'scores_v5_0_{datetime.now().strftime("%Y%m%d")}.json'
 
         result = subprocess.run(
             ['python3', str(scorer_script), '--output', str(scores_file)],
@@ -173,13 +173,13 @@ def run_v4_scorer():
         if result.returncode == 0 and scores_file.exists():
             log(f'✅ Scorer completed: {scores_file}')
             # Load scores into DB
-            load_script = Path.home() / 'meritgiving' / 'scripts' / 'load_v4_scores.py'
+            load_script = Path.home() / 'meritgiving' / 'scripts' / 'load_v5_scores.py'
             load_result = subprocess.run(
                 ['python3', str(load_script), str(scores_file)],
                 capture_output=True, text=True, timeout=600,
             )
             if load_result.returncode == 0:
-                log('✅ Scores loaded into registry_enriched')
+                log('✅ V5.0 scores loaded into registry_enriched')
             else:
                 log(f'⚠️  Scorer loaded but score import failed: {load_result.stderr[:200]}')
         else:
@@ -231,9 +231,9 @@ def main():
     log('=' * 60)
     log('Complete: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
     log('=' * 60)
-    # Re-score with v4.0 if any data changed (non-blocking)
-    log('Running merit_scorer_v4_0 to keep scores fresh...')
-    run_v4_scorer()
+    # Re-score with v5.0 to keep financial context fresh (non-blocking)
+    log('Running merit_scorer_v5_0 to keep v5 scores fresh...')
+    run_v5_scorer()
     # Rebuild cause-cohort context from fresh scores (non-blocking)
     run_cohort_context()
     # Expire past volunteer events
