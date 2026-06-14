@@ -236,6 +236,12 @@ def main():
     run_v4_scorer()
     # Rebuild cause-cohort context from fresh scores (non-blocking)
     run_cohort_context()
+    # Expire past volunteer events
+    try:
+        from expire_volunteer_events import run as expire_events
+        expire_events()
+    except Exception as exc:
+        log(f'[expire_volunteer_events] non-fatal error: {exc}')
     log('=' * 60)
 
 if __name__ == '__main__':

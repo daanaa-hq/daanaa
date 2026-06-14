@@ -153,6 +153,13 @@ export default function About() {
             </div>
           </div>
 
+          <div className="mt-10 pt-8 border-t border-light-grey">
+            <h2 className="font-display text-deep-navy text-[20px] font-semibold mb-3">How Daanaa stays free</h2>
+            <p className="font-body text-[15px] text-cool-grey leading-[1.7] max-w-xl">
+              Daanaa is free for donors and nonprofits. The Daanaa vendor network — businesses that offer nonprofits better pricing on the tools they already need — supports the infrastructure that keeps it that way. No ads, no donor data, no paid placement. Vendors earn access to nonprofit buyers by offering genuine value, and the arrangement is transparent by design.
+            </p>
+          </div>
+
           {import.meta.env.VITE_SUPPORT_URL && (
             <div className="mt-10 pt-8 border-t border-light-grey">
               <h2 className="font-display text-deep-navy text-[20px] font-semibold mb-3">Support the work</h2>

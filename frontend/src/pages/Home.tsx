@@ -42,7 +42,7 @@ function seededShuffle<T>(arr: T[], seed: number): T[] {
 // ─── Hero ────────────────────────────────────────────────────────────────────
 function HeroSection() {
   const { data: stats } = useApi(() => getStats(), [])
-  const orgCount = stats?.total_organizations ?? 1_600_000
+  const orgCount = stats?.total_organizations ?? 1_800_000
   const [query, setQuery] = useState('')
   const navigate = useNavigate()
 
@@ -723,7 +723,7 @@ function FooterCTA() {
   const orgCount = stats?.total_organizations
   const countLabel = orgCount != null
     ? `${(Math.floor(orgCount / 1000) * 1000).toLocaleString()}+`
-    : '1,600,000+'
+    : '1,800,000+'
 
   return (
     <section className="bg-white border-t border-light-grey py-10 md:py-16">

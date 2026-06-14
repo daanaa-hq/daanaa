@@ -22,7 +22,7 @@ const SLIDES: Slide[] = [
   {
     tag: 'Discover',
     title: 'Find the invisible 97%',
-    body: `Daanaa indexes 1.6 million tax-deductible nonprofits, and almost none are ones you have heard of. Search by cause, by place, or in plain words, like 'after school reading help in Austin', and meet the overlooked ones doing real good.`,
+    body: `Daanaa indexes over 1.8 million tax-deductible nonprofits, and almost none are ones you have heard of. Search by cause, by place, or in plain words, like 'after school reading help in Austin', and meet the overlooked ones doing real good.`,
   },
   {
     tag: 'Context',

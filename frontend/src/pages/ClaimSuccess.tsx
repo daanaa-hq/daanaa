@@ -34,6 +34,12 @@ export default function ClaimSuccess() {
             View your page →
           </Link>
           <Link
+            to="/member/benefits"
+            className="block w-full px-4 py-3 border border-soft-gold/40 text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-soft-gold/8 transition-colors text-center"
+          >
+            Access guild benefits →
+          </Link>
+          <Link
             to="/"
             className="block w-full px-4 py-3 border border-light-cream text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-light-cream transition-colors text-center"
           >

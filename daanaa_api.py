@@ -461,9 +461,10 @@ _init_waitlist_table()
 
 def _init_guild_tables():
     """
-    vendor_codes        — active discount codes published to all guild members
-    vendor_spend        — monthly spend reports from vendors; drives threshold checks
+    vendor_codes        — network partners: national/regional vendors with formal CAF contracts
+    vendor_spend        — monthly spend reports from network partners; drives threshold checks
     vendor_nominations  — nonprofits nominating vendors they already work with
+    community_partners  — any business offering nonprofits a better deal; no CAF required
     """
     with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
@@ -483,7 +484,6 @@ def _init_guild_tables():
                 updated_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        # Add referral_slug column to existing installs that predate this change
         try:
             db.execute("ALTER TABLE vendor_codes ADD COLUMN referral_slug TEXT UNIQUE")
         except Exception:
@@ -513,9 +513,163 @@ def _init_guild_tables():
                 created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        # Community partners: any business — local, small, regional — that wants to
+        # support nonprofits. No CAF, no reporting. Simple offer + location + contact.
+        # Admin reviews and activates. Members find them via the vendor directory.
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS community_partners (
+                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                business_name       TEXT NOT NULL,
+                category            TEXT NOT NULL,
+                offer               TEXT NOT NULL,
+                location_city       TEXT,
+                location_state      TEXT,
+                service_area_type   TEXT NOT NULL DEFAULT 'local',
+                service_area_values TEXT NOT NULL DEFAULT '[]',
+                contact_email       TEXT,
+                contact_phone       TEXT,
+                website_url         TEXT,
+                submitter_name      TEXT NOT NULL,
+                submitter_email     TEXT NOT NULL,
+                notes               TEXT,
+                status              TEXT NOT NULL DEFAULT 'pending',
+                is_active           INTEGER NOT NULL DEFAULT 0,
+                created_at          TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        # Migrate existing installs
+        for col, defval in [
+            ("service_area_type",   "'local'"),
+            ("service_area_values", "'[]'"),
+        ]:
+            try:
+                db.execute(f"ALTER TABLE community_partners ADD COLUMN {col} TEXT NOT NULL DEFAULT {defval}")
+            except Exception:
+                pass
+
+        # Donor codes + service area on network partner (vendor_codes) table
+        for col, defval in [
+            ("donor_code",         "NULL"),
+            ("service_area_type",  "'nationwide'"),
+        ]:
+            try:
+                db.execute(f"ALTER TABLE vendor_codes ADD COLUMN {col} TEXT DEFAULT {defval}")
+            except Exception:
+                pass
+
+        # Org service areas — self-reported by orgs after claiming their page.
+        # area_type: local | county | statewide | nationwide
+        # area_values: JSON array of state codes and/or "County, ST" strings
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS org_service_areas (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                ein         TEXT NOT NULL,
+                area_type   TEXT NOT NULL DEFAULT 'local',
+                area_values TEXT NOT NULL DEFAULT '[]',
+                updated_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(ein)
+            )
+        """)
+
+        # US zip code reference table — populated by scripts/import_zip_codes.py
+        # Used for zip-code search: query → city/county/state → matching orgs
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS zip_codes (
+                zip         TEXT PRIMARY KEY,
+                city        TEXT,
+                state_id    TEXT,
+                state_name  TEXT,
+                county_name TEXT,
+                county_fips TEXT,
+                lat         REAL,
+                lon         REAL
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_zip_state ON zip_codes(state_id)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_zip_county ON zip_codes(county_name, state_id)")
+
+        # P7 audit trail: every admin change to vendor_codes is logged here.
+        # Append-only — no DELETE endpoint exists for this table.
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS vendor_code_audit (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                code_id     INTEGER NOT NULL,
+                changed_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                field       TEXT NOT NULL,
+                old_value   TEXT,
+                new_value   TEXT,
+                reason      TEXT NOT NULL
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_vca_code ON vendor_code_audit(code_id)")
         db.commit()
 
 _init_guild_tables()
+
+
+def _init_volunteer_events_table():
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS volunteer_events (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                ein             TEXT NOT NULL,
+                title           TEXT NOT NULL,
+                description     TEXT,
+                event_date      TEXT NOT NULL,
+                start_time      TEXT,
+                end_time        TEXT,
+                location_city   TEXT,
+                location_state  TEXT,
+                location_zip    TEXT,
+                is_virtual      INTEGER NOT NULL DEFAULT 0,
+                signup_url      TEXT,
+                contact_email   TEXT,
+                capacity        INTEGER,
+                status          TEXT NOT NULL DEFAULT 'active',
+                created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_ve_ein ON volunteer_events(ein)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_ve_date ON volunteer_events(event_date, status)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_ve_location ON volunteer_events(location_state, location_city, status)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_ve_zip ON volunteer_events(location_zip, status)")
+        db.commit()
+
+_init_volunteer_events_table()
+
+
+def _is_ein_guild_eligible(ein: str) -> tuple[bool, str]:
+    """
+    Check if an EIN is eligible for guild benefits.
+    Returns (eligible: bool, reason: str).
+    Blocks revoked orgs and claimed-but-revoked Daanaa claims.
+    """
+    if not ein:
+        return False, "No EIN provided"
+    db = get_db()
+    row = db.execute(
+        "SELECT irs_revoked, org_status FROM registry_enriched WHERE ein=?",
+        (ein.replace("-", "").strip(),)
+    ).fetchone()
+    if not row:
+        return False, "Organization not found in IRS records"
+    if row["irs_revoked"]:
+        return False, "IRS tax-exempt status has been revoked"
+    if row["org_status"] and row["org_status"] != "active":
+        return False, f"Organization status is '{row['org_status']}'"
+    # Check Daanaa claim is verified and not revoked
+    claim = db.execute(
+        "SELECT claim_status, revoked_at FROM org_claims WHERE ein=? ORDER BY created_at DESC LIMIT 1",
+        (ein.replace("-", "").strip(),)
+    ).fetchone()
+    if not claim:
+        return False, "No verified Daanaa claim found for this organization"
+    if claim["revoked_at"]:
+        return False, "Daanaa membership has been suspended"
+    if claim["claim_status"] != "verified":
+        return False, "Organization claim is not yet verified"
+    return True, "eligible"
 
 
 def _init_link_feedback_table():
@@ -2601,7 +2755,7 @@ def claim_profile_update():
     return jsonify({"status": "updated"})
 
 
-def _fetch_orgs_by_eins(db, eins: list[str]) -> list[dict]:
+def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[dict]:
     if not eins:
         return []
     cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
@@ -2611,10 +2765,13 @@ def _fetch_orgs_by_eins(db, eins: list[str]) -> list[dict]:
               v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
     placeholders = ",".join("?" * len(eins))
+    # active_only=True enforces the same deductibility + revocation filter used by
+    # /api/organizations so revoked orgs can't surface via vector/semantic paths.
+    dedup_clause = f" AND {_DEDUCTIBILITY_FILTER}" if active_only else ""
     rows = db.execute(
         f"""SELECT {cols} FROM registry_enriched r
             LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
-            WHERE r.EIN IN ({placeholders})""", eins
+            WHERE r.EIN IN ({placeholders}){dedup_clause}""", eins
     ).fetchall()
     order = {e: i for i, e in enumerate(eins)}
     result = []
@@ -2638,7 +2795,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
     vec = _get_org_vec(ein_clean)
     if vec is not None and _emb_matrix is not None:
         top_eins = _vec_similar(vec, ein_clean, limit)
-        results  = _fetch_orgs_by_eins(db, top_eins)
+        results  = _fetch_orgs_by_eins(db, top_eins, active_only=True)
         if len(results) >= 3:
             return results, 'vector'
 
@@ -2702,6 +2859,20 @@ def guild_benefits():
     return jsonify([dict(r) for r in rows])
 
 
+@app.route('/api/guild/member-count')
+@limiter.limit("120 per minute")
+def guild_member_count():
+    """Live count of verified claimed orgs — shown on ForVendors as proof of distribution."""
+    try:
+        db = get_db()
+        row = db.execute(
+            "SELECT COUNT(*) AS n FROM org_claims WHERE claim_status='verified'"
+        ).fetchone()
+        return jsonify({"member_count": row["n"] if row else 0})
+    except Exception:
+        return jsonify({"member_count": 0})
+
+
 @app.route('/api/admin/guild/codes', methods=['GET'])
 def admin_guild_codes_list():
     require_admin()
@@ -2748,6 +2919,9 @@ def admin_guild_codes_create():
 def admin_guild_codes_update(code_id):
     require_admin()
     data = request.get_json(silent=True) or {}
+    reason = (data.get('reason') or '').strip()
+    if not reason:
+        return jsonify({"error": "reason is required for audit trail (P7)"}), 400
     allowed = ('vendor_name', 'category', 'code', 'description', 'discount_label',
                'website_url', 'how_to_use', 'milestone_tier', 'is_active')
     sets, params = [], []
@@ -2757,15 +2931,38 @@ def admin_guild_codes_update(code_id):
             params.append(data[f])
     if not sets:
         return jsonify({"error": "Nothing to update"}), 400
+    db = get_db()
+    before = db.execute("SELECT * FROM vendor_codes WHERE id=?", (code_id,)).fetchone()
+    if not before:
+        return jsonify({"error": "Not found"}), 404
+    before = dict(before)
     sets.append("updated_at=CURRENT_TIMESTAMP")
     params.append(code_id)
-    db = get_db()
     db.execute(f"UPDATE vendor_codes SET {', '.join(sets)} WHERE id=?", params)
+    # Log every changed field to the P7 audit trail
+    for f in allowed:
+        if f in data and str(data[f]) != str(before.get(f, '')):
+            db.execute(
+                "INSERT INTO vendor_code_audit (code_id, field, old_value, new_value, reason) "
+                "VALUES (?,?,?,?,?)",
+                (code_id, f, str(before.get(f, '')), str(data[f]), reason)
+            )
     db.commit()
     row = db.execute("SELECT * FROM vendor_codes WHERE id=?", (code_id,)).fetchone()
-    if not row:
-        return jsonify({"error": "Not found"}), 404
     return jsonify(dict(row))
+
+
+@app.route('/api/admin/guild/audit')
+def admin_guild_audit():
+    """P7 audit trail: last 100 vendor code changes."""
+    require_admin()
+    db = get_db()
+    rows = db.execute(
+        "SELECT a.*, vc.vendor_name FROM vendor_code_audit a "
+        "LEFT JOIN vendor_codes vc ON vc.id=a.code_id "
+        "ORDER BY a.changed_at DESC LIMIT 100"
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
 
 
 @app.route('/api/admin/guild/codes/<int:code_id>/spend', methods=['POST'])
@@ -2897,6 +3094,226 @@ def admin_guild_nomination_update(nom_id):
     return jsonify(dict(row))
 
 
+@app.route('/api/guild/eligibility')
+@limiter.limit("60 per minute")
+def guild_eligibility():
+    """
+    Check whether an EIN is eligible for guild benefits.
+    GET /api/guild/eligibility?ein=<ein>
+    Returns {eligible: bool, reason: str}.
+    Called by the member dashboard before showing the guild tab.
+    """
+    ein = (request.args.get('ein') or '').strip().replace('-', '')
+    eligible, reason = _is_ein_guild_eligible(ein)
+    return jsonify({"eligible": eligible, "reason": reason})
+
+
+@app.route('/api/guild/community-partner', methods=['POST'])
+@limiter.limit("10 per hour")
+def guild_community_partner_apply():
+    """
+    Any business — local, small, regional — applies to be listed as a
+    community partner. Admin reviews and activates. No CAF, no reporting.
+    """
+    data = request.get_json(silent=True) or {}
+    required = ('business_name', 'category', 'offer', 'submitter_name', 'submitter_email')
+    for f in required:
+        if not (data.get(f) or '').strip():
+            return jsonify({"error": f"Missing required field: {f}"}), 400
+    submitter_email = (data.get('submitter_email') or '').strip()
+    if '@' not in submitter_email:
+        return jsonify({"error": "Invalid email"}), 400
+    db = get_db()
+    import json as _json
+    valid_reach = {'local', 'regional', 'statewide', 'nationwide'}
+    area_type = (data.get('service_area_type') or 'local').strip()
+    if area_type not in valid_reach:
+        area_type = 'local'
+    area_values_raw = data.get('service_area_values')
+    if isinstance(area_values_raw, list):
+        area_values = _json.dumps(area_values_raw[:50])
+    else:
+        area_values = '[]'
+
+    cur = db.execute(
+        "INSERT INTO community_partners "
+        "(business_name, category, offer, location_city, location_state, "
+        "service_area_type, service_area_values, "
+        "contact_email, contact_phone, website_url, submitter_name, submitter_email, notes) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            data['business_name'].strip()[:200],
+            data['category'].strip()[:100],
+            data['offer'].strip()[:500],
+            (data.get('location_city') or '').strip()[:100],
+            (data.get('location_state') or '').strip()[:50],
+            area_type,
+            area_values,
+            (data.get('contact_email') or '').strip()[:200],
+            (data.get('contact_phone') or '').strip()[:50],
+            (data.get('website_url') or '').strip()[:500],
+            data['submitter_name'].strip()[:200],
+            submitter_email[:200],
+            (data.get('notes') or '').strip()[:1000],
+        )
+    )
+    db.commit()
+    _send_daanaa_email(
+        "partners@daanaa.org",
+        f"[Community partner] {data['business_name'].strip()} applied to join the network",
+        f"A business has applied to join the Daanaa impact network as a community partner.\n\n"
+        f"Business:      {data['business_name'].strip()}\n"
+        f"Category:      {data['category'].strip()}\n"
+        f"Offer:         {data['offer'].strip()}\n"
+        f"Reach:         {area_type}\n"
+        f"Location:      {(data.get('location_city') or '').strip()} {(data.get('location_state') or '').strip()}\n"
+        f"Website:       {(data.get('website_url') or '').strip() or '(not provided)'}\n"
+        f"Contact email: {(data.get('contact_email') or '').strip() or '(not provided)'}\n"
+        f"Contact phone: {(data.get('contact_phone') or '').strip() or '(not provided)'}\n"
+        f"Submitter:     {data['submitter_name'].strip()} <{submitter_email}>\n"
+        f"Notes:         {(data.get('notes') or '').strip() or '(none)'}\n\n"
+        f"Activate at: PATCH /api/admin/guild/community-partners/{cur.lastrowid} {{\"is_active\": 1, \"status\": \"active\"}}",
+        from_addr="Daanaa <partners@daanaa.org>",
+    )
+    return jsonify({"ok": True, "id": cur.lastrowid}), 201
+
+
+@app.route('/api/guild/directory')
+@limiter.limit("120 per minute")
+def guild_directory():
+    """
+    Combined directory: network partners (vendor_codes) + community partners.
+    Optional filters: ?category=&state= for community partners.
+    Powers the member-facing vendor directory and the /for-vendors directory preview.
+    """
+    db = get_db()
+    category = (request.args.get('category') or '').strip()
+    state = (request.args.get('state') or '').strip()
+
+    # Network partners — national/regional with shared codes
+    net_q = (
+        "SELECT id, vendor_name AS business_name, category, discount_label AS offer, "
+        "description, website_url, how_to_use, 'network' AS partner_type, "
+        "NULL AS location_city, NULL AS location_state "
+        "FROM vendor_codes WHERE is_active=1"
+    )
+    net_params: list = []
+    if category:
+        net_q += " AND category=?"
+        net_params.append(category)
+
+    # Community partners — local/small, admin-activated
+    com_q = (
+        "SELECT id, business_name, category, offer, "
+        "NULL AS description, website_url, NULL AS how_to_use, "
+        "'community' AS partner_type, location_city, location_state "
+        "FROM community_partners WHERE is_active=1"
+    )
+    com_params: list = []
+    if category:
+        com_q += " AND category=?"
+        com_params.append(category)
+    if state:
+        com_q += " AND (location_state=? OR location_state IS NULL OR location_state='')"
+        com_params.append(state)
+
+    network = [dict(r) for r in db.execute(net_q, net_params).fetchall()]
+    community = [dict(r) for r in db.execute(com_q, com_params).fetchall()]
+    return jsonify({"network": network, "community": community})
+
+
+@app.route('/api/impact')
+@limiter.limit("60 per minute")
+def impact_stats():
+    """
+    Public impact scorecard for the Daanaa impact network.
+    Cached 1 hour — these numbers move slowly.
+    """
+    cache_key = _ck("impact", "stats")
+    cached = _cget(cache_key, "stats")
+    if cached:
+        return jsonify(cached)
+
+    db = get_db()
+
+    orgs_indexed = db.execute(
+        "SELECT COUNT(*) FROM registry_enriched WHERE irs_revoked=0 AND org_status='active'"
+    ).fetchone()[0]
+
+    orgs_claimed = db.execute(
+        "SELECT COUNT(DISTINCT ein) FROM org_claims WHERE claim_status='verified' AND revoked_at IS NULL"
+    ).fetchone()[0]
+
+    states_row = db.execute(
+        "SELECT COUNT(DISTINCT state) FROM registry_enriched WHERE irs_revoked=0 AND state IS NOT NULL"
+    ).fetchone()
+    states_covered = states_row[0] if states_row else 0
+
+    ntee_row = db.execute(
+        "SELECT COUNT(DISTINCT nteecc) FROM registry_enriched WHERE irs_revoked=0 AND nteecc IS NOT NULL"
+    ).fetchone()
+    ntee_categories = ntee_row[0] if ntee_row else 0
+
+    network_partners = db.execute(
+        "SELECT COUNT(*) FROM vendor_codes WHERE is_active=1"
+    ).fetchone()[0]
+
+    community_partners = db.execute(
+        "SELECT COUNT(*) FROM community_partners WHERE is_active=1"
+    ).fetchone()[0]
+
+    # States covered by community partners
+    cp_states = db.execute(
+        "SELECT COUNT(DISTINCT location_state) FROM community_partners "
+        "WHERE is_active=1 AND location_state IS NOT NULL AND location_state != ''"
+    ).fetchone()[0]
+
+    result = {
+        "orgs_indexed": orgs_indexed,
+        "orgs_claimed": orgs_claimed,
+        "states_covered": states_covered,
+        "ntee_categories": ntee_categories,
+        "network_partners": network_partners,
+        "community_partners": community_partners,
+        "community_partner_states": cp_states,
+        "total_partners": network_partners + community_partners,
+    }
+    _cset(cache_key, result)
+    return jsonify(result)
+
+
+@app.route('/api/admin/guild/community-partners', methods=['GET'])
+def admin_community_partners_list():
+    require_admin()
+    db = get_db()
+    rows = db.execute(
+        "SELECT * FROM community_partners ORDER BY created_at DESC LIMIT 500"
+    ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/api/admin/guild/community-partners/<int:cp_id>', methods=['PATCH'])
+def admin_community_partner_update(cp_id):
+    require_admin()
+    data = request.get_json(silent=True) or {}
+    sets, params = [], []
+    allowed = ('status', 'is_active', 'business_name', 'category', 'offer',
+               'location_city', 'location_state', 'contact_email', 'contact_phone',
+               'website_url', 'notes')
+    for field in allowed:
+        if field in data:
+            sets.append(f"{field}=?")
+            params.append(data[field])
+    if not sets:
+        return jsonify({"error": "No fields to update"}), 400
+    params.append(cp_id)
+    db = get_db()
+    db.execute(f"UPDATE community_partners SET {', '.join(sets)} WHERE id=?", params)
+    db.commit()
+    row = db.execute("SELECT * FROM community_partners WHERE id=?", (cp_id,)).fetchone()
+    return jsonify(dict(row))
+
+
 # ---------------------------------------------------------------------------
 # Partner / vendor inquiry (existing — vendors and payment processors)
 # ---------------------------------------------------------------------------
@@ -3002,7 +3419,7 @@ def semantic_search():
 
     top_eins = _vec_similar(vec, exclude_ein="", limit=limit)
     db = get_db()
-    results  = [_strip_scores(r) for r in _fetch_orgs_by_eins(db, top_eins)]
+    results  = [_strip_scores(r) for r in _fetch_orgs_by_eins(db, top_eins, active_only=True)]
     return jsonify({"results": results, "query": q, "mode": "semantic", "total": len(results)})
 
 
@@ -3022,7 +3439,39 @@ def fused_search():
     if not q:
         return jsonify({"error": "q param required"}), 400
 
-    ck = _ck('fused', q)
+    # ── Zip code intercept ────────────────────────────────────────────────────
+    # If query is a 5-digit zip, resolve it to city+county+state and expand
+    # results to include orgs that serve that area (via org_service_areas) plus
+    # orgs headquartered in that city/state. Return augmented results with a
+    # "zip_resolved" meta field so the UI can show "Showing results for 60614 (Chicago, IL)".
+    zip_meta: dict | None = None
+    area_eins: list[str] = []
+    if q.isdigit() and len(q) == 5:
+        db_zip = get_db()
+        zrow = db_zip.execute("SELECT * FROM zip_codes WHERE zip=?", (q,)).fetchone()
+        if zrow:
+            zrow = dict(zrow)
+            zip_meta = zrow
+            # Expand query: search by city name so FTS finds orgs in that city
+            # Also collect EINs from org_service_areas matching this state/county
+            state = zrow.get('state_id', '')
+            county = zrow.get('county_name', '')
+            city = zrow.get('city', '')
+            q_expanded = city if city else q   # fall back to raw zip if no city
+            # Find orgs whose service area includes this state or county
+            area_eins: list[str] = []
+            if state:
+                sa_rows = db_zip.execute(
+                    "SELECT ein FROM org_service_areas WHERE "
+                    "area_type='nationwide' OR "
+                    "(area_type='statewide' AND area_values LIKE ?) OR "
+                    "(area_type IN ('county','local') AND area_values LIKE ?)",
+                    (f'%"{state}"%', f'%"{county}%"')
+                ).fetchall()
+                area_eins = [r[0] for r in sa_rows]
+            q = q_expanded  # use city name for FTS/semantic search
+
+    ck = _ck('fused', q, zip_meta['zip'] if zip_meta else '')
     cached = _cget(ck, 'search')
     if cached:
         return jsonify(cached)
@@ -3071,6 +3520,16 @@ def fused_search():
         rrf[ein] = rrf.get(ein, 0.0) + 1.0 / (RRF_K + rank)
 
     fused_eins = sorted(rrf, key=lambda e: rrf[e], reverse=True)
+
+    # ── Inject zip-area matches at the top of results ─────────────────────────
+    if zip_meta and area_eins:
+        # Orgs that self-report serving this area get a strong synthetic score
+        area_set = set(area_eins)
+        for ein in area_eins:
+            if ein not in rrf:
+                rrf[ein] = 0.04   # Below surge boosts (0.05) but above normal RRF
+        # Re-sort to pull area matches forward without discarding keyword/semantic matches
+        fused_eins = sorted(rrf, key=lambda e: rrf[e], reverse=True)
 
     # ── Apply surge boosts (event-driven: add relevant orgs even if not in keyword/semantic) ─────────────
     # Check if there are active boosts for this query's detected event.
@@ -3158,9 +3617,343 @@ def fused_search():
 
     # Set mode indicator: fts-only (fast path) or fused (semantic included)
     mode = "fts-only" if use_fast_path else "fused"
-    out = {"results": results, "query": q, "mode": mode, "total": len(results)}
+    out: dict = {"results": results, "query": q, "mode": mode, "total": len(results)}
+    if zip_meta:
+        out["zip_resolved"] = {
+            "zip": zip_meta["zip"],
+            "city": zip_meta.get("city"),
+            "state": zip_meta.get("state_id"),
+            "county": zip_meta.get("county_name"),
+        }
     _cset(ck, out)
     return jsonify(out)
+
+
+# ── Zip code lookup ────────────────────────────────────────────────────────
+
+@app.route('/api/zip/<zip_code>')
+@limiter.limit("120 per minute")
+def zip_lookup(zip_code: str):
+    """
+    GET /api/zip/60614  → {zip, city, state_id, county_name, lat, lon}
+    Powers frontend zip-code typeahead and search routing.
+    Returns 404 if zip is not in the reference table (run import_zip_codes.py first).
+    """
+    z = zip_code.strip()
+    if not z.isdigit() or len(z) != 5:
+        return jsonify({"error": "Invalid zip code"}), 400
+    db = get_db()
+    row = db.execute("SELECT * FROM zip_codes WHERE zip=?", (z,)).fetchone()
+    if not row:
+        return jsonify({"error": "Zip code not found"}), 404
+    return jsonify(dict(row))
+
+
+# ── Service area endpoints ──────────────────────────────────────────────────
+
+@app.route('/api/org/<ein>/service-area', methods=['GET'])
+@limiter.limit("120 per minute")
+def org_service_area_get(ein: str):
+    """Return an org's self-reported service area. Public."""
+    clean = ein.replace('-', '').strip()
+    db = get_db()
+    row = db.execute(
+        "SELECT area_type, area_values, updated_at FROM org_service_areas WHERE ein=?",
+        (clean,)
+    ).fetchone()
+    if not row:
+        return jsonify({"area_type": None, "area_values": [], "updated_at": None})
+    d = dict(row)
+    try:
+        d['area_values'] = json.loads(d['area_values'])
+    except (json.JSONDecodeError, TypeError):
+        d['area_values'] = []
+    return jsonify(d)
+
+
+@app.route('/api/org/<ein>/service-area', methods=['PUT'])
+@limiter.limit("30 per hour")
+def org_service_area_put(ein: str):
+    """
+    Orgs set their self-reported reach level after claiming their page.
+    area_type: local | regional | statewide | nationwide | international
+    area_values:
+      regional    → ["Cook County, IL", "DuPage County, IL"] (free-text, ≤10 items)
+      statewide   → ["IL", "WI"]  (US state abbreviations, ≤50)
+      international → ["KE", "UG", "TZ"]  (ISO 3166-1 alpha-2, ≤50)
+      local / nationwide → [] (empty — donor sees city from IRS address or "nationwide")
+    Auth: verification_token (claim flow) OR admin key.
+    """
+    clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+    data  = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    db = get_db()
+
+    # Auth: claim token OR admin key
+    if token:
+        if not _verify_claim_token(clean, token):
+            return jsonify({"error": "Invalid verification token"}), 403
+    else:
+        try:
+            require_admin()
+        except Exception:
+            return jsonify({"error": "verification_token or admin key required"}), 403
+
+    valid_types = {'local', 'regional', 'statewide', 'nationwide', 'international'}
+    area_type = (data.get('area_type') or 'local').strip()
+    if area_type not in valid_types:
+        return jsonify({"error": f"area_type must be one of {sorted(valid_types)}"}), 400
+
+    area_values = data.get('area_values', [])
+    if not isinstance(area_values, list):
+        return jsonify({"error": "area_values must be a list"}), 400
+
+    # Sanitise and cap per type
+    max_items = {'regional': 10, 'statewide': 50, 'international': 50}.get(area_type, 0)
+    area_values = [str(v).strip()[:100] for v in area_values if str(v).strip()][:max_items]
+
+    db.execute("""
+        INSERT INTO org_service_areas (ein, area_type, area_values, updated_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(ein) DO UPDATE SET
+            area_type=excluded.area_type,
+            area_values=excluded.area_values,
+            updated_at=excluded.updated_at
+    """, (clean, area_type, json.dumps(area_values)))
+    db.commit()
+    return jsonify({"ok": True, "ein": clean, "area_type": area_type, "area_values": area_values})
+
+
+# ── Volunteer events ───────────────────────────────────────────────────────
+
+def _verify_claim_token(ein: str, token: str) -> bool:
+    """Return True if token is a valid verification token for a non-revoked claim."""
+    db = get_db()
+    row = db.execute("SELECT pin, claim_status FROM org_claims WHERE ein=?", (ein,)).fetchone()
+    if not row or row["claim_status"] == "revoked":
+        return False
+    stored_pin = row["pin"]
+    return token == stored_pin or token == _make_verify_token(ein, stored_pin)
+
+
+def _format_event(row) -> dict:
+    return {
+        "id":             row["id"],
+        "ein":            row["ein"],
+        "title":          row["title"],
+        "description":    row["description"],
+        "event_date":     row["event_date"],
+        "start_time":     row["start_time"],
+        "end_time":       row["end_time"],
+        "location_city":  row["location_city"],
+        "location_state": row["location_state"],
+        "location_zip":   row["location_zip"],
+        "is_virtual":     bool(row["is_virtual"]),
+        "signup_url":     row["signup_url"],
+        "contact_email":  row["contact_email"],
+        "capacity":       row["capacity"],
+        "status":         row["status"],
+        "created_at":     row["created_at"],
+        "updated_at":     row["updated_at"],
+    }
+
+
+@app.route('/api/volunteer-events', methods=['GET'])
+@limiter.limit("120 per minute")
+def volunteer_events_search():
+    """Public search for volunteer events by location/date/cause. No auth required."""
+    db = get_db()
+    zip_code   = (request.args.get('zip')   or '').strip()[:10]
+    city       = (request.args.get('city')  or '').strip()[:100]
+    state      = (request.args.get('state') or '').strip()[:2].upper()
+    date_from  = (request.args.get('date_from') or '').strip()[:10]
+    date_to    = (request.args.get('date_to')   or '').strip()[:10]
+    ntee       = (request.args.get('ntee')  or '').strip()[:1].upper()
+    virtual    = request.args.get('virtual') in ('1', 'true')
+    limit_val  = min(int(request.args.get('limit',  50)), 100)
+    offset_val = max(int(request.args.get('offset',  0)), 0)
+
+    where, params = ["ve.status='active'", "ve.event_date >= date('now')"], []
+    if zip_code:
+        where.append("ve.location_zip=?"); params.append(zip_code)
+    elif city and state:
+        where.append("lower(ve.location_city)=lower(?) AND ve.location_state=?")
+        params += [city, state]
+    elif state:
+        where.append("ve.location_state=?"); params.append(state)
+    if virtual:
+        where.append("ve.is_virtual=1")
+    if date_from:
+        where.append("ve.event_date >= ?"); params.append(date_from)
+    if date_to:
+        where.append("ve.event_date <= ?"); params.append(date_to)
+    if ntee:
+        where.append("r.ntee1=?"); params.append(ntee)
+    sql = (
+        "SELECT ve.*, r.organization_name AS org_name "
+        "FROM volunteer_events ve "
+        "LEFT JOIN registry_enriched r ON ve.ein=r.EIN "
+        f"WHERE {' AND '.join(where)} "
+        "ORDER BY ve.event_date ASC, ve.start_time ASC "
+        "LIMIT ? OFFSET ?"
+    )
+    rows = db.execute(sql, params + [limit_val, offset_val]).fetchall()
+    events = []
+    for row in rows:
+        e = _format_event(row)
+        try:
+            e["org_name"] = row["org_name"]
+        except IndexError:
+            e["org_name"] = None
+        events.append(e)
+    return jsonify({"events": events, "count": len(events)})
+
+
+@app.route('/api/org/<ein>/volunteer-events', methods=['GET'])
+@limiter.limit("120 per minute")
+def org_volunteer_events_list(ein: str):
+    """Public: all active/upcoming events for a given org."""
+    clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not clean:
+        return jsonify({"events": []})
+    db = get_db()
+    include_past = request.args.get('all') == '1'
+    if include_past:
+        rows = db.execute(
+            "SELECT * FROM volunteer_events WHERE ein=? AND status != 'cancelled' "
+            "ORDER BY event_date DESC LIMIT 50", (clean,)
+        ).fetchall()
+    else:
+        rows = db.execute(
+            "SELECT * FROM volunteer_events WHERE ein=? AND status='active' "
+            "AND event_date >= date('now') ORDER BY event_date ASC LIMIT 20", (clean,)
+        ).fetchall()
+    return jsonify({"events": [_format_event(r) for r in rows]})
+
+
+@app.route('/api/org/<ein>/volunteer-events', methods=['POST'])
+@limiter.limit("20 per minute")
+def org_volunteer_events_create(ein: str):
+    """Create a volunteer event. Requires valid verification_token for this EIN."""
+    clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    data  = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not token or not _verify_claim_token(clean, token):
+        return jsonify({"error": "Invalid or missing verification token"}), 403
+
+    title      = (data.get('title')       or '').strip()[:200]
+    event_date = (data.get('event_date')  or '').strip()[:10]
+    if not title or not event_date:
+        return jsonify({"error": "title and event_date are required"}), 400
+
+    import re
+    if not re.match(r'^\d{4}-\d{2}-\d{2}$', event_date):
+        return jsonify({"error": "event_date must be YYYY-MM-DD"}), 400
+
+    description    = (data.get('description')    or '').strip()[:1000]
+    start_time     = (data.get('start_time')     or '').strip()[:5] or None
+    end_time       = (data.get('end_time')       or '').strip()[:5] or None
+    location_city  = (data.get('location_city')  or '').strip()[:100] or None
+    location_state = (data.get('location_state') or '').strip()[:2].upper() or None
+    location_zip   = (data.get('location_zip')   or '').strip()[:10] or None
+    is_virtual     = bool(data.get('is_virtual', False))
+    signup_url     = (data.get('signup_url')     or '').strip()[:500] or None
+    contact_email  = (data.get('contact_email')  or '').strip()[:200] or None
+    capacity       = data.get('capacity')
+    if capacity is not None:
+        try:
+            capacity = max(1, int(capacity))
+        except (ValueError, TypeError):
+            capacity = None
+
+    if signup_url and not signup_url.startswith(('http://', 'https://')):
+        signup_url = None
+
+    db = get_db()
+    cur = db.execute("""
+        INSERT INTO volunteer_events
+            (ein, title, description, event_date, start_time, end_time,
+             location_city, location_state, location_zip, is_virtual,
+             signup_url, contact_email, capacity, status)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'active')
+    """, (clean, title, description or None, event_date, start_time, end_time,
+          location_city, location_state, location_zip, int(is_virtual),
+          signup_url, contact_email, capacity))
+    db.commit()
+    event_id = cur.lastrowid
+    row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    return jsonify(_format_event(row)), 201
+
+
+@app.route('/api/volunteer-events/<int:event_id>', methods=['PATCH'])
+@limiter.limit("30 per minute")
+def volunteer_event_update(event_id: int):
+    """Update a volunteer event. Requires verification_token matching the event's EIN."""
+    data  = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    db  = get_db()
+    row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Event not found"}), 404
+    if not token or not _verify_claim_token(row["ein"], token):
+        return jsonify({"error": "Invalid or missing verification token"}), 403
+    if row["status"] == "expired":
+        return jsonify({"error": "Cannot update an expired event"}), 400
+
+    allowed = {"title", "description", "event_date", "start_time", "end_time",
+               "location_city", "location_state", "location_zip", "is_virtual",
+               "signup_url", "contact_email", "capacity", "status"}
+    valid_statuses = {"active", "filled", "cancelled"}
+    updates, vals = [], []
+    for field in allowed:
+        if field not in data:
+            continue
+        val = data[field]
+        if field == "status":
+            if val not in valid_statuses:
+                return jsonify({"error": f"status must be one of {valid_statuses}"}), 400
+        if field == "is_virtual":
+            val = int(bool(val))
+        if field == "signup_url" and val and not str(val).startswith(('http://', 'https://')):
+            continue
+        updates.append(f"{field}=?"); vals.append(val)
+
+    if not updates:
+        return jsonify({"error": "No valid fields to update"}), 400
+    updates.append("updated_at=CURRENT_TIMESTAMP")
+    db.execute(f"UPDATE volunteer_events SET {', '.join(updates)} WHERE id=?", vals + [event_id])
+    db.commit()
+    row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    return jsonify(_format_event(row))
+
+
+@app.route('/api/volunteer-events/<int:event_id>', methods=['DELETE'])
+@limiter.limit("20 per minute")
+def volunteer_event_delete(event_id: int):
+    """Cancel a volunteer event. Requires verification_token matching the event's EIN."""
+    data  = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    db  = get_db()
+    row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Event not found"}), 404
+    if not token or not _verify_claim_token(row["ein"], token):
+        return jsonify({"error": "Invalid or missing verification token"}), 403
+
+    db.execute(
+        "UPDATE volunteer_events SET status='cancelled', updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        (event_id,)
+    )
+    db.commit()
+    return jsonify({"ok": True, "id": event_id, "status": "cancelled"})
 
 
 # ── Well-known / security ──────────────────────────────────────────────────

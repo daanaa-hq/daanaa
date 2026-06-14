@@ -35,16 +35,17 @@ rsync -avz -e "ssh -i $SSH_KEY" \
   --exclude='venv' \
   --exclude='data/*' \
   --exclude='logs/*' \
+  --exclude='precompute_output/*' \
   "$REPO_DIR/" "root@$DROPLET_IP:/opt/daanaa/" >> "$LOG_FILE" 2>&1 || {
   log "ERROR: Rsync to droplet failed"
   exit 1
 }
 log "✓ Code synced to droplet"
 
-# Step 3: Restart API on droplet
-log "Restarting API on droplet..."
+# Step 3: Promote updated droplet_api.py and restart via systemd
+log "Restarting API on droplet (systemd)..."
 ssh -i "$SSH_KEY" "root@$DROPLET_IP" \
-  "pkill -f gunicorn; sleep 2; cd /opt/daanaa && /opt/daanaa/venv/bin/gunicorn -w 2 -b 0.0.0.0:80 --timeout 120 --access-logfile logs/access.log --error-logfile logs/error.log daanaa_api:app &" \
+  "cp /opt/daanaa/scripts/droplet_api.py /opt/daanaa/droplet_api.py && systemctl restart daanaa" \
   >> "$LOG_FILE" 2>&1 || {
   log "ERROR: API restart failed"
   exit 1
@@ -53,8 +54,8 @@ log "✓ API restarting on droplet"
 
 # Step 4: Health check
 log "Running health check..."
-sleep 3
-HEALTH=$(ssh -i "$SSH_KEY" "root@$DROPLET_IP" "curl -s http://localhost/api/stats | jq -r '.total_organizations // empty'" 2>/dev/null || echo "")
+sleep 5
+HEALTH=$(ssh -i "$SSH_KEY" "root@$DROPLET_IP" "curl -s http://localhost:5000/api/stats | jq -r '.total_organizations // empty'" 2>/dev/null || echo "")
 if [ -n "$HEALTH" ] && [ "$HEALTH" != "null" ]; then
   log "✓ API health check passed (orgs: $HEALTH)"
 else

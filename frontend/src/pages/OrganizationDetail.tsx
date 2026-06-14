@@ -12,8 +12,8 @@ import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
-import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs } from '../data/api'
-import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord } from '../data/api'
+import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents } from '../data/api'
+import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 import { getPrimaryExternalLink } from '../utils/externalLink'
@@ -319,6 +319,11 @@ export default function OrganizationDetail() {
     () => id ? getSimilarOrgs(id, { limit: 6 }) : Promise.resolve({ results: [], mode: '', diamonds_only: false }),
     [id]
   )
+  const { data: volunteerEventsData } = useApi(
+    () => id ? getOrgVolunteerEvents(id) : Promise.resolve({ events: [] }),
+    [id]
+  )
+  const volunteerEvents: VolunteerEvent[] = volunteerEventsData?.events ?? []
   const similarApiOrgs: ApiOrganization[] = (similarData?.results ?? []) as ApiOrganization[]
   const revenueTrend = financials
     .filter(f => f.totrevenue !== null && f.totrevenue > 0)
@@ -1255,6 +1260,69 @@ export default function OrganizationDetail() {
           >State Charity Registry</a>
         </div>
       </div>
+
+      {/* Volunteer opportunities */}
+      {volunteerEvents.length > 0 && (
+        <div className="bg-warm-cream py-12 border-t border-light-grey">
+          <div className="max-w-[900px] mx-auto px-6 lg:px-12">
+            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-4">
+              Volunteer opportunities
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {volunteerEvents.map(ev => {
+                const [y, m, d] = ev.event_date.split('-')
+                const dateStr = new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString('en-US', {
+                  weekday: 'short', month: 'short', day: 'numeric',
+                })
+                const location = ev.is_virtual
+                  ? 'Virtual'
+                  : [ev.location_city, ev.location_state].filter(Boolean).join(', ') || null
+                return (
+                  <div key={ev.id} className="bg-white rounded-xl border border-light-cream p-5 flex flex-col gap-3">
+                    <div>
+                      <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase mb-1 ${
+                        ev.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/10 text-soft-gold'
+                      }`}>
+                        {ev.is_virtual ? 'Virtual' : 'In Person'}
+                      </span>
+                      <h3 className="font-display italic text-deep-navy text-[17px] leading-tight">{ev.title}</h3>
+                      <p className="font-body text-[12px] text-cool-grey mt-0.5">
+                        {dateStr}{location ? ` · ${location}` : ''}
+                      </p>
+                    </div>
+                    {ev.description && (
+                      <p className="font-body text-[13px] text-cool-grey leading-[1.6] line-clamp-2">{ev.description}</p>
+                    )}
+                    <div className="mt-auto">
+                      {ev.signup_url ? (
+                        <a
+                          href={ev.signup_url} target="_blank" rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
+                        >
+                          Sign up
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M7 17 17 7M17 7H8M17 7v9"/>
+                          </svg>
+                        </a>
+                      ) : ev.contact_email ? (
+                        <a
+                          href={`mailto:${ev.contact_email}`}
+                          className="font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
+                        >
+                          Contact to volunteer
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="mt-6 font-body text-[12px] text-muted-cream">
+              Sign-ups are handled by the organization directly. Daanaa does not collect volunteer information.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Similar Organizations */}
       {similarOrgs.length > 0 && (

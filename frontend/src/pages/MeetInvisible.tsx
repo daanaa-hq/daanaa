@@ -98,7 +98,7 @@ export default function MeetInvisible() {
           Many are doing real work. Most are just invisible.
         </h1>
         <p className="font-body text-[17px] text-muted-cream leading-[1.7] mt-6 max-w-[560px] mx-auto">
-          Of 1.6 million tax-deductible nonprofits in America, most operate without the visibility of household names. Many simply haven't published financial data yet. That doesn't make their work less real. Let's change that.
+          Of 1.8 million+ tax-deductible nonprofits in America, most operate without the visibility of household names. Many simply haven't published financial data yet. That doesn't make their work less real. Let's change that.
         </p>
       </section>
 
@@ -135,7 +135,7 @@ export default function MeetInvisible() {
       {/* CTA */}
       <section className="max-w-[820px] mx-auto px-6 pb-32 text-center">
         <p className="font-display italic text-warm-cream leading-[1.15]" style={{ fontSize: 'clamp(26px, 4vw, 40px)' }}>
-          1.6 million nonprofits doing the work.<br />You just discovered 18 of them.
+          1.8 million+ nonprofits doing the work.<br />You just discovered 18 of them.
         </p>
         <Link
           to="/directory"

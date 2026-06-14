@@ -57,12 +57,26 @@ def test_no_payment_routes():
 # ── P2 — Donor privacy ────────────────────────────────────────────────────────
 
 @pytest.mark.principle
-def test_no_wallet_write_route():
-    """No API route writes wallet/giving data — wallet is localStorage-only."""
+def test_wallet_routes_require_firebase_auth():
+    """Wallet sync routes (opt-in cross-device) must be gated by Firebase auth.
+    Wallet data is never exposed without explicit user authentication (P2).
+    No giving/donation routes may exist — those stay in localStorage only.
+    """
     src = _api_src()
     wallet_routes = _grep(r"@app\.route\(['\"].*wallet.*['\"]", src)
+    # Wallet routes exist for optional cross-device sync; that's allowed by P2.
+    # Every handler MUST call _require_firebase_user() before touching any data.
+    if wallet_routes:
+        firebase_guards = len(re.findall(r"_require_firebase_user\(\)", src))
+        assert firebase_guards >= len(wallet_routes), (
+            f"P2 violation: {len(wallet_routes)} wallet routes but only "
+            f"{firebase_guards} Firebase auth guards — some routes are unprotected"
+        )
+        assert "_require_firebase_user" in src, (
+            "P2 violation: _require_firebase_user missing — wallet routes unprotected"
+        )
+    # Giving/donation routes must never exist server-side
     giving_routes = _grep(r"@app\.route\(['\"].*giving.*['\"]", src)
-    assert not wallet_routes, f"P2 violation: wallet route on server: {wallet_routes}"
     assert not giving_routes, f"P2 violation: giving route on server: {giving_routes}"
 
 

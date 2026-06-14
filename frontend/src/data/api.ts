@@ -392,6 +392,159 @@ export async function getSimilarOrgs(ein: string, options?: {
   return fetchJson(`/api/organizations/${ein}/similar?${params}`);
 }
 
+// --- Guild ---
+
+export interface VendorBenefit {
+  id: number
+  vendor_name: string
+  category: string
+  code: string
+  description: string
+  discount_label: string
+  website_url: string | null
+  how_to_use: string | null
+  milestone_tier: number
+}
+
+export async function getGuildBenefits(): Promise<VendorBenefit[]> {
+  return fetchJson('/api/guild/benefits')
+}
+
+export async function getGuildMemberCount(): Promise<{ member_count: number }> {
+  return fetchJson('/api/guild/member-count')
+}
+
+export async function submitGuildWaitlist(email: string, ein?: string): Promise<void> {
+  try {
+    await fetchJson('/api/waitlist', {
+      method: 'POST',
+      body: JSON.stringify({ email, source: 'guild_waitlist', ein }),
+    })
+  } catch (e: unknown) {
+    // 409 = already on list — not an error from UX perspective
+    if (e instanceof Error && e.message.includes('409')) return
+    throw e
+  }
+}
+
+// ── Service area ────────────────────────────────────────────────────────────
+
+export type ServiceAreaType = 'local' | 'regional' | 'statewide' | 'nationwide' | 'international'
+
+export interface ServiceArea {
+  area_type: ServiceAreaType | null
+  area_values: string[]
+  updated_at: string | null
+}
+
+export async function getServiceArea(ein: string): Promise<ServiceArea> {
+  return fetchJson(`${API_BASE}/api/org/${ein}/service-area`)
+}
+
+export async function putServiceArea(
+  ein: string,
+  token: string,
+  area_type: ServiceAreaType,
+  area_values: string[],
+): Promise<{ ok: boolean }> {
+  return fetchJson(`${API_BASE}/api/org/${ein}/service-area`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ verification_token: token, area_type, area_values }),
+  })
+}
+
+// ── Volunteer events ────────────────────────────────────────────────────────
+
+export interface VolunteerEvent {
+  id: number
+  ein: string
+  title: string
+  description: string | null
+  event_date: string          // YYYY-MM-DD
+  start_time: string | null   // HH:MM
+  end_time: string | null
+  location_city: string | null
+  location_state: string | null
+  location_zip: string | null
+  is_virtual: boolean
+  signup_url: string | null
+  contact_email: string | null
+  capacity: number | null
+  status: 'active' | 'filled' | 'cancelled' | 'expired'
+  org_name?: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface VolunteerEventSearchParams {
+  zip?: string
+  city?: string
+  state?: string
+  date_from?: string
+  date_to?: string
+  ntee?: string
+  virtual?: boolean
+  limit?: number
+  offset?: number
+}
+
+export async function searchVolunteerEvents(
+  params: VolunteerEventSearchParams,
+): Promise<{ events: VolunteerEvent[]; count: number }> {
+  const q = new URLSearchParams()
+  if (params.zip)       q.set('zip', params.zip)
+  if (params.city)      q.set('city', params.city)
+  if (params.state)     q.set('state', params.state)
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to)   q.set('date_to', params.date_to)
+  if (params.ntee)      q.set('ntee', params.ntee)
+  if (params.virtual)   q.set('virtual', '1')
+  if (params.limit)     q.set('limit', String(params.limit))
+  if (params.offset)    q.set('offset', String(params.offset))
+  return fetchJson(`${API_BASE}/api/volunteer-events?${q}`)
+}
+
+export async function getOrgVolunteerEvents(
+  ein: string,
+  opts?: { all?: boolean },
+): Promise<{ events: VolunteerEvent[] }> {
+  const q = opts?.all ? '?all=1' : ''
+  return fetchJson(`${API_BASE}/api/org/${ein}/volunteer-events${q}`)
+}
+
+export async function createVolunteerEvent(
+  ein: string,
+  token: string,
+  event: Omit<VolunteerEvent, 'id' | 'ein' | 'status' | 'org_name' | 'created_at' | 'updated_at'>,
+): Promise<VolunteerEvent> {
+  return fetchJson(`${API_BASE}/api/org/${ein}/volunteer-events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...event, verification_token: token }),
+  })
+}
+
+export async function updateVolunteerEvent(
+  id: number,
+  token: string,
+  updates: Partial<Omit<VolunteerEvent, 'id' | 'ein' | 'org_name' | 'created_at' | 'updated_at'>>,
+): Promise<VolunteerEvent> {
+  return fetchJson(`${API_BASE}/api/volunteer-events/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...updates, verification_token: token }),
+  })
+}
+
+export async function cancelVolunteerEvent(id: number, token: string): Promise<void> {
+  await fetchJson(`${API_BASE}/api/volunteer-events/${id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ verification_token: token }),
+  })
+}
+
 export async function submitFeedback(
   message: string,
   opts?: { email?: string; page?: string; category?: string },
