@@ -129,8 +129,13 @@ Key columns of note (beyond the obvious name/location fields):
 
 | Column | Notes |
 |--------|-------|
-| `merit_score` | 0–100 peer financial context score (NULL = unscored) |
-| `merit_tier` / `merit_band` | Human-readable tier label derived from score |
+| `merit_score` | (v4) 0–100 peer financial context score within operating model + band |
+| `merit_tier` / `merit_band` | (v4) Lamp tiers (Beacon/Torch/Candle/Spark); still active for visibility layer |
+| `merit_score_v5` | (v5) 0–100 financial context percentile rank within archetype + revenue band |
+| `merit_archetype_v5` / `merit_archetype_v5_label` | (v5) Funding model: Donation-Funded, Fee-for-Service, Endowment-Funded |
+| `merit_band_v5_label` | (v5) Revenue band: Micro (<$150K), Professional ($150K–$700K), Established (>$700K) |
+| `merit_health_signal_v5` | (v5) Financial health: HEALTHY, STABLE, or CAUTION |
+| `merit_peer_group_v5` / `merit_peer_count_v5` | (v5) Peer cell size and ranking within cell |
 | `ntee1_percentile` | Percentile rank within the NTEE1 peer group |
 | `peer_percentile` / `peer_rank` / `peer_total` | Finer peer group stats |
 | `mission` / `mission_source` | 1–2 sentence description; source = `ai_ntee`, `ai_generated`, or scraped |
@@ -155,7 +160,17 @@ Secondary/legacy: `data/meritgiving.db`, `data/merit_state.db` — do not treat 
 
 ### Data pipeline (`scripts/`)
 
-Current scorer: `scripts/merit_scorer_v4_0.py` (run by `overnight_pipeline.py`).
+**Financial context system:** v5 (Donation-Funded/Fee-for-Service/Endowment-Funded,
+3 revenue bands, health signals) drives all user-facing financial context. v4 (9
+operating models) and lamp tiers remain for backwards compatibility and the
+visibility layer. The research page documents v5; org detail pages show v5 context.
+
+Production scorer: `scripts/merit_scorer_v4_0.py` (runs nightly via
+`overnight_pipeline.py`). v5 columns are pre-computed and stable in the database
+(411K+ orgs scored; coverage bounded by financial data availability, not partial
+run). Dry-run revealed v5 only assigns 3 archetypes (NTEE mapping constraint);
+re-scoring would not add missing archetypes or expand coverage.
+
 Legacy scorers (v2_0, v3_3, _db, _tier_b/_c, agent2) archived to
 `archive/legacy_scorers_20260609/` — never run those.
 
