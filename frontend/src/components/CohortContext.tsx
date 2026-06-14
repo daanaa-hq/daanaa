@@ -50,7 +50,7 @@ export default function CohortContext({ org }: CohortContextProps) {
           <p className="font-body text-[14px] text-deep-navy">
             Run this organization?{' '}
             <Link
-              to="/claim"
+              to={`/for-nonprofits?ein=${org.EIN}`}
               className="font-semibold underline underline-offset-2 hover:opacity-80"
             >
               Claim your page

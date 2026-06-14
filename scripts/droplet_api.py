@@ -20,7 +20,10 @@ from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder=None)
-CORS(app)
+# Restrict CORS to the production origins. The SPA is served same-origin, so
+# this only governs cross-origin API calls — no need to allow the whole web.
+CORS(app, origins=["https://daanaa.org", "https://www.daanaa.org"],
+     supports_credentials=False)
 
 
 @app.after_request
@@ -28,6 +31,25 @@ def set_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # CSP must allow Firebase/Google Sign-In origins (daanaa.org serves the auth
+    # popup). Mirrors daanaa_api.py so prod and home server stay consistent.
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data: https://fonts.gstatic.com; "
+        "connect-src 'self' https://daanaa.org https://www.daanaa.org "
+        "https://identitytoolkit.googleapis.com "
+        "https://securetoken.googleapis.com "
+        "https://www.googleapis.com; "
+        "frame-src https://accounts.google.com https://daanaa-af9c2.firebaseapp.com; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
+    )
+    # HSTS — daanaa.org is HTTPS-only via Cloudflare.
+    response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
 
 

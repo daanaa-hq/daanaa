@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { CompareProvider } from './contexts/CompareContext'
 import { AuthProvider } from './contexts/AuthContext'
 
@@ -49,6 +50,7 @@ function PageLoader() {
 
 export default function App() {
   return (
+    <ErrorBoundary>
     <AuthProvider>
     <CompareProvider>
       <Suspense fallback={<PageLoader />}>
@@ -101,5 +103,6 @@ export default function App() {
       </Suspense>
     </CompareProvider>
     </AuthProvider>
+    </ErrorBoundary>
   )
 }
