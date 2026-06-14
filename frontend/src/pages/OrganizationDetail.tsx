@@ -715,7 +715,7 @@ export default function OrganizationDetail() {
                     </span>
                   )}
                   {v4Health.peerCellSize && (
-                    <span className="font-body text-[9px] text-muted-cream">
+                    <span className="font-body text-[11px] text-muted-cream">
                       Peer group: {v4Health.peerCellSize.toLocaleString()} orgs
                     </span>
                   )}
