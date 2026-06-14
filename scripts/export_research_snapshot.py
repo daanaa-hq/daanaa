@@ -320,11 +320,14 @@ def build_monthly_changes(db):
         months.append(cur.strftime('%Y-%m'))
         cur += relativedelta(months=1)
 
-    # New registrations by month (ruling_date is YYYYMM or YYYY-MM-DD format)
+    # New registrations by month (ruling_date is YYYYMM — 6 chars, e.g. "202407")
+    # Convert to YYYY-MM for matching by inserting a hyphen after position 4.
     new_rows = db.execute("""
-        SELECT substr(ruling_date, 1, 7) as yrmo, COUNT(*) as cnt
+        SELECT substr(ruling_date,1,4) || '-' || substr(ruling_date,5,2) as yrmo,
+               COUNT(*) as cnt
         FROM registry_enriched
         WHERE ruling_date IS NOT NULL AND ruling_date != ''
+          AND length(ruling_date) >= 6
           AND subsection = '3' AND deductibility = '1'
           AND COALESCE(irs_revoked, 0) != 1
           AND COALESCE(org_status, '') != 'revoked'
