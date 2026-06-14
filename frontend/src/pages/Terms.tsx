@@ -143,6 +143,12 @@ export default function Terms() {
               Organizations that post volunteer events represent that they are responsible for the safety of those
               events, including appropriate insurance and compliance with applicable local requirements.
             </p>
+            <p className="mt-3">
+              If an event involves minors or requires parental supervision, it is the organization's responsibility
+              to state so clearly in their listing. Parents and guardians are responsible for determining whether an
+              event is appropriate for minors in their care. Daanaa does not screen volunteer listings for
+              age-appropriateness or child-safety compliance.
+            </p>
           </section>
 
           <section>

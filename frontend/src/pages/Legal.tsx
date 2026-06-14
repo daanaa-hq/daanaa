@@ -130,9 +130,12 @@ export default function Legal() {
               name, title, email address, and phone number. We use them for one purpose: to verify by
               phone that you represent the organization before your page goes live. None of this
               information is ever shown publicly. We keep a record of your claim, the statements you
-              agreed to, and our verification call, because claiming a page carries legal weight and
-              both sides benefit from a clear record. To correct or remove your claim information,
-              email <a href="mailto:privacy@daanaa.org" className="text-soft-gold hover:underline">privacy@daanaa.org</a>.
+              agreed to, and our verification call for as long as your claim is active and for up to
+              three years after it is closed, because claiming a page carries legal weight and both
+              sides benefit from a clear record. To correct, update, or request deletion of your claim
+              information, email{' '}
+              <a href="mailto:privacy@daanaa.org" className="text-soft-gold hover:underline">privacy@daanaa.org</a>
+              {' '}and we will respond within 30 days.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">The Giving Wallet requires a free account.</strong> To save
