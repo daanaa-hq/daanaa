@@ -140,6 +140,94 @@ def enrich_batch(size=1000):
     log('Batch: ' + str(updated) + ' updated, ' + str(errors) + ' errors')
     return updated, errors
 
+def run_bmf_classification_sync():
+    """Sync subsection+deductibility from BMF. Catches any drift that crept in
+    since the last BMF refresh (e.g. from NCCS re-ingests or manual edits)."""
+    try:
+        import subprocess
+        log('Syncing subsection/deductibility from BMF...')
+        script = Path.home() / 'meritgiving' / 'scripts' / 'backfill_subsection_deductibility.py'
+        result = subprocess.run(
+            ['python3', str(script)],
+            capture_output=True, text=True, timeout=300,
+        )
+        for line in (result.stdout or '').strip().splitlines():
+            log(line)
+        if result.returncode != 0:
+            log(f'⚠️  BMF classification sync non-zero exit: {result.stderr[:200]}')
+    except Exception as e:
+        log(f'⚠️  BMF classification sync error (non-fatal): {str(e)[:100]}')
+
+
+def run_data_quality_gate():
+    """Lightweight invariant checks before data is considered publish-ready.
+
+    Logs WARN for soft violations and raises on hard violations that indicate
+    the pipeline has produced bad data.
+    """
+    try:
+        db = get_db()
+
+        # Hard check: no 501(c)(4/5/6/7/8) should appear as deductible 501(c)(3)
+        bad = db.execute("""
+            SELECT COUNT(*) FROM registry_enriched
+            WHERE deductibility = '1'
+              AND subsection IN ('4','5','6','7','8','9','12','13','19')
+              AND COALESCE(irs_revoked, 0) != 1
+        """).fetchone()[0]
+        if bad > 0:
+            log(f'🚨 DATA QUALITY FAIL: {bad} non-501(c)(3) orgs showing as deductible — run backfill_subsection_deductibility.py')
+        else:
+            log('✅ Quality gate: no non-501(c)(3) orgs showing as deductible')
+
+        # Soft check: active deductible count should be between 1.5M and 2.2M
+        active = db.execute("""
+            SELECT COUNT(*) FROM registry_enriched
+            WHERE subsection = '3' AND deductibility = '1'
+              AND COALESCE(irs_revoked, 0) != 1
+              AND COALESCE(org_status, '') != 'revoked'
+        """).fetchone()[0]
+        if active < 1_500_000 or active > 2_200_000:
+            log(f'⚠️  Quality gate WARN: active deductible count {active:,} is outside expected range 1.5M–2.2M')
+        else:
+            log(f'✅ Quality gate: active deductible 501(c)(3) count {active:,}')
+
+        # Soft check: revoked orgs should not appear active
+        revoked_active = db.execute("""
+            SELECT COUNT(*) FROM registry_enriched
+            WHERE COALESCE(irs_revoked, 0) = 1
+              AND COALESCE(org_status, '') = 'active'
+        """).fetchone()[0]
+        if revoked_active > 0:
+            log(f'⚠️  Quality gate WARN: {revoked_active} orgs are irs_revoked=1 but org_status=active')
+        else:
+            log('✅ Quality gate: no revoked orgs marked active')
+
+        db.close()
+    except Exception as e:
+        log(f'⚠️  Data quality gate error (non-fatal): {str(e)[:100]}')
+
+
+def run_export_snapshot():
+    """Regenerate the research snapshot JSON so daanaa.org/research always
+    reflects the latest corrected data after each nightly pipeline run."""
+    try:
+        import subprocess
+        log('Exporting research snapshot...')
+        script = Path.home() / 'meritgiving' / 'scripts' / 'export_research_snapshot.py'
+        result = subprocess.run(
+            ['python3', str(script)],
+            capture_output=True, text=True, timeout=120,
+            cwd=str(Path.home() / 'meritgiving'),
+        )
+        for line in (result.stdout or '').strip().splitlines():
+            log(line)
+        if result.returncode != 0:
+            log(f'⚠️  Snapshot export failed (non-fatal): {result.stderr[:200]}')
+    except Exception as e:
+        log(f'⚠️  Snapshot export error (non-fatal): {str(e)[:100]}')
+
+
 def run_revocation_check():
     """Daily fast check against already-loaded revoked_eins table."""
     try:
@@ -213,8 +301,17 @@ def main():
     log('=' * 60)
     log('Overnight Pipeline Started')
     log('=' * 60)
+
+    # Step 1: Sync IRS classification from BMF (must run before scoring)
+    run_bmf_classification_sync()
+
+    # Step 2: Check for newly revoked orgs
     run_revocation_check()
+
+    # Step 3: Ingest manual submissions
     process_manual_submissions()
+
+    # Step 4: ProPublica enrichment (no-op if schema lacks those columns)
     total = 0
     errs = 0
     batches = 0
@@ -228,20 +325,30 @@ def main():
             break
         if batches % 5 == 0:
             log('Progress: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
-    log('=' * 60)
     log('Complete: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
-    log('=' * 60)
-    # Re-score with v5.0 to keep financial context fresh (non-blocking)
+
+    # Step 5: Re-score with v5.0
     log('Running merit_scorer_v5_0 to keep v5 scores fresh...')
     run_v5_scorer()
-    # Rebuild cause-cohort context from fresh scores (non-blocking)
+
+    # Step 6: Rebuild cause-cohort context from fresh scores
     run_cohort_context()
-    # Expire past volunteer events
+
+    # Step 7: Expire past volunteer events
     try:
         from expire_volunteer_events import run as expire_events
         expire_events()
     except Exception as exc:
         log(f'[expire_volunteer_events] non-fatal error: {exc}')
+
+    # Step 8: Data quality gate — log any invariant violations before publish
+    run_data_quality_gate()
+
+    # Step 9: Regenerate research snapshot so static page reflects latest data
+    run_export_snapshot()
+
+    log('=' * 60)
+    log('Overnight Pipeline Complete')
     log('=' * 60)
 
 if __name__ == '__main__':

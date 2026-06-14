@@ -125,6 +125,17 @@ def relaunch_pipeline():
                          stderr=subprocess.STDOUT, cwd=BASE)
 
 
+def backfill_classification():
+    """Sync subsection+deductibility from BMF for all orgs — runs after every
+    BMF apply so newly ingested orgs get correct IRS classification immediately."""
+    script = BASE / "scripts" / "backfill_subsection_deductibility.py"
+    result = subprocess.run([PY, str(script)], capture_output=True, text=True, timeout=300)
+    for line in (result.stdout or "").strip().splitlines():
+        log(line)
+    if result.returncode != 0:
+        log(f"WARN: backfill_classification non-zero exit — {result.stderr[:200]}")
+
+
 def main():
     stopped = stop_pipeline()
     try:
@@ -133,6 +144,7 @@ def main():
         if stopped:
             relaunch_pipeline()
     log(f"done — {added} new orgs applied, pipeline relaunched")
+    backfill_classification()
 
 
 if __name__ == "__main__":
