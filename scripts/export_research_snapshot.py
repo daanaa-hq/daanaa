@@ -59,7 +59,16 @@ def _percentile(sorted_vals, q):
 
 
 def build_metadata(db):
-    total_orgs = db.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]
+    # Count the active, tax-deductible 501(c)(3) set — the same population the
+    # rest of the dashboard analyses and the public site surface. Excludes the
+    # ~193K auto-revoked orgs so the headline matches the analysis below it and
+    # the homepage (mirrors daanaa_api.py _DEDUCTIBILITY_FILTER).
+    total_orgs = db.execute(
+        "SELECT COUNT(*) FROM registry_enriched "
+        "WHERE subsection = '3' AND deductibility = '1' "
+        "AND COALESCE(irs_revoked, 0) != 1 "
+        "AND COALESCE(org_status, '') != 'revoked'"
+    ).fetchone()[0]
     period = db.execute(
         "SELECT MAX(period) FROM research_operating_model_summary"
     ).fetchone()[0]
