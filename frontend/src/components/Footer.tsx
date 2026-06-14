@@ -60,6 +60,7 @@ export default function Footer() {
             <ul className="space-y-1">
               {[
                 { label: 'Claim your page', to: '/for-nonprofits' },
+                { label: 'Find volunteer opportunities', to: '/volunteer' },
                 { label: 'Join the Impact Network', to: '/for-vendors' },
               ].map(({ label, to }) => (
                 <li key={label}>
