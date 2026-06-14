@@ -13,6 +13,7 @@ import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
 import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
+import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
@@ -1206,10 +1207,20 @@ export default function OrganizationDetail() {
                       <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">EIN</p>
                       <p className="text-deep-navy font-medium">{formatEIN(org.ein)}</p>
                     </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">NTEE Category</p>
-                      <p className="text-deep-navy font-medium">{(org as any).nteecc || org.category || '--'}</p>
-                    </div>
+                    {(() => {
+                      const nteeCode = (org as any).nteecc || org.category || ''
+                      if (!nteeCode) return null
+                      const label = getNteeLabel(nteeCode)
+                      return (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">NTEE Category</p>
+                          <p className="text-deep-navy font-medium">{label}</p>
+                          {label.toLowerCase() !== nteeCode.toLowerCase() && (
+                            <p className="text-[11px] text-cool-grey mt-0.5">Code {nteeCode}</p>
+                          )}
+                        </div>
+                      )
+                    })()}
                     {nonprofitSizeLabel(apiOrg!.total_revenue) && (
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">Size</p>
