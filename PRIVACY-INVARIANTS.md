@@ -14,9 +14,13 @@ Wire it as a pre-commit hook or CI step so the build fails if privacy regresses.
    frontend or index.html. (If analytics is ever added, it must be a self-hosted,
    cookieless, privacy-respecting provider per STEWARDSHIP principle 2.)
 
-2. **Giving data never leaves the device.** Wallet data (`merit_wallet_donations`,
-   `merit_wallet_volunteer`) lives in localStorage only. It must never be sent to any
-   server endpoint. There is no server-side store of donor giving activity.
+2. **Giving data is account-scoped, not public.** Wallet data (bookmarks and giving
+   intent) is stored server-side under the user's Google account via Firebase Auth.
+   Wallet contents are never exposed publicly, never shared with third parties, never
+   used for advertising or outreach. No donor identity may be tied to giving amounts
+   or organization choices in any endpoint that is accessible without the owner's own
+   auth token. Browsing Daanaa never requires an account.
+   *(Changed 2026-06-14: wallet moved from localStorage-only to Google account-backed.)*
 
 3. **No visitor IP retention.** The access log format must omit the client host
    (`%(h)`). IPs may be used transiently for rate-limiting (in-memory only) but never
