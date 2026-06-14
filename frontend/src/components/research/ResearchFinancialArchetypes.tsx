@@ -239,11 +239,11 @@ export default function ResearchFinancialArchetypes({
             <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: '#10B981' }} />
             <div>
               <div className="font-semibold text-deep-navy">
-                HEALTHY ({healthPcts.healthy}%)
+                Healthy ({healthPcts.healthy}%)
               </div>
               <p className="text-sm text-slate mt-1">
-                Organizations demonstrating strong revenue stability, adequate reserves (typically 6+ months),
-                and healthy program spending ratios. These organizations are well-positioned for sustainability.
+                Reserves above the peer median for this archetype and revenue band. The organization
+                has a financial cushion relative to similar nonprofits.
               </p>
             </div>
           </div>
@@ -252,35 +252,43 @@ export default function ResearchFinancialArchetypes({
             <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: '#F59E0B' }} />
             <div>
               <div className="font-semibold text-deep-navy">
-                STABLE ({healthPcts.stable}%)
+                Stable ({healthPcts.stable}%)
               </div>
               <p className="text-sm text-slate mt-1">
-                Organizations with adequate financial fundamentals and appropriate reserves for their size
-                and revenue model. They operate within expected parameters for their peer group.
+                Reserves near the peer median. The organization operates within the typical range
+                for its peers.
               </p>
             </div>
           </div>
 
           <div className="flex gap-4">
-            <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: '#EF4444' }} />
+            <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: '#F59E0B' }} />
             <div>
               <div className="font-semibold text-deep-navy">
-                CAUTION ({healthPcts.caution}%)
+                Needs support ({healthPcts.caution}%)
               </div>
               <p className="text-sm text-slate mt-1">
-                Organizations with notable financial vulnerabilities: limited reserves, revenue volatility,
-                or program spending that deviates significantly from peer norms. These organizations may face
-                sustainability challenges in economic downturns or funding disruptions.
+                Reserves below the peer median. This does not reflect the quality of the work —
+                many of the highest-impact organizations in a community operate lean by design,
+                or because demand for their services outpaces available funding. Donors
+                who give here often make the most difference.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      <p className="text-xs text-cool-grey leading-relaxed max-w-2xl">
-        Financial context scores measure peer performance within each archetype + band cell. Health signals
-        are independent structural assessments. Neither ranking nor verdict—starting points for deeper due diligence.
-      </p>
+      <div className="bg-warm-cream/40 border border-soft-gold/30 rounded-lg p-5 max-w-2xl">
+        <p className="text-sm text-deep-navy font-semibold mb-2">A note on how to use this</p>
+        <p className="text-sm text-slate leading-relaxed">
+          Financial context is a starting point, not a score card. A lower reserves number can
+          mean many things: rapid growth, recent investment in programs, a community that depends
+          heavily on the organization, or simply that unrestricted funding is hard to come by.
+          Daanaa does not recommend giving to some organizations over others. We provide
+          context so donors can ask better questions and give with more confidence — wherever
+          they choose to give.
+        </p>
+      </div>
     </div>
   )
 }

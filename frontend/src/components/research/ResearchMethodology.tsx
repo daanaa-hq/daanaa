@@ -72,10 +72,10 @@ export default function ResearchMethodology() {
             <div>
               <dt className="font-semibold text-deep-navy">Financial Context Score</dt>
               <dd className="text-sm mt-1">
-                A 0–100 percentile rank within the peer group. A score of 75 means the
-                organization ranks in the 75th percentile of peer financial health within its
-                archetype + band. Higher is healthier; lower suggests financial stress relative
-                to peers.
+                A 0–100 percentile rank within the peer group, based on months of operating
+                reserves. A score of 75 means the organization holds more reserves than 75% of
+                its peers. This is context, not a verdict. A lower score often means an
+                organization needs more community support — not that it is doing less good.
               </dd>
             </div>
             <div>
