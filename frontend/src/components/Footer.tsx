@@ -101,7 +101,7 @@ export default function Footer() {
               {[
                 { label: 'About Us', to: '/about' },
                 { label: 'Privacy', to: '/legal#privacy' },
-                { label: 'Terms', to: '/legal#terms' },
+                { label: 'Terms', to: '/terms' },
                 { label: 'Contact', to: '/feedback' },
               ].map(({ label, to }) => (
                 <li key={label}>
