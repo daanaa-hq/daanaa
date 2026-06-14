@@ -149,7 +149,7 @@ function MSAPicker({ values, onChange }: {
 }
 
 function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
-  const [areaType, setAreaType] = useState<ServiceAreaType>('local')
+  const [areaType, setAreaType] = useState<ServiceAreaType>('regional')
   const [values, setValues]     = useState<string[]>([])
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
@@ -159,7 +159,8 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
   useEffect(() => {
     getServiceArea(ein)
       .then(r => {
-        if (r.area_type) setAreaType(r.area_type)
+        // 'local' is legacy — treat as regional (MSA picker) with no pre-selection
+        setAreaType(r.area_type && r.area_type !== 'local' ? r.area_type : 'regional')
         setValues(r.area_values ?? [])
       })
       .catch(() => {})
@@ -191,22 +192,23 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
         Where you serve
       </legend>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {(['local','regional','statewide','nationwide','international'] as ServiceAreaType[]).map(t => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {([
+          { type: 'regional',      label: 'Metro areas' },
+          { type: 'statewide',     label: 'States' },
+          { type: 'nationwide',    label: 'Nationwide' },
+          { type: 'international', label: 'International' },
+        ] as { type: ServiceAreaType; label: string }[]).map(({ type, label }) => (
           <button
-            key={t} type="button"
-            onClick={() => { setAreaType(t); setValues([]) }}
-            className={`px-3 py-2 rounded-xl font-body text-[13px] border capitalize transition-colors ${
-              areaType === t
+            key={type} type="button"
+            onClick={() => { setAreaType(type); setValues([]) }}
+            className={`px-3 py-2 rounded-xl font-body text-[13px] border transition-colors ${
+              areaType === type || (type === 'regional' && areaType === 'local')
                 ? 'bg-soft-gold text-deep-navy border-soft-gold'
                 : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
             }`}
           >
-            {t === 'local' ? 'Local (my city)' :
-             t === 'regional' ? 'Metro areas' :
-             t === 'statewide' ? 'States' :
-             t === 'nationwide' ? 'Nationwide' :
-             'International'}
+            {label}
           </button>
         ))}
       </div>
