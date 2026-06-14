@@ -135,11 +135,10 @@ export default function Legal() {
               email <a href="mailto:privacy@daanaa.org" className="text-soft-gold hover:underline">privacy@daanaa.org</a>.
             </p>
             <p className="mt-3">
-              <strong className="text-deep-navy">The Giving Wallet lives on your device.</strong> Organizations you
-              save are stored in your own browser, not on our servers. We cannot see your wallet, and
-              no giving activity is tracked, stored, or shared by us. If we add an optional sign in for
-              syncing your wallet across devices, it will stay exactly that: optional, private, never
-              shown publicly, never used for outreach, and deletable in full at any time.
+              <strong className="text-deep-navy">The Giving Wallet requires a free account.</strong> To save
+              organizations to your wallet, sign in with Google. Your wallet holds bookmarks and giving intent
+              only — never transaction records. It is never shown publicly, never used for marketing or outreach,
+              and can be deleted in full at any time. We do not track your browsing activity on the site.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">Partner inquiries</strong> sent through our partners page go to our

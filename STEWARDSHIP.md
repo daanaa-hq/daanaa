@@ -40,14 +40,12 @@ activity.
 AI systems must also be designed to minimize unnecessary data collection,
 retention, exposure, and inference.
 
-**How implemented:** The Giving Wallet works without an account and lives on the
-visitor's device by default. An optional sign in (email link or Google) lets a
-visitor sync their wallet across devices. A synced wallet holds bookmarks and
-giving intent only, never transactions; it is never shown publicly, never used
-for outreach or advertising, and can be deleted entirely at any time. Browsing
-and giving never require an account. Analytics will use a privacy-respecting
-provider (Plausible) with no third-party tracking. No social sharing of giving
-activity is surfaced or encouraged.
+**How implemented:** The Giving Wallet requires a free Google account to use.
+Wallet data holds bookmarks and giving intent only, never transactions; it is
+never shown publicly, never used for outreach or advertising, and can be deleted
+entirely at any time. Browsing the directory never requires an account. Analytics
+will use a privacy-respecting provider (Plausible) with no third-party tracking.
+No social sharing of giving activity is surfaced or encouraged.
 
 ## 3. Trust signals must be evidence-based and honestly stated
 
@@ -203,6 +201,7 @@ care, accountability, and humility.
 |---|---|---|
 | 2026-05-24 | Claude Code | Rebranded MERIT → Daanaa; consolidated 12 → 11 points (merged pre-launch testing language into principle 3); added "How implemented" section to each principle; no principles removed |
 | 2026-06-12 | Akbar Khowaja (approved) · Claude Code (drafted) | P2 implementation note updated: Giving Wallet stays device-first and account-free by default; added optional sign in (email magic link or Google) for cross-device wallet sync. Synced wallets hold bookmarks and intent only, never transactions; never public, never used for outreach, deletable in full. Principle text unchanged. |
+| 2026-06-14 | Akbar Khowaja (approved) · Claude Code (drafted) | P2 implementation note updated: Giving Wallet now requires a free Google account (no anonymous device storage). Browsing the directory remains account-free. Wallet data remains bookmarks + intent only, never transactions; never public, never used for outreach, deletable in full. Principle text unchanged. |
 
 ---
 

@@ -31,9 +31,7 @@ Use of the site by a person under 13 is not permitted. If you are between 13 and
 
 ## 4. The Giving Wallet
 
-The Giving Wallet is a browser-local bookmarking tool. Organizations you save are stored in your own browser — not on our servers. We cannot see your wallet, and we do not track or store your saving activity.
-
-An optional sign-in (email magic link or Google) lets you sync your wallet across devices. A synced wallet holds bookmarks and giving intent only — never transaction records. It is never shown publicly, never used for marketing or outreach, and can be deleted in full at any time. Signing in is not required to use any feature of the site.
+The Giving Wallet is a free bookmarking tool that requires a Google account to use. Sign in with Google to save organizations and access your wallet across devices. Your wallet holds bookmarks and giving intent only — never transaction records. It is never shown publicly, never used for marketing or outreach, and can be deleted in full at any time. Browsing the directory does not require an account.
 
 ---
 
@@ -108,7 +106,7 @@ Our full privacy practices are described in the [Legal & Data Attribution page](
 
 - We do not use cookies for tracking and do not run behavioral analytics.
 - We do not sell personal information.
-- The Giving Wallet is stored on your device by default. Optional sync requires an account you control.
+- The Giving Wallet requires a free Google account. Wallet data is never shown publicly and can be deleted at any time.
 - If you submit personal information (claim form, feedback form), we use it only to respond to your request.
 - California residents have CCPA rights as described on our Legal page.
 
