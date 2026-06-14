@@ -664,6 +664,10 @@ def claim_proxy(subpath):
     if request.query_string:
         url += '?' + request.query_string.decode()
     headers = {'Content-Type': request.headers.get('Content-Type', 'application/json')}
+    # Forward Firebase Bearer token so authenticated claim endpoints work
+    auth = request.headers.get('Authorization')
+    if auth:
+        headers['Authorization'] = auth
     # Forward the real visitor IP so the home API's rate limiter buckets per
     # visitor instead of lumping all claims into one droplet bucket.
     real_ip = request.headers.get('CF-Connecting-IP') or request.remote_addr
