@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, Legend,
+} from 'recharts'
 import { loadResearchSnapshot } from '../../data/researchSnapshot'
 
 interface ResearchDataMovementProps {
@@ -11,9 +14,11 @@ export default function ResearchDataMovement({
   metadata,
 }: ResearchDataMovementProps) {
   const [loading, setLoading] = useState(true)
+  const [monthlyData, setMonthlyData] = useState<any[]>([])
 
   useEffect(() => {
     loadResearchSnapshot()
+      .then((snap) => setMonthlyData(snap.monthly_changes ?? []))
       .catch((error) => console.error('Failed to load snapshot:', error))
       .finally(() => setLoading(false))
   }, [])
@@ -97,6 +102,90 @@ export default function ResearchDataMovement({
             </div>
           </div>
         </div>
+
+        {/* Month-over-Month Activity Chart */}
+        {monthlyData.length > 0 && (
+          <div>
+            <h3 className="text-lg font-semibold text-deep-navy mb-2">
+              Month-over-month activity
+            </h3>
+            <p className="text-sm text-cool-grey mb-4">
+              New IRS registrations and revocations over the past 24 months. Bars show
+              both flows — taller bars mean more activity, not necessarily growth.
+            </p>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart
+                data={monthlyData.map((m) => ({
+                  ...m,
+                  label: m.month.slice(2).replace('-', '/'),
+                }))}
+                barGap={0}
+                barCategoryGap="15%"
+                margin={{ top: 4, right: 0, left: 0, bottom: 4 }}
+              >
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={3}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
+                  width={32}
+                />
+                <Tooltip
+                  cursor={{ fill: 'rgba(212,185,104,0.08)' }}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0]?.payload
+                    return (
+                      <div className="bg-deep-navy text-warm-cream p-3 rounded shadow-lg text-xs border border-soft-gold/30">
+                        <p className="font-semibold text-soft-gold mb-1">{d?.month}</p>
+                        <p>New registrations: {d?.new_registrations?.toLocaleString()}</p>
+                        <p>Revocations: {d?.revocations?.toLocaleString()}{d?.is_batch_revocation ? ' ⚠ IRS batch' : ''}</p>
+                        <p className={`mt-1 font-medium ${d?.net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          Net: {d?.net >= 0 ? '+' : ''}{d?.net?.toLocaleString()}
+                        </p>
+                      </div>
+                    )
+                  }}
+                />
+                <Bar dataKey="new_registrations" name="New registrations" stackId="a" fill="#D4B968" radius={[0,0,0,0]} />
+                <Bar dataKey="revocations" name="Revocations" stackId="a" fill="transparent" stroke="transparent">
+                  {monthlyData.map((m, i) => (
+                    <Cell
+                      key={i}
+                      fill={m.is_batch_revocation ? 'rgba(239,68,68,0.55)' : 'rgba(239,68,68,0.25)'}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex gap-6 mt-2 text-xs text-cool-grey">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: '#D4B968' }} />
+                New registrations
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: 'rgba(239,68,68,0.4)' }} />
+                Revocations
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3 h-2 rounded-sm" style={{ background: 'rgba(239,68,68,0.55)' }} />
+                IRS batch revocation
+              </span>
+            </div>
+            <p className="text-xs text-cool-grey mt-2 leading-relaxed">
+              Revocations overlay within each bar shows how much of that month's activity was
+              removals. IRS auto-revocation batches (typically May each year) are shown at higher
+              opacity. Hover for exact counts.
+            </p>
+          </div>
+        )}
 
         {/* Year-over-Year IRS Data */}
         <div>

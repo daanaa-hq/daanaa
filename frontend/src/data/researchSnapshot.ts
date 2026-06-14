@@ -86,6 +86,13 @@ export interface ResearchSnapshot {
       caution: number
     }
   }
+  monthly_changes?: Array<{
+    month: string
+    new_registrations: number
+    revocations: number
+    net: number
+    is_batch_revocation: boolean
+  }>
 }
 
 let cache: Promise<ResearchSnapshot> | null = null

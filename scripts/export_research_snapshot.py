@@ -19,7 +19,8 @@ import sqlite3
 import json
 import os
 import csv
-from datetime import datetime
+from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
 
 DB_PATH = os.environ.get("MERIT_DB_PATH", "/home/akbar/meritgiving/data/merit_registry.db")
 BMF_PATH = os.environ.get("MERIT_BMF_PATH", "/home/akbar/meritgiving/data/bmf.csv")
@@ -300,6 +301,69 @@ def build_v5(db):
     }
 
 
+def build_monthly_changes(db):
+    """24 months of new registrations + revocations from IRS data.
+
+    New registrations: ruling_date from registry_enriched (active deductible 501c3s only).
+    Revocations: revocation_date from revoked_eins (format: DD-MON-YYYY).
+
+    May spikes (~43-48K) are IRS annual batch auto-revocations — flagged in the data.
+    """
+    # Build 24-month window ending last complete month
+    today = date.today()
+    end = date(today.year, today.month, 1) - relativedelta(months=1)  # last complete month
+    start = end - relativedelta(months=23)
+
+    months = []
+    cur = start
+    while cur <= end:
+        months.append(cur.strftime('%Y-%m'))
+        cur += relativedelta(months=1)
+
+    # New registrations by month (ruling_date is YYYYMM or YYYY-MM-DD format)
+    new_rows = db.execute("""
+        SELECT substr(ruling_date, 1, 7) as yrmo, COUNT(*) as cnt
+        FROM registry_enriched
+        WHERE ruling_date IS NOT NULL AND ruling_date != ''
+          AND subsection = '3' AND deductibility = '1'
+          AND COALESCE(irs_revoked, 0) != 1
+          AND COALESCE(org_status, '') != 'revoked'
+        GROUP BY yrmo
+    """).fetchall()
+    new_by_month = {r[0]: r[1] for r in new_rows}
+
+    # Revocations by month (format: DD-MON-YYYY → parse to YYYY-MM)
+    rev_rows = db.execute(
+        "SELECT revocation_date FROM revoked_eins WHERE revocation_date IS NOT NULL"
+    ).fetchall()
+    rev_by_month = {}
+    for (d,) in rev_rows:
+        try:
+            dt = datetime.strptime(d.strip(), '%d-%b-%Y')
+            key = dt.strftime('%Y-%m')
+            rev_by_month[key] = rev_by_month.get(key, 0) + 1
+        except Exception:
+            pass
+
+    # IRS does annual batch auto-revocations — flag months above 10K revocations
+    BATCH_REVOCATION_THRESHOLD = 10000
+
+    result = []
+    for yrmo in months:
+        new_count = new_by_month.get(yrmo, 0)
+        rev_count = rev_by_month.get(yrmo, 0)
+        is_batch = rev_count >= BATCH_REVOCATION_THRESHOLD
+        result.append({
+            'month': yrmo,
+            'new_registrations': new_count,
+            'revocations': rev_count,
+            'net': new_count - rev_count,
+            'is_batch_revocation': is_batch,
+        })
+
+    return result
+
+
 def main():
     db = get_db()
     try:
@@ -311,6 +375,7 @@ def main():
             'spending': build_spending(db),
             'entity_types': build_entity_types(db),
             'v5': build_v5(db),
+            'monthly_changes': build_monthly_changes(db),
         }
     finally:
         db.close()
@@ -333,6 +398,9 @@ def main():
     v5 = snapshot['v5']
     print(f"   v5:            {v5['total_scored']:,} scored, "
           f"{len(v5['archetypes'])} archetypes, {len(v5['cells'])} cells")
+    mc = snapshot['monthly_changes']
+    batch_months = [m['month'] for m in mc if m['is_batch_revocation']]
+    print(f"   monthly:       {len(mc)} months, batch-revocation months: {batch_months or 'none'}")
 
 
 if __name__ == '__main__':
