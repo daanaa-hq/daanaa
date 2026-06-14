@@ -94,29 +94,31 @@ METHODOLOGY_VERSION = "v1"
 # ── Legal Disclosures ──────────────────────────────────────────────────────────
 # Attached to all responses containing scores
 SCORE_DISCLAIMER = (
-    "⚠️ Financial Health is a peer-group ranking relative to similar organizations. "
-    "It does NOT evaluate mission impact, program quality, governance, or legitimacy. "
-    "Always verify information independently before donating. "
-    "See daanaa.org/methodology for full limitations."
+    "Financial Health compares an organization with similar ones in its peer group. "
+    "It does not measure mission impact, program quality, governance, or legitimacy. "
+    "Please verify anything that matters to you before giving. "
+    "Our full method and its limits are at daanaa.org/methodology."
 )
 
 UNSCORED_DISCLOSURE = (
-    "🔍 No Financial Data Available: This organization lacks revenue/expense data in IRS records. "
-    "This does NOT indicate unhealthiness. Verify directly: check IRS.gov 501(c)(3) status, "
-    "ask for Form 990, or contact them. "
-    "Help us score them: claim a page and add financial data at daanaa.org/for-nonprofits"
+    "We do not have IRS revenue or expense data for this organization yet. "
+    "That is common for smaller and newer groups, and it says nothing about their health or their work. "
+    "To learn more, check their 501(c)(3) status on IRS.gov, ask them for a recent Form 990, or reach out directly. "
+    "If you run this organization, you can claim its page and add your numbers at daanaa.org/for-nonprofits."
 )
 
 SELF_REPORTED_DISCLAIMER = (
-    "⚠️ Self-Reported Data: This financial information was submitted by the organization. "
-    "We have NOT independently verified these figures. Recommend requesting Form 990 directly. "
-    "Daanaa assumes no liability for accuracy."
+    "These figures were shared by the organization itself. "
+    "We have not independently checked them, so if the numbers matter to your decision, "
+    "we suggest asking for a recent Form 990. "
+    "Daanaa is not responsible for the accuracy of self-reported information."
 )
 
 BETA_WEBSITE_DISCLOSURE = (
-    "🔍 Website discovered via heuristic search and verified to exist, but NOT confirmed by the organization. "
-    "Always verify on their official channels before using. "
-    "Organizations can claim and update their information at daanaa.org/for-nonprofits"
+    "We found this website through an automated search and confirmed it loads, "
+    "but the organization has not verified it with us. "
+    "Please double-check it through their official channels before relying on it. "
+    "Organizations can claim and update their details at daanaa.org/for-nonprofits."
 )
 
 # ── Response cache ─────────────────────────────────────────────────────────────
