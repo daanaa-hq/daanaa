@@ -235,13 +235,13 @@ export default function ForNonprofits() {
           <div className="mt-10 max-w-[680px] p-6 rounded-xl bg-warm-cream border border-light-grey">
             <div className="flex items-start gap-4">
               <div className="shrink-0 mt-0.5">
-                <span className="inline-block border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5 font-body">β ai-generated</span>
+                <span className="inline-block border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5 font-body">beta</span>
               </div>
               <div>
                 <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the β label means on your page</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.65]">
                   Before you claim your page, Daanaa shows a best-guess mission statement inferred from your sector and location.
-                  It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">β ai-generated</span> so donors know it is a starting point, not your own words.
+                  It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">beta</span> so donors know it is a starting point, not your own words.
                   When you claim your page, you replace it with the mission statement you actually want donors to see, and the label is removed.
                 </p>
               </div>
@@ -259,7 +259,7 @@ export default function ForNonprofits() {
               Simple. No cost. No middleman.
             </h2>
             <div className="space-y-5">
-              <StepDot n={1} label="Find your organization in the directory and click 'Claim this page'" />
+              <StepDot n={1} label="Find your organization in the directory and click 'Claim your page'" />
               <StepDot n={2} label="Submit the claim form with your name, role, email, and phone number" />
               <StepDot n={3} label="A member of the Daanaa team calls you to verify your identity" />
               <StepDot n={4} label="Enter the 6-digit PIN we give you on the call to unlock your page" />

@@ -164,7 +164,7 @@ export default function About() {
             <div className="mt-10 pt-8 border-t border-light-grey">
               <h2 className="font-display text-deep-navy text-[20px] font-semibold mb-3">Support the work</h2>
               <p className="font-body text-[15px] text-cool-grey mb-4 max-w-xl">
-                Daanaa is free for everyone. If you find it useful, you can support the team behind it. Contributions go to EcoMargins LLC, which operates Daanaa.
+                Daanaa is free for everyone. If you find it useful, you can support the team behind it. Contributions go to EcoMargins Consulting LLC, which operates Daanaa.
               </p>
               <a
                 href={import.meta.env.VITE_SUPPORT_URL}
@@ -175,7 +175,7 @@ export default function About() {
                 Support Daanaa
               </a>
               <p className="mt-3 font-body text-[12px] text-cool-grey">
-                Not tax-deductible. This supports EcoMargins LLC, not a nonprofit.
+                Not tax-deductible. This supports EcoMargins Consulting LLC, not a nonprofit.
               </p>
             </div>
           )}

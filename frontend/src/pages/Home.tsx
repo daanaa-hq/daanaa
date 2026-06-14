@@ -576,7 +576,7 @@ function WalletSection() {
               >
                 Your giving history,<br />private by design
               </h2>
-              <span className="inline-flex items-center self-start mt-2 px-2 py-0.5 rounded-full bg-soft-gold/15 border border-soft-gold/30 font-body text-[10px] font-semibold tracking-[0.06em] text-soft-gold uppercase">β Beta</span>
+              <span className="inline-flex items-center self-start mt-2 px-2 py-0.5 rounded-full bg-soft-gold/15 border border-soft-gold/30 font-body text-[10px] font-semibold tracking-[0.06em] text-soft-gold uppercase">beta</span>
             </div>
             <p className="mt-5 font-body text-[16px] leading-[1.7]" style={{ color: 'rgba(245,240,235,0.65)' }}>
               Log every donation you make, through any channel, to any nonprofit.
