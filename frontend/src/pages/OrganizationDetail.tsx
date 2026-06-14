@@ -936,7 +936,7 @@ export default function OrganizationDetail() {
                             <div className="rounded-lg bg-warm-cream px-4 py-3">
                               <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
                               <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
-                                {apiOrg!.months_of_reserve > 999 ? '99+' : apiOrg!.months_of_reserve.toFixed(0)} mo
+                                {apiOrg!.months_of_reserve > 999 ? '999+' : apiOrg!.months_of_reserve.toFixed(0)} mo
                               </span>
                               <span className="block font-body text-[11px] text-cool-grey">months net assets cover costs</span>
                             </div>
@@ -945,7 +945,7 @@ export default function OrganizationDetail() {
                             <div className="rounded-lg bg-warm-cream px-4 py-3">
                               <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Revenue vs costs</span>
                               <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
-                                {apiOrg!.total_revenue >= apiOrg!.total_expenses ? '+' : ''}
+                                {(apiOrg!.revenue_3yr_avg ?? apiOrg!.total_revenue) >= apiOrg!.total_expenses ? '+' : ''}
                                 {(((apiOrg!.revenue_3yr_avg ?? apiOrg!.total_revenue) - apiOrg!.total_expenses) / apiOrg!.total_expenses * 100).toFixed(0)}%
                               </span>
                               <span className="block font-body text-[11px] text-cool-grey">
