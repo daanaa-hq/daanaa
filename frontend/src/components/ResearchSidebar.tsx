@@ -13,7 +13,7 @@ const SECTIONS = [
   { id: 'entity-types', label: 'Organization Types', icon: '🏛️' },
   { id: 'findings', label: 'Research Findings', icon: '📚' },
   { id: 'spending', label: 'Program Spending', icon: '💸' },
-  { id: 'operating-models', label: 'Operating Models (v4 Reference)', icon: '🔧' },
+
   { id: 'data-movement', label: "What's Changed", icon: '📋' },
 ]
 

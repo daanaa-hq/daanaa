@@ -4,7 +4,7 @@ import ResearchOverview from './research/ResearchOverview'
 import ResearchAbout from './research/ResearchAbout'
 import ResearchProblem from './research/ResearchProblem'
 import ResearchMethodology from './research/ResearchMethodology'
-import ResearchOperatingModels from './research/ResearchOperatingModels'
+
 import ResearchFinancialArchetypes from './research/ResearchFinancialArchetypes'
 import ResearchEntityTypes from './research/ResearchEntityTypes'
 
@@ -32,7 +32,7 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
     { id: 'about', component: ResearchAbout },
     { id: 'problem', component: ResearchProblem },
     { id: 'methodology', component: ResearchMethodology },
-    { id: 'operating-models', component: ResearchOperatingModels },
+
     { id: 'financial-archetypes', component: ResearchFinancialArchetypes },
     { id: 'entity-types', component: ResearchEntityTypes },
 
