@@ -21,6 +21,225 @@ const US_STATES = [
   'VA','WA','WV','WI','WY','DC',
 ]
 
+const COUNTRIES: { code: string; name: string }[] = [
+  { code: 'AF', name: 'Afghanistan' }, { code: 'AL', name: 'Albania' },
+  { code: 'DZ', name: 'Algeria' }, { code: 'AO', name: 'Angola' },
+  { code: 'AR', name: 'Argentina' }, { code: 'AM', name: 'Armenia' },
+  { code: 'AU', name: 'Australia' }, { code: 'AT', name: 'Austria' },
+  { code: 'AZ', name: 'Azerbaijan' }, { code: 'BD', name: 'Bangladesh' },
+  { code: 'BY', name: 'Belarus' }, { code: 'BE', name: 'Belgium' },
+  { code: 'BZ', name: 'Belize' }, { code: 'BJ', name: 'Benin' },
+  { code: 'BO', name: 'Bolivia' }, { code: 'BA', name: 'Bosnia and Herzegovina' },
+  { code: 'BW', name: 'Botswana' }, { code: 'BR', name: 'Brazil' },
+  { code: 'BF', name: 'Burkina Faso' }, { code: 'BI', name: 'Burundi' },
+  { code: 'KH', name: 'Cambodia' }, { code: 'CM', name: 'Cameroon' },
+  { code: 'CA', name: 'Canada' }, { code: 'CF', name: 'Central African Republic' },
+  { code: 'TD', name: 'Chad' }, { code: 'CL', name: 'Chile' },
+  { code: 'CN', name: 'China' }, { code: 'CO', name: 'Colombia' },
+  { code: 'CD', name: 'Congo (DRC)' }, { code: 'CG', name: 'Congo (Republic)' },
+  { code: 'CR', name: 'Costa Rica' }, { code: 'HR', name: 'Croatia' },
+  { code: 'CU', name: 'Cuba' }, { code: 'CY', name: 'Cyprus' },
+  { code: 'CZ', name: 'Czech Republic' }, { code: 'DK', name: 'Denmark' },
+  { code: 'DJ', name: 'Djibouti' }, { code: 'DO', name: 'Dominican Republic' },
+  { code: 'EC', name: 'Ecuador' }, { code: 'EG', name: 'Egypt' },
+  { code: 'SV', name: 'El Salvador' }, { code: 'ER', name: 'Eritrea' },
+  { code: 'ET', name: 'Ethiopia' }, { code: 'FI', name: 'Finland' },
+  { code: 'FR', name: 'France' }, { code: 'GA', name: 'Gabon' },
+  { code: 'GM', name: 'Gambia' }, { code: 'GE', name: 'Georgia' },
+  { code: 'DE', name: 'Germany' }, { code: 'GH', name: 'Ghana' },
+  { code: 'GR', name: 'Greece' }, { code: 'GT', name: 'Guatemala' },
+  { code: 'GN', name: 'Guinea' }, { code: 'GW', name: 'Guinea-Bissau' },
+  { code: 'HT', name: 'Haiti' }, { code: 'HN', name: 'Honduras' },
+  { code: 'HU', name: 'Hungary' }, { code: 'IN', name: 'India' },
+  { code: 'ID', name: 'Indonesia' }, { code: 'IR', name: 'Iran' },
+  { code: 'IQ', name: 'Iraq' }, { code: 'IE', name: 'Ireland' },
+  { code: 'IL', name: 'Israel' }, { code: 'IT', name: 'Italy' },
+  { code: 'JM', name: 'Jamaica' }, { code: 'JP', name: 'Japan' },
+  { code: 'JO', name: 'Jordan' }, { code: 'KZ', name: 'Kazakhstan' },
+  { code: 'KE', name: 'Kenya' }, { code: 'KP', name: 'North Korea' },
+  { code: 'KR', name: 'South Korea' }, { code: 'KW', name: 'Kuwait' },
+  { code: 'KG', name: 'Kyrgyzstan' }, { code: 'LA', name: 'Laos' },
+  { code: 'LB', name: 'Lebanon' }, { code: 'LR', name: 'Liberia' },
+  { code: 'LY', name: 'Libya' }, { code: 'LT', name: 'Lithuania' },
+  { code: 'MG', name: 'Madagascar' }, { code: 'MW', name: 'Malawi' },
+  { code: 'MY', name: 'Malaysia' }, { code: 'ML', name: 'Mali' },
+  { code: 'MR', name: 'Mauritania' }, { code: 'MX', name: 'Mexico' },
+  { code: 'MD', name: 'Moldova' }, { code: 'MN', name: 'Mongolia' },
+  { code: 'MA', name: 'Morocco' }, { code: 'MZ', name: 'Mozambique' },
+  { code: 'MM', name: 'Myanmar' }, { code: 'NA', name: 'Namibia' },
+  { code: 'NP', name: 'Nepal' }, { code: 'NL', name: 'Netherlands' },
+  { code: 'NZ', name: 'New Zealand' }, { code: 'NI', name: 'Nicaragua' },
+  { code: 'NE', name: 'Niger' }, { code: 'NG', name: 'Nigeria' },
+  { code: 'NO', name: 'Norway' }, { code: 'PK', name: 'Pakistan' },
+  { code: 'PA', name: 'Panama' }, { code: 'PG', name: 'Papua New Guinea' },
+  { code: 'PY', name: 'Paraguay' }, { code: 'PE', name: 'Peru' },
+  { code: 'PH', name: 'Philippines' }, { code: 'PL', name: 'Poland' },
+  { code: 'PT', name: 'Portugal' }, { code: 'RO', name: 'Romania' },
+  { code: 'RU', name: 'Russia' }, { code: 'RW', name: 'Rwanda' },
+  { code: 'SA', name: 'Saudi Arabia' }, { code: 'SN', name: 'Senegal' },
+  { code: 'SL', name: 'Sierra Leone' }, { code: 'SO', name: 'Somalia' },
+  { code: 'ZA', name: 'South Africa' }, { code: 'SS', name: 'South Sudan' },
+  { code: 'ES', name: 'Spain' }, { code: 'LK', name: 'Sri Lanka' },
+  { code: 'SD', name: 'Sudan' }, { code: 'SE', name: 'Sweden' },
+  { code: 'CH', name: 'Switzerland' }, { code: 'SY', name: 'Syria' },
+  { code: 'TW', name: 'Taiwan' }, { code: 'TJ', name: 'Tajikistan' },
+  { code: 'TZ', name: 'Tanzania' }, { code: 'TH', name: 'Thailand' },
+  { code: 'TL', name: 'Timor-Leste' }, { code: 'TG', name: 'Togo' },
+  { code: 'TN', name: 'Tunisia' }, { code: 'TR', name: 'Turkey' },
+  { code: 'TM', name: 'Turkmenistan' }, { code: 'UG', name: 'Uganda' },
+  { code: 'UA', name: 'Ukraine' }, { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'GB', name: 'United Kingdom' }, { code: 'US', name: 'United States' },
+  { code: 'UY', name: 'Uruguay' }, { code: 'UZ', name: 'Uzbekistan' },
+  { code: 'VE', name: 'Venezuela' }, { code: 'VN', name: 'Vietnam' },
+  { code: 'YE', name: 'Yemen' }, { code: 'ZM', name: 'Zambia' },
+  { code: 'ZW', name: 'Zimbabwe' },
+]
+
+function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
+  const [areaType, setAreaType]     = useState<ServiceAreaType>('local')
+  const [values, setValues]         = useState<string[]>([])
+  const [regional, setRegional]     = useState('')
+  const [loading, setLoading]       = useState(true)
+  const [saving, setSaving]         = useState(false)
+  const [saved, setSaved]           = useState(false)
+  const [error, setError]           = useState<string | null>(null)
+
+  useEffect(() => {
+    getServiceArea(ein)
+      .then(r => {
+        if (r.area_type) setAreaType(r.area_type)
+        setValues(r.area_values ?? [])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [ein])
+
+  async function handleSave() {
+    setSaving(true); setError(null); setSaved(false)
+    try {
+      await putServiceArea(ein, token, areaType, values)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch {
+      setError('Could not save. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function toggleValue(v: string) {
+    setValues(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
+  }
+
+  function addRegional() {
+    const t = regional.trim()
+    if (!t || values.includes(t) || values.length >= 10) return
+    setValues(prev => [...prev, t])
+    setRegional('')
+  }
+
+  if (loading) return null
+
+  return (
+    <fieldset className="border border-light-cream rounded-xl p-5 space-y-4">
+      <legend className="px-2 font-body text-[13px] font-semibold text-cool-grey uppercase tracking-wider">
+        Where you serve
+      </legend>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {(['local','regional','statewide','nationwide','international'] as ServiceAreaType[]).map(t => (
+          <button
+            key={t} type="button"
+            onClick={() => { setAreaType(t); setValues([]) }}
+            className={`px-3 py-2 rounded-xl font-body text-[13px] border capitalize transition-colors ${
+              areaType === t
+                ? 'bg-soft-gold text-deep-navy border-soft-gold'
+                : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
+            }`}
+          >
+            {t === 'local' ? 'Local (my city)' :
+             t === 'regional' ? 'Regional (counties)' :
+             t === 'statewide' ? 'Statewide' :
+             t === 'nationwide' ? 'Nationwide (US)' :
+             'International'}
+          </button>
+        ))}
+      </div>
+
+      {areaType === 'regional' && (
+        <div className="space-y-2">
+          <p className="font-body text-[12px] text-cool-grey">Add counties or metro areas you serve (up to 10)</p>
+          <div className="flex gap-2">
+            <input
+              value={regional} onChange={e => setRegional(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addRegional())}
+              placeholder="e.g. Cook County, IL"
+              className="flex-1 px-3 py-2 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold"
+            />
+            <button type="button" onClick={addRegional}
+              className="px-4 py-2 bg-pale-gold/30 text-deep-navy rounded-xl font-body text-[13px] hover:bg-pale-gold/50 transition-colors">
+              Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {values.map(v => (
+              <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 bg-pale-gold/20 text-deep-navy rounded-full font-body text-[12px]">
+                {v}
+                <button type="button" onClick={() => setValues(p => p.filter(x => x !== v))}
+                  className="text-cool-grey hover:text-deep-navy leading-none">×</button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {areaType === 'statewide' && (
+        <div className="space-y-2">
+          <p className="font-body text-[12px] text-cool-grey">Select the states you serve</p>
+          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+            {US_STATES.map(s => (
+              <button key={s} type="button" onClick={() => toggleValue(s)}
+                className={`px-2.5 py-1 rounded-full font-body text-[12px] border transition-colors ${
+                  values.includes(s)
+                    ? 'bg-soft-gold text-deep-navy border-soft-gold'
+                    : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
+                }`}
+              >{s}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {areaType === 'international' && (
+        <div className="space-y-2">
+          <p className="font-body text-[12px] text-cool-grey">Select the countries you serve (up to 50)</p>
+          <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+            {COUNTRIES.map(c => (
+              <button key={c.code} type="button"
+                onClick={() => (values.length < 50 || values.includes(c.code)) && toggleValue(c.code)}
+                className={`px-2.5 py-1 rounded-full font-body text-[12px] border transition-colors ${
+                  values.includes(c.code)
+                    ? 'bg-soft-gold text-deep-navy border-soft-gold'
+                    : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
+                }`}
+              >{c.name}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center gap-3">
+        <button type="button" onClick={handleSave} disabled={saving}
+          className="px-5 py-2 bg-soft-gold text-deep-navy font-body text-[13px] font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 transition-colors">
+          {saving ? 'Saving…' : 'Save reach'}
+        </button>
+        {saved && <span className="font-body text-[13px] text-green-600">Saved!</span>}
+        {error && <span className="font-body text-[13px] text-red-500">{error}</span>}
+      </div>
+    </fieldset>
+  )
+}
+
 function formatDate(d: string) {
   const [y, m, day] = d.split('-')
   return new Date(Number(y), Number(m) - 1, Number(day)).toLocaleDateString('en-US', {
@@ -523,6 +742,10 @@ export default function OrgClaimEditor() {
               ))}
             </div>
           </fieldset>
+
+          {ein && token && (
+            <ServiceAreaSection ein={ein} token={token} />
+          )}
 
           {ein && token && (
             <VolunteerEventsSection ein={ein} token={token} />

@@ -12,8 +12,8 @@ import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { useGivingList } from '../hooks/useGivingList'
-import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents } from '../data/api'
-import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent } from '../data/api'
+import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea } from '../data/api'
+import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 import { getPrimaryExternalLink } from '../utils/externalLink'
@@ -324,6 +324,11 @@ export default function OrganizationDetail() {
     [id]
   )
   const volunteerEvents: VolunteerEvent[] = volunteerEventsData?.events ?? []
+  const { data: serviceAreaData } = useApi(
+    () => id ? getServiceArea(id) : Promise.resolve({ area_type: null, area_values: [], updated_at: null } as ServiceArea),
+    [id]
+  )
+  const serviceArea = serviceAreaData ?? null
   const similarApiOrgs: ApiOrganization[] = (similarData?.results ?? []) as ApiOrganization[]
   const revenueTrend = financials
     .filter(f => f.totrevenue !== null && f.totrevenue > 0)
@@ -1260,6 +1265,32 @@ export default function OrganizationDetail() {
           >State Charity Registry</a>
         </div>
       </div>
+
+      {/* Service area */}
+      {serviceArea?.area_type && serviceArea.area_type !== 'local' && (
+        <div className="bg-warm-cream py-8 border-t border-light-grey">
+          <div className="max-w-[900px] mx-auto px-6 lg:px-12">
+            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-2">
+              Where they serve
+            </p>
+            <p className="font-body text-[15px] text-deep-navy">
+              {serviceArea.area_type === 'nationwide' && 'Serves communities nationwide across the US'}
+              {serviceArea.area_type === 'international' && (
+                serviceArea.area_values.length > 0
+                  ? `International work in ${serviceArea.area_values.length} ${serviceArea.area_values.length === 1 ? 'country' : 'countries'}`
+                  : 'International reach'
+              )}
+              {serviceArea.area_type === 'statewide' && serviceArea.area_values.length > 0 && (
+                `Statewide in ${serviceArea.area_values.slice(0, 5).join(', ')}${serviceArea.area_values.length > 5 ? ` +${serviceArea.area_values.length - 5} more` : ''}`
+              )}
+              {serviceArea.area_type === 'regional' && serviceArea.area_values.length > 0 && (
+                serviceArea.area_values.slice(0, 4).join(' · ')
+              )}
+            </p>
+            <p className="font-body text-[11px] text-cool-grey mt-1">Self-reported by the organization</p>
+          </div>
+        </div>
+      )}
 
       {/* Volunteer opportunities */}
       {volunteerEvents.length > 0 && (
