@@ -13,16 +13,17 @@ export default function ResearchOverview({
         Daanaa Research Dashboard
       </h1>
       <p className="text-lg text-cool-grey mb-6 max-w-2xl">
-        A comprehensive guide to how Daanaa discovers, evaluates, and ranks nonprofit
-        organizations. This research document is intended for advisors, academics,
-        foundations, and nonprofit professionals seeking to understand our methodology.
+        A comprehensive guide to how Daanaa discovers, organizes, and provides peer
+        financial context for nonprofit organizations. This research document is
+        intended for advisors, academics, foundations, and nonprofit professionals
+        seeking to understand our methodology.
       </p>
 
       {metadata && (
         <div className="grid grid-cols-3 gap-4 mt-8">
           <div className="bg-soft-gold/10 rounded-lg p-4">
             <div className="text-3xl font-display text-soft-gold">
-              {(metadata.total_orgs / 1_000_000).toFixed(1)}M
+              {(metadata.total_organizations / 1_000_000).toFixed(1)}M
             </div>
             <div className="text-sm text-cool-grey">Organizations indexed</div>
           </div>

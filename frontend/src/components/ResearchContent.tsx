@@ -51,10 +51,10 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
       {metadata && (
         <footer className="mt-20 pt-8 border-t border-cool-grey/20 text-xs text-cool-grey">
           <p className="mb-2">
-            Data current as of: {new Date(metadata.last_updated).toLocaleDateString()}
+            Data current as of: {new Date(metadata.data_period).toLocaleDateString()}
           </p>
           <p>
-            Total organizations indexed: {metadata.total_orgs?.toLocaleString()}
+            Total organizations indexed: {metadata.total_organizations?.toLocaleString()}
           </p>
           <p className="mt-4 text-cool-grey">{metadata.disclaimer}</p>
         </footer>
