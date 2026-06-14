@@ -13,12 +13,12 @@ export default function ResearchProblem() {
         </p>
 
         <div className="bg-warm-cream border-l-4 border-soft-gold p-4">
-          <p className="font-semibold text-deep-navy mb-2">The statistics:</p>
+          <p className="font-semibold text-deep-navy mb-2">The scale of the problem:</p>
           <p>
-            97% of nonprofits have revenue under $5M. Most do hyper-local work: food banks
+            About 97% of nonprofits operate on under $5M annually. Most do hyper local work: food banks
             in rural counties, literacy programs in underserved neighborhoods, legal aid for
-            immigrant families. Their work is invisible to most donors because they lack the
-            resources for national marketing or foundation relationships.
+            immigrant families. These organizations do excellent work but lack the visibility
+            that comes from large budgets, national marketing, or foundation backing.
           </p>
         </div>
 
@@ -27,7 +27,7 @@ export default function ResearchProblem() {
           <ul className="list-disc pl-5 space-y-2">
             <li>
               <strong>Donor impact is misaligned with need:</strong> Billions flow to
-              well-known organizations while local crises go underfunded.
+              famous organizations while local crises go underfunded.
             </li>
             <li>
               <strong>Hidden gems are missed:</strong> High-impact small organizations
