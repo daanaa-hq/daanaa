@@ -50,6 +50,15 @@ export interface ResearchSnapshot {
     p25_program_spend: number | null
     p75_program_spend: number | null
   }>
+  entity_types?: {
+    total: number
+    public_charity: number
+    private_foundation: number
+    unclassified: number
+    pct_public_charity: number
+    pct_private_foundation: number
+    pct_unclassified: number
+  }
 }
 
 let cache: Promise<ResearchSnapshot> | null = null

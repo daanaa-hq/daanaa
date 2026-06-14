@@ -18,10 +18,18 @@ local API-backed version.
 import sqlite3
 import json
 import os
+import csv
 from datetime import datetime
 
 DB_PATH = os.environ.get("MERIT_DB_PATH", "/home/akbar/meritgiving/data/merit_registry.db")
+BMF_PATH = os.environ.get("MERIT_BMF_PATH", "/home/akbar/meritgiving/data/bmf.csv")
 OUT_PATH = "/home/akbar/meritgiving/frontend/public/research-snapshot.json"
+
+# IRS BMF FOUNDATION codes → 501(c)(3) sub-classification.
+# 02-04 are private foundations; 10-18 are public charities (509(a)(1)-(4)).
+# Anything else (00, blank) has no determination on file.
+PRIVATE_FOUNDATION_CODES = {'02', '03', '04'}
+PUBLIC_CHARITY_CODES = {'10', '11', '12', '13', '14', '15', '16', '17', '18'}
 
 VALID_MODELS = [
     'Activity_Programming',
@@ -182,6 +190,57 @@ def build_spending(db):
     return data
 
 
+def build_entity_types(db):
+    """Public charity vs private foundation composition of the deductible set.
+
+    Within 501(c)(3), the IRS classifies every org as either a public charity
+    (509(a)(1)-(4)) or a private foundation. The distinction is donor-relevant:
+    public charities are publicly supported operating orgs; private foundations
+    are endowment-funded grantmakers that fund others rather than take public
+    donations. The classification lives in the IRS BMF FOUNDATION code, joined
+    here to the same active, deductible 501(c)(3) set the rest of the page uses.
+    """
+    deductible = set(
+        r[0] for r in db.execute(
+            "SELECT EIN FROM registry_enriched "
+            "WHERE subsection = '3' AND deductibility = '1' "
+            "AND COALESCE(irs_revoked, 0) != 1 "
+            "AND COALESCE(org_status, '') != 'revoked'"
+        ).fetchall()
+    )
+    counts = {'public_charity': 0, 'private_foundation': 0, 'unclassified': 0}
+    if os.path.exists(BMF_PATH):
+        with open(BMF_PATH, newline='') as f:
+            reader = csv.DictReader(f)
+            ein_col = next((c for c in reader.fieldnames if c.upper() == 'EIN'), None)
+            fnd_col = next((c for c in reader.fieldnames if c.upper() == 'FOUNDATION'), None)
+            seen = set()
+            for row in reader:
+                ein = (row.get(ein_col) or '').strip().zfill(9)
+                if ein not in deductible or ein in seen:
+                    continue
+                seen.add(ein)
+                code = (row.get(fnd_col) or '').strip()
+                if code in PRIVATE_FOUNDATION_CODES:
+                    counts['private_foundation'] += 1
+                elif code in PUBLIC_CHARITY_CODES:
+                    counts['public_charity'] += 1
+                else:
+                    counts['unclassified'] += 1
+            # Orgs in the deductible set with no BMF row at all are unclassified
+            counts['unclassified'] += len(deductible - seen)
+    total = sum(counts.values()) or 1
+    return {
+        'total': total,
+        'public_charity': counts['public_charity'],
+        'private_foundation': counts['private_foundation'],
+        'unclassified': counts['unclassified'],
+        'pct_public_charity': round(counts['public_charity'] * 100 / total, 1),
+        'pct_private_foundation': round(counts['private_foundation'] * 100 / total, 1),
+        'pct_unclassified': round(counts['unclassified'] * 100 / total, 1),
+    }
+
+
 def main():
     db = get_db()
     try:
@@ -191,6 +250,7 @@ def main():
             'categories': build_categories(db),
             'states': build_states(db),
             'spending': build_spending(db),
+            'entity_types': build_entity_types(db),
         }
     finally:
         db.close()
@@ -206,6 +266,10 @@ def main():
     print(f"   categories:    {len(snapshot['categories'])} rows")
     print(f"   states:        {len(snapshot['states'])} rows")
     print(f"   spending:      {len(snapshot['spending'])} rows")
+    et = snapshot['entity_types']
+    print(f"   entity_types:  {et['pct_public_charity']}% public charity, "
+          f"{et['pct_private_foundation']}% private foundation, "
+          f"{et['pct_unclassified']}% unclassified")
 
 
 if __name__ == '__main__':
