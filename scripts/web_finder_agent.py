@@ -60,7 +60,7 @@ def can_fetch(url: str) -> bool:
             _robots_cache[base] = rp
         return _robots_cache[base].can_fetch(UA, url)
     except Exception:
-        return True  # fail open
+        return False  # fail closed — can't confirm permission, don't scrape
 
 def log(msg: str):
     ts = datetime.now(timezone.utc).isoformat()

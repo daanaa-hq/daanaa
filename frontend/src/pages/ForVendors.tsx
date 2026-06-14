@@ -253,6 +253,20 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
           placeholder="We've worked with nonprofits for 10 years / We're a small business ourselves / We'd love to expand with Daanaa…"
           className="w-full px-4 py-3 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-y" />
       </label>
+      <label className="flex items-start gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          required
+          className="mt-0.5 accent-soft-gold shrink-0"
+        />
+        <span className="font-body text-[13px] text-cool-grey leading-[1.6]">
+          I have read and agree to the{' '}
+          <a href="/vendor-policy" target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:underline">
+            Daanaa Vendor and Partner Policy
+          </a>
+          , including that participation never affects how any organization appears in Daanaa search results, and that the discount or benefit I describe must be real and honored as listed.
+        </span>
+      </label>
       <button type="submit" disabled={sending}
         className="w-full sm:w-auto px-8 py-3 bg-soft-gold text-deep-navy font-body text-[15px] font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 transition-colors">
         {sending ? 'Sending…' : 'Join the network'}

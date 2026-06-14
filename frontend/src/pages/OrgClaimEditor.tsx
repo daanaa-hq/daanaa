@@ -278,12 +278,14 @@ interface EventFormData {
   signup_url: string
   contact_email: string
   capacity: string
+  safetyAck: boolean
 }
 
 const EMPTY_FORM: EventFormData = {
   title: '', description: '', event_date: '', start_time: '', end_time: '',
   location_city: '', location_state: '', location_zip: '',
   is_virtual: false, signup_url: '', contact_email: '', capacity: '',
+  safetyAck: false,
 }
 
 function EventForm({
@@ -434,11 +436,22 @@ function EventForm({
         />
       </label>
 
+      <label className="flex items-start gap-2.5 cursor-pointer pt-1">
+        <input
+          type="checkbox"
+          checked={form.safetyAck}
+          onChange={e => set('safetyAck', e.target.checked)}
+          className="mt-0.5 accent-soft-gold shrink-0"
+        />
+        <span className="font-body text-[12px] text-cool-grey leading-[1.6]">
+          Our organization is responsible for the safety of this event, including appropriate insurance and compliance with local requirements. Daanaa does not organize, supervise, or insure volunteer events.
+        </span>
+      </label>
       <div className="flex gap-3 pt-1">
         <button
           type="button"
           onClick={() => onSave(form)}
-          disabled={saving || !form.title || !form.event_date}
+          disabled={saving || !form.title || !form.event_date || !form.safetyAck}
           className="px-5 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save event'}
@@ -597,6 +610,7 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
                 location_state: ev.location_state ?? '', location_zip: ev.location_zip ?? '',
                 is_virtual: ev.is_virtual, signup_url: ev.signup_url ?? '',
                 contact_email: ev.contact_email ?? '', capacity: ev.capacity ? String(ev.capacity) : '',
+                safetyAck: true,
               }}
               onSave={data => handleUpdate(ev.id, data)}
               onCancel={() => setEditId(null)}

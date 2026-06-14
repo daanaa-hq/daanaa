@@ -30,6 +30,7 @@ const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
 const ClaimSuccess = lazy(() => import('./pages/ClaimSuccess'))
 const ForVendors = lazy(() => import('./pages/ForVendors'))
+const VendorPolicy = lazy(() => import('./pages/VendorPolicy'))
 const GuildReferral = lazy(() => import('./pages/GuildReferral'))
 const MemberBenefits = lazy(() => import('./pages/MemberBenefits'))
 const VolunteerSearch = lazy(() => import('./pages/VolunteerSearch'))
@@ -81,6 +82,7 @@ export default function App() {
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/for-vendors" element={<ForVendors />} />
+            <Route path="/vendor-policy" element={<VendorPolicy />} />
             <Route path="/guild/:slug" element={<GuildReferral />} />
             <Route path="/member/benefits" element={<MemberBenefits />} />
             <Route path="/volunteer" element={<VolunteerSearch />} />

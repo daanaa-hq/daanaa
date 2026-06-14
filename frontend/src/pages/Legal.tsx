@@ -150,6 +150,15 @@ export default function Legal() {
               by contacting us. In most cases, corrections require updating the underlying IRS 990
               filing, which is the authoritative source.
             </p>
+            <p className="mt-3">
+              <strong className="text-deep-navy">California residents (CCPA).</strong> If you have
+              submitted personal information to Daanaa — such as an email address through the claim
+              form or feedback form — you have the right to know what information we hold, the right
+              to request deletion, and the right to opt out of any sale of your personal information.
+              We do not sell personal information. To exercise any of these rights, email{' '}
+              <a href="mailto:privacy@daanaa.org" className="text-soft-gold hover:underline">privacy@daanaa.org</a>{' '}
+              and we will respond within 45 days.
+            </p>
           </section>
 
           {/* Terms of Use */}
