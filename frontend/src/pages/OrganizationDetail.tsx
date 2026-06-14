@@ -193,6 +193,19 @@ function formatOrdinal(n: number): string {
 }
 
 // Decode a peer_group string like "B24:Medium" into a readable label
+// Plain-English size for the "Size" field. The stored revenue_band is a
+// model-specific scoring tier (0-7) — meaningless to a reader — so we derive a
+// universal size from actual annual revenue instead. Null when revenue is
+// unknown, so we hide the field rather than guess.
+function nonprofitSizeLabel(revenue: number | null | undefined): string | null {
+  if (revenue == null || revenue <= 0) return null
+  if (revenue < 250_000) return 'Micro'
+  if (revenue < 1_000_000) return 'Small'
+  if (revenue < 10_000_000) return 'Mid-size'
+  if (revenue < 100_000_000) return 'Large'
+  return 'Major'
+}
+
 function peerGroupLabel(peerGroup: string | null, revenueBand: string | null): string {
   if (!peerGroup) return ''
   if (peerGroup.includes(':')) {
@@ -1197,10 +1210,10 @@ export default function OrganizationDetail() {
                       <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">NTEE Category</p>
                       <p className="text-deep-navy font-medium">{(org as any).nteecc || org.category || '--'}</p>
                     </div>
-                    {(org as any).revenueBand && (
+                    {nonprofitSizeLabel(apiOrg!.total_revenue) && (
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">Size</p>
-                        <p className="text-deep-navy font-medium">{(org as any).revenueBand} nonprofit</p>
+                        <p className="text-deep-navy font-medium">{nonprofitSizeLabel(apiOrg!.total_revenue)} nonprofit</p>
                       </div>
                     )}
                   </div>
