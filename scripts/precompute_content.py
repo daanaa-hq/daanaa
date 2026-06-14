@@ -15,6 +15,17 @@ from datetime import datetime
 DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
 OUTPUT_DIR = os.path.join(os.environ.get("PRECOMPUTE_OUT", "precompute_output"), "content")
 
+# Must match daanaa_api.py _DEDUCTIBILITY_FILTER exactly. Homepage stats describe
+# the nonprofits a donor can actually find and give a deductible gift to — the
+# same set browse/search returns — so revoked and non-deductible orgs are
+# excluded. Without this, counts included ~193K auto-revoked orgs and the
+# homepage reported 2.06M while the live browse set is 1.87M.
+DEDUCTIBLE = (
+    "subsection = '3' AND deductibility = '1' "
+    "AND COALESCE(irs_revoked, 0) != 1 "
+    "AND COALESCE(org_status, '') != 'revoked'"
+)
+
 
 # NTEE categories for homepage stats
 CATEGORIES = [
@@ -110,13 +121,13 @@ def main():
 
     # 1. Homepage data
     print("  Generating homepage data...")
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT
             COUNT(*) as total_organizations,
             COUNT(CASE WHEN total_revenue IS NOT NULL THEN 1 END) as with_revenue,
             SUM(CASE WHEN total_revenue IS NOT NULL THEN total_revenue ELSE 0 END) as total_revenue_sum,
             AVG(CASE WHEN total_revenue IS NOT NULL THEN total_revenue ELSE NULL END) as avg_revenue
-        FROM registry_enriched
+        FROM registry_enriched WHERE {DEDUCTIBLE}
     """)
     row = cursor.fetchone()
     stats = {
@@ -127,10 +138,10 @@ def main():
     }
 
     # Top states
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT STATE, COUNT(*) as count
         FROM registry_enriched
-        WHERE STATE IS NOT NULL
+        WHERE {DEDUCTIBLE} AND STATE IS NOT NULL
         GROUP BY STATE
         ORDER BY count DESC
         LIMIT 10
@@ -141,8 +152,8 @@ def main():
     # Category counts
     category_stats = []
     for cat_code, cat_name in CATEGORIES:
-        cursor.execute("""
-            SELECT COUNT(*) as count FROM registry_enriched WHERE NTEE1 = ?
+        cursor.execute(f"""
+            SELECT COUNT(*) as count FROM registry_enriched WHERE {DEDUCTIBLE} AND NTEE1 = ?
         """, (cat_code,))
         count = cursor.fetchone()['count']
         category_stats.append({
@@ -154,10 +165,10 @@ def main():
     stats['categories'] = category_stats
 
     # Tier distribution
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT merit_tier, COUNT(*) as count
         FROM registry_enriched
-        WHERE merit_tier IS NOT NULL
+        WHERE {DEDUCTIBLE} AND merit_tier IS NOT NULL
         GROUP BY merit_tier
         ORDER BY merit_tier
     """)
@@ -167,7 +178,7 @@ def main():
     stats['tier_distribution'] = tier_dist
 
     # Reserve health
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT
             COUNT(*) as total_with_reserve,
             COUNT(CASE WHEN months_of_reserve < 0 THEN 1 END) as insolvent,
@@ -175,7 +186,7 @@ def main():
             COUNT(CASE WHEN months_of_reserve >= 3 AND months_of_reserve < 12 THEN 1 END) as minimal,
             COUNT(CASE WHEN months_of_reserve >= 12 THEN 1 END) as healthy
         FROM registry_enriched
-        WHERE months_of_reserve IS NOT NULL
+        WHERE {DEDUCTIBLE} AND months_of_reserve IS NOT NULL
     """)
     row = cursor.fetchone()
     stats['reserve_health'] = {
