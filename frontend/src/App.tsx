@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { CompareProvider } from './contexts/CompareContext'
@@ -22,7 +22,6 @@ const CauseSpotlight = lazy(() => import('./pages/CauseSpotlight'))
 const Methodology = lazy(() => import('./pages/Methodology2'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
-const Partners = lazy(() => import('./pages/Partners'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const Learn = lazy(() => import('./pages/Learn'))
 const About = lazy(() => import('./pages/About'))
@@ -83,7 +82,7 @@ export default function App() {
             <Route path="/guides" element={<Learn />} />
             <Route path="/faq" element={<Learn />} />
             <Route path="/feedback" element={<Feedback />} />
-            <Route path="/partners" element={<Partners />} />
+            <Route path="/partners" element={<Navigate to="/for-vendors" replace />} />
             <Route path="/for-vendors" element={<ForVendors />} />
             <Route path="/vendor-policy" element={<VendorPolicy />} />
             <Route path="/terms" element={<Terms />} />
