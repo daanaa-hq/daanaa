@@ -51,7 +51,7 @@ export default function V5Context({ org }: V5ContextProps) {
         {/* Header with beta badge */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className="font-body text-xs tracking-widest uppercase font-semibold opacity-70">
+            <h3 className="font-body text-xs tracking-widest uppercase font-semibold text-cool-grey">
               Financial Context
             </h3>
             <p className={`font-body text-lg font-semibold mt-2 ${colors.text}`}>
@@ -65,35 +65,35 @@ export default function V5Context({ org }: V5ContextProps) {
 
         {/* Peer group info */}
         <div className="space-y-2">
-          <div className="text-sm">
-            <span className="opacity-70">Compared to </span>
-            <span className="font-semibold">{v5.peer_group.label}</span>
-            <span className="opacity-70"> ({v5.peer_group.org_count.toLocaleString()} organizations)</span>
+          <div className="text-sm text-slate">
+            <span className="text-cool-grey">Compared to </span>
+            <span className="font-semibold text-deep-navy">{v5.peer_group.label}</span>
+            <span className="text-cool-grey"> ({v5.peer_group.org_count.toLocaleString()} organizations)</span>
           </div>
         </div>
 
         {/* Percentile rank */}
         <div className="grid grid-cols-2 gap-6">
           <div className="text-center">
-            <span className="block text-xs opacity-60 mb-1.5">Percentile Rank</span>
+            <span className="block text-xs text-cool-grey mb-1.5">Percentile Rank</span>
             <span className={`block font-body text-3xl font-bold ${colors.text}`}>
               {v5.score.percentile}
             </span>
-            <span className="text-xs opacity-60">among similar orgs</span>
+            <span className="text-xs text-cool-grey">among similar orgs</span>
           </div>
           <div className="text-center">
-            <span className="block text-xs opacity-60 mb-1.5">Peer Typical</span>
+            <span className="block text-xs text-cool-grey mb-1.5">Peer Typical</span>
             <span className={`block font-body text-3xl font-bold ${colors.text}`}>
               {v5.benchmarks.reserves_months.p50.toFixed(0)}
             </span>
-            <span className="text-xs opacity-60">months reserve</span>
+            <span className="text-xs text-cool-grey">months reserve</span>
           </div>
         </div>
 
         {/* Reserve comparison if available */}
         {v5.benchmarks.reserves_months.your_value !== null && (
           <div className="pt-3 space-y-2">
-            <div className="text-xs opacity-70">Your organization: <span className="font-semibold">{v5.benchmarks.reserves_months.your_value.toFixed(1)} months</span></div>
+            <div className="text-xs text-slate">Your organization: <span className="font-semibold text-deep-navy">{v5.benchmarks.reserves_months.your_value.toFixed(1)} months</span></div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className={`h-2 rounded-full ${colors.badge.split(' ')[0]}`}
@@ -102,7 +102,7 @@ export default function V5Context({ org }: V5ContextProps) {
                 }}
               />
             </div>
-            <div className="flex justify-between text-xs opacity-60">
+            <div className="flex justify-between text-xs text-cool-grey">
               <span>P25: {v5.benchmarks.reserves_months.p25.toFixed(0)}</span>
               <span>P50: {v5.benchmarks.reserves_months.p50.toFixed(0)}</span>
               <span>P75: {v5.benchmarks.reserves_months.p75.toFixed(0)}</span>
@@ -110,14 +110,14 @@ export default function V5Context({ org }: V5ContextProps) {
           </div>
         )}
 
-        {/* Donor explanation */}
-        <p className={`font-body text-sm leading-relaxed ${colors.text}`}>
+        {/* Donor explanation — neutral dark for readability, not tinted */}
+        <p className="font-body text-[15px] leading-relaxed text-slate">
           {v5.donor_explanation}
         </p>
 
         {/* Method note — honest disclosure of what this is and isn't (P3) */}
-        <div className="pt-3 border-t border-current/20">
-          <p className="text-xs opacity-70 italic">
+        <div className="pt-3 border-t border-deep-navy/10">
+          <p className="text-xs text-cool-grey italic">
             This compares the organization to financially similar peers, not to all
             nonprofits. It is context from public IRS data, not a rating.
           </p>

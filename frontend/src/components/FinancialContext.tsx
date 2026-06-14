@@ -47,7 +47,7 @@ export default function FinancialContext({ org }: FinancialContextProps) {
         {/* Header with status badge */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h3 className={`font-body text-xs tracking-widest uppercase font-semibold opacity-70 ${style.label}`}>
+            <h3 className={`font-body text-xs tracking-widest uppercase font-semibold ${style.label}`}>
               Financial Health Assessment
             </h3>
             <p className={`font-body text-lg font-semibold mt-2 ${style.label}`}>
@@ -64,39 +64,39 @@ export default function FinancialContext({ org }: FinancialContextProps) {
         {/* Peer comparison (if available) */}
         {!isIncomplete && fc.peer_model && (
           <div className="space-y-3">
-            <div className="text-xs opacity-70">
+            <div className="text-xs text-cool-grey">
               Peer group: <span className="font-semibold">{fc.peer_model.replace(/_/g, ' ')}</span>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="text-center">
-                <span className="block text-xs opacity-60 mb-1.5">Peer Baseline</span>
+                <span className="block text-xs text-cool-grey mb-1.5">Peer Baseline</span>
                 <span className={`block font-body text-3xl font-bold ${style.label}`}>
                   {fc.peer_baseline.toFixed(0)}
                 </span>
-                <span className="text-xs opacity-60">months reserve</span>
+                <span className="text-xs text-cool-grey">months reserve</span>
               </div>
               {fc.months_reserve !== null && (
                 <div className="text-center">
-                  <span className="block text-xs opacity-60 mb-1.5">This Organization</span>
+                  <span className="block text-xs text-cool-grey mb-1.5">This Organization</span>
                   <span className={`block font-body text-3xl font-bold ${style.label}`}>
                     {fc.months_reserve.toFixed(0)}
                   </span>
-                  <span className="text-xs opacity-60">months reserve</span>
+                  <span className="text-xs text-cool-grey">months reserve</span>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Explanation */}
-        <p className={`font-body text-sm leading-relaxed ${style.label}`}>
+        {/* Explanation — neutral dark for readability, not tinted */}
+        <p className="font-body text-[15px] leading-relaxed text-slate">
           {fc.explanation}
         </p>
 
         {/* Data issues (if present) */}
         {fc.data_issues && fc.data_issues.length > 0 && (
           <div className="space-y-2 pt-2">
-            <p className="text-xs opacity-70">Data quality flags:</p>
+            <p className="text-xs text-cool-grey">Data quality flags:</p>
             <div className="flex flex-wrap gap-2">
               {fc.data_issues.map(issue => (
                 <span key={issue} className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${style.badge}`}>
@@ -109,7 +109,7 @@ export default function FinancialContext({ org }: FinancialContextProps) {
 
         {/* Confidence disclaimer */}
         {fc.confidence === 'LOW' && (
-          <p className="text-xs opacity-70 italic pt-2">
+          <p className="text-xs text-cool-grey italic pt-2">
             This assessment has low confidence due to data quality concerns. We're working to verify the latest financial information.
           </p>
         )}

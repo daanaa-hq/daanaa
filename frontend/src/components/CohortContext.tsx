@@ -22,7 +22,7 @@ export default function CohortContext({ org }: CohortContextProps) {
     <div className="rounded-lg border border-light-grey bg-warm-cream/40 p-6">
       <div className="space-y-4">
         <div>
-          <h3 className="font-body text-xs tracking-widest uppercase font-semibold opacity-70">
+          <h3 className="font-body text-xs tracking-widest uppercase font-semibold text-cool-grey">
             Financial Context
           </h3>
           <p className="font-body text-[15px] text-deep-navy mt-2 leading-relaxed">
@@ -32,7 +32,7 @@ export default function CohortContext({ org }: CohortContextProps) {
         </div>
 
         <div className="rounded-md bg-white border border-light-grey p-4 space-y-2">
-          <p className="font-body text-[13px] tracking-wide uppercase opacity-60">
+          <p className="font-body text-[13px] tracking-wide uppercase text-cool-grey">
             About {causeLabel.toLowerCase().startsWith('this') ? causeLabel : `its work in ${causeLabel}`}
           </p>
           <p className="font-body text-[15px] text-deep-navy leading-relaxed">
