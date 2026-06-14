@@ -7,7 +7,7 @@
 
 **This Collective Action Framework Agreement** ("Agreement") is entered into as of [DATE] ("Effective Date") by and between:
 
-**EcoMargins LLC**, a Delaware limited liability company operating as Daanaa ("Daanaa"), and
+**EcoMargins Consulting LLC**, a Texas limited liability company operating as Daanaa ("Daanaa"), and
 
 **[VENDOR LEGAL NAME]**, a [STATE] [entity type] ("Partner").
 
@@ -194,10 +194,10 @@ Each Party will keep the other's non-public business information confidential an
 ## 10. General Provisions
 
 ### 10.1 Governing Law
-This Agreement is governed by the laws of the State of Delaware, without regard to conflict-of-law principles.
+This Agreement is governed by the laws of the State of Texas, without regard to conflict-of-law principles.
 
 ### 10.2 Dispute Resolution
-The Parties will attempt in good faith to resolve any dispute through direct negotiation. If unresolved within 30 days, disputes will be submitted to binding arbitration in [CITY, STATE] under the rules of the American Arbitration Association, with one arbitrator. The prevailing Party is entitled to recover its reasonable attorneys' fees.
+The Parties will attempt in good faith to resolve any dispute through direct negotiation. If unresolved within 30 days, disputes will be submitted to binding arbitration in [CITY], Texas under the rules of the American Arbitration Association, with one arbitrator. The prevailing Party is entitled to recover its reasonable attorneys' fees.
 
 ### 10.3 Relationship of Parties
 The Parties are independent contractors. Nothing in this Agreement creates an employment, agency, partnership, or joint venture relationship between them.
@@ -229,7 +229,7 @@ Notices under this Agreement must be in writing and delivered by email with conf
 
 By signing below, each Party agrees to be bound by the terms of this Agreement.
 
-**EcoMargins LLC (Daanaa)**
+**EcoMargins Consulting LLC (Daanaa)**
 
 Signature: _________________________ Date: ____________
 
@@ -280,4 +280,4 @@ Partner may improve the CAF Discount above the minimums at any time. Reductions 
 
 ---
 
-*This template requires review by qualified legal counsel before execution. EcoMargins LLC is not a law firm and this document does not constitute legal advice.*
+*This template requires review by qualified legal counsel before execution. EcoMargins Consulting LLC is not a law firm and this document does not constitute legal advice.*

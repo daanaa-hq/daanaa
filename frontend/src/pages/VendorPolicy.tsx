@@ -19,7 +19,7 @@ export default function VendorPolicy() {
           Daanaa Impact Network<br />Vendor and Partner Policy
         </h1>
         <p className="mt-4 font-body text-[13px] text-muted-cream">
-          Effective June 14, 2026 · Operated by EcoMargins LLC
+          Effective June 14, 2026 · Operated by EcoMargins Consulting LLC
         </p>
 
         <div className="mt-12 space-y-12 font-body text-[15px] text-cool-grey leading-[1.7]">
@@ -39,7 +39,7 @@ export default function VendorPolicy() {
             <p className="mt-3">The network has two tiers:</p>
             <ul className="mt-3 space-y-2 ml-4 list-disc">
               <li><strong className="text-deep-navy">Community Partners</strong> — Any business that offers a genuine benefit to nonprofits. No formal contract required. Applications are reviewed by Daanaa staff and activated at Daanaa's discretion.</li>
-              <li><strong className="text-deep-navy">Network Partners</strong> — Businesses that have entered into a formal Collective Action Framework (CAF) agreement with EcoMargins LLC. Network partners agree to reporting requirements and milestone-based pricing commitments.</li>
+              <li><strong className="text-deep-navy">Network Partners</strong> — Businesses that have entered into a formal Collective Action Framework (CAF) agreement with EcoMargins Consulting LLC. Network partners agree to reporting requirements and milestone-based pricing commitments.</li>
             </ul>
           </section>
 
@@ -146,7 +146,7 @@ export default function VendorPolicy() {
               You are responsible for the accuracy and legality of every listing you submit.
             </p>
             <p className="mt-3">
-              You agree to indemnify, defend, and hold harmless EcoMargins LLC, its officers, agents,
+              You agree to indemnify, defend, and hold harmless EcoMargins Consulting LLC, its officers, agents,
               and representatives from any claim, liability, loss, damage, or expense (including
               reasonable legal fees) arising from: (a) the inaccuracy or misrepresentation of your
               listing; (b) your failure to fulfill a listed offer; (c) your use of nonprofit data
@@ -154,7 +154,7 @@ export default function VendorPolicy() {
               your participation.
             </p>
             <p className="mt-3">
-              To the maximum extent permitted by applicable law, EcoMargins LLC's total liability to
+              To the maximum extent permitted by applicable law, EcoMargins Consulting LLC's total liability to
               any vendor shall not exceed the fees paid by that vendor in the twelve months preceding
               the claim. Community partners participating at no cost acknowledge that Daanaa's
               liability is zero.
@@ -184,8 +184,8 @@ export default function VendorPolicy() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Governing terms</h2>
             <p>
-              This policy is governed by the laws of the State of Delaware, without regard to
-              conflict-of-law principles, reflecting the jurisdiction of EcoMargins LLC.
+              This policy is governed by the laws of the State of Texas, without regard to
+              conflict-of-law principles, reflecting the jurisdiction of EcoMargins Consulting LLC.
             </p>
             <p className="mt-3">
               Daanaa may update this policy at any time. Material changes will be communicated to
@@ -214,7 +214,7 @@ export default function VendorPolicy() {
               Policy questions:{' '}
               <a href="mailto:legal@daanaa.org" className="text-soft-gold hover:underline">legal@daanaa.org</a>
               {' · '}
-              EcoMargins LLC · Operating as Daanaa · daanaa.org
+              EcoMargins Consulting LLC · Operating as Daanaa · daanaa.org
             </p>
           </section>
 

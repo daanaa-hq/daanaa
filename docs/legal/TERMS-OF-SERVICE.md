@@ -1,13 +1,13 @@
 # Terms of Service
 ## Daanaa — daanaa.org
 
-**Effective: June 14, 2026 · Operated by EcoMargins LLC**
+**Effective: June 14, 2026 · Operated by EcoMargins Consulting LLC**
 
 ---
 
 ## 1. Who we are and what Daanaa is
 
-Daanaa is operated by **EcoMargins LLC**, a for-profit Delaware limited liability company. Daanaa is not a nonprofit organization. We are not affiliated with the IRS or any government agency.
+Daanaa is operated by **EcoMargins Consulting LLC**, a for-profit Texas limited liability company. Daanaa is not a nonprofit organization. We are not affiliated with the IRS or any government agency.
 
 Daanaa is a public-data directory of U.S. 501(c)(3) organizations. We aggregate publicly available information from IRS filings, ProPublica, and the National Center for Charitable Statistics, and we present it in a searchable format. Our purpose is to help people discover and learn about nonprofits — particularly smaller organizations with limited public visibility.
 
@@ -88,7 +88,7 @@ Vendor benefits are listed for informational purposes. Daanaa does not warranty 
 
 ## 10. Intellectual property
 
-Daanaa's original expression — including our scoring methodology descriptions, platform design, and editorial content — is protected by copyright and owned by EcoMargins LLC.
+Daanaa's original expression — including our scoring methodology descriptions, platform design, and editorial content — is protected by copyright and owned by EcoMargins Consulting LLC.
 
 Organization data (names, addresses, EINs, financial figures from 990 filings) is derived from public-domain government filings. Daanaa does not claim copyright in that underlying government data.
 
@@ -111,7 +111,7 @@ Our full privacy practices are described in the [Legal & Data Attribution page](
 - The Giving Wallet requires a free Google account. Wallet data is never shown publicly and can be deleted at any time.
 - If you submit personal information (claim form, feedback form), we use it only to respond to your request.
 - California residents have CCPA rights as described on our Legal page.
-- EU and UK residents have GDPR / UK GDPR rights as described on our Legal page. Daanaa is a U.S.-directed service; EcoMargins LLC is the data controller.
+- EU and UK residents have GDPR / UK GDPR rights as described on our Legal page. Daanaa is a U.S.-directed service; EcoMargins Consulting LLC is the data controller.
 
 ---
 
@@ -129,15 +129,15 @@ TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, ECOMARGINS LLC'S TOTAL LIABIL
 
 ## 15. Indemnification
 
-You agree to indemnify, defend, and hold harmless EcoMargins LLC, its members, managers, officers, employees, and agents from any claim, liability, loss, or expense (including reasonable attorneys' fees) arising from your use of daanaa.org in violation of these Terms or applicable law.
+You agree to indemnify, defend, and hold harmless EcoMargins Consulting LLC, its members, managers, officers, employees, and agents from any claim, liability, loss, or expense (including reasonable attorneys' fees) arising from your use of daanaa.org in violation of these Terms or applicable law.
 
 ---
 
 ## 16. Governing law and disputes
 
-These Terms are governed by the laws of the State of Delaware, without regard to conflict-of-law principles, reflecting the jurisdiction of EcoMargins LLC.
+These Terms are governed by the laws of the State of Texas, without regard to conflict-of-law principles, reflecting the jurisdiction of EcoMargins Consulting LLC.
 
-Disputes that cannot be resolved informally within 30 days of written notice will be submitted to binding arbitration in Delaware under the rules of the American Arbitration Association, with one arbitrator. The prevailing party is entitled to recover its reasonable attorneys' fees. You waive any right to a jury trial or to participate in a class action.
+Disputes that cannot be resolved informally within 30 days of written notice will be submitted to binding arbitration in Texas under the rules of the American Arbitration Association, with one arbitrator. The prevailing party is entitled to recover its reasonable attorneys' fees. You waive any right to a jury trial or to participate in a class action.
 
 Nothing in this section limits either party's right to seek injunctive or other equitable relief in any court of competent jurisdiction.
 
@@ -155,8 +155,8 @@ Legal questions: [legal@daanaa.org](mailto:legal@daanaa.org)
 Privacy and data requests: [privacy@daanaa.org](mailto:privacy@daanaa.org)  
 Data corrections: [trust@daanaa.org](mailto:trust@daanaa.org)
 
-EcoMargins LLC · Operating as Daanaa · daanaa.org
+EcoMargins Consulting LLC · Operating as Daanaa · daanaa.org
 
 ---
 
-*These terms should be reviewed by qualified legal counsel. EcoMargins LLC is not a law firm and this document does not constitute legal advice to any third party.*
+*These terms should be reviewed by qualified legal counsel. EcoMargins Consulting LLC is not a law firm and this document does not constitute legal advice to any third party.*

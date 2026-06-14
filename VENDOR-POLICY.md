@@ -1,7 +1,7 @@
 # Daanaa Impact Network — Vendor and Partner Policy
 
 **Effective date:** 2026-06-14
-**Operated by:** EcoMargins LLC ("Daanaa")
+**Operated by:** EcoMargins Consulting LLC ("Daanaa")
 **Applies to:** All community partners, network partners, and vendors participating in the Daanaa Impact Network
 
 ---
@@ -15,7 +15,7 @@ The goal of the network is simple: make it easier for nonprofits to access servi
 **The network has two participation tiers:**
 
 - **Community Partners** — Any business that offers a genuine benefit to nonprofits. No formal contract required. Applications are reviewed by Daanaa staff and activated at Daanaa's discretion.
-- **Network Partners** — Businesses that have entered into a formal Collective Action Framework (CAF) agreement with EcoMargins LLC. Network partners agree to reporting requirements and milestone-based pricing commitments in exchange for deeper network access and co-marketing.
+- **Network Partners** — Businesses that have entered into a formal Collective Action Framework (CAF) agreement with EcoMargins Consulting LLC. Network partners agree to reporting requirements and milestone-based pricing commitments in exchange for deeper network access and co-marketing.
 
 ---
 
@@ -71,9 +71,9 @@ Daanaa is not an agent, broker, or representative of any vendor. Daanaa does not
 
 You are responsible for the accuracy and legality of every listing you submit to the Daanaa Impact Network.
 
-You agree to indemnify, defend, and hold harmless EcoMargins LLC, its officers, agents, and representatives from any claim, liability, loss, damage, or expense (including reasonable legal fees) arising from: (a) the inaccuracy or misrepresentation of your listing; (b) your failure to fulfill a listed offer; (c) your use of nonprofit data obtained through the network; or (d) any violation of applicable law in connection with your participation.
+You agree to indemnify, defend, and hold harmless EcoMargins Consulting LLC, its officers, agents, and representatives from any claim, liability, loss, damage, or expense (including reasonable legal fees) arising from: (a) the inaccuracy or misrepresentation of your listing; (b) your failure to fulfill a listed offer; (c) your use of nonprofit data obtained through the network; or (d) any violation of applicable law in connection with your participation.
 
-To the maximum extent permitted by applicable law, EcoMargins LLC's total liability to any vendor in connection with the Daanaa Impact Network shall not exceed the fees paid by that vendor to EcoMargins LLC in the twelve months preceding the claim. Community partners who participate at no cost acknowledge that Daanaa's liability is zero.
+To the maximum extent permitted by applicable law, EcoMargins Consulting LLC's total liability to any vendor in connection with the Daanaa Impact Network shall not exceed the fees paid by that vendor to EcoMargins Consulting LLC in the twelve months preceding the claim. Community partners who participate at no cost acknowledge that Daanaa's liability is zero.
 
 ---
 
@@ -89,7 +89,7 @@ Daanaa does not mediate disputes between vendors and nonprofits. Those disputes 
 
 ## Governing terms
 
-This policy is governed by the laws of the State of Delaware, without regard to conflict-of-law principles, reflecting the jurisdiction of EcoMargins LLC.
+This policy is governed by the laws of the State of Texas, without regard to conflict-of-law principles, reflecting the jurisdiction of EcoMargins Consulting LLC.
 
 Daanaa may update this policy at any time. Material changes will be communicated to active partners by email at least 14 days before taking effect. Continued participation after the effective date of any update constitutes acceptance of the revised terms.
 
@@ -115,4 +115,4 @@ The principles most directly relevant to vendor participation are:
 For vendor and partnership inquiries: partners@daanaa.org
 For policy questions: legal@daanaa.org
 
-EcoMargins LLC · Operating as Daanaa · daanaa.org
+EcoMargins Consulting LLC · Operating as Daanaa · daanaa.org

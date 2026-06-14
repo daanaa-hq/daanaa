@@ -1,13 +1,13 @@
 # Daanaa Impact Network — Network Partner Program
 ## Onboarding and Operating Guide
 
-**Operated by EcoMargins LLC · partners@daanaa.org**
+**Operated by EcoMargins Consulting LLC · partners@daanaa.org**
 
 ---
 
 ## What this guide covers
 
-This guide is for businesses that have completed a Collective Action Framework (CAF) agreement with EcoMargins LLC and are entering the Daanaa Impact Network as a **Network Partner**. It explains how your listing works, how nonprofit members find and access your benefit, what you need to do to stay in good standing, and how Daanaa supports you.
+This guide is for businesses that have completed a Collective Action Framework (CAF) agreement with EcoMargins Consulting LLC and are entering the Daanaa Impact Network as a **Network Partner**. It explains how your listing works, how nonprofit members find and access your benefit, what you need to do to stay in good standing, and how Daanaa supports you.
 
 If you are a **Community Partner** (no formal contract), a shorter onboarding email covers your setup. This guide applies to Network Partners only.
 

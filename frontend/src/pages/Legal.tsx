@@ -165,7 +165,7 @@ export default function Legal() {
               <strong className="text-deep-navy">EU and UK residents (GDPR / UK GDPR).</strong>{' '}
               Daanaa is a U.S.-directed service focused on U.S. nonprofit organizations. If you are
               located in the European Union or United Kingdom and have voluntarily submitted personal
-              information to us, EcoMargins LLC is the data controller. You have the right to access,
+              information to us, EcoMargins Consulting LLC is the data controller. You have the right to access,
               correct, erase, restrict processing of, and port your personal data, and to object to
               processing. We do not use your data for profiling or automated decision-making. Our
               lawful basis for processing claim and contact data is legitimate interest in verifying
@@ -223,7 +223,7 @@ export default function Legal() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Who operates Daanaa</h2>
             <p>
-              Daanaa is operated by <strong>EcoMargins Consulting LLC</strong>, a for-profit company. Daanaa is not a 501(c)(3) charity or a nonprofit organization. We are not affiliated with the IRS or any government agency.
+              Daanaa is operated by <strong>EcoMargins Consulting LLC</strong>, a for-profit Texas limited liability company doing business as Daanaa. Daanaa is not a 501(c)(3) charity or a nonprofit organization. We are not affiliated with the IRS or any government agency.
             </p>
             <p className="mt-3">
               Daanaa does not receive, hold, solicit, or process charitable gifts. We are a public-data directory. All giving happens directly between donors and the nonprofits they choose. We never touch the money.

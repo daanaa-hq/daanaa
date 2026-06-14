@@ -4,7 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 export default function Terms() {
   usePageMeta(
     'Terms of Service — Daanaa',
-    'Terms governing use of daanaa.org, operated by EcoMargins LLC.',
+    'Terms governing use of daanaa.org, operated by EcoMargins Consulting LLC.',
   )
 
   return (
@@ -19,7 +19,7 @@ export default function Terms() {
           Terms of Service
         </h1>
         <p className="mt-4 font-body text-[13px] text-muted-cream">
-          Effective June 14, 2026 · Operated by EcoMargins LLC
+          Effective June 14, 2026 · Operated by EcoMargins Consulting LLC
         </p>
 
         <div className="mt-12 space-y-12 font-body text-[15px] text-cool-grey leading-[1.7]">
@@ -27,7 +27,7 @@ export default function Terms() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">1. Who we are and what Daanaa is</h2>
             <p>
-              Daanaa is operated by <strong className="text-deep-navy">EcoMargins LLC</strong>, a for-profit Delaware
+              Daanaa is operated by <strong className="text-deep-navy">EcoMargins Consulting LLC</strong>, a for-profit Texas
               limited liability company. Daanaa is not a nonprofit organization. We are not affiliated with the IRS
               or any government agency.
             </p>
@@ -173,7 +173,7 @@ export default function Terms() {
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">10. Intellectual property</h2>
             <p>
               Daanaa's original expression — including our scoring methodology descriptions, platform design, and
-              editorial content — is protected by copyright and owned by EcoMargins LLC.
+              editorial content — is protected by copyright and owned by EcoMargins Consulting LLC.
             </p>
             <p className="mt-3">
               Organization data (names, addresses, EINs, financial figures from 990 filings) is derived from
@@ -207,14 +207,14 @@ export default function Terms() {
               <li>The Giving Wallet requires a free Google account. Wallet data is never shown publicly and can be deleted at any time.</li>
               <li>If you submit personal information (claim form, feedback form), we use it only to respond to your request.</li>
               <li>California residents have CCPA rights as described on our Legal page.</li>
-              <li>EU and UK residents have GDPR rights as described on our Legal page. Daanaa is a U.S.-directed service; EcoMargins LLC is the data controller.</li>
+              <li>EU and UK residents have GDPR rights as described on our Legal page. Daanaa is a U.S.-directed service; EcoMargins Consulting LLC is the data controller.</li>
             </ul>
           </section>
 
           <section>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">13. Disclaimer of warranties</h2>
             <p className="uppercase text-[13px] tracking-[0.01em]">
-              Daanaa is provided "as is" without warranty of any kind. EcoMargins LLC disclaims all warranties,
+              Daanaa is provided "as is" without warranty of any kind. EcoMargins Consulting LLC disclaims all warranties,
               express or implied, including warranties of merchantability, fitness for a particular purpose, and
               non-infringement.
             </p>
@@ -223,8 +223,8 @@ export default function Terms() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">14. Limitation of liability</h2>
             <p className="uppercase text-[13px] tracking-[0.01em]">
-              To the maximum extent permitted by applicable law, EcoMargins LLC's total liability to you for any
-              claim arising from or related to use of Daanaa is limited to $100. EcoMargins LLC is not liable for
+              To the maximum extent permitted by applicable law, EcoMargins Consulting LLC's total liability to you for any
+              claim arising from or related to use of Daanaa is limited to $100. EcoMargins Consulting LLC is not liable for
               indirect, incidental, consequential, punitive, or special damages.
             </p>
           </section>
@@ -232,7 +232,7 @@ export default function Terms() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">15. Indemnification</h2>
             <p>
-              You agree to indemnify, defend, and hold harmless EcoMargins LLC, its members, managers, officers,
+              You agree to indemnify, defend, and hold harmless EcoMargins Consulting LLC, its members, managers, officers,
               employees, and agents from any claim, liability, loss, or expense (including reasonable attorneys' fees)
               arising from your use of daanaa.org in violation of these Terms or applicable law.
             </p>
@@ -241,12 +241,12 @@ export default function Terms() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">16. Governing law and disputes</h2>
             <p>
-              These Terms are governed by the laws of the State of Delaware, without regard to conflict-of-law
+              These Terms are governed by the laws of the State of Texas, without regard to conflict-of-law
               principles.
             </p>
             <p className="mt-3">
               Disputes that cannot be resolved informally within 30 days of written notice will be submitted to
-              binding arbitration in Delaware under the rules of the American Arbitration Association, with one
+              binding arbitration in Texas under the rules of the American Arbitration Association, with one
               arbitrator. The prevailing party is entitled to recover its reasonable attorneys' fees. You waive any
               right to a jury trial or to participate in a class action.
             </p>
@@ -277,7 +277,7 @@ export default function Terms() {
               <a href="mailto:trust@daanaa.org" className="text-soft-gold hover:underline">trust@daanaa.org</a>
             </p>
             <p className="mt-2 text-[13px] text-muted-cream">
-              EcoMargins LLC · Operating as Daanaa · daanaa.org
+              EcoMargins Consulting LLC · Operating as Daanaa · daanaa.org
             </p>
           </section>
 
