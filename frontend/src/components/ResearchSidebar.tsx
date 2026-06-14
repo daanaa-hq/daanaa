@@ -8,12 +8,12 @@ const SECTIONS = [
   { id: 'about', label: 'About Daanaa', icon: '🎯' },
   { id: 'problem', label: 'The Discovery Problem', icon: '🔍' },
   { id: 'methodology', label: 'Our Methodology', icon: '📐' },
-  { id: 'operating-models', label: 'Operating Models & Bands', icon: '⚙️' },
   { id: 'financial-archetypes', label: 'Financial Archetypes', icon: '📈' },
-  { id: 'entity-types', label: 'Organization Types', icon: '🏛️' },
   { id: 'peer-context', label: 'Peer Financial Context', icon: '💰' },
+  { id: 'entity-types', label: 'Organization Types', icon: '🏛️' },
   { id: 'findings', label: 'Research Findings', icon: '📚' },
   { id: 'spending', label: 'Program Spending', icon: '💸' },
+  { id: 'operating-models', label: 'Operating Models (v4 Reference)', icon: '🔧' },
   { id: 'data-movement', label: "What's Changed", icon: '📋' },
 ]
 

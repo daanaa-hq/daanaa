@@ -32,8 +32,8 @@ export default function ResearchOverview({
             <div className="text-sm text-cool-grey">States represented</div>
           </div>
           <div className="bg-soft-gold/10 rounded-lg p-4">
-            <div className="text-3xl font-display text-soft-gold">9</div>
-            <div className="text-sm text-cool-grey">Operating models</div>
+            <div className="text-3xl font-display text-soft-gold">3</div>
+            <div className="text-sm text-cool-grey">Financial Archetypes</div>
           </div>
         </div>
       )}
@@ -42,10 +42,11 @@ export default function ResearchOverview({
         <h3 className="text-sm font-semibold text-deep-navy mb-2">📌 What you'll learn</h3>
         <ul className="space-y-2 text-sm text-cool-grey">
           <li>✓ How we source and verify nonprofit data</li>
-          <li>✓ Our peer financial context scoring methodology</li>
-          <li>✓ Operating model segmentation and revenue band distribution</li>
-          <li>✓ Transparency about our data limitations</li>
-          <li>✓ Future research directions</li>
+          <li>✓ Our peer financial context scoring methodology (v5)</li>
+          <li>✓ Three financial archetypes and how they define nonprofit strategy</li>
+          <li>✓ Revenue bands and peer group benchmarking</li>
+          <li>✓ Health signals and what they reveal about financial sustainability</li>
+          <li>✓ Transparency about our data limitations and coverage</li>
         </ul>
       </div>
     </div>

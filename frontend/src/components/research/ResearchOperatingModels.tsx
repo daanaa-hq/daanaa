@@ -148,8 +148,17 @@ export default function ResearchOperatingModels({
   return (
     <div>
       <h2 className="text-3xl font-display text-deep-navy mb-6">
-        Operating Models & Revenue Bands
+        Operating Models & Revenue Bands (v4 Reference)
       </h2>
+
+      <div className="bg-warm-cream/30 border-l-4 border-soft-gold p-4 mb-8 rounded-r">
+        <p className="text-sm text-deep-navy font-semibold mb-2">Reference: V4 Segmentation</p>
+        <p className="text-sm text-slate">
+          This section documents the nine operating models from our v4 system. We have transitioned to a simpler
+          three-archetype model (v5) for financial context scoring. Operating models remain useful for understanding
+          mission-driven segmentation across the nonprofit sector.
+        </p>
+      </div>
 
       <p className="text-cool-grey mb-8 max-w-2xl">
         Click any operating model to see how organizations are distributed across revenue bands within that group.
