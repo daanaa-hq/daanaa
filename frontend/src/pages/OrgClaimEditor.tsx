@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { ClaimProgressBar } from '../components/ClaimProgressBar'
@@ -7,6 +7,7 @@ import {
   getServiceArea, putServiceArea,
   type VolunteerEvent, type ServiceAreaType,
 } from '../data/api'
+import { METRO_NAMES } from '../data/msas'
 
 const CAUSE_TAGS = [
   'Arts & Culture','Education','Environment','Health','Community Development',
@@ -95,14 +96,65 @@ const COUNTRIES: { code: string; name: string }[] = [
   { code: 'ZW', name: 'Zimbabwe' },
 ]
 
+function MSAPicker({ values, onChange }: {
+  values: string[]
+  onChange: (v: string[]) => void
+}) {
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return q ? METRO_NAMES.filter(m => m.toLowerCase().includes(q)) : METRO_NAMES
+  }, [search])
+
+  function toggle(name: string) {
+    if (values.includes(name)) onChange(values.filter(v => v !== name))
+    else if (values.length < 50) onChange([...values, name])
+  }
+
+  return (
+    <div className="space-y-3">
+      {values.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {values.map(v => (
+            <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 bg-soft-gold/20 text-deep-navy rounded-full font-body text-[12px]">
+              {v}
+              <button type="button" onClick={() => onChange(values.filter(x => x !== v))}
+                className="text-cool-grey hover:text-deep-navy leading-none ml-0.5">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <input
+        value={search} onChange={e => setSearch(e.target.value)}
+        placeholder="Search metro areas… e.g. Chicago, Dallas, Phoenix"
+        className="w-full px-3 py-2 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold"
+      />
+      <div className="border border-light-cream rounded-xl overflow-y-auto max-h-52 divide-y divide-light-cream/60">
+        {filtered.slice(0, 80).map(name => (
+          <label key={name} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-warm-cream transition-colors ${values.includes(name) ? 'bg-soft-gold/10' : ''}`}>
+            <input type="checkbox" checked={values.includes(name)} onChange={() => toggle(name)}
+              className="accent-soft-gold w-4 h-4 flex-shrink-0" />
+            <span className="font-body text-[14px] text-deep-navy">{name}</span>
+          </label>
+        ))}
+        {filtered.length > 80 && (
+          <p className="px-4 py-2.5 font-body text-[12px] text-cool-grey">
+            {filtered.length - 80} more — type to narrow the list
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
-  const [areaType, setAreaType]     = useState<ServiceAreaType>('local')
-  const [values, setValues]         = useState<string[]>([])
-  const [regional, setRegional]     = useState('')
-  const [loading, setLoading]       = useState(true)
-  const [saving, setSaving]         = useState(false)
-  const [saved, setSaved]           = useState(false)
-  const [error, setError]           = useState<string | null>(null)
+  const [areaType, setAreaType] = useState<ServiceAreaType>('local')
+  const [values, setValues]     = useState<string[]>([])
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [saved, setSaved]       = useState(false)
+  const [error, setError]       = useState<string | null>(null)
 
   useEffect(() => {
     getServiceArea(ein)
@@ -131,13 +183,6 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
     setValues(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
   }
 
-  function addRegional() {
-    const t = regional.trim()
-    if (!t || values.includes(t) || values.length >= 10) return
-    setValues(prev => [...prev, t])
-    setRegional('')
-  }
-
   if (loading) return null
 
   return (
@@ -158,73 +203,44 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
             }`}
           >
             {t === 'local' ? 'Local (my city)' :
-             t === 'regional' ? 'Regional (counties)' :
-             t === 'statewide' ? 'Statewide' :
-             t === 'nationwide' ? 'Nationwide (US)' :
+             t === 'regional' ? 'Metro areas' :
+             t === 'statewide' ? 'States' :
+             t === 'nationwide' ? 'Nationwide' :
              'International'}
           </button>
         ))}
       </div>
 
       {areaType === 'regional' && (
-        <div className="space-y-2">
-          <p className="font-body text-[12px] text-cool-grey">Add counties or metro areas you serve (up to 10)</p>
-          <div className="flex gap-2">
-            <input
-              value={regional} onChange={e => setRegional(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addRegional())}
-              placeholder="e.g. Cook County, IL"
-              className="flex-1 px-3 py-2 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold"
-            />
-            <button type="button" onClick={addRegional}
-              className="px-4 py-2 bg-pale-gold/30 text-deep-navy rounded-xl font-body text-[13px] hover:bg-pale-gold/50 transition-colors">
-              Add
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {values.map(v => (
-              <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 bg-pale-gold/20 text-deep-navy rounded-full font-body text-[12px]">
-                {v}
-                <button type="button" onClick={() => setValues(p => p.filter(x => x !== v))}
-                  className="text-cool-grey hover:text-deep-navy leading-none">×</button>
-              </span>
-            ))}
-          </div>
-        </div>
+        <MSAPicker values={values} onChange={setValues} />
       )}
 
       {areaType === 'statewide' && (
-        <div className="space-y-2">
-          <p className="font-body text-[12px] text-cool-grey">Select the states you serve</p>
-          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
-            {US_STATES.map(s => (
-              <button key={s} type="button" onClick={() => toggleValue(s)}
-                className={`px-2.5 py-1 rounded-full font-body text-[12px] border transition-colors ${
-                  values.includes(s)
-                    ? 'bg-soft-gold text-deep-navy border-soft-gold'
-                    : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
-                }`}
-              >{s}</button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
+          {US_STATES.map(s => (
+            <button key={s} type="button" onClick={() => toggleValue(s)}
+              className={`px-2.5 py-1 rounded-full font-body text-[12px] border transition-colors ${
+                values.includes(s)
+                  ? 'bg-soft-gold text-deep-navy border-soft-gold'
+                  : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
+              }`}
+            >{s}</button>
+          ))}
         </div>
       )}
 
       {areaType === 'international' && (
-        <div className="space-y-2">
-          <p className="font-body text-[12px] text-cool-grey">Select the countries you serve (up to 50)</p>
-          <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
-            {COUNTRIES.map(c => (
-              <button key={c.code} type="button"
-                onClick={() => (values.length < 50 || values.includes(c.code)) && toggleValue(c.code)}
-                className={`px-2.5 py-1 rounded-full font-body text-[12px] border transition-colors ${
-                  values.includes(c.code)
-                    ? 'bg-soft-gold text-deep-navy border-soft-gold'
-                    : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
-                }`}
-              >{c.name}</button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
+          {COUNTRIES.map(c => (
+            <button key={c.code} type="button"
+              onClick={() => (values.length < 50 || values.includes(c.code)) && toggleValue(c.code)}
+              className={`px-2.5 py-1 rounded-full font-body text-[12px] border transition-colors ${
+                values.includes(c.code)
+                  ? 'bg-soft-gold text-deep-navy border-soft-gold'
+                  : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
+              }`}
+            >{c.name}</button>
+          ))}
         </div>
       )}
 
