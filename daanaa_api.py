@@ -1135,7 +1135,9 @@ def list_organizations():
         where_clauses.append(f'merit_tier IN ({placeholders})')
         params.extend(included)
 
-    allowed_sorts = ['total_revenue', 'organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']
+    # total_revenue removed from public sorts (P4 — peer-benchmarked score is the
+    # right ranking signal; raw revenue ranking disadvantages small orgs by design)
+    allowed_sorts = ['organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']
     if sort_by not in allowed_sorts:
         sort_by = 'merit_score'
     if order not in ['asc', 'desc']:
@@ -1143,7 +1145,7 @@ def list_organizations():
 
     # Prefix sort_by with table alias to avoid ambiguity in JOINs
     sort_col = f"r.{sort_by}"
-    if sort_by in ['total_revenue', 'organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']:
+    if sort_by in ['organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']:
         sort_col = f"r.{sort_by}"
 
     where_sql = " AND ".join(where_clauses)

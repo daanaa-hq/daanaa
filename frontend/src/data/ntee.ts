@@ -328,6 +328,34 @@ export const NTEE_CATEGORIES: NteeMajor[] = [
       { code: 'W50', name: 'Telecommunications' },
     ],
   },
+  {
+    id: 'Y', name: 'Mutual Benefit', emoji: '🤝',
+    gradient: ['#3D5A80', '#98C1D9'],
+    subs: [
+      { code: 'Y02', name: 'Management & Technical Assistance' },
+      { code: 'Y11', name: 'Mutual Aid & Fraternal Societies' },
+      { code: 'Y20', name: 'Insurance Providers' },
+      { code: 'Y22', name: 'Local Benevolent Societies' },
+      { code: 'Y25', name: 'Fraternal Beneficiary Societies' },
+      { code: 'Y30', name: 'Pension & Retirement Funds' },
+      { code: 'Y33', name: 'Teacher Retirement Fund Associations' },
+      { code: 'Y34', name: 'Police Officers Retirement Associations' },
+      { code: 'Y35', name: 'Firemen\'s Retirement Associations' },
+      { code: 'Y36', name: 'State-Sponsored Workers\' Compensation Reinsurance Organizations' },
+      { code: 'Y37', name: 'State-Sponsored Unemployment Compensation Reinsurance Organizations' },
+      { code: 'Y40', name: 'Credit Unions' },
+      { code: 'Y42', name: 'Savings Institutions, Federally Chartered' },
+      { code: 'Y43', name: 'Savings Institutions, Not Federally Chartered' },
+      { code: 'Y50', name: 'Cemeteries & Burial Services' },
+    ],
+  },
+  {
+    id: 'Z', name: 'Unclassified', emoji: '🔍',
+    gradient: ['#6B7280', '#9CA3AF'],
+    subs: [
+      { code: 'Z99', name: 'Unclassified' },
+    ],
+  },
 ]
 
 // Lookup by id

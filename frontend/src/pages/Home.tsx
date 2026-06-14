@@ -584,7 +584,7 @@ function WalletSection() {
             </p>
             <ul className="mt-7 space-y-3.5">
               {[
-                'Search 1.6M+ tax-deductible nonprofits and auto-fill the details',
+                'Search 1.8M+ tax-deductible nonprofits and auto-fill the details',
                 'Request an acknowledgment letter for gifts of $250+',
                 'Export by year, ready for your accountant',
               ].map(item => (

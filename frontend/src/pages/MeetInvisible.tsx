@@ -59,7 +59,7 @@ function RevealCard({ org, i }: { org: ApiOrganization; i: number }) {
 export default function MeetInvisible() {
   usePageMeta(
     'The Invisible 97% — Daanaa',
-    'Of 1.6 million tax-deductible American nonprofits, you have heard of almost none. Meet the ones doing real work, finally findable and ready to support.',
+    'Of 1.8 million tax-deductible American nonprofits, you have heard of almost none. Meet the ones doing real work, finally findable and ready to support.',
   )
   const [orgs, setOrgs] = useState<ApiOrganization[]>([])
   const [loading, setLoading] = useState(true)
