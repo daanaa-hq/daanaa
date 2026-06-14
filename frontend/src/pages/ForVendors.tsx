@@ -24,34 +24,25 @@ const ALL_CATEGORIES = [
 
 // ─── Community partner form ──────────────────────────────────────────────────
 
-type ServiceReach = 'local' | 'regional' | 'statewide' | 'nationwide'
+type ServiceReach = 'local' | 'regional' | 'multi_state' | 'online'
 
 const REACH_OPTIONS: { value: ServiceReach; label: string; hint: string }[] = [
-  { value: 'local',      label: 'My city or neighborhood', hint: 'A few miles radius — I know my customers by name' },
-  { value: 'regional',   label: 'Multiple counties or metro area', hint: 'A region, a metro, a cluster of cities' },
-  { value: 'statewide',  label: 'Statewide', hint: 'I serve the whole state — community partner path still works' },
-  { value: 'nationwide', label: 'Nationwide', hint: 'I operate across the US — this routes to the network partner program' },
+  { value: 'local',       label: 'My city or neighborhood',     hint: 'A few miles radius — I know my customers by name' },
+  { value: 'regional',    label: 'Metro area or multiple counties', hint: 'A region, a metro, a cluster of cities' },
+  { value: 'multi_state', label: 'Multiple states',             hint: 'Physical presence or clients across several states' },
+  { value: 'online',      label: 'Online — works with anyone',  hint: 'Software, consulting, remote services — no geography required' },
 ]
 
-// Vendors who serve statewide or nationwide belong in the network partner
-// program (formal contract, shared code, CAF, milestone pricing).
-// This gate is a helpful redirect, not a wall.
 function ServiceReachSelector({
-  value, onChange, onGate,
+  value, onChange,
 }: {
   value: ServiceReach
   onChange: (v: ServiceReach) => void
-  onGate: () => void
 }) {
-  function handleChange(v: ServiceReach) {
-    onChange(v)
-    if (v === 'nationwide') onGate()
-  }
-
   return (
     <div>
       <span className="block font-body text-[13px] font-medium text-deep-navy mb-2">
-        Where do you serve nonprofits?
+        How do you serve nonprofits?
       </span>
       <div className="grid sm:grid-cols-2 gap-2">
         {REACH_OPTIONS.map(opt => (
@@ -68,7 +59,7 @@ function ServiceReachSelector({
               name="service_reach"
               value={opt.value}
               checked={value === opt.value}
-              onChange={() => handleChange(opt.value)}
+              onChange={() => onChange(opt.value)}
               className="mt-0.5 accent-[#C9A96E] shrink-0"
             />
             <div>
@@ -93,16 +84,13 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [gated, setGated] = useState(false)
 
   function set(field: string) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm(f => ({ ...f, [field]: e.target.value }))
   }
 
-  function handleGate() {
-    setGated(true)
-  }
+  const isRemote = form.service_area_type === 'online' || form.service_area_type === 'multi_state'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -139,36 +127,6 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
     </div>
   )
 
-  // Nationwide vendors belong in the network partner program
-  if (gated) return (
-    <div className="py-4">
-      <div className="bg-deep-navy rounded-2xl p-7 mb-4">
-        <p className="font-body text-[12px] font-medium tracking-[0.1em] text-soft-gold uppercase mb-3">
-          Great — you belong in the network partner program
-        </p>
-        <h3 className="font-display italic text-[22px] text-warm-cream mb-3">
-          Nationwide vendors get more with a formal contract.
-        </h3>
-        <p className="font-body text-[14px] text-warm-cream/75 leading-[1.7] mb-4">
-          Because you serve nonprofits across the country, we can negotiate a shared
-          discount code for all 1.8M+ Daanaa members, build milestone pricing into
-          your contract from day one, and give you a dedicated referral page at
-          daanaa.org/guild/your-name. That's worth a real conversation.
-        </p>
-        <button
-          onClick={onGateToNetwork}
-          className="px-6 py-2.5 bg-soft-gold text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-bright-gold transition-colors">
-          Switch to network partner form
-        </button>
-      </div>
-      <button
-        onClick={() => { setGated(false); setForm(f => ({ ...f, service_area_type: 'regional' })) }}
-        className="font-body text-[13px] text-cool-grey hover:text-deep-navy underline underline-offset-2">
-        Actually, I serve a specific region — let me continue as a community partner
-      </button>
-    </div>
-  )
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
@@ -180,8 +138,24 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
       <ServiceReachSelector
         value={form.service_area_type}
         onChange={v => setForm(f => ({ ...f, service_area_type: v }))}
-        onGate={handleGate}
       />
+
+      {/* Soft nudge for multi-state/online — no wall, just an option */}
+      {isRemote && (
+        <div className="flex items-start gap-3 bg-deep-navy/[0.04] border border-light-grey rounded-xl px-4 py-3">
+          <span className="shrink-0 mt-0.5 text-soft-gold">◆</span>
+          <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
+            Community partner works great for online and multi-state businesses.
+            If you're a larger national vendor and want a formal pricing contract,
+            shared discount code for all members, and milestone pricing —{' '}
+            <button type="button" onClick={onGateToNetwork}
+              className="text-soft-gold hover:underline font-medium">
+              the network partner path
+            </button>{' '}
+            might suit you better. Either way, you're welcome here.
+          </p>
+        </div>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-4">
         <label className="block">
@@ -204,7 +178,7 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
           className="w-full px-4 py-3 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-y" />
         <p className="mt-1 font-body text-[12px] text-muted-cream">Keep it simple. Members need to understand it in one sentence.</p>
       </label>
-      {form.service_area_type !== 'nationwide' && (
+      {!isRemote && (
         <div className="grid sm:grid-cols-2 gap-4">
           <label className="block">
             <span className="block font-body text-[13px] font-medium text-deep-navy mb-1.5">
@@ -461,8 +435,9 @@ export default function ForVendors() {
         <section id="how-it-works" className="py-16 scroll-mt-24">
           <h2 className="font-display italic text-[30px] text-deep-navy mb-2">Two ways in. One network.</h2>
           <p className="font-body text-[15px] text-cool-grey mb-10 leading-[1.7]">
-            Choose the level that fits your business now. You can always grow into a
-            network partnership as the relationship deepens.
+            The difference isn't size or geography — it's whether you want a formal contract.
+            A local shop and an online SaaS serving clients in 40 states can both be community partners.
+            Choose what fits your business now.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
 
@@ -476,10 +451,18 @@ export default function ForVendors() {
               </div>
               <h3 className="font-body text-[17px] font-semibold text-deep-navy mb-2">Community partner</h3>
               <p className="font-body text-[14px] text-cool-grey leading-[1.65] mb-4">
-                Any business. Any size. Any geography. Tell us what you offer — and we list you.
+                Any business. Any size. Any geography — including online services and
+                businesses that work across multiple states. Tell us what you offer and we list you.
+                No contract required.
               </p>
               <ul className="space-y-2 mb-6">
-                {['Local, regional, or national', 'Any offer: discount, free session, priority service', 'No CAF, no fees, no monthly reporting', 'Reviewed and listed within a week', 'Shareable Daanaa referral link for your listing'].map(item => (
+                {[
+                  'Local shop, multi-state firm, or fully online — all welcome',
+                  'Any offer: discount, free session, priority service',
+                  'No contract, no CAF, no monthly reporting',
+                  'Reviewed and listed within a week',
+                  'Shareable referral link included with your listing',
+                ].map(item => (
                   <li key={item} className="flex gap-2.5">
                     <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full bg-soft-gold/15 flex items-center justify-center">
                       <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
@@ -505,11 +488,18 @@ export default function ForVendors() {
               </div>
               <h3 className="font-body text-[17px] font-semibold text-warm-cream mb-2">Network partner</h3>
               <p className="font-body text-[14px] text-warm-cream/70 leading-[1.65] mb-4">
-                For national or large regional vendors ready to formalize. One contract,
-                one shared code, milestone pricing that improves as the guild grows.
+                For vendors ready to formalize — a signed contract with milestone pricing built
+                in from day one, a shared discount code for all members, and a dedicated
+                referral page. Best for large-scale or high-volume nonprofit programs.
               </p>
               <ul className="space-y-2 mb-6">
-                {['Formal contract with milestone pricing from day one', 'Shared code for all 1.8M+ members', 'Monthly aggregate reporting + CAF invoice', 'Unique referral page at daanaa.org/guild/your-name', 'Rates improve automatically as guild spend grows'].map(item => (
+                {[
+                  'Formal contract with milestone pricing from day one',
+                  'Shared code for all 1.8M+ members',
+                  'Monthly aggregate reporting + CAF invoice',
+                  'Dedicated page at daanaa.org/guild/your-name',
+                  'Rates improve automatically as guild spend grows',
+                ].map(item => (
                   <li key={item} className="flex gap-2.5">
                     <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full bg-soft-gold/20 flex items-center justify-center">
                       <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
