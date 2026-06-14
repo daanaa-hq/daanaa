@@ -534,12 +534,22 @@ def get_financials(ein):
     org_data = load_org_detail(ein)
     if not org_data:
         return jsonify({'ein': ein, 'financials': [], 'total': 0})
-    record = {}
-    for field in ('total_revenue', 'total_expenses', 'net_assets', 'employee_count',
-                  'program_expense_pct', 'months_of_reserve', 'latest_tax_year'):
-        if org_data.get(field) is not None:
-            record[field] = org_data[field]
-    financials = [record] if record.get('latest_tax_year') else []
+    # Multi-year history baked into precomputed org JSON by precompute_orgs.py
+    financials = org_data.get('financials') or []
+    # Fallback: synthesise a single-year record for orgs not yet re-precomputed
+    if not financials and org_data.get('latest_tax_year'):
+        financials = [{
+            'tax_prd_yr':     org_data.get('latest_tax_year'),
+            'totrevenue':     org_data.get('total_revenue'),
+            'totfuncexpns':   org_data.get('total_expenses'),
+            'totnetassetend': org_data.get('net_assets'),
+            'totassetsend':   None,
+            'totliabend':     org_data.get('total_liabilities'),
+            'totcntrbgfts':   None,
+            'totprgmrevnue':  None,
+            'compnsatncurrofcr': None,
+            'pdf_url':        None,
+        }]
     return jsonify({'ein': ein, 'financials': financials, 'total': len(financials)})
 
 

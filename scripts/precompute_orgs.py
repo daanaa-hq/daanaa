@@ -115,6 +115,38 @@ def org_to_dict(row):
     return d
 
 
+def _load_financials_index(conn):
+    """Load all financial history rows keyed by EIN. Returns {} if table absent."""
+    try:
+        rows = conn.execute("""
+            SELECT EIN, tax_prd_yr, totrevenue, totfuncexpns, totassetsend,
+                   totliabend, totnetassetend, totcntrbgfts, totprgmrevnue,
+                   compnsatncurrofcr, pdf_url
+            FROM propublica_financials
+            ORDER BY EIN, tax_prd_yr DESC
+        """).fetchall()
+    except Exception:
+        return {}
+    index = {}
+    for r in rows:
+        ein = r[0]
+        if ein not in index:
+            index[ein] = []
+        index[ein].append({
+            'tax_prd_yr':        r[1],
+            'totrevenue':        r[2],
+            'totfuncexpns':      r[3],
+            'totassetsend':      r[4],
+            'totliabend':        r[5],
+            'totnetassetend':    r[6],
+            'totcntrbgfts':      r[7],
+            'totprgmrevnue':     r[8],
+            'compnsatncurrofcr': r[9],
+            'pdf_url':           r[10],
+        })
+    return index
+
+
 def main():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -122,6 +154,11 @@ def main():
 
     timestamp = datetime.now().isoformat()
     print(f"[{timestamp}] Pre-computing org detail pages...")
+
+    # Load financial history index once (keyed by EIN)
+    print("  Loading financial history index...")
+    financials_index = _load_financials_index(conn)
+    print(f"  Financial history: {len(financials_index):,} orgs with multi-year data")
 
     # Check existing files FIRST (before loading all orgs into memory)
     print("  Checking existing files...")
@@ -168,6 +205,7 @@ def main():
 
         org_data = org_to_dict(row)
         org_data['similar_organizations'] = []
+        org_data['financials'] = financials_index.get(ein, [])
         _write_org(org_data)
 
         processed += 1
