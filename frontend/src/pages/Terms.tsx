@@ -207,6 +207,7 @@ export default function Terms() {
               <li>The Giving Wallet requires a free Google account. Wallet data is never shown publicly and can be deleted at any time.</li>
               <li>If you submit personal information (claim form, feedback form), we use it only to respond to your request.</li>
               <li>California residents have CCPA rights as described on our Legal page.</li>
+              <li>EU and UK residents have GDPR rights as described on our Legal page. Daanaa is a U.S.-directed service; EcoMargins LLC is the data controller.</li>
             </ul>
           </section>
 

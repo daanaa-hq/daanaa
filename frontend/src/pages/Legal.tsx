@@ -161,6 +161,19 @@ export default function Legal() {
               <a href="mailto:privacy@daanaa.org" className="text-soft-gold hover:underline">privacy@daanaa.org</a>{' '}
               and we will respond within 45 days.
             </p>
+            <p className="mt-3">
+              <strong className="text-deep-navy">EU and UK residents (GDPR / UK GDPR).</strong>{' '}
+              Daanaa is a U.S.-directed service focused on U.S. nonprofit organizations. If you are
+              located in the European Union or United Kingdom and have voluntarily submitted personal
+              information to us, EcoMargins LLC is the data controller. You have the right to access,
+              correct, erase, restrict processing of, and port your personal data, and to object to
+              processing. We do not use your data for profiling or automated decision-making. Our
+              lawful basis for processing claim and contact data is legitimate interest in verifying
+              identity and responding to inquiries. To exercise any of these rights, email{' '}
+              <a href="mailto:privacy@daanaa.org" className="text-soft-gold hover:underline">privacy@daanaa.org</a>.
+              We aim to respond within 30 days. You also have the right to lodge a complaint with your
+              local supervisory authority.
+            </p>
           </section>
 
           {/* Terms of Use */}
