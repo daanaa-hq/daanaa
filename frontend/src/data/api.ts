@@ -561,3 +561,45 @@ export async function submitFeedback(
   });
   if (!res.ok && res.status !== 204) throw new Error('feedback failed');
 }
+
+// ── Nonprofit portal auth ────────────────────────────────────────────────────
+
+export interface ClaimedOrg {
+  ein: string
+  claim_status: string
+  verified_at: string | null
+  organization_name: string | null
+  city: string | null
+  state: string | null
+}
+
+export async function linkFirebaseToClaim(
+  ein: string,
+  verification_token: string,
+  idToken: string,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/claim/link-firebase`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ ein, verification_token }),
+  })
+  if (!res.ok) throw new Error('link failed')
+}
+
+export async function getMyOrgs(idToken: string): Promise<ClaimedOrg[]> {
+  const res = await fetch(`${API_BASE}/api/claim/my-orgs`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('my-orgs failed')
+  const data = await res.json()
+  return data.orgs ?? []
+}
+
+export async function getPortalToken(ein: string, idToken: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/claim/portal-token?ein=${encodeURIComponent(ein)}`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('portal-token failed')
+  const data = await res.json()
+  return data.verification_token
+}

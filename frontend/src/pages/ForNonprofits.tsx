@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { submitWaitlist, getOrganization } from '../data/api'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { submitWaitlist, getOrganization, getMyOrgs, getPortalToken } from '../data/api'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useAuth } from '../contexts/AuthContext'
+import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import LampMark from '../components/LampMark'
 import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
@@ -20,7 +22,11 @@ function StepDot({ n, label }: { n: number; label: string }) {
 
 export default function ForNonprofits() {
   usePageMeta('For Nonprofits', 'Claim your free Daanaa page. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
+  const navigate = useNavigate()
+  const { user, getIdToken } = useAuth()
   const [searchParams] = useSearchParams()
+  const [portalLoading, setPortalLoading] = useState(false)
+  const [portalError, setPortalError]     = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [ein, setEin] = useState('')
   const [submitted, setSubmitted] = useState(false)
@@ -337,6 +343,58 @@ export default function ForNonprofits() {
       })()}
 
       {/* Claim form */}
+      {/* Return portal — signed-in nonprofits jump straight to their editor */}
+      <div className="bg-warm-cream border-t border-light-grey py-10">
+        <div className="max-w-[520px] mx-auto px-6">
+          <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-3">
+            Already claimed your page?
+          </p>
+          {!user ? (
+            <div className="space-y-2">
+              <p className="font-body text-[15px] text-deep-navy mb-3">
+                Sign in to go straight to your editor — no PIN needed.
+              </p>
+              <GoogleSignInButton />
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <p className="font-body text-[14px] text-deep-navy font-medium">{user.email}</p>
+                <p className="font-body text-[13px] text-cool-grey">Signed in</p>
+              </div>
+              <button
+                onClick={async () => {
+                  setPortalLoading(true); setPortalError(null)
+                  try {
+                    const idToken = await getIdToken()
+                    if (!idToken) throw new Error('no token')
+                    const orgs = await getMyOrgs(idToken)
+                    if (orgs.length === 0) {
+                      setPortalError("We don't have a claimed page linked to this account yet. Use the form below to claim your page.")
+                      return
+                    }
+                    const org = orgs[0]
+                    const token = await getPortalToken(org.ein, idToken)
+                    navigate(`/claim/edit?ein=${encodeURIComponent(org.ein)}&token=${encodeURIComponent(token)}`)
+                  } catch {
+                    setPortalError('Could not load your page. Please try again.')
+                  } finally {
+                    setPortalLoading(false)
+                  }
+                }}
+                disabled={portalLoading}
+                className="px-5 py-2.5 bg-soft-gold text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 transition-colors"
+              >
+                {portalLoading ? 'Loading…' : 'Go to my page'}
+              </button>
+            </div>
+          )}
+          {portalError && (
+            <p className="mt-3 font-body text-[13px] text-red-600">{portalError}</p>
+          )}
+        </div>
+      </div>
+
       <div id="claim" className="bg-deep-navy py-10 md:py-16 lg:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="max-w-[520px]">

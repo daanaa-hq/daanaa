@@ -762,11 +762,16 @@ def _init_org_claims_table():
         # called_at/call_notes are the audit trail that the verification call
         # actually happened — written from the admin claims queue.
         for col in ("phone TEXT", "rep_title TEXT", "attested_at TEXT", "attestation_version TEXT",
-                    "called_at TEXT", "call_notes TEXT", "rep_name TEXT"):
+                    "called_at TEXT", "call_notes TEXT", "rep_name TEXT",
+                    "firebase_uid TEXT"):
             try:
                 db.execute(f"ALTER TABLE org_claims ADD COLUMN {col}")
             except sqlite3.OperationalError:
                 pass  # column already present
+        try:
+            db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_firebase ON org_claims(firebase_uid)")
+        except sqlite3.OperationalError:
+            pass
         db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_ein ON org_claims(ein)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_status ON org_claims(claim_status)")
         db.commit()
@@ -2630,6 +2635,76 @@ def claim_verify():
         "current_donate_url": org['donate_url'] if org else None,
         "irs_address": row['irs_address'],
         "verification_token": _make_verify_token(ein, row['pin']),
+    })
+
+
+@app.route('/api/claim/link-firebase', methods=['POST'])
+@limiter.limit("20 per hour")
+def claim_link_firebase():
+    """
+    After PIN verification, link a Firebase UID to the org's claim.
+    Body: { ein, verification_token }
+    Auth: Bearer <firebase-id-token>
+    """
+    uid  = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+    ein  = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'ein and verification_token required'}), 400
+    db  = get_db()
+    row = db.execute('SELECT pin, claim_status FROM org_claims WHERE ein=?', (ein,)).fetchone()
+    if not row or row['claim_status'] == 'revoked':
+        return jsonify({'error': 'Claim not found'}), 404
+    if not _verify_claim_token(ein, token):
+        return jsonify({'error': 'Invalid verification token'}), 403
+    db.execute('UPDATE org_claims SET firebase_uid=? WHERE ein=?', (uid, ein))
+    db.commit()
+    _log_org_activity(ein, 'firebase_linked', f'Firebase UID linked to claim', actor='org')
+    return jsonify({'ok': True})
+
+
+@app.route('/api/claim/my-orgs', methods=['GET'])
+@limiter.limit("60 per minute")
+def claim_my_orgs():
+    """Return all verified claims belonging to the authenticated Firebase user."""
+    uid = _require_firebase_user()
+    db  = get_db()
+    rows = db.execute(
+        """SELECT c.ein, c.claim_status, c.verified_at, r.organization_name, r.city, r.state
+           FROM org_claims c
+           LEFT JOIN registry_enriched r ON r.EIN = c.ein
+           WHERE c.firebase_uid = ? AND c.claim_status != 'revoked'
+           ORDER BY c.verified_at DESC""",
+        (uid,)
+    ).fetchall()
+    return jsonify({'orgs': [dict(r) for r in rows]})
+
+
+@app.route('/api/claim/portal-token', methods=['GET'])
+@limiter.limit("30 per minute")
+def claim_portal_token():
+    """
+    Return a fresh verification_token for an org the Firebase user has already claimed.
+    No PIN required — Firebase auth proves identity.
+    Query param: ?ein=<ein>
+    """
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (request.args.get('ein') or '') if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'ein required'}), 400
+    db  = get_db()
+    row = db.execute(
+        'SELECT pin, claim_status FROM org_claims WHERE ein=? AND firebase_uid=?',
+        (ein, uid)
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'No linked claim found for this org'}), 404
+    if row['claim_status'] == 'revoked':
+        return jsonify({'error': 'This claim has been revoked'}), 403
+    return jsonify({
+        'ein': ein,
+        'verification_token': _make_verify_token(ein, row['pin']),
     })
 
 

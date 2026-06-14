@@ -2,11 +2,15 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { ClaimProgressBar } from '../components/ClaimProgressBar'
+import { useAuth } from '../contexts/AuthContext'
+import { linkFirebaseToClaim } from '../data/api'
+import { GoogleSignInButton } from '../components/GoogleSignInButton'
 
 export default function ClaimVerify() {
   usePageMeta('Verify Claim', 'Enter the PIN we gave you over the phone to claim your nonprofit page.')
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { user, getIdToken } = useAuth()
   const [pin, setPin] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -49,6 +53,15 @@ export default function ClaimVerify() {
         return
       }
       const token = body.verification_token || pin
+
+      // If signed in with Firebase, link the UID to this claim silently
+      if (user) {
+        try {
+          const idToken = await getIdToken()
+          if (idToken) await linkFirebaseToClaim(ein, token, idToken)
+        } catch { /* non-fatal — claim still proceeds */ }
+      }
+
       navigate(`/claim/edit?ein=${encodeURIComponent(ein)}&token=${encodeURIComponent(token)}`)
     } catch {
       setError('Could not reach the server. Please try again.')
@@ -69,6 +82,30 @@ export default function ClaimVerify() {
             Enter it below to finish.
           </p>
         </div>
+
+        {/* Optional: sign in to save access for return visits */}
+        {!user && (
+          <div className="mb-4 bg-white rounded-2xl border border-light-cream p-5">
+            <p className="font-body text-[13px] font-medium text-deep-navy mb-1">
+              Sign in to save your access
+            </p>
+            <p className="font-body text-[12px] text-cool-grey mb-3">
+              Optional — sign in once and return to edit your page anytime without a PIN.
+            </p>
+            <GoogleSignInButton />
+          </div>
+        )}
+
+        {user && (
+          <div className="mb-4 bg-soft-gold/10 border border-soft-gold/30 rounded-2xl px-5 py-3 flex items-center gap-3">
+            <span className="text-lg">✓</span>
+            <div>
+              <p className="font-body text-[13px] font-medium text-deep-navy">Signed in as {user.email}</p>
+              <p className="font-body text-[12px] text-cool-grey">Your access will be saved after verification.</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleVerify} className="bg-white rounded-2xl shadow-sm border border-light-cream p-8">
           {error && (
             <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
