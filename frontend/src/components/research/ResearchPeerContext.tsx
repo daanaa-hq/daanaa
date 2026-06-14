@@ -16,7 +16,7 @@ export default function ResearchPeerContext() {
           <p className="font-semibold text-deep-navy mb-2">The Core Metric</p>
           <p className="text-sm">
             Peer Financial Context = percentile rank of organization's revenue within its
-            operating model + revenue band peer group.
+            financial archetype + revenue band peer group.
           </p>
         </div>
 
@@ -25,7 +25,8 @@ export default function ResearchPeerContext() {
           <ol className="list-decimal pl-5 space-y-3">
             <li>
               <strong>Identify the peer group:</strong> Find all organizations with the same
-              operating model and revenue band.
+              financial archetype (Donation-Funded, Fee-for-Service, or Endowment-Funded) and
+              revenue band (Micro, Professional, or Established).
             </li>
             <li>
               <strong>Calculate position:</strong> Rank the organization by total revenue
@@ -33,7 +34,7 @@ export default function ResearchPeerContext() {
             </li>
             <li>
               <strong>Express as percentile:</strong> If an org is in the 75th percentile, it
-              has stronger revenue than 75% of its peers.
+              has stronger revenue than 75% of its peers within its archetype and band.
             </li>
           </ol>
         </div>
@@ -69,8 +70,9 @@ export default function ResearchPeerContext() {
           <h3 className="text-lg font-semibold text-deep-navy mb-3">Why This Matters</h3>
           <ul className="list-disc pl-5 space-y-2">
             <li>
-              <strong>Fair comparison:</strong> A $100K youth program is "Large" in a rural
-              model; the same amount is "Tiny" in an urban food bank model.
+              <strong>Fair comparison:</strong> A $100K donation-funded program has a different
+              sustainability profile than a $100K fee-for-service operator. Each is benchmarked
+              within its own funding model.
             </li>
             <li>
               <strong>Transparency:</strong> All peer grouping rules are public and

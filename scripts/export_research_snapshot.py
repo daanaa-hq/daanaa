@@ -241,6 +241,65 @@ def build_entity_types(db):
     }
 
 
+V5_BAND_ORDER = {'Micro (<$150K)': 0, 'Professional ($150K–$700K)': 1, 'Established (>$700K)': 2}
+V5_ARCHETYPE_ORDER = {
+    'Donation-Funded Programs': 0,
+    'Fee-for-Service Operators': 1,
+    'Endowment-Funded Grantmakers': 2,
+}
+
+
+def build_v5(db):
+    """v5 financial-context taxonomy, computed from the merit_*_v5 columns already
+    in registry_enriched. Peer cell = archetype + revenue band; score = percentile
+    rank within that cell; health signal = HEALTHY/STABLE/CAUTION. Only the
+    deductible set is counted. Lamp tiers are a separate visibility layer (not v5).
+    """
+    rows = db.execute(
+        """SELECT merit_archetype_v5_label AS archetype,
+                  merit_band_v5_label      AS band,
+                  COUNT(*)                 AS count,
+                  ROUND(AVG(merit_score_v5), 1)        AS avg_score,
+                  ROUND(AVG(program_expense_pct), 1)   AS avg_program_pct,
+                  ROUND(AVG(CASE WHEN months_of_reserve BETWEEN -120 AND 120
+                                 THEN months_of_reserve END), 1) AS avg_months_reserve,
+                  SUM(CASE WHEN merit_health_signal_v5='HEALTHY' THEN 1 ELSE 0 END) AS healthy,
+                  SUM(CASE WHEN merit_health_signal_v5='STABLE'  THEN 1 ELSE 0 END) AS stable,
+                  SUM(CASE WHEN merit_health_signal_v5='CAUTION' THEN 1 ELSE 0 END) AS caution
+             FROM registry_enriched
+            WHERE subsection = '3' AND deductibility = '1'
+              AND COALESCE(irs_revoked, 0) != 1
+              AND COALESCE(org_status, '') != 'revoked'
+              AND merit_archetype_v5_label IS NOT NULL
+              AND merit_band_v5_label IS NOT NULL
+            GROUP BY merit_archetype_v5_label, merit_band_v5_label"""
+    ).fetchall()
+    cells = [dict(r) for r in rows]
+    cells.sort(key=lambda c: (V5_ARCHETYPE_ORDER.get(c['archetype'], 99),
+                              V5_BAND_ORDER.get(c['band'], 99)))
+    total = sum(c['count'] for c in cells) or 1
+    # Per-archetype rollup
+    arche = {}
+    for c in cells:
+        a = arche.setdefault(c['archetype'], {'archetype': c['archetype'], 'count': 0,
+                                              'healthy': 0, 'stable': 0, 'caution': 0})
+        a['count'] += c['count']
+        a['healthy'] += c['healthy']; a['stable'] += c['stable']; a['caution'] += c['caution']
+    archetypes = sorted(arche.values(), key=lambda a: V5_ARCHETYPE_ORDER.get(a['archetype'], 99))
+    for a in archetypes:
+        a['pct'] = round(a['count'] * 100 / total, 1)
+    return {
+        'total_scored': total,
+        'cells': cells,
+        'archetypes': archetypes,
+        'health_totals': {
+            'healthy': sum(c['healthy'] for c in cells),
+            'stable': sum(c['stable'] for c in cells),
+            'caution': sum(c['caution'] for c in cells),
+        },
+    }
+
+
 def main():
     db = get_db()
     try:
@@ -251,6 +310,7 @@ def main():
             'states': build_states(db),
             'spending': build_spending(db),
             'entity_types': build_entity_types(db),
+            'v5': build_v5(db),
         }
     finally:
         db.close()
@@ -270,6 +330,9 @@ def main():
     print(f"   entity_types:  {et['pct_public_charity']}% public charity, "
           f"{et['pct_private_foundation']}% private foundation, "
           f"{et['pct_unclassified']}% unclassified")
+    v5 = snapshot['v5']
+    print(f"   v5:            {v5['total_scored']:,} scored, "
+          f"{len(v5['archetypes'])} archetypes, {len(v5['cells'])} cells")
 
 
 if __name__ == '__main__':

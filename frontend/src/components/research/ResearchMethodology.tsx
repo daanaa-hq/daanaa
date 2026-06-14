@@ -45,31 +45,53 @@ export default function ResearchMethodology() {
           <h3 className="text-lg font-semibold text-deep-navy mb-3">Key Concepts</h3>
           <dl className="space-y-4">
             <div>
-              <dt className="font-semibold text-deep-navy">Operating Model</dt>
+              <dt className="font-semibold text-deep-navy">Financial Archetype</dt>
               <dd className="text-sm mt-1">
-                How an organization delivers its mission: Direct Service, Activity
-                Programming, Advocacy & Research, Faith Community, etc. (9 models total)
+                How an organization funds itself: Donation-Funded Programs (community
+                fundraising), Fee-for-Service Operators (earned revenue), or Endowment-Funded
+                Grantmakers (reserve-driven). Archetype shapes financial strategy and
+                sustainability drivers.
               </dd>
             </div>
             <div>
               <dt className="font-semibold text-deep-navy">Revenue Band</dt>
               <dd className="text-sm mt-1">
-                Operating model–specific revenue brackets. A $200K food bank is "Large" in
-                its model; a $200K health clinic is "Nano." This prevents unfair comparison.
+                Three universal bands applied across all archetypes: Micro (&lt;$150K),
+                Professional ($150K–$700K), Established (&gt;$700K). Bands prevent unfair
+                comparison between a $100K startup and a $50M institution.
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-deep-navy">Peer Financial Context</dt>
+              <dt className="font-semibold text-deep-navy">Peer Group</dt>
               <dd className="text-sm mt-1">
-                The organization's revenue percentile rank within its operating model +
-                revenue band peer group. Contextual, not absolute.
+                A peer group is formed by combining archetype + revenue band. An organization is
+                benchmarked only against others in its peer group. Each peer group has its own
+                typical financial profile.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-deep-navy">Financial Context Score</dt>
+              <dd className="text-sm mt-1">
+                A 0–100 percentile rank within the peer group. A score of 75 means the
+                organization ranks in the 75th percentile of peer financial health within its
+                archetype + band. Higher is healthier; lower suggests financial stress relative
+                to peers.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-deep-navy">Health Signal</dt>
+              <dd className="text-sm mt-1">
+                An independent assessment of financial vulnerability: HEALTHY (strong reserves
+                and revenue stability), STABLE (adequate resources for peers), or CAUTION
+                (limited reserves or revenue volatility). Not a verdict—a flag for deeper review.
               </dd>
             </div>
             <div>
               <dt className="font-semibold text-deep-navy">Lamp Tier</dt>
               <dd className="text-sm mt-1">
-                A visibility indicator (Beacon, Torch, Candle, Spark) based on data
-                completeness, not organizational quality.
+                A separate visibility indicator (Beacon, Torch, Candle, Spark) based on data
+                completeness, not financial performance. Visibility and financial context are
+                independent dimensions.
               </dd>
             </div>
           </dl>

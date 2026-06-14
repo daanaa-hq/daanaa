@@ -59,6 +59,33 @@ export interface ResearchSnapshot {
     pct_private_foundation: number
     pct_unclassified: number
   }
+  v5?: {
+    total_scored: number
+    cells: Array<{
+      archetype: string
+      band: string
+      count: number
+      avg_score: number
+      avg_program_pct: number
+      avg_months_reserve: number
+      healthy: number
+      stable: number
+      caution: number
+    }>
+    archetypes: Array<{
+      archetype: string
+      count: number
+      pct: number
+      healthy: number
+      stable: number
+      caution: number
+    }>
+    health_totals: {
+      healthy: number
+      stable: number
+      caution: number
+    }
+  }
 }
 
 let cache: Promise<ResearchSnapshot> | null = null

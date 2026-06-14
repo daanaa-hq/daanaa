@@ -9,6 +9,7 @@ const SECTIONS = [
   { id: 'problem', label: 'The Discovery Problem', icon: '🔍' },
   { id: 'methodology', label: 'Our Methodology', icon: '📐' },
   { id: 'operating-models', label: 'Operating Models & Bands', icon: '⚙️' },
+  { id: 'financial-archetypes', label: 'Financial Archetypes', icon: '📈' },
   { id: 'entity-types', label: 'Organization Types', icon: '🏛️' },
   { id: 'peer-context', label: 'Peer Financial Context', icon: '💰' },
   { id: 'findings', label: 'Research Findings', icon: '📚' },
