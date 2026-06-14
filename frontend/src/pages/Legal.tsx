@@ -2,22 +2,30 @@ import { Link } from 'react-router-dom'
 
 export default function Legal() {
   return (
-    <div className="min-h-[100dvh] bg-warm-cream">
-      <div className="max-w-[800px] mx-auto px-6 lg:px-12 py-24">
-        <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-cool-grey hover:text-deep-navy transition-colors">
-          ← Back to Home
-        </Link>
+    <div className="min-h-[100dvh]">
+      {/* Hero */}
+      <div className="bg-deep-navy pt-[72px]">
+        <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-12 pb-10">
+          <div className="flex items-center gap-2 mb-4">
+            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <span className="text-muted-cream">/</span>
+            <span className="font-body text-[12px] text-muted-cream">Legal & Data Attribution</span>
+          </div>
+          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]"
+              style={{ fontSize: 'clamp(36px, 5vw, 56px)' }}>
+            Legal & Data Attribution
+          </h1>
+        </div>
+      </div>
 
-        <h1 className="font-display italic text-deep-navy mt-6 leading-[0.95] tracking-[-0.02em]"
-            style={{ fontSize: 'clamp(36px, 6vw, 64px)' }}>
-          Legal & Data Attribution
-        </h1>
+      <div className="bg-warm-cream py-16 md:py-20">
+        <div className="max-w-[800px] mx-auto px-6 md:px-12">
 
-        <div className="mt-12 space-y-12 font-body text-[15px] text-cool-grey leading-[1.7]">
+        <div className="space-y-12 font-body text-[16px] text-cool-grey leading-[1.7]">
 
           {/* Data Sources */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Data Sources</h2>
+            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Data Sources</h2>
             <p>
               Daanaa aggregates publicly available data from the following sources. We do not collect,
               store, or distribute any information beyond what these sources make available to the public.
@@ -63,7 +71,7 @@ export default function Legal() {
 
           {/* Data Accuracy */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Data Accuracy & Freshness</h2>
+            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Data Accuracy & Freshness</h2>
             <p>
               Financial figures shown on Daanaa are derived from IRS Form 990 filings. The most
               recent filing available for each organization may lag the current fiscal year by
@@ -81,7 +89,7 @@ export default function Legal() {
 
           {/* AI-generated & automatically-collected content */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] mb-4">AI-Generated & Automatically-Collected Content</h2>
+            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">AI-Generated & Automatically-Collected Content</h2>
             <p>
               To make organizations easier to find, Daanaa fills gaps in the public record using
               automated tools. Two kinds of content are produced this way, and both are labeled in the
@@ -111,7 +119,7 @@ export default function Legal() {
 
           {/* Privacy */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Privacy Policy</h2>
+            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Privacy Policy</h2>
             <p>
               Daanaa is a public directory of tax-exempt organizations. All organization data
               displayed on this platform originates from IRS public filings and is required to be
@@ -178,7 +186,7 @@ export default function Legal() {
 
           {/* Terms of Use */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Terms of Use</h2>
+            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Terms of Use</h2>
             <p>
               Daanaa data is provided for informational and research purposes. You may use organization
               profiles, Daanaa scores, and ranking data freely for personal, academic, journalistic,
@@ -197,7 +205,7 @@ export default function Legal() {
 
           {/* Contact */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Contact</h2>
+            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Contact</h2>
             <p>
               Legal questions and takedown requests:{' '}
               <a href="mailto:legal@daanaa.org"
@@ -221,7 +229,7 @@ export default function Legal() {
 
           {/* Entity disclosure — required before public launch */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] mb-4">Who operates Daanaa</h2>
+            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Who operates Daanaa</h2>
             <p>
               Daanaa is operated by <strong>EcoMargins Consulting LLC</strong>, a for-profit Texas limited liability company doing business as Daanaa. Daanaa is not a 501(c)(3) charity or a nonprofit organization. We are not affiliated with the IRS or any government agency.
             </p>
@@ -233,6 +241,7 @@ export default function Legal() {
           <p className="text-[12px] text-cool-grey pt-4 border-t border-light-grey">
             Last updated: June 2026
           </p>
+        </div>
         </div>
       </div>
     </div>
