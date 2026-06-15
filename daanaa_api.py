@@ -406,6 +406,52 @@ def _make_verify_token(ein: str, pin: str) -> str:
     """Return HMAC-SHA256 hex token for the given EIN + PIN pair."""
     return hmac.new(_CLAIM_SECRET, f"{ein}:{pin}".encode(), hashlib.sha256).hexdigest()
 
+def _make_approve_token(cp_id: int) -> str:
+    """HMAC-signed one-click approve token scoped to a specific community partner ID."""
+    secret = (_ADMIN_KEY or "dev").encode()
+    return hmac.new(secret, f"approve-partner:{cp_id}".encode(), hashlib.sha256).hexdigest()
+
+
+def _triage_partner_application(data: dict) -> str:
+    """
+    Ask the local LLM to review a new community partner application and return
+    a brief assessment (2-4 sentences). Non-fatal: returns empty string on error.
+    Runs synchronously but quickly — the LLM is local and fast.
+    """
+    try:
+        prompt = (
+            "You are reviewing a new business application to join the Daanaa Impact Network — "
+            "a community of partners who offer genuine benefits to US nonprofits. "
+            "Review the application below and provide a 2-4 sentence assessment covering: "
+            "(1) whether the offer is clear and genuinely useful for nonprofits, "
+            "(2) any red flags (vague, inflated, or unverifiable claims), and "
+            "(3) a confidence level: HIGH / MEDIUM / LOW that this is a good-faith submission.\n\n"
+            f"Business: {data.get('business_name', '')}\n"
+            f"Category: {data.get('category', '')}\n"
+            f"Offer: {data.get('offer', '')}\n"
+            f"Reach: {data.get('service_area_type', '')}\n"
+            f"Location: {data.get('location_city', '')} {data.get('location_state', '')} {data.get('location_country', '')}\n"
+            f"Website: {data.get('website_url', '') or '(not provided)'}\n"
+            f"Notes: {data.get('notes', '') or '(none)'}\n\n"
+            "Assessment:"
+        )
+        resp = _http.post(
+            "http://localhost:11437/v1/chat/completions",
+            json={
+                "model": "qwen2.5-32b",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 200,
+                "temperature": 0.3,
+            },
+            timeout=30,
+        )
+        if resp.status_code == 200:
+            return resp.json()["choices"][0]["message"]["content"].strip()
+    except Exception:
+        pass
+    return ""
+
+
 # Admin key — set DAANAA_ADMIN_KEY env var before starting the API.
 # Backward compatible with old MERIT_ADMIN_KEY env var name.
 # Any endpoint decorated with @require_admin_key will return 401 if it's missing or wrong.
@@ -543,6 +589,8 @@ def _init_guild_tables():
         for col, defval in [
             ("service_area_type",   "'local'"),
             ("service_area_values", "'[]'"),
+            ("location_country",    "''"),
+            ("triage_notes",        "''"),
         ]:
             try:
                 db.execute(f"ALTER TABLE community_partners ADD COLUMN {col} TEXT NOT NULL DEFAULT {defval}")
@@ -963,12 +1011,13 @@ def set_security_headers(response):
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         # Firebase Google Sign-In popup requires apis.google.com scripts
-        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com; "
+        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "img-src 'self' data: https:; "
         "font-src 'self' data: https://fonts.gstatic.com; "
         # Firebase auth needs to connect to Google/Firebase endpoints
         + connect_src.rstrip('; ') +
+        " https://stats.daanaa.org"
         " https://identitytoolkit.googleapis.com"
         " https://securetoken.googleapis.com"
         " https://www.googleapis.com; "
@@ -3204,7 +3253,7 @@ def guild_community_partner_apply():
         return jsonify({"error": "Invalid email"}), 400
     db = get_db()
     import json as _json
-    valid_reach = {'local', 'regional', 'statewide', 'nationwide'}
+    valid_reach = {'local', 'regional', 'statewide', 'nationwide', 'multi_state', 'online'}
     area_type = (data.get('service_area_type') or 'local').strip()
     if area_type not in valid_reach:
         area_type = 'local'
@@ -3214,18 +3263,22 @@ def guild_community_partner_apply():
     else:
         area_values = '[]'
 
+    location_country = (data.get('location_country') or '').strip()[:100]
+    triage = _triage_partner_application(data)
+
     cur = db.execute(
         "INSERT INTO community_partners "
-        "(business_name, category, offer, location_city, location_state, "
+        "(business_name, category, offer, location_city, location_state, location_country, "
         "service_area_type, service_area_values, "
-        "contact_email, contact_phone, website_url, submitter_name, submitter_email, notes) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "contact_email, contact_phone, website_url, submitter_name, submitter_email, notes, triage_notes) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (
             data['business_name'].strip()[:200],
             data['category'].strip()[:100],
             data['offer'].strip()[:500],
             (data.get('location_city') or '').strip()[:100],
             (data.get('location_state') or '').strip()[:50],
+            location_country,
             area_type,
             area_values,
             (data.get('contact_email') or '').strip()[:200],
@@ -3234,24 +3287,35 @@ def guild_community_partner_apply():
             data['submitter_name'].strip()[:200],
             submitter_email[:200],
             (data.get('notes') or '').strip()[:1000],
+            triage[:1000],
         )
     )
     db.commit()
+
+    location_display = ' '.join(filter(None, [
+        (data.get('location_city') or '').strip(),
+        (data.get('location_state') or '').strip(),
+        location_country,
+    ])) or '(not provided)'
+    triage_section = f"\n─── Agent review ───\n{triage}\n────────────────────\n" if triage else ""
+
     _send_daanaa_email(
         "partners@daanaa.org",
         f"[Community partner] {data['business_name'].strip()} applied to join the network",
-        f"A business has applied to join the Daanaa impact network as a community partner.\n\n"
+        f"A business has applied to join the Daanaa Impact Network as a community partner.\n"
+        f"{triage_section}\n"
         f"Business:      {data['business_name'].strip()}\n"
         f"Category:      {data['category'].strip()}\n"
         f"Offer:         {data['offer'].strip()}\n"
         f"Reach:         {area_type}\n"
-        f"Location:      {(data.get('location_city') or '').strip()} {(data.get('location_state') or '').strip()}\n"
+        f"Location:      {location_display}\n"
         f"Website:       {(data.get('website_url') or '').strip() or '(not provided)'}\n"
         f"Contact email: {(data.get('contact_email') or '').strip() or '(not provided)'}\n"
         f"Contact phone: {(data.get('contact_phone') or '').strip() or '(not provided)'}\n"
         f"Submitter:     {data['submitter_name'].strip()} <{submitter_email}>\n"
         f"Notes:         {(data.get('notes') or '').strip() or '(none)'}\n\n"
-        f"Activate at: PATCH /api/admin/guild/community-partners/{cur.lastrowid} {{\"is_active\": 1, \"status\": \"active\"}}",
+        f"One-click approve: https://daanaa.org/api/admin/guild/approve-partner/{cur.lastrowid}?token={_make_approve_token(cur.lastrowid)}\n\n"
+        f"(Or manually: PATCH /api/admin/guild/community-partners/{cur.lastrowid} {{\"is_active\": 1, \"status\": \"active\"}})",
         from_addr="Daanaa <partners@daanaa.org>",
     )
     return jsonify({"ok": True, "id": cur.lastrowid}), 201
@@ -3371,6 +3435,48 @@ def admin_community_partners_list():
     return jsonify([dict(r) for r in rows])
 
 
+@app.route('/api/admin/guild/partners-review', methods=['GET'])
+def admin_partners_review():
+    """
+    View all pending and rejected partners for follow-up and coaching.
+    Use this to identify patterns, reach out to improve applications, and help partners succeed.
+    """
+    require_admin()
+    db = get_db()
+    status = request.args.get('status', '').strip()  # 'pending' or 'rejected'
+
+    query = "SELECT * FROM community_partners WHERE is_active=0"
+    params = []
+
+    if status in ('pending', 'rejected'):
+        query += " AND status=?"
+        params.append(status)
+
+    query += " ORDER BY created_at DESC LIMIT 200"
+
+    rows = db.execute(query, params).fetchall()
+
+    # Summary stats
+    total_pending = db.execute(
+        "SELECT COUNT(*) FROM community_partners WHERE is_active=0 AND status='pending'"
+    ).fetchone()[0]
+    total_rejected = db.execute(
+        "SELECT COUNT(*) FROM community_partners WHERE is_active=0 AND status='rejected'"
+    ).fetchone()[0]
+    total_active = db.execute(
+        "SELECT COUNT(*) FROM community_partners WHERE is_active=1"
+    ).fetchone()[0]
+
+    return jsonify({
+        'stats': {
+            'pending': total_pending,
+            'rejected': total_rejected,
+            'active': total_active,
+        },
+        'partners': [dict(r) for r in rows],
+    })
+
+
 @app.route('/api/admin/guild/community-partners/<int:cp_id>', methods=['PATCH'])
 def admin_community_partner_update(cp_id):
     require_admin()
@@ -3391,6 +3497,54 @@ def admin_community_partner_update(cp_id):
     db.commit()
     row = db.execute("SELECT * FROM community_partners WHERE id=?", (cp_id,)).fetchone()
     return jsonify(dict(row))
+
+
+@app.route('/api/admin/guild/approve-partner/<int:cp_id>', methods=['GET'])
+def admin_community_partner_approve(cp_id):
+    """
+    One-click approve link sent in the notification email.
+    Validates a signed token so no admin header is required — works directly from inbox.
+    GET /api/admin/guild/approve-partner/<id>?token=<hmac>
+    """
+    provided = request.args.get('token', '')
+    expected = _make_approve_token(cp_id)
+    if not provided or not hmac.compare_digest(provided, expected):
+        abort(401)
+    db = get_db()
+    row = db.execute("SELECT * FROM community_partners WHERE id=?", (cp_id,)).fetchone()
+    if not row:
+        abort(404)
+    if row['is_active']:
+        return (
+            "<html><body style='font-family:sans-serif;padding:2rem'>"
+            f"<h2>Already active</h2><p>{row['business_name']} is already in the network.</p>"
+            "</body></html>", 200
+        )
+    db.execute(
+        "UPDATE community_partners SET is_active=1, status='active' WHERE id=?", (cp_id,)
+    )
+    db.commit()
+    _send_daanaa_email(
+        row['submitter_email'],
+        f"Welcome to the Daanaa Impact Network — {row['business_name']}",
+        f"Hi {row['submitter_name']},\n\n"
+        f"Your business has been approved and is now listed in the Daanaa Impact Network.\n\n"
+        f"Business: {row['business_name']}\n"
+        f"Category: {row['category']}\n"
+        f"Offer: {row['offer']}\n\n"
+        f"Nonprofits in your area will be able to see your offer when they visit the Daanaa network directory.\n\n"
+        f"Thank you for supporting the nonprofit community.\n\n"
+        f"— The Daanaa Team\n"
+        f"  daanaa.org · partners@daanaa.org",
+        from_addr="Daanaa <partners@daanaa.org>",
+    )
+    return (
+        "<html><body style='font-family:sans-serif;padding:2rem;max-width:480px;margin:auto'>"
+        f"<h2 style='color:#1a3a5c'>Approved!</h2>"
+        f"<p><strong>{row['business_name']}</strong> is now active in the Daanaa Impact Network.</p>"
+        f"<p>A welcome email has been sent to {row['submitter_email']}.</p>"
+        "</body></html>", 200
+    )
 
 
 # ---------------------------------------------------------------------------
