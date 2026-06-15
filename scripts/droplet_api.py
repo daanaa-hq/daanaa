@@ -16,7 +16,8 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from flask import Flask, request, jsonify, send_file, send_from_directory
+import html as _htmllib
+from flask import Flask, request, jsonify, send_file, send_from_directory, Response
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder=None)
@@ -866,6 +867,51 @@ def guild_proxy(subpath):
 
 # ── Frontend SPA ─────────────────────────────────────────────────────────────
 
+# Per-route meta injection. The SPA sets <title>/og tags client-side, but social
+# scrapers (LinkedIn, X, Facebook) and many crawlers don't run JS — they read the
+# raw HTML, where every route would otherwise share one static title/og:image.
+# We inject route-specific title/description/og into the served HTML so shared
+# links and search snippets are accurate. Pure string work; og:image stays the
+# site default until per-org cards are generated (separate patch).
+_INDEX_CACHE = {}
+
+def _index_html() -> str:
+    if 'html' not in _INDEX_CACHE:
+        idx = FRONTEND_DIR / 'index.html'
+        _INDEX_CACHE['html'] = idx.read_text(encoding='utf-8') if idx.exists() else ''
+    return _INDEX_CACHE['html']
+
+def _inject_meta(doc: str, title: str, desc: str, url: str) -> str:
+    t, d, u = _htmllib.escape(title), _htmllib.escape(desc), _htmllib.escape(url)
+    doc = re.sub(r'<title>.*?</title>', f'<title>{t}</title>', doc, count=1, flags=re.S)
+    for attr, val in (
+        (r'<meta name="description" content="', d),
+        (r'<meta property="og:title" content="', t),
+        (r'<meta property="og:description" content="', d),
+        (r'<meta property="og:url" content="', u),
+        (r'<meta name="twitter:title" content="', t),
+        (r'<meta name="twitter:description" content="', d),
+    ):
+        doc = re.sub(re.escape(attr) + r'[^"]*"', attr + val + '"', doc, count=1)
+    return doc
+
+def _meta_for_path(path: str):
+    """(title, description, url) for crawler-relevant routes, else None."""
+    p = (path or '').strip('/')
+    if p.startswith('org/'):
+        ein = p.split('/', 1)[1].split('/')[0].strip().upper()
+        org = load_org_detail(ein)
+        if org:
+            name = org.get('organization_name') or 'Nonprofit'
+            city, state = org.get('CITY'), org.get('STATE')
+            loc = f"{city}, {state}" if city and state else (state or '')
+            mission = (org.get('mission') or '').strip()
+            desc = mission[:200] if mission else (
+                f"{name}{(' in ' + loc) if loc else ''}: public IRS record, peer "
+                f"financial context, and mission on Daanaa.")
+            return (f"{name} — Daanaa", desc, f"https://daanaa.org/org/{ein}")
+    return None
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_spa(path):
@@ -875,6 +921,9 @@ def serve_spa(path):
             return send_from_directory(FRONTEND_DIR, path)
         index = FRONTEND_DIR / 'index.html'
         if index.exists():
+            meta = _meta_for_path(path)
+            if meta:
+                return Response(_inject_meta(_index_html(), *meta), mimetype='text/html')
             return send_file(index)
     return 'Not found', 404
 
