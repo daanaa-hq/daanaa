@@ -94,3 +94,4 @@ precompute_output/browse/
 # Firebase service account (private key — never commit)
 firebase-service-account.json
 firebase-service-account.json.odt
+deploy/plausible/plausible-conf.env

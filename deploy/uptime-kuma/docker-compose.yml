@@ -1,0 +1,19 @@
+# Uptime Kuma — self-hosted uptime + TLS-cert-expiry monitoring for daanaa.org.
+# Runs on the home box, LAN-only (behind the router; not internet-exposed).
+# Already running via `docker run`; this file is the version-controlled equivalent.
+#
+#   cd ~/meritgiving/deploy/uptime-kuma && docker compose up -d
+#   then open http://192.168.1.73:3101  (port 3001 was taken, so host port = 3101)
+#
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "3101:3001"
+    volumes:
+      - uptime-kuma:/app/data
+
+volumes:
+  uptime-kuma:
