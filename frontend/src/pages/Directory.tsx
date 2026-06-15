@@ -138,8 +138,8 @@ export default function Directory() {
   const subParam      = searchParams.get('sub') || ''
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
-    qParam ? `"${qParam}" · Causes & Giving Paths` : 'Explore Causes & Giving Paths',
-    'Search 1.8 million+ tax-deductible 501(c)(3) organizations recognized by the IRS, by cause, category, location, and giving path.'
+    qParam ? `"${qParam}" · Causes & Organizations` : 'Explore Causes & Organizations',
+    'Search 1.8 million+ tax-deductible 501(c)(3) organizations recognized by the IRS, by cause, category, and location.'
   )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
@@ -173,7 +173,18 @@ export default function Directory() {
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
-  const [recent, setRecent] = useState(searchParams.get('recent') === '1')
+  // Hidden gems is the default landing view (small, healthy, low-profile orgs,
+  // reshuffled weekly). On by default unless the user arrived with an explicit
+  // filter in the URL, or explicitly turned it off (?hidden_gem=0).
+  const _noUrlFilters = !categoryParam && !subParam && !stateParam && !qParam &&
+                        !revenueParam && !searchParams.get('cause') && !searchParams.get('tier')
+  const [hiddenGem, setHiddenGem] = useState(
+    searchParams.get('hidden_gem') === '1' ||
+    (searchParams.get('hidden_gem') !== '0' && _noUrlFilters)
+  )
+  const [needsSupport, setNeedsSupport] = useState(searchParams.get('needs_funding') === '1')
+  const [visTier, setVisTier] = useState(searchParams.get('tier') || '')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
@@ -221,8 +232,12 @@ export default function Directory() {
   // Resolve revenue preset to API params
   const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
+  // A search query searches the whole directory, so the gems-default lens is
+  // dropped while typing (otherwise search would only ever find ~34k gems).
+  const effectiveHiddenGem = hiddenGem && !debouncedQuery.trim()
+
   // Fused search mode: any meaningful query with no active structured filters
-  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || hasWebsite || recent || !!debouncedCause.trim()
+  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || hasWebsite || needsSupport || !!visTier || !!debouncedCause.trim()
   const isFusedMode = !hasAnyFilter && debouncedQuery.trim().length >= 2
 
   // Categories the user drilled into (picked specific subcats) are represented by
@@ -237,16 +252,19 @@ export default function Directory() {
       state: stateFilter || undefined,
       q: debouncedQuery || undefined,
       sort: sortBy,
+      order: sortOrder,
       page: currentPage,
       per_page: itemsPerPage,
       min_revenue: revPreset?.min,
       max_revenue: revPreset?.max,
       min_tier: scoreTier || undefined,
+      tier: visTier || undefined,
       has_website: hasWebsite || undefined,
-      recent: recent || undefined,
+      hidden_gem: effectiveHiddenGem || undefined,
+      needs_funding: needsSupport || undefined,
       cause: debouncedCause.trim() || undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, currentPage, revenueFilter, scoreTier, hasWebsite, recent, debouncedCause, itemsPerPage]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, revenueFilter, scoreTier, visTier, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
@@ -317,17 +335,21 @@ export default function Directory() {
     setSearchParams(searchParams)
   }
 
+  // Clear all filters returns to the default landing (hidden gems on).
   const handleClearAll = () => {
     setSearchQuery('')
     setDebouncedQuery('')
     setActiveFilters([])
     setSubFilters([])
     setStateFilter('')
-    setSortBy('organization_name')
+    setSortBy(SCORES_ENABLED ? 'merit_score' : 'total_revenue')
+    setSortOrder('desc')
     setRevenueFilter('')
     setScoreTier('')
+    setVisTier('')
     setHasWebsite(false)
-    setRecent(false)
+    setNeedsSupport(false)
+    setHiddenGem(true)
     setCause('')
     setDebouncedCause('')
     setCurrentPage(1)
@@ -337,8 +359,21 @@ export default function Directory() {
     searchParams.delete('state')
     searchParams.delete('revenue')
     searchParams.delete('min_tier')
+    searchParams.delete('tier')
     searchParams.delete('has_website')
-    searchParams.delete('recent')
+    searchParams.delete('hidden_gem')
+    searchParams.delete('needs_funding')
+    setSearchParams(searchParams)
+  }
+
+  // "See all" — leave the gems lens and browse the full directory.
+  const handleSeeAll = () => {
+    setHiddenGem(false)
+    setNeedsSupport(false)
+    setVisTier('')
+    setCurrentPage(1)
+    scrollTop()
+    searchParams.set('hidden_gem', '0')
     setSearchParams(searchParams)
   }
 
@@ -443,35 +478,14 @@ export default function Directory() {
                 drawer (Filters button); the discovery toggles are surfaced here
                 because they're the point of the directory. */}
             {searchMode === 'browse' && <div className="flex items-center gap-2 flex-wrap pb-4">
-            <button
-              onClick={() => setFilterSheetOpen(true)}
-              title="Open all filters — cause, state, revenue size, financial tier, sort, and more"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all duration-150"
-              style={{
-                backgroundColor: activeFilterCount > 0 ? '#C9A96E' : 'transparent',
-                color: activeFilterCount > 0 ? '#0A1628' : '#4B5563',
-                borderColor: activeFilterCount > 0 ? '#C9A96E' : '#E5E0DB',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
-              </svg>
-              All filters
-              {activeFilterCount > 0 && (
-                <span className="min-w-[16px] h-4 flex items-center justify-center bg-deep-navy text-soft-gold text-[10px] font-bold rounded-full px-1">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-
             {/* Discovery toggles — each keeps its own color (even when off) + a tooltip */}
             {[
-              { key: 'hw', label: 'Has a website', tip: 'A working website you can visit to learn more', on: hasWebsite, color: '#0EA5E9', textOn: '#FFFFFF',
-                icon: <><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></>,
-                toggle: () => { setHasWebsite(!hasWebsite); setCurrentPage(1); scrollTop() } },
-              { key: 'rc', label: 'Recently active', tip: 'Most recent public filing is from 2022 or later', on: recent, color: '#7C3AED', textOn: '#FFFFFF',
-                icon: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-                toggle: () => { setRecent(!recent); setCurrentPage(1); scrollTop() } },
+              { key: 'hg', label: 'Hidden gems', tip: 'Small, financially healthy, low-profile orgs — a fresh set each week', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
+                icon: <><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></>,
+                toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
+              { key: 'ns', label: 'Needs support', tip: 'Operating on under six months of financial reserve', on: needsSupport, color: '#7C3AED', textOn: '#FFFFFF',
+                icon: <><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></>,
+                toggle: () => { setNeedsSupport(!needsSupport); setCurrentPage(1); scrollTop() } },
             ].map(t => (
               <button
                 key={t.key}
@@ -516,6 +530,49 @@ export default function Directory() {
               </button>
             ))}
             <div className="ml-auto flex items-center gap-2">
+              {/* Has a website */}
+              <button
+                onClick={() => { setHasWebsite(!hasWebsite); setCurrentPage(1); scrollTop() }}
+                title="A working website you can visit to learn more"
+                aria-pressed={hasWebsite}
+                className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-[12px] font-medium border transition-all duration-150"
+                style={{
+                  backgroundColor: hasWebsite ? '#0EA5E9' : '#0EA5E912',
+                  color: hasWebsite ? '#FFFFFF' : '#374151',
+                  borderColor: hasWebsite ? '#0EA5E9' : '#0EA5E959',
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={hasWebsite ? '#FFFFFF' : '#0EA5E9'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+                Has a website
+              </button>
+              {/* Visibility level (lamp tier) */}
+              <div className="relative">
+                <select
+                  value={visTier}
+                  onChange={e => {
+                    const v = e.target.value
+                    setVisTier(v); setCurrentPage(1); scrollTop()
+                    if (v) { searchParams.set('tier', v) } else { searchParams.delete('tier') }
+                    setSearchParams(searchParams)
+                  }}
+                  title="Filter by visibility level — how much public data backs the page"
+                  className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
+                  style={{
+                    backgroundColor: visTier ? '#C9A96E' : 'transparent',
+                    color: visTier ? '#0A1628' : '#4B5563',
+                    borderColor: visTier ? '#C9A96E' : '#E5E0DB',
+                  }}
+                >
+                  <option value="">Any visibility</option>
+                  <option value="beacon">Beacon</option>
+                  <option value="torch">Torch</option>
+                  <option value="candle">Candle</option>
+                  <option value="spark">Spark</option>
+                </select>
+                <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
               {/* Revenue band */}
               <div className="relative">
                 <select
@@ -646,8 +703,16 @@ export default function Directory() {
               <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
                 <div>
                   <span className="font-body text-[20px] font-semibold tracking-[-0.02em] text-deep-navy">
-                    {total.toLocaleString()} {searchQuery || activeFilters.length > 0 || stateFilter ? 'results' : 'organizations'}
+                    {total.toLocaleString()} {effectiveHiddenGem ? 'hidden gems' : (searchQuery || activeFilters.length > 0 || stateFilter ? 'results' : 'organizations')}
                   </span>
+                  {effectiveHiddenGem && (
+                    <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
+                      <span>Small, overlooked organizations · a fresh set each week.</span>
+                      <button onClick={handleSeeAll} className="font-semibold text-soft-gold hover:text-bright-gold transition-colors">
+                        See all 1.8M →
+                      </button>
+                    </p>
+                  )}
                   {statsData?.irs_status_verified_at && (
                     <p className="font-body text-[12px] text-cool-grey mt-1">
                       Built from public IRS data, last checked {new Date(statsData.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
@@ -722,19 +787,34 @@ export default function Directory() {
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  {/* Sort — all breakpoints (rail removed) */}
-                  <div className="hidden sm:flex items-center gap-2">
-                    <span className="font-body text-[14px] text-cool-grey">Sort:</span>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1) }}
-                      className="bg-transparent font-body text-[14px] text-deep-navy outline-none cursor-pointer"
-                    >
-                      {SORT_OPTIONS.map(opt => (
-                        <option key={opt.id} value={opt.id}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Sort + direction — hidden while gems is on (static weekly order) */}
+                  {effectiveHiddenGem ? (
+                    <span className="hidden sm:inline font-body text-[13px] text-cool-grey italic">Shuffled weekly</span>
+                  ) : (
+                    <div className="hidden sm:flex items-center gap-2">
+                      <span className="font-body text-[14px] text-cool-grey">Sort:</span>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1) }}
+                        className="bg-transparent font-body text-[14px] text-deep-navy outline-none cursor-pointer"
+                      >
+                        {SORT_OPTIONS.map(opt => (
+                          <option key={opt.id} value={opt.id}>{opt.label}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => { setSortOrder(o => o === 'asc' ? 'desc' : 'asc'); setCurrentPage(1) }}
+                        title={sortOrder === 'asc' ? 'Ascending — tap for descending' : 'Descending — tap for ascending'}
+                        aria-label={`Sort direction: ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-light-grey text-cool-grey hover:text-deep-navy hover:border-cool-grey transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                          style={{ transform: sortOrder === 'asc' ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
+                          <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                   {/* Grid/List toggle */}
                   <div className="hidden md:flex items-center gap-1 border border-light-grey rounded-lg p-1">
                     <button

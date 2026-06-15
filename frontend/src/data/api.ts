@@ -199,8 +199,10 @@ export async function getOrganizations(params?: {
   max_revenue?: number;
   min_percentile?: number;    // legacy — filter by ntee1_percentile >= value
   min_tier?: string;          // 'Beacon' | 'Torch' | 'Candle' | 'Spark'
+  tier?: string;              // visibility level: 'beacon' | 'torch' | 'candle' | 'spark'
   has_website?: boolean;      // true = only orgs with a verified, live website
-  recent?: boolean;           // true = only orgs whose latest filing is 2022 or later
+  hidden_gem?: boolean;       // true = only hidden gems (small, healthy, low-profile)
+  needs_funding?: boolean;    // true = only orgs with under 6 months of reserve
   cause?: string;             // matches a cause tag (e.g. "food bank", "mental health")
 }): Promise<{
   organizations: ApiOrganization[];
@@ -222,8 +224,10 @@ export async function getOrganizations(params?: {
   if (params?.max_revenue != null) sp.set('max_revenue', String(params.max_revenue));
   if (params?.min_percentile != null) sp.set('min_percentile', String(params.min_percentile));
   if (params?.min_tier) sp.set('min_tier', params.min_tier);
+  if (params?.tier) sp.set('tier', params.tier);
   if (params?.has_website) sp.set('has_website', '1');
-  if (params?.recent) sp.set('recent', '1');
+  if (params?.hidden_gem) sp.set('hidden_gem', '1');
+  if (params?.needs_funding) sp.set('needs_funding', '1');
   if (params?.cause) sp.set('cause', params.cause);
   return fetchJson(`/api/organizations?${sp.toString()}`);
 }

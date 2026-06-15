@@ -136,6 +136,41 @@ def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias=''):
     return conds, params
 
 
+# Visibility level (lamp tier) filter. The DB stores a wider set of historical
+# tier names than the 4 the UI shows, so map each display tier to its DB values.
+_TIER_DB_VALUES = {
+    'beacon': ('Beacon',),
+    'torch':  ('Torch', 'Lantern', 'Flame'),
+    'candle': ('Candle', 'Ember', 'Glow'),
+    'spark':  ('Spark', 'Seed'),
+}
+
+
+def _tier_condition(tier: str, alias: str = ''):
+    """WHERE fragment + params for a visibility-level filter, or (None, [])."""
+    vals = _TIER_DB_VALUES.get((tier or '').strip().lower())
+    if not vals:
+        return None, []
+    return f"{alias}merit_tier IN ({','.join('?' * len(vals))})", list(vals)
+
+
+def _order_clause(sort: str, order: str, alias: str = '') -> str:
+    """ORDER BY body honoring an asc/desc direction. Name defaults A-Z,
+    revenue/score default high-first; an explicit order param overrides.
+    COALESCE keeps NULLs last (and, per the 2026-06-09 note, avoids the score
+    index forcing a row-by-row probe on filtered browses)."""
+    o = (order or '').strip().lower()
+    if sort in ('name', 'organization_name'):
+        d = 'DESC' if o == 'desc' else 'ASC'
+        return f"{alias}organization_name {d}"
+    if sort in ('revenue', 'total_revenue'):
+        d = 'ASC' if o == 'asc' else 'DESC'
+        return f"COALESCE({alias}total_revenue, -1) {d}"
+    # default + explicit merit_score
+    d = 'ASC' if o == 'asc' else 'DESC'
+    return f"COALESCE({alias}merit_score, -1) {d}"
+
+
 # Legal posture (2026-06-10): no donation links on public surfaces. Donate data
 # stays internal; strip it from every payload — including precomputed files
 # generated before the policy change.
@@ -243,6 +278,8 @@ def get_organizations():
     hidden_gem    = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website   = request.args.get('has_website', '').strip() == '1'
+    order = request.args.get('order', '').strip()
+    tier  = request.args.get('tier', '').strip()
     min_rev = request.args.get('min_revenue', type=float)
     max_rev = request.args.get('max_revenue', type=float)
     # Comma-separated multi-select, same contract as the home daanaa_api:
@@ -250,19 +287,32 @@ def get_organizations():
     ntee_list = [x.strip()[:1] for x in ntee.split(',') if x.strip()][:26]
     sub_list  = [x.strip()[:4] for x in sub.split(',') if x.strip()][:40]
 
+    # ── Hidden gems landing: serve the weekly-rotated static pages ──────────
+    # When hidden gems is the ONLY signal, this is the default directory view.
+    # Serve the precomputed static file (zero live-query cost; search speed
+    # unaffected). Falls through to the live query if the file isn't present.
+    gems_only = (hidden_gem and not needs_funding and not has_website and not tier
+                 and not ntee_list and not sub_list and not state
+                 and min_rev is None and max_rev is None)
+    if gems_only and not (q and len(q) >= 2):
+        gem_file = DATA_DIR / 'browse' / 'hidden_gems' / f"ALL_{page}.json.gz"
+        data = load_json_gz(gem_file)
+        if data:
+            return jsonify(data)
+
     # ── Text search: route to FTS ──────────────────────────────────────────
     if q and len(q) >= 2:
         return _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                               state, sort, page, per_page,
-                              hidden_gem, needs_funding, has_website)
+                              hidden_gem, needs_funding, has_website, order, tier)
 
     # ── Filter browse: DB query when flags, revenue, or multi-select used ───
-    any_filter = hidden_gem or needs_funding or has_website
+    any_filter = hidden_gem or needs_funding or has_website or bool(tier)
     multi_select = len(ntee_list) > 1 or len(sub_list) > 1 or (ntee_list and sub_list)
     if any_filter or multi_select or min_rev is not None or max_rev is not None:
         return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                                  state, sort, page, per_page,
-                                 hidden_gem, needs_funding, has_website)
+                                 hidden_gem, needs_funding, has_website, order, tier)
 
     # ── Browse: precomputed files ──────────────────────────────────────────
     category = sub if sub else ntee
@@ -303,7 +353,7 @@ def get_organizations():
 
 def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                       state, sort, page, per_page,
-                      hidden_gem, needs_funding, has_website):
+                      hidden_gem, needs_funding, has_website, order='', tier=''):
     """Query orgs table directly with filter conditions but no FTS match."""
     conn = get_search_db()
     if not conn:
@@ -320,18 +370,21 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
             conditions.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
         if has_website:
             conditions.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
+        tier_cond, tier_params = _tier_condition(tier)
+        if tier_cond:
+            conditions.append(tier_cond)
+            params.extend(tier_params)
 
         where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
-        _SORT_MAP = {'name': 'organization_name ASC'}
         # COALESCE instead of NULLS LAST: same ordering, but the non-indexable
         # expression stops SQLite walking the score index and probing the
         # filter row-by-row (6s → 0.2s on OR'd category filters, 2026-06-09).
-        order = _SORT_MAP.get(sort, 'COALESCE(merit_score, -1) DESC')
+        order_by = _order_clause(sort, order)
 
         total = conn.execute(f"SELECT COUNT(*) FROM orgs {where}", params).fetchone()[0]
         offset = (page - 1) * per_page
         rows = conn.execute(
-            f"SELECT * FROM orgs {where} ORDER BY {order} LIMIT ? OFFSET ?",
+            f"SELECT * FROM orgs {where} ORDER BY {order_by} LIMIT ? OFFSET ?",
             params + [per_page, offset]
         ).fetchall()
         orgs = [_row_to_org(r) for r in rows]
@@ -348,7 +401,7 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
 
 def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                    state, sort, page, per_page,
-                   hidden_gem, needs_funding, has_website):
+                   hidden_gem, needs_funding, has_website, order='', tier=''):
     """FTS search against search.db orgs table, returns full org objects."""
     conn = get_search_db()
     if not conn:
@@ -367,10 +420,12 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
             conditions.append("o.months_of_reserve IS NOT NULL AND o.months_of_reserve < 6")
         if has_website:
             conditions.append("o.website IS NOT NULL AND o.website != '' AND o.website_status = 'ok'")
+        tier_cond, tier_params = _tier_condition(tier, alias='o.')
+        if tier_cond:
+            conditions.append(tier_cond)
+            params.extend(tier_params)
 
-        order = "COALESCE(o.merit_score, -1) DESC"
-        if sort == 'name':
-            order = "o.organization_name ASC"
+        order = _order_clause(sort, order, alias='o.')
 
         count_sql = f"""
             SELECT COUNT(*) FROM org_search s, orgs o
