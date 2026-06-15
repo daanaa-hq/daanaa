@@ -64,7 +64,7 @@ function HeroSection() {
 
         {/* Subheadline */}
         <p className="mt-8 font-body text-[18px] leading-[1.65] max-w-[720px] mx-auto" style={{ color: 'rgba(245,240,235,0.80)' }}>
-          Daanaa helps people discover causes and organizations using public information presented with context, stewardship, and respect.
+          Daanaa helps you explore U.S. nonprofits using public records, presented with context and respect. No ads, no rankings, no pressure to give.
         </p>
 
         {/* CTAs */}
@@ -376,7 +376,7 @@ function BrowseCauses() {
             Organizations making change
           </h2>
           <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.6] max-w-[640px]">
-            Choose a cause that matters to you. See the nonprofits working on it, understand their financial standing, and find where to give.
+            Choose a cause that matters to you. See the nonprofits working on it, explore their public record, and visit their official website.
           </p>
         </div>
 

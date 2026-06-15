@@ -241,7 +241,7 @@ export default function TiersPage() {
                 A tiny organization running an extraordinary neighborhood pantry on a 990-N postcard will show as Spark or Candle. That reflects what the IRS collects. A 990-N reports only that the organization exists, not its financials. It says nothing about their effectiveness, their importance to the communities they serve, or whether they deserve your support.
               </p>
               <p>
-                Tiers answer one question: <em>how much public data backs this listing?</em> They are a starting point for research, not a verdict. Use them to calibrate how much additional due diligence to apply, not to rank organizations against each other.
+                Tiers answer one question: <em>how much public data backs this page?</em> They are a starting point for research, not a verdict. Use them to calibrate how much additional due diligence to apply, not to rank organizations against each other.
               </p>
             </div>
 

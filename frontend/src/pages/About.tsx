@@ -128,7 +128,7 @@ export default function About() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="font-display text-deep-navy text-[16px] group-hover:text-soft-gold transition-colors">How we score</h3>
-                    <p className="mt-1 font-body text-[13px] text-cool-grey">Our methodology for financial health and peer analysis</p>
+                    <p className="mt-1 font-body text-[13px] text-cool-grey">Our methodology for peer financial context and peer group analysis</p>
                   </div>
                   <svg className="w-4 h-4 text-soft-gold shrink-0 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <polyline points="9 18 15 12 9 6"></polyline>

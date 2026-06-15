@@ -972,7 +972,7 @@ export default function OrganizationDetail() {
                         <div className="flex items-center justify-between pt-1">
                           <p className="font-body text-[11px] text-cool-grey">
                             Compared to {apiOrg!.peer_total?.toLocaleString() ?? 'similar'} {modelLabel ?? 'similar'} organizations
-                            {apiOrg!.peer_rank && apiOrg!.peer_total ? ` · ranked #${apiOrg!.peer_rank.toLocaleString()} of ${apiOrg!.peer_total.toLocaleString()}` : ''}
+                            {apiOrg!.peer_rank && apiOrg!.peer_total ? ` · #${apiOrg!.peer_rank.toLocaleString()} of ${apiOrg!.peer_total.toLocaleString()} peers` : ''}
                           </p>
                           <Link to="/methodology" className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors shrink-0 ml-3">
                             How we score →
@@ -993,7 +993,7 @@ export default function OrganizationDetail() {
             <div className="flex flex-col gap-4">
               {/* About this listing -- informational only */}
               <div className="bg-white border border-light-grey rounded-xl px-6 py-5">
-                <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this listing</span>
+                <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this page</span>
                 {lampTier === 'Beacon' ? (
                   <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
                     {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, website, and top-quartile financial context all on public record.

@@ -117,7 +117,7 @@ export default function CauseSpotlight() {
           </p>
           <p className="mt-3 font-body text-[13px] text-cool-grey leading-[1.6] max-w-[680px]">
             How these are chosen: smaller organizations (under $500K in revenue) that rank near the top
-            of their peer group for financial health, with a public mission on file. It is a starting
+            of their peer group in peer financial context, with a public mission on file. It is a starting
             point for your own research, not a verdict.{' '}
             <Link to="/methodology" className="text-soft-gold hover:underline">See how we measure this</Link>.
           </p>

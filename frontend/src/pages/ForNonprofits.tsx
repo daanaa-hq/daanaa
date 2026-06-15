@@ -150,7 +150,7 @@ export default function ForNonprofits() {
               {
                 n: 4,
                 title: 'Annual reports & documents',
-                description: 'Link your latest annual report, impact summary, or external evaluations. Give donors the documents they\'re already searching for, directly on your listing.',
+                description: 'Link your latest annual report, impact summary, or external evaluations. Give donors the documents they\'re already searching for, directly on your page.',
               },
               {
                 n: 5,
@@ -235,13 +235,13 @@ export default function ForNonprofits() {
           <div className="mt-10 max-w-[680px] p-6 rounded-xl bg-warm-cream border border-light-grey">
             <div className="flex items-start gap-4">
               <div className="shrink-0 mt-0.5">
-                <span className="inline-block border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5 font-body">beta</span>
+                <span className="inline-block border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5 font-body">AI assisted</span>
               </div>
               <div>
-                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the β label means on your page</p>
+                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the AI assisted label means on your page</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.65]">
                   Before you claim your page, Daanaa shows a best-guess mission statement inferred from your sector and location.
-                  It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">beta</span> so donors know it is a starting point, not your own words.
+                  It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">AI assisted</span> so donors know it is a starting point, not your own words.
                   When you claim your page, you replace it with the mission statement you actually want donors to see, and the label is removed.
                 </p>
               </div>

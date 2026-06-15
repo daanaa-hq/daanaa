@@ -84,7 +84,13 @@ export default function Footer() {
           Daanaa is an independent nonprofit discovery platform. Not affiliated with the IRS, the federal government, or any nonprofit rating agency.
         </p>
         <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
-          © 2026 Daanaa. Data sourced from IRS, NCCS, and ProPublica public records. Some descriptions and links are AI-generated or auto-collected and labeled beta.{' '}
+          Daanaa does not process donations, hold donor funds, issue tax receipts, or represent any nonprofit.
+        </p>
+        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
+          Public records may be delayed or incomplete. Independently verify an organization before donating or volunteering.
+        </p>
+        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
+          © 2026 Daanaa. Data sourced from IRS, NCCS, and ProPublica public records. Some summaries, categories, and descriptions may be AI assisted and should be reviewed for accuracy.{' '}
           <Link to="/legal" className="hover:text-warm-cream transition-colors duration-150 underline underline-offset-2">
             Attribution &amp; Terms
           </Link>

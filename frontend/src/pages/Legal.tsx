@@ -83,35 +83,35 @@ export default function Legal() {
               financial data shown. Daanaa refreshes data from ProPublica and IRS sources monthly, and supplements with NCCS extracts as they become available.
             </p>
             <p className="mt-3">
-              Daanaa scores and peer group rankings are recalculated whenever the underlying data is updated. Rankings are relative. A score reflects an organization's position among its true peers — same operating model and similar revenue size — not an absolute quality rating.
+              Daanaa peer financial context scores are recalculated whenever the underlying data is updated. Scores are relative. A score reflects an organization's position among its true peers — same operating model and similar revenue size — not an absolute quality rating.
             </p>
           </section>
 
           {/* AI-generated & automatically-collected content */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">AI-Generated & Automatically-Collected Content</h2>
+            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">AI Assisted & Automatically-Collected Content</h2>
             <p>
               To make organizations easier to find, Daanaa fills gaps in the public record using
               automated tools. Two kinds of content are produced this way, and both are labeled in the
               interface so you always know what you are looking at.
             </p>
             <p className="mt-3">
-              <strong className="text-deep-navy">AI-generated text.</strong> Some mission summaries and
+              <strong className="text-deep-navy">AI assisted text.</strong> Some mission summaries and
               search tags are written by an AI model from public IRS category and filing data, not by the
-              organization. These carry a <strong className="text-deep-navy">beta</strong> label. They are
+              organization. These carry an <strong className="text-deep-navy">AI assisted</strong> label. They are
               a starting point, may be incomplete or inaccurate, and are not the organization's official
               statement of its mission.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">Automatically-collected links.</strong> Some website
-              links are discovered by automated search of public web pages, not provided by the
-              organization. These also carry a <strong className="text-deep-navy">beta</strong> label. We
-              run basic checks that a link is live and appears to match the organization, but a beta label
+              links are found by automated search of public web pages, not provided by the
+              organization. These carry a <strong className="text-deep-navy">discovered</strong> label. We
+              run basic checks that a link is live and appears to match the organization, but a discovered label
               is not an endorsement. Confirm you are on the correct organization's official page.
               Daanaa never receives or processes any donation, and never collects donor payment information.
             </p>
             <p className="mt-3">
-              An organization can claim its page to replace AI-generated text and automatically-collected
+              An organization can claim its page to replace AI assisted text and automatically-collected
               links with its own verified information. Claimed content is labeled accordingly. If you find
               an error, contact us and we will correct or remove it.
             </p>

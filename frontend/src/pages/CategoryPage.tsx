@@ -8,7 +8,7 @@ export default function CategoryPage() {
 
   usePageMeta(
     category?.name ?? '',
-    category ? `Browse ${category.name} nonprofits on Daanaa. 501(c)(3) organizations the IRS recognizes, scored by financial health and transparency.` : ''
+    category ? `Browse ${category.name} nonprofits on Daanaa. 501(c)(3) organizations from public IRS records with peer financial context and mission information.` : ''
   )
 
   if (!category) return <Navigate to="/directory" replace />
@@ -34,7 +34,7 @@ export default function CategoryPage() {
               {category.name}
             </h1>
             <p className="mt-4 font-body text-[17px] leading-[1.6] text-muted-cream max-w-[560px]">
-              Organizations working in this area. Find one that aligns with your values, understand their financial standing, and give where it matters to you.
+              Organizations working in this area. Find one that aligns with your values, explore their public record, and visit their official website.
             </p>
             <Link
               to={`/directory?category=${category.id}`}

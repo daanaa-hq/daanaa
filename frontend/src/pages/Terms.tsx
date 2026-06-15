@@ -108,12 +108,12 @@ export default function Terms() {
               organizational quality, or an endorsement. It is a data point.
             </p>
             <p className="mt-3">
-              Mission summaries and search tags marked <strong className="text-deep-navy">beta</strong> are generated
+              Mission summaries and search tags marked <strong className="text-deep-navy">AI assisted</strong> are generated
               by AI from public IRS category and filing data. They are a starting point, may be incomplete or
               inaccurate, and are not the organization's own statement of its mission.
             </p>
             <p className="mt-3">
-              Website links marked <strong className="text-deep-navy">beta</strong> were discovered by automated
+              Website links marked <strong className="text-deep-navy">discovered</strong> were found by automated
               search and have not been provided by the organization. Confirm you are on the correct organization's
               official page before submitting any personal or financial information.
             </p>

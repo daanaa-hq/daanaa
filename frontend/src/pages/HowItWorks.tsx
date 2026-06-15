@@ -80,18 +80,18 @@ export default function HowItWorks() {
 
           <Section label="Our foundation" title="What Daanaa is, and what it isn't">
             <p>
-              Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their listing or score.
+              Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their page or score.
             </p>
             <p>
               We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.8 million of them. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
-              Two signals work together on every page. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The Financial Health tier (Strong, Stable, or Inspiring) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
+              Two signals work together on every page. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The peer financial context signal (Strong, Stable, or Inspiring) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
             </Callout>
           </Section>
 
           <Section label="Data sources" title="Where the data comes from">
-            <p>Every organization listing is built from multiple layers of public data:</p>
+            <p>Every organization page is built from multiple layers of public data:</p>
             <div className="mt-2 space-y-3">
               {[
                 { source: 'IRS nonprofit registration list', what: 'Legal name, category, state, and nonprofit status. Updated by the IRS continuously.' },
@@ -109,7 +109,7 @@ export default function HowItWorks() {
               ))}
             </div>
             <p className="mt-4">
-              Every listing shows when the data is from and where it came from, like "2023 · Source: IRS", so you always know how recent the information is.
+              Every page shows when the data is from and where it came from, like "2023 · Source: IRS", so you always know how recent the information is.
             </p>
           </Section>
 
@@ -130,7 +130,7 @@ export default function HowItWorks() {
               <div className="p-4 bg-white rounded-lg border border-light-grey">
                 <p className="font-body text-[14px] font-semibold text-deep-navy">Revenue Band</p>
                 <p className="font-body text-[14px] text-cool-grey mt-1">
-                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. Each operating model has five to eight revenue bands, set from that model's own distribution — so a small food bank is sized against other small food banks, not against small hospitals. Your $80K community garden is ranked against other community gardens of a similar size.
+                  A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. Each operating model has five to eight revenue bands, set from that model's own distribution — so a small food bank is sized against other small food banks, not against small hospitals. Your $80K community garden is compared against other community gardens of a similar size.
                 </p>
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function HowItWorks() {
             </div>
 
             <p className="mt-5 font-body text-[15px] text-cool-grey leading-[1.7]">
-              When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">Financial Health tier</strong> — Strong, Stable, or Inspiring. That is a different measure from the 0–100 number above. The number shows financial scale. The tier shows how well the organization manages its resources within that peer group. A small org can be Strong. A large org can be Inspiring.
+              When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">peer financial context signal</strong> — Strong, Stable, or Inspiring. That is a different measure from the 0–100 number above. The number shows financial scale. The signal shows how well the organization manages its resources within that peer group. A small org can be Strong. A large org can be Inspiring.
             </p>
             <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
               <strong className="text-deep-navy font-medium">Why "Inspiring"?</strong> Constrained financial resources don't mean constrained impact. Organizations working within tight means often do the most essential work in their communities. The name honors that — not a consolation, a recognition.
@@ -163,14 +163,14 @@ export default function HowItWorks() {
                 to="/methodology"
                 className="inline-flex items-center gap-1.5 font-body text-[13px] font-semibold text-soft-gold hover:text-bright-gold transition-colors"
               >
-                Full methodology: how Financial Health tiers are calculated →
+                Full methodology: how peer financial context signals are calculated →
               </Link>
             </div>
           </Section>
 
           <Section label="Visibility levels" title="Visibility levels: how much information is available">
             <p>
-              Every listing displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a page <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
+              Every page displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a page <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
             </p>
             <div className="mt-4 space-y-3">
               {([
@@ -219,7 +219,7 @@ export default function HowItWorks() {
 
           <Section label="Two-layer model" title="What the organization controls">
             <p>
-              Every listing has two distinct layers:
+              Every page has two distinct layers:
             </p>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-5 bg-white rounded-xl border border-light-grey">
