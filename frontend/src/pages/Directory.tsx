@@ -428,10 +428,10 @@ export default function Directory() {
           </div>
 
           <h1 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}>
-            Explore Causes &amp; Giving Paths
+            Explore Causes &amp; Organizations
           </h1>
           <p className="mt-3 font-body text-[16px] leading-[1.6] text-cool-grey">
-            Search public records, cause tags, locations, and giving paths across the United States.
+            Search public records, cause tags, and locations across the United States.
           </p>
 
           {/* Search */}
