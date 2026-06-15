@@ -88,7 +88,7 @@ function HeroSection() {
 
         {/* Trust line */}
         <p className="mt-8 font-body text-[14px]" style={{ color: 'rgba(245,240,235,0.60)' }}>
-          Independent. Public-record based. Not a rating agency.
+          Independent. Built on public records. Not a rating agency.
         </p>
       </div>
     </section>
@@ -112,7 +112,7 @@ function WhatDaanaaDoesSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { title: 'Discover causes', body: 'Search by cause, place, or community need.' },
-            { title: 'Understand context', body: 'View public information with peer-based context instead of one-size-fits-all judgment.' },
+            { title: 'Understand context', body: 'View public information with peer context, not a one size fits all rating.' },
             { title: 'Connect directly', body: 'When available, Daanaa points you to the organization\'s own official website.' },
           ].map(card => (
             <div key={card.title} className="bg-white border border-light-grey rounded-2xl p-6 md:p-8">
@@ -584,7 +584,7 @@ function WalletSection() {
             </p>
             <ul className="mt-7 space-y-3.5">
               {[
-                'Search 1.8M+ tax-deductible nonprofits and auto-fill the details',
+                'Search 1.8M+ tax-deductible nonprofits and autofill the details',
                 'Request an acknowledgment letter for gifts of $250+',
                 'Export by year, ready for your accountant',
               ].map(item => (

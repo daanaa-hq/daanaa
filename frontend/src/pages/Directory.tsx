@@ -480,7 +480,7 @@ export default function Directory() {
             {searchMode === 'browse' && <div className="flex items-center gap-2 flex-wrap pb-4">
             {/* Discovery toggles — each keeps its own color (even when off) + a tooltip */}
             {[
-              { key: 'hg', label: 'Hidden gems', tip: 'Small, financially healthy, low-profile orgs — a fresh set each week', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
+              { key: 'hg', label: 'Hidden gems', tip: 'Small, financially healthy, lower profile orgs — a fresh set each week', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
                 icon: <><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></>,
                 toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
               { key: 'ns', label: 'Needs support', tip: 'Operating on under six months of financial reserve', on: needsSupport, color: '#7C3AED', textOn: '#FFFFFF',

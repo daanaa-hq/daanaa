@@ -134,7 +134,7 @@ function OrgColumn({ ein }: { ein: string }) {
           {(org.mission_source || '').startsWith('ai') && (
             <span
               className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-body text-cool-grey/55"
-              title="AI-generated from public records — not confirmed by the organization"
+              title="AI assisted, from public records. Not confirmed by the organization."
             >
               <span className="w-1 h-1 rounded-full bg-cool-grey/40" />
               AI generated

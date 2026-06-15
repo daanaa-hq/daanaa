@@ -717,7 +717,7 @@ export default function Wallet() {
                         <div className="mt-1.5">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-green/10 border border-success-green/20 font-body text-[10px] font-medium" style={{ color: '#4ADE80' }}>
                             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            Acknowledged (self-attested)
+                            Acknowledged (self reported)
                           </span>
                         </div>
                       )}

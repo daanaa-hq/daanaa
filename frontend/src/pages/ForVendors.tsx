@@ -76,7 +76,7 @@ function ServiceReachSelector({
 function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void }) {
   const [form, setForm] = useState({
     business_name: '', category: ALL_CATEGORIES[0], offer: '',
-    location_city: '', location_state: '',
+    location_city: '', location_state: '', location_country: '',
     service_area_type: 'local' as ServiceReach,
     contact_email: '', contact_phone: '', website_url: '',
     submitter_name: '', submitter_email: '', notes: '',
@@ -145,14 +145,13 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
         <div className="flex items-start gap-3 bg-deep-navy/[0.04] border border-light-grey rounded-xl px-4 py-3">
           <span className="shrink-0 mt-0.5 text-soft-gold">◆</span>
           <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
-            Community partner works great for online and multi-state businesses.
-            If you're a larger national vendor and want a formal pricing contract,
-            shared discount code for all members, and milestone pricing —{' '}
+            Community partner works great for online businesses and those serving across multiple states.
+            If you're ready for a formal contract, shared discount code for all members, and milestone pricing —{' '}
             <button type="button" onClick={onGateToNetwork}
               className="text-soft-gold hover:underline font-medium">
               the network partner path
             </button>{' '}
-            might suit you better. Either way, you're welcome here.
+            might be the right fit. Either way, you're welcome in this community.
           </p>
         </div>
       )}
@@ -178,22 +177,33 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
           className="w-full px-4 py-3 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-y" />
         <p className="mt-1 font-body text-[12px] text-muted-cream">Keep it simple. Members need to understand it in one sentence.</p>
       </label>
-      {!isRemote && (
-        <div className="grid sm:grid-cols-2 gap-4">
-          <label className="block">
-            <span className="block font-body text-[13px] font-medium text-deep-navy mb-1.5">
-              {form.service_area_type === 'local' ? 'Your city' : 'Primary city or region'}
-            </span>
-            <input type="text" value={form.location_city} onChange={set('location_city')} placeholder="Chicago"
-              className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold" />
-          </label>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <label className="block">
+          <span className="block font-body text-[13px] font-medium text-deep-navy mb-1.5">
+            {isRemote ? 'City or headquarters' : (form.service_area_type === 'local' ? 'Your city' : 'Primary city or region')}
+            {isRemote && <span className="text-cool-grey font-normal ml-1">(optional)</span>}
+          </span>
+          <input type="text" value={form.location_city} onChange={set('location_city')}
+            placeholder={isRemote ? 'Toronto, London, Chicago…' : 'Chicago'}
+            className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold" />
+        </label>
+        {!isRemote ? (
           <label className="block">
             <span className="block font-body text-[13px] font-medium text-deep-navy mb-1.5">State</span>
             <input type="text" value={form.location_state} onChange={set('location_state')} placeholder="IL"
               className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold" />
           </label>
-        </div>
-      )}
+        ) : (
+          <label className="block">
+            <span className="block font-body text-[13px] font-medium text-deep-navy mb-1.5">
+              Country <span className="text-cool-grey font-normal">(if outside the US)</span>
+            </span>
+            <input type="text" value={form.location_country} onChange={set('location_country')}
+              placeholder="Canada, UK, Germany…"
+              className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold" />
+          </label>
+        )}
+      </div>
       <div className="grid sm:grid-cols-2 gap-4">
         <label className="block">
           <span className="block font-body text-[13px] font-medium text-deep-navy mb-1.5">Website</span>
@@ -227,20 +237,25 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
           placeholder="We've worked with nonprofits for 10 years / We're a small business ourselves / We'd love to expand with Daanaa…"
           className="w-full px-4 py-3 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-y" />
       </label>
-      <label className="flex items-start gap-3 cursor-pointer">
-        <input
-          type="checkbox"
-          required
-          className="mt-0.5 accent-soft-gold shrink-0"
-        />
-        <span className="font-body text-[13px] text-cool-grey leading-[1.6]">
-          I have read and agree to the{' '}
-          <a href="/vendor-policy" target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:underline">
-            Daanaa Vendor and Partner Policy
-          </a>
-          , including that participation never affects how any organization appears in Daanaa search results, and that the discount or benefit I describe must be real and honored as listed.
-        </span>
-      </label>
+      <div className="space-y-3">
+        <p className="font-body text-[12px] text-muted-cream">
+          Your application will be reviewed by our team for completeness and good faith.
+        </p>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            required
+            className="mt-0.5 accent-soft-gold shrink-0"
+          />
+          <span className="font-body text-[13px] text-cool-grey leading-[1.6]">
+            I have read and agree to the{' '}
+            <a href="/vendor-policy" target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:underline">
+              Daanaa Impact Network Partner Policy
+            </a>
+            , including that participation never affects how any organization appears in Daanaa search results, and that the discount or benefit I describe must be real and honored as listed.
+          </span>
+        </label>
+      </div>
       <button type="submit" disabled={sending}
         className="w-full sm:w-auto px-8 py-3 bg-soft-gold text-deep-navy font-body text-[15px] font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 transition-colors">
         {sending ? 'Sending…' : 'Join the network'}
@@ -419,7 +434,7 @@ export default function ForVendors() {
           {[
             { value: orgCountLabel, label: 'nonprofits in the directory' },
             { value: memberCountLabel, label: 'guild members so far' },
-            { value: vendorCountLabel, label: 'active vendor deals' },
+            { value: vendorCountLabel, label: 'active partner offers' },
           ].map(({ value, label }) => (
             <div key={label}>
               <p className="font-display italic text-[28px] text-soft-gold leading-none mb-1">{value}</p>
@@ -488,9 +503,9 @@ export default function ForVendors() {
               </div>
               <h3 className="font-body text-[17px] font-semibold text-warm-cream mb-2">Network partner</h3>
               <p className="font-body text-[14px] text-warm-cream/70 leading-[1.65] mb-4">
-                For vendors ready to formalize — a signed contract with milestone pricing built
+                For partners ready to formalize — a signed contract with milestone pricing built
                 in from day one, a shared discount code for all members, and a dedicated
-                referral page. Best for large-scale or high-volume nonprofit programs.
+                referral page. Best for large scale or high volume nonprofit programs.
               </p>
               <ul className="space-y-2 mb-6">
                 {[
@@ -528,7 +543,7 @@ export default function ForVendors() {
             {[
               { title: 'Your customers are already here', body: 'Most of your existing nonprofit clients are somewhere in our 1.8M+ index. Joining puts you in front of them — and in front of the ones who haven\'t found you yet.' },
               { title: 'No individual account management', body: 'Community partners get a listing and members reach you directly. Network partners use one shared code. Daanaa handles distribution, you handle the relationship.' },
-              { title: 'You earn business by being good', body: 'No paid placement. Members choose vendors on price, quality, and reputation. The network rewards vendors who genuinely show up for nonprofits.' },
+              { title: 'You earn trust by showing up', body: 'No paid placement. Members choose partners on price, quality, and reputation. The network rewards partners who genuinely show up for nonprofits.' },
               { title: 'Your referral link grows your own book', body: 'Every listed partner gets a shareable page they can put in their email signature or on their website. Any nonprofit who clicks and claims their Daanaa page can access your offer.' },
               { title: 'Rates improve as the network grows', body: 'For network partners: milestone pricing is in every contract from day one. The more members use the network, the better the rates get — for everyone, automatically.' },
             ].map(({ title, body }) => (
@@ -556,7 +571,7 @@ export default function ForVendors() {
                 { title: 'Standard rates per category', body: 'Same CAF % for every network partner in the same category. No individual placement deals.' },
                 { title: 'Your relationships stay yours', body: 'Once a member contacts you, the relationship is yours. We see aggregate numbers for invoicing only.' },
                 { title: 'Milestone pricing in writing', body: 'Thresholds are in the contract before we sign. Rate improvements are automatic — no renegotiation.' },
-                { title: 'Independence is non-negotiable', body: 'No vendor relationship ever affects how nonprofits are scored, ranked, or shown on the platform.' },
+                { title: 'Independence is absolute', body: 'No partner relationship ever affects how nonprofits are scored, ranked, or shown on the platform.' },
               ].map(({ title, body }) => (
                 <div key={title}>
                   <p className="font-body text-[14px] font-semibold text-deep-navy mb-0.5">{title}</p>
@@ -611,8 +626,8 @@ export default function ForVendors() {
               <Link to="/for-nonprofits" className="text-soft-gold hover:underline">Claim your free page</Link>
             </p>
             <p className="font-body text-[13px] text-cool-grey">
-              Want to recommend a vendor your org already works with?{' '}
-              <Link to="/for-vendors" className="text-soft-gold hover:underline">Use the nomination form on this page</Link>
+              Know a business that supports nonprofits?{' '}
+              <Link to="/for-vendors" className="text-soft-gold hover:underline">Nominate them on this page</Link>
             </p>
           </div>
         </section>

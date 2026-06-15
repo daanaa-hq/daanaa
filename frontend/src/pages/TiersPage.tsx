@@ -17,7 +17,7 @@ const TIERS: {
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
-      { label: 'Top-quartile financial context score (≥75th percentile)', met: true },
+      { label: 'Top quartile financial context score (≥75th percentile)', met: true },
       { label: 'Mission statement on public record', met: true },
       { label: 'Active website on record', met: true },
     ],

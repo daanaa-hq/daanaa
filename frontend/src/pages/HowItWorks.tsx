@@ -96,7 +96,7 @@ export default function HowItWorks() {
               {[
                 { source: 'IRS nonprofit registration list', what: 'Legal name, category, state, and nonprofit status. Updated by the IRS continuously.' },
                 { source: 'Annual financial reports (filed with the government)', what: 'Reports nonprofits file with the IRS each year. Source of mission statements, program descriptions, leadership, and detailed financials.' },
-                { source: 'Government-published financial summaries', what: 'IRS financial data covering 2019–2024. Revenue and expense figures for about 530,000 organizations.' },
+                { source: 'Government published financial summaries', what: 'IRS financial data covering 2019–2024. Revenue and expense figures for about 530,000 organizations.' },
                 { source: 'ProPublica nonprofit database (a public interest newsroom)', what: 'Financial data for about 42,000 organizations with verified 2022–2024 figures.' },
               ].map(({ source, what }) => (
                 <div key={source} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey">
@@ -188,7 +188,7 @@ export default function HowItWorks() {
                 },
                 {
                   tier: 'Glow' as TierName,
-                  what: 'IRS-confirmed nonprofit with some financial data on record. Not enough data yet to assign a financial context ranking.',
+                  what: 'IRS confirmed nonprofit with some financial data on record. Not enough data yet to assign a financial context ranking.',
                 },
                 {
                   tier: 'Spark' as TierName,
@@ -217,7 +217,7 @@ export default function HowItWorks() {
             </div>
           </Section>
 
-          <Section label="Two-layer model" title="What the organization controls">
+          <Section label="Two layer model" title="What the organization controls">
             <p>
               Every page has two distinct layers:
             </p>
@@ -225,7 +225,7 @@ export default function HowItWorks() {
               <div className="p-5 bg-white rounded-xl border border-light-grey">
                 <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Daanaa's data</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
-                  Sourced from IRS public records. Objective, fact-checked, timestamped. Organizations cannot edit this layer.
+                  Sourced from IRS public records. Objective, fact checked, timestamped. Organizations cannot edit this layer.
                 </p>
                 <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
                   {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Daanaa financial ranking', 'Data source & year'].map(i => (

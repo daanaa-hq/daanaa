@@ -167,7 +167,7 @@ export default function ForNonprofits() {
               {
                 n: 7,
                 title: 'Supplier network',
-                description: 'Access vetted vendors for software, printing, and supplies, negotiated at nonprofit rates. Lower your costs so more goes to your mission.',
+                description: 'Access vetted community partners for software, printing, and supplies at nonprofit rates. Lower your costs so more goes to your mission.',
                 phase2: true,
               },
             ].map(({ n, title, description, phase2 }) => (
@@ -240,7 +240,7 @@ export default function ForNonprofits() {
               <div>
                 <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the AI assisted label means on your page</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.65]">
-                  Before you claim your page, Daanaa shows a best-guess mission statement inferred from your sector and location.
+                  Before you claim your page, Daanaa shows a best guess mission statement inferred from your sector and location.
                   It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">AI assisted</span> so donors know it is a starting point, not your own words.
                   When you claim your page, you replace it with the mission statement you actually want donors to see, and the label is removed.
                 </p>
@@ -290,12 +290,12 @@ export default function ForNonprofits() {
             tier: 'Torch',
             pct: '~17.5% of tax-deductible 501(c)(3)s',
             description: 'You have a current annual report and a financial ranking among similar nonprofits. Add a mission statement and website to your public record for greater visibility.',
-            nextStep: 'To reach Beacon: achieve a top-quartile financial score within your peer group and ensure mission, website, and current annual report are all on the public record.',
+            nextStep: 'To reach Beacon: achieve a top quartile financial score within your peer group and ensure mission, website, and current annual report are all on the public record.',
           },
           {
             tier: 'Beacon',
             pct: '~0.6% of tax-deductible 501(c)(3)s',
-            description: 'Complete page. Top-quartile financial score, current annual report, mission, and website all on public record. The most complete picture donors can see.',
+            description: 'Complete page. Top quartile financial score, current annual report, mission, and website all on public record. The most complete picture donors can see.',
             nextStep: null,
           },
         ]

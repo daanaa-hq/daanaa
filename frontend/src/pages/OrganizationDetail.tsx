@@ -916,14 +916,14 @@ export default function OrganizationDetail() {
                   {(() => {
                     const HEALTH_MEANINGS: Record<string, Record<string, string>> = {
                       Clinical_Reimbursement: { Strong: 'Strong reimbursement coverage and healthy operating reserves', Stable: 'Consistent patient revenue, steady program delivery', Inspiring: 'Committed to care within tight reimbursement margins' },
-                      Direct_Delivery: { Strong: 'Solid program efficiency and financial runway for the mission', Stable: 'Reliable service delivery with predictable funding', Inspiring: 'High-impact direct service within resource constraints' },
-                      Activity_Programming: { Strong: 'Broad programming reach, strong participation-driven revenue', Stable: 'Consistent activity base, steady community engagement', Inspiring: 'Vibrant programming with lean operational means' },
+                      Direct_Delivery: { Strong: 'Solid program efficiency and financial runway for the mission', Stable: 'Reliable service delivery with predictable funding', Inspiring: 'High impact direct service within resource constraints' },
+                      Activity_Programming: { Strong: 'Broad programming reach, strong participation driven revenue', Stable: 'Consistent activity base, steady community engagement', Inspiring: 'Vibrant programming with lean operational means' },
                       Community_Human_Services: { Strong: 'Program efficiency, financial resilience across service lines', Stable: 'Reliable community delivery, predictable operational base', Inspiring: 'Remarkable community service within tight constraints' },
                       Emergency_Logistics: { Strong: 'Strong surge capacity and reserve depth for response cycles', Stable: 'Reliable response readiness, steady logistics funding', Inspiring: 'Committed frontline response with limited reserves' },
                       Cause_Advocacy_Research: { Strong: 'Well-resourced mission and strong organizational staying power', Stable: 'Consistent advocacy funding, steady research operations', Inspiring: 'Impactful advocacy and research within lean resources' },
                       Intermediary_Public_Benefit: { Strong: 'Effective grant deployment with strong organizational reserves', Stable: 'Consistent intermediary function, reliable grant flow', Inspiring: 'High-leverage public benefit work with constrained capital' },
                       Faith_Community: { Strong: 'Mission vitality supported by sustained congregational giving', Stable: 'Steady congregational support, predictable ministry funding', Inspiring: 'Growing faith mission within meaningful financial constraints' },
-                      Membership_Mutual_Benefit: { Strong: 'Active member-driven revenue and long-term reserve depth', Stable: 'Stable membership base, consistent mutual support model', Inspiring: 'Growing member community building toward long-term stability' },
+                      Membership_Mutual_Benefit: { Strong: 'Active member driven revenue and long-term reserve depth', Stable: 'Stable membership base, consistent mutual support model', Inspiring: 'Growing member community building toward long-term stability' },
                     }
                     const model = apiOrg!.operating_model as string | null
                     const tier = apiOrg!.financial_health as string
@@ -996,7 +996,7 @@ export default function OrganizationDetail() {
                 <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this page</span>
                 {lampTier === 'Beacon' ? (
                   <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, website, and top-quartile financial context all on public record.
+                    {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, website, and top quartile financial context all on public record.
                   </p>
                 ) : lampTier === 'Torch' ? (
                   <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
