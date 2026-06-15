@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useApi } from '../hooks/useApi'
 import { getOrganization } from '../data/api'
 import type { ApiOrganization } from '../data/api'
-import { getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
+import { getTierFromOrg, financialContextLabel, TIER_COLORS } from '../components/TrustBadge'
 import LampMark from '../components/LampMark'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { formatEIN } from '../data/organizations'
@@ -88,9 +88,9 @@ function OrgColumn({ ein }: { ein: string }) {
     { label: 'Focus area', value: subcategoryName(org) },
     { label: 'Revenue', value: formatCurrency(org.total_revenue) },
     {
-      label: 'Financial health',
+      label: 'Peer financial context',
       value: health ? (
-        <span className="font-semibold" style={{ color: HEALTH_COLORS[health] }}>{health}</span>
+        <span className="font-semibold" style={{ color: HEALTH_COLORS[health] }}>{financialContextLabel(health)}</span>
       ) : (
         <span className="text-cool-grey font-normal">Not yet scored</span>
       ),

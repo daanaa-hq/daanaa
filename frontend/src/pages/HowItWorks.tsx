@@ -86,7 +86,7 @@ export default function HowItWorks() {
               We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.8 million of them. Our role is to surface information, not to judge missions.
             </p>
             <Callout>
-              Two signals work together on every page. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The peer financial context signal (Strong, Stable, or Inspiring) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
+              Two signals work together on every page. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The peer financial context signal (Healthy, Stable, or Needs Support) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
             </Callout>
           </Section>
 
@@ -153,10 +153,10 @@ export default function HowItWorks() {
             </div>
 
             <p className="mt-5 font-body text-[15px] text-cool-grey leading-[1.7]">
-              When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">peer financial context signal</strong> — Strong, Stable, or Inspiring. That is a different measure from the 0–100 number above. The number shows financial scale. The signal shows how well the organization manages its resources within that peer group. A small org can be Strong. A large org can be Inspiring.
+              When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">peer financial context signal</strong> — Healthy, Stable, or Needs Support. That is a different measure from the 0–100 number above. The number shows financial scale. The signal shows how well the organization manages its resources within that peer group, independent of size. A small organization can be Healthy; a large one can show Needs Support.
             </p>
             <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
-              <strong className="text-deep-navy font-medium">Why "Inspiring"?</strong> Constrained financial resources don't mean constrained impact. Organizations working within tight means often do the most essential work in their communities. The name honors that — not a consolation, a recognition.
+              <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower signal does not mean a lesser organization. It often points to a group doing essential work within tight means — exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
             </p>
             <div className="mt-4">
               <Link

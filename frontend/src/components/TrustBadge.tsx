@@ -40,6 +40,22 @@ export function getV4FinancialHealth(org: ApiOrganization): {
   return { tier, operatingModel: model, peerCellSize: peerSize }
 }
 
+// v5 display vocabulary for the financial-context signal. The underlying v4
+// field (Strong/Stable/Inspiring) still drives logic, colors, and coverage;
+// we render the v5 wording site-wide so cards, org pages, compare, and the
+// research dashboard all speak the same language. "Needs Support" frames the
+// constrained band as needing community support, never as a lesser org.
+export const FINANCIAL_CONTEXT_LABEL: Record<'Strong' | 'Stable' | 'Inspiring', string> = {
+  Strong:    'Healthy',
+  Stable:    'Stable',
+  Inspiring: 'Needs Support',
+}
+
+export function financialContextLabel(value: string | null | undefined): string | null {
+  if (!value) return null
+  return FINANCIAL_CONTEXT_LABEL[value as 'Strong' | 'Stable' | 'Inspiring'] ?? value
+}
+
 export const TIER_COLORS: Record<TierName, string> = {
   Beacon:  '#B8902F',
   Torch:   '#D4B968',

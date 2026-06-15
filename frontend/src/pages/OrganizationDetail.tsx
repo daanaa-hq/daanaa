@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
-import { getTierSummary, getTierFromOrg, getV4FinancialHealth, TIER_COLORS } from '../components/TrustBadge'
+import { getTierSummary, getTierFromOrg, getV4FinancialHealth, financialContextLabel, TIER_COLORS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
 import LampMark from '../components/LampMark'
@@ -894,7 +894,7 @@ export default function OrganizationDetail() {
                       ? 'bg-blue-50 text-blue-700 border border-blue-200'
                       : 'bg-amber-50 text-amber-700 border border-amber-200'
                   }`}>
-                    {apiOrg!.financial_health}
+                    {financialContextLabel(apiOrg!.financial_health)}
                   </span>
                   {!showResources && apiOrg!.peer_total && (
                     <span className="font-body text-[12px] text-cool-grey truncate hidden md:block">
