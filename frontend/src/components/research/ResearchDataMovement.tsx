@@ -193,7 +193,7 @@ export default function ResearchDataMovement({
           <p className="text-sm text-cool-grey mb-4">
             Based on IRS Statistics of Income annual extracts — organizations that file a full Form 990.
           </p>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable data table">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-light-grey">

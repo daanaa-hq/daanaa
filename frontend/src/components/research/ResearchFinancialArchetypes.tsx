@@ -152,7 +152,7 @@ export default function ResearchFinancialArchetypes({
           within that peer group.
         </p>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable data table">
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="border-b border-light-grey bg-deep-navy/[0.02]">

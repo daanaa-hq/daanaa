@@ -344,7 +344,7 @@ export default function SectorHealth() {
               <div className="w-6 h-6 rounded-full border-2 border-soft-gold border-t-transparent animate-spin" />
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable data table">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-light-grey">

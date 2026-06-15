@@ -80,16 +80,16 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-6 border-t border-navy-mid space-y-2">
-        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
+        <p className="font-body text-[12px] tracking-[0.02em] text-muted-cream">
           Daanaa is an independent nonprofit discovery platform. Not affiliated with the IRS, the federal government, or any nonprofit rating agency.
         </p>
-        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
+        <p className="font-body text-[12px] tracking-[0.02em] text-muted-cream">
           Daanaa does not process donations, hold donor funds, issue tax receipts, or represent any nonprofit.
         </p>
-        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
+        <p className="font-body text-[12px] tracking-[0.02em] text-muted-cream">
           Public records may be delayed or incomplete. Independently verify an organization before donating or volunteering.
         </p>
-        <p className="font-body text-[12px] tracking-[0.02em] text-cool-grey">
+        <p className="font-body text-[12px] tracking-[0.02em] text-muted-cream">
           © 2026 Daanaa. Data sourced from IRS, NCCS, and ProPublica public records. Some summaries, categories, and descriptions may be AI assisted and should be reviewed for accuracy.{' '}
           <Link to="/legal" className="hover:text-warm-cream transition-colors duration-150 underline underline-offset-2">
             Attribution &amp; Terms

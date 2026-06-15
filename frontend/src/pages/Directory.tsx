@@ -558,6 +558,7 @@ export default function Directory() {
                     setSearchParams(searchParams)
                   }}
                   title="Filter by visibility level — how much public data backs the page"
+                  aria-label="Filter by visibility level"
                   className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
                   style={{
                     backgroundColor: visTier ? '#C9A96E' : 'transparent',
@@ -579,6 +580,7 @@ export default function Directory() {
                   value={revenueFilter}
                   onChange={e => handleRevenueChange((e.target.value || '') as RevenueId)}
                   title="Filter by the organization's annual revenue size"
+                  aria-label="Filter by revenue size"
                   className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
                   style={{
                     backgroundColor: revenueFilter ? '#C9A96E' : 'transparent',
@@ -598,6 +600,7 @@ export default function Directory() {
                 <select
                   value={stateFilter}
                   onChange={e => handleStateChange(e.target.value)}
+                  aria-label="Filter by state"
                   className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
                   style={{
                     backgroundColor: stateFilter ? '#C9A96E' : 'transparent',
@@ -796,6 +799,7 @@ export default function Directory() {
                       <select
                         value={sortBy}
                         onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1) }}
+                        aria-label="Sort organizations by"
                         className="bg-transparent font-body text-[14px] text-deep-navy outline-none cursor-pointer"
                       >
                         {SORT_OPTIONS.map(opt => (
@@ -820,6 +824,7 @@ export default function Directory() {
                     <button
                       onClick={() => setViewMode('grid')}
                       title="Grid view"
+                      aria-label="Grid view"
                       className="p-1.5 rounded transition-colors"
                       style={{ backgroundColor: viewMode === 'grid' ? '#E5E0DB' : 'transparent' }}
                     >
@@ -830,6 +835,7 @@ export default function Directory() {
                     <button
                       onClick={() => setViewMode('list')}
                       title="List view"
+                      aria-label="List view"
                       className="p-1.5 rounded transition-colors"
                       style={{ backgroundColor: viewMode === 'list' ? '#E5E0DB' : 'transparent' }}
                     >
@@ -923,6 +929,7 @@ export default function Directory() {
                       <button
                         onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); scrollTop() }}
                         disabled={currentPage === 1}
+                        aria-label="Previous page"
                         className="w-8 h-8 flex items-center justify-center rounded-full text-cool-grey hover:text-deep-navy disabled:opacity-30 transition-colors"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
@@ -959,6 +966,7 @@ export default function Directory() {
                       <button
                         onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); scrollTop() }}
                         disabled={currentPage === totalPages}
+                        aria-label="Next page"
                         className="w-8 h-8 flex items-center justify-center rounded-full text-cool-grey hover:text-deep-navy disabled:opacity-30 transition-colors"
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
