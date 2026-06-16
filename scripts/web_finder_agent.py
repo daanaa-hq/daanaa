@@ -23,10 +23,12 @@ import sqlite3
 import requests
 import re
 import argparse
+import json
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 from urllib.robotparser import RobotFileParser
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 
 from website_normalize import normalize_website
@@ -35,12 +37,15 @@ DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
 LOG_PATH = Path.home() / "meritgiving/logs/web_finder_50k.log"
 EMBED_URL = "http://127.0.0.1:11436/v1/embeddings"
 EMBED_MODEL = "mxbai-embed-large"
+LLM_URL = "http://127.0.0.1:11437/v1/chat/completions"
+LLM_MODEL = "local"
 
 UA = ("Mozilla/5.0 (compatible; DaanaaWebFinder/1.0; "
       "+https://daanaa.org/about) website-discovery")
 
 FETCH_TIMEOUT = 8
 MIN_CONFIDENCE = 0.5   # embedding floor; primary gate is the name-token check (≥70%)
+LLM_TIMEOUT = 15   # LLM domain guessing timeout
 
 # robots.txt cache, one parser per scheme://host (modeled on donation_link_pipeline)
 _robots_cache: dict[str, RobotFileParser] = {}
@@ -121,6 +126,46 @@ def search_website(org_name: str, city: str, state: str) -> list[str]:
     # Return top candidates to try
     return list(candidates)[:5]
 
+def llm_domain_guesses(org_name: str, city: str = '', state: str = '') -> list[str]:
+    """
+    Use Qwen3-30B to generate smart domain guesses (abbreviations, acronyms, shorthands).
+    Falls back to empty list on error — pattern-based guessing still runs.
+    """
+    try:
+        context = f"{org_name}"
+        if city:
+            context += f" in {city}"
+        if state:
+            context += f", {state}"
+
+        payload = {
+            "model": LLM_MODEL,
+            "messages": [
+                {"role": "system", "content": "You generate likely nonprofit website domain names. Return only a JSON array of domain guesses (no .org/.com extensions, just the domain part). E.g. [\"redcross\", \"americanredcross\", \"arc\"]"},
+                {"role": "user", "content": f"Generate 5 likely website domain names for nonprofit: {context}"},
+            ],
+            "temperature": 0.3,
+            "max_tokens": 100,
+        }
+
+        resp = requests.post(LLM_URL, json=payload, timeout=LLM_TIMEOUT)
+        if resp.status_code == 200:
+            content = resp.json()["choices"][0]["message"]["content"].strip()
+            # Parse the JSON array
+            guesses = json.loads(content)
+            if isinstance(guesses, list):
+                # Add .org and .com variants
+                candidates = set()
+                for guess in guesses[:5]:
+                    guess_clean = guess.lower().replace(' ', '').replace('-', '')
+                    candidates.add(f"{guess_clean}.org")
+                    candidates.add(f"{guess_clean}.com")
+                return list(candidates)
+    except Exception as e:
+        pass  # fail gracefully; pattern-based search will still run
+
+    return []
+
 def fetch_website_text(url: str) -> str | None:
     """Fetch website homepage and extract text."""
     try:
@@ -190,25 +235,58 @@ def verify_website_ownership(org_record: dict, website_url: str) -> tuple[bool, 
     log(f"    Verified: {is_verified} (name tokens: {name_ratio:.0%}, similarity: {similarity:.3f})")
     return is_verified, similarity
 
+def process_org(ein: str, name: str, city: str, state: str, revenue: float, dry_run: bool) -> dict:
+    """Process a single org: guess candidates, fetch, verify, save. Returns result dict."""
+    result = {'ein': ein, 'name': name, 'verified': False, 'candidate': None, 'error': None}
+
+    try:
+        # Get candidates: LLM guesses + pattern-based guesses
+        llm_candidates = llm_domain_guesses(name, city or '', state or '')
+        pattern_candidates = search_website(name, city or '', state or '')
+        candidates = list(dict.fromkeys(llm_candidates + pattern_candidates))  # dedupe, preserve order
+
+        if not candidates:
+            result['error'] = 'no candidates'
+            return result
+
+        # Try each candidate until we find a verified match
+        for candidate in candidates:
+            website_text = fetch_website_text(candidate)
+            if website_text is None:
+                continue
+
+            is_verified, confidence = verify_website_ownership(
+                {'EIN': ein, 'organization_name': name, 'CITY': city, 'STATE': state},
+                candidate
+            )
+
+            if is_verified:
+                result['verified'] = True
+                result['candidate'] = normalize_website(candidate)
+                result['confidence'] = confidence
+                return result
+
+    except Exception as e:
+        result['error'] = str(e)
+
+    return result
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--limit', type=int, default=100)
+    parser.add_argument('--workers', type=int, default=8)
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--priority', choices=['high-revenue', 'all'], default='high-revenue')
     args = parser.parse_args()
 
     log("━" * 70)
-    log(f"Web Finder Agent — Priority: {args.priority}")
+    log(f"Web Finder Agent — Priority: {args.priority}, Workers: {args.workers}")
 
     # isolation_level=None = autocommit; each UPDATE is its own transaction.
-    # This prevents web_finder from holding a write lock for 50 HTTP requests
-    # at a time (the default behavior with implicit transactions).
     conn = sqlite3.connect(DB_PATH, isolation_level=None, timeout=30)
     c = conn.cursor()
 
     # Query orgs: have revenue, missing website, ordered by revenue DESC.
-    # Skip orgs attempted in the last 90 days so nightly loops advance through
-    # the queue instead of re-trying the same top-revenue failures forever.
     if args.priority == 'high-revenue':
         query = """
             SELECT EIN, organization_name, CITY, STATE, total_revenue
@@ -239,53 +317,45 @@ def main():
     if args.dry_run:
         log("DRY RUN — not saving results")
 
-    processed = 0
     verified = 0
+    processed = 0
 
-    for row in orgs:
-        ein, name, city, state, revenue = row
-        log(f"\n[{processed+1}/{len(orgs)}] {name} (${revenue:,.0f})")
+    # Process orgs in parallel
+    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+        futures = {
+            pool.submit(process_org, ein, name, city, state, revenue, args.dry_run): (ein, name, revenue)
+            for ein, name, city, state, revenue in orgs
+        }
 
-        # Get website candidates via heuristic patterns
-        candidates = search_website(name, city or '', state or '')
+        for i, future in enumerate(as_completed(futures), 1):
+            ein, name, revenue = futures[future]
+            try:
+                result = future.result()
+                log(f"\n[{i}/{len(orgs)}] {name} (${revenue:,.0f})")
 
-        found = False
-        for candidate in candidates:
-            # Try to fetch and verify
-            website_text = fetch_website_text(candidate)
-            if website_text is None:
-                continue
-
-            # Verify ownership via GPU semantic similarity
-            is_verified, confidence = verify_website_ownership(
-                {'EIN': ein, 'organization_name': name, 'CITY': city, 'STATE': state},
-                candidate
-            )
-
-            if is_verified:
-                # 'beta' per disclosure policy: heuristically discovered, not human-reviewed
-                log(f"  ✓ Verified! {candidate} (confidence: {confidence:.3f})")
-                if not args.dry_run:
-                    c.execute("""
-                        UPDATE registry_enriched
-                        SET website = ?, website_status = 'beta', website_checked_at = datetime('now')
-                        WHERE EIN = ?
-                    """, (normalize_website(candidate), ein))
+                if result['verified']:
+                    log(f"  ✓ Verified! {result['candidate']} (confidence: {result['confidence']:.3f})")
+                    if not args.dry_run:
+                        c.execute("""
+                            UPDATE registry_enriched
+                            SET website = ?, website_status = 'beta', website_checked_at = datetime('now')
+                            WHERE EIN = ?
+                        """, (result['candidate'], ein))
                     verified += 1
-                found = True
-                break
+                else:
+                    log(f"  ✗ No verified website found")
+                    if not args.dry_run:
+                        c.execute("""
+                            UPDATE registry_enriched
+                            SET website_status = 'no_website_found', website_checked_at = datetime('now')
+                            WHERE EIN = ?
+                        """, (ein,))
 
-        if not found:
-            log(f"  ✗ No verified website found among candidates")
-            if not args.dry_run:
-                # Mark the attempt so nightly loops move on (re-eligible after 90 days)
-                c.execute("""
-                    UPDATE registry_enriched
-                    SET website_status = 'no_website_found', website_checked_at = datetime('now')
-                    WHERE EIN = ?
-                """, (ein,))
+                processed += 1
 
-        processed += 1
+            except Exception as e:
+                log(f"[{i}/{len(orgs)}] {name}: ERROR - {e}")
+                processed += 1
 
     conn.close()
 

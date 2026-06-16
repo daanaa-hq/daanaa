@@ -51,16 +51,8 @@ start() {
     nohup bash -c "python3 scripts/generate_missions.py --workers 6 && python3 scripts/generate_missions_irs_bmf.py --workers 6" >> "$GEN_LOG" 2>&1 &
   fi
 
-  # CPU side: loop donate-link discovery/release so the CPU isn't idle (low heat)
-  if pgrep -f "scripts/cpu_night.sh" >/dev/null; then
-    echo "[$(ts)] start: cpu_night donate loop already running — skipping"
-  else
-    echo "[$(ts)] start: launching cpu_night donate loop"
-    nohup bash "$BASE/scripts/cpu_night.sh" >> "$LOG_DIR/cpu_night.log" 2>&1 &
-  fi
-
   # Website discovery: loop web_finder_agent (CPU crawl + :11436 GPU verification)
-  # so orgs missing websites get filled revenue-DESC; feeds next night's donate loop.
+  # so orgs missing websites get filled.
   if pgrep -f "scripts/web_night.sh" >/dev/null; then
     echo "[$(ts)] start: web_night discovery loop already running — skipping"
   else
@@ -85,9 +77,6 @@ stop() {
   echo "[$(ts)] stop: halting web_night discovery loop"
   pkill -f "scripts/web_night.sh" 2>/dev/null
   pkill -f "scripts/web_finder_agent.py" 2>/dev/null
-  echo "[$(ts)] stop: halting cpu_night donate loop"
-  pkill -f "scripts/cpu_night.sh" 2>/dev/null
-  pkill -f "scripts/donation_link_pipeline.py" 2>/dev/null
   echo "[$(ts)] stop: halting mission generation"
   pkill -f "scripts/generate_missions" 2>/dev/null
   echo "[$(ts)] stop: halting LLM cause-tag enrichment"
@@ -102,9 +91,9 @@ stop() {
   sleep 2
   # belt-and-suspenders: free the mission port
   fuser -k "${PORT}/tcp" 2>/dev/null
-  # NOTE: embed_server (port 11436) is kept running until Phase 4 completes.
-  # Phase 4 may run until 07:00+. See stop_embed_server() cron job (runs at 08:00).
-  echo "[$(ts)] stop: done (GPU freed, embed_server still running for Phase 4)"
+  # NOTE: embed_server (port 11436) is kept running until web_finder completes.
+  # See stop_embed_server() cron job (runs at 08:00).
+  echo "[$(ts)] stop: done (GPU freed, embed_server still running for web_finder)"
 }
 
 stop_embed_server() {
