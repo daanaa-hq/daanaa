@@ -90,6 +90,8 @@ stop() {
   pkill -f "scripts/donation_link_pipeline.py" 2>/dev/null
   echo "[$(ts)] stop: halting mission generation"
   pkill -f "scripts/generate_missions" 2>/dev/null
+  echo "[$(ts)] stop: halting LLM cause-tag enrichment"
+  pkill -f "scripts/enrich_cause_tags_llm.py" 2>/dev/null
   sleep 2
   echo "[$(ts)] stop: halting reembed_watchdog"
   pkill -f "scripts/reembed_watchdog.py" 2>/dev/null
