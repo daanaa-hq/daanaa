@@ -1,27 +1,27 @@
 # Daanaa — Traction Brief
 
-*Auto-generated from live platform data, 2026-06-09 22:32. Every number is queryable and real.*
+*Auto-generated from live platform data, 2026-06-15 05:35. Every number is queryable and real.*
 
 ## Platform scale
 
 | Metric | Value |
 |--------|-------|
-| Organizations indexed | 2,064,612 |
-| Active, tax-deductible (publicly shown) | 1,968,365 |
-| Peer financial context scores | 537,920 (27% of active) |
-| AI-assisted mission summaries | 1,819,272 |
-| Verified websites | 116,494 |
-| High-confidence donate links (≥90) | 237 |
+| Organizations indexed | 2,064,613 |
+| Active, tax-deductible (publicly shown) | 1,858,452 |
+| Peer financial context scores | 537,920 (29% of active) |
+| AI-assisted mission summaries | 2,064,613 |
+| Verified websites | 116,826 |
+| High-confidence donate links (≥90) | 251 |
 | Hidden gems flagged (small + healthy + low-profile) | 39,938 |
 
 ## Engagement (early stage — honest zeros where we haven't launched)
 
 | Metric | Value |
 |--------|-------|
-| Nonprofit profile claims | 0 |
+| Nonprofit profile claims | 2 |
 | Newsletter / waitlist signups | 0 |
 | Donate hand-offs, last 30 days | 2 |
-| Pageviews, last 30 days (first-party, cookieless) | 200 |
+| Pageviews, last 30 days (first-party, cookieless) | 229 |
 
 ## What Daanaa is
 
