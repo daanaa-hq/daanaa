@@ -27,10 +27,11 @@ from threading import Lock
 DB_PATH       = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 OLLAMA_URL    = "http://localhost:11434/api/embed"
 VULKAN_URL    = "http://127.0.0.1:11436/v1/embeddings"  # llama-server Vulkan, gfx1201 native
-MODEL         = "nomic-embed-text"
-BATCH_SIZE    = 100
-DIM           = 768
-USE_VULKAN    = False  # set True when running mxbai via llama-server
+MODEL         = "mxbai-embed-large"
+BATCH_SIZE    = 256  # increased for GPU utilization
+DIM           = 1024
+USE_VULKAN    = True  # set True when running mxbai via llama-server
+DEFAULT_WORKERS = 16  # maximize hardware usage on R9700
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS org_embeddings (

@@ -102,29 +102,29 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
 
 def search_website(org_name: str, city: str, state: str) -> list[str]:
     """
-    Search for org website candidates.
+    Search for org website candidates. Prioritize .org over .com (nonprofits ~99% use .org).
     Strategy: Try heuristic patterns first, then semantic search via existing websites.
     In production, can integrate SerpAPI or Google Custom Search.
     """
-    candidates = set()
+    candidates = []  # Use list to preserve order; .org first
 
     # Pattern 1: Direct domain guesses (most orgs use org_name pattern)
     org_clean = org_name.lower().strip().replace(' ', '').replace('-', '').replace('.', '')
-    candidates.add(f"{org_clean}.org")
-    candidates.add(f"{org_clean}.com")
+    candidates.append(f"{org_clean}.org")
+    candidates.append(f"{org_clean}.com")
 
     # Pattern 2: First word + .org
     first_word = org_name.split()[0].lower().replace('-', '')
     if len(first_word) > 2:
-        candidates.add(f"{first_word}.org")
+        candidates.append(f"{first_word}.org")
 
     # Pattern 3: City + org pattern (e.g., "bostonchildrensmuseum.org")
     if city:
         city_clean = city.lower().replace(' ', '')
-        candidates.add(f"{city_clean}{org_clean}.org")
+        candidates.append(f"{city_clean}{org_clean}.org")
 
-    # Return top candidates to try
-    return list(candidates)[:5]
+    # Return top candidates to try (deduped, .org-first)
+    return list(dict.fromkeys(candidates))[:5]
 
 def llm_domain_guesses(org_name: str, city: str = '', state: str = '') -> list[str]:
     """
@@ -154,13 +154,13 @@ def llm_domain_guesses(org_name: str, city: str = '', state: str = '') -> list[s
             # Parse the JSON array
             guesses = json.loads(content)
             if isinstance(guesses, list):
-                # Add .org and .com variants
-                candidates = set()
+                # Add .org and .com variants, prioritize .org
+                candidates = []
                 for guess in guesses[:5]:
                     guess_clean = guess.lower().replace(' ', '').replace('-', '')
-                    candidates.add(f"{guess_clean}.org")
-                    candidates.add(f"{guess_clean}.com")
-                return list(candidates)
+                    candidates.append(f"{guess_clean}.org")
+                    candidates.append(f"{guess_clean}.com")
+                return list(dict.fromkeys(candidates))  # Dedupe, preserve .org-first order
     except Exception as e:
         pass  # fail gracefully; pattern-based search will still run
 
@@ -204,14 +204,38 @@ def _name_token_ratio(org_name: str, page_text: str) -> float:
         return 0.0
     return sum(1 for t in tokens if t in page_text) / len(tokens)
 
+def llm_verify_website(org_name: str, website_url: str, website_text: str) -> bool:
+    """
+    Use LLM to verify website ownership. Final gate to catch false positives:
+    - Spanish language sites, unrelated orgs with similar names, generic company sites.
+    Returns True if LLM confirms this is the org's official website.
+    """
+    try:
+        payload = {
+            "model": LLM_MODEL,
+            "messages": [
+                {"role": "system", "content": "You are a website verification expert. Given an organization name and website content, determine if the website is the official website for that organization. Respond with only 'YES' or 'NO'."},
+                {"role": "user", "content": f"Is {website_url} the official website for '{org_name}'? Here is the page content: {website_text[:500]}"},
+            ],
+            "temperature": 0.0,
+            "max_tokens": 5,
+        }
+
+        resp = requests.post(LLM_URL, json=payload, timeout=LLM_TIMEOUT)
+        if resp.status_code == 200:
+            content = resp.json()["choices"][0]["message"]["content"].strip().upper()
+            return "YES" in content
+    except Exception as e:
+        log(f"  LLM verification error: {e}")
+
+    return False  # Fail closed — uncertain, don't verify
+
 def verify_website_ownership(org_record: dict, website_url: str) -> tuple[bool, float]:
     """
-    Verify the website belongs to the org. Two signals, both required:
+    Verify the website belongs to the org. Three gates, all required:
     1. Name-token check: ≥70% of meaningful org-name words appear on the page
-       (a domain-pattern guess can land on an unrelated squatter/company site).
-    2. Embedding similarity ≥ 0.5 between org identity and page text — a sanity
-       floor only. (Name-vs-HTML cosine peaks ~0.7, so the old 0.85 bar could
-       never pass: 0 verified in 1,800 attempts on 2026-06-10.)
+    2. Embedding similarity ≥ 0.5 between org identity and page text
+    3. LLM confirmation: "Is this the official website?" (catches false positives)
     Returns (is_verified, confidence_score)
     """
     org_name = org_record['organization_name']
@@ -231,8 +255,14 @@ def verify_website_ownership(org_record: dict, website_url: str) -> tuple[bool, 
     website_emb = embed_text(website_text)
     similarity = cosine_similarity(org_emb, website_emb)
 
-    is_verified = similarity >= MIN_CONFIDENCE
-    log(f"    Verified: {is_verified} (name tokens: {name_ratio:.0%}, similarity: {similarity:.3f})")
+    if similarity < MIN_CONFIDENCE:
+        log(f"    Verified: False (embedding similarity: {similarity:.3f}, below {MIN_CONFIDENCE})")
+        return False, 0.0
+
+    # Final gate: LLM verification
+    llm_confirmed = llm_verify_website(org_name, website_url, website_text)
+    is_verified = llm_confirmed
+    log(f"    Verified: {is_verified} (name tokens: {name_ratio:.0%}, similarity: {similarity:.3f}, llm: {llm_confirmed})")
     return is_verified, similarity
 
 def process_org(ein: str, name: str, city: str, state: str, revenue: float, dry_run: bool) -> dict:

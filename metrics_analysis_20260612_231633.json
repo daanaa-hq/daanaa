@@ -1,0 +1,28 @@
+{
+  "generated": "2026-06-12T23:16:33.119310",
+  "clarity": {
+    "total": 1,
+    "clear": 1,
+    "pct": 100.0,
+    "pass": true
+  },
+  "preference": {
+    "total": 1,
+    "peer": 1,
+    "pct": 100.0,
+    "pass": true
+  },
+  "ntee": {
+    "total": 0,
+    "mismatch": 0,
+    "pct": 0,
+    "pass": true
+  },
+  "coverage": {
+    "unique_orgs": 1,
+    "coverage_estimated": 99,
+    "pass": true
+  },
+  "decision": "LAUNCH",
+  "all_pass": true
+}
