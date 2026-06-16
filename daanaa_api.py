@@ -11,6 +11,9 @@ from flask import Flask, jsonify, request, g, abort, send_from_directory, Bluepr
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from twilio.twiml.voice_response import VoiceResponse
+from twilio.twiml.messaging_response import MessagingResponse
+from twilio.request_validator import RequestValidator
 
 # Firebase token verification using public keys — no service account file required.
 # Firebase publishes its signing certs at a well-known URL; cached for 1 hour.
@@ -4565,6 +4568,165 @@ def wallet_get():
         'donations':      json.loads(row['donations_json']),
         'volunteerHours': json.loads(row['volunteer_json']),
     })
+
+
+@app.route('/api/claim/phone-callback', methods=['POST'])
+def claim_phone_callback():
+    """
+    Twilio incoming voice webhook.
+    Verifies webhook signature and logs call attempt.
+    Returns TwiML instructions for the caller.
+    """
+    # Verify Twilio request signature for security
+    _auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
+    if _auth_token:
+        validator = RequestValidator(_auth_token)
+        if not validator.validate(request.base_url, request.form or {},
+                                  request.headers.get('X-Twilio-Signature', '')):
+            app.logger.warning(f"Invalid Twilio signature from {request.remote_addr}")
+            abort(403)
+
+    from_phone = (request.form.get('From') or '').strip()
+    call_sid = (request.form.get('CallSid') or '').strip()
+
+    app.logger.info(f"[Twilio Voice] Incoming call from {from_phone}, CallSid={call_sid}")
+
+    db = get_db()
+    # Look up if this phone is associated with a claim
+    claim = db.execute(
+        "SELECT ein, rep_name, organization_name FROM org_claims "
+        "LEFT JOIN registry_enriched ON org_claims.ein = registry_enriched.EIN "
+        "WHERE phone = ? AND claim_status IN ('pending', 'verified', 'active')",
+        (from_phone,)
+    ).fetchone()
+
+    # Log the call attempt
+    if claim:
+        db.execute(
+            "UPDATE org_claims SET called_at=datetime('now'), call_notes=? WHERE phone=?",
+            (f"CallSid: {call_sid}, from {from_phone}", from_phone)
+        )
+        db.commit()
+        org_name = claim['organization_name'] or 'your organization'
+        first_name = (claim['rep_name'] or '').split(' ')[0] or 'there'
+        _log_org_activity(claim['ein'], 'phone_verification_started',
+                         f"Call from {from_phone}, CallSid={call_sid}", actor='system')
+
+    # Return TwiML response
+    resp = VoiceResponse()
+    resp.say(f"Thank you for verifying your nonprofit claim with Daanaa.", voice='woman')
+    resp.say("Please wait for an agent or leave a message.", voice='woman')
+    resp.record(max_length=60, action='/api/claim/phone-record', method='POST')
+
+    return str(resp), 200, {'Content-Type': 'text/xml'}
+
+
+@app.route('/api/claim/phone-record', methods=['POST'])
+def claim_phone_record():
+    """
+    Handle the recording from an incoming voice call.
+    Stores the recording reference and notifies admin.
+    """
+    call_sid = (request.form.get('CallSid') or '').strip()
+    from_phone = (request.form.get('From') or '').strip()
+    recording_sid = (request.form.get('RecordingSid') or '').strip()
+
+    app.logger.info(f"[Twilio Voice] Recording saved: {recording_sid} for {call_sid}")
+
+    db = get_db()
+    claim = db.execute(
+        "SELECT ein, rep_name, email FROM org_claims WHERE phone = ?",
+        (from_phone,)
+    ).fetchone()
+
+    if claim:
+        notes = f"Recording: {recording_sid}"
+        db.execute(
+            "UPDATE org_claims SET call_notes=? WHERE ein=?",
+            (notes, claim['ein'])
+        )
+        db.commit()
+
+        # Notify admin of the call + recording
+        _send_daanaa_email(
+            os.environ.get('ADMIN_EMAIL', 'orgs@daanaa.org'),
+            f"Claim Verification Call from {from_phone}",
+            f"Recording available: https://api.twilio.com/2010-04-01/Accounts/{os.environ.get('TWILIO_ACCOUNT_SID')}/Recordings/{recording_sid}\n\n"
+            f"Claimant: {claim['rep_name']}\n"
+            f"Email: {claim['email']}\n"
+            f"CallSid: {call_sid}",
+            from_addr="Daanaa <verify@daanaa.org>"
+        )
+
+    resp = VoiceResponse()
+    resp.say("Thank you. Your recording has been saved. Goodbye.", voice='woman')
+    resp.hangup()
+
+    return str(resp), 200, {'Content-Type': 'text/xml'}
+
+
+@app.route('/api/claim/sms-callback', methods=['POST'])
+def claim_sms_callback():
+    """
+    Twilio incoming SMS webhook.
+    Verifies webhook signature and logs SMS attempt.
+    Returns TwiML response (SMS reply).
+    """
+    # Verify Twilio request signature
+    _auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '')
+    if _auth_token:
+        validator = RequestValidator(_auth_token)
+        if not validator.validate(request.base_url, request.form or {},
+                                  request.headers.get('X-Twilio-Signature', '')):
+            app.logger.warning(f"Invalid Twilio signature from {request.remote_addr}")
+            abort(403)
+
+    from_phone = (request.form.get('From') or '').strip()
+    body = (request.form.get('Body') or '').strip()
+    message_sid = (request.form.get('MessageSid') or '').strip()
+
+    app.logger.info(f"[Twilio SMS] Incoming from {from_phone}: {body[:50]}")
+
+    db = get_db()
+    claim = db.execute(
+        "SELECT ein, rep_name, pin FROM org_claims WHERE phone = ? AND claim_status IN ('pending', 'verified', 'active')",
+        (from_phone,)
+    ).fetchone()
+
+    if not claim:
+        resp = MessagingResponse()
+        resp.message("We don't have a pending claim for this phone number. "
+                    "Visit daanaa.org/for-nonprofits to start a claim.")
+        return str(resp), 200, {'Content-Type': 'text/xml'}
+
+    # Log the SMS attempt
+    db.execute(
+        "UPDATE org_claims SET called_at=datetime('now'), call_notes=? WHERE ein=?",
+        (f"SMS received: {body[:100]}", claim['ein'])
+    )
+    db.commit()
+    _log_org_activity(claim['ein'], 'sms_verification_attempt',
+                     f"SMS from {from_phone}: {body[:100]}", actor='system')
+
+    # Simple PIN validation from SMS
+    sms_input = ''.join(c for c in body if c.isdigit())
+    if hmac.compare_digest(sms_input, claim['pin']):
+        # PIN matches! Mark claim as verified
+        db.execute(
+            "UPDATE org_claims SET claim_status='verified', verified_at=datetime('now') WHERE ein=?",
+            (claim['ein'],)
+        )
+        db.commit()
+        _log_org_activity(claim['ein'], 'pin_verified_via_sms',
+                         f"PIN verified via SMS from {from_phone}", actor='system')
+
+        resp = MessagingResponse()
+        resp.message("Your PIN has been verified! Visit the edit link in your email to manage your organization page.")
+        return str(resp), 200, {'Content-Type': 'text/xml'}
+    else:
+        resp = MessagingResponse()
+        resp.message("That PIN is not correct. Please check your verification letter and try again.")
+        return str(resp), 200, {'Content-Type': 'text/xml'}
 
 
 @app.route('/api/wallet', methods=['PUT'])
