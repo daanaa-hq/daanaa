@@ -53,7 +53,7 @@ export default function GuildReferral() {
         <div className="text-center max-w-[400px]">
           <h1 className="font-display italic text-[28px] text-deep-navy mb-3">Link not found</h1>
           <p className="font-body text-[15px] text-cool-grey mb-6 leading-[1.7]">
-            This vendor link may have changed or expired. Visit the Daanaa Guild to see all
+            This partner link may have changed or expired. Visit the Daanaa Guild to see all
             current member benefits.
           </p>
           <Link
@@ -122,7 +122,7 @@ export default function GuildReferral() {
             Claim your free page to unlock this and more.
           </h2>
           <p className="font-body text-[14px] text-warm-cream/70 leading-[1.7] mb-6 max-w-[480px] mx-auto">
-            The Daanaa Guild brings {vendor.vendor_name} and other vetted vendors together
+            The Daanaa Guild brings {vendor.vendor_name} and other community partners together
             for nonprofits like yours. Free to join. Better rates for everyone as the
             guild grows.
           </p>
@@ -143,11 +143,11 @@ export default function GuildReferral() {
             },
             {
               title: 'Rates improve as the guild grows',
-              body: 'Milestone pricing is built into every vendor contract. The more members use the guild, the better the rates get — for everyone, automatically.',
+              body: 'Milestone pricing is built into every partner contract. The more members use the guild, the better the rates get — for everyone, automatically.',
             },
             {
               title: 'Free for nonprofits, always',
-              body: 'Guild membership is free. Vendors pay a standard contract administration fee. You never pay Daanaa anything.',
+              body: 'Guild membership is free. Partners pay a standard contract administration fee. You never pay Daanaa anything.',
             },
           ].map(({ title, body }) => (
             <div key={title} className="flex gap-4 bg-white rounded-xl border border-light-grey p-5">

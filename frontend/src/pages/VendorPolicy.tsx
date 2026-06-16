@@ -3,7 +3,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 
 export default function VendorPolicy() {
   usePageMeta(
-    'Vendor and Partner Policy — Daanaa',
+    'Impact Network Partner Policy — Daanaa',
     'The rules governing participation in the Daanaa Impact Network for community partners and network partners.',
   )
 
@@ -16,7 +16,7 @@ export default function VendorPolicy() {
 
         <h1 className="font-display italic text-deep-navy mt-6 leading-[0.95] tracking-[-0.02em]"
             style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}>
-          Daanaa Impact Network<br />Vendor and Partner Policy
+          Daanaa Impact Network<br />Partner Policy
         </h1>
         <p className="mt-4 font-body text-[13px] text-muted-cream">
           Effective June 14, 2026 · Operated by EcoMargins Consulting LLC
@@ -34,7 +34,7 @@ export default function VendorPolicy() {
             <p className="mt-3">
               The goal is simple: make it easier for nonprofits to access services, tools, and
               resources at fair prices. Participation is a values commitment, not just a commercial
-              transaction. Vendors join because they believe in supporting the sector.
+              transaction. Partners join because they believe in supporting the sector.
             </p>
             <p className="mt-3">The network has two tiers:</p>
             <ul className="mt-3 space-y-2 ml-4 list-disc">
@@ -44,7 +44,7 @@ export default function VendorPolicy() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">What vendors and partners agree to</h2>
+            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">What partners agree to</h2>
             <ol className="space-y-4 ml-4 list-decimal">
               <li>
                 <strong className="text-deep-navy">Accuracy.</strong> Every offer, discount, code,
@@ -76,7 +76,7 @@ export default function VendorPolicy() {
                 <Link to="/stewardship" className="text-soft-gold hover:underline">
                   Founding Stewardship Commitment
                 </Link>
-                . Vendors whose business practices are in material conflict with those principles are
+                . Partners whose business practices are in material conflict with those principles are
                 not eligible to participate and may be removed.
               </li>
             </ol>
@@ -85,22 +85,22 @@ export default function VendorPolicy() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">What Daanaa commits to</h2>
             <p>
-              <strong className="text-deep-navy">Independence is non-negotiable.</strong> Vendor
+              <strong className="text-deep-navy">Independence is non-negotiable.</strong> Partner
               participation — including the payment of any fees — never affects how an organization
               appears in Daanaa search results, its financial context score, its tier, its visibility
-              ranking, or any other trust signal on the platform. No vendor may pay for placement.
+              ranking, or any other trust signal on the platform. No partner may pay for placement.
               This principle is absolute and derives directly from{' '}
               <Link to="/stewardship" className="text-soft-gold hover:underline">Principle 7</Link>{' '}
               of the Founding Stewardship Commitment.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">Fair review.</strong> Applications are reviewed on
-              values fit and benefit quality, not on the size of the vendor.
+              values fit and benefit quality, not on the size of the partner.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">Disclosure.</strong> Daanaa discloses to nonprofits
-              that the network includes vendor relationships and that those relationships contribute
-              to platform sustainability. Vendor relationships are never presented as endorsements of
+              that the network includes partner relationships and that those relationships contribute
+              to platform sustainability. Partner relationships are never presented as endorsements of
               individual organizations.
             </p>
           </section>
@@ -109,16 +109,16 @@ export default function VendorPolicy() {
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Data and privacy</h2>
             <p>
               Daanaa does not share donor data, giving history, wallet contents, or any user-level
-              behavioral data with vendors. Ever.
+              behavioral data with partners. Ever.
             </p>
             <p className="mt-3">
-              When a nonprofit accesses a vendor benefit through Daanaa, the only information Daanaa
-              may confirm to the vendor for verification purposes is the organization's name, EIN,
+              When a nonprofit accesses a partner benefit through Daanaa, the only information Daanaa
+              may confirm to the partner for verification purposes is the organization's name, EIN,
               and claimed status on the platform. No financial data, no giving data, no donor
               information.
             </p>
             <p className="mt-3">
-              Vendors may not use EIN-level information obtained through the Daanaa Impact Network
+              Partners may not use EIN-level information obtained through the Daanaa Impact Network
               to build commercial databases, enrich third-party lists, or resell organization data.
               This obligation survives the end of your participation.
             </p>
@@ -128,14 +128,14 @@ export default function VendorPolicy() {
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Daanaa's role and limits</h2>
             <p>
               Daanaa is the convener of the network. Daanaa is not a party to any transaction between
-              a vendor and a nonprofit. When a nonprofit uses a code, accesses a benefit, or enters a
-              service relationship with a vendor, that relationship is directly between the nonprofit
-              and the vendor.
+              a partner and a nonprofit. When a nonprofit uses a code, accesses a benefit, or enters a
+              service relationship with a partner, that relationship is directly between the nonprofit
+              and the partner.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">Daanaa makes no warranty</strong> — express, implied,
               or otherwise — that any listed benefit is available, accurate, of merchantable quality,
-              or fit for any particular purpose. Nonprofits use vendor benefits at their own
+              or fit for any particular purpose. Nonprofits use partner benefits at their own
               discretion.
             </p>
           </section>
@@ -155,7 +155,7 @@ export default function VendorPolicy() {
             </p>
             <p className="mt-3">
               To the maximum extent permitted by applicable law, EcoMargins Consulting LLC's total liability to
-              any vendor shall not exceed the fees paid by that vendor in the twelve months preceding
+              any partner shall not exceed the fees paid by that partner in the twelve months preceding
               the claim. Community partners participating at no cost acknowledge that Daanaa's
               liability is zero.
             </p>
@@ -164,7 +164,7 @@ export default function VendorPolicy() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Removal and disputes</h2>
             <p>
-              Daanaa may remove any vendor listing at any time, for any reason, including values
+              Daanaa may remove any partner listing at any time, for any reason, including values
               misalignment, inaccurate listings, nonprofit complaints, or changes in platform
               direction.
             </p>
@@ -176,7 +176,7 @@ export default function VendorPolicy() {
               . Daanaa will respond within ten business days. The outcome is final.
             </p>
             <p className="mt-3">
-              Daanaa does not mediate disputes between vendors and nonprofits. Those disputes are
+              Daanaa does not mediate disputes between partners and nonprofits. Those disputes are
               between the parties directly.
             </p>
           </section>

@@ -163,7 +163,7 @@ export default function Terms() {
             <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">9. Impact Network and partner benefits</h2>
             <p>
               Daanaa operates an Impact Network that connects nonprofits with businesses offering services at
-              preferential rates. Vendor participation — including any fees paid to Daanaa — never affects how any
+              preferential rates. Partner participation — including any fees paid to Daanaa — never affects how any
               organization appears in search results, its financial context score, its tier, or any other trust signal
               on the platform. This principle is absolute and is embedded in our{' '}
               <Link to="/stewardship" className="text-soft-gold hover:underline">
@@ -171,9 +171,9 @@ export default function Terms() {
               </Link>.
             </p>
             <p className="mt-3">
-              Vendor benefits are listed for informational purposes. Daanaa does not warranty the accuracy,
-              availability, or quality of any vendor's product or service. Transactions are directly between the
-              nonprofit and the vendor. Daanaa is not a party to those transactions.
+              Partner benefits are listed for informational purposes. Daanaa does not warranty the accuracy,
+              availability, or quality of any partner's product or service. Transactions are directly between the
+              nonprofit and the partner. Daanaa is not a party to those transactions.
             </p>
           </section>
 

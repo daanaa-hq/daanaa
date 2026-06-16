@@ -6,7 +6,7 @@ import { getGuildBenefits, getGuildMemberCount, submitGuildWaitlist, type Vendor
 // Member milestone targets — member-count based until vendor contracts define dollar thresholds
 const MILESTONES = [
   { label: 'Tier 2', target: 500, description: 'First pricing improvements unlock' },
-  { label: 'Tier 3', target: 2_000, description: 'Expanded vendor categories' },
+  { label: 'Tier 3', target: 2_000, description: 'Expanded partner categories' },
   { label: 'Tier 4', target: 10_000, description: 'Maximum guild rates' },
 ]
 
@@ -109,7 +109,7 @@ function MilestoneTracker({ memberCount }: { memberCount: number }) {
         />
       </div>
       <p className="font-body text-[11px] text-muted-cream mt-2">
-        Milestone pricing baked into every vendor contract from day one — no renegotiation needed.
+        Milestone pricing baked into every partner contract from day one — no renegotiation needed.
       </p>
     </div>
   )
@@ -176,7 +176,7 @@ function EmptyState({ memberCount }: { memberCount: number }) {
           Guild benefits coming soon
         </p>
         <h2 className="font-display italic text-deep-navy text-[24px] leading-tight mb-3">
-          First vendor deals are being finalized.
+          First partner offers are being finalized.
         </h2>
         <p className="font-body text-[15px] text-cool-grey leading-[1.7] mb-2">
           {display}
@@ -285,7 +285,7 @@ export default function MemberBenefits() {
 
             <div className="mt-6 border-t border-light-cream pt-6">
               <p className="font-body text-[13px] text-muted-cream leading-[1.6]">
-                Guild pricing improves automatically as the network grows — milestone thresholds are baked into every vendor contract from day one.
+                Guild pricing improves automatically as the network grows — milestone thresholds are baked into every partner contract from day one.
                 Questions? <a href="mailto:orgs@daanaa.org" className="text-soft-gold hover:underline">orgs@daanaa.org</a>
               </p>
             </div>

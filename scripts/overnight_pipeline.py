@@ -208,6 +208,33 @@ def run_data_quality_gate():
         log(f'⚠️  Data quality gate error (non-fatal): {str(e)[:100]}')
 
 
+def cleanup_stale_scores():
+    """Delete old score JSON files, keeping only the most recent 2.
+    Prevents disk bloat from nightly scoring runs."""
+    try:
+        import glob
+        import os as _os
+        scores_dir = Path.home() / 'meritgiving'
+        pattern = str(scores_dir / 'scores_v4_0_*.json')
+        files = glob.glob(pattern)
+
+        # Filter: keep only dated files (YYYYMMDD* pattern), exclude the full snapshot
+        dated_files = [f for f in files if '_full' not in f and 'scores_v4_0_' in f]
+        dated_files.sort(reverse=True)  # Most recent first
+
+        # Keep the most recent 2; delete the rest
+        to_delete = dated_files[2:]
+        for fpath in to_delete:
+            size_mb = _os.path.getsize(fpath) // (1024 * 1024)
+            try:
+                _os.remove(fpath)
+                log(f'Cleaned: {Path(fpath).name} (~{size_mb}MB)')
+            except Exception as e:
+                log(f'Failed to delete {Path(fpath).name}: {e}')
+    except Exception as e:
+        log(f'⚠️  Stale score cleanup error (non-fatal): {str(e)[:100]}')
+
+
 def run_export_snapshot():
     """Regenerate the research snapshot JSON so daanaa.org/research always
     reflects the latest corrected data after each nightly pipeline run."""
@@ -346,6 +373,9 @@ def main():
 
     # Step 9: Regenerate research snapshot so static page reflects latest data
     run_export_snapshot()
+
+    # Step 10: Clean up stale score files to prevent disk bloat
+    cleanup_stale_scores()
 
     log('=' * 60)
     log('Overnight Pipeline Complete')
