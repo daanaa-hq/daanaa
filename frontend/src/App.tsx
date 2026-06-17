@@ -38,6 +38,7 @@ const VolunteerSearch = lazy(() => import('./pages/VolunteerSearch'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
 const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
+const NonprofitDashboard = lazy(() => import('./pages/NonprofitDashboard'))
 
 function PageLoader() {
   return (
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />
           <Route path="/research" element={<ResearchDashboard />} />
+          <Route path="/nonprofit/verify-hours" element={<NonprofitDashboard />} />
           <Route path="/claim/verify" element={<ClaimVerify />} />
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/claim/success" element={<ClaimSuccess />} />

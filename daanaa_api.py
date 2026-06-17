@@ -449,7 +449,7 @@ _ALLOWED_ORIGINS = [
     "https://daanaa.org",
     "https://www.daanaa.org",
 ]
-CORS(app, origins=_ALLOWED_ORIGINS, supports_credentials=False)
+CORS(app, origins=_ALLOWED_ORIGINS, supports_credentials=True)
 
 # Rate limiting — backs off abusive callers without blocking normal use
 limiter = Limiter(
@@ -4994,9 +4994,31 @@ def wallet_volunteer_hours():
             'notes': notes,
             'created_at': datetime.utcnow().isoformat(),
             'status': 'logged',
+            'volunteer_user_id': uid,  # reference back to volunteer
         }
 
         if _firestore_set('volunteer_hour_logs', log_id, log_data, user_id=uid):
+            # Also create a nonprofit-facing pending record (organized by EIN)
+            # This lets nonprofits easily query their pending verifications
+            nonprofit_pending_data = {
+                'volunteer_user_id': uid,
+                'nonprofit_ein': nonprofit_ein,
+                'nonprofit_name': nonprofit_name,
+                'service_date': service_date,
+                'hours_logged': hours_logged,
+                'notes': notes,
+                'created_at': datetime.utcnow().isoformat(),
+                'status': 'pending',
+                'log_id': log_id,  # reference to original log
+            }
+            # Store under nonprofit's EIN for easy querying
+            try:
+                _firestore_set('nonprofit_pending_verifications', log_id, nonprofit_pending_data,
+                              user_id=nonprofit_ein)
+            except Exception as e:
+                _logger.warning(f"Could not create nonprofit pending record: {e}")
+                # Don't fail the volunteer's log if this fails
+
             return jsonify({'success': True, 'log_id': log_id}), 201
         return jsonify({'error': 'Failed to log hours'}), 500
 
@@ -5077,6 +5099,140 @@ def wallet_delete():
     _firestore_delete('saved_organizations', 'data', user_id=uid)
 
     return jsonify({'success': True, 'message': 'All wallet data deleted'}), 200
+
+
+# ── Nonprofit Hour Verification Portal ──────────────────────────────────────
+
+def _require_nonprofit_token() -> str:
+    """Extract and validate nonprofit verification token from request."""
+    token = request.headers.get('X-Verification-Token') or request.args.get('verification_token')
+    if not token:
+        raise ValueError('Nonprofit verification token required')
+    return token
+
+
+@app.route('/api/nonprofit/<ein>/pending-verifications', methods=['GET'])
+def nonprofit_pending_verifications(ein: str):
+    """List volunteer hours pending verification for a nonprofit.
+
+    Requires: X-Verification-Token header (nonprofit claim token)
+    Returns: List of volunteer_hour_logs where nonprofit_ein matches and status='logged'
+    """
+    try:
+        token = _require_nonprofit_token()
+        db = get_db()
+
+        # Verify the nonprofit owns this EIN (via the claim system)
+        claim = db.execute(
+            "SELECT * FROM org_claims WHERE EIN = ? AND status = 'verified'",
+            (ein,)
+        ).fetchone()
+        if not claim:
+            return jsonify({'error': 'Nonprofit not verified or EIN mismatch'}), 403
+
+        # Query nonprofit_pending_verifications keyed by EIN
+        pending = _firestore_list('nonprofit_pending_verifications', user_id=ein)
+        # Filter to only pending status (in case some were already verified)
+        pending = [p for p in pending if p.get('status') == 'pending']
+        pending = sorted(pending, key=lambda x: x.get('created_at', ''), reverse=True)
+
+        return jsonify({'pending_verifications': pending, 'total': len(pending)}), 200
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        _logger.error(f"Error fetching pending verifications: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/nonprofit/<ein>/verify-hours/<log_id>', methods=['POST'])
+def nonprofit_verify_hours(ein: str, log_id: str):
+    """Confirm volunteer hours. Creates a volunteer_hour_confirmation record.
+
+    Requires: X-Verification-Token header (nonprofit claim token)
+    Body: {
+      hours_confirmed: number,  # can differ from hours_logged
+      notes: string (optional),
+      volunteer_user_id: string  # which volunteer's log to confirm
+    }
+    """
+    try:
+        token = _require_nonprofit_token()
+        db = get_db()
+
+        # Verify the nonprofit owns this EIN
+        claim = db.execute(
+            "SELECT * FROM org_claims WHERE EIN = ? AND status = 'verified'",
+            (ein,)
+        ).fetchone()
+        if not claim:
+            return jsonify({'error': 'Nonprofit not verified or EIN mismatch'}), 403
+
+        data = request.get_json() or {}
+        hours_confirmed = float(data.get('hours_confirmed', 0))
+        notes = (data.get('notes') or '').strip()
+        volunteer_user_id = (data.get('volunteer_user_id') or '').strip()
+
+        if not volunteer_user_id:
+            return jsonify({'error': 'volunteer_user_id required'}), 400
+        if hours_confirmed <= 0 or hours_confirmed > 24:
+            return jsonify({'error': 'hours_confirmed must be between 0.1 and 24'}), 400
+
+        # Fetch the original log entry to validate it exists and matches
+        orig_log = _firestore_get('volunteer_hour_logs', log_id, user_id=volunteer_user_id)
+        if not orig_log:
+            return jsonify({'error': 'Volunteer hour log not found'}), 404
+
+        if orig_log.get('nonprofit_ein') != ein:
+            return jsonify({'error': 'EIN mismatch: log does not belong to this nonprofit'}), 400
+
+        # Create confirmation record in Firestore
+        # Volunteer sees this under their volunteer_hour_confirmations collection
+        confirm_id = secrets.token_urlsafe(16)
+        confirm_data = {
+            'nonprofit_ein': ein,
+            'nonprofit_name': orig_log.get('nonprofit_name', ''),
+            'service_date': orig_log.get('service_date', ''),
+            'hours_confirmed': hours_confirmed,
+            'hours_logged': orig_log.get('hours_logged', 0),
+            'notes': notes,
+            'confirmed_at': datetime.utcnow().isoformat(),
+            'log_id': log_id,  # reference to the original log
+            'verified_by_ein': ein,  # audit trail
+        }
+
+        # Estimate value: US volunteer hour rate is ~$29.95/hr (national average)
+        volunteer_hour_rate = 29.95
+        confirm_data['estimated_value'] = hours_confirmed * volunteer_hour_rate
+
+        if _firestore_set('volunteer_hour_confirmations', confirm_id, confirm_data, user_id=volunteer_user_id):
+            # Update the original log to mark it as verified
+            orig_log['status'] = 'verified'
+            _firestore_set('volunteer_hour_logs', log_id, orig_log, user_id=volunteer_user_id)
+
+            # Update nonprofit's pending record to mark as verified
+            try:
+                pending_record = _firestore_get('nonprofit_pending_verifications', log_id, user_id=ein)
+                if pending_record:
+                    pending_record['status'] = 'verified'
+                    _firestore_set('nonprofit_pending_verifications', log_id, pending_record, user_id=ein)
+            except Exception as e:
+                _logger.warning(f"Could not update nonprofit pending record: {e}")
+
+            return jsonify({
+                'success': True,
+                'confirmation_id': confirm_id,
+                'hours_confirmed': hours_confirmed,
+                'estimated_value': confirm_data['estimated_value']
+            }), 201
+
+        return jsonify({'error': 'Failed to create confirmation'}), 500
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        _logger.error(f"Error verifying hours: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/', defaults={'path': ''})
