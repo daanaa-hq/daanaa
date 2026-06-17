@@ -5,7 +5,6 @@ import { useApi } from '../hooks/useApi'
 import { getStats, getGuildMemberCount, getGuildBenefits } from '../data/api'
 
 const ALL_CATEGORIES = [
-  'Payment processing',
   'Insurance',
   'Printing and marketing',
   'Travel and fuel',
