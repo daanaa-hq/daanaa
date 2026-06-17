@@ -673,6 +673,7 @@ export async function logVolunteerHours(
   serviceDate: string,
   hoursLogged: number,
   notes?: string,
+  allowVerification: boolean = true,
 ): Promise<{ success: boolean; log_id: string }> {
   const res = await fetch(`${API_BASE}/api/wallet/volunteer-hours`, {
     method: 'POST',
@@ -683,6 +684,7 @@ export async function logVolunteerHours(
       service_date: serviceDate,
       hours_logged: hoursLogged,
       notes,
+      allow_verification: allowVerification,
     }),
   })
   if (!res.ok) throw new Error('log hours failed')

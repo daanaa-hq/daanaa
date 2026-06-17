@@ -19,6 +19,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [allowVerification, setAllowVerification] = useState(true)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -75,6 +76,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
         formData.service_date,
         parseFloat(formData.hours_logged),
         formData.notes.trim(),
+        allowVerification,
       )
 
       setSuccess(true)
@@ -195,6 +197,23 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
           rows={3}
           className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/30"
         />
+      </div>
+
+      {/* Consent Checkbox */}
+      <div className="flex items-start space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <input
+          type="checkbox"
+          id="allow_verification"
+          checked={allowVerification}
+          onChange={(e) => setAllowVerification(e.target.checked)}
+          className="mt-1 w-4 h-4 cursor-pointer"
+        />
+        <label htmlFor="allow_verification" className="text-sm text-deep-navy cursor-pointer">
+          <span className="font-medium">Allow {formData.nonprofit_name || 'this nonprofit'} to verify these hours</span>
+          <p className="text-xs text-cool-grey mt-1">
+            When unchecked, these hours stay private in your wallet. You can change this anytime.
+          </p>
+        </label>
       </div>
 
       {errors.submit && (

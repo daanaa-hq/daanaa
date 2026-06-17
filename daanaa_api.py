@@ -4965,6 +4965,7 @@ def wallet_volunteer_hours():
         service_date = (data.get('service_date') or '').strip()
         hours_logged = float(data.get('hours_logged') or 0)
         notes = (data.get('notes') or '').strip()
+        allow_verification = data.get('allow_verification', True)
 
         # Validate
         if not nonprofit_ein or len(nonprofit_ein) != 9:
@@ -4998,26 +4999,38 @@ def wallet_volunteer_hours():
         }
 
         if _firestore_set('volunteer_hour_logs', log_id, log_data, user_id=uid):
-            # Also create a nonprofit-facing pending record (organized by EIN)
-            # This lets nonprofits easily query their pending verifications
-            nonprofit_pending_data = {
-                'volunteer_user_id': uid,
+            # Store consent record
+            consent_id = secrets.token_urlsafe(16)
+            consent_data = {
                 'nonprofit_ein': nonprofit_ein,
                 'nonprofit_name': nonprofit_name,
-                'service_date': service_date,
-                'hours_logged': hours_logged,
-                'notes': notes,
+                'log_id': log_id,
+                'allowed': allow_verification,
                 'created_at': datetime.utcnow().isoformat(),
-                'status': 'pending',
-                'log_id': log_id,  # reference to original log
+                'updated_at': datetime.utcnow().isoformat(),
             }
-            # Store under nonprofit's EIN for easy querying
-            try:
-                _firestore_set('nonprofit_pending_verifications', log_id, nonprofit_pending_data,
-                              user_id=nonprofit_ein)
-            except Exception as e:
-                _logger.warning(f"Could not create nonprofit pending record: {e}")
-                # Don't fail the volunteer's log if this fails
+            _firestore_set('consent_records', consent_id, consent_data, user_id=uid)
+
+            # Only create nonprofit-facing pending record if volunteer consents
+            if allow_verification:
+                nonprofit_pending_data = {
+                    'volunteer_user_id': uid,
+                    'nonprofit_ein': nonprofit_ein,
+                    'nonprofit_name': nonprofit_name,
+                    'service_date': service_date,
+                    'hours_logged': hours_logged,
+                    'notes': notes,
+                    'created_at': datetime.utcnow().isoformat(),
+                    'status': 'pending',
+                    'log_id': log_id,  # reference to original log
+                }
+                # Store under nonprofit's EIN for easy querying
+                try:
+                    _firestore_set('nonprofit_pending_verifications', log_id, nonprofit_pending_data,
+                                  user_id=nonprofit_ein)
+                except Exception as e:
+                    _logger.warning(f"Could not create nonprofit pending record: {e}")
+                    # Don't fail the volunteer's log if this fails
 
             return jsonify({'success': True, 'log_id': log_id}), 201
         return jsonify({'error': 'Failed to log hours'}), 500
@@ -5099,6 +5112,49 @@ def wallet_delete():
     _firestore_delete('saved_organizations', 'data', user_id=uid)
 
     return jsonify({'success': True, 'message': 'All wallet data deleted'}), 200
+
+
+# ── Volunteer Consent Management ───────────────────────────────────────────
+
+@app.route('/api/wallet/consent-records', methods=['GET'])
+def wallet_consent_records():
+    """Get all consent records for the logged-in volunteer."""
+    uid = _require_firebase_user()
+    records = _firestore_list('consent_records', user_id=uid)
+    return jsonify({'consent_records': records, 'total': len(records)}), 200
+
+
+@app.route('/api/wallet/consent-records/<record_id>', methods=['PATCH'])
+def wallet_update_consent(record_id: str):
+    """Update consent for a specific nonprofit and log entry.
+
+    Body: { allowed: boolean }
+    """
+    uid = _require_firebase_user()
+    data = request.get_json() or {}
+    allowed = data.get('allowed', True)
+
+    record = _firestore_get('consent_records', record_id, user_id=uid)
+    if not record:
+        return jsonify({'error': 'Consent record not found'}), 404
+
+    record['allowed'] = allowed
+    record['updated_at'] = datetime.utcnow().isoformat()
+
+    if _firestore_set('consent_records', record_id, record, user_id=uid):
+        # If withdrawing consent, remove from nonprofit pending
+        if not allowed:
+            try:
+                log_id = record.get('log_id')
+                nonprofit_ein = record.get('nonprofit_ein')
+                if log_id and nonprofit_ein:
+                    _firestore_delete('nonprofit_pending_verifications', log_id, user_id=nonprofit_ein)
+            except Exception as e:
+                _logger.warning(f"Could not remove nonprofit pending record: {e}")
+
+        return jsonify({'success': True, 'allowed': allowed}), 200
+
+    return jsonify({'error': 'Failed to update consent'}), 500
 
 
 # ── Nonprofit Hour Verification Portal ──────────────────────────────────────
