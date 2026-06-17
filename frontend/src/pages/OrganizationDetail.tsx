@@ -11,7 +11,6 @@ import MistakeRegistry from '../components/MistakeRegistry'
 import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
 import { useSavedOrgs } from '../hooks/useSavedOrgs'
-import { useGivingList } from '../hooks/useGivingList'
 import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
 import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
@@ -22,118 +21,10 @@ import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import { useAuth } from '../contexts/AuthContext'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
-import FinancialContext from '../components/FinancialContext'
 import V5Context from '../components/V5Context'
 import CohortContext from '../components/CohortContext'
-
-// ---- Revenue Bar Chart ----
-function RevenueChart({ data }: { data: { year: number; amount: number }[] }) {
-  const [hoveredBar, setHoveredBar] = useState<number | null>(null)
-  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
-  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const [revealed, setRevealed] = useState(prefersReducedMotion)
-  const svgRef = useRef<SVGSVGElement>(null)
-
-  useEffect(() => {
-    if (prefersReducedMotion) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setRevealed(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.3 }
-    )
-    if (svgRef.current) observer.observe(svgRef.current)
-    return () => observer.disconnect()
-  }, [])
-
-  const maxAmount = Math.max(...data.map(d => d.amount))
-  const chartW = 680
-  const chartH = 350
-  const margin = { top: 40, right: 40, bottom: 60, left: 80 }
-  const innerW = chartW - margin.left - margin.right
-  const innerH = chartH - margin.top - margin.bottom
-
-  const barWidth = 80
-  const gap = (innerW - barWidth * data.length) / (data.length + 1)
-
-  const yTicks = [0, maxAmount * 0.25, maxAmount * 0.5, maxAmount * 0.75, maxAmount]
-
-  const handleMouseMove = (e: React.MouseEvent, index: number) => {
-    const rect = svgRef.current?.getBoundingClientRect()
-    if (rect) {
-      setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
-    }
-    setHoveredBar(index)
-  }
-
-  return (
-    <div className="bg-white border border-light-grey rounded-xl p-6 relative">
-      <h4 className="font-display text-deep-navy text-[20px] mb-4">Revenue Trend (5 Years)</h4>
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${chartW} ${chartH}`}
-        className="w-full"
-        style={{ aspectRatio: '16/9' }}
-      >
-        {yTicks.map((tick, i) => {
-          const y = margin.top + innerH - (tick / maxAmount) * innerH
-          return (
-            <g key={i}>
-              <line x1={margin.left} y1={y} x2={chartW - margin.right} y2={y} stroke="#E5E0DB" strokeWidth={1} />
-              <text x={margin.left - 12} y={y + 4} textAnchor="end" fill="#6B7280" fontSize="12" fontFamily="Inter, sans-serif">
-                {formatCurrency(tick)}
-              </text>
-            </g>
-          )
-        })}
-
-        <line x1={margin.left} y1={margin.top + innerH} x2={chartW - margin.right} y2={margin.top + innerH} stroke="#E5E0DB" strokeWidth={1} />
-
-        {/* Vertical grid lines between bars */}
-        {data.slice(0, -1).map((_, i) => {
-          const x = margin.left + gap + i * (barWidth + gap) + barWidth + gap / 2
-          return (
-            <line key={`vgrid-${i}`} x1={x} y1={margin.top} x2={x} y2={margin.top + innerH} stroke="#E5E0DB" strokeWidth={1} strokeDasharray="3 3" />
-          )
-        })}
-
-        {data.map((d, i) => {
-          const barH = (d.amount / maxAmount) * innerH
-          const x = margin.left + gap + i * (barWidth + gap)
-          const y = margin.top + innerH - barH
-          const targetY = y
-          const startY = margin.top + innerH
-
-          return (
-            <g key={d.year} onMouseMove={(e) => handleMouseMove(e, i)} onMouseLeave={() => setHoveredBar(null)} style={{ cursor: 'pointer' }}>
-              <rect
-                x={x} y={revealed ? targetY : startY}
-                width={barWidth} height={revealed ? barH : 0}
-                rx={8}
-                fill={hoveredBar === i ? '#D4B87A' : '#C9A96E'}
-                style={{ transition: prefersReducedMotion ? 'none' : `all 1s ease-out ${i * 0.1}s` }}
-              />
-              <text x={x + barWidth / 2} y={margin.top + innerH + 24} textAnchor="middle" fill="#6B7280" fontSize="12" fontFamily="Inter, sans-serif">
-                {d.year}
-              </text>
-            </g>
-          )
-        })}
-      </svg>
-
-      {hoveredBar !== null && (
-        <div className="absolute pointer-events-none bg-white rounded-lg shadow-lg px-3 py-2 z-10" style={{ left: tooltipPos.x, top: tooltipPos.y - 50, transform: 'translateX(-50%)' }}>
-          <p className="font-body text-[13px] font-medium text-deep-navy whitespace-nowrap">
-            {data[hoveredBar].year}: {formatCurrency(data[hoveredBar].amount)}
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
+import DonationAttributionBanner from '../components/DonationAttributionBanner'
+import ImpactWidget from '../components/ImpactWidget'
 
 // ---- Metric Card ----
 // ---- Data freshness badge ----
@@ -279,7 +170,6 @@ function adaptOrg(apiOrg: ApiOrganization) {
     programs: [] as string[],
     leadership: [] as { name: string; title: string; initials: string }[],
     boardSize: 0,
-    revenueTrend: [] as { year: number; amount: number }[],
     programEfficiency: meritScore,
     fundraisingRatio: 0,
     operatingReserve: 0,
@@ -316,7 +206,6 @@ export default function OrganizationDetail() {
   const [showScoreExplainer, setShowScoreExplainer] = useState(false)
   const [showVolunteer, setShowVolunteer] = useState(false)
   const [showResources, setShowResources] = useState(false)
-  const { isInList, items: givingItems, addItem, removeItem } = useGivingList()
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
     () => getOrganization(id || ''),
@@ -350,9 +239,6 @@ export default function OrganizationDetail() {
   )
   const serviceArea = serviceAreaData ?? null
   const similarApiOrgs: ApiOrganization[] = (similarData?.results ?? []) as ApiOrganization[]
-  const revenueTrend = financials
-    .filter(f => f.totrevenue !== null && f.totrevenue > 0)
-    .map(f => ({ year: f.tax_prd_yr, amount: f.totrevenue! }))
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -369,9 +255,6 @@ export default function OrganizationDetail() {
   }, [apiOrg, similarApiOrgs])
 
   const similarOrgs = useMemo(() => rawSimilarOrgs.map(adaptOrg), [rawSimilarOrgs])
-
-  const inList = isInList(org?.ein || '')
-  const hasGiven = givingItems.some(i => i.ein === (org?.ein || '') && i.status === 'given')
 
   const metaTitle = apiOrg?.organization_name ?? ''
   const metaDesc = apiOrg
@@ -406,25 +289,6 @@ export default function OrganizationDetail() {
   const v4Health     = getV4FinancialHealth(apiOrg!)
   const badges = getOrgBadges(apiOrg!)
 
-  const givePayload = {
-    ein: org.ein,
-    orgName: org.name,
-    city: org.city || undefined,
-    state: org.state || undefined,
-    ntee1: org.category || undefined,
-    amount: 0,
-    trustTier: lampTier,
-    trustSummary,
-  }
-
-  const handleGiveToggle = () => {
-    if (inList) {
-      removeItem(org.ein)
-    } else {
-      addItem(givePayload)
-    }
-  }
-
   return (
     <div className="min-h-[100dvh]">
       {/* Profile Header */}
@@ -440,38 +304,24 @@ export default function OrganizationDetail() {
             </div>
             <button
               onClick={() => toggleSave(org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })}
-              title={isSaved(org.ein) ? 'Remove from saved' : 'Save organization'}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border transition-all duration-150 font-body text-[12px] font-medium"
+              title={isSaved(org.ein) ? 'Remove from wallet' : 'Save to wallet'}
+              className="inline-flex items-center gap-2 px-5 py-1.5 rounded-full font-body text-[13px] font-semibold transition-all duration-150"
               style={{
-                borderColor: isSaved(org.ein) ? '#C9A96E' : 'rgba(201,169,110,0.3)',
-                color: isSaved(org.ein) ? '#C9A96E' : '#A89F94',
-                background: isSaved(org.ein) ? 'rgba(201,169,110,0.1)' : 'transparent',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill={isSaved(org.ein) ? '#C9A96E' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-              {isSaved(org.ein) ? 'Saved' : 'Save'}
-            </button>
-
-            {/* Desktop Give button */}
-            <button
-              onClick={handleGiveToggle}
-              className="hidden md:inline-flex items-center gap-2 px-5 py-1.5 rounded-full font-body text-[13px] font-semibold transition-all duration-150"
-              style={{
-                backgroundColor: inList ? 'transparent' : '#C9A96E',
-                color: inList ? '#C9A96E' : '#0A1628',
-                border: inList ? '1px solid #C9A96E' : '1px solid transparent',
+                backgroundColor: isSaved(org.ein) ? 'transparent' : '#C9A96E',
+                color: isSaved(org.ein) ? '#C9A96E' : '#0A1628',
+                border: isSaved(org.ein) ? '1px solid #C9A96E' : '1px solid transparent',
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24"
-                fill="none"
-                stroke={inList ? '#C9A96E' : '#0A1628'}
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                fill={isSaved(org.ein) ? '#C9A96E' : 'none'}
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
-              {inList ? 'Saved to Wallet' : 'Save to Wallet'}
+              {isSaved(org.ein) ? 'Saved to Wallet' : 'Save to Wallet'}
             </button>
           </div>
 
@@ -616,7 +466,49 @@ export default function OrganizationDetail() {
                         </p>
                       )}
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                        External link. Daanaa does not process donations or collect donor payment information.
+                        External link. Daanaa does not process donations or collect donor payment information.</p>
+                    </div>
+                  );
+                }
+
+                return null;
+              })()}
+
+              {/* Contact phone */}
+              {apiOrg?.phone && (
+                <div className="mt-4">
+                  <a
+                    href={`tel:${apiOrg.phone}`}
+                    className="inline-flex items-center gap-2 font-body text-[15px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    {apiOrg.phone}
+                  </a>
+                  <p className="mt-1.5 font-body text-[11px] text-cool-grey">
+                    Questions about volunteering? Call the organization directly.
+                  </p>
+                </div>
+              )}
+
+              {/* Stats continue below */}
+              {(() => {
+                const websiteVerified = apiOrg?.website_status === 'ok' || apiOrg?.website_status === 'beta';
+                const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
+
+                if (!link.url) {
+                  return (
+                    <div className="mt-5">
+                      <a
+                        href={`https://www.irs.gov/pub/irs-soi/19eo${org.ein.substring(0, 1)}.zip`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-warm-cream text-deep-navy px-7 py-3 rounded-full hover:bg-warm-cream/80 transition-colors"
+                      >
+                        IRS 990-N Record
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                      </a>
+                      <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
+                        IRS public record. Daanaa does not process donations or collect donor payment information.
                       </p>
                       <button
                         onClick={() => setShowVolunteer(true)}
@@ -648,26 +540,6 @@ export default function OrganizationDetail() {
 
               {/* Loop-closer: connect the give moment to a private record.
                   Appears under whichever CTA rendered. */}
-              <div className="mt-4">
-                {hasGiven ? (
-                  <span className="inline-flex items-center gap-2 font-body text-[13px] text-emerald-400">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                    In your Giving Wallet
-                    <Link to="/wallet" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">View</Link>
-                  </span>
-                ) : (
-                  <button
-                    onClick={handleGiveToggle}
-                    className="inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    Keep a private record of this gift
-                  </button>
-                )}
-                <p className="mt-1.5 font-body text-[11px] text-muted-cream leading-[1.5] max-w-[340px]">
-                  Saved on your device only, for your tax records. Never shared, never tracked.
-                </p>
-              </div>
             </div>
 
             {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) && (
@@ -785,6 +657,9 @@ export default function OrganizationDetail() {
             {/* LEFT COLUMN -- main content */}
             <div className="min-w-0">
 
+      {/* Donation Attribution Banner */}
+      {apiOrg && <DonationAttributionBanner org={apiOrg} />}
+
       {/* Financial Overview */}
       <div className="py-0">
         <div>
@@ -871,10 +746,10 @@ export default function OrganizationDetail() {
             </div>
           )}
 
-          {/* Financial Context Assessment — stewardship-aligned (P3, P4, P5, P6, P9) */}
-          {apiOrg! && (
+          {/* Community Impact */}
+          {apiOrg && (
             <div className="mb-8">
-              <FinancialContext org={apiOrg!} />
+              <ImpactWidget orgEin={apiOrg.EIN} size="small" />
             </div>
           )}
 
@@ -1104,37 +979,6 @@ export default function OrganizationDetail() {
         </div>
       </div>
 
-      {/* Revenue Trend -- its own full-width block, below the About / claim space.
-          Wide and clearly defined so it's easy to read for anyone learning more. */}
-      {revenueTrend.length >= 2 && (() => {
-        const first = revenueTrend[0].amount
-        const last = revenueTrend[revenueTrend.length - 1].amount
-        const trendWindow = revenueTrend.slice(-5)
-        const trendFirst  = trendWindow[0].amount
-        const trendYears  = trendWindow.length - 1
-        const pct = (first === 0 || trendFirst === 0) ? 0 : Math.round(((last - trendFirst) / trendFirst) * 100)
-        const isFlat = Math.abs(pct) < 2
-        return (
-          <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
-            <div className="flex items-center gap-3 mb-5 flex-wrap">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Revenue over time</span>
-              {first !== 0 && (
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border"
-                  style={isFlat
-                    ? { background: '#F5F4F2', borderColor: '#D9D4CE', color: '#6B7280' }
-                    : pct > 0
-                    ? { background: '#ECFDF5', borderColor: '#A7F3D0', color: '#065F46' }
-                    : { background: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
-                >
-                  <span>{isFlat ? '→' : pct > 0 ? '↗' : '↘'}</span>
-                  <span>{isFlat ? 'Flat' : `${pct > 0 ? '+' : ''}${pct}%`} over {trendYears} year{trendYears !== 1 ? 's' : ''}</span>
-                </span>
-              )}
-            </div>
-            <RevenueChart data={revenueTrend} />
-          </div>
-        )
-      })()}
 
       {/* Mission & Programs */}
       <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
@@ -1566,25 +1410,27 @@ export default function OrganizationDetail() {
         </div>
       )}
 
-      {/* Mobile sticky Give CTA */}
+      {/* Mobile sticky Save to Wallet CTA */}
       <div className="md:hidden fixed bottom-[60px] left-0 right-0 z-40 px-4 pb-2">
         <button
-          onClick={handleGiveToggle}
+          onClick={() => toggleSave(org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })}
           className="w-full py-4 rounded-full font-body text-[15px] font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
           style={{
-            backgroundColor: inList ? '#0A1628' : '#C9A96E',
-            color: inList ? '#C9A96E' : '#0A1628',
-            border: inList ? '1px solid #C9A96E' : 'none',
+            backgroundColor: isSaved(org.ein) ? 'transparent' : '#C9A96E',
+            color: isSaved(org.ein) ? '#C9A96E' : '#0A1628',
+            border: isSaved(org.ein) ? '1px solid #C9A96E' : 'none',
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24"
-            fill="none"
-            stroke={inList ? '#C9A96E' : '#0A1628'}
-            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+            fill={isSaved(org.ein) ? '#C9A96E' : 'none'}
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
-          {inList ? 'Remove from Wallet' : 'Save to Wallet'}
+          {isSaved(org.ein) ? 'Remove from Wallet' : 'Save to Wallet'}
         </button>
       </div>
 

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
-import { useSavedOrgs } from '../hooks/useSavedOrgs'
-import { Link } from 'react-router-dom'
 import LogVolunteerHours from '../components/LogVolunteerHours'
 import VerifiedHours from '../components/VerifiedHours'
-import { getWalletSummary, getSavedOrganizations, SavedOrganization, WalletSummary } from '../data/api'
+
+interface WalletSummary {
+  logged_hours: { count: number; total_hours: number }
+  verified_hours: { count: number; total_hours: number; estimated_value: number }
+}
 
 export default function ImpactWallet() {
   usePageMeta(
@@ -13,10 +15,8 @@ export default function ImpactWallet() {
     'Track your giving, volunteering, and community impact.'
   )
 
-  const { user, loading: authLoading, getIdToken } = useAuth()
-  const { savedOrgs: localSavedOrgs } = useSavedOrgs()
+  const { user, loading: authLoading } = useAuth()
   const [summary, setSummary] = useState<WalletSummary | null>(null)
-  const [savedOrgs, setSavedOrgs] = useState<SavedOrganization[]>([])
   const [loading, setLoading] = useState(true)
   const [showLogForm, setShowLogForm] = useState(false)
 
@@ -24,31 +24,22 @@ export default function ImpactWallet() {
     if (authLoading) return
     if (!user) return
 
-    const fetchWalletData = async () => {
+    const loadSummary = async () => {
       try {
-        const idToken = await getIdToken()
-        if (!idToken) {
-          console.error('No auth token available')
-          setLoading(false)
-          return
+        const response = await fetch('/api/wallet/summary')
+        if (response.ok) {
+          const data = await response.json()
+          setSummary(data)
         }
-
-        const [summaryData, savedOrgsData] = await Promise.all([
-          getWalletSummary(idToken),
-          getSavedOrganizations(idToken),
-        ])
-
-        setSummary(summaryData)
-        setSavedOrgs(savedOrgsData)
       } catch (err) {
-        console.error('Error fetching wallet data:', err)
+        console.error('Error fetching wallet summary:', err)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchWalletData()
-  }, [user, authLoading, getIdToken])
+    loadSummary()
+  }, [user, authLoading])
 
   if (authLoading || loading) {
     return (
@@ -140,37 +131,6 @@ export default function ImpactWallet() {
             <div className="bg-white border border-light-grey rounded-xl p-6">
               <h2 className="text-xl font-display text-deep-navy mb-6">Hours Confirmed by Nonprofits</h2>
               <VerifiedHours />
-            </div>
-
-            {/* Saved Organizations */}
-            <div className="bg-white border border-light-grey rounded-xl p-6">
-              <h2 className="text-xl font-display text-deep-navy mb-6">Saved Organizations</h2>
-              {savedOrgs.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-cool-grey mb-3">No saved organizations yet.</p>
-                  <p className="text-sm text-slate-500">
-                    Browse the directory and click "Save to Wallet" to bookmark nonprofits you want to remember.
-                  </p>
-                  <Link to="/directory" className="inline-block mt-4 px-4 py-2 bg-soft-gold text-white rounded-lg font-medium hover:bg-soft-gold/90 transition-colors text-sm">
-                    Browse Directory
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {savedOrgs.map((org) => (
-                    <Link
-                      key={org.ein}
-                      to={`/org/${org.ein}`}
-                      className="block p-4 bg-warm-cream rounded-lg border border-light-grey/50 hover:border-soft-gold hover:bg-warm-cream/70 transition-colors"
-                    >
-                      <p className="font-semibold text-deep-navy">{org.name}</p>
-                      {org.city && org.state && (
-                        <p className="text-sm text-cool-grey mt-1">{org.city}, {org.state}</p>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 

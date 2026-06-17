@@ -3,7 +3,7 @@
 Daanaa API — Peer-context nonprofit directory backend
 Serves registry_enriched + v4 scores to frontend
 """
-import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
+import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets, logging
 from datetime import datetime
 import numpy as np
 import requests as _http
@@ -15,11 +15,17 @@ from twilio.twiml.voice_response import VoiceResponse
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.request_validator import RequestValidator
 
+_logger = logging.getLogger(__name__)
+
 # Firebase token verification using public keys — no service account file required.
 # Firebase publishes its signing certs at a well-known URL; cached for 1 hour.
 import jwt as _pyjwt
 
 _FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID', 'daanaa-af9c2')
+_FIRESTORE_PROJECT_ID = os.environ.get('FIRESTORE_PROJECT_ID', 'the-giving-wallet')
+_FIRESTORE_API_KEY = os.environ.get('FIRESTORE_API_KEY', '')
+_FIRESTORE_BASE_URL = f'https://firestore.googleapis.com/v1/projects/{_FIRESTORE_PROJECT_ID}/databases/(default)/documents'
+
 _FIREBASE_PUBKEYS_URL = (
     'https://www.googleapis.com/robot/v1/metadata/x509/'
     'securetoken@system.gserviceaccount.com'
@@ -76,6 +82,137 @@ def _require_firebase_user() -> str:
         return uid
     except Exception:
         abort(401)
+
+
+def _firestore_value(val) -> dict:
+    """Convert Python value to Firestore value format."""
+    if val is None:
+        return {'nullValue': None}
+    elif isinstance(val, bool):
+        return {'booleanValue': val}
+    elif isinstance(val, (int, float)):
+        return {'doubleValue': float(val)} if isinstance(val, float) else {'integerValue': str(val)}
+    elif isinstance(val, str):
+        return {'stringValue': val}
+    elif isinstance(val, list):
+        return {'arrayValue': {'values': [_firestore_value(v) for v in val]}}
+    elif isinstance(val, dict):
+        return {'mapValue': {'fields': {k: _firestore_value(v) for k, v in val.items()}}}
+    else:
+        return {'stringValue': str(val)}
+
+
+def _firestore_unpack(fval: dict):
+    """Convert Firestore value format to Python value."""
+    if 'nullValue' in fval:
+        return None
+    elif 'booleanValue' in fval:
+        return fval['booleanValue']
+    elif 'integerValue' in fval:
+        return int(fval['integerValue'])
+    elif 'doubleValue' in fval:
+        return float(fval['doubleValue'])
+    elif 'stringValue' in fval:
+        return fval['stringValue']
+    elif 'arrayValue' in fval:
+        return [_firestore_unpack(v) for v in fval['arrayValue'].get('values', [])]
+    elif 'mapValue' in fval:
+        return {k: _firestore_unpack(v) for k, v in fval['mapValue'].get('fields', {}).items()}
+    elif 'timestampValue' in fval:
+        return fval['timestampValue']
+    return None
+
+
+def _firestore_get(collection: str, document: str, user_id: str = None) -> dict:
+    """Fetch a document from Firestore. If user_id is provided, prepends it to path."""
+    try:
+        if user_id:
+            path = f'{user_id}/{collection}/{document}'
+        else:
+            path = f'{collection}/{document}'
+
+        url = f'{_FIRESTORE_BASE_URL}/{path}'
+        resp = _http.get(url, params={'key': _FIRESTORE_API_KEY}, timeout=5)
+
+        if resp.status_code == 404:
+            return None
+        resp.raise_for_status()
+
+        doc = resp.json()
+        if 'fields' not in doc:
+            return None
+
+        return {k: _firestore_unpack(v) for k, v in doc['fields'].items()}
+    except Exception as e:
+        _logger.error(f"Firestore GET error: {e}")
+        return None
+
+
+def _firestore_set(collection: str, document: str, data: dict, user_id: str = None, merge: bool = False) -> bool:
+    """Set a document in Firestore."""
+    try:
+        if user_id:
+            path = f'{user_id}/{collection}/{document}'
+        else:
+            path = f'{collection}/{document}'
+
+        url = f'{_FIRESTORE_BASE_URL}/{path}'
+        body = {
+            'fields': {k: _firestore_value(v) for k, v in data.items()}
+        }
+
+        params = {'key': _FIRESTORE_API_KEY}
+        if merge:
+            params['updateMask.fieldPaths'] = list(data.keys())
+
+        resp = _http.patch(url, json=body, params=params, timeout=5)
+        resp.raise_for_status()
+        return True
+    except Exception as e:
+        _logger.error(f"Firestore SET error: {e}")
+        return False
+
+
+def _firestore_delete(collection: str, document: str, user_id: str = None) -> bool:
+    """Delete a document from Firestore."""
+    try:
+        if user_id:
+            path = f'{user_id}/{collection}/{document}'
+        else:
+            path = f'{collection}/{document}'
+
+        url = f'{_FIRESTORE_BASE_URL}/{path}'
+        resp = _http.delete(url, params={'key': _FIRESTORE_API_KEY}, timeout=5)
+        resp.raise_for_status()
+        return True
+    except Exception as e:
+        _logger.error(f"Firestore DELETE error: {e}")
+        return False
+
+
+def _firestore_list(collection: str, user_id: str = None) -> list:
+    """List all documents in a collection."""
+    try:
+        if user_id:
+            path = f'{user_id}/{collection}'
+        else:
+            path = collection
+
+        url = f'{_FIRESTORE_BASE_URL}/{path}'
+        resp = _http.get(url, params={'key': _FIRESTORE_API_KEY}, timeout=5)
+        resp.raise_for_status()
+
+        data = resp.json()
+        docs = data.get('documents', [])
+
+        return [{
+            'id': doc['name'].split('/')[-1],
+            **{k: _firestore_unpack(v) for k, v in doc.get('fields', {}).items()}
+        } for doc in docs]
+    except Exception as e:
+        _logger.error(f"Firestore LIST error: {e}")
+        return []
+
 
 def _real_ip() -> str:
     # Cloudflare sets CF-Connecting-IP; fall back to X-Forwarded-For, then REMOTE_ADDR.
@@ -863,7 +1000,7 @@ def _log_org_activity(ein: str, event_type: str, detail: str = '', actor: str = 
             (ein, event_type, (detail or '')[:500], actor))
         db.commit()
     except Exception as e:
-        app.logger.error(f"org_activity log failed for {ein}/{event_type}: {e}")
+        _logger.error(f"org_activity log failed for {ein}/{event_type}: {e}")
 
 
 def _init_feedback_table():
@@ -2355,7 +2492,7 @@ def _send_daanaa_email(to_addr: str, subject: str, body: str,
             raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
             gmail_service().users().messages().send(userId="me", body={"raw": raw}).execute()
         except Exception as e:
-            app.logger.error(f"daanaa email to {to_addr} failed: {e}")
+            _logger.error(f"daanaa email to {to_addr} failed: {e}")
 
     threading.Thread(target=_send, daemon=True).start()
 
@@ -2578,7 +2715,7 @@ def claim_start():
                 )
                 db.commit()
         except Exception as e:
-            app.logger.error(f"send_claim_letter failed for {ein}: {e}")
+            _logger.error(f"send_claim_letter failed for {ein}: {e}")
 
     # Friendly address preview (first line only for privacy)
     preview = f"{street}, {row['CITY']}, {row['STATE']}" if street else irs_address
@@ -4549,25 +4686,37 @@ def research_metadata():
 
 
 # ── Frontend static serving ────────────────────────────────────────────────
-# ── Donor wallet sync ────────────────────────────────────────────────────────
-# One row per firebase_uid. Donations and volunteer hours stored as JSON blobs.
-# No PII beyond what the donor explicitly logged. GDPR delete via DELETE.
+# ── Impact Wallet (Firestore) ────────────────────────────────────────────────
+# User's saved organizations, volunteer hours, giving intent stored in Firestore.
+# Accessible even when home server is down. Privacy: no PII beyond what user logs.
 
-@app.route('/api/wallet', methods=['GET'])
-def wallet_get():
+@app.route('/api/wallet/summary', methods=['GET'])
+def wallet_summary():
+    """Get wallet summary for authenticated user."""
     uid = _require_firebase_user()
-    with sqlite3.connect(DB_PATH) as db:
-        db.row_factory = sqlite3.Row
-        _ensure_wallet_sync_table(db)
-        row = db.execute(
-            'SELECT donations_json, volunteer_json FROM wallet_sync WHERE firebase_uid = ?', (uid,)
-        ).fetchone()
-    if not row:
-        return jsonify({'donations': [], 'volunteerHours': []})
+
+    logged_hours = _firestore_list('volunteer_hour_logs', user_id=uid)
+    verified_hours = _firestore_list('volunteer_hour_confirmations', user_id=uid)
+    saved_orgs = _firestore_get('saved_organizations', 'data', user_id=uid) or {}
+    funded_log = _firestore_list('funded_log', user_id=uid)
+
+    total_logged = sum(h.get('hours_logged', 0) for h in logged_hours)
+    total_verified = sum(h.get('hours_confirmed', 0) for h in verified_hours)
+    total_value = sum(h.get('estimated_value', 0) for h in verified_hours)
+
     return jsonify({
-        'donations':      json.loads(row['donations_json']),
-        'volunteerHours': json.loads(row['volunteer_json']),
-    })
+        'logged_hours': {
+            'count': len(logged_hours),
+            'total_hours': float(total_logged),
+        },
+        'verified_hours': {
+            'count': len(verified_hours),
+            'total_hours': float(total_verified),
+            'estimated_value': float(total_value),
+        },
+        'saved_orgs': len(saved_orgs.get('orgs', {})),
+        'funded_items': len(funded_log),
+    }), 200
 
 
 @app.route('/api/claim/phone-callback', methods=['POST'])
@@ -4729,35 +4878,205 @@ def claim_sms_callback():
         return str(resp), 200, {'Content-Type': 'text/xml'}
 
 
-@app.route('/api/wallet', methods=['PUT'])
-def wallet_put():
+@app.route('/api/wallet/saved-organizations', methods=['GET', 'POST', 'DELETE'])
+def wallet_saved_organizations():
+    """Manage saved nonprofit organizations."""
     uid = _require_firebase_user()
-    data = request.get_json(silent=True) or {}
-    donations = data.get('donations', [])
-    volunteer = data.get('volunteerHours', [])
-    if not isinstance(donations, list) or not isinstance(volunteer, list):
-        return jsonify({'error': 'donations and volunteerHours must be arrays'}), 400
-    with sqlite3.connect(DB_PATH) as db:
-        _ensure_wallet_sync_table(db)
-        db.execute("""
-            INSERT INTO wallet_sync (firebase_uid, donations_json, volunteer_json, updated_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-            ON CONFLICT(firebase_uid) DO UPDATE SET
-                donations_json = excluded.donations_json,
-                volunteer_json = excluded.volunteer_json,
-                updated_at     = excluded.updated_at
-        """, (uid, json.dumps(donations), json.dumps(volunteer)))
-    return jsonify({'ok': True})
+    db = get_db()
+
+    if request.method == 'GET':
+        saved = _firestore_get('saved_organizations', 'data', user_id=uid) or {'orgs': {}}
+        orgs_dict = saved.get('orgs', {})
+
+        orgs_list = []
+        for ein, org_data in orgs_dict.items():
+            if isinstance(org_data, dict):
+                orgs_list.append({
+                    'ein': ein,
+                    **org_data
+                })
+
+        return jsonify({'saved_organizations': orgs_list}), 200
+
+    elif request.method == 'POST':
+        data = request.get_json() or {}
+        ein = (data.get('ein') or '').strip()
+        ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+        if not ein or len(ein) != 9:
+            return jsonify({'error': 'Invalid EIN'}), 400
+
+        org = db.execute(
+            "SELECT organization_name, city, state, ntee1 FROM registry_enriched WHERE EIN = ?",
+            (ein,)
+        ).fetchone()
+
+        if not org:
+            return jsonify({'error': 'Organization not found'}), 404
+
+        saved = _firestore_get('saved_organizations', 'data', user_id=uid) or {'orgs': {}}
+        if not isinstance(saved.get('orgs'), dict):
+            saved['orgs'] = {}
+
+        saved['orgs'][ein] = {
+            'name': org['organization_name'],
+            'city': org['city'],
+            'state': org['state'],
+            'ntee1': org['ntee1'],
+            'saved_at': datetime.utcnow().isoformat(),
+        }
+
+        if _firestore_set('saved_organizations', 'data', saved, user_id=uid):
+            return jsonify({'success': True, 'ein': ein}), 201
+        return jsonify({'error': 'Failed to save'}), 500
+
+    elif request.method == 'DELETE':
+        ein = request.args.get('ein', '').strip()
+        ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+        if not ein or len(ein) != 9:
+            return jsonify({'error': 'Invalid EIN'}), 400
+
+        saved = _firestore_get('saved_organizations', 'data', user_id=uid) or {'orgs': {}}
+        if ein in saved.get('orgs', {}):
+            del saved['orgs'][ein]
+            if _firestore_set('saved_organizations', 'data', saved, user_id=uid):
+                return jsonify({'success': True}), 200
+
+        return jsonify({'error': 'Not found'}), 404
+
+
+@app.route('/api/wallet/volunteer-hours', methods=['GET', 'POST'])
+def wallet_volunteer_hours():
+    """Get or log volunteer hours."""
+    uid = _require_firebase_user()
+    db = get_db()
+
+    if request.method == 'GET':
+        rows = _firestore_list('volunteer_hour_logs', user_id=uid)
+        return jsonify({'volunteer_hours': sorted(rows, key=lambda x: x.get('service_date', ''), reverse=True)}), 200
+
+    # POST: Log new volunteer hours
+    try:
+        data = request.get_json() or {}
+        nonprofit_ein = (data.get('nonprofit_ein') or '').strip()
+        nonprofit_ein = ''.join(c for c in nonprofit_ein if c.isdigit())[:10]
+        nonprofit_name = (data.get('nonprofit_name') or '').strip()
+        service_date = (data.get('service_date') or '').strip()
+        hours_logged = float(data.get('hours_logged') or 0)
+        notes = (data.get('notes') or '').strip()
+
+        # Validate
+        if not nonprofit_ein or len(nonprofit_ein) != 9:
+            return jsonify({'error': 'Invalid nonprofit EIN'}), 400
+        if not service_date:
+            return jsonify({'error': 'Service date required'}), 400
+        if hours_logged <= 0 or hours_logged > 24:
+            return jsonify({'error': 'Hours must be between 0.1 and 24'}), 400
+        if not nonprofit_name:
+            return jsonify({'error': 'Nonprofit name required'}), 400
+
+        # Verify nonprofit exists
+        org = db.execute(
+            "SELECT organization_name FROM registry_enriched WHERE EIN = ?",
+            (nonprofit_ein,)
+        ).fetchone()
+        if not org:
+            return jsonify({'error': 'Nonprofit not found'}), 404
+
+        # Create log entry in Firestore
+        log_id = secrets.token_urlsafe(16)
+        log_data = {
+            'nonprofit_ein': nonprofit_ein,
+            'nonprofit_name': nonprofit_name,
+            'service_date': service_date,
+            'hours_logged': hours_logged,
+            'notes': notes,
+            'created_at': datetime.utcnow().isoformat(),
+            'status': 'logged',
+        }
+
+        if _firestore_set('volunteer_hour_logs', log_id, log_data, user_id=uid):
+            return jsonify({'success': True, 'log_id': log_id}), 201
+        return jsonify({'error': 'Failed to log hours'}), 500
+
+    except ValueError:
+        return jsonify({'error': 'Invalid hours value'}), 400
+    except Exception as e:
+        _logger.error(f"Error logging volunteer hours: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/wallet/verified-hours', methods=['GET'])
+def wallet_verified_hours():
+    """Get nonprofit-verified volunteer hours."""
+    uid = _require_firebase_user()
+
+    rows = _firestore_list('volunteer_hour_confirmations', user_id=uid)
+    return jsonify({
+        'verified_hours': sorted(rows, key=lambda x: x.get('service_date', ''), reverse=True)
+    }), 200
+
+
+@app.route('/api/wallet/export', methods=['GET'])
+def wallet_export():
+    """Export wallet data as CSV (funded_log only per spec)."""
+    uid = _require_firebase_user()
+
+    import csv
+    import io
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Header
+    writer.writerow(['Date', 'Type', 'Nonprofit', 'Amount', 'Status', 'Notes'])
+
+    # Funded log entries (donations/giving intent)
+    funded = _firestore_list('funded_log', user_id=uid)
+    for entry in sorted(funded, key=lambda x: x.get('created_at', ''), reverse=True):
+        writer.writerow([
+            entry.get('created_at', '')[:10],  # Date only
+            'Donation' if entry.get('status') == 'intent' else 'Pledged',
+            entry.get('nonprofit_name', ''),
+            f"${entry.get('amount', 0):.2f}" if entry.get('amount') else '',
+            entry.get('status', 'intent'),
+            entry.get('notes', ''),
+        ])
+
+    csv_data = output.getvalue()
+    return csv_data, 200, {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': f'attachment; filename="daanaa-funded-log-{datetime.now().strftime("%Y%m%d")}.csv"'
+    }
 
 
 @app.route('/api/wallet', methods=['DELETE'])
 def wallet_delete():
     """GDPR-compliant: wipe all stored wallet data for this user."""
     uid = _require_firebase_user()
-    with sqlite3.connect(DB_PATH) as db:
-        _ensure_wallet_sync_table(db)
-        db.execute('DELETE FROM wallet_sync WHERE firebase_uid = ?', (uid,))
-    return jsonify({'ok': True})
+
+    # Delete all wallet collections for this user
+    collections = [
+        'saved_organizations',
+        'volunteer_hour_logs',
+        'volunteer_hour_confirmations',
+        'funded_log',
+        'consent_logs',
+        'audit_logs',
+    ]
+
+    for collection in collections:
+        docs = _firestore_list(collection, user_id=uid)
+        for doc in docs:
+            doc_id = doc.get('id')
+            if doc_id:
+                _firestore_delete(collection, doc_id, user_id=uid)
+
+    # Also delete the saved_organizations map document
+    _firestore_delete('saved_organizations', 'data', user_id=uid)
+
+    return jsonify({'success': True, 'message': 'All wallet data deleted'}), 200
 
 
 @app.route('/', defaults={'path': ''})

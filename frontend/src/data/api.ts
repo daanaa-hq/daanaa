@@ -110,6 +110,7 @@ export interface ApiOrganization {
   mission_source?: string | null;        // 'ai_ntee'|'ai_haiku'|'ai_web'|'lucido'|'claimed'|null
   website?: string | null;
   website_status?: string | null;        // 'ok' = verified live & on-domain; else fall back to EIN record
+  phone?: string | null;                 // Organization phone number from 990
   // Data provenance — which fields are AI-generated vs verified
   data_badges?: {
     mission?: string | null;   // 'ai_ntee' | 'scraped' | 'claimed' | null
@@ -606,4 +607,138 @@ export async function getPortalToken(ein: string, idToken: string): Promise<stri
   if (!res.ok) throw new Error('portal-token failed')
   const data = await res.json()
   return data.verification_token
+}
+
+// ── Impact Wallet (Firestore) ─────────────────────────────────────────────────
+
+export interface WalletSummary {
+  logged_hours: { count: number; total_hours: number }
+  verified_hours: { count: number; total_hours: number; estimated_value: number }
+  saved_orgs: number
+  funded_items: number
+}
+
+export interface VolunteerHourLog {
+  id: string
+  nonprofit_ein: string
+  nonprofit_name: string
+  service_date: string
+  hours_logged: number
+  notes?: string
+  created_at: string
+  status: string
+}
+
+export interface VerifiedHour {
+  id: string
+  nonprofit_ein: string
+  nonprofit_name: string
+  service_date: string
+  hours_confirmed: number
+  estimated_value: number
+  notes?: string
+  confirmed_at: string
+}
+
+export interface SavedOrganization {
+  ein: string
+  name: string
+  city?: string
+  state?: string
+  ntee1?: string
+  saved_at: string
+}
+
+export async function getWalletSummary(idToken: string): Promise<WalletSummary> {
+  const res = await fetch(`${API_BASE}/api/wallet/summary`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('wallet summary failed')
+  return res.json()
+}
+
+export async function getLoggedHours(idToken: string): Promise<VolunteerHourLog[]> {
+  const res = await fetch(`${API_BASE}/api/wallet/volunteer-hours`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('logged hours failed')
+  const data = await res.json()
+  return data.volunteer_hours ?? []
+}
+
+export async function logVolunteerHours(
+  idToken: string,
+  nonprofitEin: string,
+  nonprofitName: string,
+  serviceDate: string,
+  hoursLogged: number,
+  notes?: string,
+): Promise<{ success: boolean; log_id: string }> {
+  const res = await fetch(`${API_BASE}/api/wallet/volunteer-hours`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({
+      nonprofit_ein: nonprofitEin,
+      nonprofit_name: nonprofitName,
+      service_date: serviceDate,
+      hours_logged: hoursLogged,
+      notes,
+    }),
+  })
+  if (!res.ok) throw new Error('log hours failed')
+  return res.json()
+}
+
+export async function getVerifiedHours(idToken: string): Promise<VerifiedHour[]> {
+  const res = await fetch(`${API_BASE}/api/wallet/verified-hours`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('verified hours failed')
+  const data = await res.json()
+  return data.verified_hours ?? []
+}
+
+export async function getSavedOrganizations(idToken: string): Promise<SavedOrganization[]> {
+  const res = await fetch(`${API_BASE}/api/wallet/saved-organizations`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('saved orgs failed')
+  const data = await res.json()
+  return data.saved_organizations ?? []
+}
+
+export async function addSavedOrganization(idToken: string, ein: string): Promise<{ success: boolean; ein: string }> {
+  const res = await fetch(`${API_BASE}/api/wallet/saved-organizations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ ein }),
+  })
+  if (!res.ok) throw new Error('save org failed')
+  return res.json()
+}
+
+export async function removeSavedOrganization(idToken: string, ein: string): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_BASE}/api/wallet/saved-organizations?ein=${encodeURIComponent(ein)}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('remove org failed')
+  return res.json()
+}
+
+export async function exportWalletCSV(idToken: string): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/api/wallet/export`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('export failed')
+  return res.blob()
+}
+
+export async function deleteAllWalletData(idToken: string): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_BASE}/api/wallet`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('delete failed')
+  return res.json()
 }
