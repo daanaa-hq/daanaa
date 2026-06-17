@@ -5,7 +5,7 @@ import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { Link } from 'react-router-dom'
 import LogVolunteerHours from '../components/LogVolunteerHours'
 import VerifiedHours from '../components/VerifiedHours'
-import { getWalletSummary, getSavedOrganizations, SavedOrganization, WalletSummary } from '../data/api'
+import { getWalletSummary, getSavedOrganizations, SavedOrganization, WalletSummary, getLoggedHours, VolunteerHourLog } from '../data/api'
 
 export default function ImpactWallet() {
   usePageMeta(
@@ -205,17 +205,21 @@ export default function ImpactWallet() {
 }
 
 function LoggedHoursList() {
-  const [hours, setHours] = useState<any[]>([])
+  const { getIdToken } = useAuth()
+  const [hours, setHours] = useState<VolunteerHourLog[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const loadHours = async () => {
       try {
-        const response = await fetch('/api/wallet/volunteer-hours')
-        if (response.ok) {
-          const data = await response.json()
-          setHours(data.volunteer_hours)
+        const token = await getIdToken()
+        if (!token) {
+          console.error('No auth token available')
+          setLoading(false)
+          return
         }
+        const data = await getLoggedHours(token)
+        setHours(data)
       } catch (err) {
         console.error('Error fetching hours:', err)
       } finally {
@@ -223,7 +227,7 @@ function LoggedHoursList() {
       }
     }
     loadHours()
-  }, [])
+  }, [getIdToken])
 
   if (loading) return <div className="text-center text-cool-grey">Loading...</div>
   if (hours.length === 0) {
