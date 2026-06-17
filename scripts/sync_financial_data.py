@@ -72,25 +72,65 @@ def sync():
 
         log(f"✓ Data synced to droplet")
 
-        # 3. Import on droplet via SSH
+        # 3. Create import script on droplet and execute
         log("Importing data on droplet...")
-        import_sql = f"""
-        CREATE TEMP TABLE financial_import (
-            ein TEXT, revenue REAL, expenses REAL, net_assets REAL,
-            months_of_reserve REAL, program_pct REAL, health_signal TEXT,
-            archetype TEXT, band TEXT, peer_count INT
-        );
-        .mode csv
-        .import {DROPLET_SYNC_DIR}/financial_data.csv financial_import
-        UPDATE orgs SET
-            revenue = i.revenue, expenses = i.expenses, net_assets = i.net_assets,
-            months_of_reserve = i.months_of_reserve, program_pct = i.program_pct,
-            health_signal = i.health_signal, archetype = i.archetype,
-            band = i.band, peer_count = i.peer_count
-        FROM financial_import i WHERE orgs.ein = i.ein;
-        """
+        import_script = f"""
+CREATE TEMP TABLE financial_import AS SELECT
+  ein, revenue, expenses, net_assets, months_of_reserve,
+  program_pct, health_signal, archetype, band, peer_count
+FROM csv_import('{DROPLET_SYNC_DIR}/financial_data.csv');
 
-        cmd = f'sqlite3 {DROPLET_DB} "{import_sql}" && rm {DROPLET_SYNC_DIR}/financial_data.csv'
+UPDATE orgs SET
+  revenue = (SELECT revenue FROM financial_import WHERE ein = orgs.ein LIMIT 1),
+  expenses = (SELECT expenses FROM financial_import WHERE ein = orgs.ein LIMIT 1),
+  net_assets = (SELECT net_assets FROM financial_import WHERE ein = orgs.ein LIMIT 1),
+  months_of_reserve = (SELECT months_of_reserve FROM financial_import WHERE ein = orgs.ein LIMIT 1),
+  program_pct = (SELECT program_pct FROM financial_import WHERE ein = orgs.ein LIMIT 1),
+  health_signal = (SELECT health_signal FROM financial_import WHERE ein = orgs.ein LIMIT 1),
+  archetype = (SELECT archetype FROM financial_import WHERE ein = orgs.ein LIMIT 1),
+  band = (SELECT band FROM financial_import WHERE ein = orgs.ein LIMIT 1),
+  peer_count = (SELECT peer_count FROM financial_import WHERE ein = orgs.ein LIMIT 1)
+WHERE ein IN (SELECT ein FROM financial_import);
+"""
+
+        # Import to droplet (financial columns only)
+        # Note: droplet search.db only has basic financial columns, not v5 context
+        cmd = f"""
+python3 << 'PYSCRIPT'
+import sqlite3
+import csv
+
+db = sqlite3.connect('{DROPLET_DB}')
+cur = db.cursor()
+
+# Import CSV data directly - droplet has: total_revenue, total_expenses, net_assets,
+# months_of_reserve, program_expense_pct (note the underscore naming)
+with open('{DROPLET_SYNC_DIR}/financial_data.csv', 'r') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        cur.execute('''
+            UPDATE orgs SET
+              total_revenue=?, total_expenses=?, net_assets=?,
+              months_of_reserve=?, program_expense_pct=?
+            WHERE ein=?
+        ''', (
+            float(row['revenue']) if row['revenue'] else None,
+            float(row['expenses']) if row['expenses'] else None,
+            float(row['net_assets']) if row['net_assets'] else None,
+            float(row['months_of_reserve']) if row['months_of_reserve'] else None,
+            float(row['program_pct']) if row['program_pct'] else None,
+            row['ein']
+        ))
+
+db.commit()
+db.close()
+
+import os
+os.unlink('{DROPLET_SYNC_DIR}/financial_data.csv')
+print('Financial data synced')
+PYSCRIPT
+"""
+
         result = subprocess.run(
             ["ssh", DROPLET_HOST, cmd],
             capture_output=True, text=True, timeout=600
