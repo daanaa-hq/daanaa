@@ -53,7 +53,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
+    provider.addScope('email')
+    provider.addScope('profile')
+    try {
+      await signInWithPopup(auth, provider)
+    } catch (error: any) {
+      console.error('Google sign-in error:', error.code, error.message)
+      // Re-throw with user-friendly message
+      if (error.code === 'auth/popup-blocked') {
+        throw new Error('Sign-in popup was blocked. Please allow popups and try again.')
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in was cancelled.')
+      } else if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection.')
+      }
+      throw new Error(error.message || 'Failed to sign in with Google')
+    }
   }
 
   const sendMagicLink = async (email: string) => {
