@@ -643,27 +643,6 @@ export default function Directory() {
                 </select>
                 <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
-              {/* Visibility Level */}
-              <div className="relative">
-                <select
-                  value={visTier}
-                  onChange={e => handleVisTierChange(e.target.value)}
-                  title="Filter by organizational visibility tier"
-                  aria-label="Filter by visibility level"
-                  className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
-                  style={{
-                    backgroundColor: visTier ? '#C9A96E' : 'transparent',
-                    color: visTier ? '#0A1628' : '#4B5563',
-                    borderColor: visTier ? '#C9A96E' : '#E5E0DB',
-                  }}
-                >
-                  <option value="">All visibility levels</option>
-                  {VISIBILITY_TIERS.map(t => (
-                    <option key={t.id} value={t.id}>{t.label} · {t.description}</option>
-                  ))}
-                </select>
-                <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </div>
             </div>
           </div>}
           </div>

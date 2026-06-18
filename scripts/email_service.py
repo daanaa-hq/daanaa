@@ -2,10 +2,15 @@
 
 import os
 import smtplib
+import json
+import requests
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dataclasses import dataclass
 from typing import Optional
+import logging
+
+logger = logging.getLogger(__name__)
 
 @dataclass
 class EmailTemplate:
@@ -24,11 +29,41 @@ class EmailService:
         self.smtp_password = os.getenv('SMTP_PASSWORD', '')
         self.from_email = os.getenv('FROM_EMAIL', 'noreply@daanaa.org')
         self.enabled = os.getenv('EMAIL_ENABLED', 'false').lower() == 'true'
+        self.firestore_base_url = os.getenv(
+            'FIRESTORE_BASE_URL',
+            'https://firestore.googleapis.com/v1/projects/daanaa-af9c2/databases/(default)/documents'
+        )
+        self.firestore_api_key = os.getenv('FIRESTORE_API_KEY', '')
+
+    def _fetch_user_email(self, user_id: str) -> Optional[str]:
+        """Fetch volunteer email from Firestore."""
+        if not self.firestore_api_key:
+            return None
+
+        try:
+            # Try to fetch from user's profile document in Firestore
+            url = f"{self.firestore_base_url}/{user_id}/profile/info?key={self.firestore_api_key}"
+            response = requests.get(url, timeout=5)
+
+            if response.status_code == 200:
+                data = response.json()
+                fields = data.get('fields', {})
+                email_field = fields.get('email', {})
+                return email_field.get('stringValue', '')
+
+            return None
+        except Exception as e:
+            logger.warning(f"Error fetching email for user {user_id}: {e}")
+            return None
 
     def send(self, to_email: str, subject: str, html: str, plain_text: str) -> bool:
         """Send an email."""
+        if not to_email:
+            logger.warning(f"No recipient email for: {subject}")
+            return False
+
         if not self.enabled:
-            print(f"[EMAIL DISABLED] Would send to {to_email}: {subject}")
+            logger.info(f"[EMAIL DISABLED] Would send to {to_email}: {subject}")
             return True
 
         try:
@@ -46,9 +81,10 @@ class EmailService:
                     server.login(self.smtp_user, self.smtp_password)
                 server.send_message(msg)
 
+            logger.info(f"Email sent to {to_email}: {subject}")
             return True
         except Exception as e:
-            print(f"Error sending email to {to_email}: {e}")
+            logger.error(f"Error sending email to {to_email}: {e}")
             return False
 
 def hours_verified_email(
