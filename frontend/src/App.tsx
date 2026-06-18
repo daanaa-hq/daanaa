@@ -39,6 +39,8 @@ const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
 const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
 const NonprofitDashboard = lazy(() => import('./pages/NonprofitDashboard'))
+const Partners = lazy(() => import('./pages/Partners'))
+const PartnerDetail = lazy(() => import('./pages/PartnerDetail'))
 
 function PageLoader() {
   return (
@@ -83,7 +85,8 @@ export default function App() {
             <Route path="/guides" element={<Learn />} />
             <Route path="/faq" element={<Learn />} />
             <Route path="/feedback" element={<Feedback />} />
-            <Route path="/partners" element={<Navigate to="/for-vendors" replace />} />
+            <Route path="/partners" element={<Partners />} />
+            <Route path="/partners/:vendor_id" element={<PartnerDetail />} />
             <Route path="/for-vendors" element={<ForVendors />} />
             <Route path="/vendor-policy" element={<VendorPolicy />} />
             <Route path="/terms" element={<Terms />} />

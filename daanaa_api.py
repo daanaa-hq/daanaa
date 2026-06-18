@@ -5291,6 +5291,261 @@ def nonprofit_verify_hours(ein: str, log_id: str):
         return jsonify({'error': 'Internal server error'}), 500
 
 
+# ── Vendor Partnership Reviews ──────────────────────────────────────────
+# Fully automated, zero-touch moderation. Nonprofits rate vendors (1-5 stars),
+# optionally report savings. Public display is anonymous; vendor sees nonprofit
+# name in private dashboard. AI validates: valid star, plausible savings, no spam.
+
+def _ai_validate_rating(stars: int, savings: int, nonprofit_ein: str) -> tuple[bool, str]:
+    """
+    Validate rating: star range, savings plausibility, spam patterns.
+    Returns (is_valid, reason_if_invalid).
+    """
+    if not isinstance(stars, int) or stars < 1 or stars > 5:
+        return False, "Star rating must be 1-5"
+    if not isinstance(savings, int) or savings < 0 or savings > 999999:
+        return False, "Savings must be 0-999999"
+    # Basic spam check: nonprofit exists
+    db = get_db()
+    org = db.execute("SELECT EIN FROM registry_enriched WHERE EIN = ?", (nonprofit_ein,)).fetchone()
+    if not org:
+        return False, "Nonprofit not found in registry"
+    return True, ""
+
+
+def _aggregate_vendor_stats(vendor_id: str):
+    """Recalculate and cache aggregated stats for a vendor."""
+    db = get_db()
+    stats = db.execute("""
+        SELECT
+            ROUND(AVG(stars), 2) as avg_rating,
+            COUNT(*) as rating_count,
+            SUM(savings_amount) as total_savings,
+            COUNT(CASE WHEN savings_amount > 0 THEN 1 END) as nonprofits_contributed
+        FROM vendor_ratings
+        WHERE vendor_id = ?
+    """, (vendor_id,)).fetchone()
+
+    if not stats:
+        stats = (None, 0, 0, 0)
+
+    avg_rating, rating_count, total_savings, nonprofits_contributed = stats
+    db.execute("""
+        INSERT INTO vendor_stats (vendor_id, avg_rating, rating_count, total_savings, nonprofits_contributed, last_aggregated_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT(vendor_id) DO UPDATE SET
+            avg_rating = ?,
+            rating_count = ?,
+            total_savings = ?,
+            nonprofits_contributed = ?,
+            last_aggregated_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+    """, (vendor_id, avg_rating, rating_count or 0, total_savings or 0, nonprofits_contributed or 0,
+          avg_rating, rating_count or 0, total_savings or 0, nonprofits_contributed or 0))
+    db.commit()
+
+
+@app.route('/api/vendors', methods=['GET'])
+def get_vendors():
+    """List all active vendors with aggregated stats."""
+    db = get_db()
+    vendors = db.execute("""
+        SELECT v.*, s.avg_rating, s.rating_count, s.total_savings
+        FROM vendors v
+        LEFT JOIN vendor_stats s ON v.vendor_id = s.vendor_id
+        WHERE v.active = 1
+        ORDER BY s.avg_rating DESC, v.created_at DESC
+    """).fetchall()
+
+    result = []
+    for row in vendors:
+        result.append({
+            'vendor_id': row['vendor_id'],
+            'name': row['name'],
+            'category': row['category'],
+            'description': row['description'],
+            'website': row['website'],
+            'logo_url': row['logo_url'],
+            'discount_code': row['discount_code'],
+            'discount_description': row['discount_description'],
+            'avg_rating': row['avg_rating'],
+            'rating_count': row['rating_count'] or 0,
+            'total_savings': row['total_savings'] or 0,
+        })
+
+    return jsonify({'vendors': result})
+
+
+@app.route('/api/vendors/<vendor_id>', methods=['GET'])
+def get_vendor(vendor_id: str):
+    """Get vendor detail with stats."""
+    db = get_db()
+    vendor = db.execute("""
+        SELECT v.*, s.avg_rating, s.rating_count, s.total_savings
+        FROM vendors v
+        LEFT JOIN vendor_stats s ON v.vendor_id = s.vendor_id
+        WHERE v.vendor_id = ? AND v.active = 1
+    """, (vendor_id,)).fetchone()
+
+    if not vendor:
+        return jsonify({'error': 'Vendor not found'}), 404
+
+    return jsonify({
+        'vendor_id': vendor['vendor_id'],
+        'name': vendor['name'],
+        'category': vendor['category'],
+        'description': vendor['description'],
+        'contact_email': vendor['contact_email'],
+        'website': vendor['website'],
+        'logo_url': vendor['logo_url'],
+        'discount_code': vendor['discount_code'],
+        'discount_description': vendor['discount_description'],
+        'avg_rating': vendor['avg_rating'],
+        'rating_count': vendor['rating_count'] or 0,
+        'total_savings': vendor['total_savings'] or 0,
+    })
+
+
+@app.route('/api/vendors/<vendor_id>/ratings', methods=['POST'])
+def submit_vendor_rating(vendor_id: str):
+    """
+    Submit a rating for a vendor.
+    Requires Firebase auth (nonprofit_ein from token).
+    Auto-validates and publishes if passes checks.
+
+    {
+        "stars": 1-5,
+        "savings_amount": 0-999999 (optional)
+    }
+    """
+    try:
+        # Require Firebase auth
+        token = _require_firebase_token()
+        nonprofit_ein = token.get('uid', '')
+
+        if not nonprofit_ein:
+            return jsonify({'error': 'Authentication required'}), 401
+
+        db = get_db()
+
+        # Vendor must exist
+        vendor = db.execute("SELECT vendor_id FROM vendors WHERE vendor_id = ? AND active = 1",
+                           (vendor_id,)).fetchone()
+        if not vendor:
+            return jsonify({'error': 'Vendor not found'}), 404
+
+        data = request.get_json() or {}
+        stars = data.get('stars')
+        savings_amount = data.get('savings_amount', 0)
+
+        # Coerce to int
+        try:
+            stars = int(stars) if stars is not None else None
+            savings_amount = int(savings_amount) if savings_amount else 0
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid stars or savings_amount'}), 400
+
+        # AI validation
+        is_valid, reason = _ai_validate_rating(stars, savings_amount, nonprofit_ein)
+        if not is_valid:
+            return jsonify({'error': reason}), 400
+
+        # Check for duplicate (nonprofit can only rate each vendor once, but can update)
+        existing = db.execute(
+            "SELECT rating_id FROM vendor_ratings WHERE vendor_id = ? AND nonprofit_ein = ?",
+            (vendor_id, nonprofit_ein)
+        ).fetchone()
+
+        if existing:
+            # Update existing rating
+            rating_id = existing['rating_id']
+            db.execute("""
+                UPDATE vendor_ratings
+                SET stars = ?, savings_amount = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE rating_id = ?
+            """, (stars, savings_amount, rating_id))
+            db.commit()
+            action = 'updated'
+        else:
+            # Create new rating (auto-published, no moderation queue)
+            rating_id = secrets.token_urlsafe(16)
+            db.execute("""
+                INSERT INTO vendor_ratings (rating_id, vendor_id, nonprofit_ein, stars, savings_amount)
+                VALUES (?, ?, ?, ?, ?)
+            """, (rating_id, vendor_id, nonprofit_ein, stars, savings_amount))
+            db.commit()
+            action = 'created'
+
+        # Recalculate vendor stats
+        _aggregate_vendor_stats(vendor_id)
+
+        return jsonify({
+            'success': True,
+            'rating_id': rating_id,
+            'action': action,
+            'stars': stars,
+            'savings_amount': savings_amount,
+        }), 201
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        _logger.error(f"Error submitting vendor rating: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+
+@app.route('/api/vendors/<vendor_id>/ratings', methods=['GET'])
+def get_vendor_ratings(vendor_id: str):
+    """
+    Get all ratings for a vendor (public view, anonymous).
+    Returns: list of {stars, savings_amount, created_at} (no nonprofit name).
+    """
+    db = get_db()
+    ratings = db.execute("""
+        SELECT stars, savings_amount, created_at
+        FROM vendor_ratings
+        WHERE vendor_id = ?
+        ORDER BY created_at DESC
+    """, (vendor_id,)).fetchall()
+
+    return jsonify({
+        'ratings': [
+            {
+                'stars': r['stars'],
+                'savings_amount': r['savings_amount'],
+                'created_at': r['created_at'],
+            }
+            for r in ratings
+        ]
+    })
+
+
+@app.route('/api/vendors/<vendor_id>/stats', methods=['GET'])
+def get_vendor_stats(vendor_id: str):
+    """Get aggregated stats for a vendor."""
+    db = get_db()
+    stats = db.execute("""
+        SELECT avg_rating, rating_count, total_savings, nonprofits_contributed
+        FROM vendor_stats
+        WHERE vendor_id = ?
+    """, (vendor_id,)).fetchone()
+
+    if not stats:
+        return jsonify({
+            'avg_rating': None,
+            'rating_count': 0,
+            'total_savings': 0,
+            'nonprofits_contributed': 0,
+        })
+
+    return jsonify({
+        'avg_rating': stats['avg_rating'],
+        'rating_count': stats['rating_count'],
+        'total_savings': stats['total_savings'],
+        'nonprofits_contributed': stats['nonprofits_contributed'],
+    })
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
