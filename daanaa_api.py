@@ -1264,6 +1264,7 @@ def list_organizations():
     min_tier = request.args.get('min_tier', '').strip()
     if min_tier == 'Glow':  # frontend alias for DB name Ember
         min_tier = 'Ember'
+    tier = request.args.get('tier', '').strip()  # Filter by specific visibility tier
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
@@ -1348,6 +1349,11 @@ def list_organizations():
         placeholders = ','.join('?' * len(included))
         where_clauses.append(f'merit_tier IN ({placeholders})')
         params.extend(included)
+    # Exact visibility tier filter (e.g., show only Beacon orgs)
+    _VISIBILITY_TIERS = ['Beacon', 'Torch', 'Lantern', 'Candle', 'Ember', 'Spark']
+    if tier and tier in _VISIBILITY_TIERS:
+        where_clauses.append("merit_tier = ?")
+        params.append(tier)
 
     # total_revenue removed from public sorts (P4 — peer-benchmarked score is the
     # right ranking signal; raw revenue ranking disadvantages small orgs by design)
