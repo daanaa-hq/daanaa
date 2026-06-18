@@ -5,7 +5,7 @@
 # Usage: bash scripts/refresh_hidden_gems.sh
 
 set -e
-DROPLET="root@162.243.97.179"
+DROPLET="daanaa-droplet"
 SSH_KEY="$HOME/.ssh/daanaa_do"
 LOCAL_GEMS="$HOME/meritgiving/precompute_output/browse/hidden_gems"
 REMOTE_GEMS="/data/precompute/v1/browse/hidden_gems"
@@ -22,10 +22,10 @@ PYTHONPATH=scripts venv/bin/python3 scripts/precompute_hidden_gems.py
 # 2. Ship the gem pages (changed only). --delete drops stale pages if the gem
 #    count shrank week-over-week.
 echo "Step 2/3: rsync to droplet..."
-rsync -az --delete -e "ssh -i $SSH_KEY" "$LOCAL_GEMS/" "$DROPLET:$REMOTE_GEMS/"
+rsync -az --delete "$LOCAL_GEMS/" "$DROPLET:$REMOTE_GEMS/"
 
 # 3. Clear the API in-memory cache so the new week's order is served.
 echo "Step 3/3: restart API..."
-ssh -i "$SSH_KEY" "$DROPLET" "systemctl restart daanaa" || true
+ssh "$DROPLET" "systemctl restart daanaa" || true
 
 echo "=== Done: $(date) ==="
