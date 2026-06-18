@@ -170,6 +170,7 @@ def main():
         CREATE INDEX IF NOT EXISTS idx_orgs_state ON orgs(STATE);
         CREATE INDEX IF NOT EXISTS idx_orgs_score ON orgs(merit_score DESC);
         CREATE INDEX IF NOT EXISTS idx_orgs_hidden ON orgs(is_hidden_gem);
+        CREATE INDEX IF NOT EXISTS idx_orgs_merit_tier ON orgs(merit_tier);
         -- Multi-category + revenue-band filters (directory UI); without these
         -- the filter browse path full-scans 1.8M rows (~7s, 2026-06-09 fix)
         CREATE INDEX IF NOT EXISTS idx_orgs_ntee1_rev ON orgs(NTEE1, total_revenue);
