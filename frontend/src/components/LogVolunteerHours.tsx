@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { logVolunteerHours } from '../data/api'
+import { logVolunteerHours, getOrganizations } from '../data/api'
+import type { ApiOrganization } from '../data/api'
 
 interface LogVolunteerHoursProps {
   onSuccess?: () => void
@@ -20,10 +21,60 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [allowVerification, setAllowVerification] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<ApiOrganization[]>([])
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleNonprofitSearch = useCallback(async (query: string) => {
+    setSearchQuery(query)
+    if (query.trim().length < 2) {
+      setSearchResults([])
+      setShowDropdown(false)
+      return
+    }
+
+    setSearching(true)
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await getOrganizations({
+          q: query,
+          page: 1,
+          per_page: 10,
+        })
+        setSearchResults(results.organizations || [])
+        setShowDropdown(true)
+      } catch (err) {
+        console.error('Error searching organizations:', err)
+        setSearchResults([])
+      } finally {
+        setSearching(false)
+      }
+    }, 300)
+  }, [])
+
+  const handleSelectOrganization = (org: ApiOrganization) => {
+    setFormData((prev) => ({
+      ...prev,
+      nonprofit_name: org.organization_name || '',
+      nonprofit_ein: org.EIN || '',
+    }))
+    setSearchQuery(org.organization_name || '')
+    setShowDropdown(false)
+    setSearchResults([])
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    if (name === 'nonprofit_name') {
+      handleNonprofitSearch(value)
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }))
+    }
     if (errors[name]) {
       setErrors((prev) => {
         const newErrors = { ...prev }
@@ -33,10 +84,19 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
     }
   }
 
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const validate = useCallback(() => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.nonprofit_name.trim()) {
+    const nameToCheck = formData.nonprofit_name || searchQuery
+    if (!nameToCheck.trim()) {
       newErrors.nonprofit_name = 'Nonprofit name is required'
     }
     if (!formData.service_date) {
@@ -53,7 +113,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }, [formData])
+  }, [formData, searchQuery])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,10 +129,11 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
         return
       }
 
+      const nameToSubmit = formData.nonprofit_name || searchQuery
       await logVolunteerHours(
         idToken,
         formData.nonprofit_ein.trim(),
-        formData.nonprofit_name.trim(),
+        nameToSubmit.trim(),
         formData.service_date,
         parseFloat(formData.hours_logged),
         formData.notes.trim(),
@@ -87,6 +148,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
         hours_logged: '',
         notes: '',
       })
+      setSearchQuery('')
       setTimeout(() => {
         setSuccess(false)
         onSuccess?.()
@@ -109,22 +171,55 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Nonprofit Name */}
-        <div>
+        {/* Nonprofit Name with Search */}
+        <div className="relative">
           <label className="block text-sm font-medium text-deep-navy mb-2">
             Nonprofit Name *
           </label>
           <input
             type="text"
             name="nonprofit_name"
-            value={formData.nonprofit_name}
+            value={searchQuery || formData.nonprofit_name}
             onChange={handleChange}
-            placeholder="e.g., The Beacon of Downtown Houston"
+            onFocus={() => {
+              if (searchQuery && searchResults.length > 0) {
+                setShowDropdown(true)
+              }
+            }}
+            placeholder="Search for a nonprofit..."
+            autoComplete="off"
             className={`w-full px-3 py-2 border rounded-lg font-body text-sm ${
               errors.nonprofit_name ? 'border-red-500' : 'border-light-grey'
             } focus:outline-none focus:ring-2 focus:ring-soft-gold/30`}
           />
+          {searching && (
+            <p className="text-xs text-cool-grey mt-1">Searching...</p>
+          )}
           {errors.nonprofit_name && <p className="text-xs text-red-600 mt-1">{errors.nonprofit_name}</p>}
+
+          {/* Dropdown Results */}
+          {showDropdown && searchResults.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-light-grey rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {searchResults.map((org) => (
+                <button
+                  key={org.EIN}
+                  type="button"
+                  onClick={() => handleSelectOrganization(org)}
+                  className="w-full text-left px-3 py-2 hover:bg-warm-cream transition-colors border-b border-light-grey/30 last:border-b-0"
+                >
+                  <p className="font-medium text-deep-navy text-sm">{org.organization_name}</p>
+                  <p className="text-xs text-cool-grey">
+                    {org.CITY && org.STATE ? `${org.CITY}, ${org.STATE}` : ''} {org.EIN && `(${org.EIN})`}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+          {showDropdown && searchResults.length === 0 && searchQuery && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-light-grey rounded-lg shadow-lg p-3">
+              <p className="text-xs text-cool-grey text-center">No organizations found. Enter the name manually.</p>
+            </div>
+          )}
         </div>
 
         {/* EIN (Optional) */}

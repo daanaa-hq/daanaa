@@ -13,9 +13,7 @@ mkdir -p "$OUT/critical" "$OUT/full"
 
 # Nightly: critical tables only (KB-MB scale). .backup-safe via .dump on a
 # read connection; sqlite3 .dump of named tables doesn't block WAL writers.
-sqlite3 "file:$DB?mode=ro" ".dump org_claims org_activity feedback waitlist org_fts_meta 2>/dev/null" 2>/dev/null \
-  | gzip > "$OUT/critical/critical_$STAMP.sql.gz" || \
-sqlite3 "file:$DB?mode=ro" ".dump org_claims org_activity feedback waitlist" \
+sqlite3 "file:$DB?mode=ro" ".dump org_claims org_activity feedback waitlist" 2>/dev/null \
   | gzip > "$OUT/critical/critical_$STAMP.sql.gz"
 find "$OUT/critical" -name 'critical_*.sql.gz' -mtime +30 -delete
 

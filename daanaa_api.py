@@ -22,7 +22,7 @@ _logger = logging.getLogger(__name__)
 import jwt as _pyjwt
 
 _FIREBASE_PROJECT_ID = os.environ.get('FIREBASE_PROJECT_ID', 'daanaa-af9c2')
-_FIRESTORE_PROJECT_ID = os.environ.get('FIRESTORE_PROJECT_ID', 'the-giving-wallet')
+_FIRESTORE_PROJECT_ID = os.environ.get('FIRESTORE_PROJECT_ID', 'daanaa-af9c2')
 _FIRESTORE_API_KEY = os.environ.get('FIRESTORE_API_KEY', '')
 _FIRESTORE_BASE_URL = f'https://firestore.googleapis.com/v1/projects/{_FIRESTORE_PROJECT_ID}/databases/(default)/documents'
 
@@ -458,6 +458,22 @@ limiter = Limiter(
     default_limits=["200 per minute", "2000 per hour"],
     storage_uri="memory://",
 )
+
+# JSON error handler — return proper JSON for API endpoints instead of HTML error pages
+@app.errorhandler(400)
+@app.errorhandler(401)
+@app.errorhandler(403)
+@app.errorhandler(404)
+@app.errorhandler(500)
+def handle_error(error):
+    """Return JSON errors for API endpoints, HTML for others."""
+    if request.path.startswith('/api/'):
+        return jsonify({
+            'error': error.description or 'Request failed',
+            'status': error.code
+        }), error.code
+    # For non-API endpoints, let Flask handle the error normally
+    return error
 
 DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
 
@@ -4702,7 +4718,17 @@ def wallet_summary():
 
     total_logged = sum(h.get('hours_logged', 0) for h in logged_hours)
     total_verified = sum(h.get('hours_confirmed', 0) for h in verified_hours)
-    total_value = sum(h.get('estimated_value', 0) for h in verified_hours)
+    volunteer_value = sum(h.get('estimated_value', 0) for h in verified_hours)
+
+    # Funding impact
+    total_funded = sum(f.get('amount', 0) for f in funded_log)
+    funding_year = datetime.now().year
+    recent_funded = [f for f in funded_log if f.get('year', 0) == funding_year]
+
+    # Unique nonprofits (no duplicates across giving + volunteering)
+    funded_eins = set(f.get('ein', '') for f in funded_log if f.get('ein'))
+    volunteer_eins = set(h.get('nonprofit_ein', '') for h in logged_hours + verified_hours if h.get('nonprofit_ein'))
+    unique_supported = len(funded_eins | volunteer_eins)
 
     return jsonify({
         'logged_hours': {
@@ -4712,11 +4738,76 @@ def wallet_summary():
         'verified_hours': {
             'count': len(verified_hours),
             'total_hours': float(total_verified),
-            'estimated_value': float(total_value),
+            'estimated_value': float(volunteer_value),
+        },
+        'funding': {
+            'count': len(funded_log),
+            'total_amount': float(total_funded),
+            'year_2026_count': len(recent_funded),
+            'recent_funding': recent_funded,
         },
         'saved_orgs': len(saved_orgs.get('orgs', {})),
-        'funded_items': len(funded_log),
+        'unique_charities_supported': unique_supported,
+        'overall_impact_value': float(total_funded + volunteer_value),
     }), 200
+
+
+@app.route('/api/wallet/funding-history', methods=['GET', 'POST'])
+def wallet_funding_history():
+    """Get or log funding/giving history."""
+    uid = _require_firebase_user()
+    db = get_db()
+
+    if request.method == 'GET':
+        # Retrieve funding history
+        funded_log = _firestore_list('funded_log', user_id=uid)
+        # Sort by date, most recent first
+        funded_log.sort(key=lambda x: x.get('date', ''), reverse=True)
+
+        return jsonify({
+            'funding_history': funded_log,
+            'total': len(funded_log),
+            'total_amount': sum(f.get('amount', 0) for f in funded_log)
+        }), 200
+
+    elif request.method == 'POST':
+        data = request.get_json() or {}
+        ein = (data.get('ein') or '').strip()
+        ein = ''.join(c for c in ein if c.isdigit())[:10]
+        amount = float(data.get('amount', 0)) if data.get('amount') else 0
+        nonprofit_name = (data.get('nonprofit_name') or '').strip()
+        date = data.get('date') or datetime.now().isoformat()
+
+        if not ein or not amount or not nonprofit_name:
+            return jsonify({'error': 'Missing ein, amount, or nonprofit_name'}), 400
+
+        # Verify org exists
+        org = db.execute(
+            "SELECT organization_name FROM registry_enriched WHERE EIN = ?",
+            (ein,)
+        ).fetchone()
+
+        if not org:
+            return jsonify({'error': 'Organization not found'}), 404
+
+        # Create funding record
+        funding_entry = {
+            'ein': ein,
+            'nonprofit_name': nonprofit_name,
+            'amount': amount,
+            'date': date,
+            'year': datetime.fromisoformat(date).year if isinstance(date, str) else datetime.now().year,
+            'created_at': datetime.utcnow().isoformat(),
+        }
+
+        # Append to funded_log
+        funded_log = _firestore_list('funded_log', user_id=uid) or []
+        funded_log.append(funding_entry)
+
+        if _firestore_set('funded_log', 'entries', funded_log, user_id=uid):
+            return jsonify({'success': True, 'funding_entry': funding_entry}), 201
+        else:
+            return jsonify({'error': 'Failed to save funding record'}), 500
 
 
 @app.route('/api/claim/phone-callback', methods=['POST'])

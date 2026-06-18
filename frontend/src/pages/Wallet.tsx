@@ -5,7 +5,8 @@ import { useSavedOrgs } from '../hooks/useSavedOrgs'
 import { Link } from 'react-router-dom'
 import LogVolunteerHours from '../components/LogVolunteerHours'
 import VerifiedHours from '../components/VerifiedHours'
-import { getWalletSummary, getSavedOrganizations, SavedOrganization, WalletSummary, getLoggedHours, VolunteerHourLog } from '../data/api'
+import { getWalletSummary, getSavedOrganizations, SavedOrganization, WalletSummary, getLoggedHours, VolunteerHourLog, getFundingHistory } from '../data/api'
+import LogFunding from '../components/LogFunding'
 
 export default function ImpactWallet() {
   usePageMeta(
@@ -13,35 +14,46 @@ export default function ImpactWallet() {
     'Track your giving, volunteering, and community impact.'
   )
 
-  const { user, loading: authLoading, getIdToken } = useAuth()
+  const { user, loading: authLoading, getIdToken, signInWithGoogle, signOut } = useAuth()
   const { savedOrgs: localSavedOrgs } = useSavedOrgs()
   const [summary, setSummary] = useState<WalletSummary | null>(null)
   const [savedOrgs, setSavedOrgs] = useState<SavedOrganization[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showLogForm, setShowLogForm] = useState(false)
+  const [showFundingForm, setShowFundingForm] = useState(false)
+  const [fundingHistory, setFundingHistory] = useState<any[]>([])
 
   useEffect(() => {
     if (authLoading) return
-    if (!user) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
 
     const fetchWalletData = async () => {
       try {
+        setError(null)
         const idToken = await getIdToken()
         if (!idToken) {
-          console.error('No auth token available')
+          setError('Unable to retrieve authentication token. Please sign in again.')
           setLoading(false)
           return
         }
 
-        const [summaryData, savedOrgsData] = await Promise.all([
+        const [summaryData, savedOrgsData, fundingData] = await Promise.all([
           getWalletSummary(idToken),
           getSavedOrganizations(idToken),
+          getFundingHistory(idToken),
         ])
 
         setSummary(summaryData)
         setSavedOrgs(savedOrgsData)
+        setFundingHistory(fundingData.funding_history || [])
       } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load wallet data'
         console.error('Error fetching wallet data:', err)
+        setError('Unable to load wallet data. Please try refreshing the page.')
       } finally {
         setLoading(false)
       }
@@ -61,8 +73,26 @@ export default function ImpactWallet() {
     )
   }
 
+  if (error) {
+    return (
+      <div className="bg-warm-cream min-h-screen py-12 md:py-16">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-red-800 mb-2">Unable to Load Wallet</h2>
+            <p className="text-red-700 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!user) {
-    const { signInWithGoogle } = useAuth()
     return (
       <div className="bg-warm-cream min-h-screen py-12 md:py-16">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
@@ -90,17 +120,67 @@ export default function ImpactWallet() {
   return (
     <div className="bg-warm-cream min-h-screen py-12 md:py-16">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl font-display text-deep-navy mb-3">Impact Wallet</h1>
-          <p className="text-lg text-cool-grey max-w-2xl">
-            Your private place to track giving, volunteering, and community impact.
-          </p>
+        {/* Header with User Info */}
+        <div className="mb-12 flex items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-display text-deep-navy mb-3">Impact Wallet</h1>
+            <p className="text-lg text-cool-grey max-w-2xl">
+              Your private place to track giving, volunteering, and community impact.
+            </p>
+          </div>
+          {user && (
+            <div className="text-right">
+              <p className="text-sm text-cool-grey">Signed in as</p>
+              <p className="font-medium text-deep-navy">{user.email}</p>
+              <button
+                onClick={() => signOut()}
+                className="mt-2 px-3 py-1 text-xs font-medium text-soft-gold hover:text-bright-gold transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Summary Cards */}
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+            <div className="bg-white border border-light-grey rounded-xl p-6">
+              <div className="text-xs text-soft-gold uppercase tracking-wider font-semibold mb-2">
+                Overall Impact
+              </div>
+              <div className="text-3xl font-display text-deep-navy mb-2">
+                ${summary.overall_impact_value.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              </div>
+              <p className="text-sm text-cool-grey">
+                Giving + volunteer value
+              </p>
+            </div>
+
+            <div className="bg-white border border-light-grey rounded-xl p-6">
+              <div className="text-xs text-soft-gold uppercase tracking-wider font-semibold mb-2">
+                Charities Supported
+              </div>
+              <div className="text-3xl font-display text-deep-navy mb-2">
+                {summary.unique_charities_supported}
+              </div>
+              <p className="text-sm text-cool-grey">
+                Through giving & volunteering
+              </p>
+            </div>
+
+            <div className="bg-white border border-light-grey rounded-xl p-6">
+              <div className="text-xs text-soft-gold uppercase tracking-wider font-semibold mb-2">
+                Funded in 2026
+              </div>
+              <div className="text-3xl font-display text-deep-navy mb-2">
+                {summary.funding.year_2026_count}
+              </div>
+              <p className="text-sm text-cool-grey">
+                Organizations supported
+              </p>
+            </div>
+
             <div className="bg-white border border-light-grey rounded-xl p-6">
               <div className="text-xs text-soft-gold uppercase tracking-wider font-semibold mb-2">
                 Volunteer Hours
@@ -109,23 +189,62 @@ export default function ImpactWallet() {
                 {(summary.verified_hours.total_hours + summary.logged_hours.total_hours).toFixed(1)}
               </div>
               <p className="text-sm text-cool-grey">
-                {summary.verified_hours.total_hours.toFixed(1)} verified, {summary.logged_hours.total_hours.toFixed(1)} logged
-              </p>
-            </div>
-
-            <div className="bg-white border border-light-grey rounded-xl p-6">
-              <div className="text-xs text-soft-gold uppercase tracking-wider font-semibold mb-2">
-                Estimated Community Value
-              </div>
-              <div className="text-3xl font-display text-deep-navy mb-2">
-                ${summary.verified_hours.estimated_value.toFixed(2)}
-              </div>
-              <p className="text-xs text-slate-500 mt-2">
-                Based on verified hours only. For informational purposes.
+                {summary.verified_hours.total_hours.toFixed(1)} verified
               </p>
             </div>
           </div>
         )}
+
+        {/* Funding History */}
+        <div className="mb-12">
+          <div className="bg-white border border-light-grey rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-display text-deep-navy">Giving History</h2>
+              <button
+                onClick={() => setShowFundingForm(!showFundingForm)}
+                className="px-4 py-2 bg-soft-gold text-white rounded-lg font-medium text-sm hover:bg-soft-gold/90 transition-colors"
+              >
+                {showFundingForm ? 'Cancel' : 'Log Gift'}
+              </button>
+            </div>
+
+            {showFundingForm && (
+              <div className="mb-8 pb-8 border-b border-light-grey">
+                <LogFunding onSuccess={() => {
+                  setShowFundingForm(false)
+                  // Refresh funding history
+                  if (user) {
+                    getIdToken().then(token => {
+                      if (token) {
+                        getFundingHistory(token).then(data => {
+                          setFundingHistory(data.funding_history || [])
+                        }).catch(() => {})
+                      }
+                    })
+                  }
+                }} />
+              </div>
+            )}
+
+            {fundingHistory.length > 0 ? (
+              <div className="space-y-3">
+                {fundingHistory.map((item, idx) => (
+                  <div key={idx} className="flex items-start justify-between p-4 bg-warm-cream rounded-lg border border-light-grey/50">
+                    <div>
+                      <p className="font-semibold text-deep-navy">{item.nonprofit_name}</p>
+                      {item.date && <p className="text-sm text-cool-grey">{new Date(item.date).toLocaleDateString()}</p>}
+                    </div>
+                    <p className="font-semibold text-deep-navy text-right whitespace-nowrap ml-4">
+                      ${item.amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-cool-grey py-8">No gifts logged yet. Start supporting causes you care about.</p>
+            )}
+          </div>
+        </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

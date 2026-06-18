@@ -753,8 +753,8 @@ export default function OrganizationDetail() {
             </div>
           )}
 
-          {/* How They Manage Resources -- financial health context, collapsed by default */}
-          {apiOrg!.financial_health && (
+          {/* How They Manage Resources -- financial context framework, collapsed by default */}
+          {apiOrg!.financial_context && (
             <div className="mb-8">
               <button
                 onClick={() => setShowResources(s => !s)}
@@ -763,17 +763,19 @@ export default function OrganizationDetail() {
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium shrink-0">How they manage resources</span>
                   <span className={`shrink-0 inline-block px-2.5 py-0.5 rounded font-body text-[11px] font-semibold ${
-                    apiOrg!.financial_health === 'Strong'
+                    apiOrg!.financial_context.status === 'VERIFIED_HEALTHY'
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : apiOrg!.financial_health === 'Stable'
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      : apiOrg!.financial_context.status === 'FINANCIAL_NOTE'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                      : 'bg-slate-50 text-slate-700 border border-slate-200'
                   }`}>
-                    {financialContextLabel(apiOrg!.financial_health)}
+                    {apiOrg!.financial_context.status === 'VERIFIED_HEALTHY' ? 'Healthy finances'
+                      : apiOrg!.financial_context.status === 'FINANCIAL_NOTE' ? 'Tight finances'
+                      : 'Data incomplete'}
                   </span>
-                  {!showResources && apiOrg!.peer_total && (
+                  {!showResources && apiOrg!.financial_context && (
                     <span className="font-body text-[12px] text-cool-grey truncate hidden md:block">
-                      among {apiOrg!.peer_total.toLocaleString()} similar organizations
+                      {apiOrg!.financial_context.peer_model}
                     </span>
                   )}
                 </div>
@@ -789,26 +791,12 @@ export default function OrganizationDetail() {
               {showResources && (
                 <div className="mt-1 bg-white border border-light-grey border-t-0 rounded-b-xl px-5 pb-5 pt-4 space-y-4">
                   {(() => {
-                    const HEALTH_MEANINGS: Record<string, Record<string, string>> = {
-                      Clinical_Reimbursement: { Strong: 'Strong reimbursement coverage and healthy operating reserves', Stable: 'Consistent patient revenue, steady program delivery', Inspiring: 'Committed to care within tight reimbursement margins' },
-                      Direct_Delivery: { Strong: 'Solid program efficiency and financial runway for the mission', Stable: 'Reliable service delivery with predictable funding', Inspiring: 'High impact direct service within resource constraints' },
-                      Activity_Programming: { Strong: 'Broad programming reach, strong participation driven revenue', Stable: 'Consistent activity base, steady community engagement', Inspiring: 'Vibrant programming with lean operational means' },
-                      Community_Human_Services: { Strong: 'Program efficiency, financial resilience across service lines', Stable: 'Reliable community delivery, predictable operational base', Inspiring: 'Remarkable community service within tight constraints' },
-                      Emergency_Logistics: { Strong: 'Strong surge capacity and reserve depth for response cycles', Stable: 'Reliable response readiness, steady logistics funding', Inspiring: 'Committed frontline response with limited reserves' },
-                      Cause_Advocacy_Research: { Strong: 'Well-resourced mission and strong organizational staying power', Stable: 'Consistent advocacy funding, steady research operations', Inspiring: 'Impactful advocacy and research within lean resources' },
-                      Intermediary_Public_Benefit: { Strong: 'Effective grant deployment with strong organizational reserves', Stable: 'Consistent intermediary function, reliable grant flow', Inspiring: 'High-leverage public benefit work with constrained capital' },
-                      Faith_Community: { Strong: 'Mission vitality supported by sustained congregational giving', Stable: 'Steady congregational support, predictable ministry funding', Inspiring: 'Growing faith mission within meaningful financial constraints' },
-                      Membership_Mutual_Benefit: { Strong: 'Active member driven revenue and long-term reserve depth', Stable: 'Stable membership base, consistent mutual support model', Inspiring: 'Growing member community building toward long-term stability' },
-                    }
-                    const model = apiOrg!.operating_model as string | null
-                    const tier = apiOrg!.financial_health as string
-                    const meaning = model ? (HEALTH_MEANINGS[model]?.[tier] ?? '') : ''
-                    const modelLabel = model ? model.replace(/_/g, ' ') : null
+                    const fc = apiOrg!.financial_context
 
                     return (
                       <>
-                        {meaning && (
-                          <p className="font-body text-[14px] text-deep-navy leading-[1.6]">{meaning}</p>
+                        {fc.explanation && (
+                          <p className="font-body text-[14px] text-deep-navy leading-[1.6]">{fc.explanation}</p>
                         )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -821,11 +809,11 @@ export default function OrganizationDetail() {
                               <span className="block font-body text-[11px] text-cool-grey">of every dollar spent on programs</span>
                             </div>
                           )}
-                          {apiOrg!.months_of_reserve != null && (
+                          {fc.months_reserve != null && (
                             <div className="rounded-lg bg-warm-cream px-4 py-3">
                               <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
                               <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
-                                {apiOrg!.months_of_reserve > 999 ? '999+' : apiOrg!.months_of_reserve.toFixed(0)} mo
+                                {fc.months_reserve > 999 ? '999+' : fc.months_reserve.toFixed(1)} mo
                               </span>
                               <span className="block font-body text-[11px] text-cool-grey">months net assets cover costs</span>
                             </div>
@@ -846,8 +834,16 @@ export default function OrganizationDetail() {
 
                         <div className="flex items-center justify-between pt-1">
                           <p className="font-body text-[11px] text-cool-grey">
-                            Compared to {apiOrg!.peer_total?.toLocaleString() ?? 'similar'} {modelLabel ?? 'similar'} organizations
-                            {apiOrg!.peer_rank && apiOrg!.peer_total ? ` · #${apiOrg!.peer_rank.toLocaleString()} of ${apiOrg!.peer_total.toLocaleString()} peers` : ''}
+                            {fc.peer_model && fc.peer_baseline ? (
+                              <>
+                                Compared to {fc.peer_model?.replace(/_/g, ' ') || 'similar'} organizations
+                                {fc.gap_from_baseline != null && (
+                                  <> · {fc.gap_from_baseline > 0 ? '+' : ''}{fc.gap_from_baseline.toFixed(1)} months vs peer baseline</>
+                                )}
+                              </>
+                            ) : (
+                              'Financial context available'
+                            )}
                           </p>
                           <Link to="/methodology" className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors shrink-0 ml-3">
                             How we score →

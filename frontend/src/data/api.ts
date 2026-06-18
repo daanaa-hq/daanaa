@@ -614,8 +614,21 @@ export async function getPortalToken(ein: string, idToken: string): Promise<stri
 export interface WalletSummary {
   logged_hours: { count: number; total_hours: number }
   verified_hours: { count: number; total_hours: number; estimated_value: number }
+  funding: {
+    count: number
+    total_amount: number
+    year_2026_count: number
+    recent_funding: Array<{
+      ein: string
+      nonprofit_name: string
+      amount: number
+      date?: string
+      year?: number
+    }>
+  }
   saved_orgs: number
-  funded_items: number
+  unique_charities_supported: number
+  overall_impact_value: number
 }
 
 export interface VolunteerHourLog {
@@ -742,5 +755,44 @@ export async function deleteAllWalletData(idToken: string): Promise<{ success: b
     headers: { Authorization: `Bearer ${idToken}` },
   })
   if (!res.ok) throw new Error('delete failed')
+  return res.json()
+}
+
+export async function getFundingHistory(idToken: string): Promise<{
+  funding_history: Array<{
+    ein: string
+    nonprofit_name: string
+    amount: number
+    date: string
+    year: number
+  }>
+  total: number
+  total_amount: number
+}> {
+  const res = await fetch(`${API_BASE}/api/wallet/funding-history`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+  if (!res.ok) throw new Error('funding history failed')
+  return res.json()
+}
+
+export async function logFunding(
+  idToken: string,
+  ein: string,
+  nonprofitName: string,
+  amount: number,
+  date?: string,
+): Promise<{ success: boolean; funding_entry: any }> {
+  const res = await fetch(`${API_BASE}/api/wallet/funding-history`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({
+      ein,
+      nonprofit_name: nonprofitName,
+      amount,
+      date,
+    }),
+  })
+  if (!res.ok) throw new Error('log funding failed')
   return res.json()
 }
