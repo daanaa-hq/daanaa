@@ -57,7 +57,7 @@ We're about to launch publicly in August, and we're looking for founding partner
 In exchange, you sign a Stewardship Commitment — an agreement that our independence is protected, no paid placement, no favoritism, full privacy for donors."
 
 ### Why This Matters (2 min)
-"Right now, the nonprofit sector has an information problem. We're building the infrastructure to solve it. When you fund Daanaa, you're funding something that strengthens the entire ecosystem — not just your grantees."
+"Right now, the nonprofit sector lacks financial transparency and peer context. We're building the infrastructure to solve it. When you fund Daanaa, you're funding something that strengthens nonprofit financial transparency — helping all organizations understand their peer group and financial health."
 
 ### Pause for questions / objections
 

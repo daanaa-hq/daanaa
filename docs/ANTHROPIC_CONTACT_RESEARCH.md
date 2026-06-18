@@ -185,7 +185,7 @@ If Anthropic doesn't respond or says "not now":
 - They schedule a call
 - They show interest in research collaboration (strong signal)
 
-**Conservative estimate:** 40–50% chance of response, 20% chance of partnership conversation, 10% chance of actual partnership. But if you get the partnership, it's high-credibility.
+**Realistic expectations for cold outreach:** 20–30% chance of response (Anthropic is selective), 10% chance of partnership conversation, 5% chance of actual partnership. But if you get the partnership, it's high-credibility and validates your responsible AI approach.
 
 ---
 

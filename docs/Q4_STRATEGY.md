@@ -12,7 +12,7 @@
 - 30–40% of annual giving happens in Oct–Dec (especially Dec)
 - Nonprofit executives are planning year-end campaigns now (Aug–Sep)
 - Individual donors are thinking about tax planning + legacy gifts
-- Daanaa should be their discovery tool
+- Daanaa could become their discovery tool
 
 **Your window:**
 - **Sep 1–30:** Build nonprofit awareness, get orgs claiming profiles
@@ -73,7 +73,7 @@
 
 4. **Podcast / interview outreach**
    - Pitch yourself to 20–30 nonprofit + philanthropic podcasts
-   - Goal: 2–3 interview bookings by Oct 1
+   - Target: 2–3 interview bookings by Oct 1
    - Message: "I'm building AI-powered nonprofit discovery that protects independence and fairness"
 
 ---
@@ -221,6 +221,8 @@
 
 ## Success Metrics (By Dec 31)
 
+**Stretch targets for end-of-year (subject to market conditions, user adoption, and partnerships):**
+
 | Metric | Target | How to Track |
 |--------|--------|--------------|
 | **Nonprofits claiming profiles** | 1K+ | Org_claims table count |
@@ -232,7 +234,7 @@
 | **Donor intent tracked** | 10K+ gifts | Wallet data (anonymized) |
 | **Hidden gems funded** | 200+ | Donation link data + surveys |
 
-**Big picture:** By Dec 31, Daanaa is known in nonprofit sector + among year-end donors. Platform is sustainable. Nonprofits see value. Donors understand Daanaa as fair discovery tool.
+**Realistic goal:** By Dec 31, Daanaa has demonstrated real value to nonprofits and donors. Platform is operationally stable. Sector awareness is growing. Clear data on what's working informs 2027 roadmap.
 
 ---
 

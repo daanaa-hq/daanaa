@@ -10,7 +10,7 @@ You're registering two "Fictitious Business Names" (DBAs) under EcoMargins LLC w
 
 **Parent Company:** EcoMargins Consulting LLC (formed 12/28/2025)  
 **DBA #1:** Daanaa (nonprofit discovery platform)  
-**DBA #2:** ZDPark (what is this? add context)
+**DBA #2:** ZDPark (financial infrastructure research project)
 
 ---
 
