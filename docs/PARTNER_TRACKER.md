@@ -8,13 +8,11 @@ Copy this to Google Sheets for live updates.
 
 ## Tier 1: Highest Priority (Call by Jun 19)
 
-| Funder | Contact | Likelihood | Call Date | Interest Level | Next Step | Timeline | Notes |
-|--------|---------|-----------|-----------|---|---|--|--|
-| **DRK Foundation** | TBD | 95% | — | — | Find contact | Jun 17 | Systems change angle |
-| **Knight Foundation** | TBD | 90% | — | — | Find contact | Jun 17 | Civic participation angle |
-| **Omidyar Network** | TBD | 85% | — | — | Find contact | Jun 18 | AI governance angle |
-| **Mozilla Foundation** | TBD | 85% | — | — | Find contact | Jun 18 | Privacy + open angle |
-| **Schmidt Family** | TBD | 70% | — | — | Find contact | Jun 19 | Research angle |
+| Funder | Fit | Script | Contact | Call Date | Tone | Next Step | Decision By |
+|--------|-----|--------|---------|-----------|------|-----------|-------------|
+| **DRK Foundation** | 95% | FUNDER_CALL_DRK_SCRIPT_DETAILED.md | [Name] | [Date] | [Tone] | Send docs / 2nd call | Jun 21 |
+| **Knight Foundation** | 90% | FUNDER_CALL_KNIGHT_SCRIPT_DETAILED.md | [Name] | [Date] | [Tone] | Send docs / 2nd call | Jun 21 |
+| **Omidyar Network** | 85% | FUNDER_CALL_OMIDYAR_SCRIPT_DETAILED.md | [Name] | [Date] | [Tone] | Send docs / 2nd call | Jun 21 |
 
 ---
 
@@ -55,39 +53,103 @@ Copy this to Google Sheets for live updates.
 
 ---
 
-## Call Results Template
+## Call Sequence for Each Partner
 
-### **Call 1: [Funder Name]**
+### After Call 1 (Day 0)
 
-| Item | Response |
-|------|----------|
-| **Date Called** | [DATE] |
-| **Contact** | [NAME, TITLE] |
-| **Their Reaction** | ☐ Intrigued ☐ Curious ☐ Skeptical ☐ Not Now |
-| **Why Interested?** | [What resonated?] |
-| **Questions They Asked** | [List 2–3] |
-| **Objections** | [Any red flags?] |
-| **Next Step** | ☐ Send docs ☐ Follow-up call ☐ Not a fit |
-| **Follow-up Date** | [DATE] |
-| **My Notes** | [Anything to remember?] |
-| **Principles Alignment** | [Did they try to pressure you? How did you handle it?] |
+**Send immediately:**
+- [ ] STEWARDSHIP.md (full Commitment)
+- [ ] PARTNER_AGREEMENT_SUMMARY.md (terms, no-liability clause)
+- [ ] BUILD_PRIORITY_ROADMAP.md + EXECUTION_MASTER_CHECKLIST_2026.md
+- [ ] Email: "No pressure, just wanted you to see everything. Questions?"
 
 ---
 
-### **Call 2: [Funder Name]**
+### Day 3 Follow-Up
+
+**Brief check-in:**
+> "Hi [Name],
+>
+> Hope you got the materials. Curious if anything jumped out—questions, concerns, or things you'd like me to clarify?
+>
+> No pressure. Just want to make sure you have everything you need.
+>
+> —Akbar"
+
+---
+
+### Day 10 Follow-Up
+
+**Propose second call:**
+> "Hi [Name],
+>
+> I'd love to do a second conversation—this time you ask all the hard questions. I want to walk you through:
+> - How we prevent vendor/funder influence (real structures, not just words)
+> - Our measurement framework (fairness metrics, not just growth)
+> - Revenue model safeguards (how we stay independent)
+> - Governance and audit processes
+>
+> Ready for that conversation?
+>
+> —Akbar"
+
+---
+
+### Day 14: Call 2 Agenda (30–45 min)
+
+1. **Their questions** (10 min) — What did they want to dig into from materials?
+2. **Governance deep dive** (10 min) — Prevent drift, audit processes, partner oversight
+3. **Measurement** (10 min) — Success metrics, fairness tracking, impact reporting
+4. **Logistics** (5 min) — Timeline, internal approval, next steps
+
+**Outcome:** Clear signal—IN / CURIOUS / OUT
+
+---
+
+### Day 21: Decision Gate
+
+**Final check-in call (15 min):**
+> "Hi [Name],
+>
+> I'm checking in on the Stewardship partnership. Where are you leaning?
+>
+> If you're interested, I want to move forward with formal paperwork. If this isn't the right fit, I totally understand—no pressure either way.
+>
+> What's your sense?"
+
+---
+
+## Call Results Template
+
+### **[FUNDER NAME] — Call 1**
 
 | Item | Response |
 |------|----------|
 | **Date Called** | [DATE] |
 | **Contact** | [NAME, TITLE] |
 | **Their Reaction** | ☐ Intrigued ☐ Curious ☐ Skeptical ☐ Not Now |
-| **Why Interested?** | [What resonated?] |
-| **Questions They Asked** | [List 2–3] |
-| **Objections** | [Any red flags?] |
-| **Next Step** | ☐ Send docs ☐ Follow-up call ☐ Not a fit |
-| **Follow-up Date** | [DATE] |
-| **My Notes** | [Anything to remember?] |
-| **Principles Alignment** | [Did they try to pressure you? How did you handle it?] |
+| **What Resonated** | [2–3 key points they responded to] |
+| **Questions Asked** | [List main questions] |
+| **Concerns Raised** | [Any hesitations?] |
+| **Materials Sent** | ☐ Stewardship.md ☐ Partner Agreement ☐ Roadmap |
+| **Follow-up Scheduled** | Day 10? Day 14? [DATE] |
+| **My Notes** | [Tone, energy, deal-breakers, gut feel] |
+
+---
+
+### **[FUNDER NAME] — Call 2**
+
+| Item | Response |
+|------|----------|
+| **Date Called** | [DATE] |
+| **Their Deep Dives** | [What did they want to understand better?] |
+| **Governance Questions** | [How did they respond to independence/audit structures?] |
+| **Measurement Fit** | [Did they like fairness metrics approach?] |
+| **Their Decision** | ☐ IN (committed) ☐ CURIOUS (more time) ☐ OUT (not fit) |
+| **Funding Confirmed** | ☐ Yes ☐ Pending budget approval ☐ No |
+| **Timeline** | [When will they decide officially?] |
+| **Next Step** | [Formal agreement? Legal review? Board approval?] |
+| **My Notes** | [Final assessment, any red flags, follow-up needed?] |
 
 ---
 
