@@ -13,6 +13,7 @@ const ComparePage = lazy(() => import('./pages/ComparePage'))
 const Legal = lazy(() => import('./pages/Legal'))
 const HowItWorks = lazy(() => import('./pages/HowItWorks'))
 const Wallet = lazy(() => import('./pages/Wallet'))
+const NonprofitVerification = lazy(() => import('./pages/NonprofitVerification'))
 const ForNonprofits = lazy(() => import('./pages/ForNonprofits'))
 // const GivingListPage = lazy(() => import('./pages/GivingListPage'))  // Giving List feature hidden
 // const GivingReview = lazy(() => import('./pages/GivingReview'))  // Giving List feature hidden
@@ -97,7 +98,7 @@ export default function App() {
           <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />
           <Route path="/research" element={<ResearchDashboard />} />
-          <Route path="/nonprofit/verify-hours" element={<NonprofitDashboard />} />
+          <Route path="/nonprofit/verify-hours" element={<NonprofitVerification />} />
           <Route path="/claim/verify" element={<ClaimVerify />} />
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/claim/success" element={<ClaimSuccess />} />

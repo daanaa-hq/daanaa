@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { logVolunteerHours, getOrganizations } from '../data/api'
+import ConsentDialog from './ConsentDialog'
 import type { ApiOrganization } from '../data/api'
 
 interface LogVolunteerHoursProps {
@@ -25,6 +26,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
   const [searchResults, setSearchResults] = useState<ApiOrganization[]>([])
   const [showDropdown, setShowDropdown] = useState(false)
   const [searching, setSearching] = useState(false)
+  const [showConsentDialog, setShowConsentDialog] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const handleNonprofitSearch = useCallback(async (query: string) => {
@@ -126,6 +128,16 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
       return
     }
 
+    // If allowing verification, show consent dialog first
+    if (allowVerification) {
+      setShowConsentDialog(true)
+    } else {
+      // If not allowing verification, save directly
+      await saveHours()
+    }
+  }
+
+  const saveHours = async () => {
     setLoading(true)
     try {
       const idToken = await getIdToken()
@@ -355,6 +367,22 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
       <p className="text-xs text-cool-grey text-center">
         This is your personal record. A nonprofit can verify these hours later.
       </p>
+
+      {showConsentDialog && (
+        <ConsentDialog
+          nonprofit_name={formData.nonprofit_name || searchQuery}
+          nonprofit_ein={formData.nonprofit_ein}
+          hours_logged={parseFloat(formData.hours_logged)}
+          service_date={formData.service_date}
+          notes={formData.notes}
+          onConsent={async () => {
+            setShowConsentDialog(false)
+            await saveHours()
+          }}
+          onCancel={() => setShowConsentDialog(false)}
+          isLoading={loading}
+        />
+      )}
     </form>
   )
 }

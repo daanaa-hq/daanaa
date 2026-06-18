@@ -337,15 +337,25 @@ export default function ImpactWallet() {
             <div className="bg-white border border-light-grey rounded-xl p-6 sticky top-6">
               <h3 className="text-lg font-display text-deep-navy mb-4">Actions</h3>
               <div className="space-y-3">
-                <a
-                  href="/wallet/export"
-                  className="block w-full px-4 py-3 text-center bg-warm-cream text-deep-navy rounded-lg font-medium hover:bg-warm-cream/70 transition-colors border border-light-grey"
-                >
-                  Download CSV
-                </a>
-                <p className="text-xs text-cool-grey">
-                  Export your impact wallet for personal records.
-                </p>
+                {user ? (
+                  <>
+                    <a
+                      href="/api/wallet/export"
+                      className="block w-full px-4 py-3 text-center bg-warm-cream text-deep-navy rounded-lg font-medium hover:bg-warm-cream/70 transition-colors border border-light-grey"
+                    >
+                      Download CSV
+                    </a>
+                    <p className="text-xs text-cool-grey">
+                      Export your impact wallet for personal records.
+                    </p>
+                  </>
+                ) : (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-800">
+                      Sign in to export your wallet data as CSV.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="mt-8 pt-6 border-t border-light-grey">

@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== USER WALLET DATA =====
+    // User can read/write their own wallet data
+    match /{uid}/saved_organizations/{document=**} {
+      allow read, write: if request.auth.uid == uid;
+    }
+
+    match /{uid}/funded_log/{document=**} {
+      allow read, write: if request.auth.uid == uid;
+    }
+
+    match /{uid}/volunteer_hour_logs/{document=**} {
+      allow read, write: if request.auth.uid == uid;
+    }
+
+    match /{uid}/volunteer_hour_confirmations/{document=**} {
+      allow read, write: if request.auth.uid == uid;
+    }
+
+    match /{uid}/consent_records/{document=**} {
+      allow read, write: if request.auth.uid == uid;
+    }
+
+    // ===== NONPROFIT VERIFICATION RECORDS =====
+    // Nonprofits can read/write hour verification records for their organization
+    match /nonprofit_verifications/{nonprofit_id}/{document=**} {
+      // Allow nonprofit staff to verify hours for their organization
+      allow read, write: if request.auth.uid != null;
+    }
+
+    // ===== AUDIT LOGS =====
+    // Only backend can write audit logs, users can read their own
+    match /{uid}/audit_logs/{document=**} {
+      allow read: if request.auth.uid == uid;
+      allow write: if false;  // Backend writes via admin SDK
+    }
+  }
+}
