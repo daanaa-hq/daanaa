@@ -19,7 +19,7 @@
 ### **Opening (2 min)**
 
 **You say:**
-> "Hi [Name], thanks for making time. I wanted to call before we go through any formal application process. We're building something different in the giving space, and I wanted to see if there's potential alignment between what we're doing at Daanaa and your foundation's mission.
+> "Hi [Name], thanks for making time. I wanted to call before we go through any formal application process. We're building something different in the giving space — infrastructure that helps everyone rise together.
 >
 > Do you have 20 minutes?"
 
@@ -30,11 +30,15 @@
 ### **Context (3 min)**
 
 **You say:**
-> "Daanaa is a nonprofit discovery platform — but we're not building it like mainstream giving platforms. We're focused on evidence-based financial context, donor privacy by design, and fairness to small organizations.
+> "Daanaa is infrastructure for how nonprofits succeed. We're building a complete ecosystem where three types of support flow to mission-driven organizations: donor capital, volunteer talent, and board leadership.
 >
-> We've built the full infrastructure (scoring, verified giving, nonprofit claiming) and we're now at pre-launch. We're seeking 3–5 founding partners who not only fund us, but who believe in a specific set of principles around how giving infrastructure should work.
+> Here's the problem we're solving: Small nonprofits are invisible. Not because they lack impact, but because donors default to size + brand. There's no peer context, no volunteer matching, no board recruitment infrastructure. They're competing blind.
 >
-> The reason I'm calling you specifically is that your work on [their mission area] aligns with what we're building. I wanted to explore: Would you be interested in being a Founding Stewardship Signatory for Daanaa?"
+> We're fixing that — with evidence-based financial context, direct volunteer-to-nonprofit matching, and board recruitment. All transparent, all privacy-first, all fair.
+>
+> We've built the full infrastructure (scoring, claiming, volunteer signals, board matching) and we're launching publicly in August. We're seeking 3–5 founding partners who not only fund us, but who believe in this vision: everyone rises together.
+>
+> Your work on [their mission area] tells me you believe in fairness and mission. I wanted to explore: Would you be interested in being a Founding Stewardship Signatory?"
 
 *[Let them respond. Don't push yet.]*
 
@@ -49,11 +53,13 @@
 >
 > **From us:** $100–250K in funding over 18 months, advisor role on quarterly calls, and public recognition as a founding partner.
 >
-> **From you:** You'd sign our Stewardship Commitment — which basically says you endorse an approach to giving infrastructure that's evidence-based, respects donor privacy, treats small orgs fairly, and never compromises those principles for growth.
+> **From you:** You'd sign our Stewardship Commitment — which says you endorse infrastructure that's evidence-based, respects privacy, treats small orgs fairly, and connects them with the three types of support they need: donor capital, volunteer talent, board leadership.
 >
-> **What signing does NOT mean:** You're not controlling operations, you're not liable for our actions, you're not getting equity. You're endorsing a set of principles and advising strategically.
+> **What signing does NOT mean:** You're not controlling operations, you're not liable for our actions, you're not getting equity. You're endorsing principles and advising strategically.
 >
-> The core belief is: Better giving infrastructure beats transactional incentives. No matches, no dark patterns, no donor tracking. Just informed giving and frictionless experience.
+> **The sequencing:** We launch with donor search + nonprofit claiming (Aug). Then volunteer matching (Sep). Then board recruitment (Oct). Then sustainable services (year 2). Each phase builds on the last. Everyone rises together.
+>
+> **Why partnership matters:** We're not building a commercial platform. We're building public infrastructure that small nonprofits deserve. That requires partners who believe in fairness, not growth hacking.
 >
 > Does that resonate?"
 
