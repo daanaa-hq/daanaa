@@ -6309,6 +6309,7 @@ def track_org_view(ein):
 
 
 @app.route('/api/org/<ein>/view-stats', methods=['GET'])
+@limiter.limit("60 per minute")
 def org_view_stats(ein):
     """Aggregate view + wallet-save counts for nonprofit dashboard. Requires claim."""
     uid = _require_firebase_user()
@@ -6341,6 +6342,58 @@ def org_view_stats(ein):
         'views_7d':    vrow['d7']    or 0,
         'wallet_saves': wrow['n'] if wrow else 0,
     }), 200
+
+
+@app.route('/api/org/<ein>/grants', methods=['GET'])
+@limiter.limit("30 per minute")
+def org_grants(ein):
+    """Federal grant opportunities discovered for this org. Requires claim."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if len(ein) != 9:
+        return jsonify({'error': 'Invalid EIN'}), 400
+    db = get_db()
+    claim = db.execute(
+        "SELECT 1 FROM org_claims WHERE ein=? AND firebase_uid=? "
+        "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
+        (ein, uid),
+    ).fetchone()
+    if not claim:
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    try:
+        rows = db.execute("""
+            SELECT grant_id, title, agency, close_date, cfda, url, found_at
+            FROM grant_opportunities
+            WHERE ein=?
+            ORDER BY found_at DESC
+            LIMIT 10
+        """, (ein,)).fetchall()
+    except Exception:
+        # Table not yet created (agent hasn't run)
+        return jsonify({'grants': []}), 200
+
+    from datetime import datetime, timedelta
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    grants = []
+    for r in rows:
+        close_str = r['close_date'] or ''
+        if close_str:
+            try:
+                close_dt = datetime.strptime(close_str, "%m/%d/%Y")
+                if close_dt < cutoff:
+                    continue
+            except ValueError:
+                pass
+        grants.append({
+            'grant_id': r['grant_id'],
+            'title': r['title'],
+            'agency': r['agency'],
+            'close_date': close_str,
+            'cfda': r['cfda'],
+            'url': r['url'],
+        })
+    return jsonify({'grants': grants}), 200
 
 
 # ── Wallet SQLite mirror (powers digest + nonprofit analytics) ─────────────────

@@ -10,11 +10,11 @@ type ClaimStatus = ClaimedOrg['claim_status']
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; classes: string }> = {
-    active:      { label: 'Active',          classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    verified:    { label: 'Verified',         classes: 'bg-blue-50 text-blue-700 border-blue-200' },
-    pending:     { label: 'Waiting for PIN',  classes: 'bg-amber-50 text-amber-700 border-amber-200' },
-    letter_sent: { label: 'Waiting for PIN',  classes: 'bg-amber-50 text-amber-700 border-amber-200' },
-    revoked:     { label: 'Revoked',          classes: 'bg-red-50 text-red-700 border-red-200' },
+    active:      { label: 'Active',           classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    verified:    { label: 'Active',            classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    pending:     { label: 'Waiting for PIN',   classes: 'bg-amber-50 text-amber-700 border-amber-200' },
+    letter_sent: { label: 'Waiting for PIN',   classes: 'bg-amber-50 text-amber-700 border-amber-200' },
+    revoked:     { label: 'Revoked',           classes: 'bg-red-50 text-red-700 border-red-200' },
   }
   const cfg = map[status] ?? { label: status, classes: 'bg-light-grey text-cool-grey border-light-grey' }
   return (
@@ -85,17 +85,7 @@ function OrgCard({ org, onOpenDashboard, onEditProfile, loadingEin }: {
           </button>
         )}
 
-        {status === 'verified' && (
-          <button
-            onClick={() => onEditProfile(org.ein)}
-            disabled={isLoading}
-            className="px-4 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 font-body text-[13px] font-semibold hover:bg-blue-100 disabled:opacity-50 transition-colors"
-          >
-            {isLoading ? 'Loading…' : 'Set up profile'}
-          </button>
-        )}
-
-        {status === 'active' && (
+        {(status === 'verified' || status === 'active') && (
           <>
             <button
               onClick={() => onOpenDashboard(org.ein)}

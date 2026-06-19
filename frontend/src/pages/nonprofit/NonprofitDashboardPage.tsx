@@ -180,6 +180,98 @@ function PublicProfilePanel({ org }: { org: ApiOrganization }) {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
+interface GrantOpportunity {
+  grant_id: string
+  title: string
+  agency: string
+  close_date: string
+  cfda: string
+  url: string
+}
+
+function formatGrantDate(mmddyyyy: string): { label: string; urgent: boolean; soon: boolean } {
+  const label = mmddyyyy
+  if (!mmddyyyy) return { label: '', urgent: false, soon: false }
+  const [m, d, y] = mmddyyyy.split('/').map(Number)
+  if (!m || !d || !y) return { label: mmddyyyy, urgent: false, soon: false }
+  const dt = new Date(y, m - 1, d)
+  const now = new Date()
+  const daysLeft = Math.ceil((dt.getTime() - now.getTime()) / 86400000)
+  const formatted = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return {
+    label: formatted,
+    urgent: daysLeft >= 0 && daysLeft <= 30,
+    soon: daysLeft > 30 && daysLeft <= 60,
+  }
+}
+
+function GrantsPanel({ grants, loaded }: { grants: GrantOpportunity[]; loaded: boolean }) {
+  return (
+    <div className="bg-white rounded-2xl border border-light-grey p-6">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="font-body text-[15px] font-semibold text-deep-navy">Grant opportunities</h2>
+        <span className="font-body text-[11px] text-cool-grey">From Grants.gov. Updated weekly.</span>
+      </div>
+
+      {!loaded ? (
+        <div className="space-y-3 mt-4">
+          {[1, 2].map(i => (
+            <div key={i} className="h-16 bg-light-grey rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : grants.length === 0 ? (
+        <p className="font-body text-[13px] text-cool-grey mt-3">
+          We check for matching federal grants every Monday. Nothing found yet for your category.
+          <a
+            href="https://grants.gov/search-grants?eligibilities=25&oppStatuses=posted"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-1 text-soft-gold hover:underline"
+          >
+            Browse Grants.gov yourself.
+          </a>
+        </p>
+      ) : (
+        <ul className="divide-y divide-light-grey mt-2">
+          {grants.map(g => {
+            const { label: dateLabel, urgent, soon } = formatGrantDate(g.close_date)
+            return (
+              <li key={g.grant_id} className="py-3 flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-body text-[13px] font-semibold text-deep-navy leading-snug line-clamp-2">
+                    {g.title}
+                  </p>
+                  <p className="font-body text-[11px] text-cool-grey mt-0.5">
+                    {g.agency}
+                    {g.cfda && <span className="ml-2 text-muted-cream">CFDA {g.cfda}</span>}
+                  </p>
+                  {dateLabel && (
+                    <p className={`font-body text-[11px] mt-0.5 font-semibold ${
+                      urgent ? 'text-red-600' : soon ? 'text-amber-600' : 'text-cool-grey'
+                    }`}>
+                      Closes {dateLabel}
+                    </p>
+                  )}
+                </div>
+                {g.url && (
+                  <a
+                    href={g.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 mt-0.5 px-3 py-1.5 rounded-xl border border-light-grey font-body text-[11px] text-cool-grey hover:border-soft-gold/40 hover:text-deep-navy transition-colors whitespace-nowrap"
+                  >
+                    View ↗
+                  </a>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 interface ViewStats {
   views_total: number
   views_30d: number
@@ -226,6 +318,8 @@ export default function NonprofitDashboardPage() {
   const [editToken, setEditToken] = useState<string | null>(null)
   const [pendingHours, setPendingHours] = useState<number | null>(null)
   const [viewStats, setViewStats] = useState<ViewStats | null>(null)
+  const [grants, setGrants] = useState<GrantOpportunity[]>([])
+  const [grantsLoaded, setGrantsLoaded] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -242,8 +336,8 @@ export default function NonprofitDashboardPage() {
 
         const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 
-        // Load in parallel: org data + portal token + pending hours + view stats
-        const [orgData, token, hoursRes, statsRes] = await Promise.allSettled([
+        // Load in parallel: org data + portal token + pending hours + view stats + grants
+        const [orgData, token, hoursRes, statsRes, grantsRes] = await Promise.allSettled([
           getOrganization(ein!),
           getPortalToken(ein!, idToken),
           fetch(`${base}/api/nonprofit/hours-pending`, {
@@ -252,6 +346,9 @@ export default function NonprofitDashboardPage() {
           fetch(`${base}/api/org/${ein}/view-stats`, {
             headers: { Authorization: `Bearer ${idToken}` },
           }).then(r => r.ok ? r.json() : null),
+          fetch(`${base}/api/org/${ein}/grants`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+          }).then(r => r.ok ? r.json() : { grants: [] }),
         ])
 
         if (orgData.status === 'fulfilled') {
@@ -282,6 +379,11 @@ export default function NonprofitDashboardPage() {
         } else {
           setViewStats({ views_total: 0, views_30d: 0, views_7d: 0, wallet_saves: 0 })
         }
+
+        if (grantsRes.status === 'fulfilled' && grantsRes.value?.grants) {
+          setGrants(grantsRes.value.grants as GrantOpportunity[])
+        }
+        setGrantsLoaded(true)
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : ''
         if (msg.includes('401')) {
@@ -290,6 +392,7 @@ export default function NonprofitDashboardPage() {
         } else {
           setError('Something went wrong. Please try again.')
         }
+        setGrantsLoaded(true)
       } finally {
         setLoading(false)
       }
@@ -390,6 +493,11 @@ export default function NonprofitDashboardPage() {
         {/* Analytics panel */}
         <div className="mt-4">
           <AnalyticsPanel stats={viewStats} />
+        </div>
+
+        {/* Grant opportunities panel */}
+        <div className="mt-4">
+          <GrantsPanel grants={grants} loaded={grantsLoaded} />
         </div>
 
         {/* Quick actions */}
