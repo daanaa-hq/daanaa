@@ -113,7 +113,7 @@ function walletReducer(state: Wallet, action: WalletAction): Wallet {
   }
 }
 
-const WalletContext = createContext<WalletContextType | null>(null)
+export const WalletContext = createContext<WalletContextType | null>(null)
 
 interface WalletProviderProps {
   children: React.ReactNode
