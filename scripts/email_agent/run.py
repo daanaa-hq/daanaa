@@ -35,6 +35,22 @@ _AUTOMATED_FROM_RE = re.compile(
     re.I,
 )
 
+_OWN_DOMAINS_RE = re.compile(r"@(daanaa\.org|ecomargins\.com)[\s>]?$", re.I)
+
+
+def _is_internal(headers: dict[str, str]) -> bool:
+    """Sender is one of our own domains — silently drop, never draft or ack.
+
+    Google Groups rewrites From: to our alias when the original sender's domain
+    has DMARC p=reject (Google, Microsoft, Yahoo). But it preserves Reply-To as
+    the original external address. So if Reply-To is external, it's a real human
+    email even if From was rewritten — let it through.
+    """
+    reply_to = headers.get("Reply-To", "")
+    if reply_to and not _OWN_DOMAINS_RE.search(reply_to):
+        return False
+    return bool(_OWN_DOMAINS_RE.search(headers.get("From", "")))
+
 
 def _is_automated(headers: dict[str, str]) -> bool:
     sender = headers.get("From", "")
@@ -49,6 +65,11 @@ def _is_automated(headers: dict[str, str]) -> bool:
     if "submitter: google.com" in subj or "report domain:" in subj:
         return True
     return False
+
+
+def _is_reply(headers: dict[str, str]) -> bool:
+    """True when this is a reply thread, not a first-contact message."""
+    return bool(headers.get("In-Reply-To") or headers.get("References"))
 from scripts.email_agent.labels import (
     ensure_labels, TRIAGED, NEEDS_HUMAN, AI_DRAFT, route_label,
 )
@@ -138,7 +159,22 @@ def main():
             stats["skipped"] += 1
             continue
 
-        # Automated system emails: label+archive, never ack or draft
+        # Internal sender (our own domains) — silently drop, never ack or draft
+        if _is_internal(headers):
+            stats["automated"] += 1
+            print(f"  [intern] ⊘ {targeted} | {subject}")
+            if not args.dry_run:
+                try:
+                    svc.users().messages().modify(
+                        userId="me", id=msg["id"],
+                        body={"addLabelIds": [labels[TRIAGED]]},
+                    ).execute()
+                except Exception as e:
+                    stats["errors"] += 1
+                    print(f"           ✗ label error: {e}")
+            continue
+
+        # Automated system emails — silently archive, never ack or draft
         if _is_automated(headers):
             stats["automated"] += 1
             print(f"  [auto  ] ⊘ {targeted} | {subject}")
@@ -155,21 +191,27 @@ def main():
 
         stats["matched"] += 1
 
+        is_reply = _is_reply(headers)
+
         # Decide actions for this tier
-        should_auto_ack = route.tier in ("high", "medium") and not args.no_auto_ack
+        # Replies never get auto-acked — prevents infinite ack loops
+        should_auto_ack = route.tier in ("high", "medium") and not args.no_auto_ack and not is_reply
         should_draft    = route.tier in ("high", "medium")
-        will_need_human = route.tier in ("low", "medium")
+        will_need_human = route.tier in ("low", "medium") or is_reply
 
         add_labels = [labels[TRIAGED], labels[route_label(route.address.split("@")[0])]]
         if will_need_human:
             add_labels.append(labels[NEEDS_HUMAN])
 
         tier_mark = {"high": "✦", "medium": "○", "low": "·"}.get(route.tier, " ")
-        print(f"  [{route.tier:6}] {tier_mark} {targeted} | {subject}")
+        reply_tag = " [reply]" if is_reply else ""
+        print(f"  [{route.tier:6}] {tier_mark} {targeted} | {subject}{reply_tag}")
 
         if args.dry_run:
             if should_auto_ack:
                 print(f"           → would auto-ack from {route.address} (instant)")
+            elif is_reply:
+                print(f"           → reply thread: no auto-ack, draft queued for human")
             if should_draft:
                 stats["drafted"] += 1
                 print(f"           → would create full draft from {route.address}")
