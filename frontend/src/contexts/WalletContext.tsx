@@ -205,14 +205,23 @@ export function WalletProvider({ children }: WalletProviderProps) {
 
   const syncToServer = useCallback(
     async (googleEmail: string, token: string): Promise<void> => {
-      // Phase 2: Implement actual server sync
-      // For now, just mark as synced
       if (!googleEmail || !token) {
         throw new Error('googleEmail and token are required for sync')
       }
+      const eins = wallet.orgs.map(org => org.ein)
+      const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const resp = await fetch(`${base}/api/wallet/sync-saves`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eins }),
+      })
+      if (!resp.ok) throw new Error(`Wallet sync failed: ${resp.status}`)
       dispatch({ type: 'SYNC_WITH_SERVER', payload: { googleEmail } })
     },
-    []
+    [wallet.orgs]
   )
 
   const logoutAndClearSync = useCallback(() => {

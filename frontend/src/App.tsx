@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { CompareProvider } from './contexts/CompareContext'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { useWallet } from './contexts/WalletContext'
 import NonprofitRoute from './components/NonprofitRoute'
 
 const Home = lazy(() => import('./pages/Home'))
@@ -58,10 +59,42 @@ function PageLoader() {
   )
 }
 
+function WalletSyncBridge() {
+  const { user, getIdToken } = useAuth()
+  const { wallet, syncToServer } = useWallet()
+  const lastSyncedUid = useRef<string | null>(null)
+
+  // Sync to server when user logs in
+  useEffect(() => {
+    if (!user?.email) return
+    if (lastSyncedUid.current === user.uid) return
+    getIdToken().then(token => {
+      if (token) {
+        syncToServer(user.email!, token).catch(() => {})
+        lastSyncedUid.current = user.uid
+      }
+    })
+  }, [user, getIdToken, syncToServer])
+
+  // Re-sync when wallet orgs change while logged in (debounced 3s)
+  useEffect(() => {
+    if (!user?.email || !lastSyncedUid.current) return
+    const timer = setTimeout(() => {
+      getIdToken().then(token => {
+        if (token) syncToServer(user.email!, token).catch(() => {})
+      })
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [wallet.orgs, user, getIdToken, syncToServer])
+
+  return null
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
     <AuthProvider>
+    <WalletSyncBridge />
     <CompareProvider>
       <Suspense fallback={<PageLoader />}>
         <Routes>

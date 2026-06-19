@@ -366,6 +366,67 @@ The Daanaa Team
     )
 
 
+def wallet_digest_email(
+    display_name: Optional[str],
+    orgs: list[dict],
+) -> EmailTemplate:
+    """Weekly digest for donors: a warm summary of their saved orgs.
+
+    Each org dict should have: name, ein, mission (optional), donate_url (optional).
+    Max 5 orgs shown. Stewardship: never used for marketing, always serves giving intent.
+    """
+    first = display_name.split()[0] if display_name else None
+    greet = f"Hi {first}," if first else "Hi,"
+    n = len(orgs)
+    count_line = f"You have {n} {'organization' if n == 1 else 'organizations'} in your Daanaa wallet."
+
+    org_cards_html = ""
+    org_lines_plain = ""
+    for org in orgs[:5]:
+        name = org.get("name", "Unknown Organization")
+        ein = org.get("ein", "")
+        mission = org.get("mission") or ""
+        donate_url = org.get("donate_url") or ""
+        org_url = f"https://daanaa.org/org/{ein}"
+        donate_html = (
+            f'<p style="margin:6px 0"><a href="{donate_url}" style="color:#d4af37;font-weight:700">Give now</a>'
+            f' &nbsp;&middot;&nbsp; <a href="{org_url}" style="color:#888">View page</a></p>'
+            if donate_url else
+            f'<p style="margin:6px 0"><a href="{org_url}" style="color:#d4af37">View page</a></p>'
+        )
+        org_cards_html += f"""
+<div style="padding:14px 16px;border-left:4px solid #d4af37;background:#f9f6f0;margin:14px 0;border-radius:0 6px 6px 0">
+  <p style="margin:0 0 4px;font-weight:700;font-size:15px">{name}</p>
+  {f'<p style="margin:4px 0;font-size:13px;color:#555">{mission[:160]}{"..." if len(mission) > 160 else ""}</p>' if mission else ''}
+  {donate_html}
+</div>"""
+        org_lines_plain += f"\n  {name}"
+        if donate_url:
+            org_lines_plain += f"\n  Give: {donate_url}"
+        org_lines_plain += f"\n  Page: {org_url}\n"
+
+    body = f"""<p>{greet}</p>
+<p>{count_line} Here's a quick look at each one so you can act when you're ready.</p>
+{org_cards_html}
+<p style="margin-top:20px"><a href="https://daanaa.org/wallet" style="color:#d4af37;font-weight:700">Open your full wallet</a></p>
+<p style="font-size:12px;color:#888;margin-top:16px">You're getting this because you saved these orgs to your Daanaa wallet.
+<a href="https://daanaa.org/wallet" style="color:#888">Manage your wallet</a> to add or remove orgs at any time.</p>"""
+
+    plain = f"""{greet}
+
+{count_line} Here's a quick look:
+{org_lines_plain}
+Open your wallet: https://daanaa.org/wallet
+
+The Daanaa Team
+"""
+    return EmailTemplate(
+        subject=f"Your Daanaa wallet: {n} {'org' if n == 1 else 'orgs'} you've saved",
+        html=_base_html("Your giving wallet", "#d4af37", "#f5e6d3", body),
+        plain_text=plain,
+    )
+
+
 # ── Singleton ─────────────────────────────────────────────────────────────────
 
 _email_service: Optional[EmailService] = None

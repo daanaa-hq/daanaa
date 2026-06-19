@@ -245,6 +245,15 @@ export default function OrganizationDetail() {
     window.scrollTo(0, 0)
   }, [id])
 
+  // Fire anonymous view event (fire-and-forget, never awaited)
+  useEffect(() => {
+    if (!id) return
+    const ein = id.replace(/\D/g, '').slice(0, 9)
+    if (ein.length !== 9) return
+    const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    fetch(`${base}/api/org/${ein}/view`, { method: 'POST' }).catch(() => {})
+  }, [id])
+
   const org = apiOrg ? adaptOrg(apiOrg) : null
 
   const rawSimilarOrgs = useMemo(() => {

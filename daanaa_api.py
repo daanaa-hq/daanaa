@@ -1152,6 +1152,74 @@ def _ensure_wallet_sync_table(db: sqlite3.Connection) -> None:
     """)
 
 
+def _ensure_donor_tables(db: sqlite3.Connection) -> None:
+    """Tables for view tracking, wallet SQLite mirror, and donor digest."""
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS donor_users (
+            firebase_uid  TEXT PRIMARY KEY,
+            email         TEXT,
+            display_name  TEXT,
+            last_seen     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS org_wallet_saves (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            firebase_uid TEXT NOT NULL,
+            ein          TEXT NOT NULL,
+            saved_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(firebase_uid, ein)
+        )
+    """)
+    db.execute("CREATE INDEX IF NOT EXISTS idx_wallet_saves_ein ON org_wallet_saves(ein)")
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS org_view_events (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            ein       TEXT NOT NULL,
+            view_date TEXT NOT NULL DEFAULT (date('now')),
+            source    TEXT NOT NULL DEFAULT 'web'
+        )
+    """)
+    db.execute("CREATE INDEX IF NOT EXISTS idx_view_events_ein ON org_view_events(ein)")
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS donor_digest_log (
+            firebase_uid TEXT NOT NULL,
+            sent_week    TEXT NOT NULL,
+            sent_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (firebase_uid, sent_week)
+        )
+    """)
+
+
+def _firebase_claims() -> tuple:
+    """Like _require_firebase_user() but returns (uid, email, display_name)."""
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        abort(401)
+    token = auth_header[7:]
+    try:
+        from cryptography.x509 import load_pem_x509_certificate
+        header = _pyjwt.get_unverified_header(token)
+        kid = header.get('kid', '')
+        pubkeys = _get_firebase_pubkeys()
+        if kid not in pubkeys:
+            abort(401)
+        cert = load_pem_x509_certificate(pubkeys[kid].encode())
+        pub_key = cert.public_key()
+        decoded = _pyjwt.decode(
+            token, pub_key,
+            algorithms=['RS256'],
+            audience=_FIREBASE_PROJECT_ID,
+            issuer=f'https://securetoken.google.com/{_FIREBASE_PROJECT_ID}',
+        )
+        uid = decoded.get('sub', '')
+        if not uid:
+            abort(401)
+        return uid, decoded.get('email', '') or '', decoded.get('name', '') or ''
+    except Exception:
+        abort(401)
+
+
 def _init_revoked_eins_table():
     # IRS Automatic Revocation of Exemption list. An org here has LOST its tax-
     # exempt status — we must NEVER present a donate path for it (G2 gate). This
@@ -3806,7 +3874,7 @@ def admin_community_partner_approve(cp_id):
         f"Offer: {row['offer']}\n\n"
         f"Nonprofits in your area will be able to see your offer when they visit the Daanaa network directory.\n\n"
         f"Thank you for supporting the nonprofit community.\n\n"
-        f"— The Daanaa Team\n"
+        f"The Daanaa Team\n"
         f"  daanaa.org · partners@daanaa.org",
         from_addr="Daanaa <partners@daanaa.org>",
     )
@@ -6078,15 +6146,15 @@ def vendor_apply():
             svc = get_email_service()
             svc.send(
                 contact_email,
-                f"We received your Daanaa vendor application — {name}",
+                f"We received your Daanaa vendor application: {name}",
                 f"""<p>Hi,</p>
 <p>We received your application to join the Daanaa Vendor Network as <strong>{name}</strong>.</p>
 <p>Our team reviews all applications within 2 business days. We'll email you at {contact_email} with next steps.</p>
 <p>In the meantime, you can reach us at <a href="mailto:partners@daanaa.org">partners@daanaa.org</a>.</p>
-<p>— The Daanaa Team</p>""",
+<p>The Daanaa Team</p>""",
                 f"Hi,\n\nWe received your vendor application for {name}. "
                 f"We review applications within 2 business days and will email you next steps.\n\n"
-                f"Questions? partners@daanaa.org\n\n— The Daanaa Team",
+                f"Questions? partners@daanaa.org\n\nThe Daanaa Team",
             )
         except Exception as _e:
             _logger.warning(f"vendor apply email failed: {_e}")
@@ -6209,20 +6277,134 @@ def admin_vendor_approve(vendor_id: str):
         try:
             get_email_service().send(
                 vendor["contact_email"],
-                f"Your Daanaa vendor listing is live — {vendor['name']}",
+                f"Your Daanaa vendor listing is live: {vendor['name']}",
                 f"""<p>Hi,</p>
-<p>Great news — your vendor listing for <strong>{vendor['name']}</strong> is now live on Daanaa.</p>
+<p>Your vendor listing for <strong>{vendor['name']}</strong> is now live on Daanaa.</p>
 <p>Nonprofits in our network can now find you, leave ratings, and request your discount code.</p>
 <p>Manage your listing at <a href="https://daanaa.org/vendor/dashboard">daanaa.org/vendor/dashboard</a>.</p>
-<p>— The Daanaa Team</p>""",
+<p>The Daanaa Team</p>""",
                 f"Hi,\n\nYour vendor listing for {vendor['name']} is live on Daanaa. "
-                f"Manage it at https://daanaa.org/vendor/dashboard\n\n— The Daanaa Team",
+                f"Manage it at https://daanaa.org/vendor/dashboard\n\nThe Daanaa Team",
             )
         except Exception as _e:
             _logger.warning(f"vendor approve email failed: {_e}")
 
     return jsonify({"ok": True, "vendor_id": vendor_id, "status": "active"})
 
+
+# ── Org view tracking ─────────────────────────────────────────────────────────
+
+@app.route('/api/org/<ein>/view', methods=['POST'])
+@limiter.limit("30 per minute")
+def track_org_view(ein):
+    """Anonymous page view counter. Called fire-and-forget by org detail page."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if len(ein) != 9:
+        return '', 204
+    db = get_db()
+    _ensure_donor_tables(db)
+    db.execute("INSERT INTO org_view_events (ein) VALUES (?)", (ein,))
+    db.commit()
+    return '', 204
+
+
+@app.route('/api/org/<ein>/view-stats', methods=['GET'])
+def org_view_stats(ein):
+    """Aggregate view + wallet-save counts for nonprofit dashboard. Requires claim."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if len(ein) != 9:
+        return jsonify({'error': 'Invalid EIN'}), 400
+    db = get_db()
+    claim = db.execute(
+        "SELECT 1 FROM org_claims WHERE ein=? AND firebase_uid=? "
+        "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
+        (ein, uid),
+    ).fetchone()
+    if not claim:
+        return jsonify({'error': 'Unauthorized'}), 403
+    _ensure_donor_tables(db)
+    vrow = db.execute("""
+        SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN view_date >= date('now','-30 days') THEN 1 ELSE 0 END) AS d30,
+            SUM(CASE WHEN view_date >= date('now','-7 days')  THEN 1 ELSE 0 END) AS d7
+        FROM org_view_events WHERE ein=?
+    """, (ein,)).fetchone()
+    wrow = db.execute(
+        "SELECT COUNT(*) AS n FROM org_wallet_saves WHERE ein=?", (ein,)
+    ).fetchone()
+    return jsonify({
+        'ein': ein,
+        'views_total': vrow['total'] or 0,
+        'views_30d':   vrow['d30']   or 0,
+        'views_7d':    vrow['d7']    or 0,
+        'wallet_saves': wrow['n'] if wrow else 0,
+    }), 200
+
+
+# ── Wallet SQLite mirror (powers digest + nonprofit analytics) ─────────────────
+
+@app.route('/api/wallet/sync-saves', methods=['POST'])
+def wallet_sync_saves():
+    """Mirror localStorage wallet EINs to SQLite. Also registers the donor user.
+
+    Body: { "eins": ["123456789", ...] }
+    The full list replaces whatever was stored before — deleted orgs are removed.
+    """
+    uid, email, display_name = _firebase_claims()
+    data = request.get_json(silent=True) or {}
+    raw_eins = data.get('eins', [])
+    if not isinstance(raw_eins, list):
+        raw_eins = []
+    eins = [''.join(c for c in str(e) if c.isdigit())[:10] for e in raw_eins]
+    eins = [e for e in eins if len(e) == 9][:100]
+
+    db = get_db()
+    _ensure_donor_tables(db)
+
+    db.execute("""
+        INSERT INTO donor_users (firebase_uid, email, display_name, last_seen)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(firebase_uid) DO UPDATE SET
+            email        = excluded.email,
+            display_name = excluded.display_name,
+            last_seen    = CURRENT_TIMESTAMP
+    """, (uid, email, display_name))
+
+    for ein in eins:
+        db.execute(
+            "INSERT OR IGNORE INTO org_wallet_saves (firebase_uid, ein) VALUES (?, ?)",
+            (uid, ein),
+        )
+
+    if eins:
+        placeholders = ','.join('?' * len(eins))
+        db.execute(
+            f"DELETE FROM org_wallet_saves WHERE firebase_uid=? AND ein NOT IN ({placeholders})",
+            [uid] + eins,
+        )
+    else:
+        db.execute("DELETE FROM org_wallet_saves WHERE firebase_uid=?", (uid,))
+
+    db.commit()
+    return jsonify({'ok': True, 'synced': len(eins)}), 200
+
+
+@app.route('/api/wallet/saves', methods=['GET'])
+def wallet_get_saves():
+    """Return user's saved EINs from the SQLite mirror."""
+    uid, _, _ = _firebase_claims()
+    db = get_db()
+    _ensure_donor_tables(db)
+    rows = db.execute(
+        "SELECT ein, saved_at FROM org_wallet_saves WHERE firebase_uid=? ORDER BY saved_at DESC",
+        (uid,),
+    ).fetchall()
+    return jsonify({'saves': [dict(r) for r in rows]}), 200
+
+
+# ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
 # before forking workers. Workers inherit via CoW without re-reading the DB.
