@@ -415,7 +415,7 @@ export default function OrganizationDetail() {
                     {apiOrg!.v5_context?.score?.percentile != null && (
                       <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
                         <span className="font-display text-[26px] text-warm-cream leading-none">
-                          Top {Math.round(100 - (apiOrg!.v5_context.score.percentile * 100))}%
+                          Top {Math.max(1, 100 - apiOrg!.v5_context.score.percentile)}%
                         </span>
                         <span className="font-body text-[11px] text-muted-cream text-center mt-1">of peer nonprofits</span>
                       </div>
