@@ -261,7 +261,12 @@ export default function OrganizationDetail() {
   const metaDesc = apiOrg
     ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. Tier: ${apiOrg.merit_tier ?? 'Flame'}. Financial scale: ${apiOrg.peer_percentile != null ? `${Math.round(apiOrg.peer_percentile)}/100` : 'pending'}.`
     : ''
-  usePageMeta(metaTitle, metaDesc)
+
+  const ogImage = apiOrg && apiOrg.NTEE1
+    ? `https://daanaa.org/categories/${apiOrg.NTEE1}.png`
+    : 'https://daanaa.org/logo.png'
+
+  usePageMeta(metaTitle, { description: metaDesc, ogImage })
 
   const jsonLdSchema = useMemo(() => {
     if (!apiOrg) return null

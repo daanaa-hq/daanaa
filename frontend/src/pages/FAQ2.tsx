@@ -4,7 +4,10 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useJsonLd, faqPageSchema } from '../hooks/useJsonLd'
 
 export default function FAQ() {
-  usePageMeta('FAQ — Daanaa', 'Answers about Daanaa, nonprofit discovery, public records, Peer Financial Context, Lamp Tiers, and direct giving.')
+  usePageMeta('FAQ — Daanaa', {
+    description: 'Answers about Daanaa, nonprofit discovery, public records, Peer Financial Context, Lamp Tiers, and direct giving.',
+    ogImage: 'https://daanaa.org/logo.png',
+  })
   const [open, setOpen] = useState<number | null>(0)
 
   const faqs = [

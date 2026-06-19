@@ -771,7 +771,10 @@ function FooterCTA() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
-  usePageMeta('Daanaa — Independent Nonprofit Discovery Platform', 'Discover causes and organizations using public nonprofit information presented with context, stewardship, and respect.')
+  usePageMeta('Daanaa — Independent Nonprofit Discovery Platform', {
+    description: 'Discover causes and organizations using public nonprofit information presented with context, stewardship, and respect.',
+    ogImage: 'https://daanaa.org/logo.png',
+  })
 
   useJsonLd(websiteSchema({
     name: 'Daanaa',

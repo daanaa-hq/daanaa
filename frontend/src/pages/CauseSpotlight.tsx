@@ -17,7 +17,10 @@ export default function CauseSpotlight() {
 
   usePageMeta(
     cat ? `${cat.name} — Featured cause` : 'Featured cause',
-    cat ? `Discover ${cat.name} nonprofits on Daanaa. ${meta?.tagline ?? ''}` : '',
+    {
+      description: cat ? `Discover ${cat.name} nonprofits on Daanaa. ${meta?.tagline ?? ''}` : '',
+      ogImage: cat ? `https://daanaa.org/categories/${code}.png` : 'https://daanaa.org/logo.png',
+    }
   )
 
   const schemas = useMemo(() => {
