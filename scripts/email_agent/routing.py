@@ -22,6 +22,7 @@ class Route:
 
 ROUTES: dict[str, Route] = {
     "hello":    Route("hello@daanaa.org",    "04-operations",           "Front desk",                 "high"),
+    "support":  Route("support@daanaa.org",  "04-operations",           "General support",            "high"),
     "orgs":     Route("orgs@daanaa.org",     "10-nonprofit-success",    "Nonprofit relations",        "high"),
     "partners": Route("partners@daanaa.org", "07-people-partnerships",  "Partnerships",               "high"),
     "contact":  Route("contact@daanaa.org",  "02-data-research",        "Crawler/webmaster contact",  "high"),

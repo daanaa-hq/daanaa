@@ -26,6 +26,15 @@ def reply_template(route: Route, sender_first_name: str | None) -> tuple[str, st
     greet = f"Hi {sender_first_name}," if sender_first_name else "Hi,"
 
     bodies = {
+        "support": (
+            f"{greet}\n\nThanks for reaching out to Daanaa. We read every message and "
+            "respond within 1–2 business days.\n\n"
+            "A few common questions we can address quickly:\n"
+            "  • To find a nonprofit: daanaa.org/directory\n"
+            "  • To add your organization: daanaa.org/for-nonprofits\n"
+            "  • To report a data issue: trust@daanaa.org\n\n"
+            "If you're writing about something else, a real person will pick this up shortly."
+        ),
         "hello": (
             f"{greet}\n\nThanks for writing to Daanaa. We read every email — "
             "someone will come back to you within a couple of working days.\n\n"

@@ -5991,6 +5991,239 @@ def serve_frontend(path):
     return send_from_directory(FRONTEND_DIST, 'index.html')
 
 
+# ── Vendor self-service portal ───────────────────────────────────────────────
+# Vendors are businesses that serve nonprofits. They self-register, manage
+# their own listing, and pay for premium placement. Nonprofits always free.
+
+def _ensure_vendor_portal_schema():
+    """Add firebase_uid + portal columns to vendors table if not present."""
+    db = get_db()
+    existing = {row[1] for row in db.execute("PRAGMA table_info(vendors)").fetchall()}
+    migrations = [
+        ("firebase_uid",   "TEXT"),
+        ("tagline",        "TEXT"),
+        ("services",       "TEXT"),   # JSON array
+        ("service_areas",  "TEXT"),   # JSON array
+        ("founded_year",   "INTEGER"),
+        ("team_size",      "TEXT"),
+        ("portal_status",  "TEXT DEFAULT 'pending'"),  # pending|active|suspended
+        ("portal_notes",   "TEXT"),
+        ("approved_at",    "TEXT"),
+    ]
+    for col, typedef in migrations:
+        if col not in existing:
+            db.execute(f"ALTER TABLE vendors ADD COLUMN {col} {typedef}")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_vendors_firebase ON vendors(firebase_uid)")
+    db.commit()
+
+
+@app.route('/api/vendor/apply', methods=['POST'])
+@limiter.limit("5 per hour")
+def vendor_apply():
+    """
+    Vendor self-registers. Creates a pending listing.
+    Requires Firebase auth. Idempotent — existing vendor returns their record.
+
+    Body:
+      name, category, description, tagline, website, contact_email,
+      contact_phone, service_areas (list), discount_description
+    """
+    uid = _require_firebase_user()
+    _ensure_vendor_portal_schema()
+    db = get_db()
+
+    # Idempotent — if they already applied, return their record
+    existing = db.execute(
+        "SELECT vendor_id, portal_status FROM vendors WHERE firebase_uid=?", (uid,)
+    ).fetchone()
+    if existing:
+        return jsonify({
+            "vendor_id": existing["vendor_id"],
+            "portal_status": existing["portal_status"],
+            "message": "Application already on file",
+        })
+
+    data = request.get_json(silent=True) or {}
+    name = (data.get("name") or "").strip()[:100]
+    category = (data.get("category") or "").strip()[:60]
+    description = (data.get("description") or "").strip()[:500]
+    tagline = (data.get("tagline") or "").strip()[:120]
+    website = (data.get("website") or "").strip()[:200]
+    contact_email = (data.get("contact_email") or "").strip()[:100]
+    contact_phone = (data.get("contact_phone") or "").strip()[:30]
+    service_areas = data.get("service_areas") or []
+    discount_description = (data.get("discount_description") or "").strip()[:300]
+
+    if not name or not category or not contact_email:
+        return jsonify({"error": "name, category, and contact_email are required"}), 400
+
+    vendor_id = secrets.token_urlsafe(10)
+    db.execute("""
+        INSERT INTO vendors
+          (vendor_id, firebase_uid, name, category, description, tagline, website,
+           contact_email, contact_phone, service_areas, discount_description,
+           portal_status, active, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,'pending',0,datetime('now'),datetime('now'))
+    """, (vendor_id, uid, name, category, description, tagline, website,
+          contact_email, contact_phone, json.dumps(service_areas), discount_description))
+    db.commit()
+
+    # Notify the team
+    _log_org_activity(vendor_id, "vendor_apply",
+                      f"New vendor application: {name} ({category})", actor="vendor")
+
+    # Send confirmation email to the applicant
+    if get_email_service:
+        try:
+            svc = get_email_service()
+            svc.send(
+                contact_email,
+                f"We received your Daanaa vendor application — {name}",
+                f"""<p>Hi,</p>
+<p>We received your application to join the Daanaa Vendor Network as <strong>{name}</strong>.</p>
+<p>Our team reviews all applications within 2 business days. We'll email you at {contact_email} with next steps.</p>
+<p>In the meantime, you can reach us at <a href="mailto:partners@daanaa.org">partners@daanaa.org</a>.</p>
+<p>— The Daanaa Team</p>""",
+                f"Hi,\n\nWe received your vendor application for {name}. "
+                f"We review applications within 2 business days and will email you next steps.\n\n"
+                f"Questions? partners@daanaa.org\n\n— The Daanaa Team",
+            )
+        except Exception as _e:
+            _logger.warning(f"vendor apply email failed: {_e}")
+
+    return jsonify({
+        "vendor_id": vendor_id,
+        "portal_status": "pending",
+        "message": "Application received. We review within 2 business days.",
+    }), 201
+
+
+@app.route('/api/vendor/me', methods=['GET'])
+@limiter.limit("60 per minute")
+def vendor_me():
+    """Return the authenticated vendor's own listing and stats."""
+    uid = _require_firebase_user()
+    _ensure_vendor_portal_schema()
+    db = get_db()
+
+    row = db.execute("""
+        SELECT v.*, s.avg_rating, s.rating_count, s.total_savings, s.nonprofits_contributed
+        FROM vendors v
+        LEFT JOIN vendor_stats s ON v.vendor_id = s.vendor_id
+        WHERE v.firebase_uid = ?
+    """, (uid,)).fetchone()
+
+    if not row:
+        return jsonify({"error": "No vendor account found. Apply at /api/vendor/apply"}), 404
+
+    return jsonify({
+        "vendor_id": row["vendor_id"],
+        "portal_status": row["portal_status"],
+        "name": row["name"],
+        "category": row["category"],
+        "description": row["description"],
+        "tagline": row["tagline"],
+        "website": row["website"],
+        "contact_email": row["contact_email"],
+        "contact_phone": row["contact_phone"],
+        "service_areas": json.loads(row["service_areas"] or "[]"),
+        "discount_description": row["discount_description"],
+        "discount_code": row["discount_code"],
+        "logo_url": row["logo_url"],
+        "active": bool(row["active"]),
+        "approved_at": row["approved_at"],
+        "created_at": row["created_at"],
+        "stats": {
+            "avg_rating": row["avg_rating"],
+            "rating_count": row["rating_count"] or 0,
+            "total_savings": row["total_savings"] or 0,
+            "nonprofits_contributed": row["nonprofits_contributed"] or 0,
+        },
+    })
+
+
+@app.route('/api/vendor/me', methods=['PATCH'])
+@limiter.limit("20 per hour")
+def vendor_me_update():
+    """
+    Vendor updates their own listing.
+    Only allowed fields — vendor cannot change portal_status or active flag.
+    """
+    uid = _require_firebase_user()
+    _ensure_vendor_portal_schema()
+    db = get_db()
+
+    vendor = db.execute(
+        "SELECT vendor_id, portal_status FROM vendors WHERE firebase_uid=?", (uid,)
+    ).fetchone()
+    if not vendor:
+        return jsonify({"error": "No vendor account found"}), 404
+
+    data = request.get_json(silent=True) or {}
+    allowed = {
+        "name": str, "description": str, "tagline": str,
+        "website": str, "contact_phone": str, "discount_description": str,
+    }
+    updates = {}
+    for field, cast in allowed.items():
+        if field in data:
+            updates[field] = cast(data[field])[:500] if data[field] else ""
+
+    if "service_areas" in data and isinstance(data["service_areas"], list):
+        updates["service_areas"] = json.dumps(data["service_areas"][:20])
+
+    if not updates:
+        return jsonify({"error": "No updatable fields provided"}), 400
+
+    set_clause = ", ".join(f"{k}=?" for k in updates)
+    db.execute(
+        f"UPDATE vendors SET {set_clause}, updated_at=datetime('now') WHERE firebase_uid=?",
+        (*updates.values(), uid),
+    )
+    db.commit()
+    return jsonify({"ok": True, "updated": list(updates.keys())})
+
+
+@app.route('/api/admin/vendor/<vendor_id>/approve', methods=['POST'])
+@limiter.limit("30 per minute")
+def admin_vendor_approve(vendor_id: str):
+    """Admin approves a vendor application — makes them active and visible."""
+    _require_admin()
+    _ensure_vendor_portal_schema()
+    db = get_db()
+    vendor = db.execute(
+        "SELECT vendor_id, name, contact_email FROM vendors WHERE vendor_id=?", (vendor_id,)
+    ).fetchone()
+    if not vendor:
+        return jsonify({"error": "Vendor not found"}), 404
+
+    db.execute("""
+        UPDATE vendors SET portal_status='active', active=1,
+        approved_at=datetime('now'), updated_at=datetime('now')
+        WHERE vendor_id=?
+    """, (vendor_id,))
+    db.commit()
+
+    # Notify vendor
+    if get_email_service and vendor["contact_email"]:
+        try:
+            get_email_service().send(
+                vendor["contact_email"],
+                f"Your Daanaa vendor listing is live — {vendor['name']}",
+                f"""<p>Hi,</p>
+<p>Great news — your vendor listing for <strong>{vendor['name']}</strong> is now live on Daanaa.</p>
+<p>Nonprofits in our network can now find you, leave ratings, and request your discount code.</p>
+<p>Manage your listing at <a href="https://daanaa.org/vendor/dashboard">daanaa.org/vendor/dashboard</a>.</p>
+<p>— The Daanaa Team</p>""",
+                f"Hi,\n\nYour vendor listing for {vendor['name']} is live on Daanaa. "
+                f"Manage it at https://daanaa.org/vendor/dashboard\n\n— The Daanaa Team",
+            )
+        except Exception as _e:
+            _logger.warning(f"vendor approve email failed: {_e}")
+
+    return jsonify({"ok": True, "vendor_id": vendor_id, "status": "active"})
+
+
 # Eager load so gunicorn --preload populates the matrix in the master process
 # before forking workers. Workers inherit via CoW without re-reading the DB.
 # DAANAA_SKIP_EMBEDDINGS=1 (tests) avoids the ~2 GB load on import.

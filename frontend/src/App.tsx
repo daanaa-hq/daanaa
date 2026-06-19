@@ -47,6 +47,8 @@ const MyOrgsPage = lazy(() => import('./pages/nonprofit/MyOrgsPage'))
 const NonprofitDashboardPage = lazy(() => import('./pages/nonprofit/NonprofitDashboardPage'))
 const Partners = lazy(() => import('./pages/Partners'))
 const PartnerDetail = lazy(() => import('./pages/PartnerDetail'))
+const VendorLoginPage = lazy(() => import('./pages/vendor/VendorLoginPage'))
+const VendorDashboardPage = lazy(() => import('./pages/vendor/VendorDashboardPage'))
 
 function PageLoader() {
   return (
@@ -110,6 +112,8 @@ export default function App() {
             <Route path="/nonprofit/my-orgs" element={<MyOrgsPage />} />
             <Route path="/nonprofit/dashboard/:ein" element={<NonprofitDashboardPage />} />
           </Route>
+          <Route path="/vendor/login" element={<VendorLoginPage />} />
+          <Route path="/vendor/dashboard" element={<VendorDashboardPage />} />
           <Route path="/claim/verify" element={<ClaimVerify />} />
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/claim/success" element={<ClaimSuccess />} />
