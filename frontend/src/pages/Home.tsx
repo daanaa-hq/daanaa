@@ -1,16 +1,17 @@
-import { useState, useMemo, type ReactNode } from 'react'
+import { useState, useMemo, useEffect, type ReactNode } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useJsonLd, websiteSchema } from '../hooks/useJsonLd'
 import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import LampMark from '../components/LampMark'
 import { useApi } from '../hooks/useApi'
-import { getStats, getCategories } from '../data/api'
+import { getStats, getCategories, getOrganizations, type ApiOrganization } from '../data/api'
 import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { getFeaturedCategory } from '../data/featuredCategory'
 import ImpactWidget from '../components/ImpactWidget'
+import AddToWalletButton from '../components/AddToWalletButton'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
   { name: 'Beacon',  pct: '0.6%',  blurb: 'Complete public data: financial reports, mission statement, website, and current Form 990' },
@@ -644,6 +645,95 @@ function WalletSection() {
   )
 }
 
+// ─── Hidden Gems ─────────────────────────────────────────────────────────────
+const HEALTH_LABEL: Record<string, string> = {
+  HEALTHY: 'Financially healthy',
+  STABLE:  'Financially stable',
+  CAUTION: 'Needs support',
+}
+const HEALTH_CLASSES: Record<string, string> = {
+  HEALTHY: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  STABLE:  'bg-amber-50 text-amber-700 border-amber-200',
+  CAUTION: 'bg-orange-50 text-orange-700 border-orange-200',
+}
+
+function HiddenGemsSection() {
+  const [gems, setGems] = useState<ApiOrganization[]>([])
+
+  useEffect(() => {
+    getOrganizations({ hidden_gem: true, per_page: 40 })
+      .then(res => {
+        const pool = res.organizations
+        // Week-stable shuffle: same 4 orgs all week, different each week
+        const shuffled = seededShuffle([...pool], weekSeed())
+        setGems(shuffled.slice(0, 4))
+      })
+      .catch(() => {/* silently skip section on error */})
+  }, [])
+
+  if (gems.length === 0) return null
+
+  return (
+    <section className="bg-warm-cream py-14 md:py-20 border-t border-light-grey">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+          <div>
+            <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase">
+              Worth discovering
+            </span>
+            <h2 className="mt-2 font-display italic text-deep-navy leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 38px)' }}>
+              The ones doing quiet, steady work
+            </h2>
+            <p className="mt-3 font-body text-[15px] text-cool-grey max-w-xl leading-[1.6]">
+              Small nonprofits — under $500K in revenue — that rank near the top of their peer group.
+              Starting points for your own research, not verdicts.
+            </p>
+          </div>
+          <Link
+            to="/directory?hidden_gem=1"
+            className="shrink-0 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors flex items-center gap-1.5"
+          >
+            See more
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {gems.map(org => {
+            const signal = org.v5_context?.score?.health_signal ?? 'STABLE'
+            const causes = (org.cause_tags ?? []).slice(0, 2)
+            return (
+              <div key={org.EIN} className="bg-white rounded-2xl border border-light-grey p-5 flex flex-col hover:border-soft-gold/40 hover:shadow-sm transition-all">
+                <Link
+                  to={`/org/${org.EIN}`}
+                  className="font-body text-[14px] font-semibold text-deep-navy hover:text-soft-gold transition-colors leading-snug mb-1"
+                >
+                  {org.organization_name}
+                </Link>
+                <p className="font-body text-[12px] text-cool-grey mb-3">
+                  {[org.CITY, org.STATE].filter(Boolean).join(', ')}
+                  {causes.length > 0 && ` · ${causes.join(', ')}`}
+                </p>
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border font-body ${HEALTH_CLASSES[signal] ?? HEALTH_CLASSES.STABLE}`}>
+                    {HEALTH_LABEL[signal] ?? 'Financially stable'}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-violet-50 text-violet-700 border-violet-200 font-body">
+                    Hidden gem
+                  </span>
+                </div>
+                <div className="mt-auto">
+                  <AddToWalletButton ein={org.EIN} orgName={org.organization_name} />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ─── Advisor teaser ───────────────────────────────────────────────────────────
 function AdvisorTeaser() {
   return (
@@ -770,6 +860,7 @@ export default function Home() {
       <WhatDaanaaDoesSection />
       <HowDiscoveryWorks />
       <FeaturedCause />
+      <HiddenGemsSection />
       <BrowseCauses />
 
       {/* Impact Section */}
@@ -791,6 +882,7 @@ export default function Home() {
       </div>
 
       <PeerFinancialContextSection />
+      <WalletSection />
       <TiersStrip />
       <StewardshipSection />
       <FinalCTA />
