@@ -264,7 +264,7 @@ export default function OrganizationDetail() {
 
   const ogImage = apiOrg && apiOrg.NTEE1
     ? `https://daanaa.org/categories/${apiOrg.NTEE1}.png`
-    : 'https://daanaa.org/logo.png'
+    : 'https://daanaa.org/og-image-v2.png'
 
   usePageMeta(metaTitle, { description: metaDesc, ogImage })
 

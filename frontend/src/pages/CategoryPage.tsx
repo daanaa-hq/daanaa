@@ -12,7 +12,7 @@ export default function CategoryPage() {
     category?.name ?? '',
     {
       description: category ? `Browse ${category.name} nonprofits on Daanaa. 501(c)(3) organizations from public IRS records with peer financial context and mission information.` : '',
-      ogImage: category ? `https://daanaa.org/categories/${category.id}.png` : 'https://daanaa.org/logo.png',
+      ogImage: category ? `https://daanaa.org/categories/${category.id}.png` : 'https://daanaa.org/og-image-v2.png',
     }
   )
 

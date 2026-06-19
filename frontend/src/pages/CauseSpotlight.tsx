@@ -19,7 +19,7 @@ export default function CauseSpotlight() {
     cat ? `${cat.name} — Featured cause` : 'Featured cause',
     {
       description: cat ? `Discover ${cat.name} nonprofits on Daanaa. ${meta?.tagline ?? ''}` : '',
-      ogImage: cat ? `https://daanaa.org/categories/${code}.png` : 'https://daanaa.org/logo.png',
+      ogImage: cat ? `https://daanaa.org/categories/${code}.png` : 'https://daanaa.org/og-image-v2.png',
     }
   )
 
