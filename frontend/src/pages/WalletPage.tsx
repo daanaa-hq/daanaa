@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useWallet } from '../contexts/WalletContext'
 import WalletCard from '../components/WalletCard'
+import EditIntentModal from '../components/EditIntentModal'
 import type { WalletOrg } from '../types/wallet'
 import {
   validateSearchTerm,
@@ -147,8 +148,10 @@ export default function WalletPage() {
 
   const handleEdit = useCallback((ein: string) => {
     setEditingEin(ein)
-    // TODO: Open IntentModal when implemented
-    console.log(`Edit intent for ${ein}`)
+  }, [])
+
+  const handleEditClose = useCallback(() => {
+    setEditingEin(null)
   }, [])
 
   // Empty state
@@ -333,6 +336,15 @@ export default function WalletPage() {
           </div>
         )}
       </div>
+
+      {/* Edit Intent Modal */}
+      {editingEin && (
+        <EditIntentModal
+          org={wallet.orgs.find(o => o.ein === editingEin)!}
+          isOpen={!!editingEin}
+          onClose={handleEditClose}
+        />
+      )}
     </div>
   )
 }

@@ -19,15 +19,18 @@ import '@fontsource/inter/700.css'
 import './index.css'
 import App from './App.tsx'
 import { GivingListProvider } from './contexts/GivingListContext'
+import { WalletProvider } from './contexts/WalletContext'
 import ScrollToTop from './components/ScrollToTop'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <GivingListProvider>
-        <ScrollToTop />
-        <App />
-      </GivingListProvider>
+      <WalletProvider>
+        <GivingListProvider>
+          <ScrollToTop />
+          <App />
+        </GivingListProvider>
+      </WalletProvider>
     </BrowserRouter>
   </StrictMode>,
 )
