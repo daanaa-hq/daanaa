@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, type ReactNode } from 'react'
+import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react'
+import { useInView } from '../hooks/useInView'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useJsonLd, websiteSchema } from '../hooks/useJsonLd'
 import { Link, useNavigate } from 'react-router-dom'
@@ -47,7 +48,10 @@ function HeroSection() {
   const { data: stats } = useApi(() => getStats(), [])
   const orgCount = stats?.total_organizations ?? 1_800_000
   const [query, setQuery] = useState('')
+  const [mounted, setMounted] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => { setMounted(true) }, [])
 
   const handleSearch = (q: string) => {
     navigate(q.trim() ? `/directory?q=${encodeURIComponent(q)}` : '/directory')
@@ -57,41 +61,45 @@ function HeroSection() {
     <section className="bg-deep-navy pt-[72px]">
       <div className="max-w-[760px] mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-28 text-center">
 
-        {/* Headline */}
         <h1
-          className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.025em]"
+          className={`font-display italic text-warm-cream leading-[1.05] tracking-[-0.025em] transition-all duration-700 ease-out ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
           style={{ fontSize: 'clamp(48px, 7vw, 80px)' }}
         >
           See the overlooked. Give with heart.
         </h1>
 
-        {/* Subheadline */}
-        <p className="mt-8 font-body text-[18px] leading-[1.65] max-w-[720px] mx-auto" style={{ color: 'rgba(245,240,235,0.80)' }}>
-          Daanaa helps you explore U.S. nonprofits using public records, presented with context and respect. No ads, no rankings, no pressure to give.
+        <p
+          className={`mt-6 font-body text-[18px] leading-[1.65] max-w-[620px] mx-auto transition-all duration-700 ease-out delay-150 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
+          style={{ color: 'rgba(245,240,235,0.80)' }}
+        >
+          {orgCount.toLocaleString()}+ U.S. nonprofits, public records, peer context. No ads, no rankings, no pressure.
         </p>
 
-        {/* CTAs */}
-        <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
-          <Link
-            to="/directory"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-bold hover:bg-bright-gold transition-colors shadow-lg"
-          >
-            Start Discovering
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </Link>
-          <Link
-            to="/methodology"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-full border-2 border-soft-gold text-soft-gold font-body text-[15px] font-medium hover:bg-soft-gold/10 transition-colors"
-          >
-            See Methodology
-          </Link>
+        <div className={`mt-8 max-w-[560px] mx-auto transition-all duration-700 ease-out delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            onSearch={handleSearch}
+            dark
+            placeholder="Search by name, cause, or city…"
+          />
         </div>
 
-        {/* Trust line */}
-        <p className="mt-8 font-body text-[14px]" style={{ color: 'rgba(245,240,235,0.60)' }}>
-          Independent. Built on public records. Not a rating agency.
+        <p
+          className={`mt-5 font-body text-[14px] transition-all duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
+          style={{ color: 'rgba(245,240,235,0.55)', transitionDelay: '450ms' }}
+        >
+          or{' '}
+          <Link to="/directory" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">browse the directory</Link>
+          {' · '}
+          <Link to="/causes" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">explore causes</Link>
+        </p>
+
+        <p
+          className={`mt-6 font-body text-[13px] transition-opacity duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
+          style={{ color: 'rgba(245,240,235,0.40)', transitionDelay: '600ms' }}
+        >
+          Independent · Built on public records · Not a rating agency
         </p>
       </div>
     </section>
@@ -100,14 +108,15 @@ function HeroSection() {
 
 // ─── What Daanaa Does ────────────────────────────────────────────────────────
 function WhatDaanaaDoesSection() {
+  const { ref, inView } = useInView()
   return (
     <section className="bg-warm-cream py-16 md:py-20">
-      <div className="max-w-[1120px] mx-auto px-6 md:px-12">
+      <div ref={ref} className="max-w-[1120px] mx-auto px-6 md:px-12">
         <div className="mb-12">
-          <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
+          <h2 className={`font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em] transition-all duration-700 ease-out ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
             What Daanaa does
           </h2>
-          <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
+          <p className={`mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px] transition-all duration-700 ease-out delay-100 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
             Daanaa organizes public nonprofit information so people can discover organizations with more context. It does not rank nonprofits, process donations, or tell people where they must give.
           </p>
         </div>
@@ -116,9 +125,13 @@ function WhatDaanaaDoesSection() {
           {[
             { title: 'Discover causes', body: 'Search by cause, place, or community need.' },
             { title: 'Understand context', body: 'View public information with peer context, not a one size fits all rating.' },
-            { title: 'Connect directly', body: 'When available, Daanaa points you to the organization\'s own official website.' },
-          ].map(card => (
-            <div key={card.title} className="bg-white border border-light-grey rounded-2xl p-6 md:p-8">
+            { title: 'Connect directly', body: "When available, Daanaa points you to the organization's own official website." },
+          ].map((card, i) => (
+            <div
+              key={card.title}
+              className={`bg-white border border-light-grey rounded-2xl p-6 md:p-8 transition-all duration-700 ease-out ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+              style={{ transitionDelay: inView ? `${200 + i * 100}ms` : '0ms' }}
+            >
               <h3 className="font-display text-deep-navy text-[20px] md:text-[22px]">{card.title}</h3>
               <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.6]">{card.body}</p>
             </div>
@@ -659,6 +672,7 @@ const HEALTH_CLASSES: Record<string, string> = {
 
 function HiddenGemsSection() {
   const [gems, setGems] = useState<ApiOrganization[]>([])
+  const { ref, inView } = useInView(0.08)
 
   useEffect(() => {
     getOrganizations({ hidden_gem: true, per_page: 40 })
@@ -674,9 +688,9 @@ function HiddenGemsSection() {
   if (gems.length === 0) return null
 
   return (
-    <section className="bg-warm-cream py-14 md:py-20 border-t border-light-grey">
+    <section ref={ref} className="bg-warm-cream py-14 md:py-20 border-t border-light-grey">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+        <div className={`flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 transition-all duration-700 ease-out ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
             <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase">
               Worth discovering
@@ -699,11 +713,15 @@ function HiddenGemsSection() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {gems.map(org => {
+          {gems.map((org, i) => {
             const signal = org.v5_context?.score?.health_signal ?? 'STABLE'
             const causes = (org.cause_tags ?? []).slice(0, 2)
             return (
-              <div key={org.EIN} className="bg-white rounded-2xl border border-light-grey p-5 flex flex-col hover:border-soft-gold/40 hover:shadow-sm transition-all">
+              <div
+                key={org.EIN}
+                className={`bg-white rounded-2xl border border-light-grey p-5 flex flex-col hover:border-soft-gold/40 hover:shadow-sm transition-all duration-700 ease-out ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+                style={{ transitionDelay: inView ? `${100 + i * 80}ms` : '0ms' }}
+              >
                 <Link
                   to={`/org/${org.EIN}`}
                   className="font-body text-[14px] font-semibold text-deep-navy hover:text-soft-gold transition-colors leading-snug mb-1"
