@@ -20,14 +20,14 @@ function getIntentDisplay(org: WalletOrg): string | null {
   const { type, amount, hours, frequency } = intent
   switch (type) {
     case 'giving': {
-      if (!amount) return 'Interested in giving'
+      if (!amount) return 'Planning to give'
       const freq = frequency === 'month' ? '/mo' : frequency === 'one-time' ? ' one-time' : '/yr'
-      return `Interested in giving · $${amount}${freq}`
+      return `Giving · $${amount.toLocaleString()}${freq}`
     }
     case 'volunteer':
-      return hours ? `Interested in volunteering · ${hours} hrs/wk` : 'Interested in volunteering'
+      return hours ? `Volunteering · ${hours} hrs/wk` : 'Planning to volunteer'
     case 'board':
-      return 'Interested in board opportunity'
+      return 'Interested in the board'
     default:
       return null
   }
@@ -103,7 +103,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
       {/* Mission */}
       {org.mission && (
         <p className="font-body text-[13px] text-cool-grey mb-3 line-clamp-2 italic">
-          "{org.mission}"
+          &ldquo;{org.mission.replace(/^[""\s]+|[""\s]+$/g, '')}&rdquo;
         </p>
       )}
 

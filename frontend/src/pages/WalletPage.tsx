@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useWallet } from '../contexts/WalletContext'
@@ -10,6 +10,9 @@ import {
   validateSortValue,
   logValidationError,
 } from '../utils/walletValidation'
+
+const NUDGE_KEY = 'daanaa_wallet_nudge_ts'
+const NUDGE_THROTTLE_MS = 7 * 24 * 60 * 60 * 1000
 
 type SortBy = 'recent' | 'name' | 'health'
 type FilterIntent = 'all' | 'giving' | 'volunteer' | 'board'
@@ -34,6 +37,22 @@ export default function WalletPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [searchError, setSearchError] = useState<string | null>(null)
   const [editingEin, setEditingEin] = useState<string | null>(null)
+  const [showNudge, setShowNudge] = useState(false)
+
+  const hasOrgsWithoutIntent = wallet.orgs.some(o => !o.givingIntent)
+
+  useEffect(() => {
+    if (!hasOrgsWithoutIntent || wallet.orgs.length === 0) return
+    const last = localStorage.getItem(NUDGE_KEY)
+    if (!last || Date.now() - Number(last) > NUDGE_THROTTLE_MS) {
+      setShowNudge(true)
+    }
+  }, [hasOrgsWithoutIntent, wallet.orgs.length])
+
+  const dismissNudge = useCallback(() => {
+    setShowNudge(false)
+    localStorage.setItem(NUDGE_KEY, String(Date.now()))
+  }, [])
 
   const filteredOrgs = useMemo(() => {
     let result = wallet.orgs
@@ -187,8 +206,38 @@ export default function WalletPage() {
           </button>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-2xl border border-light-grey p-5 mb-8">
+        {/* Welcome-back nudge */}
+        {showNudge && (
+          <div className="flex items-center justify-between gap-4 bg-soft-gold/10 border border-soft-gold/25 rounded-2xl px-5 py-4 mb-6">
+            <div className="flex items-center gap-3 min-w-0">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                <path d="M12 8v4M12 16h.01"/>
+              </svg>
+              <p className="font-body text-[13px] text-deep-navy">
+                You have saved nonprofits without a plan yet.{' '}
+                <button
+                  onClick={() => {
+                    dismissNudge()
+                    const first = wallet.orgs.find(o => !o.givingIntent)
+                    if (first) setEditingEin(first.ein)
+                  }}
+                  className="text-soft-gold hover:text-bright-gold font-semibold underline"
+                >
+                  Add your giving plan
+                </button>
+              </p>
+            </div>
+            <button onClick={dismissNudge} aria-label="Dismiss" className="shrink-0 p-1 text-cool-grey hover:text-deep-navy transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Filters — only shown when wallet is large enough to benefit from filtering */}
+        {wallet.orgs.length >= 5 && <div className="bg-white rounded-2xl border border-light-grey p-5 mb-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
               <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">Sort</label>
@@ -256,7 +305,7 @@ export default function WalletPage() {
           {searchError && (
             <p className="font-body text-[12px] text-red-600 mt-1" role="alert">{searchError}</p>
           )}
-        </div>
+        </div>}
 
         {/* No results message */}
         {filteredOrgs.length === 0 && wallet.orgs.length > 0 && (
