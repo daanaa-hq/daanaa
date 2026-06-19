@@ -1021,15 +1021,30 @@ export default function Directory() {
                   )}
                 </>
               ) : (
-                <div className="text-center py-16">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.5" className="mx-auto mb-4">
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                  </svg>
-                  <p className="font-body text-[16px] text-cool-grey">No organizations found.</p>
-                  <button onClick={handleClearAll} className="mt-4 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
-                    Clear filters
-                  </button>
+                <div className="text-center py-16 max-w-[420px] mx-auto">
+                  <div className="w-14 h-14 rounded-full bg-light-grey/60 flex items-center justify-center mx-auto mb-5">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+                    </svg>
+                  </div>
+                  <p className="font-body text-[17px] font-semibold text-deep-navy mb-2">Nothing matched those filters</p>
+                  <p className="font-body text-[14px] text-cool-grey mb-6 leading-relaxed">
+                    Try broadening your search — remove a filter, shorten the keyword, or browse by cause instead.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button
+                      onClick={handleClearAll}
+                      className="px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
+                    >
+                      Clear all filters
+                    </button>
+                    <Link
+                      to="/"
+                      className="px-5 py-2.5 rounded-xl border border-light-grey text-cool-grey font-body text-[13px] font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
+                    >
+                      Browse by cause
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
