@@ -11,7 +11,8 @@ import TierBreakdown from '../components/TierBreakdown'
 import MistakeRegistry from '../components/MistakeRegistry'
 import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
-import { useSavedOrgs } from '../hooks/useSavedOrgs'
+import { useWallet } from '../contexts/WalletContext'
+import type { WalletOrg } from '../types/wallet'
 import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
 import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
@@ -198,7 +199,7 @@ export default function OrganizationDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, getIdToken } = useAuth()
-  const { isSaved, toggle: toggleSave } = useSavedOrgs()
+  const { isInWallet, addOrg: addToWallet, removeOrg: removeFromWallet } = useWallet()
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalError, setPortalError]     = useState<string | null>(null)
@@ -332,17 +333,34 @@ export default function OrganizationDetail() {
               <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream truncate max-w-[200px]">{org.name}</span>
             </div>
             <button
-              onClick={() => toggleSave(org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })}
-              title={isSaved(org.ein) ? 'Remove from wallet' : 'Save to wallet'}
+              onClick={() => {
+                if (isInWallet(org.ein)) {
+                  removeFromWallet(org.ein)
+                } else if (apiOrg) {
+                  const walletOrg: WalletOrg = {
+                    ein: apiOrg.EIN,
+                    name: apiOrg.organization_name,
+                    mission: apiOrg.mission || '',
+                    location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
+                    cause: apiOrg.cause_tags || [],
+                    merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
+                    merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
+                    is_hidden_gem: !!(apiOrg as any).is_hidden_gem,
+                    bookmarkedAt: Date.now(),
+                  }
+                  addToWallet(walletOrg)
+                }
+              }}
+              title={isInWallet(org.ein) ? 'Remove from wallet' : 'Save to wallet'}
               className="inline-flex items-center gap-2 px-5 py-1.5 rounded-full font-body text-[13px] font-semibold transition-all duration-150"
               style={{
-                backgroundColor: isSaved(org.ein) ? 'transparent' : '#C9A96E',
-                color: isSaved(org.ein) ? '#C9A96E' : '#0A1628',
-                border: isSaved(org.ein) ? '1px solid #C9A96E' : '1px solid transparent',
+                backgroundColor: isInWallet(org.ein) ? 'transparent' : '#C9A96E',
+                color: isInWallet(org.ein) ? '#C9A96E' : '#0A1628',
+                border: isInWallet(org.ein) ? '1px solid #C9A96E' : '1px solid transparent',
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24"
-                fill={isSaved(org.ein) ? '#C9A96E' : 'none'}
+                fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeLinecap="round"
@@ -350,7 +368,7 @@ export default function OrganizationDetail() {
               >
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
-              {isSaved(org.ein) ? 'Saved to Wallet' : 'Save to Wallet'}
+              {isInWallet(org.ein) ? 'Saved to Wallet' : 'Save to Wallet'}
             </button>
           </div>
 
@@ -1374,8 +1392,25 @@ export default function OrganizationDetail() {
                     key={o.id}
                     org={o}
                     compact
-                    isSaved={isSaved(o.ein)}
-                    onToggleSave={(_e, ein, meta) => toggleSave(ein, meta)}
+                    isSaved={isInWallet(o.ein)}
+                    onToggleSave={(_e, ein, _meta) => {
+                      if (isInWallet(ein)) {
+                        removeFromWallet(ein)
+                      } else {
+                        const rawOrg = raw as any
+                        addToWallet({
+                          ein,
+                          name: rawOrg.organization_name || ein,
+                          mission: rawOrg.mission || '',
+                          location: [rawOrg.CITY, rawOrg.STATE].filter(Boolean).join(', '),
+                          cause: rawOrg.cause_tags || [],
+                          merit_score_v5: rawOrg.v5_context?.score?.percentile ?? 0,
+                          merit_health_signal_v5: rawOrg.v5_context?.score?.health_signal ?? 'STABLE',
+                          is_hidden_gem: !!rawOrg.is_hidden_gem,
+                          bookmarkedAt: Date.now(),
+                        })
+                      }
+                    }}
                     apiOrg={raw}
                     trustSummary={simSummary}
                   />
@@ -1499,16 +1534,32 @@ export default function OrganizationDetail() {
       {/* Mobile sticky Save to Wallet CTA */}
       <div className="md:hidden fixed bottom-[60px] left-0 right-0 z-40 px-4 pb-2">
         <button
-          onClick={() => toggleSave(org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })}
+          onClick={() => {
+            if (isInWallet(org.ein)) {
+              removeFromWallet(org.ein)
+            } else if (apiOrg) {
+              addToWallet({
+                ein: apiOrg.EIN,
+                name: apiOrg.organization_name,
+                mission: apiOrg.mission || '',
+                location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
+                cause: apiOrg.cause_tags || [],
+                merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
+                merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
+                is_hidden_gem: !!(apiOrg as any).is_hidden_gem,
+                bookmarkedAt: Date.now(),
+              })
+            }
+          }}
           className="w-full py-4 rounded-full font-body text-[15px] font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
           style={{
-            backgroundColor: isSaved(org.ein) ? 'transparent' : '#C9A96E',
-            color: isSaved(org.ein) ? '#C9A96E' : '#0A1628',
-            border: isSaved(org.ein) ? '1px solid #C9A96E' : 'none',
+            backgroundColor: isInWallet(org.ein) ? 'transparent' : '#C9A96E',
+            color: isInWallet(org.ein) ? '#C9A96E' : '#0A1628',
+            border: isInWallet(org.ein) ? '1px solid #C9A96E' : 'none',
           }}
         >
           <svg width="16" height="16" viewBox="0 0 24 24"
-            fill={isSaved(org.ein) ? '#C9A96E' : 'none'}
+            fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
@@ -1516,7 +1567,7 @@ export default function OrganizationDetail() {
           >
             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
           </svg>
-          {isSaved(org.ein) ? 'Remove from Wallet' : 'Save to Wallet'}
+          {isInWallet(org.ein) ? 'Remove from Wallet' : 'Save to Wallet'}
         </button>
       </div>
 

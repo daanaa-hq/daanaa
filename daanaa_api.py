@@ -5880,46 +5880,50 @@ def get_vendor_stats(vendor_id: str):
 # ── Nonprofit Hour Verification (Simplified API) ────────────────────────────
 
 @app.route('/api/nonprofit/hours-pending', methods=['GET'])
+@limiter.limit("60 per minute")
 def nonprofit_hours_pending():
-    """Get volunteer hours pending verification for nonprofits claimed by the user.
-
-    Requires: Firebase auth token
-    Returns: List of volunteer_hour_logs with status='pending' from claimed nonprofits
-    """
+    """Volunteer hour logs awaiting rep confirmation for all orgs claimed by this user."""
     uid = _require_firebase_user()
-    try:
-        db = get_db()
+    db = get_db()
 
-        # Get all verified claims for this user
-        claims = db.execute(
-            "SELECT EIN FROM org_claims WHERE user_id = ? AND status = 'verified'",
-            (uid,)
-        ).fetchall()
+    # Lazy-add status/rejection_reason columns (first-run migration)
+    for col_def in [
+        "ALTER TABLE volunteer_hour_logs ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'",
+        "ALTER TABLE volunteer_hour_logs ADD COLUMN rejection_reason TEXT",
+    ]:
+        try:
+            db.execute(col_def)
+            db.commit()
+        except Exception:
+            pass
 
-        if not claims:
-            return jsonify({'hours': [], 'total': 0}), 200
+    claims = db.execute(
+        "SELECT ein FROM org_claims WHERE firebase_uid=? "
+        "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
+        (uid,),
+    ).fetchall()
+    if not claims:
+        return jsonify({'hours': [], 'total': 0}), 200
 
-        ein_list = [c['EIN'] for c in claims]
-        placeholders = ','.join('?' * len(ein_list))
+    eins = [c['ein'] for c in claims]
+    placeholders = ','.join('?' * len(eins))
+    _ensure_donor_tables(db)
 
-        # Get all pending volunteer hours for these EINs
-        hours = db.execute(f"""
-            SELECT
-                id, volunteer_uid, volunteer_email, nonprofit_ein,
-                nonprofit_name, service_date, hours_logged, notes,
-                'pending' as status, created_at
-            FROM volunteer_hour_logs
-            WHERE nonprofit_ein IN ({placeholders})
-            AND status = 'pending'
-            ORDER BY created_at DESC
-        """, ein_list).fetchall()
+    rows = db.execute(f"""
+        SELECT l.id, l.user_id, l.nonprofit_ein, l.nonprofit_name,
+               l.service_date, l.hours_logged, l.notes,
+               l.status, l.rejection_reason, l.created_at,
+               u.email AS volunteer_email
+        FROM volunteer_hour_logs l
+        LEFT JOIN donor_users u ON u.firebase_uid = l.user_id
+        WHERE l.nonprofit_ein IN ({placeholders})
+          AND l.status = 'pending'
+        ORDER BY l.created_at DESC
+        LIMIT 100
+    """, eins).fetchall()
 
-        hours_list = [dict(h) for h in hours]
-        return jsonify({'hours': hours_list, 'total': len(hours_list)}), 200
-
-    except Exception as e:
-        _logger.error(f"Error fetching pending hours: {e}")
-        return jsonify({'error': 'Failed to fetch pending hours'}), 500
+    hours_list = [dict(r) for r in rows]
+    return jsonify({'hours': hours_list, 'total': len(hours_list)}), 200
 
 
 @app.route('/api/nonprofit/verify-hours', methods=['POST'])
@@ -5957,28 +5961,28 @@ def nonprofit_verify_hours_action():
 
         # Verify user can modify this (owns the nonprofit claim)
         claim = db.execute(
-            "SELECT * FROM org_claims WHERE EIN = ? AND user_id = ? AND status = 'verified'",
-            (log['nonprofit_ein'], uid)
+            "SELECT 1 FROM org_claims WHERE ein=? AND firebase_uid=? "
+            "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
+            (log['nonprofit_ein'], uid),
         ).fetchone()
 
         if not claim:
             return jsonify({'error': 'Not authorized to verify hours for this nonprofit'}), 403
 
-        # Get volunteer info
-        volunteer = db.execute(
-            "SELECT firebase_uid FROM volunteer_hour_logs WHERE id = ?",
-            (record_id,)
-        ).fetchone()
-        volunteer_uid = volunteer['firebase_uid'] if volunteer else None
+        volunteer_uid = log['user_id'] if log else None
 
         # Update status
         if action == 'verify':
             message = (data.get('message') or '').strip()
+            # Record confirmation in the confirmations table
+            db.execute("""
+                INSERT OR IGNORE INTO volunteer_hour_confirmations
+                    (user_id, log_id, nonprofit_ein, hours_confirmed, confirmed_by_admin_id, notes)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (volunteer_uid, record_id, log['nonprofit_ein'], log['hours_logged'], uid, message))
             db.execute(
-                """UPDATE volunteer_hour_logs
-                   SET status = 'verified', verified_at = ?, verified_by = ?, verification_message = ?
-                   WHERE id = ?""",
-                (datetime.utcnow().isoformat(), uid, message, record_id)
+                "UPDATE volunteer_hour_logs SET status='confirmed' WHERE id=?",
+                (record_id,),
             )
             db.commit()
 
@@ -6012,10 +6016,8 @@ def nonprofit_verify_hours_action():
             if not reason:
                 return jsonify({'error': 'Rejection reason required'}), 400
             db.execute(
-                """UPDATE volunteer_hour_logs
-                   SET status = 'rejected', rejection_reason = ?
-                   WHERE id = ?""",
-                (reason, record_id)
+                "UPDATE volunteer_hour_logs SET status='rejected', rejection_reason=? WHERE id=?",
+                (reason, record_id),
             )
             db.commit()
 

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { WalletOrg } from '../types/wallet'
 
@@ -8,134 +8,141 @@ interface WalletCardProps {
   onEdit?: (ein: string) => void
 }
 
-/**
- * WalletCard: Individual nonprofit card in wallet
- * Shows org info, financial health, giving intent, and actions
- * Memoized to prevent unnecessary rerenders
- */
+const healthMap: Record<string, { label: string; classes: string }> = {
+  HEALTHY: { label: 'Financially healthy',        classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  STABLE:  { label: 'Financially stable',         classes: 'bg-amber-50 text-amber-700 border-amber-200' },
+  CAUTION: { label: 'Needs support',    classes: 'bg-orange-50 text-orange-700 border-orange-200' },
+}
+
+function getIntentDisplay(org: WalletOrg): string | null {
+  const intent = org.givingIntent
+  if (!intent) return null
+  const { type, amount, hours, frequency } = intent
+  switch (type) {
+    case 'giving': {
+      if (!amount) return 'Interested in giving'
+      const freq = frequency === 'month' ? '/mo' : frequency === 'one-time' ? ' one-time' : '/yr'
+      return `Interested in giving · $${amount}${freq}`
+    }
+    case 'volunteer':
+      return hours ? `Interested in volunteering · ${hours} hrs/wk` : 'Interested in volunteering'
+    case 'board':
+      return 'Interested in board opportunity'
+    default:
+      return null
+  }
+}
+
 function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
-  const healthBgColor = {
-    HEALTHY: 'bg-green-50 border-green-200',
-    STABLE: 'bg-yellow-50 border-yellow-200',
-    CAUTION: 'bg-orange-50 border-orange-200',
-  }[org.merit_health_signal_v5]
-
-  const healthBadgeColor = {
-    HEALTHY: 'bg-green-100 text-green-800',
-    STABLE: 'bg-yellow-100 text-yellow-800',
-    CAUTION: 'bg-orange-100 text-orange-800',
-  }[org.merit_health_signal_v5]
-
-  // Show max 3 cause tags, with +N more indicator
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const displayedCauses = org.cause.slice(0, 3)
   const hiddenCauseCount = Math.max(0, org.cause.length - 3)
+  const health = healthMap[org.merit_health_signal_v5] ?? healthMap.STABLE
+  const intentText = getIntentDisplay(org)
 
-  // Format giving intent display
-  const getIntentDisplay = () => {
-    if (!org.givingIntent) {
-      return 'No intent set'
-    }
-
-    const { type, amount, hours, frequency } = org.givingIntent
-
-    switch (type) {
-      case 'giving': {
-        if (!amount) return 'Interested in Giving'
-        const freqLabel = frequency === 'month' ? '/month' : frequency === 'one-time' ? '(one-time)' : '/year'
-        return `Interested in Giving · $${amount}${freqLabel}`
-      }
-      case 'volunteer':
-        return hours ? `Interested in Volunteering · ${hours} hours/week` : 'Interested in Volunteering'
-      case 'board':
-        return 'Interested in Board Opportunity'
-      default:
-        return 'No intent set'
+  function handleRemoveClick() {
+    if (confirmRemove) {
+      onRemove?.(org.ein)
+    } else {
+      setConfirmRemove(true)
     }
   }
 
   return (
-    <div className={`border rounded-lg p-5 transition-all hover:shadow-md ${healthBgColor}`}>
-      {/* Header: Org Name + Remove Button */}
-      <div className="flex items-start justify-between mb-3">
+    <div className="bg-white rounded-2xl border border-light-grey p-6 hover:border-soft-gold/40 transition-colors">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-3">
         <Link
           to={`/org/${org.ein}`}
-          className="text-lg font-semibold text-deep-navy hover:text-soft-gold transition-colors flex-1"
+          className="font-body text-[15px] font-semibold text-deep-navy hover:text-soft-gold transition-colors leading-snug flex-1"
         >
           {org.name}
         </Link>
         {onRemove && (
-          <button
-            onClick={() => onRemove(org.ein)}
-            aria-label={`Remove ${org.name} from wallet`}
-            className="ml-2 p-1 hover:bg-white/50 rounded transition-colors flex-shrink-0"
-            title="Remove from wallet"
-          >
-            <svg
-              className="w-5 h-5 text-cool-grey hover:text-deep-navy"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {confirmRemove ? (
+              <>
+                <button
+                  onClick={handleRemoveClick}
+                  className="px-2 py-1 rounded-lg text-[12px] font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+                >
+                  Remove
+                </button>
+                <button
+                  onClick={() => setConfirmRemove(false)}
+                  className="px-2 py-1 rounded-lg text-[12px] font-semibold bg-light-grey/40 text-cool-grey hover:bg-light-grey transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleRemoveClick}
+                aria-label={`Remove ${org.name} from wallet`}
+                className="p-1.5 rounded-lg text-cool-grey hover:text-deep-navy hover:bg-light-grey/40 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Location + Causes */}
-      <div className="mb-3">
-        <p className="text-sm text-cool-grey">
+      {/* Location + causes */}
+      {(org.location || displayedCauses.length > 0) && (
+        <p className="font-body text-[12px] text-cool-grey mb-3 leading-relaxed">
           {org.location}
-          {displayedCauses.length > 0 && ' · '}
+          {org.location && displayedCauses.length > 0 && ' · '}
           {displayedCauses.join(', ')}
           {hiddenCauseCount > 0 && <span> +{hiddenCauseCount} more</span>}
         </p>
-      </div>
+      )}
 
       {/* Mission */}
       {org.mission && (
-        <p className="text-sm text-slate-600 mb-3 line-clamp-2">"{org.mission}"</p>
+        <p className="font-body text-[13px] text-cool-grey mb-3 line-clamp-2 italic">
+          "{org.mission}"
+        </p>
       )}
 
-      {/* Health Signal + Score */}
-      <div className="mb-4 flex items-center gap-2 flex-wrap">
-        <span className={`px-2 py-1 rounded text-xs font-semibold ${healthBadgeColor}`}>
-          {org.merit_health_signal_v5}
-        </span>
-        <span className="text-xs text-cool-grey">
-          Score: {org.merit_score_v5}/100
+      {/* Health badge */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border font-body ${health.classes}`}>
+          {health.label}
         </span>
         {org.is_hidden_gem && (
-          <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-semibold">
-            Hidden Gem
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-violet-50 text-violet-700 border-violet-200 font-body">
+            Hidden gem
           </span>
         )}
       </div>
 
-      {/* Giving Intent / Status */}
-      <div className="border-t border-current border-opacity-20 pt-3 mb-4">
-        <p className="text-sm font-medium text-deep-navy">
-          {getIntentDisplay()}
-        </p>
-        {org.givingIntent?.notes && (
-          <p className="text-xs text-slate-600 mt-1 italic">"{org.givingIntent.notes}"</p>
-        )}
-      </div>
+      {/* Giving intent */}
+      {intentText && (
+        <div className="border-t border-light-grey pt-3 mb-4">
+          <p className="font-body text-[12px] font-medium text-deep-navy">{intentText}</p>
+          {org.givingIntent?.notes && (
+            <p className="font-body text-[11px] text-cool-grey mt-1 italic">"{org.givingIntent.notes}"</p>
+          )}
+        </div>
+      )}
 
-      {/* Action Buttons */}
+      {/* Actions */}
       <div className="flex gap-2">
         {onEdit && (
           <button
             onClick={() => onEdit(org.ein)}
             aria-label={`Edit giving intent for ${org.name}`}
-            className="flex-1 px-3 py-2 bg-soft-gold text-white rounded-lg text-sm font-medium hover:bg-soft-gold/90 transition-colors"
+            className="flex-1 px-3 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
           >
-            Edit
+            {intentText ? 'Edit intent' : 'Set intent'}
           </button>
         )}
         <Link
           to={`/org/${org.ein}`}
-          className="flex-1 px-3 py-2 bg-warm-cream text-deep-navy rounded-lg text-sm font-medium hover:bg-warm-cream/70 transition-colors text-center border border-light-grey"
+          className="flex-1 px-3 py-2 rounded-xl border border-light-grey text-cool-grey font-body text-[13px] font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors text-center"
         >
           View
         </Link>
@@ -145,5 +152,4 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
 }
 
 export const WalletCard = React.memo(WalletCardComponent)
-
 export default WalletCard

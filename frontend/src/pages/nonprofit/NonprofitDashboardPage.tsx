@@ -134,7 +134,7 @@ function PublicProfilePanel({ org }: { org: ApiOrganization }) {
   const healthMap: Record<string, { label: string; classes: string }> = {
     HEALTHY: { label: 'Financially healthy',  classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
     STABLE:  { label: 'Financially stable',   classes: 'bg-blue-50 text-blue-700 border-blue-200' },
-    CAUTION: { label: 'Needs community support', classes: 'bg-amber-50 text-amber-700 border-amber-200' },
+    CAUTION: { label: 'Needs support', classes: 'bg-amber-50 text-amber-700 border-amber-200' },
   }
   const healthCfg = healthSignal ? (healthMap[healthSignal] ?? null) : null
 

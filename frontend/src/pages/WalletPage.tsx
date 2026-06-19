@@ -4,7 +4,6 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useWallet } from '../contexts/WalletContext'
 import WalletCard from '../components/WalletCard'
 import EditIntentModal from '../components/EditIntentModal'
-import type { WalletOrg } from '../types/wallet'
 import {
   validateSearchTerm,
   validateFilterValue,
@@ -21,33 +20,24 @@ interface FilterState {
   health: FilterHealth
 }
 
-/**
- * WalletPage: Main page showing all saved nonprofits
- * Features: sorting, filtering, search, and intent editing
- */
 export default function WalletPage() {
   usePageMeta(
     'Your Giving Wallet | Daanaa',
-    'Save nonprofits you\'re interested in and track your giving intentions.'
+    "Save nonprofits you're interested in and track your giving intentions."
   )
 
   const navigate = useNavigate()
   const { wallet, removeOrg, updateIntent } = useWallet()
 
   const [sortBy, setSortBy] = useState<SortBy>('recent')
-  const [filterState, setFilterState] = useState<FilterState>({
-    intent: 'all',
-    health: 'all',
-  })
+  const [filterState, setFilterState] = useState<FilterState>({ intent: 'all', health: 'all' })
   const [searchTerm, setSearchTerm] = useState('')
   const [searchError, setSearchError] = useState<string | null>(null)
   const [editingEin, setEditingEin] = useState<string | null>(null)
 
-  // Memoized filtered and sorted orgs
   const filteredOrgs = useMemo(() => {
     let result = wallet.orgs
 
-    // Apply search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       result = result.filter(
@@ -59,17 +49,14 @@ export default function WalletPage() {
       )
     }
 
-    // Apply intent filter
     if (filterState.intent !== 'all') {
       result = result.filter(org => org.givingIntent?.type === filterState.intent)
     }
 
-    // Apply health filter
     if (filterState.health !== 'all') {
       result = result.filter(org => org.merit_health_signal_v5 === filterState.health)
     }
 
-    // Apply sorting
     const sorted = [...result]
     switch (sortBy) {
       case 'recent':
@@ -78,16 +65,16 @@ export default function WalletPage() {
       case 'name':
         sorted.sort((a, b) => a.name.localeCompare(b.name))
         break
-      case 'health':
+      case 'health': {
         const healthOrder = { HEALTHY: 0, STABLE: 1, CAUTION: 2 }
         sorted.sort((a, b) => healthOrder[a.merit_health_signal_v5] - healthOrder[b.merit_health_signal_v5])
         break
+      }
     }
 
     return sorted
   }, [wallet.orgs, searchTerm, filterState, sortBy])
 
-  // Handlers with validation
   const handleSort = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value
     if (validateSortValue(value)) {
@@ -123,27 +110,20 @@ export default function WalletPage() {
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchError(null)
-
-    // Allow empty search
     if (value === '') {
       setSearchTerm('')
       return
     }
-
-    // Validate non-empty search
     try {
       const validated = validateSearchTerm(value)
       setSearchTerm(validated)
     } catch (err) {
       setSearchError((err as Error).message)
-      // Don't update search term on validation error
     }
   }, [])
 
   const handleRemove = useCallback((ein: string) => {
-    if (confirm('Remove this organization from your wallet?')) {
-      removeOrg(ein)
-    }
+    removeOrg(ein)
   }, [removeOrg])
 
   const handleEdit = useCallback((ein: string) => {
@@ -154,164 +134,144 @@ export default function WalletPage() {
     setEditingEin(null)
   }, [])
 
+  const hasActiveFilters =
+    filterState.intent !== 'all' || filterState.health !== 'all' || searchTerm !== ''
+
   // Empty state
   if (wallet.orgs.length === 0) {
     return (
-      <div className="bg-warm-cream min-h-screen py-12 md:py-16">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-          <h1 className="text-4xl font-display text-deep-navy mb-8">Your Giving Wallet</h1>
+      <div className="bg-warm-cream min-h-[100dvh] pt-[72px]">
+        <div className="max-w-[720px] mx-auto px-6 py-16">
+          <h1 className="font-display italic text-deep-navy text-[32px] mb-2">Your Giving Wallet</h1>
+          <p className="font-body text-cool-grey mb-10">Nonprofits you want to support, all in one place.</p>
 
-          <div className="bg-white rounded-lg border border-light-grey p-12 text-center">
-            <svg
-              className="w-16 h-16 mx-auto text-cool-grey mb-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 6v6m0 0v6m0-6h6m0 0h6m-6-6l-6-6m6 6l6-6M3 12a9 9 0 1118 0 9 9 0 01-18 0z"
-              />
-            </svg>
-
-            <h2 className="text-2xl font-display text-deep-navy mb-3">Your wallet is empty</h2>
-            <p className="text-cool-grey mb-6 max-w-md mx-auto">
-              Add nonprofits from the directory to get started. Save organizations you're interested in supporting,
-              signal your giving or volunteering intent, and track your impact.
-            </p>
-
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={() => navigate('/directory')}
-                className="px-6 py-3 bg-soft-gold text-white rounded-lg font-medium hover:bg-soft-gold/90 transition-colors"
-              >
-                Browse Directory
-              </button>
-              <button
-                onClick={() => navigate('/')}
-                className="px-6 py-3 bg-warm-cream text-deep-navy rounded-lg font-medium hover:bg-warm-cream/70 transition-colors border border-light-grey"
-              >
-                Start Exploring
-              </button>
+          <div className="bg-white rounded-2xl border border-light-grey p-12 text-center">
+            <div className="w-14 h-14 rounded-full bg-soft-gold/10 flex items-center justify-center mx-auto mb-5">
+              <svg className="w-7 h-7 text-soft-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+              </svg>
             </div>
+            <h2 className="font-display italic text-deep-navy text-[22px] mb-2">Your wallet is empty</h2>
+            <p className="font-body text-[15px] text-cool-grey mb-8 max-w-sm mx-auto">
+              Browse the directory and save nonprofits you care about. You can track your giving intent for each one.
+            </p>
+            <button
+              onClick={() => navigate('/directory')}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+            >
+              Browse nonprofits
+            </button>
           </div>
         </div>
       </div>
     )
   }
 
-  // Main view with orgs
   return (
-    <div className="bg-warm-cream min-h-screen py-12 md:py-16">
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+    <div className="bg-warm-cream min-h-[100dvh] pt-[72px]">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-10">
+
         {/* Header */}
         <div className="flex items-start justify-between mb-8">
           <div>
-            <h1 className="text-4xl font-display text-deep-navy mb-2">Your Giving Wallet</h1>
-            <p className="text-cool-grey">
+            <h1 className="font-display italic text-deep-navy text-[32px] mb-1">Your Giving Wallet</h1>
+            <p className="font-body text-[14px] text-cool-grey">
               {wallet.orgs.length} organization{wallet.orgs.length !== 1 ? 's' : ''} saved
             </p>
           </div>
           <button
             onClick={() => navigate('/directory')}
-            className="px-4 py-2 bg-soft-gold text-white rounded-lg text-sm font-medium hover:bg-soft-gold/90 transition-colors whitespace-nowrap"
+            className="px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors whitespace-nowrap"
           >
-            + Add More
+            + Add more
           </button>
         </div>
 
-        {/* Filters & Search */}
-        <div className="bg-white rounded-lg border border-light-grey p-4 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            {/* Sort */}
+        {/* Filters */}
+        <div className="bg-white rounded-2xl border border-light-grey p-5 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
-              <label className="text-xs font-semibold text-cool-grey uppercase">Sort</label>
+              <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">Sort</label>
               <select
                 value={sortBy}
                 onChange={handleSort}
                 aria-label="Sort by"
-                className="w-full mt-1 px-3 py-2 border border-light-grey rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
               >
-                <option value="recent">Recently Added</option>
-                <option value="name">Name (A-Z)</option>
-                <option value="health">Financial Health</option>
+                <option value="recent">Recently added</option>
+                <option value="name">Name (A–Z)</option>
+                <option value="health">Financial health</option>
               </select>
             </div>
 
-            {/* Filter: Intent */}
             <div>
-              <label className="text-xs font-semibold text-cool-grey uppercase">Intent</label>
+              <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">Intent</label>
               <select
                 value={filterState.intent}
                 onChange={handleIntentFilter}
                 aria-label="Filter by intent"
-                className="w-full mt-1 px-3 py-2 border border-light-grey rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
               >
-                <option value="all">All</option>
+                <option value="all">All intents</option>
                 <option value="giving">Giving</option>
                 <option value="volunteer">Volunteering</option>
                 <option value="board">Board</option>
               </select>
             </div>
 
-            {/* Filter: Health */}
             <div>
-              <label className="text-xs font-semibold text-cool-grey uppercase">Health</label>
+              <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">Health</label>
               <select
                 value={filterState.health}
                 onChange={handleHealthFilter}
                 aria-label="Filter by health"
-                className="w-full mt-1 px-3 py-2 border border-light-grey rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
               >
                 <option value="all">All</option>
-                <option value="HEALTHY">Healthy</option>
-                <option value="STABLE">Stable</option>
-                <option value="CAUTION">Caution</option>
+                <option value="HEALTHY">Financially healthy</option>
+                <option value="STABLE">Financially stable</option>
+                <option value="CAUTION">Needs support</option>
               </select>
             </div>
 
-            {/* Clear Filters */}
             <div className="flex items-end">
               <button
                 onClick={handleClearFilters}
-                className="w-full px-3 py-2 bg-warm-cream text-deep-navy rounded-lg text-sm font-medium hover:bg-warm-cream/70 transition-colors border border-light-grey"
+                disabled={!hasActiveFilters}
+                className="w-full px-3 py-2 rounded-xl border border-light-grey font-body text-[13px] text-cool-grey hover:border-soft-gold/40 hover:text-deep-navy disabled:opacity-40 disabled:cursor-default transition-colors"
               >
-                Clear Filters
+                Clear filters
               </button>
             </div>
           </div>
 
-          {/* Search */}
-          <div>
-            <input
-              type="text"
-              placeholder="Search by name, location, or cause..."
-              value={searchTerm}
-              onChange={e => handleSearchChange(e.target.value)}
-              className="w-full px-4 py-2 border border-light-grey rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold"
-              aria-invalid={!!searchError}
-            />
-            {searchError && (
-              <p className="text-red-600 text-xs mt-1" role="alert">
-                {searchError}
-              </p>
-            )}
-          </div>
+          <input
+            type="text"
+            placeholder="Search by name, location, or cause..."
+            value={searchTerm}
+            onChange={e => handleSearchChange(e.target.value)}
+            className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy placeholder:text-cool-grey/60 focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
+            aria-invalid={!!searchError}
+          />
+          {searchError && (
+            <p className="font-body text-[12px] text-red-600 mt-1" role="alert">{searchError}</p>
+          )}
         </div>
 
-        {/* Results Message */}
+        {/* No results message */}
         {filteredOrgs.length === 0 && wallet.orgs.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-blue-800 text-sm">
-              No organizations match your filters. Try adjusting your search or filters.
+          <div className="bg-white border border-light-grey rounded-2xl p-6 mb-6 text-center">
+            <p className="font-body text-[14px] text-cool-grey">
+              No organizations match your filters.{' '}
+              <button onClick={handleClearFilters} className="text-soft-gold hover:text-bright-gold underline">
+                Clear filters
+              </button>
             </p>
           </div>
         )}
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredOrgs.map(org => (
             <WalletCard
               key={org.ein}
@@ -321,23 +281,8 @@ export default function WalletPage() {
             />
           ))}
         </div>
-
-        {/* Footer Actions */}
-        {filteredOrgs.length > 0 && (
-          <div className="mt-12 text-center space-y-3">
-            <div className="flex gap-3 justify-center flex-wrap">
-              <button className="px-6 py-2 bg-warm-cream text-deep-navy rounded-lg text-sm font-medium hover:bg-warm-cream/70 transition-colors border border-light-grey">
-                Export Wallet
-              </button>
-              <button className="px-6 py-2 bg-warm-cream text-deep-navy rounded-lg text-sm font-medium hover:bg-warm-cream/70 transition-colors border border-light-grey">
-                Share Wallet
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* Edit Intent Modal */}
       {editingEin && (
         <EditIntentModal
           org={wallet.orgs.find(o => o.ein === editingEin)!}

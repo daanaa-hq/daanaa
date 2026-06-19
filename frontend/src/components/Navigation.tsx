@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useSavedOrgs } from '../hooks/useSavedOrgs'
+import { useWallet } from '../contexts/WalletContext'
 
 interface NavigationProps {
   solid?: boolean
@@ -11,7 +11,8 @@ export default function Navigation({ solid = true }: NavigationProps) {
   const [headerQuery, setHeaderQuery] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const { count: savedCount } = useSavedOrgs()
+  const { wallet } = useWallet()
+  const savedCount = wallet.orgs.length
 
   // Discover stays lit while browsing anything reached from the directory
   const discoverPrefixes = ['/directory', '/org/', '/category/', '/causes/']
@@ -121,6 +122,11 @@ export default function Navigation({ solid = true }: NavigationProps) {
                 <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
               </svg>
               Wallet
+              {savedCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[17px] h-[17px] bg-soft-gold text-deep-navy text-[10px] font-bold rounded-full px-[4px]">
+                  {savedCount > 99 ? '99+' : savedCount}
+                </span>
+              )}
             </Link>
           </div>
 

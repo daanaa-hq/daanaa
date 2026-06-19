@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useSavedOrgs } from '../hooks/useSavedOrgs'
+import { useWallet } from '../contexts/WalletContext'
 
 export default function BottomNav() {
   const location = useLocation()
-  const { count: savedCount } = useSavedOrgs()
+  const { wallet } = useWallet()
+  const savedCount = wallet.orgs.length
   const p = location.pathname
 
   const items = [
