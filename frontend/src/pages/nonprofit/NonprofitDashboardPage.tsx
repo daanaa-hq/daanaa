@@ -180,6 +180,43 @@ function PublicProfilePanel({ org }: { org: ApiOrganization }) {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
+interface ViewStats {
+  views_total: number
+  views_30d: number
+  views_7d: number
+  wallet_saves: number
+}
+
+function AnalyticsPanel({ stats }: { stats: ViewStats | null }) {
+  const metrics = [
+    { label: 'Page views this week', value: stats?.views_7d ?? null },
+    { label: 'Page views this month', value: stats?.views_30d ?? null },
+    { label: 'Donors who saved your page', value: stats?.wallet_saves ?? null },
+  ]
+  return (
+    <div className="bg-white rounded-2xl border border-light-grey p-6">
+      <h2 className="font-body text-[15px] font-semibold text-deep-navy mb-4">Your reach</h2>
+      <div className="grid grid-cols-3 gap-4">
+        {metrics.map(m => (
+          <div key={m.label} className="text-center">
+            {m.value === null ? (
+              <div className="h-8 bg-light-grey rounded animate-pulse mx-auto w-12" />
+            ) : (
+              <p className="font-display italic text-deep-navy text-[28px] leading-none">{m.value.toLocaleString()}</p>
+            )}
+            <p className="font-body text-[11px] text-cool-grey mt-1.5 leading-snug">{m.label}</p>
+          </div>
+        ))}
+      </div>
+      {stats && stats.views_30d === 0 && stats.wallet_saves === 0 && (
+        <p className="font-body text-[12px] text-cool-grey mt-4 text-center">
+          Numbers build as donors discover your page. A complete profile helps you show up in more searches.
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function NonprofitDashboardPage() {
   const { ein } = useParams<{ ein: string }>()
   const navigate = useNavigate()
@@ -188,6 +225,7 @@ export default function NonprofitDashboardPage() {
   const [org, setOrg] = useState<ApiOrganization | null>(null)
   const [editToken, setEditToken] = useState<string | null>(null)
   const [pendingHours, setPendingHours] = useState<number | null>(null)
+  const [viewStats, setViewStats] = useState<ViewStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -202,13 +240,18 @@ export default function NonprofitDashboardPage() {
           return
         }
 
-        // Load in parallel: org data + portal token + pending hours count
-        const [orgData, token, hoursRes] = await Promise.allSettled([
+        const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+
+        // Load in parallel: org data + portal token + pending hours + view stats
+        const [orgData, token, hoursRes, statsRes] = await Promise.allSettled([
           getOrganization(ein!),
           getPortalToken(ein!, idToken),
-          fetch('/api/nonprofit/hours-pending', {
+          fetch(`${base}/api/nonprofit/hours-pending`, {
             headers: { Authorization: `Bearer ${idToken}` },
           }).then(r => r.json()),
+          fetch(`${base}/api/org/${ein}/view-stats`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+          }).then(r => r.ok ? r.json() : null),
         ])
 
         if (orgData.status === 'fulfilled') {
@@ -226,13 +269,18 @@ export default function NonprofitDashboardPage() {
 
         if (hoursRes.status === 'fulfilled') {
           const data = hoursRes.value
-          // The endpoint returns either { hours: [...], total: N } or { total: N }
           const count = typeof data.total === 'number'
             ? data.total
             : (Array.isArray(data.hours) ? data.hours.length : 0)
           setPendingHours(count)
         } else {
           setPendingHours(0)
+        }
+
+        if (statsRes.status === 'fulfilled' && statsRes.value) {
+          setViewStats(statsRes.value as ViewStats)
+        } else {
+          setViewStats({ views_total: 0, views_30d: 0, views_7d: 0, wallet_saves: 0 })
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : ''
@@ -338,6 +386,11 @@ export default function NonprofitDashboardPage() {
 
         {/* Public profile panel — full width */}
         <PublicProfilePanel org={org} />
+
+        {/* Analytics panel */}
+        <div className="mt-4">
+          <AnalyticsPanel stats={viewStats} />
+        </div>
 
         {/* Quick actions */}
         <div className="mt-4 bg-white rounded-2xl border border-light-grey p-6">

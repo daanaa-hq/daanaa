@@ -321,10 +321,13 @@ class OnboardingAgent(BaseAgent):
 
     def _get_wallet_adds(self, ein: str) -> int:
         """Count how many donors have this org in their wallet (aggregate only, P2)."""
-        row = self.db().execute(
-            "SELECT COUNT(*) AS n FROM org_wallet_stats WHERE ein=?", (ein,)
-        ).fetchone()
-        return (row["n"] if row else 0) if row else 0
+        try:
+            row = self.db().execute(
+                "SELECT COUNT(*) AS n FROM org_wallet_saves WHERE ein=?", (ein,)
+            ).fetchone()
+            return int(row["n"]) if row else 0
+        except Exception:
+            return 0
 
     def _get_volunteer_hours(self, ein: str) -> int:
         row = self.db().execute(

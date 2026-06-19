@@ -427,6 +427,90 @@ The Daanaa Team
     )
 
 
+def grant_opportunity_email(
+    rep_name: Optional[str],
+    org_name: str,
+    grants: list[dict],
+) -> EmailTemplate:
+    """Weekly grant alert for verified nonprofit reps.
+
+    Each grant dict should have: title, agency, close_date, url (optional), cfda (optional).
+    Max 5 grants shown. Stewardship: P1 (giving intent), P3 (public data only),
+    P10 (no LLM inference on this email, deterministic template).
+    """
+    first = rep_name.split()[0] if rep_name else None
+    greet = f"Hi {first}," if first else "Hi,"
+    n = len(grants)
+    count_line = (
+        f"We found {n} federal grant {'opportunity' if n == 1 else 'opportunities'} "
+        f"that may be a fit for {org_name}."
+    )
+
+    grant_cards_html = ""
+    grant_lines_plain = ""
+    for g in grants[:5]:
+        title = g.get("title", "Untitled Grant")
+        agency = g.get("agency", "")
+        close_date = g.get("close_date", "")
+        url = g.get("url") or ""
+        cfda = g.get("cfda", "")
+        deadline_html = (
+            f'<span style="color:#c0392b;font-weight:700">Closes {close_date}</span>'
+            if close_date else ""
+        )
+        cfda_html = (
+            f'<span style="font-size:11px;color:#888;margin-left:8px">CFDA {cfda}</span>'
+            if cfda else ""
+        )
+        link_html = (
+            f'<p style="margin:6px 0"><a href="{url}" style="color:#d4af37;font-weight:700">'
+            f'View on Grants.gov</a></p>'
+            if url else
+            '<p style="margin:6px 0;font-size:12px;color:#888">Search Grants.gov for details</p>'
+        )
+        grant_cards_html += f"""
+<div style="padding:14px 16px;border-left:4px solid #4a90d9;background:#f0f5fb;margin:14px 0;border-radius:0 6px 6px 0">
+  <p style="margin:0 0 4px;font-weight:700;font-size:15px">{title}</p>
+  <p style="margin:4px 0;font-size:13px;color:#555">{agency}{cfda_html}</p>
+  {f'<p style="margin:4px 0;font-size:13px">{deadline_html}</p>' if deadline_html else ''}
+  {link_html}
+</div>"""
+        grant_lines_plain += f"\n  {title}"
+        if agency:
+            grant_lines_plain += f"\n  {agency}"
+        if close_date:
+            grant_lines_plain += f"\n  Closes: {close_date}"
+        if url:
+            grant_lines_plain += f"\n  {url}"
+        grant_lines_plain += "\n"
+
+    body = f"""<p>{greet}</p>
+<p>{count_line} These come from Grants.gov, the official federal grants database. Each one lists nonprofits as eligible recipients.</p>
+{grant_cards_html}
+<p style="margin-top:20px;font-size:13px;color:#555">Grant opportunities change quickly. Review each one and confirm your organization meets the eligibility requirements before applying.</p>
+<p style="margin-top:16px"><a href="https://grants.gov/search-grants?eligibilities=25&oppStatuses=posted" style="color:#d4af37;font-weight:700">Browse all open grants on Grants.gov</a></p>
+<p style="font-size:12px;color:#888;margin-top:16px">You're receiving this because {org_name} has a verified profile on Daanaa.
+<a href="https://daanaa.org/nonprofit/dashboard" style="color:#888">Manage your profile</a> at any time.</p>"""
+
+    plain = f"""{greet}
+
+{count_line}
+
+These come from Grants.gov, the official federal grants database.
+{grant_lines_plain}
+Browse all open grants: https://grants.gov/search-grants?eligibilities=25&oppStatuses=posted
+
+Review each opportunity carefully and confirm your organization meets eligibility requirements before applying.
+
+The Daanaa Team
+"""
+    return EmailTemplate(
+        subject=f"Grant alert: {n} {'opportunity' if n == 1 else 'opportunities'} for {org_name}",
+        html=_base_html("Grant opportunities", "#4a90d9", "#eef4fb", body),
+        plain_text=plain,
+    )
+
+
 # ── Singleton ─────────────────────────────────────────────────────────────────
 
 _email_service: Optional[EmailService] = None
