@@ -1,5 +1,6 @@
 import { useState, useMemo, type ReactNode } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useJsonLd, websiteSchema } from '../hooks/useJsonLd'
 import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import LampMark from '../components/LampMark'
@@ -771,6 +772,13 @@ function FooterCTA() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   usePageMeta('Daanaa — Independent Nonprofit Discovery Platform', 'Discover causes and organizations using public nonprofit information presented with context, stewardship, and respect.')
+
+  useJsonLd(websiteSchema({
+    name: 'Daanaa',
+    url: 'https://daanaa.org',
+    description: 'Independent nonprofit discovery platform. Search 1.8M US nonprofits with peer financial context, public data, and verified giving paths.',
+  }))
+
   return (
     <div>
       <HeroSection />

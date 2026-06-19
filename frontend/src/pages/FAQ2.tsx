@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useJsonLd, faqPageSchema } from '../hooks/useJsonLd'
 
 export default function FAQ() {
   usePageMeta('FAQ — Daanaa', 'Answers about Daanaa, nonprofit discovery, public records, Peer Financial Context, Lamp Tiers, and direct giving.')
@@ -36,6 +37,8 @@ export default function FAQ() {
       a: 'Yes. Organizations and visitors can report data issues through our feedback form. We correct errors quickly and disclose corrections publicly.'
     },
   ]
+
+  useJsonLd(faqPageSchema(faqs.map(faq => ({ question: faq.q, answer: faq.a }))))
 
   return (
     <div className="min-h-[100dvh]">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useJsonLd, organizationSchema } from '../hooks/useJsonLd'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import { getTierSummary, getTierFromOrg, getV4FinancialHealth, financialContextLabel, TIER_COLORS } from '../components/TrustBadge'
@@ -261,6 +262,22 @@ export default function OrganizationDetail() {
     ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. Tier: ${apiOrg.merit_tier ?? 'Flame'}. Financial scale: ${apiOrg.peer_percentile != null ? `${Math.round(apiOrg.peer_percentile)}/100` : 'pending'}.`
     : ''
   usePageMeta(metaTitle, metaDesc)
+
+  const jsonLdSchema = useMemo(() => {
+    if (!apiOrg) return null
+    return organizationSchema({
+      name: apiOrg.organization_name,
+      ein: apiOrg.EIN,
+      description: apiOrg.mission || undefined,
+      url: `https://daanaa.org/organizations/${apiOrg.EIN}`,
+      address: apiOrg.CITY && apiOrg.STATE ? `${apiOrg.CITY}, ${apiOrg.STATE}` : undefined,
+      state: apiOrg.STATE || undefined,
+    })
+  }, [apiOrg])
+
+  if (jsonLdSchema) {
+    useJsonLd(jsonLdSchema)
+  }
 
   if (orgLoading) {
     return (
