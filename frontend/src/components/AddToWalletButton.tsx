@@ -11,8 +11,8 @@
  *   onAdded?: Callback after successful add
  */
 
-import React, { useState, useContext } from 'react'
-import { WalletContext } from '../contexts/WalletContext'
+import React, { useState } from 'react'
+import { useWallet } from '../contexts/WalletContext'
 import { getOrganization, type ApiOrganization } from '../data/api'
 import type { WalletOrg } from '../types/wallet'
 
@@ -29,7 +29,7 @@ export default function AddToWalletButton({
   orgName,
   onAdded,
 }: AddToWalletButtonProps) {
-  const { isInWallet, addOrg } = useContext(WalletContext)
+  const { isInWallet, addOrg } = useWallet()
   const [state, setState] = useState<ButtonState>('idle')
 
   const alreadyInWallet = isInWallet(ein)

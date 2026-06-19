@@ -14,10 +14,10 @@
  *   <WalletBadge style="pill" intent="giving" />
  */
 
-import React, { useContext, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { WalletContext } from '../contexts/WalletContext'
-import type { GivingIntent } from '../types/wallet'
+import { useWallet } from '../contexts/WalletContext'
+import type { GivingIntent, WalletOrg } from '../types/wallet'
 
 interface WalletBadgeProps {
   style?: 'inline' | 'badge' | 'pill'
@@ -28,7 +28,7 @@ export default function WalletBadge({
   style = 'inline',
   intent,
 }: WalletBadgeProps) {
-  const { wallet } = useContext(WalletContext)
+  const { wallet } = useWallet()
 
   // Compute filtered count based on intent
   const count = useMemo(() => {
@@ -36,7 +36,7 @@ export default function WalletBadge({
       return wallet.orgs.length
     }
 
-    return wallet.orgs.filter((org) => {
+    return wallet.orgs.filter((org: WalletOrg) => {
       const orgIntent = org.givingIntent as GivingIntent | undefined
       return orgIntent && orgIntent.type === intent
     }).length
