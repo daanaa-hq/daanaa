@@ -22,10 +22,33 @@ from __future__ import annotations
 
 import argparse
 import base64
+import re
 from email.message import EmailMessage
 
 from scripts.email_agent.oauth import gmail_service
 from scripts.email_agent.routing import classify
+
+_AUTOMATED_FROM_RE = re.compile(
+    r"(no.?reply|noreply|postmaster|mailer.?daemon|do.not.reply|"
+    r"notifications?|automated|bounce|alert|report\.system|"
+    r"safebrowsing|google-no-reply)@",
+    re.I,
+)
+
+
+def _is_automated(headers: dict[str, str]) -> bool:
+    sender = headers.get("From", "")
+    if _AUTOMATED_FROM_RE.search(sender):
+        return True
+    auto_submitted = headers.get("Auto-Submitted", "no").lower()
+    if auto_submitted not in ("no", ""):
+        return True
+    if headers.get("Precedence", "").lower() in ("bulk", "list", "junk"):
+        return True
+    subj = headers.get("Subject", "").lower()
+    if "submitter: google.com" in subj or "report domain:" in subj:
+        return True
+    return False
 from scripts.email_agent.labels import (
     ensure_labels, TRIAGED, NEEDS_HUMAN, AI_DRAFT, route_label,
 )
@@ -100,7 +123,7 @@ def main():
     stats = {
         "matched": 0, "auto_acked": 0,
         "drafted": 0, "needs_human": 0,
-        "skipped": 0, "errors": 0,
+        "skipped": 0, "automated": 0, "errors": 0,
     }
 
     for msg in fetch_inbox(svc, args.query, args.limit):
@@ -113,6 +136,21 @@ def main():
 
         if route is None:
             stats["skipped"] += 1
+            continue
+
+        # Automated system emails: label+archive, never ack or draft
+        if _is_automated(headers):
+            stats["automated"] += 1
+            print(f"  [auto  ] ⊘ {targeted} | {subject}")
+            if not args.dry_run:
+                try:
+                    svc.users().messages().modify(
+                        userId="me", id=msg["id"],
+                        body={"addLabelIds": [labels[TRIAGED]]},
+                    ).execute()
+                except Exception as e:
+                    stats["errors"] += 1
+                    print(f"           ✗ label error: {e}")
             continue
 
         stats["matched"] += 1
@@ -173,8 +211,10 @@ def main():
     print(f"\n{stats}")
     acked = stats['auto_acked']
     drafted = stats['drafted']
+    auto = stats['automated']
     print(
-        f"\nSummary: {acked} instant acks sent, "
+        f"\nSummary: {auto} automated emails silently archived, "
+        f"{acked} instant acks sent, "
         f"{drafted} full drafts queued for human review."
     )
 
