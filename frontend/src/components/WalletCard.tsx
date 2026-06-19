@@ -10,8 +10,8 @@ interface WalletCardProps {
 
 const healthMap: Record<string, { label: string; classes: string }> = {
   HEALTHY: { label: 'Financially healthy',        classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  STABLE:  { label: 'Financially stable',         classes: 'bg-amber-50 text-amber-700 border-amber-200' },
-  CAUTION: { label: 'Needs support',    classes: 'bg-orange-50 text-orange-700 border-orange-200' },
+  STABLE:  { label: 'Financially stable',         classes: 'bg-blue-50 text-blue-700 border-blue-200' },
+  CAUTION: { label: 'Needs support',    classes: 'bg-amber-50 text-amber-700 border-amber-200' },
 }
 
 function getIntentDisplay(org: WalletOrg): string | null {
@@ -119,7 +119,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
         )}
         {org.merit_score_v5 >= 50 && (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-deep-navy/5 text-deep-navy border-deep-navy/10 font-body">
-            Top {100 - org.merit_score_v5}% of peers
+            Top {Math.max(1, 100 - org.merit_score_v5)}% of peers
           </span>
         )}
       </div>

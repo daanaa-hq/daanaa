@@ -49,19 +49,17 @@ export default function DonationAttributionBanner({ org }: DonationAttributionBa
   if (dismissed) return null
 
   return (
-    <div className="bg-soft-gold/5 border border-soft-gold/20 rounded-lg p-4 mb-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <p className="text-sm text-deep-navy font-medium">
-            Just donated? 💝 If Daanaa helped you find {org.organization_name}, let us know. It helps us measure our impact.
-          </p>
-        </div>
+    <div className="bg-soft-gold/5 border border-soft-gold/20 rounded-xl p-4 mb-6">
+      <div className="flex items-center justify-between gap-4">
+        <p className="font-body text-[13px] text-deep-navy flex-1">
+          Did Daanaa help you find {org.organization_name}? Let us know — it helps us measure our reach.
+        </p>
         <button
           onClick={handleConfirm}
           disabled={loading}
-          className="shrink-0 px-4 py-2 bg-soft-gold text-white rounded-lg font-medium text-sm hover:bg-soft-gold/90 disabled:opacity-50 transition-colors"
+          className="shrink-0 px-4 py-2 bg-soft-gold text-deep-navy rounded-xl font-body text-[13px] font-semibold hover:bg-bright-gold disabled:opacity-50 transition-colors"
         >
-          {loading ? 'Confirming...' : 'Yes, helped me'}
+          {loading ? 'Saving...' : 'Yes, it did'}
         </button>
       </div>
     </div>

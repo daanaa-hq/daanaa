@@ -778,8 +778,8 @@ const HEALTH_LABEL: Record<string, string> = {
 }
 const HEALTH_CLASSES: Record<string, string> = {
   HEALTHY: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  STABLE:  'bg-amber-50 text-amber-700 border-amber-200',
-  CAUTION: 'bg-orange-50 text-orange-700 border-orange-200',
+  STABLE:  'bg-blue-50 text-blue-700 border-blue-200',
+  CAUTION: 'bg-amber-50 text-amber-700 border-amber-200',
 }
 
 function HiddenGemsSection() {
