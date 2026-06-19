@@ -741,9 +741,9 @@ function WalletSection() {
               </div>
               <div className="space-y-3">
                 {[
-                  { org: 'Houston Food Bank', location: 'Houston, TX', health: 'Financially healthy', intent: 'Giving · $500/yr', gem: false },
-                  { org: 'Literacy Coalition', location: 'Austin, TX', health: 'Financially stable', intent: 'Volunteering · 4 hrs/wk', gem: true },
-                  { org: 'Houston SPCA', location: 'Houston, TX', health: 'Financially healthy', intent: null, gem: false },
+                  { org: 'Houston Food Bank', location: 'Houston, TX', healthClass: 'bg-emerald-500/15 text-emerald-300', health: 'Financially healthy', intent: 'Giving · $500/yr', gem: false },
+                  { org: 'Literacy Coalition', location: 'Austin, TX', healthClass: 'bg-blue-500/15 text-blue-300', health: 'Financially stable', intent: 'Volunteering · 4 hrs/wk', gem: true },
+                  { org: 'Houston SPCA', location: 'Houston, TX', healthClass: 'bg-emerald-500/15 text-emerald-300', health: 'Financially healthy', intent: null, gem: false },
                 ].map(d => (
                   <div key={d.org} className="bg-white/5 rounded-xl px-4 py-3.5">
                     <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -754,7 +754,7 @@ function WalletSection() {
                     </div>
                     <p className="font-body text-[11px] text-cool-grey mb-2">{d.location}</p>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-body text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">{d.health}</span>
+                      <span className={`font-body text-[10px] px-2 py-0.5 rounded-full ${d.healthClass}`}>{d.health}</span>
                       {d.intent && (
                         <span className="font-body text-[10px] text-soft-gold/80">{d.intent}</span>
                       )}

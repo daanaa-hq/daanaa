@@ -68,7 +68,6 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
           >
             Claim this page for free.
           </a>
-          {' '}It&rsquo;s free.
         </p>
 
         <div className="w-full pt-4 mt-1 border-t" style={{ borderColor: '#E5E0DB' }}>
