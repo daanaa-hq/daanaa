@@ -1588,8 +1588,9 @@ def get_organization(ein):
     # Cause-cohort context for UNSCORED orgs only. When we have no 990 financials
     # of our own for this org, show the *typical* financial shape of its NTEE
     # cause-cohort (drawn from scored orgs) — framed as "about this cause area,
-    # not this org" (Stewardship P3/P4). Never overrides real v5_context.
-    if not org.get('v5_context') and not org.get('financial_health'):
+    # not this org" (Stewardship P3/P4). Only populate when merit_score_v5 is None
+    # (no v5 scoring — missing financials).
+    if not org.get('merit_score_v5'):
         try:
             from scripts.enrich_api_responses import get_cohort_context
             org['cohort_context'] = get_cohort_context(
@@ -1598,6 +1599,8 @@ def get_organization(ein):
         except Exception as e:
             app.logger.debug(f"cohort context enrichment failed for {ein_clean}: {e}")
             org['cohort_context'] = None
+    else:
+        org['cohort_context'] = None
 
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
@@ -5292,8 +5295,7 @@ def wallet_export():
 
     writer.writerow([])
     writer.writerow(['---'])
-    writer.writerow(['This export includes your personal impact data: giving history, volunteer hours, and']
-    writer.writerow(['supporting organizations. This data is private and for your personal records only.'])
+    writer.writerow(['This export includes your personal impact data: giving history, volunteer hours, and supporting organizations. This data is private and for your personal records only.'])
 
     csv_data = output.getvalue()
     return csv_data, 200, {
