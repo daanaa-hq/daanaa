@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { CompareProvider } from './contexts/CompareContext'
 import { AuthProvider } from './contexts/AuthContext'
+import NonprofitRoute from './components/NonprofitRoute'
 
 const Home = lazy(() => import('./pages/Home'))
 const Directory = lazy(() => import('./pages/Directory'))
@@ -41,6 +42,9 @@ const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
 const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
 const NonprofitDashboard = lazy(() => import('./pages/NonprofitDashboard'))
+const NonprofitLogin = lazy(() => import('./pages/nonprofit/NonprofitLogin'))
+const MyOrgsPage = lazy(() => import('./pages/nonprofit/MyOrgsPage'))
+const NonprofitDashboardPage = lazy(() => import('./pages/nonprofit/NonprofitDashboardPage'))
 const Partners = lazy(() => import('./pages/Partners'))
 const PartnerDetail = lazy(() => import('./pages/PartnerDetail'))
 
@@ -101,6 +105,11 @@ export default function App() {
           <Route path="/invisible-preview" element={<MeetInvisible />} />
           <Route path="/research" element={<ResearchDashboard />} />
           <Route path="/nonprofit/verify-hours" element={<NonprofitVerification />} />
+          <Route path="/nonprofit/login" element={<NonprofitLogin />} />
+          <Route element={<NonprofitRoute />}>
+            <Route path="/nonprofit/my-orgs" element={<MyOrgsPage />} />
+            <Route path="/nonprofit/dashboard/:ein" element={<NonprofitDashboardPage />} />
+          </Route>
           <Route path="/claim/verify" element={<ClaimVerify />} />
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/claim/success" element={<ClaimSuccess />} />
