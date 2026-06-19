@@ -14,7 +14,6 @@ const OrganizationDetail = lazy(() => import('./pages/OrganizationDetail'))
 const ComparePage = lazy(() => import('./pages/ComparePage'))
 const Legal = lazy(() => import('./pages/Legal'))
 const HowItWorks = lazy(() => import('./pages/HowItWorks'))
-const Wallet = lazy(() => import('./pages/Wallet'))
 const WalletPage = lazy(() => import('./pages/WalletPage'))
 const NonprofitVerification = lazy(() => import('./pages/NonprofitVerification'))
 const ForNonprofits = lazy(() => import('./pages/ForNonprofits'))
@@ -107,8 +106,8 @@ export default function App() {
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/legal" element={<Legal />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
-            <Route path="/wallet" element={<Wallet />} />
-            <Route path="/giving-wallet" element={<WalletPage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/giving-wallet" element={<Navigate to="/wallet" replace />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
             <Route path="/about" element={<About />} />
             <Route path="/principles" element={<Principles />} />
