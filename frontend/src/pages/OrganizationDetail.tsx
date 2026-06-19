@@ -347,9 +347,8 @@ export default function OrganizationDetail() {
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
             <div>
+              {/* ORG NAME & LOCATION */}
               <div className="flex items-start gap-4 sm:gap-5">
-                {/* Logo slot -- placeholder (org initials) until the organization uploads
-                    its logo on claim (B4). Reserves a clean, defined identity space. */}
                 <div className="shrink-0 mt-1.5 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border border-white/15 bg-white/[0.06]">
                   <span className="font-display text-[22px] sm:text-[26px] text-soft-gold leading-none tracking-tight">
                     {org.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
@@ -367,6 +366,67 @@ export default function OrganizationDetail() {
                   <span className="font-body text-[16px] text-muted-cream">{org.city}, {org.state}</span>
                 </div>
               </div>
+
+              {/* FINANCIAL TRUST LINE + PEER CONTEXT (Hero) */}
+              {apiOrg! && (apiOrg!.v5_context || apiOrg!.cohort_context) && (
+                <div className="mt-6 space-y-4">
+                  <div className="p-4 rounded-xl bg-white/8 border border-white/12">
+                    <div className="space-y-3">
+                      {/* Efficiency metric */}
+                      {apiOrg!.program_expense_pct != null && apiOrg!.program_expense_pct > 0 && (
+                        <div className="flex items-center justify-between">
+                          <span className="font-body text-[13px] text-muted-cream">Program spending</span>
+                          <span className="font-body text-[18px] font-semibold text-warm-cream">
+                            {apiOrg!.program_expense_pct.toFixed(0)}¢ per dollar
+                          </span>
+                        </div>
+                      )}
+                      {/* Peer context snap */}
+                      {apiOrg!.v5_context && (
+                        <div className="flex items-center justify-between">
+                          <span className="font-body text-[13px] text-muted-cream">vs peer group</span>
+                          <span className="font-body text-[18px] font-semibold text-warm-cream">
+                            {apiOrg!.v5_context.score?.percentile ? `Top ${Math.round(100 - (apiOrg!.v5_context.score.percentile * 100))}%` : 'Ranked'}
+                          </span>
+                        </div>
+                      )}
+                      {/* Health signal */}
+                      {apiOrg!.v5_context && (
+                        <div className="flex items-center justify-between">
+                          <span className="font-body text-[13px] text-muted-cream">Financial health</span>
+                          <span className={`font-body text-[14px] font-semibold px-3 py-1 rounded ${
+                            apiOrg!.v5_context.score?.health_signal === 'HEALTHY' ? 'bg-emerald-500/20 text-emerald-300' :
+                            apiOrg!.v5_context.score?.health_signal === 'STABLE' ? 'bg-blue-500/20 text-blue-300' :
+                            'bg-amber-500/20 text-amber-300'
+                          }`}>
+                            {apiOrg!.v5_context.score?.health_signal === 'CAUTION' ? 'Needs support' : apiOrg!.v5_context.score?.health_signal}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* PRIMARY DONATE CTA */}
+                  {(() => {
+                    const websiteVerified = apiOrg?.website_status === 'ok' || apiOrg?.website_status === 'beta';
+                    const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
+
+                    if (link.url) {
+                      return (
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center w-full px-6 py-4 rounded-xl bg-soft-gold text-deep-navy font-body text-[16px] font-semibold hover:bg-bright-gold transition-colors"
+                        >
+                          {link.label || 'Visit their website'}
+                        </a>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              )}
 
               {/* Stub banner -- shown when org is IRS-registered but has no 990 data */}
               {apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null && (
@@ -684,6 +744,110 @@ export default function OrganizationDetail() {
       <div className="py-0">
         <div>
 
+          {/* How They Manage Resources -- surfaced early, opened by default for quick givers */}
+          {apiOrg!.financial_context && (
+            <div className="mb-8">
+              <button
+                onClick={() => setShowResources(s => !s)}
+                className="w-full flex items-center justify-between px-5 py-4 bg-white border border-light-grey rounded-xl hover:border-soft-gold/50 transition-colors group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium shrink-0">Financial context</span>
+                  <span className={`shrink-0 inline-block px-2.5 py-0.5 rounded font-body text-[11px] font-semibold ${
+                    apiOrg!.financial_context.status === 'VERIFIED_HEALTHY'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : apiOrg!.financial_context.status === 'FINANCIAL_NOTE'
+                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                      : 'bg-slate-50 text-slate-700 border border-slate-200'
+                  }`}>
+                    {apiOrg!.financial_context.status === 'VERIFIED_HEALTHY' ? 'Healthy'
+                      : apiOrg!.financial_context.status === 'FINANCIAL_NOTE' ? 'Tight finances'
+                      : 'Data incomplete'}
+                  </span>
+                  {!showResources && apiOrg!.financial_context && (
+                    <span className="font-body text-[12px] text-cool-grey truncate hidden md:block">
+                      {apiOrg!.financial_context.peer_model}
+                    </span>
+                  )}
+                </div>
+                <svg
+                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  className={`shrink-0 text-cool-grey group-hover:text-soft-gold transition-transform duration-200 ${showResources ? 'rotate-180' : ''}`}
+                >
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+
+              {showResources && (
+                <div className="mt-1 bg-white border border-light-grey border-t-0 rounded-b-xl px-5 pb-5 pt-4 space-y-4">
+                  {(() => {
+                    const fc = apiOrg!.financial_context
+
+                    return (
+                      <>
+                        {fc.explanation && (
+                          <p className="font-body text-[14px] text-deep-navy leading-[1.6]">{fc.explanation}</p>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {apiOrg!.program_expense_pct != null && apiOrg!.program_expense_pct > 0 && (
+                            <div className="rounded-lg bg-warm-cream px-4 py-3">
+                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Programs</span>
+                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
+                                {apiOrg!.program_expense_pct.toFixed(0)}¢
+                              </span>
+                              <span className="block font-body text-[11px] text-cool-grey">of every dollar spent on programs</span>
+                            </div>
+                          )}
+                          {fc.months_reserve != null && (
+                            <div className="rounded-lg bg-warm-cream px-4 py-3">
+                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
+                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
+                                {fc.months_reserve > 999 ? '999+' : fc.months_reserve.toFixed(1)} mo
+                              </span>
+                              <span className="block font-body text-[11px] text-cool-grey">months net assets cover costs</span>
+                            </div>
+                          )}
+                          {apiOrg!.total_revenue != null && apiOrg!.total_expenses != null && apiOrg!.total_expenses > 0 && (
+                            <div className="rounded-lg bg-warm-cream px-4 py-3">
+                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Revenue vs costs</span>
+                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
+                                {(apiOrg!.revenue_3yr_avg ?? apiOrg!.total_revenue) >= apiOrg!.total_expenses ? '+' : ''}
+                                {(((apiOrg!.revenue_3yr_avg ?? apiOrg!.total_revenue) - apiOrg!.total_expenses) / apiOrg!.total_expenses * 100).toFixed(0)}%
+                              </span>
+                              <span className="block font-body text-[11px] text-cool-grey">
+                                {apiOrg!.revenue_3yr_avg ? '3-year average vs costs' : 'revenue vs costs'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <p className="font-body text-[11px] text-cool-grey">
+                            {fc.peer_model && fc.peer_baseline ? (
+                              <>
+                                Compared to {fc.peer_model?.replace(/_/g, ' ') || 'similar'} organizations
+                                {fc.gap_from_baseline != null && (
+                                  <> · {fc.gap_from_baseline > 0 ? '+' : ''}{fc.gap_from_baseline.toFixed(1)} months vs peer baseline</>
+                                )}
+                              </>
+                            ) : (
+                              'Financial context available'
+                            )}
+                          </p>
+                          <Link to="/methodology" className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors shrink-0 ml-3">
+                            How we score →
+                          </Link>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Key financial metrics row -- shown when ProPublica data is available */}
           {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -773,109 +937,6 @@ export default function OrganizationDetail() {
             </div>
           )}
 
-          {/* How They Manage Resources -- financial context framework, collapsed by default */}
-          {apiOrg!.financial_context && (
-            <div className="mb-8">
-              <button
-                onClick={() => setShowResources(s => !s)}
-                className="w-full flex items-center justify-between px-5 py-4 bg-white border border-light-grey rounded-xl hover:border-soft-gold/50 transition-colors group"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium shrink-0">How they manage resources</span>
-                  <span className={`shrink-0 inline-block px-2.5 py-0.5 rounded font-body text-[11px] font-semibold ${
-                    apiOrg!.financial_context.status === 'VERIFIED_HEALTHY'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : apiOrg!.financial_context.status === 'FINANCIAL_NOTE'
-                      ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                      : 'bg-slate-50 text-slate-700 border border-slate-200'
-                  }`}>
-                    {apiOrg!.financial_context.status === 'VERIFIED_HEALTHY' ? 'Healthy finances'
-                      : apiOrg!.financial_context.status === 'FINANCIAL_NOTE' ? 'Tight finances'
-                      : 'Data incomplete'}
-                  </span>
-                  {!showResources && apiOrg!.financial_context && (
-                    <span className="font-body text-[12px] text-cool-grey truncate hidden md:block">
-                      {apiOrg!.financial_context.peer_model}
-                    </span>
-                  )}
-                </div>
-                <svg
-                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                  strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  className={`shrink-0 text-cool-grey group-hover:text-soft-gold transition-transform duration-200 ${showResources ? 'rotate-180' : ''}`}
-                >
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-
-              {showResources && (
-                <div className="mt-1 bg-white border border-light-grey border-t-0 rounded-b-xl px-5 pb-5 pt-4 space-y-4">
-                  {(() => {
-                    const fc = apiOrg!.financial_context
-
-                    return (
-                      <>
-                        {fc.explanation && (
-                          <p className="font-body text-[14px] text-deep-navy leading-[1.6]">{fc.explanation}</p>
-                        )}
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {apiOrg!.program_expense_pct != null && apiOrg!.program_expense_pct > 0 && (
-                            <div className="rounded-lg bg-warm-cream px-4 py-3">
-                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Programs</span>
-                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
-                                {apiOrg!.program_expense_pct.toFixed(0)}¢
-                              </span>
-                              <span className="block font-body text-[11px] text-cool-grey">of every dollar spent on programs</span>
-                            </div>
-                          )}
-                          {fc.months_reserve != null && (
-                            <div className="rounded-lg bg-warm-cream px-4 py-3">
-                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
-                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
-                                {fc.months_reserve > 999 ? '999+' : fc.months_reserve.toFixed(1)} mo
-                              </span>
-                              <span className="block font-body text-[11px] text-cool-grey">months net assets cover costs</span>
-                            </div>
-                          )}
-                          {apiOrg!.total_revenue != null && apiOrg!.total_expenses != null && apiOrg!.total_expenses > 0 && (
-                            <div className="rounded-lg bg-warm-cream px-4 py-3">
-                              <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Revenue vs costs</span>
-                              <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
-                                {(apiOrg!.revenue_3yr_avg ?? apiOrg!.total_revenue) >= apiOrg!.total_expenses ? '+' : ''}
-                                {(((apiOrg!.revenue_3yr_avg ?? apiOrg!.total_revenue) - apiOrg!.total_expenses) / apiOrg!.total_expenses * 100).toFixed(0)}%
-                              </span>
-                              <span className="block font-body text-[11px] text-cool-grey">
-                                {apiOrg!.revenue_3yr_avg ? '3-year average vs costs' : 'revenue vs costs'}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center justify-between pt-1">
-                          <p className="font-body text-[11px] text-cool-grey">
-                            {fc.peer_model && fc.peer_baseline ? (
-                              <>
-                                Compared to {fc.peer_model?.replace(/_/g, ' ') || 'similar'} organizations
-                                {fc.gap_from_baseline != null && (
-                                  <> · {fc.gap_from_baseline > 0 ? '+' : ''}{fc.gap_from_baseline.toFixed(1)} months vs peer baseline</>
-                                )}
-                              </>
-                            ) : (
-                              'Financial context available'
-                            )}
-                          </p>
-                          <Link to="/methodology" className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors shrink-0 ml-3">
-                            How we score →
-                          </Link>
-                        </div>
-                      </>
-                    )
-                  })()}
-                </div>
-              )}
-            </div>
-          )}
 
           {/* About this listing + the org's claimable spaces get the full width
               and are clearly defined. The wide revenue trend chart moves to its

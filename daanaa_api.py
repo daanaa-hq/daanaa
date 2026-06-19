@@ -5139,9 +5139,19 @@ def wallet_volunteer_hours():
         notes = (data.get('notes') or '').strip()
         allow_verification = data.get('allow_verification', True)
 
-        # Validate
+        # If EIN not provided, try to look it up from nonprofit name
         if not nonprofit_ein or len(nonprofit_ein) != 9:
-            return jsonify({'error': 'Invalid nonprofit EIN'}), 400
+            if nonprofit_name:
+                org_match = db.execute(
+                    "SELECT EIN FROM registry_enriched WHERE organization_name ILIKE ? LIMIT 1",
+                    (nonprofit_name,)
+                ).fetchone()
+                if org_match:
+                    nonprofit_ein = org_match[0].replace('-', '')
+
+            # Still no valid EIN
+            if not nonprofit_ein or len(nonprofit_ein) != 9:
+                return jsonify({'error': 'Invalid nonprofit EIN. Please select from the search dropdown or provide a valid EIN.'}), 400
         if not service_date:
             return jsonify({'error': 'Service date required'}), 400
         if hours_logged <= 0 or hours_logged > 24:

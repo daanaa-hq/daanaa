@@ -700,7 +700,10 @@ export async function logVolunteerHours(
       allow_verification: allowVerification,
     }),
   })
-  if (!res.ok) throw new Error('log hours failed')
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}))
+    throw new Error(errData.error || 'Failed to log volunteer hours')
+  }
   return res.json()
 }
 

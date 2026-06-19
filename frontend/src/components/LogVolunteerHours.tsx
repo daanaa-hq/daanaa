@@ -100,6 +100,8 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
     const nameToCheck = formData.nonprofit_name || searchQuery
     if (!nameToCheck.trim()) {
       newErrors.nonprofit_name = 'Nonprofit name is required'
+    } else if (!formData.nonprofit_ein.trim()) {
+      newErrors.nonprofit_name = 'Please select a nonprofit from the dropdown or provide an EIN'
     }
     if (!formData.service_date) {
       newErrors.service_date = 'Date is required'
@@ -191,7 +193,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Nonprofit Name with Search */}
         <div className="relative">
-          <label className="block text-sm font-medium text-deep-navy mb-2">
+          <label className="block text-sm font-medium text-warm-cream mb-2">
             Nonprofit Name *
           </label>
           <input
@@ -211,9 +213,9 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
             } focus:outline-none focus:ring-2 focus:ring-soft-gold/30`}
           />
           {searching && (
-            <p className="text-xs text-cool-grey mt-1">Searching...</p>
+            <p className="text-xs text-muted-cream mt-1">Searching...</p>
           )}
-          {errors.nonprofit_name && <p className="text-xs text-red-600 mt-1">{errors.nonprofit_name}</p>}
+          {errors.nonprofit_name && <p className="text-xs text-amber-300 mt-1">{errors.nonprofit_name}</p>}
 
           {/* Dropdown Results */}
           {showDropdown && searchResults.length > 0 && (
@@ -226,7 +228,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
                   className="w-full text-left px-3 py-2 hover:bg-warm-cream transition-colors border-b border-light-grey/30 last:border-b-0"
                 >
                   <p className="font-medium text-deep-navy text-sm">{org.organization_name}</p>
-                  <p className="text-xs text-cool-grey">
+                  <p className="text-xs text-muted-cream/80">
                     {org.CITY && org.STATE ? `${org.CITY}, ${org.STATE}` : ''} {org.EIN && `(${org.EIN})`}
                   </p>
                 </button>
@@ -235,7 +237,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
           )}
           {showDropdown && searchResults.length === 0 && searchQuery && (
             <div className="absolute z-10 w-full mt-1 bg-white border border-light-grey rounded-lg shadow-lg p-3">
-              <p className="text-xs text-cool-grey text-center">No organizations found. Enter the name manually.</p>
+              <p className="text-xs text-muted-cream text-center">No organizations found. Enter the name manually.</p>
             </div>
           )}
         </div>
@@ -253,7 +255,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
             placeholder="e.g., 71-0933434"
             className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/30"
           />
-          <p className="text-xs text-cool-grey mt-1">Helps us match your nonprofit</p>
+          <p className="text-xs text-muted-cream mt-1">Helps us match your nonprofit</p>
         </div>
       </div>
 
@@ -272,7 +274,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
               errors.service_date ? 'border-red-500' : 'border-light-grey'
             } focus:outline-none focus:ring-2 focus:ring-soft-gold/30`}
           />
-          {errors.service_date && <p className="text-xs text-red-600 mt-1">{errors.service_date}</p>}
+          {errors.service_date && <p className="text-xs text-amber-300 mt-1">{errors.service_date}</p>}
         </div>
 
         {/* Hours */}
@@ -293,7 +295,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
               errors.hours_logged ? 'border-red-500' : 'border-light-grey'
             } focus:outline-none focus:ring-2 focus:ring-soft-gold/30`}
           />
-          {errors.hours_logged && <p className="text-xs text-red-600 mt-1">{errors.hours_logged}</p>}
+          {errors.hours_logged && <p className="text-xs text-amber-300 mt-1">{errors.hours_logged}</p>}
         </div>
       </div>
 
@@ -313,7 +315,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
       </div>
 
       {/* Consent Checkbox */}
-      <div className="flex items-start space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="flex items-start space-x-3 p-3 bg-soft-gold/10 border border-soft-gold/30 rounded-lg">
         <input
           type="checkbox"
           id="allow_verification"
@@ -321,9 +323,9 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
           onChange={(e) => setAllowVerification(e.target.checked)}
           className="mt-1 w-4 h-4 cursor-pointer"
         />
-        <label htmlFor="allow_verification" className="text-sm text-deep-navy cursor-pointer">
+        <label htmlFor="allow_verification" className="text-sm text-warm-cream cursor-pointer">
           <span className="font-medium">Allow {formData.nonprofit_name || 'this nonprofit'} to verify these hours</span>
-          <p className="text-xs text-cool-grey mt-1">
+          <p className="text-xs text-muted-cream mt-1">
             When unchecked, these hours stay private in your wallet. You can change this anytime.
           </p>
         </label>
@@ -332,10 +334,10 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
       {errors.submit && (
         <div className={`p-3 rounded-lg ${
           errors.submit.includes('sign in')
-            ? 'bg-blue-50 border border-blue-200'
-            : 'bg-red-50 border border-red-200'
+            ? 'bg-blue-500/20 border border-blue-400'
+            : 'bg-red-500/20 border border-red-400'
         }`}>
-          <p className={errors.submit.includes('sign in') ? 'text-blue-800 text-sm' : 'text-red-800 text-sm'}>
+          <p className={errors.submit.includes('sign in') ? 'text-blue-300 text-sm' : 'text-red-300 text-sm'}>
             {errors.submit}
           </p>
           {errors.submit.includes('sign in') && (
@@ -364,7 +366,7 @@ export default function LogVolunteerHours({ onSuccess }: LogVolunteerHoursProps)
         {loading ? 'Logging...' : 'Log Volunteer Hours'}
       </button>
 
-      <p className="text-xs text-cool-grey text-center">
+      <p className="text-xs text-muted-cream text-center">
         This is your personal record. A nonprofit can verify these hours later.
       </p>
 
