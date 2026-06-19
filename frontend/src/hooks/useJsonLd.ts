@@ -6,8 +6,10 @@ export interface JsonLdSchema {
   [key: string]: any
 }
 
-export function useJsonLd(schema: JsonLdSchema) {
+export function useJsonLd(schema: JsonLdSchema | null | undefined) {
   useEffect(() => {
+    if (!schema) return
+
     let script = document.querySelector<HTMLScriptElement>('script[type="application/ld+json"]')
     if (!script) {
       script = document.createElement('script')

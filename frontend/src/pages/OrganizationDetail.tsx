@@ -275,9 +275,7 @@ export default function OrganizationDetail() {
     })
   }, [apiOrg])
 
-  if (jsonLdSchema) {
-    useJsonLd(jsonLdSchema)
-  }
+  useJsonLd(jsonLdSchema)
 
   if (orgLoading) {
     return (

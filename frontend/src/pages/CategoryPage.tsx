@@ -1,6 +1,8 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { useMemo } from 'react'
 import { getNteeCategory, NTEE_CATEGORIES } from '../data/ntee'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useJsonLd, categoryPageSchema } from '../hooks/useJsonLd'
 
 export default function CategoryPage() {
   const { id } = useParams<{ id: string }>()
@@ -10,6 +12,17 @@ export default function CategoryPage() {
     category?.name ?? '',
     category ? `Browse ${category.name} nonprofits on Daanaa. 501(c)(3) organizations from public IRS records with peer financial context and mission information.` : ''
   )
+
+  const categorySchema = useMemo(() => {
+    if (!category) return null
+    return categoryPageSchema({
+      name: category.name,
+      description: `Organizations working in ${category.name}. Find one that aligns with your values.`,
+      url: `https://daanaa.org/categories/${category.id}`,
+    })
+  }, [category])
+
+  useJsonLd(categorySchema)
 
   if (!category) return <Navigate to="/directory" replace />
 
