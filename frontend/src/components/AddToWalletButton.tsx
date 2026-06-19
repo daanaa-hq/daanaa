@@ -1,17 +1,5 @@
-/**
- * AddToWalletButton: CTA button to add org to wallet
- * - Fetches full org data from API
- * - Adds to wallet with loading/success/error states
- * - Automatically resets after 3 seconds on success
- * - Shows disabled state when already in wallet
- *
- * Props:
- *   ein: Organization EIN
- *   orgName: Organization name (for aria-label)
- *   onAdded?: Callback after successful add
- */
-
 import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
 import { getOrganization, type ApiOrganization } from '../data/api'
 import type { WalletOrg } from '../types/wallet'
@@ -29,7 +17,7 @@ export default function AddToWalletButton({
   orgName,
   onAdded,
 }: AddToWalletButtonProps) {
-  const { isInWallet, addOrg } = useWallet()
+  const { isInWallet, addOrg, getIntent } = useWallet()
   const [state, setState] = useState<ButtonState>('idle')
 
   const alreadyInWallet = isInWallet(ein)
@@ -38,10 +26,8 @@ export default function AddToWalletButton({
     try {
       setState('loading')
 
-      // Fetch full org data from API
       const apiOrg = await getOrganization(ein)
 
-      // Convert ApiOrganization to WalletOrg
       const walletOrg: WalletOrg = {
         ein: apiOrg.EIN || ein,
         name: apiOrg.organization_name || orgName,
@@ -50,27 +36,18 @@ export default function AddToWalletButton({
         cause: apiOrg.cause_tags || [],
         merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
         merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
-        is_hidden_gem: !!(apiOrg as any).is_hidden_gem,
+        is_hidden_gem: !!(apiOrg.is_hidden_gem),
         bookmarkedAt: Date.now(),
       }
 
-      // Add org to wallet
       addOrg(walletOrg)
-
-      // Show success state
       setState('success')
 
-      // Call optional callback
-      if (onAdded) {
-        onAdded(ein)
-      }
+      if (onAdded) onAdded(ein)
 
-      // Reset after 3 seconds
-      setTimeout(() => {
-        setState('idle')
-      }, 3000)
-    } catch (error) {
-      console.error('Failed to add org to wallet:', error)
+      // Extend to 10s so the intent prompt is visible (implementation intentions window)
+      setTimeout(() => setState('idle'), 10000)
+    } catch {
       setState('error')
     }
   }
@@ -80,7 +57,6 @@ export default function AddToWalletButton({
     handleClick()
   }
 
-  // Determine button text and styling
   if (alreadyInWallet) {
     return (
       <button
@@ -112,15 +88,30 @@ export default function AddToWalletButton({
   }
 
   if (state === 'success') {
+    const intentAlreadySet = getIntent(ein)
     return (
-      <button
-        type="button"
-        disabled
-        aria-label={`Added ${orgName} to wallet`}
-        className="inline-flex items-center justify-center gap-2 px-5 py-1.5 rounded-full font-body text-[13px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
-      >
-        Added to Wallet
-      </button>
+      <div className="flex flex-col gap-1.5">
+        <button
+          type="button"
+          disabled
+          aria-label={`Added ${orgName} to wallet`}
+          className="inline-flex items-center justify-center gap-2 px-5 py-1.5 rounded-full font-body text-[13px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Added to Wallet
+        </button>
+        {!intentAlreadySet && (
+          <Link
+            to="/wallet"
+            className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors text-center leading-snug"
+            aria-label="Set a giving plan for this organization"
+          >
+            How would you like to support them? →
+          </Link>
+        )}
+      </div>
     )
   }
 

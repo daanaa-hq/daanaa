@@ -8,6 +8,7 @@ import LampMark from '../components/LampMark'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { formatEIN } from '../data/organizations'
 import { getPrimaryExternalLink } from '../utils/externalLink'
+import AddToWalletButton from '../components/AddToWalletButton'
 
 function formatCurrency(n: number | null): string {
   if (!n) return '—'
@@ -172,6 +173,10 @@ function OrgColumn({ ein }: { ein: string }) {
       >
         View full profile →
       </Link>
+
+      <div className="mt-2.5 flex justify-center">
+        <AddToWalletButton ein={ein} orgName={org.organization_name || ''} />
+      </div>
     </div>
   )
 }
