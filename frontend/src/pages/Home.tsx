@@ -367,6 +367,70 @@ function FeaturedCause() {
 }
 
 // ─── Find Causes ──────────────────────────────────────────────────────────────
+
+// One-line plain-English tagline per NTEE major category
+const CAUSE_TAGLINES: Record<string, string> = {
+  A: 'Museums, theaters, and the arts that make a community whole.',
+  B: 'Schools, scholarships, and learning programs for every age.',
+  C: 'Land, water, wildlife, and climate work.',
+  D: 'Shelters, sanctuaries, and animal welfare programs.',
+  E: 'Community clinics, hospitals, and wellness programs.',
+  F: 'Counseling, crisis support, and mental health services.',
+  G: 'Organizations focused on specific diseases and conditions.',
+  H: 'Medical and scientific research institutions.',
+  I: 'Legal aid, crime prevention, and access to justice.',
+  J: 'Job training, workforce development, and economic opportunity.',
+  K: 'Food security, urban farming, and hunger relief.',
+  L: 'Affordable housing, emergency shelter, and homelessness prevention.',
+  M: 'Public safety, emergency preparedness, and disaster relief.',
+  N: 'Parks, sports programs, and outdoor recreation.',
+  O: 'After-school programs, mentorship, and youth leadership.',
+  P: 'Food banks, shelters, and support for families in need.',
+  Q: 'Global development, disaster relief, and international aid.',
+  R: 'Advocacy for civil rights, equity, and social justice.',
+  S: 'Neighborhood groups, civic organizations, and community builders.',
+  T: 'Foundations and grant-making organizations.',
+  U: 'Science, technology, and research institutions.',
+  V: 'Social research, policy, and knowledge building.',
+  W: 'Public affairs, voter engagement, and government policy.',
+  X: 'Faith-based organizations serving their communities.',
+  Y: 'Mutual benefit and membership organizations.',
+  Z: 'Nonprofits with limited public classification data.',
+}
+
+// Color accent palette — one per NTEE major group
+const CAUSE_ACCENT: Record<string, { bg: string; emoji_bg: string; border: string; text: string }> = {
+  A: { bg: 'bg-amber-50',   emoji_bg: 'bg-amber-100',  border: 'border-amber-200',   text: 'text-amber-700'  },
+  B: { bg: 'bg-blue-50',    emoji_bg: 'bg-blue-100',   border: 'border-blue-200',    text: 'text-blue-700'   },
+  C: { bg: 'bg-green-50',   emoji_bg: 'bg-green-100',  border: 'border-green-200',   text: 'text-green-700'  },
+  D: { bg: 'bg-orange-50',  emoji_bg: 'bg-orange-100', border: 'border-orange-200',  text: 'text-orange-700' },
+  E: { bg: 'bg-rose-50',    emoji_bg: 'bg-rose-100',   border: 'border-rose-200',    text: 'text-rose-700'   },
+  F: { bg: 'bg-purple-50',  emoji_bg: 'bg-purple-100', border: 'border-purple-200',  text: 'text-purple-700' },
+  G: { bg: 'bg-pink-50',    emoji_bg: 'bg-pink-100',   border: 'border-pink-200',    text: 'text-pink-700'   },
+  H: { bg: 'bg-cyan-50',    emoji_bg: 'bg-cyan-100',   border: 'border-cyan-200',    text: 'text-cyan-700'   },
+  I: { bg: 'bg-slate-50',   emoji_bg: 'bg-slate-100',  border: 'border-slate-200',   text: 'text-slate-700'  },
+  J: { bg: 'bg-indigo-50',  emoji_bg: 'bg-indigo-100', border: 'border-indigo-200',  text: 'text-indigo-700' },
+  K: { bg: 'bg-lime-50',    emoji_bg: 'bg-lime-100',   border: 'border-lime-200',    text: 'text-lime-700'   },
+  L: { bg: 'bg-yellow-50',  emoji_bg: 'bg-yellow-100', border: 'border-yellow-200',  text: 'text-yellow-700' },
+  M: { bg: 'bg-red-50',     emoji_bg: 'bg-red-100',    border: 'border-red-200',     text: 'text-red-700'    },
+  N: { bg: 'bg-teal-50',    emoji_bg: 'bg-teal-100',   border: 'border-teal-200',    text: 'text-teal-700'   },
+  O: { bg: 'bg-violet-50',  emoji_bg: 'bg-violet-100', border: 'border-violet-200',  text: 'text-violet-700' },
+  P: { bg: 'bg-sky-50',     emoji_bg: 'bg-sky-100',    border: 'border-sky-200',     text: 'text-sky-700'    },
+  Q: { bg: 'bg-emerald-50', emoji_bg: 'bg-emerald-100',border: 'border-emerald-200', text: 'text-emerald-700'},
+  R: { bg: 'bg-fuchsia-50', emoji_bg: 'bg-fuchsia-100',border: 'border-fuchsia-200', text: 'text-fuchsia-700'},
+  S: { bg: 'bg-stone-50',   emoji_bg: 'bg-stone-100',  border: 'border-stone-200',   text: 'text-stone-700'  },
+  T: { bg: 'bg-amber-50',   emoji_bg: 'bg-amber-100',  border: 'border-amber-200',   text: 'text-amber-700'  },
+  U: { bg: 'bg-blue-50',    emoji_bg: 'bg-blue-100',   border: 'border-blue-200',    text: 'text-blue-700'   },
+  V: { bg: 'bg-slate-50',   emoji_bg: 'bg-slate-100',  border: 'border-slate-200',   text: 'text-slate-700'  },
+  W: { bg: 'bg-indigo-50',  emoji_bg: 'bg-indigo-100', border: 'border-indigo-200',  text: 'text-indigo-700' },
+  X: { bg: 'bg-yellow-50',  emoji_bg: 'bg-yellow-100', border: 'border-yellow-200',  text: 'text-yellow-700' },
+  Y: { bg: 'bg-teal-50',    emoji_bg: 'bg-teal-100',   border: 'border-teal-200',    text: 'text-teal-700'   },
+  Z: { bg: 'bg-gray-50',    emoji_bg: 'bg-gray-100',   border: 'border-gray-200',    text: 'text-gray-600'   },
+}
+
+// The 8 causes donors most commonly explore — pinned at top of the grid
+const FEATURED_CAUSE_IDS = ['E', 'B', 'P', 'C', 'D', 'A', 'O', 'S']
+
 function BrowseCauses() {
   const cats = useMemo(() => seededShuffle(NTEE_CATEGORIES, weekSeed()), [])
   const { data: catData } = useApi(() => getCategories(), [])
@@ -376,12 +440,21 @@ function BrowseCauses() {
     return map
   }, [catData])
 
+  const featuredCats = useMemo(
+    () => FEATURED_CAUSE_IDS.map(id => NTEE_CATEGORIES.find(c => c.id === id)!).filter(Boolean),
+    []
+  )
+  const restCats = useMemo(
+    () => cats.filter(c => !FEATURED_CAUSE_IDS.includes(c.id)),
+    [cats]
+  )
+
   return (
     <section className="bg-[#F8F5F0] border-t border-light-grey py-14 md:py-20">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
         {/* Section header */}
-        <div className="mb-12">
+        <div className="mb-10">
           <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-2">
             Find by Cause
           </p>
@@ -389,50 +462,89 @@ function BrowseCauses() {
             className="font-display italic text-deep-navy leading-tight tracking-[-0.015em]"
             style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}
           >
-            Organizations making change
+            What do you care about?
           </h2>
-          <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.6] max-w-[640px]">
-            Choose a cause that matters to you. See the nonprofits working on it, explore their public record, and visit their official website.
+          <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.6] max-w-[580px]">
+            Pick a cause to see the nonprofits working on it, explore their public record, and visit their official website.
           </p>
         </div>
 
-        {/* Cause grid — 2 cols mobile · 3 cols tablet · 4 cols desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {cats.map(cat => {
+        {/* Featured 8 — larger tiles with icon + tagline */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
+          {featuredCats.map(cat => {
+            const accent = CAUSE_ACCENT[cat.id] ?? CAUSE_ACCENT.Z
             const count = orgCountByCode[cat.id]
+            const tagline = CAUSE_TAGLINES[cat.id] ?? ''
             return (
               <Link
                 key={cat.id}
                 to={`/category/${cat.id}`}
-                className="group flex flex-col justify-between bg-white border border-light-grey rounded-xl px-5 py-5 hover:border-soft-gold/40 hover:shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
-                style={{ minHeight: '100px' }}
+                className={`group flex flex-col gap-3 rounded-2xl border px-5 py-5 transition-all duration-200 hover:-translate-y-[2px] hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold ${accent.bg} ${accent.border}`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="font-body text-[15px] font-semibold text-deep-navy leading-snug tracking-[0.01em] group-hover:text-soft-gold transition-colors duration-150">
+                {/* Emoji bubble */}
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-[22px] ${accent.emoji_bg}`}>
+                  {cat.emoji}
+                </div>
+
+                {/* Name */}
+                <div className="flex-1">
+                  <p className={`font-body text-[15px] font-semibold leading-snug group-hover:opacity-80 transition-opacity ${accent.text}`}>
                     {cat.name}
+                  </p>
+                  <p className="font-body text-[12px] text-cool-grey mt-1 leading-relaxed line-clamp-2">
+                    {tagline}
+                  </p>
+                </div>
+
+                {/* Count + arrow */}
+                <div className="flex items-center justify-between pt-2 border-t border-black/5">
+                  <span className="font-body text-[12px] text-cool-grey">
+                    {count != null ? `${count.toLocaleString()} orgs` : `${cat.subs.length} types`}
                   </span>
                   <svg
-                    width="8" height="12" viewBox="0 0 8 12"
-                    className="shrink-0 mt-[3px] opacity-25 group-hover:opacity-100 transition-opacity duration-200"
+                    width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                    className={`opacity-40 group-hover:opacity-90 group-hover:translate-x-0.5 transition-all ${accent.text}`}
                   >
-                    <polygon points="4,0 8,6 4,12 0,6" fill="#C9A96E"/>
+                    <polyline points="9 18 15 12 9 6"/>
                   </svg>
                 </div>
-                <span className="font-body text-[13px] text-cool-grey mt-3">
-                  {count != null ? `${count.toLocaleString()} organizations` : `${cat.subs.length} subcategories`}
-                </span>
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* Remaining categories — compact 3→6-col grid */}
+        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
+          {restCats.map(cat => {
+            const count = orgCountByCode[cat.id]
+            const accent = CAUSE_ACCENT[cat.id] ?? CAUSE_ACCENT.Z
+            return (
+              <Link
+                key={cat.id}
+                to={`/category/${cat.id}`}
+                className="group flex flex-col items-center gap-1.5 px-3 py-3.5 bg-white rounded-xl border border-light-grey hover:border-soft-gold/40 hover:shadow-sm transition-all duration-150 text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
+              >
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-[18px] ${accent.emoji_bg}`}>
+                  {cat.emoji}
+                </div>
+                <p className="font-body text-[11px] font-medium text-deep-navy/70 group-hover:text-deep-navy leading-tight transition-colors">
+                  {cat.name}
+                </p>
+                {count != null && (
+                  <p className="font-body text-[10px] text-cool-grey/70">{count.toLocaleString()}</p>
+                )}
               </Link>
             )
           })}
         </div>
 
         {/* Link to see all */}
-        <div className="mt-10 text-center">
+        <div className="mt-8 text-center">
           <Link
             to="/directory"
             className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
           >
-            See all causes and search organizations
+            Search all organizations
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
