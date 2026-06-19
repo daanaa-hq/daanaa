@@ -207,7 +207,7 @@ export default function OrganizationDetail() {
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
   const [showScoreExplainer, setShowScoreExplainer] = useState(false)
   const [showVolunteer, setShowVolunteer] = useState(false)
-  const [showResources, setShowResources] = useState(false)
+  const [showResources, setShowResources] = useState(true)
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
     () => getOrganization(id || ''),
@@ -440,25 +440,6 @@ export default function OrganizationDetail() {
                     )}
                   </div>
 
-                  {/* PRIMARY DONATE CTA */}
-                  {(() => {
-                    const websiteVerified = apiOrg?.website_status === 'ok' || apiOrg?.website_status === 'beta';
-                    const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
-
-                    if (link.url) {
-                      return (
-                        <a
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block text-center w-full px-6 py-4 rounded-xl bg-soft-gold text-deep-navy font-body text-[16px] font-semibold hover:bg-bright-gold transition-colors"
-                        >
-                          {link.label || 'Visit their website'}
-                        </a>
-                      );
-                    }
-                    return null;
-                  })()}
                 </div>
               )}
 
@@ -562,15 +543,55 @@ export default function OrganizationDetail() {
                 if (link.url) {
                   return (
                     <div className="mt-5">
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
-                      >
-                        {link.label}
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                      </a>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                        >
+                          {link.label}
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                        {apiOrg && (
+                          <button
+                            onClick={() => {
+                              if (isInWallet(org.ein)) {
+                                removeFromWallet(org.ein)
+                              } else {
+                                addToWallet({
+                                  ein: apiOrg.EIN,
+                                  name: apiOrg.organization_name,
+                                  mission: apiOrg.mission || '',
+                                  location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
+                                  cause: apiOrg.cause_tags || [],
+                                  merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
+                                  merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
+                                  is_hidden_gem: !!(apiOrg.is_hidden_gem),
+                                  bookmarkedAt: Date.now(),
+                                })
+                              }
+                            }}
+                            className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-body text-[15px] font-semibold transition-all duration-150 border"
+                            style={{
+                              backgroundColor: isInWallet(org.ein) ? 'rgba(201,169,110,0.12)' : 'transparent',
+                              color: isInWallet(org.ein) ? '#C9A96E' : '#C9A96E',
+                              borderColor: '#C9A96E',
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24"
+                              fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
+                              stroke="#C9A96E"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                            </svg>
+                            {isInWallet(org.ein) ? 'Saved' : 'Save'}
+                          </button>
+                        )}
+                      </div>
                       {apiOrg!.website_status === 'beta' && (
                         <p className="mt-1.5 font-body text-[11px] text-cool-grey flex items-center gap-1.5">
                           <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">⚠️ discovered</span>
@@ -1572,7 +1593,7 @@ export default function OrganizationDetail() {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
           </svg>
           {isInWallet(org.ein) ? 'Remove from Wallet' : 'Save to Wallet'}
         </button>
