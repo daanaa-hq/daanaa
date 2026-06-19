@@ -361,12 +361,12 @@ export default function OrganizationDetail() {
             >
               <svg width="16" height="16" viewBox="0 0 24 24"
                 fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
-                stroke="currentColor"
+                stroke={isInWallet(org.ein) ? '#C9A96E' : 'currentColor'}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
               </svg>
               {isInWallet(org.ein) ? 'Saved to Wallet' : 'Save to Wallet'}
             </button>
@@ -394,43 +394,50 @@ export default function OrganizationDetail() {
                 </div>
               </div>
 
+              {org.mission && (
+                <p className="mt-4 font-body text-[15px] text-muted-cream/90 leading-[1.7] max-w-[600px] italic">
+                  &ldquo;{org.mission.replace(/^["“\s]+|["”\s]+$/g, '')}&rdquo;
+                </p>
+              )}
+
               {/* FINANCIAL TRUST LINE + PEER CONTEXT (Hero) */}
               {apiOrg! && (apiOrg!.v5_context || apiOrg!.cohort_context) && (
                 <div className="mt-6 space-y-4">
-                  <div className="p-4 rounded-xl bg-white/8 border border-white/12">
-                    <div className="space-y-3">
-                      {/* Efficiency metric */}
-                      {apiOrg!.program_expense_pct != null && apiOrg!.program_expense_pct > 0 && (
-                        <div className="flex items-center justify-between">
-                          <span className="font-body text-[13px] text-muted-cream">Program spending</span>
-                          <span className="font-body text-[18px] font-semibold text-warm-cream">
-                            {apiOrg!.program_expense_pct.toFixed(0)}¢ per dollar
-                          </span>
-                        </div>
-                      )}
-                      {/* Peer context snap */}
-                      {apiOrg!.v5_context && (
-                        <div className="flex items-center justify-between">
-                          <span className="font-body text-[13px] text-muted-cream">vs peer group</span>
-                          <span className="font-body text-[18px] font-semibold text-warm-cream">
-                            {apiOrg!.v5_context.score?.percentile ? `Top ${Math.round(100 - (apiOrg!.v5_context.score.percentile * 100))}%` : 'Ranked'}
-                          </span>
-                        </div>
-                      )}
-                      {/* Health signal */}
-                      {apiOrg!.v5_context && (
-                        <div className="flex items-center justify-between">
-                          <span className="font-body text-[13px] text-muted-cream">Financial health</span>
-                          <span className={`font-body text-[14px] font-semibold px-3 py-1 rounded ${
-                            apiOrg!.v5_context.score?.health_signal === 'HEALTHY' ? 'bg-emerald-500/20 text-emerald-300' :
-                            apiOrg!.v5_context.score?.health_signal === 'STABLE' ? 'bg-blue-500/20 text-blue-300' :
-                            'bg-amber-500/20 text-amber-300'
-                          }`}>
-                            {apiOrg!.v5_context.score?.health_signal === 'HEALTHY' ? 'Financially healthy' : apiOrg!.v5_context.score?.health_signal === 'STABLE' ? 'Financially stable' : 'Needs support'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex flex-wrap gap-3">
+                    {apiOrg!.program_expense_pct != null && apiOrg!.program_expense_pct > 0 && (
+                      <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
+                        <span className="font-display text-[26px] text-warm-cream leading-none">
+                          {apiOrg!.program_expense_pct.toFixed(0)}¢
+                        </span>
+                        <span className="font-body text-[11px] text-muted-cream text-center mt-1">per dollar to programs</span>
+                      </div>
+                    )}
+                    {apiOrg!.v5_context?.score?.percentile != null && (
+                      <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
+                        <span className="font-display text-[26px] text-warm-cream leading-none">
+                          Top {Math.round(100 - (apiOrg!.v5_context.score.percentile * 100))}%
+                        </span>
+                        <span className="font-body text-[11px] text-muted-cream text-center mt-1">of peer nonprofits</span>
+                      </div>
+                    )}
+                    {apiOrg!.v5_context?.score?.health_signal && (
+                      <div className={`flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl border min-w-[130px] ${
+                        apiOrg!.v5_context.score.health_signal === 'HEALTHY' ? 'bg-emerald-500/15 border-emerald-500/25' :
+                        apiOrg!.v5_context.score.health_signal === 'STABLE' ? 'bg-blue-500/10 border-blue-500/20' :
+                        'bg-amber-500/10 border-amber-500/20'
+                      }`}>
+                        <span className={`font-body text-[13px] font-semibold leading-none ${
+                          apiOrg!.v5_context.score.health_signal === 'HEALTHY' ? 'text-emerald-300' :
+                          apiOrg!.v5_context.score.health_signal === 'STABLE' ? 'text-blue-300' :
+                          'text-amber-300'
+                        }`}>
+                          {apiOrg!.v5_context.score.health_signal === 'HEALTHY' ? 'Financially healthy' :
+                           apiOrg!.v5_context.score.health_signal === 'STABLE' ? 'Financially stable' :
+                           'Needs support'}
+                        </span>
+                        <span className="font-body text-[11px] text-muted-cream text-center mt-1">financial health signal</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* PRIMARY DONATE CTA */}

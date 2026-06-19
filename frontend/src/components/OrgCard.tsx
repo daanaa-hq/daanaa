@@ -6,7 +6,6 @@ import { NTEE_SUBCATEGORIES } from '../data/categories'
 import BadgeChip from './BadgeChip'
 import { getTierFromOrg, getInlineVerifiedFact } from './TrustBadge'
 import LampMark from './LampMark'
-import { useGivingList } from '../hooks/useGivingList'
 import type { ApiOrganization } from '../data/api'
 import { getCardBadges } from '../utils/badges'
 import { useCompare } from '../contexts/CompareContext'
@@ -84,12 +83,12 @@ function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; can
   )
 }
 
-function FavoriteButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: React.MouseEvent) => void }) {
+function SaveButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: React.MouseEvent) => void }) {
   const color = isSaved ? '#C9A96E' : '#A89F94'
   return (
     <button
       onClick={onClick}
-      title={isSaved ? 'Remove from favorites' : 'Add to favorites'}
+      title={isSaved ? 'Saved to Wallet' : 'Save to Wallet'}
       className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold/70 focus-visible:ring-offset-1"
       aria-pressed={isSaved}
     >
@@ -99,17 +98,15 @@ function FavoriteButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: R
         stroke={color}
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
       >
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
       </svg>
-      <span className="font-body text-[10px] leading-none" style={{ color }}>Fav</span>
+      <span className="font-body text-[10px] leading-none" style={{ color }}>Save</span>
     </button>
   )
 }
 
 export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSummary, hideCompare }: OrgCardProps) {
-  const { isInList, addItem, removeItem } = useGivingList()
   const { isInCompare, addItem: addCompare, removeItem: removeCompare, canAdd } = useCompare()
-  const inList    = isInList(org.ein)
   const inCompare = isInCompare(org.ein)
   const lampTier  = apiOrg ? getTierFromOrg(apiOrg) : undefined
   const inlineFact = apiOrg ? getInlineVerifiedFact(apiOrg) : ''
@@ -117,24 +114,6 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
   const handleBookmark = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation()
     onToggleSave?.(e, org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })
-  }
-
-  const handleAddToList = (e: React.MouseEvent) => {
-    e.preventDefault(); e.stopPropagation()
-    if (inList) {
-      removeItem(org.ein)
-    } else {
-      addItem({
-        ein: org.ein,
-        orgName: org.name,
-        city: org.city || undefined,
-        state: org.state || undefined,
-        ntee1: org.category || undefined,
-        amount: 0,
-        trustTier: lampTier || 'Spark',
-        trustSummary: trustSummary || 'IRS registered',
-      })
-    }
   }
 
   const handleCompare = (e: React.MouseEvent) => {
@@ -204,7 +183,7 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
       <div className="flex items-center gap-1.5 shrink-0">
         {/* Compare hidden on mobile — too small to be useful */}
         {!hideCompare && <span className="hidden md:contents"><CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} /></span>}
-        {onToggleSave && <FavoriteButton isSaved={isSaved} onClick={handleBookmark} />}
+        {onToggleSave && <SaveButton isSaved={isSaved} onClick={handleBookmark} />}
       </div>
     </Link>
   )
@@ -212,9 +191,7 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
 
 export default function OrgCard({ org, compact = false, isSaved = false, onToggleSave, apiOrg, trustSummary, hideCompare }: OrgCardProps) {
   const scored     = org.hasScore !== false && org.meritScore > 0
-  const { isInList, addItem, removeItem } = useGivingList()
   const { isInCompare, addItem: addCompare, removeItem: removeCompare, canAdd } = useCompare()
-  const inList     = isInList(org.ein)
   const inCompare  = isInCompare(org.ein)
   const lampTier   = apiOrg ? getTierFromOrg(apiOrg) : undefined
   const inlineFact = apiOrg ? getInlineVerifiedFact(apiOrg) : ''
@@ -222,24 +199,6 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
   const handleBookmark = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation()
     onToggleSave?.(e, org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })
-  }
-
-  const handleAddToList = (e: React.MouseEvent) => {
-    e.preventDefault(); e.stopPropagation()
-    if (inList) {
-      removeItem(org.ein)
-    } else {
-      addItem({
-        ein: org.ein,
-        orgName: org.name,
-        city: org.city || undefined,
-        state: org.state || undefined,
-        ntee1: org.category || undefined,
-        amount: 0,
-        trustTier: lampTier || 'Spark',
-        trustSummary: trustSummary || 'IRS registered',
-      })
-    }
   }
 
   const handleCompare = (e: React.MouseEvent) => {
@@ -338,7 +297,7 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         )}
         <div className="flex items-center justify-end gap-1">
           {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
-          {onToggleSave && <FavoriteButton isSaved={isSaved} onClick={handleBookmark} />}
+          {onToggleSave && <SaveButton isSaved={isSaved} onClick={handleBookmark} />}
         </div>
       </div>
     </Link>
