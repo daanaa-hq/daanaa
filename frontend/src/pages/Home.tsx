@@ -571,24 +571,21 @@ function WalletSection() {
             <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase">
               Your giving, kept private
             </span>
-            <div className="mt-3 flex items-center gap-2 flex-wrap">
-              <h2
-                className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]"
-                style={{ fontSize: 'clamp(30px, 4vw, 50px)' }}
-              >
-                Your giving history,<br />private by design
-              </h2>
-              <span className="inline-flex items-center self-start mt-2 px-2 py-0.5 rounded-full bg-soft-gold/15 border border-soft-gold/30 font-body text-[10px] font-semibold tracking-[0.06em] text-soft-gold uppercase">beta</span>
-            </div>
+            <h2
+              className="mt-3 font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]"
+              style={{ fontSize: 'clamp(30px, 4vw, 50px)' }}
+            >
+              Save the ones<br />that matter to you
+            </h2>
             <p className="mt-5 font-body text-[16px] leading-[1.7]" style={{ color: 'rgba(245,240,235,0.65)' }}>
-              Log every donation you make, through any channel, to any nonprofit.
-              Records stay on your device only, never our servers.
+              Your Giving Wallet holds the nonprofits you want to support.
+              Track your intent for each one. Everything stays private — your account, your list, no one else's.
             </p>
             <ul className="mt-7 space-y-3.5">
               {[
-                'Search 1.8M+ tax-deductible nonprofits and autofill the details',
-                'Request an acknowledgment letter for gifts of $250+',
-                'Export by year, ready for your accountant',
+                'Save nonprofits as you discover them across Daanaa',
+                'Set your giving intent — amount, volunteering, or board interest',
+                'Sync across devices with your Google account',
               ].map(item => (
                 <li key={item} className="flex items-start gap-3 font-body text-[15px]" style={{ color: 'rgba(245,240,235,0.75)' }}>
                   <svg className="shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -612,45 +609,30 @@ function WalletSection() {
           {/* Wallet mockup */}
           <div>
             <div className="bg-[#0F1F38] border border-white/8 rounded-2xl p-6 shadow-2xl">
-              <div className="flex items-center gap-2 mb-4">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-                <span className="font-body text-[11px] tracking-[0.04em]" style={{ color: 'rgba(168,159,148,0.55)' }}>
-                  Private · stored on this device
-                </span>
+              <div className="flex items-center justify-between mb-5">
+                <span className="font-display italic text-[18px] text-warm-cream">Your Giving Wallet</span>
+                <span className="font-body text-[11px] tracking-[0.04em]" style={{ color: 'rgba(168,159,148,0.55)' }}>3 saved</span>
               </div>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="space-y-3">
                 {[
-                  { label: 'Given all-time', value: '$1,249.95' },
-                  { label: `This year`, value: '$999.98' },
-                  { label: 'Orgs', value: '6' },
-                ].map(s => (
-                  <div key={s.label} className="bg-white/5 rounded-xl p-3.5">
-                    <p className="font-body text-[10px] text-cool-grey uppercase tracking-[0.05em] mb-1.5">{s.label}</p>
-                    <p className="font-display text-[20px] text-warm-cream leading-none">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-2">
-                {[
-                  { org: 'Houston Food Bank', amount: '$500.00', date: 'Dec 15', badge: 'Letter pending' },
-                  { org: 'Literacy Coalition', amount: '$249.99', date: 'Nov 28', badge: null },
-                  { org: 'Houston SPCA',       amount: '$249.99', date: 'Oct 3',  badge: null },
+                  { org: 'Houston Food Bank', location: 'Houston, TX', health: 'Financially healthy', intent: 'Giving · $500/yr', gem: false },
+                  { org: 'Literacy Coalition', location: 'Austin, TX', health: 'Financially stable', intent: 'Volunteering · 4 hrs/wk', gem: true },
+                  { org: 'Houston SPCA', location: 'Houston, TX', health: 'Financially healthy', intent: null, gem: false },
                 ].map(d => (
-                  <div key={d.org} className="flex items-center justify-between bg-white/4 rounded-xl px-4 py-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-[13px] text-warm-cream font-medium">{d.org}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="font-body text-[11px] text-cool-grey">{d.date}</p>
-                        {d.badge && (
-                          <span className="font-body text-[10px] px-1.5 py-0.5 rounded-full bg-soft-gold/15 text-soft-gold">
-                            {d.badge}
-                          </span>
-                        )}
-                      </div>
+                  <div key={d.org} className="bg-white/5 rounded-xl px-4 py-3.5">
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <p className="font-body text-[13px] text-warm-cream font-semibold leading-snug">{d.org}</p>
+                      {d.gem && (
+                        <span className="font-body text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 shrink-0">Hidden gem</span>
+                      )}
                     </div>
-                    <span className="font-display text-[15px] text-soft-gold ml-3">{d.amount}</span>
+                    <p className="font-body text-[11px] text-cool-grey mb-2">{d.location}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-body text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">{d.health}</span>
+                      {d.intent && (
+                        <span className="font-body text-[10px] text-soft-gold/80">{d.intent}</span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
