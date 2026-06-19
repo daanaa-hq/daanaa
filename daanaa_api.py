@@ -5,6 +5,20 @@ Serves registry_enriched + v4 scores to frontend
 """
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets, logging, sys
 from datetime import datetime
+
+# Sentry error tracking — activate by setting SENTRY_DSN env var.
+import sentry_sdk
+_sentry_dsn = os.environ.get("SENTRY_DSN", "")
+if _sentry_dsn:
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        traces_sample_rate=0.1,   # 10% of requests traced
+        profiles_sample_rate=0.05,
+        environment=os.environ.get("DAANAA_ENV", "production"),
+        release=os.environ.get("GIT_COMMIT", "unknown"),
+        # Never capture PII — no user emails, IPs, or request bodies in Sentry
+        send_default_pii=False,
+    )
 import numpy as np
 import requests as _http
 from flask import Flask, jsonify, request, g, abort, send_from_directory, Blueprint
@@ -18,9 +32,17 @@ from twilio.request_validator import RequestValidator
 # Add scripts directory to path for email service
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
 try:
-    from email_service import get_email_service, hours_verified_email, hours_rejected_email
+    from email_service import (
+        get_email_service,
+        hours_verified_email,
+        hours_rejected_email,
+        claim_received_email,
+        claim_verified_email,
+    )
 except ImportError:
     get_email_service = None
+    claim_received_email = None
+    claim_verified_email = None
 
 _logger = logging.getLogger(__name__)
 
@@ -2852,10 +2874,23 @@ def claim_verify():
         "SELECT organization_name, mission, donate_url FROM registry_enriched WHERE EIN=?", (ein,)
     ).fetchone()
 
+    org_name = org['organization_name'] if org else ""
+
+    # Send verified confirmation email if we have a rep email and the template is available
+    rep_email = row['email'] if 'email' in row.keys() else None
+    if rep_email and claim_verified_email and get_email_service:
+        try:
+            dashboard_url = f"https://daanaa.org/nonprofit/dashboard/{ein}"
+            rep_name = row['name'] if 'name' in row.keys() else ""
+            template = claim_verified_email(org_name, rep_name or "there", ein, dashboard_url)
+            get_email_service().send_template(rep_email, template)
+        except Exception as _email_err:
+            _logger.warning(f"claim verified email failed for {ein}: {_email_err}")
+
     return jsonify({
         "status": "verified",
         "ein": ein,
-        "org_name": org['organization_name'] if org else "",
+        "org_name": org_name,
         "current_mission": org['mission'] if org else None,
         "current_donate_url": org['donate_url'] if org else None,
         "irs_address": row['irs_address'],

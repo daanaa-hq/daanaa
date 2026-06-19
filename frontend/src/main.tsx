@@ -1,6 +1,26 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import * as Sentry from '@sentry/react'
+
+// Sentry — activate by setting VITE_SENTRY_DSN in .env.production
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN as string,
+    environment: import.meta.env.MODE,
+    tracesSampleRate: 0.1,
+    // Never capture user PII — wallet data stays on device, never in Sentry
+    sendDefaultPii: false,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+    ],
+    // Ignore known benign errors
+    ignoreErrors: [
+      'ResizeObserver loop limit exceeded',
+      'Non-Error exception captured',
+    ],
+  })
+}
 
 // Register service worker for offline app shell
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
