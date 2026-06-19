@@ -44,9 +44,9 @@ export default function V5Context({ org }: V5ContextProps) {
   }
 
   const healthLabel = {
-    'HEALTHY': 'Healthy',
-    'STABLE': 'Stable',
-    'CAUTION': 'Needs Support',
+    'HEALTHY': 'Financially healthy',
+    'STABLE': 'Financially stable',
+    'CAUTION': 'Needs support',
   }
 
   const colors = healthColor[v5.score.health_signal]

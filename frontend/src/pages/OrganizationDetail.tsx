@@ -345,7 +345,7 @@ export default function OrganizationDetail() {
                     cause: apiOrg.cause_tags || [],
                     merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
                     merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
-                    is_hidden_gem: !!(apiOrg as any).is_hidden_gem,
+                    is_hidden_gem: !!(apiOrg.is_hidden_gem),
                     bookmarkedAt: Date.now(),
                   }
                   addToWallet(walletOrg)
@@ -426,7 +426,7 @@ export default function OrganizationDetail() {
                             apiOrg!.v5_context.score?.health_signal === 'STABLE' ? 'bg-blue-500/20 text-blue-300' :
                             'bg-amber-500/20 text-amber-300'
                           }`}>
-                            {apiOrg!.v5_context.score?.health_signal === 'CAUTION' ? 'Needs support' : apiOrg!.v5_context.score?.health_signal}
+                            {apiOrg!.v5_context.score?.health_signal === 'HEALTHY' ? 'Financially healthy' : apiOrg!.v5_context.score?.health_signal === 'STABLE' ? 'Financially stable' : 'Needs support'}
                           </span>
                         </div>
                       )}
@@ -1546,7 +1546,7 @@ export default function OrganizationDetail() {
                 cause: apiOrg.cause_tags || [],
                 merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
                 merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
-                is_hidden_gem: !!(apiOrg as any).is_hidden_gem,
+                is_hidden_gem: !!(apiOrg.is_hidden_gem),
                 bookmarkedAt: Date.now(),
               })
             }
