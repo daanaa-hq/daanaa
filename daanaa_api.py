@@ -3064,10 +3064,13 @@ def claim_update():
     cause_tags_json    = (data.get('cause_tags_json') or '[]').strip()
     donate_confirmed   = bool(data.get('donate_confirmed', False))
     donate_url         = (data.get('donate_url') or '').strip()[:500]
+    website_url        = (data.get('website_url') or '').strip()[:500]
 
-    # Validate donate URL if provided
+    # Validate URLs
     if donate_url and not donate_url.startswith(('http://', 'https://')):
         donate_url = ''
+    if website_url and not website_url.startswith(('http://', 'https://')):
+        website_url = ''
 
     try:
         # Update org_claims record
@@ -3077,9 +3080,10 @@ def claim_update():
                 verified_at      = datetime('now'),
                 custom_mission   = ?,
                 custom_description = ?,
-                donate_confirmed = ?
+                donate_confirmed = ?,
+                website_url      = ?
             WHERE ein = ?
-        """, (custom_mission or None, custom_description or None, int(donate_confirmed), ein))
+        """, (custom_mission or None, custom_description or None, int(donate_confirmed), website_url or None, ein))
 
         # Write custom fields to registry_enriched
         if custom_mission:
@@ -3088,6 +3092,13 @@ def claim_update():
                 SET mission = ?, mission_source = 'claimed'
                 WHERE EIN = ?
             """, (custom_mission, ein))
+
+        if website_url:
+            db.execute("""
+                UPDATE registry_enriched
+                SET website = ?, website_status = 'claimed'
+                WHERE EIN = ?
+            """, (website_url, ein))
 
         if donate_url and donate_confirmed:
             db.execute("""

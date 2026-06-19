@@ -663,6 +663,7 @@ export default function OrgClaimEditor() {
   const [searchParams] = useSearchParams()
   const [mission, setMission] = useState('')
   const [description, setDescription] = useState('')
+  const [websiteUrl, setWebsiteUrl] = useState('')
   const [donateUrl, setDonateUrl] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
@@ -692,6 +693,7 @@ export default function OrgClaimEditor() {
           custom_mission: mission,
           custom_description: description,
           cause_tags_json: JSON.stringify(selectedTags),
+          website_url: websiteUrl || undefined,
           donate_confirmed: donateUrl.length > 0,
           donate_url: donateUrl || undefined,
         }),
@@ -747,16 +749,49 @@ export default function OrgClaimEditor() {
             />
             <p className="mt-1 font-body text-[11px] text-muted-cream">{description.length}/500</p>
           </label>
-          <label className="block">
-            <span className="block font-body text-[13px] font-medium text-deep-navy mb-2">Donation link <span className="text-muted-cream font-normal">(optional)</span></span>
-            <input
-              type="url" value={donateUrl} onChange={e => setDonateUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-[14px] placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
-              disabled={saving}
-            />
-            <p className="mt-1 font-body text-[11px] text-muted-cream">Your official page where donors can give directly.</p>
-          </label>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-px flex-1 bg-light-cream" />
+              <span className="font-body text-[11px] font-semibold text-muted-cream uppercase tracking-wider px-2">How donors can reach you</span>
+              <div className="h-px flex-1 bg-light-cream" />
+            </div>
+            <label className="block">
+              <span className="block font-body text-[13px] font-medium text-deep-navy mb-1">
+                Official website
+                <span className="ml-1.5 font-normal text-muted-cream">(optional)</span>
+              </span>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </span>
+                <input
+                  type="url" value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)}
+                  placeholder="https://yourorg.org"
+                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-[14px] placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                  disabled={saving}
+                />
+              </div>
+              <p className="mt-1 font-body text-[11px] text-muted-cream">Your main homepage. Donors see this as the primary link on your page.</p>
+            </label>
+            <label className="block">
+              <span className="block font-body text-[13px] font-medium text-deep-navy mb-1">
+                Direct donation link
+                <span className="ml-1.5 font-normal text-muted-cream">(optional)</span>
+              </span>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </span>
+                <input
+                  type="url" value={donateUrl} onChange={e => setDonateUrl(e.target.value)}
+                  placeholder="https://yourorg.org/donate"
+                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-[14px] placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                  disabled={saving}
+                />
+              </div>
+              <p className="mt-1 font-body text-[11px] text-muted-cream">The page where donors can give directly. Can be a PayPal, Stripe, or your own donation page.</p>
+            </label>
+          </div>
           <fieldset>
             <legend className="font-body text-[13px] font-medium text-deep-navy mb-3">Focus areas <span className="text-muted-cream font-normal">(select all that apply)</span></legend>
             <div className="flex flex-wrap gap-2">
