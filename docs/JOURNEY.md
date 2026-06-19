@@ -224,3 +224,62 @@ irreplaceable tables, a **morning digest** delivers the day's worklist, and a on
 the product, win a neighborhood not the nation, free giving-infrastructure setup as
 the claim magnet, and the quiet verified room as the moat. First real claimant: still
 ahead — and now everything is ready for them.
+
+---
+
+## 2026-06-13 to 06-18 — Hidden gems, cohort context, email automation
+
+**2026-06-13 — Hidden Gems Directory Landing ships.**
+The directory `/` landing no longer defaults to sorting by financial size (a violation
+of Stewardship P4: small orgs deserve fairness). Instead, it surfaces **hidden gems** —
+small, financially healthy, low-profile organizations — **reshuffled weekly** by ISO-week
+seed so every gem gets fair rotation. This mirrors the cause-spotlight weekly rotation
+and surfaces the 39,938 organizations that scores never show.
+
+Architecture: gems are served as **static weekly-precomputed files** (0 live-query cost);
+full 1.8M browse path is untouched. Droplet receives ~1,600 JSON.gz files via rsync
+Monday mornings; live filters (category + state + reserve) route through indexed DB
+subsets only. Director UI ships with gems-default toggle, Visibility level dropdown
+(Beacon/Torch/Candle/Spark tiers), sort direction toggle (asc/desc), and a clear
+**"See all 1.8M"** link to browse the full directory.
+
+Stewardship alignment: P4 (small orgs treated equally), P5 (additive framing — lamp
+marks visibility, never a verdict), P7 (algorithmic, no curation), P9 (explainable
+choice: "hidden gems · a fresh set each week").
+
+**2026-06-14 to 06-15 — Cohort context for unscored organizations.**
+~79% of organizations have incomplete financial data and therefore no peer-context score.
+To serve them fairly, a new **cohort context** system benchmarks unscored orgs against
+*scored peers in their cause area*. Example: an arts nonprofit with minimal Form 990 data
+now shows "Typical organizations like this have X months of reserves and Y% maintain
+healthy finances" — drawn from the 1,800+ scored peers in its NTEE category.
+
+This required: reworking the condition logic to correctly identify unscored orgs
+(`if not org.get('merit_score_v5')` — the true signal of scoring incompleteness),
+and embedding cause-area financial benchmarks into all API responses. The feature
+respects Stewardship P3 (evidence-based trust, no inference) and P4 (gives small,
+data-light orgs dignity by showing them peer context, not a void).
+
+**2026-06-15 to 06-18 — Email notifications for nonprofit volunteer hour verification.**
+The nonprofit dashboard (launched 2026-06-12) can now **verify or reject volunteer hours**
+with email notification to volunteers. The email service integrates with Firestore to
+fetch volunteer contact info, renders branded HTML + plain-text templates (hours_verified_email,
+hours_rejected_email), and sends via SMTP (SendGrid/Mailgun/AWS SES/MailHog dev).
+
+Email templates include:
+- Verification: congratulatory framing, hours + date + notes, link to Wallet, thank you.
+- Rejection: empathetic framing, reason field, link to Wallet, reapply instructions.
+
+Configuration is env-driven (`EMAIL_ENABLED`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
+`SMTP_PASSWORD`, `FROM_EMAIL`). Graceful degradation: if email is disabled or Firestore
+fetch fails, the hour verification itself completes; email is a side effect, never a blocker.
+
+Stewardship alignment: P2 (privacy structural — email addresses sourced only from
+Firestore, never exposed to frontend), P5 (kind language in email copy).
+
+**Infrastructure notes:** All three features shipped with zero disruption to live traffic.
+Gems rely on precomputed files synced via rsync Monday mornings (future weekly cron).
+Cohort context required one condition fix on a hot path (`get_organization` by ID — 
+millions of calls/day); fix was validated before deploy. Email service is optional
+and does not block core flows. Hidden gems DB patch (is_hidden_gem flags for 39,938 EINs)
+was applied separately and tested via live filter queries before frontend deploy.
