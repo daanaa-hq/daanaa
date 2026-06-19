@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useJsonLd, categoryPageSchema, breadcrumbSchema } from '../hooks/useJsonLd'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { FEATURED_META } from '../data/featuredCategory'
 import { loadCauseSpotlights, type SpotlightData } from '../data/causeSpotlight'
@@ -18,6 +19,25 @@ export default function CauseSpotlight() {
     cat ? `${cat.name} — Featured cause` : 'Featured cause',
     cat ? `Discover ${cat.name} nonprofits on Daanaa. ${meta?.tagline ?? ''}` : '',
   )
+
+  const schemas = useMemo(() => {
+    if (!cat) return { category: null, breadcrumb: null }
+    return {
+      category: categoryPageSchema({
+        name: `${cat.name} — Featured cause`,
+        description: meta?.tagline || `Organizations working in ${cat.name}`,
+        url: `https://daanaa.org/causes/${code}`,
+      }),
+      breadcrumb: breadcrumbSchema([
+        { name: 'Home', url: 'https://daanaa.org' },
+        { name: 'Featured causes', url: 'https://daanaa.org/causes' },
+        { name: cat.name, url: `https://daanaa.org/causes/${code}` },
+      ]),
+    }
+  }, [cat, code, meta])
+
+  useJsonLd(schemas.category)
+  useJsonLd(schemas.breadcrumb)
 
   useEffect(() => {
     loadCauseSpotlights()
