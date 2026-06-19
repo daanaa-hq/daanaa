@@ -53,36 +53,51 @@ def _profile_score(row) -> tuple[int, list[str]]:
 
 _GOLD = "#d4af37"
 _NAVY = "#1a2e3f"
-_BG   = "#f5e6d3"
+_LOGO_URL = "https://daanaa.org/logo.png"
 
 
 def _base(title: str, body_html: str) -> str:
-    return f"""<!DOCTYPE html><html><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{{font-family:Arial,sans-serif;color:#333;line-height:1.6;margin:0;background:#f5f5f5}}
-  .w{{max-width:600px;margin:0 auto;padding:20px}}
-  .hdr{{background:{_BG};padding:24px 20px;border-radius:8px 8px 0 0}}
-  .hdr h2{{margin:0;color:{_NAVY};font-size:20px}}
-  .body{{background:#fff;padding:24px 20px;border:1px solid #eee;border-radius:0 0 8px 8px}}
-  .box{{background:#f9f9f9;padding:14px 16px;border-left:4px solid {_GOLD};margin:16px 0;border-radius:0 4px 4px 0}}
-  .btn{{display:inline-block;padding:12px 24px;background:{_GOLD};color:#fff;text-decoration:none;border-radius:6px;margin:12px 0;font-weight:bold}}
-  .bar{{height:12px;background:#eee;border-radius:6px;overflow:hidden;margin:8px 0}}
-  .fill{{height:12px;background:{_GOLD};border-radius:6px}}
-  .foot{{text-align:center;margin-top:20px;color:#888;font-size:12px}}
-  p{{margin:8px 0}} ul{{margin:8px 0 8px 20px}} li{{margin:4px 0}}
-</style></head><body>
-<div class="w">
-  <div class="hdr"><h2>{title}</h2></div>
-  <div class="body">
-    {body_html}
-    <div class="foot">
-      <p>Daanaa — nonprofit discovery for donors who care<br>
-      <a href="https://daanaa.org" style="color:{_GOLD}">daanaa.org</a> ·
-      <a href="mailto:orgs@daanaa.org" style="color:{_GOLD}">orgs@daanaa.org</a></p>
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{{font-family:Georgia,'Times New Roman',serif;color:#1a2e3f;line-height:1.7;margin:0;padding:0;background:#f5f0e8}}
+    .wrap{{max-width:600px;margin:0 auto;padding:24px 16px}}
+    .brand{{background:#1a2e3f;padding:28px 20px 20px;border-radius:12px 12px 0 0;text-align:center}}
+    .brand img{{width:64px;height:64px;display:block;margin:0 auto 10px}}
+    .brand span{{display:block;font-family:Arial,sans-serif;font-size:22px;font-weight:700;letter-spacing:0.05em;color:#d4af37}}
+    .title-bar{{background:#fef3c7;padding:14px 24px;border-left:4px solid {_GOLD}}}
+    .title-bar h2{{margin:0;color:#1a2e3f;font-size:17px;font-weight:600;font-family:Arial,sans-serif}}
+    .body{{background:#fff;padding:28px 24px;border:1px solid #e8e0d4;border-top:none;border-radius:0 0 12px 12px}}
+    .box{{background:#f9f6f0;padding:14px 16px;border-left:4px solid {_GOLD};margin:16px 0;border-radius:0 6px 6px 0}}
+    .box p{{margin:4px 0;font-size:14px}}
+    .btn{{display:inline-block;padding:13px 28px;background:{_GOLD};color:#fff;text-decoration:none;border-radius:8px;margin:14px 0;font-weight:700;font-family:Arial,sans-serif;font-size:15px}}
+    .bar{{height:12px;background:#eee;border-radius:6px;overflow:hidden;margin:8px 0}}
+    .fill{{height:12px;background:{_GOLD};border-radius:6px}}
+    .foot{{text-align:center;margin-top:28px;padding-top:16px;border-top:1px solid #ede8df;color:#888;font-size:12px;font-family:Arial,sans-serif}}
+    p{{margin:10px 0}} ul,ol{{margin:8px 0 8px 20px}} li{{margin:5px 0}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <img src="{_LOGO_URL}" alt="Daanaa" width="64" height="64">
+      <span>daanaa</span>
+    </div>
+    <div class="title-bar"><h2>{title}</h2></div>
+    <div class="body">
+      {body_html}
+      <div class="foot">
+        <p><a href="https://daanaa.org" style="color:#d4af37;text-decoration:none">daanaa.org</a>
+        &nbsp;&middot;&nbsp; <a href="mailto:orgs@daanaa.org" style="color:#d4af37;text-decoration:none">orgs@daanaa.org</a></p>
+        <p style="margin-top:8px">Nonprofit discovery for people who want to give thoughtfully.</p>
+      </div>
     </div>
   </div>
-</div></body></html>"""
+</body>
+</html>"""
 
 
 def day1_profile_email(
@@ -97,7 +112,7 @@ def day1_profile_email(
     pct = min(score, 100)
     missing_html = "".join(f"<li>{m}</li>" for m in missing) if missing else "<li>Profile is complete!</li>"
     body = f"""<p>Hi {rep_name},</p>
-<p>Your Daanaa page for <strong>{org_name}</strong> is live. Donors search for orgs like yours every day — a complete profile means they find you.</p>
+<p>Your Daanaa page for <strong>{org_name}</strong> is live. Donors search for orgs like yours every day. A complete profile means they find you.</p>
 <p><strong>Your profile is {pct}% complete.</strong></p>
 <div class="bar"><div class="fill" style="width:{pct}%"></div></div>
 {"<p>What's still missing:</p><ul>" + missing_html + "</ul>" if missing else ""}
@@ -107,10 +122,10 @@ def day1_profile_email(
   <p><strong>Why it matters:</strong> Donors use cause tags, mission text, and donation links to decide which orgs to support.
   Orgs with complete profiles appear in 3× more searches.</p>
 </div>
-<p>Questions? Reply to this email — orgs@daanaa.org is our nonprofit team and a real person reads it.</p>"""
+<p>Questions? Reply to this email. Our nonprofit team at orgs@daanaa.org reads every message.</p>"""
     return EmailTemplate(
-        subject=f"Your Daanaa profile is {pct}% complete — here's what's missing",
-        html=_base(f"{org_name} — Profile {pct}% complete", body),
+        subject=f"Your Daanaa profile is {pct}% complete. Here's what you can add.",
+        html=_base(f"{org_name}: Profile {pct}% complete", body),
         plain_text=f"""Hi {rep_name},
 
 Your Daanaa page for {org_name} is live and {pct}% complete.
@@ -123,7 +138,7 @@ Orgs with complete profiles appear in 3x more searches. It takes about 5 minutes
 
 Questions? Reply or email orgs@daanaa.org.
 
-— The Daanaa Team
+The Daanaa Team
 """,
     )
 
@@ -137,7 +152,7 @@ def day3_nudge_email(
 ) -> EmailTemplate:
     """Day 3: donors are searching for orgs like yours."""
     body = f"""<p>Hi {rep_name},</p>
-<p>Donors searched for nonprofits in your category on Daanaa this week. Your profile for <strong>{org_name}</strong> is {score}% complete — a little more information could make the difference.</p>
+<p>Donors searched for nonprofits in your category on Daanaa this week. Your profile for <strong>{org_name}</strong> is {score}% complete. A little more information could make the difference.</p>
 <div class="box">
   <p><strong>The three things donors look for most:</strong></p>
   <ul>
@@ -163,7 +178,7 @@ The three things donors look for most:
 
 Update your profile: {dashboard_url}
 
-— The Daanaa Team
+The Daanaa Team
 """,
     )
 
@@ -185,32 +200,32 @@ def day7_tips_email(
     body = f"""<p>Hi {rep_name},</p>
 <p>It's been a week since {org_name} joined Daanaa. Here's what the orgs that donors engage with most have in common:</p>
 <ul>
-  <li><strong>Specific mission text</strong> — "We feed 1,200 families in South Dallas every week" beats "We serve the community"</li>
-  <li><strong>Accurate cause tags</strong> — donors filter by cause; your tags determine which searches you appear in</li>
-  <li><strong>A live donation link</strong> — donors who are ready to give will leave if there's no clear path</li>
-  <li><strong>Financial health signal</strong> — your Daanaa score is calculated from IRS data; we show donors context, not a grade</li>
+  <li><strong>Specific mission text:</strong> "We feed 1,200 families in South Dallas every week" lands better than "We serve the community"</li>
+  <li><strong>Accurate cause tags:</strong> donors filter by cause, and your tags determine which searches you appear in</li>
+  <li><strong>A live donation link:</strong> donors who are ready to give need a clear path forward</li>
+  <li><strong>Financial health signal:</strong> your Daanaa score comes from IRS data and we show donors context, not a grade</li>
 </ul>
 {gem_note}
 <p>You can update everything from your dashboard:</p>
 <a href="{dashboard_url}" class="btn">Open My Dashboard</a>
-<p>If you have questions about your score, your data, or anything on your page — reply here. We read every email from nonprofits.</p>"""
+<p>If you have questions about your score, your data, or anything on your page, reply here. We read every email from nonprofits.</p>"""
     return EmailTemplate(
-        subject=f"How top orgs on Daanaa stand out — tips for {org_name}",
+        subject=f"Tips for standing out on Daanaa: {org_name}",
         html=_base("How the best-performing orgs stand out", body),
         plain_text=f"""Hi {rep_name},
 
 It's been a week since {org_name} joined Daanaa. Here's what works:
 
 - Specific mission text ("We feed 1,200 families in South Dallas every week")
-- Accurate cause tags — donors filter by cause
-- A live donation link — donors who are ready to give need a clear path
-- Your financial health score is from IRS data — donors see context, not a grade
+- Accurate cause tags. Donors filter by cause.
+- A live donation link. Donors who are ready to give need a clear path.
+- Your financial health score comes from IRS data. Donors see context, not a grade.
 
-{"You're flagged as a Hidden Gem — donors who want lesser-known high-performers will find you." if is_hidden_gem else ""}
+{"You're flagged as a Hidden Gem. Donors who want lesser-known, high-performing orgs will find you." if is_hidden_gem else ""}
 
 Open your dashboard: {dashboard_url}
 
-— The Daanaa Team
+The Daanaa Team
 """,
     )
 
@@ -228,28 +243,28 @@ def day30_report_email(
     body = f"""<p>Hi {rep_name},</p>
 <p>Here's your first monthly snapshot for <strong>{org_name}</strong> on Daanaa:</p>
 <div class="box">
-  <p><strong>Wallet adds:</strong> {wallet_adds} donors added your org to their giving wallet</p>
+  <p><strong>Donors who saved your page:</strong> {wallet_adds} people added your org to their Daanaa Wallet</p>
   <p><strong>Volunteer hours logged:</strong> {volunteer_hours} hours by your community</p>
   <p><strong>Profile completeness:</strong> {profile_score}%</p>
 </div>
-{"<p>Your profile is complete — you're showing up in all the right searches. Well done.</p>" if profile_score >= 90 else f"<p>Your profile is {profile_score}% complete. A complete profile means more donors find you. <a href=\"{dashboard_url}\">Finish it here</a>.</p>"}
+{"<p>Your profile is complete. You're showing up in all the right searches.</p>" if profile_score >= 90 else f"<p>Your profile is {profile_score}% complete. A complete profile means more donors find you. <a href=\"{dashboard_url}\">Finish it here</a>.</p>"}
 <p>Every month, Daanaa is seen by thousands of donors who want to give thoughtfully. Your page makes it possible for them to find you.</p>
 <a href="{dashboard_url}" class="btn">View My Dashboard</a>
-<p style="font-size:13px;color:#888">These numbers are from your page's activity since you joined. We don't share individual user data with nonprofits — only aggregate counts.</p>"""
+<p style="font-size:13px;color:#888">These numbers are from your page's activity since you joined. We don't share individual user data with nonprofits, only aggregate counts.</p>"""
     return EmailTemplate(
-        subject=f"Your Daanaa monthly report — {org_name}",
-        html=_base(f"{org_name} — First Month on Daanaa", body),
+        subject=f"Your Daanaa monthly report: {org_name}",
+        html=_base(f"{org_name}: Your First Month on Daanaa", body),
         plain_text=f"""Hi {rep_name},
 
 Your first month on Daanaa:
 
-  Wallet adds: {wallet_adds} donors
+  Donors who saved your page: {wallet_adds}
   Volunteer hours logged: {volunteer_hours}
   Profile completeness: {profile_score}%
 
-{"Profile is complete — you're showing up in all the right searches." if profile_score >= 90 else f"Profile is {profile_score}% complete. Finish it: {dashboard_url}"}
+{"Profile is complete. You're showing up in all the right searches." if profile_score >= 90 else f"Profile is {profile_score}% complete. Finish it here: {dashboard_url}"}
 
-— The Daanaa Team
+The Daanaa Team
 """,
     )
 

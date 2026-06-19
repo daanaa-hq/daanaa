@@ -34,9 +34,9 @@ from scripts.email_agent.templates import reply_template, extract_first_name
 
 
 _AUTO_ACK_FOOTER = (
-    "\n\n— Daanaa\n"
+    "\n\nDaanaa\n"
     "(This is an automatic acknowledgement. A real person will follow up "
-    "with a full response — typically within 1–2 business days.)"
+    "with a full response, typically within 1 to 2 business days.)"
 )
 
 _TIER_SLA = {
@@ -56,7 +56,7 @@ def _build_auto_ack(route, sender: str, subject: str, message_id: str | None) ->
         f"{greet}\n\n"
         f"Thanks for writing to {route.address}. We got your message "
         f"and a real person will get back to you within {sla}.\n\n"
-        "If this is urgent, reply and say so — we prioritize time-sensitive requests."
+        "If this is urgent, reply and say so. We prioritize time-sensitive requests."
         + _AUTO_ACK_FOOTER
     )
 

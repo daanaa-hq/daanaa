@@ -156,6 +156,9 @@ class EmailService:
 
 # ── Templates ─────────────────────────────────────────────────────────────────
 
+_LOGO_URL = "https://daanaa.org/logo.png"
+
+
 def _base_html(title: str, accent: str, header_bg: str, body: str) -> str:
     return f"""<!DOCTYPE html>
 <html>
@@ -163,25 +166,34 @@ def _base_html(title: str, accent: str, header_bg: str, body: str) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    body{{font-family:Arial,sans-serif;color:#333;line-height:1.6;margin:0;padding:0;background:#f5f5f5}}
-    .wrap{{max-width:600px;margin:0 auto;padding:20px}}
-    .hdr{{background:{header_bg};padding:24px 20px;border-radius:8px 8px 0 0}}
-    .hdr h2{{margin:0;color:#1a2e3f;font-size:20px}}
-    .body{{background:#fff;padding:24px 20px;border:1px solid #eee;border-radius:0 0 8px 8px}}
-    .details{{background:#f9f9f9;padding:14px 16px;border-left:4px solid {accent};margin:16px 0;border-radius:0 4px 4px 0}}
-    .btn{{display:inline-block;padding:12px 24px;background:{accent};color:#fff;text-decoration:none;border-radius:6px;margin:12px 0;font-weight:bold}}
-    .foot{{text-align:center;margin-top:20px;color:#888;font-size:12px}}
-    p{{margin:8px 0}}
+    body{{font-family:Georgia,'Times New Roman',serif;color:#1a2e3f;line-height:1.7;margin:0;padding:0;background:#f5f0e8}}
+    .wrap{{max-width:600px;margin:0 auto;padding:24px 16px}}
+    .brand{{background:#1a2e3f;padding:28px 20px 20px;border-radius:12px 12px 0 0;text-align:center}}
+    .brand img{{width:64px;height:64px;display:block;margin:0 auto 10px}}
+    .brand span{{display:block;font-family:Arial,sans-serif;font-size:22px;font-weight:700;letter-spacing:0.05em;color:#d4af37}}
+    .title-bar{{background:{header_bg};padding:14px 24px;border-left:4px solid {accent}}}
+    .title-bar h2{{margin:0;color:#1a2e3f;font-size:17px;font-weight:600;font-family:Arial,sans-serif}}
+    .body{{background:#fff;padding:28px 24px;border:1px solid #e8e0d4;border-top:none;border-radius:0 0 12px 12px}}
+    .details{{background:#f9f6f0;padding:14px 16px;border-left:4px solid {accent};margin:16px 0;border-radius:0 6px 6px 0}}
+    .details p{{margin:4px 0;font-size:14px}}
+    .btn{{display:inline-block;padding:13px 28px;background:{accent};color:#fff;text-decoration:none;border-radius:8px;margin:14px 0;font-weight:700;font-family:Arial,sans-serif;font-size:15px}}
+    .foot{{text-align:center;margin-top:28px;padding-top:16px;border-top:1px solid #ede8df;color:#888;font-size:12px;font-family:Arial,sans-serif}}
+    p{{margin:10px 0}} ul,ol{{margin:8px 0 8px 20px}} li{{margin:5px 0}}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="hdr"><h2>{title}</h2></div>
+    <div class="brand">
+      <img src="{_LOGO_URL}" alt="Daanaa" width="64" height="64">
+      <span>daanaa</span>
+    </div>
+    <div class="title-bar"><h2>{title}</h2></div>
     <div class="body">
       {body}
       <div class="foot">
-        <p>Daanaa — nonprofit discovery for donors who care<br>
-        <a href="https://daanaa.org" style="color:{accent}">daanaa.org</a> · support@daanaa.org</p>
+        <p><a href="https://daanaa.org" style="color:#d4af37;text-decoration:none">daanaa.org</a>
+        &nbsp;&middot;&nbsp; support@daanaa.org</p>
+        <p style="margin-top:8px">Nonprofit discovery for people who want to give thoughtfully.</p>
       </div>
     </div>
   </div>
@@ -203,11 +215,11 @@ We received your request to claim the page for {org_name} (EIN {ein}) on Daanaa.
 What happens next:
   1. We verify your connection to the organization (usually within 2 business days)
   2. You'll receive a verification letter with a one-time access code
-  3. Once entered, your dashboard unlocks — add your mission, website, and team
+  3. Once entered, your dashboard unlocks. Add your mission, website, and team
 
 Questions? Reply to this email or reach us at support@daanaa.org.
 
-— The Daanaa Team
+The Daanaa Team
 https://daanaa.org
 """
     body = f"""<p>Hi {rep_name},</p>
@@ -240,9 +252,7 @@ def claim_verified_email(
     subject = f"Your Daanaa page for {org_name} is verified"
     plain = f"""Hi {rep_name},
 
-Great news — your claim for {org_name} (EIN {ein}) has been verified.
-
-Your nonprofit dashboard is ready:
+Your claim for {org_name} (EIN {ein}) has been verified. Your nonprofit dashboard is ready:
 {dashboard_url}
 
 From your dashboard you can:
@@ -253,11 +263,11 @@ From your dashboard you can:
 
 This link is private to you. Bookmark it or save your login details.
 
-— The Daanaa Team
+The Daanaa Team
 https://daanaa.org
 """
     body = f"""<p>Hi {rep_name},</p>
-<p>Your claim for <strong>{org_name}</strong> has been verified — your nonprofit dashboard is ready.</p>
+<p>Your claim for <strong>{org_name}</strong> has been verified. Your nonprofit dashboard is ready.</p>
 <div class="details">
   <p><strong>EIN:</strong> {ein}</p>
   <p><strong>Status:</strong> Verified ✓</p>
@@ -298,7 +308,7 @@ View your full volunteer record at https://daanaa.org/wallet
 
 Thank you for your service!
 
-— The Daanaa Team
+The Daanaa Team
 """
     body = f"""<p>Hello,</p>
 <p>Good news! <strong>{nonprofit_name}</strong> verified your volunteer hours.</p>
@@ -337,7 +347,7 @@ If you believe this is an error, contact the nonprofit directly or email support
 
 View your wallet at https://daanaa.org/wallet
 
-— The Daanaa Team
+The Daanaa Team
 """
     body = f"""<p>Hello,</p>
 <p><strong>{nonprofit_name}</strong> was unable to verify your volunteer hours.</p>
