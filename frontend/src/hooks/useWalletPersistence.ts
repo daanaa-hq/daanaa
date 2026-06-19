@@ -22,13 +22,11 @@ interface PersistenceState {
  * useWalletPersistence
  * @param wallet Current wallet state
  * @param isDirty Whether wallet has changed (parent component signal)
- * @param onRecovery Callback if corruption is detected and recovery succeeds
  * @returns { synced, error, quotaWarning }
  */
 export function useWalletPersistence(
   wallet: Wallet,
-  isDirty: boolean,
-  onRecovery: (recovered: Wallet) => void
+  isDirty: boolean
 ): PersistenceState {
   const [synced, setSynced] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,10 +42,9 @@ export function useWalletPersistence(
       const corruption = walletStorage.checkCorruption()
       if (corruption.corrupted) {
         if (corruption.recovered) {
-          // Recovery succeeded
+          // Recovery succeeded; set error state for parent to handle via useEffect
           console.warn('[Wallet] Data corruption detected but recovered from backup', corruption.error)
           setError(corruption.error || 'Data recovered from backup')
-          onRecovery(corruption.recovered)
         } else {
           // Total loss
           console.error('[Wallet]', corruption.error)
@@ -67,7 +64,7 @@ export function useWalletPersistence(
       console.error('[Wallet] Failed to load from localStorage:', err)
       setError(err instanceof Error ? err.message : 'Failed to load wallet')
     }
-  }, [onRecovery])
+  }, [])
 
   // Write to localStorage when wallet changes (debounced)
   useEffect(() => {
