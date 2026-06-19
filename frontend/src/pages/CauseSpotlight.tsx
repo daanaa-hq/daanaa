@@ -5,6 +5,7 @@ import { useJsonLd, categoryPageSchema, breadcrumbSchema } from '../hooks/useJso
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { FEATURED_META } from '../data/featuredCategory'
 import { loadCauseSpotlights, type SpotlightData } from '../data/causeSpotlight'
+import AddToWalletButton from '../components/AddToWalletButton'
 
 export default function CauseSpotlight() {
   const { id = '' } = useParams<{ id: string }>()
@@ -147,19 +148,22 @@ export default function CauseSpotlight() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
             {data.featured.map(org => (
-              <Link
+              <div
                 key={org.ein}
-                to={`/org/${org.ein}`}
-                className="block p-5 rounded-2xl bg-white border border-soft-gold/15 hover:border-soft-gold/40 hover:shadow-md transition-all group"
+                className="p-5 rounded-2xl bg-white border border-soft-gold/15 hover:border-soft-gold/40 hover:shadow-md transition-all group"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-display text-[18px] text-deep-navy leading-snug group-hover:text-soft-gold transition-colors">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <Link
+                    to={`/org/${org.ein}`}
+                    className="font-display text-[18px] text-deep-navy leading-snug hover:text-soft-gold transition-colors"
+                  >
                     {org.name}
-                  </h3>
+                  </Link>
                   <span className="font-body text-[12px] text-cool-grey whitespace-nowrap shrink-0 pt-1">{org.city}, {org.state}</span>
                 </div>
-                <p className="mt-2 font-body text-[14px] text-cool-grey leading-[1.6]">{org.blurb}</p>
-              </Link>
+                <p className="mb-4 font-body text-[14px] text-cool-grey leading-[1.6]">{org.blurb}</p>
+                <AddToWalletButton ein={org.ein} orgName={org.name} />
+              </div>
             ))}
           </div>
 

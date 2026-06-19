@@ -107,7 +107,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
         </p>
       )}
 
-      {/* Health badge */}
+      {/* Health badge + peer rank */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border font-body ${health.classes}`}>
           {health.label}
@@ -115,6 +115,11 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
         {org.is_hidden_gem && (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-violet-50 text-violet-700 border-violet-200 font-body">
             Hidden gem
+          </span>
+        )}
+        {org.merit_score_v5 >= 50 && (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-deep-navy/5 text-deep-navy border-deep-navy/10 font-body">
+            Top {100 - org.merit_score_v5}% of peers
           </span>
         )}
       </div>
