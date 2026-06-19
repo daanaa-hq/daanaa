@@ -399,7 +399,7 @@ const CAUSE_TAGLINES: Record<string, string> = {
 }
 
 // Color accent palette — one per NTEE major group
-const CAUSE_ACCENT: Record<string, { bg: string; emoji_bg: string; border: string; text: string }> = {
+export const CAUSE_ACCENT: Record<string, { bg: string; emoji_bg: string; border: string; text: string }> = {
   A: { bg: 'bg-amber-50',   emoji_bg: 'bg-amber-100',  border: 'border-amber-200',   text: 'text-amber-700'  },
   B: { bg: 'bg-blue-50',    emoji_bg: 'bg-blue-100',   border: 'border-blue-200',    text: 'text-blue-700'   },
   C: { bg: 'bg-green-50',   emoji_bg: 'bg-green-100',  border: 'border-green-200',   text: 'text-green-700'  },

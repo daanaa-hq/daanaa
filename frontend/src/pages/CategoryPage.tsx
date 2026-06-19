@@ -1,12 +1,30 @@
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { getNteeCategory, NTEE_CATEGORIES } from '../data/ntee'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useJsonLd, categoryPageSchema } from '../hooks/useJsonLd'
+import { getOrganizations, type ApiOrganization } from '../data/api'
+import { useWallet } from '../contexts/WalletContext'
+import { CAUSE_ACCENT } from './Home'
+
+const healthLabel: Record<string, string> = {
+  HEALTHY: 'Financially healthy',
+  STABLE: 'Financially stable',
+  CAUTION: 'Needs support',
+}
+const healthClasses: Record<string, string> = {
+  HEALTHY: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  STABLE:  'bg-amber-50 text-amber-700 border-amber-200',
+  CAUTION: 'bg-orange-50 text-orange-700 border-orange-200',
+}
 
 export default function CategoryPage() {
   const { id } = useParams<{ id: string }>()
   const category = getNteeCategory(id || '')
+  const { isInWallet, addOrg, removeOrg } = useWallet()
+  const [orgs, setOrgs] = useState<ApiOrganization[]>([])
+  const [total, setTotal] = useState(0)
+  const [orgsLoading, setOrgsLoading] = useState(true)
 
   usePageMeta(
     category?.name ?? '',
@@ -26,6 +44,15 @@ export default function CategoryPage() {
   }, [category])
 
   useJsonLd(categorySchema)
+
+  useEffect(() => {
+    if (!category) return
+    setOrgsLoading(true)
+    getOrganizations({ ntee: category.id, per_page: 9, sort: 'ntee1_percentile', order: 'desc' })
+      .then(r => { setOrgs(r.organizations); setTotal(r.total) })
+      .catch(() => {})
+      .finally(() => setOrgsLoading(false))
+  }, [category?.id])
 
   if (!category) return <Navigate to="/directory" replace />
 
@@ -65,8 +92,125 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* Subcategory grid */}
+      {/* Featured orgs */}
       <div className="bg-warm-cream py-14">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-6 h-px bg-soft-gold/50" />
+                <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Organizations</span>
+              </div>
+              <h2 className="font-display italic text-deep-navy" style={{ fontSize: 'clamp(20px, 3vw, 30px)' }}>
+                {total > 0 ? `${total.toLocaleString()} organizations` : category.name}
+              </h2>
+            </div>
+            <Link
+              to={`/directory?category=${category.id}`}
+              className="shrink-0 inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+            >
+              View all
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 17 17 7M17 7H8M17 7v9"/>
+              </svg>
+            </Link>
+          </div>
+
+          {orgsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl border border-light-grey p-5 animate-pulse">
+                  <div className="h-4 bg-light-grey rounded w-3/4 mb-3" />
+                  <div className="h-3 bg-light-grey rounded w-1/2 mb-4" />
+                  <div className="h-3 bg-light-grey rounded w-full mb-1" />
+                  <div className="h-3 bg-light-grey rounded w-5/6" />
+                </div>
+              ))}
+            </div>
+          ) : orgs.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                {orgs.map(org => {
+                  const ein = org.EIN || ''
+                  const saved = isInWallet(ein)
+                  const signal = org.v5_context?.score?.health_signal ?? ''
+                  const scoreV5 = org.v5_context?.score?.percentile ?? org.ntee1_percentile ?? 0
+                  return (
+                    <div key={ein} className="bg-white rounded-2xl border border-light-grey p-5 hover:border-soft-gold/30 transition-colors flex flex-col">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <Link
+                          to={`/org/${ein}`}
+                          className="font-body text-[14px] font-semibold text-deep-navy hover:text-soft-gold transition-colors leading-snug flex-1"
+                        >
+                          {org.organization_name}
+                        </Link>
+                        <button
+                          onClick={() => saved
+                            ? removeOrg(ein)
+                            : addOrg({
+                                ein,
+                                name: org.organization_name,
+                                mission: (org as any).mission ?? '',
+                                location: [org.CITY, org.STATE].filter(Boolean).join(', '),
+                                cause: (org.cause_tags ?? []).slice(0, 3),
+                                merit_score_v5: scoreV5,
+                                merit_health_signal_v5: (signal || 'STABLE') as 'HEALTHY' | 'STABLE' | 'CAUTION',
+                                is_hidden_gem: org.is_hidden_gem ?? false,
+                                bookmarkedAt: Date.now(),
+                              })
+                          }
+                          aria-label={saved ? `Remove ${org.organization_name} from wallet` : `Save ${org.organization_name}`}
+                          className={`shrink-0 p-1.5 rounded-lg transition-colors ${saved ? 'text-soft-gold' : 'text-cool-grey hover:text-soft-gold'}`}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                          </svg>
+                        </button>
+                      </div>
+                      {(org.CITY || org.STATE) && (
+                        <p className="font-body text-[11px] text-cool-grey mb-2">
+                          {[org.CITY, org.STATE].filter(Boolean).join(', ')}
+                        </p>
+                      )}
+                      {(org as any).mission && (
+                        <p className="font-body text-[12px] text-cool-grey italic line-clamp-2 mb-3 flex-1">
+                          {(org as any).mission.replace(/^[""\s]+|[""\s]+$/g, '')}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 flex-wrap mt-auto">
+                        {signal && healthLabel[signal] && (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border font-body ${healthClasses[signal] ?? ''}`}>
+                            {healthLabel[signal]}
+                          </span>
+                        )}
+                        {org.is_hidden_gem && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-violet-50 text-violet-700 border-violet-200 font-body">
+                            Hidden gem
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="text-center">
+                <Link
+                  to={`/directory?category=${category.id}`}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/8 transition-colors"
+                >
+                  View all {total > 0 ? `${total.toLocaleString()} ` : ''}organizations in {category.name}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </Link>
+              </div>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Subcategory grid */}
+      <div className="bg-white py-14">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-6 h-px bg-soft-gold/50" />
