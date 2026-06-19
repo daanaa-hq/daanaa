@@ -5851,7 +5851,7 @@ def nonprofit_verify_hours_action():
         if not claim:
             return jsonify({'error': 'Not authorized to verify hours for this nonprofit'}), 403
 
-        # Get volunteer email for notification
+        # Get volunteer info
         volunteer = db.execute(
             "SELECT firebase_uid FROM volunteer_hour_logs WHERE id = ?",
             (record_id,)
@@ -5867,22 +5867,32 @@ def nonprofit_verify_hours_action():
                    WHERE id = ?""",
                 (datetime.utcnow().isoformat(), uid, message, record_id)
             )
+            db.commit()
 
-            # Send verification email if email service is available
+            # Send verification email if email service is available and volunteer exists
             if get_email_service and volunteer_uid:
                 try:
-                    email_template = hours_verified_email(
-                        volunteer_email='',  # Would need to fetch from Firestore
-                        nonprofit_name=log['nonprofit_name'],
-                        hours=log['hours_logged'],
-                        service_date=log['service_date'],
-                        notes=log['notes'] if log['notes'] else None
-                    )
-                    # Note: Actual email sending would happen in background with volunteer's email from Firestore
-                    # For now, this is logged; full implementation requires fetching user email
-                    _logger.info(f"Email notification queued for hours verification: {record_id}")
+                    email_service = get_email_service()
+                    volunteer_email = email_service._fetch_user_email(volunteer_uid)
+                    if volunteer_email:
+                        template = hours_verified_email(
+                            volunteer_email=volunteer_email,
+                            nonprofit_name=log['nonprofit_name'],
+                            hours=log['hours_logged'],
+                            service_date=log['service_date'],
+                            notes=log['notes'] if log['notes'] else None
+                        )
+                        email_service.send(
+                            to_email=volunteer_email,
+                            subject=template.subject,
+                            html=template.html,
+                            plain_text=template.plain_text
+                        )
+                        _logger.info(f"Verification email sent for hours {record_id} to {volunteer_email}")
+                    else:
+                        _logger.warning(f"Could not fetch email for volunteer {volunteer_uid}")
                 except Exception as e:
-                    _logger.error(f"Error preparing verification email: {e}")
+                    _logger.error(f"Error sending verification email: {e}")
 
         else:  # reject
             reason = (data.get('reason') or '').strip()
@@ -5894,22 +5904,33 @@ def nonprofit_verify_hours_action():
                    WHERE id = ?""",
                 (reason, record_id)
             )
+            db.commit()
 
-            # Send rejection email if email service is available
+            # Send rejection email if email service is available and volunteer exists
             if get_email_service and volunteer_uid:
                 try:
-                    email_template = hours_rejected_email(
-                        volunteer_email='',  # Would need to fetch from Firestore
-                        nonprofit_name=log['nonprofit_name'],
-                        hours=log['hours_logged'],
-                        service_date=log['service_date'],
-                        rejection_reason=reason
-                    )
-                    _logger.info(f"Email notification queued for hours rejection: {record_id}")
+                    email_service = get_email_service()
+                    volunteer_email = email_service._fetch_user_email(volunteer_uid)
+                    if volunteer_email:
+                        template = hours_rejected_email(
+                            volunteer_email=volunteer_email,
+                            nonprofit_name=log['nonprofit_name'],
+                            hours=log['hours_logged'],
+                            service_date=log['service_date'],
+                            rejection_reason=reason
+                        )
+                        email_service.send(
+                            to_email=volunteer_email,
+                            subject=template.subject,
+                            html=template.html,
+                            plain_text=template.plain_text
+                        )
+                        _logger.info(f"Rejection email sent for hours {record_id} to {volunteer_email}")
+                    else:
+                        _logger.warning(f"Could not fetch email for volunteer {volunteer_uid}")
                 except Exception as e:
-                    _logger.error(f"Error preparing rejection email: {e}")
+                    _logger.error(f"Error sending rejection email: {e}")
 
-        db.commit()
         return jsonify({'success': True, 'action': action}), 200
 
     except Exception as e:
