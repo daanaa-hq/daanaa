@@ -87,6 +87,7 @@ export interface ApiOrganization {
   v4_percentiles?: Record<string, unknown> | null;    // percentile data (optional)
   has_mission: boolean | null;
   has_website: boolean | null;
+  is_hidden_gem?: boolean | null;
   // ProPublica enrichment fields
   months_of_reserve: number | null;   // (net_assets / total_expenses) * 12
   net_assets: number | null;          // totnetassetend = assets - liabilities

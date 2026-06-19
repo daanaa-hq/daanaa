@@ -5,7 +5,8 @@ import OrgCard, { OrgCardRow } from '../components/OrgCard'
 import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
 import { useApi } from '../hooks/useApi'
-import { useSavedOrgs } from '../hooks/useSavedOrgs'
+import { useWallet } from '../contexts/WalletContext'
+import type { WalletOrg } from '../types/wallet'
 import { getOrganizations, getFusedSearch, getStats } from '../data/api'
 import type { ApiOrganization } from '../data/api'
 import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
@@ -201,7 +202,26 @@ export default function Directory() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const searchMode = 'browse'
-  const { isSaved, toggle: toggleSave } = useSavedOrgs()
+  const { isInWallet, addOrg: addToWallet, removeOrg: removeFromWallet } = useWallet()
+
+  function walletToggle(org: ApiOrganization) {
+    if (isInWallet(org.EIN)) {
+      removeFromWallet(org.EIN)
+    } else {
+      const w: WalletOrg = {
+        ein: org.EIN,
+        name: org.organization_name,
+        mission: org.mission || '',
+        location: [org.CITY, org.STATE].filter(Boolean).join(', '),
+        cause: org.cause_tags || [],
+        merit_score_v5: org.v5_context?.score.percentile ?? 0,
+        merit_health_signal_v5: org.v5_context?.score.health_signal ?? 'STABLE',
+        is_hidden_gem: !!(org.is_hidden_gem),
+        bookmarkedAt: Date.now(),
+      }
+      addToWallet(w)
+    }
+  }
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const itemsPerPage = viewMode === 'list' ? 25 : 18
@@ -930,8 +950,8 @@ export default function Directory() {
                         <OrgCardApi
                           key={org.EIN}
                           org={org}
-                          isSaved={isSaved(org.EIN)}
-                          onToggleSave={(_e, ein, meta) => toggleSave(ein, meta)}
+                          isSaved={isInWallet(org.EIN)}
+                          onToggleSave={() => walletToggle(org)}
                           listView
                         />
                       ))}
@@ -942,8 +962,8 @@ export default function Directory() {
                         <OrgCardApi
                           key={org.EIN}
                           org={org}
-                          isSaved={isSaved(org.EIN)}
-                          onToggleSave={(_e, ein, meta) => toggleSave(ein, meta)}
+                          isSaved={isInWallet(org.EIN)}
+                          onToggleSave={() => walletToggle(org)}
                         />
                       ))}
                     </div>
