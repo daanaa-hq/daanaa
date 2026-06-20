@@ -10,7 +10,7 @@ MED [mission] api/main.py:90 — /ntee endpoint ORDER BY total_revenue DESC (dor
 MED [mission] api/main.py:114 — /search endpoint ORDER BY total_revenue DESC (dormant) — same fix as above
 FIXED 2026-06-09 [info-leak] — both str(e) 500s now log via app.logger.exception and return generic messages
 FIXED 2026-06-09 [validation] — _int_arg() helper replaces all 5 unguarded int casts; verified ?limit=abc → 200
-LOW [network] restart_api.sh:22 — gunicorn binds 0.0.0.0:5000 (deliberate LAN+Tunnel) — document firewall assumption, consider ufw allowlist
+NOTED [network] restart_api.sh:22 — gunicorn binds 0.0.0.0:5000+8880 (deliberate: LAN access at 192.168.1.73 + Cloudflare origin on 8880); firewall assumption documented in comment lines 18-21; ufw not added (LAN-only dev server, Cloudflare terminates public TLS)
 
 ## Phase 2 — Frontend
 FIXED 2026-06-09 [resilience] frontend/src/data/api.ts — fetchJson now uses AbortSignal.timeout(10s) with a human-readable timeout message; all API calls covered
@@ -27,7 +27,7 @@ HIGH [secrets] scripts/daily_sync.sh:2 — leaked TiDB DATABASE_URL in git histo
 FIXED 2026-06-09 [ops] crontab — watchdog now scripts/api_watchdog.sh (health-check + retry + restart_api.sh); weekly Sunday 4:30 restart added; crontab backup in .backups/crontab_20260609.txt
 FIXED+REVISED 2026-06-09 [ingest] — flagged script was legacy (writes obsolete table); ACTIVE sync (sync_irs_revocations.py) already had EIN checks + sync log; added file-shrink guard (>20% abort) + irs_revoked column update per sync; backfilled all 218,775 NULLs (30,713→1, rest→0; verified zero browse leakage — org_status had caught them); guarded by test_revocation_sync_updates_registry_column
 FIXED 2026-06-09 [freshness] — Directory now shows "Built from public IRS data, last checked <date>" under the results count (uses stats.irs_status_verified_at; scores_last_updated was null)
-LOW [cleanup] scripts/ — 6+ scorer versions; v4_0 canonical — archive the rest
+FIXED 2026-06-09 [cleanup] scripts/ — legacy scorers archived to archive/legacy_scorers_20260609/; only v4_0 (canonical) + v5_0 (reference, not nightly) remain
 INFO [freshness] PASSES mostly — irs_sync_log stored, API returns irs_status_verified_at, org detail + spotlight show dates
 INFO [revocation-gate] daanaa_api.py:882 — donate affordance fails closed on revoked orgs ✔
 
