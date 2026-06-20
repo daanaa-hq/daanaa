@@ -1464,46 +1464,82 @@ export default function OrganizationDetail() {
         </div>
       )}
 
-      {/* Mobile sticky Save to Wallet CTA */}
-      <div className="md:hidden fixed bottom-[60px] left-0 right-0 z-40 px-4 pb-2">
-        <button
-          onClick={() => {
-            if (isInWallet(org.ein)) {
-              removeFromWallet(org.ein)
-            } else if (apiOrg) {
-              addToWallet({
-                ein: apiOrg.EIN,
-                name: apiOrg.organization_name,
-                mission: apiOrg.mission || '',
-                location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
-                cause: apiOrg.cause_tags || [],
-                merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
-                merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
-                is_hidden_gem: !!(apiOrg.is_hidden_gem),
-                website: apiOrg.website_status === 'ok' ? (apiOrg.website || undefined) : undefined,
-                bookmarkedAt: Date.now(),
-              })
-            }
-          }}
-          className="w-full py-4 rounded-full font-body text-[15px] font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
-          style={{
-            backgroundColor: isInWallet(org.ein) ? 'transparent' : '#C9A96E',
-            color: isInWallet(org.ein) ? '#C9A96E' : '#0A1628',
-            border: isInWallet(org.ein) ? '1px solid #C9A96E' : 'none',
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24"
-            fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-          </svg>
-          {isInWallet(org.ein) ? 'Remove from Wallet' : 'Save to Wallet'}
-        </button>
-      </div>
+      {/* Mobile sticky CTA — "Visit website" primary when available, wallet secondary */}
+      {(() => {
+        const hasVerifiedSite = apiOrg?.website_status === 'ok' && apiOrg?.website
+        const saved = isInWallet(org.ein)
+        const handleWalletToggle = () => {
+          if (saved) {
+            removeFromWallet(org.ein)
+          } else if (apiOrg) {
+            addToWallet({
+              ein: apiOrg.EIN,
+              name: apiOrg.organization_name,
+              mission: apiOrg.mission || '',
+              location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
+              cause: apiOrg.cause_tags || [],
+              merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
+              merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
+              is_hidden_gem: !!(apiOrg.is_hidden_gem),
+              website: apiOrg.website_status === 'ok' ? (apiOrg.website || undefined) : undefined,
+              bookmarkedAt: Date.now(),
+            })
+          }
+        }
+        return (
+          <div className="md:hidden fixed bottom-[60px] left-0 right-0 z-40 px-4 pb-2">
+            {hasVerifiedSite ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleWalletToggle}
+                  title={saved ? 'Remove from wallet' : 'Save to wallet'}
+                  aria-label={saved ? 'Remove from wallet' : 'Save to wallet'}
+                  className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all"
+                  style={{
+                    backgroundColor: saved ? 'transparent' : '#C9A96E',
+                    color: saved ? '#C9A96E' : '#0A1628',
+                    border: saved ? '1px solid #C9A96E' : 'none',
+                  }}
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24"
+                    fill={saved ? '#C9A96E' : 'none'}
+                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                  </svg>
+                </button>
+                <a
+                  href={apiOrg!.website!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg hover:bg-bright-gold transition-colors"
+                >
+                  Visit website
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                </a>
+              </div>
+            ) : (
+              <button
+                onClick={handleWalletToggle}
+                className="w-full py-4 rounded-full font-body text-[15px] font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
+                style={{
+                  backgroundColor: saved ? 'transparent' : '#C9A96E',
+                  color: saved ? '#C9A96E' : '#0A1628',
+                  border: saved ? '1px solid #C9A96E' : 'none',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24"
+                  fill={saved ? '#C9A96E' : 'none'}
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                </svg>
+                {saved ? 'Saved to Wallet' : 'Save to Wallet'}
+              </button>
+            )}
+          </div>
+        )
+      })()}
 
       {showVolunteer && apiOrg && (
         <VolunteerInterest
