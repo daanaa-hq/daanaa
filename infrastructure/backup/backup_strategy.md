@@ -1,266 +1,169 @@
 # Daanaa Backup & Disaster Recovery Strategy
 
-## Backup Targets
+## What actually runs
 
-### Home Server (Primary)
-- **merit_registry.db** (1.8M orgs, ~8 GB)
-  - Daily encrypted snapshot
-  - 30-day retention (rolling)
-  - Stored: `/backups/merit_registry/`
+### Critical tables (nightly, 02:30 cron)
+`org_claims`, `org_activity`, `feedback`, `waitlist` — the irreplaceable, non-derivable rows.
 
-- **Precomputed browse cache** (1M org files, ~800 MB)
-  - Weekly snapshot (after nightly pipeline)
-  - Stored: `/backups/browse_cache/`
+- Script: `scripts/ops/daanaa_backup.sh`
+- Output: `backups/critical/critical_YYYYMMDD.sql.gz` (~1 KB each)
+- Retention: 30 days rolling
+- Error detection: warns if dump contains "ERROR" or file is <400 bytes
 
-### Droplet (Production)
-- **search.db** (FTS5 index, ~200 MB)
-  - Daily automated snapshot
-  - Stored: `/backups/search.db/`
-  
-- **Frontend assets** (3 MB)
-  - Already tracked in git; re-deploy from source if needed
-  - Stored: git history
+### Full registry snapshot (weekly, Sunday 02:30)
+The entire `merit_registry.db` (~10 GB) via SQLite `.backup` (online, non-blocking).
 
-## Backup Schedule
+- Output: `backups/full/full_YYYYMMDD.db.gz` (~7 GB compressed)
+- Retention: 2 most recent Sunday snapshots
+- Integrity check: `gzip -t` runs immediately after compression
 
-| What | When | Frequency | Retention | Time to Restore |
-|------|------|-----------|-----------|-----------------|
-| merit_registry.db | 2:00 AM daily | Daily | 30 days | 10 min |
-| search.db (droplet) | 3:00 AM daily | Daily | 14 days | 5 min |
-| browse cache | Sun 4:00 AM | Weekly | 8 weeks | 15 min |
-| Frontend | On each deploy | Manual | Git history | 2 min |
+### Offsite (Google Drive via rclone)
+`daanaa-backup:` remote is configured and active. Runs at the end of every backup:
 
-## Backup Execution
+- Critical: `rclone copy --max-age 2d` (last 2 days only, keeps Drive lean)
+- Full: all full snapshots mirrored
 
-### Home Server Daily Backup (2 AM)
-```bash
-# Encrypt + compress merit_registry.db
-gzip -c data/merit_registry.db | \
-  openssl enc -aes-256-cbc -salt \
-  -out /backups/merit_registry/db_$(date +%Y%m%d).db.gz.enc
-
-# Verify backup integrity
-openssl enc -aes-256-cbc -d -in /backups/merit_registry/db_$(date +%Y%m%d).db.gz.enc \
-  | gzip -t  # Test gzip integrity
-```
-
-### Droplet Daily Backup (3 AM)
-```bash
-# SSH into droplet and backup search.db
-ssh root@162.243.97.179 "
-  tar -czf /tmp/search.db.tar.gz /data/precompute/v1/search.db
-  openssl enc -aes-256-cbc -salt \
-    -in /tmp/search.db.tar.gz \
-    -out /backups/search.db_\$(date +%Y%m%d).tar.gz.enc
-"
-
-# Copy to home server for redundancy
-scp root@162.243.97.179:/backups/search.db_*.tar.gz.enc /backups/search.db/
-```
-
-## Disaster Recovery Procedures
-
-### Scenario 1: merit_registry.db Corruption
-
-**RTO:** 10 minutes | **RPO:** < 24 hours
-
-```bash
-# 1. Identify the backup (latest good snapshot)
-ls -lh /backups/merit_registry/ | tail -5
-
-# 2. Decrypt and decompress
-BACKUP_DATE=20260620
-openssl enc -aes-256-cbc -d \
-  -in /backups/merit_registry/db_${BACKUP_DATE}.db.gz.enc | \
-  gzip -dc > /tmp/restore.db
-
-# 3. Restore (rename current, restore from backup)
-mv data/merit_registry.db data/merit_registry.db.CORRUPT_$(date +%s)
-cp /tmp/restore.db data/merit_registry.db
-
-# 4. Verify
-sqlite3 data/merit_registry.db "SELECT COUNT(*) FROM registry_enriched;"
-
-# 5. Restart API (if running)
-systemctl restart gunicorn  # or equivalent
-```
-
-**Post-disaster:**
-- Check dmesg for disk errors
-- Run VACUUM and PRAGMA integrity_check to verify the restored DB
-- Alert to re-run nightly scorer if you restored from >24h ago
-
-### Scenario 2: search.db Corruption (Droplet)
-
-**RTO:** 5 minutes | **RPO:** < 24 hours
-
-```bash
-# SSH into droplet
-ssh root@162.243.97.179 "
-
-# 1. Stop gunicorn
-systemctl stop gunicorn
-
-# 2. Backup the corrupted file
-mv /data/precompute/v1/search.db /data/precompute/v1/search.db.CORRUPT
-
-# 3. Restore from backup
-cd /backups/search.db
-BACKUP_DATE=20260620
-openssl enc -aes-256-cbc -d \
-  -in search.db_${BACKUP_DATE}.tar.gz.enc | \
-  tar -xz -C /data/precompute/v1/
-
-# 4. Verify
-sqlite3 /data/precompute/v1/search.db 'SELECT COUNT(*) FROM orgs;'
-
-# 5. Restart API
-systemctl start gunicorn
-"
-```
-
-### Scenario 3: Droplet Disk Full
-
-**RTO:** < 2 minutes | **RPO:** None (read-only operation)
-
-The droplet serves precomputed files (read-only). If disk fills:
-
-```bash
-ssh root@162.243.97.179 "
-
-# Identify large files
-du -sh /data/* | sort -rh | head -10
-
-# If precompute cache is the issue:
-# - Remove old gem snapshots: rm /data/precompute/v1/browse/hidden_gems/OLD_*
-# - Or: rsync --delete fresh copy from home server
-
-# If search.db is too large (shouldn't happen; it's ~200 MB):
-# - Rebuild from fresh export
-
-# Free up space
-du -sh /var/log/*  # Check logs
-journalctl --vacuum=100M  # Trim systemd logs
-"
-```
-
-### Scenario 4: Nightly Scorer Fails (Home Server)
-
-**RTO:** Manual rerun | **RPO:** 1 day
-
-```bash
-# Check if scorer ran recently
-sqlite3 data/merit_registry.db \
-  "SELECT run_date FROM score_snapshots ORDER BY run_date DESC LIMIT 1;"
-
-# If missing or stale, manually trigger
-cd /home/akbar/meritgiving && \
-  source venv/bin/activate && \
-  python3 scripts/merit_scorer_v4_0.py
-
-# Check for errors
-tail -100 /var/log/nightly_pipeline.log | grep -i error
-
-# After scoring, rebuild FTS:
-python3 scripts/build_fts_index.py
-```
-
-### Scenario 5: Complete Droplet Failure
-
-**RTO:** 30 minutes | **RPO:** 24 hours
-
-1. **Spin up new droplet** (snapshot existing one for backup)
-2. **Deploy from home server:**
-   ```bash
-   bash scripts/safe_deploy_droplet.sh
-   ```
-   This will:
-   - Sync precomputed browse cache
-   - Deploy droplet_api.py
-   - Deploy frontend assets
-   - Restart services
-
-3. **Restore search.db from backup:**
-   ```bash
-   scp /backups/search.db/search.db_LATEST.tar.gz.enc root@NEW_IP:/tmp/
-   # Decrypt and restore on new droplet
-   ```
-
-## Testing & Verification
-
-### Monthly Backup Drill (1st of month, 10 AM)
-
-```bash
-# 1. Restore merit_registry.db to a test location
-openssl enc -aes-256-cbc -d \
-  -in /backups/merit_registry/db_$(date +%Y%m01).db.gz.enc | \
-  gzip -dc > /tmp/test_registry.db
-
-# 2. Verify integrity
-sqlite3 /tmp/test_registry.db "
-  PRAGMA integrity_check;
-  SELECT COUNT(*) FROM registry_enriched;
-  SELECT COUNT(*) FROM org_fts;
-"
-
-# 3. Verify recent org
-sqlite3 /tmp/test_registry.db \
-  "SELECT organization_name, updated_at FROM registry_enriched ORDER BY updated_at DESC LIMIT 1;"
-
-# 4. Log results
-echo "$(date): Backup test PASSED" >> /var/log/backup_tests.log
-```
-
-### Restore Speed Test (Quarterly)
-
-Time an actual restore from the latest backup to measure RTO:
-
-```bash
-time (
-  openssl enc -aes-256-cbc -d \
-    -in /backups/merit_registry/db_LATEST.db.gz.enc | \
-    gzip -dc > /tmp/speed_test.db
-)
-# Should complete in < 10 seconds
-```
-
-## Retention Policy
-
-| Backup | Daily | Weekly | Monthly | Yearly |
-|--------|-------|--------|---------|--------|
-| merit_registry.db | 30 copies | 1 copy | 1 copy | 1 copy |
-| search.db | 14 copies | — | — | — |
-| browse cache | — | 8 copies | — | — |
-
-**Cleanup cron (runs weekly):**
-```bash
-# Remove merit_registry backups >30 days old
-find /backups/merit_registry -name "db_*.db.gz.enc" -mtime +30 -delete
-
-# Remove search.db backups >14 days old
-find /backups/search.db -name "*.tar.gz.enc" -mtime +14 -delete
-```
-
-## Offsite Backup (Optional Enhancement)
-
-For production hardening, consider:
-- **AWS S3 + lifecycle policies** (encrypt at rest, 90-day retention)
-- **Backblaze B2** (cheap, $6/TB/month)
-- **Home server NAS backup** (rsync to a second drive)
-
-This is "nice to have" but not critical given the data is derived from public IRS records (rebuilding from source is possible, just slow).
-
-## Alert Integration
-
-Backup failures should trigger alerts:
-- No backup file created in 26 hours → CRITICAL
-- Backup file < 100 MB → WARNING (may be truncated)
-- Test restore fails → CRITICAL
-
-These are checked by `metrics_collector.py` and alerted via `alert_manager.py`.
+### Frontend / precompute
+Static files. Re-deploy from `scripts/safe_deploy_droplet.sh` if lost.
+The droplet serves static files (read-only); no DB backup needed there.
 
 ---
 
-**Last tested:** [TBD — schedule first drill]  
-**Owner:** [TBD — assign ops lead]  
-**Updated:** 2026-06-20
+## Backup schedule
+
+| What | When | Retention | Offsite |
+|------|------|-----------|---------|
+| Critical tables dump | Daily 02:30 | 30 days | Google Drive (2 days) |
+| Full registry snapshot | Sunday 02:30 | 2 snapshots | Google Drive (all) |
+
+---
+
+## Restore procedures
+
+### Restore critical tables (claims, activity, feedback, waitlist)
+
+```bash
+# Find backup to restore from
+ls -lh backups/critical/
+
+# Restore to a temp DB and verify before overwriting production
+BACKUP=backups/critical/critical_20260620.sql.gz
+TMPDB=/tmp/restore_check.db
+
+zcat "$BACKUP" | sqlite3 "$TMPDB"
+sqlite3 "$TMPDB" ".tables"
+sqlite3 "$TMPDB" "SELECT COUNT(*) FROM org_claims;"
+sqlite3 "$TMPDB" "PRAGMA integrity_check;"
+rm "$TMPDB"
+```
+
+If it looks good, apply to the live DB:
+```bash
+# Backup current state first
+cp data/merit_registry.db data/merit_registry.db.pre_restore
+
+# Apply dump (merges — org_claims has UNIQUE on ein, so duplicate rows skip)
+zcat backups/critical/critical_YYYYMMDD.sql.gz | sqlite3 data/merit_registry.db
+```
+
+### Restore full registry from Sunday snapshot
+
+RTO ~15 min (7 GB gzip decompress).
+
+```bash
+# Verify gzip integrity first
+gzip -t backups/full/full_YYYYMMDD.db.gz && echo "OK"
+
+# Decompress to temp location
+zcat backups/full/full_YYYYMMDD.db.gz > /tmp/restore_full.db
+
+# Verify
+sqlite3 /tmp/restore_full.db "PRAGMA integrity_check;"
+sqlite3 /tmp/restore_full.db "SELECT COUNT(*) FROM registry_enriched;"
+
+# Swap in (stop API first)
+./restart_api.sh stop  # or: kill $(pgrep gunicorn)
+mv data/merit_registry.db data/merit_registry.db.REPLACED_$(date +%s)
+mv /tmp/restore_full.db data/merit_registry.db
+./restart_api.sh
+```
+
+### Restore from Google Drive (offsite)
+
+```bash
+# Pull critical backups
+rclone copy daanaa-backup:daanaa-backups/critical backups/critical/
+
+# Pull full snapshot
+rclone copy daanaa-backup:daanaa-backups/full backups/full/
+
+# Then follow restore procedures above
+```
+
+---
+
+## Disaster scenarios
+
+### Scenario 1: merit_registry.db corruption
+
+1. Stop API: `kill $(pgrep gunicorn)`
+2. Verify Sunday snapshot: `gzip -t backups/full/full_LATEST.db.gz`
+3. Restore (see above). RPO: up to 7 days of scorer runs.
+4. Re-run nightly scorer if restore is >24h old.
+5. Check `dmesg` for disk errors after restoring.
+
+### Scenario 2: Lost claims / waitlist data
+
+1. Stop API.
+2. Restore critical tables dump (see above).
+3. Restart API.
+4. RPO: <24 hours.
+
+### Scenario 3: Full home server loss
+
+1. Spin up replacement machine.
+2. Install dependencies (`venv`, sqlite3, rclone).
+3. Pull latest backups from Google Drive.
+4. Restore full snapshot.
+5. Re-deploy frontend to droplet: `scripts/safe_deploy_droplet.sh`.
+
+### Scenario 4: Droplet failure
+
+The droplet is stateless (serves precomputed files). Run `scripts/safe_deploy_droplet.sh` — it rebuilds from the home server's precompute_output. No backup needed.
+
+### Scenario 5: Nightly scorer fails
+
+```bash
+# Check last run
+sqlite3 data/merit_registry.db "SELECT run_date FROM score_snapshots ORDER BY run_date DESC LIMIT 1;"
+
+# Re-run manually
+source venv/bin/activate
+python3 scripts/overnight_pipeline.py
+```
+
+---
+
+## Monitoring
+
+The backup script writes status to `logs/backup.log`:
+- `backup ok:` — normal run
+- `backup warn:` — completed but something was off (check the line)
+- `backup error:` — critical failure
+
+Check weekly: `tail -20 logs/backup.log`
+
+---
+
+## Restore drill log
+
+| Date | Backup tested | Method | Result |
+|------|--------------|--------|--------|
+| 2026-06-20 | critical_20260620.sql.gz | zcat → sqlite3 temp DB | PASS — 2 claims, integrity_check ok |
+
+Next drill: 2026-07-20 (monthly). Test the full Sunday snapshot.
+
+---
+
+**Updated:** 2026-06-20  
+**Script:** `scripts/ops/daanaa_backup.sh`
