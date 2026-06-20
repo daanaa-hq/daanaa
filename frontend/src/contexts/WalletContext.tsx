@@ -125,6 +125,7 @@ interface WalletProviderProps {
  */
 export function WalletProvider({ children }: WalletProviderProps) {
   const [wallet, dispatch] = useReducer(walletReducer, createEmptyWallet())
+  const [storageError, setStorageError] = React.useState<'quota' | null>(null)
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -153,7 +154,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
       // Handle quota exceeded
       if (err.name === 'QuotaExceededError') {
         console.error('[Wallet] localStorage quota exceeded. Wallet full.')
-        // In a real app, we'd show a toast/error UI
+        setStorageError('quota')
       } else {
         console.error('[Wallet] Failed to persist wallet:', err)
       }
@@ -237,6 +238,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     getIntent,
     syncToServer,
     logoutAndClearSync,
+    storageError,
   }
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>

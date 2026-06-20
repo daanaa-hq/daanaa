@@ -79,6 +79,7 @@ export interface WalletContextType {
   getIntent: (ein: string) => GivingIntent | undefined
   syncToServer: (googleEmail: string, token: string) => Promise<void>
   logoutAndClearSync: () => void
+  storageError: 'quota' | null
 }
 
 /**
