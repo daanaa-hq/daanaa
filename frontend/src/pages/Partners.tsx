@@ -46,7 +46,7 @@ export default function Partners() {
             Services rated by nonprofit members. Use discount codes below.
           </p>
           <p className="mt-4 font-body text-[12px] text-cool-grey bg-warm-cream border border-light-grey rounded p-3">
-            Ratings are anonymous. Daanaa doesn't endorse—reflect real experiences only.
+            Ratings are anonymous. Daanaa does not endorse these services. Ratings reflect real experiences from nonprofit members.
           </p>
         </div>
       </div>
