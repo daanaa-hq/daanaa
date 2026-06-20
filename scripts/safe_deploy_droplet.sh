@@ -37,7 +37,7 @@ PRECOMPUTE="$SCRATCH/precompute"
 PAYLOAD="$SCRATCH/precompute_payload.tar.gz"
 LOG="$BASE/logs/safe_deploy.log"
 DROPLET_STAGING="/opt/daanaa/staging"
-DISK_MARGIN_GB=3        # keep at least this much free on the droplet after deploy
+DISK_MARGIN_GB=5        # keep at least this much free on the droplet after deploy
 FRONTEND_LOCAL="$BASE/frontend"
 FRONTEND_DROPLET="/opt/daanaa/frontend/dist"   # FRONTEND_DIR that droplet_api serves the SPA from
 
