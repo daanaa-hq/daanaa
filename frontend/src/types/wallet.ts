@@ -80,6 +80,7 @@ export interface WalletContextType {
   syncToServer: (googleEmail: string, token: string) => Promise<void>
   logoutAndClearSync: () => void
   storageError: 'quota' | null
+  corruptionDetected: boolean
 }
 
 /**

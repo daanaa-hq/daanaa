@@ -126,6 +126,7 @@ interface WalletProviderProps {
 export function WalletProvider({ children }: WalletProviderProps) {
   const [wallet, dispatch] = useReducer(walletReducer, createEmptyWallet())
   const [storageError, setStorageError] = React.useState<'quota' | null>(null)
+  const [corruptionDetected, setCorruptionDetected] = React.useState(false)
 
   // Hydrate from localStorage on mount
   useEffect(() => {
@@ -138,11 +139,13 @@ export function WalletProvider({ children }: WalletProviderProps) {
         } else {
           console.warn('[Wallet] Corrupted data in localStorage, starting fresh')
           localStorage.removeItem(STORAGE_KEY)
+          setCorruptionDetected(true)
         }
       }
     } catch (err) {
       console.error('[Wallet] Failed to hydrate from localStorage:', err)
       localStorage.removeItem(STORAGE_KEY)
+      setCorruptionDetected(true)
     }
   }, [])
 
@@ -239,6 +242,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     syncToServer,
     logoutAndClearSync,
     storageError,
+    corruptionDetected,
   }
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
