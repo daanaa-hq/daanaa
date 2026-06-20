@@ -1,0 +1,13 @@
+Route Status Codes:
+  ✓ / — 200 (expected 200)
+  ✓ /directory — 200 (expected 200)
+  ✓ /about — 200 (expected 200)
+  ✓ /how-it-works — 200 (expected 200)
+  ✓ /faq — 200 (expected 200)
+  ✓ /methodology — 200 (expected 200)
+  ✓ /legal/privacy — 200 (expected 200)
+  ✓ /legal/terms — 200 (expected 200)
+  ✓ /for-nonprofits — 200 (expected 200)
+  ✓ /health — 200 (expected 200)
+  ✓ /api/stats — 200 (expected 200)
+  ✗ /nonexistent-route-test — 200 (expected 404)

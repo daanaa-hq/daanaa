@@ -1,0 +1,20 @@
+{
+  "/api/stats": {
+    "mean_ms": 297.42,
+    "median_ms": 7.47,
+    "min_ms": 3.22,
+    "max_ms": 1465.58
+  },
+  "/api/organizations?page=1&per_page=25": {
+    "mean_ms": 269.02,
+    "median_ms": 7.37,
+    "min_ms": 7.34,
+    "max_ms": 1315.54
+  },
+  "/": {
+    "mean_ms": 4.08,
+    "median_ms": 3.27,
+    "min_ms": 3.21,
+    "max_ms": 7.4
+  }
+}
