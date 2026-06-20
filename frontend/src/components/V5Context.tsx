@@ -74,23 +74,23 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-body text-[12px] font-medium text-deep-navy">Months of reserve</span>
             <span className={`font-body text-[13px] font-semibold ${style.text}`}>
-              {reserves.your_value!.toFixed(1)} months
+              {Number.isInteger(reserves.your_value!) ? reserves.your_value! : reserves.your_value!.toFixed(1)} months
             </span>
           </div>
           <div className="w-full bg-deep-navy/8 rounded-full h-2 mb-1.5">
             <div className={`h-2 rounded-full ${style.bar}`} style={{ width: `${barPct}%` }} />
           </div>
           <div className="flex justify-between font-body text-[11px] text-cool-grey">
-            <span>Typical low: {reserves.p25.toFixed(0)} mo</span>
-            <span>Typical: {reserves.p50.toFixed(0)} mo</span>
-            <span>Strong: {reserves.p75.toFixed(0)} mo</span>
+            <span>Typical low: {Math.round(reserves.p25)} mo</span>
+            <span>Typical: {Math.round(reserves.p50)} mo</span>
+            <span>Strong: {Math.round(reserves.p75)} mo</span>
           </div>
         </div>
       )}
 
       {/* Donor explanation */}
       <p className="font-body text-[14px] leading-relaxed text-deep-navy/80">
-        {v5.donor_explanation}
+        {v5.donor_explanation.replace(/\b(\d+)\.0\b/g, '$1')}
       </p>
 
       {/* Disclosure */}

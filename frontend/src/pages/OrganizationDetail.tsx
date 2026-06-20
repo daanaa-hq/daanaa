@@ -393,9 +393,17 @@ export default function OrganizationDetail() {
               </div>
 
               {org.mission && (
-                <p className="mt-4 font-body text-[15px] text-muted-cream/90 leading-[1.7] max-w-[600px] italic">
-                  &ldquo;{org.mission.replace(/^["“\s]+|["”\s]+$/g, '')}&rdquo;
-                </p>
+                <div className=”mt-4 flex items-start gap-2”>
+                  <p className=”font-body text-[15px] text-muted-cream/90 leading-[1.7] max-w-[600px] italic”>
+                    &ldquo;{org.mission.replace(/^[“”\s]+|[“”\s]+$/g, '')}&rdquo;
+                  </p>
+                  {(['ai_ntee', 'ai_haiku', 'ai_web', 'ai_generated'].includes(
+                    apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? '')) && (
+                    <span className=”shrink-0 mt-1”>
+                      <AiBadge />
+                    </span>
+                  )}
+                </div>
               )}
 
               {/* FINANCIAL TRUST LINE + PEER CONTEXT (Hero) */}
@@ -433,7 +441,7 @@ export default function OrganizationDetail() {
                            apiOrg!.v5_context.score.health_signal === 'STABLE' ? 'Financially stable' :
                            'Needs support'}
                         </span>
-                        <span className="font-body text-[11px] text-muted-cream text-center mt-1">financial health signal</span>
+                        <span className="font-body text-[11px] text-muted-cream text-center mt-1">financial health</span>
                       </div>
                     )}
                   </div>
@@ -489,7 +497,7 @@ export default function OrganizationDetail() {
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   {apiOrg!.months_of_reserve < 0
                     ? 'Negative net assets. This group owes more than it owns.'
-                    : `Net assets cover only ${apiOrg!.months_of_reserve.toFixed(1)} months of costs`}
+                    : `Net assets cover only ${Math.round(apiOrg!.months_of_reserve)} months of costs`}
                 </div>
               )}
 
@@ -762,7 +770,7 @@ export default function OrganizationDetail() {
                             <div className="rounded-lg bg-warm-cream px-4 py-3">
                               <span className="block font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
                               <span className="block font-body text-[22px] font-semibold text-deep-navy tracking-[-0.02em]">
-                                {fc.months_reserve > 999 ? '999+' : fc.months_reserve.toFixed(1)} mo
+                                {fc.months_reserve > 999 ? '999+' : Math.round(fc.months_reserve)} mo
                               </span>
                               <span className="block font-body text-[11px] text-cool-grey">months net assets cover costs</span>
                             </div>
@@ -823,7 +831,7 @@ export default function OrganizationDetail() {
                     className="block font-body text-[26px] font-semibold tracking-[-0.02em]"
                     style={{ color: apiOrg!.months_of_reserve < 0 ? '#8B1A1A' : apiOrg!.months_of_reserve < 3 ? '#92400E' : '#0A1628' }}
                   >
-                    {apiOrg!.months_of_reserve! > 999 ? '999+' : apiOrg!.months_of_reserve! < 0 ? `(${Math.abs(apiOrg!.months_of_reserve!).toFixed(1)})` : apiOrg!.months_of_reserve!.toFixed(1)}
+                    {apiOrg!.months_of_reserve! > 999 ? '999+' : apiOrg!.months_of_reserve! < 0 ? `(${Math.round(Math.abs(apiOrg!.months_of_reserve!))})` : Math.round(apiOrg!.months_of_reserve!)}
                   </span>
                   <span className="font-body text-[11px] text-cool-grey">
                     {apiOrg!.months_of_reserve < 0
@@ -1020,29 +1028,8 @@ export default function OrganizationDetail() {
         <div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">MISSION</span>
-                {['ai_ntee', 'ai_haiku', 'ai_web', 'ai_generated'].includes(
-                  apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? '') && (
-                  <AiBadge />
-                )}
-                {apiOrg?.data_badges?.mission === 'lucido' && (
-                  <span
-                    className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
-                    title="Sourced from public IRS filings; not confirmed by the organization"
-                  >
-                    from public records
-                  </span>
-                )}
-                {apiOrg?.data_badges?.mission === 'claimed' && (
-                  <span className="border border-soft-gold/30 text-soft-gold rounded text-[10px] px-1.5 py-0.5">
-                    ✓ by organization
-                  </span>
-                )}
-              </div>
-              {org.mission ? (
-                <p className="mt-3 font-display italic text-deep-navy text-[18px] leading-[1.6]">&ldquo;{org.mission.replace(/^["\s]+|["\s]+$/g, '')}&rdquo;</p>
-              ) : (
+              {/* Mission text is shown in the hero above; only show here if not in hero */}
+              {!org.mission && (
                 <p className="mt-3 font-body text-cool-grey text-[15px]">Mission statement sourced from public records. Extended narrative not yet available for this organization.</p>
               )}
               {org.programs.length > 0 && (
