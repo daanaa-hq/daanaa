@@ -1,12 +1,12 @@
 /**
  * WalletBadge: Badge showing wallet count + status
  * - Supports three styles: inline, badge, pill
- * - Can filter by giving intent (giving/volunteer/board)
+ * - Can filter by giving intent (giving/volunteer)
  * - Shows "Empty" when 0 orgs (inline only)
  *
  * Props:
  *   style?: "inline" | "badge" | "pill" (default: inline)
- *   intent?: "giving" | "volunteer" | "board" (optional filter)
+ *   intent?: "giving" | "volunteer" (optional filter)
  *
  * Usage:
  *   <WalletBadge style="inline" />
@@ -21,7 +21,7 @@ import type { GivingIntent, WalletOrg } from '../types/wallet'
 
 interface WalletBadgeProps {
   style?: 'inline' | 'badge' | 'pill'
-  intent?: 'giving' | 'volunteer' | 'board'
+  intent?: 'giving' | 'volunteer'
 }
 
 export default function WalletBadge({

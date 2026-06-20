@@ -5,7 +5,7 @@
 
 /**
  * GivingIntent represents a donor's intention regarding a specific nonprofit
- * type: what kind of involvement (giving, volunteering, board)
+ * type: what kind of involvement (giving or volunteering)
  * status: whether the donor is still interested or has withdrawn
  * amount: optional $ amount if type is "giving"
  * frequency: optional frequency for giving (year, month, one-time)
@@ -14,7 +14,7 @@
  * notes: optional 200-char max user notes
  */
 export interface GivingIntent {
-  type: 'giving' | 'volunteer' | 'board'
+  type: 'giving' | 'volunteer'
   status: 'interested' | 'withdrawn'
   amount?: number // in dollars, must be > 0 if present
   frequency?: 'year' | 'month' | 'one-time' // frequency for giving

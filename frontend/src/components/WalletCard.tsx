@@ -27,8 +27,6 @@ function getIntentDisplay(org: WalletOrg): string | null {
     }
     case 'volunteer':
       return hours ? `Volunteering · ${hours} hrs/wk` : 'Planning to volunteer'
-    case 'board':
-      return 'Interested in the board'
     default:
       return null
   }

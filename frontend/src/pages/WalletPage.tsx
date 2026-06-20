@@ -18,7 +18,7 @@ const API_BASE = import.meta.env.VITE_API_URL || ''
 const STALE_CHECK_MAX = 10
 
 type SortBy = 'recent' | 'name' | 'health'
-type FilterIntent = 'all' | 'giving' | 'volunteer' | 'board'
+type FilterIntent = 'all' | 'giving' | 'volunteer'
 type FilterHealth = 'all' | 'HEALTHY' | 'STABLE' | 'CAUTION'
 
 interface FilterState {
@@ -306,10 +306,6 @@ export default function WalletPage() {
               <p className="font-body text-[12px] font-semibold text-deep-navy">Volunteering</p>
               <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you want to give your time to</p>
             </div>
-            <div>
-              <p className="font-body text-[12px] font-semibold text-deep-navy">Board service</p>
-              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you want to govern and guide</p>
-            </div>
           </div>
         </div>}
 
@@ -399,7 +395,6 @@ export default function WalletPage() {
                 <option value="all">All intents</option>
                 <option value="giving">Giving</option>
                 <option value="volunteer">Volunteering</option>
-                <option value="board">Board</option>
               </select>
             </div>
 

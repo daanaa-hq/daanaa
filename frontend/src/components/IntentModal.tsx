@@ -14,7 +14,7 @@ interface IntentModalProps {
   initialIntent?: GivingIntent
 }
 
-type IntentType = 'giving' | 'volunteer' | 'board'
+type IntentType = 'giving' | 'volunteer'
 type Frequency = 'year' | 'month' | 'one-time'
 type Step = 'type' | 'details'
 
@@ -175,16 +175,6 @@ export default function IntentModal({
         </svg>
       ),
     },
-    board: {
-      label: 'Join the board',
-      sub: 'Govern and guide',
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <path d="M3 9h18M9 21V9"/>
-        </svg>
-      ),
-    },
   }
 
   const selectedTypeLabel = typeLabels[selectedType]
@@ -235,7 +225,7 @@ export default function IntentModal({
         {/* Step 1: Type selection */}
         {step === 'type' && (
           <div className="px-6 pb-6 space-y-3">
-            {(['giving', 'volunteer', 'board'] as IntentType[]).map((type) => {
+            {(['giving', 'volunteer'] as IntentType[]).map((type) => {
               const t = typeLabels[type]
               return (
                 <button
@@ -357,13 +347,6 @@ export default function IntentModal({
                   <p className="font-body text-red-600 text-[12px] mt-1">{errors.hours}</p>
                 )}
               </div>
-            )}
-
-            {/* Board: no extra fields, just notes */}
-            {selectedType === 'board' && (
-              <p className="font-body text-[14px] text-cool-grey leading-[1.6]">
-                Board service is one of the most meaningful ways to support an organization. Your interest is saved here. Use the notes below to remember anything specific.
-              </p>
             )}
 
             {/* Notes */}
