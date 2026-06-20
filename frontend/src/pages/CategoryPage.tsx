@@ -144,28 +144,44 @@ export default function CategoryPage() {
                         >
                           {org.organization_name}
                         </Link>
-                        <button
-                          onClick={() => saved
-                            ? removeOrg(ein)
-                            : addOrg({
-                                ein,
-                                name: org.organization_name,
-                                mission: (org as any).mission ?? '',
-                                location: [org.CITY, org.STATE].filter(Boolean).join(', '),
-                                cause: (org.cause_tags ?? []).slice(0, 3),
-                                merit_score_v5: scoreV5,
-                                merit_health_signal_v5: (signal || 'STABLE') as 'HEALTHY' | 'STABLE' | 'CAUTION',
-                                is_hidden_gem: org.is_hidden_gem ?? false,
-                                bookmarkedAt: Date.now(),
-                              })
-                          }
-                          aria-label={saved ? `Remove ${org.organization_name} from wallet` : `Save ${org.organization_name}`}
-                          className={`shrink-0 p-1.5 rounded-lg transition-colors ${saved ? 'text-soft-gold' : 'text-cool-grey hover:text-soft-gold'}`}
-                        >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-                          </svg>
-                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {org.website_status === 'ok' && org.website && (
+                            <a
+                              href={org.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Visit website"
+                              aria-label={`Visit ${org.organization_name}'s website`}
+                              onClick={e => e.stopPropagation()}
+                              className="p-1.5 rounded-lg text-cool-grey hover:text-soft-gold transition-colors"
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                            </a>
+                          )}
+                          <button
+                            onClick={() => saved
+                              ? removeOrg(ein)
+                              : addOrg({
+                                  ein,
+                                  name: org.organization_name,
+                                  mission: (org as any).mission ?? '',
+                                  location: [org.CITY, org.STATE].filter(Boolean).join(', '),
+                                  cause: (org.cause_tags ?? []).slice(0, 3),
+                                  merit_score_v5: scoreV5,
+                                  merit_health_signal_v5: (signal || 'STABLE') as 'HEALTHY' | 'STABLE' | 'CAUTION',
+                                  is_hidden_gem: org.is_hidden_gem ?? false,
+                                  website: org.website_status === 'ok' ? (org.website || undefined) : undefined,
+                                  bookmarkedAt: Date.now(),
+                                })
+                            }
+                            aria-label={saved ? `Remove ${org.organization_name} from wallet` : `Save ${org.organization_name}`}
+                            className={`p-1.5 rounded-lg transition-colors ${saved ? 'text-soft-gold' : 'text-cool-grey hover:text-soft-gold'}`}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                       {(org.CITY || org.STATE) && (
                         <p className="font-body text-[11px] text-cool-grey mb-2">
