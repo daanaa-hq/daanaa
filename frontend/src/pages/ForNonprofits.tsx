@@ -265,7 +265,7 @@ export default function ForNonprofits() {
             <div className="space-y-5">
               <StepDot n={1} label="Find your organization in the directory and click 'Claim your page'" />
               <StepDot n={2} label="Submit the claim form with your name, role, email, and phone number" />
-              <StepDot n={3} label="A member of the Daanaa team calls you to verify your identity" />
+              <StepDot n={3} label="A member of the Daanaa team calls you, usually within 1 to 2 business days, to confirm your role" />
               <StepDot n={4} label="Enter the 6-digit PIN we give you on the call to unlock your page" />
             </div>
             <p className="mt-8 font-body text-[14px] text-cool-grey leading-[1.6]">
@@ -414,7 +414,7 @@ export default function ForNonprofits() {
                   {orgName && <span className="block text-soft-gold text-[20px] mt-1">{orgName}</span>}
                 </h3>
                 <p className="font-body text-[15px] text-muted-cream leading-[1.6] mb-4">
-                  A member of the Daanaa team will call the number you provided, usually within a few business days, to verify your identity.
+                  A member of the Daanaa team will call the number you provided, usually within 1 to 2 business days, to confirm your role.
                 </p>
                 <p className="font-body text-[14px] text-muted-cream leading-[1.6] mb-6">
                   On the call we give you a 6-digit PIN. Enter it at{' '}
@@ -530,7 +530,7 @@ export default function ForNonprofits() {
                       className="w-full h-[48px] bg-navy-mid border border-soft-gold/20 text-warm-cream px-4 rounded-xl font-body text-[15px] outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
                     />
                     <p className="mt-1.5 font-body text-[11px] text-muted-cream">
-                      We will call this number to verify your identity before activating your page. Not shared publicly.
+                      We will call this number, usually within 1 to 2 business days, to confirm your role and give you a PIN. Not shared publicly.
                     </p>
                   </div>
 
@@ -584,8 +584,8 @@ export default function ForNonprofits() {
                       className="mt-0.5 h-4 w-4 rounded border-soft-gold/30 text-soft-gold focus:ring-soft-gold shrink-0"
                     />
                     <span className="font-body text-[12px] text-muted-cream leading-[1.6]">
-                      I understand that submitting false or misleading information is a federal offense under{' '}
-                      <strong className="text-warm-cream">18 U.S.C. § 1001</strong> and may result in permanent removal from Daanaa and referral to relevant authorities.
+                      The information I have provided is accurate to the best of my knowledge. I understand that knowingly providing false information is a federal offense under{' '}
+                      <strong className="text-warm-cream">18 U.S.C. § 1001</strong>.
                     </span>
                   </label>
 
@@ -602,7 +602,7 @@ export default function ForNonprofits() {
                   </button>
                 </form>
                 <p className="mt-4 font-body text-[11px] text-muted-cream leading-[1.5]">
-                  A member of the Daanaa team will call the number you provided to verify your identity. Once confirmed, your page goes live. No cost to you.
+                  We will call you within 1 to 2 business days to confirm your role. Once confirmed, your page goes live. No cost to you.
                 </p>
               </>
             )}
