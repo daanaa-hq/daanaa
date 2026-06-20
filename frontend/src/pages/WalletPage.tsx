@@ -289,13 +289,13 @@ export default function WalletPage() {
                   : 'bg-soft-gold/20 text-soft-gold border border-soft-gold/30 hover:bg-soft-gold/30'
               } disabled:opacity-50`}
             >
-              {syncing ? 'Syncing...' : user ? '☁ Synced' : '☁ Save to Cloud'}
+              {syncing ? 'Syncing...' : user ? 'Synced' : 'Save to Cloud'}
             </button>
           </div>
         </div>
 
-        {/* Giving Intent Guide */}
-        <div className="bg-soft-gold/8 border border-soft-gold/20 rounded-2xl p-5 mb-8">
+        {/* Giving Intent Guide — only shown when orgs without a plan exist */}
+        {hasOrgsWithoutIntent && <div className="bg-soft-gold/8 border border-soft-gold/20 rounded-2xl p-5 mb-8">
           <p className="font-body text-[13px] text-cool-grey mb-3 font-medium">What each giving type means:</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -311,7 +311,7 @@ export default function WalletPage() {
               <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you want to govern and guide</p>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Welcome-back nudge */}
         {showNudge && (
