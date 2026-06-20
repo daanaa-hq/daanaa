@@ -19,6 +19,7 @@ export default function AddToWalletButton({
 }: AddToWalletButtonProps) {
   const { isInWallet, addOrg, getIntent } = useWallet()
   const [state, setState] = useState<ButtonState>('idle')
+  const [savedWebsite, setSavedWebsite] = useState<string | undefined>(undefined)
 
   const alreadyInWallet = isInWallet(ein)
 
@@ -28,6 +29,7 @@ export default function AddToWalletButton({
 
       const apiOrg = await getOrganization(ein)
 
+      const websiteUrl = (apiOrg.website_status === 'ok' && apiOrg.website) ? apiOrg.website : undefined
       const walletOrg: WalletOrg = {
         ein: apiOrg.EIN || ein,
         name: apiOrg.organization_name || orgName,
@@ -37,11 +39,12 @@ export default function AddToWalletButton({
         merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
         merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
         is_hidden_gem: !!(apiOrg.is_hidden_gem),
-        website: (apiOrg.website_status === 'ok' && apiOrg.website) ? apiOrg.website : undefined,
+        website: websiteUrl,
         bookmarkedAt: Date.now(),
       }
 
       addOrg(walletOrg)
+      setSavedWebsite(websiteUrl)
       setState('success')
 
       if (onAdded) onAdded(ein)
@@ -101,9 +104,21 @@ export default function AddToWalletButton({
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          Added to Wallet
+          Saved
         </button>
-        {!intentAlreadySet && (
+        {savedWebsite && (
+          <a
+            href={savedWebsite}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-1.5 font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors text-center leading-snug"
+            aria-label={`Visit ${orgName}'s website`}
+          >
+            Visit their website
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+          </a>
+        )}
+        {!savedWebsite && !intentAlreadySet && (
           <Link
             to="/wallet"
             className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors text-center leading-snug"

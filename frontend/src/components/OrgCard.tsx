@@ -154,6 +154,20 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
       <div className="flex items-center gap-1.5 shrink-0">
         {/* Compare hidden on mobile — too small to be useful */}
         {!hideCompare && <span className="hidden md:contents"><CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} /></span>}
+        {apiOrg?.website_status === 'ok' && apiOrg.website && (
+          <a
+            href={apiOrg.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Visit website"
+            aria-label={`Visit ${org.name}'s website`}
+            onClick={e => e.stopPropagation()}
+            className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 text-cool-grey hover:text-soft-gold"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+            <span className="font-body text-[10px] leading-none">Visit</span>
+          </a>
+        )}
         {onToggleSave
           ? <SaveButton isSaved={isSaved} onClick={handleBookmark} />
           : <div onClick={e => { e.preventDefault(); e.stopPropagation() }}>
@@ -273,6 +287,20 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         )}
         <div className="flex items-center justify-end gap-1">
           {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
+          {apiOrg?.website_status === 'ok' && apiOrg.website && (
+            <a
+              href={apiOrg.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Visit website"
+              aria-label={`Visit ${org.name}'s website`}
+              onClick={e => e.stopPropagation()}
+              className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 text-cool-grey hover:text-soft-gold"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+              <span className="font-body text-[10px] leading-none">Visit</span>
+            </a>
+          )}
           {onToggleSave && <SaveButton isSaved={isSaved} onClick={handleBookmark} />}
         </div>
         {/* Show AddToWalletButton only when parent doesn't provide its own toggle handler */}
