@@ -299,16 +299,16 @@ export default function WalletPage() {
           <p className="font-body text-[13px] text-cool-grey mb-3 font-medium">What each giving type means:</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <p className="font-body text-[12px] font-semibold text-deep-navy">💰 Giving</p>
-              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you plan to donate to</p>
+              <p className="font-body text-[12px] font-semibold text-deep-navy">Giving</p>
+              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you want to support financially</p>
             </div>
             <div>
-              <p className="font-body text-[12px] font-semibold text-deep-navy">🤝 Volunteering</p>
-              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you want to volunteer with</p>
+              <p className="font-body text-[12px] font-semibold text-deep-navy">Volunteering</p>
+              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you want to give your time to</p>
             </div>
             <div>
-              <p className="font-body text-[12px] font-semibold text-deep-navy">🪑 Board</p>
-              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you're considering for board service</p>
+              <p className="font-body text-[12px] font-semibold text-deep-navy">Board service</p>
+              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you want to govern and guide</p>
             </div>
           </div>
         </div>

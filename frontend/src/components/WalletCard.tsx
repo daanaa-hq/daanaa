@@ -8,10 +8,10 @@ interface WalletCardProps {
   onEdit?: (ein: string) => void
 }
 
-const healthMap: Record<string, { label: string; classes: string }> = {
-  HEALTHY: { label: 'Financially healthy',        classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  STABLE:  { label: 'Financially stable',         classes: 'bg-blue-50 text-blue-700 border-blue-200' },
-  CAUTION: { label: 'Needs support',    classes: 'bg-amber-50 text-amber-700 border-amber-200' },
+const healthMap: Record<string, { label: string; classes: string; title: string }> = {
+  HEALTHY: { label: 'Financially healthy', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200', title: 'More reserves than most similar organizations. From public IRS data.' },
+  STABLE:  { label: 'Financially stable',  classes: 'bg-blue-50 text-blue-700 border-blue-200',         title: 'Typical reserve level for this type of organization. From public IRS data.' },
+  CAUTION: { label: 'Needs support',       classes: 'bg-amber-50 text-amber-700 border-amber-200',      title: 'Fewer reserves than most similar organizations. An invitation to give, not a judgment of the work.' },
 }
 
 function getIntentDisplay(org: WalletOrg): string | null {
@@ -110,7 +110,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
 
       {/* Health badge + peer rank */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border font-body ${health.classes}`}>
+        <span title={health.title} className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border font-body ${health.classes}`}>
           {health.label}
         </span>
         {org.is_hidden_gem && (
@@ -145,7 +145,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Visit ${org.name}'s website`}
-            title="Link from our public records — websites can change. Search by name if this doesn't work."
+            title="Link from our public records. Websites can change. Search by name if this does not work."
             className="flex-1 px-3 py-2 rounded-xl bg-deep-navy text-warm-cream font-body text-[13px] font-semibold hover:bg-deep-navy/80 transition-colors text-center"
           >
             Visit website
@@ -183,7 +183,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
       </div>
       {org.website && (
         <p className="font-body text-[10px] text-cool-grey/50 mt-2 leading-relaxed">
-          Link from our records — websites can change. If it's broken, search for them by name.
+          Link from our records. Websites can change. If it is broken, search for them by name.
         </p>
       )}
     </div>

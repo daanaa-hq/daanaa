@@ -524,7 +524,7 @@ export default function Directory() {
               { key: 'hg', label: 'Hidden gems', tip: 'Small, financially healthy, lower profile orgs. A fresh set each week.', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
                 icon: <><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></>,
                 toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
-              { key: 'ns', label: 'Needs support', tip: 'Operating on under six months of financial reserve', on: needsSupport, color: '#7C3AED', textOn: '#FFFFFF',
+              { key: 'ns', label: 'Needs support', tip: 'Fewer than six months of operating reserves. An invitation to support, not a judgment of the work.', on: needsSupport, color: '#7C3AED', textOn: '#FFFFFF',
                 icon: <><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></>,
                 toggle: () => { setNeedsSupport(!needsSupport); setCurrentPage(1); scrollTop() } },
             ].map(t => (

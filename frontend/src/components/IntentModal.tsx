@@ -362,7 +362,7 @@ export default function IntentModal({
             {/* Board: no extra fields, just notes */}
             {selectedType === 'board' && (
               <p className="font-body text-[14px] text-cool-grey leading-[1.6]">
-                We will keep track of your interest here. Use the notes below to add any context.
+                Board service is one of the most meaningful ways to support an organization. Your interest is saved here. Use the notes below to remember anything specific.
               </p>
             )}
 
