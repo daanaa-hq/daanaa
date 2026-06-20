@@ -17,6 +17,7 @@ const healthMap: Record<string, { label: string; classes: string }> = {
 function getIntentDisplay(org: WalletOrg): string | null {
   const intent = org.givingIntent
   if (!intent) return null
+  if (intent.status === 'withdrawn') return 'No longer interested'
   const { type, amount, hours, frequency } = intent
   switch (type) {
     case 'giving': {
@@ -127,8 +128,10 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
       {/* Giving intent */}
       {intentText && (
         <div className="border-t border-light-grey pt-3 mb-4">
-          <p className="font-body text-[12px] font-medium text-deep-navy">{intentText}</p>
-          {org.givingIntent?.notes && (
+          <p className={`font-body text-[12px] font-medium ${intentText === 'No longer interested' ? 'text-cool-grey line-through' : 'text-deep-navy'}`}>
+            {intentText}
+          </p>
+          {org.givingIntent?.notes && intentText !== 'No longer interested' && (
             <p className="font-body text-[11px] text-cool-grey mt-1 italic">"{org.givingIntent.notes}"</p>
           )}
         </div>
@@ -142,7 +145,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
             aria-label={`Edit giving intent for ${org.name}`}
             className="flex-1 px-3 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
           >
-            {intentText ? 'Edit intent' : 'Set intent'}
+            {intentText && intentText !== 'No longer interested' ? 'Edit intent' : intentText === 'No longer interested' ? 'Update intent' : 'Set intent'}
           </button>
         )}
         <Link

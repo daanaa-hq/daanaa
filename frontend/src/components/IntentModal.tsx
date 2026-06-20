@@ -119,6 +119,15 @@ export default function IntentModal({
     return Object.keys(newErrors).length === 0
   }
 
+  const handleWithdraw = () => {
+    const intent: GivingIntent = {
+      ...(initialIntent as GivingIntent),
+      status: 'withdrawn',
+    }
+    onSave(org.ein, intent)
+    onClose()
+  }
+
   const handleSave = () => {
     if (!validateForm()) return
 
@@ -388,6 +397,18 @@ export default function IntentModal({
                 <p className="font-body text-[11px] text-cool-grey ml-auto">{notes.length}/200</p>
               </div>
             </div>
+
+            {/* Withdraw option — edit flow only */}
+            {isEditing && (
+              <div className="text-center">
+                <button
+                  onClick={handleWithdraw}
+                  className="font-body text-[12px] text-cool-grey hover:text-deep-navy underline transition-colors"
+                >
+                  No longer interested in supporting this org?
+                </button>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-1">
