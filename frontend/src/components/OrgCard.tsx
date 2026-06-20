@@ -154,13 +154,12 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
       <div className="flex items-center gap-1.5 shrink-0">
         {/* Compare hidden on mobile — too small to be useful */}
         {!hideCompare && <span className="hidden md:contents"><CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} /></span>}
-        {onToggleSave && <SaveButton isSaved={isSaved} onClick={handleBookmark} />}
-        {/* Save to Wallet — stop propagation so the row Link doesn't fire */}
-        <div
-          onClick={e => { e.preventDefault(); e.stopPropagation() }}
-        >
-          <AddToWalletButton ein={org.ein} orgName={org.name} />
-        </div>
+        {onToggleSave
+          ? <SaveButton isSaved={isSaved} onClick={handleBookmark} />
+          : <div onClick={e => { e.preventDefault(); e.stopPropagation() }}>
+              <AddToWalletButton ein={org.ein} orgName={org.name} />
+            </div>
+        }
       </div>
     </Link>
   )
@@ -276,13 +275,15 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
           {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
           {onToggleSave && <SaveButton isSaved={isSaved} onClick={handleBookmark} />}
         </div>
-        {/* Save to Wallet — stop propagation so the card Link doesn't fire */}
-        <div
-          className="mt-2"
-          onClick={e => { e.preventDefault(); e.stopPropagation() }}
-        >
-          <AddToWalletButton ein={org.ein} orgName={org.name} />
-        </div>
+        {/* Show AddToWalletButton only when parent doesn't provide its own toggle handler */}
+        {!onToggleSave && (
+          <div
+            className="mt-2"
+            onClick={e => { e.preventDefault(); e.stopPropagation() }}
+          >
+            <AddToWalletButton ein={org.ein} orgName={org.name} />
+          </div>
+        )}
       </div>
     </Link>
   )
