@@ -41,7 +41,10 @@ SELECT_SQL = """
         latest_tax_year, data_source, updated_at, merit_tier, merit_score,
         merit_band, financial_health, months_of_reserve, net_assets,
         total_expenses, employee_count, program_expense_pct,
-        mission, mission_source, website, website_status, cause_tags
+        mission, mission_source, website, website_status, cause_tags,
+        merit_score_v5, merit_health_signal_v5, merit_archetype_v5,
+        merit_archetype_v5_label, merit_band_v5, merit_band_v5_label,
+        merit_peer_group_v5, merit_peer_count_v5, is_hidden_gem
     FROM registry_enriched
     -- Same deductibility/active gate as the rest of the browse cache: only
     -- surface orgs where donating is currently tax-deductible. Fail closed.
