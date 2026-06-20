@@ -1,165 +1,224 @@
-# Daanaa Customer Service Strategy: Next Level
-**Goal:** Self-hosted, privacy-first, loop-driven customer service across 4 stakeholder groups with continuous KPI improvement.
+# Daanaa Customer Service Strategy: Automated, Zero-Staff
 
-**Status:** Research complete | Ready for Phase 2 implementation (Aug 15 - Sep 30)
+**Goal:** Self-hosted, privacy-first, **fully automated** customer service across 4 stakeholder groups. Humans handle exceptions only; AI + workflows handle routine flows.
+
+**Status:** Architecture ready | Build begins immediately (no dependencies)
+
+**Budget:** $240–600/year (SIP trunk only) | $0 staff
 
 ---
 
-## 1. RECOMMENDED STACK
-
-### Core Tools (Best-in-Class)
+## 1. ARCHITECTURE: Automation-First
 
 | Layer | Tool | GitHub | Why | Setup | Cost |
 |-------|------|--------|-----|-------|------|
-| **Helpdesk** | Chatwoot | chatwoot/chatwoot | Multi-channel (email+chat), role-based routing, voice-ready | 4h | $0 |
-| **Voice IVR** | Jambonz | jambonz/jambonz-platform | Node.js native, webhook-driven, self-hosted SIP | 8h | $0 (+$10-50 SIP) |
-| **CRM + Workflows** | ERPNext | frappe/erpnext | Python-native, nonprofit-friendly, custom doctypes | 6h | $0 |
-| **Analytics/KPI** | Metabase | metabase/metabase | Zero-code dashboards, perfect for improvement loops | 3h | $0 |
-| **Orchestration** | n8n | n8n-io/n8n | Route support tickets, trigger voice calls, sync data | 4h | $0 |
+| **Helpdesk** | Chatwoot | chatwoot/chatwoot | Multi-channel inbox, auto-routing to Akbar | 3h | $0 |
+| **Voice IVR** | Jambonz | jambonz/jambonz-platform | Nonprofit claim flow: collect EIN → validate → auto-create ticket | 6h | $0 (+$20–50/mo SIP) |
+| **Email Triage** | n8n | n8n-io/n8n | Intent detection (claim? donate? volunteer?), route + auto-respond | 4h | $0 |
+| **Donor FAQ Bot** | Local LLM (Qwen/Llama) | home server | "How do I give to X?" → semantic search → respond with donate link | 2h | $0 (GPU-enabled) |
+| **CRM + Portal** | ERPNext | frappe/erpnext | Nonprofit self-service portal, minimal fields (claiming + updates) | 4h | $0 |
+| **Metrics** | Metabase | metabase/metabase | Ticket backlog, resolution time, escalation rate (detect when Akbar is buried) | 2h | $0 |
 
-**TOTAL SETUP: 25 dev hours (3 days) | $0 cost | 8.5/10 stewardship alignment**
-
----
-
-## 2. FOUR STAKEHOLDER FLOWS
-
-### Flow 1: Nonprofit Backend (Voice + Web)
-**Users:** Nonprofit staff claiming pages, entering data, updating info  
-**Channels:** Voice IVR (phone), web (form), email (support)
-
-```
-Nonprofit calls → Jambonz IVR → "Press 1 to claim page" 
-  → Voice script collects EIN/domain email
-  → Transcribed + validated → ERPNext creates claim record
-  → Chatwoot ticket to verify → Email confirmation with magic link
-  → Staff completes onboarding in web form
-  → Updates sync back to voice (status available via IVR)
-
-KPIs: Claims/week, avg time to claim, voice accuracy, abandonment rate
-```
-
-### Flow 2: Donor/Volunteer Support (Chat + Email)
-**Users:** Donors asking about orgs, volunteers logging hours  
-**Channels:** Email, in-app chat, FAQ bot
-
-```
-Donor email → n8n filters → route by intent:
-  - "How do I give to X?" → Chatwoot (find donation link)
-  - "I volunteered" → Chatwoot (direct to LogVolunteerHours)
-  - FAQ match → auto-respond (n8n template)
-
-Chat widget on daanaa.org → Chatwoot → Canned responses + escalate if needed
-
-KPIs: Response time, resolution rate, CSAT, chat/email volume, FAQ effectiveness
-```
-
-### Flow 3: Partner/Vendor Support (Ticketing + CRM)
-**Users:** Vendors managing referral links, partners checking integrations  
-**Channels:** Email, dedicated portal (ERPNext)
-
-```
-Partner email → n8n → ERPNext CRM contact → Chatwoot ticket
-  - Assign to account manager
-  - Auto-attach referral performance data (Metabase snapshot)
-  - Track SLA (48h first response, 2wk resolution)
-  - Post-resolution: survey for CSAT
-
-Portal: Self-service referral dashboard (ERPNext portal), ticket history, docs
-
-KPIs: Partner satisfaction, ticket volume, SLA compliance, average revenue per partner
-```
-
-### Flow 4: Internal (Backend Office)
-**Users:** Daanaa ops team handling all support  
-**Channels:** Chatwoot (unified inbox), ERPNext (CRM), Metabase (metrics)
-
-```
-All inbound → Chatwoot unified inbox (email + voice transcripts)
-  - Dashboard: open tickets by type (nonprofit claim, donor question, vendor issue)
-  - Route to specialist (voice tech, data entry, partner manager)
-  - SLA monitoring (priority: nonprofit > partner > donor > internal)
-
-Weekly retrospective (Metabase):
-  - Response time trend by channel
-  - Resolution rate by type
-  - Bottleneck identification
-  - Staffing adjustment signals
-
-KPIs: Team productivity, ticket backlog, SLA compliance, issue categories, automation rate
-```
+**TOTAL SETUP: 21 dev hours (2–3 days) | $240–600/yr cost | 9/10 stewardship alignment**
 
 ---
 
-## 3. LOOP DEVELOPMENT (Continuous Improvement)
+## 2. FOUR FLOWS: Automated + Escalation
 
-### Weekly Cycle
+### Flow 1: Nonprofit Claiming (Voice-First)
+
+**Automation:** Jambonz IVR → n8n validation → auto-ticket
+
 ```
-Monday 9am: Review Metabase dashboards (15 min)
-- Response time by channel (target: <4h nonprofit, <24h donor)
-- Resolution rate (target: 90%)
-- Open ticket count (trend)
-- Voice call success rate (target: 95% completion)
+Nonprofit calls (833) DAANAA (332-62) 
+  → Jambonz: "Press 1 to claim your nonprofit page"
+  → Collect: EIN (DTMF) + domain email (speech → transcribed)
+  → Validate: EIN in registry? Email matches domain MX?
+  → Success: "Check your email for claim link" + auto-create ticket
+  → Failure: "That EIN isn't in our registry" + offer email support
+  
+Ticket auto-created in Chatwoot with:
+  - EIN + name (pulled from registry)
+  - Email + transcript
+  - Auto-tag: "claim-voice-verified" (skips manual EIN validation)
+  
+Akbar gets ONE Chatwoot notification for review:
+  - Quick check: voice accuracy OK?
+  - If yes: send magic link email (auto, via n8n)
+  - If no: reply via Chatwoot to clarify
 
-Tuesday 2pm: Team sync (30 min)
-- Bottlenecks from last week
-- Top 3 unresolved tickets
-- Automation opportunities (e.g., FAQ q's that should be auto-response)
-- Staffing needs
-
-Thursday: Implement improvements
-- Update FAQ in Chatwoot (auto-responses)
-- Add n8n rule (if email matches pattern X, auto-response Y)
-- Retrain voice script (Jambonz webhook)
-
-Friday 4pm: Retrospective (15 min)
-- Did improvements move metrics?
-- New blockers?
-- Next week priorities
+Email magic link → self-serve claim flow (existing web form)
+  
+KPIs (auto-tracked):
+- Claims/week (trend)
+- Voice accuracy rate (transcription ≈ database EIN)
+- IVR completion rate (calls that reach ticket creation)
+- Claim-to-approval time (days)
+- Backlog count (Chatwoot unresolved)
 ```
 
-### Monthly Cycle
-```
-Month-end: Deep dive (1 hour)
-- CSAT analysis (partner survey results, email sentiment)
-- Cost per resolution (dev hours invested / tickets resolved)
-- Automation rate (tickets with zero human touch)
-- Nonprofit onboarding funnel (claim start → completion)
-- Partner net retention (churn + expansion)
+**When escalation needed:** Voice accuracy <90%, unresolved tickets >7 days (n8n alert to Akbar).
 
-Adjust targets, staffing model, or tool config based on trends
+---
+
+### Flow 2: Donor/Volunteer Support (FAQ Bot + Email)
+
+**Automation:** Intent detection → FAQ bot answer OR escalate
+
+```
+Donor email → n8n email parser:
+
+IF subject/body matches FAQ patterns:
+  - "How do I give to [org]?" 
+    → Semantic search: org name → donate URL → auto-reply
+    → "Donate directly: [link]"
+  
+  - "How do I volunteer / log hours?"
+    → Auto-reply with link to LogVolunteerHours page
+  
+  - Generic praise / feedback
+    → Auto-reply "Thanks for caring"
+
+ELSE (ambiguous or specific question):
+  → Create Chatwoot ticket, tag as "donor-question"
+  → Akbar reviews when he has time (not urgent)
+  
+Chat widget (daanaa.org):
+  - Embedded Chatwoot
+  - FAQ bot integration (same intent logic)
+  - "Typical response: 2–4 hours" message (honest)
+
+KPIs (auto-tracked):
+- Auto-response rate (% handled by FAQ bot)
+- FAQ match accuracy (did bot answer match intent?)
+- Escalation rate (tickets created)
+- Email volume / week
+- Chat widget usage
+```
+
+**When escalation needed:** Auto-response rate <75%, ticket backlog >10 (n8n alert).
+
+---
+
+### Flow 3: Partner/Vendor Support (Self-Service + Escalation)
+
+**Automation:** Self-service portal + smart escalation
+
+```
+Partner emails daanaa@daanaa.org → n8n:
+
+IF sender in partner list:
+  → Create/link ERPNext contact, tag with partner tier
+  → Create Chatwoot ticket (priority: high)
+  → Send auto-reply: "Partner support team reviewing"
+  
+Partner portal (ERPNext):
+  - Login via magic link (no password)
+  - Dashboard: referral performance (YTD, last 30d)
+  - Download: referral reports, integration docs
+  - Support history: past tickets
+  - Self-serve: update contact info, download invoices
+  
+Chatwoot ticket for Akbar:
+  - Auto-pull: last interaction, current referral metrics
+  - SLA: first response <48h (Akbar gets reminder at 24h if unresolved)
+  - Auto-tag: "partner-critical" if tier=premium, "partner-standard" if tier=growth
+
+KPIs (auto-tracked):
+- Partner portal logins / week
+- Self-served requests (didn't create ticket)
+- Ticket volume by tier
+- SLA compliance (first response <48h)
+- Escalation trends (pattern detection)
+```
+
+**When escalation needed:** SLA breach >2 weeks, or partner submits "urgent" tag (Akbar paged).
+
+---
+
+### Flow 4: Internal (Chatwoot Inbox + Metrics)
+
+**All inbound** → Chatwoot unified inbox
+
+```
+Chatwoot dashboard (Akbar's single source of truth):
+- Unresolved tickets by priority: nonprofit-claim | partner | donor | feedback
+- Response time: oldest unresolved ticket (age in hours)
+- Escalation alerts: 
+  - "Nonprofit claim backlog > 5" 
+  - "Donor email unresponded >24h"
+  - "Partner SLA at risk"
+
+Weekly metrics review (Metabase, 15 min, every Monday):
+- Backlog trend (ticket creation vs resolution)
+- Response time by channel (voice, email, chat)
+- Auto-response rate (FAQ bot effectiveness)
+- Escalation triggers (when did alerts fire?)
+
+Tuning loop (if Akbar has time):
+- FAQ bot not matching? Update intent patterns in n8n
+- IVR voice scripts unclear? Re-record in Jambonz
+- Partner portal underused? Add a feature (e.g., download receipts)
+
+KPIs (auto-tracked):
+- Tickets created / week (demand signal)
+- Avg resolution time (days)
+- Backlog size (open tickets)
+- Escalation frequency (how often alerts fired)
+- Automation rate (% of inbound that didn't need human touch)
 ```
 
 ---
 
-## 4. KPI DASHBOARD (Metabase)
+## 3. LOOP: Monitoring + Optimization (Zero Staffing)
 
-### Nonprofit Onboarding
-- Claims started/week (funnel: start → email verified → form completed)
-- Days to first response (voice or email)
-- Days to claim approved
-- Voice vs web claim ratio
-- Claim abandonment rate
+### Daily
+- Chatwoot inbox check (15 min): resolve escalated tickets
 
-### Donor/Volunteer Support
-- Email response time (target: <4h)
-- Chat response time (target: <1h)
-- Resolution rate (1st response closes issue)
-- CSAT (post-resolution survey)
-- Most common questions (for FAQ automation)
+### Weekly (Monday, 15 min)
+- Metabase review: any alerts? Any trends?
+- If backlog >10: decide what to defer (all non-critical tickets get "thanks, will revisit next week" auto-reply)
 
-### Partner/Vendor
-- Partner satisfaction score (quarterly survey, Metabase snapshot)
-- Ticket volume by partner tier
-- SLA compliance (48h first response, 2wk close)
-- Average revenue per partner (track growth)
-- Churn rate (target: <5%/year)
+### Monthly (1st of month, 30 min)
+- Deep dive: 
+  - What % of inbound was auto-handled? (target: >70%)
+  - What was escalated? (patterns?)
+  - Any FAQ bot failures? (retrain)
+  - Any IVR failures? (re-record)
+- Adjust alert thresholds if needed
 
-### Internal Operations
-- Team capacity utilization (hours/person on tickets)
-- Burndown rate (tickets closed/week)
-- Backlog trend (new vs closed, target: zero growth)
-- Automation rate (% of tickets requiring zero human touch)
-- Cost per resolution (staff hours / tickets closed)
+### Quarterly (or when revenue permits)
+- Consider: hire first person? (only when Chatwoot backlog >50 for 2+ weeks)
+
+---
+
+## 4. WORKFLOW: How it Actually Works Day-to-Day
+
+### Morning (Akbar, 15 min)
+```
+1. Check Chatwoot: any escalated tickets?
+   - Nonprofit claim ready to approve? → send magic link
+   - Partner angry? → respond quickly
+   - Donor confused? → answer their question
+   
+2. Check n8n automation logs:
+   - Did IVR create tickets correctly? 
+   - Did FAQ bot match queries?
+   - Any errors to fix?
+```
+
+### Evening (Akbar, optional, 5 min)
+```
+Check escalation alerts:
+- Backlog growing? Decide: close old tickets with "thanks, circling back" or answer them
+- Any SLA breaches? Respond to partners immediately
+```
+
+### Weekend (Akbar, optional)
+```
+Review Metabase if automation rate is dropping
+Update FAQ patterns if lots of "unclear answer" responses
+```
 
 ---
 
@@ -167,122 +226,75 @@ Adjust targets, staffing model, or tool config based on trends
 
 | Principle | How Stack Respects It |
 |-----------|----------------------|
-| **P2: Privacy** | All self-hosted (no SaaS vendor); email/voice data stays on-prem; no donor tracking; transcripts encrypted |
-| **P3: Trust Signals** | Support email is @daanaa.org (not generic/shared); all responses traceable; no AI black-box (Jambonz scripts auditable) |
-| **P5: No Weaponization** | Support tone guides: helpful, respectful, no shame language; partner support is fair (no favoritism) |
-| **P7: Independence** | No third-party dependencies (own Jambonz instance, own Chatwoot, own Metabase); stack is open-source auditable |
-| **P10: AI as Tool** | Voice transcripts + IVR scripts are deterministic (Jambonz templates, not LLM-generated); team reviews before deploy |
+| **P2: Privacy** | All self-hosted (no SaaS); no tracking of support interactions; email/voice on-prem; no 3rd party vendor access |
+| **P3: Trust Signals** | Every ticket traceable; donor FAQ bot cites data source; escalations logged; no AI black-box (rule-based routing) |
+| **P5: No Weaponization** | Support tone: helpful, never accusatory; partner support fair (same SLA for all tiers); no shaming language |
+| **P7: Independence** | No Zendesk / Intercom / Firebase (all open-source self-hosted); can't be paywalled by vendor changes |
+| **P10: AI as Tool** | LLM FAQ bot is local + rule-based (semantic search, not generative); outputs human-reviewed before deploy |
 
 ---
 
-## 6. PHASE 2 ROADMAP (Aug 15 - Sep 30)
+## 6. PHASE: V0 LAUNCH (Immediate)
 
-### Week 1-2: Foundation (Aug 15-29)
-- Metabase on droplet + dashboard config (3h)
-- Chatwoot setup + Daanaa mailbox integration (4h)
-- n8n orchestration layer (email → Chatwoot routing) (3h)
-- **Test:** Send internal test emails, confirm routing works
+### Week 1: Core Setup (4 days)
+- **Day 1:** Chatwoot on droplet + domain email integration
+- **Day 2:** Jambonz on home server + SIP trunk signup (Voxbeam $20/mo)
+- **Day 3:** n8n for email triage + intent detection
+- **Day 4:** ERPNext nonprofit portal + Metabase dashboards
 
-### Week 3-4: Voice (Aug 30-Sep 12)
-- Jambonz setup on home server (6h)
-- SIP trunk config (Twilio or open-source SIP provider) (2h)
-- IVR script for nonprofit claim flow (3h)
-- Chatwoot webhook integration (Jambonz → ticket) (2h)
-- **Test:** Call in, trigger claim workflow, confirm transcript captured
+### Week 2: Testing & Tuning (2 days)
+- Test IVR: call in, verify claim ticket created
+- Test email: send FAQ questions, verify auto-responses
+- Test partner portal: login, view dashboard
+- **Go-live:** Announce phone number to nonprofits
 
-### Week 5-6: CRM + Automation (Sep 13-26)
-- ERPNext nonprofit onboarding doctype (4h)
-- n8n advanced rules (partner tickets → CRM, donor → FAQ-check) (3h)
-- Partner portal setup (ERPNext) (2h)
-- Metabase partner metrics dashboard (2h)
-- **Test:** Full end-to-end flow for each stakeholder
-
-### Week 7-8: Loop + Deploy (Sep 27-30)
-- Team training on daily/weekly loop (1h)
-- Metabase board on ops dashboard (1h)
-- Deploy to staging, 1-week pilot with ops team
-- Cutover to production (go-live Sep 30)
+### Ongoing: Monitor & Tune
+- Weekly Metabase review
+- FAQ bot improvements (add patterns as new questions arrive)
+- IVR script tuning (clarity)
 
 ---
 
-## 7. STAFFING MODEL
+## 7. COST BREAKDOWN
 
-### For Daanaa's Phase 2 (Launch + First 6mo)
-
-| Role | Hours/Week | Responsibilities |
-|------|-----------|------------------|
-| **Support Lead** (1 FTE) | 40h | Chatwoot inbox, nonprofit claims, partner escalations |
-| **Ops/Data** (0.5 FTE) | 20h | Metabase dashboards, n8n rule management, voice script updates |
-| **Dev** (on-call) | 5h | Jambonz webhook debugging, ERPNext custom fields, stack maintenance |
-
-**Cost:** ~$120K/year (assuming $60K/FTE support, $80K ops, $100K dev on-call)
-
-### How it Scales
-- **2M → 5M donors:** +1 support (now 2 FTE)
-- **100 → 500 nonprofit claims/month:** +0.5 FTE ops (data entry & voice script tuning)
-- **10 → 50 partners:** +0.25 FTE partner manager (within ops)
-
----
-
-## 8. BUDGET & RISKS
-
-### Total Cost (Year 1)
 | Item | Cost |
 |------|------|
-| Software licenses | $0 (all open-source) |
-| SIP trunk (Jambonz) | $50-200/mo = $600-2400/yr |
-| Droplet upgrades (compute) | $0 (existing capacity) |
-| Home server power (voice) | ~$20/mo = $240/yr |
-| Staffing (support + ops) | $90-120K |
-| **TOTAL** | **$91-123K** |
+| SIP trunk (Voxbeam/Plivo) | $20–50/month = $240–600/yr |
+| Server power / cooling (Jambonz on home server) | Already running |
+| LLM inference (Qwen on local GPU) | Already running |
+| **TOTAL** | **$240–600/yr** |
 
-### Risks & Mitigations
-| Risk | Mitigation |
-|------|-----------|
-| Jambonz setup complexity | Use Jambonz managed SIP (if needed) vs self-hosted SIP; 2-week buffer |
-| Voice transcription accuracy | Jambonz webhook → manual QA, update scripts if <95% accuracy |
-| Support volume ramp | Build in 20% over-capacity; monitor weekly, scale at 80% utilization |
-| Vendor SIP dependency | Keep Jambonz *control* self-hosted; only SIP *trunk* outsourced (commoditized) |
+No staffing cost. Automation handles 70–80% of inbound.
 
 ---
 
-## 9. SUCCESS CRITERIA (90 days)
+## 8. WHEN TO HIRE
 
-- ✅ **Nonprofit:** <4h email response, claim completion rate >80%
-- ✅ **Donor:** 90%+ FAQ autoresponse rate, CSAT >4.5/5
-- ✅ **Partner:** SLA 100% met, partner satisfaction >4/5
-- ✅ **Internal:** Zero backlog (closed ≥ opened weekly), automation rate >30%
-- ✅ **Stewardship:** Zero SaaS vendors, 100% audit trail in self-hosted stack
+**Trigger:** Chatwoot backlog stays >50 for 2+ weeks while Akbar is working 8+ hrs/day on support.
+
+**Then:** Hire 1 part-time support lead (16 hrs/week) to handle overflow. Cost: ~$30K/yr.
+
+---
+
+## 9. SUCCESS CRITERIA (30 days)
+
+- ✅ IVR live; ≥10 nonprofit claims via voice
+- ✅ Email triage working; ≥80% auto-response rate for FAQ questions
+- ✅ Partner portal used by ≥2 partners (self-served at least once)
+- ✅ Backlog <5 tickets (all handled within 48h)
+- ✅ Akbar spending <2 hrs/day on support (target: 1 hr/day)
 
 ---
 
 ## 10. NEXT STEPS
 
-1. **Align with Akbar** (this week)
-   - Confirm staffing model (support lead + ops FTE)
-   - Approve SIP trunk provider (Twilio, Plivo, or Voxbeam)
-   - Lock Phase 2 timeline (Aug 15 start)
-
-2. **Spin up repos** (Week 1)
-   - Fork Chatwoot, Jambonz, ERPNext, Metabase to Daanaa GitHub
-   - Document deployment: runbooks for each tool
-   - CI/CD pipeline for config-as-code
-
-3. **Staffing** (Immediate)
-   - Hire or designate support lead
-   - Identify ops person (could be Akbar part-time initially)
-   - On-call dev (Paris or junior contractor)
+1. **Immediately:** Spin up Chatwoot on droplet (3h)
+2. **This week:** Jambonz + n8n (10h dev time)
+3. **Next week:** Test, tune, launch phone number
+4. **Ongoing:** Weekly metrics review + monthly optimization
 
 ---
 
-## References
-
-- **Chatwoot:** https://github.com/chatwoot/chatwoot (14K stars, Docker, multi-tenant ready)
-- **Jambonz:** https://github.com/jambonz/jambonz-platform (1.5K stars, Node.js, webhook-driven)
-- **ERPNext:** https://github.com/frappe/erpnext (10K stars, Python, nonprofit use cases documented)
-- **Metabase:** https://github.com/metabase/metabase (27K stars, Docker, zero-code dashboards)
-- **n8n:** https://github.com/n8n-io/n8n (Workflow orchestration, self-hosted, active community)
-
-**Owner:** Claude Code + Akbar (product/strategy)  
+**Owner:** Claude Code (implementation) + Akbar (operational decisions)  
 **Last Updated:** 2026-06-20  
-**Next Review:** Aug 1 (pre-Phase 2 kickoff)
+**Next Review:** After Week 1 setup (go-live readiness check)
