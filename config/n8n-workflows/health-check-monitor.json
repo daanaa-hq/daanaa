@@ -1,0 +1,213 @@
+{
+  "name": "System Health Monitor",
+  "description": "Every 30 minutes: check service health, escalate alerts if thresholds breached",
+  "nodes": [
+    {
+      "parameters": {
+        "interval": [30],
+        "unit": "minutes"
+      },
+      "id": "1",
+      "name": "Cron Trigger (30 min)",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://chatwoot:3000/health"
+      },
+      "id": "2",
+      "name": "Check Chatwoot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 150],
+        "onError": "continueErrorHandling"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://n8n:5678/api/v1/workflows?limit=1"
+      },
+      "id": "3",
+      "name": "Check n8n",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300],
+      "onError": "continueErrorHandling"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://jambonz:3000/health"
+      },
+      "id": "4",
+      "name": "Check Jambonz",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 450],
+      "onError": "continueErrorHandling"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:5000/api/organizations?limit=1"
+      },
+      "id": "5",
+      "name": "Check Daanaa API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 600],
+      "onError": "continueErrorHandling"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://chatwoot:3000/api/v1/account/conversations?limit=1"
+      },
+      "id": "6",
+      "name": "Get Chatwoot Backlog Count",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [650, 150]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Evaluate all health checks\nconst chatwoot = $node['Check Chatwoot'].json?.status === 'ok' ? 'healthy' : 'unhealthy';\nconst n8n = $node['Check n8n'].json?.data ? 'healthy' : 'unhealthy';\nconst jambonz = $node['Check Jambonz'].json?.status === 'ok' ? 'healthy' : 'unhealthy';\nconst daanaaAPI = $node['Check Daanaa API'].json?.status === 200 ? 'healthy' : 'unhealthy';\nconst backlogCount = $node['Get Chatwoot Backlog Count'].json?.payload?.length || 0;\n\nconst alerts = [];\n\n// Check service health\nif (chatwoot === 'unhealthy') {\n  alerts.push({ severity: 'critical', message: 'Chatwoot is down', action: 'docker-compose -f /opt/chatwoot/docker-compose.yml restart' });\n}\nif (n8n === 'unhealthy') {\n  alerts.push({ severity: 'critical', message: 'n8n is down', action: 'docker-compose -f /opt/n8n/docker-compose.yml restart' });\n}\nif (jambonz === 'unhealthy') {\n  alerts.push({ severity: 'critical', message: 'Jambonz is down', action: 'docker-compose -f /opt/jambonz/docker-compose.yml restart' });\n}\nif (daanaaAPI === 'unhealthy') {\n  alerts.push({ severity: 'warning', message: 'Daanaa API unresponsive', action: 'Check API logs: tail -f /var/log/daanaa_api.log' });\n}\n\n// Check backlog\nif (backlogCount > 15) {\n  alerts.push({ severity: 'warning', message: 'High backlog: ' + backlogCount + ' unresolved tickets', action: 'Review and prioritize oldest escalations' });\n}\n\nreturn {\n  timestamp: new Date().toISOString(),\n  services: {\n    chatwoot,\n    n8n,\n    jambonz,\n    daanaa_api: daanaaAPI\n  },\n  metrics: {\n    backlog_count: backlogCount\n  },\n  alerts: alerts,\n  alert_count: alerts.length,\n  healthy: alerts.length === 0\n};"
+      },
+      "id": "7",
+      "name": "Evaluate Health",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "to": "akbar.khowaja@gmail.com",
+        "subject": "🔴 DAANAA AUTOMATION ALERT — {{ $node.Evaluate Health.json.alert_count }} Issue(s)",
+        "htmlBody": "<h2>System Health Alert</h2>\n<p><strong>Timestamp:</strong> {{ $node['Evaluate Health'].json.timestamp }}</p>\n<h3>Service Status</h3>\n<ul>\n  <li>Chatwoot: <strong>{{ $node['Evaluate Health'].json.services.chatwoot }}</strong></li>\n  <li>n8n: <strong>{{ $node['Evaluate Health'].json.services.n8n }}</strong></li>\n  <li>Jambonz: <strong>{{ $node['Evaluate Health'].json.services.jambonz }}</strong></li>\n  <li>Daanaa API: <strong>{{ $node['Evaluate Health'].json.services.daanaa_api }}</strong></li>\n</ul>\n<h3>Metrics</h3>\n<ul>\n  <li>Unresolved Chatwoot Tickets: {{ $node['Evaluate Health'].json.metrics.backlog_count }}</li>\n</ul>\n<h3>Alerts ({{ $node['Evaluate Health'].json.alert_count }})</h3>\n{{ $node['Evaluate Health'].json.alerts.map(a => \n  '<p><strong>[' + a.severity.toUpperCase() + ']</strong> ' + a.message + '<br/>Action: <code>' + a.action + '</code></p>'\n).join('') }}\n<p><a href='http://localhost:3000'>Open Chatwoot</a> | <a href='http://localhost:5678'>Open n8n</a></p>"
+      },
+      "id": "8",
+      "name": "Send Alert Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1050, 200],
+      "condition": "$node['Evaluate Health'].json.alert_count > 0"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5000/api/metrics/health",
+        "sendBody": true,
+        "bodyParameters": {
+          "raw": "{ \"services\": {{ $node['Evaluate Health'].json.services }}, \"metrics\": {{ $node['Evaluate Health'].json.metrics }}, \"healthy\": {{ $node['Evaluate Health'].json.healthy }}, \"timestamp\": \"{{ $node['Evaluate Health'].json.timestamp }}\" }"
+        }
+      },
+      "id": "9",
+      "name": "Log Health Metric",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 350]
+    }
+  ],
+  "connections": {
+    "Cron Trigger (30 min)": {
+      "main": [
+        [
+          {
+            "node": "Check Chatwoot",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check n8n",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Jambonz",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check Daanaa API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Chatwoot": {
+      "main": [
+        [
+          {
+            "node": "Get Chatwoot Backlog Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Chatwoot Backlog Count": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check n8n": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Jambonz": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Daanaa API": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Health": {
+      "main": [
+        [
+          {
+            "node": "Send Alert Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Health Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

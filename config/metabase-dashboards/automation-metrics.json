@@ -1,0 +1,246 @@
+{
+  "name": "Automation Stack KPI Dashboard",
+  "description": "Real-time metrics for email triage, voice claims, and escalations",
+  "cards": [
+    {
+      "id": 1,
+      "name": "Daily Email Volume",
+      "type": "line",
+      "query": {
+        "source-table": "metrics",
+        "aggregation": [["count"]],
+        "breakout": [["field", "timestamp", {"temporal-unit": "day"}]],
+        "filter": [
+          "and",
+          ["=", ["field", "source"], "email"],
+          [">", ["field", "timestamp"], ["relative-datetime", -30, "day"]]
+        ]
+      },
+      "visualization": "line",
+      "title": "📧 Emails Received",
+      "description": "Last 30 days, daily count"
+    },
+    {
+      "id": 2,
+      "name": "Auto-Response Rate",
+      "type": "gauge",
+      "query": {
+        "source-table": "metrics",
+        "expressions": {
+          "auto_rate": [
+            "/",
+            [
+              "count",
+              ["filter", ["=", ["field", "auto_responded"], true]]
+            ],
+            ["count"]
+          ]
+        },
+        "aggregation": [["expression", "auto_rate"]],
+        "filter": [
+          "and",
+          ["=", ["field", "source"], "email"],
+          [">", ["field", "timestamp"], ["relative-datetime", -7, "day"]]
+        ]
+      },
+      "visualization": "gauge",
+      "title": "✅ Auto-Response Rate (7d)",
+      "description": "% of emails auto-handled without escalation",
+      "gauge": {
+        "min": 0,
+        "max": 100,
+        "target": 75,
+        "warning": 60,
+        "critical": 40
+      }
+    },
+    {
+      "id": 3,
+      "name": "Escalation Rate by Intent",
+      "type": "pie",
+      "query": {
+        "source-table": "metrics",
+        "aggregation": [["count"]],
+        "breakout": [["field", "intent"]],
+        "filter": [
+          "and",
+          ["=", ["field", "source"], "email"],
+          [">", ["field", "timestamp"], ["relative-datetime", -7, "day"]]
+        ]
+      },
+      "visualization": "pie",
+      "title": "📊 Intent Distribution (7d)",
+      "description": "Breakdown of email intents: donation_link, support_ticket, volunteer_hours, feedback, unknown"
+    },
+    {
+      "id": 4,
+      "name": "Chatwoot Backlog Trend",
+      "type": "line",
+      "query": {
+        "source-table": "conversations",
+        "aggregation": [["count"]],
+        "breakout": [["field", "created_at", {"temporal-unit": "day"}]],
+        "filter": [
+          "and",
+          ["=", ["field", "status"], "open"],
+          [">", ["field", "created_at"], ["relative-datetime", -30, "day"]]
+        ]
+      },
+      "visualization": "line",
+      "title": "📋 Unresolved Tickets (30d)",
+      "description": "Count of open conversations by day (target: <10)"
+    },
+    {
+      "id": 5,
+      "name": "Avg Response Time (Escalations)",
+      "type": "number",
+      "query": {
+        "source-table": "conversations",
+        "aggregation": [
+          [
+            "avg",
+            ["field", "response_time_hours"]
+          ]
+        ],
+        "filter": [
+          "and",
+          ["=", ["field", "source"], "email"],
+          [">", ["field", "resolved_at"], ["relative-datetime", -7, "day"]]
+        ]
+      },
+      "visualization": "number",
+      "title": "⏱️  Avg Response Time (7d)",
+      "description": "Hours from escalation to Akbar response (target: <24h)"
+    },
+    {
+      "id": 6,
+      "name": "Voice Claims Attempted",
+      "type": "number",
+      "query": {
+        "source-table": "metrics",
+        "aggregation": [["count"]],
+        "filter": [
+          "and",
+          ["=", ["field", "source"], "voice"],
+          [">", ["field", "timestamp"], ["relative-datetime", -7, "day"]]
+        ]
+      },
+      "visualization": "number",
+      "title": "📞 Voice Claims (7d)",
+      "description": "Total call attempts received"
+    },
+    {
+      "id": 7,
+      "name": "Voice Claim Success Rate",
+      "type": "gauge",
+      "query": {
+        "source-table": "metrics",
+        "expressions": {
+          "success_rate": [
+            "/",
+            [
+              "count",
+              ["filter", ["=", ["field", "verified"], true]]
+            ],
+            ["count"]
+          ]
+        },
+        "aggregation": [["expression", "success_rate"]],
+        "filter": [
+          "and",
+          ["=", ["field", "source"], "voice"],
+          [">", ["field", "timestamp"], ["relative-datetime", -7, "day"]]
+        ]
+      },
+      "visualization": "gauge",
+      "title": "✅ Voice Claim Success (7d)",
+      "description": "% of voice claims successfully verified",
+      "gauge": {
+        "min": 0,
+        "max": 100,
+        "target": 80,
+        "warning": 60,
+        "critical": 40
+      }
+    },
+    {
+      "id": 8,
+      "name": "System Uptime",
+      "type": "number",
+      "query": {
+        "source-table": "health_checks",
+        "aggregation": [
+          [
+            "sum",
+            ["field", "uptime_percent"]
+          ]
+        ],
+        "filter": [
+          [">", ["field", "checked_at"], ["relative-datetime", -7, "day"]]
+        ]
+      },
+      "visualization": "number",
+      "title": "🟢 Uptime (7d)",
+      "description": "% of time all services were responding (target: >99%)"
+    },
+    {
+      "id": 9,
+      "name": "Email Processing Latency",
+      "type": "line",
+      "query": {
+        "source-table": "metrics",
+        "aggregation": [["avg", ["field", "processing_time_ms"]]],
+        "breakout": [["field", "timestamp", {"temporal-unit": "hour"}]],
+        "filter": [
+          "and",
+          ["=", ["field", "source"], "email"],
+          [">", ["field", "timestamp"], ["relative-datetime", -7, "day"]]
+        ]
+      },
+      "visualization": "line",
+      "title": "⚡ Email Processing Latency (7d)",
+      "description": "Milliseconds from email arrival to intent detection + response/escalation (target: <500ms)"
+    },
+    {
+      "id": 10,
+      "name": "Weekly Health Summary",
+      "type": "table",
+      "query": {
+        "source-table": "metrics",
+        "aggregation": [
+          ["count"],
+          [
+            "sum",
+            ["field", "auto_responded"]
+          ],
+          [
+            "avg",
+            ["field", "response_time_hours"]
+          ]
+        ],
+        "breakout": [
+          [
+            "field",
+            "timestamp",
+            {"temporal-unit": "week"}
+          ]
+        ],
+        "filter": [
+          [">", ["field", "timestamp"], ["relative-datetime", -8, "week"]]
+        ]
+      },
+      "visualization": "table",
+      "title": "📈 Weekly Summary",
+      "description": "Emails | Auto-Handled | Avg Response Time (h)"
+    }
+  ],
+  "layout": {
+    "rows": [
+      {"cards": [1, 2, 3]},
+      {"cards": [4, 5]},
+      {"cards": [6, 7, 8]},
+      {"cards": [9]},
+      {"cards": [10]}
+    ]
+  }
+}

@@ -1,0 +1,242 @@
+{
+  "name": "FAQ Bot - Semantic Search",
+  "description": "Answer common donor/nonprofit questions via semantic similarity matching",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "faq-query",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11436/v1/embeddings",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "raw": "{ \"input\": \"{{ $node.Webhook.json.query }}\", \"model\": \"mxbai-embed-large\" }"
+        }
+      },
+      "id": "2",
+      "name": "Embed Query",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:5000/api/faq/search?query={{ $node.Webhook.json.query }}&limit=3",
+        "options": {}
+      },
+      "id": "3",
+      "name": "Search FAQ Database",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract and rank FAQ results by similarity\nconst results = $node['Search FAQ Database'].json.results || [];\nconst topResult = results[0];\n\n// Confidence threshold: 0.7 on cosine similarity\nconst confidence = topResult?.similarity || 0;\n\nreturn {\n  found: results.length > 0,\n  confidence: confidence,\n  should_respond: confidence >= 0.7 && results.length > 0,\n  top_result: topResult,\n  all_results: results.slice(0, 3),\n  original_query: $node.Webhook.json.query\n};"
+      },
+      "id": "4",
+      "name": "Evaluate Match Quality",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": [
+            {
+              "condition": "boolean",
+              "value1": "{{ $node['Evaluate Match Quality'].json.should_respond }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "High Confidence Match?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "to": "{{ $node.Webhook.json.email }}",
+        "subject": "Re: {{ $node.Webhook.json.subject }}",
+        "htmlBody": "<p>Hi there,</p>\n<p>{{ $node['Evaluate Match Quality'].json.top_result.answer }}</p>\n<p>Learn more: {{ $node['Evaluate Match Quality'].json.top_result.source_url }}</p>\n<p>For more help, email support@daanaa.org</p>\n<p>Best,<br/>Daanaa FAQ Bot</p>"
+      },
+      "id": "6",
+      "name": "Send FAQ Response",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [1250, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://chatwoot:3000/api/v1/inboxes/1/messages",
+        "authentication": "genericCredentialType",
+        "genericCredentials": "chatwoot_api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "FAQ Query (low confidence: {{ $node['Evaluate Match Quality'].json.confidence }}):\n\nOriginal query: {{ $node['Evaluate Match Quality'].json.original_query }}\n\nTop match (confidence: {{ $node['Evaluate Match Quality'].json.confidence }}):\n{{ $node['Evaluate Match Quality'].json.top_result.question }}\nAnswer: {{ $node['Evaluate Match Quality'].json.top_result.answer }}\n\nManual review recommended."
+            },
+            {
+              "name": "email",
+              "value": "{{ $node.Webhook.json.email }}"
+            },
+            {
+              "name": "source_id",
+              "value": "faq_escalation"
+            },
+            {
+              "name": "custom_attributes",
+              "value": "{ \"faq_query\": true, \"confidence\": \"{{ $node['Evaluate Match Quality'].json.confidence }}\", \"question\": \"{{ $node['Evaluate Match Quality'].json.original_query }}\" }"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "Escalate Low Confidence",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://metabase:3000/api/card",
+        "authentication": "genericCredentialType",
+        "genericCredentials": "metabase_api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query_type",
+              "value": "faq"
+            },
+            {
+              "name": "confidence",
+              "value": "{{ $node['Evaluate Match Quality'].json.confidence }}"
+            },
+            {
+              "name": "responded",
+              "value": "{{ $node['Evaluate Match Quality'].json.should_respond }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "{{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "Log FAQ Metric",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1450, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Embed Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed Query": {
+      "main": [
+        [
+          {
+            "node": "Search FAQ Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search FAQ Database": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Match Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Match Quality": {
+      "main": [
+        [
+          {
+            "node": "High Confidence Match?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "High Confidence Match?": {
+      "main": [
+        [
+          {
+            "node": "Send FAQ Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Escalate Low Confidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send FAQ Response": {
+      "main": [
+        [
+          {
+            "node": "Log FAQ Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalate Low Confidence": {
+      "main": [
+        [
+          {
+            "node": "Log FAQ Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
