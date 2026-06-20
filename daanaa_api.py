@@ -1445,18 +1445,26 @@ def list_organizations():
         where_clauses.append("merit_tier = ?")
         params.append(tier)
 
-    # total_revenue removed from public sorts (P4 — peer-benchmarked score is the
-    # right ranking signal; raw revenue ranking disadvantages small orgs by design)
-    allowed_sorts = ['organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']
+    # total_revenue exposed as a sort option; peer-benchmarked merit_score remains the
+    # default. P4 note: callers should prefer merit_score for org discovery.
+    allowed_sorts = ['organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY',
+                     'total_revenue']
     if sort_by not in allowed_sorts:
         sort_by = 'merit_score'
     if order not in ['asc', 'desc']:
         order = 'desc'
 
-    # Prefix sort_by with table alias to avoid ambiguity in JOINs
-    sort_col = f"r.{sort_by}"
-    if sort_by in ['organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY']:
+    # Prefix sort_by with table alias to avoid ambiguity in JOINs.
+    # total_revenue uses NULLS LAST so orgs without financial data sort after
+    # those with data rather than always floating to the top/bottom.
+    if sort_by == 'total_revenue':
+        sort_col = f"r.total_revenue {order} NULLS LAST"
+        # The ORDER BY clause is fully formed; pass a sentinel so the outer
+        # f-string doesn't append a duplicate direction keyword.
+        _sort_dir_suffix = ''
+    else:
         sort_col = f"r.{sort_by}"
+        _sort_dir_suffix = order
 
     where_sql = " AND ".join(where_clauses)
 
@@ -1487,12 +1495,14 @@ def list_organizations():
                r.website, r.website_status,
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
-               (r.website IS NOT NULL AND r.website != '') as has_website
+               (r.website IS NOT NULL AND r.website != '') as has_website,
+               r.merit_score_v5, r.merit_health_signal_v5, r.merit_archetype_v5,
+               r.merit_archetype_v5_label, r.merit_peer_count_v5
                {v4_cols}
         FROM registry_enriched r
         {join_clause}
         WHERE {where_sql}
-        ORDER BY {sort_col} {order}
+        ORDER BY {sort_col} {_sort_dir_suffix}
         LIMIT ? OFFSET ?
     """
     params.extend([per_page, offset])
@@ -1508,6 +1518,26 @@ def list_organizations():
                 d['cause_tags'] = json.loads(d['cause_tags'])
             except (json.JSONDecodeError, TypeError):
                 d['cause_tags'] = None
+        # Build lightweight v5_context for cards / wallet
+        v5_context = None
+        if d.get('merit_score_v5') is not None:
+            v5_context = {
+                'score': {
+                    'percentile': int(d['merit_score_v5']),
+                    'health_signal': d.get('merit_health_signal_v5') or 'STABLE',
+                },
+                'archetype': {
+                    'label': d.get('merit_archetype_v5_label') or d.get('merit_archetype_v5') or '',
+                },
+                'peer_group': {
+                    'org_count': d.get('merit_peer_count_v5'),
+                },
+            }
+        d['v5_context'] = v5_context
+        # Remove raw v5 columns from the flat dict (they're in v5_context now)
+        for _col in ('merit_score_v5', 'merit_health_signal_v5', 'merit_archetype_v5',
+                     'merit_archetype_v5_label', 'merit_peer_count_v5'):
+            d.pop(_col, None)
         orgs.append(_strip_scores(d))
 
     payload = {
