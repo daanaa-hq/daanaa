@@ -16,7 +16,7 @@ LOW [network] restart_api.sh:22 — gunicorn binds 0.0.0.0:5000 (deliberate LAN+
 FIXED 2026-06-09 [resilience] frontend/src/data/api.ts — fetchJson now uses AbortSignal.timeout(10s) with a human-readable timeout message; all API calls covered
 FIXED 2026-06-09 [resilience] Directory.tsx — fused error captured; degrades to keyword results when available, surfaces error UI only when nothing to show
 FIXED 2026-06-09 [bug-found-in-session-3] daanaa_api.py:2202 — fused search 500'd on EVERY query (surge_boosts table absent; wiped by catalog sync) — now try/except OperationalError; pre-existing bug exposed because audit latency probes never checked status codes (lesson logged)
-LOW [a11y] frontend/src — 57 aria- / 14 alt= across 146 files; icon-only buttons + FilterSheet need targeted pass — audit FilterSheet, CompareBar, icon buttons
+FIXED 2026-06-20 [a11y] frontend/src — FilterSheet: role=dialog + aria-modal + aria-label on close btn + aria-hidden on backdrop; ScoreBreakdown: aria-label on close; OrgClaimEditor: aria-label on tag remove btns; CompareBar already had labels
 FIXED 2026-06-09 [cleanup] — 3 dead GivingList pages deleted; legacy scorers → archive/legacy_scorers_20260609/; dormant api/main.py → archive/api_fastapi_20260609/; CLAUDE.md architecture section rewritten (daanaa_api.py sole backend, v4_0 canonical scorer)
 INFO [honesty] components/FinancialContext.tsx — tier labels render human-readable + confidence + explanation + data-quality flags — PASSES stewardship principle 3, no fix needed
 INFO [xss] components/ui/chart.tsx:83 — dangerouslySetInnerHTML is shadcn CSS-var boilerplate, not user data — no action
@@ -41,7 +41,7 @@ INFO [perf] response cache works (TTLs 15min-2h); cold→warm 3.66s→0.007s
 
 ## Phase 5 — Stewardship
 MED [governance] daanaa_api.py:1096 — Principle 3 gap = Phase 3 CRITICAL (revoked orgs w/ badges); cross-ref, fix once
-LOW [docs] CLAUDE.md + stale prompts — "12 principles" / "7-principle mission-lock" don't exist; canon is 11 principles + 7 privacy invariants — correct stale references
+FIXED 2026-06-20 [docs] docs/audit/README.md — "12 principles" → "11 principles" (canon); CLAUDE.md was already correct
 INFO [governance] 9/11 principles verified enforced in code; privacy_check.sh live in pre-commit; all 7 privacy invariants re-verified including live log inspection
 
 ## Phase 0 — Structure (context notes, not defects)
