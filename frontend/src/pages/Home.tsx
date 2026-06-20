@@ -309,8 +309,8 @@ function FeaturedCause() {
   const cat = NTEE_CATEGORIES.find(c => c.id === featured.id)
   if (!cat) return null
   return (
-    <section className="bg-deep-navy border-b border-white/10">
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-9 md:py-12">
+    <section className="bg-deep-navy border-b border-white/10 py-14 md:py-20">
+      <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className="flex flex-col md:flex-row items-center gap-7 md:gap-11">
           {/* Diamond logo */}
           <Link to={`/causes/${cat.id}`} className="shrink-0">
@@ -633,7 +633,7 @@ function StatsBar() {
 // ─── Trust Tiers strip ────────────────────────────────────────────────────────
 function TiersStrip() {
   return (
-    <section className="bg-white border-t border-b border-light-grey py-9">
+    <section className="bg-white border-t border-b border-light-grey py-14 md:py-20">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-0">
 
