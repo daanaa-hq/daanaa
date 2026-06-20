@@ -608,27 +608,56 @@ export default function OrganizationDetail() {
                 const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
 
                 return (
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    {!link.url && (
-                      <a
-                        href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
+                  <>
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      {!link.url && (
+                        <a
+                          href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
+                        >
+                          View public record
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                        </a>
+                      )}
+                      <AddToWalletButton ein={org.ein} orgName={org.name} />
+                      <button
+                        onClick={() => setShowVolunteer(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-muted-cream/40 font-body text-[13px] font-medium text-muted-cream hover:border-warm-cream hover:text-warm-cream transition-colors"
                       >
-                        View public record
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-                      </a>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Volunteer with this org
+                      </button>
+                    </div>
+                    {!link.url && (
+                      <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 max-w-[480px]">
+                        <p className="font-body text-[11px] tracking-[0.06em] uppercase font-medium text-muted-cream mb-3">How to give</p>
+                        <div className="flex flex-col gap-2.5">
+                          <div className="flex items-start gap-2">
+                            <span className="font-body text-[12px] text-muted-cream shrink-0 mt-0.5">EIN:</span>
+                            <div>
+                              <span className="font-body text-[13px] font-semibold text-warm-cream">{apiOrg!.EIN}</span>
+                              <p className="font-body text-[11px] text-muted-cream/70 mt-0.5">Use this for a donor-advised fund gift or when writing a check.</p>
+                            </div>
+                          </div>
+                          {apiOrg!.street_address && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-body text-[12px] text-muted-cream shrink-0 mt-0.5">Address:</span>
+                              <span className="font-body text-[12px] text-warm-cream/90">
+                                {[apiOrg!.street_address, apiOrg!.CITY, apiOrg!.STATE, apiOrg!.zipcode].filter(Boolean).join(', ')}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {!apiOrg!.street_address && (
+                          <p className="mt-2.5 font-body text-[11px] text-muted-cream/60">
+                            Most donor-advised funds accept gifts to any IRS-recognized nonprofit by EIN alone.
+                          </p>
+                        )}
+                      </div>
                     )}
-                    <AddToWalletButton ein={org.ein} orgName={org.name} />
-                    <button
-                      onClick={() => setShowVolunteer(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-muted-cream/40 font-body text-[13px] font-medium text-muted-cream hover:border-warm-cream hover:text-warm-cream transition-colors"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                      Volunteer with this org
-                    </button>
-                  </div>
+                  </>
                 );
               })()}
 
@@ -934,6 +963,10 @@ export default function OrganizationDetail() {
                   <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
                     {apiOrg!.organization_name} is a federally recognized nonprofit with financial filings on public record. They hold federal tax-exempt status as a charitable organization. This profile will grow as more data becomes available.
                   </p>
+                ) : lampTier === 'Candle' ? (
+                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
+                    {apiOrg!.organization_name} is a federally recognized nonprofit with some financial filings on public record. They hold federal tax-exempt status as a charitable organization. A full peer financial profile becomes available once their 990 is processed and scored within their peer group.
+                  </p>
                 ) : (
                   <>
                     <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
@@ -1003,7 +1036,11 @@ export default function OrganizationDetail() {
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
                       <p className="font-body text-[13px] font-medium text-deep-navy">Is this your nonprofit?</p>
-                      <p className="font-body text-[12px] text-cool-grey mt-0.5">Add your mission, website, and updates. Free.</p>
+                      <p className="font-body text-[12px] text-cool-grey mt-0.5">
+                        {lampTier === 'Spark'
+                          ? 'This page shows IRS records only. Claim it to add your story, website, and how people can help.'
+                          : 'Add your mission, website, and updates. Free.'}
+                      </p>
                     </div>
                     <Link
                       to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
