@@ -138,7 +138,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         {org.website && (
           <a
             href={org.website}
@@ -161,9 +161,13 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
         )}
         <Link
           to={`/org/${org.ein}`}
-          className="flex-1 px-3 py-2 rounded-xl border border-light-grey text-cool-grey font-body text-[13px] font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors text-center"
+          aria-label={`View ${org.name} detail page`}
+          className="shrink-0 p-2 rounded-lg text-cool-grey hover:text-deep-navy hover:bg-light-grey/40 transition-colors"
+          title="View detail page"
         >
-          View
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 17 17 7M17 7H8M17 7v9"/>
+          </svg>
         </Link>
       </div>
     </div>
