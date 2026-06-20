@@ -120,6 +120,7 @@ function MSAPicker({ values, onChange }: {
             <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 bg-soft-gold/20 text-deep-navy rounded-full font-body text-[12px]">
               {v}
               <button type="button" onClick={() => onChange(values.filter(x => x !== v))}
+                aria-label={`Remove ${v}`}
                 className="text-cool-grey hover:text-deep-navy leading-none ml-0.5">×</button>
             </span>
           ))}

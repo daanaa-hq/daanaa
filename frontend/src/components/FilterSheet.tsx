@@ -90,10 +90,13 @@ export default function FilterSheet({
   return (
     <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
 
       {/* Sheet */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filters"
         className="relative bg-white rounded-t-2xl max-h-[85dvh] flex flex-col"
         style={{ animation: 'slideUp 0.25s ease-out' }}
       >
@@ -107,8 +110,8 @@ export default function FilterSheet({
               </span>
             )}
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full hover:bg-light-grey transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2">
+          <button onClick={onClose} aria-label="Close filters" className="p-1.5 rounded-full hover:bg-light-grey transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>

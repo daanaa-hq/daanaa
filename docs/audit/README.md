@@ -18,7 +18,7 @@ This directory holds the audit of Daanaa against mission constraints, security, 
 - **PHASE 2:** Frontend + UX + accessibility (XSS, mixed content, error handling, tier explanations, keyboard nav)
 - **PHASE 3:** Data credibility (BMF ingest validation, data freshness visibility, tier assignment logic, revocations)
 - **PHASE 4:** Performance (droplet slowness diagnosis: CPU, memory, query, embedding server, caching)
-- **PHASE 5:** Stewardship reconciliation (each of 12 principles + 7 privacy invariants → enforced in code? gaps?)
+- **PHASE 5:** Stewardship reconciliation (each of 11 principles + 7 privacy invariants → enforced in code? gaps?)
 - **PHASE 6:** Synthesis (top 5 CRITICAL/HIGH fixes, quick wins, fix sequence for future sessions)
 
 ### Constraints enforced
