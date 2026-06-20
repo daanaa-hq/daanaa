@@ -186,6 +186,13 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
           Link from our records. Websites can change. If it is broken, search for them by name.
         </p>
       )}
+      {org.givingIntent?.type === 'giving' && org.givingIntent?.status !== 'withdrawn' && !org.website && (
+        <div className="mt-3 p-3 rounded-lg bg-soft-gold/[0.06] border border-soft-gold/20">
+          <p className="font-body text-[11px] font-medium text-deep-navy mb-1">Give by EIN</p>
+          <p className="font-body text-[13px] font-semibold text-deep-navy">{org.ein}</p>
+          <p className="font-body text-[11px] text-cool-grey mt-1">Use this for a donor-advised fund gift or when writing a check. The full mailing address is on their profile page.</p>
+        </div>
+      )}
     </div>
   )
 }

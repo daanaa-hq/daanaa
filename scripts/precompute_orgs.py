@@ -54,7 +54,7 @@ def org_to_dict(row):
         'ntee1_total_orgs': row[8],
         'source': row[9],
         'zipcode': row[10],
-        'address': row[11],
+        'street_address': row[11],
         'revenue_band': row[12],
         'peer_percentile': row[13],
         'peer_rank': row[14],
@@ -181,7 +181,7 @@ def main():
         SELECT
             EIN, organization_name, NTEE1, NTEECC, CITY, STATE,
             total_revenue, ntee1_percentile, ntee1_total_orgs, source,
-            zipcode, NULL as address, revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
+            zipcode, street_address, revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
             latest_tax_year, data_source, updated_at, merit_tier, merit_score,
             merit_band, financial_health, months_of_reserve, net_assets,
             total_expenses, total_liabilities, employee_count, program_expense_pct,

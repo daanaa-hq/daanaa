@@ -603,7 +603,7 @@ export default function OrganizationDetail() {
                     {apiOrg.phone}
                   </a>
                   <p className="mt-1.5 font-body text-[11px] text-cool-grey">
-                    Questions about volunteering? Call the organization directly.
+                    Contact them to give, volunteer, or learn more.
                   </p>
                 </div>
               )}
