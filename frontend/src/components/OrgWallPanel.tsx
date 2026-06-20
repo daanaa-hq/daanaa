@@ -11,6 +11,7 @@ const LAMP_PATH = [
   'Z',
 ].join(' ')
 
+import { Link } from 'react-router-dom'
 import SupportIntent from './SupportIntent'
 
 interface OrgWallPanelProps {
@@ -19,7 +20,6 @@ interface OrgWallPanelProps {
 }
 
 export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
-  const mailtoHref = `mailto:orgs@daanaa.org?subject=Claim our page for ${encodeURIComponent(orgName)}&body=Hi%2C%20I%27d%20like%20to%20claim%20the%20Daanaa%20page%20for%20${encodeURIComponent(orgName)}%20(EIN%20${encodeURIComponent(ein)}).%20Please%20help%20us%20get%20started.`
 
   return (
     <div
@@ -62,12 +62,12 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
 
         <p className="font-body text-[13px] text-cool-grey leading-[1.55]">
           Are you with this organization?{' '}
-          <a
-            href={mailtoHref}
+          <Link
+            to={`/claim/verify?ein=${encodeURIComponent(ein)}`}
             className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2"
           >
             Claim this page for free.
-          </a>
+          </Link>
         </p>
 
         <div className="w-full pt-4 mt-1 border-t" style={{ borderColor: '#E5E0DB' }}>
