@@ -64,7 +64,15 @@ def main():
             cause_tags       TEXT,
             is_hidden_gem    INTEGER DEFAULT 0,
             data_source      TEXT,
-            source           TEXT
+            source           TEXT,
+            merit_archetype_v5       TEXT,
+            merit_archetype_v5_label TEXT,
+            merit_band_v5            TEXT,
+            merit_band_v5_label      TEXT,
+            merit_score_v5           REAL,
+            merit_health_signal_v5   TEXT,
+            merit_peer_group_v5      TEXT,
+            merit_peer_count_v5      INTEGER
         );
 
         CREATE VIRTUAL TABLE IF NOT EXISTS org_search USING fts5(
@@ -100,7 +108,10 @@ def main():
             ruling_date, website, website_status,
             donate_url, donate_platform, donate_url_status,
             cause_tags, is_hidden_gem,
-            data_source, source
+            data_source, source,
+            merit_archetype_v5, merit_archetype_v5_label, merit_band_v5,
+            merit_band_v5_label, merit_score_v5, merit_health_signal_v5,
+            merit_peer_group_v5, merit_peer_count_v5
         FROM registry_enriched
         ORDER BY merit_score DESC NULLS LAST
     """
@@ -123,6 +134,9 @@ def main():
             r["donate_url"], r["donate_platform"], r["donate_url_status"],
             r["cause_tags"], 1 if r["is_hidden_gem"] else 0,
             r["data_source"], r["source"],
+            r["merit_archetype_v5"], r["merit_archetype_v5_label"], r["merit_band_v5"],
+            r["merit_band_v5_label"], r["merit_score_v5"], r["merit_health_signal_v5"],
+            r["merit_peer_group_v5"], r["merit_peer_count_v5"],
         ))
         batch_fts.append((r["EIN"], r["organization_name"] or "", r["mission"] or "",
                           r["NTEE1"] or "", r["NTEECC"] or "",
@@ -131,7 +145,7 @@ def main():
         if len(batch_orgs) >= BATCH:
             dest.executemany("""
                 INSERT OR REPLACE INTO orgs VALUES (
-                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+                    ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
                 )
             """, batch_orgs)
             dest.executemany("""
@@ -150,7 +164,7 @@ def main():
     if batch_orgs:
         dest.executemany("""
             INSERT OR REPLACE INTO orgs VALUES (
-                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+                ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
             )
         """, batch_orgs)
         dest.executemany("""

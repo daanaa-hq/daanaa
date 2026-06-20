@@ -8,8 +8,16 @@ import sqlite3
 import json
 import gzip
 import os
+import sys
 from pathlib import Path
 from datetime import datetime
+
+# Pull in shared v5 context builder (same function used by precompute_orgs.py)
+try:
+    sys.path.insert(0, str(Path(__file__).parent))
+    from enrich_api_responses import build_v5_context
+except ImportError:
+    build_v5_context = None
 
 DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
 OUTPUT_DIR = os.path.join(os.environ.get("PRECOMPUTE_OUT", "precompute_output"), "browse")
@@ -92,9 +100,25 @@ def org_to_dict(row):
         'website': row[29],
         'website_status': row[30],
         'cause_tags': json.loads(row[31]) if row[31] else None,
+        'is_hidden_gem': bool(row[40]) if row[40] is not None else False,
         # donate_* fields intentionally not emitted (2026-06-10): no donation
         # links on public surfaces — data stays internal for the claim flow.
+        'v5_context': _build_v5(row),
     }
+
+
+def _build_v5(row):
+    """Build v5_context dict from v5 columns appended to the SELECT (row[32..39])."""
+    if not build_v5_context or row[32] is None:
+        return None
+    try:
+        return build_v5_context(
+            row[32], row[33], row[34], row[35],   # archetype key/label, band key/label
+            row[36], row[37], row[38], row[39],   # score, health_signal, peer_group, peer_count
+            row[22],                               # months_of_reserve
+        )
+    except Exception:
+        return None
 
 
 def main():
@@ -126,7 +150,10 @@ def main():
                     latest_tax_year, data_source, updated_at, merit_tier, merit_score,
                     merit_band, financial_health, months_of_reserve, net_assets,
                     total_expenses, employee_count, program_expense_pct,
-                    mission, mission_source, website, website_status, cause_tags
+                    mission, mission_source, website, website_status, cause_tags,
+                    merit_archetype_v5, merit_archetype_v5_label, merit_band_v5,
+                    merit_band_v5_label, merit_score_v5, merit_health_signal_v5,
+                    merit_peer_group_v5, merit_peer_count_v5, is_hidden_gem
                 FROM registry_enriched
                 -- Only surface orgs where donating is currently tax-deductible:
                 -- deductible 501(c)(3) AND not IRS-revoked. Fail closed on revocation.
@@ -187,7 +214,10 @@ def main():
                 latest_tax_year, data_source, updated_at, merit_tier, merit_score,
                 merit_band, financial_health, months_of_reserve, net_assets,
                 total_expenses, employee_count, program_expense_pct,
-                mission, mission_source, website, website_status, cause_tags
+                mission, mission_source, website, website_status, cause_tags,
+                merit_archetype_v5, merit_archetype_v5_label, merit_band_v5,
+                merit_band_v5_label, merit_score_v5, merit_health_signal_v5,
+                merit_peer_group_v5, merit_peer_count_v5, is_hidden_gem
             FROM registry_enriched
             -- Only surface orgs where donating is currently tax-deductible (see above).
             WHERE NTEE1 = ? AND deductibility = 1 AND org_status = 'active'

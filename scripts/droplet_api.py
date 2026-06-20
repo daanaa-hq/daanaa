@@ -191,6 +191,71 @@ def _strip_donate(d: dict) -> dict:
     return d
 
 
+# Peer benchmark stats per (archetype, band) — mirrors enrich_api_responses.py
+_V5_BENCHMARKS = {
+    ('donation_funded', 'micro'):         {'p25': 6.2,   'p50': 19.2, 'p75': 61.8,  'hr': 49.0},
+    ('donation_funded', 'professional'):  {'p25': 4.7,   'p50': 12.9, 'p75': 32.8,  'hr': 54.6},
+    ('donation_funded', 'established'):   {'p25': 4.5,   'p50': 11.4, 'p75': 26.4,  'hr': 51.2},
+    ('fee_for_service', 'micro'):         {'p25': 8.0,   'p50': 21.0, 'p75': 40.0,  'hr': 50.0},
+    ('fee_for_service', 'professional'):  {'p25': 5.0,   'p50': 10.0, 'p75': 20.0,  'hr': 45.0},
+    ('fee_for_service', 'established'):   {'p25': 4.0,   'p50': 8.8,  'p75': 18.0,  'hr': 42.0},
+    ('endowment', 'micro'):               {'p25': 120.0, 'p50': 120.0,'p75': 120.0, 'hr': 98.0},
+    ('endowment', 'professional'):        {'p25': 120.0, 'p50': 120.0,'p75': 120.0, 'hr': 99.0},
+    ('endowment', 'established'):         {'p25': 120.0, 'p50': 120.0,'p75': 120.0, 'hr': 99.0},
+}
+
+
+def _assemble_v5_context(d: dict) -> dict | None:
+    """Build the v5_context dict from individual v5 columns in a search.db row."""
+    arch_key = d.pop('merit_archetype_v5', None)
+    arch_label = d.pop('merit_archetype_v5_label', None)
+    band_key = d.pop('merit_band_v5', None)
+    band_label = d.pop('merit_band_v5_label', None)
+    score = d.pop('merit_score_v5', None)
+    health = d.pop('merit_health_signal_v5', None)
+    peer_group = d.pop('merit_peer_group_v5', None)
+    peer_count = d.pop('merit_peer_count_v5', None)
+    reserves = d.get('months_of_reserve')
+
+    if not arch_key:
+        return None
+
+    bench = _V5_BENCHMARKS.get((arch_key, band_key), {})
+    p50 = bench.get('p50', 0)
+
+    if health == 'HEALTHY':
+        health_desc = 'Above the typical level for similar organizations, suggesting solid financial stability.'
+    elif health == 'STABLE':
+        health_desc = 'Close to the typical level for similar organizations, showing steady financial management.'
+    else:
+        health_desc = 'Below the typical level for similar organizations. This organization may be in a growth phase or operating lean by design.'
+
+    if reserves and p50:
+        explanation = (
+            f"This organization is a {arch_label} nonprofit with a budget in the {band_label} range. "
+            f"Looking at its financial reserves: Organizations like this one typically keep about {int(p50)} months "
+            f"of operating costs in reserve. This one has {reserves:.1f} months. {health_desc} "
+            f"This comparison is based on public IRS 990 data from {(peer_count or 0):,} similar organizations."
+        )
+    else:
+        explanation = "Financial data not available from IRS Form 990."
+
+    return {
+        'archetype': {'key': arch_key, 'label': arch_label},
+        'band': {'key': band_key, 'label': band_label},
+        'peer_group': {'label': peer_group, 'org_count': peer_count},
+        'score': {'percentile': int(score) if score is not None else 0, 'health_signal': health},
+        'benchmarks': {
+            'reserves_months': {
+                'p25': bench.get('p25', 0), 'p50': p50,
+                'p75': bench.get('p75', 0), 'your_value': reserves,
+            },
+            'healthy_rate_peer': bench.get('hr', 0),
+        },
+        'donor_explanation': explanation,
+    }
+
+
 def _row_to_org(row) -> dict:
     """Convert a search.db orgs row to the org dict the frontend expects."""
     d = dict(row)
@@ -202,6 +267,9 @@ def _row_to_org(row) -> dict:
             d['cause_tags'] = []
     d['is_hidden_gem'] = bool(d.get('is_hidden_gem'))
     d['data_badges'] = {'mission': d.get('mission_source')}
+    # Assemble v5_context from v5 columns (present after search.db rebuild with v5 fields)
+    if 'merit_archetype_v5' in d:
+        d['v5_context'] = _assemble_v5_context(d)
     return _strip_donate(d)
 
 
