@@ -25,7 +25,7 @@ export default function SupportIntent({ orgName, ein }: { orgName: string; ein: 
     return (
       <p className="font-body text-[12px] text-cool-grey leading-[1.5]">
         Thank you. When {orgName} claims their page, they'll see there's interest in
-        volunteering — anonymously. We never store who you are.
+        volunteering, anonymously. We never store who you are.
       </p>
     )
   }
@@ -33,7 +33,7 @@ export default function SupportIntent({ orgName, ein }: { orgName: string; ein: 
   return (
     <div>
       <p className="font-body text-[12px] text-cool-grey mb-2 leading-[1.5]">
-        Want to support {orgName}? Let them know there's interest — anonymously.
+        Want to support {orgName}? Let them know there's interest, anonymously.
       </p>
       <div className="flex flex-wrap gap-2">
         <button

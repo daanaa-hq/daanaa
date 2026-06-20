@@ -185,7 +185,7 @@ export default function V5FeedbackForm({ org, archetype }: V5FeedbackProps) {
           onChange={(e) => setOtherFeedback(e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           rows={2}
-          placeholder="Optional — anything else we should know"
+          placeholder="Optional: anything else we should know"
         />
       </div>
 

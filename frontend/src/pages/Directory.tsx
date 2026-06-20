@@ -518,7 +518,7 @@ export default function Directory() {
             {searchMode === 'browse' && <div className="flex items-center gap-2 flex-wrap pb-4">
             {/* Discovery toggles — each keeps its own color (even when off) + a tooltip */}
             {[
-              { key: 'hg', label: 'Hidden gems', tip: 'Small, financially healthy, lower profile orgs — a fresh set each week', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
+              { key: 'hg', label: 'Hidden gems', tip: 'Small, financially healthy, lower profile orgs. A fresh set each week.', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
                 icon: <><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></>,
                 toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
               { key: 'ns', label: 'Needs support', tip: 'Operating on under six months of financial reserve', on: needsSupport, color: '#7C3AED', textOn: '#FFFFFF',
@@ -595,7 +595,7 @@ export default function Directory() {
                     if (v) { searchParams.set('tier', v) } else { searchParams.delete('tier') }
                     setSearchParams(searchParams)
                   }}
-                  title="Filter by visibility level — how much public data backs the page"
+                  title="Filter by visibility level: how much public data backs this page"
                   aria-label="Filter by visibility level"
                   className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
                   style={{
@@ -854,7 +854,7 @@ export default function Directory() {
                       </select>
                       <button
                         onClick={() => { setSortOrder(o => o === 'asc' ? 'desc' : 'asc'); setCurrentPage(1) }}
-                        title={sortOrder === 'asc' ? 'Ascending — tap for descending' : 'Descending — tap for ascending'}
+                        title={sortOrder === 'asc' ? 'Ascending: tap to reverse' : 'Descending: tap to reverse'}
                         aria-label={`Sort direction: ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
                         className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-light-grey text-cool-grey hover:text-deep-navy hover:border-cool-grey transition-colors"
                       >
@@ -1029,7 +1029,7 @@ export default function Directory() {
                   </div>
                   <p className="font-body text-[17px] font-semibold text-deep-navy mb-2">Nothing matched those filters</p>
                   <p className="font-body text-[14px] text-cool-grey mb-6 leading-relaxed">
-                    Try broadening your search — remove a filter, shorten the keyword, or browse by cause instead.
+                    Try removing a filter, shortening the keyword, or browsing by cause instead.
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <button

@@ -95,7 +95,7 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
 
       {/* Disclosure */}
       <p className="mt-4 font-body text-[11px] text-cool-grey italic border-t border-deep-navy/10 pt-3">
-        Context from public IRS data, compared to financially similar peers — not a rating or recommendation.
+        Context from public IRS data, compared to financially similar peers. Not a rating or recommendation.
       </p>
     </div>
   )

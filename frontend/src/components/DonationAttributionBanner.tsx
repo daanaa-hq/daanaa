@@ -44,7 +44,7 @@ export default function DonationAttributionBanner({ org }: DonationAttributionBa
     <div className="bg-soft-gold/5 border border-soft-gold/20 rounded-xl p-4 mb-6">
       <div className="flex items-center justify-between gap-4">
         <p className="font-body text-[13px] text-deep-navy flex-1">
-          Did Daanaa help you find {org.organization_name}? Let us know — it helps us measure our reach.
+          Did Daanaa help you find {org.organization_name}? Let us know. It helps us measure our reach.
         </p>
         <button
           onClick={handleConfirm}
