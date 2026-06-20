@@ -25,7 +25,7 @@ export default function FAQ() {
     },
     {
       q: 'What are Lamp Tiers?',
-      a: 'Lamp Tiers are visibility indicators based on public information completeness and availability. They are not ratings—they reflect how much public context Daanaa can show.'
+      a: 'Lamp Tiers are visibility indicators based on public information completeness and availability. They are not ratings. They reflect how much public context Daanaa can show.'
     },
     {
       q: 'Does Daanaa process donations?',

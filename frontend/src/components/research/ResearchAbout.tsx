@@ -27,10 +27,10 @@ export default function ResearchAbout() {
           <h3 className="text-xl font-semibold text-deep-navy mb-3">Stewardship Principles</h3>
           <ul className="list-disc pl-5 space-y-2">
             <li>Trust signals reflect real, evidence-based data only</li>
-            <li>Donor privacy is non-negotiable—no tracking, no social pressure</li>
+            <li>Donor privacy is non-negotiable: no tracking, no social pressure</li>
             <li>Small organizations have equal dignity to large ones</li>
             <li>All findings must be explainable and traceable</li>
-            <li>We never handle funds—we hand off to organizations' own processors</li>
+            <li>We never handle funds. We hand off to organizations' own processors.</li>
           </ul>
         </div>
 

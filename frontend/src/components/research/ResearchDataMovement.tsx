@@ -67,7 +67,7 @@ export default function ResearchDataMovement({
   ]
 
   const filerGrowth = irsData[2].filers501c3 - irsData[0].filers501c3
-  const revenueNote = 'Revenue figures represent 501(c)(3) full-990 filers only — organizations below the filing threshold are not included.'
+  const revenueNote = 'Revenue figures represent 501(c)(3) full-990 filers only. Organizations below the filing threshold are not included.'
 
   return (
     <div>

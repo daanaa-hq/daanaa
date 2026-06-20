@@ -82,7 +82,7 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 export default function SectorHealth() {
   usePageMeta(
     'Peer financial context by sector',
-    'Understand public financial patterns across operating models and cause areas. How organizations in different sectors compare to their peers — based on available public records and financial filings.'
+    'Understand public financial patterns across operating models and cause areas. How organizations in different sectors compare to their peers, based on available public records and financial filings.'
   )
 
   const navigate = useNavigate()

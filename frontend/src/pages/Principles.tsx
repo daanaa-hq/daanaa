@@ -11,7 +11,7 @@ export default function Principles() {
     },
     {
       title: 'We do not control donor funds',
-      description: 'Donations do not pass through Daanaa. We link to an organization\'s own official website. Anyone who gives deals with the nonprofit directly—we never hold, process, or transfer charitable funds.'
+      description: 'Donations do not pass through Daanaa. We link to an organization\'s own official website. Anyone who gives deals with the nonprofit directly. We never hold, process, or transfer charitable funds.'
     },
     {
       title: 'We do not sell donor activity',

@@ -26,10 +26,10 @@ const ALL_CATEGORIES = [
 type ServiceReach = 'local' | 'regional' | 'multi_state' | 'online'
 
 const REACH_OPTIONS: { value: ServiceReach; label: string; hint: string }[] = [
-  { value: 'local',       label: 'My city or neighborhood',     hint: 'A few miles radius — I know my customers by name' },
+  { value: 'local',       label: 'My city or neighborhood',     hint: 'A few miles radius. I know my customers by name.' },
   { value: 'regional',    label: 'Metro area or multiple counties', hint: 'A region, a metro, a cluster of cities' },
   { value: 'multi_state', label: 'Multiple states',             hint: 'Physical presence or clients across several states' },
-  { value: 'online',      label: 'Online — works with anyone',  hint: 'Software, consulting, remote services — no geography required' },
+  { value: 'online',      label: 'Online, works with anyone',   hint: 'Software, consulting, remote services. No geography required.' },
 ]
 
 function ServiceReachSelector({
@@ -145,7 +145,7 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
           <span className="shrink-0 mt-0.5 text-soft-gold">◆</span>
           <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
             Community partner works great for online businesses and those serving across multiple states.
-            If you're ready for a formal contract, shared discount code for all members, and milestone pricing —{' '}
+            If you want a formal contract, a shared code for all members, and milestone pricing,{' '}
             <button type="button" onClick={onGateToNetwork}
               className="text-soft-gold hover:underline font-medium">
               the network partner path
@@ -375,7 +375,7 @@ function NetworkPartnerForm() {
 export default function ForVendors() {
   usePageMeta(
     'Join the Daanaa Impact Network',
-    'Any business can join — local, small, national. Tell us what you offer nonprofits and we list you. No fees for community partners.',
+    'Any business can join: local, small, national. Tell us what you offer nonprofits and we list you. No fees for community partners.',
   )
 
   const [path, setPath] = useState<'community' | 'network'>('community')
@@ -408,7 +408,7 @@ export default function ForVendors() {
           <p className="font-body text-[17px] text-warm-cream/80 leading-[1.7] max-w-[640px] mb-4">
             Daanaa connects {orgCountLabel} nonprofits with the donors who support them and the
             businesses that help them operate. The impact network is open to any business
-            that wants to be part of it — a neighborhood print shop, a regional insurance
+            that wants to be part of it: a neighborhood print shop, a regional insurance
             broker, or a national payment processor.
           </p>
           <p className="font-body text-[17px] text-warm-cream/80 leading-[1.7] max-w-[640px] mb-8">
@@ -449,7 +449,7 @@ export default function ForVendors() {
         <section id="how-it-works" className="py-16 scroll-mt-24">
           <h2 className="font-display italic text-[30px] text-deep-navy mb-2">Two ways in. One network.</h2>
           <p className="font-body text-[15px] text-cool-grey mb-10 leading-[1.7]">
-            The difference isn't size or geography — it's whether you want a formal contract.
+            The difference isn't size or geography. It's whether you want a formal contract.
             A local shop and an online SaaS serving clients in 40 states can both be community partners.
             Choose what fits your business now.
           </p>
@@ -465,13 +465,13 @@ export default function ForVendors() {
               </div>
               <h3 className="font-body text-[17px] font-semibold text-deep-navy mb-2">Community partner</h3>
               <p className="font-body text-[14px] text-cool-grey leading-[1.65] mb-4">
-                Any business. Any size. Any geography — including online services and
+                Any business. Any size. Any geography, including online services and
                 businesses that work across multiple states. Tell us what you offer and we list you.
                 No contract required.
               </p>
               <ul className="space-y-2 mb-6">
                 {[
-                  'Local shop, multi-state firm, or fully online — all welcome',
+                  'Local shop, multi-state firm, or fully online. All welcome.',
                   'Any offer: discount, free session, priority service',
                   'No contract, no CAF, no monthly reporting',
                   'Reviewed and listed within a week',
@@ -502,7 +502,7 @@ export default function ForVendors() {
               </div>
               <h3 className="font-body text-[17px] font-semibold text-warm-cream mb-2">Network partner</h3>
               <p className="font-body text-[14px] text-warm-cream/70 leading-[1.65] mb-4">
-                For partners ready to formalize — a signed contract with milestone pricing built
+                For partners ready to formalize: a signed contract with milestone pricing built
                 in from day one, a shared discount code for all members, and a dedicated
                 referral page. Best for large scale or high volume nonprofit programs.
               </p>
