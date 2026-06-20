@@ -449,6 +449,8 @@ export default function Directory() {
     !!revenueFilter,
     !!scoreTier,
     !!visTier,
+    hasWebsite,
+    needsSupport,
     sortBy !== (SCORES_ENABLED ? 'merit_score' : 'total_revenue'),
   ].filter(Boolean).length
 
