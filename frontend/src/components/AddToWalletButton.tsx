@@ -62,18 +62,28 @@ export default function AddToWalletButton({
   }
 
   if (alreadyInWallet) {
+    const existingIntent = getIntent(ein)
     return (
-      <button
-        type="button"
-        disabled
-        aria-label={`Already in wallet: ${orgName}`}
-        className="inline-flex items-center justify-center gap-2 px-5 py-1.5 rounded-full font-body text-[13px] font-semibold text-soft-gold border border-soft-gold cursor-default"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#C9A96E" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-        </svg>
-        Saved to Wallet
-      </button>
+      <div className="flex flex-col gap-1.5">
+        <button
+          type="button"
+          disabled
+          aria-label={`Already in wallet: ${orgName}`}
+          className="inline-flex items-center justify-center gap-2 px-5 py-1.5 rounded-full font-body text-[13px] font-semibold text-soft-gold border border-soft-gold cursor-default"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#C9A96E" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+          </svg>
+          Saved to Wallet
+        </button>
+        <Link
+          to={`/wallet?intent=${ein}`}
+          className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors text-center leading-snug"
+          aria-label={existingIntent ? 'Edit your giving plan' : 'Set a giving plan'}
+        >
+          {existingIntent ? 'Edit your giving plan →' : 'Set a giving plan →'}
+        </Link>
+      </div>
     )
   }
 
