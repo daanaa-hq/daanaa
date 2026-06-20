@@ -283,3 +283,45 @@ Cohort context required one condition fix on a hot path (`get_organization` by I
 millions of calls/day); fix was validated before deploy. Email service is optional
 and does not block core flows. Hidden gems DB patch (is_hidden_gem flags for 39,938 EINs)
 was applied separately and tested via live filter queries before frontend deploy.
+
+---
+
+## 2026-06-20 — Org detail polish + SaveToWallet everywhere
+
+**2026-06-20 — Data display accuracy fixes in droplet_api.py.**
+Two float/string artifacts surfaced in org detail pages and were traced to
+`_assemble_v5_context()` in `droplet_api.py`. The peer group label was emitting
+`"Donation-Funded: Professional"` (raw DB colon-delimited string passed straight
+through); it now reads `"Donation-Funded, Professional"`. Months-of-reserve in the
+donor explanation was printing `"120.0 months"` (Python `{:.1f}` format); it now
+emits integers (`"120 months"`). Both fixes are live on the droplet.
+
+Stewardship alignment: P3 (trust signals are accurate and honestly stated — no
+floating-point artifacts or malformed labels reach donors), P4 (orgs shown with
+clean, readable context regardless of size).
+
+**2026-06-20 — Org detail page UI tightened.**
+Four small but visible inconsistencies fixed across the org detail page:
+
+- Redundant mission statement in the bottom section suppressed — the hero already
+  shows it; the bottom section now only renders the mission block when there is no
+  mission in the hero or when programs exist to anchor it alongside.
+- AI attribution badge now appears in the hero via the `HeroMission` component when
+  `mission_source` is AI-derived (`ai_ntee` or `ai_generated`), so provenance is
+  visible at first glance (Stewardship P3).
+- "Financial health signal" sublabel simplified to "Financial health" — matches
+  natural language, removes jargon.
+- All `months_of_reserve` displays now use `Math.round()` instead of `toFixed(1)`,
+  consistent with the API fix above. Bottom section layout collapses to single column
+  when an org has a mission (shown in hero) but no programs, eliminating an empty
+  left-side grid column.
+
+**2026-06-20 — SaveToWallet added across every org surface.**
+`AddToWalletButton` now appears in the org detail hero CTA area and inside `OrgCard`
+(search results, home page featured orgs, cause spotlight). Smart deduplication: when
+a parent component already provides an `onToggleSave` handler (Directory, similar-orgs
+panel), the compact `SaveButton` icon is used instead so the save affordance is never
+doubled. Wallet remains fully local — `localStorage` only, no server call needed.
+
+Stewardship alignment: P2 (wallet is structural device-local storage; adding an org
+to the wallet requires no account and sends nothing to a server).
