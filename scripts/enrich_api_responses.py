@@ -150,7 +150,7 @@ def build_v5_context(archetype_key, archetype_label, band_key, band_label,
             'label': band_label,
         },
         'peer_group': {
-            'label': peer_group,
+            'label': f"{archetype_label}, {band_label}" if archetype_label and band_label else (peer_group or ''),
             'org_count': peer_count,
         },
         'score': {
@@ -189,7 +189,7 @@ def generate_donor_copy(archetype: str, band: str, health: str,
     return (
         f"This organization is a {archetype} nonprofit with a budget in the {band} range. "
         f"Looking at its financial reserves: Organizations like this one typically keep about {int(p50)} months "
-        f"of operating costs in reserve. This one has {reserves_mo:.1f} months. {health_desc} "
+        f"of operating costs in reserve. This one has {int(reserves_mo) if reserves_mo == int(reserves_mo) else f'{reserves_mo:.1f}'} months. {health_desc} "
         f"This comparison is based on public IRS 990 data from {peer_count:,} similar organizations."
     )
 
