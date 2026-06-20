@@ -37,6 +37,7 @@ export default function AddToWalletButton({
         merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
         merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
         is_hidden_gem: !!(apiOrg.is_hidden_gem),
+        website: (apiOrg.website_status === 'ok' && apiOrg.website) ? apiOrg.website : undefined,
         bookmarkedAt: Date.now(),
       }
 

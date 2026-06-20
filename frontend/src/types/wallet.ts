@@ -44,6 +44,7 @@ export interface WalletOrg {
   merit_health_signal_v5: 'HEALTHY' | 'STABLE' | 'CAUTION'
   is_hidden_gem: boolean
   donate_url?: string
+  website?: string
   bookmarkedAt: number // timestamp in milliseconds
   givingIntent?: GivingIntent
 }
@@ -130,6 +131,7 @@ export function isValidWalletOrg(org: unknown): org is WalletOrg {
     typeof o.bookmarkedAt === 'number' &&
     o.bookmarkedAt > 0 &&
     (o.donate_url === undefined || typeof o.donate_url === 'string') &&
+    (o.website === undefined || typeof o.website === 'string') &&
     (o.givingIntent === undefined || isValidGivingIntent(o.givingIntent))
   )
 }

@@ -217,6 +217,7 @@ export default function Directory() {
         merit_score_v5: org.v5_context?.score.percentile ?? 0,
         merit_health_signal_v5: org.v5_context?.score.health_signal ?? 'STABLE',
         is_hidden_gem: !!(org.is_hidden_gem),
+        website: (org.website_status === 'ok' && org.website) ? org.website : undefined,
         bookmarkedAt: Date.now(),
       }
       addToWallet(w)

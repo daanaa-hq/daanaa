@@ -139,6 +139,17 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
 
       {/* Actions */}
       <div className="flex gap-2">
+        {org.website && (
+          <a
+            href={org.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Visit ${org.name}'s website`}
+            className="flex-1 px-3 py-2 rounded-xl bg-deep-navy text-warm-cream font-body text-[13px] font-semibold hover:bg-deep-navy/80 transition-colors text-center"
+          >
+            Visit website
+          </a>
+        )}
         {onEdit && (
           <button
             onClick={() => onEdit(org.ein)}
