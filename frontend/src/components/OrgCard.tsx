@@ -28,36 +28,6 @@ function getNteeInfo(code: string): { major: string; sub: string | null } {
   return { major, sub: entry?.label ?? null }
 }
 
-function AddButton({ inList, onClick }: { inList: boolean; onClick: (e: React.MouseEvent) => void }) {
-  return (
-    <button
-      onClick={onClick}
-      title={inList ? 'Remove from Wallet' : 'Save to Wallet'}
-      className="shrink-0 inline-flex items-center gap-1 px-3 py-2.5 md:py-2 rounded-full font-body text-[12px] font-medium transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold/70 focus-visible:ring-offset-1"
-      style={{
-        backgroundColor: inList ? '#2A6B45' : 'transparent',
-        borderColor: inList ? '#2A6B45' : 'rgba(42,107,69,0.40)',
-        color: inList ? '#FFFFFF' : '#2A6B45',
-      }}
-    >
-      {inList ? (
-        <>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          Saved
-        </>
-      ) : (
-        <>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-          </svg>
-          Save
-        </>
-      )}
-    </button>
-  )
-}
 
 function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; canAdd: boolean; onClick: (e: React.MouseEvent) => void }) {
   const color = inCompare ? '#C9A96E' : '#A89F94'

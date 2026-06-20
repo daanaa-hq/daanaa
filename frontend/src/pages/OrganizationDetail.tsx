@@ -3,7 +3,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useJsonLd, organizationSchema } from '../hooks/useJsonLd'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
-import { getTierSummary, getTierFromOrg, getV4FinancialHealth, financialContextLabel, TIER_COLORS } from '../components/TrustBadge'
+import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
 import LampMark from '../components/LampMark'
@@ -205,7 +205,6 @@ export default function OrganizationDetail() {
   const [portalError, setPortalError]     = useState<string | null>(null)
   const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
-  const [showScoreExplainer, setShowScoreExplainer] = useState(false)
   const [showVolunteer, setShowVolunteer] = useState(false)
   const [showResources, setShowResources] = useState(true)
 
@@ -269,7 +268,7 @@ export default function OrganizationDetail() {
 
   const metaTitle = apiOrg?.organization_name ?? ''
   const metaDesc = apiOrg
-    ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. Tier: ${apiOrg.merit_tier ?? 'Flame'}. Financial scale: ${apiOrg.peer_percentile != null ? `${Math.round(apiOrg.peer_percentile)}/100` : 'pending'}.`
+    ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. ${apiOrg.mission ? apiOrg.mission.slice(0, 120).replace(/\s+\S+$/, '') + '.' : 'Public financial context and peer comparison available.'}`
     : ''
 
   const ogImage = apiOrg && apiOrg.NTEE1
@@ -316,7 +315,6 @@ export default function OrganizationDetail() {
 
   const lampTier     = getTierFromOrg(apiOrg!)
   const trustSummary = getTierSummary(lampTier, apiOrg!)
-  const v4Health     = getV4FinancialHealth(apiOrg!)
   const badges = getOrgBadges(apiOrg!)
 
   return (
@@ -553,44 +551,6 @@ export default function OrganizationDetail() {
                           {link.label}
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
-                        {apiOrg && (
-                          <button
-                            onClick={() => {
-                              if (isInWallet(org.ein)) {
-                                removeFromWallet(org.ein)
-                              } else {
-                                addToWallet({
-                                  ein: apiOrg.EIN,
-                                  name: apiOrg.organization_name,
-                                  mission: apiOrg.mission || '',
-                                  location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
-                                  cause: apiOrg.cause_tags || [],
-                                  merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
-                                  merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
-                                  is_hidden_gem: !!(apiOrg.is_hidden_gem),
-                                  bookmarkedAt: Date.now(),
-                                })
-                              }
-                            }}
-                            className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-body text-[15px] font-semibold transition-all duration-150 border"
-                            style={{
-                              backgroundColor: isInWallet(org.ein) ? 'rgba(201,169,110,0.12)' : 'transparent',
-                              color: isInWallet(org.ein) ? '#C9A96E' : '#C9A96E',
-                              borderColor: '#C9A96E',
-                            }}
-                          >
-                            <svg width="15" height="15" viewBox="0 0 24 24"
-                              fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
-                              stroke="#C9A96E"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-                            </svg>
-                            {isInWallet(org.ein) ? 'Saved' : 'Save'}
-                          </button>
-                        )}
                       </div>
                       {apiOrg!.website_status === 'beta' && (
                         <p className="mt-1.5 font-body text-[11px] text-cool-grey flex items-center gap-1.5">
@@ -625,97 +585,30 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* Stats continue below */}
+              {/* Volunteer + public record fallback */}
               {(() => {
                 const websiteVerified = apiOrg?.website_status === 'ok' || apiOrg?.website_status === 'beta';
                 const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
 
-                if (!link.url) {
-                  return (
-                    <div className="mt-5">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <a
-                          href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
-                        >
-                          View public record
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-                        </a>
-                        {apiOrg && (
-                          <button
-                            onClick={() => {
-                              if (isInWallet(org.ein)) {
-                                removeFromWallet(org.ein)
-                              } else {
-                                addToWallet({
-                                  ein: apiOrg.EIN,
-                                  name: apiOrg.organization_name,
-                                  mission: apiOrg.mission || '',
-                                  location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
-                                  cause: apiOrg.cause_tags || [],
-                                  merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
-                                  merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
-                                  is_hidden_gem: !!(apiOrg.is_hidden_gem),
-                                  bookmarkedAt: Date.now(),
-                                })
-                              }
-                            }}
-                            className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-body text-[15px] font-semibold transition-all duration-150 border"
-                            style={{
-                              backgroundColor: isInWallet(org.ein) ? 'rgba(201,169,110,0.12)' : 'transparent',
-                              color: '#C9A96E',
-                              borderColor: '#C9A96E',
-                            }}
-                          >
-                            <svg width="15" height="15" viewBox="0 0 24 24"
-                              fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
-                              stroke="#C9A96E"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-                            </svg>
-                            {isInWallet(org.ein) ? 'Saved' : 'Save'}
-                          </button>
-                        )}
-                      </div>
-                      <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                        Public record via ProPublica. Daanaa does not process donations or collect donor payment information.
-                      </p>
-                      <button
-                        onClick={() => setShowVolunteer(true)}
-                        className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-muted-cream/40 font-body text-[13px] font-medium text-muted-cream hover:border-warm-cream hover:text-warm-cream transition-colors"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        Volunteer with this organization
-                      </button>
-                    </div>
-                  );
-                }
-
                 return (
-                  <div className="mt-5">
-                    <a
-                      href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
-                    >
-                      View public record
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-                    </a>
-                    <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                      We could not verify this organization&rsquo;s own website, so we link its IRS-backed public record instead. External link. Daanaa does not process donations or collect donor payment information.
-                    </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    {!link.url && (
+                      <a
+                        href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
+                      >
+                        View public record
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                      </a>
+                    )}
                     <button
                       onClick={() => setShowVolunteer(true)}
-                      className="mt-3 inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-muted-cream/40 font-body text-[13px] font-medium text-muted-cream hover:border-warm-cream hover:text-warm-cream transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-muted-cream/40 font-body text-[13px] font-medium text-muted-cream hover:border-warm-cream hover:text-warm-cream transition-colors"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                      Volunteer with this organization
+                      Volunteer with this org
                     </button>
                   </div>
                 );
@@ -769,50 +662,12 @@ export default function OrganizationDetail() {
                   </span>
                 )}
               </div>
-              {/* v4.0 Financial Health — model-specific peer comparison (when available) */}
-              {v4Health && (
-                <div className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-lg border border-soft-gold/40 bg-soft-gold/8">
-                  <span className="font-body text-[10px] tracking-[0.06em] uppercase text-muted-cream">
-                    Financial health
-                  </span>
-                  <span className="font-body text-[14px] font-semibold text-soft-gold">
-                    {v4Health.tier}
-                  </span>
-                  {v4Health.operatingModel && (
-                    <span className="font-body text-[10px] text-muted-cream text-center leading-[1.4]">
-                      Among {v4Health.operatingModel?.replace(/_/g, ' ')} nonprofits
-                    </span>
-                  )}
-                  {v4Health.peerCellSize && (
-                    <span className="font-body text-[11px] text-muted-cream">
-                      Peer group: {v4Health.peerCellSize.toLocaleString()} orgs
-                    </span>
-                  )}
-                </div>
-              )}
-              <button
-                onClick={() => setShowScoreExplainer(s => !s)}
+              <Link
+                to="/methodology"
                 className="font-body text-[11px] text-muted-cream hover:text-soft-gold transition-colors"
               >
-                How is this scored? {showScoreExplainer ? '↑' : '→'}
-              </button>
-              {showScoreExplainer && (
-                <div className="w-full px-3 py-3 rounded-lg bg-white/5 border border-white/10 text-left space-y-2">
-                  <p className="font-body text-[11px] text-muted-cream leading-[1.5]">
-                    We compare reserves, program spending, and revenue stability against nonprofits in the same cause area and revenue range. The 0-100 score shows where they stand within that group of {apiOrg!.peer_total ? apiOrg!.peer_total.toLocaleString() : 'similar'} orgs.
-                  </p>
-                  <p className="font-body text-[10px] text-muted-cream leading-[1.5]">
-                    Source: Annual financial reports via ProPublica Nonprofit Explorer
-                    {apiOrg!.latest_tax_year ? ` · FY${apiOrg!.latest_tax_year}` : ''}.
-                  </p>
-                  <Link
-                    to="/methodology"
-                    className="font-body text-[10px] text-soft-gold hover:text-bright-gold transition-colors block"
-                  >
-                    Full methodology →
-                  </Link>
-                </div>
-              )}
+                About this score →
+              </Link>
             </div>
             )}{/* end stub score conditional */}
           </div>
@@ -847,8 +702,8 @@ export default function OrganizationDetail() {
       <div className="py-0">
         <div>
 
-          {/* How They Manage Resources -- surfaced early, opened by default for quick givers */}
-          {apiOrg!.financial_context && (
+          {/* How They Manage Resources -- only shown for orgs without v5 context (avoids duplication) */}
+          {apiOrg!.financial_context && !apiOrg!.v5_context && (
             <div className="mb-8">
               <button
                 onClick={() => setShowResources(s => !s)}
