@@ -252,7 +252,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase mb-0.5">PIN — read on call only</p>
+                  <p className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase mb-0.5">PIN: read on call only</p>
                   <p className="font-mono text-[22px] font-semibold text-deep-navy tracking-[0.25em]">{c.pin}</p>
                 </div>
               </div>

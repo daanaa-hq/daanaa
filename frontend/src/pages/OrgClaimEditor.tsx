@@ -719,7 +719,7 @@ export default function OrgClaimEditor() {
           <h1 className="font-display italic text-deep-navy mb-2" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
             Tell your story
           </h1>
-          <p className="font-body text-[15px] text-cool-grey">All fields are optional. Add what you can — you can always come back.</p>
+          <p className="font-body text-[15px] text-cool-grey">All fields are optional. Add what you can. You can always come back.</p>
         </div>
         <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm border border-light-cream p-8 space-y-6">
           {error && (

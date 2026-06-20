@@ -153,10 +153,10 @@ export default function HowItWorks() {
             </div>
 
             <p className="mt-5 font-body text-[15px] text-cool-grey leading-[1.7]">
-              When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">peer financial context signal</strong> — Healthy, Stable, or Needs Support. That is a different measure from the 0–100 number above. The number shows financial scale. The signal shows how well the organization manages its resources within that peer group, independent of size. A small organization can be Healthy; a large one can show Needs Support.
+              When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">peer financial context signal</strong>: Healthy, Stable, or Needs Support. That is a different measure from the 0–100 number above. The number shows financial scale. The signal shows how well the organization manages its resources within that peer group, independent of size. A small organization can be Healthy; a large one can show Needs Support.
             </p>
             <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
-              <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower signal does not mean a lesser organization. It often points to a group doing essential work within tight means — exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
+              <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower signal does not mean a lesser organization. It often points to a group doing essential work within tight means. That is exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
             </p>
             <div className="mt-4">
               <Link

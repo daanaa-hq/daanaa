@@ -352,7 +352,7 @@ export default function ForNonprofits() {
           {!user ? (
             <div className="space-y-2">
               <p className="font-body text-[15px] text-deep-navy mb-3">
-                Sign in to go straight to your editor — no PIN needed.
+                Sign in to go straight to your editor. No PIN needed.
               </p>
               <GoogleSignInButton />
             </div>
@@ -406,7 +406,7 @@ export default function ForNonprofits() {
                   </svg>
                 </div>
                 <h3 className="font-display italic text-warm-cream text-[28px] mb-3">
-                  Claim received — we'll call you
+                  Claim received. We'll call you
                   {orgName && <span className="block text-soft-gold text-[20px] mt-1">{orgName}</span>}
                 </h3>
                 <p className="font-body text-[15px] text-muted-cream leading-[1.6] mb-4">

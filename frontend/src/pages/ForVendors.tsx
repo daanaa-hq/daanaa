@@ -172,7 +172,7 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
       <label className="block">
         <span className="block font-body text-[13px] font-medium text-deep-navy mb-1.5">What you offer nonprofit members</span>
         <textarea value={form.offer} onChange={set('offer')} required rows={3} maxLength={500}
-          placeholder="e.g. 15% off all orders for verified Daanaa members — or free first consultation"
+          placeholder="e.g. 15% off all orders for verified Daanaa members, or a free first consultation"
           className="w-full px-4 py-3 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-y" />
         <p className="mt-1 font-body text-[12px] text-muted-cream">Keep it simple. Members need to understand it in one sentence.</p>
       </label>
@@ -540,11 +540,11 @@ export default function ForVendors() {
           </p>
           <div className="grid gap-3">
             {[
-              { title: 'Your customers are already here', body: 'Most of your existing nonprofit clients are somewhere in our 1.8M+ index. Joining puts you in front of them — and in front of the ones who haven\'t found you yet.' },
+              { title: 'Your customers are already here', body: "Most of your existing nonprofit clients are somewhere in our 1.8M+ index. Joining puts you in front of them and in front of the ones who haven't found you yet." },
               { title: 'No individual account management', body: 'Community partners get a listing and members reach you directly. Network partners use one shared code. Daanaa handles distribution, you handle the relationship.' },
               { title: 'You earn trust by showing up', body: 'No paid placement. Members choose partners on price, quality, and reputation. The network rewards partners who genuinely show up for nonprofits.' },
               { title: 'Your referral link grows your own book', body: 'Every listed partner gets a shareable page they can put in their email signature or on their website. Any nonprofit who clicks and claims their Daanaa page can access your offer.' },
-              { title: 'Rates improve as the network grows', body: 'For network partners: milestone pricing is in every contract from day one. The more members use the network, the better the rates get — for everyone, automatically.' },
+              { title: 'Rates improve as the network grows', body: 'For network partners: milestone pricing is in every contract from day one. The more members use the network, the better the rates get, for everyone, automatically.' },
             ].map(({ title, body }) => (
               <div key={title} className="flex gap-4 bg-white rounded-xl border border-light-grey p-5">
                 <span className="shrink-0 mt-1 w-5 h-5 rounded-full bg-soft-gold/15 flex items-center justify-center">
@@ -569,7 +569,7 @@ export default function ForVendors() {
               {[
                 { title: 'Standard rates per category', body: 'Same CAF % for every network partner in the same category. No individual placement deals.' },
                 { title: 'Your relationships stay yours', body: 'Once a member contacts you, the relationship is yours. We see aggregate numbers for invoicing only.' },
-                { title: 'Milestone pricing in writing', body: 'Thresholds are in the contract before we sign. Rate improvements are automatic — no renegotiation.' },
+                { title: 'Milestone pricing in writing', body: 'Thresholds are in the contract before we sign. Rate improvements are automatic. No renegotiation.' },
                 { title: 'Independence is absolute', body: 'No partner relationship ever affects how nonprofits are scored, ranked, or shown on the platform.' },
               ].map(({ title, body }) => (
                 <div key={title}>

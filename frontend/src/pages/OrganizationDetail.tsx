@@ -1126,7 +1126,7 @@ export default function OrganizationDetail() {
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
                       <p className="font-body text-[13px] font-medium text-deep-navy">Is this your nonprofit?</p>
-                      <p className="font-body text-[12px] text-cool-grey mt-0.5">Add your mission, website, and updates — free.</p>
+                      <p className="font-body text-[12px] text-cool-grey mt-0.5">Add your mission, website, and updates. Free.</p>
                     </div>
                     <Link
                       to={`/for-nonprofits?ein=${apiOrg!.EIN}`}

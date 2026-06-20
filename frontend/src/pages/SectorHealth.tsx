@@ -445,7 +445,7 @@ export default function SectorHealth() {
           {/* Methodology note */}
           <div className="mt-12 pt-8 border-t border-light-grey">
             <p className="font-body text-[13px] text-cool-grey leading-[1.6] max-w-[680px]">
-              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data — approximately 23.7% of the 1.63 million donation eligible nonprofits Daanaa indexes. The remaining 76.3% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
+              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data, approximately 23.7% of the 1.63 million donation eligible nonprofits Daanaa indexes. The remaining 76.3% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
               <span className="inline-flex items-center gap-1.5 font-body text-[12px] text-cool-grey">
