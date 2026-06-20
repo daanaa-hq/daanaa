@@ -9,6 +9,7 @@ import LampMark from './LampMark'
 import type { ApiOrganization } from '../data/api'
 import { getCardBadges } from '../utils/badges'
 import { useCompare } from '../contexts/CompareContext'
+import AddToWalletButton from './AddToWalletButton'
 
 interface OrgCardProps {
   org: Organization
@@ -154,6 +155,12 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
         {/* Compare hidden on mobile — too small to be useful */}
         {!hideCompare && <span className="hidden md:contents"><CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} /></span>}
         {onToggleSave && <SaveButton isSaved={isSaved} onClick={handleBookmark} />}
+        {/* Save to Wallet — stop propagation so the row Link doesn't fire */}
+        <div
+          onClick={e => { e.preventDefault(); e.stopPropagation() }}
+        >
+          <AddToWalletButton ein={org.ein} orgName={org.name} />
+        </div>
       </div>
     </Link>
   )
@@ -268,6 +275,13 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
         <div className="flex items-center justify-end gap-1">
           {!hideCompare && <CompareButton inCompare={inCompare} canAdd={canAdd} onClick={handleCompare} />}
           {onToggleSave && <SaveButton isSaved={isSaved} onClick={handleBookmark} />}
+        </div>
+        {/* Save to Wallet — stop propagation so the card Link doesn't fire */}
+        <div
+          className="mt-2"
+          onClick={e => { e.preventDefault(); e.stopPropagation() }}
+        >
+          <AddToWalletButton ein={org.ein} orgName={org.name} />
         </div>
       </div>
     </Link>
