@@ -27,6 +27,7 @@ import V5Context from '../components/V5Context'
 import CohortContext from '../components/CohortContext'
 import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
+import AddToWalletButton from '../components/AddToWalletButton'
 
 // ---- Metric Card ----
 // ---- Data freshness badge ----
@@ -618,6 +619,7 @@ export default function OrganizationDetail() {
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
                       </a>
                     )}
+                    <AddToWalletButton ein={org.ein} orgName={org.name} />
                     <button
                       onClick={() => setShowVolunteer(true)}
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-muted-cream/40 font-body text-[13px] font-medium text-muted-cream hover:border-warm-cream hover:text-warm-cream transition-colors"
@@ -1031,25 +1033,29 @@ export default function OrganizationDetail() {
 
 
       {/* Mission & Programs */}
+      {/* Left column only renders when there is real content: no mission yet (show fallback text) or programs are listed.
+          When the mission is already shown in the hero and there are no programs, collapse to a single column. */}
       <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
         <div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <div>
-              {/* Mission text is shown in the hero above; only show here if not in hero */}
-              {!org.mission && (
-                <p className="mt-3 font-body text-cool-grey text-[15px]">Mission statement sourced from public records. Extended narrative not yet available for this organization.</p>
-              )}
-              {org.programs.length > 0 && (
-                <>
-                  <span className="block mt-8 font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">PROGRAMS</span>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {org.programs.map((program) => (
-                      <span key={program} className="px-3 py-1.5 rounded-full bg-navy-mid/10 text-deep-navy font-body text-[13px]">{program}</span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+          <div className={`grid grid-cols-1 gap-12 ${(!org.mission || org.programs.length > 0) ? 'lg:grid-cols-2' : ''}`}>
+            {(!org.mission || org.programs.length > 0) && (
+              <div>
+                {/* Mission fallback — only shown when the hero has no mission to display */}
+                {!org.mission && (
+                  <p className="mt-3 font-body text-cool-grey text-[15px]">Mission statement sourced from public records. Extended narrative not yet available for this organization.</p>
+                )}
+                {org.programs.length > 0 && (
+                  <>
+                    <span className="block mt-8 font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">PROGRAMS</span>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {org.programs.map((program) => (
+                        <span key={program} className="px-3 py-1.5 rounded-full bg-navy-mid/10 text-deep-navy font-body text-[13px]">{program}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <div>
               {org.leadership.length > 0 ? (
                 <>
