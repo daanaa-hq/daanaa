@@ -963,11 +963,11 @@ export default function OrganizationDetail() {
                 <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this page</span>
                 {lampTier === 'Beacon' ? (
                   <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, website, and top quartile financial context all on public record.
+                    {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, website, and a top-quarter peer financial ranking all on public record.
                   </p>
                 ) : lampTier === 'Torch' ? (
                   <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    {apiOrg!.organization_name} is a federally recognized nonprofit with financial filings on public record. They hold federal tax-exempt status as a charitable organization. This profile will grow as more data becomes available.
+                    {apiOrg!.organization_name} is a federally recognized nonprofit with financial filings on public record. They hold federal tax-exempt status as a charitable organization.
                   </p>
                 ) : lampTier === 'Candle' ? (
                   <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
