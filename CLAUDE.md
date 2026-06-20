@@ -152,10 +152,11 @@ Secondary/legacy: `data/meritgiving.db`, `data/merit_state.db` — do not treat 
 ### Frontend (`frontend/`)
 
 - React 19, TypeScript, Vite; Tailwind CSS + Radix UI (shadcn-style)
-- API base URL: `VITE_API_URL` env var, defaults to `http://localhost:5000` (see `src/api.ts`)
+- API base URL: `VITE_API_URL` env var, defaults to `http://localhost:5000` (see `src/data/api.ts`)
 - Built output: `frontend/dist/` — Flask serves this as the SPA fallback on `/<path:path>`
-- **Wallet / Giving List** persist exclusively in `localStorage` — no server-side user accounts
-- **CompareContext** (`src/contexts/CompareContext.tsx`) is the only React context; holds up to 4 orgs for side-by-side compare
+- **Wallet** (`WalletPage.tsx`) persists in `localStorage` via `WalletContext` — bookmarks + giving intent only, no transactions; `ImpactWallet.tsx` and `Wallet.tsx` deleted (dead)
+- **GivingListContext** (`src/contexts/GivingListContext.tsx`) still exists as a compatibility shim for `useGivingList` hook — the GivingList page itself is removed
+- **CompareContext** (`src/contexts/CompareContext.tsx`) holds up to 4 orgs for side-by-side compare
 - `VITE_ENABLE_SCORES=false` suppresses score UI (Financial Health sort, tier badges) without changing the backend
 
 ### Data pipeline (`scripts/`)
