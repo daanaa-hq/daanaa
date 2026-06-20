@@ -91,7 +91,7 @@ function HeroSection() {
           or{' '}
           <Link to="/directory" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">browse the directory</Link>
           {' · '}
-          <Link to="/causes" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">explore causes</Link>
+          <Link to="/directory?hidden_gem=0" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">explore causes</Link>
         </p>
 
         <p
