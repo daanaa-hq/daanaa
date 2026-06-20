@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useWallet } from '../contexts/WalletContext'
+import { useAuth } from '../contexts/AuthContext'
 import WalletCard from '../components/WalletCard'
 import EditIntentModal from '../components/EditIntentModal'
 import {
@@ -30,9 +31,11 @@ export default function WalletPage() {
   )
 
   const navigate = useNavigate()
-  const { wallet, removeOrg, updateIntent, storageError, corruptionDetected } = useWallet()
+  const { user, signInWithGoogle, getIdToken } = useAuth()
+  const { wallet, removeOrg, updateIntent, storageError, corruptionDetected, syncToServer } = useWallet()
 
   const [sortBy, setSortBy] = useState<SortBy>('recent')
+  const [syncing, setSyncing] = useState(false)
   const [filterState, setFilterState] = useState<FilterState>({ intent: 'all', health: 'all' })
   const [searchTerm, setSearchTerm] = useState('')
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -156,6 +159,24 @@ export default function WalletPage() {
   const hasActiveFilters =
     filterState.intent !== 'all' || filterState.health !== 'all' || searchTerm !== ''
 
+  const handleSaveToCloud = useCallback(async () => {
+    if (!user) {
+      signInWithGoogle()
+      return
+    }
+    setSyncing(true)
+    try {
+      const token = await getIdToken()
+      if (user.email && token) {
+        await syncToServer(user.email, token)
+      }
+    } catch (err) {
+      console.error('Sync failed:', err)
+    } finally {
+      setSyncing(false)
+    }
+  }, [user, signInWithGoogle, getIdToken, syncToServer])
+
   // Empty state
   if (wallet.orgs.length === 0) {
     return (
@@ -203,19 +224,56 @@ export default function WalletPage() {
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-10">
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-8">
+        <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>
             <h1 className="font-display italic text-deep-navy text-[32px] mb-1">Your Giving Wallet</h1>
             <p className="font-body text-[14px] text-cool-grey">
               {wallet.orgs.length} organization{wallet.orgs.length !== 1 ? 's' : ''} saved
             </p>
+            <p className="font-body text-[13px] text-cool-grey/70 mt-2 max-w-md">
+              Track nonprofits you care about and your giving plans. All saved locally on this device.
+              {user && ' Synced to your account.'}
+            </p>
           </div>
-          <button
-            onClick={() => navigate('/directory')}
-            className="px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors whitespace-nowrap"
-          >
-            + Add more
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/directory')}
+              className="px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors whitespace-nowrap"
+            >
+              + Add more
+            </button>
+            <button
+              onClick={handleSaveToCloud}
+              disabled={syncing}
+              title={user ? 'Sync your wallet to cloud' : 'Sign in to sync across devices'}
+              className={`px-4 py-2 rounded-xl font-body text-[13px] font-semibold whitespace-nowrap transition-colors ${
+                user
+                  ? 'bg-deep-navy/5 text-deep-navy border border-deep-navy/20 hover:bg-deep-navy/10'
+                  : 'bg-soft-gold/20 text-soft-gold border border-soft-gold/30 hover:bg-soft-gold/30'
+              } disabled:opacity-50`}
+            >
+              {syncing ? 'Syncing...' : user ? '☁ Synced' : '☁ Save to Cloud'}
+            </button>
+          </div>
+        </div>
+
+        {/* Giving Intent Guide */}
+        <div className="bg-soft-gold/8 border border-soft-gold/20 rounded-2xl p-5 mb-8">
+          <p className="font-body text-[13px] text-cool-grey mb-3 font-medium">What each giving type means:</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <p className="font-body text-[12px] font-semibold text-deep-navy">💰 Giving</p>
+              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you plan to donate to</p>
+            </div>
+            <div>
+              <p className="font-body text-[12px] font-semibold text-deep-navy">🤝 Volunteering</p>
+              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you want to volunteer with</p>
+            </div>
+            <div>
+              <p className="font-body text-[12px] font-semibold text-deep-navy">🪑 Board</p>
+              <p className="font-body text-[12px] text-cool-grey/80 mt-1">Organizations you're considering for board service</p>
+            </div>
+          </div>
         </div>
 
         {/* Welcome-back nudge */}
