@@ -207,18 +207,27 @@ _V5_BENCHMARKS = {
 
 def _assemble_v5_context(d: dict) -> dict | None:
     """Build the v5_context dict from individual v5 columns in a search.db row."""
-    arch_key = d.pop('merit_archetype_v5', None)
+    d.pop('merit_archetype_v5', None)          # integer index — not used directly
     arch_label = d.pop('merit_archetype_v5_label', None)
-    band_key = d.pop('merit_band_v5', None)
+    band_key   = d.pop('merit_band_v5', None)  # already a string key (micro/professional/established)
     band_label = d.pop('merit_band_v5_label', None)
-    score = d.pop('merit_score_v5', None)
-    health = d.pop('merit_health_signal_v5', None)
+    score      = d.pop('merit_score_v5', None)
+    health     = d.pop('merit_health_signal_v5', None)
     peer_group = d.pop('merit_peer_group_v5', None)
     peer_count = d.pop('merit_peer_count_v5', None)
-    reserves = d.get('months_of_reserve')
+    reserves   = d.get('months_of_reserve')
 
-    if not arch_key:
+    if not arch_label or score is None or not health:
         return None
+
+    # Derive canonical arch_key from label for _V5_BENCHMARKS lookup
+    lbl = (arch_label or '').lower()
+    if 'donation' in lbl:
+        arch_key = 'donation_funded'
+    elif 'fee' in lbl or 'service' in lbl:
+        arch_key = 'fee_for_service'
+    else:
+        arch_key = 'endowment'
 
     bench = _V5_BENCHMARKS.get((arch_key, band_key), {})
     p50 = bench.get('p50', 0)
