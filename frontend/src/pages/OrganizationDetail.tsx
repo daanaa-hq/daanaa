@@ -194,6 +194,23 @@ function adaptOrg(apiOrg: ApiOrganization) {
   }
 }
 
+const AI_MISSION_SOURCES = new Set(['ai_ntee', 'ai_haiku', 'ai_web', 'ai_generated'])
+function HeroMission({ mission, missionSrc }: { mission: string; missionSrc: string }) {
+  const cleaned = mission.replace(/^[""\s]+|[""\s]+$/g, '')
+  return (
+    <div className="mt-4 flex items-start gap-2">
+      <p className="font-body text-[15px] text-muted-cream/90 leading-[1.7] max-w-[600px] italic">
+        &ldquo;{cleaned}&rdquo;
+      </p>
+      {AI_MISSION_SOURCES.has(missionSrc) && (
+        <span className="shrink-0 mt-1">
+          <AiBadge />
+        </span>
+      )}
+    </div>
+  )
+}
+
 // ---- Main Page ----
 export default function OrganizationDetail() {
   const { id } = useParams<{ id: string }>()
@@ -393,17 +410,7 @@ export default function OrganizationDetail() {
               </div>
 
               {org.mission && (
-                <div className=”mt-4 flex items-start gap-2”>
-                  <p className=”font-body text-[15px] text-muted-cream/90 leading-[1.7] max-w-[600px] italic”>
-                    &ldquo;{org.mission.replace(/^[“”\s]+|[“”\s]+$/g, '')}&rdquo;
-                  </p>
-                  {(['ai_ntee', 'ai_haiku', 'ai_web', 'ai_generated'].includes(
-                    apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? '')) && (
-                    <span className=”shrink-0 mt-1”>
-                      <AiBadge />
-                    </span>
-                  )}
-                </div>
+                <HeroMission mission={org.mission} missionSrc={apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? ''} />
               )}
 
               {/* FINANCIAL TRUST LINE + PEER CONTEXT (Hero) */}
@@ -795,7 +802,7 @@ export default function OrganizationDetail() {
                               <>
                                 Compared to {fc.peer_model?.replace(/_/g, ' ') || 'similar'} organizations
                                 {fc.gap_from_baseline != null && (
-                                  <> · {fc.gap_from_baseline > 0 ? '+' : ''}{fc.gap_from_baseline.toFixed(1)} months vs peer baseline</>
+                                  <> · {fc.gap_from_baseline > 0 ? '+' : ''}{Math.round(fc.gap_from_baseline)} months vs peer baseline</>
                                 )}
                               </>
                             ) : (
