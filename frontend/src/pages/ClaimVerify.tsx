@@ -90,7 +90,7 @@ export default function ClaimVerify() {
               Sign in to save your access
             </p>
             <p className="font-body text-[12px] text-cool-grey mb-3">
-              Optional — sign in once and return to edit your page anytime without a PIN.
+              Optional. Sign in once and return to edit your page anytime without a PIN.
             </p>
             <GoogleSignInButton />
           </div>

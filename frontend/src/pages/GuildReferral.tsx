@@ -74,7 +74,7 @@ export default function GuildReferral() {
       <div className="bg-deep-navy pt-[108px] pb-20 px-6">
         <div className="max-w-[680px] mx-auto text-center">
           <p className="font-body text-[12px] font-medium tracking-[0.12em] text-soft-gold uppercase mb-5">
-            Daanaa Guild — Exclusive Member Benefit
+            Daanaa Guild: Exclusive Member Benefit
           </p>
           <h1
             className="font-display italic text-warm-cream leading-[1.1] mb-6"
@@ -143,7 +143,7 @@ export default function GuildReferral() {
             },
             {
               title: 'Rates improve as the guild grows',
-              body: 'Milestone pricing is built into every partner contract. The more members use the guild, the better the rates get — for everyone, automatically.',
+              body: 'Milestone pricing is built into every partner contract. The more members use the guild, the better the rates get, for everyone, automatically.',
             },
             {
               title: 'Free for nonprofits, always',

@@ -97,7 +97,7 @@ function MilestoneTracker({ memberCount }: { memberCount: number }) {
     <div className="bg-warm-cream border border-light-cream rounded-2xl p-5">
       <p className="font-body text-[11px] font-semibold tracking-[0.1em] uppercase text-cool-grey mb-1">Guild milestone</p>
       <p className="font-display italic text-deep-navy text-[18px] leading-tight">
-        {next.label} — {next.description}
+        {next.label}: {next.description}
       </p>
       <p className="font-body text-[13px] text-cool-grey mt-1">
         {memberCount.toLocaleString()} of {next.target.toLocaleString()} members
@@ -109,7 +109,7 @@ function MilestoneTracker({ memberCount }: { memberCount: number }) {
         />
       </div>
       <p className="font-body text-[11px] text-muted-cream mt-2">
-        Milestone pricing baked into every partner contract from day one — no renegotiation needed.
+        Milestone pricing baked into every partner contract from day one. No renegotiation needed.
       </p>
     </div>
   )
@@ -167,7 +167,7 @@ function WaitlistForm({ memberCount }: { memberCount: number }) {
 function EmptyState({ memberCount }: { memberCount: number }) {
   const display = memberCount > 0
     ? `${memberCount.toLocaleString()} nonprofits already have guild access.`
-    : 'Early access — first members are joining now.'
+    : 'Early access. First members are joining now.'
 
   return (
     <div className="max-w-[560px] mx-auto py-8">
@@ -182,7 +182,7 @@ function EmptyState({ memberCount }: { memberCount: number }) {
           {display}
         </p>
         <p className="font-body text-[14px] text-cool-grey leading-[1.7]">
-          You'll have access to discounted rates on software, insurance, printing, travel, and more — all at prices the sector has never had before.
+          You'll have access to discounted rates on software, insurance, printing, travel, and more. Prices the sector has never had before.
         </p>
       </div>
 
@@ -285,7 +285,7 @@ export default function MemberBenefits() {
 
             <div className="mt-6 border-t border-light-cream pt-6">
               <p className="font-body text-[13px] text-muted-cream leading-[1.6]">
-                Guild pricing improves automatically as the network grows — milestone thresholds are baked into every partner contract from day one.
+                Guild pricing improves automatically as the network grows. Milestone thresholds are baked into every partner contract from day one.
                 Questions? <a href="mailto:orgs@daanaa.org" className="text-soft-gold hover:underline">orgs@daanaa.org</a>
               </p>
             </div>

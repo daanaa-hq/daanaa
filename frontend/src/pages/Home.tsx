@@ -173,7 +173,7 @@ function PeerFinancialContextSection() {
               Peer Financial Context shows public financial information within comparable peer groups. It is designed to add context, not to rate, rank, or recommend organizations.
             </p>
             <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.65]">
-              This approach respects the fact that a small community organization and a large national nonprofit may both be thriving—they just have different financial profiles.
+              This approach respects the fact that a small community organization and a large national nonprofit may both be thriving. They just have different financial profiles.
             </p>
             <Link
               to="/methodology"
