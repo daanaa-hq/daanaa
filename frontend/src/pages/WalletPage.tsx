@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useWallet } from '../contexts/WalletContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -33,6 +33,7 @@ export default function WalletPage() {
   )
 
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user, signInWithGoogle, getIdToken } = useAuth()
   const { wallet, removeOrg, updateIntent, storageError, corruptionDetected, syncToServer } = useWallet()
 
@@ -46,6 +47,17 @@ export default function WalletPage() {
   const [showNudge, setShowNudge] = useState(false)
 
   const hasOrgsWithoutIntent = wallet.orgs.some(o => !o.givingIntent)
+
+  // ?intent=EIN — auto-open intent modal for a specific org (e.g. from post-save prompt)
+  useEffect(() => {
+    const targetEin = searchParams.get('intent')
+    if (!targetEin) return
+    const inWallet = wallet.orgs.some(o => o.ein === targetEin)
+    if (inWallet) {
+      setEditingEin(targetEin)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, wallet.orgs, setSearchParams])
 
   useEffect(() => {
     if (!hasOrgsWithoutIntent || wallet.orgs.length === 0) return

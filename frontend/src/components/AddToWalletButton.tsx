@@ -120,7 +120,7 @@ export default function AddToWalletButton({
         )}
         {!savedWebsite && !intentAlreadySet && (
           <Link
-            to="/wallet"
+            to={`/wallet?intent=${ein}`}
             className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors text-center leading-snug"
             aria-label="Set a giving plan for this organization"
           >
