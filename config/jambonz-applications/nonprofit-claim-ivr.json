@@ -1,0 +1,214 @@
+{
+  "name": "Nonprofit Claim IVR",
+  "description": "Voice flow for nonprofits to claim their organization page and verify ownership",
+  "application": {
+    "name": "Nonprofit Claim",
+    "description": "Collect EIN and domain email to verify nonprofit ownership",
+    "speech_recognizer_vendor": "google",
+    "allow_transfer": true,
+    "transfer_target": "support@daanaa.org",
+    "call_hook": {
+      "url": "http://localhost:8000/ivr/claim",
+      "method": "POST"
+    },
+    "scenarios": [
+      {
+        "name": "initial_greeting",
+        "trigger": "call_start",
+        "actions": [
+          {
+            "action": "say",
+            "text": "Welcome to Daanaa. To claim your nonprofit page, press 1. For other options, press 0.",
+            "options": {
+              "voice": "google",
+              "language": "en-US"
+            }
+          },
+          {
+            "action": "listen",
+            "options": {
+              "maxSpeechTime": 5,
+              "timeout": 8,
+              "digits": {
+                "max_digits": 1
+              }
+            }
+          }
+        ]
+      },
+      {
+        "name": "handle_claim_selection",
+        "trigger": "digit_input",
+        "match": "1",
+        "actions": [
+          {
+            "action": "say",
+            "text": "Great! To verify your organization, please say your organization's EIN. For example, you can say 46 3120432.",
+            "options": {
+              "voice": "google",
+              "language": "en-US"
+            }
+          },
+          {
+            "action": "listen",
+            "options": {
+              "maxSpeechTime": 10,
+              "timeout": 8,
+              "speechTimeout": 3,
+              "speechMode": "numbers"
+            }
+          }
+        ]
+      },
+      {
+        "name": "handle_ein_collection",
+        "trigger": "speech_input",
+        "actions": [
+          {
+            "action": "say",
+            "text": "I heard {{rrn.SPEECH_TEXT}}. Let me verify that.",
+            "options": {
+              "voice": "google",
+              "language": "en-US"
+            }
+          },
+          {
+            "action": "webhook",
+            "url": "http://localhost:8000/ivr/verify-ein",
+            "method": "POST",
+            "body": {
+              "transcript": "{{rrn.SPEECH_TEXT}}",
+              "phone": "{{rrn.CALLER_ID}}",
+              "call_sid": "{{rrn.CALL_SID}}"
+            }
+          }
+        ]
+      },
+      {
+        "name": "ein_verified",
+        "trigger": "webhook_response",
+        "match": {
+          "status": "verified"
+        },
+        "actions": [
+          {
+            "action": "say",
+            "text": "Thank you! We found {{rrn.ORG_NAME}}. Now please provide your organization's domain email address. For example, you can say my email is admin at example dot org.",
+            "options": {
+              "voice": "google",
+              "language": "en-US"
+            }
+          },
+          {
+            "action": "listen",
+            "options": {
+              "maxSpeechTime": 15,
+              "timeout": 8,
+              "speechTimeout": 3
+            }
+          }
+        ]
+      },
+      {
+        "name": "email_collected",
+        "trigger": "speech_input",
+        "actions": [
+          {
+            "action": "webhook",
+            "url": "http://localhost:8000/ivr/verify-email",
+            "method": "POST",
+            "body": {
+              "ein": "{{rrn.EIN}}",
+              "org_name": "{{rrn.ORG_NAME}}",
+              "email_transcript": "{{rrn.SPEECH_TEXT}}",
+              "phone": "{{rrn.CALLER_ID}}",
+              "call_sid": "{{rrn.CALL_SID}}"
+            }
+          }
+        ]
+      },
+      {
+        "name": "email_verified",
+        "trigger": "webhook_response",
+        "match": {
+          "status": "email_valid"
+        },
+        "actions": [
+          {
+            "action": "say",
+            "text": "Perfect! Check your email for a claim verification link. You can also call back anytime.",
+            "options": {
+              "voice": "google",
+              "language": "en-US"
+            }
+          },
+          {
+            "action": "hangup"
+          }
+        ]
+      },
+      {
+        "name": "ein_not_found",
+        "trigger": "webhook_response",
+        "match": {
+          "status": "not_found"
+        },
+        "actions": [
+          {
+            "action": "say",
+            "text": "I couldn't find that EIN in our registry. Please email support at daanaa at daanaa dot org to claim your organization. Goodbye.",
+            "options": {
+              "voice": "google",
+              "language": "en-US"
+            }
+          },
+          {
+            "action": "hangup"
+          }
+        ]
+      },
+      {
+        "name": "email_invalid",
+        "trigger": "webhook_response",
+        "match": {
+          "status": "email_invalid"
+        },
+        "actions": [
+          {
+            "action": "say",
+            "text": "That email doesn't match your organization's domain. Please try again or email support at daanaa at daanaa dot org.",
+            "options": {
+              "voice": "google",
+              "language": "en-US"
+            }
+          },
+          {
+            "action": "listen",
+            "options": {
+              "maxSpeechTime": 15,
+              "timeout": 8
+            }
+          }
+        ]
+      },
+      {
+        "name": "handle_other",
+        "trigger": "digit_input",
+        "match": "0",
+        "actions": [
+          {
+            "action": "say",
+            "text": "For support, email us at support at daanaa dot org. Goodbye.",
+            "options": {
+              "voice": "google",
+              "language": "en-US"
+            }
+          },
+          {
+            "action": "hangup"
+          }
+        ]
+      }
+    ]
+  }
+}

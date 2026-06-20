@@ -1,0 +1,284 @@
+{
+  "name": "Email Triage & Intent Detection",
+  "description": "Route incoming daanaa@daanaa.org emails by intent: donation link, volunteer hours, support ticket",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "mailbox": "INBOX",
+        "mark": "read"
+      },
+      "id": "1",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Extract email fields\nconst body = $node.previous.data[0].body || '';\nconst subject = $node.previous.data[0].subject || '';\nconst from = $node.previous.data[0].from.address;\nconst text = (subject + ' ' + body).toLowerCase();\n\n// Intent detection\nlet intent = 'unknown';\nlet priority = 'low';\n\nif (text.includes('give') || text.includes('donate') || text.includes('contribute')) {\n  intent = 'donation_link';\n  priority = 'medium';\n} else if (text.includes('volunteer') || text.includes('hours') || text.includes('logged')) {\n  intent = 'volunteer_hours';\n  priority = 'low';\n} else if (text.includes('support') || text.includes('help') || text.includes('issue') || text.includes('broken')) {\n  intent = 'support_ticket';\n  priority = 'high';\n} else if (text.includes('feedback') || text.includes('suggestion') || text.includes('idea')) {\n  intent = 'feedback';\n  priority = 'low';\n}\n\nreturn {\n  intent,\n  priority,\n  from,\n  subject,\n  body: $node.previous.data[0].body,\n  confidence: intent !== 'unknown' ? 0.95 : 0.3\n};"
+      },
+      "id": "2",
+      "name": "Intent Detector",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": [
+            {
+              "condition": "string",
+              "value1": "{{ $node[\"Intent Detector\"].json.intent }}",
+              "value2": "donation_link"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "If Donation Link",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": [
+            {
+              "condition": "string",
+              "value1": "{{ $node[\"Intent Detector\"].json.intent }}",
+              "value2": "volunteer_hours"
+            }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "If Volunteer Hours",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 350]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": [
+            {
+              "condition": "string",
+              "value1": "{{ $node[\"Intent Detector\"].json.intent }}",
+              "value2": "support_ticket"
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "If Support Ticket",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "to": "{{ $node[\"Intent Detector\"].json.from }}",
+        "subject": "Re: {{ $node[\"Intent Detector\"].json.subject }}",
+        "htmlBody": "<p>Hi there,</p><p>Thanks for reaching out to Daanaa. To make a donation directly to the organization, visit: <strong>{{ $node[\"Get Org\"].json.donate_url }}</strong></p><p>You can also browse similar organizations on our <a href=\"https://daanaa.org/directory\">directory</a>.</p><p>Best,<br>Daanaa Support</p>"
+      },
+      "id": "6",
+      "name": "Send Donation Link Response",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [850, 150]
+    },
+    {
+      "parameters": {
+        "to": "{{ $node[\"Intent Detector\"].json.from }}",
+        "subject": "Re: {{ $node[\"Intent Detector\"].json.subject }}",
+        "htmlBody": "<p>Hi there,</p><p>Thanks for volunteering! Log your volunteer hours here: <a href=\"https://daanaa.org/volunteer/log-hours\">Log Volunteer Hours</a></p><p>Your contribution helps nonprofits understand their volunteer impact.</p><p>Best,<br>Daanaa Support</p>"
+      },
+      "id": "7",
+      "name": "Send Volunteer Hours Response",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://chatwoot:3000/api/v1/inboxes/1/messages",
+        "authentication": "genericCredentialType",
+        "genericCredentials": "chatwoot_api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "{{ $node[\"Intent Detector\"].json.body }}"
+            },
+            {
+              "name": "email",
+              "value": "{{ $node[\"Intent Detector\"].json.from }}"
+            },
+            {
+              "name": "source_id",
+              "value": "email_support"
+            },
+            {
+              "name": "custom_attributes",
+              "value": "{ \"subject\": \"{{ $node[\\\"Intent Detector\\\"].json.subject }}\", \"priority\": \"{{ $node[\\\"Intent Detector\\\"].json.priority }}\", \"intent\": \"{{ $node[\\\"Intent Detector\\\"].json.intent }}\", \"escalated\": true }"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "Create Chatwoot Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://metabase:3000/api/card",
+        "authentication": "genericCredentialType",
+        "genericCredentials": "metabase_api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "intent",
+              "value": "{{ $node[\"Intent Detector\"].json.intent }}"
+            },
+            {
+              "name": "priority",
+              "value": "{{ $node[\"Intent Detector\"].json.priority }}"
+            },
+            {
+              "name": "auto_responded",
+              "value": "{{ $node[\"Intent Detector\"].json.intent !== 'unknown' }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "{{ new Date().toISOString() }}"
+            },
+            {
+              "name": "from",
+              "value": "{{ $node[\"Intent Detector\"].json.from }}"
+            }
+          ]
+        }
+      },
+      "id": "9",
+      "name": "Log Metric",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 400]
+    }
+  ],
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Intent Detector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Detector": {
+      "main": [
+        [
+          {
+            "node": "If Donation Link",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Volunteer Hours",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Donation Link": {
+      "main": [
+        [
+          {
+            "node": "Send Donation Link Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Volunteer Hours": {
+      "main": [
+        [
+          {
+            "node": "Send Volunteer Hours Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "Create Chatwoot Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Donation Link Response": {
+      "main": [
+        [
+          {
+            "node": "Log Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Volunteer Hours Response": {
+      "main": [
+        [
+          {
+            "node": "Log Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Chatwoot Ticket": {
+      "main": [
+        [
+          {
+            "node": "Log Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

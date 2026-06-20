@@ -1,0 +1,316 @@
+{
+  "name": "Nonprofit Claim Verification",
+  "description": "Receive EIN/email from Jambonz IVR, validate against registry, create Chatwoot ticket",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "claim-verify",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://localhost:5000/api/organizations/ein/{{ $node.Webhook.json.ein }}",
+        "options": {}
+      },
+      "id": "2",
+      "name": "Lookup EIN in Registry",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": [
+            {
+              "condition": "string",
+              "value1": "{{ $node[\"Lookup EIN in Registry\"].json.status }}",
+              "value2": "200"
+            }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "EIN Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Parse speech transcript to extract email\nconst transcript = $node.Webhook.json.email_transcript.toLowerCase();\nlet email = '';\n\n// Pattern: \"admin at example dot org\" → \"admin@example.org\"\nconst words = transcript.split(/\\s+/);\nfor (let i = 0; i < words.length - 2; i++) {\n  if (words[i + 1] === 'at' && words[i + 3] === 'dot') {\n    email = words[i] + '@' + words[i + 2] + '.' + words[i + 4];\n    break;\n  }\n}\n\n// Validate email against org domain\nconst orgDomain = $node[\"Lookup EIN in Registry\"].json.domain || '';\nconst emailDomain = email.split('@')[1] || '';\n\nreturn {\n  email: email,\n  email_parsed: email ? true : false,\n  domain_match: emailDomain === orgDomain || emailDomain.endsWith('.' + orgDomain),\n  org_name: $node[\"Lookup EIN in Registry\"].json.organization_name,\n  org_ein: $node.Webhook.json.ein,\n  phone: $node.Webhook.json.phone,\n  call_sid: $node.Webhook.json.call_sid\n};"
+      },
+      "id": "4",
+      "name": "Validate Email Against Domain",
+      "type": "n8n-nodes-base.functionItem",
+      "typeVersion": 1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": [
+            {
+              "condition": "boolean",
+              "value1": "{{ $node[\"Validate Email Against Domain\"].json.domain_match }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Email Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 250]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://chatwoot:3000/api/v1/inboxes/1/messages",
+        "authentication": "genericCredentialType",
+        "genericCredentials": "chatwoot_api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "Nonprofit claim via voice IVR:\n\nOrganization: {{ $node[\"Validate Email Against Domain\"].json.org_name }}\nEIN: {{ $node[\"Validate Email Against Domain\"].json.org_ein }}\nDomain Email: {{ $node[\"Validate Email Against Domain\"].json.email }}\nPhone: {{ $node[\"Validate Email Against Domain\"].json.phone }}\nCall SID: {{ $node[\"Validate Email Against Domain\"].json.call_sid }}\n\nVoice transcript matched EIN and email domain. Ready to approve claim."
+            },
+            {
+              "name": "email",
+              "value": "{{ $node[\"Validate Email Against Domain\"].json.email }}"
+            },
+            {
+              "name": "source_id",
+              "value": "voice_claim"
+            },
+            {
+              "name": "custom_attributes",
+              "value": "{ \"ein\": \"{{ $node[\"Validate Email Against Domain\"].json.org_ein }}\", \"phone\": \"{{ $node[\"Validate Email Against Domain\"].json.phone }}\", \"claim_type\": \"voice\", \"voice_verified\": true, \"call_sid\": \"{{ $node[\"Validate Email Against Domain\"].json.call_sid }}\" }"
+            }
+          ]
+        }
+      },
+      "id": "6",
+      "name": "Create Chatwoot Ticket (Email Valid)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 150]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://chatwoot:3000/api/v1/inboxes/1/messages",
+        "authentication": "genericCredentialType",
+        "genericCredentials": "chatwoot_api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "Nonprofit claim via voice IVR (EMAIL MISMATCH):\n\nOrganization: {{ $node[\"Validate Email Against Domain\"].json.org_name }}\nEIN: {{ $node[\"Validate Email Against Domain\"].json.org_ein }}\nClaimed Email: {{ $node[\"Validate Email Against Domain\"].json.email }}\nOrg Domain: (from registry)\nPhone: {{ $node[\"Validate Email Against Domain\"].json.phone }}\n\nEmail provided does not match organization domain. Manual verification needed."
+            },
+            {
+              "name": "email",
+              "value": "{{ $node[\"Validate Email Against Domain\"].json.email }}"
+            },
+            {
+              "name": "source_id",
+              "value": "voice_claim"
+            },
+            {
+              "name": "custom_attributes",
+              "value": "{ \"ein\": \"{{ $node[\"Validate Email Against Domain\"].json.org_ein }}\", \"phone\": \"{{ $node[\"Validate Email Against Domain\"].json.phone }}\", \"claim_type\": \"voice\", \"voice_verified\": false, \"email_mismatch\": true, \"priority\": \"high\" }"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "Create Chatwoot Ticket (Email Mismatch)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 350]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://chatwoot:3000/api/v1/inboxes/1/messages",
+        "authentication": "genericCredentialType",
+        "genericCredentials": "chatwoot_api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "Nonprofit claim via voice IVR (EIN NOT FOUND):\n\nEIN Provided: {{ $node.Webhook.json.ein }}\nPhone: {{ $node.Webhook.json.phone }}\n\nEIN not found in registry. Caller should email support@daanaa.org."
+            },
+            {
+              "name": "email",
+              "value": "support@daanaa.org"
+            },
+            {
+              "name": "source_id",
+              "value": "voice_claim"
+            },
+            {
+              "name": "custom_attributes",
+              "value": "{ \"ein\": \"{{ $node.Webhook.json.ein }}\", \"phone\": \"{{ $node.Webhook.json.phone }}\", \"claim_type\": \"voice\", \"ein_not_found\": true }"
+            }
+          ]
+        }
+      },
+      "id": "8",
+      "name": "Create Chatwoot Ticket (EIN Not Found)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 550]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://metabase:3000/api/card",
+        "authentication": "genericCredentialType",
+        "genericCredentials": "metabase_api",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "claim_type",
+              "value": "voice"
+            },
+            {
+              "name": "ein",
+              "value": "{{ $node.Webhook.json.ein }}"
+            },
+            {
+              "name": "verified",
+              "value": "{{ $node[\"Validate Email Against Domain\"].json.domain_match }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "{{ new Date().toISOString() }}"
+            }
+          ]
+        }
+      },
+      "id": "9",
+      "name": "Log Claim Metric",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1450, 400]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Lookup EIN in Registry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup EIN in Registry": {
+      "main": [
+        [
+          {
+            "node": "EIN Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "EIN Found?": {
+      "main": [
+        [
+          {
+            "node": "Validate Email Against Domain",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Chatwoot Ticket (EIN Not Found)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Email Against Domain": {
+      "main": [
+        [
+          {
+            "node": "Email Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Valid?": {
+      "main": [
+        [
+          {
+            "node": "Create Chatwoot Ticket (Email Valid)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Chatwoot Ticket (Email Mismatch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Chatwoot Ticket (Email Valid)": {
+      "main": [
+        [
+          {
+            "node": "Log Claim Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Chatwoot Ticket (Email Mismatch)": {
+      "main": [
+        [
+          {
+            "node": "Log Claim Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Chatwoot Ticket (EIN Not Found)": {
+      "main": [
+        [
+          {
+            "node": "Log Claim Metric",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
