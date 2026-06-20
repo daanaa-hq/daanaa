@@ -208,7 +208,7 @@ export default function IntentModal({
                 ? `How would you like to support ${org.name}?`
                 : isEditing
                   ? `Edit your intent for ${org.name}`
-                  : `${selectedTypeLabel.label} — ${org.name}`}
+                  : `${selectedTypeLabel.label} for ${org.name}`}
             </h2>
           </div>
           <button

@@ -704,12 +704,12 @@ function WalletSection() {
             </h2>
             <p className="mt-5 font-body text-[16px] leading-[1.7]" style={{ color: 'rgba(245,240,235,0.65)' }}>
               Your Giving Wallet holds the nonprofits you want to support.
-              Track your intent for each one. Everything stays private — your account, your list, no one else's.
+              Track your intent for each one. Everything stays private: your account, your list, no one else's.
             </p>
             <ul className="mt-7 space-y-3.5">
               {[
                 'Save nonprofits as you discover them across Daanaa',
-                'Set your giving intent — amount, volunteering, or board interest',
+                'Set your giving intent: amount, volunteering, or board interest',
                 'Sync across devices with your Google account',
               ].map(item => (
                 <li key={item} className="flex items-start gap-3 font-body text-[15px]" style={{ color: 'rgba(245,240,235,0.75)' }}>
@@ -810,7 +810,7 @@ function HiddenGemsSection() {
               The ones doing quiet, steady work
             </h2>
             <p className="mt-3 font-body text-[15px] text-cool-grey max-w-xl leading-[1.6]">
-              Small nonprofits — under $500K in revenue — that rank near the top of their peer group.
+              Small nonprofits under $500K in revenue that rank near the top of their peer group.
               Starting points for your own research, not verdicts.
             </p>
           </div>
