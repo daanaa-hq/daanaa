@@ -145,6 +145,7 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Visit ${org.name}'s website`}
+            title="Link from our public records — websites can change. Search by name if this doesn't work."
             className="flex-1 px-3 py-2 rounded-xl bg-deep-navy text-warm-cream font-body text-[13px] font-semibold hover:bg-deep-navy/80 transition-colors text-center"
           >
             Visit website
@@ -159,17 +160,32 @@ function WalletCardComponent({ org, onRemove, onEdit }: WalletCardProps) {
             {intentText && intentText !== 'No longer interested' ? 'Edit intent' : intentText === 'No longer interested' ? 'Update intent' : 'Set intent'}
           </button>
         )}
-        <Link
-          to={`/org/${org.ein}`}
-          aria-label={`View ${org.name} detail page`}
-          className="shrink-0 p-2 rounded-lg text-cool-grey hover:text-deep-navy hover:bg-light-grey/40 transition-colors"
-          title="View detail page"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 17 17 7M17 7H8M17 7v9"/>
-          </svg>
-        </Link>
+        {org.website ? (
+          <Link
+            to={`/org/${org.ein}`}
+            aria-label={`View ${org.name} detail page`}
+            className="shrink-0 p-2 rounded-lg text-cool-grey hover:text-deep-navy hover:bg-light-grey/40 transition-colors"
+            title="View detail page"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M7 17 17 7M17 7H8M17 7v9"/>
+            </svg>
+          </Link>
+        ) : (
+          <Link
+            to={`/org/${org.ein}`}
+            aria-label={`View ${org.name} detail page`}
+            className="flex-1 px-3 py-2 rounded-xl border border-light-grey text-cool-grey font-body text-[13px] font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors text-center"
+          >
+            View profile
+          </Link>
+        )}
       </div>
+      {org.website && (
+        <p className="font-body text-[10px] text-cool-grey/50 mt-2 leading-relaxed">
+          Link from our records — websites can change. If it's broken, search for them by name.
+        </p>
+      )}
     </div>
   )
 }

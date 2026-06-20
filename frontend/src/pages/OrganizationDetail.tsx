@@ -578,7 +578,7 @@ export default function OrganizationDetail() {
                         </p>
                       )}
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                        External link. Daanaa does not process donations or collect donor payment information.</p>
+                        External link from our public records. Websites can change — if this link is broken, search for the organization by name. Daanaa does not process donations.</p>
                     </div>
                   );
                 }

@@ -159,7 +159,7 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
             href={apiOrg.website}
             target="_blank"
             rel="noopener noreferrer"
-            title="Visit website"
+            title="Visit their website — from our public records, may not always be current"
             aria-label={`Visit ${org.name}'s website`}
             onClick={e => e.stopPropagation()}
             className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 text-cool-grey hover:text-soft-gold"
@@ -292,7 +292,7 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
               href={apiOrg.website}
               target="_blank"
               rel="noopener noreferrer"
-              title="Visit website"
+              title="Visit their website — from our public records, may not always be current"
               aria-label={`Visit ${org.name}'s website`}
               onClick={e => e.stopPropagation()}
               className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 text-cool-grey hover:text-soft-gold"
