@@ -4387,8 +4387,8 @@ def volunteer_events_search():
     date_to    = (request.args.get('date_to')   or '').strip()[:10]
     ntee       = (request.args.get('ntee')  or '').strip()[:1].upper()
     virtual    = request.args.get('virtual') in ('1', 'true')
-    limit_val  = min(int(request.args.get('limit',  50)), 100)
-    offset_val = max(int(request.args.get('offset',  0)), 0)
+    limit_val  = _int_arg('limit',  50, hi=100)
+    offset_val = _int_arg('offset',  0, hi=10_000_000)
 
     where, params = ["ve.status='active'", "ve.event_date >= date('now')"], []
     if zip_code:

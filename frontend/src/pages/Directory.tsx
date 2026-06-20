@@ -757,9 +757,15 @@ export default function Directory() {
                       </button>
                     </p>
                   )}
-                  {statsData?.irs_status_verified_at && (
+                  {(statsData?.irs_status_verified_at || statsData?.scores_last_updated) && (
                     <p className="font-body text-[12px] text-cool-grey mt-1">
-                      Built from public IRS data, last checked {new Date(statsData.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      Built from public IRS data
+                      {statsData?.scores_last_updated && (
+                        <> · Financial data as of {new Date(statsData.scores_last_updated).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</>
+                      )}
+                      {statsData?.irs_status_verified_at && (
+                        <> · IRS status checked {new Date(statsData.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</>
+                      )}
                     </p>
                   )}
 
