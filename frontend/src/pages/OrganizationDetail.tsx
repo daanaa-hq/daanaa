@@ -142,9 +142,9 @@ function summaryLine(org: ApiOrganization): string {
   if (org.months_of_reserve != null) {
     const m = Math.round(org.months_of_reserve)
     const feel = m >= 6 ? 'a strong cushion' : m >= 3 ? 'a healthy buffer' : 'limited runway'
-    return `They carry about ${m} months of savings -- ${feel}.`
+    return `They carry about ${m} months of savings, ${feel}.`
   }
-  return `Ranked within a peer group of ${org.peer_total ?? '--'} similar nonprofits.`
+  return `Ranked within a peer group of ${org.peer_total ? org.peer_total.toLocaleString() : 'similar'} nonprofits.`
 }
 
 // ---- Convert API org to local format ----
@@ -633,17 +633,57 @@ export default function OrganizationDetail() {
                 if (!link.url) {
                   return (
                     <div className="mt-5">
-                      <a
-                        href={`https://www.irs.gov/pub/irs-soi/19eo${org.ein.substring(0, 1)}.zip`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-warm-cream text-deep-navy px-7 py-3 rounded-full hover:bg-warm-cream/80 transition-colors"
-                      >
-                        IRS 990-N Record
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                      </a>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <a
+                          href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
+                        >
+                          View public record
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                        </a>
+                        {apiOrg && (
+                          <button
+                            onClick={() => {
+                              if (isInWallet(org.ein)) {
+                                removeFromWallet(org.ein)
+                              } else {
+                                addToWallet({
+                                  ein: apiOrg.EIN,
+                                  name: apiOrg.organization_name,
+                                  mission: apiOrg.mission || '',
+                                  location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
+                                  cause: apiOrg.cause_tags || [],
+                                  merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
+                                  merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
+                                  is_hidden_gem: !!(apiOrg.is_hidden_gem),
+                                  bookmarkedAt: Date.now(),
+                                })
+                              }
+                            }}
+                            className="inline-flex items-center gap-2 px-5 py-3 rounded-full font-body text-[15px] font-semibold transition-all duration-150 border"
+                            style={{
+                              backgroundColor: isInWallet(org.ein) ? 'rgba(201,169,110,0.12)' : 'transparent',
+                              color: '#C9A96E',
+                              borderColor: '#C9A96E',
+                            }}
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24"
+                              fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
+                              stroke="#C9A96E"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                            </svg>
+                            {isInWallet(org.ein) ? 'Saved' : 'Save'}
+                          </button>
+                        )}
+                      </div>
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                        IRS public record. Daanaa does not process donations or collect donor payment information.
+                        Public record via ProPublica. Daanaa does not process donations or collect donor payment information.
                       </p>
                       <button
                         onClick={() => setShowVolunteer(true)}
@@ -1031,7 +1071,7 @@ export default function OrganizationDetail() {
                   <p className="mt-3 font-body text-[12px] text-cool-grey">This page is managed by the organization.</p>
                 )}
                 {apiOrg!.claim_status === 'letter_sent' && (
-                  <p className="mt-3 font-body text-[12px] text-cool-grey">Claim in progress -- verification letter sent.</p>
+                  <p className="mt-3 font-body text-[12px] text-cool-grey">Claim in progress: verification letter sent.</p>
                 )}
                 {apiOrg!.irs_status_verified_at && (
                   <p className="mt-3 font-body text-[11px] text-cool-grey">
@@ -1134,7 +1174,7 @@ export default function OrganizationDetail() {
                 {apiOrg?.data_badges?.mission === 'lucido' && (
                   <span
                     className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5"
-                    title="Sourced from public IRS filings -- not confirmed by the organization"
+                    title="Sourced from public IRS filings; not confirmed by the organization"
                   >
                     from public records
                   </span>
