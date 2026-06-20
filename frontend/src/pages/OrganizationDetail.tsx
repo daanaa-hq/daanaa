@@ -675,9 +675,13 @@ export default function OrganizationDetail() {
                     Claimed
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-cool-grey/30 text-cool-grey font-body text-[11px]">
+                  <Link
+                    to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
+                    title="Is this your nonprofit? Claim your page free."
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-cool-grey/30 text-cool-grey hover:border-soft-gold/50 hover:text-soft-gold font-body text-[11px] transition-colors"
+                  >
                     Unclaimed
-                  </span>
+                  </Link>
                 )}
               </div>
               <Link

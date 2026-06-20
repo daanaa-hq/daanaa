@@ -40,7 +40,7 @@ export default function ForNonprofits() {
   const [repName, setRepName] = useState('')
   const [title, setTitle] = useState('')
 
-  // Prefill EIN from URL param and look up org info
+  // Prefill EIN from URL param, look up org info, and scroll to form
   useEffect(() => {
     const einParam = (searchParams.get('ein') || '').replace(/\D/g, '').slice(0, 9)
     if (!einParam) return
@@ -50,6 +50,10 @@ export default function ForNonprofits() {
       const addr = [org.street_address, org.CITY, org.STATE, org.zipcode].filter(Boolean).join(', ')
       setIrsAddress(addr || null)
     }).catch(() => {})
+    // Rep is coming directly from their org page — skip the marketing sections
+    setTimeout(() => {
+      document.getElementById('claim')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
   }, [searchParams])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -414,7 +418,9 @@ export default function ForNonprofits() {
                 </p>
                 <p className="font-body text-[14px] text-muted-cream leading-[1.6] mb-6">
                   On the call we give you a 6-digit PIN. Enter it at{' '}
-                  <span className="text-soft-gold">daanaa.org/claim/verify</span>{' '}
+                  <Link to="/claim/verify" className="text-soft-gold hover:text-bright-gold underline underline-offset-2 transition-colors">
+                    daanaa.org/claim/verify
+                  </Link>{' '}
                   to unlock your page.
                 </p>
                 <Link to="/directory" className="inline-block font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
