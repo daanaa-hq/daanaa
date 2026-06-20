@@ -11,7 +11,6 @@ import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { getFeaturedCategory } from '../data/featuredCategory'
-import ImpactWidget from '../components/ImpactWidget'
 import AddToWalletButton from '../components/AddToWalletButton'
 
 const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
@@ -997,24 +996,6 @@ export default function Home() {
       <FeaturedCause />
       <HiddenGemsSection />
       <BrowseCauses />
-
-      {/* Impact Section */}
-      <div className="bg-warm-cream py-12 md:py-16">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-          <div className="mb-8">
-            <div className="text-xs text-soft-gold uppercase tracking-wider font-semibold mb-3">
-              Impact
-            </div>
-            <h2 className="text-3xl font-display text-deep-navy mb-4">
-              How Daanaa is making a difference
-            </h2>
-            <p className="text-lg text-cool-grey max-w-2xl">
-              Donors tell us when we helped them find a nonprofit. Nonprofits report their volunteers. Together, we measure real impact.
-            </p>
-          </div>
-          <ImpactWidget period="month" size="large" />
-        </div>
-      </div>
 
       <PeerFinancialContextSection />
       <WalletSection />

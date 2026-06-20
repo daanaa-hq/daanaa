@@ -24,26 +24,18 @@ export default function DonationAttributionBanner({ org }: DonationAttributionBa
     }
   }, [org.EIN])
 
-  const handleConfirm = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/impact/log-donation-attribution', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ein: org.EIN }),
-      })
+  const handleConfirm = () => {
+    // Dismiss immediately for good UX, then fire API in background
+    const storageKey = `daanaa_donation_banner_${org.EIN}`
+    localStorage.setItem(storageKey, Date.now().toString())
+    setDismissed(true)
+    setLoading(false)
 
-      if (response.ok) {
-        // Mark as dismissed for 24h
-        const storageKey = `daanaa_donation_banner_${org.EIN}`
-        localStorage.setItem(storageKey, Date.now().toString())
-        setDismissed(true)
-      }
-    } catch (error) {
-      console.error('Error logging donation attribution:', error)
-    } finally {
-      setLoading(false)
-    }
+    fetch('/api/impact/log-donation-attribution', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ein: org.EIN }),
+    }).catch(() => {/* endpoint not yet live, ignore */})
   }
 
   if (dismissed) return null
