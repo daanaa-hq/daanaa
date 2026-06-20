@@ -176,12 +176,16 @@ def main():
     print(f"  Total: {total_orgs} tax-deductible orgs")
 
     # Stream orgs directly without loading all into memory
+    # street_address was backfilled 2026-06-11; older snapshots may not have it.
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(registry_enriched)").fetchall()}
+    street_col = "street_address" if "street_address" in cols else "NULL as street_address"
+
     print(f"  Streaming {total_orgs} orgs (skipping {len(existing)} existing)...")
-    cursor.execute("""
+    cursor.execute(f"""
         SELECT
             EIN, organization_name, NTEE1, NTEECC, CITY, STATE,
             total_revenue, ntee1_percentile, ntee1_total_orgs, source,
-            zipcode, street_address, revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
+            zipcode, {street_col}, revenue_band, peer_percentile, peer_rank, peer_total, peer_group,
             latest_tax_year, data_source, updated_at, merit_tier, merit_score,
             merit_band, financial_health, months_of_reserve, net_assets,
             total_expenses, total_liabilities, employee_count, program_expense_pct,
