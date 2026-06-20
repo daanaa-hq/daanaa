@@ -14,6 +14,8 @@ import {
 
 const NUDGE_KEY = 'daanaa_wallet_nudge_ts'
 const NUDGE_THROTTLE_MS = 7 * 24 * 60 * 60 * 1000
+const API_BASE = import.meta.env.VITE_API_URL || ''
+const STALE_CHECK_MAX = 10
 
 type SortBy = 'recent' | 'name' | 'health'
 type FilterIntent = 'all' | 'giving' | 'volunteer' | 'board'
@@ -36,6 +38,7 @@ export default function WalletPage() {
 
   const [sortBy, setSortBy] = useState<SortBy>('recent')
   const [syncing, setSyncing] = useState(false)
+  const [staleEins, setStaleEins] = useState<Set<string>>(new Set())
   const [filterState, setFilterState] = useState<FilterState>({ intent: 'all', health: 'all' })
   const [searchTerm, setSearchTerm] = useState('')
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -51,6 +54,28 @@ export default function WalletPage() {
       setShowNudge(true)
     }
   }, [hasOrgsWithoutIntent, wallet.orgs.length])
+
+  // Stale org check: fire-and-forget, runs once when wallet.orgs changes.
+  // Checks up to STALE_CHECK_MAX EINs; any 404 is added to staleEins.
+  useEffect(() => {
+    if (wallet.orgs.length === 0) return
+    const einsToCheck = wallet.orgs.slice(0, STALE_CHECK_MAX).map(o => o.ein)
+    let cancelled = false
+    Promise.all(
+      einsToCheck.map(ein =>
+        fetch(`${API_BASE}/api/organizations/${ein}`, { method: 'HEAD' })
+          .then(res => (res.status === 404 ? ein : null))
+          .catch(() => null)
+      )
+    ).then(results => {
+      if (cancelled) return
+      const found = results.filter((ein): ein is string => ein !== null)
+      if (found.length > 0) {
+        setStaleEins(new Set(found))
+      }
+    })
+    return () => { cancelled = true }
+  }, [wallet.orgs])
 
   const dismissNudge = useCallback(() => {
     setShowNudge(false)
@@ -420,12 +445,32 @@ export default function WalletPage() {
         {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredOrgs.map(org => (
-            <WalletCard
-              key={org.ein}
-              org={org}
-              onRemove={handleRemove}
-              onEdit={handleEdit}
-            />
+            <div key={org.ein} className="flex flex-col gap-2">
+              {staleEins.has(org.ein) && (
+                <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    <p className="font-body text-[12px] text-deep-navy leading-snug">
+                      This organization may no longer be active in our registry.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleRemove(org.ein)}
+                    className="shrink-0 px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 font-body text-[11px] font-semibold transition-colors whitespace-nowrap"
+                  >
+                    Remove from wallet
+                  </button>
+                </div>
+              )}
+              <WalletCard
+                org={org}
+                onRemove={handleRemove}
+                onEdit={handleEdit}
+              />
+            </div>
           ))}
         </div>
       </div>
