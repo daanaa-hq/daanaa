@@ -48,6 +48,7 @@ const Partners = lazy(() => import('./pages/Partners'))
 const PartnerDetail = lazy(() => import('./pages/PartnerDetail'))
 const VendorLoginPage = lazy(() => import('./pages/vendor/VendorLoginPage'))
 const VendorDashboardPage = lazy(() => import('./pages/vendor/VendorDashboardPage'))
+const NonprofitSignup = lazy(() => import('./components/NonprofitSignup'))
 
 function PageLoader() {
   return (
@@ -113,6 +114,7 @@ export default function App() {
           <Route path="/research" element={<ResearchDashboard />} />
           <Route path="/nonprofit/verify-hours" element={<NonprofitVerification />} />
           <Route path="/nonprofit/login" element={<NonprofitLogin />} />
+          <Route path="/nonprofit/letters/signup" element={<NonprofitSignup />} />
           <Route element={<NonprofitRoute />}>
             <Route path="/nonprofit/my-orgs" element={<MyOrgsPage />} />
             <Route path="/nonprofit/dashboard/:ein" element={<NonprofitDashboardPage />} />
