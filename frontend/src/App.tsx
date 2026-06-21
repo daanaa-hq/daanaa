@@ -52,6 +52,7 @@ const VendorDashboardPage = lazy(() => import('./pages/vendor/VendorDashboardPag
 const NonprofitSignup = lazy(() => import('./components/NonprofitSignup'))
 const AdminOperations = lazy(() => import('./pages/AdminOperations'))
 const VolunteerApproval = lazy(() => import('./pages/nonprofit/VolunteerApproval'))
+const VolunteerSubmission = lazy(() => import('./pages/VolunteerSubmission'))
 
 function PageLoader() {
   return (
@@ -111,6 +112,7 @@ export default function App() {
             <Route path="/guild/:slug" element={<GuildReferral />} />
             <Route path="/member/benefits" element={<MemberBenefits />} />
             <Route path="/volunteer" element={<VolunteerSearch />} />
+            <Route path="/volunteer/submit" element={<VolunteerSubmission />} />
           </Route>
           <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />
