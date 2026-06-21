@@ -6,6 +6,7 @@ import WalletCard from '../components/WalletCard'
 import EditIntentModal from '../components/EditIntentModal'
 import PassphraseModal from '../components/PassphraseModal'
 import ImpactSummary from '../components/ImpactSummary'
+import WalletAccountLink from '../components/WalletAccountLink'
 import type { ApiOrganization } from '../data/api'
 import { API_BASE } from '../lib/platform'
 import {
@@ -348,6 +349,12 @@ export default function WalletPage() {
         <div className="mb-10">
           <p className="font-body text-xs text-cool-grey uppercase tracking-wide font-semibold mb-3">Your Impact</p>
           <ImpactSummary />
+        </div>
+
+        {/* Account Linking */}
+        <div className="mb-10">
+          <p className="font-body text-xs text-cool-grey uppercase tracking-wide font-semibold mb-3">Recovery</p>
+          <WalletAccountLink />
         </div>
 
         {/* Giving Intent Guide — only shown when orgs without a plan exist */}

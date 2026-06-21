@@ -6154,6 +6154,95 @@ def e2e_wallet_sync():
                     'salt': row[2], 'updatedAt': row[3]})
 
 
+@app.route('/api/wallet/backup', methods=['POST'])
+def backup_wallet():
+    """Backup encrypted wallet to account (requires Firebase auth)."""
+    try:
+        from firebase_admin import auth
+
+        token = request.headers.get('Authorization', '').split(' ')[-1]
+        if not token:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        try:
+            decoded = auth.verify_id_token(token)
+            user_id = decoded['uid']
+        except Exception:
+            return jsonify({'error': 'Invalid token'}), 401
+
+        data = request.json or {}
+        entries = data.get('entries', [])
+
+        if not entries:
+            return jsonify({'error': 'No wallet data to backup'}), 400
+
+        # Store encrypted backup linked to user account
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS wallet_backups (
+                user_id TEXT PRIMARY KEY,
+                entries TEXT NOT NULL,
+                backed_up_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id)
+            )
+        ''')
+
+        import json
+        cursor.execute('''
+            INSERT OR REPLACE INTO wallet_backups (user_id, entries, backed_up_at)
+            VALUES (?, ?, ?)
+        ''', (user_id, json.dumps(entries), datetime.now().isoformat()))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'backed_up_at': datetime.now().isoformat()}), 200
+    except ImportError:
+        return jsonify({'error': 'Firebase not configured'}), 503
+    except Exception as e:
+        return jsonify({'error': f'Backup failed: {str(e)}'}), 500
+
+
+@app.route('/api/wallet/restore', methods=['GET'])
+def restore_wallet():
+    """Restore wallet from backup (requires Firebase auth)."""
+    try:
+        from firebase_admin import auth
+
+        token = request.headers.get('Authorization', '').split(' ')[-1]
+        if not token:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        try:
+            decoded = auth.verify_id_token(token)
+            user_id = decoded['uid']
+        except Exception:
+            return jsonify({'error': 'Invalid token'}), 401
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT entries FROM wallet_backups WHERE user_id = ?
+        ''', (user_id,))
+
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            return jsonify({'entries': [], 'found': False}), 404
+
+        import json
+        entries = json.loads(row[0])
+        return jsonify({'entries': entries, 'found': True}), 200
+    except ImportError:
+        return jsonify({'error': 'Firebase not configured'}), 503
+    except Exception as e:
+        return jsonify({'error': f'Restore failed: {str(e)}'}), 500
+
+
 @app.route('/api/wallet/donation-receipt', methods=['POST'])
 def generate_donation_receipt():
     """Generate IRS-compliant donation receipt PDF."""
