@@ -1006,6 +1006,12 @@ def export_funding_csv():
     })
 
 
+@app.route('/api/nonprofit/<path:subpath>', methods=['GET', 'POST', 'PATCH', 'PUT', 'DELETE'])
+def nonprofit_proxy(subpath):
+    """Proxy nonprofit endpoints to upstream home server."""
+    return _live_proxy(f"/api/nonprofit/{subpath}")
+
+
 @app.route('/api/guild/<path:subpath>', methods=['GET', 'POST', 'PATCH'])
 def guild_proxy(subpath):
     return _live_proxy(f"/api/guild/{subpath}")

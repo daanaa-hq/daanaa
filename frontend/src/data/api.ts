@@ -1,6 +1,22 @@
 // API client for Daanaa backend — maps to daanaa_api.py (Flask, port 5000)
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+// Nonprofit endpoints route to the home server API instead of the droplet
+// This keeps the droplet stateless (browse/search only) while nonprofit features
+// (analytics, approval) use the full daanaa_api.py backend
+const getApiBase = (path: string): string => {
+  if (path.startsWith('/api/nonprofit/')) {
+    // On production (daanaa.org via Cloudflare), nonprofit API routes through home server
+    // On localhost, use port 5000 (which is daanaa_api.py)
+    if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+      return 'http://localhost:5000';
+    }
+    // On production, fetch through the same origin (Cloudflare routes /api/nonprofit to home)
+    return '';
+  }
+  return API_BASE;
+};
+
 // Hard cap on every request: a slow or hung backend must surface as an error
 // the UI can show, never an indefinite blank loading state.
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -8,8 +24,9 @@ const REQUEST_TIMEOUT_MS = 10_000;
 async function fetchJson<T>(path: string, options?: RequestInit): Promise<T> {
   const { headers: extraHeaders, ...rest } = options ?? {};
   let response: Response;
+  const apiBase = getApiBase(path);
   try {
-    response = await fetch(`${API_BASE}${path}`, {
+    response = await fetch(`${apiBase}${path}`, {
       headers: { 'Content-Type': 'application/json', ...(extraHeaders ?? {}) },
       ...rest,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
