@@ -42,10 +42,8 @@ def _get_portal_analytics():
     ''')
     by_status = dict(cursor.fetchall())
 
-    # Total credits purchased
-    cursor.execute('SELECT SUM(COALESCE(lc_original.letters_purchased, 0)) FROM (
-        SELECT nonprofit_ein, COUNT(*) as letters_purchased FROM letter_credits GROUP BY nonprofit_ein
-    ) as lc_original')
+    # Total credits purchased (estimate from credit records)
+    cursor.execute('SELECT COUNT(*) FROM letter_credits')
     total_credits_purchased = cursor.fetchone()[0] or 0
 
     # Total letters generated
@@ -76,13 +74,14 @@ def register_nonprofit_endpoints(app):
     @app.route('/api/nonprofit/analytics', methods=['GET'])
     def nonprofit_analytics():
         """Get nonprofit portal usage metrics (admin only)."""
-        auth = request.headers.get('Authorization', '')
-        admin_key = auth.split(' ')[-1] if auth else None
         expected_key = os.environ.get('DAANAA_ADMIN_KEY', '')
 
-        # Allow both admin key and local dev
-        if admin_key != expected_key and expected_key:
-            return jsonify({'error': 'Unauthorized'}), 401
+        # If key is configured, require auth
+        if expected_key:
+            auth = request.headers.get('Authorization', '')
+            admin_key = auth.split(' ')[-1] if auth else ''
+            if admin_key != expected_key:
+                return jsonify({'error': 'Unauthorized'}), 401
 
         try:
             analytics = _get_portal_analytics()
