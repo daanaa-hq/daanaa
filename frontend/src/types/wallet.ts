@@ -56,6 +56,7 @@ export interface WalletContextType {
   getDonations: (ein: string) => LoggedDonation[] | undefined
   getVolunteerHours: (ein: string) => LoggedVolunteerHours[] | undefined
   updateDonationLetterStatus: (ein: string, donationId: string, status: LoggedDonation['letterStatus']) => void
+  archiveDonationHistory: (ein: string, beforeDate: string) => void
   // Legacy intent methods (deprecated, kept for backward compat)
   updateIntent: (ein: string, intent: GivingIntent) => void
   getIntent: (ein: string) => GivingIntent | undefined

@@ -511,6 +511,61 @@ The Daanaa Team
     )
 
 
+def nonprofit_signup_email(
+    nonprofit_name: str,
+    nonprofit_email: str,
+    magic_link: str,
+) -> EmailTemplate:
+    """Nonprofit ED signup confirmation with magic link."""
+    body = f"""
+<p>Thank you for registering <strong>{nonprofit_name}</strong> with Daanaa.</p>
+
+<p>To verify your email and unlock your dashboard, click the link below:</p>
+
+<p style="text-align: center; margin: 20px 0;">
+  <a href="{magic_link}" style="background-color: #4a90d9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">
+    Verify Email & Access Dashboard
+  </a>
+</p>
+
+<p style="font-size: 0.9em; color: #666;">
+  Or copy this link: <code>{magic_link}</code>
+</p>
+
+<p>This link expires in 24 hours.</p>
+
+<p>From your dashboard, you can:<br>
+• Approve donation letters for your donors<br>
+• Generate tax-compliant receipt PDFs<br>
+• Manage your letter generation credits</p>
+
+<p>Questions? Reply to this email or contact us at support@daanaa.org</p>
+
+<p>The Daanaa Team</p>
+"""
+    plain = f"""Thank you for registering {nonprofit_name} with Daanaa.
+
+To verify your email and unlock your dashboard, visit:
+{magic_link}
+
+This link expires in 24 hours.
+
+From your dashboard, you can:
+• Approve donation letters for your donors
+• Generate tax-compliant receipt PDFs
+• Manage your letter generation credits
+
+Questions? Contact us at support@daanaa.org
+
+The Daanaa Team"""
+
+    return EmailTemplate(
+        subject=f"Verify your {nonprofit_name} Daanaa account",
+        html=_base_html("Verify your account", "#4a90d9", "#eef4fb", body),
+        plain_text=plain,
+    )
+
+
 # ── Singleton ─────────────────────────────────────────────────────────────────
 
 _email_service: Optional[EmailService] = None

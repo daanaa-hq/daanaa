@@ -2,10 +2,18 @@
 
 import uuid
 import sqlite3
+import os
 from datetime import datetime, timedelta
 from flask import request, jsonify
 
 DB_PATH = 'data/merit_registry.db'
+
+# Email service (imported from scripts/)
+try:
+    from email_service import nonprofit_signup_email, get_email_service
+except ImportError:
+    nonprofit_signup_email = None
+    get_email_service = None
 
 def register_nonprofit_endpoints(app):
     """Register nonprofit portal routes on Flask app."""
@@ -40,7 +48,18 @@ def register_nonprofit_endpoints(app):
             conn.commit()
             conn.close()
 
-            # TODO: Send magic link email
+            # Send magic link email
+            if nonprofit_signup_email and get_email_service:
+                magic_link = f"{os.environ.get('DAANAA_FRONTEND_URL', 'https://daanaa.org')}/nonprofit/verify?id={account_id}"
+                template = nonprofit_signup_email(org[0], email, magic_link)
+                email_service = get_email_service()
+                email_service.send(
+                    to_email=email,
+                    subject=template.subject,
+                    html=template.html,
+                    plain_text=template.plain_text,
+                )
+
             return jsonify({'account_id': account_id, 'message': 'Check email for verification link'}), 201
 
         except sqlite3.IntegrityError:

@@ -134,44 +134,28 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
     syncTimerRef.current = setTimeout(async () => {
       dispatch({ type: 'SET_SYNC_STATUS', status: 'syncing' })
-      try {
-        const { ciphertext, iv } = await encryptWallet(state.entries, state.encKey!)
+      let lastError: Error | null = null
 
-        // Request a JWT token if needed
-        const now = Date.now()
-        if (!tokenRef.current || tokenRef.current.expiresAt < now) {
-          const tokenRes = await fetch(`${getApiBase()}/api/wallet/token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keyHash: state.keyHash }),
-          })
-          if (!tokenRes.ok) throw new Error(`token request failed: ${tokenRes.status}`)
-          const { token, expiresIn } = await tokenRes.json()
-          tokenRef.current = { token, expiresAt: now + expiresIn * 1000 }
-        }
+      // Exponential backoff retry: up to 3 attempts (400ms, 800ms, 1600ms delays)
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { ciphertext, iv } = await encryptWallet(state.entries, state.encKey!)
 
-        // Sync with JWT token
-        const r = await fetch(`${getApiBase()}/api/wallet/sync`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${tokenRef.current.token}`,
-          },
-          body: JSON.stringify({ ciphertext, iv, salt: state.salt }),
-        })
+          // Request a JWT token if needed
+          const now = Date.now()
+          if (!tokenRef.current || tokenRef.current.expiresAt < now) {
+            const tokenRes = await fetch(`${getApiBase()}/api/wallet/token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyHash: state.keyHash }),
+            })
+            if (!tokenRes.ok) throw new Error(`token request failed: ${tokenRes.status}`)
+            const { token, expiresIn } = await tokenRes.json()
+            tokenRef.current = { token, expiresAt: now + expiresIn * 1000 }
+          }
 
-        // If 401, token expired — refresh and retry
-        if (r.status === 401) {
-          const tokenRes = await fetch(`${getApiBase()}/api/wallet/token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keyHash: state.keyHash }),
-          })
-          if (!tokenRes.ok) throw new Error(`token refresh failed: ${tokenRes.status}`)
-          const { token, expiresIn } = await tokenRes.json()
-          tokenRef.current = { token, expiresAt: now + expiresIn * 1000 }
-
-          const retryR = await fetch(`${getApiBase()}/api/wallet/sync`, {
+          // Sync with JWT token
+          const r = await fetch(`${getApiBase()}/api/wallet/sync`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -179,15 +163,45 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
             },
             body: JSON.stringify({ ciphertext, iv, salt: state.salt }),
           })
-          if (!retryR.ok) throw new Error(`sync failed after token refresh: ${retryR.status}`)
-        } else if (!r.ok) {
-          throw new Error(`sync failed: ${r.status}`)
-        }
 
-        dispatch({ type: 'SET_SYNC_STATUS', status: 'idle' })
-      } catch {
-        dispatch({ type: 'SET_SYNC_STATUS', status: 'error' })
+          // If 401, token expired — refresh and retry
+          if (r.status === 401) {
+            const tokenRes = await fetch(`${getApiBase()}/api/wallet/token`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyHash: state.keyHash }),
+            })
+            if (!tokenRes.ok) throw new Error(`token refresh failed: ${tokenRes.status}`)
+            const { token, expiresIn } = await tokenRes.json()
+            tokenRef.current = { token, expiresAt: now + expiresIn * 1000 }
+
+            const retryR = await fetch(`${getApiBase()}/api/wallet/sync`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tokenRef.current.token}`,
+              },
+              body: JSON.stringify({ ciphertext, iv, salt: state.salt }),
+            })
+            if (!retryR.ok) throw new Error(`sync failed after token refresh: ${retryR.status}`)
+          } else if (!r.ok) {
+            throw new Error(`sync failed: ${r.status}`)
+          }
+
+          // Success
+          dispatch({ type: 'SET_SYNC_STATUS', status: 'idle' })
+          return
+        } catch (e) {
+          lastError = e instanceof Error ? e : new Error(String(e))
+          if (attempt < 2) {
+            // Exponential backoff: 400ms, 800ms
+            await new Promise(resolve => setTimeout(resolve, 400 * Math.pow(2, attempt)))
+          }
+        }
       }
+
+      // All retries failed
+      dispatch({ type: 'SET_SYNC_STATUS', status: 'error' })
     }, 800)
     return () => { if (syncTimerRef.current) clearTimeout(syncTimerRef.current) }
   }, [state.entries, state.encKey, state.keyHash, state.salt])
@@ -311,7 +325,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const logDonation = useCallback((ein: string, amount: number, date: string, notes?: string) => {
     const donation: LoggedDonation = {
-      id: `don_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `don_${crypto.randomUUID()}`,
       amount,
       date,
       notes,
@@ -322,7 +336,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const logVolunteerHours = useCallback((ein: string, hours: number, date: string, notes?: string) => {
     const entry: LoggedVolunteerHours = {
-      id: `vol_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `vol_${crypto.randomUUID()}`,
       hours,
       date,
       notes,
@@ -338,6 +352,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'UPDATE_DONATION_LETTER_STATUS', ein, donationId, status })
   }, [])
 
+  const archiveDonationHistory = useCallback((ein: string, beforeDate: string) => {
+    // Delete donations/volunteer hours before a given date (ISO string).
+    // Use case: comply with data retention policies (e.g., keep 7 years only).
+    const idx = state.entries.findIndex(e => e.ein === ein)
+    if (idx === -1) return
+    const next = [...state.entries]
+    const entry = { ...next[idx] }
+    entry.donations = (entry.donations || []).filter(d => d.date >= beforeDate)
+    entry.volunteerHours = (entry.volunteerHours || []).filter(v => v.date >= beforeDate)
+    next[idx] = entry
+    dispatch({ type: 'HYDRATE', entries: next, keyHash: state.keyHash!, salt: state.salt!, encKey: state.encKey! })
+  }, [state.entries, state.keyHash, state.salt, state.encKey])
+
   return (
     <WalletContext.Provider value={{
       entries: state.entries, addEntry, removeEntry, updateIntent,
@@ -346,6 +373,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       unlockWithPassphrase, setupNewWallet, lockWallet, deleteWallet,
       downloadBackup, syncStatus: state.syncStatus,
       migrationData, applyMigration, dismissMigration,
+      archiveDonationHistory,
     }}>
       {children}
     </WalletContext.Provider>
