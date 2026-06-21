@@ -92,16 +92,33 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
   }
 
   return (
-    <div className="min-h-screen bg-soft-cream py-12 px-4">
-      <div className="max-w-md mx-auto bg-white rounded-2xl p-8 shadow-lg">
-        <h1 className="font-display text-3xl italic text-deep-navy mb-2">
-          Letter Portal
-        </h1>
-        <p className="font-body text-sm text-cool-grey mb-6">
-          Sign in with your organization's EIN to access donation letters and impact reports.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-soft-cream to-white py-12 px-4">
+      <div className="max-w-md mx-auto">
+        <div className="bg-white rounded-2xl p-8 shadow-lg">
+          <div className="mb-6 text-center">
+            <h1 className="font-display text-4xl italic text-deep-navy mb-2">
+              Letter Portal
+            </h1>
+            <p className="font-body text-sm text-cool-grey">
+              Manage donation letters and volunteer tracking
+            </p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Info banner */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-xs text-blue-900">
+              <strong>✓ Free for nonprofits</strong> · Approve and generate tax-compliant donation letters for your supporters.
+            </p>
+          </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800"><strong>Error:</strong> {error}</p>
+            </div>
+          )}
+
           {/* EIN Input */}
           <div>
             <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
@@ -113,50 +130,50 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
               onChange={handleEinChange}
               placeholder="XX-XXXXXXX"
               maxLength={11}
-              className="w-full px-4 py-2.5 border border-light-grey rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
+              className={`w-full px-4 py-3 border rounded-lg font-mono text-sm focus:outline-none focus:ring-2 transition-colors ${
+                error && ein.replace(/\D/g, '').length !== 9
+                  ? 'border-red-300 focus:ring-red-200'
+                  : 'border-light-grey focus:ring-soft-gold/50'
+              }`}
+              autoFocus
             />
-            <p className="font-body text-xs text-cool-grey mt-1">
-              Found on your IRS 501(c)(3) determination letter
+            <p className="font-body text-xs text-cool-grey mt-2">
+              Found on your IRS 501(c)(3) determination letter. Example: 12-3456789
             </p>
           </div>
 
           {/* Email Input */}
           <div>
             <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
-              Email *
+              Email Address *
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="executive-director@org.org"
-              className="w-full px-4 py-2.5 border border-light-grey rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
+              placeholder="director@nonprofit.org"
+              className="w-full px-4 py-3 border border-light-grey rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
+              required
             />
-            <p className="font-body text-xs text-cool-grey mt-1">
-              We'll send a verification link here
+            <p className="font-body text-xs text-cool-grey mt-2">
+              We'll send a verification link to this address. Use your organizational email if possible.
             </p>
           </div>
-
-          {/* Error */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 font-body text-sm">
-              {error}
-            </div>
-          )}
 
           {/* Submit */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-sm font-semibold hover:bg-bright-gold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={loading || ein.replace(/\D/g, '').length !== 9 || !email.trim()}
+            className="w-full py-3 rounded-lg bg-soft-gold text-deep-navy font-body text-sm font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Sending link…' : 'Get verification link'}
+            {loading ? '⏳ Sending link…' : '📧 Get verification link'}
           </button>
         </form>
 
         <p className="font-body text-xs text-cool-grey text-center mt-6">
           Your organization must be registered with the IRS as a 501(c)(3) nonprofit.
         </p>
+        </div>
       </div>
     </div>
   )

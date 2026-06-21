@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { usePageMeta } from '../../hooks/usePageMeta'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import OnboardingChecklist from '../../components/OnboardingChecklist'
 
 interface LetterRequest {
   id: string
@@ -121,10 +122,72 @@ export default function NonprofitDashboardPage() {
 
   return (
     <div className="min-h-screen bg-soft-cream p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="font-display text-4xl italic text-deep-navy mb-2">{dashboard.name}</h1>
           <p className="text-cool-grey">EIN: {dashboard.nonprofit_ein}</p>
+        </div>
+
+        <OnboardingChecklist ein={dashboard.nonprofit_ein} />
+
+        {/* Feature cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Donation Letters */}
+          <div className="bg-gradient-to-br from-soft-gold/20 to-bright-gold/10 rounded-2xl p-6 border border-soft-gold/30">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="font-display text-xl text-deep-navy">Donation Letters</h3>
+              <span className="text-2xl">📄</span>
+            </div>
+            <p className="text-sm text-cool-grey mb-4">
+              Approve and generate tax-compliant donation letters for your donors.
+            </p>
+            <div className="mb-4">
+              <p className="text-xs text-cool-grey font-semibold mb-1">Credits Available</p>
+              <p className="text-3xl font-display italic text-soft-gold">{dashboard.letters_remaining}</p>
+            </div>
+            <Link
+              to={`#pending`}
+              className="inline-block px-4 py-2 bg-soft-gold text-deep-navy rounded-lg font-semibold text-sm hover:bg-bright-gold transition-colors"
+            >
+              Manage Letters
+            </Link>
+          </div>
+
+          {/* Volunteer Hours */}
+          <div className="bg-gradient-to-br from-green-100/30 to-emerald-100/10 rounded-2xl p-6 border border-green-200/30">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="font-display text-xl text-deep-navy">Volunteer Hours</h3>
+              <span className="text-2xl">🤝</span>
+            </div>
+            <p className="text-sm text-cool-grey mb-4">
+              Track and verify volunteer service hours contributed by your supporters.
+            </p>
+            <p className="text-xs text-cool-grey font-semibold mb-4">Set up tracking for your team</p>
+            <Link
+              to="/nonprofit/volunteer-approval"
+              className="inline-block px-4 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors"
+            >
+              Configure Now
+            </Link>
+          </div>
+
+          {/* Daanaa Profile */}
+          <div className="bg-gradient-to-br from-blue-100/30 to-cyan-100/10 rounded-2xl p-6 border border-blue-200/30">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="font-display text-xl text-deep-navy">Daanaa Profile</h3>
+              <span className="text-2xl">🏢</span>
+            </div>
+            <p className="text-sm text-cool-grey mb-4">
+              View your nonprofit's profile on Daanaa and update key information.
+            </p>
+            <p className="text-xs text-cool-grey font-semibold mb-4">Help donors discover you</p>
+            <a
+              href={`/org/${dashboard.nonprofit_ein}`}
+              className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-colors"
+            >
+              View Profile
+            </a>
+          </div>
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-8 border-l-4 border-soft-gold">
@@ -140,10 +203,15 @@ export default function NonprofitDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="font-display text-2xl italic text-deep-navy mb-6">
-            Pending Requests ({dashboard.pending_letters.length})
+        <div className="bg-white rounded-2xl p-6 shadow-sm" id="pending">
+          <h2 className="font-display text-2xl italic text-deep-navy mb-2">
+            Letter Requests
           </h2>
+          <p className="text-sm text-cool-grey mb-6">
+            {dashboard.pending_letters.length === 0
+              ? 'No pending requests. Donors will see your profile on Daanaa and can request donation letters.'
+              : `${dashboard.pending_letters.filter(l => l.status === 'pending').length} pending · ${dashboard.pending_letters.filter(l => l.status === 'approved').length} approved · ${dashboard.pending_letters.filter(l => l.status === 'generated').length} generated`}
+          </p>
 
           {dashboard.pending_letters.length === 0 ? (
             <p className="text-center text-cool-grey py-8">No pending requests</p>
