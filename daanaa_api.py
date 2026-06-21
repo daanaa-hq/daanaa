@@ -6729,8 +6729,13 @@ def e2e_wallet_sync():
     POST { keyHash, ciphertext, iv, salt } → { ok }
     DELETE { keyHash }             → { ok }
     """
-    body = request.get_json(silent=True) or {}
-    key_hash = body.get('keyHash') or request.args.get('keyHash', '')
+    # Extract keyHash based on method (GET uses query string; POST/DELETE require body)
+    if request.method == 'GET':
+        body = {}
+        key_hash = request.args.get('keyHash', '')
+    else:
+        body = request.get_json(silent=True) or {}
+        key_hash = body.get('keyHash', '')
 
     if not key_hash or len(key_hash) != 64 or not all(c in '0123456789abcdef' for c in key_hash):
         return jsonify({'error': 'invalid key_hash'}), 400

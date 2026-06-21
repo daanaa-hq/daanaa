@@ -72,6 +72,7 @@ class TestWalletSync:
         data = json.loads(r.data)
         assert data['ciphertext'] == new_ct
         assert data['iv'] == new_iv
+        assert data['salt'] == SALT  # salt must not change on overwrite
 
     def test_delete_removes_wallet(self, client):
         payload = {'keyHash': KEY_HASH, 'ciphertext': CIPHERTEXT, 'iv': IV, 'salt': SALT}
@@ -102,3 +103,18 @@ class TestWalletSync:
         # Flask's global MAX_CONTENT_LENGTH=64KB may return 413 before our handler
         # runs; our handler returns 400. Both correctly reject the oversized payload.
         assert r.status_code in (400, 413)
+
+    def test_rate_limit_enforced(self, client):
+        # Clear the in-process rate-limit bucket so prior test calls don't bleed in.
+        api._wallet_rate.clear()
+        payload = {'keyHash': 'b' * 64, 'ciphertext': CIPHERTEXT, 'iv': IV, 'salt': SALT}
+        for _ in range(10):
+            r = client.post('/api/wallet/sync', data=json.dumps(payload), content_type='application/json')
+            assert r.status_code == 200
+        r = client.post('/api/wallet/sync', data=json.dumps(payload), content_type='application/json')
+        assert r.status_code == 429
+
+    def test_uppercase_key_hash_rejected(self, client):
+        payload = {'keyHash': 'A' * 64, 'ciphertext': CIPHERTEXT, 'iv': IV, 'salt': SALT}
+        r = client.post('/api/wallet/sync', data=json.dumps(payload), content_type='application/json')
+        assert r.status_code == 400
