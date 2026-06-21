@@ -67,12 +67,12 @@ export default function PassphraseModal({ mode, onSetup, onRestore, onClose }: P
             <h2 className="font-body text-xl font-semibold text-deep-navy mb-2">
               Your wallet passphrase
             </h2>
-            <p className="font-body text-sm text-warm-gray mb-4">
+            <p className="font-body text-sm text-deep-navy mb-4">
               Write this down. It's the only way to access your wallet on another device.
               We cannot recover it.
             </p>
             {passphrase ? (
-              <div className="bg-soft-cream rounded-xl p-4 mb-4 font-mono text-lg text-deep-navy text-center tracking-wide select-all">
+              <div className="bg-soft-cream rounded-xl p-4 mb-4 font-mono text-lg font-semibold text-black text-center tracking-wide select-all">
                 {passphrase}
               </div>
             ) : (
@@ -86,7 +86,7 @@ export default function PassphraseModal({ mode, onSetup, onRestore, onClose }: P
                   onChange={e => setSavedConfirmed(e.target.checked)}
                   className="mt-0.5"
                 />
-                <span className="font-body text-sm text-warm-gray">
+                <span className="font-body text-sm text-deep-navy">
                   I've saved my passphrase in a safe place
                 </span>
               </label>
@@ -97,7 +97,7 @@ export default function PassphraseModal({ mode, onSetup, onRestore, onClose }: P
                   onChange={e => setBackupConfirmed(e.target.checked)}
                   className="mt-0.5"
                 />
-                <span className="font-body text-sm text-warm-gray">
+                <span className="font-body text-sm text-deep-navy">
                   I'll download a backup after setup
                 </span>
               </label>
@@ -106,7 +106,7 @@ export default function PassphraseModal({ mode, onSetup, onRestore, onClose }: P
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 rounded-full font-body text-sm border border-light-grey text-warm-gray hover:bg-soft-cream transition-colors"
+                className="flex-1 px-4 py-2 rounded-full font-body text-sm border border-light-grey text-deep-navy hover:bg-soft-cream transition-colors"
               >
                 Cancel
               </button>
@@ -125,7 +125,7 @@ export default function PassphraseModal({ mode, onSetup, onRestore, onClose }: P
             <h2 className="font-body text-xl font-semibold text-deep-navy mb-2">
               Restore your wallet
             </h2>
-            <p className="font-body text-sm text-warm-gray mb-4">
+            <p className="font-body text-sm text-deep-navy mb-4">
               Enter your 4-word passphrase to access your wallet on this device.
             </p>
             <input
@@ -141,7 +141,7 @@ export default function PassphraseModal({ mode, onSetup, onRestore, onClose }: P
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-2 rounded-full font-body text-sm border border-light-grey text-warm-gray hover:bg-soft-cream transition-colors"
+                className="flex-1 px-4 py-2 rounded-full font-body text-sm border border-light-grey text-deep-navy hover:bg-soft-cream transition-colors"
               >
                 Cancel
               </button>
