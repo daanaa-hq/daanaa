@@ -29,6 +29,59 @@ from twilio.twiml.voice_response import VoiceResponse
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.request_validator import RequestValidator
 
+
+def _run_migrations(db_path: str):
+    """Run pending database migrations from migrations/ directory."""
+    try:
+        migration_dir = os.path.join(os.path.dirname(__file__), 'migrations')
+        if not os.path.isdir(migration_dir):
+            return
+
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # Get list of already-run migrations from metadata table (if it exists)
+        try:
+            cursor.execute('SELECT migration_name FROM _migration_log')
+            run_migrations = {row[0] for row in cursor.fetchall()}
+        except sqlite3.OperationalError:
+            # Create log table if it doesn't exist
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS _migration_log (
+                    migration_name TEXT PRIMARY KEY,
+                    run_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            run_migrations = set()
+
+        # Run .sql files in alphabetical order
+        for filename in sorted(os.listdir(migration_dir)):
+            if not filename.endswith('.sql'):
+                continue
+
+            if filename in run_migrations:
+                continue
+
+            migration_path = os.path.join(migration_dir, filename)
+            with open(migration_path, 'r') as f:
+                sql = f.read()
+
+            # Execute migration (can be multiple statements)
+            for statement in sql.split(';'):
+                stmt = statement.strip()
+                if stmt:
+                    cursor.execute(stmt)
+
+            # Log that we ran it
+            cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
+            _logger.info(f'Ran migration: {filename}')
+
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        _logger.error(f'Migration error: {e}', exc_info=True)
+        # Don't fail startup — migrations are best-effort
+
 # Add scripts directory to path for email service
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
 try:
@@ -45,9 +98,10 @@ except ImportError:
     claim_verified_email = None
 
 try:
-    from nonprofit_portal_endpoints import register_nonprofit_endpoints
+    from nonprofit_portal_endpoints import register_nonprofit_endpoints, register_phase3_endpoints
 except ImportError:
     register_nonprofit_endpoints = None
+    register_phase3_endpoints = None
 
 _logger = logging.getLogger(__name__)
 
@@ -474,6 +528,9 @@ def _vec_similar(query_vec: np.ndarray, exclude_ein: str, limit: int) -> list[st
 
 app = Flask(__name__)
 
+# Run database migrations on startup
+_run_migrations(os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db")))
+
 # Restrict CORS to known origins; add production domain when deploying
 _ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -502,6 +559,10 @@ limiter = Limiter(
 # Register nonprofit portal endpoints
 if register_nonprofit_endpoints:
     register_nonprofit_endpoints(app)
+
+# Register Phase 3 endpoints (letter credits, donor tracking, impact dashboard)
+if register_phase3_endpoints:
+    register_phase3_endpoints(app)
 
 # JSON error handler — return proper JSON for API endpoints instead of HTML error pages
 @app.errorhandler(400)

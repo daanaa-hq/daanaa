@@ -1,0 +1,327 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║                  PHASE 5 MISSION & CAUSE BACKFILL PIPELINE                ║
+║                          BUILD COMPLETE & READY                           ║
+║                                                                            ║
+║  Status:     ✓ Ready to launch immediately when Phase 4 completes        ║
+║  Expected:   15-25K orgs with missions + causes in 30-40 hours          ║
+║  Built:      2026-06-21                                                  ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+
+DELIVERABLES SUMMARY
+====================
+
+4 PRODUCTION SCRIPTS
+────────────────────
+✓ scripts/cause_taxonomy.py (168 lines)
+  - 15-cause taxonomy with 120+ keyword patterns
+  - Confidence scoring (0.0-1.0)
+  - Tested: python3 scripts/cause_taxonomy.py ✓
+
+✓ scripts/phase5_mission_backfill.py (380 lines)
+  - Main execution engine
+  - Qwen2.5-32B integration (batch processing 16 orgs/call)
+  - Checkpointing every 100 orgs (resumable)
+  - CLI: --limit N --workers W --dry-run --resume
+  - Syntax verified ✓
+
+✓ scripts/phase5_monitor.py (247 lines)
+  - Real-time progress monitoring
+  - Speed metrics, stall detection, cause distribution
+  - Color-coded alerts to terminal + log file
+  - CLI: --log-only --interval N
+  - Syntax verified ✓
+
+✓ scripts/launch_phase5_bg.sh (328 lines, executable)
+  - Launcher with pre-flight health checks
+  - Background monitoring + auto-restart (up to 5x)
+  - Process management + graceful shutdown
+  - CLI: --resume --dry-run --stop
+  - Syntax verified ✓
+
+3 COMPREHENSIVE GUIDES
+──────────────────────
+✓ docs/PHASE5.md (9.5K, 340 lines)
+  - Complete reference guide
+  - Architecture + pipeline explanation
+  - Configuration tuning
+  - Troubleshooting + integration
+
+✓ docs/PHASE5_LAUNCH_CHECKLIST.md (5.4K, 270 lines)
+  - Pre-launch checklist (5 min)
+  - Launch command (1 min)
+  - Real-time monitoring (3 terminals)
+  - Post-launch verification
+
+✓ PHASE5_BUILD.md (11K, 330 lines, THIS DIRECTORY)
+  - Complete build summary
+  - Deliverables + architecture
+  - Quality assurance checklist
+  - Launch commands + timeline
+
+
+QUICK START
+===========
+
+Step 1: Verify Phase 4 Complete (30 seconds)
+────────────────────────────────────────────
+  sqlite3 ~/meritgiving/data/merit_registry.db \
+    "SELECT COUNT(*) FROM registry_enriched WHERE semantic_match = 1;"
+
+  Expected: > 0 orgs verified by Phase 4
+
+Step 2: Start Qwen2.5-32B (if not already running)
+─────────────────────────────────────────────────
+  llama-server -m /mnt/models/Qwen2.5-32B-Instruct-Q4_K_M.gguf \
+    -ngl 80 -t 8 -c 4096 --port 11437 &
+
+Step 3: Launch Phase 5
+───────────────────────
+  bash ~/meritgiving/scripts/launch_phase5_bg.sh
+
+  This will:
+  - Run health checks (DB, Phase 4, LLM)
+  - Launch mission backfill in background
+  - Start monitoring process with auto-restart
+  - Log to: ~/meritgiving/logs/phase5_monitor.log
+
+Step 4: Monitor Progress (3 Terminals)
+───────────────────────────────────────
+  Terminal 1: tail -f /tmp/phase5_progress.log
+  Terminal 2: python3 ~/meritgiving/scripts/phase5_monitor.py
+  Terminal 3: tail -f ~/meritgiving/logs/phase5_monitor.log
+
+Step 5: Verify Results After Completion
+─────────────────────────────────────────
+  sqlite3 ~/meritgiving/data/merit_registry.db \
+    "SELECT COUNT(*) FROM registry_enriched WHERE mission_source='ai_generated';"
+
+  Expected: Should match verified org count from Phase 4
+
+
+PERFORMANCE PROFILE
+===================
+
+Architecture:  Batch processing 16 orgs per LLM call
+LLM Model:     Qwen2.5-32B-Instruct on port 11437
+Token Rate:    ~60 tokens/sec
+Per Org:       ~60 tokens, 2-3 sentence mission
+Per Batch:     ~960 tokens, ~16 seconds
+Throughput:    ~60 orgs/minute (~3,600/hour best case)
+For 18K orgs:  ~5 hours optimal, 30-40 hours realistic
+
+(Realistic account for I/O, DB locks, LLM retries, network variability)
+
+
+DATABASE INTEGRATION
+====================
+
+✓ No schema changes required
+✓ Uses existing columns: mission, mission_source, cause_tags
+✓ Fully backward compatible
+✓ Can run during other pipeline activity (retry logic handles locks)
+✓ Checkpointing allows pause/resume anytime
+
+
+WHAT PHASE 5 PRODUCES
+=====================
+
+For each verified org (semantic_match=1):
+
+  mission:              "2-3 sentence description of org activities"
+  cause_tags:           ["education", "youth", "stem"] (3-5 items, JSON)
+  mission_confidence:   0.82 (0.0-1.0 confidence in cause extraction)
+  mission_source:       "ai_generated"
+
+Example API Response After Phase 5:
+────────────────────────────────────
+{
+  "EIN": "12-3456789",
+  "organization_name": "Tech for All",
+  "mission": "Provides coding education and mentorship to underserved youth in the Bay Area.",
+  "cause_tags": ["education", "youth", "stem"],
+  "mission_confidence": 0.82,
+  "mission_source": "ai_generated",
+  ...
+}
+
+
+CAUSE TAXONOMY (15 CATEGORIES)
+==============================
+
+education         - schools, tutoring, literacy, STEM, scholarships
+health            - hospitals, primary care, mental health, maternal health
+food              - food banks, hunger relief, nutrition
+housing           - affordable housing, homelessness, eviction prevention
+youth             - mentoring, after-school, foster care, child welfare
+environment       - climate, conservation, renewable energy, pollution
+arts              - museums, music, theater, dance, creative education
+civil_rights      - racial equity, voting rights, LGBTQ+, immigration
+employment        - job training, entrepreneurship, financial literacy
+seniors           - elder services, aging in place, retirement planning
+animals           - animal welfare, rescue, sanctuary, endangered species
+international     - global development, humanitarian, peace building
+disability        - developmental disability, therapy, accessibility
+community         - community development, disaster relief, civic engagement
+social_services   - family services, domestic violence, counseling
+
+
+TESTING BEFORE LAUNCH
+=====================
+
+Test with 100 orgs:
+  python3 scripts/phase5_mission_backfill.py --limit 100 --workers 4
+
+Show sample LLM prompts (dry run):
+  python3 scripts/phase5_mission_backfill.py --limit 10 --dry-run
+
+Resume from checkpoint:
+  python3 scripts/phase5_mission_backfill.py --resume --workers 16
+
+Test monitoring:
+  python3 scripts/phase5_monitor.py
+
+
+TROUBLESHOOTING
+===============
+
+"Phase 4 not complete":
+  → Run Phase 4 first: python3 scripts/phase4_semantic_verification.py
+
+"LLM not responding":
+  → Start llama-server on port 11437
+
+"No verified orgs":
+  → Phase 4 may still be running or didn't verify any orgs
+
+"Process keeps restarting":
+  → Check LLM logs, reduce BATCH_SIZE to 8, increase LLM_TIMEOUT
+
+See docs/PHASE5.md for comprehensive troubleshooting guide.
+
+
+WHAT'S INCLUDED
+===============
+
+Core Pipeline:
+  ✓ Mission generation (Qwen2.5-32B)
+  ✓ Cause extraction (15-category taxonomy)
+  ✓ Confidence scoring
+  ✓ Batch processing (16 orgs/call)
+  ✓ Checkpointing (every 100 orgs)
+
+Robustness:
+  ✓ Error handling (6 levels: timeout, JSON, DB lock, network, validation)
+  ✓ Resume capability (checkpoint-based)
+  ✓ Retry logic (exponential backoff for DB locks)
+  ✓ Validation (only accept EINs from input batch)
+
+Monitoring:
+  ✓ Real-time metrics (speed, elapsed, errors)
+  ✓ Stall detection (alert if < 1 org/min)
+  ✓ Cause distribution tracking
+  ✓ Progress logging (detailed + summary)
+
+Operations:
+  ✓ Health checks (DB, Phase 4, LLM)
+  ✓ Auto-restart (up to 5x with backoff)
+  ✓ Process management (PID tracking)
+  ✓ Graceful shutdown (--stop flag)
+
+
+NEXT STEPS
+==========
+
+1. Read PHASE5_BUILD.md (this directory) for complete details
+
+2. Verify Phase 4 completion:
+   sqlite3 ~/meritgiving/data/merit_registry.db \
+     "SELECT COUNT(*) FROM registry_enriched WHERE semantic_match = 1;"
+
+3. Launch Phase 5:
+   bash ~/meritgiving/scripts/launch_phase5_bg.sh
+
+4. Monitor with 3 terminals as shown in Quick Start
+
+5. After completion (30-40 hours):
+   - Verify missions were written
+   - Optional: rebuild FTS index
+   - Optional: restart API to warm caches
+   - Optional: sync to droplet
+
+
+SUCCESS CRITERIA
+================
+
+✅ Phase 5 launch is successful if:
+
+1. All health checks pass (DB, Phase 4, LLM)
+2. Process runs without crash > 1 hour
+3. Speed stays above 30 orgs/min
+4. No more than 2% LLM errors
+5. Checkpoints saving every 100 orgs
+6. Final message: "Phase 5 Complete!"
+7. Database shows all verified orgs have missions
+
+
+TIMELINE ESTIMATE
+=================
+
+Phase 4 completion  → Ready signal (user verifies)
+Pre-flight checks   → ~30 seconds
+Phase 5 launch      → 0:00
+Processing 5K orgs  → ~1.5 hours
+Processing 18K orgs → ~5 hours (best case)
+Realistic timeline  → 30-40 hours total
+Post-launch cleanup → 15 minutes
+
+Total commitment: 30-40 hours of GPU time, zero human interaction after launch
+
+
+FILES CREATED
+=============
+
+Scripts:
+  /home/akbar/meritgiving/scripts/cause_taxonomy.py
+  /home/akbar/meritgiving/scripts/phase5_mission_backfill.py
+  /home/akbar/meritgiving/scripts/phase5_monitor.py
+  /home/akbar/meritgiving/scripts/launch_phase5_bg.sh
+
+Documentation:
+  /home/akbar/meritgiving/docs/PHASE5.md
+  /home/akbar/meritgiving/docs/PHASE5_LAUNCH_CHECKLIST.md
+  /home/akbar/meritgiving/PHASE5_BUILD.md
+  /home/akbar/meritgiving/PHASE5_READY.txt (THIS FILE)
+
+Logs (created at runtime):
+  /tmp/phase5_progress.log                (detailed progress)
+  ~/meritgiving/logs/phase5_monitor.log   (health + restarts)
+  ~/meritgiving/logs/phase5_checkpoint.json (state for resume)
+
+
+SUPPORT
+=======
+
+Full reference:        docs/PHASE5.md
+Launch guide:          docs/PHASE5_LAUNCH_CHECKLIST.md
+Build summary:         PHASE5_BUILD.md
+Module help:           python3 scripts/phase5_mission_backfill.py --help
+Monitor help:          python3 scripts/phase5_monitor.py --help
+Launcher help:         bash scripts/launch_phase5_bg.sh --help
+
+
+READY TO LAUNCH
+===============
+
+All prerequisites met. Phase 5 is ready to launch immediately when Phase 4
+completes and Qwen2.5-32B is running on port 11437.
+
+Expected: 15-25K orgs with missions + causes in 30-40 hours.
+
+Next: Review PHASE5_BUILD.md and run:
+      bash ~/meritgiving/scripts/launch_phase5_bg.sh
+
+Built with: Claude Code (claude-haiku-4-5-20251001)
+Date: 2026-06-21
