@@ -5,6 +5,7 @@ import { useWallet } from '../contexts/WalletContext'
 import WalletCard from '../components/WalletCard'
 import EditIntentModal from '../components/EditIntentModal'
 import PassphraseModal from '../components/PassphraseModal'
+import ImpactSummary from '../components/ImpactSummary'
 import type { ApiOrganization } from '../data/api'
 import { API_BASE } from '../lib/platform'
 import {
@@ -341,6 +342,12 @@ export default function WalletPage() {
               + Add more
             </button>
           </div>
+        </div>
+
+        {/* Impact Summary */}
+        <div className="mb-10">
+          <p className="font-body text-xs text-cool-grey uppercase tracking-wide font-semibold mb-3">Your Impact</p>
+          <ImpactSummary />
         </div>
 
         {/* Giving Intent Guide — only shown when orgs without a plan exist */}
