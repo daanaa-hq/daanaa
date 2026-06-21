@@ -62,6 +62,12 @@ _FIREBASE_PUBKEYS_URL = (
 _firebase_pubkeys: dict = {}
 _firebase_pubkeys_expires: float = 0.0
 
+# E2E wallet rate limiting: simple in-memory per-IP counter (no deps).
+import collections as _collections
+_wallet_rate: dict = _collections.defaultdict(list)
+_WALLET_RATE_LIMIT = 10   # POST per minute per IP
+_WALLET_MAX_BYTES = 65536  # 64KB max payload
+
 
 def _get_firebase_pubkeys() -> dict:
     global _firebase_pubkeys, _firebase_pubkeys_expires
@@ -1148,6 +1154,23 @@ def _ensure_wallet_sync_table(db: sqlite3.Connection) -> None:
             donations_json TEXT NOT NULL DEFAULT '[]',
             volunteer_json TEXT NOT NULL DEFAULT '[]',
             updated_at     TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+
+def _ensure_e2e_wallet_sync_table(db: sqlite3.Connection) -> None:
+    """E2E encrypted wallet locker. Server stores opaque ciphertext — cannot decrypt.
+    key_hash: HKDF-derived id token (info='daanaa-wallet-id') — no identity linkage.
+    iv: fresh AES-GCM IV on every encryption call.
+    salt: server-issued 16 random bytes, not secret, needed for key rederivation on second device.
+    """
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS e2e_wallet_sync (
+            key_hash   TEXT PRIMARY KEY,
+            ciphertext TEXT NOT NULL,
+            iv         TEXT NOT NULL,
+            salt       TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
         )
     """)
 
@@ -6686,6 +6709,75 @@ def wallet_get_saves():
         (uid,),
     ).fetchall()
     return jsonify({'saves': [dict(r) for r in rows]}), 200
+
+
+# ── E2E Encrypted Wallet (no auth — security comes from keyHash) ──────────────
+
+@app.route('/api/wallet/init', methods=['POST'])
+def e2e_wallet_init():
+    """Issue a random salt for a new wallet. Salt is not secret."""
+    import base64 as _b64
+    salt = _b64.b64encode(secrets.token_bytes(16)).decode()
+    return jsonify({'salt': salt})
+
+
+@app.route('/api/wallet/sync', methods=['GET', 'POST', 'DELETE'])
+def e2e_wallet_sync():
+    """Dumb ciphertext locker. Server cannot read wallet contents.
+
+    GET  ?keyHash=<hex64>          → { found, ciphertext, iv, salt, updatedAt }
+    POST { keyHash, ciphertext, iv, salt } → { ok }
+    DELETE { keyHash }             → { ok }
+    """
+    body = request.get_json(silent=True) or {}
+    key_hash = body.get('keyHash') or request.args.get('keyHash', '')
+
+    if not key_hash or len(key_hash) != 64 or not all(c in '0123456789abcdef' for c in key_hash):
+        return jsonify({'error': 'invalid key_hash'}), 400
+
+    db = get_db()
+    _ensure_e2e_wallet_sync_table(db)
+
+    if request.method == 'POST':
+        ip = request.remote_addr or 'unknown'
+        now = time.time()
+        window = [t for t in _wallet_rate[ip] if now - t < 60]
+        if len(window) >= _WALLET_RATE_LIMIT:
+            return jsonify({'error': 'rate limit exceeded'}), 429
+        _wallet_rate[ip] = window + [now]
+
+        ct = body.get('ciphertext', '')
+        iv = body.get('iv', '')
+        salt = body.get('salt', '')
+        if not ct or not iv or not salt:
+            return jsonify({'error': 'missing fields'}), 400
+        if len(ct) > _WALLET_MAX_BYTES:
+            return jsonify({'error': 'payload too large'}), 400
+
+        db.execute(
+            'INSERT INTO e2e_wallet_sync (key_hash, ciphertext, iv, salt, updated_at)'
+            ' VALUES (?, ?, ?, ?, ?)'
+            ' ON CONFLICT(key_hash) DO UPDATE SET'
+            ' ciphertext=excluded.ciphertext, iv=excluded.iv, updated_at=excluded.updated_at',
+            [key_hash, ct, iv, salt, int(time.time())]
+        )
+        db.commit()
+        return jsonify({'ok': True})
+
+    if request.method == 'DELETE':
+        db.execute('DELETE FROM e2e_wallet_sync WHERE key_hash=?', [key_hash])
+        db.commit()
+        return jsonify({'ok': True})
+
+    # GET
+    row = db.execute(
+        'SELECT ciphertext, iv, salt, updated_at FROM e2e_wallet_sync WHERE key_hash=?',
+        [key_hash]
+    ).fetchone()
+    if not row:
+        return jsonify({'found': False}), 404
+    return jsonify({'found': True, 'ciphertext': row[0], 'iv': row[1],
+                    'salt': row[2], 'updatedAt': row[3]})
 
 
 # ── Eager load embeddings ──────────────────────────────────────────────────────
