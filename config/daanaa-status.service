@@ -1,0 +1,35 @@
+[Unit]
+Description=Daanaa Infrastructure Status Monitor
+Documentation=file:///home/akbar/meritgiving/CLAUDE.md
+After=network.target
+PartOf=daanaa.target
+
+[Service]
+Type=simple
+User=akbar
+WorkingDirectory=/home/akbar/meritgiving
+
+# Core monitoring command
+ExecStart=/usr/bin/python3 /home/akbar/meritgiving/scripts/daanaa_status.py
+
+# Restart policy
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=daanaa-status
+
+# Resource limits
+MemoryLimit=256M
+CPUQuota=10%
+
+# Security
+PrivateTmp=yes
+NoNewPrivileges=yes
+
+# Environment
+Environment="PYTHONUNBUFFERED=1"
+Environment="PYTHONPATH=/home/akbar/meritgiving"
+
+[Install]
+WantedBy=multi-user.target
