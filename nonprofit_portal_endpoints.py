@@ -313,3 +313,150 @@ def register_nonprofit_endpoints(app):
             return jsonify({'credit_id': credit_id, 'letters_added': 100, 'amount': 1000}), 201
         except Exception as e:
             return jsonify({'error': f'Payment failed: {str(e)}'}), 402
+
+    @app.route('/api/nonprofit/volunteer-hours', methods=['GET'])
+    def get_volunteer_hours():
+        """List volunteer hour submissions for ED review."""
+        auth = request.headers.get('Authorization', '')
+        nonprofit_ein = auth.split(' ')[-1] if auth else None
+
+        if not nonprofit_ein:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        filter_status = request.args.get('status', 'all')  # all|pending|verified|rejected
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        if filter_status == 'all':
+            cursor.execute('''
+                SELECT id, volunteer_name, volunteer_email, hours, service_date,
+                       activity_description, status, submitted_at
+                FROM volunteer_hours
+                WHERE nonprofit_ein = ?
+                ORDER BY submitted_at DESC
+            ''', (nonprofit_ein,))
+        else:
+            cursor.execute('''
+                SELECT id, volunteer_name, volunteer_email, hours, service_date,
+                       activity_description, status, submitted_at
+                FROM volunteer_hours
+                WHERE nonprofit_ein = ? AND status = ?
+                ORDER BY submitted_at DESC
+            ''', (nonprofit_ein, filter_status))
+
+        rows = cursor.fetchall()
+        conn.close()
+
+        records = [
+            {
+                'id': row[0],
+                'volunteer_name': row[1],
+                'volunteer_email': row[2],
+                'hours': row[3],
+                'service_date': row[4],
+                'activity_description': row[5],
+                'status': row[6],
+                'submitted_at': row[7],
+            }
+            for row in rows
+        ]
+
+        return jsonify({'records': records, 'count': len(records)}), 200
+
+    @app.route('/api/nonprofit/volunteer-hours', methods=['POST'])
+    def submit_volunteer_hours():
+        """Submit volunteer hours for approval."""
+        auth = request.headers.get('Authorization', '')
+        nonprofit_ein = auth.split(' ')[-1] if auth else None
+
+        if not nonprofit_ein:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        data = request.json or {}
+        volunteer_name = data.get('volunteer_name', '').strip()
+        volunteer_email = data.get('volunteer_email', '').strip()
+        hours = data.get('hours', 0)
+        service_date = data.get('service_date', '').strip()
+        activity_description = data.get('activity_description', '').strip()
+
+        if not all([volunteer_name, volunteer_email, hours, service_date, activity_description]):
+            return jsonify({'error': 'All fields required'}), 400
+
+        try:
+            record_id = str(uuid.uuid4())
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                INSERT INTO volunteer_hours
+                (id, nonprofit_ein, volunteer_name, volunteer_email, hours,
+                 service_date, activity_description, status, submitted_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+            ''', (record_id, nonprofit_ein, volunteer_name, volunteer_email, hours,
+                  service_date, activity_description, datetime.now().isoformat()))
+
+            conn.commit()
+            conn.close()
+
+            return jsonify({'id': record_id, 'status': 'pending'}), 201
+        except Exception as e:
+            return jsonify({'error': f'Failed to submit: {str(e)}'}), 500
+
+    @app.route('/api/nonprofit/volunteer-hours/<record_id>/approve', methods=['POST'])
+    def approve_volunteer_hours(record_id):
+        """ED approves volunteer hours submission."""
+        auth = request.headers.get('Authorization', '')
+        nonprofit_ein = auth.split(' ')[-1] if auth else None
+
+        if not nonprofit_ein:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                UPDATE volunteer_hours
+                SET status = 'verified', approved_by = ?, approved_at = ?
+                WHERE id = ? AND nonprofit_ein = ?
+            ''', (nonprofit_ein, datetime.now().isoformat(), record_id, nonprofit_ein))
+
+            conn.commit()
+            conn.close()
+
+            return jsonify({'status': 'verified'}), 200
+        except Exception as e:
+            return jsonify({'error': f'Failed to approve: {str(e)}'}), 500
+
+    @app.route('/api/nonprofit/volunteer-hours/<record_id>/reject', methods=['POST'])
+    def reject_volunteer_hours(record_id):
+        """ED rejects volunteer hours submission with reason."""
+        auth = request.headers.get('Authorization', '')
+        nonprofit_ein = auth.split(' ')[-1] if auth else None
+
+        if not nonprofit_ein:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        data = request.json or {}
+        reason = data.get('reason', '').strip()
+
+        if not reason:
+            return jsonify({'error': 'Rejection reason required'}), 400
+
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                UPDATE volunteer_hours
+                SET status = 'rejected', rejection_reason = ?, rejected_by = ?, rejected_at = ?
+                WHERE id = ? AND nonprofit_ein = ?
+            ''', (reason, nonprofit_ein, datetime.now().isoformat(), record_id, nonprofit_ein))
+
+            conn.commit()
+            conn.close()
+
+            return jsonify({'status': 'rejected'}), 200
+        except Exception as e:
+            return jsonify({'error': f'Failed to reject: {str(e)}'}), 500

@@ -38,42 +38,19 @@ export default function VolunteerApproval() {
         return
       }
 
-      // Mock data since API endpoint doesn't exist yet
-      const mockRecords: VolunteerRecord[] = [
-        {
-          id: 'vol-1',
-          volunteer_name: 'Sarah Johnson',
-          volunteer_email: 'sarah@example.com',
-          hours: 8,
-          service_date: '2026-06-20',
-          activity_description: 'Community outreach event at local park',
-          status: 'pending',
-          submitted_at: '2026-06-21T10:00:00Z',
+      const response = await fetch(`/api/nonprofit/volunteer-hours?status=${filter}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
         },
-        {
-          id: 'vol-2',
-          volunteer_name: 'Michael Chen',
-          volunteer_email: 'michael@example.com',
-          hours: 4,
-          service_date: '2026-06-19',
-          activity_description: 'Data entry and database management',
-          status: 'pending',
-          submitted_at: '2026-06-21T09:30:00Z',
-        },
-        {
-          id: 'vol-3',
-          volunteer_name: 'Lisa Martinez',
-          volunteer_email: 'lisa@example.com',
-          hours: 6,
-          service_date: '2026-06-18',
-          activity_description: 'Fundraiser setup and coordination',
-          status: 'verified',
-          submitted_at: '2026-06-20T14:00:00Z',
-        },
-      ]
+      })
 
-      const filtered = filter === 'all' ? mockRecords : mockRecords.filter(r => r.status === filter)
-      setRecords(filtered)
+      if (!response.ok) {
+        throw new Error('Failed to load volunteer hours')
+      }
+
+      const data = await response.json()
+      setRecords(data.records || [])
       setError(null)
     } catch (err) {
       setError((err as Error).message)
@@ -85,7 +62,19 @@ export default function VolunteerApproval() {
   const handleApprove = async (recordId: string) => {
     setApproving(recordId)
     try {
-      // Update local state (actual API call would go here)
+      const authToken = localStorage.getItem('nonprofit_account_id') || localStorage.getItem('nonprofit_auth_token')
+      const response = await fetch(`/api/nonprofit/volunteer-hours/${recordId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to approve volunteer hours')
+      }
+
       setRecords(prev =>
         prev.map(r => (r.id === recordId ? { ...r, status: 'verified' } : r))
       )
@@ -105,7 +94,22 @@ export default function VolunteerApproval() {
 
     setRejecting(recordId)
     try {
-      // Update local state (actual API call would go here)
+      const authToken = localStorage.getItem('nonprofit_account_id') || localStorage.getItem('nonprofit_auth_token')
+      const response = await fetch(`/api/nonprofit/volunteer-hours/${recordId}/reject`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: rejectionReason[recordId],
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to reject volunteer hours')
+      }
+
       setRecords(prev =>
         prev.map(r => (r.id === recordId ? { ...r, status: 'rejected' } : r))
       )

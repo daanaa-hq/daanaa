@@ -69,6 +69,29 @@ def migrate():
         )
     ''')
 
+    # volunteer_hours: volunteer hour submissions & approvals
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS volunteer_hours (
+            id TEXT PRIMARY KEY,
+            nonprofit_ein TEXT NOT NULL,
+            volunteer_name TEXT NOT NULL,
+            volunteer_email TEXT NOT NULL,
+            hours REAL NOT NULL,
+            service_date TEXT NOT NULL,
+            activity_description TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            approval_notes TEXT,
+            approved_by TEXT,
+            approved_at TEXT,
+            rejection_reason TEXT,
+            rejected_by TEXT,
+            rejected_at TEXT,
+            submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
+        )
+    ''')
+
     conn.commit()
     conn.close()
     print("✓ Migration complete: nonprofit portal tables created")
