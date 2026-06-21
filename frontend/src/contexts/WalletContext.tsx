@@ -2,7 +2,7 @@ import React, {
   createContext, useContext, useReducer, useCallback,
   useEffect, useRef, useState,
 } from 'react'
-import type { WalletEntry, GivingIntent, WalletContextType } from '../types/wallet'
+import type { WalletEntry, GivingIntent, WalletContextType, LoggedDonation, LoggedVolunteerHours } from '../types/wallet'
 import { isValidWalletEntry, isLegacyWalletV1 } from '../types/wallet'
 import { validateGivingIntent, logValidationError } from '../utils/walletValidation'
 import {
@@ -30,6 +30,9 @@ type Action =
   | { type: 'ADD'; ein: string }
   | { type: 'REMOVE'; ein: string }
   | { type: 'UPDATE_INTENT'; ein: string; intent: GivingIntent }
+  | { type: 'LOG_DONATION'; ein: string; donation: LoggedDonation }
+  | { type: 'LOG_VOLUNTEER_HOURS'; ein: string; hours: LoggedVolunteerHours }
+  | { type: 'UPDATE_DONATION_LETTER_STATUS'; ein: string; donationId: string; status: LoggedDonation['letterStatus'] }
   | { type: 'SET_SYNC_STATUS'; status: State['syncStatus'] }
   | { type: 'LOCK' }
 
@@ -49,6 +52,36 @@ function reducer(state: State, action: Action): State {
       if (idx === -1) return state
       const next = [...state.entries]
       next[idx] = { ...next[idx], givingIntent: action.intent }
+      return { ...state, entries: next }
+    }
+    case 'LOG_DONATION': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const next = [...state.entries]
+      const entry = { ...next[idx] }
+      entry.donations = [...(entry.donations || []), action.donation]
+      next[idx] = entry
+      return { ...state, entries: next }
+    }
+    case 'LOG_VOLUNTEER_HOURS': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const next = [...state.entries]
+      const entry = { ...next[idx] }
+      entry.volunteerHours = [...(entry.volunteerHours || []), action.hours]
+      next[idx] = entry
+      return { ...state, entries: next }
+    }
+    case 'UPDATE_DONATION_LETTER_STATUS': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const next = [...state.entries]
+      const donations = next[idx].donations || []
+      const donIdx = donations.findIndex(d => d.id === action.donationId)
+      if (donIdx === -1) return state
+      const newDonations = [...donations]
+      newDonations[donIdx] = { ...newDonations[donIdx], letterStatus: action.status }
+      next[idx] = { ...next[idx], donations: newDonations }
       return { ...state, entries: next }
     }
     case 'SET_SYNC_STATUS':
@@ -237,9 +270,39 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setMigrationData(null)
   }, [])
 
+  const logDonation = useCallback((ein: string, amount: number, date: string, notes?: string) => {
+    const donation: LoggedDonation = {
+      id: `don_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      amount,
+      date,
+      notes,
+      letterRequested: false,
+    }
+    dispatch({ type: 'LOG_DONATION', ein, donation })
+  }, [])
+
+  const logVolunteerHours = useCallback((ein: string, hours: number, date: string, notes?: string) => {
+    const entry: LoggedVolunteerHours = {
+      id: `vol_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      hours,
+      date,
+      notes,
+    }
+    dispatch({ type: 'LOG_VOLUNTEER_HOURS', ein, hours: entry })
+  }, [])
+
+  const getDonations = useCallback((ein: string) => state.entries.find(e => e.ein === ein)?.donations, [state.entries])
+
+  const getVolunteerHours = useCallback((ein: string) => state.entries.find(e => e.ein === ein)?.volunteerHours, [state.entries])
+
+  const updateDonationLetterStatus = useCallback((ein: string, donationId: string, status: LoggedDonation['letterStatus']) => {
+    dispatch({ type: 'UPDATE_DONATION_LETTER_STATUS', ein, donationId, status })
+  }, [])
+
   return (
     <WalletContext.Provider value={{
       entries: state.entries, addEntry, removeEntry, updateIntent,
+      logDonation, logVolunteerHours, getDonations, getVolunteerHours, updateDonationLetterStatus,
       isInWallet, getIntent, isUnlocked: state.encKey !== null,
       unlockWithPassphrase, setupNewWallet, lockWallet, deleteWallet,
       downloadBackup, syncStatus: state.syncStatus,

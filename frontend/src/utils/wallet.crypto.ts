@@ -47,7 +47,7 @@ export async function deriveAll(
     'raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveBits']
   )
   const prkBits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     keyMaterial, 256
   )
   const prk = await crypto.subtle.importKey('raw', prkBits, 'HKDF', false, ['deriveBits'])
@@ -122,7 +122,7 @@ export async function deriveRawKeyBytes(
     'raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveBits']
   )
   const prkBits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     keyMaterial, 256
   )
   const prk = await crypto.subtle.importKey('raw', prkBits, 'HKDF', false, ['deriveBits'])
@@ -139,6 +139,6 @@ export async function deriveRawKeyBytes(
  */
 export async function importKeyFromBytes(bytes: Uint8Array): Promise<CryptoKey> {
   return crypto.subtle.importKey(
-    'raw', bytes, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    'raw', bytes as BufferSource, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
   )
 }

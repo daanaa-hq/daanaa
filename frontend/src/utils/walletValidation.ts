@@ -231,8 +231,8 @@ export function validateGivingIntent(intent: Partial<GivingIntent>): Partial<Giv
     validated.amount = validateAmount(intent.amount)
   }
 
-  if (intent.hours !== undefined) {
-    validated.hours = validateHours(intent.hours)
+  if (intent.hoursPerMonth !== undefined) {
+    validated.hoursPerMonth = validateHours(intent.hoursPerMonth)
   }
 
   if (intent.notes !== undefined) {

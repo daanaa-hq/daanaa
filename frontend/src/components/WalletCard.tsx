@@ -18,8 +18,7 @@ const healthMap: Record<string, { label: string; classes: string; title: string 
 
 function getIntentDisplay(intent: GivingIntent | undefined): string | null {
   if (!intent) return null
-  if (intent.status === 'withdrawn') return 'No longer interested'
-  const { type, amount, hoursPerMonth, frequency } = intent as GivingIntent & { status?: string }
+  const { type, amount, hoursPerMonth, frequency } = intent
   switch (type) {
     case 'giving': {
       if (!amount) return 'Planning to give'

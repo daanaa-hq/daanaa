@@ -44,6 +44,11 @@ except ImportError:
     claim_received_email = None
     claim_verified_email = None
 
+try:
+    from nonprofit_portal_endpoints import register_nonprofit_endpoints
+except ImportError:
+    register_nonprofit_endpoints = None
+
 _logger = logging.getLogger(__name__)
 
 # Firebase token verification using public keys — no service account file required.
@@ -493,6 +498,10 @@ limiter = Limiter(
     default_limits=["200 per minute", "2000 per hour"],
     storage_uri="memory://",
 )
+
+# Register nonprofit portal endpoints
+if register_nonprofit_endpoints:
+    register_nonprofit_endpoints(app)
 
 # JSON error handler — return proper JSON for API endpoints instead of HTML error pages
 @app.errorhandler(400)

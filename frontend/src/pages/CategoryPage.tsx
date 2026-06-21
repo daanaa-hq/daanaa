@@ -21,7 +21,7 @@ const healthClasses: Record<string, string> = {
 export default function CategoryPage() {
   const { id } = useParams<{ id: string }>()
   const category = getNteeCategory(id || '')
-  const { isInWallet, addOrg, removeOrg } = useWallet()
+  const { isInWallet, addEntry, removeEntry } = useWallet()
   const [orgs, setOrgs] = useState<ApiOrganization[]>([])
   const [total, setTotal] = useState(0)
   const [orgsLoading, setOrgsLoading] = useState(true)
@@ -160,19 +160,8 @@ export default function CategoryPage() {
                           )}
                           <button
                             onClick={() => saved
-                              ? removeOrg(ein)
-                              : addOrg({
-                                  ein,
-                                  name: org.organization_name,
-                                  mission: (org as any).mission ?? '',
-                                  location: [org.CITY, org.STATE].filter(Boolean).join(', '),
-                                  cause: (org.cause_tags ?? []).slice(0, 3),
-                                  merit_score_v5: scoreV5,
-                                  merit_health_signal_v5: (signal || 'STABLE') as 'HEALTHY' | 'STABLE' | 'CAUTION',
-                                  is_hidden_gem: org.is_hidden_gem ?? false,
-                                  website: org.website_status === 'ok' ? (org.website || undefined) : undefined,
-                                  bookmarkedAt: Date.now(),
-                                })
+                              ? removeEntry(ein)
+                              : addEntry(ein)
                             }
                             aria-label={saved ? `Remove ${org.organization_name} from wallet` : `Save ${org.organization_name}`}
                             className={`p-1.5 rounded-lg transition-colors ${saved ? 'text-soft-gold' : 'text-cool-grey hover:text-soft-gold'}`}

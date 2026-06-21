@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-06-19T10:30:01.432039+00:00",
+  "generated_at": "2026-06-21T10:30:01.876976+00:00",
   "categories": {
     "A": {
       "id": "A",
       "name": "Arts & Culture",
       "totalOrgs": 139204,
-      "withContext": 46951,
+      "withContext": 47597,
       "topStates": [
         {
           "state": "CA",
@@ -56,7 +56,7 @@
       "id": "B",
       "name": "Education",
       "totalOrgs": 220917,
-      "withContext": 78230,
+      "withContext": 78894,
       "topStates": [
         {
           "state": "CA",
@@ -81,13 +81,6 @@
       ],
       "featured": [
         {
-          "ein": "811585020",
-          "name": "TOLEDO AIR SHOW FOUNDATION INC",
-          "city": "TOLEDO",
-          "state": "OH",
-          "blurb": "Organizes and promotes the Toledo Air Show to educate and entertain the community."
-        },
-        {
           "ein": "383472995",
           "name": "JAMES D MELLISH FOUNDATION",
           "city": "STERLING HTS",
@@ -100,6 +93,13 @@
           "city": "NEW YORK",
           "state": "NY",
           "blurb": "Supports research and education initiatives at The Cooper Union for the Advancement in New York, NY."
+        },
+        {
+          "ein": "277120765",
+          "name": "HELEN GEE CHIN SCHOLARSHIP FOUNDATION",
+          "city": "NEWTON HLDS",
+          "state": "MA",
+          "blurb": "Provides scholarships to students in Newton Hlds to support their educational goals."
         }
       ]
     },
@@ -107,7 +107,7 @@
       "id": "C",
       "name": "Environment",
       "totalOrgs": 34416,
-      "withContext": 11187,
+      "withContext": 11530,
       "topStates": [
         {
           "state": "CA",
@@ -158,7 +158,7 @@
       "id": "D",
       "name": "Animals",
       "totalOrgs": 45868,
-      "withContext": 12748,
+      "withContext": 12813,
       "topStates": [
         {
           "state": "CA",

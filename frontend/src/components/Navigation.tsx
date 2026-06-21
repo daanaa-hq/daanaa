@@ -11,8 +11,8 @@ export default function Navigation({ solid = true }: NavigationProps) {
   const [headerQuery, setHeaderQuery] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const { wallet } = useWallet()
-  const savedCount = wallet.orgs.length
+  const { entries } = useWallet()
+  const savedCount = entries.length
 
   // Discover stays lit while browsing anything reached from the directory
   const discoverPrefixes = ['/directory', '/org/', '/category/', '/causes/']

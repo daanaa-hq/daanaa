@@ -3,8 +3,8 @@ import { useWallet } from '../contexts/WalletContext'
 
 export default function BottomNav() {
   const location = useLocation()
-  const { wallet } = useWallet()
-  const savedCount = wallet.orgs.length
+  const { entries } = useWallet()
+  const savedCount = entries.length
   const p = location.pathname
 
   const items = [
