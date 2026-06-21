@@ -140,6 +140,8 @@ export interface ApiOrganization {
     explanation: string;
     data_issues: string[];
   } | null;
+  // Governance & volunteerism
+  seeking_board_members?: boolean | null;
 }
 
 export interface ApiCategory {
@@ -786,17 +788,21 @@ export async function logFunding(
   nonprofitName: string,
   amount: number,
   date?: string,
-): Promise<{ success: boolean; funding_entry: any }> {
+): Promise<{ success: boolean; id: string; message: string }> {
   const res = await fetch(`${API_BASE}/api/wallet/funding-history`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      idToken,
       ein,
-      nonprofit_name: nonprofitName,
+      nonprofitName,
       amount,
-      date,
+      date: date || new Date().toISOString().split('T')[0],
     }),
   })
-  if (!res.ok) throw new Error('log funding failed')
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.error || 'Failed to log funding')
+  }
   return res.json()
 }

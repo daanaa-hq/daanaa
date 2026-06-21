@@ -5,6 +5,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { useAuth } from '../contexts/AuthContext'
 import WalletCard from '../components/WalletCard'
 import EditIntentModal from '../components/EditIntentModal'
+import LogFunding from '../components/LogFunding'
 import {
   validateSearchTerm,
   validateFilterValue,
@@ -446,6 +447,13 @@ export default function WalletPage() {
                 Clear filters
               </button>
             </p>
+          </div>
+        )}
+
+        {/* Donation logging — track giving for tax purposes */}
+        {wallet.orgs.length > 0 && (
+          <div className="mb-8">
+            <LogFunding />
           </div>
         )}
 

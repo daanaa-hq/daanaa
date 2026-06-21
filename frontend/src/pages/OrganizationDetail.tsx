@@ -510,6 +510,19 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
+              {/* Seeking board members */}
+              {apiOrg!.seeking_board_members && (
+                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  Looking for board members
+                </div>
+              )}
+
               {/* Cause tags -- AI-generated (beta) until the organization sets its own */}
               {Array.isArray(apiOrg!.cause_tags) && apiOrg!.cause_tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">

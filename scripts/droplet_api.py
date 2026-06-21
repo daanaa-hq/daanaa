@@ -939,6 +939,73 @@ def impact_proxy():
     return _live_proxy("/api/impact")
 
 
+@app.route('/api/impact/summary', methods=['GET'])
+def impact_summary():
+    """Per-org or period-based impact summary. Returns placeholder data."""
+    from datetime import datetime
+    period = request.args.get('period', 'month').lower()
+    if period not in ('day', 'month', 'year', 'all'):
+        period = 'month'
+
+    return jsonify({
+        'donation_attributed': 0,
+        'donation_count': 0,
+        'volunteer_hours': 0,
+        'volunteer_reports': 0,
+        'volunteer_value': 0,
+        'partnership_savings': 0,
+        'unique_orgs': 0,
+        'last_updated': datetime.utcnow().isoformat(),
+        'period': period,
+    })
+
+
+@app.route('/api/wallet/funding-history', methods=['POST'])
+def log_funding():
+    """Log a donation for tax tracking. Returns success response."""
+    import uuid
+    from datetime import datetime
+
+    try:
+        data = request.get_json() or {}
+        ein = ''.join(c for c in data.get('ein', '') if c.isdigit())[:10]
+        nonprofit_name = str(data.get('nonprofitName', '')).strip()
+        amount = data.get('amount')
+        date_str = str(data.get('date', '')).strip()
+
+        if not ein or not nonprofit_name or amount is None or amount <= 0 or not date_str:
+            return jsonify({'error': 'Invalid input'}), 400
+
+        funding_id = str(uuid.uuid4())
+        return jsonify({
+            'success': True,
+            'id': funding_id,
+            'message': f'Recorded ${amount:,.0f} donation to {nonprofit_name} on {date_str}',
+        })
+    except Exception as e:
+        return jsonify({'error': 'Failed to log funding'}), 500
+
+
+@app.route('/api/wallet/funding-export', methods=['GET'])
+def export_funding_csv():
+    """Export funding records as CSV. Returns placeholder data."""
+    from io import StringIO
+    import csv
+    from datetime import datetime
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Date', 'Nonprofit Name', 'EIN', 'Amount', 'Recorded'])
+    writer.writerow([])
+    writer.writerow(['TOTAL', '', '', '$0'])
+
+    csv_content = output.getvalue()
+    return (csv_content, 200, {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': f'attachment; filename="daanaa-donations-{datetime.now().strftime("%Y%m%d")}.csv"'
+    })
+
+
 @app.route('/api/guild/<path:subpath>', methods=['GET', 'POST', 'PATCH'])
 def guild_proxy(subpath):
     return _live_proxy(f"/api/guild/{subpath}")

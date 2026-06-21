@@ -212,6 +212,12 @@ probe the filter (use COALESCE/expression to force filter-first).
 - **Fix:** Added `PRAGMA table_info(registry_enriched)` check in `precompute_orgs.py` to detect column presence at runtime, falling back to `NULL as street_address` if absent. New columns introduced by backfills must be guarded this way until the snapshot is refreshed.
 - **Rule:** When a new column is added to `registry_enriched` and `precompute_orgs.py` SELECT is updated to read it, add a `PRAGMA table_info` fallback immediately — the deploy snapshot can be days old and will break the pipeline without it. Use `--force` to refresh the snapshot or wait for the next nightly that creates a fresh one.
 
+## 2026-06-20 — Atomic swap failed "No space left on device" — site down 3 min
+- **Symptom:** `safe_deploy_droplet.sh` reached Stage 4 (atomic swap), successfully stopped the API and renamed v1→v0, then failed on `cp /data/precompute/v0/search.db /data/precompute/v1/search.db` — "No space left on device". API never restarted; daanaa.org was down.
+- **Root cause:** During the swap, three large objects co-exist on the 33GB droplet: live v1 (~8.4GB), extracted temp (~8.4GB in /tmp), and the staging tar (~2GB). Total peaked at ~19GB for precompute alone, pushing root past 97%. The `cp search.db` (1.2GB) hit the ceiling.
+- **Fix (manual recovery):** Deleted staging tar + /tmp extract (freed ~10GB), manually `cp`'d search.db from v0→v1, ran `systemctl start daanaa`, then deleted the now-backup v0. Site restored in ~3 min.
+- **Rule:** The deploy requires ~11GB of free space at the swap moment. Before shipping a new payload: `ssh root@162.243.97.179 df -h /` — if free < 12GB, abort and free space first (delete v0 if safe, clean /tmp). Consider pre-deleting the staging tar immediately after extraction in `safe_deploy_droplet.sh` to halve the peak usage.
+
 ## 2026-06-20 — Org-detail pages showed v4 and v5 financial context simultaneously
 - **Symptom:** The org page for 900334854 (and all v5-scored orgs) displayed both the legacy v4 "Financial context" sidebar widget (financial_health: Strong/Stable/Inspiring + operating_model) AND the modern V5Context component, creating visible duplication and confusing copy.
 - **Root cause:** v4Health widget was rendered unconditionally from `getV4FinancialHealth(apiOrg)`. The `financial_context` accordion also showed whenever `financial_context` was non-null, even when `v5_context` was also present. The two systems were additive, not mutually exclusive.
