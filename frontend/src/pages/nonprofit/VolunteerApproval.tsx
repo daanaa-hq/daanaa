@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { usePageMeta } from '../../hooks/usePageMeta'
+import VolunteerExportButton from '../../components/VolunteerExportButton'
 
 interface VolunteerRecord {
   id: string
@@ -153,20 +154,28 @@ export default function VolunteerApproval() {
         )}
 
         {/* Filter Tabs */}
-        <div className="bg-white rounded-lg p-4 mb-6 border border-light-grey flex gap-4 flex-wrap">
-          {(['all', 'pending', 'verified', 'rejected'] as const).map(status => (
-            <button
-              key={status}
-              onClick={() => setFilter(status)}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                filter === status
-                  ? 'bg-soft-gold text-deep-navy'
-                  : 'bg-light-grey text-cool-grey hover:bg-light-grey/70'
-              }`}
-            >
-              {status === 'all' ? 'All Submissions' : status === 'pending' ? `Pending (${pendingCount})` : status === 'verified' ? 'Verified' : 'Rejected'}
-            </button>
-          ))}
+        <div className="bg-white rounded-lg p-4 mb-6 border border-light-grey flex gap-4 flex-wrap justify-between items-center">
+          <div className="flex gap-4 flex-wrap">
+            {(['all', 'pending', 'verified', 'rejected'] as const).map(status => (
+              <button
+                key={status}
+                onClick={() => setFilter(status)}
+                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                  filter === status
+                    ? 'bg-soft-gold text-deep-navy'
+                    : 'bg-light-grey text-cool-grey hover:bg-light-grey/70'
+                }`}
+              >
+                {status === 'all' ? 'All Submissions' : status === 'pending' ? `Pending (${pendingCount})` : status === 'verified' ? 'Verified' : 'Rejected'}
+              </button>
+            ))}
+          </div>
+          <div className="w-full md:w-auto">
+            <VolunteerExportButton
+              nonprofitEin={localStorage.getItem('nonprofit_account_id') || ''}
+              authToken={localStorage.getItem('nonprofit_account_id') || localStorage.getItem('nonprofit_auth_token') || ''}
+            />
+          </div>
         </div>
 
         {/* Records List */}

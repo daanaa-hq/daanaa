@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { usePageMeta } from '../../hooks/usePageMeta'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import OnboardingChecklist from '../../components/OnboardingChecklist'
+import VolunteerInsightsCard from '../../components/VolunteerInsightsCard'
+import DonorCommunicationCard from '../../components/DonorCommunicationCard'
 
 interface LetterRequest {
   id: string
@@ -131,7 +133,7 @@ export default function NonprofitDashboardPage() {
         <OnboardingChecklist ein={dashboard.nonprofit_ein} />
 
         {/* Feature cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
           {/* Donation Letters */}
           <div className="bg-gradient-to-br from-soft-gold/20 to-bright-gold/10 rounded-2xl p-6 border border-soft-gold/30">
             <div className="flex items-start justify-between mb-4">
@@ -188,6 +190,19 @@ export default function NonprofitDashboardPage() {
               View Profile
             </a>
           </div>
+
+          {/* Volunteer Insights - NEW */}
+          <VolunteerInsightsCard
+            nonprofitEin={dashboard.nonprofit_ein}
+            authToken={getAuthToken()}
+          />
+
+          {/* Donor Communication - NEW */}
+          <DonorCommunicationCard
+            nonprofitEin={dashboard.nonprofit_ein}
+            nonprofitName={dashboard.name}
+            authToken={getAuthToken()}
+          />
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm mb-8 border-l-4 border-soft-gold">

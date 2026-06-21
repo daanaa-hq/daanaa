@@ -286,3 +286,41 @@ links visible-but-flagged (donor-confusion risk, violates 2026-06-09 fail-closed
 **Chose:** Remove the v4 "Financial context" sidebar widget from OrganizationDetail entirely; gate the old `financial_context` accordion on `!v5_context`; replace the v4 block with an "About this score →" methodology link. Separately: expose `storageError: 'quota' | null` from WalletContext and show an amber warning banner in WalletPage when quota is exceeded.
 **Why:** v4 and v5 context were both rendering, making org pages visually confusing. The v5 V5Context component is the canonical display — v4 should only show for orgs that have neither archetype nor v5 context. The quota warning was logged to console but invisible to users; a banner closes the gap.
 **Rejected:** Keeping both rendered with a "Legacy" label (too confusing for donors); a modal for the quota error (overkill — a sticky banner is enough).
+
+## 2026-06-21 — Track 2 Phase 2: Volunteer Reporting + Donor Tools (async exports + templates + insights)
+
+**Chose:** 
+1. **Async volunteer hours export** — CSV generation via background job (threading, not Celery/Redis). Jobs tracked in `background_jobs` table with status polling (`/api/nonprofit/background-jobs/{job_id}`). CSV columns: volunteer_name, email, hours, service_date, activity, status, approved_date.
+2. **Donor templates** — 5 hardcoded defaults (simple, tax deduction, impact focus, sustaining, corporate) + unlimited custom templates. Customizable via POST/PUT/DELETE to `donor_templates` table. Template variables: {donor_name}, {amount}, {date}, {org_name}. Real-time preview substitution on frontend.
+3. **Volunteer Insights dashboard card** — Monthly vs all-time hours, trend indicator (↑/↓/→), top 3 volunteers, status counts. Filters endpoint: `/api/nonprofit/volunteer-hours/summary?period=month|all`.
+4. **Two new dashboard cards** on NonprofitDashboardPage: "Volunteer Insights" (emerald) + "Donor Communication" (purple). Keeps existing 3 cards (gold, green, blue).
+
+**Why:**
+- Threading avoids Celery/Redis complexity while supporting current nonprofit count (100–200); CSV write to `/tmp` + DB path = fail-safe.
+- Hardcoded defaults are a safe baseline (no blank slate problem), custom templates add flexibility without staff overhead.
+- Dashboard visibility surfaces volunteer impact at a glance (engagement metric, retention signal). Trend indicator + top volunteers motivate continued volunteering.
+- Five components (VolunteerInsightsCard, DonorCommunicationCard, TemplateEditorModal, VolunteerExportButton + Zod schemas) keep code modular; TypeScript interfaces + Zod parsing enforce API contract safety at boundaries.
+- All endpoints require Bearer token auth; nonprofit_ein ownership verified on each read/write (prevents cross-org data leakage).
+- Tests in `tests/test_nonprofit_endpoints_phase2.py` verify table schema, ranking, and status counting. E2E test suite in checklist form.
+
+**Rejected:**
+- Celery + Redis (overengineering for current scale; threading works for <1000 nonprofits, async job count << 1000/day).
+- Customer-curated template library (too much moderation overhead; hardcoded defaults + user edits balance safety + flexibility).
+- Real-time volunteer dashboards (batch approval workflow is current ED behavior; summary is derivative of existing tables, no schema change needed).
+- Storing jobs in memory (ephemeral, restarting API loses all pending/completed jobs; DB is source of truth).
+- Frontend-only template variable substitution (solves preview, but API responses still need substituted values for email send — must happen server-side; preview uses same function as API for consistency).
+
+**Files changed:**
+- Backend: `nonprofit_portal_endpoints.py` (+8 endpoints, +2 helper functions)
+- Database: `data/merit_registry.db` (+2 tables: `background_jobs`, `donor_templates`)
+- Frontend: 
+  - New: `VolunteerInsightsCard.tsx`, `DonorCommunicationCard.tsx`, `TemplateEditorModal.tsx`, `VolunteerExportButton.tsx`, `lib/schemas.ts`
+  - Updated: `NonprofitDashboardPage.tsx` (grid 3→5 cols, import new cards), `VolunteerApproval.tsx` (add export button)
+- Tests: `tests/test_nonprofit_endpoints_phase2.py` (9 test classes, schema + ranking + status + template validation)
+
+**Notes:**
+- Export CSV headers use sentence case (Volunteer Name, not volunteer_name) for user readability.
+- Trend calculation: if `total_hours_previous == 0`, trend_percent defaults to 100 (all growth); trend_direction is 'flat' if ±5% (avoids noise on small changes).
+- Default templates stored in code (5 hardcoded), not DB (is_default=1 is reserved for future; defaults returned every call, custom templates queried per org).
+- Modal preview in real-time; tabs (name/body/preview) on mobile for space.
+- All async jobs timeout after 60s of polling; if incomplete, user sees "Export is taking too long, please try again."
