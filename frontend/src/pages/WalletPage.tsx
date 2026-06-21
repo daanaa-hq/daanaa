@@ -5,7 +5,6 @@ import { useWallet } from '../contexts/WalletContext'
 import WalletCard from '../components/WalletCard'
 import EditIntentModal from '../components/EditIntentModal'
 import PassphraseModal from '../components/PassphraseModal'
-import LogFunding from '../components/LogFunding'
 import type { ApiOrganization } from '../data/api'
 import { API_BASE } from '../lib/platform'
 import {
@@ -475,12 +474,6 @@ export default function WalletPage() {
           </div>
         )}
 
-        {/* Donation logging — track giving for tax purposes */}
-        {entries.length > 0 && (
-          <div className="mb-8">
-            <LogFunding />
-          </div>
-        )}
 
         {/* Cards */}
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 ${hydrating ? 'opacity-60' : ''}`}>

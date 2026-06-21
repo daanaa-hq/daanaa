@@ -208,6 +208,25 @@ def run_data_quality_gate():
         log(f'⚠️  Data quality gate error (non-fatal): {str(e)[:100]}')
 
 
+def purge_stale_wallets():
+    """Delete e2e_wallet_sync rows not updated in 90+ days.
+    Server only stores ciphertext — purging is safe; user can re-import from backup."""
+    try:
+        db_path = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
+        conn = sqlite3.connect(str(db_path))
+        cur = conn.cursor()
+        cur.execute(
+            "DELETE FROM e2e_wallet_sync WHERE updated_at < datetime('now', '-90 days')"
+        )
+        deleted = cur.rowcount
+        conn.commit()
+        conn.close()
+        if deleted:
+            log(f'Purged {deleted} stale wallet row(s) (>90 days idle)')
+    except Exception as e:
+        log(f'⚠️  Wallet purge error (non-fatal): {str(e)[:100]}')
+
+
 def cleanup_stale_scores():
     """Delete old score JSON files, keeping only the most recent 2.
     Prevents disk bloat from nightly scoring runs."""
@@ -376,6 +395,9 @@ def main():
 
     # Step 10: Clean up stale score files to prevent disk bloat
     cleanup_stale_scores()
+
+    # Step 11: Purge e2e wallet rows idle for 90+ days (zero-knowledge — server never sees plaintext)
+    purge_stale_wallets()
 
     log('=' * 60)
     log('Overnight Pipeline Complete')
