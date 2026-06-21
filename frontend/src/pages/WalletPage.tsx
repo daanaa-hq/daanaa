@@ -500,21 +500,11 @@ export default function WalletPage() {
         const entry = entries.find(o => o.ein === editingEin)
         if (!entry) return null
         const org = orgDataMap.get(editingEin)
-        if (!org) return null
-        // EditIntentModal expects a WalletOrg-shaped object; build a compatible shim
-        const orgShim = {
-          ein: entry.ein,
-          bookmarkedAt: entry.bookmarkedAt,
-          givingIntent: entry.givingIntent,
-          name: org.organization_name ?? '',
-          location: [org.CITY, org.STATE].filter(Boolean).join(', '),
-          cause: org.cause_tags ?? [],
-          mission: org.mission ?? '',
-          merit_health_signal_v5: org.v5_context?.score.health_signal ?? 'STABLE',
-        }
         return (
           <EditIntentModal
-            org={orgShim as Parameters<typeof EditIntentModal>[0]['org']}
+            ein={editingEin}
+            orgName={org?.organization_name ?? editingEin}
+            givingIntent={entry.givingIntent}
             isOpen={!!editingEin}
             onClose={handleEditClose}
           />

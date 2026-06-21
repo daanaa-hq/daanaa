@@ -1,43 +1,41 @@
 import React from 'react'
 import { useWallet } from '../contexts/WalletContext'
 import IntentModal from './IntentModal'
-import type { WalletOrg, GivingIntent } from '../types/wallet'
+import type { GivingIntent, WalletEntry } from '../types/wallet'
 
 interface EditIntentModalProps {
-  org: WalletOrg
+  ein: string
+  orgName: string
+  givingIntent?: GivingIntent
   isOpen: boolean
   onClose: () => void
 }
 
-/**
- * EditIntentModal: Wrapper around IntentModal with WalletContext integration
- * Automatically handles saving to wallet context and error handling
- * Can be used to edit an existing intent or add a new one
- */
 export default function EditIntentModal({
-  org,
+  ein,
+  orgName,
+  givingIntent,
   isOpen,
   onClose,
 }: EditIntentModalProps) {
   const { updateIntent } = useWallet()
 
-  const handleSave = (ein: string, intent: GivingIntent) => {
+  const handleSave = (entryEin: string, intent: GivingIntent) => {
     try {
-      updateIntent(ein, intent)
-      // Modal closes automatically via onClose
+      updateIntent(entryEin, intent)
     } catch (err) {
-      // Error is logged in updateIntent via validation
       console.error('Failed to update intent:', err)
     }
   }
 
   return (
     <IntentModal
-      org={org}
+      ein={ein}
+      orgName={orgName}
       isOpen={isOpen}
       onClose={onClose}
       onSave={handleSave}
-      initialIntent={org.givingIntent}
+      initialIntent={givingIntent}
     />
   )
 }

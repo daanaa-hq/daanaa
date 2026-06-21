@@ -17,7 +17,7 @@
 import React, { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useWallet } from '../contexts/WalletContext'
-import type { GivingIntent, WalletOrg } from '../types/wallet'
+import type { GivingIntent, WalletEntry } from '../types/wallet'
 
 interface WalletBadgeProps {
   style?: 'inline' | 'badge' | 'pill'
@@ -28,19 +28,19 @@ export default function WalletBadge({
   style = 'inline',
   intent,
 }: WalletBadgeProps) {
-  const { wallet } = useWallet()
+  const { entries } = useWallet()
 
   // Compute filtered count based on intent
   const count = useMemo(() => {
     if (!intent) {
-      return wallet.orgs.length
+      return entries.length
     }
 
-    return wallet.orgs.filter((org: WalletOrg) => {
-      const orgIntent = org.givingIntent as GivingIntent | undefined
+    return entries.filter((entry: WalletEntry) => {
+      const orgIntent = entry.givingIntent as GivingIntent | undefined
       return orgIntent && orgIntent.type === intent
     }).length
-  }, [wallet.orgs, intent])
+  }, [entries, intent])
 
   // Determine label text
   const label = `${count} organization${count !== 1 ? 's' : ''} in your wallet`

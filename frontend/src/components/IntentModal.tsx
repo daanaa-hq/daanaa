@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import type { WalletOrg, GivingIntent } from '../types/wallet'
+import type { GivingIntent } from '../types/wallet'
 import {
   validateAmount,
   validateHours,
@@ -7,7 +7,8 @@ import {
 } from '../utils/walletValidation'
 
 interface IntentModalProps {
-  org: WalletOrg
+  ein: string
+  orgName: string
   isOpen: boolean
   onClose: () => void
   onSave: (ein: string, intent: GivingIntent) => void
@@ -23,7 +24,8 @@ interface FormErrors {
 }
 
 export default function IntentModal({
-  org,
+  ein,
+  orgName,
   isOpen,
   onClose,
   onSave,
@@ -44,8 +46,8 @@ export default function IntentModal({
     (initialIntent?.frequency as Frequency) || 'year'
   )
   const [hours, setHours] = useState<string>(
-    initialIntent?.type === 'volunteer' && initialIntent.hours
-      ? String(initialIntent.hours)
+    initialIntent?.type === 'volunteer' && initialIntent.hoursPerMonth
+      ? String(initialIntent.hoursPerMonth)
       : ''
   )
   const [notes, setNotes] = useState<string>(initialIntent?.notes || '')
@@ -122,9 +124,8 @@ export default function IntentModal({
   const handleWithdraw = () => {
     const intent: GivingIntent = {
       ...(initialIntent as GivingIntent),
-      status: 'withdrawn',
     }
-    onSave(org.ein, intent)
+    onSave(ein, intent)
     onClose()
   }
 
@@ -133,7 +134,6 @@ export default function IntentModal({
 
     const intent: GivingIntent = {
       type: selectedType,
-      status: 'interested',
       addedAt: initialIntent?.addedAt || Date.now(),
       notes: notes || undefined,
     }
@@ -144,10 +144,10 @@ export default function IntentModal({
     }
 
     if (selectedType === 'volunteer' && hours) {
-      intent.hours = parseFloat(hours)
+      intent.hoursPerMonth = parseFloat(hours)
     }
 
-    onSave(org.ein, intent)
+    onSave(ein, intent)
     onClose()
   }
 
@@ -204,10 +204,10 @@ export default function IntentModal({
             )}
             <h2 id="modal-title" className="font-display italic text-[20px] text-deep-navy leading-snug">
               {step === 'type'
-                ? `How would you like to support ${org.name}?`
+                ? `How would you like to support ${orgName}?`
                 : isEditing
-                  ? `Edit your intent for ${org.name}`
-                  : `${selectedTypeLabel.label} for ${org.name}`}
+                  ? `Edit your intent for ${orgName}`
+                  : `${selectedTypeLabel.label} for ${orgName}`}
             </h2>
           </div>
           <button

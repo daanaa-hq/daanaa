@@ -6,7 +6,6 @@ import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
 import { useApi } from '../hooks/useApi'
 import { useWallet } from '../contexts/WalletContext'
-import type { WalletOrg } from '../types/wallet'
 import { getOrganizations, getFusedSearch, getStats } from '../data/api'
 import type { ApiOrganization } from '../data/api'
 import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
@@ -202,25 +201,13 @@ export default function Directory() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const searchMode = 'browse'
-  const { isInWallet, addOrg: addToWallet, removeOrg: removeFromWallet } = useWallet()
+  const { isInWallet, addEntry: addToWallet, removeEntry: removeFromWallet } = useWallet()
 
   function walletToggle(org: ApiOrganization) {
     if (isInWallet(org.EIN)) {
       removeFromWallet(org.EIN)
     } else {
-      const w: WalletOrg = {
-        ein: org.EIN,
-        name: org.organization_name,
-        mission: org.mission || '',
-        location: [org.CITY, org.STATE].filter(Boolean).join(', '),
-        cause: org.cause_tags || [],
-        merit_score_v5: org.v5_context?.score.percentile ?? 0,
-        merit_health_signal_v5: org.v5_context?.score.health_signal ?? 'STABLE',
-        is_hidden_gem: !!(org.is_hidden_gem),
-        website: (org.website_status === 'ok' && org.website) ? org.website : undefined,
-        bookmarkedAt: Date.now(),
-      }
-      addToWallet(w)
+      addToWallet(org.EIN)
     }
   }
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)

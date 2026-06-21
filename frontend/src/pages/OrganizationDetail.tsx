@@ -12,7 +12,6 @@ import MistakeRegistry from '../components/MistakeRegistry'
 import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
 import { useWallet } from '../contexts/WalletContext'
-import type { WalletOrg } from '../types/wallet'
 import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
 import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
@@ -217,7 +216,7 @@ export default function OrganizationDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, getIdToken } = useAuth()
-  const { isInWallet, addOrg: addToWallet, removeOrg: removeFromWallet } = useWallet()
+  const { isInWallet, addEntry: addToWallet, removeEntry: removeFromWallet } = useWallet()
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalError, setPortalError]     = useState<string | null>(null)
@@ -353,19 +352,7 @@ export default function OrganizationDetail() {
                 if (isInWallet(org.ein)) {
                   removeFromWallet(org.ein)
                 } else if (apiOrg) {
-                  const walletOrg: WalletOrg = {
-                    ein: apiOrg.EIN,
-                    name: apiOrg.organization_name,
-                    mission: apiOrg.mission || '',
-                    location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
-                    cause: apiOrg.cause_tags || [],
-                    merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
-                    merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
-                    is_hidden_gem: !!(apiOrg.is_hidden_gem),
-                    website: apiOrg.website_status === 'ok' ? (apiOrg.website || undefined) : undefined,
-                    bookmarkedAt: Date.now(),
-                  }
-                  addToWallet(walletOrg)
+                  addToWallet(apiOrg.EIN)
                 }
               }}
               title={isInWallet(org.ein) ? 'Remove from wallet' : 'Save to wallet'}
@@ -1389,19 +1376,7 @@ export default function OrganizationDetail() {
                       if (isInWallet(ein)) {
                         removeFromWallet(ein)
                       } else {
-                        const rawOrg = raw as any
-                        addToWallet({
-                          ein,
-                          name: rawOrg.organization_name || ein,
-                          mission: rawOrg.mission || '',
-                          location: [rawOrg.CITY, rawOrg.STATE].filter(Boolean).join(', '),
-                          cause: rawOrg.cause_tags || [],
-                          merit_score_v5: rawOrg.v5_context?.score?.percentile ?? 0,
-                          merit_health_signal_v5: rawOrg.v5_context?.score?.health_signal ?? 'STABLE',
-                          is_hidden_gem: !!rawOrg.is_hidden_gem,
-                          website: rawOrg.website_status === 'ok' ? (rawOrg.website || undefined) : undefined,
-                          bookmarkedAt: Date.now(),
-                        })
+                        addToWallet(ein)
                       }
                     }}
                     apiOrg={raw}
@@ -1532,18 +1507,7 @@ export default function OrganizationDetail() {
           if (saved) {
             removeFromWallet(org.ein)
           } else if (apiOrg) {
-            addToWallet({
-              ein: apiOrg.EIN,
-              name: apiOrg.organization_name,
-              mission: apiOrg.mission || '',
-              location: [apiOrg.CITY, apiOrg.STATE].filter(Boolean).join(', '),
-              cause: apiOrg.cause_tags || [],
-              merit_score_v5: apiOrg.v5_context?.score.percentile ?? 0,
-              merit_health_signal_v5: apiOrg.v5_context?.score.health_signal ?? 'STABLE',
-              is_hidden_gem: !!(apiOrg.is_hidden_gem),
-              website: apiOrg.website_status === 'ok' ? (apiOrg.website || undefined) : undefined,
-              bookmarkedAt: Date.now(),
-            })
+            addToWallet(apiOrg.EIN)
           }
         }
         return (
