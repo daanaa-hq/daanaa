@@ -38,7 +38,7 @@ import threading
 DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
 CHECKPOINT_PATH = Path.home() / "meritgiving/logs/phase4_checkpoint.json"
 PROGRESS_LOG = Path("/tmp/phase4_progress.log")
-EMBED_URL = "http://127.0.0.1:11436/v1/embeddings"
+EMBED_URL = "http://127.0.0.1:11436/embedding"  # GPU-accelerated llama-server endpoint
 EMBED_MODEL = "mxbai-embed-large"
 
 UA = ("Mozilla/5.0 (compatible; DaanaaWebFinder/1.0; "
@@ -102,19 +102,23 @@ def can_fetch(url: str) -> bool:
         return False
 
 def embed_text(text: str) -> np.ndarray | None:
-    """Get embedding via GPU server."""
+    """Get embedding via GPU-accelerated llama-server endpoint."""
     try:
         resp = requests.post(
             EMBED_URL,
-            json={"model": EMBED_MODEL, "input": text},
+            json={"content": text},
             timeout=30
         )
         if resp.status_code == 200:
-            emb = resp.json()["data"][0]["embedding"]
-            return np.array(emb, dtype=np.float32)
-        else:
-            with _stats_lock:
-                _stats["embed_errors"] += 1
+            data = resp.json()
+            # llama-server format: [{"index": 0, "embedding": [[1024-dim vector]]}]
+            if isinstance(data, list) and len(data) > 0:
+                item = data[0]
+                if "embedding" in item and len(item["embedding"]) > 0:
+                    emb = item["embedding"][0]  # Extract from nested list
+                    return np.array(emb, dtype=np.float32)
+        with _stats_lock:
+            _stats["embed_errors"] += 1
     except Exception as e:
         with _stats_lock:
             _stats["embed_errors"] += 1
@@ -273,7 +277,7 @@ def main():
     # Load reference embeddings from orgs that have websites
     log("Loading reference embeddings...")
     c.execute("""
-        SELECT org_embeddings.EIN, org_embeddings.embedding
+        SELECT org_embeddings.EIN, org_embeddings.vector
         FROM org_embeddings
         JOIN registry_enriched ON org_embeddings.EIN = registry_enriched.EIN
         WHERE registry_enriched.website IS NOT NULL
@@ -284,9 +288,9 @@ def main():
 
     reference_embeddings = []
     ref_count = 0
-    for ein, emb_json in c.fetchall():
+    for ein, vec_blob in c.fetchall():
         try:
-            emb_array = np.array(json.loads(emb_json), dtype=np.float32)
+            emb_array = np.frombuffer(vec_blob, dtype=np.float32)
             reference_embeddings.append(emb_array)
             ref_count += 1
         except Exception:

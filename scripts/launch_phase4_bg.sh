@@ -48,23 +48,23 @@ fi
 > "$PROGRESS_LOG"
 log "Phase 4 launcher started"
 
-# Wait for embed server
-log "Waiting for embed server on :11436..."
-TIMEOUT=300
+# Wait for Ollama embedding server
+log "Waiting for Ollama embedding server on :11434..."
+TIMEOUT=60
 START_TIME=$(date +%s)
 while true; do
-    if curl -s "http://127.0.0.1:11436/health" 2>/dev/null | grep -q '"status":"ok"'; then
-        log "✓ Embed server healthy"
+    if curl -s "http://127.0.0.1:11434/api/tags" 2>/dev/null | grep -q '"name":"mxbai-embed-large'; then
+        log "✓ Ollama embedding server healthy (mxbai-embed-large available)"
         break
     fi
 
     ELAPSED=$(($(date +%s) - START_TIME))
     if [ $ELAPSED -ge $TIMEOUT ]; then
-        log "✗ Embed server failed to start within ${TIMEOUT}s"
+        log "✗ Ollama embedding server not available within ${TIMEOUT}s"
         exit 1
     fi
 
-    sleep 2
+    sleep 1
 done
 
 # Launch in background

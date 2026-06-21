@@ -1,0 +1,19 @@
+# Daanaa Database Optimization + Cron Monitoring
+# Installed to /etc/cron.d/daanaa-maintenance
+# All logs go to /home/akbar/meritgiving/logs/
+
+# Database optimization (monthly, first Sunday at 2am)
+0 2 1-7 * 0 akbar cd /home/akbar/meritgiving && python3 scripts/create_database_indexes.py >> logs/db_optimization.log 2>&1
+
+# Backup integrity verification (daily at 6am)
+0 6 * * * akbar cd /home/akbar/meritgiving && python3 scripts/verify_backup_integrity.py >> logs/backup_verification.log 2>&1
+
+# API health check (every 5 minutes)
+*/5 * * * * akbar cd /home/akbar/meritgiving && python3 scripts/health_check.py >> logs/health_check.log 2>&1
+
+# Cleanup stale nonprofit accounts (weekly, Sunday at 2:30am)
+30 2 * * 0 akbar cd /home/akbar/meritgiving && python3 scripts/cleanup_stale_accounts.py >> logs/cleanup_stale_accounts.log 2>&1
+
+# Memory monitoring via health_check (integrated)
+# The health_check.py script monitors gunicorn memory and restarts if needed
+# No separate cron needed for this — it's part of the 5-minute health check
