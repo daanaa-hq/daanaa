@@ -89,6 +89,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   // On mount: try to restore session key from sessionStorage
   useEffect(() => {
+    let active = true
     const rawB64 = sessionStorage.getItem(SS_RAW_KEY)
     const keyHash = localStorage.getItem(LS_KEY_HASH)
     const salt = localStorage.getItem(LS_SALT)
@@ -99,15 +100,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         const bytes = Uint8Array.from(atob(rawB64), c => c.charCodeAt(0))
         const encKey = await importKeyFromBytes(bytes)
         const r = await fetch(`${getApiBase()}/api/wallet/sync?keyHash=${keyHash}`)
-        if (!r.ok) return
+        if (!r.ok || !active) return
         const data = await r.json()
-        if (!data.found) return
-        const entries = await decryptWallet(data.ciphertext, data.iv, encKey)
-        dispatch({ type: 'HYDRATE', entries, keyHash, salt, encKey })
+        if (!data.found || !active) return
+        const rawEntries = await decryptWallet(data.ciphertext, data.iv, encKey)
+        const entries = rawEntries.filter(isValidWalletEntry)
+        if (active) dispatch({ type: 'HYDRATE', entries, keyHash, salt, encKey })
       } catch {
-        sessionStorage.removeItem(SS_RAW_KEY)
+        if (active) sessionStorage.removeItem(SS_RAW_KEY)
       }
     })()
+
+    return () => { active = false }
   }, [])
 
   // Debounced sync on entries change (only when unlocked)
@@ -159,11 +163,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const saltBytes = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0))
     const { encKey, keyHash } = await deriveAll(passphrase, saltBytes)
     const { ciphertext, iv } = await encryptWallet([], encKey)
-    await fetch(`${getApiBase()}/api/wallet/sync`, {
+    const syncResponse = await fetch(`${getApiBase()}/api/wallet/sync`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ keyHash, ciphertext, iv, salt: saltB64 }),
     })
+    if (!syncResponse.ok) throw new Error('Failed to save wallet to server')
     localStorage.setItem(LS_KEY_HASH, keyHash)
     localStorage.setItem(LS_SALT, saltB64)
     const rawBytes = await deriveRawKeyBytes(passphrase, saltBytes)
@@ -181,7 +186,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (r.status === 404) throw new Error('Incorrect passphrase')
     if (!r.ok) throw new Error('Server error')
     const data = await r.json()
-    const entries = await decryptWallet(data.ciphertext, data.iv, encKey)
+    const rawEntries = await decryptWallet(data.ciphertext, data.iv, encKey)
+    const entries = rawEntries.filter(isValidWalletEntry)
     const rawBytes = await deriveRawKeyBytes(passphrase, saltBytes)
     sessionStorage.setItem(SS_RAW_KEY, btoa(String.fromCharCode(...rawBytes)))
     dispatch({ type: 'HYDRATE', entries, keyHash, salt: saltB64, encKey })
