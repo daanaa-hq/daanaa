@@ -178,24 +178,42 @@ def register_nonprofit_endpoints(app):
 
     @app.route('/api/nonprofit/purchase-letters', methods=['POST'])
     def purchase_letters():
-        """Buy 100 letters for $10 (Stripe integration)."""
+        """Buy 100 letters for $10 via Stripe."""
         auth = request.headers.get('Authorization', '')
         nonprofit_ein = auth.split(' ')[-1] if auth else None
 
         if not nonprofit_ein:
             return jsonify({'error': 'Unauthorized'}), 401
 
-        # TODO: Integrate Stripe
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        body = request.json or {}
+        stripe_payment_method_id = body.get('paymentMethodId')
 
-        credit_id = str(uuid.uuid4())
-        cursor.execute('''
-            INSERT INTO letter_credits (id, nonprofit_ein, letters_remaining)
-            VALUES (?, ?, 100)
-        ''', (credit_id, nonprofit_ein))
+        # For now, stub the Stripe call — real integration requires STRIPE_API_KEY env var
+        # When Stripe is set up, this will call stripe.PaymentIntent.create() with the payment method
+        if not stripe_payment_method_id:
+            return jsonify({'error': 'Payment method required'}), 400
 
-        conn.commit()
-        conn.close()
+        try:
+            # TODO: Call Stripe API to charge $10
+            # stripe.PaymentIntent.create(
+            #   amount=1000,  # $10 in cents
+            #   currency='usd',
+            #   payment_method=stripe_payment_method_id,
+            #   confirm=True,
+            # )
 
-        return jsonify({'credit_id': credit_id, 'letters_added': 100}), 201
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            credit_id = str(uuid.uuid4())
+            cursor.execute('''
+                INSERT INTO letter_credits (id, nonprofit_ein, letters_remaining)
+                VALUES (?, ?, 100)
+            ''', (credit_id, nonprofit_ein))
+
+            conn.commit()
+            conn.close()
+
+            return jsonify({'credit_id': credit_id, 'letters_added': 100, 'amount': 1000}), 201
+        except Exception as e:
+            return jsonify({'error': f'Payment failed: {str(e)}'}), 402

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { usePageMeta } from '../../hooks/usePageMeta'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 
 interface LetterRequest {
   id: string
@@ -19,17 +19,27 @@ interface DashboardData {
 
 export default function NonprofitDashboardPage() {
   const { ein } = useParams<{ ein: string }>()
-  usePageMeta(`${ein} Dashboard | Daanaa`, 'Manage donation letter requests, approvals, and credits')
+  const navigate = useNavigate()
+  usePageMeta('Nonprofit Dashboard | Daanaa', 'Manage donation letter requests, approvals, and credits')
 
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [approving, setApproving] = useState<string | null>(null)
 
+  const getAuthToken = () => {
+    return localStorage.getItem('nonprofit_account_id') || localStorage.getItem('nonprofit_auth_token') || ein || ''
+  }
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const authToken = localStorage.getItem('nonprofit_auth_token') || ein
+        const authToken = getAuthToken()
+        if (!authToken) {
+          navigate('/nonprofit/letters/signup')
+          return
+        }
+
         const res = await fetch('/api/nonprofit/dashboard', {
           headers: { Authorization: `Bearer ${authToken}` },
         })
@@ -43,12 +53,12 @@ export default function NonprofitDashboardPage() {
       }
     }
     fetchDashboard()
-  }, [ein])
+  }, [ein, navigate])
 
   const handleApprove = async (letterId: string) => {
     setApproving(letterId)
     try {
-      const authToken = localStorage.getItem('nonprofit_auth_token') || ein
+      const authToken = getAuthToken()
       const res = await fetch(`/api/nonprofit/letter/${letterId}/approve`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authToken}` },
@@ -69,7 +79,7 @@ export default function NonprofitDashboardPage() {
 
   const handleGenerateLetter = async (letterId: string) => {
     try {
-      const authToken = localStorage.getItem('nonprofit_auth_token') || ein
+      const authToken = getAuthToken()
       const res = await fetch(`/api/nonprofit/letter/${letterId}/generate`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${authToken}` },

@@ -44,6 +44,7 @@ const NonprofitDashboard = lazy(() => import('./pages/NonprofitDashboard'))
 const NonprofitLogin = lazy(() => import('./pages/nonprofit/NonprofitLogin'))
 const MyOrgsPage = lazy(() => import('./pages/nonprofit/MyOrgsPage'))
 const NonprofitDashboardPage = lazy(() => import('./pages/nonprofit/NonprofitDashboardPage'))
+const NonprofitVerifyEmail = lazy(() => import('./pages/nonprofit/NonprofitVerification'))
 const Partners = lazy(() => import('./pages/Partners'))
 const PartnerDetail = lazy(() => import('./pages/PartnerDetail'))
 const VendorLoginPage = lazy(() => import('./pages/vendor/VendorLoginPage'))
@@ -113,6 +114,7 @@ export default function App() {
           <Route path="/invisible-preview" element={<MeetInvisible />} />
           <Route path="/research" element={<ResearchDashboard />} />
           <Route path="/nonprofit/verify-hours" element={<NonprofitVerification />} />
+          <Route path="/nonprofit/verify" element={<NonprofitVerifyEmail />} />
           <Route path="/nonprofit/login" element={<NonprofitLogin />} />
           <Route path="/nonprofit/letters/signup" element={<NonprofitSignup />} />
           <Route element={<NonprofitRoute />}>

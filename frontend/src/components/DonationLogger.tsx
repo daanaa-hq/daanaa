@@ -9,6 +9,7 @@ interface DonationLoggerProps {
 
 export default function DonationLogger({ ein, orgName, orgOptedInLetters = false }: DonationLoggerProps) {
   const { logDonation } = useWallet()
+  const [donorName, setDonorName] = useState('')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
@@ -49,7 +50,7 @@ export default function DonationLogger({ ein, orgName, orgOptedInLetters = false
             ein,
             amount: parsedAmount,
             date,
-            donorName: 'Anonymous', // TODO: get from user
+            donorName: donorName || 'Anonymous',
           }),
         })
         if (!letterRes.ok) {
@@ -59,6 +60,7 @@ export default function DonationLogger({ ein, orgName, orgOptedInLetters = false
       }
 
       setSuccess(true)
+      setDonorName('')
       setAmount('')
       setNotes('')
       setRequestLetter(false)
@@ -87,6 +89,22 @@ export default function DonationLogger({ ein, orgName, orgOptedInLetters = false
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Donor Name */}
+        <div>
+          <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
+            Your name (optional)
+          </label>
+          <input
+            type="text"
+            value={donorName}
+            onChange={(e) => setDonorName(e.target.value.slice(0, 100))}
+            placeholder="Leave blank to remain anonymous"
+            maxLength={100}
+            className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
+          />
+          <p className="text-xs text-cool-grey mt-1">Private to {orgName} only</p>
+        </div>
+
         {/* Amount */}
         <div>
           <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
