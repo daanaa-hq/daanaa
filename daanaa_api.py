@@ -6154,6 +6154,44 @@ def e2e_wallet_sync():
                     'salt': row[2], 'updatedAt': row[3]})
 
 
+@app.route('/api/wallet/donation-receipt', methods=['POST'])
+def generate_donation_receipt():
+    """Generate IRS-compliant donation receipt PDF."""
+    try:
+        from scripts.letter_generator import generate_donation_letter
+
+        data = request.json or {}
+        org_name = data.get('org_name', '').strip()
+        ein = data.get('ein', '').strip()
+        amount = data.get('amount', 0)
+        donation_date = data.get('date', '').strip()
+        donor_name = data.get('donor_name', 'Honored Donor').strip()
+
+        if not all([org_name, ein, amount, donation_date]):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        pdf_bytes = generate_donation_letter(
+            nonprofit_name=org_name,
+            nonprofit_ein=ein,
+            donor_name=donor_name,
+            amount=amount,
+            donation_date=donation_date,
+            nonprofit_address=org_name
+        )
+
+        from io import BytesIO
+        return send_file(
+            BytesIO(pdf_bytes),
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f'receipt_{ein}_{donation_date.split("T")[0]}.pdf'
+        )
+    except ImportError:
+        return jsonify({'error': 'PDF generation service unavailable'}), 503
+    except Exception as e:
+        return jsonify({'error': f'Failed to generate receipt: {str(e)}'}), 500
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
