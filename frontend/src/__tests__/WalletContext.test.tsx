@@ -106,3 +106,85 @@ describe('WalletContext', () => {
     expect(ctx.isUnlocked).toBe(false)
   })
 })
+
+describe('legacy wallet migration', () => {
+  const legacyWallet = {
+    version: 1,
+    lastUpdated: Date.now(),
+    orgs: [
+      {
+        ein: '123456789',
+        bookmarkedAt: 1718000000000,
+        name: 'Old Org Name',
+        mission: 'Old mission text',
+        location: 'NYC',
+        cause: ['education'],
+        merit_score_v5: 75,
+        merit_health_signal_v5: 'HEALTHY',
+        is_hidden_gem: false,
+        givingIntent: { type: 'giving', addedAt: 1718000000000, amount: 100 },
+      },
+    ],
+    syncedWithServer: false,
+  }
+
+  beforeEach(() => {
+    localStorage.setItem('daanaa_wallet', JSON.stringify(legacyWallet))
+  })
+  afterEach(() => {
+    jest.clearAllMocks()
+    localStorage.clear()
+    sessionStorage.clear()
+  })
+
+  it('detects legacy wallet and exposes migrationData', () => {
+    let ctx: any
+    render(
+      <WalletProvider>
+        <Probe onMount={(w) => { ctx = w }} />
+      </WalletProvider>
+    )
+    expect(ctx.migrationData).toHaveLength(1)
+    expect(ctx.migrationData[0].ein).toBe('123456789')
+    expect((ctx.migrationData[0] as any).name).toBeUndefined()
+  })
+
+  it('migrationData preserves givingIntent', () => {
+    let ctx: any
+    render(
+      <WalletProvider>
+        <Probe onMount={(w) => { ctx = w }} />
+      </WalletProvider>
+    )
+    expect(ctx.migrationData[0].givingIntent?.type).toBe('giving')
+    expect(ctx.migrationData[0].givingIntent?.amount).toBe(100)
+  })
+
+  it('applyMigration merges entries and clears legacy key', async () => {
+    let ctx: any
+    render(
+      <WalletProvider>
+        <Probe onMount={(w) => { ctx = w }} />
+      </WalletProvider>
+    )
+    await act(async () => { ctx.applyMigration() })
+    expect(ctx.entries).toHaveLength(1)
+    expect(ctx.entries[0].ein).toBe('123456789')
+    expect(ctx.entries[0].givingIntent?.amount).toBe(100)
+    expect(localStorage.getItem('daanaa_wallet')).toBeNull()
+    expect(ctx.migrationData).toBeNull()
+  })
+
+  it('dismissMigration removes legacy key without importing entries', async () => {
+    let ctx: any
+    render(
+      <WalletProvider>
+        <Probe onMount={(w) => { ctx = w }} />
+      </WalletProvider>
+    )
+    await act(async () => { ctx.dismissMigration() })
+    expect(ctx.entries).toHaveLength(0)
+    expect(localStorage.getItem('daanaa_wallet')).toBeNull()
+    expect(ctx.migrationData).toBeNull()
+  })
+})

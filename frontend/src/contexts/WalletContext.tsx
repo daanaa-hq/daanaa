@@ -224,7 +224,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const applyMigration = useCallback(() => {
     if (!migrationData) return
-    migrationData.forEach(e => dispatch({ type: 'ADD', ein: e.ein }))
+    migrationData.forEach(e => {
+      dispatch({ type: 'ADD', ein: e.ein })
+      if (e.givingIntent) dispatch({ type: 'UPDATE_INTENT', ein: e.ein, intent: e.givingIntent })
+    })
     localStorage.removeItem('daanaa_wallet')
     setMigrationData(null)
   }, [migrationData])
