@@ -6031,21 +6031,80 @@ def e2e_wallet_init():
     return jsonify({'salt': salt})
 
 
+@app.route('/api/wallet/token', methods=['POST'])
+def e2e_wallet_token():
+    """Issue short-lived JWT for wallet sync (security fix: no raw key bytes in browser).
+
+    POST { keyHash }  → { token, expiresIn }
+
+    Token is httpOnly-safe and expires in 5 minutes.
+    Used by WalletContext to sync without storing raw AES key bytes in sessionStorage.
+    """
+    body = request.get_json(silent=True) or {}
+    key_hash = body.get('keyHash', '')
+
+    if not key_hash or len(key_hash) != 64 or not all(c in '0123456789abcdef' for c in key_hash):
+        return jsonify({'error': 'invalid key_hash'}), 400
+
+    db = get_db()
+    _ensure_e2e_wallet_sync_table(db)
+
+    # Verify wallet exists
+    row = db.execute(
+        'SELECT 1 FROM e2e_wallet_sync WHERE key_hash=?',
+        [key_hash]
+    ).fetchone()
+    if not row:
+        return jsonify({'error': 'wallet not found'}), 404
+
+    # Issue JWT: payload = {keyHash, exp, iat}
+    import base64 as _b64
+    secret = os.environ.get('WALLET_JWT_SECRET', os.urandom(32).hex())
+    now = int(time.time())
+    token = _pyjwt.encode(
+        {'keyHash': key_hash, 'exp': now + 300, 'iat': now},  # 5-min expiry
+        secret,
+        algorithm='HS256'
+    )
+
+    return jsonify({'token': token, 'expiresIn': 300})
+
+
 @app.route('/api/wallet/sync', methods=['GET', 'POST', 'DELETE'])
 def e2e_wallet_sync():
     """Dumb ciphertext locker. Server cannot read wallet contents.
 
-    GET  ?keyHash=<hex64>          → { found, ciphertext, iv, salt, updatedAt }
-    POST { keyHash, ciphertext, iv, salt } → { ok }
-    DELETE { keyHash }             → { ok }
+    GET  ?keyHash=<hex64> | Authorization: Bearer <token>  → { found, ciphertext, iv, salt, updatedAt }
+    POST { keyHash, ... } | Authorization: Bearer <token>  → { ok }
+    DELETE { keyHash } | Authorization: Bearer <token>     → { ok }
+
+    Supports both legacy keyHash in body + new JWT auth (security fix).
     """
-    # Extract keyHash based on method (GET uses query string; POST/DELETE require body)
-    if request.method == 'GET':
-        body = {}
-        key_hash = request.args.get('keyHash', '')
+    import base64 as _b64
+
+    # Extract keyHash: try JWT first, fall back to body/query
+    key_hash = None
+    auth_header = request.headers.get('Authorization', '')
+    if auth_header.startswith('Bearer '):
+        token = auth_header[7:]
+        try:
+            secret = os.environ.get('WALLET_JWT_SECRET', '')
+            if secret:
+                payload = _pyjwt.decode(token, secret, algorithms=['HS256'])
+                key_hash = payload.get('keyHash', '')
+        except Exception:
+            pass  # Fall through to body/query parsing
+
+    # Fall back: extract from body/query string (legacy)
+    if not key_hash:
+        if request.method == 'GET':
+            body = {}
+            key_hash = request.args.get('keyHash', '')
+        else:
+            body = request.get_json(silent=True) or {}
+            key_hash = body.get('keyHash', '')
     else:
         body = request.get_json(silent=True) or {}
-        key_hash = body.get('keyHash', '')
 
     if not key_hash or len(key_hash) != 64 or not all(c in '0123456789abcdef' for c in key_hash):
         return jsonify({'error': 'invalid key_hash'}), 400

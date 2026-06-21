@@ -13,7 +13,7 @@ import { getApiBase } from '../utils/env'
 
 const LS_KEY_HASH = 'dw_kh'
 const LS_SALT    = 'dw_s'
-const SS_RAW_KEY = 'dw_k'
+// SECURITY: removed SS_RAW_KEY (raw key caching). Use JWT tokens instead (see /api/wallet/token).
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -102,6 +102,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     entries: [], keyHash: null, salt: null, encKey: null, syncStatus: 'idle',
   })
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const tokenRef = useRef<{ token: string; expiresAt: number } | null>(null)
   const [migrationData, setMigrationData] = useState<WalletEntry[] | null>(null)
 
   // On mount: detect legacy v1 wallet
@@ -120,31 +121,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     } catch { /* ignore */ }
   }, [])
 
-  // On mount: try to restore session key from sessionStorage
+  // SECURITY FIX: On mount, no longer restore raw key from sessionStorage.
+  // Use JWT token endpoint instead (see setupNewWallet & unlockWithPassphrase).
+  // This prevents XSS from exfiltrating the key material.
   useEffect(() => {
-    let active = true
-    const rawB64 = sessionStorage.getItem(SS_RAW_KEY)
-    const keyHash = localStorage.getItem(LS_KEY_HASH)
-    const salt = localStorage.getItem(LS_SALT)
-    if (!rawB64 || !keyHash || !salt) return
-
-    ;(async () => {
-      try {
-        const bytes = Uint8Array.from(atob(rawB64), c => c.charCodeAt(0))
-        const encKey = await importKeyFromBytes(bytes)
-        const r = await fetch(`${getApiBase()}/api/wallet/sync?keyHash=${keyHash}`)
-        if (!r.ok || !active) return
-        const data = await r.json()
-        if (!data.found || !active) return
-        const rawEntries = await decryptWallet(data.ciphertext, data.iv, encKey)
-        const entries = rawEntries.filter(isValidWalletEntry)
-        if (active) dispatch({ type: 'HYDRATE', entries, keyHash, salt, encKey })
-      } catch {
-        if (active) sessionStorage.removeItem(SS_RAW_KEY)
-      }
-    })()
-
-    return () => { active = false }
+    // Removed raw key restoration. Tokens are issued on-demand by /api/wallet/token.
   }, [])
 
   // Debounced sync on entries change (only when unlocked)
@@ -155,12 +136,54 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_SYNC_STATUS', status: 'syncing' })
       try {
         const { ciphertext, iv } = await encryptWallet(state.entries, state.encKey!)
+
+        // Request a JWT token if needed
+        const now = Date.now()
+        if (!tokenRef.current || tokenRef.current.expiresAt < now) {
+          const tokenRes = await fetch(`${getApiBase()}/api/wallet/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyHash: state.keyHash }),
+          })
+          if (!tokenRes.ok) throw new Error(`token request failed: ${tokenRes.status}`)
+          const { token, expiresIn } = await tokenRes.json()
+          tokenRef.current = { token, expiresAt: now + expiresIn * 1000 }
+        }
+
+        // Sync with JWT token
         const r = await fetch(`${getApiBase()}/api/wallet/sync`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ keyHash: state.keyHash, ciphertext, iv, salt: state.salt }),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tokenRef.current.token}`,
+          },
+          body: JSON.stringify({ ciphertext, iv, salt: state.salt }),
         })
-        if (!r.ok) throw new Error(`sync failed: ${r.status}`)
+
+        // If 401, token expired — refresh and retry
+        if (r.status === 401) {
+          const tokenRes = await fetch(`${getApiBase()}/api/wallet/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyHash: state.keyHash }),
+          })
+          if (!tokenRes.ok) throw new Error(`token refresh failed: ${tokenRes.status}`)
+          const { token, expiresIn } = await tokenRes.json()
+          tokenRef.current = { token, expiresAt: now + expiresIn * 1000 }
+
+          const retryR = await fetch(`${getApiBase()}/api/wallet/sync`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${tokenRef.current.token}`,
+            },
+            body: JSON.stringify({ ciphertext, iv, salt: state.salt }),
+          })
+          if (!retryR.ok) throw new Error(`sync failed after token refresh: ${retryR.status}`)
+        } else if (!r.ok) {
+          throw new Error(`sync failed: ${r.status}`)
+        }
+
         dispatch({ type: 'SET_SYNC_STATUS', status: 'idle' })
       } catch {
         dispatch({ type: 'SET_SYNC_STATUS', status: 'error' })
@@ -204,8 +227,16 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (!syncResponse.ok) throw new Error('Failed to save wallet to server')
     localStorage.setItem(LS_KEY_HASH, keyHash)
     localStorage.setItem(LS_SALT, saltB64)
-    const rawBytes = await deriveRawKeyBytes(passphrase, saltBytes)
-    sessionStorage.setItem(SS_RAW_KEY, btoa(String.fromCharCode(...rawBytes)))
+    // Request initial token
+    const tokenRes = await fetch(`${getApiBase()}/api/wallet/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyHash }),
+    })
+    if (tokenRes.ok) {
+      const { token, expiresIn } = await tokenRes.json()
+      tokenRef.current = { token, expiresAt: Date.now() + expiresIn * 1000 }
+    }
     dispatch({ type: 'HYDRATE', entries: [], keyHash, salt: saltB64, encKey })
   }, [])
 
@@ -216,18 +247,26 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const saltBytes = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0))
     const { encKey, keyHash } = await deriveAll(passphrase, saltBytes)
     const r = await fetch(`${getApiBase()}/api/wallet/sync?keyHash=${keyHash}`)
-    if (r.status === 404) throw new Error('Incorrect passphrase')
+    if (r.status === 401 || r.status === 404) throw new Error('Incorrect passphrase')
     if (!r.ok) throw new Error('Server error')
     const data = await r.json()
     const rawEntries = await decryptWallet(data.ciphertext, data.iv, encKey)
     const entries = rawEntries.filter(isValidWalletEntry)
-    const rawBytes = await deriveRawKeyBytes(passphrase, saltBytes)
-    sessionStorage.setItem(SS_RAW_KEY, btoa(String.fromCharCode(...rawBytes)))
+    // Request initial token on unlock
+    const tokenRes = await fetch(`${getApiBase()}/api/wallet/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyHash }),
+    })
+    if (tokenRes.ok) {
+      const { token, expiresIn } = await tokenRes.json()
+      tokenRef.current = { token, expiresAt: Date.now() + expiresIn * 1000 }
+    }
     dispatch({ type: 'HYDRATE', entries, keyHash, salt: saltB64, encKey })
   }, [])
 
   const lockWallet = useCallback(() => {
-    sessionStorage.removeItem(SS_RAW_KEY)
+    tokenRef.current = null
     dispatch({ type: 'LOCK' })
   }, [])
 
@@ -242,7 +281,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
     localStorage.removeItem(LS_KEY_HASH)
     localStorage.removeItem(LS_SALT)
-    sessionStorage.removeItem(SS_RAW_KEY)
+    tokenRef.current = null
     dispatch({ type: 'LOCK' })
   }, [])
 
