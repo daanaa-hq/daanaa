@@ -1,261 +1,248 @@
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
-import type {
-  Wallet,
-  WalletOrg,
-  GivingIntent,
-  WalletContextType,
-} from '../types/wallet'
-import { isValidWallet, isValidWalletOrg, isValidGivingIntent } from '../types/wallet'
+import React, {
+  createContext, useContext, useReducer, useCallback,
+  useEffect, useRef, useState,
+} from 'react'
+import type { WalletEntry, GivingIntent, WalletContextType } from '../types/wallet'
+import { isValidWalletEntry, isLegacyWalletV1 } from '../types/wallet'
 import { validateGivingIntent, logValidationError } from '../utils/walletValidation'
+import {
+  deriveAll, encryptWallet, decryptWallet,
+  deriveRawKeyBytes, importKeyFromBytes,
+} from '../utils/wallet.crypto'
+import { getApiBase } from '../utils/env'
 
-const STORAGE_KEY = 'daanaa_wallet'
-const CURRENT_VERSION = 1
+const LS_KEY_HASH = 'dw_kh'
+const LS_SALT    = 'dw_s'
+const SS_RAW_KEY = 'dw_k'
 
-/**
- * Default/empty wallet state
- */
-function createEmptyWallet(): Wallet {
-  return {
-    version: CURRENT_VERSION,
-    lastUpdated: Date.now(),
-    orgs: [],
-    syncedWithServer: false,
-  }
+// ─── State ───────────────────────────────────────────────────────────────────
+
+type State = {
+  entries: WalletEntry[]
+  keyHash: string | null
+  salt: string | null
+  encKey: CryptoKey | null
+  syncStatus: 'idle' | 'syncing' | 'error'
 }
 
-/**
- * Wallet actions for useReducer
- */
-type WalletAction =
-  | { type: 'ADD_ORG'; payload: WalletOrg }
-  | { type: 'REMOVE_ORG'; payload: string } // ein
-  | { type: 'UPDATE_INTENT'; payload: { ein: string; intent: GivingIntent } }
-  | { type: 'HYDRATE'; payload: Wallet }
-  | { type: 'SYNC_WITH_SERVER'; payload: { googleEmail: string } }
-  | { type: 'LOGOUT_AND_CLEAR_SYNC' }
+type Action =
+  | { type: 'HYDRATE'; entries: WalletEntry[]; keyHash: string; salt: string; encKey: CryptoKey }
+  | { type: 'ADD'; ein: string }
+  | { type: 'REMOVE'; ein: string }
+  | { type: 'UPDATE_INTENT'; ein: string; intent: GivingIntent }
+  | { type: 'SET_SYNC_STATUS'; status: State['syncStatus'] }
+  | { type: 'LOCK' }
 
-/**
- * Reducer for wallet state management
- * All mutations return new wallet with updated lastUpdated timestamp
- */
-function walletReducer(state: Wallet, action: WalletAction): Wallet {
+function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case 'ADD_ORG': {
-      // Prevent duplicates
-      if (state.orgs.some(org => org.ein === action.payload.ein)) {
-        return state
-      }
-      return {
-        ...state,
-        orgs: [...state.orgs, action.payload],
-        lastUpdated: Date.now(),
-      }
+    case 'HYDRATE':
+      return { ...state, entries: action.entries, keyHash: action.keyHash,
+               salt: action.salt, encKey: action.encKey, syncStatus: 'idle' }
+    case 'ADD': {
+      if (state.entries.some(e => e.ein === action.ein)) return state
+      return { ...state, entries: [...state.entries, { ein: action.ein, bookmarkedAt: Date.now() }] }
     }
-
-    case 'REMOVE_ORG': {
-      const orgs = state.orgs.filter(org => org.ein !== action.payload)
-      if (orgs.length === state.orgs.length) {
-        // Not found, no change
-        return state
-      }
-      return {
-        ...state,
-        orgs,
-        lastUpdated: Date.now(),
-      }
-    }
-
+    case 'REMOVE':
+      return { ...state, entries: state.entries.filter(e => e.ein !== action.ein) }
     case 'UPDATE_INTENT': {
-      const orgIndex = state.orgs.findIndex(org => org.ein === action.payload.ein)
-      if (orgIndex === -1) {
-        return state
-      }
-      const newOrgs = [...state.orgs]
-      newOrgs[orgIndex] = {
-        ...newOrgs[orgIndex],
-        givingIntent: action.payload.intent,
-      }
-      return {
-        ...state,
-        orgs: newOrgs,
-        lastUpdated: Date.now(),
-      }
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const next = [...state.entries]
+      next[idx] = { ...next[idx], givingIntent: action.intent }
+      return { ...state, entries: next }
     }
-
-    case 'HYDRATE': {
-      // Only hydrate if valid wallet
-      if (isValidWallet(action.payload)) {
-        return action.payload
-      }
-      return state
-    }
-
-    case 'SYNC_WITH_SERVER': {
-      return {
-        ...state,
-        syncedWithServer: true,
-        googleEmail: action.payload.googleEmail,
-        lastUpdated: Date.now(),
-      }
-    }
-
-    case 'LOGOUT_AND_CLEAR_SYNC': {
-      return {
-        ...state,
-        syncedWithServer: false,
-        googleEmail: undefined,
-        lastUpdated: Date.now(),
-      }
-    }
-
+    case 'SET_SYNC_STATUS':
+      return { ...state, syncStatus: action.status }
+    case 'LOCK':
+      return { entries: [], keyHash: null, salt: null, encKey: null, syncStatus: 'idle' }
     default:
       return state
   }
 }
 
+// ─── Context ─────────────────────────────────────────────────────────────────
+
 export const WalletContext = createContext<WalletContextType | null>(null)
 
-interface WalletProviderProps {
-  children: React.ReactNode
-}
+export function WalletProvider({ children }: { children: React.ReactNode }) {
+  const [state, dispatch] = useReducer(reducer, {
+    entries: [], keyHash: null, salt: null, encKey: null, syncStatus: 'idle',
+  })
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [migrationData, setMigrationData] = useState<WalletEntry[] | null>(null)
 
-/**
- * WalletProvider manages wallet state and localStorage persistence
- * Recovers from corrupted localStorage gracefully
- */
-export function WalletProvider({ children }: WalletProviderProps) {
-  const [wallet, dispatch] = useReducer(walletReducer, createEmptyWallet())
-  const [storageError, setStorageError] = React.useState<'quota' | null>(null)
-  const [corruptionDetected, setCorruptionDetected] = React.useState(false)
-
-  // Hydrate from localStorage on mount
+  // On mount: detect legacy v1 wallet
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored) as unknown
-        if (isValidWallet(parsed)) {
-          dispatch({ type: 'HYDRATE', payload: parsed })
-        } else {
-          console.warn('[Wallet] Corrupted data in localStorage, starting fresh')
-          localStorage.removeItem(STORAGE_KEY)
-          setCorruptionDetected(true)
-        }
-      }
-    } catch (err) {
-      console.error('[Wallet] Failed to hydrate from localStorage:', err)
-      localStorage.removeItem(STORAGE_KEY)
-      setCorruptionDetected(true)
-    }
+      const raw = localStorage.getItem('daanaa_wallet')
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      if (!isLegacyWalletV1(parsed)) return
+      const entries: WalletEntry[] = parsed.orgs.map((o: any) => ({
+        ein: o.ein,
+        bookmarkedAt: o.bookmarkedAt ?? Date.now(),
+        givingIntent: o.givingIntent,
+      })).filter(isValidWalletEntry)
+      if (entries.length > 0) setMigrationData(entries)
+    } catch { /* ignore */ }
   }, [])
 
-  // Persist wallet to localStorage whenever it changes
+  // On mount: try to restore session key from sessionStorage
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(wallet))
-    } catch (err: any) {
-      // Handle quota exceeded
-      if (err.name === 'QuotaExceededError') {
-        console.error('[Wallet] localStorage quota exceeded. Wallet full.')
-        setStorageError('quota')
-      } else {
-        console.error('[Wallet] Failed to persist wallet:', err)
-      }
-    }
-  }, [wallet])
+    const rawB64 = sessionStorage.getItem(SS_RAW_KEY)
+    const keyHash = localStorage.getItem(LS_KEY_HASH)
+    const salt = localStorage.getItem(LS_SALT)
+    if (!rawB64 || !keyHash || !salt) return
 
-  // Implement WalletContextType methods
-  const addOrg = useCallback((org: WalletOrg) => {
-    if (!isValidWalletOrg(org)) {
-      logValidationError('addOrg', new Error('Invalid org structure'))
-      return
-    }
-    dispatch({ type: 'ADD_ORG', payload: org })
+    ;(async () => {
+      try {
+        const bytes = Uint8Array.from(atob(rawB64), c => c.charCodeAt(0))
+        const encKey = await importKeyFromBytes(bytes)
+        const r = await fetch(`${getApiBase()}/api/wallet/sync?keyHash=${keyHash}`)
+        if (!r.ok) return
+        const data = await r.json()
+        if (!data.found) return
+        const entries = await decryptWallet(data.ciphertext, data.iv, encKey)
+        dispatch({ type: 'HYDRATE', entries, keyHash, salt, encKey })
+      } catch {
+        sessionStorage.removeItem(SS_RAW_KEY)
+      }
+    })()
   }, [])
 
-  const removeOrg = useCallback((ein: string) => {
-    dispatch({ type: 'REMOVE_ORG', payload: ein })
+  // Debounced sync on entries change (only when unlocked)
+  useEffect(() => {
+    if (!state.encKey || !state.keyHash || !state.salt) return
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current)
+    syncTimerRef.current = setTimeout(async () => {
+      dispatch({ type: 'SET_SYNC_STATUS', status: 'syncing' })
+      try {
+        const { ciphertext, iv } = await encryptWallet(state.entries, state.encKey!)
+        const r = await fetch(`${getApiBase()}/api/wallet/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ keyHash: state.keyHash, ciphertext, iv, salt: state.salt }),
+        })
+        if (!r.ok) throw new Error(`sync failed: ${r.status}`)
+        dispatch({ type: 'SET_SYNC_STATUS', status: 'idle' })
+      } catch {
+        dispatch({ type: 'SET_SYNC_STATUS', status: 'error' })
+      }
+    }, 800)
+    return () => { if (syncTimerRef.current) clearTimeout(syncTimerRef.current) }
+  }, [state.entries, state.encKey, state.keyHash, state.salt])
+
+  // ─── Actions ───────────────────────────────────────────────────────────────
+
+  const addEntry = useCallback((ein: string) => {
+    if (!/^\d{9}$/.test(ein)) return
+    dispatch({ type: 'ADD', ein })
+  }, [])
+
+  const removeEntry = useCallback((ein: string) => {
+    dispatch({ type: 'REMOVE', ein })
   }, [])
 
   const updateIntent = useCallback((ein: string, intent: GivingIntent) => {
-    // Validate structure first
-    if (!isValidGivingIntent(intent)) {
-      logValidationError('updateIntent', new Error('Invalid intent structure'))
-      return
+    try { validateGivingIntent(intent) } catch (e) {
+      logValidationError('updateIntent', e as Error); return
     }
-
-    // Then validate individual fields (amount, hours, notes)
-    try {
-      validateGivingIntent(intent)
-    } catch (err) {
-      logValidationError('updateIntent', err as Error)
-      return
-    }
-
-    dispatch({ type: 'UPDATE_INTENT', payload: { ein, intent } })
+    dispatch({ type: 'UPDATE_INTENT', ein, intent })
   }, [])
 
-  const isInWallet = useCallback(
-    (ein: string): boolean => wallet.orgs.some(org => org.ein === ein),
-    [wallet.orgs]
-  )
+  const isInWallet = useCallback((ein: string) => state.entries.some(e => e.ein === ein), [state.entries])
+  const getIntent = useCallback((ein: string) => state.entries.find(e => e.ein === ein)?.givingIntent, [state.entries])
 
-  const getIntent = useCallback(
-    (ein: string): GivingIntent | undefined => {
-      return wallet.orgs.find(org => org.ein === ein)?.givingIntent
-    },
-    [wallet.orgs]
-  )
-
-  const syncToServer = useCallback(
-    async (googleEmail: string, token: string): Promise<void> => {
-      if (!googleEmail || !token) {
-        throw new Error('googleEmail and token are required for sync')
-      }
-      const eins = wallet.orgs.map(org => org.ein)
-      const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      const resp = await fetch(`${base}/api/wallet/sync-saves`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ eins }),
-      })
-      if (!resp.ok) throw new Error(`Wallet sync failed: ${resp.status}`)
-      dispatch({ type: 'SYNC_WITH_SERVER', payload: { googleEmail } })
-    },
-    [wallet.orgs]
-  )
-
-  const logoutAndClearSync = useCallback(() => {
-    dispatch({ type: 'LOGOUT_AND_CLEAR_SYNC' })
+  const setupNewWallet = useCallback(async (passphrase: string) => {
+    const r = await fetch(`${getApiBase()}/api/wallet/init`, { method: 'POST' })
+    const { salt: saltB64 } = await r.json()
+    const saltBytes = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0))
+    const { encKey, keyHash } = await deriveAll(passphrase, saltBytes)
+    const { ciphertext, iv } = await encryptWallet([], encKey)
+    await fetch(`${getApiBase()}/api/wallet/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyHash, ciphertext, iv, salt: saltB64 }),
+    })
+    localStorage.setItem(LS_KEY_HASH, keyHash)
+    localStorage.setItem(LS_SALT, saltB64)
+    const rawBytes = await deriveRawKeyBytes(passphrase, saltBytes)
+    sessionStorage.setItem(SS_RAW_KEY, btoa(String.fromCharCode(...rawBytes)))
+    dispatch({ type: 'HYDRATE', entries: [], keyHash, salt: saltB64, encKey })
   }, [])
 
-  const value: WalletContextType = {
-    wallet,
-    addOrg,
-    removeOrg,
-    updateIntent,
-    isInWallet,
-    getIntent,
-    syncToServer,
-    logoutAndClearSync,
-    storageError,
-    corruptionDetected,
-  }
+  const unlockWithPassphrase = useCallback(async (passphrase: string) => {
+    const saltB64 = localStorage.getItem(LS_SALT)
+    const storedKeyHash = localStorage.getItem(LS_KEY_HASH)
+    if (!saltB64 || !storedKeyHash) throw new Error('No wallet found on this device')
+    const saltBytes = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0))
+    const { encKey, keyHash } = await deriveAll(passphrase, saltBytes)
+    const r = await fetch(`${getApiBase()}/api/wallet/sync?keyHash=${keyHash}`)
+    if (r.status === 404) throw new Error('Incorrect passphrase')
+    if (!r.ok) throw new Error('Server error')
+    const data = await r.json()
+    const entries = await decryptWallet(data.ciphertext, data.iv, encKey)
+    const rawBytes = await deriveRawKeyBytes(passphrase, saltBytes)
+    sessionStorage.setItem(SS_RAW_KEY, btoa(String.fromCharCode(...rawBytes)))
+    dispatch({ type: 'HYDRATE', entries, keyHash, salt: saltB64, encKey })
+  }, [])
 
-  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
+  const lockWallet = useCallback(() => {
+    sessionStorage.removeItem(SS_RAW_KEY)
+    dispatch({ type: 'LOCK' })
+  }, [])
+
+  const deleteWallet = useCallback(async () => {
+    const keyHash = localStorage.getItem(LS_KEY_HASH)
+    if (keyHash) {
+      await fetch(`${getApiBase()}/api/wallet/sync`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyHash }),
+      }).catch(() => {})
+    }
+    localStorage.removeItem(LS_KEY_HASH)
+    localStorage.removeItem(LS_SALT)
+    sessionStorage.removeItem(SS_RAW_KEY)
+    dispatch({ type: 'LOCK' })
+  }, [])
+
+  const downloadBackup = useCallback(() => {
+    const data = JSON.stringify({ version: 2, entries: state.entries, exportedAt: new Date().toISOString() }, null, 2)
+    const blob = new Blob([data], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = 'daanaa-wallet-backup.json'; a.click()
+    URL.revokeObjectURL(url)
+  }, [state.entries])
+
+  const applyMigration = useCallback(() => {
+    if (!migrationData) return
+    migrationData.forEach(e => dispatch({ type: 'ADD', ein: e.ein }))
+    localStorage.removeItem('daanaa_wallet')
+    setMigrationData(null)
+  }, [migrationData])
+
+  const dismissMigration = useCallback(() => {
+    localStorage.removeItem('daanaa_wallet')
+    setMigrationData(null)
+  }, [])
+
+  return (
+    <WalletContext.Provider value={{
+      entries: state.entries, addEntry, removeEntry, updateIntent,
+      isInWallet, getIntent, isUnlocked: state.encKey !== null,
+      unlockWithPassphrase, setupNewWallet, lockWallet, deleteWallet,
+      downloadBackup, syncStatus: state.syncStatus,
+      migrationData, applyMigration, dismissMigration,
+    }}>
+      {children}
+    </WalletContext.Provider>
+  )
 }
 
-/**
- * Hook to use wallet context
- * Throws if used outside WalletProvider
- */
 export function useWallet(): WalletContextType {
   const ctx = useContext(WalletContext)
-  if (!ctx) {
-    throw new Error('useWallet must be used within WalletProvider')
-  }
+  if (!ctx) throw new Error('useWallet must be used within WalletProvider')
   return ctx
 }
