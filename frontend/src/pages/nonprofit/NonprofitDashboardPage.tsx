@@ -85,8 +85,24 @@ export default function NonprofitDashboardPage() {
         headers: { Authorization: `Bearer ${authToken}` },
       })
       if (!res.ok) throw new Error('Failed to generate letter')
-      const data = await res.json()
-      if (data.pdf_url) window.open(data.pdf_url, '_blank')
+
+      // Handle PDF download
+      const contentType = res.headers.get('content-type')
+      if (contentType?.includes('application/pdf')) {
+        const blob = await res.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `donation_letter_${letterId}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        const data = await res.json()
+        if (data.pdf_url) window.open(data.pdf_url, '_blank')
+      }
+
       setDashboard(prev => prev ? {
         ...prev,
         pending_letters: prev.pending_letters.map(l =>
