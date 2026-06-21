@@ -50,6 +50,8 @@ const PartnerDetail = lazy(() => import('./pages/PartnerDetail'))
 const VendorLoginPage = lazy(() => import('./pages/vendor/VendorLoginPage'))
 const VendorDashboardPage = lazy(() => import('./pages/vendor/VendorDashboardPage'))
 const NonprofitSignup = lazy(() => import('./components/NonprofitSignup'))
+const AdminOperations = lazy(() => import('./pages/AdminOperations'))
+const VolunteerApproval = lazy(() => import('./pages/nonprofit/VolunteerApproval'))
 
 function PageLoader() {
   return (
@@ -120,6 +122,7 @@ export default function App() {
           <Route element={<NonprofitRoute />}>
             <Route path="/nonprofit/my-orgs" element={<MyOrgsPage />} />
             <Route path="/nonprofit/dashboard/:ein" element={<NonprofitDashboardPage />} />
+            <Route path="/nonprofit/volunteer-approval" element={<VolunteerApproval />} />
           </Route>
           <Route path="/vendor/login" element={<VendorLoginPage />} />
           <Route path="/vendor/dashboard" element={<VendorDashboardPage />} />
@@ -127,6 +130,7 @@ export default function App() {
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/claim/success" element={<ClaimSuccess />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/operations" element={<AdminOperations />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
