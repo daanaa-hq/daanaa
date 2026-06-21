@@ -108,7 +108,7 @@ export function isValidGivingIntent(intent: unknown): intent is GivingIntent {
   const i = intent as Record<string, unknown>
   return (
     typeof i.type === 'string' &&
-    ['giving', 'volunteer', 'board'].includes(i.type) &&
+    ['giving', 'volunteer'].includes(i.type) &&
     typeof i.status === 'string' &&
     ['interested', 'withdrawn'].includes(i.status) &&
     typeof i.addedAt === 'number' &&

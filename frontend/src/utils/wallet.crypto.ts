@@ -4,6 +4,15 @@
 import type { WalletEntry } from '../types/wallet'
 import wordlistJson from '../../public/bip39-english.json'
 
+/** Safe base64 encode for arbitrary-length byte arrays.
+ *  btoa(String.fromCharCode(...bytes)) overflows the call stack for large payloads.
+ */
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return btoa(binary)
+}
+
 const PBKDF2_ITERATIONS = 310_000
 
 function getWordlist(): string[] {
@@ -76,8 +85,8 @@ export async function encryptWallet(
     new TextEncoder().encode(plaintext)
   )
   return {
-    ciphertext: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
-    iv: btoa(String.fromCharCode(...iv)),
+    ciphertext: bytesToBase64(new Uint8Array(encrypted)),
+    iv: btoa(String.fromCharCode(...iv)),  // iv is 12 bytes — safe to spread
   }
 }
 
