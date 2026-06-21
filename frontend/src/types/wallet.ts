@@ -84,6 +84,13 @@ export interface WalletContextType {
   corruptionDetected: boolean
 }
 
+/** Normalized wallet entry — EIN + intent only. Org display data fetched live. */
+export interface WalletEntry {
+  ein: string
+  bookmarkedAt: number
+  givingIntent?: GivingIntent
+}
+
 /**
  * Validation constraints
  */

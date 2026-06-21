@@ -15,6 +15,7 @@ module.exports = {
     '**/__tests__/**/*.{test,spec}.{ts,tsx}',
     '**/*.{test,spec}.{ts,tsx}',
   ],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   globals: {
     'ts-jest': {
       tsconfig: {
@@ -22,6 +23,7 @@ module.exports = {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
         skipLibCheck: true,
+        resolveJsonModule: true,
       },
       isolatedModules: true,
     },

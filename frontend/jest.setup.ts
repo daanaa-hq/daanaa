@@ -7,6 +7,17 @@ if (typeof global.TextEncoder === 'undefined') {
   global.TextDecoder = TextDecoder
 }
 
+// Bridge Node 22 WebCrypto into jsdom global.crypto.subtle
+// jsdom 29.7 exposes crypto.getRandomValues but not crypto.subtle
+if (typeof global.crypto === 'undefined' || typeof (global.crypto as Crypto).subtle === 'undefined') {
+  const { webcrypto } = require('crypto') as { webcrypto: Crypto }
+  Object.defineProperty(global, 'crypto', {
+    value: webcrypto,
+    configurable: true,
+    writable: true,
+  })
+}
+
 // Jest setup file for jsdom environment
 // Mock localStorage for tests
 const localStorageMock = (() => {
