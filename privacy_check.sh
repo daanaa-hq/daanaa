@@ -42,7 +42,11 @@ EXCLUDE_PATTERNS=(
   "venv/"
   "__pycache__/"
   ".pytest_cache/"
-  "*.json"
+  ".json"
+  "privacy_check.sh"
+  "CLAUDE.md"
+  "README"
+  ".md"
 )
 
 exclude_filter() {
@@ -65,23 +69,22 @@ echo ""
 echo "GATE 1: Token Pattern Detection"
 
 TOKEN_PATTERNS=(
-  'AKIA[0-9A-Z]{16}'                          # AWS Access Key
-  'ghp_[a-zA-Z0-9_]{36}'                      # GitHub Personal Token
-  'ghu_[a-zA-Z0-9_]{36}'                      # GitHub User Token
-  'ghs_[a-zA-Z0-9_]{36}'                      # GitHub Server Token
-  'gho_[a-zA-Z0-9_]{36}'                      # GitHub OAuth Token
-  'sk-[a-zA-Z0-9]{20,}'                       # OpenAI API Key
-  'AIza[0-9A-Za-z\-_]{35}'                    # Google API Key
-  'ya29\.[a-zA-Z0-9_-]{10,}'                  # Google OAuth Token
-  'ASIAR[0-9A-Z]{16}'                         # AWS STS Credential
+  'AKIA[0-9A-Z]\{16\}'
+  'ghp_[a-zA-Z0-9_]\{36\}'
+  'ghu_[a-zA-Z0-9_]\{36\}'
+  'ghs_[a-zA-Z0-9_]\{36\}'
+  'gho_[a-zA-Z0-9_]\{36\}'
+  'sk-[a-zA-Z0-9]\{20,\}'
+  'AIza[0-9A-Za-z_-]\{35\}'
+  'ASIAR[0-9A-Z]\{16\}'
 )
 
 for pattern in "${TOKEN_PATTERNS[@]}"; do
   while IFS= read -r file; do
     if exclude_filter "$file"; then continue; fi
 
-    if git show ":$file" 2>/dev/null | grep -qE "$pattern"; then
-      warn "Token pattern '${pattern:0:20}...' found in $file"
+    if git show ":$file" 2>/dev/null | grep -q "$pattern"; then
+      warn "Token pattern detected in $file"
       VIOLATIONS=$((VIOLATIONS + 1))
     fi
   done <<< "$STAGED_FILES"

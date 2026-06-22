@@ -24,6 +24,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
 import V5Context from '../components/V5Context'
 import CohortContext from '../components/CohortContext'
+import PeerContextBreakdown from '../components/PeerContextBreakdown'
 import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
 import AddToWalletButton from '../components/AddToWalletButton'
@@ -942,6 +943,15 @@ export default function OrganizationDetail() {
           {apiOrg! && apiOrg!.cohort_context && (
             <div className="mb-8">
               <CohortContext org={apiOrg!} />
+            </div>
+          )}
+
+          {/* Multi-dimensional peer context breakdown — shows where the org
+              ranks by category, state, revenue size, and financial model. Simple,
+              clear format for nonprofits to understand their position. */}
+          {apiOrg! && (
+            <div className="mb-8">
+              <PeerContextBreakdown org={apiOrg!} />
             </div>
           )}
 
