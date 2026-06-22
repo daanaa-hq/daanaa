@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
 Phase 5: Mission & Cause Backfill — Generate missions and extract causes for
-verified Phase 4 orgs (semantic_match=1).
+all eligible orgs (deductible + active).
 
 Pipeline:
-1. Load Phase 4 verified orgs (semantic_match=1)
-2. For each org where mission IS NULL:
+1. Load eligible orgs (deductibility=1 AND org_status='active', mission IS NULL)
+2. For each org:
    a. Generate 2-3 sentence mission via Qwen2.5-32B (port 11437)
    b. Extract causes via keyword rules + confidence scoring
    c. UPDATE registry_enriched with mission, cause_tags, mission_confidence
@@ -13,7 +13,7 @@ Pipeline:
 4. Log to /tmp/phase5_progress.log
 
 GPU: Qwen2.5-32B-Instruct on port 11437
-Speed: ~60 tok/s → 15-25K orgs in 30-40 hours
+Speed: ~60 tok/s → 400K+ orgs in 30-40 hours depending on scale
 Workers: 16 parallel (tuned for GPU mem + API throttling)
 
 Usage:
@@ -296,8 +296,8 @@ def fetch_orgs_for_phase5(
     Fetch orgs for Phase 5 backfill.
 
     Filters:
-    - semantic_match=1 (verified by Phase 4)
-    - mission IS NULL or mission=''
+    - deductibility=1 AND org_status='active' (eligible orgs)
+    - mission_source='ai_ntee' (upgrade ai_ntee to ai_generated via Qwen)
     - NOT already processed in this checkpoint
     """
     skip_eins = skip_eins or set()
@@ -305,9 +305,9 @@ def fetch_orgs_for_phase5(
     query = """
     SELECT EIN, organization_name, NTEE1, CITY, STATE, total_revenue
     FROM registry_enriched
-    WHERE semantic_match = 1
-      AND (mission IS NULL OR mission = '')
-      AND mission_source IS NULL
+    WHERE deductibility = 1
+      AND org_status = 'active'
+      AND mission_source = 'ai_ntee'
     LIMIT ?
     """
 
@@ -317,8 +317,7 @@ def fetch_orgs_for_phase5(
         return [o for o in orgs if o["EIN"] not in skip_eins]
     except sqlite3.OperationalError as e:
         if "no such column" in str(e).lower():
-            # Phase 4 not run yet; semantic_match column doesn't exist
-            log(f"Phase 4 not yet complete: {e}", to_progress=True)
+            log(f"Database schema incomplete: {e}", to_progress=True)
             return []
         raise
 
@@ -359,10 +358,10 @@ def main(
         orgs = fetch_orgs_for_phase5(conn, limit=limit, skip_eins=processed_eins)
         total = len(orgs)
 
-        log(f"Found {total} orgs to backfill (semantic_match=1, mission IS NULL)")
+        log(f"Found {total} orgs to upgrade (ai_ntee → ai_generated via Qwen)")
 
         if total == 0:
-            log("No orgs to process. Phase 4 may not be complete.")
+            log("No ai_ntee missions to upgrade. All done or already upgraded.")
             return
 
         if dry_run:

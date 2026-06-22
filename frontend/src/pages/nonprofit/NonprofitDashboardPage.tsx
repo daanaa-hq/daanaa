@@ -4,6 +4,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import OnboardingChecklist from '../../components/OnboardingChecklist'
 import VolunteerInsightsCard from '../../components/VolunteerInsightsCard'
 import DonorCommunicationCard from '../../components/DonorCommunicationCard'
+import ImpactForecast from '../../components/ImpactForecast'
+import DonorMessagesCard from '../../components/DonorMessagesCard'
+import VolunteerExportButton from '../../components/VolunteerExportButton'
+import CreditPurchaseModal from '../../components/CreditPurchaseModal'
 
 interface LetterRequest {
   id: string
@@ -29,6 +33,7 @@ export default function NonprofitDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [approving, setApproving] = useState<string | null>(null)
+  const [showCreditModal, setShowCreditModal] = useState(false)
 
   const getAuthToken = () => {
     return localStorage.getItem('nonprofit_account_id') || localStorage.getItem('nonprofit_auth_token') || ein || ''
@@ -212,7 +217,7 @@ export default function NonprofitDashboardPage() {
               <p className="font-display text-4xl italic text-deep-navy">{dashboard.letters_remaining}</p>
               <p className="text-xs text-cool-grey mt-2">letters remaining</p>
             </div>
-            <button className="px-4 py-2 bg-soft-gold text-deep-navy rounded-lg font-semibold text-sm hover:bg-bright-gold transition-colors">
+            <button onClick={() => setShowCreditModal(true)} className="px-4 py-2 bg-soft-gold text-deep-navy rounded-lg font-semibold text-sm hover:bg-bright-gold transition-colors">
               Buy More
             </button>
           </div>
@@ -276,6 +281,52 @@ export default function NonprofitDashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Phase 3: Impact & Communication */}
+        <div className="mb-8">
+          <h2 className="font-display text-2xl italic text-deep-navy mb-4">Impact & Communication</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Impact Forecast */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm">
+              <h3 className="font-display text-xl text-deep-navy mb-4">Impact Summary</h3>
+              <ImpactForecast nonprofitEin={dashboard.nonprofit_ein} authToken={getAuthToken()} />
+            </div>
+
+            {/* Donor Communication */}
+            <div>
+              <DonorMessagesCard nonprofitEin={dashboard.nonprofit_ein} authToken={getAuthToken()} />
+            </div>
+          </div>
+        </div>
+
+        {/* Volunteer Export */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm mb-8">
+          <h2 className="font-display text-2xl italic text-deep-navy mb-4">Export Data</h2>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <p className="text-sm text-cool-grey mb-3">Download volunteer hours in multiple formats:</p>
+              <VolunteerExportButton nonprofitEin={dashboard.nonprofit_ein} authToken={getAuthToken()} format="csv" />
+            </div>
+          </div>
+        </div>
+
+        {/* Credit Purchase Modal */}
+        {showCreditModal && (
+          <CreditPurchaseModal
+            nonprofitEin={dashboard?.nonprofit_ein || ''}
+            currentBalance={dashboard?.letters_remaining || 0}
+            onClose={() => setShowCreditModal(false)}
+            onSuccess={(creditsAdded) => {
+              setShowCreditModal(false)
+              if (dashboard) {
+                setDashboard({
+                  ...dashboard,
+                  letters_remaining: dashboard.letters_remaining + creditsAdded,
+                })
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   )

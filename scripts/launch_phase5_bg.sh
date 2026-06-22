@@ -73,33 +73,33 @@ check_db() {
         return 1
     fi
 
-    # Check if semantic_match column exists (Phase 4 complete)
+    # Check if website_status column exists (Phase 4 uses this)
     if ! $PYTHON -c "
 import sqlite3
 conn = sqlite3.connect('$DB_PATH', timeout=5)
 cursor = conn.execute('PRAGMA table_info(registry_enriched)')
 cols = [row[1] for row in cursor.fetchall()]
-if 'semantic_match' not in cols:
-    print('semantic_match column not found')
+if 'website_status' not in cols:
+    print('website_status column not found')
     exit(1)
 conn.close()
 " 2>/dev/null; then
-        log_error "Phase 4 not complete: semantic_match column missing"
+        log_error "Database schema incomplete: website_status column missing"
         return 1
     fi
 
-    # Check verified org count
+    # Check org count available for mission generation (deductible + active)
     count=$($PYTHON -c "
 import sqlite3
 conn = sqlite3.connect('$DB_PATH', timeout=5)
-cursor = conn.execute('SELECT COUNT(*) FROM registry_enriched WHERE semantic_match = 1')
+cursor = conn.execute('SELECT COUNT(*) FROM registry_enriched WHERE deductibility=1 AND org_status=\"active\"')
 count = cursor.fetchone()[0]
 conn.close()
 print(count)
 ")
 
     if (( count == 0 )); then
-        log_error "No verified orgs found (semantic_match=1)"
+        log_error "No eligible orgs found (need deductible=1 AND org_status='active')"
         return 1
     fi
 
