@@ -1931,6 +1931,188 @@ def register_phase3_endpoints(app):
         except Exception as e:
             return jsonify({'error': f'Failed to get impact metrics: {str(e)}'}), 500
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Nonprofit Data Transparency & Correction (Claiming Flow)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    @app.route('/api/nonprofit/update-data', methods=['POST'])
+    def nonprofit_update_data():
+        """Accept nonprofit-submitted financial data updates during claiming flow.
+
+        POST /api/nonprofit/update-data
+        Body: {
+            "claim_token": "xyz123",
+            "ein": "12-3456789",
+            "updates": {
+                "total_revenue": 3100000,
+                "total_expenses": 2850000,
+                "program_expense_pct": 81,
+                "months_of_reserve": 3.2
+            },
+            "explanation": "2024 was stronger year than FY2024 IRS data"
+        }
+
+        Returns: {
+            "status": "received",
+            "update_id": 1,
+            "message": "Your update will be included in tomorrow's scoring run"
+        }
+        """
+        try:
+            data = request.get_json()
+            claim_token = data.get('claim_token', '').strip()
+            ein = data.get('ein', '').strip()
+            updates = data.get('updates', {})
+            explanation = data.get('explanation', '').strip()
+
+            # Validate required fields
+            if not claim_token or not ein:
+                return jsonify({"error": "Missing claim_token or ein"}), 400
+
+            # Validate that claim exists and is active
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT claim_status, firebase_uid FROM org_claims
+                WHERE ein = ? AND claim_status IN ('verified', 'pending')
+                LIMIT 1
+            ''', (ein,))
+            claim_row = cursor.fetchone()
+
+            if not claim_row:
+                conn.close()
+                return jsonify({"error": "Claim not found or not active"}), 404
+
+            # Validate update values
+            revenue = updates.get('total_revenue')
+            expenses = updates.get('total_expenses')
+            program_pct = updates.get('program_expense_pct')
+            months_reserve = updates.get('months_of_reserve')
+
+            errors = []
+            if revenue is not None and revenue < 0:
+                errors.append("Revenue cannot be negative")
+            if expenses is not None and expenses < 0:
+                errors.append("Expenses cannot be negative")
+            if program_pct is not None:
+                if program_pct < 0 or program_pct > 100:
+                    errors.append("Program % must be 0-100")
+            if months_reserve is not None and months_reserve < 0:
+                errors.append("Months of reserve cannot be negative")
+
+            # Revenue should be >= expenses (sanity check)
+            if revenue is not None and expenses is not None and revenue < expenses:
+                errors.append("Revenue should be greater than or equal to expenses")
+
+            if errors:
+                conn.close()
+                return jsonify({"errors": errors}), 400
+
+            # Get current financial data for comparison
+            cursor.execute('''
+                SELECT
+                    total_revenue, total_expenses,
+                    program_expense_pct, months_of_reserve,
+                    latest_tax_year
+                FROM registry_enriched
+                WHERE EIN = ?
+                LIMIT 1
+            ''', (ein,))
+            irs_row = cursor.fetchone()
+
+            if not irs_row:
+                conn.close()
+                return jsonify({"error": "Organization not found in registry"}), 404
+
+            irs_revenue, irs_expenses, irs_pct, irs_months, irs_tax_year = irs_row
+
+            # Flag if >50% change in any metric (sanity check)
+            sanity_check_failed = 0
+            if revenue is not None and irs_revenue and abs(revenue - irs_revenue) / irs_revenue > 0.5:
+                sanity_check_failed = 1
+            if expenses is not None and irs_expenses and abs(expenses - irs_expenses) / irs_expenses > 0.5:
+                sanity_check_failed = 1
+            if program_pct is not None and irs_pct and abs(program_pct - irs_pct) > 20:
+                sanity_check_failed = 1
+
+            # Store in database
+            cursor.execute('''
+                INSERT INTO org_nonprofit_updates
+                (ein, claim_token, irs_total_revenue, irs_total_expenses,
+                 irs_program_expense_pct, irs_months_of_reserve, irs_tax_year,
+                 submitted_total_revenue, submitted_total_expenses,
+                 submitted_program_expense_pct, submitted_months_of_reserve,
+                 submitted_explanation, status, sanity_check_failed)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_review', ?)
+            ''', (
+                ein, claim_token,
+                irs_revenue, irs_expenses, irs_pct, irs_months, irs_tax_year,
+                revenue, expenses, program_pct, months_reserve,
+                explanation, sanity_check_failed
+            ))
+
+            conn.commit()
+            update_id = cursor.lastrowid
+            conn.close()
+
+            return jsonify({
+                "status": "received",
+                "update_id": update_id,
+                "message": "Your update will be reviewed and included in the next scoring run"
+            }), 200
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
+    @app.route('/api/nonprofit/update-status/<int:update_id>', methods=['GET'])
+    def get_nonprofit_update_status(update_id):
+        """Get status of a nonprofit data update submission.
+
+        GET /api/nonprofit/update-status/123?claim_token=xyz
+
+        Returns: {
+            "update_id": 123,
+            "status": "pending_review|validated|pending_scoring|included_in_run|rejected",
+            "submitted_at": "2026-06-24T14:30:00",
+            "included_in_run_at": null,
+            "result_health_signal": "HEALTHY|STABLE|CAUTION|null"
+        }
+        """
+        try:
+            claim_token = request.args.get('claim_token', '').strip()
+            if not claim_token:
+                return jsonify({"error": "Missing claim_token"}), 400
+
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT id, status, submitted_at, included_in_run_at,
+                       result_health_signal, result_v5_percentile
+                FROM org_nonprofit_updates
+                WHERE id = ? AND claim_token = ?
+                LIMIT 1
+            ''', (update_id, claim_token))
+
+            row = cursor.fetchone()
+            conn.close()
+
+            if not row:
+                return jsonify({"error": "Update not found"}), 404
+
+            return jsonify({
+                "update_id": row[0],
+                "status": row[1],
+                "submitted_at": row[2],
+                "included_in_run_at": row[3],
+                "result_health_signal": row[4],
+                "result_v5_percentile": row[5]
+            }), 200
+
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
 
 def _get_tracking_gif() -> tuple:
     """Return a 1x1 transparent GIF."""

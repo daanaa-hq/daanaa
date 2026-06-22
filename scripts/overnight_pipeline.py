@@ -291,6 +291,89 @@ def run_revocation_check():
         log('Revocation check error: ' + str(e))
 
 
+def apply_nonprofit_updates():
+    """Apply nonprofit-submitted financial data updates to registry before scoring.
+
+    Process:
+    1. Find pending_review updates with no sanity check failures
+    2. Auto-validate them (mark as validated)
+    3. Update registry_enriched with nonprofit data
+    4. Mark updates as pending_scoring
+
+    Flagged updates (>50% changes) are logged but not applied yet (require admin review).
+    """
+    try:
+        conn = get_db()
+        c = conn.cursor()
+
+        # Find auto-validate-safe updates (no sanity check failures)
+        c.execute('''
+            SELECT id, ein, submitted_total_revenue, submitted_total_expenses,
+                   submitted_program_expense_pct, submitted_months_of_reserve
+            FROM org_nonprofit_updates
+            WHERE status = 'pending_review' AND sanity_check_failed = 0
+        ''')
+        safe_updates = c.fetchall()
+
+        applied = 0
+        flagged = 0
+
+        for update_id, ein, rev, exp, prog, months in safe_updates:
+            try:
+                # Update registry with nonprofit data (mark source as nonprofit-submitted)
+                updates = []
+                params = []
+
+                if rev is not None:
+                    updates.append('total_revenue = ?')
+                    params.append(rev)
+                if exp is not None:
+                    updates.append('total_expenses = ?')
+                    params.append(exp)
+                if prog is not None:
+                    updates.append('program_expense_pct = ?')
+                    params.append(prog)
+                if months is not None:
+                    updates.append('months_of_reserve = ?')
+                    params.append(months)
+
+                # Add flag that data was nonprofit-submitted (for transparency)
+                updates.append('data_submitted_by_org = 1')
+                updates.append('data_submitted_at = CURRENT_TIMESTAMP')
+                params.append(ein)
+
+                if updates:
+                    update_sql = 'UPDATE registry_enriched SET ' + ', '.join(updates) + ' WHERE EIN = ?'
+                    c.execute(update_sql, params)
+
+                    # Mark update as validated and pending scoring
+                    c.execute('''
+                        UPDATE org_nonprofit_updates
+                        SET status = 'pending_scoring', validated_at = CURRENT_TIMESTAMP,
+                            validated_by = 'auto', scoring_run_date = CURRENT_TIMESTAMP
+                        WHERE id = ?
+                    ''', (update_id,))
+                    applied += 1
+            except Exception as e:
+                log(f'Error applying nonprofit update {update_id}: {str(e)[:100]}')
+
+        # Count flagged updates (sanity check failures)
+        c.execute('''
+            SELECT COUNT(*) FROM org_nonprofit_updates
+            WHERE status = 'pending_review' AND sanity_check_failed = 1
+        ''')
+        flagged = c.fetchone()[0]
+
+        conn.commit()
+        conn.close()
+
+        if applied > 0 or flagged > 0:
+            log(f'Nonprofit updates: {applied} applied, {flagged} flagged for review')
+
+    except Exception as e:
+        log(f'⚠️  Error processing nonprofit updates: {str(e)[:100]}')
+
+
 def run_v5_scorer():
     """Run merit_scorer_v5_0 to keep v5 financial context scores fresh. Logs but doesn't fail pipeline if scorer errors."""
     try:
@@ -314,6 +397,22 @@ def run_v5_scorer():
             )
             if load_result.returncode == 0:
                 log('✅ V5.0 scores loaded into registry_enriched')
+                # Mark all pending_scoring updates as included_in_run
+                try:
+                    conn = get_db()
+                    c = conn.cursor()
+                    c.execute('''
+                        UPDATE org_nonprofit_updates
+                        SET status = 'included_in_run', included_in_run_at = CURRENT_TIMESTAMP
+                        WHERE status = 'pending_scoring'
+                    ''')
+                    conn.commit()
+                    affected = c.rowcount
+                    conn.close()
+                    if affected > 0:
+                        log(f'✅ Marked {affected} nonprofit updates as included_in_run')
+                except Exception as e:
+                    log(f'⚠️  Error marking updates as included: {str(e)[:100]}')
             else:
                 log(f'⚠️  Scorer loaded but score import failed: {load_result.stderr[:200]}')
         else:
@@ -372,6 +471,9 @@ def main():
         if batches % 5 == 0:
             log('Progress: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
     log('Complete: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
+
+    # Step 5a: Apply nonprofit-submitted data updates before scoring
+    apply_nonprofit_updates()
 
     # Step 5: Re-score with v5.0
     log('Running merit_scorer_v5_0 to keep v5 scores fresh...')
