@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { CreditPurchaseSchema } from '../lib/schemas'
+import { LetterCreditPurchaseSchema } from '../lib/schemas'
 
 interface CreditPurchaseModalProps {
   nonprofitEin: string
