@@ -221,6 +221,44 @@ Do not use cloud APIs for batch ML tasks — route through the local server:
 - Before editing any file, read the relevant section first. Before modifying a function, grep for all callers.
 - Research before you edit. If the same approach fails twice, stop and ask.
 
+---
+
+## Tool Permissions (Principle of Least Privilege)
+
+**Stewardship Principle #9 applied:** Decisions should be explainable. Tool permissions are scoped to prevent accidental
+misuse and enforce structural guardrails on sensitive operations.
+
+### Bash
+- ✅ **Allowed:** `git *`, `npm *`, `python3 *`, `ssh *`, `curl *`, file utilities (`ls`, `grep`, `find`, `cat`)
+- ❌ **Blocked:** `rm -rf`, `sudo`, `chmod`, `pkill`, `killall`, any unquoted `system()` calls
+- **Why:** Prevents destructive operations on shared code or infrastructure
+
+### Edit / Write
+- ✅ **Allowed:** `src/`, `frontend/`, `scripts/`, `docs/`, `tests/`, `data/`
+- ❌ **Blocked:** `.env*`, `secrets.*`, `config/production.*`, `PRIVATE*`, `*credentials*`, `.ssh/`, `Makefile` auth sections
+- **Why:** Prevents accidental credential commits; secrets stay in env/config only
+
+### Read
+- ✅ **Allowed:** All codebase files, `data/`, `docs/`, `scripts/`, project architecture
+- ❌ **Blocked:** `/etc/`, `/root/`, `/home/*/.ssh/`, system config files outside the project
+- **Why:** Boundaries protect system-level secrets from leaking into project context
+
+### Privacy-Check Hook
+- **Enforced at every commit** by `/home/akbar/meritgiving/privacy_check.sh`
+- Blocks: token patterns, log leakage, env var fallbacks, exfiltration vectors, data source mismatches
+- See `privacy_check.sh` for full rules aligned with STEWARDSHIP.md Principles #2 and #3
+
+### Approval Gates (Autonomy Rule)
+These operations **require explicit approval** before execution:
+- Writing to shared repo (`git push`, `git commit` on branches)
+- Deploying to production (`safe_deploy_droplet.sh`, droplet API restart)
+- Spending budget (cloud APIs, services)
+- Anything touching the database schema or migration
+
+**Pattern:** I show the proposed change, you approve it before it ships.
+
+---
+
 ## Skill routing
 
 When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
