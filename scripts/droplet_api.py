@@ -366,19 +366,6 @@ def get_organizations():
     ntee_list = [x.strip()[:1] for x in ntee.split(',') if x.strip()][:26]
     sub_list  = [x.strip()[:4] for x in sub.split(',') if x.strip()][:40]
 
-    # ── Hidden gems landing: serve the weekly-rotated static pages ──────────
-    # When hidden gems is the ONLY signal, this is the default directory view.
-    # Serve the precomputed static file (zero live-query cost; search speed
-    # unaffected). Falls through to the live query if the file isn't present.
-    gems_only = (hidden_gem and not needs_funding and not has_website and not tier
-                 and not ntee_list and not sub_list and not state
-                 and min_rev is None and max_rev is None)
-    if gems_only and not (q and len(q) >= 2):
-        gem_file = DATA_DIR / 'browse' / 'hidden_gems' / f"ALL_{page}.json.gz"
-        data = load_json_gz(gem_file)
-        if data:
-            return jsonify(data)
-
     # ── Text search: route to FTS ──────────────────────────────────────────
     if q and len(q) >= 2:
         return _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,

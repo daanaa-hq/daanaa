@@ -143,7 +143,7 @@ const US_MILITARY = [
 
 export default function Directory() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const categoryParam = searchParams.get('category') || 'all'
+  const categoryParam = searchParams.get('ntee') || searchParams.get('category') || 'all'
   const subParam      = searchParams.get('sub') || ''
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
@@ -182,15 +182,7 @@ export default function Directory() {
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
-  // Hidden gems is the default landing view (small, healthy, low-profile orgs,
-  // reshuffled weekly). On by default unless the user arrived with an explicit
-  // filter in the URL, or explicitly turned it off (?hidden_gem=0).
-  const _noUrlFilters = !categoryParam && !subParam && !stateParam && !qParam &&
-                        !revenueParam && !searchParams.get('cause') && !searchParams.get('tier')
-  const [hiddenGem, setHiddenGem] = useState(
-    searchParams.get('hidden_gem') === '1' ||
-    (searchParams.get('hidden_gem') !== '0' && _noUrlFilters)
-  )
+  const [hiddenGem, setHiddenGem] = useState(searchParams.get('hidden_gem') === '1')
   const [needsSupport, setNeedsSupport] = useState(searchParams.get('needs_funding') === '1')
   const [visTier, setVisTier] = useState(searchParams.get('tier') || '')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -312,9 +304,9 @@ export default function Directory() {
     setCurrentPage(1)
     scrollTop()
     if (next.length === 0) {
-      searchParams.delete('category')
+      searchParams.delete('ntee')
     } else {
-      searchParams.set('category', next.join(','))
+      searchParams.set('ntee', next.join(','))
     }
     setSearchParams(searchParams)
   }
@@ -374,11 +366,11 @@ export default function Directory() {
     setVisTier('')
     setHasWebsite(false)
     setNeedsSupport(false)
-    setHiddenGem(true)
+    setHiddenGem(false)
     setCause('')
     setDebouncedCause('')
     setCurrentPage(1)
-    searchParams.delete('category')
+    searchParams.delete('ntee')
     searchParams.delete('sub')
     searchParams.delete('q')
     searchParams.delete('state')
