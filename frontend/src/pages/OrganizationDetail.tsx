@@ -11,6 +11,7 @@ import TierBreakdown from '../components/TierBreakdown'
 import MistakeRegistry from '../components/MistakeRegistry'
 import VolunteerInterest from '../components/VolunteerInterest'
 import { useApi } from '../hooks/useApi'
+import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { useWallet } from '../contexts/WalletContext'
 import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
 import { getNteeLabel } from '../data/ntee'
@@ -334,6 +335,7 @@ export default function OrganizationDetail() {
   const lampTier     = getTierFromOrg(apiOrg!)
   const trustSummary = getTierSummary(lampTier, apiOrg!)
   const badges = getOrgBadges(apiOrg!)
+  const showPeerContextBreakdown = useFeatureFlag('peer_context_breakdown', 1) // 1% rollout
 
   return (
     <div className="min-h-[100dvh]">
@@ -948,8 +950,9 @@ export default function OrganizationDetail() {
 
           {/* Multi-dimensional peer context breakdown — shows where the org
               ranks by category, state, revenue size, and financial model. Simple,
-              clear format for nonprofits to understand their position. */}
-          {apiOrg! && (
+              clear format for nonprofits to understand their position.
+              Feature flag: peer_context_breakdown at 1% for testing. */}
+          {apiOrg! && showPeerContextBreakdown && (
             <div className="mb-8">
               <PeerContextBreakdown org={apiOrg!} />
             </div>
