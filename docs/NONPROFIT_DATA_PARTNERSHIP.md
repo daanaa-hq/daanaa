@@ -37,9 +37,9 @@ Nonprofits have current data (mission, finances, website, giving URLs) but no fr
 
 ## Solution: Nonprofit Claim Flow + Data Update API
 
-### Phase 1: Claim & Update (MVP)
-**Timeline:** 2 weeks  
-**Scope:** Nonprofits claim their EIN, update 3–5 key fields (mission, website, donate URL, cause tags)
+### Phase 1: Claim & Update + Donor Interest Dashboard (MVP)
+**Timeline:** 3 weeks  
+**Scope:** Nonprofits claim their EIN, update 3–5 key fields (mission, website, donate URL, cause tags), access a free dashboard showing real donor interest
 
 #### UX Flow
 
@@ -97,14 +97,60 @@ Page loads:
 └──────────────────────────────────────┘
 ```
 
-**Step 4: Confirmation**
+**Step 4: Confirmation + Dashboard Access**
 ```
 ✓ Submitted!
 Your updates will appear on your profile in ~1 hour
 (Daanaa reviews for spam/abuse; you can edit anytime)
 
-[View your profile]
+[View your profile] [View your Donor Dashboard]
 ```
+
+**Step 5: Donor Interest Dashboard** (NEW — the "why should I care?" moment)
+```
+Dashboard: daanaa.org/dashboard/{TOKEN}
+(Token valid as long as email verified; can log back in anytime)
+
+┌─────────────────────────────────────────────────┐
+│ ACME Food Bank — Donor Interest Dashboard       │
+├─────────────────────────────────────────────────┤
+│ This Month's Donor Attention                    │
+│                                                  │
+│ Bookmarks to Giving Wallet: 42 ↑ (+35% vs last)│
+│ • From "Food Justice" cause: 28                 │
+│ • From "Community Empowerment": 14              │
+│ • Top location: San Francisco (18 bookmarks)    │
+│                                                  │
+│ Profile Strength:                               │
+│ ✅ Mission updated (fresh, today)               │
+│ ✅ Website verified (live)                      │
+│ ✅ Donate link working                          │
+│ ⚠️ Cause tags: 2/5 (add 1-2 more to reach 847   │
+│    donors interested in "Nutrition")            │
+│                                                  │
+│ Anonymized Donor Insights:                      │
+│ • Donors bookmarking you are also interested in:│
+│   - Nutrition (847 donors) ← recommended        │
+│   - Child Health (612 donors)                   │
+│   - Rural Development (445 donors)              │
+│                                                  │
+│ Tips to increase visibility:                    │
+│ 📊 Orgs with complete cause tags get 2.3x more │
+│    bookmarks. Add "Nutrition" tag to match 847  │
+│    interested donors.                           │
+│                                                  │
+│ 📅 Update your mission every 6 months to stay   │
+│    in the "Recently Updated" search feed.       │
+│                                                  │
+│ [Edit your profile] [Contact support]           │
+└─────────────────────────────────────────────────┘
+```
+
+**Why this dashboard changes everything:**
+- **Proof, not promises**: "42 real donors bookmarked you" vs "trust us, you'll get visibility"
+- **Actionable insight**: "Add Nutrition tag to reach 847 donors" is concrete, motivating
+- **Recurring engagement**: They log back monthly to see "47 bookmarks this month" — builds habit
+- **No tracking**: Completely anonymized (no "Maria from SF bookmarked you"), privacy-first
 
 #### Backend Implementation
 
@@ -153,6 +199,55 @@ Body:
   "merit_score": 0.72,
   "merit_score_source": "irs_public_data",
   "merit_score_last_updated": "2024-06-15"
+}
+
+# GET /api/nonprofit/dashboard/{claim_token}
+→ Nonprofit dashboard (claims their org interest metrics):
+{
+  "ein": "123456789",
+  "org_name": "ACME Food Bank",
+  "claim_verified_email": "your@acmefood.org",
+  "this_month": {
+    "bookmarks_total": 42,
+    "bookmarks_prev_month": 31,
+    "bookmarks_by_cause": {
+      "Food Justice": 28,
+      "Community Empowerment": 14
+    },
+    "bookmarks_by_location": {
+      "San Francisco, CA": 18,
+      "Oakland, CA": 8,
+      "Los Angeles, CA": 6
+    }
+  },
+  "profile_completeness": {
+    "mission_status": "✅ fresh",
+    "website_status": "✅ verified",
+    "donate_url_status": "✅ working",
+    "cause_tags_count": 2,
+    "cause_tags_recommended": [
+      {
+        "tag": "Nutrition",
+        "interested_donors": 847,
+        "reason": "Orgs with this tag + your profile get 2.3x more bookmarks"
+      },
+      {
+        "tag": "Child Health",
+        "interested_donors": 612
+      }
+    ]
+  },
+  "donor_insights": {
+    "donors_also_interested_in": [
+      { "tag": "Nutrition", "count": 847 },
+      { "tag": "Child Health", "count": 612 },
+      { "tag": "Rural Development", "count": 445 }
+    ]
+  },
+  "tips": [
+    "Orgs with complete cause tags (5/5) get 2.3x more bookmarks",
+    "Update your mission every 6 months to stay in 'Recently Updated' feed"
+  ]
 }
 ```
 
@@ -363,7 +458,10 @@ Daanaa Team
 |--------|--------|-----|
 | Claim completion rate | 7% of 5K outreach = 350 claims | Modest; most orgs won't claim |
 | Update quality (pass auto-review) | 90% | Focus on accessibility, not perfection |
-| Data freshness (claimed data avg age) | < 3 months | Shows orgs actively maintain their profiles |
+| Dashboard first-view rate | 80% of claimants | Essential: they need to see the value prop |
+| Dashboard repeat-visit rate | 40% month-on-month | Shows dashboard provides ongoing value |
+| Profile improvement actions | 35% add cause tags after dashboard | Actionable insights drive behavior |
+| Data freshness (claimed data avg age) | < 3 months | Shows orgs actively maintain profiles |
 | Dispute rate | < 2% | Few false claims or bad updates |
 | Repeat update rate | 30% of claimed orgs update again | Indicates adoption |
 
@@ -382,20 +480,25 @@ Daanaa Team
 
 ## Rollout Sequence
 
-### Week 1–2: Claim flow MVP
+### Week 1–2: Claim flow MVP + Dashboard backend
 - [ ] Database schema + org_claims extensions
-- [ ] Backend endpoints (`/api/claim/*`)
+- [ ] Backend endpoints (`/api/claim/*`, `/api/nonprofit/dashboard/*`)
 - [ ] Email magic link + JWT token system
+- [ ] Dashboard data aggregation (wallet bookmarks → cause/location breakdown)
+- [ ] Cause tag recommendation engine (count donors by tag, suggest high-ROI tags)
 - [ ] Frontend ClaimOrgModal + CTA
+- [ ] Frontend DonorDashboard component (stats, profile strength, tips)
 - [ ] Auto-review quality gate (Phase 1 simple heuristics)
 - [ ] Manual review queue (admin endpoint)
 - [ ] Test with 10 internal test orgs
 
-### Week 3–4: Deployment + polish
+### Week 3: Deployment + dashboard polish
 - [ ] Deploy to production (droplet)
 - [ ] Monitor claim requests, token expiry, email bounce rate
-- [ ] Fix any UX friction (modal text, email clarity)
+- [ ] Dashboard performance (query optimization for large bookmark tables)
+- [ ] Fix any UX friction (modal text, email clarity, dashboard load time)
 - [ ] Data freshness badges on org detail pages
+- [ ] Test end-to-end: claim → email link → dashboard access → data visible
 
 ### Week 5–6: Outreach (optional)
 - [ ] Identify 100 test orgs (high-visibility, high-impact)
