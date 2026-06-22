@@ -8,6 +8,8 @@ import EditIntentModal from '../components/EditIntentModal'
 import PassphraseModal from '../components/PassphraseModal'
 import ImpactSummary from '../components/ImpactSummary'
 import WalletAccountLink from '../components/WalletAccountLink'
+import DonationLogger from '../components/DonationLogger'
+import VolunteerLogger from '../components/VolunteerLogger'
 import type { ApiOrganization } from '../data/api'
 import { API_BASE } from '../lib/platform'
 import {
@@ -227,35 +229,7 @@ export default function WalletPage() {
   const hasActiveFilters =
     filterState.intent !== 'all' || filterState.health !== 'all' || searchTerm !== ''
 
-  // ─── Google auth gate (required per Stewardship Commitment) ───────────────────
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-warm-cream">
-        <div className="text-center">
-          <p className="font-body text-cool-grey">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-warm-cream">
-        <div className="text-center max-w-sm">
-          <h1 className="font-body text-2xl font-semibold text-deep-navy mb-3">Your Giving Wallet</h1>
-          <p className="font-body text-sm text-cool-grey mb-6">
-            Sign in with Google to access your Giving Wallet and sync your saved nonprofits across devices.
-          </p>
-          <button
-            onClick={signInWithGoogle}
-            className="w-full py-3 rounded-full font-body font-semibold bg-soft-gold text-deep-navy hover:bg-bright-gold transition-colors flex items-center justify-center gap-2"
-          >
-            <span>🔵</span> Sign in with Google
-          </button>
-        </div>
-      </div>
-    )
-  }
+  // No auth gate — device-first. Optional sign-in for backup/community impact tracking shown later.
 
   // ─── Passphrase gate ────────────────────────────────────────────────────────
   if (!isUnlocked) {
@@ -315,7 +289,14 @@ export default function WalletPage() {
       <div className="bg-warm-cream min-h-[100dvh] pt-[72px]">
         <div className="max-w-[720px] mx-auto px-6 py-16">
           <h1 className="font-display italic text-deep-navy text-[32px] mb-2">Your Giving Wallet</h1>
-          <p className="font-body text-cool-grey mb-10">Nonprofits you want to support, all in one place.</p>
+          <p className="font-body text-cool-grey mb-10">Track your giving, volunteer hours, and community impact.</p>
+
+          {/* Device-first storage notice */}
+          <div className="bg-soft-gold/10 border border-soft-gold/30 rounded-2xl p-5 mb-8">
+            <p className="font-body text-sm text-deep-navy">
+              📱 Your data is stored on this device for now. Sign in with Google anytime to back it up and help us measure cumulative community impact.
+            </p>
+          </div>
 
           <div className="bg-white rounded-2xl border border-light-grey p-12 text-center">
             <div className="w-14 h-14 rounded-full bg-soft-gold/10 flex items-center justify-center mx-auto mb-5">
@@ -325,7 +306,7 @@ export default function WalletPage() {
             </div>
             <h2 className="font-display italic text-deep-navy text-[22px] mb-2">Your wallet is empty</h2>
             <p className="font-body text-[15px] text-cool-grey mb-8 max-w-sm mx-auto">
-              Browse the directory and save nonprofits you care about. You can track your giving intent for each one.
+              Browse the directory and save nonprofits you care about. Then log your giving and volunteer hours.
             </p>
             <button
               onClick={() => navigate('/directory')}
@@ -532,6 +513,31 @@ export default function WalletPage() {
               onEdit={handleEdit}
             />
           ))}
+        </div>
+
+        {/* Device-first storage notice + Optional backup */}
+        <div className="mt-12 bg-soft-gold/10 border border-soft-gold/30 rounded-2xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <p className="font-body font-semibold text-deep-navy mb-2">📱 Your data is stored locally</p>
+              <p className="font-body text-sm text-cool-grey">
+                Your giving logs and volunteer hours are saved on this device. Back them up and help us measure community impact.
+              </p>
+            </div>
+            {!user && (
+              <button
+                onClick={signInWithGoogle}
+                className="shrink-0 px-4 py-2 rounded-lg bg-soft-gold text-deep-navy font-body text-sm font-semibold hover:bg-bright-gold transition-colors whitespace-nowrap"
+              >
+                Sign in with Google
+              </button>
+            )}
+            {user && (
+              <div className="shrink-0 text-right">
+                <p className="font-body text-xs text-cool-grey">✓ Backup enabled</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

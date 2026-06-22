@@ -6342,6 +6342,135 @@ def generate_donation_receipt():
         return jsonify({'error': f'Failed to generate receipt: {str(e)}'}), 500
 
 
+# ── Community Impact Logging ───────────────────────────────────────────────────
+
+@app.route('/api/impact/log', methods=['POST'])
+@limiter.limit("100 per hour")
+def log_impact():
+    """Log opted-in giving/volunteer activity for community impact tracking.
+
+    No user ID required—anonymous. Donation/volunteer is logged server-side
+    for daily aggregation and monthly community reporting.
+
+    Payload:
+      - ein: str (9-digit)
+      - type: 'giving' | 'volunteer'
+      - amount: int (cents) — for giving only
+      - hours: float — for volunteer only
+      - date: str (ISO date)
+    """
+    try:
+        data = request.get_json()
+        ein = data.get('ein', '').strip()
+        log_type = data.get('type', '').lower()
+        amount = data.get('amount')
+        hours = data.get('hours')
+        log_date = data.get('date', datetime.now().isoformat().split('T')[0])
+
+        # Validation
+        if not ein or not re.match(r'^\d{9}$', ein):
+            return jsonify({'error': 'Invalid EIN'}), 400
+        if log_type not in ('giving', 'volunteer'):
+            return jsonify({'error': 'Invalid type'}), 400
+        if log_type == 'giving' and (not isinstance(amount, (int, float)) or amount < 1):
+            return jsonify({'error': 'Invalid amount'}), 400
+        if log_type == 'volunteer' and (not isinstance(hours, (int, float)) or hours < 0.25):
+            return jsonify({'error': 'Invalid hours'}), 400
+
+        # Insert into impact_logs
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        log_id = f"{log_type}_{ein}_{log_date}_{secrets.token_hex(4)}"
+
+        cursor.execute('''
+            INSERT INTO impact_logs (id, ein, type, amount, hours, log_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (log_id, ein, log_type, amount if log_type == 'giving' else None,
+              hours if log_type == 'volunteer' else None, log_date))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'log_id': log_id}), 201
+    except Exception as e:
+        logging.error(f'Impact log error: {e}')
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/impact/community-stats', methods=['GET'])
+@limiter.limit("100 per hour")
+def get_community_stats():
+    """Get aggregated community impact stats (updated daily)."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+
+        # Get latest aggregate (today or most recent date)
+        cursor.execute('''
+            SELECT total_dollars, total_hours, donation_count, volunteer_count,
+                   org_count, active_volunteers, aggregate_date
+            FROM impact_aggregates
+            ORDER BY aggregate_date DESC
+            LIMIT 1
+        ''')
+        row = cursor.fetchone()
+        conn.close()
+
+        if not row:
+            # No aggregates yet — compute from raw logs
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT
+                  COALESCE(SUM(amount), 0) as total_dollars,
+                  COALESCE(SUM(hours), 0) as total_hours,
+                  SUM(CASE WHEN type='giving' THEN 1 ELSE 0 END) as donation_count,
+                  SUM(CASE WHEN type='volunteer' THEN 1 ELSE 0 END) as volunteer_count,
+                  COUNT(DISTINCT ein) as org_count
+                FROM impact_logs
+            ''')
+            stats_row = cursor.fetchone()
+            conn.close()
+            if stats_row:
+                total_dollars, total_hours, donation_count, volunteer_count, org_count = stats_row
+                volunteer_hourly_value = 31.80  # Placeholder BAL for 2026
+                lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
+                return jsonify({
+                    'total_dollars': total_dollars or 0,
+                    'total_hours': round(total_hours or 0, 2),
+                    'donation_count': donation_count or 0,
+                    'volunteer_count': volunteer_count or 0,
+                    'org_count': org_count or 0,
+                    'active_volunteers': volunteer_count or 0,
+                    'lifetime_value': lifetime_value,
+                    'as_of_date': datetime.now().isoformat().split('T')[0],
+                }), 200
+            else:
+                return jsonify({
+                    'total_dollars': 0, 'total_hours': 0, 'donation_count': 0,
+                    'volunteer_count': 0, 'org_count': 0, 'active_volunteers': 0,
+                    'lifetime_value': 0, 'as_of_date': datetime.now().isoformat().split('T')[0],
+                }), 200
+
+        total_dollars, total_hours, donation_count, volunteer_count, org_count, active_volunteers, aggregate_date = row
+        volunteer_hourly_value = 31.80
+        lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
+
+        return jsonify({
+            'total_dollars': total_dollars,
+            'total_hours': round(total_hours, 2),
+            'donation_count': donation_count,
+            'volunteer_count': volunteer_count,
+            'org_count': org_count,
+            'active_volunteers': active_volunteers,
+            'lifetime_value': lifetime_value,
+            'as_of_date': aggregate_date,
+        }), 200
+    except Exception as e:
+        logging.error(f'Community stats error: {e}')
+        return jsonify({'error': str(e)}), 500
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process

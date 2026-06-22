@@ -323,25 +323,35 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setMigrationData(null)
   }, [])
 
-  const logDonation = useCallback((ein: string, amount: number, date: string, notes?: string) => {
+  const logDonation = useCallback((ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean) => {
     const donation: LoggedDonation = {
       id: `don_${crypto.randomUUID()}`,
       amount,
       date,
       notes,
       letterRequested: false,
+      helpedDaanaa: helpedDaanaa ?? false,
     }
     dispatch({ type: 'LOG_DONATION', ein, donation })
+    // Auto-sync if opted in
+    if (helpedDaanaa) {
+      syncImpactLog(donation, 'giving', ein).catch(e => console.error('Failed to sync impact log:', e))
+    }
   }, [])
 
-  const logVolunteerHours = useCallback((ein: string, hours: number, date: string, notes?: string) => {
+  const logVolunteerHours = useCallback((ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean) => {
     const entry: LoggedVolunteerHours = {
       id: `vol_${crypto.randomUUID()}`,
       hours,
       date,
       notes,
+      helpedDaanaa: helpedDaanaa ?? false,
     }
     dispatch({ type: 'LOG_VOLUNTEER_HOURS', ein, hours: entry })
+    // Auto-sync if opted in
+    if (helpedDaanaa) {
+      syncImpactLog(entry, 'volunteer', ein).catch(e => console.error('Failed to sync impact log:', e))
+    }
   }, [])
 
   const getDonations = useCallback((ein: string) => state.entries.find(e => e.ein === ein)?.donations, [state.entries])
@@ -365,6 +375,27 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'HYDRATE', entries: next, keyHash: state.keyHash!, salt: state.salt!, encKey: state.encKey! })
   }, [state.entries, state.keyHash, state.salt, state.encKey])
 
+  const syncImpactLog = useCallback(async (entry: LoggedDonation | LoggedVolunteerHours, type: 'giving' | 'volunteer', ein: string) => {
+    try {
+      const res = await fetch(`${getApiBase()}/api/impact/log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ein,
+          type,
+          amount: type === 'giving' ? (entry as LoggedDonation).amount : null,
+          hours: type === 'volunteer' ? (entry as LoggedVolunteerHours).hours : null,
+          date: entry.date,
+        }),
+      })
+      if (!res.ok) {
+        console.warn(`Impact log sync failed: ${res.status}`)
+      }
+    } catch (e) {
+      console.error('Impact log sync error:', e)
+    }
+  }, [])
+
   return (
     <WalletContext.Provider value={{
       entries: state.entries, addEntry, removeEntry, updateIntent,
@@ -374,6 +405,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       downloadBackup, syncStatus: state.syncStatus,
       migrationData, applyMigration, dismissMigration,
       archiveDonationHistory,
+      syncImpactLog,
     }}>
       {children}
     </WalletContext.Provider>

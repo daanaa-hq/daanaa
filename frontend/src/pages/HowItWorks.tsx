@@ -176,23 +176,19 @@ export default function HowItWorks() {
               {([
                 {
                   tier: 'Beacon' as TierName,
-                  what: 'Mission, giving path, service area, and public financial data all on record. Complete page confirmed from public records.',
+                  what: 'Complete public data: financial reports, mission statement, website, and current Form 990.',
                 },
                 {
-                  tier: 'Lantern' as TierName,
-                  what: 'Current annual report, mission statement, and active website all on public record. Financial ranking on file.',
+                  tier: 'Torch' as TierName,
+                  what: 'Strong public data: financial context available, recent filings, and organizational information.',
                 },
                 {
-                  tier: 'Flame' as TierName,
-                  what: 'Current annual report on file with a financial ranking. Mission statement or website not yet in public records.',
-                },
-                {
-                  tier: 'Glow' as TierName,
-                  what: 'IRS confirmed nonprofit with some financial data on record. Not enough data yet to assign a financial context ranking.',
+                  tier: 'Candle' as TierName,
+                  what: 'Moderate public data: some financial information and basic organizational records.',
                 },
                 {
                   tier: 'Spark' as TierName,
-                  what: 'Registered nonprofit in the IRS list. No financial detail in our index yet. Many small organizations filing a simplified annual form (under $50K revenue) fall here.',
+                  what: 'Recognized nonprofit with minimal public information available. Many small organizations filing simplified forms fall here.',
                 },
               ] as const).map(({ tier, what }) => (
                 <div key={tier} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">

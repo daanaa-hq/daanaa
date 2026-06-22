@@ -11,6 +11,7 @@ export interface LoggedDonation {
   notes?: string
   letterRequested?: boolean
   letterStatus?: 'pending' | 'approved' | 'generated' | 'downloaded'
+  helpedDaanaa?: boolean  // one-way: once true, permanent. indicates opt-in to impact tracking
 }
 
 // LoggedVolunteerHours — actual hours logged by volunteer
@@ -19,6 +20,7 @@ export interface LoggedVolunteerHours {
   hours: number
   date: string  // ISO date
   notes?: string
+  helpedDaanaa?: boolean  // one-way: once true, permanent. indicates opt-in to impact tracking
 }
 
 /** The normalized wallet entry. Tracks bookmarks + actual activity. */
@@ -51,12 +53,13 @@ export interface WalletContextType {
   addEntry: (ein: string) => void
   removeEntry: (ein: string) => void
   // Logging actual giving/volunteering
-  logDonation: (ein: string, amount: number, date: string, notes?: string) => void
-  logVolunteerHours: (ein: string, hours: number, date: string, notes?: string) => void
+  logDonation: (ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean) => void
+  logVolunteerHours: (ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean) => void
   getDonations: (ein: string) => LoggedDonation[] | undefined
   getVolunteerHours: (ein: string) => LoggedVolunteerHours[] | undefined
   updateDonationLetterStatus: (ein: string, donationId: string, status: LoggedDonation['letterStatus']) => void
   archiveDonationHistory: (ein: string, beforeDate: string) => void
+  syncImpactLog: (entry: LoggedDonation | LoggedVolunteerHours, type: 'giving' | 'volunteer', ein: string) => Promise<void>
   // Legacy intent methods (deprecated, kept for backward compat)
   updateIntent: (ein: string, intent: GivingIntent) => void
   getIntent: (ein: string) => GivingIntent | undefined

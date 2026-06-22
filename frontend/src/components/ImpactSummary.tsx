@@ -4,6 +4,10 @@ import { useWallet } from '../contexts/WalletContext'
 export default function ImpactSummary() {
   const { entries } = useWallet()
 
+  // Placeholder BAL (Benefit Amount in Labor) for volunteer hour valuation
+  // In production, this should be fetched for the current year from Independent Sector or similar
+  const VOLUNTEER_HOURLY_VALUE = 31.80  // 2026 placeholder
+
   const impact = useMemo(() => {
     if (!entries || entries.length === 0) {
       return {
@@ -11,27 +15,40 @@ export default function ImpactSummary() {
         uniqueOrgs: 0,
         totalHours: 0,
         averageDonation: 0,
+        lifetimeImpact: 0,
+        volunteeredCount: 0,
       }
     }
 
-    // Collect all donations from all entries
+    // Collect all donations and volunteer hours from all entries
     const allDonations: any[] = []
+    let allVolunteerHours: any[] = []
+
     entries.forEach((entry: any) => {
       if (entry.donations && Array.isArray(entry.donations)) {
         allDonations.push(...entry.donations)
       }
+      if (entry.volunteerHours && Array.isArray(entry.volunteerHours)) {
+        allVolunteerHours.push(...entry.volunteerHours)
+      }
     })
 
     const totalDonated = allDonations.reduce((sum: number, d: any) => sum + (d.amount || 0), 0)
+    const totalHours = allVolunteerHours.reduce((sum: number, v: any) => sum + (v.hours || 0), 0)
+    const volunteeredCount = entries.filter(e => e.volunteerHours && e.volunteerHours.length > 0).length
     const uniqueOrgs = entries.length
-    const totalHours = 0  // TODO: track volunteer hours when available
     const averageDonation = allDonations.length > 0 ? totalDonated / allDonations.length : 0
+
+    // Lifetime impact = total donated + (volunteer hours × hourly value)
+    const lifetimeImpact = totalDonated + (totalHours * VOLUNTEER_HOURLY_VALUE)
 
     return {
       totalDonated,
       uniqueOrgs,
       totalHours,
       averageDonation,
+      lifetimeImpact,
+      volunteeredCount,
     }
   }, [entries])
 
@@ -75,19 +92,19 @@ export default function ImpactSummary() {
 
       <div className="bg-gradient-to-br from-blue-100/30 to-cyan-100/20 rounded-lg p-4 border border-blue-200/30">
         <p className="text-xs text-cool-grey uppercase tracking-wide font-semibold mb-1">
-          Impact
+          Lifetime Value
         </p>
         <p className="font-display text-xl text-blue-600">
-          {impact.uniqueOrgs > 0 || impact.totalHours > 0 ? '⚡ Active' : '○ Ready'}
+          ${impact.lifetimeImpact.toLocaleString('en-US', { maximumFractionDigits: 0 })}
         </p>
         <p className="text-xs text-cool-grey mt-1">
-          {impact.uniqueOrgs > 0 && impact.totalHours > 0
-            ? 'Giver + Volunteer'
-            : impact.uniqueOrgs > 0
-              ? 'Financial supporter'
+          {impact.totalDonated > 0 && impact.totalHours > 0
+            ? `Funding + ${impact.totalHours.toFixed(1)}h volunteer`
+            : impact.totalDonated > 0
+              ? 'Financial support'
               : impact.totalHours > 0
-                ? 'Hands-on helper'
-                : 'Your giving journey'}
+                ? `${impact.totalHours.toFixed(1)} volunteer hours`
+                : 'Ready to give'}
         </p>
       </div>
     </div>
