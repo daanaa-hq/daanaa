@@ -102,7 +102,7 @@ def get_search_db():
 def _fts_where(q: str, state: str = '') -> tuple:
     """Build base FTS WHERE conditions and params for q + state."""
     fts_q = ' '.join(f'{w}*' for w in q.split() if w)
-    conditions: list = ["s.ein = o.EIN", "org_search MATCH ?"]
+    conditions: list = ["s.ein = o.EIN", "org_fts MATCH ?"]
     params: list = [fts_q]
     if state:
         conditions.append("o.STATE = ?")
@@ -294,12 +294,12 @@ def load_org_detail(ein: str) -> dict | None:
             data['data_badges']['mission'] = data.get('mission_source')
         return _strip_donate(data)
 
-    # Fallback: serve from search.db orgs table (IRS_BMF / bmf_stub orgs)
+    # Fallback: serve from search.db registry_enriched table (IRS_BMF / bmf_stub orgs)
     conn = get_search_db()
     if not conn:
         return None
     try:
-        row = conn.execute("SELECT * FROM orgs WHERE EIN = ?", (ein,)).fetchone()
+        row = conn.execute("SELECT * FROM registry_enriched WHERE EIN = ?", (ein,)).fetchone()
         return _row_to_org(row) if row else None
     except Exception:
         return None
@@ -460,10 +460,10 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
         # filter row-by-row (6s → 0.2s on OR'd category filters, 2026-06-09).
         order_by = _order_clause(sort, order)
 
-        total = conn.execute(f"SELECT COUNT(*) FROM orgs {where}", params).fetchone()[0]
+        total = conn.execute(f"SELECT COUNT(*) FROM registry_enriched {where}", params).fetchone()[0]
         offset = (page - 1) * per_page
         rows = conn.execute(
-            f"SELECT * FROM orgs {where} ORDER BY {order_by} LIMIT ? OFFSET ?",
+            f"SELECT * FROM registry_enriched {where} ORDER BY {order_by} LIMIT ? OFFSET ?",
             params + [per_page, offset]
         ).fetchall()
         orgs = [_row_to_org(r) for r in rows]
@@ -507,7 +507,7 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         order = _order_clause(sort, order, alias='o.')
 
         count_sql = f"""
-            SELECT COUNT(*) FROM org_search s, orgs o
+            SELECT COUNT(*) FROM org_fts s, registry_enriched o
             WHERE {' AND '.join(conditions)}
         """
         total = conn.execute(count_sql, params).fetchone()[0]
@@ -515,7 +515,7 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         offset = (page - 1) * per_page
         params_page = params + [per_page, offset]
         rows_sql = f"""
-            SELECT o.* FROM org_search s, orgs o
+            SELECT o.* FROM org_fts s, registry_enriched o
             WHERE {' AND '.join(conditions)}
             ORDER BY {order}
             LIMIT ? OFFSET ?
@@ -580,9 +580,9 @@ def _get_real_total(state: str = '') -> int:
         return 0
     try:
         if state:
-            n = conn.execute("SELECT COUNT(*) FROM orgs WHERE STATE = ?", (state,)).fetchone()[0]
+            n = conn.execute("SELECT COUNT(*) FROM registry_enriched WHERE STATE = ?", (state,)).fetchone()[0]
         else:
-            n = conn.execute("SELECT COUNT(*) FROM orgs").fetchone()[0]
+            n = conn.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]
         _real_total_cache[key] = n
         return n
     except Exception:
@@ -718,7 +718,7 @@ def search():
         params.extend(cat_params)
         params.append(limit)
         sql = (f"SELECT o.EIN, o.organization_name, o.NTEE1, o.NTEECC, o.CITY, o.STATE, o.mission, o.merit_score "
-               f"FROM org_search s, orgs o WHERE {' AND '.join(conditions)} LIMIT ?")
+               f"FROM org_fts s, registry_enriched o WHERE {' AND '.join(conditions)} LIMIT ?")
         rows = conn.execute(sql, params).fetchall()
         results = [dict(r) for r in rows]
         return jsonify({'results': results, 'query': query,
@@ -760,10 +760,10 @@ def fused_search():
         params.extend(cat_params)
 
         total = conn.execute(
-            f"SELECT COUNT(*) FROM org_search s, orgs o WHERE {' AND '.join(conditions)}", params
+            f"SELECT COUNT(*) FROM org_fts s, registry_enriched o WHERE {' AND '.join(conditions)}", params
         ).fetchone()[0]
         offset = (page - 1) * per_page
-        sql = (f"SELECT o.* FROM org_search s, orgs o "
+        sql = (f"SELECT o.* FROM org_fts s, registry_enriched o "
                f"WHERE {' AND '.join(conditions)} "
                f"ORDER BY COALESCE(o.merit_score, -1) DESC "
                f"LIMIT ? OFFSET ?")
@@ -1079,6 +1079,80 @@ def serve_spa(path):
     return 'Not found', 404
 
 
+def _validate_search_db():
+    """Fail loudly if search.db is missing, empty, or invalid. Better to crash
+    on startup than silently return 0 search results."""
+    fts_path = DATA_DIR / 'search.db'
+
+    # Check existence
+    if not fts_path.exists():
+        raise RuntimeError(
+            f"FATAL: search.db not found at {fts_path}. "
+            "Search will not work. Deploy search.db from home server via: "
+            "rsync ~/meritgiving/data/merit_registry.db root@droplet:/data/precompute/v1/search.db"
+        )
+
+    # Check size (0-byte file is a deployment failure)
+    size = fts_path.stat().st_size
+    if size == 0:
+        raise RuntimeError(
+            f"FATAL: search.db is empty (0 bytes) at {fts_path}. "
+            "This is a deployment error. Sync from home server: "
+            "rsync ~/meritgiving/data/merit_registry.db root@droplet:/data/precompute/v1/search.db"
+        )
+
+    # Check that org_fts table exists and has data
+    try:
+        conn = sqlite3.connect(str(fts_path), timeout=5)
+        try:
+            # Verify org_fts FTS5 table exists
+            result = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='org_fts'"
+            ).fetchone()
+            if not result:
+                raise RuntimeError(
+                    f"FATAL: org_fts table not found in search.db. "
+                    "This file is corrupted or incompatible. "
+                    "Redeploy from home server: "
+                    "rsync ~/meritgiving/data/merit_registry.db root@droplet:/data/precompute/v1/search.db"
+                )
+
+            # Verify registry_enriched table exists (for orgs view)
+            result = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='registry_enriched'"
+            ).fetchone()
+            if not result:
+                raise RuntimeError(
+                    f"FATAL: registry_enriched table not found in search.db. "
+                    "Database schema is incomplete. Redeploy: "
+                    "rsync ~/meritgiving/data/merit_registry.db root@droplet:/data/precompute/v1/search.db"
+                )
+
+            # Count rows in org_fts to ensure index is populated
+            count = conn.execute("SELECT COUNT(*) FROM org_fts").fetchone()[0]
+            if count == 0:
+                raise RuntimeError(
+                    f"FATAL: org_fts table is empty (0 rows). "
+                    "FTS index was not built. Redeploy: "
+                    "rsync ~/meritgiving/data/merit_registry.db root@droplet:/data/precompute/v1/search.db"
+                )
+
+            print(f"✓ search.db validated: {count:,} organizations in FTS index ({size / (1024**3):.1f} GB)")
+        finally:
+            conn.close()
+    except sqlite3.Error as e:
+        raise RuntimeError(
+            f"FATAL: search.db is corrupted or unreadable: {e}. "
+            "Redeploy from home server: "
+            "rsync ~/meritgiving/data/merit_registry.db root@droplet:/data/precompute/v1/search.db"
+        )
+
+
 if __name__ == '__main__':
     print(f"Data dir: {DATA_DIR} ({'exists' if DATA_DIR.exists() else 'MISSING'})")
+    try:
+        _validate_search_db()
+    except RuntimeError as e:
+        print(str(e), file=__import__('sys').stderr)
+        __import__('sys').exit(1)
     app.run(host='0.0.0.0', port=5000, debug=False)

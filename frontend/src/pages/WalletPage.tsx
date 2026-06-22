@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useWallet } from '../contexts/WalletContext'
+import { useAuth } from '../contexts/AuthContext'
 import WalletCard from '../components/WalletCard'
 import EditIntentModal from '../components/EditIntentModal'
 import PassphraseModal from '../components/PassphraseModal'
@@ -35,6 +36,7 @@ export default function WalletPage() {
   )
 
   const navigate = useNavigate()
+  const { user, loading: authLoading, signInWithGoogle } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const {
     entries,
@@ -224,6 +226,36 @@ export default function WalletPage() {
 
   const hasActiveFilters =
     filterState.intent !== 'all' || filterState.health !== 'all' || searchTerm !== ''
+
+  // ─── Google auth gate (required per Stewardship Commitment) ───────────────────
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-warm-cream">
+        <div className="text-center">
+          <p className="font-body text-cool-grey">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-warm-cream">
+        <div className="text-center max-w-sm">
+          <h1 className="font-body text-2xl font-semibold text-deep-navy mb-3">Your Giving Wallet</h1>
+          <p className="font-body text-sm text-cool-grey mb-6">
+            Sign in with Google to access your Giving Wallet and sync your saved nonprofits across devices.
+          </p>
+          <button
+            onClick={signInWithGoogle}
+            className="w-full py-3 rounded-full font-body font-semibold bg-soft-gold text-deep-navy hover:bg-bright-gold transition-colors flex items-center justify-center gap-2"
+          >
+            <span>🔵</span> Sign in with Google
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // ─── Passphrase gate ────────────────────────────────────────────────────────
   if (!isUnlocked) {
