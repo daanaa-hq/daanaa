@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { ClaimProgressBar } from '../components/ClaimProgressBar'
+import ResearchDataTransparency from '../components/ResearchDataTransparency'
+import DataUpdateForm from '../components/DataUpdateForm'
 import {
-  getOrgVolunteerEvents, createVolunteerEvent, updateVolunteerEvent, cancelVolunteerEvent,
+  getOrg, getOrgVolunteerEvents, createVolunteerEvent, updateVolunteerEvent, cancelVolunteerEvent,
   getServiceArea, putServiceArea,
-  type VolunteerEvent, type ServiceAreaType,
+  type VolunteerEvent, type ServiceAreaType, type ApiOrganization,
 } from '../data/api'
 import { METRO_NAMES } from '../data/msas'
 
@@ -669,6 +671,9 @@ export default function OrgClaimEditor() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [org, setOrg] = useState<ApiOrganization | null>(null)
+  const [showUpdateForm, setShowUpdateForm] = useState(false)
+  const [loadingOrg, setLoadingOrg] = useState(true)
 
   const ein = searchParams.get('ein') || ''
   const token = searchParams.get('token') || ''
@@ -676,6 +681,14 @@ export default function OrgClaimEditor() {
   useEffect(() => {
     if (!ein || !token) navigate('/for-nonprofits', { replace: true })
   }, [ein, token, navigate])
+
+  useEffect(() => {
+    if (!ein) return
+    getOrg(ein)
+      .then(setOrg)
+      .catch(() => {})
+      .finally(() => setLoadingOrg(false))
+  }, [ein])
 
   function toggleTag(tag: string) {
     setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])
@@ -716,6 +729,29 @@ export default function OrgClaimEditor() {
     <div className="min-h-[100dvh] bg-warm-cream pt-[72px]">
       <div className="max-w-[560px] mx-auto px-6 py-12">
         <ClaimProgressBar currentStep="edit" />
+
+        {/* Data Transparency Section */}
+        {!loadingOrg && org && (
+          <div className="mb-8">
+            <ResearchDataTransparency org={org} onUpdateClick={() => setShowUpdateForm(true)} />
+
+            {showUpdateForm && (
+              <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-2xl">
+                <h3 className="font-display text-[16px] font-semibold text-deep-navy mb-4">
+                  Update Your Financial Information
+                </h3>
+                <DataUpdateForm
+                  org={org}
+                  claimToken={token}
+                  ein={ein}
+                  onSuccess={() => setShowUpdateForm(false)}
+                  onCancel={() => setShowUpdateForm(false)}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="text-center mb-8">
           <h1 className="font-display italic text-deep-navy mb-2" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
             Tell your story
