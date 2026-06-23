@@ -1961,7 +1961,7 @@ def register_phase3_endpoints(app):
         try:
             data = request.get_json()
             claim_token = data.get('claim_token', '').strip()
-            ein = data.get('ein', '').strip()
+            ein = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
             updates = data.get('updates', {})
             explanation = data.get('explanation', '').strip()
 
