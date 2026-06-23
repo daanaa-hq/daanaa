@@ -9,13 +9,15 @@ import LampMark from './LampMark'
 import type { ApiOrganization } from '../data/api'
 import { getCardBadges } from '../utils/badges'
 import { useCompare } from '../contexts/CompareContext'
-import AddToWalletButton from './AddToWalletButton'
+import { useWallet } from '../contexts/WalletContext'
 
 interface OrgCardProps {
   org: Organization
   compact?: boolean
-  isSaved?: boolean
-  onToggleSave?: (e: React.MouseEvent, ein: string, meta?: { name: string; city?: string; state?: string; ntee1?: string }) => void
+  isInFunding?: boolean
+  isInVolunteering?: boolean
+  onToggleFunding?: (e: React.MouseEvent, ein: string) => void
+  onToggleVolunteering?: (e: React.MouseEvent, ein: string) => void
   apiOrg?: ApiOrganization
   trustSummary?: string
   hideCompare?: boolean
@@ -54,37 +56,66 @@ function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; can
   )
 }
 
-function SaveButton({ isSaved, onClick }: { isSaved: boolean; onClick: (e: React.MouseEvent) => void }) {
-  const color = isSaved ? '#C9A96E' : '#A89F94'
+function HeartButtons({
+  isInFunding, isInVolunteering, onToggleFunding, onToggleVolunteering,
+}: {
+  isInFunding: boolean; isInVolunteering: boolean
+  onToggleFunding: (e: React.MouseEvent) => void
+  onToggleVolunteering: (e: React.MouseEvent) => void
+}) {
+  const heartPath = "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
   return (
-    <button
-      onClick={onClick}
-      title={isSaved ? 'Saved to Wallet' : 'Save to Wallet'}
-      className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold/70 focus-visible:ring-offset-1"
-      aria-pressed={isSaved}
-    >
-      <svg
-        width="15" height="15" viewBox="0 0 24 24"
-        fill={isSaved ? '#C9A96E' : 'none'}
-        stroke={color}
-        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+    <div className="flex items-center gap-1">
+      <button
+        onClick={onToggleFunding}
+        title={isInFunding ? 'In donation list' : 'Add to donation list'}
+        aria-pressed={isInFunding}
+        className="flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-all duration-150 hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-300"
       >
-        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-      </svg>
-      <span className="font-body text-[10px] leading-none" style={{ color }}>Save</span>
-    </button>
+        <svg width="15" height="15" viewBox="0 0 24 24"
+          fill={isInFunding ? '#22c55e' : 'none'} stroke="#22c55e"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={heartPath}/>
+        </svg>
+      </button>
+      <button
+        onClick={onToggleVolunteering}
+        title={isInVolunteering ? 'In volunteer list' : 'Add to volunteer list'}
+        aria-pressed={isInVolunteering}
+        className="flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-all duration-150 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24"
+          fill={isInVolunteering ? '#ef4444' : 'none'} stroke="#ef4444"
+          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d={heartPath}/>
+        </svg>
+      </button>
+    </div>
   )
 }
 
-export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSummary, hideCompare }: OrgCardProps) {
+export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: propInVolunteering, onToggleFunding, onToggleVolunteering, apiOrg, trustSummary, hideCompare }: OrgCardProps) {
+  const { isInFunding: walletInFunding, isInVolunteering: walletInVolunteering, addToFunding, addToVolunteering, removeFromFunding, removeFromVolunteering } = useWallet()
   const { isInCompare, addItem: addCompare, removeItem: removeCompare, canAdd } = useCompare()
-  const inCompare = isInCompare(org.ein)
-  const lampTier  = apiOrg ? getTierFromOrg(apiOrg) : undefined
+  const inCompare  = isInCompare(org.ein)
+  const lampTier   = apiOrg ? getTierFromOrg(apiOrg) : undefined
   const inlineFact = apiOrg ? getInlineVerifiedFact(apiOrg) : ''
 
-  const handleBookmark = (e: React.MouseEvent) => {
+  const inFunding      = propInFunding      ?? walletInFunding(org.ein)
+  const inVolunteering = propInVolunteering ?? walletInVolunteering(org.ein)
+
+  const handleFunding = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation()
-    onToggleSave?.(e, org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })
+    if (onToggleFunding) { onToggleFunding(e, org.ein); return }
+    if (inFunding) removeFromFunding(org.ein)
+    else addToFunding(org.ein)
+  }
+
+  const handleVolunteering = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    if (onToggleVolunteering) { onToggleVolunteering(e, org.ein); return }
+    if (inVolunteering) removeFromVolunteering(org.ein)
+    else addToVolunteering(org.ein)
   }
 
   const handleCompare = (e: React.MouseEvent) => {
@@ -168,27 +199,40 @@ export function OrgCardRow({ org, isSaved = false, onToggleSave, apiOrg, trustSu
             <span className="font-body text-[10px] leading-none">Visit</span>
           </a>
         )}
-        {onToggleSave
-          ? <SaveButton isSaved={isSaved} onClick={handleBookmark} />
-          : <div onClick={e => { e.preventDefault(); e.stopPropagation() }}>
-              <AddToWalletButton ein={org.ein} orgName={org.name} />
-            </div>
-        }
+        <HeartButtons
+          isInFunding={inFunding}
+          isInVolunteering={inVolunteering}
+          onToggleFunding={handleFunding}
+          onToggleVolunteering={handleVolunteering}
+        />
       </div>
     </Link>
   )
 }
 
-export default function OrgCard({ org, compact = false, isSaved = false, onToggleSave, apiOrg, trustSummary, hideCompare }: OrgCardProps) {
+export default function OrgCard({ org, compact = false, isInFunding: propInFunding, isInVolunteering: propInVolunteering, onToggleFunding, onToggleVolunteering, apiOrg, trustSummary, hideCompare }: OrgCardProps) {
   const scored     = org.hasScore !== false && org.meritScore > 0
+  const { isInFunding: walletInFunding, isInVolunteering: walletInVolunteering, addToFunding, addToVolunteering, removeFromFunding, removeFromVolunteering } = useWallet()
   const { isInCompare, addItem: addCompare, removeItem: removeCompare, canAdd } = useCompare()
   const inCompare  = isInCompare(org.ein)
   const lampTier   = apiOrg ? getTierFromOrg(apiOrg) : undefined
   const inlineFact = apiOrg ? getInlineVerifiedFact(apiOrg) : ''
 
-  const handleBookmark = (e: React.MouseEvent) => {
+  const inFunding      = propInFunding      ?? walletInFunding(org.ein)
+  const inVolunteering = propInVolunteering ?? walletInVolunteering(org.ein)
+
+  const handleFunding = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation()
-    onToggleSave?.(e, org.ein, { name: org.name, city: org.city || undefined, state: org.state || undefined, ntee1: org.category || undefined })
+    if (onToggleFunding) { onToggleFunding(e, org.ein); return }
+    if (inFunding) removeFromFunding(org.ein)
+    else addToFunding(org.ein)
+  }
+
+  const handleVolunteering = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation()
+    if (onToggleVolunteering) { onToggleVolunteering(e, org.ein); return }
+    if (inVolunteering) removeFromVolunteering(org.ein)
+    else addToVolunteering(org.ein)
   }
 
   const handleCompare = (e: React.MouseEvent) => {
@@ -301,17 +345,13 @@ export default function OrgCard({ org, compact = false, isSaved = false, onToggl
               <span className="font-body text-[10px] leading-none">Visit</span>
             </a>
           )}
-          {onToggleSave && <SaveButton isSaved={isSaved} onClick={handleBookmark} />}
+          <HeartButtons
+            isInFunding={inFunding}
+            isInVolunteering={inVolunteering}
+            onToggleFunding={handleFunding}
+            onToggleVolunteering={handleVolunteering}
+          />
         </div>
-        {/* Show AddToWalletButton only when parent doesn't provide its own toggle handler */}
-        {!onToggleSave && (
-          <div
-            className="mt-2"
-            onClick={e => { e.preventDefault(); e.stopPropagation() }}
-          >
-            <AddToWalletButton ein={org.ein} orgName={org.name} />
-          </div>
-        )}
       </div>
     </Link>
   )

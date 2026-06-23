@@ -351,3 +351,15 @@ separate (perpetuates duplication).
 - Removed merged URLs from `public/sitemap.xml`.
 
 Deleted: `HowItWorks.tsx`, `Learn.tsx`, `Guides2.tsx`, `FAQ2.tsx`. Deployed + verified live.
+
+## 2026-06-23 — prod search.db rebuild (org_fts + metro)
+- Chose FORWARD-FIX (build search.db carrying `org_fts`) over rolling the API back to
+  the `org_search` version: one swap restores search AND ships metro; rollback would
+  revert the Jun 22 API fixes and not deliver metro. Rename-backup gives instant revert.
+- Built `registry_enriched` with the live db's exact 41 columns (not the full 68 from
+  `merit_registry.db`): full copy was 2.0GB and the droplet root is 96% full; parity
+  build is 1.7GB and behaves identically (frontend uses the live column set). `metro`
+  intentionally lives only in `org_fts` (search), not `registry_enriched`.
+- Metro discoverability: `org_fts` now indexes Census CBSA so suburban orgs match under
+  their whole metro (e.g. "Boston" → 32,499 incl. Somerville/Cambridge). Crosswalk from
+  `scripts/build_metro_crosswalk.py`; stamped by `scripts/backfill_metro.py` (1.53M orgs).

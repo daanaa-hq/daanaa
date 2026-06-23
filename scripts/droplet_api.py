@@ -36,12 +36,12 @@ def set_security_headers(response):
     # popup). Mirrors daanaa_api.py so prod and home server stay consistent.
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org; "
+        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org https://plausible.io; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "img-src 'self' data: https:; "
         "font-src 'self' data: https://fonts.gstatic.com; "
         "connect-src 'self' https://daanaa.org https://www.daanaa.org "
-        "https://stats.daanaa.org "
+        "https://stats.daanaa.org https://plausible.io "
         "https://identitytoolkit.googleapis.com "
         "https://securetoken.googleapis.com "
         "https://www.googleapis.com; "
@@ -865,6 +865,44 @@ def wallet_proxy():
     except Exception:
         return jsonify({"error": "Wallet sync is briefly unavailable."}), 503
 
+
+@app.route('/api/wallet/backup', methods=['POST'])
+def wallet_backup_proxy():
+    """Proxy wallet backup to home-server (DynamoDB write via :5001 tunnel)."""
+    if request.content_length and request.content_length > WALLET_MAX_BODY:
+        return jsonify({"error": "Request too large"}), 413
+    url = f"{WALLET_UPSTREAM}/api/wallet/backup"
+    headers = {'Content-Type': 'application/json'}
+    auth = request.headers.get('Authorization')
+    if auth:
+        headers['Authorization'] = auth
+    body = request.get_data()
+    req = urllib.request.Request(url, data=body, headers=headers, method='POST')
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read(), resp.status, {'Content-Type': 'application/json'}
+    except urllib.error.HTTPError as e:
+        return e.read(), e.code, {'Content-Type': 'application/json'}
+    except Exception:
+        return jsonify({"error": "Wallet backup is briefly unavailable."}), 503
+
+
+@app.route('/api/wallet/restore', methods=['GET'])
+def wallet_restore_proxy():
+    """Proxy wallet restore from home-server (DynamoDB read via :5001 tunnel)."""
+    url = f"{WALLET_UPSTREAM}/api/wallet/restore"
+    headers = {}
+    auth = request.headers.get('Authorization')
+    if auth:
+        headers['Authorization'] = auth
+    req = urllib.request.Request(url, headers=headers, method='GET')
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read(), resp.status, {'Content-Type': 'application/json'}
+    except urllib.error.HTTPError as e:
+        return e.read(), e.code, {'Content-Type': 'application/json'}
+    except Exception:
+        return jsonify({"error": "Wallet restore is briefly unavailable."}), 503
 
 
 # ── Live-backend proxy: volunteer events, guild, service area, zip, impact ───

@@ -60,6 +60,7 @@ def build(db: sqlite3.Connection, rebuild: bool) -> None:
                 mission,
                 city,
                 state,
+                metro,
                 category,
                 cause_tags,
                 tokenize = "unicode61 remove_diacritics 2"
@@ -81,7 +82,7 @@ def build(db: sqlite3.Connection, rebuild: bool) -> None:
 
         while offset < total:
             db.execute("""
-                INSERT INTO org_fts (ein, merit_tier, org_name, mission, city, state, category, cause_tags)
+                INSERT INTO org_fts (ein, merit_tier, org_name, mission, city, state, metro, category, cause_tags)
                 SELECT
                     EIN,
                     COALESCE(merit_tier, 'Spark'),
@@ -89,6 +90,7 @@ def build(db: sqlite3.Connection, rebuild: bool) -> None:
                     COALESCE(mission, ''),
                     COALESCE(CITY, ''),
                     COALESCE(STATE, ''),
+                    COALESCE(metro, ''),
                     NTEECC,
                     COALESCE(cause_tags, '{}')
                 FROM registry_enriched

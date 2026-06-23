@@ -256,7 +256,7 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dic
         _errors  += batch_size - len(results)
 
 
-def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False):
+def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False, small_first=False):
     conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     _ensure_column(conn)
@@ -264,9 +264,14 @@ def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False):
     scope = "" if all_orgs else "AND re.merit_score IS NOT NULL"
     mission_filter = "(re.mission IS NULL OR re.mission = '' OR re.mission_source = 'template_ntee')" \
                      if upgrade_templates else "(re.mission IS NULL OR re.mission = '')"
-    # Prioritise orgs that already have a cached web page: web_context yields
-    # far better missions (ai_web) than NTEE-only inference (ai_ntee). Process
-    # those first so GPU time produces the highest-quality missions up front.
+    # Ordering: default prioritises orgs with a cached web page (ai_web missions
+    # beat ai_ntee) then highest merit. --small-first flips this to target the
+    # invisible long tail — smallest/no-revenue orgs first — to lift search
+    # discoverability of tiny nonprofits (Stewardship P4). Opt-in so nightly
+    # runs keep their default highest-quality-first behaviour.
+    order_by = ("re.total_revenue ASC NULLS FIRST"
+                if small_first else
+                "(pc.ein IS NULL), re.merit_score DESC NULLS LAST")
     query = f"""
         SELECT re.EIN, re.organization_name, re.NTEE1, re.CITY, re.STATE, re.total_revenue
         FROM registry_enriched re
@@ -274,7 +279,7 @@ def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False):
           ON pc.ein = re.EIN
         WHERE {mission_filter} {scope}
           AND re.source NOT IN ('IRS_BMF', 'bmf_stub')
-        ORDER BY (pc.ein IS NULL), re.merit_score DESC NULLS LAST
+        ORDER BY {order_by}
         {'LIMIT ' + str(limit) if limit else ''}
     """
     rows = [dict(r) for r in conn.execute(query)]
@@ -348,6 +353,7 @@ if __name__ == "__main__":
     ap.add_argument("--workers",           type=int, default=1)
     ap.add_argument("--all-orgs",          action="store_true", help="Include unscored orgs too")
     ap.add_argument("--upgrade-templates", action="store_true", help="Replace template_ntee missions with AI-generated ones")
+    ap.add_argument("--small-first",       action="store_true", help="Process smallest/no-revenue orgs first (discoverability of tiny nonprofits)")
     ap.add_argument("--url",               type=str, help="Override inference endpoint URL")
     ap.add_argument("--model",             type=str, help="Override model name")
     args = ap.parse_args()
@@ -356,4 +362,4 @@ if __name__ == "__main__":
     if args.model:
         MODEL = args.model
     run(limit=args.limit, workers=args.workers, all_orgs=args.all_orgs,
-        upgrade_templates=args.upgrade_templates)
+        upgrade_templates=args.upgrade_templates, small_first=args.small_first)

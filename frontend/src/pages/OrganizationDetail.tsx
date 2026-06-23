@@ -28,8 +28,6 @@ import CohortContext from '../components/CohortContext'
 import PeerContextBreakdown from '../components/PeerContextBreakdown'
 import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
-import AddToWalletButton from '../components/AddToWalletButton'
-
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -218,7 +216,8 @@ export default function OrganizationDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, getIdToken } = useAuth()
-  const { isInWallet, addEntry: addToWallet, removeEntry: removeFromWallet } = useWallet()
+  const { isInFunding, isInVolunteering, addToFunding, addToVolunteering,
+          removeFromFunding, removeFromVolunteering } = useWallet()
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalError, setPortalError]     = useState<string | null>(null)
@@ -351,33 +350,36 @@ export default function OrganizationDetail() {
               <span className="text-muted-cream">/</span>
               <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream truncate max-w-[200px]">{org.name}</span>
             </div>
-            <button
-              onClick={() => {
-                if (isInWallet(org.ein)) {
-                  removeFromWallet(org.ein)
-                } else if (apiOrg) {
-                  addToWallet(apiOrg.EIN)
-                }
-              }}
-              title={isInWallet(org.ein) ? 'Remove from wallet' : 'Save to wallet'}
-              className="inline-flex items-center gap-2 px-5 py-1.5 rounded-full font-body text-[13px] font-semibold transition-all duration-150"
-              style={{
-                backgroundColor: isInWallet(org.ein) ? 'transparent' : '#C9A96E',
-                color: isInWallet(org.ein) ? '#C9A96E' : '#0A1628',
-                border: isInWallet(org.ein) ? '1px solid #C9A96E' : '1px solid transparent',
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24"
-                fill={isInWallet(org.ein) ? '#C9A96E' : 'none'}
-                stroke={isInWallet(org.ein) ? '#C9A96E' : 'currentColor'}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <div className="flex items-center gap-2">
+              {/* Green heart — funding list */}
+              <button
+                onClick={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
+                title={isInFunding(org.ein) ? 'Remove from funding list' : 'Add to funding list'}
+                aria-label={isInFunding(org.ein) ? 'Remove from funding list' : 'Fund this org'}
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150"
+                style={{ background: isInFunding(org.ein) ? '#22c55e20' : 'rgba(255,255,255,0.08)', border: `1px solid ${isInFunding(org.ein) ? '#22c55e' : 'rgba(255,255,255,0.2)'}` }}
               >
-                <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-              </svg>
-              {isInWallet(org.ein) ? 'Saved to Wallet' : 'Save to Wallet'}
-            </button>
+                <svg width="16" height="16" viewBox="0 0 24 24"
+                  fill={isInFunding(org.ein) ? '#22c55e' : 'none'}
+                  stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+              {/* Red heart — volunteer list */}
+              <button
+                onClick={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
+                title={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'I want to volunteer here'}
+                aria-label={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'Volunteer here'}
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150"
+                style={{ background: isInVolunteering(org.ein) ? '#ef444420' : 'rgba(255,255,255,0.08)', border: `1px solid ${isInVolunteering(org.ein) ? '#ef4444' : 'rgba(255,255,255,0.2)'}` }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24"
+                  fill={isInVolunteering(org.ein) ? '#ef4444' : 'none'}
+                  stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
@@ -631,13 +633,23 @@ export default function OrganizationDetail() {
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
                         </a>
                       )}
-                      <AddToWalletButton ein={org.ein} orgName={org.name} />
                       <button
-                        onClick={() => setShowVolunteer(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-muted-cream/40 font-body text-[13px] font-medium text-muted-cream hover:border-warm-cream hover:text-warm-cream transition-colors"
+                        onClick={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
+                        title={isInFunding(org.ein) ? 'Remove from donation list' : 'Add to donation list'}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-150"
+                        style={{ background: isInFunding(org.ein) ? '#22c55e20' : 'rgba(255,255,255,0.08)', border: `1px solid ${isInFunding(org.ein) ? '#22c55e' : 'rgba(255,255,255,0.2)'}`, color: isInFunding(org.ein) ? '#22c55e' : '#d4cfc8' }}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        Volunteer with this org
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill={isInFunding(org.ein) ? '#22c55e' : 'none'} stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        {isInFunding(org.ein) ? 'In donation list' : 'Add to donation list'}
+                      </button>
+                      <button
+                        onClick={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
+                        title={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'Add to volunteer list'}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-150"
+                        style={{ background: isInVolunteering(org.ein) ? '#ef444420' : 'rgba(255,255,255,0.08)', border: `1px solid ${isInVolunteering(org.ein) ? '#ef4444' : 'rgba(255,255,255,0.2)'}`, color: isInVolunteering(org.ein) ? '#ef4444' : '#d4cfc8' }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill={isInVolunteering(org.ein) ? '#ef4444' : 'none'} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                        {isInVolunteering(org.ein) ? 'In volunteer list' : 'Add to volunteer list'}
                       </button>
                     </div>
                     {!link.url && (
@@ -1384,14 +1396,6 @@ export default function OrganizationDetail() {
                     key={o.id}
                     org={o}
                     compact
-                    isSaved={isInWallet(o.ein)}
-                    onToggleSave={(_e, ein, _meta) => {
-                      if (isInWallet(ein)) {
-                        removeFromWallet(ein)
-                      } else {
-                        addToWallet(ein)
-                      }
-                    }}
                     apiOrg={raw}
                     trustSummary={simSummary}
                   />
@@ -1512,68 +1516,55 @@ export default function OrganizationDetail() {
         </div>
       )}
 
-      {/* Mobile sticky CTA — "Visit website" primary when available, wallet secondary */}
+      {/* Mobile sticky CTA — two heart buttons + optional website */}
       {(() => {
         const hasVerifiedSite = apiOrg?.website_status === 'ok' && apiOrg?.website
-        const saved = isInWallet(org.ein)
-        const handleWalletToggle = () => {
-          if (saved) {
-            removeFromWallet(org.ein)
-          } else if (apiOrg) {
-            addToWallet(apiOrg.EIN)
-          }
-        }
+        const fundingActive = isInFunding(org.ein)
+        const volunteeringActive = isInVolunteering(org.ein)
+        const heartButtons = (
+          <div className="flex gap-2">
+            <button
+              onClick={() => fundingActive ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
+              title={fundingActive ? 'Remove from funding list' : 'Fund this org'}
+              aria-label={fundingActive ? 'Remove from funding list' : 'Fund this org'}
+              className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all"
+              style={{ background: fundingActive ? '#22c55e20' : 'white', border: `1.5px solid ${fundingActive ? '#22c55e' : '#e5e7eb'}` }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24"
+                fill={fundingActive ? '#22c55e' : 'none'}
+                stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </button>
+            <button
+              onClick={() => volunteeringActive ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
+              title={volunteeringActive ? 'Remove from volunteer list' : 'Volunteer here'}
+              aria-label={volunteeringActive ? 'Remove from volunteer list' : 'Volunteer here'}
+              className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all"
+              style={{ background: volunteeringActive ? '#ef444420' : 'white', border: `1.5px solid ${volunteeringActive ? '#ef4444' : '#e5e7eb'}` }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24"
+                fill={volunteeringActive ? '#ef4444' : 'none'}
+                stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+            </button>
+            {hasVerifiedSite && (
+              <a
+                href={apiOrg!.website!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg hover:bg-bright-gold transition-colors"
+              >
+                Visit website
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+              </a>
+            )}
+          </div>
+        )
         return (
           <div className="md:hidden fixed bottom-[60px] left-0 right-0 z-40 px-4 pb-2">
-            {hasVerifiedSite ? (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleWalletToggle}
-                  title={saved ? 'Remove from wallet' : 'Save to wallet'}
-                  aria-label={saved ? 'Remove from wallet' : 'Save to wallet'}
-                  className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all"
-                  style={{
-                    backgroundColor: saved ? 'transparent' : '#C9A96E',
-                    color: saved ? '#C9A96E' : '#0A1628',
-                    border: saved ? '1px solid #C9A96E' : 'none',
-                  }}
-                >
-                  <svg width="17" height="17" viewBox="0 0 24 24"
-                    fill={saved ? '#C9A96E' : 'none'}
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                  >
-                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-                  </svg>
-                </button>
-                <a
-                  href={apiOrg!.website!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg hover:bg-bright-gold transition-colors"
-                >
-                  Visit website
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-                </a>
-              </div>
-            ) : (
-              <button
-                onClick={handleWalletToggle}
-                className="w-full py-4 rounded-full font-body text-[15px] font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg"
-                style={{
-                  backgroundColor: saved ? 'transparent' : '#C9A96E',
-                  color: saved ? '#C9A96E' : '#0A1628',
-                  border: saved ? '1px solid #C9A96E' : 'none',
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24"
-                  fill={saved ? '#C9A96E' : 'none'}
-                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                >
-                  <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
-                </svg>
-                {saved ? 'Saved to Wallet' : 'Save to Wallet'}
-              </button>
-            )}
+            {heartButtons}
           </div>
         )
       })()}

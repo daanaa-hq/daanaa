@@ -27,6 +27,8 @@ export interface LoggedVolunteerHours {
 export interface WalletEntry {
   ein: string                      // 9-digit EIN
   bookmarkedAt: number
+  inFunding?: boolean              // in funding/giving list (green heart)
+  inVolunteering?: boolean         // in volunteering list (red heart)
   donations?: LoggedDonation[]     // actual donations
   volunteerHours?: LoggedVolunteerHours[]  // actual volunteer hours
   givingIntent?: GivingIntent      // legacy: intent tracking (deprecated, kept for migration)
@@ -52,6 +54,12 @@ export interface WalletContextType {
   entries: WalletEntry[]
   addEntry: (ein: string) => void
   removeEntry: (ein: string) => void
+  addToFunding: (ein: string) => void
+  addToVolunteering: (ein: string) => void
+  removeFromFunding: (ein: string) => void
+  removeFromVolunteering: (ein: string) => void
+  isInFunding: (ein: string) => boolean
+  isInVolunteering: (ein: string) => boolean
   // Logging actual giving/volunteering
   logDonation: (ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean) => void
   logVolunteerHours: (ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean) => void
@@ -72,6 +80,8 @@ export interface WalletContextType {
   deleteWallet: () => Promise<void>
   // Sync state
   syncStatus: 'idle' | 'syncing' | 'error'
+  // Cross-device sync (Firebase-backed)
+  mergeRemoteEntries: (entries: WalletEntry[]) => void
   // Download backup
   downloadBackup: () => void
   // Migration

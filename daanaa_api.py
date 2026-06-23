@@ -1311,14 +1311,14 @@ def set_security_headers(response):
     is_prod = bool(os.environ.get("DAANAA_PROD"))
     # In prod, connect-src is HTTPS origins only; localhost is dev-only.
     connect_src = (
-        "connect-src 'self' https://daanaa.org https://www.daanaa.org https://stats.daanaa.org; "
+        "connect-src 'self' https://daanaa.org https://www.daanaa.org https://stats.daanaa.org https://plausible.io;"
         if is_prod else
-        "connect-src 'self' http://localhost:5000 https://daanaa.org https://www.daanaa.org https://stats.daanaa.org; "
+        "connect-src 'self' http://localhost:5000 https://daanaa.org https://www.daanaa.org https://stats.daanaa.org https://plausible.io;"
     )
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         # Firebase Google Sign-In popup requires apis.google.com scripts
-        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org; "
+        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org https://plausible.io; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "img-src 'self' data: https:; "
         "font-src 'self' data: https://fonts.gstatic.com; "
@@ -6216,93 +6216,148 @@ def e2e_wallet_sync():
                     'salt': row[2], 'updatedAt': row[3]})
 
 
+def _lean_entry(entry: dict) -> dict:
+    """Strip deprecated/derived fields — only persist what's needed for cross-device restore."""
+    lean: dict = {
+        'ein': entry.get('ein', ''),
+        'bookmarkedAt': entry.get('bookmarkedAt', 0),
+    }
+    if entry.get('inFunding') is not None:
+        lean['inFunding'] = bool(entry['inFunding'])
+    if entry.get('inVolunteering') is not None:
+        lean['inVolunteering'] = bool(entry['inVolunteering'])
+    if entry.get('donations'):
+        lean['donations'] = [
+            {
+                'id': d.get('id', ''),
+                'amount': d.get('amount', 0),
+                'date': d.get('date', ''),
+                'notes': d.get('notes', '') or '',
+                'helpedDaanaa': bool(d.get('helpedDaanaa', False)),
+                'letterRequested': bool(d.get('letterRequested', False)),
+            }
+            for d in entry['donations'] if d.get('id') and d.get('amount')
+        ]
+    if entry.get('volunteerHours'):
+        lean['volunteerHours'] = [
+            {
+                'id': v.get('id', ''),
+                'hours': v.get('hours', 0),
+                'date': v.get('date', ''),
+                'notes': v.get('notes', '') or '',
+                'helpedDaanaa': bool(v.get('helpedDaanaa', False)),
+            }
+            for v in entry['volunteerHours'] if v.get('id') and v.get('hours')
+        ]
+    return lean
+
+
+def _get_dynamo_table():
+    """Return DynamoDB Table resource. Raises if not configured."""
+    import boto3
+    region = os.environ.get('AWS_REGION', 'us-east-1')
+    table_name = os.environ.get('WALLET_DYNAMO_TABLE', 'daanaa_wallets')
+    dynamodb = boto3.resource(
+        'dynamodb',
+        region_name=region,
+        aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
+    )
+    return dynamodb.Table(table_name)
+
+
+def _firebase_uid_from_request() -> str:
+    """Verify Firebase ID token from Authorization header, return uid."""
+    from firebase_admin import auth as fb_auth
+    token = request.headers.get('Authorization', '').split(' ')[-1]
+    if not token:
+        raise ValueError('missing token')
+    decoded = fb_auth.verify_id_token(token)
+    return decoded['uid']
+
+
 @app.route('/api/wallet/backup', methods=['POST'])
 def backup_wallet():
-    """Backup encrypted wallet to account (requires Firebase auth)."""
+    """Back up wallet to DynamoDB (lean format, Firebase auth required)."""
     try:
-        from firebase_admin import auth
-
-        token = request.headers.get('Authorization', '').split(' ')[-1]
-        if not token:
-            return jsonify({'error': 'Unauthorized'}), 401
-
-        try:
-            decoded = auth.verify_id_token(token)
-            user_id = decoded['uid']
-        except Exception:
-            return jsonify({'error': 'Invalid token'}), 401
-
-        data = request.json or {}
-        entries = data.get('entries', [])
-
-        if not entries:
-            return jsonify({'error': 'No wallet data to backup'}), 400
-
-        # Store encrypted backup linked to user account
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS wallet_backups (
-                user_id TEXT PRIMARY KEY,
-                entries TEXT NOT NULL,
-                backed_up_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id)
-            )
-        ''')
-
-        import json
-        cursor.execute('''
-            INSERT OR REPLACE INTO wallet_backups (user_id, entries, backed_up_at)
-            VALUES (?, ?, ?)
-        ''', (user_id, json.dumps(entries), datetime.now().isoformat()))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({'success': True, 'backed_up_at': datetime.now().isoformat()}), 200
+        user_id = _firebase_uid_from_request()
     except ImportError:
         return jsonify({'error': 'Firebase not configured'}), 503
-    except Exception as e:
-        return jsonify({'error': f'Backup failed: {str(e)}'}), 500
+    except Exception:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    data = request.json or {}
+    raw_entries = data.get('entries', [])
+    if not raw_entries:
+        return jsonify({'error': 'No entries to backup'}), 400
+
+    lean = [_lean_entry(e) for e in raw_entries if e.get('ein')]
+    backed_at = datetime.now().isoformat()
+
+    try:
+        table = _get_dynamo_table()
+        table.put_item(Item={
+            'user_id': user_id,
+            'entries': json.dumps(lean, separators=(',', ':')),
+            'entry_count': len(lean),
+            'updated_at': backed_at,
+            'version': 1,
+        })
+        return jsonify({'success': True, 'backed_up_at': backed_at, 'entry_count': len(lean)}), 200
+    except Exception as dynamo_err:
+        # Fallback: SQLite (local dev / DynamoDB not yet provisioned)
+        logging.warning('DynamoDB backup failed, falling back to SQLite: %s', dynamo_err)
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS wallet_backups (
+                    user_id TEXT PRIMARY KEY,
+                    entries TEXT NOT NULL,
+                    backed_up_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.execute(
+                'INSERT OR REPLACE INTO wallet_backups (user_id, entries, backed_up_at) VALUES (?, ?, ?)',
+                (user_id, json.dumps(lean), backed_at),
+            )
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True, 'backed_up_at': backed_at, 'entry_count': len(lean)}), 200
+        except Exception as e:
+            return jsonify({'error': f'Backup failed: {e}'}), 500
 
 
 @app.route('/api/wallet/restore', methods=['GET'])
 def restore_wallet():
-    """Restore wallet from backup (requires Firebase auth)."""
+    """Restore wallet from DynamoDB (Firebase auth required)."""
     try:
-        from firebase_admin import auth
-
-        token = request.headers.get('Authorization', '').split(' ')[-1]
-        if not token:
-            return jsonify({'error': 'Unauthorized'}), 401
-
-        try:
-            decoded = auth.verify_id_token(token)
-            user_id = decoded['uid']
-        except Exception:
-            return jsonify({'error': 'Invalid token'}), 401
-
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            SELECT entries FROM wallet_backups WHERE user_id = ?
-        ''', (user_id,))
-
-        row = cursor.fetchone()
-        conn.close()
-
-        if not row:
-            return jsonify({'entries': [], 'found': False}), 404
-
-        import json
-        entries = json.loads(row[0])
-        return jsonify({'entries': entries, 'found': True}), 200
+        user_id = _firebase_uid_from_request()
     except ImportError:
         return jsonify({'error': 'Firebase not configured'}), 503
-    except Exception as e:
-        return jsonify({'error': f'Restore failed: {str(e)}'}), 500
+    except Exception:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        table = _get_dynamo_table()
+        resp = table.get_item(Key={'user_id': user_id})
+        item = resp.get('Item')
+        if not item:
+            return jsonify({'entries': [], 'found': False}), 200
+        entries = json.loads(item['entries'])
+        return jsonify({'entries': entries, 'found': True, 'updated_at': item.get('updated_at')}), 200
+    except Exception as dynamo_err:
+        # Fallback: SQLite
+        logging.warning('DynamoDB restore failed, falling back to SQLite: %s', dynamo_err)
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            row = conn.execute('SELECT entries FROM wallet_backups WHERE user_id = ?', (user_id,)).fetchone()
+            conn.close()
+            if not row:
+                return jsonify({'entries': [], 'found': False}), 200
+            entries = json.loads(row[0])
+            return jsonify({'entries': entries, 'found': True}), 200
+        except Exception as e:
+            return jsonify({'error': f'Restore failed: {e}'}), 500
 
 
 @app.route('/api/wallet/donation-receipt', methods=['POST'])
@@ -6673,6 +6728,60 @@ def nonprofit_dashboard_analytics(claim_token: str):
     except Exception as e:
         _logger.error(f'Dashboard error: {e}')
         return jsonify({'error': 'Failed to load dashboard'}), 500
+
+
+# ── Volunteer interest counter ────────────────────────────────────────────────
+# Anonymous aggregate: counts how many people expressed interest in volunteering
+# at each org. No user IDs stored — just a tally. Only surfaces to claimed orgs
+# when count >= 5 (prevents re-identification at count=1). Rate-limited per-worker
+# in-memory (low-stakes feature; per-worker is good enough to deter obvious abuse).
+
+_volunteer_rate: dict[str, list[float]] = {}
+
+def _vol_rate_ok(ip: str, limit: int = 20, window: int = 3600) -> bool:
+    import time as _time
+    now = _time.time()
+    hits = [t for t in _volunteer_rate.get(ip, []) if now - t < window]
+    if len(hits) >= limit:
+        return False
+    _volunteer_rate[ip] = hits + [now]
+    return True
+
+def _ensure_volunteer_interest_table(db: sqlite3.Connection) -> None:
+    db.execute('''CREATE TABLE IF NOT EXISTS volunteer_interest
+                  (EIN TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0)''')
+
+@app.route('/api/volunteer-interest/<ein>', methods=['POST', 'DELETE'])
+def volunteer_interest(ein: str):
+    import re as _re2
+    if not _re2.match(r'^\d{9}$', ein):
+        return jsonify({'error': 'invalid EIN'}), 400
+    ip = request.remote_addr or 'unknown'
+    if not _vol_rate_ok(ip):
+        return jsonify({'error': 'rate limit'}), 429
+    db = get_db()
+    _ensure_volunteer_interest_table(db)
+    if request.method == 'POST':
+        db.execute('''INSERT INTO volunteer_interest (EIN, count) VALUES (?, 1)
+                      ON CONFLICT(EIN) DO UPDATE SET count = count + 1''', (ein,))
+    else:
+        db.execute('''UPDATE volunteer_interest SET count = MAX(0, count - 1)
+                      WHERE EIN = ?''', (ein,))
+    db.commit()
+    row = db.execute('SELECT count FROM volunteer_interest WHERE EIN = ?', (ein,)).fetchone()
+    return jsonify({'ein': ein, 'count': row[0] if row else 0}), 200
+
+@app.route('/api/volunteer-interest/<ein>', methods=['GET'])
+def volunteer_interest_get(ein: str):
+    """For claimed org dashboards — returns count only if >= 5 (privacy threshold)."""
+    import re as _re2
+    if not _re2.match(r'^\d{9}$', ein):
+        return jsonify({'error': 'invalid EIN'}), 400
+    db = get_db()
+    _ensure_volunteer_interest_table(db)
+    row = db.execute('SELECT count FROM volunteer_interest WHERE EIN = ?', (ein,)).fetchone()
+    count = row[0] if row else 0
+    return jsonify({'ein': ein, 'count': count if count >= 5 else None, 'threshold': 5}), 200
 
 
 # ── Eager load embeddings ──────────────────────────────────────────────────────

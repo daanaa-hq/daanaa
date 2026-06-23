@@ -56,8 +56,16 @@ def build_prompt(orgs: list[dict]) -> str:
     )
 
 
-def parse_tags(raw: str, expected: int) -> list[list[str]]:
-    """Parse LLM output into a list-of-lists, one per org."""
+def parse_tags(raw: str, expected: int) -> list[list[str]] | None:
+    """Parse LLM output into a list-of-lists, one per org — or None if the
+    response does not CLEANLY align to `expected` orgs.
+
+    Alignment is structural: tags get zipped back to orgs by position, so a
+    short/long/garbled response would silently shift every tag after the gap
+    onto the wrong org (this mislabelled shelter orgs with 'animals' in a
+    batch of 12). On any ambiguity we return None and the caller re-does the
+    batch one org at a time, where alignment can't drift.
+    """
     raw = raw.strip()
     # Strip markdown fences
     if raw.startswith("```"):
@@ -68,22 +76,38 @@ def parse_tags(raw: str, expected: int) -> list[list[str]]:
     try:
         parsed = json.loads(raw)
     except Exception:
-        return [[] for _ in range(expected)]
+        return None
     if not isinstance(parsed, list):
-        return [[] for _ in range(expected)]
-    # If it's a flat list of strings (single org response), wrap it
-    if parsed and isinstance(parsed[0], str):
-        return [parsed] + [[] for _ in range(expected - 1)]
-    # Normalize: ensure each element is a list of strings
-    result = []
-    for item in parsed[:expected]:
-        if isinstance(item, list):
-            result.append([str(t).lower().strip() for t in item if t])
-        else:
-            result.append([])
-    while len(result) < expected:
-        result.append([])
-    return result
+        return None
+    # Single org: accept a flat list of strings or a [[...]] wrapper.
+    if expected == 1:
+        if parsed and isinstance(parsed[0], str):
+            return [[str(t).lower().strip().replace('_', ' ') for t in parsed if t]]
+        if parsed and isinstance(parsed[0], list):
+            return [[str(t).lower().strip().replace('_', ' ') for t in parsed[0] if t]]
+        return [[]]
+    # Multi: require EXACTLY `expected` inner lists, else treat as misaligned.
+    if len(parsed) != expected or not all(isinstance(x, list) for x in parsed):
+        return None
+    return [[str(t).lower().strip().replace('_', ' ') for t in item if t] for item in parsed]
+
+
+def _call_and_parse(orgs: list[dict]) -> list[list[str]] | None:
+    """One LLM call for `orgs`; returns aligned tags or None (LLM/parse fail)."""
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": build_prompt(orgs)},
+        ],
+        "temperature": 0.1,
+        "max_tokens": 512,
+    }
+    try:
+        return parse_tags(llm_call(payload), len(orgs))
+    except Exception as e:
+        print(f"  LLM error (batch of {len(orgs)}): {e}", flush=True)
+        return None
 
 
 def process_batch(orgs: list[dict], dry_run: bool) -> tuple[int, int]:
@@ -92,22 +116,17 @@ def process_batch(orgs: list[dict], dry_run: bool) -> tuple[int, int]:
         for o in orgs:
             print(f"  DRY: {o['organization_name'][:60]}")
         return len(orgs), 0
-    prompt = build_prompt(orgs)
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user",   "content": prompt},
-        ],
-        "temperature": 0.1,
-        "max_tokens": 512,
-    }
-    try:
-        raw    = llm_call(payload)
-        parsed = parse_tags(raw, len(orgs))
-    except Exception as e:
-        print(f"  LLM error (batch of {len(orgs)}): {e}", flush=True)
-        return 0, len(orgs)
+
+    parsed = _call_and_parse(orgs)
+    # Misaligned (or failed) multi-org response → re-do per org, where the
+    # one-to-one mapping is unambiguous. Single-org failure is just an error.
+    if parsed is None:
+        if len(orgs) == 1:
+            return 0, 1
+        parsed = []
+        for o in orgs:
+            p = _call_and_parse([o])
+            parsed.append(p[0] if p else [])
 
     db = sqlite3.connect(DB_PATH, timeout=30)
     saved = 0
@@ -128,6 +147,8 @@ def main():
     ap.add_argument("--workers",  type=int, default=4)
     ap.add_argument("--limit",    type=int, default=0)
     ap.add_argument("--dry-run",  action="store_true")
+    ap.add_argument("--small-first", action="store_true",
+                    help="Tag smallest/no-revenue orgs first (discoverability of tiny nonprofits)")
     args = ap.parse_args()
 
     # Check llama-server is up
@@ -144,16 +165,22 @@ def main():
         WHERE mission IS NOT NULL AND mission != ''
           AND (cause_tags IS NULL OR cause_tags = '[]' OR cause_tags = 'null')
           AND deductibility = 1 AND org_status = 'active'
+          AND mission_source = 'ai_generated'
     """
     total = db.execute(count_q).fetchone()[0]
     limit = args.limit if args.limit else total
     print(f"Orgs to tag via LLM: {min(total, limit):,} (of {total:,} untagged active)", flush=True)
 
+    # --small-first targets the invisible long tail (tiny/no-revenue orgs) so
+    # GPU time lifts discoverability of small nonprofits (Stewardship P4).
+    order_clause = "ORDER BY total_revenue ASC NULLS FIRST" if args.small_first else ""
     rows = db.execute(f"""
         SELECT EIN, organization_name, mission, NTEE1 FROM registry_enriched
         WHERE mission IS NOT NULL AND mission != ''
           AND (cause_tags IS NULL OR cause_tags = '[]' OR cause_tags = 'null')
           AND deductibility = 1 AND org_status = 'active'
+          AND mission_source = 'ai_generated'
+        {order_clause}
         LIMIT {limit}
     """).fetchall()
     db.close()

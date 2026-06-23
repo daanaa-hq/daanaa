@@ -51,14 +51,15 @@ start() {
     nohup bash -c "python3 scripts/generate_missions.py --workers 6 && python3 scripts/generate_missions_irs_bmf.py --workers 6" >> "$GEN_LOG" 2>&1 &
   fi
 
-  # Website discovery: loop web_finder_agent (CPU crawl + :11436 GPU verification)
-  # so orgs missing websites get filled.
-  if pgrep -f "scripts/web_night.sh" >/dev/null; then
-    echo "[$(ts)] start: web_night discovery loop already running — skipping"
-  else
-    echo "[$(ts)] start: launching web_night discovery loop"
-    nohup bash "$BASE/scripts/web_night.sh" >> "$LOG_DIR/web_night.log" 2>&1 &
-  fi
+  # Website discovery: DISABLED 2026-06-22 per directive — "we are not doing
+  # websites or donate links." The web_finder_agent loop is network-bound and
+  # off-mission; do not relaunch it. Left in place (commented) for traceability.
+  # if pgrep -f "scripts/web_night.sh" >/dev/null; then
+  #   echo "[$(ts)] start: web_night discovery loop already running — skipping"
+  # else
+  #   echo "[$(ts)] start: launching web_night discovery loop"
+  #   nohup bash "$BASE/scripts/web_night.sh" >> "$LOG_DIR/web_night.log" 2>&1 &
+  # fi
 
   # Re-embed orgs whose mission was (re)written so semantic search stays current.
   # The watchdog runs its own embed server on :11436 (separate from the mission

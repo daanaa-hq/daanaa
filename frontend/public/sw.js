@@ -8,7 +8,7 @@
 // Bump CACHE_NAME on any caching-behavior change so the activate handler
 // purges the stale shell from previous versions.
 
-const CACHE_NAME = 'daanaa-shell-v2';
+const CACHE_NAME = 'daanaa-shell-v3';
 
 // Minimal static shell — Vite hashes the JS/CSS filenames so we can't
 // pre-cache them by name here. Instead we intercept navigations and

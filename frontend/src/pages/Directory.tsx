@@ -5,10 +5,9 @@ import OrgCard, { OrgCardRow } from '../components/OrgCard'
 import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
 import { useApi } from '../hooks/useApi'
-import { useWallet } from '../contexts/WalletContext'
 import { getOrganizations, getFusedSearch, getStats } from '../data/api'
 import type { ApiOrganization } from '../data/api'
-import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
+import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
 import LampMark from '../components/LampMark'
 import type { TierName } from '../components/TrustBadge'
 import { RAIL_CATEGORIES, ALL_CATEGORIES, NTEE_SUBCATEGORIES } from '../data/categories'
@@ -62,17 +61,7 @@ function hasKnownDataSource(src: string | null) {
   return src === 'propublica' || src === 'irs_soi'
 }
 
-function OrgCardApi({
-  org,
-  isSaved,
-  onToggleSave,
-  listView = false,
-}: {
-  org: ApiOrganization
-  isSaved: boolean
-  onToggleSave: (e: React.MouseEvent, ein: string, meta?: { name: string; city?: string; state?: string; ntee1?: string }) => void
-  listView?: boolean
-}) {
+function OrgCardApi({ org, listView = false }: { org: ApiOrganization; listView?: boolean }) {
   const scored = hasKnownDataSource(org.data_source) && (org.peer_percentile ?? org.ntee1_percentile) !== null
   const cardOrg = {
     id: org.EIN,
@@ -105,13 +94,7 @@ function OrgCardApi({
     transparencyScore: 0,
   }
   const summary = getTierSummary(getTierFromOrg(org), org)
-  const props = {
-    org: cardOrg,
-    isSaved,
-    onToggleSave: (e: React.MouseEvent, ein: string, meta?: { name: string; city?: string; state?: string; ntee1?: string }) => onToggleSave(e, ein, meta),
-    apiOrg: org,
-    trustSummary: summary,
-  }
+  const props = { org: cardOrg, apiOrg: org, trustSummary: summary }
   return listView ? <OrgCardRow {...props} /> : <OrgCard {...props} />
 }
 
@@ -193,15 +176,6 @@ export default function Directory() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const searchMode = 'browse'
-  const { isInWallet, addEntry: addToWallet, removeEntry: removeFromWallet } = useWallet()
-
-  function walletToggle(org: ApiOrganization) {
-    if (isInWallet(org.EIN)) {
-      removeFromWallet(org.EIN)
-    } else {
-      addToWallet(org.EIN)
-    }
-  }
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const itemsPerPage = viewMode === 'list' ? 25 : 18
@@ -935,24 +909,13 @@ export default function Directory() {
                   {viewMode === 'list' ? (
                     <div className="flex flex-col gap-2">
                       {organizations.map((org) => (
-                        <OrgCardApi
-                          key={org.EIN}
-                          org={org}
-                          isSaved={isInWallet(org.EIN)}
-                          onToggleSave={() => walletToggle(org)}
-                          listView
-                        />
+                        <OrgCardApi key={org.EIN} org={org} listView />
                       ))}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       {organizations.map((org) => (
-                        <OrgCardApi
-                          key={org.EIN}
-                          org={org}
-                          isSaved={isInWallet(org.EIN)}
-                          onToggleSave={() => walletToggle(org)}
-                        />
+                        <OrgCardApi key={org.EIN} org={org} />
                       ))}
                     </div>
                   )}

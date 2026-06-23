@@ -15,6 +15,14 @@ const LS_KEY_HASH = 'dw_kh'
 const LS_SALT    = 'dw_s'
 // SECURITY: removed SS_RAW_KEY (raw key caching). Use JWT tokens instead (see /api/wallet/token).
 
+function uuid(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16)
+  })
+}
+
 // ─── State ───────────────────────────────────────────────────────────────────
 
 type State = {
@@ -27,8 +35,14 @@ type State = {
 
 type Action =
   | { type: 'HYDRATE'; entries: WalletEntry[]; keyHash: string; salt: string; encKey: CryptoKey }
+  | { type: 'LOAD_LOCAL'; entries: WalletEntry[] }
+  | { type: 'MERGE_REMOTE'; entries: WalletEntry[] }
   | { type: 'ADD'; ein: string }
   | { type: 'REMOVE'; ein: string }
+  | { type: 'ADD_FUNDING'; ein: string }
+  | { type: 'ADD_VOLUNTEERING'; ein: string }
+  | { type: 'REMOVE_FUNDING'; ein: string }
+  | { type: 'REMOVE_VOLUNTEERING'; ein: string }
   | { type: 'UPDATE_INTENT'; ein: string; intent: GivingIntent }
   | { type: 'LOG_DONATION'; ein: string; donation: LoggedDonation }
   | { type: 'LOG_VOLUNTEER_HOURS'; ein: string; hours: LoggedVolunteerHours }
@@ -38,15 +52,51 @@ type Action =
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
-    case 'HYDRATE':
-      return { ...state, entries: action.entries, keyHash: action.keyHash,
-               salt: action.salt, encKey: action.encKey, syncStatus: 'idle' }
+    case 'HYDRATE': {
+      // Migrate legacy entries that predate the funding/volunteering split → funding list
+      const entries = action.entries.map(e =>
+        (e.inFunding === undefined && e.inVolunteering === undefined) ? { ...e, inFunding: true } : e
+      )
+      return { ...state, entries, keyHash: action.keyHash, salt: action.salt, encKey: action.encKey, syncStatus: 'idle' }
+    }
     case 'ADD': {
       if (state.entries.some(e => e.ein === action.ein)) return state
-      return { ...state, entries: [...state.entries, { ein: action.ein, bookmarkedAt: Date.now() }] }
+      return { ...state, entries: [...state.entries, { ein: action.ein, bookmarkedAt: Date.now(), inFunding: true }] }
     }
     case 'REMOVE':
       return { ...state, entries: state.entries.filter(e => e.ein !== action.ein) }
+    case 'ADD_FUNDING': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return { ...state, entries: [...state.entries, { ein: action.ein, bookmarkedAt: Date.now(), inFunding: true }] }
+      const next = [...state.entries]
+      next[idx] = { ...next[idx], inFunding: true }
+      return { ...state, entries: next }
+    }
+    case 'ADD_VOLUNTEERING': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return { ...state, entries: [...state.entries, { ein: action.ein, bookmarkedAt: Date.now(), inVolunteering: true }] }
+      const next = [...state.entries]
+      next[idx] = { ...next[idx], inVolunteering: true }
+      return { ...state, entries: next }
+    }
+    case 'REMOVE_FUNDING': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const entry = { ...state.entries[idx], inFunding: false }
+      if (!entry.inFunding && !entry.inVolunteering && !entry.donations?.length && !entry.volunteerHours?.length)
+        return { ...state, entries: state.entries.filter(e => e.ein !== action.ein) }
+      const next = [...state.entries]; next[idx] = entry
+      return { ...state, entries: next }
+    }
+    case 'REMOVE_VOLUNTEERING': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const entry = { ...state.entries[idx], inVolunteering: false }
+      if (!entry.inFunding && !entry.inVolunteering && !entry.donations?.length && !entry.volunteerHours?.length)
+        return { ...state, entries: state.entries.filter(e => e.ein !== action.ein) }
+      const next = [...state.entries]; next[idx] = entry
+      return { ...state, entries: next }
+    }
     case 'UPDATE_INTENT': {
       const idx = state.entries.findIndex(e => e.ein === action.ein)
       if (idx === -1) return state
@@ -86,6 +136,44 @@ function reducer(state: State, action: Action): State {
     }
     case 'SET_SYNC_STATUS':
       return { ...state, syncStatus: action.status }
+    case 'LOAD_LOCAL': {
+      // Only hydrate from localStorage if we have no in-memory entries yet
+      if (state.entries.length > 0) return state
+      const entries = action.entries.map(e =>
+        (e.inFunding === undefined && e.inVolunteering === undefined) ? { ...e, inFunding: true } : e
+      )
+      return { ...state, entries }
+    }
+    case 'MERGE_REMOTE': {
+      // Union-merge remote entries into local state — remote fills gaps, local wins on conflict
+      const localByEin = new Map(state.entries.map(e => [e.ein, e]))
+      const merged = [...state.entries]
+      for (const remote of action.entries) {
+        if (!remote.ein) continue
+        const local = localByEin.get(remote.ein)
+        if (!local) {
+          merged.push({ ...remote, inFunding: remote.inFunding ?? true })
+        } else {
+          const idx = merged.findIndex(e => e.ein === remote.ein)
+          const localDonIds = new Set((local.donations ?? []).map(d => d.id))
+          const localVolIds = new Set((local.volunteerHours ?? []).map(v => v.id))
+          merged[idx] = {
+            ...local,
+            inFunding: local.inFunding || remote.inFunding,
+            inVolunteering: local.inVolunteering || remote.inVolunteering,
+            donations: [
+              ...(local.donations ?? []),
+              ...(remote.donations ?? []).filter(d => !localDonIds.has(d.id)),
+            ],
+            volunteerHours: [
+              ...(local.volunteerHours ?? []),
+              ...(remote.volunteerHours ?? []).filter(v => !localVolIds.has(v.id)),
+            ],
+          }
+        }
+      }
+      return { ...state, entries: merged }
+    }
     case 'LOCK':
       return { entries: [], keyHash: null, salt: null, encKey: null, syncStatus: 'idle' }
     default:
@@ -104,6 +192,28 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tokenRef = useRef<{ token: string; expiresAt: number } | null>(null)
   const [migrationData, setMigrationData] = useState<WalletEntry[] | null>(null)
+
+  // On mount: load from localStorage (device-first — survives page refresh with no auth)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('dw_entries')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) {
+          dispatch({ type: 'LOAD_LOCAL', entries: parsed.filter(isValidWalletEntry) })
+        }
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  // Save entries to localStorage on every change (device-first persistence)
+  useEffect(() => {
+    try {
+      if (state.entries.length > 0) {
+        localStorage.setItem('dw_entries', JSON.stringify(state.entries))
+      }
+    } catch { /* ignore */ }
+  }, [state.entries])
 
   // On mount: detect legacy v1 wallet
   useEffect(() => {
@@ -225,6 +335,29 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const isInWallet = useCallback((ein: string) => state.entries.some(e => e.ein === ein), [state.entries])
+  const isInFunding = useCallback((ein: string) => state.entries.some(e => e.ein === ein && (e.inFunding ?? (!e.inVolunteering))), [state.entries])
+  const isInVolunteering = useCallback((ein: string) => state.entries.some(e => e.ein === ein && e.inVolunteering === true), [state.entries])
+
+  const addToFunding = useCallback((ein: string) => {
+    if (!/^\d{9}$/.test(ein)) return
+    dispatch({ type: 'ADD_FUNDING', ein })
+  }, [])
+
+  const addToVolunteering = useCallback((ein: string) => {
+    if (!/^\d{9}$/.test(ein)) return
+    dispatch({ type: 'ADD_VOLUNTEERING', ein })
+    fetch(`${getApiBase()}/api/volunteer-interest/${ein}`, { method: 'POST' }).catch(() => {})
+  }, [])
+
+  const removeFromFunding = useCallback((ein: string) => {
+    dispatch({ type: 'REMOVE_FUNDING', ein })
+  }, [])
+
+  const removeFromVolunteering = useCallback((ein: string) => {
+    dispatch({ type: 'REMOVE_VOLUNTEERING', ein })
+    fetch(`${getApiBase()}/api/volunteer-interest/${ein}`, { method: 'DELETE' }).catch(() => {})
+  }, [])
+
   const getIntent = useCallback((ein: string) => state.entries.find(e => e.ein === ein)?.givingIntent, [state.entries])
 
   const setupNewWallet = useCallback(async (passphrase: string) => {
@@ -325,7 +458,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const logDonation = useCallback((ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean) => {
     const donation: LoggedDonation = {
-      id: `don_${crypto.randomUUID()}`,
+      id: `don_${uuid()}`,
       amount,
       date,
       notes,
@@ -341,7 +474,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const logVolunteerHours = useCallback((ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean) => {
     const entry: LoggedVolunteerHours = {
-      id: `vol_${crypto.randomUUID()}`,
+      id: `vol_${uuid()}`,
       hours,
       date,
       notes,
@@ -352,6 +485,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     if (helpedDaanaa) {
       syncImpactLog(entry, 'volunteer', ein).catch(e => console.error('Failed to sync impact log:', e))
     }
+  }, [])
+
+  const mergeRemoteEntries = useCallback((entries: WalletEntry[]) => {
+    dispatch({ type: 'MERGE_REMOTE', entries })
   }, [])
 
   const getDonations = useCallback((ein: string) => state.entries.find(e => e.ein === ein)?.donations, [state.entries])
@@ -398,8 +535,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <WalletContext.Provider value={{
-      entries: state.entries, addEntry, removeEntry, updateIntent,
+      entries: state.entries, addEntry, removeEntry,
+      addToFunding, addToVolunteering, removeFromFunding, removeFromVolunteering,
+      isInFunding, isInVolunteering,
+      updateIntent,
       logDonation, logVolunteerHours, getDonations, getVolunteerHours, updateDonationLetterStatus,
+      mergeRemoteEntries,
       isInWallet, getIntent, isUnlocked: state.encKey !== null,
       unlockWithPassphrase, setupNewWallet, lockWallet, deleteWallet,
       downloadBackup, syncStatus: state.syncStatus,
