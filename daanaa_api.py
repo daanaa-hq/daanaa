@@ -733,13 +733,14 @@ def require_admin_key(f):
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(DB_PATH)
+        db = g._database = sqlite3.connect(DB_PATH, timeout=30)
         db.row_factory = sqlite3.Row
         # 9.6 GB catalog: mmap serves cold page reads from the OS page cache
         # instead of read() syscalls, plus a 64 MB page cache per connection.
         # Biggest win on first-hit queries after a restart or cache expiry.
         db.execute("PRAGMA mmap_size=2147483648")
         db.execute("PRAGMA cache_size=-64000")
+        db.execute("PRAGMA busy_timeout=30000")
         if _LIVE_SPLIT:
             db.execute("ATTACH DATABASE ? AS live", (LIVE_DB_PATH,))
     return db
