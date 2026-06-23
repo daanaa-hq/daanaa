@@ -55,14 +55,25 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
       ))}
 
       {metadata && (
-        <footer className="mt-20 pt-8 border-t border-cool-grey/20 text-xs text-cool-grey">
-          <p className="mb-2">
-            Data current as of: {new Date(metadata.data_period).toLocaleDateString()}
-          </p>
-          <p>
-            Total organizations indexed: {metadata.total_organizations?.toLocaleString()}
-          </p>
-          <p className="mt-4 text-cool-grey">{metadata.disclaimer}</p>
+        <footer className="mt-20 pt-8 border-t border-cool-grey/20">
+          <div className="text-xs text-cool-grey mb-6">
+            <p className="mb-2">
+              Data current as of: {new Date(metadata.data_period).toLocaleDateString()}
+            </p>
+            <p>
+              Total organizations indexed: {metadata.total_organizations?.toLocaleString()}
+            </p>
+            <p className="mt-4">{metadata.disclaimer}</p>
+          </div>
+          <div className="pt-6 border-t border-cool-grey/20 flex items-center justify-between">
+            <a
+              href="/"
+              className="text-soft-gold hover:text-bright-gold font-semibold text-sm transition-colors"
+            >
+              ← Back to Daanaa
+            </a>
+            <span className="text-xs text-cool-grey">Research Dashboard</span>
+          </div>
         </footer>
       )}
     </div>
