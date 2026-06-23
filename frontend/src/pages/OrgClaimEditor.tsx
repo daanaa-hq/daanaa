@@ -5,7 +5,7 @@ import { ClaimProgressBar } from '../components/ClaimProgressBar'
 import ResearchDataTransparency from '../components/ResearchDataTransparency'
 import DataUpdateForm from '../components/DataUpdateForm'
 import {
-  getOrg, getOrgVolunteerEvents, createVolunteerEvent, updateVolunteerEvent, cancelVolunteerEvent,
+  getOrganization, getOrgVolunteerEvents, createVolunteerEvent, updateVolunteerEvent, cancelVolunteerEvent,
   getServiceArea, putServiceArea,
   type VolunteerEvent, type ServiceAreaType, type ApiOrganization,
 } from '../data/api'
@@ -311,7 +311,7 @@ function EventForm({
           type="text" required maxLength={200}
           value={form.title} onChange={e => set('title', e.target.value)}
           placeholder="e.g. Community Garden Workday"
-          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
           disabled={saving}
         />
       </label>
@@ -322,7 +322,7 @@ function EventForm({
           <input
             type="date" required
             value={form.event_date} onChange={e => set('event_date', e.target.value)}
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
         </label>
@@ -331,7 +331,7 @@ function EventForm({
           <input
             type="time"
             value={form.start_time} onChange={e => set('start_time', e.target.value)}
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
         </label>
@@ -340,7 +340,7 @@ function EventForm({
           <input
             type="time"
             value={form.end_time} onChange={e => set('end_time', e.target.value)}
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
         </label>
@@ -365,7 +365,7 @@ function EventForm({
               type="text" maxLength={100}
               value={form.location_city} onChange={e => set('location_city', e.target.value)}
               placeholder="Austin"
-              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
               disabled={saving}
             />
           </label>
@@ -373,7 +373,7 @@ function EventForm({
             <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">State</span>
             <select
               value={form.location_state} onChange={e => set('location_state', e.target.value)}
-              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] focus:outline-none focus:border-soft-gold/60 bg-white"
+              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60 bg-white"
               disabled={saving}
             >
               <option value="">—</option>
@@ -386,7 +386,7 @@ function EventForm({
               type="text" maxLength={10} inputMode="numeric"
               value={form.location_zip} onChange={e => set('location_zip', e.target.value)}
               placeholder="78701"
-              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
               disabled={saving}
             />
           </label>
@@ -399,7 +399,7 @@ function EventForm({
           rows={3} maxLength={1000}
           value={form.description} onChange={e => set('description', e.target.value)}
           placeholder="What will volunteers do? Who is this for?"
-          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60 resize-none"
+          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60 resize-none"
           disabled={saving}
         />
       </label>
@@ -411,10 +411,10 @@ function EventForm({
             type="url" maxLength={500}
             value={form.signup_url} onChange={e => set('signup_url', e.target.value)}
             placeholder="https://..."
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
-          <p className="mt-1 font-body text-[11px] text-muted-cream">Link to your own sign-up form</p>
+          <p className="mt-1 font-body text-[11px] text-cool-grey">Link to your own sign-up form</p>
         </label>
         <label className="block">
           <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Contact email (fallback)</span>
@@ -422,7 +422,7 @@ function EventForm({
             type="email" maxLength={200}
             value={form.contact_email} onChange={e => set('contact_email', e.target.value)}
             placeholder="volunteer@org.org"
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
         </label>
@@ -434,7 +434,7 @@ function EventForm({
           type="number" min={1} max={9999}
           value={form.capacity} onChange={e => set('capacity', e.target.value)}
           placeholder="Unlimited"
-          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
           disabled={saving}
         />
       </label>
@@ -569,7 +569,7 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-body text-[13px] font-medium text-deep-navy">Volunteer events</h3>
-          <p className="font-body text-[12px] text-muted-cream mt-0.5">
+          <p className="font-body text-[12px] text-cool-grey mt-0.5">
             Events appear on the public volunteer search page. They expire automatically after their date.
           </p>
         </div>
@@ -596,10 +596,10 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
         />
       )}
 
-      {loading && <p className="font-body text-[13px] text-muted-cream">Loading events...</p>}
+      {loading && <p className="font-body text-[13px] text-cool-grey">Loading events...</p>}
 
       {!loading && events.length === 0 && !showForm && (
-        <p className="font-body text-[13px] text-muted-cream">No events yet. Add your first volunteer opportunity.</p>
+        <p className="font-body text-[13px] text-cool-grey">No events yet. Add your first volunteer opportunity.</p>
       )}
 
       {events.map(ev => (
@@ -624,7 +624,7 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {statusBadge(ev.status)}
-                  <span className="font-body text-[12px] text-muted-cream">{formatDate(ev.event_date)}</span>
+                  <span className="font-body text-[12px] text-cool-grey">{formatDate(ev.event_date)}</span>
                 </div>
                 <p className="font-body text-[15px] font-medium text-deep-navy">{ev.title}</p>
                 {ev.location_city && !ev.is_virtual && (
@@ -684,7 +684,7 @@ export default function OrgClaimEditor() {
 
   useEffect(() => {
     if (!ein) return
-    getOrg(ein)
+    getOrganization(ein)
       .then(setOrg)
       .catch(() => {})
       .finally(() => setLoadingOrg(false))
@@ -765,37 +765,37 @@ export default function OrgClaimEditor() {
             </div>
           )}
           <label className="block">
-            <span className="block font-body text-[13px] font-medium text-deep-navy mb-2">Mission statement <span className="text-muted-cream font-normal">(1–2 sentences)</span></span>
+            <span className="block font-body text-[13px] font-medium text-deep-navy mb-2">Mission statement <span className="text-cool-grey font-normal">(1–2 sentences)</span></span>
             <textarea
               value={mission} onChange={e => setMission(e.target.value.slice(0, 300))}
               placeholder="What does your organization do and who do you serve?"
               rows={3}
-              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-[14px] placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
+              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
               disabled={saving}
             />
-            <p className="mt-1 font-body text-[11px] text-muted-cream">{mission.length}/300</p>
+            <p className="mt-1 font-body text-[11px] text-cool-grey">{mission.length}/300</p>
           </label>
           <label className="block">
-            <span className="block font-body text-[13px] font-medium text-deep-navy mb-2">Programs and impact <span className="text-muted-cream font-normal">(optional)</span></span>
+            <span className="block font-body text-[13px] font-medium text-deep-navy mb-2">Programs and impact <span className="text-cool-grey font-normal">(optional)</span></span>
             <textarea
               value={description} onChange={e => setDescription(e.target.value.slice(0, 500))}
               placeholder="Describe your programs, service area, or recent impact..."
               rows={4}
-              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-[14px] placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
+              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
               disabled={saving}
             />
-            <p className="mt-1 font-body text-[11px] text-muted-cream">{description.length}/500</p>
+            <p className="mt-1 font-body text-[11px] text-cool-grey">{description.length}/500</p>
           </label>
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <div className="h-px flex-1 bg-light-cream" />
-              <span className="font-body text-[11px] font-semibold text-muted-cream uppercase tracking-wider px-2">How donors can reach you</span>
+              <span className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wider px-2">How donors can reach you</span>
               <div className="h-px flex-1 bg-light-cream" />
             </div>
             <label className="block">
               <span className="block font-body text-[13px] font-medium text-deep-navy mb-1">
                 Official website
-                <span className="ml-1.5 font-normal text-muted-cream">(optional)</span>
+                <span className="ml-1.5 font-normal text-cool-grey">(optional)</span>
               </span>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -804,16 +804,16 @@ export default function OrgClaimEditor() {
                 <input
                   type="url" value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)}
                   placeholder="https://yourorg.org"
-                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-[14px] placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
                   disabled={saving}
                 />
               </div>
-              <p className="mt-1 font-body text-[11px] text-muted-cream">Your main homepage. Donors see this as the primary link on your page.</p>
+              <p className="mt-1 font-body text-[11px] text-cool-grey">Your main homepage. Donors see this as the primary link on your page.</p>
             </label>
             <label className="block">
               <span className="block font-body text-[13px] font-medium text-deep-navy mb-1">
                 Direct donation link
-                <span className="ml-1.5 font-normal text-muted-cream">(optional)</span>
+                <span className="ml-1.5 font-normal text-cool-grey">(optional)</span>
               </span>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -822,15 +822,15 @@ export default function OrgClaimEditor() {
                 <input
                   type="url" value={donateUrl} onChange={e => setDonateUrl(e.target.value)}
                   placeholder="https://yourorg.org/donate"
-                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-[14px] placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
                   disabled={saving}
                 />
               </div>
-              <p className="mt-1 font-body text-[11px] text-muted-cream">The page where donors can give directly. Can be a PayPal, Stripe, or your own donation page.</p>
+              <p className="mt-1 font-body text-[11px] text-cool-grey">The page where donors can give directly. Can be a PayPal, Stripe, or your own donation page.</p>
             </label>
           </div>
           <fieldset>
-            <legend className="font-body text-[13px] font-medium text-deep-navy mb-3">Focus areas <span className="text-muted-cream font-normal">(select all that apply)</span></legend>
+            <legend className="font-body text-[13px] font-medium text-deep-navy mb-3">Focus areas <span className="text-cool-grey font-normal">(select all that apply)</span></legend>
             <div className="flex flex-wrap gap-2">
               {CAUSE_TAGS.map(tag => (
                 <button

@@ -91,7 +91,14 @@ function HeroSection() {
           or{' '}
           <Link to="/directory" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">browse the directory</Link>
           {' · '}
-          <Link to="/directory?hidden_gem=0" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">explore causes</Link>
+          <a
+            href="#causes"
+            onClick={(e) => {
+              e.preventDefault()
+              document.getElementById('causes')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }}
+            className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2"
+          >explore causes</a>
         </p>
 
         <p
@@ -292,10 +299,10 @@ function FinalCTA() {
             Start Discovering
           </Link>
           <Link
-            to="/guides"
+            to="/methodology"
             className="inline-flex items-center gap-2 px-8 py-4 rounded-full border-2 border-deep-navy/20 text-deep-navy font-body text-[15px] font-medium hover:border-deep-navy/40 hover:bg-deep-navy/5 transition-all"
           >
-            See Guides
+            How it works
           </Link>
         </div>
       </div>
@@ -449,7 +456,7 @@ function BrowseCauses() {
   )
 
   return (
-    <section className="bg-[#F8F5F0] border-t border-light-grey py-14 md:py-20">
+    <section id="causes" className="scroll-mt-[88px] bg-[#F8F5F0] border-t border-light-grey py-14 md:py-20">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
         {/* Section header */}
@@ -963,7 +970,7 @@ function FooterCTA() {
             Search Directory
           </Link>
           <Link
-            to="/how-it-works"
+            to="/methodology"
             className="border-2 border-deep-navy/20 text-deep-navy font-body text-[15px] font-medium px-9 py-4 rounded-full hover:border-deep-navy/40 hover:bg-deep-navy/5 transition-all"
           >
             How Daanaa works
