@@ -372,6 +372,16 @@ def get_organizations():
                               state, sort, page, per_page,
                               hidden_gem, needs_funding, has_website, order, tier)
 
+    # ── Hidden gems: static files (no other signals) ──────────────────────────
+    if (hidden_gem and not q and not ntee and not sub and not state and
+        not needs_funding and not has_website and not bool(tier) and
+        min_rev is None and max_rev is None):
+        gems_file = DATA_DIR / 'browse' / 'hidden_gems' / f"ALL_{page}.json.gz"
+        data = load_json_gz(gems_file)
+        if data:
+            return jsonify(data)
+        # Fall through to DB query if file not found
+
     # ── Filter browse: DB query when flags, revenue, or multi-select used ───
     any_filter = hidden_gem or needs_funding or has_website or bool(tier)
     multi_select = len(ntee_list) > 1 or len(sub_list) > 1 or (ntee_list and sub_list)

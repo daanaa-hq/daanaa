@@ -165,7 +165,8 @@ export default function Directory() {
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
-  const [hiddenGem, setHiddenGem] = useState(searchParams.get('hidden_gem') === '1')
+  // Land on hidden gems by default (the gems-default lens); explicit ?hidden_gem=0 disables
+  const [hiddenGem, setHiddenGem] = useState(searchParams.has('hidden_gem') ? searchParams.get('hidden_gem') === '1' : true)
   const [needsSupport, setNeedsSupport] = useState(searchParams.get('needs_funding') === '1')
   const [visTier, setVisTier] = useState(searchParams.get('tier') || '')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -340,7 +341,7 @@ export default function Directory() {
     setVisTier('')
     setHasWebsite(false)
     setNeedsSupport(false)
-    setHiddenGem(false)
+    setHiddenGem(true)
     setCause('')
     setDebouncedCause('')
     setCurrentPage(1)
