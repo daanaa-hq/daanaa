@@ -51,12 +51,22 @@ EXCLUDE_PATTERNS=(
 
 exclude_filter() {
   local file="$1"
+  local pattern   # MUST be local: unscoped, this clobbered each GATE's $pattern
   for pattern in "${EXCLUDE_PATTERNS[@]}"; do
     if [[ "$file" == *"$pattern"* ]]; then
       return 0  # Excluded
     fi
   done
   return 1  # Not excluded
+}
+
+# Emit ONLY the lines this commit adds to a file (staged diff, '+' lines minus
+# the '+++' header). A pre-commit gate should judge what the commit introduces,
+# not re-scan pre-existing content on every touch — scanning whole files via
+# `git show ":$file"` produced ~130 false positives on benign UI .tsx content
+# (2026-06-22). Detection strength on introduced secrets is unchanged.
+staged_added_lines() {
+  git diff --cached --no-color -- "$1" 2>/dev/null | grep -E '^\+' | grep -vE '^\+\+\+'
 }
 
 echo "Running Stewardship-aligned privacy checks..."
@@ -83,7 +93,8 @@ for pattern in "${TOKEN_PATTERNS[@]}"; do
   while IFS= read -r file; do
     if exclude_filter "$file"; then continue; fi
 
-    if git show ":$file" 2>/dev/null | grep -q "$pattern"; then
+    added="$(staged_added_lines "$file" || true)"
+    if [ -n "$added" ] && grep -q "$pattern" <<< "$added"; then
       warn "Token pattern detected in $file"
       VIOLATIONS=$((VIOLATIONS + 1))
     fi
@@ -115,7 +126,8 @@ for pattern in "${LEAKAGE_PATTERNS[@]}"; do
     if exclude_filter "$file"; then continue; fi
     if [[ ! "$file" =~ \.(py|js|ts|tsx|jsx)$ ]]; then continue; fi
 
-    if git show ":$file" 2>/dev/null | grep -qiE "$pattern"; then
+    added="$(staged_added_lines "$file" || true)"
+    if [ -n "$added" ] && grep -qiE "$pattern" <<< "$added"; then
       warn "Log leakage pattern detected in $file: $pattern"
       LEAKAGE_VIOLATIONS=$((LEAKAGE_VIOLATIONS + 1))
     fi
