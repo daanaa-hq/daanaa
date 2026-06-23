@@ -226,6 +226,8 @@ export default function OrganizationDetail() {
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
   const [showVolunteer, setShowVolunteer] = useState(false)
   const [showResources, setShowResources] = useState(true)
+  // Hook must run unconditionally — keep it above any early return (Rules of Hooks)
+  const showPeerContextBreakdown = useFeatureFlag('peer_context_breakdown', 1) // 1% rollout
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
     () => getOrganization(id || ''),
@@ -335,7 +337,6 @@ export default function OrganizationDetail() {
   const lampTier     = getTierFromOrg(apiOrg!)
   const trustSummary = getTierSummary(lampTier, apiOrg!)
   const badges = getOrgBadges(apiOrg!)
-  const showPeerContextBreakdown = useFeatureFlag('peer_context_breakdown', 1) // 1% rollout
 
   return (
     <div className="min-h-[100dvh]">
@@ -1244,37 +1245,36 @@ export default function OrganizationDetail() {
             </div>{/* end left column */}
 
             {/* RIGHT COLUMN -- organization wall */}
-            <div className="lg:sticky lg:top-24">
+            <div className="lg:sticky lg:top-24 space-y-4">
               <OrgWallPanel orgName={org.name} ein={org.ein} />
+
+              {/* Verify this listing -- external public records. Lives here (not a
+                  full-width strip) so it fills the sidebar beside long left content. */}
+              <div className="rounded-2xl border border-light-grey bg-white px-5 py-4">
+                <span className="block font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-3">Verify this listing</span>
+                <div className="flex flex-col gap-2">
+                  <a
+                    href="https://apps.irs.gov/app/eos/"
+                    target="_blank" rel="noopener noreferrer"
+                    className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+                  >IRS Tax Exempt Search →</a>
+                  <a
+                    href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+                  >ProPublica Nonprofit Explorer →</a>
+                  <a
+                    href="https://www.nasconet.org/resources/state-government/"
+                    target="_blank" rel="noopener noreferrer"
+                    className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+                  >State Charity Registry →</a>
+                </div>
+              </div>
             </div>
 
           </div>{/* end grid */}
         </div>{/* end max-w container */}
       </div>{/* end bg-warm-cream */}
-
-      {/* Verify This Listing */}
-      <div className="bg-warm-cream border-t border-light-grey py-6">
-        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-          <span className="font-body text-[11px] text-cool-grey">Verify this listing: </span>
-          <a
-            href="https://apps.irs.gov/app/eos/"
-            target="_blank" rel="noopener noreferrer"
-            className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
-          >IRS Tax Exempt Search</a>
-          <span className="font-body text-[11px] text-cool-grey mx-2">·</span>
-          <a
-            href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
-            target="_blank" rel="noopener noreferrer"
-            className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
-          >ProPublica Nonprofit Explorer</a>
-          <span className="font-body text-[11px] text-cool-grey mx-2">·</span>
-          <a
-            href="https://www.nasconet.org/resources/state-government/"
-            target="_blank" rel="noopener noreferrer"
-            className="font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
-          >State Charity Registry</a>
-        </div>
-      </div>
 
       {/* Service area */}
       {serviceArea?.area_type && serviceArea.area_type !== 'local' && (
@@ -1410,7 +1410,7 @@ export default function OrganizationDetail() {
             <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
               Score over time
             </h2>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-[820px]">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-light-grey">
@@ -1465,7 +1465,7 @@ export default function OrganizationDetail() {
             <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
               Financial history
             </h2>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-[820px]">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-light-grey">
