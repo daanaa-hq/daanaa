@@ -324,3 +324,30 @@ links visible-but-flagged (donor-confusion risk, violates 2026-06-09 fail-closed
 - Default templates stored in code (5 hardcoded), not DB (is_default=1 is reserved for future; defaults returned every call, custom templates queried per org).
 - Modal preview in real-time; tabs (name/body/preview) on mobile for space.
 - All async jobs timeout after 60s of polling; if incomplete, user sees "Export is taking too long, please try again."
+
+## 2026-06-22 — Merge Guides/FAQ/How-it-works/Methodology into one page
+
+**Chose:** Collapse four overlapping content pages into a single canonical page at
+`/methodology` (one flowing page + sticky TOC), folding in the FAQ accordion and the
+two methodology-only sections ("what we don't measure", "data limits").
+
+**Why:** `/how-it-works` and `/methodology` duplicated data-sources / peer-context /
+lamp-tiers / cadence content and competed for the same keywords (SEO cannibalization).
+One strong page > four thin ones. `Guides2.tsx`/`FAQ2.tsx` were already orphaned;
+`/guides`,`/faq`,`/learn` already pointed at `Learn`.
+
+**Rejected:** Keeping tabs (worse for SEO/skimming — content hidden); keeping pages
+separate (perpetuates duplication).
+
+**SEO infra added (the part that makes the merge worth it):**
+- `droplet_api.py` now server-renders title/description/canonical for static content
+  routes via `_STATIC_META` (mirrors org-page `_inject_meta`). Previously these pages
+  shipped the generic homepage shell + JS-injected meta only — invisible to non-JS
+  crawlers/social bots. Added a `<link rel="canonical">` placeholder to `index.html`.
+- Legacy paths (`how-it-works`,`learn`,`guides`,`faq`) now return HTTP **301** to
+  `/methodology` via `_LEGACY_REDIRECTS` in `serve_spa` (was a client-side `<Navigate>`
+  soft redirect; 301 consolidates link equity). Client `<Navigate>` kept as in-app fallback.
+- FAQ JSON-LD via `faqPageSchema` (client-side) for rich-result eligibility.
+- Removed merged URLs from `public/sitemap.xml`.
+
+Deleted: `HowItWorks.tsx`, `Learn.tsx`, `Guides2.tsx`, `FAQ2.tsx`. Deployed + verified live.

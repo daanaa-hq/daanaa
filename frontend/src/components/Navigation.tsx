@@ -194,7 +194,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
               style={{ animationDelay: '0.25s' }}
             >
               {[
-                { label: 'How it works', path: '/how-it-works' },
+                { label: 'How it works', path: '/methodology' },
                 { label: 'About', path: '/about' },
               ].map(item => (
                 <Link

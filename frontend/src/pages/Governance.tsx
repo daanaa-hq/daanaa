@@ -241,7 +241,7 @@ export default function Governance() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
-                to="/how-it-works"
+                to="/methodology"
                 className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
               >
                 Our methodology →

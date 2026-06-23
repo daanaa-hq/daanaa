@@ -21,9 +21,8 @@ const NAV_COLS = [
   {
     heading: 'Learn',
     links: [
-      { label: 'Guides & FAQ',    to: '/learn' },
-      { label: 'How it works',    to: '/how-it-works' },
-      { label: 'Methodology',     to: '/methodology' },
+      { label: 'How it works',    to: '/methodology' },
+      { label: 'FAQ',             to: '/methodology#faq' },
       { label: 'Principles',      to: '/principles' },
     ],
   },

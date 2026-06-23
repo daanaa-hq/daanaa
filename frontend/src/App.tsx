@@ -12,7 +12,6 @@ const CategoryPage = lazy(() => import('./pages/CategoryPage'))
 const OrganizationDetail = lazy(() => import('./pages/OrganizationDetail'))
 const ComparePage = lazy(() => import('./pages/ComparePage'))
 const Legal = lazy(() => import('./pages/Legal'))
-const HowItWorks = lazy(() => import('./pages/HowItWorks'))
 const WalletPage = lazy(() => import('./pages/WalletPage'))
 const NonprofitVerification = lazy(() => import('./pages/NonprofitVerification'))
 const ForNonprofits = lazy(() => import('./pages/ForNonprofits'))
@@ -25,7 +24,6 @@ const Methodology = lazy(() => import('./pages/Methodology2'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
-const Learn = lazy(() => import('./pages/Learn'))
 const About = lazy(() => import('./pages/About'))
 const Principles = lazy(() => import('./pages/Principles'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
@@ -84,7 +82,7 @@ export default function App() {
             <Route path="/org/:id" element={<OrganizationDetail />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/legal" element={<Legal />} />
-            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/how-it-works" element={<Navigate to="/methodology" replace />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/giving-wallet" element={<Navigate to="/wallet" replace />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
@@ -100,10 +98,10 @@ export default function App() {
             <Route path="/tiers" element={<TiersPage />} />
             <Route path="/methodology" element={<Methodology />} />
             <Route path="/sector-health" element={<SectorHealth />} />
-            <Route path="/learn" element={<Learn />} />
-            {/* Legacy routes for backward compatibility */}
-            <Route path="/guides" element={<Learn />} />
-            <Route path="/faq" element={<Learn />} />
+            {/* Merged into /methodology (one canonical page) — redirect legacy paths */}
+            <Route path="/learn" element={<Navigate to="/methodology" replace />} />
+            <Route path="/guides" element={<Navigate to="/methodology" replace />} />
+            <Route path="/faq" element={<Navigate to="/methodology#faq" replace />} />
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/partners/:vendor_id" element={<PartnerDetail />} />

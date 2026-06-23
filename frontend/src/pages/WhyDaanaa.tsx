@@ -113,7 +113,7 @@ export default function WhyDaanaa() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               <Link
-                to="/how-it-works"
+                to="/methodology"
                 className="group p-6 border border-light-grey rounded-lg hover:border-soft-gold/50 hover:bg-white/60 transition-all"
               >
                 <div className="flex items-start justify-between">

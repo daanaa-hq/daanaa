@@ -247,7 +247,7 @@ export default function TiersPage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
-                to="/how-it-works"
+                to="/methodology"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-deep-navy text-warm-cream font-body text-[13px] font-semibold hover:bg-navy-mid transition-colors"
               >
                 How scoring works

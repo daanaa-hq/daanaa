@@ -1,230 +1,425 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import LampMark from '../components/LampMark'
+import { TIER_COLORS } from '../components/TrustBadge'
+import type { TierName } from '../components/TrustBadge'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { useJsonLd, faqPageSchema } from '../hooks/useJsonLd'
+
+// Table of contents — drives the sticky sidebar and the anchor IDs below.
+const TOC = [
+  { id: 'overview', label: 'What Daanaa is' },
+  { id: 'public-data-sources', label: 'Where the data comes from' },
+  { id: 'peer-financial-context', label: 'Peer financial context' },
+  { id: 'not-measured', label: 'What we don’t measure' },
+  { id: 'data-limits', label: 'Data limits' },
+  { id: 'lamp-tiers', label: 'Visibility levels' },
+  { id: 'two-layers', label: 'What the organization controls' },
+  { id: 'updates', label: 'How data stays current' },
+  { id: 'faq', label: 'Frequently asked questions' },
+] as const
+
+const FAQS = [
+  {
+    q: 'What is Daanaa?',
+    a: 'Daanaa is an independent nonprofit discovery platform that helps people discover causes and organizations using public information presented with context, stewardship, and respect.',
+  },
+  {
+    q: 'Is Daanaa a rating agency?',
+    a: 'No. Daanaa does not rate, rank, endorse, or recommend nonprofits. We organize public information to add context to giving decisions, which is different from rating.',
+  },
+  {
+    q: 'What is Peer Financial Context?',
+    a: 'Peer Financial Context shows public financial information within comparable peer groups. It is designed to add context, not to rate, rank, or recommend organizations.',
+  },
+  {
+    q: 'What are Lamp Tiers?',
+    a: 'Lamp Tiers are visibility indicators based on public information completeness and availability. They are not ratings. They reflect how much public context Daanaa can show.',
+  },
+  {
+    q: 'Does Daanaa process donations?',
+    a: 'No. When available, Daanaa links to an organization\'s own official website. Donations never pass through our platform, and we never collect donor payment information.',
+  },
+  {
+    q: 'Is Daanaa affiliated with the IRS?',
+    a: 'No. Daanaa.org is independent and is not affiliated with the IRS, the federal government, or any nonprofit rating agency.',
+  },
+  {
+    q: 'Can organizations request corrections?',
+    a: 'Yes. Organizations and visitors can report data issues through our feedback form. We correct errors quickly and disclose corrections publicly.',
+  },
+]
+
+function Section({ id, label, title, children }: { id: string; label: string; title: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="py-10 md:py-14 border-b border-light-grey last:border-0 scroll-mt-[88px]">
+      <div className="max-w-[760px]">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-6 h-px bg-soft-gold/50" />
+          <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">{label}</span>
+        </div>
+        <h2 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(26px, 3.5vw, 40px)' }}>
+          {title}
+        </h2>
+        <div className="mt-6 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+          {children}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Callout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mt-6 p-5 rounded-xl bg-soft-gold/10 border border-soft-gold/20">
+      <p className="font-body text-[15px] text-deep-navy leading-[1.6]">{children}</p>
+    </div>
+  )
+}
+
+function TierRow({ score, label, description }: { score: string; label: string; description: string }) {
+  // Financial scale is not a danger gradient. Larger scale gets a gentle green;
+  // everything else is calm slate. A smaller organization is not "worse".
+  const color = label === 'Among the largest like it' || label === 'Larger than most like it'
+    ? '#5a9e6f'
+    : '#8a8f98'
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 py-3 border-b border-light-grey last:border-0">
+      <span className="shrink-0 sm:w-20 font-body text-[13px] font-semibold" style={{ color }}>{score}</span>
+      <span className="shrink-0 sm:w-48 font-body text-[14px] font-medium text-deep-navy">{label}</span>
+      <span className="font-body text-[14px] text-cool-grey">{description}</span>
+    </div>
+  )
+}
 
 export default function Methodology() {
-  usePageMeta('Methodology — Daanaa', 'Learn how Daanaa organizes public nonprofit information, Peer Financial Context, Lamp Tiers, data limits, and stewardship guardrails.')
+  usePageMeta(
+    'Methodology — How Daanaa Works',
+    'How Daanaa organizes public nonprofit information: data sources, Peer Financial Context, Lamp Tiers, what we don’t measure, data limits, and answers to common questions.'
+  )
+  useJsonLd(faqPageSchema(FAQS.map(f => ({ question: f.q, answer: f.a }))))
+
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
 
   return (
     <div className="min-h-[100dvh]">
-      {/* Hero */}
+      {/* Header */}
       <div className="bg-deep-navy pt-[72px]">
-        <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-16 pb-12">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-10 md:pt-12 md:pb-16">
           <div className="flex items-center gap-2 mb-6">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Methodology</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
-            <div className="max-w-[720px]">
-              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(40px, 5vw, 60px)' }}>
-                Methodology
+            <div className="max-w-[640px]">
+              <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 64px)' }}>
+                How Daanaa Works
               </h1>
-              <p className="mt-6 font-body text-[17px] leading-[1.65] text-muted-cream">
-                Daanaa does not rank human worth. We organize public information so people can make more thoughtful giving decisions.
+              <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream">
+                We don't score nonprofits on our opinion. We surface publicly available data, place each organization alongside its true peers, and let you decide. This page explains exactly how.
               </p>
             </div>
             <div className="shrink-0 hidden md:flex justify-end">
-              <img src="/logo.png" alt="Daanaa" className="w-44 h-44 lg:w-52 lg:h-52 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
+              <img src="/logo.png" alt="Daanaa" className="w-48 h-48 lg:w-56 lg:h-56 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="bg-warm-cream py-16 md:py-20">
-        <div className="max-w-[1120px] mx-auto px-6 md:px-12">
+      {/* Content + sticky TOC */}
+      <div className="bg-warm-cream">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12 flex gap-12">
 
-          {/* Critical disclaimer */}
-          <div className="mb-16 p-8 bg-white border-2 border-deep-navy/10 rounded-2xl">
-            <p className="font-body text-[16px] font-semibold text-deep-navy leading-[1.65]">
-              Peer Financial Context is not a rating, endorsement, impact score, or recommendation.
-            </p>
-          </div>
+          {/* Sticky table of contents (desktop) */}
+          <aside className="hidden lg:block shrink-0 w-56 pt-14">
+            <div className="sticky top-[88px]">
+              <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">On this page</p>
+              <nav className="space-y-2.5">
+                {TOC.map(item => (
+                  <a
+                    key={item.id}
+                    href={`#${item.id}`}
+                    className="block font-body text-[13px] text-cool-grey hover:text-soft-gold transition-colors leading-snug"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </nav>
+            </div>
+          </aside>
 
-          {/* What this page explains */}
-          <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
-              What this page explains
-            </h2>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              This page explains how Daanaa organizes public nonprofit information, what Peer Financial Context shows, what Lamp Tiers mean, what data limitations exist, and how frequently Daanaa updates.
-            </p>
-          </section>
+          {/* Main column */}
+          <div className="min-w-0 flex-1">
 
-          <hr className="border-light-grey my-12" />
-
-          {/* Public data sources */}
-          <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
-              Public data sources
-            </h2>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              Daanaa uses only public data from the IRS, NCCS (National Center for Charitable Statistics), and ProPublica.
-            </p>
-            <ul className="mt-6 space-y-3 max-w-[720px]">
-              {[
-                'IRS Form 990, 990-EZ, and 990-N filings',
-                'IRS Business Master File (nonprofit registry)',
-                'NCCS Core Files and research data',
-                'ProPublica Nonprofit Explorer data',
-              ].map(item => (
-                <li key={item} className="flex items-start gap-3 font-body text-[16px] text-cool-grey">
-                  <span className="text-soft-gold mt-1">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <hr className="border-light-grey my-12" />
-
-          {/* Peer Financial Context */}
-          <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
-              Peer Financial Context
-            </h2>
-            <div className="mt-6 space-y-4 max-w-[720px]">
-              <p className="font-body text-[16px] text-cool-grey leading-[1.65]">
-                <span className="font-semibold text-deep-navy">Peer Financial Context shows public financial information within comparable peer groups.</span> It is designed to add context, not to rate, rank, or recommend organizations.
-              </p>
-              <p className="font-body text-[16px] text-cool-grey leading-[1.65]">
-                Peer groups are formed by nonprofit type (using NTEE classification), size (revenue), and location. An organization's financial position is compared only within its peer group.
-              </p>
-              <p className="font-body text-[16px] text-cool-grey leading-[1.65]">
-                A small community food bank and a large national nonprofit both support feeding people. Their financial profiles are different, not better or worse. Daanaa shows the context so you can understand what the numbers mean.
+            {/* Critical disclaimer */}
+            <div className="mt-12 mb-2 p-6 bg-white border-2 border-deep-navy/10 rounded-2xl max-w-[760px]">
+              <p className="font-body text-[16px] font-semibold text-deep-navy leading-[1.6]">
+                Peer Financial Context is not a rating, endorsement, impact score, or recommendation. Daanaa does not rank human worth — we organize public information so people can give more thoughtfully.
               </p>
             </div>
-          </section>
 
-          <hr className="border-light-grey my-12" />
+            <Section id="overview" label="Our foundation" title="What Daanaa is, and what it isn't">
+              <p>
+                Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their page or score.
+              </p>
+              <p>
+                We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.8 million of them. Our role is to surface information, not to judge missions.
+              </p>
+              <Callout>
+                Two signals work together on every page. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The peer financial context signal (Healthy, Stable, or Needs Support) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
+              </Callout>
+            </Section>
 
-          {/* Lamp Tiers */}
-          <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
-              Lamp Tiers
-            </h2>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              <span className="font-semibold text-deep-navy">Lamp Tiers are visibility indicators based on public information completeness and availability.</span> They help explain how much public context Daanaa can show.
-            </p>
-            <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              Tiers reflect what information exists in public records, not the quality, impact, or worth of the organization.
-            </p>
-            <div className="mt-8 space-y-4">
-              {[
-                { name: 'Beacon', description: 'Complete public data: financial reports, mission statement, website, current Form 990' },
-                { name: 'Torch', description: 'Strong public data: financial context available, recent filings, organizational information' },
-                { name: 'Candle', description: 'Moderate public data: some financial information, basic organizational records' },
-                { name: 'Spark', description: 'Recognized nonprofit with minimal public information available' },
-              ].map(tier => (
-                <div key={tier.name} className="p-4 bg-white border border-light-grey rounded-lg">
-                  <p className="font-display text-deep-navy text-[18px] font-semibold">{tier.name}</p>
-                  <p className="mt-2 font-body text-[14px] text-cool-grey">{tier.description}</p>
+            <Section id="public-data-sources" label="Data sources" title="Where the data comes from">
+              <p>Every organization page is built from multiple layers of public data:</p>
+              <div className="mt-2 space-y-3">
+                {[
+                  { source: 'IRS nonprofit registration list (Business Master File)', what: 'Legal name, category, state, and nonprofit status. Updated by the IRS continuously.' },
+                  { source: 'Annual financial reports (Form 990, 990-EZ, 990-N)', what: 'Reports nonprofits file with the IRS each year. Source of mission statements, program descriptions, leadership, and detailed financials.' },
+                  { source: 'Government published financial summaries (IRS SOI / NCCS)', what: 'IRS Statistics of Income and National Center for Charitable Statistics data covering 2019–2024. Revenue and expense figures for about 530,000 organizations.' },
+                  { source: 'ProPublica Nonprofit Explorer (a public interest newsroom)', what: 'Financial data for about 42,000 organizations with verified 2022–2024 figures.' },
+                ].map(({ source, what }) => (
+                  <div key={source} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey">
+                    <div className="shrink-0 w-2 h-2 mt-2 rounded-full bg-soft-gold" />
+                    <div>
+                      <p className="font-body text-[14px] font-semibold text-deep-navy">{source}</p>
+                      <p className="font-body text-[14px] text-cool-grey mt-1">{what}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4">
+                Every page shows when the data is from and where it came from, like "2023 · Source: IRS", so you always know how recent the information is.
+              </p>
+            </Section>
+
+            <Section id="peer-financial-context" label="The financial picture" title="How peer financial context works">
+              <p>
+                This number sits quietly behind the lamp. It is not a grade and it is not a judgment. It says nothing about the quality of the work, the people, or the good they do. All it does is compare one organization's financial size to other groups doing similar work at a similar scale. The lamp is the journey. This is just one fact along the way.
+              </p>
+              <p>
+                We use two dimensions to define "similar":
+              </p>
+              <div className="mt-2 space-y-3">
+                <div className="p-4 bg-white rounded-lg border border-light-grey">
+                  <p className="font-body text-[14px] font-semibold text-deep-navy">Type of work</p>
+                  <p className="font-body text-[14px] text-cool-grey mt-1">
+                    Each nonprofit is placed in one of nine operating model groups based on how it actually runs — Activity and Programming, Direct Delivery, Community and Human Services, Clinical and Health, Emergency and Logistics, Cause and Research, Intermediary and Philanthropy, Faith Community, and Membership and Mutual Benefit. A food bank is compared to other food banks at the same scale, not to universities or hospitals.
+                  </p>
                 </div>
-              ))}
+                <div className="p-4 bg-white rounded-lg border border-light-grey">
+                  <p className="font-body text-[14px] font-semibold text-deep-navy">Revenue band</p>
+                  <p className="font-body text-[14px] text-cool-grey mt-1">
+                    A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. Each operating model has five to eight revenue bands, set from that model's own distribution — so a small food bank is sized against other small food banks, not against small hospitals. Your $80K community garden is compared against other community gardens of a similar size.
+                  </p>
+                </div>
+              </div>
+              <p className="mt-4">
+                Each peer cell needs at least 30 organizations to be meaningful. In practice, most cells have thousands. The metrics that matter differ by group: reserves are weighted less for food banks (where thin savings means mission delivery) and more for land trusts (where reserves are the mission).
+              </p>
+
+              <div className="mt-6">
+                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the number means</p>
+                <p className="font-body text-[13px] text-cool-grey mb-3 max-w-[640px]">
+                  It only tells you how big an organization is financially next to others doing similar work. A smaller organization is not a worse one. This number says nothing about the work, the people, or the good they do.
+                </p>
+                <div className="bg-white rounded-xl border border-light-grey p-4">
+                  <TierRow score="90 to 100" label="Among the largest like it" description="A bigger budget and stronger savings than almost every group doing similar work." />
+                  <TierRow score="75 to 89" label="Larger than most like it" description="Financially bigger than most groups doing similar work." />
+                  <TierRow score="60 to 74" label="A bit larger than most" description="A little bigger than the typical group doing this kind of work." />
+                  <TierRow score="40 to 59" label="About average in size" description="A normal size for the kind of work it does." />
+                  <TierRow score="0 to 39" label="Smaller than most like it" description="One of the smaller groups doing this work. Often newer, or running lean. It says nothing about how good the work is." />
+                </div>
+              </div>
+
+              <p className="mt-5 font-body text-[15px] text-cool-grey leading-[1.7]">
+                When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">peer financial context signal</strong>: Healthy, Stable, or Needs Support. That is a different measure from the 0–100 number above. The number shows financial scale. The signal shows how well the organization manages its resources within that peer group, independent of size. A small organization can be Healthy; a large one can show Needs Support.
+              </p>
+              <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
+                <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower signal does not mean a lesser organization. It often points to a group doing essential work within tight means. That is exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
+              </p>
+            </Section>
+
+            <Section id="not-measured" label="Honest limits" title="What Daanaa does not measure">
+              <p>Daanaa deliberately does not measure or estimate:</p>
+              <ul className="mt-2 space-y-2.5 max-w-[640px]">
+                {[
+                  'Impact or effectiveness of programs',
+                  'Executive compensation or overhead ratios',
+                  'Program delivery or service quality',
+                  'Community need or local priority',
+                  'Organizational leadership or governance',
+                  'Staff expertise or program outcomes',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-3 font-body text-[15px] text-cool-grey">
+                    <span className="text-soft-gold mt-1.5 w-1.5 h-1.5 rounded-full bg-soft-gold shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-4">
+                These are important decisions you should make based on your own research, not assumptions from a score.
+              </p>
+            </Section>
+
+            <Section id="data-limits" label="Honest limits" title="Data limits">
+              <p>Public nonprofit data has real limits, and we'd rather name them than hide them:</p>
+              <ul className="mt-2 space-y-2.5 max-w-[640px]">
+                {[
+                  'Reporting delays: Form 990 filings are often 1–2 years behind current operations.',
+                  'Coverage gaps: not all nonprofits file annually; small organizations may file simplified forms.',
+                  'Classification challenges: NTEE categorization is imperfect and assigned by filing organizations.',
+                  'Missing data: some organizations don\'t file or have incomplete financial records.',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-3 font-body text-[15px] text-cool-grey">
+                    <span className="text-soft-gold mt-1.5 w-1.5 h-1.5 rounded-full bg-soft-gold shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+
+            <Section id="lamp-tiers" label="Visibility levels" title="Visibility levels: how much information is available">
+              <p>
+                Every page displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a page <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
+              </p>
+              <div className="mt-4 space-y-3">
+                {([
+                  { tier: 'Beacon' as TierName, what: 'Complete public data: financial reports, mission statement, website, and current Form 990.' },
+                  { tier: 'Torch' as TierName, what: 'Strong public data: financial context available, recent filings, and organizational information.' },
+                  { tier: 'Candle' as TierName, what: 'Moderate public data: some financial information and basic organizational records.' },
+                  { tier: 'Spark' as TierName, what: 'Recognized nonprofit with minimal public information available. Many small organizations filing simplified forms fall here.' },
+                ] as const).map(({ tier, what }) => (
+                  <div key={tier} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">
+                    <div className="shrink-0 flex flex-col items-center gap-1.5 pt-0.5">
+                      <LampMark tier={tier} size="sm" />
+                      <span className="font-body text-[10px] font-semibold tracking-[0.03em]" style={{ fontFamily: 'Cinzel, serif', color: TIER_COLORS[tier] }}>{tier}</span>
+                    </div>
+                    <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{what}</p>
+                  </div>
+                ))}
+              </div>
+              <Callout>
+                A lower tier is not a negative judgment. It reflects what public data is available, not the organization's character or importance. A small organization filing a simplified annual form while doing extraordinary community work will show as Spark. That can change as more data enters the public record.
+              </Callout>
+              <div className="mt-6">
+                <Link
+                  to="/tiers"
+                  className="inline-flex items-center gap-1.5 font-body text-[13px] font-semibold text-soft-gold hover:text-bright-gold transition-colors"
+                >
+                  Full tier reference →
+                </Link>
+              </div>
+            </Section>
+
+            <Section id="two-layers" label="Two layer model" title="What the organization controls">
+              <p>Every page has two distinct layers:</p>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-5 bg-white rounded-xl border border-light-grey">
+                  <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Daanaa's data</p>
+                  <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
+                    Sourced from IRS public records. Objective, fact checked, timestamped. Organizations cannot edit this layer.
+                  </p>
+                  <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
+                    {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Daanaa financial ranking', 'Data source & year'].map(i => (
+                      <li key={i} className="flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full bg-cool-grey shrink-0" />{i}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="p-5 bg-white rounded-xl border-2 border-dashed border-soft-gold/30">
+                  <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Organization's data</p>
+                  <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
+                    Added directly by the organization. Clearly labeled as self reported. Claim your page to update this information.
+                  </p>
+                  <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
+                    {['Mission statement', 'Program descriptions', 'Leadership team', 'Photos & annual reports', 'Impact metrics'].map(i => (
+                      <li key={i} className="flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full bg-soft-gold/50 shrink-0" />{i}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <p className="mt-6">
+                This separation is fundamental to trust. You always know whether you're reading data from the IRS or an organization's own description of itself. Both are valuable, for different reasons.
+              </p>
+            </Section>
+
+            <Section id="updates" label="Updates" title="How data stays current">
+              <p>We run automated updates on a regular schedule:</p>
+              <div className="mt-2 space-y-2">
+                {[
+                  { freq: 'Monthly', what: 'ProPublica data for organizations with new financial reports' },
+                  { freq: 'Monthly', what: 'IRS financial data update for newly published years' },
+                  { freq: 'Monthly', what: 'IRS tax-exempt status check against the federal auto-revocation list' },
+                  { freq: 'Ongoing', what: 'Financial rankings recalculated after bulk revenue updates' },
+                ].map(({ freq, what }, i) => (
+                  <div key={`${freq}-${i}`} className="flex gap-4 items-start">
+                    <span className="shrink-0 font-body text-[13px] font-semibold text-soft-gold w-20">{freq}</span>
+                    <span className="font-body text-[14px] text-cool-grey">{what}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4">
+                Every organization's detail page shows when the data is from and where it came from, so you're never guessing how old the information is.
+              </p>
+            </Section>
+
+            <Section id="faq" label="Questions" title="Frequently asked questions">
+              <div className="space-y-3 max-w-[760px]">
+                {FAQS.map((faq, i) => (
+                  <div key={i} className="border border-light-grey rounded-lg overflow-hidden bg-white">
+                    <button
+                      onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                      className="w-full px-5 py-4 flex items-center justify-between hover:bg-warm-cream/40 transition-colors text-left"
+                      aria-expanded={openFaq === i}
+                    >
+                      <span className="font-body text-[15px] font-semibold text-deep-navy">{faq.q}</span>
+                      <svg className={`w-5 h-5 shrink-0 text-soft-gold transition-transform ${openFaq === i ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </button>
+                    {openFaq === i && (
+                      <div className="px-5 py-3 border-t border-light-grey bg-warm-cream/20">
+                        <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{faq.a}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            {/* CTA */}
+            <div className="py-12">
+              <div className="bg-deep-navy rounded-2xl p-8 md:p-12 text-center">
+                <h3 className="font-display italic text-warm-cream text-[28px] leading-[1.1]">Questions or corrections?</h3>
+                <p className="mt-3 font-body text-[16px] text-muted-cream max-w-[480px] mx-auto leading-[1.6]">
+                  If you represent a listed organization and want to update or claim your page, or if you spot an error in our data, we want to hear from you. We correct errors quickly and disclose corrections publicly.
+                </p>
+                <Link
+                  to="/feedback"
+                  className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+                >
+                  Contact us
+                </Link>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
+                  <Link to="/directory" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                    Browse the directory →
+                  </Link>
+                  <Link to="/principles" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                    Our principles →
+                  </Link>
+                  <Link to="/legal" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                    Data attribution →
+                  </Link>
+                </div>
+              </div>
             </div>
-          </section>
 
-          <hr className="border-light-grey my-12" />
-
-          {/* What Daanaa does not measure */}
-          <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
-              What Daanaa does not measure
-            </h2>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              Daanaa deliberately does not measure or estimate:
-            </p>
-            <ul className="mt-6 space-y-3 max-w-[720px]">
-              {[
-                'Impact or effectiveness of programs',
-                'Executive compensation or overhead ratios',
-                'Program delivery or service quality',
-                'Community need or local priority',
-                'Organizational leadership or governance',
-                'Staff expertise or program outcomes',
-              ].map(item => (
-                <li key={item} className="flex items-start gap-3 font-body text-[16px] text-cool-grey">
-                  <span className="text-soft-gold mt-1">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              These are important decisions you should make based on your own research, not assumptions from a score.
-            </p>
-          </section>
-
-          <hr className="border-light-grey my-12" />
-
-          {/* Data limits */}
-          <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
-              Data limits
-            </h2>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              Public nonprofit data has real limits:
-            </p>
-            <ul className="mt-6 space-y-3 max-w-[720px]">
-              {[
-                'Reporting delays: Form 990 filings are often 1-2 years behind current operations',
-                'Coverage gaps: not all nonprofits file annually; small organizations may file simplified forms',
-                'Classification challenges: NTEE categorization is imperfect and assigned by filing organizations',
-                'Missing data: some organizations don\'t file or have incomplete financial records',
-              ].map(item => (
-                <li key={item} className="flex items-start gap-3 font-body text-[16px] text-cool-grey">
-                  <span className="text-soft-gold mt-1">•</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <hr className="border-light-grey my-12" />
-
-          {/* Update cadence */}
-          <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
-              Update cadence
-            </h2>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              Daanaa updates public nonprofit information monthly as new IRS data becomes available.
-            </p>
-          </section>
-
-          <hr className="border-light-grey my-12" />
-
-          {/* Corrections and feedback */}
-          <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
-              Corrections and feedback
-            </h2>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px]">
-              If you find an error or have feedback, please contact us. Organizations and community members can report data issues, and we welcome corrections to public record information.
-            </p>
-            <Link
-              to="/feedback"
-              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-semibold text-soft-gold hover:text-bright-gold transition-colors"
-            >
-              Report a data issue →
-            </Link>
-          </section>
-
-          {/* Related links */}
-          <div className="mt-20 pt-12 border-t border-light-grey">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">Related</p>
-            <div className="flex flex-wrap gap-4">
-              <Link to="/stewardship" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
-                Stewardship →
-              </Link>
-              <Link to="/faq" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
-                FAQ →
-              </Link>
-              <Link to="/directory" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
-                Discover →
-              </Link>
-            </div>
           </div>
-
         </div>
       </div>
     </div>

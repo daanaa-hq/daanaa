@@ -17,7 +17,7 @@ import urllib.request
 from pathlib import Path
 
 import html as _htmllib
-from flask import Flask, request, jsonify, send_file, send_from_directory, Response
+from flask import Flask, request, jsonify, send_file, send_from_directory, Response, redirect
 from flask_cors import CORS
 
 app = Flask(__name__, static_folder=None)
@@ -1031,7 +1031,51 @@ def _inject_meta(doc: str, title: str, desc: str, url: str) -> str:
         (r'<meta name="twitter:description" content="', d),
     ):
         doc = re.sub(re.escape(attr) + r'[^"]*"', attr + val + '"', doc, count=1)
+    # Canonical: replace the placeholder href so each route advertises its own URL.
+    doc = re.sub(r'(<link rel="canonical" href=")[^"]*(")', r'\g<1>' + u + r'\g<2>', doc, count=1)
     return doc
+
+# Static (non-org) content routes that benefit from real server-rendered meta.
+# Keeps title/description/canonical in the served HTML so crawlers and social
+# preview bots don't fall back to the generic homepage shell. Path is stripped
+# of slashes; value is (title, description).
+_STATIC_META = {
+    'methodology': (
+        'Methodology — How Daanaa Works',
+        'How Daanaa organizes public nonprofit information: data sources, Peer '
+        'Financial Context, Lamp Tiers, what we don’t measure, data limits, '
+        'and answers to common questions.',
+    ),
+    'directory': (
+        'Directory — Explore 1.8M U.S. Nonprofits',
+        'Search every IRS-recognized 501(c)(3) by cause, location, and peer '
+        'financial context. Independent, donation-neutral, and private by design.',
+    ),
+    'about': (
+        'About Daanaa',
+        'Daanaa is an independent civic platform that helps people discover '
+        'nonprofits using public IRS data, presented with context and respect.',
+    ),
+    'principles': (
+        'Our Principles — Daanaa',
+        'The stewardship principles behind Daanaa: evidence-based trust signals, '
+        'structural donor privacy, and protected independence.',
+    ),
+    'for-nonprofits': (
+        'For Nonprofits — Claim Your Page on Daanaa',
+        'Claim and update your organization’s page on Daanaa for free. Add '
+        'your mission, website, and programs. No paid placement, ever.',
+    ),
+}
+
+# Legacy paths merged into a single canonical page — answered with a real 301
+# so link equity consolidates instead of relying on a client-side JS redirect.
+_LEGACY_REDIRECTS = {
+    'how-it-works': '/methodology',
+    'learn': '/methodology',
+    'guides': '/methodology',
+    'faq': '/methodology#faq',
+}
 
 def _meta_for_path(path: str):
     """(title, description, url) for crawler-relevant routes, else None."""
@@ -1048,12 +1092,19 @@ def _meta_for_path(path: str):
                 f"{name}{(' in ' + loc) if loc else ''}: public IRS record, peer "
                 f"financial context, and mission on Daanaa.")
             return (f"{name} — Daanaa", desc, f"https://daanaa.org/org/{ein}")
+    if p in _STATIC_META:
+        title, desc = _STATIC_META[p]
+        return (title, desc, f"https://daanaa.org/{p}")
     return None
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_spa(path):
     if FRONTEND_DIR.exists():
+        # 301 legacy/merged routes to their canonical destination.
+        target = _LEGACY_REDIRECTS.get((path or '').strip('/'))
+        if target:
+            return redirect(target, code=301)
         full = FRONTEND_DIR / path
         if full.is_file():
             return send_from_directory(FRONTEND_DIR, path)
