@@ -1075,7 +1075,7 @@ def _init_org_claims_table():
         # actually happened — written from the admin claims queue.
         for col in ("phone TEXT", "rep_title TEXT", "attested_at TEXT", "attestation_version TEXT",
                     "called_at TEXT", "call_notes TEXT", "rep_name TEXT",
-                    "firebase_uid TEXT"):
+                    "firebase_uid TEXT", "website_url TEXT"):
             try:
                 db.execute(f"ALTER TABLE org_claims ADD COLUMN {col}")
             except sqlite3.OperationalError:
@@ -1086,6 +1086,12 @@ def _init_org_claims_table():
             pass
         db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_ein ON org_claims(ein)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_org_claims_status ON org_claims(claim_status)")
+        # Backfill columns added to registry_enriched after initial deploy
+        for col in ("website_url TEXT", "cause_tags_source TEXT"):
+            try:
+                db.execute(f"ALTER TABLE registry_enriched ADD COLUMN {col}")
+            except sqlite3.OperationalError:
+                pass
         db.commit()
 
 _init_org_claims_table()
