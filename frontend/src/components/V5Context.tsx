@@ -26,7 +26,7 @@ const SIGNAL_LABEL = {
 
 export default function V5Context({ org }: { org: ApiOrganization }) {
   const v5 = (org as any).v5_context as V5ContextData | null
-  if (!v5?.archetype) return null
+  if (!v5?.archetype || !v5.score.health_signal) return null
 
   const style = SIGNAL_STYLE[v5.score.health_signal]
   const label = SIGNAL_LABEL[v5.score.health_signal]
