@@ -459,7 +459,6 @@ export default function OrganizationDetail() {
                            apiOrg!.v5_context.score.health_signal === 'STABLE' ? 'Financially stable' :
                            'Needs support'}
                         </span>
-                        <span className="font-body text-[11px] text-muted-cream text-center mt-1">financial health</span>
                       </div>
                     )}
                   </div>
@@ -638,17 +637,6 @@ export default function OrganizationDetail() {
                 return (
                   <>
                     <div className="mt-4 flex flex-wrap items-center gap-3">
-                      {!link.url && (
-                        <a
-                          href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
-                        >
-                          View public record
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-                        </a>
-                      )}
                       <button
                         onClick={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
                         title={isInFunding(org.ein) ? 'Remove from donation list' : 'Add to donation list'}
@@ -667,6 +655,17 @@ export default function OrganizationDetail() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill={isInVolunteering(org.ein) ? '#ef4444' : 'none'} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                         {isInVolunteering(org.ein) ? 'In volunteer list' : 'Add to volunteer list'}
                       </button>
+                      {!link.url && (
+                        <a
+                          href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
+                        >
+                          View public record
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                        </a>
+                      )}
                     </div>
                     {!link.url && (
                       <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 max-w-[480px]">
