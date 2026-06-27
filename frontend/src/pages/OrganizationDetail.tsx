@@ -9,7 +9,7 @@ import ScoreBreakdown from '../components/ScoreBreakdown'
 import LampMark from '../components/LampMark'
 import TierBreakdown from '../components/TierBreakdown'
 import MistakeRegistry from '../components/MistakeRegistry'
-import VolunteerInterest from '../components/VolunteerInterest'
+
 import { useApi } from '../hooks/useApi'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { useWallet } from '../contexts/WalletContext'
@@ -223,7 +223,7 @@ export default function OrganizationDetail() {
   const [portalError, setPortalError]     = useState<string | null>(null)
   const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
-  const [showVolunteer, setShowVolunteer] = useState(false)
+
 
   // Hook must run unconditionally — keep it above any early return (Rules of Hooks)
   const showPeerContextBreakdown = useFeatureFlag('peer_context_breakdown', 1) // 1% rollout
@@ -1252,10 +1252,10 @@ export default function OrganizationDetail() {
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {volunteerEvents.map(ev => {
-                const [y, m, d] = ev.event_date.split('-')
-                const dateStr = new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString('en-US', {
-                  weekday: 'short', month: 'short', day: 'numeric',
-                })
+                const parts = ev.event_date?.split('-') ?? []
+                const dateStr = parts.length === 3
+                  ? new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+                  : ev.event_date ?? 'Date TBD'
                 const location = ev.is_virtual
                   ? 'Virtual'
                   : [ev.location_city, ev.location_state].filter(Boolean).join(', ') || null
@@ -1307,7 +1307,7 @@ export default function OrganizationDetail() {
       )}
 
       {/* Similar Organizations */}
-      {similarOrgs.length > 0 && (
+      {similarOrgs.length > 0 ? (
         <div className="bg-deep-navy py-16 md:py-24">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">
@@ -1331,9 +1331,45 @@ export default function OrganizationDetail() {
                 )
               })}
             </div>
+            {apiOrg?.NTEE1 && (
+              <div className="mt-10">
+                <Link
+                  to={`/category/${apiOrg.NTEE1}`}
+                  className="font-body text-[14px] text-pale-gold hover:text-soft-gold transition-colors"
+                >
+                  Browse all {getNteeLabel(apiOrg.NTEE1)} organizations →
+                </Link>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      ) : apiOrg?.NTEE1 ? (
+        /* Fallback when no precomputed similar orgs — keep users moving */
+        <div className="bg-deep-navy py-12">
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">
+              EXPLORE MORE
+            </span>
+            <p className="font-display italic text-warm-cream mt-3 text-[22px] leading-snug">
+              Find more {getNteeLabel(apiOrg.NTEE1).toLowerCase()} organizations
+            </p>
+            <div className="mt-4 flex flex-wrap gap-4">
+              <Link
+                to={`/category/${apiOrg.NTEE1}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 font-body text-[14px] text-warm-cream hover:bg-white/15 transition-colors"
+              >
+                Browse {getNteeLabel(apiOrg.NTEE1)} →
+              </Link>
+              <Link
+                to="/directory"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 font-body text-[14px] text-warm-cream hover:bg-white/15 transition-colors"
+              >
+                Full directory →
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Score History */}
       {scoreHistory.length > 1 && (
@@ -1373,7 +1409,7 @@ export default function OrganizationDetail() {
                         </td>
                         <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{formatOrdinal(snap.rev_pct)} pct</td>
                         <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{formatOrdinal(snap.rsv_pct)} pct</td>
-                        <td className="font-body text-[12px] text-cool-grey py-3 font-mono">{snap.group_key ?? snap.peer_group ?? '--'}</td>
+                        <td className="font-body text-[12px] text-cool-grey py-3">{peerGroupLabel(snap.peer_group ?? snap.group_key ?? null, null) || (snap.group_key ?? snap.peer_group ?? '--')}</td>
                       </tr>
                     )
                   })}
@@ -1381,9 +1417,9 @@ export default function OrganizationDetail() {
               </table>
             </div>
             <p className="mt-4 font-body text-[12px] text-cool-grey leading-[1.5]">
-              Scores are recomputed as new annual reports are filed. Each row represents a snapshot of raw financial inputs alongside the resulting score.{' '}
+              Scores are recomputed as new annual reports are filed. Each row is a snapshot of raw financial inputs and the resulting peer percentile at that point in time.{' '}
               <Link to="/methodology" className="text-soft-gold hover:text-bright-gold transition-colors">
-                Methodology →
+                How scoring works →
               </Link>
             </p>
           </div>
@@ -1498,14 +1534,6 @@ export default function OrganizationDetail() {
         )
       })()}
 
-      {showVolunteer && apiOrg && (
-        <VolunteerInterest
-          orgName={apiOrg.organization_name}
-          website={apiOrg.website ?? (org as any).website}
-          contactEmail={volunteerEvents.find(e => e.contact_email)?.contact_email ?? null}
-          onClose={() => setShowVolunteer(false)}
-        />
-      )}
     </div>
   )
 }
