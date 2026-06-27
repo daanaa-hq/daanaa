@@ -1136,7 +1136,7 @@ export default function OrganizationDetail() {
               {/* Verify this listing -- external public records. Lives here (not a
                   full-width strip) so it fills the sidebar beside long left content. */}
               <div className="rounded-2xl border border-light-grey bg-white px-5 py-4">
-                <span className="block font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-3">Verify this listing</span>
+                <span className="block font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-3">Public records</span>
                 <div className="flex flex-col gap-2">
                   <a
                     href="https://apps.irs.gov/app/eos/"
@@ -1319,18 +1319,18 @@ export default function OrganizationDetail() {
       {scoreHistory.length > 1 && (
         <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Financial scale history</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Financial history</span>
             <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
-              Score over time
+              How they've tracked over time
             </h2>
             <div className="overflow-x-auto max-w-[820px]">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-light-grey">
                     <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Date</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Score</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Revenue rank</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Reserve rank</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Peer percentile</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Revenue (vs peers)</th>
+                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Reserves (vs peers)</th>
                     <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2">Peer group</th>
                   </tr>
                 </thead>
@@ -1361,7 +1361,7 @@ export default function OrganizationDetail() {
               </table>
             </div>
             <p className="mt-4 font-body text-[12px] text-cool-grey leading-[1.5]">
-              Scores are recomputed as new annual reports are filed. Each row is a snapshot of raw financial inputs and the resulting peer percentile at that point in time.{' '}
+              Updated as new annual reports are filed. Each row reflects where this organization stood among peers at that point in time — not a verdict, just context.{' '}
               <Link to="/methodology" className="text-soft-gold hover:text-bright-gold transition-colors">
                 How scoring works →
               </Link>

@@ -32,7 +32,9 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
   const style = SIGNAL_STYLE[v5.score.health_signal]
   const label = SIGNAL_LABEL[v5.score.health_signal]
 
-  // "Top X% of peers" is more intuitive than a raw percentile number
+  // Only show "Top X%" for healthy/stable orgs — for CAUTION orgs the
+  // health badge is the signal; the percentile number creates a mixed message
+  const showTopPct = v5.score.health_signal !== 'CAUTION'
   const topPct = Math.max(1, Math.round(100 - v5.score.percentile))
 
   const reserves = v5.benchmarks.reserves_months
@@ -65,12 +67,20 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
         </span>
       </div>
 
-      {/* Key stat */}
+      {/* Key stat — percentile for healthy/stable; supportive note for CAUTION */}
       <div className="flex items-baseline gap-2 mb-5">
-        <span className={`font-display text-[32px] font-bold leading-none ${style.text}`}>
-          Top {topPct}%
-        </span>
-        <span className="font-body text-[13px] text-cool-grey">of {v5.peer_group.label}</span>
+        {showTopPct ? (
+          <>
+            <span className={`font-display text-[32px] font-bold leading-none ${style.text}`}>
+              Top {topPct}%
+            </span>
+            <span className="font-body text-[13px] text-cool-grey">of {v5.peer_group.label}</span>
+          </>
+        ) : (
+          <p className={`font-body text-[14px] font-medium leading-snug ${style.text}`}>
+            Compared to {v5.peer_group.org_count.toLocaleString()} similar organizations
+          </p>
+        )}
       </div>
 
       {/* Reserves bar — only when we have the org's own value and peer percentile data */}
@@ -102,17 +112,24 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
         </div>
       )}
 
-      {/* Donor explanation — strip speculative/robotic phrases baked into precomputed text */}
+      {/* Donor explanation — clean precomputed text, reframe critical phrases */}
       <p className="font-body text-[14px] leading-relaxed text-deep-navy/80">
         {v5.donor_explanation
           .replace(/\b(\d+)\.0\b/g, '$1')
           .replace(/\s*This organization may be in a growth phase or operating lean by design\./g, '')
+          .replace(/\bBelow the typical level for similar organizations\./g, 'Many nonprofits actively invest their resources into their work rather than building large reserves.')
+          .replace(/\bBelow the typical level\b/g, 'investing actively in their mission')
           .replace(/\bThis organization is a ([A-Z])/g, (_, c) => `This is a ${c}`)
           .replace(/\ba ([A-Z][a-z-]+-[A-Z])/g, (_, w) => `an ${w}`)
           .replace(/\.\s*\./g, '.')
           .trim()
         }
       </p>
+      {v5.score.health_signal === 'CAUTION' && (
+        <p className="mt-3 font-body text-[13px] leading-relaxed text-deep-navy/60 italic">
+          Nonprofits with fewer reserves are often putting most of their resources directly into their programs. Lower reserves don't reflect the quality or importance of their work.
+        </p>
+      )}
 
       {/* Disclosure + methodology link */}
       <div className="mt-4 border-t border-deep-navy/10 pt-3 flex items-center justify-between gap-4">
