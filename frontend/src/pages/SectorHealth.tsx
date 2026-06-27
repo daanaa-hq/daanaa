@@ -302,10 +302,10 @@ export default function SectorHealth() {
           <div className="mb-12 p-6 rounded-2xl bg-amber-50 border border-amber-200/80">
             <p className="font-body text-[15px] text-deep-navy leading-[1.7]">
               <strong>Financial patterns differ dramatically by operating model.</strong>{' '}
-              Direct Service organizations average 10.3 months of reserves. Research & Academia averages 8.8 months — they're grant-heavy and spend the money on programs. Foundations average 34.3 months because they hold capital for strategic deployment. Religion & Spiritual organizations average 20.2 months. These differences reflect how organizations are structured, not how well they're managed.
+              Direct Service organizations average 10.3 months of reserves. Research & Academia averages 8.8 months, since they're grant-heavy and spend the money on programs. Foundations average 34.3 months because they hold capital for strategic deployment. Religion & Spiritual organizations average 20.2 months. These differences reflect how organizations are structured, not how well they're managed.
             </p>
             <p className="mt-3 font-body text-[13px] text-cool-grey">
-              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. This data covers 71,473 organizations with complete financial filings. It does not represent all 1.63 million indexed nonprofits. Patterns in the data reflect organizations with detailed filings — many small and simplified filers report less financial detail.
+              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. This data covers 71,473 organizations with complete financial filings. It does not represent all 1.63 million indexed nonprofits. Patterns in the data reflect organizations with detailed filings. Many small and simplified filers report less financial detail.
             </p>
           </div>
 
