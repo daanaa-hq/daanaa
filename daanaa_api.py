@@ -6285,12 +6285,7 @@ def _firebase_uid_from_request() -> str:
 @app.route('/api/wallet/backup', methods=['POST'])
 def backup_wallet():
     """Back up wallet to DynamoDB (lean format, Firebase auth required)."""
-    try:
-        user_id = _firebase_uid_from_request()
-    except ImportError:
-        return jsonify({'error': 'Firebase not configured'}), 503
-    except Exception:
-        return jsonify({'error': 'Unauthorized'}), 401
+    user_id = _require_firebase_user()
 
     data = request.json or {}
     raw_entries = data.get('entries', [])
@@ -6336,12 +6331,7 @@ def backup_wallet():
 @app.route('/api/wallet/restore', methods=['GET'])
 def restore_wallet():
     """Restore wallet from DynamoDB (Firebase auth required)."""
-    try:
-        user_id = _firebase_uid_from_request()
-    except ImportError:
-        return jsonify({'error': 'Firebase not configured'}), 503
-    except Exception:
-        return jsonify({'error': 'Unauthorized'}), 401
+    user_id = _require_firebase_user()
 
     try:
         table = _get_dynamo_table()

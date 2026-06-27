@@ -103,7 +103,7 @@ function HeroSection() {
 
         <p
           className={`mt-6 font-body text-[13px] transition-opacity duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
-          style={{ color: 'rgba(245,240,235,0.40)', transitionDelay: '600ms' }}
+          style={{ color: 'rgba(245,240,235,0.65)', transitionDelay: '600ms' }}
         >
           Independent · Built on public records · Not a rating agency
         </p>
@@ -461,7 +461,7 @@ function BrowseCauses() {
 
         {/* Section header */}
         <div className="mb-10">
-          <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-2">
+          <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-deep-gold uppercase mb-2">
             Find by Cause
           </p>
           <h2
@@ -537,7 +537,7 @@ function BrowseCauses() {
                   {cat.name}
                 </p>
                 {count != null && (
-                  <p className="font-body text-[10px] text-cool-grey/70">{count.toLocaleString()}</p>
+                  <p className="font-body text-[10px] text-cool-grey">{count.toLocaleString()}</p>
                 )}
               </Link>
             )

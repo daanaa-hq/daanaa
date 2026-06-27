@@ -63,8 +63,21 @@ function reducer(state: State, action: Action): State {
       if (state.entries.some(e => e.ein === action.ein)) return state
       return { ...state, entries: [...state.entries, { ein: action.ein, bookmarkedAt: Date.now(), inFunding: true }] }
     }
-    case 'REMOVE':
+    case 'REMOVE': {
+      const target = state.entries.find(e => e.ein === action.ein)
+      if (!target) return state
+      // If there are activity logs, preserve the entry but clear bookmark flags.
+      // This prevents log data loss when a user removes an org from their wallet.
+      if (target.donations?.length || target.volunteerHours?.length) {
+        return {
+          ...state,
+          entries: state.entries.map(e =>
+            e.ein === action.ein ? { ...e, inFunding: false, inVolunteering: false } : e
+          ),
+        }
+      }
       return { ...state, entries: state.entries.filter(e => e.ein !== action.ein) }
+    }
     case 'ADD_FUNDING': {
       const idx = state.entries.findIndex(e => e.ein === action.ein)
       if (idx === -1) return { ...state, entries: [...state.entries, { ein: action.ein, bookmarkedAt: Date.now(), inFunding: true }] }

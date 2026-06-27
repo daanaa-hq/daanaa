@@ -1124,15 +1124,19 @@ def guild_proxy(subpath):
 # We inject route-specific title/description/og into the served HTML so shared
 # links and search snippets are accurate. Pure string work; og:image stays the
 # site default until per-org cards are generated (separate patch).
-_INDEX_CACHE = {}
+_INDEX_CACHE: dict = {}
 
 def _index_html() -> str:
-    if 'html' not in _INDEX_CACHE:
-        idx = FRONTEND_DIR / 'index.html'
-        _INDEX_CACHE['html'] = idx.read_text(encoding='utf-8') if idx.exists() else ''
+    idx = FRONTEND_DIR / 'index.html'
+    if not idx.exists():
+        return ''
+    mtime = idx.stat().st_mtime
+    if _INDEX_CACHE.get('mtime') != mtime:
+        _INDEX_CACHE['html'] = idx.read_text(encoding='utf-8')
+        _INDEX_CACHE['mtime'] = mtime
     return _INDEX_CACHE['html']
 
-def _inject_meta(doc: str, title: str, desc: str, url: str) -> str:
+def _inject_meta(doc: str, title: str, desc: str, url: str, jsonld: dict | None = None) -> str:
     t, d, u = _htmllib.escape(title), _htmllib.escape(desc), _htmllib.escape(url)
     doc = re.sub(r'<title>.*?</title>', f'<title>{t}</title>', doc, count=1, flags=re.S)
     for attr, val in (
@@ -1146,6 +1150,11 @@ def _inject_meta(doc: str, title: str, desc: str, url: str) -> str:
         doc = re.sub(re.escape(attr) + r'[^"]*"', attr + val + '"', doc, count=1)
     # Canonical: replace the placeholder href so each route advertises its own URL.
     doc = re.sub(r'(<link rel="canonical" href=")[^"]*(")', r'\g<1>' + u + r'\g<2>', doc, count=1)
+    # Server-side JSON-LD so Bing and non-JS crawlers see structured data.
+    if jsonld:
+        import json as _json
+        ld_block = f'<script type="application/ld+json">{_json.dumps(jsonld, ensure_ascii=False)}</script>'
+        doc = doc.replace('</head>', ld_block + '</head>', 1)
     return doc
 
 # Static (non-org) content routes that benefit from real server-rendered meta.
@@ -1190,9 +1199,67 @@ _LEGACY_REDIRECTS = {
     'faq': '/methodology#faq',
 }
 
+_HOMEPAGE_JSONLD = {
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'Organization',
+            'name': 'Daanaa',
+            'url': 'https://daanaa.org',
+            'logo': 'https://daanaa.org/logo.png',
+            'description': 'Independent nonprofit discovery platform indexing 1.8M U.S. nonprofits with peer financial context and public IRS data.',
+        },
+        {
+            '@type': 'WebSite',
+            'name': 'Daanaa',
+            'url': 'https://daanaa.org',
+            'potentialAction': {
+                '@type': 'SearchAction',
+                'target': {
+                    '@type': 'EntryPoint',
+                    'urlTemplate': 'https://daanaa.org/directory?q={search_term_string}',
+                },
+                'query-input': 'required name=search_term_string',
+            },
+        },
+    ],
+}
+
+def _org_jsonld(org: dict, ein: str) -> dict:
+    name = org.get('organization_name') or 'Nonprofit'
+    city, state = org.get('CITY'), org.get('STATE')
+    ntee_label = org.get('ntee1_label') or org.get('ntee_label') or ''
+    ld: dict = {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        'name': name,
+        'url': f'https://daanaa.org/org/{ein}',
+        'identifier': ein,
+    }
+    mission = (org.get('mission') or '').strip()
+    if mission:
+        ld['description'] = mission[:300]
+    if city or state:
+        addr: dict = {'@type': 'PostalAddress'}
+        if city:
+            addr['addressLocality'] = city
+        if state:
+            addr['addressRegion'] = state
+        ld['address'] = addr
+    if ntee_label:
+        ld['category'] = ntee_label
+    website = org.get('website') or org.get('website_final_domain')
+    if website:
+        ld['sameAs'] = website if website.startswith('http') else f'https://{website}'
+    return ld
+
 def _meta_for_path(path: str):
-    """(title, description, url) for crawler-relevant routes, else None."""
+    """Returns (title, description, url, jsonld|None) for crawler-relevant routes, else None."""
     p = (path or '').strip('/')
+    if p == '':
+        title, desc = _STATIC_META.get('', ('Daanaa — Independent Nonprofit Discovery Platform',
+            'Discover causes and organizations using public nonprofit information.'))
+        return (title, desc, 'https://daanaa.org/', _HOMEPAGE_JSONLD)
     if p.startswith('org/'):
         ein = p.split('/', 1)[1].split('/')[0].strip().upper()
         org = load_org_detail(ein)
@@ -1204,11 +1271,23 @@ def _meta_for_path(path: str):
             desc = mission[:200] if mission else (
                 f"{name}{(' in ' + loc) if loc else ''}: public IRS record, peer "
                 f"financial context, and mission on Daanaa.")
-            return (f"{name} — Daanaa", desc, f"https://daanaa.org/org/{ein}")
+            return (f"{name} — Daanaa", desc, f"https://daanaa.org/org/{ein}", _org_jsonld(org, ein))
     if p in _STATIC_META:
         title, desc = _STATIC_META[p]
-        return (title, desc, f"https://daanaa.org/{p}")
+        return (title, desc, f"https://daanaa.org/{p}", None)
     return None
+
+# Known SPA route prefixes — anything not in this set and not a static file returns 404.
+# Prevents probe paths (/.env, /.git/config, /backup.zip) from getting a soft 200.
+_SPA_PREFIXES = {
+    '', 'directory', 'category', 'causes', 'org', 'compare', 'legal',
+    'how-it-works', 'wallet', 'giving-wallet', 'for-nonprofits', 'about',
+    'principles', 'governance', 'stewardship', 'why-daanaa-exists', 'tiers',
+    'methodology', 'sector-health', 'learn', 'guides', 'faq', 'feedback',
+    'partners', 'for-vendors', 'vendor-policy', 'terms', 'guild', 'member',
+    'volunteer', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
+    'nonprofit', 'vendor', 'claim', 'admin', 'sector-health',
+}
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -1221,6 +1300,10 @@ def serve_spa(path):
         full = FRONTEND_DIR / path
         if full.is_file():
             return send_from_directory(FRONTEND_DIR, path)
+        # Only serve the SPA for known client-side routes; everything else is a real 404.
+        top = (path or '').strip('/').split('/')[0]
+        if top not in _SPA_PREFIXES:
+            return 'Not found', 404
         index = FRONTEND_DIR / 'index.html'
         if index.exists():
             meta = _meta_for_path(path)
