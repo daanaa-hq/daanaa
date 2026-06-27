@@ -103,3 +103,6 @@ scores_v5_0_20260615.json
 visibility/
 dist/
 .wrangler/
+
+# Patch manifests (scratch output from patch_precompute_v5_context.py)
+precompute_output/v5_patch_changed.txt
