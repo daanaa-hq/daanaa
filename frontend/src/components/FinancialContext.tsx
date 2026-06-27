@@ -110,7 +110,7 @@ export default function FinancialContext({ org }: FinancialContextProps) {
         {/* Confidence disclaimer */}
         {fc.confidence === 'LOW' && (
           <p className="text-xs text-cool-grey italic pt-2">
-            This assessment has low confidence due to data quality concerns. We're working to verify the latest financial information.
+            Some of this organization's financial filings are still being processed, so this context is partial. We're working to bring in their latest information.
           </p>
         )}
       </div>

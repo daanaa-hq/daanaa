@@ -28,7 +28,7 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
       explanation: inTopQuarter
         ? `You're managing resources well compared to other ${nteeLabel}. This matters to donors who want assurance.`
         : inBottomQuarter
-        ? `Like many in your sector, you're lean. Donors understand that ${nteeLabel} often run on mission over margin. What matters: you're transparent.`
+        ? `Like many in your sector, you put most of your resources into the work. Donors understand that ${nteeLabel} often run on mission over margin, and your transparency speaks for itself.`
         : `You're in the typical range for ${nteeLabel}. Consistent and steady.`,
       action: {
         text: 'Claim profile → Show donors your story',
@@ -61,7 +61,7 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
       label: band,
       value: isMicro ? 'Nimble & focused' : isLarge ? 'Established & scaled' : 'Growing',
       explanation: isMicro
-        ? `At your scale, you're managing tight resources with discipline. Donors know small doesn't mean weak—it means lean and focused on impact.`
+        ? `At your scale, you're managing resources with discipline. Donors know small doesn't mean lesser. It means focused and close to the work.`
         : isLarge
         ? `You've scaled to serve more people. That takes operational skill donors respect.`
         : `You're in the growth phase. Building systems for larger impact.`,
@@ -82,12 +82,12 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
       STABLE: {
         icon: '◐',
         title: 'Financially stable',
-        explanation: 'You manage year-to-year predictably. Most nonprofits run this way—it\'s normal and sustainable. Donors trust steady.',
+        explanation: 'You manage year-to-year predictably. Most nonprofits run this way. It\'s normal and sustainable, and donors trust steady.',
       },
       CAUTION: {
-        icon: '⚠',
+        icon: '○',
         title: 'Building reserves',
-        explanation: 'You\'re lean. That\'s ok—many nonprofits are. What matters to donors: transparency + a plan. That\'s where claiming your profile helps.',
+        explanation: 'You put most of your resources into the work, like many nonprofits do. What matters to donors is your transparency and your plan, and that\'s where claiming your profile helps.',
       },
     }
 
