@@ -105,7 +105,7 @@ def test_plausible_initializer_is_csp_compatible():
 def test_footer_links_to_visibility_discovery_hub():
     """The main site must pass crawlable authority to the visibility overlay."""
     footer = (ROOT / "frontend" / "src" / "components" / "Footer.tsx").read_text()
-    assert 'href="https://data.daanaa.org/"' in footer
+    assert 'href="https://data.daanaa.org/nonprofits/state/index.html"' in footer
     assert "Explore by location" in footer
 
 
