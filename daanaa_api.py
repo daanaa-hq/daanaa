@@ -1615,8 +1615,8 @@ def list_organizations():
 def get_organization(ein):
     # Sanitize EIN — digits only, max 10 chars
     ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
-    if not ein_clean:
-        return jsonify({"error": "Invalid EIN"}), 400
+    if not ein_clean or len(ein_clean) != 9:
+        return jsonify({"error": "Invalid EIN format. EIN must be 9 digits."}), 400
 
     db = get_db()
 

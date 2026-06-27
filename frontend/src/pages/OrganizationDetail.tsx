@@ -270,7 +270,7 @@ export default function OrganizationDetail() {
     if (!id) return
     const ein = id.replace(/\D/g, '').slice(0, 9)
     if (ein.length !== 9) return
-    const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    const base = import.meta.env.VITE_API_URL || ''
     fetch(`${base}/api/org/${ein}/view`, { method: 'POST' }).catch(() => {})
   }, [id])
 
@@ -315,6 +315,22 @@ export default function OrganizationDetail() {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-deep-navy">
         <div className="w-8 h-8 border-2 border-soft-gold border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  // Check for invalid EIN format
+  const ein = id ? id.replace(/\D/g, '') : ''
+  if (ein.length !== 9) {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-warm-cream">
+        <div className="text-center">
+          <h2 className="font-display italic text-deep-navy text-[32px]">Invalid EIN</h2>
+          <p className="mt-2 font-body text-cool-grey">EIN must be 9 digits. Please check the URL and try again.</p>
+          <Link to="/directory" className="mt-4 inline-block font-body text-soft-gold hover:text-bright-gold transition-colors">
+            Back to Directory
+          </Link>
+        </div>
       </div>
     )
   }

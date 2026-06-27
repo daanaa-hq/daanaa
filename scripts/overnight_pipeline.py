@@ -4,6 +4,7 @@ import requests
 import time
 import sys
 import csv
+import json
 from pathlib import Path
 from datetime import datetime
 
@@ -442,6 +443,62 @@ def run_cohort_context():
         log(f'⚠️  cohort_context exception (non-fatal): {str(e)[:100]}')
 
 
+def generate_cause_tags_batch(batch_size=200):
+    """Generate cause tags for orgs missing them using Qwen on port 11437."""
+    try:
+        conn = get_db()
+        batch = conn.execute("""
+          SELECT EIN, organization_name, mission, total_revenue
+          FROM registry_enriched
+          WHERE (cause_tags IS NULL OR cause_tags = '[]')
+          AND organization_name IS NOT NULL
+          AND mission IS NOT NULL
+          ORDER BY total_revenue DESC NULLS LAST
+          LIMIT ?
+        """, [batch_size]).fetchall()
+
+        if not batch:
+            log('Cause tags: all orgs complete')
+            return 0
+
+        updated = 0
+        for i, org in enumerate(batch, 1):
+            try:
+                prompt = f"""Org: {org['organization_name'][:80]}
+Mission: {org['mission'][:200]}
+
+List 3-5 cause tags (comma-separated, concise): """
+
+                r = requests.post('http://127.0.0.1:11437/completion', json={
+                    'prompt': prompt,
+                    'n_predict': 80,
+                    'temperature': 0.3,
+                    'top_p': 0.9
+                }, timeout=15)
+
+                if r.status_code == 200:
+                    tags_text = r.json().get('content', '').strip()
+                    tags = [t.strip() for t in tags_text.split(',') if t.strip()][:5]
+
+                    if tags:
+                        conn.execute(
+                            "UPDATE registry_enriched SET cause_tags = ? WHERE EIN = ?",
+                            [json.dumps(tags), org['EIN']]
+                        )
+                        updated += 1
+
+                if (i % 50) == 0:
+                    log(f'  Cause tags: [{i}/{batch_size}] orgs processed')
+            except Exception as e:
+                pass  # Skip on error, continue with next org
+
+        conn.commit()
+        log(f'Cause tags: generated for {updated}/{batch_size} orgs')
+        return updated
+    except Exception as e:
+        log(f'⚠️  Cause tags failed (non-fatal): {str(e)[:100]}')
+        return 0
+
 def main():
     log('=' * 60)
     log('Overnight Pipeline Started')
@@ -481,6 +538,9 @@ def main():
 
     # Step 6: Rebuild cause-cohort context from fresh scores
     run_cohort_context()
+
+    # Step 6.5: Generate cause tags for orgs missing them (GPU-backed)
+    generate_cause_tags_batch(batch_size=1000)
 
     # Step 7: Expire past volunteer events
     try:

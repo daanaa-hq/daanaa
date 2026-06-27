@@ -220,9 +220,9 @@
     "J40": {
       "median_reserve": 17.9,
       "p25": 8.6,
-      "p75": 34.7,
+      "p75": 34.6,
       "healthy_rate": 64.9,
-      "n": 9422
+      "n": 9421
     },
     "B70": {
       "median_reserve": 33.7,
@@ -612,9 +612,9 @@
     "Y43": {
       "median_reserve": 20.4,
       "p25": 7.0,
-      "p75": 64.5,
+      "p75": 64.2,
       "healthy_rate": 62.8,
-      "n": 1792
+      "n": 1791
     },
     "A62": {
       "median_reserve": 7.4,
@@ -656,7 +656,7 @@
       "p25": 5.3,
       "p75": 21.7,
       "healthy_rate": 45.4,
-      "n": 6861
+      "n": 6860
     },
     "P117": {
       "median_reserve": 88.7,
@@ -1060,9 +1060,9 @@
     "E80": {
       "median_reserve": 10.5,
       "p25": 3.1,
-      "p75": 42.2,
-      "healthy_rate": 48.3,
-      "n": 489
+      "p75": 42.4,
+      "healthy_rate": 48.4,
+      "n": 488
     },
     "K11": {
       "median_reserve": 19.5,
@@ -2199,11 +2199,11 @@
       "n": 247
     },
     "S31": {
-      "median_reserve": 19.2,
+      "median_reserve": 19.3,
       "p25": 6.9,
       "p75": 58.2,
-      "healthy_rate": 60.1,
-      "n": 604
+      "healthy_rate": 60.2,
+      "n": 603
     },
     "O11": {
       "median_reserve": 30.6,
@@ -4369,11 +4369,11 @@
       "n": 49
     },
     "Y24": {
-      "median_reserve": 13.3,
+      "median_reserve": 13.7,
       "p25": 0.3,
-      "p75": 111.0,
-      "healthy_rate": 42.5,
-      "n": 40
+      "p75": 120.0,
+      "healthy_rate": 43.6,
+      "n": 39
     },
     "W02": {
       "median_reserve": 10.3,
@@ -4809,14 +4809,14 @@
       "p25": 6.6,
       "p75": 35.2,
       "healthy_rate": 54.7,
-      "n": 42695
+      "n": 42694
     },
     "N": {
       "median_reserve": 11.8,
       "p25": 5.2,
       "p75": 27.2,
       "healthy_rate": 47.2,
-      "n": 43063
+      "n": 43062
     },
     "L": {
       "median_reserve": 24.2,
@@ -4886,14 +4886,14 @@
       "p25": 5.8,
       "p75": 43.7,
       "healthy_rate": 58.5,
-      "n": 22235
+      "n": 22234
     },
     "J": {
       "median_reserve": 16.3,
       "p25": 7.5,
-      "p75": 33.0,
+      "p75": 32.9,
       "healthy_rate": 62.5,
-      "n": 13617
+      "n": 13616
     },
     "O": {
       "median_reserve": 13.4,
@@ -4956,7 +4956,7 @@
       "p25": 13.1,
       "p75": 120.0,
       "healthy_rate": 51.4,
-      "n": 12799
+      "n": 12797
     },
     "Q": {
       "median_reserve": 9.4,
@@ -4987,7 +4987,7 @@
       "n": 811
     }
   },
-  "generated": "2026-06-23T07:30:17.742861+00:00",
-  "source_scored_orgs": 442828,
+  "generated": "2026-06-27T07:30:17.682322+00:00",
+  "source_scored_orgs": 442822,
   "min_sample": 30
 }
