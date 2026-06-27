@@ -21,7 +21,7 @@ const healthClasses: Record<string, string> = {
 export default function CategoryPage() {
   const { id } = useParams<{ id: string }>()
   const category = getNteeCategory(id || '')
-  const { isInWallet, addEntry, removeEntry } = useWallet()
+  const { isInFunding, isInVolunteering, addToFunding, addToVolunteering, removeFromFunding, removeFromVolunteering } = useWallet()
   const [orgs, setOrgs] = useState<ApiOrganization[]>([])
   const [total, setTotal] = useState(0)
   const [orgsLoading, setOrgsLoading] = useState(true)
@@ -132,7 +132,8 @@ export default function CategoryPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                 {orgs.map(org => {
                   const ein = org.EIN || ''
-                  const saved = isInWallet(ein)
+                  const inFunding = isInFunding(ein)
+                  const inVolunteering = isInVolunteering(ein)
                   const signal = org.v5_context?.score?.health_signal ?? ''
                   const scoreV5 = org.v5_context?.score?.percentile ?? org.ntee1_percentile ?? 0
                   return (
@@ -159,16 +160,25 @@ export default function CategoryPage() {
                             </a>
                           )}
                           <button
-                            onClick={() => saved
-                              ? removeEntry(ein)
-                              : addEntry(ein)
-                            }
-                            title={saved ? 'In wallet' : 'Add to wallet'}
-                            aria-pressed={saved}
+                            onClick={() => inFunding ? removeFromFunding(ein) : addToFunding(ein)}
+                            title={inFunding ? 'In donation list' : 'Add to donation list'}
+                            aria-pressed={inFunding}
                             className="p-1.5 rounded-lg transition-colors hover:bg-green-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-300"
                           >
                             <svg width="15" height="15" viewBox="0 0 24 24"
-                              fill={saved ? '#22c55e' : 'none'} stroke="#22c55e"
+                              fill={inFunding ? '#22c55e' : 'none'} stroke="#22c55e"
+                              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => inVolunteering ? removeFromVolunteering(ein) : addToVolunteering(ein)}
+                            title={inVolunteering ? 'In volunteer list' : 'Add to volunteer list'}
+                            aria-pressed={inVolunteering}
+                            className="p-1.5 rounded-lg transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24"
+                              fill={inVolunteering ? '#ef4444' : 'none'} stroke="#ef4444"
                               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                             </svg>
