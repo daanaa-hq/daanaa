@@ -192,6 +192,12 @@ def load_into_db() -> dict:
            AND EIN NOT IN (SELECT ein FROM revoked_eins)
     ''')
 
+    # Sync org_status to match irs_revoked so both signals stay consistent.
+    cur.execute('''
+        UPDATE registry_enriched SET org_status = 'revoked'
+         WHERE irs_revoked = 1 AND COALESCE(org_status, '') = 'active'
+    ''')
+
     # Count how many of our indexed orgs are revoked
     cur.execute('''
         SELECT COUNT(*) FROM registry_enriched re
