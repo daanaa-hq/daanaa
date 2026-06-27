@@ -1317,14 +1317,14 @@ def set_security_headers(response):
     is_prod = bool(os.environ.get("DAANAA_PROD"))
     # In prod, connect-src is HTTPS origins only; localhost is dev-only.
     connect_src = (
-        "connect-src 'self' https://daanaa.org https://www.daanaa.org https://stats.daanaa.org https://plausible.io;"
+        "connect-src 'self' https://daanaa.org https://www.daanaa.org https://stats.daanaa.org https://plausible.io https://cloudflareinsights.com;"
         if is_prod else
-        "connect-src 'self' http://localhost:5000 https://daanaa.org https://www.daanaa.org https://stats.daanaa.org https://plausible.io;"
+        "connect-src 'self' http://localhost:5000 https://daanaa.org https://www.daanaa.org https://stats.daanaa.org https://plausible.io https://cloudflareinsights.com;"
     )
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         # Firebase Google Sign-In popup requires apis.google.com scripts
-        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org https://plausible.io; "
+        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org https://plausible.io https://static.cloudflareinsights.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "img-src 'self' data: https:; "
         "font-src 'self' data: https://fonts.gstatic.com; "
