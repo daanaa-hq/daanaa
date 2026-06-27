@@ -37,8 +37,10 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
 
   const reserves = v5.benchmarks.reserves_months
   const hasOwnReserves = reserves.your_value !== null
-  // Only show the bar when peer percentile data is meaningful (p75 > 0)
-  const hasPeerBench = reserves.p75 > 0
+  // Only show the peer bar when benchmark data is meaningful:
+  // p75 must be non-zero AND the three benchmarks must not all be the same value
+  // (flat benchmarks = data cap artifact, bar conveys no information)
+  const hasPeerBench = reserves.p75 > 0 && !(reserves.p25 === reserves.p50 && reserves.p50 === reserves.p75)
   const barPct = (hasOwnReserves && hasPeerBench)
     ? Math.min(100, Math.round((reserves.your_value! / reserves.p75) * 100))
     : 0
@@ -100,9 +102,16 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
         </div>
       )}
 
-      {/* Donor explanation */}
+      {/* Donor explanation — strip speculative/robotic phrases baked into precomputed text */}
       <p className="font-body text-[14px] leading-relaxed text-deep-navy/80">
-        {v5.donor_explanation.replace(/\b(\d+)\.0\b/g, '$1')}
+        {v5.donor_explanation
+          .replace(/\b(\d+)\.0\b/g, '$1')
+          .replace(/\s*This organization may be in a growth phase or operating lean by design\./g, '')
+          .replace(/\bThis organization is a ([A-Z])/g, (_, c) => `This is a ${c}`)
+          .replace(/\ba ([A-Z][a-z-]+-[A-Z])/g, (_, w) => `an ${w}`)
+          .replace(/\.\s*\./g, '.')
+          .trim()
+        }
       </p>
 
       {/* Disclosure + methodology link */}

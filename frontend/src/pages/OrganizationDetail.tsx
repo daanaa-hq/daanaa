@@ -783,8 +783,7 @@ export default function OrganizationDetail() {
             {/* LEFT COLUMN -- main content */}
             <div className="min-w-0">
 
-      {/* Donation Attribution Banner */}
-      {apiOrg && <DonationAttributionBanner org={apiOrg} />}
+      {/* Donation Attribution Banner removed — adds noise, not value */}
 
       {/* Financial Overview */}
       <div className="py-0">
@@ -802,7 +801,7 @@ export default function OrganizationDetail() {
                     ? { backgroundColor: '#FFFBF0', borderColor: '#FDE68A' }
                     : { backgroundColor: '#FFFFFF', borderColor: '#E5E0DB' }}
                 >
-                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Savings runway</span>
+                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Months of reserve</span>
                   <span
                     className="block font-body text-[26px] font-semibold tracking-[-0.02em]"
                     style={{ color: apiOrg!.months_of_reserve < 0 ? '#8B1A1A' : apiOrg!.months_of_reserve < 3 ? '#92400E' : '#0A1628' }}
@@ -811,10 +810,8 @@ export default function OrganizationDetail() {
                   </span>
                   <span className="font-body text-[11px] text-cool-grey">
                     {apiOrg!.months_of_reserve < 0
-                      ? 'months, negative net assets'
-                      : apiOrg!.months_of_reserve < 3
-                      ? 'months net assets cover costs'
-                      : 'months net assets cover costs'}
+                      ? 'net assets negative'
+                      : 'net assets ÷ monthly costs'}
                   </span>
                 </div>
               )}
@@ -895,59 +892,22 @@ export default function OrganizationDetail() {
               own full-width block below this (see "Revenue Trend" section). */}
           <div>
             <div className="flex flex-col gap-4">
-              {/* About this listing -- informational only */}
-              <div className="bg-white border border-light-grey rounded-xl px-6 py-5">
-                <span className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium">About this page</span>
-                {lampTier === 'Beacon' ? (
-                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    {apiOrg!.organization_name} is a registered US nonprofit with an annual report, mission, website, and a top-quarter peer financial ranking all on public record.
-                  </p>
-                ) : lampTier === 'Torch' ? (
-                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    {apiOrg!.organization_name} is a federally recognized nonprofit with financial filings on public record. They hold federal tax-exempt status as a charitable organization.
-                  </p>
-                ) : lampTier === 'Candle' ? (
-                  <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                    {apiOrg!.organization_name} is a federally recognized nonprofit with some financial filings on public record. They hold federal tax-exempt status as a charitable organization. A full peer financial profile becomes available once their 990 is processed and scored within their peer group.
-                  </p>
-                ) : (
-                  <>
-                    <p className="mt-2 font-body text-[15px] text-deep-navy leading-[1.6]">
-                      {apiOrg!.organization_name} is a federally recognized nonprofit holding federal tax-exempt status. The IRS has recognized them as a charitable organization.
-                    </p>
-                    <p className="mt-2 font-body text-[13px] text-cool-grey leading-[1.6]">
-                      Financial data isn't on public record yet for this organization. That's a data availability question, not a reflection of their work. Donors often learn about organizations like this through their community, the people behind them, and what they actually do.
-                    </p>
-                  </>
-                )}
-                {apiOrg!.claim_status === 'active' && (
-                  <p className="mt-3 font-body text-[12px] text-cool-grey">This page is managed by the organization.</p>
-                )}
-                {apiOrg!.claim_status === 'letter_sent' && (
-                  <p className="mt-3 font-body text-[12px] text-cool-grey">Claim in progress: verification letter sent.</p>
-                )}
-                {apiOrg!.irs_status_verified_at && (
-                  <p className="mt-3 font-body text-[11px] text-cool-grey">
-                    IRS status verified {new Date(apiOrg!.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                  </p>
-                )}
-                {/* Contextual handoff links */}
-                <div className="mt-4 pt-4 border-t border-light-grey flex flex-wrap gap-x-5 gap-y-2">
-                  {apiOrg!.NTEE1 && (
-                    <Link
-                      to={`/category/${apiOrg!.NTEE1}`}
-                      className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors"
-                    >
-                      Browse {getNteeLabel(apiOrg!.NTEE1 || '')} orgs →
-                    </Link>
-                  )}
-                  <Link to="/methodology" className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors">
-                    How we score →
+              {/* Contextual handoff links */}
+              <div className="flex flex-wrap gap-x-5 gap-y-2 px-1">
+                {apiOrg!.NTEE1 && (
+                  <Link
+                    to={`/category/${apiOrg!.NTEE1}`}
+                    className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors"
+                  >
+                    Browse {getNteeLabel(apiOrg!.NTEE1 || '')} orgs →
                   </Link>
-                  <Link to="/research" className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors">
-                    Sector research →
-                  </Link>
-                </div>
+                )}
+                <Link to="/methodology" className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors">
+                  How we score →
+                </Link>
+                <Link to="/research" className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors">
+                  Sector research →
+                </Link>
               </div>
 
               {/* Manage / Claim CTA */}
@@ -993,13 +953,11 @@ export default function OrganizationDetail() {
               ) : apiOrg!.claim_status !== 'letter_sent' && (
                 /* Unclaimed — show claim CTA */
                 <div className="rounded-xl border border-dashed border-soft-gold/30 bg-soft-gold/[0.03] px-6 py-5">
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                      <p className="font-body text-[13px] font-medium text-deep-navy">Is this your nonprofit?</p>
-                      <p className="font-body text-[12px] text-cool-grey mt-0.5">
-                        {lampTier === 'Spark'
-                          ? 'This page shows IRS records only. Claim it to add your story, website, and how people can help.'
-                          : 'Add your mission, website, and updates. Free.'}
+                  <div className="flex items-start justify-between gap-6 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-body text-[14px] font-semibold text-deep-navy">This page belongs to {apiOrg!.organization_name}.</p>
+                      <p className="font-body text-[13px] text-cool-grey mt-1.5 leading-relaxed">
+                        Right now it shows what's on public record. Claim it to tell your story in your own words — what you do, what you need, and how people can support your work. Free, always.
                       </p>
                     </div>
                     <Link
@@ -1012,19 +970,6 @@ export default function OrganizationDetail() {
                       </svg>
                       Claim your page
                     </Link>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-2">
-                    {[
-                      { t: 'Ways to help', d: 'Volunteer and in-kind needs' },
-                      { t: 'What we need now', d: 'A specific ask donors can act on' },
-                      { t: 'In our words', d: "Mission in the org's own voice" },
-                      { t: 'Updates & events', d: 'Short, dated notes from the org' },
-                    ].map(s => (
-                      <div key={s.t} className="rounded-lg border border-dashed border-light-grey bg-white/60 px-3 py-2">
-                        <p className="font-body text-[12px] font-medium text-deep-navy">{s.t}</p>
-                        <p className="font-body text-[11px] text-cool-grey">{s.d}</p>
-                      </div>
-                    ))}
                   </div>
                 </div>
               )}
