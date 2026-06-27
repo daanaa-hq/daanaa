@@ -101,6 +101,14 @@ def test_plausible_initializer_is_csp_compatible():
     assert 'plausible.init({ endpoint: "https://plausible.io/api/event" })' in initializer.read_text()
 
 
+@pytest.mark.principle
+def test_footer_links_to_visibility_discovery_hub():
+    """The main site must pass crawlable authority to the visibility overlay."""
+    footer = (ROOT / "frontend" / "src" / "components" / "Footer.tsx").read_text()
+    assert 'href="https://data.daanaa.org/"' in footer
+    assert "Explore by location" in footer
+
+
 
 
 # ── P1 / P7 — Verified paths, independence ───────────────────────────────────

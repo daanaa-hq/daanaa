@@ -71,6 +71,16 @@ export default function Footer() {
                     </Link>
                   </li>
                 ))}
+                {heading === 'Discover' && (
+                  <li>
+                    <a
+                      href="https://data.daanaa.org/"
+                      className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5"
+                    >
+                      Explore by location
+                    </a>
+                  </li>
+                )}
               </ul>
             </div>
           ))}

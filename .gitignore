@@ -98,3 +98,8 @@ firebase-service-account.json.odt
 deploy/plausible/plausible-conf.env
 scores_v5_0_20260615.json
 .aws-backup-config
+
+# Visibility/overlay generated artifacts (regenerate via scripts/generate_visibility_exports.py)
+visibility/
+dist/
+.wrangler/
