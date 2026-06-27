@@ -55,6 +55,29 @@ def get_cohort_context(nteecc: str | None, ntee1: str | None) -> dict | None:
             return {**b, 'level': 'broad', 'ntee_code': ntee1}
     return None
 
+# Maps every form that merit_archetype_v5 may contain → BENCHMARKS lookup key.
+# The DB column was populated by two different scripts:
+#   compute_v5_context.py  → integer codes '0','4','19','22' + label 'Donation-Funded' etc.
+#   merit_scorer_v5_0.py   → labels 'Donation-Funded Programs', 'Fee-for-Service Operators', etc.
+# Mutual-Benefit ('22') has no peer benchmark data → maps to None → empty bench.
+_ARCHETYPE_NORM: dict[str, str | None] = {
+    '0': 'donation_funded',
+    '4': 'fee_for_service',
+    '19': 'endowment',
+    '22': None,
+    'Donation-Funded': 'donation_funded',
+    'Donation-Funded Programs': 'donation_funded',
+    'Fee-for-Service': 'fee_for_service',
+    'Fee-for-Service Operators': 'fee_for_service',
+    'Endowment-Funded': 'endowment',
+    'Endowment-Funded Grantmakers': 'endowment',
+    'Mutual-Benefit': None,
+    'Mutual-Benefit Payers': None,
+    'donation_funded': 'donation_funded',
+    'fee_for_service': 'fee_for_service',
+    'endowment': 'endowment',
+}
+
 BENCHMARKS = {
     ('donation_funded', 'micro'): {
         'reserves_p25': 6.2, 'reserves_p50': 19.2, 'reserves_p75': 61.8,
@@ -138,7 +161,8 @@ def build_v5_context(archetype_key, archetype_label, band_key, band_label,
     if not archetype_key:
         return None
 
-    bench = BENCHMARKS.get((archetype_key, band_key), {})
+    bench_arch = _ARCHETYPE_NORM.get(str(archetype_key))
+    bench = BENCHMARKS.get((bench_arch, band_key), {}) if bench_arch else {}
 
     return {
         'archetype': {
