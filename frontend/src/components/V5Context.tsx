@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import type { ApiOrganization } from '../data/api'
 
 interface V5ContextData {
@@ -36,8 +37,10 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
 
   const reserves = v5.benchmarks.reserves_months
   const hasOwnReserves = reserves.your_value !== null
-  const barPct = hasOwnReserves
-    ? Math.min(100, Math.round((reserves.your_value! / Math.max(reserves.p75, 1)) * 100))
+  // Only show the bar when peer percentile data is meaningful (p75 > 0)
+  const hasPeerBench = reserves.p75 > 0
+  const barPct = (hasOwnReserves && hasPeerBench)
+    ? Math.min(100, Math.round((reserves.your_value! / reserves.p75) * 100))
     : 0
 
   return (
@@ -68,8 +71,8 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
         <span className="font-body text-[13px] text-cool-grey">of {v5.peer_group.label}</span>
       </div>
 
-      {/* Reserves bar — only when we have the org's own value */}
-      {hasOwnReserves && (
+      {/* Reserves bar — only when we have the org's own value and peer percentile data */}
+      {hasOwnReserves && hasPeerBench && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-1.5">
             <span className="font-body text-[12px] font-medium text-deep-navy">Months of reserve</span>
@@ -81,10 +84,19 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
             <div className={`h-2 rounded-full ${style.bar}`} style={{ width: `${barPct}%` }} />
           </div>
           <div className="flex justify-between font-body text-[11px] text-cool-grey">
-            <span>Typical low: {Math.round(reserves.p25)} mo</span>
+            <span>Low end: {Math.round(reserves.p25)} mo</span>
             <span>Typical: {Math.round(reserves.p50)} mo</span>
             <span>Strong: {Math.round(reserves.p75)} mo</span>
           </div>
+        </div>
+      )}
+      {/* Show reserve value only (no bar) when peer benchmark data is unavailable */}
+      {hasOwnReserves && !hasPeerBench && (
+        <div className="mb-5 flex items-center justify-between">
+          <span className="font-body text-[12px] font-medium text-deep-navy">Months of reserve</span>
+          <span className={`font-body text-[13px] font-semibold ${style.text}`}>
+            {Number.isInteger(reserves.your_value!) ? reserves.your_value! : reserves.your_value!.toFixed(1)} months
+          </span>
         </div>
       )}
 
@@ -93,10 +105,15 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
         {v5.donor_explanation.replace(/\b(\d+)\.0\b/g, '$1')}
       </p>
 
-      {/* Disclosure */}
-      <p className="mt-4 font-body text-[11px] text-cool-grey italic border-t border-deep-navy/10 pt-3">
-        Context from public IRS data, compared to financially similar peers. Not a rating or recommendation.
-      </p>
+      {/* Disclosure + methodology link */}
+      <div className="mt-4 border-t border-deep-navy/10 pt-3 flex items-center justify-between gap-4">
+        <p className="font-body text-[11px] text-cool-grey italic">
+          Context from public IRS data, compared to financially similar peers. Not a rating or recommendation.
+        </p>
+        <Link to="/methodology" className="shrink-0 font-body text-[11px] text-cool-grey hover:text-deep-navy underline underline-offset-2 transition-colors">
+          How we score →
+        </Link>
+      </div>
     </div>
   )
 }

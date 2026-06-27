@@ -363,3 +363,12 @@ Deleted: `HowItWorks.tsx`, `Learn.tsx`, `Guides2.tsx`, `FAQ2.tsx`. Deployed + ve
 - Metro discoverability: `org_fts` now indexes Census CBSA so suburban orgs match under
   their whole metro (e.g. "Boston" → 32,499 incl. Somerville/Cambridge). Crosswalk from
   `scripts/build_metro_crosswalk.py`; stamped by `scripts/backfill_metro.py` (1.53M orgs).
+
+## 2026-06-27 — Two scoring systems coexist on org detail pages (v4 + v5)
+`peer_percentile` (v4, NTEECC + revenue band) drives `meritScore` in `adaptOrg` and the
+lamp-tier assignment via `getTierFromOrg`. `v5_context.score.percentile` (v5, archetype +
+band) is what users see as "Top X% of peer nonprofits" in the hero and V5Context card.
+These can differ significantly (e.g. YES Prep: v4=58, v5=36). Chosen: keep v4 for lamp
+tier (stable, historically established) and show v5 to users (cleaner archetype model).
+Rejected: unifying to v5 for tier assignment — would require re-scoring all lamp tiers and
+could shift many orgs' displayed tier mid-session. Track for a future unified scorer pass.

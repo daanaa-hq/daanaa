@@ -246,6 +246,13 @@ def _assemble_v5_context(d: dict) -> dict | None:
             f"of operating costs in reserve. This one has {reserves:.1f} months. {health_desc} "
             f"This comparison is based on public IRS 990 data from {(peer_count or 0):,} similar organizations."
         )
+    elif reserves:
+        explanation = (
+            f"This organization is a {arch_label} nonprofit with a budget in the {band_label} range. "
+            f"It currently holds {reserves:.1f} months of operating costs in reserve. "
+            f"Peer reserve benchmarks are not yet available for this funding model. "
+            f"This context is based on public IRS 990 data."
+        )
     else:
         explanation = "Financial data not available from IRS Form 990."
 
@@ -282,6 +289,63 @@ def _row_to_org(row) -> dict:
     return _strip_donate(d)
 
 
+def _patch_v5_benchmarks(data: dict) -> None:
+    """Back-fill zero benchmark values in precomputed files from the hardcoded table.
+
+    Precomputed JSONs were generated before the benchmark table was populated, so
+    many have p25=p50=p75=0.  We correct them at serve time rather than waiting for
+    a full precompute rebuild.
+    """
+    v5 = data.get('v5_context')
+    if not isinstance(v5, dict):
+        return
+    bench = v5.get('benchmarks', {})
+    rm = bench.get('reserves_months', {})
+    if rm.get('p75', 0) != 0:
+        return  # already has real data
+
+    arch_label = (v5.get('archetype') or {}).get('label', '')
+    band_key   = (v5.get('band') or {}).get('key') or ''
+    lbl = arch_label.lower()
+    if 'donation' in lbl:
+        arch_key = 'donation_funded'
+    elif 'fee' in lbl or 'service' in lbl:
+        arch_key = 'fee_for_service'
+    elif 'endowment' in lbl:
+        arch_key = 'endowment'
+    else:
+        return  # unknown archetype — leave as-is
+
+    real = _V5_BENCHMARKS.get((arch_key, band_key))
+    if not real:
+        return
+
+    rm.update({'p25': real['p25'], 'p50': real['p50'], 'p75': real['p75']})
+    bench['healthy_rate_peer'] = real['hr']
+
+    # Regenerate donor_explanation only when it still contains the stale "0 months" wording
+    explanation = v5.get('donor_explanation', '')
+    if 'about 0 months' in explanation or '0 months of operating costs' in explanation:
+        reserves  = data.get('months_of_reserve')
+        p50       = real['p50']
+        band_lbl  = (v5.get('band') or {}).get('label', '')
+        peer_count = (v5.get('peer_group') or {}).get('org_count', 0)
+        health    = (v5.get('score') or {}).get('health_signal', '')
+        if health == 'HEALTHY':
+            health_desc = 'Above the typical level for similar organizations, suggesting solid financial stability.'
+        elif health == 'STABLE':
+            health_desc = 'Close to the typical level for similar organizations, showing steady financial management.'
+        else:
+            health_desc = 'Below the typical level for similar organizations. This organization may be in a growth phase or operating lean by design.'
+        if reserves and p50:
+            v5['donor_explanation'] = (
+                f"This organization is a {arch_label} nonprofit with a budget in the {band_lbl} range. "
+                f"Organizations like this one typically keep about {int(p50)} months of operating costs "
+                f"in reserve. This one has {reserves:.1f} months. {health_desc} "
+                f"This comparison is based on public IRS 990 data from {peer_count:,} similar organizations."
+            )
+
+
 def load_org_detail(ein: str) -> dict | None:
     """Load org detail: precomputed file first, then search.db fallback."""
     ein_prefix = ein[:3]
@@ -292,6 +356,7 @@ def load_org_detail(ein: str) -> dict | None:
             data['data_badges'] = {'mission': data.get('mission_source')}
         elif isinstance(data.get('data_badges'), dict) and 'mission' not in data['data_badges']:
             data['data_badges']['mission'] = data.get('mission_source')
+        _patch_v5_benchmarks(data)
         return _strip_donate(data)
 
     # Fallback: serve from search.db registry_enriched table (IRS_BMF / bmf_stub orgs)
