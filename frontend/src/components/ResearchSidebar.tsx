@@ -22,7 +22,7 @@ export default function ResearchSidebar({
   onSectionChange,
 }: ResearchSidebarProps) {
   return (
-    <aside className="w-64 bg-deep-navy text-warm-cream sticky top-0 h-screen overflow-y-auto border-r border-soft-gold/20 p-6">
+    <aside className="w-64 bg-deep-navy text-warm-cream sticky top-[72px] h-[calc(100vh-72px)] overflow-y-auto border-r border-soft-gold/20 p-6 shrink-0">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-3">
           <img

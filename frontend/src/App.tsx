@@ -113,10 +113,10 @@ export default function App() {
             <Route path="/volunteer" element={<VolunteerSearch />} />
             <Route path="/volunteer/submit" element={<VolunteerSubmission />} />
             <Route path="/donation/receipt" element={<DonationReceipt />} />
+            <Route path="/research" element={<ResearchDashboard />} />
           </Route>
           <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />
-          <Route path="/research" element={<ResearchDashboard />} />
           <Route path="/nonprofit/verify-hours" element={<NonprofitVerification />} />
           <Route path="/nonprofit/verify" element={<NonprofitVerifyEmail />} />
           <Route path="/nonprofit/login" element={<NonprofitLogin />} />
