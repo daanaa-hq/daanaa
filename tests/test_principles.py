@@ -90,6 +90,19 @@ def test_csp_header_present():
     assert "script-src" in src, "P2 violation: CSP missing script-src directive"
 
 
+@pytest.mark.principle
+def test_plausible_initializer_is_csp_compatible():
+    """Plausible initialization must run without allowing arbitrary inline scripts."""
+    index = (ROOT / "frontend" / "index.html").read_text()
+    initializer = ROOT / "frontend" / "public" / "plausible-init.js"
+    assert '<script src="/plausible-init.js?v=2"></script>' in index
+    assert "plausible.init()" not in index
+    assert initializer.exists()
+    assert 'plausible.init({ endpoint: "https://plausible.io/api/event" })' in initializer.read_text()
+
+
+
+
 # ── P1 / P7 — Verified paths, independence ───────────────────────────────────
 
 @pytest.mark.principle
