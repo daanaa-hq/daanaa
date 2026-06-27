@@ -11,7 +11,6 @@ export default function WalletAccountLink() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [lastSaved, setLastSaved] = useState<string | null>(null)
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const restoredRef = useRef(false)
 
   // Auto-restore on sign-in (fires once per login)
@@ -29,27 +28,6 @@ export default function WalletAccountLink() {
         .catch(() => {})
     })
   }, [user?.uid])
-
-  // Auto-save on entries change when signed in (debounced 3 s)
-  useEffect(() => {
-    if (!user || entries.length === 0) return
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => {
-      user.getIdToken().then(token => {
-        fetch(`${API_BASE}/api/wallet/backup`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ entries }),
-        })
-          .then(r => (r.ok ? r.json() : null))
-          .then(data => {
-            if (data?.success) setLastSaved(new Date().toLocaleTimeString())
-          })
-          .catch(() => {})
-      })
-    }, 3000)
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
-  }, [user?.uid, entries])
 
   const handleEmailLink = async () => {
     if (!email) { setError('Email required'); return }
