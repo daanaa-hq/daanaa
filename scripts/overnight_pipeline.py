@@ -540,7 +540,8 @@ def main():
     run_cohort_context()
 
     # Step 6.5: Generate cause tags for orgs missing them (GPU-backed)
-    generate_cause_tags_batch(batch_size=1000)
+    # Increased from 1000 → 5000/night to close the 249K gap in ~50 nights.
+    generate_cause_tags_batch(batch_size=5000)
 
     # Step 7: Expire past volunteer events
     try:
