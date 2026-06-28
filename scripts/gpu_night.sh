@@ -61,6 +61,18 @@ start() {
   #   nohup bash "$BASE/scripts/web_night.sh" >> "$LOG_DIR/web_night.log" 2>&1 &
   # fi
 
+  # Cause tag enrichment: fills the 249K gap (orgs with no cause_tags).
+  # Runs after mission generation — both share the llama-server on :11437.
+  # 5000/night quota set in overnight_pipeline; this runs the same script
+  # directly on the GPU window for maximum throughput (7-8 hrs available).
+  if pgrep -f "scripts/enrich_cause_tags_llm.py" >/dev/null; then
+    echo "[$(ts)] start: cause-tag enrichment already running — skipping"
+  else
+    echo "[$(ts)] start: launching LLM cause-tag enrichment (249K gap)"
+    nohup "$BASE/venv/bin/python3" "$BASE/scripts/enrich_cause_tags_llm.py" \
+      >> "$LOG_DIR/cause_tags_llm.log" 2>&1 &
+  fi
+
   # Re-embed orgs whose mission was (re)written so semantic search stays current.
   # The watchdog runs its own embed server on :11436 (separate from the mission
   # model on :11437) and re-embeds once enough missions are stale, then idles.
