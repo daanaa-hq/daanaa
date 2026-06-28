@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
-import { searchVolunteerEvents, type VolunteerEvent } from '../data/api'
+import { searchVolunteerEvents, type VolunteerEvent, type EventType } from '../data/api'
 
 const US_STATES = [
   ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
@@ -32,6 +32,19 @@ function formatTime(t: string | null) {
   return `${hour}:${String(min).padStart(2, '0')} ${ampm}`
 }
 
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  volunteer:  'Volunteer',
+  community:  'Community',
+  fundraiser: 'Fundraiser',
+  networking: 'Networking',
+}
+const EVENT_TYPE_COLORS: Record<string, string> = {
+  volunteer:  'bg-green-50 text-green-700',
+  community:  'bg-soft-gold/10 text-soft-gold',
+  fundraiser: 'bg-blue-50 text-blue-600',
+  networking: 'bg-purple-50 text-purple-600',
+}
+
 function EventCard({ event }: { event: VolunteerEvent }) {
   const timeStr = event.start_time
     ? `${formatTime(event.start_time)}${event.end_time ? ` – ${formatTime(event.end_time)}` : ''}`
@@ -41,31 +54,42 @@ function EventCard({ event }: { event: VolunteerEvent }) {
     ? 'Virtual'
     : [event.location_city, event.location_state].filter(Boolean).join(', ') || null
 
+  const typeLabel = EVENT_TYPE_LABELS[event.event_type] || 'Event'
+  const typeColor = EVENT_TYPE_COLORS[event.event_type] || 'bg-light-cream text-cool-grey'
+
   return (
-    <div className="bg-white rounded-2xl border border-light-cream p-5 flex flex-col gap-3">
+    <Link
+      to={`/events/${event.id}`}
+      className="bg-white rounded-2xl border border-light-cream p-5 flex flex-col gap-3 hover:border-soft-gold/40 hover:shadow-sm transition-all"
+    >
       <div>
         <div className="flex items-start justify-between gap-2 mb-1">
-          <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase ${
-            event.is_virtual
-              ? 'bg-blue-50 text-blue-600'
-              : 'bg-soft-gold/10 text-soft-gold'
-          }`}>
-            {event.is_virtual ? 'Virtual' : 'In Person'}
-          </span>
-          {event.capacity && (
-            <span className="font-body text-[11px] text-muted-cream">
-              {event.capacity} spots
+          <div className="flex gap-1.5 flex-wrap">
+            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase ${typeColor}`}>
+              {typeLabel}
+            </span>
+            {event.is_virtual && (
+              <span className="inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase bg-blue-50 text-blue-600">
+                Virtual
+              </span>
+            )}
+            {event.min_age && event.min_age > 0 && (
+              <span className="inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase bg-orange-50 text-orange-600">
+                {event.min_age}+
+              </span>
+            )}
+          </div>
+          {event.signup_count > 0 && (
+            <span className="font-body text-[11px] text-cool-grey shrink-0">
+              {event.signup_count} going
             </span>
           )}
         </div>
         <h3 className="font-display italic text-deep-navy text-[18px] leading-tight">{event.title}</h3>
         {event.org_name && (
-          <Link
-            to={`/org/${event.ein}`}
-            className="font-body text-[13px] text-soft-gold hover:text-bright-gold font-medium mt-0.5 block"
-          >
+          <span className="font-body text-[13px] text-deep-navy font-medium mt-0.5 block">
             {event.org_name}
-          </Link>
+          </span>
         )}
       </div>
 
@@ -81,42 +105,21 @@ function EventCard({ event }: { event: VolunteerEvent }) {
         )}
       </div>
 
-      {event.description && (
-        <p className="font-body text-[14px] text-cool-grey leading-[1.6] line-clamp-3">
-          {event.description}
+      {(event.description || event.org_mission) && (
+        <p className="font-body text-[14px] text-cool-grey leading-[1.6] line-clamp-2">
+          {event.description || event.org_mission}
         </p>
       )}
 
-      <div className="mt-auto pt-1 flex items-center gap-3">
-        {event.signup_url ? (
-          <a
-            href={event.signup_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-soft-gold text-deep-navy rounded-lg font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
-          >
-            Sign up
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M7 17 17 7M17 7H8M17 7v9"/>
-            </svg>
-          </a>
-        ) : event.contact_email ? (
-          <a
-            href={`mailto:${event.contact_email}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 border border-soft-gold/40 text-deep-navy rounded-lg font-body text-[13px] font-semibold hover:bg-soft-gold/8 transition-colors"
-          >
-            Contact to volunteer
-          </a>
-        ) : (
-          <Link
-            to={`/org/${event.ein}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 border border-light-cream text-cool-grey rounded-lg font-body text-[13px] hover:border-soft-gold/40 transition-colors"
-          >
-            View organization
-          </Link>
-        )}
+      <div className="mt-auto pt-1">
+        <span className="inline-flex items-center gap-1 font-body text-[13px] text-soft-gold font-semibold">
+          View event
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </span>
       </div>
-    </div>
+    </Link>
   )
 }
 
@@ -126,10 +129,11 @@ export default function VolunteerSearch() {
     'Find volunteer events near you. Browse opportunities from verified nonprofits by location and cause.',
   )
 
-  const [zip, setZip]       = useState('')
-  const [city, setCity]     = useState('')
-  const [state, setState]   = useState('')
-  const [virtual, setVirtual] = useState(false)
+  const [zip, setZip]           = useState('')
+  const [city, setCity]         = useState('')
+  const [state, setState]       = useState('')
+  const [virtual, setVirtual]   = useState(false)
+  const [eventType, setEventType] = useState<EventType | ''>('')
   const [searched, setSearched] = useState(false)
   const [loading, setLoading]   = useState(false)
   const [events, setEvents]     = useState<VolunteerEvent[]>([])
@@ -140,14 +144,17 @@ export default function VolunteerSearch() {
     setError(false)
     setSearched(true)
     try {
-      const result = await searchVolunteerEvents({ zip, city, state, virtual })
+      const result = await searchVolunteerEvents({
+        zip, city, state, virtual,
+        event_type: eventType || undefined,
+      })
       setEvents(result.events)
     } catch {
       setError(true)
     } finally {
       setLoading(false)
     }
-  }, [zip, city, state, virtual])
+  }, [zip, city, state, virtual, eventType])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -215,16 +222,29 @@ export default function VolunteerSearch() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={virtual}
-                onChange={e => setVirtual(e.target.checked)}
-                className="w-4 h-4 rounded border-light-cream accent-soft-gold"
-              />
-              <span className="font-body text-[14px] text-cool-grey">Include virtual events</span>
-            </label>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-4 flex-wrap">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={virtual}
+                  onChange={e => setVirtual(e.target.checked)}
+                  className="w-4 h-4 rounded border-light-cream accent-soft-gold"
+                />
+                <span className="font-body text-[14px] text-cool-grey">Virtual</span>
+              </label>
+              <select
+                value={eventType}
+                onChange={e => setEventType(e.target.value as EventType | '')}
+                className="px-3 py-2 rounded-xl border border-light-cream font-body text-[13px] text-deep-navy bg-white focus:outline-none focus:border-soft-gold/60"
+              >
+                <option value="">All types</option>
+                <option value="volunteer">Volunteer</option>
+                <option value="community">Community</option>
+                <option value="fundraiser">Fundraiser</option>
+                <option value="networking">Networking</option>
+              </select>
+            </div>
             <button
               type="submit"
               disabled={loading}
@@ -288,11 +308,9 @@ export default function VolunteerSearch() {
               {events.map(e => <EventCard key={e.id} event={e} />)}
             </div>
             <p className="mt-8 font-body text-[12px] text-muted-cream text-center leading-[1.6]">
-              Sign-ups happen directly with the organization. Daanaa does not collect volunteer information.
-              <br />
               Are you a nonprofit?{' '}
               <Link to="/for-nonprofits" className="text-soft-gold hover:underline">Claim your page</Link>{' '}
-              to post opportunities.
+              to post events. Your contact info is shared only with the event organizer.
             </p>
           </>
         )}

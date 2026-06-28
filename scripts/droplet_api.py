@@ -36,7 +36,7 @@ def set_security_headers(response):
     # popup). Mirrors daanaa_api.py so prod and home server stay consistent.
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org https://plausible.io https://static.cloudflareinsights.com 'sha256-2R+YvVjJkt+4EKQQ00rAyL2cUTpD4iDu3o/dgUQN574='; "
+        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org https://plausible.io https://static.cloudflareinsights.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "img-src 'self' data: https:; "
         "font-src 'self' data: https://fonts.gstatic.com; "
@@ -50,6 +50,12 @@ def set_security_headers(response):
         "base-uri 'self'; "
         "form-action 'self';"
     )
+    response.headers["Permissions-Policy"] = (
+        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), "
+        "interest-cohort=()"
+    )
+    # Blocks cross-origin no-cors reads of our API responses.
+    response.headers["Cross-Origin-Resource-Policy"] = "same-site"
     # HSTS — daanaa.org is HTTPS-only via Cloudflare.
     response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
@@ -1024,6 +1030,78 @@ def org_volunteer_events_proxy(ein):
     return _live_proxy(f"/api/org/{ein}/volunteer-events")
 
 
+# Events platform — all new routes proxy to live backend
+@app.route('/api/events/<int:event_id>', methods=['GET'])
+def event_detail_proxy(event_id):
+    return _live_proxy(f"/api/events/{event_id}")
+
+@app.route('/api/events/<int:event_id>/signup', methods=['POST'])
+def event_signup_proxy(event_id):
+    return _live_proxy(f"/api/events/{event_id}/signup")
+
+@app.route('/api/events/<int:event_id>/cancel-booking', methods=['POST'])
+def event_cancel_booking_proxy(event_id):
+    return _live_proxy(f"/api/events/{event_id}/cancel-booking")
+
+@app.route('/api/events/<int:event_id>/qr.png', methods=['GET'])
+def event_qr_proxy(event_id):
+    return _live_proxy(f"/api/events/{event_id}/qr.png")
+
+@app.route('/api/events/<int:event_id>/calendar.ics', methods=['GET'])
+def event_ical_proxy(event_id):
+    return _live_proxy(f"/api/events/{event_id}/calendar.ics")
+
+@app.route('/api/portal/events', methods=['GET', 'POST'])
+def portal_events_proxy():
+    return _live_proxy("/api/portal/events")
+
+@app.route('/api/portal/events/<int:event_id>', methods=['PATCH', 'DELETE'])
+def portal_event_proxy(event_id):
+    return _live_proxy(f"/api/portal/events/{event_id}")
+
+@app.route('/api/portal/events/<int:event_id>/attendees', methods=['GET'])
+def portal_event_attendees_proxy(event_id):
+    return _live_proxy(f"/api/portal/events/{event_id}/attendees")
+
+@app.route('/api/portal/events/<int:event_id>/verify-hours', methods=['POST'])
+def portal_verify_hours_proxy(event_id):
+    return _live_proxy(f"/api/portal/events/{event_id}/verify-hours")
+
+@app.route('/api/portal/contacts', methods=['GET', 'PUT'])
+def portal_contacts_proxy():
+    return _live_proxy("/api/portal/contacts")
+
+@app.route('/api/org/<ein>/contacts', methods=['GET'])
+def org_contacts_proxy(ein):
+    return _live_proxy(f"/api/org/{ein}/contacts")
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Prevents urlopen from following 3xx — lets the caller handle them."""
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+@app.route('/e/<short_id>', methods=['GET'])
+def event_short_redirect(short_id):
+    """Short URL: /e/{short_id} → 301 → /events/{id}. Proxy the redirect from the backend."""
+    import re as _re
+    if not _re.match(r'^[A-Za-z0-9_-]{6,16}$', short_id):
+        return 'Not found', 404
+    url = f"{LIVE_UPSTREAM}/e/{short_id}"
+    opener = urllib.request.build_opener(_NoRedirectHandler())
+    try:
+        with opener.open(url, timeout=10) as _resp:
+            return 'Not found', 404
+    except urllib.error.HTTPError as e:
+        if e.code in (301, 302):
+            loc = e.headers.get('Location', '/')
+            return redirect(loc, code=301)
+        return 'Not found', 404
+    except Exception:
+        return 'Not found', 404
+
+
 @app.route('/api/org/<ein>/service-area', methods=['GET', 'PUT'])
 def service_area_proxy(ein):
     return _live_proxy(f"/api/org/{ein}/service-area")
@@ -1225,6 +1303,26 @@ _HOMEPAGE_JSONLD = {
     ],
 }
 
+_DIRECTORY_JSONLD = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    'name': 'U.S. Nonprofit Directory — Daanaa',
+    'description': 'Search every IRS-recognized 501(c)(3) by cause, location, and peer financial context.',
+    'url': 'https://daanaa.org/directory',
+    'numberOfItems': 1800000,
+    'itemListElement': [
+        {'@type': 'ListItem', 'position': 1, 'name': 'Arts & Culture', 'url': 'https://daanaa.org/category/A'},
+        {'@type': 'ListItem', 'position': 2, 'name': 'Education', 'url': 'https://daanaa.org/category/B'},
+        {'@type': 'ListItem', 'position': 3, 'name': 'Environment & Animals', 'url': 'https://daanaa.org/category/C'},
+        {'@type': 'ListItem', 'position': 4, 'name': 'Health', 'url': 'https://daanaa.org/category/E'},
+        {'@type': 'ListItem', 'position': 5, 'name': 'Human Services', 'url': 'https://daanaa.org/category/P'},
+        {'@type': 'ListItem', 'position': 6, 'name': 'Community Development', 'url': 'https://daanaa.org/category/S'},
+        {'@type': 'ListItem', 'position': 7, 'name': 'Religion', 'url': 'https://daanaa.org/category/X'},
+        {'@type': 'ListItem', 'position': 8, 'name': 'Public Benefit', 'url': 'https://daanaa.org/category/W'},
+    ],
+}
+
+
 def _org_jsonld(org: dict, ein: str) -> dict:
     name = org.get('organization_name') or 'Nonprofit'
     city, state = org.get('CITY'), org.get('STATE')
@@ -1272,10 +1370,105 @@ def _meta_for_path(path: str):
                 f"{name}{(' in ' + loc) if loc else ''}: public IRS record, peer "
                 f"financial context, and mission on Daanaa.")
             return (f"{name} — Daanaa", desc, f"https://daanaa.org/org/{ein}", _org_jsonld(org, ein))
+    if p.startswith('events/'):
+        parts = p.split('/')
+        if len(parts) >= 2:
+            try:
+                eid = int(parts[1])
+            except ValueError:
+                return None
+            event = _fetch_event_for_meta(eid)
+            if event:
+                return _event_meta(event, eid)
     if p in _STATIC_META:
         title, desc = _STATIC_META[p]
-        return (title, desc, f"https://daanaa.org/{p}", None)
+        jsonld = _DIRECTORY_JSONLD if p == 'directory' else None
+        return (title, desc, f"https://daanaa.org/{p}", jsonld)
     return None
+
+
+def _fetch_event_for_meta(event_id: int) -> dict | None:
+    """Fetch event data from the live backend for SEO meta injection."""
+    try:
+        url = f"{LIVE_UPSTREAM}/api/events/{event_id}"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            import json as _json
+            return _json.loads(resp.read())
+    except Exception:
+        return None
+
+
+def _event_meta(event: dict, event_id: int):
+    """Build (title, desc, url, jsonld) tuple for an event page."""
+    title     = event.get('title', 'Volunteer Event')
+    org_name  = event.get('org_name', '')
+    date_str  = event.get('event_date', '')
+    city      = event.get('location_city') or ''
+    state     = event.get('location_state') or ''
+    loc_str   = f"{city}, {state}".strip(', ') if (city or state) else ('Virtual' if event.get('is_virtual') else '')
+    desc_raw  = event.get('description') or ''
+    desc      = desc_raw[:200] if desc_raw else (
+        f"{title} — {org_name}" if org_name else title
+    )
+    page_url  = f"https://daanaa.org/events/{event_id}"
+
+    # Build start/end datetimes for JSON-LD (local time without tz — most events don't store tz)
+    ev_date    = date_str.replace('-', '')
+    start_time = (event.get('start_time') or '09:00').replace(':', '')
+    end_time   = (event.get('end_time')   or '10:00').replace(':', '')
+    dtstart    = f"{ev_date}T{start_time}00"
+    dtend      = f"{ev_date}T{end_time}00"
+
+    capacity  = event.get('capacity')
+    confirmed = event.get('signup_count', 0)
+    remaining = (capacity - confirmed) if capacity is not None else None
+
+    location_block: dict
+    if event.get('is_virtual'):
+        location_block = {'@type': 'VirtualLocation', 'url': page_url}
+        attendance_mode = 'OnlineEventAttendanceMode'
+    else:
+        location_block = {
+            '@type': 'Place',
+            'address': {
+                '@type': 'PostalAddress',
+                'addressLocality': city,
+                'addressRegion': state,
+                'postalCode': event.get('location_zip') or '',
+                'addressCountry': 'US',
+            },
+        }
+        attendance_mode = 'OfflineEventAttendanceMode'
+
+    jsonld: dict = {
+        '@context': 'https://schema.org',
+        '@type': 'Event',
+        'name': title,
+        'startDate': dtstart,
+        'endDate': dtend,
+        'description': desc_raw[:500],
+        'url': page_url,
+        'eventStatus': 'EventScheduled',
+        'eventAttendanceMode': f'https://schema.org/{attendance_mode}',
+        'location': location_block,
+        'offers': {
+            '@type': 'Offer',
+            'price': '0',
+            'priceCurrency': 'USD',
+            'availability': 'https://schema.org/InStock',
+            'url': page_url,
+        },
+    }
+    if org_name:
+        jsonld['organizer'] = {'@type': 'Organization', 'name': org_name}
+    if remaining is not None:
+        jsonld['remainingAttendeeCapacity'] = max(0, remaining)
+    min_age = event.get('min_age')
+    if min_age:
+        jsonld['typicalAgeRange'] = f'{min_age}-'
+
+    page_title = f"{title} — {org_name} · Daanaa" if org_name else f"{title} · Daanaa"
+    return (page_title, desc, page_url, jsonld)
 
 # Known SPA route prefixes — anything not in this set and not a static file returns 404.
 # Prevents probe paths (/.env, /.git/config, /backup.zip) from getting a soft 200.
@@ -1285,7 +1478,7 @@ _SPA_PREFIXES = {
     'principles', 'governance', 'stewardship', 'why-daanaa-exists', 'tiers',
     'methodology', 'sector-health', 'learn', 'guides', 'faq', 'feedback',
     'partners', 'for-vendors', 'vendor-policy', 'terms', 'guild', 'member',
-    'volunteer', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
+    'volunteer', 'events', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
     'nonprofit', 'vendor', 'claim', 'admin', 'sector-health',
 }
 

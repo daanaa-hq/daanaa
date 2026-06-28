@@ -13,6 +13,8 @@ Allow: /the-invisible-97
 Allow: /guides
 Allow: /faq
 Allow: /for-nonprofits
+Allow: /volunteer
+Allow: /events/
 
 # API, admin, and user-account paths — no value indexing these
 Disallow: /api/
@@ -21,8 +23,5 @@ Disallow: /giving-list/
 Disallow: /wallet
 Disallow: /compare
 Disallow: /claim/
-
-# Crawl slowly — this is a small droplet
-Crawl-delay: 2
 
 Sitemap: https://daanaa.org/sitemap.xml

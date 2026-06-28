@@ -251,7 +251,7 @@ export default function DataUpdateForm({
       </div>
 
       <label className="block">
-        <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">What changed? <span className="text-muted-cream font-normal">(optional)</span></span>
+        <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">What changed? <span className="text-cool-grey font-normal">(optional)</span></span>
         <textarea
           name="explanation"
           value={form.explanation}

@@ -15,7 +15,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
   const savedCount = entries.length
 
   // Discover stays lit while browsing anything reached from the directory
-  const discoverPrefixes = ['/directory', '/org/', '/category/', '/causes/']
+  const discoverPrefixes = ['/directory', '/org/', '/category/', '/causes/', '/volunteer', '/events/']
   const isActive = (path: string) =>
     path === '/directory'
       ? discoverPrefixes.some(pre => location.pathname === pre || location.pathname.startsWith(pre))
@@ -60,6 +60,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
           <div className="hidden md:flex items-center gap-8">
             {[
               { label: 'Discover', path: '/directory' },
+              { label: 'Volunteer', path: '/volunteer' },
               { label: 'Claim your page', path: '/for-nonprofits' },
             ].map((item) => (
               <Link
@@ -173,6 +174,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
             </form>
             {[
               { label: 'Discover', path: '/directory' },
+              { label: 'Volunteer', path: '/volunteer' },
               { label: 'Claim your page', path: '/for-nonprofits' },
             ].map((item, i) => (
               <Link

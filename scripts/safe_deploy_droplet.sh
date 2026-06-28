@@ -231,15 +231,24 @@ frontend_ship() {
   rsync -az --delete -e "ssh -i $SSH_KEY -o ConnectTimeout=15" \
     "$FRONTEND_LOCAL/dist/" "${DROPLET_USER}@${DROPLET_IP}:${FRONTEND_DROPLET}.new/" \
     >>"$LOG" 2>&1 || die "frontend rsync failed — live SPA untouched (synced to .new)"
-  # Atomic swap of the SPA dir on the droplet
-  $SSH "rm -rf ${FRONTEND_DROPLET}.old && \
-        ( [ -d ${FRONTEND_DROPLET} ] && mv ${FRONTEND_DROPLET} ${FRONTEND_DROPLET}.old || true ) && \
+  # Atomic swap: promote .new → live, keep .old until smoke tests pass
+  $SSH "( [ -d ${FRONTEND_DROPLET} ] && mv ${FRONTEND_DROPLET} ${FRONTEND_DROPLET}.old || true ) && \
         mv ${FRONTEND_DROPLET}.new ${FRONTEND_DROPLET}" >>"$LOG" 2>&1 \
     || die "frontend swap failed on droplet"
-  local code
-  code=$(curl -s -o /dev/null -w '%{http_code}' https://daanaa.org/ || echo 000)
-  log "Public SPA check: $code"
-  log "✓ frontend live (research page + methodology updated)"
+  # Smoke test a representative set of SPA routes (not just the homepage)
+  local ok=1
+  for path in "/" "/directory" "/org/530196605" "/about"; do
+    local code
+    code=$(curl -s -o /dev/null -w '%{http_code}' "https://daanaa.org${path}" || echo 000)
+    log "Smoke: ${path} → ${code}"
+    [ "$code" = "200" ] || { log "WARN: ${path} returned ${code}"; ok=0; }
+  done
+  if [ "$ok" = "1" ]; then
+    $SSH "rm -rf ${FRONTEND_DROPLET}.old" >>"$LOG" 2>&1 || true
+    log "✓ frontend live — all smoke checks passed; .old cleaned up"
+  else
+    log "WARN: some smoke checks failed — .old retained at ${FRONTEND_DROPLET}.old for rollback"
+  fi
 }
 
 # ---- Orchestrate ----

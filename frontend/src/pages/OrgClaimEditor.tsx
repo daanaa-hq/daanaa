@@ -281,6 +281,11 @@ interface EventFormData {
   signup_url: string
   contact_email: string
   capacity: string
+  coordinator_name: string
+  skill_level: string
+  what_to_bring: string
+  waiver_url: string
+  parking_info: string
   safetyAck: boolean
 }
 
@@ -288,6 +293,8 @@ const EMPTY_FORM: EventFormData = {
   title: '', description: '', event_date: '', start_time: '', end_time: '',
   location_city: '', location_state: '', location_zip: '',
   is_virtual: false, signup_url: '', contact_email: '', capacity: '',
+  coordinator_name: '',
+  skill_level: 'any', what_to_bring: '', waiver_url: '', parking_info: '',
   safetyAck: false,
 }
 
@@ -302,6 +309,8 @@ function EventForm({
   const [form, setForm] = useState<EventFormData>(initial ?? EMPTY_FORM)
   const set = (k: keyof EventFormData, v: string | boolean) =>
     setForm(prev => ({ ...prev, [k]: v }))
+  const hasExistingDetails = !!(initial?.coordinator_name || initial?.what_to_bring || initial?.waiver_url || initial?.parking_info || (initial?.skill_level && initial.skill_level !== 'any'))
+  const [showDetails, setShowDetails] = useState(hasExistingDetails)
 
   return (
     <div className="border border-soft-gold/30 rounded-xl p-5 bg-warm-cream space-y-4">
@@ -439,6 +448,84 @@ function EventForm({
         />
       </label>
 
+      <label className="block">
+        <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Volunteer coordinator name</span>
+        <input
+          type="text" maxLength={100}
+          value={form.coordinator_name} onChange={e => set('coordinator_name', e.target.value)}
+          placeholder="e.g. Maria Chen"
+          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+          disabled={saving}
+        />
+        <p className="mt-1 font-body text-[11px] text-cool-grey">Shown to volunteers so they know who to look for. You'll also receive signup emails.</p>
+      </label>
+
+      {/* Volunteer prep — collapsible; helps volunteers show up ready */}
+      <div className="pt-2 border-t border-light-grey/60">
+        <button
+          type="button"
+          onClick={() => setShowDetails(v => !v)}
+          className="flex items-center gap-1.5 font-body text-[12px] font-semibold text-cool-grey tracking-[0.06em] uppercase hover:text-deep-navy transition-colors"
+        >
+          <svg
+            width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            className={`transition-transform ${showDetails ? 'rotate-90' : ''}`}
+          >
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+          {showDetails ? 'Hide prep details' : 'Add prep details (optional)'}
+        </button>
+        {showDetails && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block">
+              <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Skill level needed</span>
+              <select
+                value={form.skill_level} onChange={e => set('skill_level', e.target.value)}
+                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy bg-white focus:outline-none focus:border-soft-gold/60"
+                disabled={saving}
+              >
+                <option value="any">Anyone welcome</option>
+                <option value="beginner">Beginner friendly</option>
+                <option value="intermediate">Some experience helpful</option>
+                <option value="skilled">Skilled volunteers only</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Waiver URL</span>
+              <input
+                type="url" maxLength={500}
+                value={form.waiver_url} onChange={e => set('waiver_url', e.target.value)}
+                placeholder="https://..."
+                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                disabled={saving}
+              />
+              <p className="mt-1 font-body text-[11px] text-cool-grey">Link to liability waiver if required</p>
+            </label>
+            <label className="block">
+              <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">What to bring</span>
+              <input
+                type="text" maxLength={500}
+                value={form.what_to_bring} onChange={e => set('what_to_bring', e.target.value)}
+                placeholder="e.g. Gloves, closed-toe shoes, water bottle"
+                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                disabled={saving}
+              />
+            </label>
+            <label className="block">
+              <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Parking and transit</span>
+              <input
+                type="text" maxLength={300}
+                value={form.parking_info} onChange={e => set('parking_info', e.target.value)}
+                placeholder="e.g. Free parking on Oak St, bus route 12"
+                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                disabled={saving}
+              />
+            </label>
+          </div>
+        )}
+      </div>
+
       <label className="flex items-start gap-2.5 cursor-pointer pt-1">
         <input
           type="checkbox"
@@ -499,8 +586,13 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
         location_zip:   data.location_zip || null,
         is_virtual:     data.is_virtual,
         signup_url:     data.signup_url || null,
-        contact_email:  data.contact_email || null,
-        capacity:       data.capacity ? Number(data.capacity) : null,
+        contact_email:    data.contact_email || null,
+        capacity:         data.capacity ? Number(data.capacity) : null,
+        coordinator_name: data.coordinator_name || null,
+        skill_level:      (data.skill_level || 'any') as 'any' | 'beginner' | 'intermediate' | 'skilled',
+        what_to_bring:    data.what_to_bring || null,
+        waiver_url:       data.waiver_url || null,
+        parking_info:     data.parking_info || null,
       })
       setEvents(prev => [ev, ...prev])
       setShowForm(false)
@@ -525,8 +617,13 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
         location_zip:   data.location_zip || null,
         is_virtual:     data.is_virtual,
         signup_url:     data.signup_url || null,
-        contact_email:  data.contact_email || null,
-        capacity:       data.capacity ? Number(data.capacity) : null,
+        contact_email:    data.contact_email || null,
+        capacity:         data.capacity ? Number(data.capacity) : null,
+        coordinator_name: data.coordinator_name || null,
+        skill_level:      (data.skill_level || 'any') as 'any' | 'beginner' | 'intermediate' | 'skilled',
+        what_to_bring:    data.what_to_bring || null,
+        waiver_url:       data.waiver_url || null,
+        parking_info:     data.parking_info || null,
       })
       setEvents(prev => prev.map(e => e.id === id ? ev : e))
       setEditId(null)
@@ -613,6 +710,9 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
                 location_state: ev.location_state ?? '', location_zip: ev.location_zip ?? '',
                 is_virtual: ev.is_virtual, signup_url: ev.signup_url ?? '',
                 contact_email: ev.contact_email ?? '', capacity: ev.capacity ? String(ev.capacity) : '',
+                coordinator_name: ev.coordinator_name ?? '',
+                skill_level: ev.skill_level ?? 'any', what_to_bring: ev.what_to_bring ?? '',
+                waiver_url: ev.waiver_url ?? '', parking_info: ev.parking_info ?? '',
                 safetyAck: true,
               }}
               onSave={data => handleUpdate(ev.id, data)}

@@ -33,7 +33,8 @@
     --bright-gold: #D4B87A;
     --pale-gold: #E8D5A3;
     --muted-cream: #D4CCBF;
-    --cool-grey: #5E6675;
+    --cool-grey: #374151;
+    --light-cream: #EDE8E0;
     --light-grey: #E5E0DB;
     --deep-gold: #8B7340;
     --success-green: #4ADE80;
@@ -94,6 +95,7 @@
   .text-pale-gold { color: var(--pale-gold); }
   .text-muted-cream { color: var(--muted-cream); }
   .text-cool-grey { color: var(--cool-grey); }
+  .text-light-cream { color: var(--light-cream); }
   .text-light-grey { color: var(--light-grey); }
   .text-deep-gold { color: var(--deep-gold); }
   .text-success-green { color: var(--success-green); }
@@ -108,12 +110,14 @@
   .bg-pale-gold { background-color: var(--pale-gold); }
   .bg-muted-cream { background-color: var(--muted-cream); }
   .bg-cool-grey { background-color: var(--cool-grey); }
+  .bg-light-cream { background-color: var(--light-cream); }
   .bg-light-grey { background-color: var(--light-grey); }
   .bg-deep-gold { background-color: var(--deep-gold); }
   .bg-success-green { background-color: var(--success-green); }
   .bg-alert-amber { background-color: var(--alert-amber); }
 
   .border-soft-gold { border-color: var(--soft-gold); }
+  .border-light-cream { border-color: var(--light-cream); }
   .border-light-grey { border-color: var(--light-grey); }
   .border-navy-mid { border-color: var(--navy-mid); }
   .border-muted-cream { border-color: var(--muted-cream); }

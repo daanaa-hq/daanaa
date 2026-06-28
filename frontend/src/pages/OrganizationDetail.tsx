@@ -18,7 +18,7 @@ import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
-import { getPrimaryExternalLink } from '../utils/externalLink'
+import { getPrimaryExternalLink, normalizeExternalUrl } from '../utils/externalLink'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import { useAuth } from '../contexts/AuthContext'
@@ -1458,9 +1458,9 @@ export default function OrganizationDetail() {
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
             </button>
-            {hasVerifiedSite && (
+            {hasVerifiedSite && normalizeExternalUrl(apiOrg?.website) && (
               <a
-                href={apiOrg!.website!}
+                href={normalizeExternalUrl(apiOrg!.website)!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg hover:bg-bright-gold transition-colors"

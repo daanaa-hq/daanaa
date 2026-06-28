@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import LampMark from '../components/LampMark'
 import { useApi } from '../hooks/useApi'
-import { getStats, getCategories, getOrganizations, type ApiOrganization } from '../data/api'
+import { getStats, getCategories, getOrganizations, searchVolunteerEvents, type ApiOrganization, type VolunteerEvent } from '../data/api'
 import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
@@ -103,7 +103,7 @@ function HeroSection() {
 
         <p
           className={`mt-6 font-body text-[13px] transition-opacity duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
-          style={{ color: 'rgba(245,240,235,0.65)', transitionDelay: '600ms' }}
+          style={{ color: 'rgba(245,240,235,0.82)', transitionDelay: '600ms' }}
         >
           Independent · Built on public records · Not a rating agency
         </p>
@@ -461,7 +461,7 @@ function BrowseCauses() {
 
         {/* Section header */}
         <div className="mb-10">
-          <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-deep-gold uppercase mb-2">
+          <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-[#6B4F1A] uppercase mb-2">
             Find by Cause
           </p>
           <h2
@@ -537,7 +537,7 @@ function BrowseCauses() {
                   {cat.name}
                 </p>
                 {count != null && (
-                  <p className="font-body text-[10px] text-cool-grey">{count.toLocaleString()}</p>
+                  <p className="font-body text-[10px] text-deep-navy/55">{count.toLocaleString()}</p>
                 )}
               </Link>
             )
@@ -885,6 +885,133 @@ function HiddenGemsSection() {
   )
 }
 
+// ─── Volunteer Events ─────────────────────────────────────────────────────────
+function formatEventDate(d: string) {
+  const [y, m, day] = d.split('-')
+  return new Date(Number(y), Number(m) - 1, Number(day)).toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+  })
+}
+
+function EventMiniCard({ event }: { event: VolunteerEvent }) {
+  const location = event.is_virtual
+    ? 'Virtual'
+    : [event.location_city, event.location_state].filter(Boolean).join(', ') || null
+
+  return (
+    <Link
+      to={`/events/${event.id}`}
+      className="bg-white border border-light-cream rounded-2xl p-5 flex flex-col gap-3 hover:border-soft-gold/40 hover:shadow-sm transition-all"
+    >
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase ${
+          event.event_type === 'volunteer' ? 'bg-green-50 text-green-700'
+          : event.event_type === 'community' ? 'bg-soft-gold/10 text-soft-gold'
+          : event.event_type === 'fundraiser' ? 'bg-blue-50 text-blue-600'
+          : 'bg-purple-50 text-purple-600'
+        }`}>
+          {event.event_type ?? 'Event'}
+        </span>
+        {event.is_virtual && (
+          <span className="inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase bg-blue-50 text-blue-600">
+            Virtual
+          </span>
+        )}
+      </div>
+      <div>
+        <h3 className="font-display italic text-deep-navy text-[17px] leading-tight line-clamp-2">{event.title}</h3>
+        {event.org_name && (
+          <p className="font-body text-[12px] text-cool-grey mt-0.5">{event.org_name}</p>
+        )}
+      </div>
+      <div className="flex items-center gap-1 text-cool-grey">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span className="font-body text-[12px]">{formatEventDate(event.event_date)}</span>
+        {location && <span className="font-body text-[12px] text-cool-grey">· {location}</span>}
+      </div>
+      {event.description && (
+        <p className="font-body text-[13px] text-cool-grey leading-[1.6] line-clamp-2">{event.description}</p>
+      )}
+      <div className="mt-auto">
+        <span className="font-body text-[12px] text-soft-gold font-semibold">See details →</span>
+      </div>
+    </Link>
+  )
+}
+
+function VolunteerEventsSection() {
+  const [events, setEvents] = useState<VolunteerEvent[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const { ref, inView } = useInView(0.1)
+
+  useEffect(() => {
+    if (!inView || loaded) return
+    setLoaded(true)
+    searchVolunteerEvents({ virtual: false })
+      .then(res => setEvents(res.events.slice(0, 4)))
+      .catch(() => {})
+  }, [inView, loaded])
+
+  if (loaded && events.length === 0) return null
+
+  return (
+    <section className="bg-white border-t border-light-grey py-14 md:py-20">
+      <div ref={ref} className="max-w-[1200px] mx-auto px-6 lg:px-12">
+        <div className="flex items-end justify-between gap-4 mb-8">
+          <div>
+            <p className="font-body text-[12px] font-semibold tracking-[0.1em] text-soft-gold uppercase mb-2">
+              Volunteer
+            </p>
+            <h2 className="font-display italic text-deep-navy text-[28px] md:text-[36px] leading-[1.1] tracking-[-0.01em]">
+              Give your time
+            </h2>
+            <p className="mt-3 font-body text-[15px] text-cool-grey max-w-[520px] leading-[1.65]">
+              Nonprofit organizations post volunteer opportunities directly on Daanaa. Show up, meet the people behind the mission.
+            </p>
+          </div>
+          <Link
+            to="/volunteer"
+            className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-soft-gold/40 text-soft-gold font-body text-[13px] font-semibold hover:bg-soft-gold/8 transition-colors shrink-0"
+          >
+            Find opportunities
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </Link>
+        </div>
+
+        {events.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {events.map(ev => <EventMiniCard key={ev.id} event={ev} />)}
+            </div>
+            <div className="mt-6 text-center md:hidden">
+              <Link
+                to="/volunteer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+              >
+                Find opportunities near you
+              </Link>
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-light-cream rounded-2xl h-[200px] animate-pulse" />
+            ))}
+          </div>
+        )}
+
+        <p className="mt-6 font-body text-[12px] text-cool-grey text-center">
+          Sign-ups go directly to the organization. Daanaa does not collect volunteer information.
+        </p>
+      </div>
+    </section>
+  )
+}
+
 // ─── Advisor teaser ───────────────────────────────────────────────────────────
 function AdvisorTeaser() {
   return (
@@ -1012,6 +1139,7 @@ export default function Home() {
       <HowDiscoveryWorks />
       <FeaturedCause />
       <HiddenGemsSection />
+      <VolunteerEventsSection />
       <BrowseCauses />
 
       <PeerFinancialContextSection />

@@ -1,5 +1,5 @@
 // API client for Daanaa backend — maps to daanaa_api.py (Flask, port 5000)
-const API_BASE = import.meta.env.VITE_API_URL || '';
+export const API_BASE = import.meta.env.VITE_API_URL || '';
 
 // Nonprofit endpoints route to the home server API instead of the droplet
 // This keeps the droplet stateless (browse/search only) while nonprofit features
@@ -159,6 +159,8 @@ export interface ApiOrganization {
   } | null;
   // Governance & volunteerism
   seeking_board_members?: boolean | null;
+  // Events (claimed orgs with posted volunteer events)
+  upcoming_events_count?: number | null;
 }
 
 export interface ApiCategory {
@@ -481,6 +483,8 @@ export async function putServiceArea(
 
 // ── Volunteer events ────────────────────────────────────────────────────────
 
+export type EventType = 'volunteer' | 'community' | 'fundraiser' | 'networking'
+
 export interface VolunteerEvent {
   id: number
   ein: string
@@ -497,9 +501,66 @@ export interface VolunteerEvent {
   contact_email: string | null
   capacity: number | null
   status: 'active' | 'filled' | 'cancelled' | 'expired'
+  event_type: EventType
+  short_id: string | null
+  min_age: number | null
+  expected_hours: number | null
+  skill_level: 'any' | 'beginner' | 'intermediate' | 'skilled' | null
+  what_to_bring: string | null
+  waiver_url: string | null
+  parking_info: string | null
+  coordinator_name: string | null
+  signup_count: number
   org_name?: string | null
+  org_mission?: string | null
   created_at: string
   updated_at: string
+}
+
+export interface EventAttendee {
+  name: string
+  age_group: 'child' | 'teen' | 'adult' | 'senior'
+}
+
+export interface EventSignupResult {
+  ok: boolean
+  booking_token: string
+  total_count: number
+  cancel_url: string
+  idempotent?: boolean
+}
+
+export interface OrgSignup {
+  id: number
+  contact_name: string
+  contact_email: string
+  attendees: EventAttendee[]
+  total_count: number
+  status: 'confirmed' | 'cancelled' | 'attended' | 'no_show'
+  hours_verified: number | null
+  hours_verified_at: string | null
+  created_at: string
+}
+
+export interface OrgContacts {
+  general_email?: string
+  general_phone?: string
+  mailing_address?: string
+  volunteer_name?: string
+  volunteer_email?: string
+  volunteer_phone?: string
+  donor_name?: string
+  donor_email?: string
+  events_name?: string
+  events_email?: string
+  media_name?: string
+  media_email?: string
+  website?: string
+  facebook_url?: string
+  instagram_url?: string
+  linkedin_url?: string
+  twitter_url?: string
+  youtube_url?: string
 }
 
 export interface VolunteerEventSearchParams {
@@ -509,6 +570,7 @@ export interface VolunteerEventSearchParams {
   date_from?: string
   date_to?: string
   ntee?: string
+  event_type?: EventType
   virtual?: boolean
   limit?: number
   offset?: number
@@ -518,16 +580,141 @@ export async function searchVolunteerEvents(
   params: VolunteerEventSearchParams,
 ): Promise<{ events: VolunteerEvent[]; count: number }> {
   const q = new URLSearchParams()
-  if (params.zip)       q.set('zip', params.zip)
-  if (params.city)      q.set('city', params.city)
-  if (params.state)     q.set('state', params.state)
-  if (params.date_from) q.set('date_from', params.date_from)
-  if (params.date_to)   q.set('date_to', params.date_to)
-  if (params.ntee)      q.set('ntee', params.ntee)
-  if (params.virtual)   q.set('virtual', '1')
-  if (params.limit)     q.set('limit', String(params.limit))
-  if (params.offset)    q.set('offset', String(params.offset))
+  if (params.zip)        q.set('zip', params.zip)
+  if (params.city)       q.set('city', params.city)
+  if (params.state)      q.set('state', params.state)
+  if (params.date_from)  q.set('date_from', params.date_from)
+  if (params.date_to)    q.set('date_to', params.date_to)
+  if (params.ntee)       q.set('ntee', params.ntee)
+  if (params.event_type) q.set('event_type', params.event_type)
+  if (params.virtual)    q.set('virtual', '1')
+  if (params.limit)      q.set('limit', String(params.limit))
+  if (params.offset)     q.set('offset', String(params.offset))
   return fetchJson(`${API_BASE}/api/volunteer-events?${q}`)
+}
+
+export async function getEventDetail(id: number): Promise<VolunteerEvent> {
+  return fetchJson(`${API_BASE}/api/events/${id}`)
+}
+
+export async function signupForEvent(
+  eventId: number,
+  payload: {
+    contact_name: string
+    contact_email: string
+    attendees?: EventAttendee[]
+    idempotency_key?: string
+  },
+): Promise<EventSignupResult> {
+  return fetchJson(`${API_BASE}/api/events/${eventId}/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function cancelEventSignup(
+  eventId: number,
+  bookingToken: string,
+): Promise<{ ok: boolean }> {
+  return fetchJson(`${API_BASE}/api/events/${eventId}/cancel-booking`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ booking_token: bookingToken }),
+  })
+}
+
+export async function getOrgContactsPublic(ein: string): Promise<{ contacts: OrgContacts }> {
+  return fetchJson(`${API_BASE}/api/org/${ein}/contacts`)
+}
+
+export async function getPortalContacts(
+  ein: string,
+  idToken: string,
+): Promise<{ contacts: OrgContacts }> {
+  return fetchJson(`${API_BASE}/api/portal/contacts?ein=${ein}`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+}
+
+export async function updatePortalContacts(
+  ein: string,
+  contacts: Partial<OrgContacts>,
+  idToken: string,
+): Promise<{ contacts: OrgContacts }> {
+  return fetchJson(`${API_BASE}/api/portal/contacts`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ ein, ...contacts }),
+  })
+}
+
+export async function getPortalEvents(
+  ein: string,
+  idToken: string,
+  all?: boolean,
+): Promise<{ events: VolunteerEvent[] }> {
+  const q = all ? '?all=1' : ''
+  return fetchJson(`${API_BASE}/api/portal/events?ein=${ein}${all ? '&all=1' : ''}`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+}
+
+export async function createPortalEvent(
+  ein: string,
+  event: Partial<VolunteerEvent> & { title: string; event_date: string },
+  idToken: string,
+): Promise<VolunteerEvent> {
+  return fetchJson(`${API_BASE}/api/portal/events`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ ein, ...event }),
+  })
+}
+
+export async function updatePortalEvent(
+  eventId: number,
+  updates: Partial<VolunteerEvent>,
+  idToken: string,
+): Promise<VolunteerEvent> {
+  return fetchJson(`${API_BASE}/api/portal/events/${eventId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify(updates),
+  })
+}
+
+export async function cancelPortalEvent(
+  eventId: number,
+  reason: string,
+  idToken: string,
+): Promise<{ ok: boolean; notified: number }> {
+  return fetchJson(`${API_BASE}/api/portal/events/${eventId}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ reason }),
+  })
+}
+
+export async function getEventAttendees(
+  eventId: number,
+  idToken: string,
+): Promise<{ signups: OrgSignup[]; total: number }> {
+  return fetchJson(`${API_BASE}/api/portal/events/${eventId}/attendees`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+  })
+}
+
+export async function verifyEventHours(
+  eventId: number,
+  verifications: Array<{ signup_id: number; hours: number; attended: boolean }>,
+  idToken: string,
+): Promise<{ ok: boolean; updated: number }> {
+  return fetchJson(`${API_BASE}/api/portal/events/${eventId}/verify-hours`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+    body: JSON.stringify({ verifications }),
+  })
 }
 
 export async function getOrgVolunteerEvents(
@@ -541,7 +728,7 @@ export async function getOrgVolunteerEvents(
 export async function createVolunteerEvent(
   ein: string,
   token: string,
-  event: Omit<VolunteerEvent, 'id' | 'ein' | 'status' | 'org_name' | 'created_at' | 'updated_at'>,
+  event: Pick<VolunteerEvent, 'title' | 'event_date'> & Partial<Omit<VolunteerEvent, 'id' | 'ein' | 'status' | 'org_name' | 'created_at' | 'updated_at'>>,
 ): Promise<VolunteerEvent> {
   return fetchJson(`${API_BASE}/api/org/${ein}/volunteer-events`, {
     method: 'POST',

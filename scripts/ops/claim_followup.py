@@ -154,9 +154,69 @@ hello@daanaa.org
     return sent
 
 
+def nudge_incomplete_profiles(conn: sqlite3.Connection) -> int:
+    """14-day nudge: verified claim with no custom_mission set yet.
+
+    Targets the first 30-day window after verification — early enough to
+    be useful, late enough that the org has had a chance to settle in.
+    Max 1 nudge per claim (profile_nudge_sent_at guards repeats).
+    """
+    cutoff_verified = (datetime.now() - timedelta(days=14)).isoformat()
+    cutoff_window   = (datetime.now() - timedelta(days=44)).isoformat()
+
+    rows = conn.execute("""
+        SELECT c.ein, c.email, c.rep_name, c.verified_at,
+               r.organization_name
+        FROM org_claims c
+        LEFT JOIN registry_enriched r ON r.EIN = c.ein
+        WHERE c.claim_status = 'verified'
+          AND c.verified_at < ?
+          AND c.verified_at > ?
+          AND (c.custom_mission IS NULL OR c.custom_mission = '')
+          AND (c.profile_nudge_sent_at IS NULL OR c.profile_nudge_sent_at = '')
+    """, (cutoff_verified, cutoff_window)).fetchall()
+
+    sent = 0
+    for row in rows:
+        name = row["rep_name"] or "there"
+        org  = row["organization_name"] or f"EIN {row['ein']}"
+        portal_url = f"https://daanaa.org/nonprofit/{row['ein']}/portal"
+
+        body = f"""Hi {name},
+
+One quick thing — you haven't added a custom mission statement to your Daanaa page for {org} yet.
+
+The mission is the first thing a potential donor reads. Even a single sentence in your own words makes a real difference.
+
+You can add it in about a minute from your portal:
+{portal_url}
+
+If you're not sure what to write, start with what you do and who you serve — that's enough.
+
+Reply to this email if you have any questions.
+
+Daanaa Team
+hello@daanaa.org
+"""
+        if send_claim_email(row["email"], f"One thing left on your Daanaa page — {org}", body):
+            conn.execute(
+                "UPDATE org_claims SET profile_nudge_sent_at = ? WHERE ein = ? AND email = ?",
+                (datetime.now().isoformat(), row["ein"], row["email"]),
+            )
+            conn.commit()
+            sent += 1
+            log(f"Profile nudge sent: {row['ein']} → {row['email']}")
+
+    return sent
+
+
 def ensure_columns(conn: sqlite3.Connection):
     """Add followup tracking columns if schema predates this script."""
-    for col, default in [("nudge_sent_at", "NULL"), ("checkin_sent_at", "NULL")]:
+    for col, default in [
+        ("nudge_sent_at", "NULL"),
+        ("checkin_sent_at", "NULL"),
+        ("profile_nudge_sent_at", "NULL"),
+    ]:
         try:
             conn.execute(f"ALTER TABLE org_claims ADD COLUMN {col} TEXT DEFAULT {default}")
             conn.commit()
@@ -172,17 +232,21 @@ def main():
     conn = get_db()
     ensure_columns(conn)
 
-    nudged = nudge_pending_claims(conn)
+    nudged  = nudge_pending_claims(conn)
     checked = checkin_verified_claims(conn)
+    profile = nudge_incomplete_profiles(conn)
     conn.close()
 
-    log(f"Done. pending nudges sent: {nudged} | 7-day check-ins sent: {checked}")
+    log(f"Done. pending nudges: {nudged} | 7-day check-ins: {checked} | profile nudges: {profile}")
 
-    if nudged + checked > 0:
+    if nudged + checked + profile > 0:
         send_ops_email(
             "security@daanaa.org",
-            f"[Daanaa] Claim follow-ups: {nudged} nudges, {checked} check-ins",
-            f"Nightly claim follow-up run complete.\n\nPending (48h) nudges: {nudged}\n7-day check-ins: {checked}\n",
+            f"[Daanaa] Claim follow-ups: {nudged} nudges, {checked} check-ins, {profile} profile",
+            f"Nightly claim follow-up run complete.\n\n"
+            f"Pending (48h) nudges:   {nudged}\n"
+            f"7-day check-ins:        {checked}\n"
+            f"Profile completion (14d): {profile}\n",
         )
 
 

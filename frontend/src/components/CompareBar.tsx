@@ -15,7 +15,7 @@ export default function CompareBar() {
   return (
     <div className="fixed bottom-[60px] md:bottom-0 left-0 right-0 z-40 px-4 py-3 bg-deep-navy border-t border-navy-mid shadow-2xl">
       <div className="max-w-[1200px] mx-auto flex items-center gap-3 flex-wrap">
-        <span className="font-body text-[12px] text-cool-grey shrink-0">
+        <span className="font-body text-[12px] text-warm-cream/60 shrink-0">
           Compare ({items.length}/{MAX_COMPARE}):
         </span>
 
@@ -52,7 +52,7 @@ export default function CompareBar() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={clearItems}
-            className="font-body text-[13px] text-cool-grey hover:text-warm-cream transition-colors"
+            className="font-body text-[13px] text-warm-cream/60 hover:text-warm-cream transition-colors"
           >
             Clear
           </button>

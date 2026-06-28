@@ -663,6 +663,16 @@ if not _claim_secret_raw:
     _claim_secret_raw = "daanaa-dev-claim-secret"
 _CLAIM_SECRET = _claim_secret_raw.encode()
 
+# Booking secret for event signup cancellation tokens — scoped separately so
+# cancellation tokens cannot be confused with claim-verify tokens.
+_BOOKING_SECRET = os.environ.get("DAANAA_BOOKING_SECRET", _claim_secret_raw).encode()
+
+def _make_booking_token(event_id: int, email: str, nonce: str) -> str:
+    return hmac.new(_BOOKING_SECRET, f"booking:{event_id}:{email}:{nonce}".encode(), hashlib.sha256).hexdigest()[:32]
+
+def _make_event_short_id() -> str:
+    return secrets.token_urlsafe(6)  # 8 url-safe base64 chars
+
 def _make_verify_token(ein: str, pin: str) -> str:
     """Return HMAC-SHA256 hex token for the given EIN + PIN pair."""
     return hmac.new(_CLAIM_SECRET, f"{ein}:{pin}".encode(), hashlib.sha256).hexdigest()
@@ -921,6 +931,7 @@ _init_guild_tables()
 
 def _init_volunteer_events_table():
     with sqlite3.connect(LIVE_DB_PATH) as db:
+        db.row_factory = sqlite3.Row
         db.execute("""
             CREATE TABLE IF NOT EXISTS volunteer_events (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -942,10 +953,93 @@ def _init_volunteer_events_table():
                 updated_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        # Schema migration: add new columns for full event platform
+        for col, defn in [
+            ("event_type",     "TEXT NOT NULL DEFAULT 'volunteer'"),
+            ("short_id",       "TEXT"),
+            ("min_age",        "INTEGER"),
+            ("expected_hours", "REAL"),
+            ("virtual_url",    "TEXT"),
+            ("co_org_eins",    "TEXT"),
+            ("skill_level",       "TEXT DEFAULT 'any'"),
+            ("what_to_bring",     "TEXT"),
+            ("waiver_url",        "TEXT"),
+            ("parking_info",      "TEXT"),
+            ("coordinator_name",  "TEXT"),
+        ]:
+            try:
+                db.execute(f"ALTER TABLE volunteer_events ADD COLUMN {col} {defn}")
+            except sqlite3.OperationalError:
+                pass
         db.execute("CREATE INDEX IF NOT EXISTS idx_ve_ein ON volunteer_events(ein)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_ve_date ON volunteer_events(event_date, status)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_ve_location ON volunteer_events(location_state, location_city, status)")
         db.execute("CREATE INDEX IF NOT EXISTS idx_ve_zip ON volunteer_events(location_zip, status)")
+        db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_ve_short_id ON volunteer_events(short_id)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_ve_type ON volunteer_events(event_type, status)")
+        # Backfill short_id for existing events
+        rows = db.execute("SELECT id FROM volunteer_events WHERE short_id IS NULL").fetchall()
+        for r in rows:
+            for _ in range(10):
+                sid = _make_event_short_id()
+                try:
+                    db.execute("UPDATE volunteer_events SET short_id=? WHERE id=?", (sid, r["id"]))
+                    break
+                except sqlite3.IntegrityError:
+                    pass
+        db.commit()
+
+        # org_signups — group bookings for events
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS org_signups (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_id          INTEGER NOT NULL REFERENCES volunteer_events(id),
+                contact_name      TEXT NOT NULL,
+                contact_email     TEXT NOT NULL,
+                booking_token     TEXT NOT NULL UNIQUE,
+                idempotency_key   TEXT UNIQUE,
+                attendees         TEXT NOT NULL DEFAULT '[]',
+                total_count       INTEGER NOT NULL DEFAULT 1,
+                status            TEXT NOT NULL DEFAULT 'confirmed',
+                hours_verified    REAL,
+                hours_verified_at TEXT,
+                hours_verified_by TEXT,
+                cancel_reason     TEXT,
+                created_at        TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                cancelled_at      TEXT
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_os_event_id ON org_signups(event_id, status)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_os_email ON org_signups(contact_email)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_os_token ON org_signups(booking_token)")
+        db.commit()
+
+        # org_contacts — structured public contact directory for claimed orgs
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS org_contacts (
+                ein                TEXT PRIMARY KEY,
+                general_email      TEXT,
+                general_phone      TEXT,
+                mailing_address    TEXT,
+                volunteer_name     TEXT,
+                volunteer_email    TEXT,
+                volunteer_phone    TEXT,
+                donor_name         TEXT,
+                donor_email        TEXT,
+                events_name        TEXT,
+                events_email       TEXT,
+                media_name         TEXT,
+                media_email        TEXT,
+                website            TEXT,
+                facebook_url       TEXT,
+                instagram_url      TEXT,
+                linkedin_url       TEXT,
+                twitter_url        TEXT,
+                youtube_url        TEXT,
+                updated_at         TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_by         TEXT
+            )
+        """)
         db.commit()
 
 _init_volunteer_events_table()
@@ -1339,6 +1433,11 @@ def set_security_headers(response):
         "base-uri 'self'; "
         "form-action 'self';"
     )
+    response.headers["Permissions-Policy"] = (
+        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), "
+        "interest-cohort=()"
+    )
+    response.headers["Cross-Origin-Resource-Policy"] = "same-site"
     if is_prod:
         response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
@@ -1781,6 +1880,17 @@ def get_organization(ein):
             org['cohort_context'] = None
     else:
         org['cohort_context'] = None
+
+    # Upcoming events count for this org (for badge display on search/similar cards)
+    try:
+        ev_row = db.execute(
+            "SELECT COUNT(*) AS cnt FROM volunteer_events "
+            "WHERE ein=? AND status='active' AND event_date >= date('now')",
+            (ein_clean,)
+        ).fetchone()
+        org['upcoming_events_count'] = ev_row['cnt'] if ev_row else 0
+    except Exception:
+        org['upcoming_events_count'] = 0
 
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
@@ -3034,16 +3144,26 @@ def claim_verify():
 
     org_name = org['organization_name'] if org else ""
 
-    # Send verified confirmation email if we have a rep email and the template is available
     rep_email = row['email'] if 'email' in row.keys() else None
-    if rep_email and claim_verified_email and get_email_service:
-        try:
-            dashboard_url = f"https://daanaa.org/nonprofit/dashboard/{ein}"
-            rep_name = row['name'] if 'name' in row.keys() else ""
-            template = claim_verified_email(org_name, rep_name or "there", ein, dashboard_url)
-            get_email_service().send_template(rep_email, template)
-        except Exception as _email_err:
-            _logger.warning(f"claim verified email failed for {ein}: {_email_err}")
+    if rep_email:
+        _rname = (row['rep_name'] if 'rep_name' in row.keys() else None) or 'there'
+        portal_url = f"https://daanaa.org/nonprofit/{ein}/portal"
+        _send_daanaa_email(
+            rep_email,
+            f"Your Daanaa page for {org_name} is verified",
+            f"Hi {_rname},\n\n"
+            f"Great news — {org_name} is verified on Daanaa.\n\n"
+            f"You can update your mission, add programs, and manage your page from your portal:\n"
+            f"{portal_url}\n\n"
+            f"A few things worth doing first:\n"
+            f"  - Add or confirm your mission statement (it's what donors read first)\n"
+            f"  - Check that your service area and cause tags are accurate\n"
+            f"  - If anything on your IRS record looks off, use 'Report an issue' on your page\n\n"
+            f"Questions? Reply to this email.\n\n"
+            f"The Daanaa Team\n"
+            f"  daanaa.org · hello@daanaa.org",
+            from_addr="Daanaa <hello@daanaa.org>",
+        )
 
     return jsonify({
         "status": "verified",
@@ -3740,6 +3860,22 @@ def guild_community_partner_apply():
     ])) or '(not provided)'
     triage_section = f"\n─── Agent review ───\n{triage}\n────────────────────\n" if triage else ""
 
+    _send_daanaa_email(
+        submitter_email,
+        f"We received your application — {data['business_name'].strip()}",
+        f"Hi {data['submitter_name'].strip()},\n\n"
+        f"Thanks for applying to join the Daanaa Impact Network.\n\n"
+        f"We review every application manually. If your offer is a good fit for nonprofits "
+        f"in our directory, we'll be in touch within a few business days.\n\n"
+        f"What you submitted:\n"
+        f"  Business: {data['business_name'].strip()}\n"
+        f"  Category: {data['category'].strip()}\n"
+        f"  Offer:    {data['offer'].strip()}\n\n"
+        f"Questions? Reply to this email.\n\n"
+        f"The Daanaa Team\n"
+        f"  daanaa.org · partners@daanaa.org",
+        from_addr="Daanaa <partners@daanaa.org>",
+    )
     _send_daanaa_email(
         "partners@daanaa.org",
         f"[Community partner] {data['business_name'].strip()} applied to join the network",
@@ -4461,7 +4597,8 @@ def _verify_claim_token(ein: str, token: str) -> bool:
     return token == stored_pin or token == _make_verify_token(ein, stored_pin)
 
 
-def _format_event(row) -> dict:
+def _format_event(row, signup_count: int = 0) -> dict:
+    keys = row.keys() if hasattr(row, 'keys') else []
     return {
         "id":             row["id"],
         "ein":            row["ein"],
@@ -4480,23 +4617,39 @@ def _format_event(row) -> dict:
         "status":         row["status"],
         "created_at":     row["created_at"],
         "updated_at":     row["updated_at"],
+        # New fields (graceful fallback for rows created before migration)
+        "event_type":     row["event_type"] if "event_type" in keys else "volunteer",
+        "short_id":       row["short_id"]   if "short_id"   in keys else None,
+        "min_age":        row["min_age"]    if "min_age"     in keys else None,
+        "expected_hours": row["expected_hours"] if "expected_hours" in keys else None,
+        "skill_level":      row["skill_level"]      if "skill_level"      in keys else "any",
+        "what_to_bring":    row["what_to_bring"]    if "what_to_bring"    in keys else None,
+        "waiver_url":       row["waiver_url"]       if "waiver_url"       in keys else None,
+        "parking_info":     row["parking_info"]     if "parking_info"     in keys else None,
+        "coordinator_name": row["coordinator_name"] if "coordinator_name" in keys else None,
+        "signup_count":     signup_count,
     }
 
 
 @app.route('/api/volunteer-events', methods=['GET'])
 @limiter.limit("120 per minute")
 def volunteer_events_search():
-    """Public search for volunteer events by location/date/cause. No auth required."""
+    """Public search for events by location/date/cause/type. No auth required."""
     db = get_db()
-    zip_code   = (request.args.get('zip')   or '').strip()[:10]
-    city       = (request.args.get('city')  or '').strip()[:100]
-    state      = (request.args.get('state') or '').strip()[:2].upper()
-    date_from  = (request.args.get('date_from') or '').strip()[:10]
-    date_to    = (request.args.get('date_to')   or '').strip()[:10]
-    ntee       = (request.args.get('ntee')  or '').strip()[:1].upper()
-    virtual    = request.args.get('virtual') in ('1', 'true')
-    limit_val  = _int_arg('limit',  50, hi=100)
-    offset_val = _int_arg('offset',  0, hi=10_000_000)
+    zip_code    = (request.args.get('zip')        or '').strip()[:10]
+    city        = (request.args.get('city')       or '').strip()[:100]
+    state       = (request.args.get('state')      or '').strip()[:2].upper()
+    date_from   = (request.args.get('date_from')  or '').strip()[:10]
+    date_to     = (request.args.get('date_to')    or '').strip()[:10]
+    ntee        = (request.args.get('ntee')       or '').strip()[:1].upper()
+    event_type  = (request.args.get('event_type') or '').strip()[:20]
+    virtual     = request.args.get('virtual') in ('1', 'true')
+    limit_val   = _int_arg('limit',  50, hi=100)
+    offset_val  = _int_arg('offset',  0, hi=10_000_000)
+
+    valid_event_types = {'volunteer', 'community', 'fundraiser', 'networking'}
+    if event_type not in valid_event_types:
+        event_type = ''
 
     where, params = ["ve.status='active'", "ve.event_date >= date('now')"], []
     if zip_code:
@@ -4514,8 +4667,12 @@ def volunteer_events_search():
         where.append("ve.event_date <= ?"); params.append(date_to)
     if ntee:
         where.append("r.ntee1=?"); params.append(ntee)
+    if event_type:
+        where.append("ve.event_type=?"); params.append(event_type)
     sql = (
-        "SELECT ve.*, r.organization_name AS org_name "
+        "SELECT ve.*, r.organization_name AS org_name, r.mission AS org_mission, "
+        "(SELECT COALESCE(SUM(total_count),0) FROM org_signups "
+        " WHERE event_id=ve.id AND status='confirmed') AS signup_count "
         "FROM volunteer_events ve "
         "LEFT JOIN registry_enriched r ON ve.ein=r.EIN "
         f"WHERE {' AND '.join(where)} "
@@ -4525,11 +4682,9 @@ def volunteer_events_search():
     rows = db.execute(sql, params + [limit_val, offset_val]).fetchall()
     events = []
     for row in rows:
-        e = _format_event(row)
-        try:
-            e["org_name"] = row["org_name"]
-        except IndexError:
-            e["org_name"] = None
+        e = _format_event(row, signup_count=row["signup_count"])
+        e["org_name"]    = row["org_name"]
+        e["org_mission"] = row["org_mission"]
         events.append(e)
     return jsonify({"events": events, "count": len(events)})
 
@@ -4593,20 +4748,32 @@ def org_volunteer_events_create(ein: str):
             capacity = max(1, int(capacity))
         except (ValueError, TypeError):
             capacity = None
+    valid_skill_levels = {'any', 'beginner', 'intermediate', 'skilled'}
+    skill_level    = (data.get('skill_level') or 'any').strip()[:20]
+    if skill_level not in valid_skill_levels:
+        skill_level = 'any'
+    what_to_bring    = (data.get('what_to_bring')    or '').strip()[:500] or None
+    waiver_url       = (data.get('waiver_url')       or '').strip()[:500] or None
+    parking_info     = (data.get('parking_info')     or '').strip()[:300] or None
+    coordinator_name = (data.get('coordinator_name') or '').strip()[:200] or None
 
     if signup_url and not signup_url.startswith(('http://', 'https://')):
         signup_url = None
+    if waiver_url and not waiver_url.startswith(('http://', 'https://')):
+        waiver_url = None
 
     db = get_db()
     cur = db.execute("""
         INSERT INTO volunteer_events
             (ein, title, description, event_date, start_time, end_time,
              location_city, location_state, location_zip, is_virtual,
-             signup_url, contact_email, capacity, status)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'active')
+             signup_url, contact_email, capacity, status,
+             skill_level, what_to_bring, waiver_url, parking_info, coordinator_name)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,?,?,?,?)
     """, (clean, title, description or None, event_date, start_time, end_time,
           location_city, location_state, location_zip, int(is_virtual),
-          signup_url, contact_email, capacity))
+          signup_url, contact_email, capacity,
+          skill_level, what_to_bring, waiver_url, parking_info, coordinator_name))
     db.commit()
     event_id = cur.lastrowid
     row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
@@ -4631,8 +4798,11 @@ def volunteer_event_update(event_id: int):
 
     allowed = {"title", "description", "event_date", "start_time", "end_time",
                "location_city", "location_state", "location_zip", "is_virtual",
-               "signup_url", "contact_email", "capacity", "status"}
+               "signup_url", "contact_email", "capacity", "status",
+               "skill_level", "what_to_bring", "waiver_url", "parking_info",
+               "coordinator_name"}
     valid_statuses = {"active", "filled", "cancelled"}
+    valid_skill_levels = {"any", "beginner", "intermediate", "skilled"}
     updates, vals = [], []
     for field in allowed:
         if field not in data:
@@ -4641,9 +4811,12 @@ def volunteer_event_update(event_id: int):
         if field == "status":
             if val not in valid_statuses:
                 return jsonify({"error": f"status must be one of {valid_statuses}"}), 400
+        if field == "skill_level":
+            if val not in valid_skill_levels:
+                val = "any"
         if field == "is_virtual":
             val = int(bool(val))
-        if field == "signup_url" and val and not str(val).startswith(('http://', 'https://')):
+        if field in ("signup_url", "waiver_url") and val and not str(val).startswith(('http://', 'https://')):
             continue
         updates.append(f"{field}=?"); vals.append(val)
 
@@ -4676,6 +4849,694 @@ def volunteer_event_delete(event_id: int):
     )
     db.commit()
     return jsonify({"ok": True, "id": event_id, "status": "cancelled"})
+
+
+# ── Events: public discovery & detail ─────────────────────────────────────
+
+def _event_signup_count(db, event_id: int) -> int:
+    row = db.execute(
+        "SELECT COALESCE(SUM(total_count),0) AS n FROM org_signups WHERE event_id=? AND status='confirmed'",
+        (event_id,),
+    ).fetchone()
+    return row["n"] if row else 0
+
+
+@app.route('/api/events/<int:event_id>', methods=['GET'])
+@limiter.limit("120 per minute")
+def event_detail(event_id: int):
+    """Public single-event detail with signup count (no attendee names)."""
+    db = get_db()
+    row = db.execute(
+        "SELECT ve.*, r.organization_name AS org_name, r.mission AS org_mission, "
+        "r.ntee1 AS org_ntee "
+        "FROM volunteer_events ve "
+        "LEFT JOIN registry_enriched r ON ve.ein=r.EIN "
+        "WHERE ve.id=?",
+        (event_id,),
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "Event not found"}), 404
+    e = _format_event(row, signup_count=_event_signup_count(db, event_id))
+    e["org_name"]    = row["org_name"]
+    e["org_mission"] = row["org_mission"]
+    return jsonify(e)
+
+
+@app.route('/e/<short_id>', methods=['GET'])
+def event_short_redirect(short_id: str):
+    """Short URL: /e/{short_id} → 301 → /events/{id}. Used in QR codes and SMS."""
+    if not re.match(r'^[A-Za-z0-9_-]{6,16}$', short_id):
+        return jsonify({"error": "Not found"}), 404
+    db = get_db()
+    row = db.execute("SELECT id FROM volunteer_events WHERE short_id=?", (short_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Not found"}), 404
+    from flask import redirect
+    return redirect(f"/events/{row['id']}", code=301)
+
+
+@app.route('/api/events/<int:event_id>/qr.png', methods=['GET'])
+@limiter.limit("30 per minute")
+def event_qr_code(event_id: int):
+    """Generate a QR code PNG pointing to this event's short URL."""
+    import io
+    import qrcode
+    import qrcode.constants
+    db = get_db()
+    row = db.execute(
+        "SELECT id, short_id, status FROM volunteer_events WHERE id=?", (event_id,)
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "Event not found"}), 404
+    url = (f"https://daanaa.org/e/{row['short_id']}" if row["short_id"]
+           else f"https://daanaa.org/events/{event_id}")
+    qr = qrcode.QRCode(
+        version=None, box_size=10, border=4,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+    )
+    qr.add_data(url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#0d2033", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    resp = make_response(buf.read())
+    resp.headers['Content-Type']  = 'image/png'
+    resp.headers['Cache-Control'] = 'public, max-age=86400'
+    return resp
+
+
+@app.route('/api/events/<int:event_id>/calendar.ics', methods=['GET'])
+@limiter.limit("60 per minute")
+def event_ical(event_id: int):
+    """iCal download for any event. Works with Google, Outlook, and Apple Calendar."""
+    db = get_db()
+    row = db.execute(
+        "SELECT ve.*, r.organization_name AS org_name "
+        "FROM volunteer_events ve LEFT JOIN registry_enriched r ON ve.ein=r.EIN "
+        "WHERE ve.id=?",
+        (event_id,),
+    ).fetchone()
+    if not row or row["status"] == "cancelled":
+        return jsonify({"error": "Event not found"}), 404
+
+    ev_date    = row["event_date"]
+    start_time = row["start_time"] or "09:00"
+    end_time   = row["end_time"] or (
+        f"{int(start_time.split(':')[0])+1:02d}:{start_time.split(':')[1]}"
+    )
+    dtstart = f"{ev_date.replace('-','')}T{start_time.replace(':','')}00"
+    dtend   = f"{ev_date.replace('-','')}T{end_time.replace(':','')}00"
+
+    location = "Virtual event" if row["is_virtual"] else ", ".join(
+        filter(None, [row["location_city"], row["location_state"], row["location_zip"]])
+    )
+    desc = (row["description"] or "").replace('\\', '\\\\').replace('\n', '\\n').replace(',', '\\,')
+    org_name = row["org_name"] or "Unknown Organization"
+    url  = f"https://daanaa.org/events/{event_id}"
+
+    ical = (
+        "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Daanaa//daanaa.org//EN\r\n"
+        "CALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nBEGIN:VEVENT\r\n"
+        f"UID:event-{event_id}@daanaa.org\r\n"
+        f"DTSTART:{dtstart}\r\nDTEND:{dtend}\r\n"
+        f"SUMMARY:{row['title']}\r\n"
+        f"DESCRIPTION:{desc}\r\n"
+        f"LOCATION:{location}\r\nURL:{url}\r\n"
+        f"ORGANIZER;CN={org_name}:mailto:events@daanaa.org\r\n"
+        "STATUS:CONFIRMED\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+    )
+    resp = make_response(ical)
+    resp.headers['Content-Type']        = 'text/calendar; charset=utf-8'
+    resp.headers['Content-Disposition'] = f'attachment; filename="event-{event_id}.ics"'
+    return resp
+
+
+# ── Events: public signup ──────────────────────────────────────────────────
+
+@app.route('/api/events/<int:event_id>/signup', methods=['POST'])
+@limiter.limit("20 per minute")
+def event_signup_create(event_id: int):
+    """Group signup for an event. No auth required. Returns HMAC booking token for cancellation."""
+    data = request.get_json(silent=True) or {}
+
+    contact_name  = (data.get('contact_name') or '').strip()[:200]
+    contact_email = (data.get('contact_email') or '').strip()[:200].lower()
+    if not contact_name or not contact_email:
+        return jsonify({"error": "contact_name and contact_email are required"}), 400
+    if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', contact_email):
+        return jsonify({"error": "Invalid email address"}), 400
+
+    attendees_raw = data.get('attendees') or []
+    if not isinstance(attendees_raw, list):
+        return jsonify({"error": "attendees must be a list"}), 400
+
+    valid_age_groups = {'child', 'teen', 'adult', 'senior'}
+    attendees = []
+    for a in attendees_raw[:50]:
+        if not isinstance(a, dict):
+            continue
+        name = (a.get('name') or '').strip()[:200]
+        age_group = (a.get('age_group') or 'adult').strip()
+        if age_group not in valid_age_groups:
+            age_group = 'adult'
+        if name:
+            attendees.append({'name': name, 'age_group': age_group})
+
+    if not attendees:
+        attendees = [{'name': contact_name, 'age_group': 'adult'}]
+
+    total_count = len(attendees)
+
+    db = get_db()
+    row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Event not found"}), 404
+    if row["status"] in ('cancelled', 'expired'):
+        return jsonify({"error": "This event is no longer accepting signups"}), 400
+    from datetime import datetime as _dt
+    if row["event_date"] < _dt.utcnow().strftime("%Y-%m-%d"):
+        return jsonify({"error": "This event has already passed"}), 400
+
+    # Min age enforcement
+    row_keys = row.keys() if hasattr(row, 'keys') else []
+    min_age = row["min_age"] if "min_age" in row_keys else None
+    if min_age and min_age >= 13:
+        child_count = sum(1 for a in attendees if a['age_group'] == 'child')
+        if child_count and min_age >= 13:
+            return jsonify({"error": f"Attendees must be at least {min_age} years old"}), 400
+
+    # Capacity check
+    if row["capacity"] is not None:
+        confirmed = db.execute(
+            "SELECT COALESCE(SUM(total_count),0) AS n FROM org_signups "
+            "WHERE event_id=? AND status='confirmed'",
+            (event_id,),
+        ).fetchone()["n"]
+        spots_left = row["capacity"] - confirmed
+        if total_count > spots_left:
+            return jsonify({"error": f"Only {max(0, spots_left)} spot(s) remaining"}), 400
+
+    # Idempotency
+    ikey = (data.get('idempotency_key') or '').strip()[:64] or None
+    if ikey:
+        existing = db.execute(
+            "SELECT booking_token FROM org_signups WHERE idempotency_key=?", (ikey,)
+        ).fetchone()
+        if existing:
+            return jsonify({"booking_token": existing["booking_token"], "idempotent": True}), 200
+
+    nonce         = secrets.token_hex(8)
+    booking_token = _make_booking_token(event_id, contact_email, nonce)
+
+    try:
+        db.execute("""
+            INSERT INTO org_signups
+                (event_id, contact_name, contact_email, booking_token,
+                 idempotency_key, attendees, total_count, status)
+            VALUES (?,?,?,?,?,?,?,'confirmed')
+        """, (event_id, contact_name, contact_email, booking_token,
+              ikey, json.dumps(attendees), total_count))
+        db.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Could not complete signup. Please try again."}), 409
+
+    cancel_url = f"https://daanaa.org/events/{event_id}?cancel={booking_token}"
+    event_url  = f"https://daanaa.org/events/{event_id}"
+    org_name_row = db.execute(
+        "SELECT organization_name FROM registry_enriched WHERE EIN=?", (row["ein"],)
+    ).fetchone()
+    org_display = org_name_row["organization_name"] if org_name_row else "the organization"
+
+    attendee_names = ", ".join(a['name'] for a in attendees)
+    keys = row.keys() if hasattr(row, 'keys') else []
+    what_to_bring_val  = row["what_to_bring"]  if "what_to_bring"  in keys else None
+    parking_info_val   = row["parking_info"]   if "parking_info"   in keys else None
+    waiver_url_val     = row["waiver_url"]     if "waiver_url"     in keys else None
+    coord_name         = row["coordinator_name"] if "coordinator_name" in keys else None
+
+    # Prep details for volunteer confirmation
+    prep_block = ""
+    if what_to_bring_val:
+        prep_block += f"\nWhat to bring: {what_to_bring_val}"
+    if parking_info_val:
+        prep_block += f"\nParking / transit: {parking_info_val}"
+    if waiver_url_val:
+        prep_block += f"\nWaiver required: {waiver_url_val}"
+
+    # Volunteer confirmation email
+    _send_daanaa_email(
+        contact_email,
+        f"You're confirmed — {row['title']}",
+        f"Hi {contact_name},\n\nYou're signed up for {row['title']}.\n\n"
+        f"Date: {row['event_date']}\n"
+        f"Organizer: {org_display}\n"
+        f"Attending: {attendee_names}"
+        f"{prep_block}\n\n"
+        f"Event page: {event_url}\n\n"
+        f"Need to cancel? Visit: {cancel_url}\n\n"
+        f"Your contact info was shared with the organizer only. "
+        f"Daanaa does not retain it after the event.\n\n— Daanaa team",
+        from_addr="events@daanaa.org",
+    )
+
+    # Notify the volunteer coordinator / ED so they know someone signed up
+    notify_email = row["contact_email"] if "contact_email" in keys else None
+    if notify_email:
+        coord_display = coord_name or "there"
+        party_summary = f"{contact_name}" + (
+            f" + {total_count - 1} more" if total_count > 1 else ""
+        )
+        portal_url = f"https://daanaa.org/nonprofit/portal"
+        _send_daanaa_email(
+            notify_email,
+            f"New signup — {row['title']}",
+            f"Hi {coord_display},\n\n"
+            f"{party_summary} just signed up for {row['title']} on {row['event_date']}.\n\n"
+            f"Total confirmed: {_event_signup_count(db, event_id)}\n"
+            f"Event page: {event_url}\n"
+            f"View all signups: {portal_url}\n\n"
+            f"— Daanaa team",
+            from_addr="events@daanaa.org",
+        )
+
+    return jsonify({
+        "ok": True,
+        "booking_token": booking_token,
+        "total_count": total_count,
+        "cancel_url": cancel_url,
+    }), 201
+
+
+@app.route('/api/events/<int:event_id>/cancel-booking', methods=['POST'])
+@limiter.limit("20 per minute")
+def event_signup_cancel(event_id: int):
+    """Cancel a signup via HMAC booking token. No auth required — token IS the proof."""
+    data  = request.get_json(silent=True) or {}
+    token = (data.get('booking_token') or request.args.get('cancel') or '').strip()[:64]
+    if not token:
+        return jsonify({"error": "booking_token required"}), 400
+
+    db  = get_db()
+    row = db.execute(
+        "SELECT * FROM org_signups WHERE booking_token=? AND event_id=?",
+        (token, event_id),
+    ).fetchone()
+    if not row:
+        return jsonify({"error": "Booking not found"}), 404
+    if row["status"] == "cancelled":
+        return jsonify({"ok": True, "already_cancelled": True}), 200
+
+    reason = (data.get('reason') or '').strip()[:200] or None
+    db.execute(
+        "UPDATE org_signups SET status='cancelled', cancelled_at=CURRENT_TIMESTAMP, "
+        "cancel_reason=? WHERE id=?",
+        (reason, row["id"]),
+    )
+    db.commit()
+    return jsonify({"ok": True})
+
+
+# ── Events: org portal (Firebase auth) ────────────────────────────────────
+
+def _assert_org_claim(uid: str, ein: str, db) -> None:
+    """Abort 403 if Firebase uid does not own a verified claim for ein."""
+    if not db.execute(
+        "SELECT 1 FROM org_claims WHERE ein=? AND firebase_uid=? "
+        "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
+        (ein, uid),
+    ).fetchone():
+        abort(403)
+
+
+@app.route('/api/portal/events', methods=['GET'])
+@limiter.limit("60 per minute")
+def portal_events_list():
+    """Firebase-auth: list events for the org's verified claim."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (request.args.get('ein') or '') if c.isdigit())[:10]
+    if not ein:
+        return jsonify({"error": "ein required"}), 400
+    db = get_db()
+    _assert_org_claim(uid, ein, db)
+    include_past = request.args.get('all') == '1'
+    if include_past:
+        rows = db.execute(
+            "SELECT *, (SELECT COALESCE(SUM(total_count),0) FROM org_signups "
+            "WHERE event_id=volunteer_events.id AND status='confirmed') AS signup_count "
+            "FROM volunteer_events WHERE ein=? ORDER BY event_date DESC LIMIT 100",
+            (ein,),
+        ).fetchall()
+    else:
+        rows = db.execute(
+            "SELECT *, (SELECT COALESCE(SUM(total_count),0) FROM org_signups "
+            "WHERE event_id=volunteer_events.id AND status='confirmed') AS signup_count "
+            "FROM volunteer_events WHERE ein=? AND status NOT IN ('cancelled','expired') "
+            "AND event_date >= date('now') ORDER BY event_date ASC LIMIT 50",
+            (ein,),
+        ).fetchall()
+    return jsonify({"events": [_format_event(r, r["signup_count"]) for r in rows]})
+
+
+@app.route('/api/portal/events', methods=['POST'])
+@limiter.limit("20 per minute")
+def portal_events_create():
+    """Firebase-auth: create a new event. Replaces token-based creation for portal users."""
+    uid  = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+    ein  = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    if not ein:
+        return jsonify({"error": "ein required"}), 400
+    db = get_db()
+    _assert_org_claim(uid, ein, db)
+
+    title      = (data.get('title')      or '').strip()[:200]
+    event_date = (data.get('event_date') or '').strip()[:10]
+    if not title or not event_date:
+        return jsonify({"error": "title and event_date are required"}), 400
+    if not re.match(r'^\d{4}-\d{2}-\d{2}$', event_date):
+        return jsonify({"error": "event_date must be YYYY-MM-DD"}), 400
+
+    event_type     = (data.get('event_type') or 'volunteer').strip()[:20]
+    if event_type not in ('volunteer', 'community', 'fundraiser', 'networking'):
+        event_type = 'volunteer'
+    description    = (data.get('description')    or '').strip()[:2000]
+    start_time     = (data.get('start_time')     or '').strip()[:5] or None
+    end_time       = (data.get('end_time')       or '').strip()[:5] or None
+    location_city  = (data.get('location_city')  or '').strip()[:100] or None
+    location_state = (data.get('location_state') or '').strip()[:2].upper() or None
+    location_zip   = (data.get('location_zip')   or '').strip()[:10] or None
+    is_virtual     = bool(data.get('is_virtual', False))
+    virtual_url    = (data.get('virtual_url')    or '').strip()[:500] or None
+    contact_email  = (data.get('contact_email')  or '').strip()[:200] or None
+    capacity       = data.get('capacity')
+    min_age        = data.get('min_age')
+    expected_hours = data.get('expected_hours')
+    co_org_eins    = data.get('co_org_eins') or None
+
+    if capacity is not None:
+        try: capacity = max(1, int(capacity))
+        except (ValueError, TypeError): capacity = None
+    if min_age is not None:
+        try: min_age = max(0, int(min_age))
+        except (ValueError, TypeError): min_age = None
+    if expected_hours is not None:
+        try: expected_hours = round(float(expected_hours), 1)
+        except (ValueError, TypeError): expected_hours = None
+    if virtual_url and not virtual_url.startswith(('http://', 'https://')):
+        virtual_url = None
+
+    # Generate a unique short_id
+    short_id = None
+    for _ in range(10):
+        candidate = _make_event_short_id()
+        if not db.execute("SELECT 1 FROM volunteer_events WHERE short_id=?", (candidate,)).fetchone():
+            short_id = candidate
+            break
+
+    cur = db.execute("""
+        INSERT INTO volunteer_events
+            (ein, title, description, event_date, start_time, end_time,
+             location_city, location_state, location_zip, is_virtual, virtual_url,
+             contact_email, capacity, status, event_type, short_id, min_age,
+             expected_hours, co_org_eins)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'active',?,?,?,?,?)
+    """, (ein, title, description or None, event_date, start_time, end_time,
+          location_city, location_state, location_zip, int(is_virtual), virtual_url,
+          contact_email, capacity, event_type, short_id, min_age, expected_hours,
+          json.dumps(co_org_eins) if isinstance(co_org_eins, list) else None))
+    db.commit()
+    row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (cur.lastrowid,)).fetchone()
+    _log_org_activity(ein, 'event_created', f'Event created: {title}', actor='org')
+    return jsonify(_format_event(row)), 201
+
+
+@app.route('/api/portal/events/<int:event_id>', methods=['PATCH'])
+@limiter.limit("30 per minute")
+def portal_events_update(event_id: int):
+    """Firebase-auth: update an event owned by the authenticated org."""
+    uid  = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+    db   = get_db()
+    row  = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Event not found"}), 404
+    _assert_org_claim(uid, row["ein"], db)
+    if row["status"] in ('cancelled', 'expired'):
+        return jsonify({"error": "Cannot update a cancelled or expired event"}), 400
+
+    allowed = {
+        "title", "description", "event_date", "start_time", "end_time",
+        "location_city", "location_state", "location_zip", "is_virtual",
+        "virtual_url", "contact_email", "capacity", "status",
+        "event_type", "min_age", "expected_hours",
+    }
+    valid_statuses   = {"active", "filled", "cancelled"}
+    valid_event_types = {"volunteer", "community", "fundraiser", "networking"}
+    updates, vals = [], []
+    for field in allowed:
+        if field not in data:
+            continue
+        val = data[field]
+        if field == "status" and val not in valid_statuses:
+            return jsonify({"error": f"status must be one of {sorted(valid_statuses)}"}), 400
+        if field == "event_type" and val not in valid_event_types:
+            return jsonify({"error": f"event_type must be one of {sorted(valid_event_types)}"}), 400
+        if field == "is_virtual":
+            val = int(bool(val))
+        if field == "virtual_url" and val and not str(val).startswith(('http://', 'https://')):
+            continue
+        updates.append(f"{field}=?")
+        vals.append(val)
+
+    if not updates:
+        return jsonify({"error": "No valid fields to update"}), 400
+    updates.append("updated_at=CURRENT_TIMESTAMP")
+    db.execute(f"UPDATE volunteer_events SET {', '.join(updates)} WHERE id=?", vals + [event_id])
+    db.commit()
+    row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    return jsonify(_format_event(row, signup_count=_event_signup_count(db, event_id)))
+
+
+@app.route('/api/portal/events/<int:event_id>', methods=['DELETE'])
+@limiter.limit("10 per minute")
+def portal_events_cancel(event_id: int):
+    """Firebase-auth: cancel an event and notify all confirmed signups."""
+    uid  = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+    db   = get_db()
+    row  = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Event not found"}), 404
+    _assert_org_claim(uid, row["ein"], db)
+    if row["status"] == "cancelled":
+        return jsonify({"ok": True, "already_cancelled": True}), 200
+
+    cancel_reason = (data.get('reason') or '').strip()[:500]
+    db.execute(
+        "UPDATE volunteer_events SET status='cancelled', updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        (event_id,),
+    )
+    db.commit()
+
+    # Notify confirmed signups
+    signups = db.execute(
+        "SELECT contact_name, contact_email FROM org_signups "
+        "WHERE event_id=? AND status='confirmed'",
+        (event_id,),
+    ).fetchall()
+    org_name_row = db.execute(
+        "SELECT organization_name FROM registry_enriched WHERE EIN=?", (row["ein"],)
+    ).fetchone()
+    org_display = org_name_row["organization_name"] if org_name_row else "the organization"
+    reason_line = f"\nReason: {cancel_reason}" if cancel_reason else ""
+    for s in signups:
+        _send_daanaa_email(
+            s["contact_email"],
+            f"Event cancelled — {row['title']}",
+            f"Hi {s['contact_name']},\n\n"
+            f"Unfortunately, {row['title']} on {row['event_date']} has been cancelled "
+            f"by {org_display}.{reason_line}\n\n"
+            f"We're sorry for the inconvenience. You can find other events at "
+            f"https://daanaa.org/volunteer\n\n— Daanaa team",
+            from_addr="events@daanaa.org",
+        )
+    _log_org_activity(row["ein"], 'event_cancelled', f'Event cancelled: {row["title"]}', actor='org')
+    return jsonify({"ok": True, "notified": len(signups)})
+
+
+@app.route('/api/portal/events/<int:event_id>/attendees', methods=['GET'])
+@limiter.limit("60 per minute")
+def portal_event_attendees(event_id: int):
+    """Firebase-auth: list signups for an event (contact info + attendee list)."""
+    uid = _require_firebase_user()
+    db  = get_db()
+    row = db.execute("SELECT ein FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    if not row:
+        return jsonify({"error": "Event not found"}), 404
+    _assert_org_claim(uid, row["ein"], db)
+    signups = db.execute(
+        "SELECT * FROM org_signups WHERE event_id=? ORDER BY created_at ASC", (event_id,)
+    ).fetchall()
+    out = []
+    for s in signups:
+        try:
+            attendees = json.loads(s["attendees"] or "[]")
+        except (json.JSONDecodeError, TypeError):
+            attendees = []
+        out.append({
+            "id":              s["id"],
+            "contact_name":    s["contact_name"],
+            "contact_email":   s["contact_email"],
+            "attendees":       attendees,
+            "total_count":     s["total_count"],
+            "status":          s["status"],
+            "hours_verified":  s["hours_verified"],
+            "hours_verified_at": s["hours_verified_at"],
+            "created_at":      s["created_at"],
+        })
+    return jsonify({"signups": out, "total": sum(s["total_count"] for s in signups
+                                                  if s["status"] == "confirmed")})
+
+
+@app.route('/api/portal/events/<int:event_id>/verify-hours', methods=['POST'])
+@limiter.limit("30 per minute")
+def portal_verify_hours(event_id: int):
+    """Firebase-auth: verify volunteer hours for one or more signups after the event."""
+    uid  = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+    db   = get_db()
+    event = db.execute("SELECT * FROM volunteer_events WHERE id=?", (event_id,)).fetchone()
+    if not event:
+        return jsonify({"error": "Event not found"}), 404
+    _assert_org_claim(uid, event["ein"], db)
+
+    # Payload: {"verifications": [{"signup_id": 1, "hours": 3.0, "attended": true}]}
+    verifications = data.get("verifications") or []
+    if not isinstance(verifications, list):
+        return jsonify({"error": "verifications must be a list"}), 400
+
+    updated = 0
+    for v in verifications:
+        if not isinstance(v, dict):
+            continue
+        signup_id = v.get("signup_id")
+        attended  = bool(v.get("attended", True))
+        hours     = v.get("hours")
+        if hours is not None:
+            try: hours = round(float(hours), 1)
+            except (ValueError, TypeError): hours = None
+
+        new_status = "attended" if attended else "no_show"
+        db.execute(
+            "UPDATE org_signups SET status=?, hours_verified=?, "
+            "hours_verified_at=CURRENT_TIMESTAMP, hours_verified_by=? "
+            "WHERE id=? AND event_id=?",
+            (new_status, hours, uid, signup_id, event_id),
+        )
+        updated += db.execute("SELECT changes()").fetchone()[0]
+
+    db.commit()
+    return jsonify({"ok": True, "updated": updated})
+
+
+# ── Org contacts: public directory ─────────────────────────────────────────
+
+# Public fields shown on the org detail page (never internal rep info)
+_PUBLIC_CONTACT_FIELDS = (
+    "general_email", "general_phone", "mailing_address",
+    "volunteer_name", "volunteer_email",
+    "events_name", "events_email",
+    "media_name", "media_email",
+    "donor_name", "donor_email",
+    "website",
+    "facebook_url", "instagram_url", "linkedin_url", "twitter_url", "youtube_url",
+)
+_ALL_CONTACT_FIELDS = _PUBLIC_CONTACT_FIELDS + ("volunteer_phone",)
+
+
+@app.route('/api/org/<ein>/contacts', methods=['GET'])
+@limiter.limit("120 per minute")
+def org_contacts_public(ein: str):
+    """Public: structured contact directory for a claimed org."""
+    clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+    db  = get_db()
+    row = db.execute("SELECT * FROM org_contacts WHERE ein=?", (clean,)).fetchone()
+    if not row:
+        return jsonify({"contacts": {}})
+    return jsonify({"contacts": {f: row[f] for f in _PUBLIC_CONTACT_FIELDS if row[f]}})
+
+
+@app.route('/api/portal/contacts', methods=['GET'])
+@limiter.limit("60 per minute")
+def portal_contacts_get():
+    """Firebase-auth: full contact record for the org."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (request.args.get('ein') or '') if c.isdigit())[:10]
+    if not ein:
+        return jsonify({"error": "ein required"}), 400
+    db = get_db()
+    _assert_org_claim(uid, ein, db)
+    row = db.execute("SELECT * FROM org_contacts WHERE ein=?", (ein,)).fetchone()
+    if not row:
+        return jsonify({"contacts": {}})
+    return jsonify({"contacts": dict(row)})
+
+
+@app.route('/api/portal/contacts', methods=['PUT'])
+@limiter.limit("20 per minute")
+def portal_contacts_update():
+    """Firebase-auth: upsert contact directory for a claimed org."""
+    uid  = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+    ein  = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    if not ein:
+        return jsonify({"error": "ein required"}), 400
+    db = get_db()
+    _assert_org_claim(uid, ein, db)
+
+    # Allowed writable fields and max lengths
+    writable = {
+        "general_email": 200, "general_phone": 30, "mailing_address": 500,
+        "volunteer_name": 200, "volunteer_email": 200, "volunteer_phone": 30,
+        "donor_name": 200, "donor_email": 200,
+        "events_name": 200, "events_email": 200,
+        "media_name": 200, "media_email": 200,
+        "website": 500,
+        "facebook_url": 500, "instagram_url": 500, "linkedin_url": 500,
+        "twitter_url": 500, "youtube_url": 500,
+    }
+
+    fields, vals = [], []
+    for field, maxlen in writable.items():
+        if field not in data:
+            continue
+        val = (data[field] or '').strip()[:maxlen] or None
+        # Validate URL fields
+        if field.endswith('_url') and val and not val.startswith(('http://', 'https://')):
+            continue
+        # Basic email validation
+        if field.endswith('_email') and val and not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', val):
+            continue
+        fields.append(field)
+        vals.append(val)
+
+    if not fields:
+        return jsonify({"error": "No valid fields provided"}), 400
+
+    set_clause = ", ".join(f"{f}=?" for f in fields)
+    set_clause += ", updated_at=CURRENT_TIMESTAMP, updated_by=?"
+    vals += [uid, ein]
+    db.execute(
+        f"INSERT INTO org_contacts (ein) VALUES (?) ON CONFLICT(ein) DO NOTHING", (ein,)
+    )
+    db.execute(f"UPDATE org_contacts SET {set_clause} WHERE ein=?", vals)
+    db.commit()
+    _log_org_activity(ein, 'contacts_updated', 'Contact directory updated', actor='org')
+    row = db.execute("SELECT * FROM org_contacts WHERE ein=?", (ein,)).fetchone()
+    return jsonify({"contacts": dict(row)})
 
 
 # ── Well-known / security ──────────────────────────────────────────────────

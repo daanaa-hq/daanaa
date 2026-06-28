@@ -35,6 +35,7 @@ const Terms = lazy(() => import('./pages/Terms'))
 const GuildReferral = lazy(() => import('./pages/GuildReferral'))
 const MemberBenefits = lazy(() => import('./pages/MemberBenefits'))
 const VolunteerSearch = lazy(() => import('./pages/VolunteerSearch'))
+const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
 const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
@@ -112,6 +113,7 @@ export default function App() {
             <Route path="/member/benefits" element={<MemberBenefits />} />
             <Route path="/volunteer" element={<VolunteerSearch />} />
             <Route path="/volunteer/submit" element={<VolunteerSubmission />} />
+            <Route path="/events/:eventId" element={<EventDetailPage />} />
             <Route path="/donation/receipt" element={<DonationReceipt />} />
             <Route path="/research" element={<ResearchDashboard />} />
           </Route>
