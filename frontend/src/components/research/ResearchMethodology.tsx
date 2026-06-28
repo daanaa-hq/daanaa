@@ -81,9 +81,9 @@ export default function ResearchMethodology() {
             <div>
               <dt className="font-semibold text-deep-navy">Health Signal</dt>
               <dd className="text-sm mt-1">
-                An independent assessment of financial vulnerability: HEALTHY (strong reserves
-                and revenue stability), STABLE (adequate resources for peers), or CAUTION
-                (limited reserves or revenue volatility). Not a verdict—a flag for deeper review.
+                An independent assessment of financial context: Financially healthy (strong reserves
+                and revenue stability), Financially stable (adequate resources for peers), or Needs
+                support (limited reserves or revenue volatility). Not a verdict — a flag for deeper review.
               </dd>
             </div>
             <div>

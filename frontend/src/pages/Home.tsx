@@ -564,7 +564,7 @@ function BrowseCauses() {
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 function StatsBar() {
   const { data: stats } = useApi(() => getStats(), [])
-  const count = stats?.total_organizations ?? 1_600_000
+  const count = stats?.total_organizations ?? 1_800_000
   const finRecords = stats?.financial_records ?? 1_785_000
   // at_risk bucket in stats API now covers 0–6 months (matches the directory filter threshold)
   const needsFundingSoon = (stats?.reserve_health?.insolvent ?? 0) + (stats?.reserve_health?.at_risk ?? 0)

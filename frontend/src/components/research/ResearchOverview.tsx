@@ -13,7 +13,7 @@ export default function ResearchOverview({
         Daanaa Research Dashboard
       </h1>
       <p className="text-lg text-cool-grey mb-6 max-w-2xl">
-        A comprehensive guide to how Daanaa discovers, organizes, and provides peer
+        A guide to how Daanaa discovers, organizes, and provides peer
         financial context for nonprofit organizations. This research document is
         intended for advisors, academics, foundations, and nonprofit professionals
         seeking to understand our methodology.
