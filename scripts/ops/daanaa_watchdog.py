@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """Daanaa watchdog — runs from cron every 5 minutes on the home box.
 
-Three checks cover the whole platform:
-  local_api    http://localhost:5000/health                 (home Flask)
-  public_site  https://daanaa.org/health                    (droplet + Cloudflare)
-  claim_path   https://daanaa.org/api/claim/health             (Cloudflare -> droplet
-               proxy -> SSH tunnel -> home API; 200/404 from our own API proves
-               every link works — the home SPA catch-all answers unknown GETs
-               with 200 — while 503/timeout means the tunnel or proxy is down)
+Checks:
+  local_api    http://localhost:5000/health          (home Flask)
+  public_site  https://daanaa.org/health             (droplet + Cloudflare)
+  claim_path   https://daanaa.org/api/claim/health   (full tunnel path: CF→droplet→tunnel→home)
+  wallet_proxy https://daanaa.org/api/wallet/restore (wallet tunnel; 401=auth gate live, 503=tunnel down)
+  search       https://daanaa.org/api/search?q=food+bank (FTS index healthy if results>0)
+  droplet_disk SSH check: df / on droplet, alert if >85%
 
-Alerts security@daanaa.org only on STATE CHANGE (fail->ok / ok->fail), never
-repeats — a 3am outage is one email, not sixty. State in logs/watchdog_state.json.
+Alerts security@daanaa.org only on STATE CHANGE (fail→ok / ok→fail), never
+repeats. State in logs/watchdog_state.json.
 """
 import json
+import os
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +25,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mailer import send_ops_email
 
 STATE_FILE = Path.home() / "meritgiving/logs/watchdog_state.json"
+SSH_KEY = str(Path.home() / ".ssh/daanaa_do")
+DROPLET = "root@162.243.97.179"
+DISK_ALERT_PCT = 85
 
 
 def check(name, url, ok_statuses, timeout=15):
@@ -33,11 +38,45 @@ def check(name, url, ok_statuses, timeout=15):
         return False, type(e).__name__
 
 
+def check_search():
+    """FTS healthy = results > 0 for a common query."""
+    try:
+        r = requests.get("https://daanaa.org/api/search?q=food+bank", timeout=15)
+        if r.status_code != 200:
+            return False, f"HTTP {r.status_code}"
+        results = r.json().get("results", [])
+        if len(results) == 0:
+            return False, "0 results (FTS index may be empty)"
+        return True, f"{len(results)} results"
+    except Exception as e:
+        return False, type(e).__name__
+
+
+def check_droplet_disk():
+    """SSH to droplet, check root partition usage."""
+    try:
+        out = subprocess.check_output(
+            ["ssh", "-i", SSH_KEY, "-o", "ConnectTimeout=10",
+             "-o", "StrictHostKeyChecking=accept-new", DROPLET,
+             "df / | tail -1 | awk '{print $5}'"],
+            stderr=subprocess.DEVNULL, timeout=20,
+        ).decode().strip().rstrip("%")
+        pct = int(out)
+        if pct >= DISK_ALERT_PCT:
+            return False, f"disk {pct}% used (threshold {DISK_ALERT_PCT}%)"
+        return True, f"disk {pct}% used"
+    except Exception as e:
+        return False, f"SSH failed: {type(e).__name__}"
+
+
 def main():
     checks = {
-        "local_api":   check("local_api",   "http://localhost:5000/health", {200}),
-        "public_site": check("public_site", "https://daanaa.org/health",    {200}),
-        "claim_path":  check("claim_path",  "https://daanaa.org/api/claim/health", {200, 404}),
+        "local_api":    check("local_api",    "http://localhost:5000/health",           {200}),
+        "public_site":  check("public_site",  "https://daanaa.org/health",              {200}),
+        "claim_path":   check("claim_path",   "https://daanaa.org/api/claim/health",    {200, 404}),
+        "wallet_proxy": check("wallet_proxy", "https://daanaa.org/api/wallet/restore",  {401}),
+        "search":       check_search(),
+        "droplet_disk": check_droplet_disk(),
     }
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     prev = {}
@@ -61,16 +100,21 @@ def main():
         downs = [n for n, s in state.items() if s == "down"]
         if downs:
             subject = f"[Daanaa ALERT] {', '.join(downs)} down"
-            hint = ("claim_path down usually means the SSH tunnel dropped: "
-                    "systemctl --user restart daanaa-claim-tunnel\n"
-                    "local_api down: cd ~/meritgiving && ./restart_api.sh\n"
-                    "public_site down: ssh the droplet, systemctl restart daanaa")
+            hints = {
+                "claim_path":   "SSH tunnel dropped → systemctl --user restart daanaa-claim-tunnel",
+                "wallet_proxy": "Wallet tunnel down (same as claim tunnel) or local API auth broken",
+                "local_api":    "cd ~/meritgiving && ./restart_api.sh",
+                "public_site":  "ssh root@162.243.97.179 'systemctl restart daanaa'",
+                "search":       "FTS index empty → cd ~/meritgiving && venv/bin/python3 scripts/build_fts_index.py --rebuild && bash scripts/deploy_browse.sh",
+                "droplet_disk": "Droplet disk full → ssh root@162.243.97.179 'du -sh /data/precompute/v1/*/* | sort -rh | head -20'",
+            }
+            hint = "\n".join(f"• {n}: {hints[n]}" for n in downs if n in hints)
         else:
             subject = "[Daanaa OK] all systems recovered"
             hint = "No action needed."
         send_ops_email("security@daanaa.org", subject,
                        f"Watchdog state change at {now}\n\n" + "\n".join(changes) +
-                       f"\n\nCurrent: {json.dumps(state)}\n\n{hint}\n")
+                       f"\n\nCurrent: {json.dumps(state, indent=2)}\n\nFix hints:\n{hint}\n")
         print(f"{now} alerted: {changes}")
     else:
         print(f"{now} no change: {json.dumps(state)}")
