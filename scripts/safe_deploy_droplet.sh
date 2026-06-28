@@ -40,6 +40,10 @@ DROPLET_STAGING="/opt/daanaa/staging"
 DISK_MARGIN_GB=${DISK_MARGIN_GB:-5}   # keep at least this much free on the droplet after deploy
 FRONTEND_LOCAL="$BASE/frontend"
 FRONTEND_DROPLET="/opt/daanaa/frontend/dist"   # FRONTEND_DIR that droplet_api serves the SPA from
+# Gunicorn imports droplet_api.py from /opt/daanaa/ (WorkingDirectory), NOT from scripts/.
+# Always write to the root-level path; keep scripts/ as a reference copy only.
+DROPLET_API_LIVE="/opt/daanaa/droplet_api.py"
+DROPLET_API_LOCAL="$BASE/scripts/droplet_api.py"
 
 FORCE=0; BUILD_ONLY=0; SHIP_ONLY=0
 for arg in "$@"; do

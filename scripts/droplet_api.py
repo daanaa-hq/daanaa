@@ -61,9 +61,10 @@ def set_security_headers(response):
     return response
 
 
-DATA_DIR     = Path(os.environ.get('PRECOMPUTE_DIR', '/data/precompute/v1'))
-CLAIMS_DIR   = Path(os.environ.get('CLAIMS_DIR', '/data/claims'))
-FRONTEND_DIR = Path(os.environ.get('FRONTEND_DIR', '/opt/daanaa/frontend/dist'))
+DATA_DIR      = Path(os.environ.get('PRECOMPUTE_DIR', '/data/precompute/v1'))
+CLAIMS_DIR    = Path(os.environ.get('CLAIMS_DIR', '/data/claims'))
+FRONTEND_DIR  = Path(os.environ.get('FRONTEND_DIR', '/opt/daanaa/frontend/dist'))
+ANALYTICS_DB  = Path(os.environ.get('ANALYTICS_DB', '/opt/daanaa/analytics.db'))
 
 _json_cache: dict = {}
 _multi_cache: dict = {}
@@ -73,6 +74,82 @@ _TOP_STATES = ['CA', 'TX', 'NY', 'FL', 'PA', 'OH', 'IL', 'GA', 'NC', 'MI',
 _ALL_NTEE1  = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 PER_PAGE_DEFAULT = 25
+
+
+# ── Analytics DB (search impressions + agent events) ─────────────────────────
+
+def _init_analytics_db() -> None:
+    """Create analytics.db with persistent tables. Runs in background thread — never blocks startup."""
+    import threading
+    import time as _time
+
+    def _create():
+        for _attempt in range(10):
+            try:
+                ANALYTICS_DB.parent.mkdir(parents=True, exist_ok=True)
+                with sqlite3.connect(str(ANALYTICS_DB), timeout=10) as db:
+                    db.execute("PRAGMA journal_mode=WAL")
+                    # Per-org search impression counts — feeds the weekly claimed-org digest.
+                    # Stewardship P2: aggregate counts only; individual query strings are
+                    # truncated to 80 chars and never linked to a user or session.
+                    db.execute("""
+                        CREATE TABLE IF NOT EXISTS search_impressions (
+                            day     TEXT NOT NULL,
+                            ein     TEXT NOT NULL,
+                            query   TEXT NOT NULL,
+                            count   INTEGER NOT NULL DEFAULT 1,
+                            PRIMARY KEY (day, ein, query)
+                        )
+                    """)
+                    # Shared memory bus for all vertical agent teams.
+                    db.execute("""
+                        CREATE TABLE IF NOT EXISTS agent_events (
+                            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                            agent_name  TEXT NOT NULL,
+                            event_type  TEXT NOT NULL,
+                            ein         TEXT,
+                            payload     TEXT,
+                            status      TEXT NOT NULL DEFAULT 'pending',
+                            created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+                        )
+                    """)
+                    db.execute("CREATE INDEX IF NOT EXISTS idx_si_ein ON search_impressions(ein, day)")
+                    db.execute("CREATE INDEX IF NOT EXISTS idx_ae_type ON agent_events(event_type, status, created_at)")
+                    db.commit()
+                return
+            except sqlite3.OperationalError as e:
+                if "locked" in str(e).lower() and _attempt < 9:
+                    _time.sleep(1)
+                else:
+                    print(f"analytics.db init warning: {e}")
+                    return
+
+    threading.Thread(target=_create, daemon=True).start()
+
+
+_init_analytics_db()
+
+
+def _log_search_impressions(eins: list, query: str) -> None:
+    """Log per-EIN search impressions for the weekly digest. Synchronous but fast (<5ms). Never raises."""
+    if not eins or not query:
+        return
+    from datetime import datetime
+    day = datetime.utcnow().strftime('%Y-%m-%d')
+    q = query.strip().lower()[:80]
+    rows = [(day, str(ein), q) for ein in eins if ein]
+    if not rows:
+        return
+    try:
+        with sqlite3.connect(str(ANALYTICS_DB), timeout=2) as db:
+            db.executemany(
+                "INSERT INTO search_impressions (day, ein, query, count) VALUES (?, ?, ?, 1) "
+                "ON CONFLICT(day, ein, query) DO UPDATE SET count = count + 1",
+                rows,
+            )
+            db.commit()
+    except Exception:
+        pass
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -789,6 +866,7 @@ def search():
                f"FROM org_fts s, registry_enriched o WHERE {' AND '.join(conditions)} LIMIT ?")
         rows = conn.execute(sql, params).fetchall()
         results = [dict(r) for r in rows]
+        _log_search_impressions([r['EIN'] for r in results], query)
         return jsonify({'results': results, 'query': query,
                         'total': len(results), 'mode': 'fts'})
     except Exception as e:
@@ -837,6 +915,7 @@ def fused_search():
                f"LIMIT ? OFFSET ?")
         rows = conn.execute(sql, params + [per_page, offset]).fetchall()
         orgs = [_row_to_org(r) for r in rows]
+        _log_search_impressions([o.get('EIN') for o in orgs], q)
         pages = max(1, (total + per_page - 1) // per_page)
         return jsonify({'organizations': orgs, 'query': q,
                         'total': total, 'pages': pages,

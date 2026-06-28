@@ -1317,6 +1317,44 @@ def _init_analytics_tables():
 _init_analytics_tables()
 
 
+def _init_agent_tables():
+    _REQUIRED = {"agent_events"}
+    try:
+        with sqlite3.connect(LIVE_DB_PATH, timeout=5) as _rc:
+            _existing = {r[0] for r in _rc.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+        if _REQUIRED.issubset(_existing):
+            return
+    except Exception:
+        pass
+    import time as _time
+    for _attempt in range(30):
+        try:
+            with sqlite3.connect(LIVE_DB_PATH, timeout=10) as db:
+                db.execute("PRAGMA journal_mode=WAL")
+                db.execute("""
+                    CREATE TABLE IF NOT EXISTS agent_events (
+                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        agent_name  TEXT NOT NULL,
+                        event_type  TEXT NOT NULL,
+                        ein         TEXT,
+                        payload     TEXT,
+                        status      TEXT NOT NULL DEFAULT 'pending',
+                        created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+                    )
+                """)
+                db.execute("CREATE INDEX IF NOT EXISTS idx_ae_ein ON agent_events(ein)")
+                db.execute("CREATE INDEX IF NOT EXISTS idx_ae_type ON agent_events(event_type, status, created_at)")
+                db.commit()
+            return
+        except sqlite3.OperationalError as _e:
+            if "locked" in str(_e).lower() and _attempt < 29:
+                _time.sleep(3)
+            else:
+                raise
+
+_init_agent_tables()
+
+
 def _ensure_e2e_wallet_sync_table(db: sqlite3.Connection) -> None:
     """E2E encrypted wallet locker. Server stores opaque ciphertext — cannot decrypt.
     key_hash: HKDF-derived id token (info='daanaa-wallet-id') — no identity linkage.
