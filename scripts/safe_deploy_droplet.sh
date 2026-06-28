@@ -232,26 +232,44 @@ frontend_build() {
 # rsync updates the site with no service restart. Atomic-ish: rsync to a temp dir then swap.
 frontend_ship() {
   log "===== STAGE 7: Frontend ship (rsync dist → droplet) ====="
-  rsync -az --delete -e "ssh -i $SSH_KEY -o ConnectTimeout=15" \
+  # No --delete: old hashed chunks stay in .new through the compatibility window so
+  # any cached HTML referencing prior chunk names continues to work after the swap.
+  rsync -az -e "ssh -i $SSH_KEY -o ConnectTimeout=15" \
     "$FRONTEND_LOCAL/dist/" "${DROPLET_USER}@${DROPLET_IP}:${FRONTEND_DROPLET}.new/" \
     >>"$LOG" 2>&1 || die "frontend rsync failed — live SPA untouched (synced to .new)"
-  # Atomic swap: promote .new → live, keep .old until smoke tests pass
+  # Merge prior hashed assets into .new so old JS/CSS URLs remain valid post-swap.
+  $SSH "[ -d ${FRONTEND_DROPLET}/assets ] && \
+    rsync -a --ignore-existing ${FRONTEND_DROPLET}/assets/ ${FRONTEND_DROPLET}.new/assets/ 2>/dev/null || true" \
+    >>"$LOG" 2>&1
+  # Atomic swap: promote .new → live, keep .old until smoke tests pass.
   $SSH "( [ -d ${FRONTEND_DROPLET} ] && mv ${FRONTEND_DROPLET} ${FRONTEND_DROPLET}.old || true ) && \
         mv ${FRONTEND_DROPLET}.new ${FRONTEND_DROPLET}" >>"$LOG" 2>&1 \
     || die "frontend swap failed on droplet"
-  # Smoke test a representative set of SPA routes (not just the homepage)
+  # Smoke-test SPA routes + one hashed JS chunk (catches asset-404 regressions).
   local ok=1
-  for path in "/" "/directory" "/org/530196605" "/about"; do
+  for path in "/" "/directory" "/org/264837170" "/about"; do
     local code
     code=$(curl -s -o /dev/null -w '%{http_code}' "https://daanaa.org${path}" || echo 000)
     log "Smoke: ${path} → ${code}"
     [ "$code" = "200" ] || { log "WARN: ${path} returned ${code}"; ok=0; }
   done
+  local js_asset
+  js_asset=$($SSH "find ${FRONTEND_DROPLET}/assets -name '*.js' -printf '%f\n' 2>/dev/null | head -1" 2>/dev/null || echo "")
+  if [ -n "$js_asset" ]; then
+    local js_code
+    js_code=$(curl -s -o /dev/null -w '%{http_code}' "https://daanaa.org/assets/${js_asset}" || echo 000)
+    log "Smoke: /assets/${js_asset} → ${js_code}"
+    [ "$js_code" = "200" ] || { log "ERROR: JS asset 404 — will roll back"; ok=0; }
+  fi
   if [ "$ok" = "1" ]; then
     $SSH "rm -rf ${FRONTEND_DROPLET}.old" >>"$LOG" 2>&1 || true
     log "✓ frontend live — all smoke checks passed; .old cleaned up"
   else
-    log "WARN: some smoke checks failed — .old retained at ${FRONTEND_DROPLET}.old for rollback"
+    # Roll back to previous release; preserve the failed bundle for inspection.
+    $SSH "( [ -d ${FRONTEND_DROPLET} ] && mv ${FRONTEND_DROPLET} ${FRONTEND_DROPLET}.failed || true ) && \
+          ( [ -d ${FRONTEND_DROPLET}.old ] && mv ${FRONTEND_DROPLET}.old ${FRONTEND_DROPLET} || true )" \
+      >>"$LOG" 2>&1 || true
+    die "Smoke tests failed — rolled back to previous release (.failed preserved for inspection)"
   fi
 }
 

@@ -184,7 +184,7 @@ function PeerFinancialContextSection() {
             </p>
             <Link
               to="/methodology"
-              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
+              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-medium text-link-gold hover:text-deep-gold transition-colors"
             >
               Learn more about methodology →
             </Link>
@@ -548,7 +548,7 @@ function BrowseCauses() {
         <div className="mt-8 text-center">
           <Link
             to="/directory"
-            className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
+            className="inline-flex items-center gap-2 font-body text-[14px] text-link-gold hover:text-deep-gold transition-colors"
           >
             Search all organizations
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -646,7 +646,7 @@ function TiersStrip() {
 
           {/* Label column */}
           <div className="md:w-[200px] shrink-0">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
+            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-link-gold uppercase mb-1">
               Public Data Completeness
             </p>
             <p className="font-body text-[14px] text-cool-grey leading-[1.5]">
@@ -654,7 +654,7 @@ function TiersStrip() {
             </p>
             <Link
               to="/tiers"
-              className="mt-2 inline-block font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+              className="mt-2 inline-block font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
             >
               How tiers work →
             </Link>
@@ -810,7 +810,7 @@ function HiddenGemsSection() {
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className={`flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 transition-all duration-700 ease-out ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
-            <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase">
+            <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-link-gold uppercase">
               Worth discovering
             </span>
             <h2 className="mt-2 font-display italic text-deep-navy leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 38px)' }}>
@@ -823,7 +823,7 @@ function HiddenGemsSection() {
           </div>
           <Link
             to="/directory?hidden_gem=1"
-            className="shrink-0 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors flex items-center gap-1.5"
+            className="shrink-0 font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors flex items-center gap-1.5"
           >
             See more
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -906,7 +906,7 @@ function EventMiniCard({ event }: { event: VolunteerEvent }) {
       <div className="flex items-center gap-2 flex-wrap">
         <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase ${
           event.event_type === 'volunteer' ? 'bg-green-50 text-green-700'
-          : event.event_type === 'community' ? 'bg-soft-gold/10 text-soft-gold'
+          : event.event_type === 'community' ? 'bg-soft-gold/10 text-link-gold'
           : event.event_type === 'fundraiser' ? 'bg-blue-50 text-blue-600'
           : 'bg-purple-50 text-purple-600'
         }`}>
@@ -935,7 +935,7 @@ function EventMiniCard({ event }: { event: VolunteerEvent }) {
         <p className="font-body text-[13px] text-cool-grey leading-[1.6] line-clamp-2">{event.description}</p>
       )}
       <div className="mt-auto">
-        <span className="font-body text-[12px] text-soft-gold font-semibold">See details →</span>
+        <span className="font-body text-[12px] text-link-gold font-semibold">See details →</span>
       </div>
     </Link>
   )
@@ -961,7 +961,7 @@ function VolunteerEventsSection() {
       <div ref={ref} className="max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className="flex items-end justify-between gap-4 mb-8">
           <div>
-            <p className="font-body text-[12px] font-semibold tracking-[0.1em] text-soft-gold uppercase mb-2">
+            <p className="font-body text-[12px] font-semibold tracking-[0.1em] text-link-gold uppercase mb-2">
               Volunteer
             </p>
             <h2 className="font-display italic text-deep-navy text-[28px] md:text-[36px] leading-[1.1] tracking-[-0.01em]">
@@ -973,7 +973,7 @@ function VolunteerEventsSection() {
           </div>
           <Link
             to="/volunteer"
-            className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-soft-gold/40 text-soft-gold font-body text-[13px] font-semibold hover:bg-soft-gold/8 transition-colors shrink-0"
+            className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-link-gold/40 text-link-gold font-body text-[13px] font-semibold hover:bg-link-gold/8 transition-colors shrink-0"
           >
             Find opportunities
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1033,7 +1033,7 @@ function AdvisorTeaser() {
           </div>
 
           <div className="flex-1 text-center md:text-left">
-            <p className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase mb-2">
+            <p className="font-body text-[11px] font-semibold tracking-[0.1em] text-link-gold uppercase mb-2">
               Cause Finder
             </p>
             <h2
@@ -1109,7 +1109,7 @@ function FooterCTA() {
         <p className="mt-5 font-body text-[14px]">
           <Link
             to="/the-invisible-97"
-            className="text-soft-gold hover:text-bright-gold transition-colors"
+            className="text-link-gold hover:text-deep-gold transition-colors"
           >
             See the invisible 97% →
           </Link>

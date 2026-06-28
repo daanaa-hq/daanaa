@@ -289,7 +289,7 @@ export default function VolunteerSearch() {
             <p className="font-body text-[15px] text-cool-grey">
               Enter a zip code or city above to find volunteer opportunities.
             </p>
-            <p className="font-body text-[13px] text-muted-cream mt-2">
+            <p className="font-body text-[13px] text-cool-grey mt-2">
               Are you a nonprofit?{' '}
               <Link to="/for-nonprofits" className="text-soft-gold hover:text-bright-gold font-semibold">
                 Claim your page

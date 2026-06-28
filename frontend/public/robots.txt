@@ -25,3 +25,4 @@ Disallow: /compare
 Disallow: /claim/
 
 Sitemap: https://daanaa.org/sitemap.xml
+Sitemap: https://data.daanaa.org/sitemap-index.xml

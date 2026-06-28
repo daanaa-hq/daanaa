@@ -22,17 +22,17 @@ export default function ResearchOverview({
       {metadata && (
         <div className="grid grid-cols-3 gap-4 mt-8">
           <div className="bg-soft-gold/10 rounded-lg p-4">
-            <div className="text-3xl font-display text-soft-gold">
+            <div className="text-3xl font-display text-link-gold">
               {(metadata.total_organizations / 1_000_000).toFixed(1)}M
             </div>
             <div className="text-sm text-cool-grey">Organizations indexed</div>
           </div>
           <div className="bg-soft-gold/10 rounded-lg p-4">
-            <div className="text-3xl font-display text-soft-gold">50</div>
+            <div className="text-3xl font-display text-link-gold">50</div>
             <div className="text-sm text-cool-grey">States represented</div>
           </div>
           <div className="bg-soft-gold/10 rounded-lg p-4">
-            <div className="text-3xl font-display text-soft-gold">3</div>
+            <div className="text-3xl font-display text-link-gold">3</div>
             <div className="text-sm text-cool-grey">Financial Archetypes</div>
           </div>
         </div>

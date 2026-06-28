@@ -121,7 +121,7 @@ export default function Methodology() {
               </p>
             </div>
             <div className="shrink-0 hidden md:flex justify-end">
-              <img src="/logo.png" alt="Daanaa" className="w-48 h-48 lg:w-56 lg:h-56 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
+              <img src="/logo.png" alt="" aria-hidden="true" className="w-48 h-48 lg:w-56 lg:h-56 object-contain drop-shadow-[0_12px_48px_rgba(201,169,110,0.22)]" />
             </div>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function Methodology() {
           <aside className="hidden lg:block shrink-0 w-56 pt-14">
             <div className="sticky top-[88px]">
               <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">On this page</p>
-              <nav className="space-y-2.5">
+              <nav aria-label="On this page" className="space-y-2.5">
                 {TOC.map(item => (
                   <a
                     key={item.id}

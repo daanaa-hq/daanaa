@@ -27,7 +27,7 @@ export default function ResearchSidebar({
         <div className="flex items-center gap-3 mb-3">
           <img
             src="/logo.png"
-            alt="Daanaa"
+            alt=""
             className="h-8 w-8 object-contain"
             width={32}
             height={32}
@@ -37,7 +37,7 @@ export default function ResearchSidebar({
         <p className="text-xs text-cool-grey">Advisor & academic guide</p>
       </div>
 
-      <nav className="space-y-2">
+      <nav aria-label="Research sections" className="space-y-2">
         {SECTIONS.map((section) => (
           <button
             key={section.id}

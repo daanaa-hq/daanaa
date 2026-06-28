@@ -1165,9 +1165,9 @@ export default function OrganizationDetail() {
       {serviceArea?.area_type && serviceArea.area_type !== 'local' && (
         <div className="bg-warm-cream py-8 border-t border-light-grey">
           <div className="max-w-[900px] mx-auto px-6 lg:px-12">
-            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-2">
+            <h2 className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase mb-2">
               Where they serve
-            </p>
+            </h2>
             <p className="font-body text-[15px] text-deep-navy">
               {serviceArea.area_type === 'nationwide' && 'Serves communities nationwide across the US'}
               {serviceArea.area_type === 'international' && (
@@ -1191,9 +1191,9 @@ export default function OrganizationDetail() {
       {volunteerEvents.length > 0 && (
         <div className="bg-warm-cream py-12 border-t border-light-grey">
           <div className="max-w-[900px] mx-auto px-6 lg:px-12">
-            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-4">
+            <h2 className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase mb-4">
               Volunteer opportunities
-            </p>
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {volunteerEvents.map(ev => {
                 const parts = ev.event_date?.split('-') ?? []
@@ -1207,7 +1207,7 @@ export default function OrganizationDetail() {
                   <div key={ev.id} className="bg-white rounded-xl border border-light-cream p-5 flex flex-col gap-3">
                     <div>
                       <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase mb-1 ${
-                        ev.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/10 text-soft-gold'
+                        ev.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/10 text-link-gold'
                       }`}>
                         {ev.is_virtual ? 'Virtual' : 'In Person'}
                       </span>
@@ -1223,7 +1223,7 @@ export default function OrganizationDetail() {
                       {ev.signup_url ? (
                         <a
                           href={ev.signup_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
+                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-link-gold font-semibold hover:text-deep-gold transition-colors"
                         >
                           Sign up
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1233,7 +1233,7 @@ export default function OrganizationDetail() {
                       ) : ev.contact_email ? (
                         <a
                           href={`mailto:${ev.contact_email}`}
-                          className="font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
+                          className="font-body text-[13px] text-link-gold font-semibold hover:text-deep-gold transition-colors"
                         >
                           Contact to volunteer
                         </a>
@@ -1243,7 +1243,7 @@ export default function OrganizationDetail() {
                 )
               })}
             </div>
-            <p className="mt-6 font-body text-[12px] text-muted-cream">
+            <p className="mt-6 font-body text-[12px] text-cool-grey">
               Sign-ups are handled by the organization directly. Daanaa does not collect volunteer information.
             </p>
           </div>

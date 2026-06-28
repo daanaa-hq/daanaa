@@ -706,7 +706,7 @@ export default function Directory() {
                   {effectiveHiddenGem && (
                     <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
                       <span>Small, overlooked organizations · a fresh set each week.</span>
-                      <button onClick={handleSeeAll} className="font-semibold text-soft-gold hover:text-bright-gold transition-colors">
+                      <button onClick={handleSeeAll} className="font-semibold text-link-gold hover:text-deep-gold transition-colors">
                         See all 1.8M →
                       </button>
                     </p>
@@ -732,7 +732,7 @@ export default function Directory() {
                         </span>
                       )}
                       {useFusedResults && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-soft-gold font-body text-[11px]" title="Results ranked by combining keyword matching and meaning, not by size or revenue">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-link-gold font-body text-[11px]" title="Results ranked by combining keyword matching and meaning, not by size or revenue">
                           Name + meaning
                         </span>
                       )}
@@ -740,7 +740,7 @@ export default function Directory() {
                         <button
                           key={f}
                           onClick={() => handleFilterChange(f)}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {RAIL_CATEGORIES.find(c => c.id === f)?.label} ×
                         </button>
@@ -757,7 +757,7 @@ export default function Directory() {
                       {stateFilter && (
                         <button
                           onClick={() => handleStateChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {stateFilter} ×
                         </button>
@@ -765,7 +765,7 @@ export default function Directory() {
                       {revenueFilter && (
                         <button
                           onClick={() => handleRevenueChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {revLabel} ×
                         </button>
@@ -773,7 +773,7 @@ export default function Directory() {
                       {scoreTier && (
                         <button
                           onClick={() => handleScoreTierChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {scoreLabel} ×
                         </button>
@@ -781,7 +781,7 @@ export default function Directory() {
                       {visTier && (
                         <button
                           onClick={() => handleVisTierChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {visTier} ×
                         </button>

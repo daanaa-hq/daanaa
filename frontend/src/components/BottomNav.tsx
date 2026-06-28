@@ -45,6 +45,7 @@ export default function BottomNav() {
 
   return (
     <nav
+      aria-label="Mobile navigation"
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-white"
       style={{
         paddingBottom: 'env(safe-area-inset-bottom, 0px)',

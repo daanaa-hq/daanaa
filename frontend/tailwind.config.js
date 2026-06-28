@@ -50,6 +50,7 @@ module.exports = {
         'light-cream': '#EDE8E0',
         'light-grey': '#E5E0DB',
         'deep-gold': '#8B7340',
+        'link-gold': '#7A5C2E',
         'success-green': '#4ADE80',
         'alert-amber': '#F59E0B',
         // New brand tokens
