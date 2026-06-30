@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { loadResearchSnapshot } from '../data/researchSnapshot'
 import RelatedPages from './RelatedPages'
+import TrustNav from './TrustNav'
 import ResearchOverview from './research/ResearchOverview'
 import ResearchAbout from './research/ResearchAbout'
 import ResearchProblem from './research/ResearchProblem'
@@ -55,6 +56,8 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
         </section>
       ))}
 
+      <TrustNav />
+
       {metadata && (
         <footer className="mt-20 pt-8 border-t border-cool-grey/20">
           <div className="text-xs text-cool-grey mb-6">
@@ -70,7 +73,7 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
             links={[
               { to: '/methodology', label: 'How we score' },
               { to: '/about', label: 'About Daanaa' },
-              { to: '/principles', label: 'Our principles' },
+              { to: '/sector-health', label: 'Sector health data' },
             ]}
           />
           <div className="mt-12 pt-6 border-t border-cool-grey/20 flex items-center justify-between">

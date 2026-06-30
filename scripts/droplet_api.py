@@ -1335,10 +1335,13 @@ _STATIC_META = {
         'Daanaa is an independent civic platform that helps people discover '
         'nonprofits using public IRS data, presented with context and respect.',
     ),
-    'principles': (
-        'Our Principles — Daanaa',
-        'The stewardship principles behind Daanaa: evidence-based trust signals, '
-        'structural donor privacy, and protected independence.',
+    'privacy': (
+        'Privacy Policy — Daanaa',
+        'How Daanaa collects, uses, stores, and protects information. Includes data retention schedule and your rights under CCPA and other state privacy laws.',
+    ),
+    'security': (
+        'Security Disclosure — Daanaa',
+        'How to report a security vulnerability to Daanaa. Our responsible disclosure policy and safe harbor commitment for security researchers.',
     ),
     'for-nonprofits': (
         'For Nonprofits — Claim Your Page on Daanaa',
@@ -1558,7 +1561,7 @@ _SPA_PREFIXES = {
     'methodology', 'sector-health', 'learn', 'guides', 'faq', 'feedback',
     'partners', 'for-vendors', 'vendor-policy', 'terms', 'guild', 'member',
     'volunteer', 'events', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
-    'nonprofit', 'vendor', 'claim', 'admin', 'sector-health',
+    'nonprofit', 'vendor', 'claim', 'admin', 'sector-health', 'privacy', 'security',
 }
 
 @app.route('/', defaults={'path': ''})

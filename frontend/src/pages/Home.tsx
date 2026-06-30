@@ -537,7 +537,7 @@ function BrowseCauses() {
                   {cat.name}
                 </p>
                 {count != null && (
-                  <p className="font-body text-[10px] text-deep-navy/55">{count.toLocaleString()}</p>
+                  <p className="font-body text-[10px] text-deep-navy/75">{count.toLocaleString()}</p>
                 )}
               </Link>
             )
@@ -743,7 +743,7 @@ function WalletSection() {
             <div className="bg-[#0F1F38] border border-white/8 rounded-2xl p-6 shadow-2xl">
               <div className="flex items-center justify-between mb-5">
                 <span className="font-display italic text-[18px] text-warm-cream">Your Giving Wallet</span>
-                <span className="font-body text-[11px] tracking-[0.04em]" style={{ color: 'rgba(168,159,148,0.55)' }}>3 saved</span>
+                <span className="font-body text-[11px] tracking-[0.04em]" style={{ color: 'rgba(168,159,148,0.85)' }}>3 saved</span>
               </div>
               <div className="space-y-3">
                 {[

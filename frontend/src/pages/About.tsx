@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import TrustNav from '../components/TrustNav'
 
 const SECTIONS = [
   {
     tag: 'Who we cover',
     title: 'Every active 501(c)(3) in America',
     body: [
-      'Daanaa indexes every 501(c)(3) organization the IRS recognizes as active and eligible for tax-deductible giving. We check each organization against the IRS automatic revocation list every month — if an organization has lost its tax-exempt status, it does not appear in browse or search.',
-      'Most platforms stop at a curated subset. We cover all 1.7 million. The words "active" and "tax-deductible" are not marketing language — they are the filter we enforce in the database and verify continuously against federal records.',
+      'Daanaa indexes every 501(c)(3) organization the IRS recognizes as active and eligible for tax deductible giving. We check each organization against the IRS automatic revocation list every month — if an organization has lost its tax exempt status, it does not appear in browse or search.',
+      'Most platforms stop at a curated subset. We cover all 1.7 million. The words "active" and "tax deductible" are not marketing language — they are the filter we enforce in the database and verify continuously against federal records.',
     ],
     link: { to: '/legal', label: 'How we source and verify the data' },
   },
@@ -15,7 +16,7 @@ const SECTIONS = [
     tag: 'Who we surface',
     title: 'Including the 97% that go unseen',
     body: [
-      'Most giving platforms highlight the same few hundred well-known organizations. The other 97% — small community groups, local mutual aid networks, neighborhood health clinics, regional arts organizations — are registered, active, and doing real work. They just lack the staff and budget to build a public profile.',
+      'Most giving platforms highlight the same few hundred well known organizations. The other 97% — small community groups, local mutual aid networks, neighborhood health clinics, regional arts organizations — are registered, active, and doing real work. They just lack the staff and budget to build a public profile.',
       'Daanaa treats every organization with equal dignity. A $40,000 food pantry gets the same care as a $40 million hospital foundation. Our hidden gems feature actively surfaces small organizations with strong financial health precisely because they are the ones that benefit most from being found.',
     ],
     link: { to: '/directory', label: 'Browse the directory' },
@@ -34,19 +35,19 @@ const SECTIONS = [
     title: 'Easy, recordable, seamless, and repeatable',
     body: [
       'Finding an organization should be the beginning, not the end. The Giving Wallet lets you save organizations you care about, log the time and money you\'ve given, and return to your list whenever you\'re ready — all without creating an account.',
-      'We never process donations, hold donor funds, or issue tax receipts. Every gift goes directly to the nonprofit through their own page. Our role is to make that hand-off frictionless and to give you a personal record of the giving that matters to you.',
+      'We never process donations, hold donor funds, or issue tax receipts. Every gift goes directly to the nonprofit through their own page. Our role is to make that hand off frictionless and to give you a personal record of the giving that matters to you.',
     ],
     link: { to: '/wallet', label: 'Learn about the Giving Wallet' },
   },
   {
     tag: 'How we operate',
-    title: 'Independent and evidence-based',
+    title: 'Independent and evidence based',
     body: [
       'No organization can pay for placement, boost its score, or suppress how it appears on Daanaa. No partner or sponsor can influence what users see. Independence is structural — there is no mechanism in the platform for money to change how an organization ranks or appears.',
       'Every trust signal comes from public IRS data, NCCS financial summaries, or ProPublica 990 records. When we use AI to generate a mission summary, we label it clearly. When data is incomplete or stale, we say so. We do not present assumptions as facts.',
     ],
     links: [
-      { to: '/principles', label: 'Our founding principles' },
+      { to: '/methodology', label: 'How scoring works' },
       { to: '/legal', label: 'Data sources and attribution' },
     ],
   },
@@ -64,7 +65,7 @@ const SECTIONS = [
 export default function About() {
   usePageMeta(
     'About Daanaa',
-    'Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with independent, evidence-based financial context so giving is easy, recordable, seamless, and repeatable.'
+    'Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with independent, evidence based financial context so giving is easy, recordable, seamless, and repeatable.'
   )
 
   return (
@@ -90,7 +91,7 @@ export default function About() {
           <div className="mt-8 max-w-[680px] space-y-1.5">
             {[
               'Independent of paid influence.',
-              'Evidence-based from public IRS data.',
+              'Evidence based on public IRS data.',
               'No ratings. Every organization benchmarked within its true peer group — never against a different type or size.',
               'Equal dignity for the small org doing extraordinary work as for the large one everyone has heard of.',
             ].map(line => (
@@ -149,7 +150,7 @@ export default function About() {
               <ul className="space-y-3">
                 {[
                   'A public directory of every active 501(c)(3)',
-                  'An independent, evidence-based financial context layer',
+                  'An independent, evidence based financial context layer',
                   'A discovery platform for the 97% that go unseen',
                   'A giving record that stays on your device',
                 ].map(item => (
@@ -184,6 +185,60 @@ export default function About() {
             </div>
           </div>
 
+          {/* Our commitments */}
+          <div className="mt-16 pt-12 border-t border-light-grey">
+            <h2 className="font-display italic text-deep-navy text-[26px] md:text-[32px] mb-8">What we commit to</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {[
+                {
+                  title: 'No paid placement',
+                  body: 'Organizations cannot pay to appear higher in search results or change how they appear. Visibility is based on publicly available information and transparent methodology, not advertising budgets.',
+                },
+                {
+                  title: 'No control of donor funds',
+                  body: 'Donations do not pass through Daanaa. We link to the organization\'s own official page. Anyone who gives deals with the nonprofit directly. We never hold, process, or transfer charitable funds.',
+                },
+                {
+                  title: 'No sale of donor activity',
+                  body: 'We do not build profiles based on giving behavior or encourage public displays of generosity. Giving is personal and should remain in the hands of the giver.',
+                },
+                {
+                  title: 'Independence is structural',
+                  body: 'No partner, sponsor, or outside relationship can influence verification outcomes, rankings, or trust indicators. There is no mechanism in the platform for money to change how an organization appears.',
+                },
+                {
+                  title: 'Errors are corrected quickly',
+                  body: 'Errors in our data, logic, or presentation are corrected openly and promptly. Accuracy is more important than protecting the appearance of the platform. Every org page has a visible corrections path.',
+                },
+                {
+                  title: 'Privacy is structural',
+                  body: 'Your giving history stays on your device by default. Signing in with Google is optional and enables backup across your devices. We use Plausible Analytics with no tracking cookies and no advertising profiles. No social sharing of giving activity is surfaced or encouraged.',
+                },
+              ].map(c => (
+                <div key={c.title} className="bg-white border border-light-grey rounded-xl p-6">
+                  <h3 className="font-display text-deep-navy text-[17px] mb-3">{c.title}</h3>
+                  <p className="font-body text-[14px] text-cool-grey leading-[1.65]">{c.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* How we use AI */}
+          <div className="mt-14 pt-10 border-t border-light-grey grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-8 md:gap-16">
+            <div className="md:pt-1">
+              <p className="font-body text-[11px] tracking-[0.1em] text-soft-gold uppercase mb-2">A note on AI</p>
+              <h2 className="font-display italic text-deep-navy text-[20px] md:text-[24px] leading-[1.2]">How we use AI responsibly</h2>
+            </div>
+            <div className="space-y-4">
+              <p className="font-body text-[15px] text-cool-grey leading-[1.7]">
+                When a nonprofit hasn't filed a mission statement with the IRS, we use AI to read the available filing data and write a starting-point description — the way a research volunteer would read an annual report and draft a summary paragraph. We label every AI-generated description clearly. Any organization can replace it at any time with their own words. You should verify anything important directly with the organization.
+              </p>
+              <p className="font-body text-[15px] text-cool-grey leading-[1.7]">
+                AI never touches financial data, scores, or peer benchmarks. Those come directly from IRS records. AI fills gaps in the written record — it does not shape the numbers. We run our AI locally on our own servers, not through third party cloud services, which means organization data stays within the platform. AI outputs are reviewable, correctable, and clearly labeled wherever they appear.
+              </p>
+            </div>
+          </div>
+
           {/* CTAs */}
           <div className="mt-14 pt-10 border-t border-light-grey grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
@@ -200,12 +255,12 @@ export default function About() {
             </Link>
 
             <Link
-              to="/principles"
+              to="/research"
               className="flex items-center justify-between px-6 py-5 bg-white border border-light-grey rounded-xl hover:border-soft-gold transition-colors group"
             >
               <div>
                 <p className="font-body text-[11px] tracking-[0.08em] text-soft-gold uppercase mb-1">Go deeper</p>
-                <p className="font-display italic text-deep-navy text-[18px]">Our founding principles</p>
+                <p className="font-display italic text-deep-navy text-[18px]">Sector data and research</p>
               </div>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" className="shrink-0 group-hover:translate-x-1 transition-transform">
                 <polyline points="9 18 15 12 9 6" />
@@ -218,6 +273,8 @@ export default function About() {
               Questions? <Link to="/feedback" className="text-soft-gold hover:text-bright-gold font-semibold">Get in touch</Link>.
             </p>
           </div>
+
+          <TrustNav />
 
         </div>
       </div>

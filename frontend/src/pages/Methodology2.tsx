@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
+import TrustNav from '../components/TrustNav'
 import LampMark from '../components/LampMark'
 import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
@@ -161,10 +162,8 @@ export default function Methodology() {
 
             <Section id="overview" label="Our foundation" title="What Daanaa is, and what it isn't">
               <p>
-                Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their page or score.
-              </p>
-              <p>
-                We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.7 million of them. Our role is to surface information, not to judge missions.
+                Daanaa is a public directory of every active 501(c)(3) in America — independent of paid influence, not affiliated with the IRS or any rating agency, and not a donation processor.{' '}
+                <Link to="/about" className="text-soft-gold hover:text-bright-gold font-medium">How we approach this →</Link>
               </p>
               <Callout>
                 Two signals work together on every page. The peer financial context score (0–100) measures months of operating reserves as a percentile within a peer group. The peer financial context signal (Healthy, Stable, or Needs Support) adds a plain-language summary of financial health. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
@@ -392,6 +391,8 @@ export default function Methodology() {
               </div>
             </Section>
 
+            <TrustNav />
+
             {/* CTA */}
             <div className="py-12">
               <div className="bg-deep-navy rounded-2xl p-8 md:p-12 text-center">
@@ -414,9 +415,6 @@ export default function Methodology() {
                   </Link>
                   <Link to="/directory" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
                     Browse the directory →
-                  </Link>
-                  <Link to="/principles" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
-                    Our principles →
                   </Link>
                   <Link to="/legal" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
                     Data attribution →

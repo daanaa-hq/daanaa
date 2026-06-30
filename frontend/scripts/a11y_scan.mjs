@@ -4,7 +4,12 @@ import { chromium } from 'playwright'
 import AxeBuilder from '@axe-core/playwright'
 
 const BASE = process.argv[2] || 'https://daanaa.org'
-const PATHS = ['/', '/directory', '/org/530196605', '/how-it-works', '/research']
+const PATHS = [
+  '/', '/directory', '/org/530196605',
+  '/about', '/methodology', '/research',
+  '/privacy', '/security', '/wallet',
+  '/for-nonprofits',
+]
 
 const browser = await chromium.launch()
 const ctx = await browser.newContext()

@@ -114,7 +114,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
               to="/wallet"
               className="relative inline-flex items-center gap-1.5 px-4 py-[11px] rounded-full font-body text-[13px] transition-all duration-150"
               style={{
-                color: isActive('/wallet') ? '#C9A96E' : '#6B7280',
+                color: isActive('/wallet') ? '#0A1628' : '#4B5563',
                 background: isActive('/wallet') ? 'rgba(201,169,110,0.08)' : 'transparent',
                 border: '1px solid',
                 borderColor: isActive('/wallet') ? 'rgba(201,169,110,0.4)' : 'rgba(229,224,219,0.8)',

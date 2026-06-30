@@ -45,6 +45,7 @@ export default function ImpactSummary() {
     `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 
   return (
+    <div className="space-y-3">
     <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
       <div className="bg-gradient-to-br from-soft-gold/20 to-bright-gold/10 rounded-lg p-4 border border-soft-gold/30">
         <p className="text-xs text-cool-grey uppercase tracking-wide font-semibold mb-1">
@@ -101,6 +102,10 @@ export default function ImpactSummary() {
                 : 'Funds + time'}
         </p>
       </div>
+    </div>
+    <p className="font-body text-[11px] text-cool-grey leading-[1.5]">
+      These figures are for your personal reference only. Dollar values for volunteer time use the Independent Sector national estimate and are not verified by Daanaa. This is not tax advice, not a tax receipt, and should not be used to support any deduction. Consult a tax advisor for guidance on charitable deductions.
+    </p>
     </div>
   )
 }

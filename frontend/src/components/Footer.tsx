@@ -21,19 +21,18 @@ const NAV_COLS = [
   {
     heading: 'Learn',
     links: [
-      { label: 'About Daanaa',     to: '/about' },
-      { label: 'How it works',    to: '/methodology' },
-      { label: 'FAQ',             to: '/methodology#faq' },
-      { label: 'Principles',      to: '/principles' },
+      { label: 'About Daanaa',  to: '/about' },
+      { label: 'How it works',  to: '/methodology' },
+      { label: 'Research',      to: '/research' },
     ],
   },
   {
-    heading: 'About',
+    heading: 'Legal',
     links: [
-      { label: 'About Us',  to: '/about' },
-      { label: 'Partners',  to: '/partners' },
-      { label: 'Privacy',   to: '/legal#privacy' },
+      { label: 'Privacy',   to: '/privacy' },
+      { label: 'Security',  to: '/security' },
       { label: 'Terms',     to: '/terms' },
+      { label: 'Partners',  to: '/partners' },
       { label: 'Contact',   to: '/feedback' },
     ],
   },

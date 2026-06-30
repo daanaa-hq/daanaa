@@ -608,7 +608,7 @@ export default function OrganizationDetail() {
                         </p>
                       )}
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                        Your giving goes directly to the organization. External link from our public records. If this link is broken, search for them by name.</p>
+                        This link takes you to an external site that Daanaa does not own or operate. Your giving goes directly to that organization. Daanaa is not responsible for the content, accuracy, or security of third party sites. Confirm you are on the correct official page before giving.</p>
                     </div>
                   );
                 }

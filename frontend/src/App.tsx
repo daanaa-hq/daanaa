@@ -25,7 +25,6 @@ const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const About = lazy(() => import('./pages/About'))
-const Principles = lazy(() => import('./pages/Principles'))
 const Approach = lazy(() => import('./pages/Approach'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
@@ -33,6 +32,8 @@ const ClaimSuccess = lazy(() => import('./pages/ClaimSuccess'))
 const ForVendors = lazy(() => import('./pages/ForVendors'))
 const VendorPolicy = lazy(() => import('./pages/VendorPolicy'))
 const Terms = lazy(() => import('./pages/Terms'))
+const Privacy = lazy(() => import('./pages/Privacy'))
+const Security = lazy(() => import('./pages/Security'))
 const GuildReferral = lazy(() => import('./pages/GuildReferral'))
 const MemberBenefits = lazy(() => import('./pages/MemberBenefits'))
 const VolunteerSearch = lazy(() => import('./pages/VolunteerSearch'))
@@ -89,11 +90,11 @@ export default function App() {
             <Route path="/giving-wallet" element={<Navigate to="/wallet" replace />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
             <Route path="/about" element={<About />} />
-            <Route path="/principles" element={<Principles />} />
+            <Route path="/principles" element={<Navigate to="/about" replace />} />
             <Route path="/approach" element={<Navigate to="/about" replace />} />
             {/* Legacy routes for backward compatibility */}
-            <Route path="/governance" element={<Principles />} />
-            <Route path="/stewardship" element={<Principles />} />
+            <Route path="/governance" element={<Navigate to="/about" replace />} />
+            <Route path="/stewardship" element={<Navigate to="/about" replace />} />
             <Route path="/why-daanaa-exists" element={<About />} />
             {/* <Route path="/giving-list" element={<GivingListPage />} /> */}
             {/* <Route path="/giving-list/review" element={<GivingReview />} /> */}
@@ -111,6 +112,8 @@ export default function App() {
             <Route path="/for-vendors" element={<ForVendors />} />
             <Route path="/vendor-policy" element={<VendorPolicy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/security" element={<Security />} />
             <Route path="/guild/:slug" element={<GuildReferral />} />
             <Route path="/member/benefits" element={<MemberBenefits />} />
             <Route path="/volunteer" element={<VolunteerSearch />} />
