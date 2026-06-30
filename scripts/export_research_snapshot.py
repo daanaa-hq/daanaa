@@ -22,6 +22,8 @@ import csv
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 
+from registry_filters import DEDUCTIBLE_FILTER, canonical_active_count
+
 DB_PATH = os.environ.get("MERIT_DB_PATH", "/home/akbar/meritgiving/data/merit_registry.db")
 BMF_PATH = os.environ.get("MERIT_BMF_PATH", "/home/akbar/meritgiving/data/bmf.csv")
 OUT_PATH = "/home/akbar/meritgiving/frontend/public/research-snapshot.json"
@@ -72,12 +74,7 @@ def build_metadata(db):
     # rest of the dashboard analyses and the public site surface. Excludes the
     # ~193K auto-revoked orgs so the headline matches the analysis below it and
     # the homepage (mirrors daanaa_api.py _DEDUCTIBILITY_FILTER).
-    total_orgs = db.execute(
-        "SELECT COUNT(*) FROM registry_enriched "
-        "WHERE subsection = '3' AND deductibility = '1' "
-        "AND COALESCE(irs_revoked, 0) != 1 "
-        "AND COALESCE(org_status, '') != 'revoked'"
-    ).fetchone()[0]
+    total_orgs = canonical_active_count(db)
     period = db.execute(
         "SELECT MAX(period) FROM research_operating_model_summary"
     ).fetchone()[0]
@@ -203,10 +200,7 @@ def build_entity_types(db):
     """
     deductible = set(
         r[0] for r in db.execute(
-            "SELECT EIN FROM registry_enriched "
-            "WHERE subsection = '3' AND deductibility = '1' "
-            "AND COALESCE(irs_revoked, 0) != 1 "
-            "AND COALESCE(org_status, '') != 'revoked'"
+            f"SELECT EIN FROM registry_enriched WHERE {DEDUCTIBLE_FILTER}"
         ).fetchall()
     )
     counts = {'public_charity': 0, 'private_foundation': 0, 'unclassified': 0}

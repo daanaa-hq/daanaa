@@ -198,7 +198,7 @@ export default function WhyDaanaa() {
                       The directory
                     </h3>
                     <p className="mt-2 font-body text-[14px] text-cool-grey">
-                      Search 1.8M nonprofits and discover organizations in your community
+                      Search 1.7M nonprofits and discover organizations in your community
                     </p>
                   </div>
                   <svg className="w-5 h-5 text-soft-gold mt-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -131,7 +131,7 @@ export default function Directory() {
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
     qParam ? `"${qParam}" · Causes & Organizations` : 'Explore Causes & Organizations',
-    'Search 1.8 million+ tax-deductible 501(c)(3) organizations recognized by the IRS, by cause, category, and location.'
+    'Search 1.7 million+ tax-deductible 501(c)(3) organizations recognized by the IRS, by cause, category, and location.'
   )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
@@ -355,6 +355,7 @@ export default function Directory() {
     searchParams.delete('has_website')
     searchParams.delete('hidden_gem')
     searchParams.delete('needs_funding')
+    searchParams.delete('cause')
     setSearchParams(searchParams)
   }
 
@@ -707,7 +708,7 @@ export default function Directory() {
                     <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
                       <span>Small, overlooked organizations · a fresh set each week.</span>
                       <button onClick={handleSeeAll} className="font-semibold text-link-gold hover:text-deep-gold transition-colors">
-                        See all 1.8M →
+                        See all 1.7M →
                       </button>
                     </p>
                   )}
@@ -724,7 +725,7 @@ export default function Directory() {
                   )}
 
                   {/* Active filter chips */}
-                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier || visTier) && (
+                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier || visTier || cause) && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-[11px]">
@@ -784,6 +785,14 @@ export default function Directory() {
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {visTier} ×
+                        </button>
+                      )}
+                      {cause && (
+                        <button
+                          onClick={() => { setCause(''); setDebouncedCause(''); const sp = new URLSearchParams(window.location.search); sp.delete('cause'); setSearchParams(sp) }}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                        >
+                          {cause} ×
                         </button>
                       )}
                       <button onClick={handleClearAll} className="font-body text-[11px] text-cool-grey hover:text-deep-navy transition-colors">

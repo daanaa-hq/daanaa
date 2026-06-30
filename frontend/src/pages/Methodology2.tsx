@@ -78,9 +78,9 @@ function Callout({ children }: { children: React.ReactNode }) {
 }
 
 function TierRow({ score, label, description }: { score: string; label: string; description: string }) {
-  // Financial scale is not a danger gradient. Larger scale gets a gentle green;
-  // everything else is calm slate. A smaller organization is not "worse".
-  const color = label === 'Among the largest like it' || label === 'Larger than most like it'
+  // Reserve strength is not a danger gradient. Stronger reserves get a gentle
+  // green; everything else is calm slate. Lower reserves are not "worse".
+  const color = label === 'Top 10% in reserves' || label === 'Top quarter in reserves'
     ? '#5a9e6f'
     : '#8a8f98'
   return (
@@ -164,10 +164,10 @@ export default function Methodology() {
                 Daanaa is an independent civic platform. We are not affiliated with the IRS, the federal government, or any nonprofit rating agency. We don't accept payments from organizations to influence their page or score.
               </p>
               <p>
-                We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.8 million of them. Our role is to surface information, not to judge missions.
+                We list every 501(c)(3) nonprofit the IRS recognizes where donations are eligible for a tax deduction. More than 1.7 million of them. Our role is to surface information, not to judge missions.
               </p>
               <Callout>
-                Two signals work together on every page. The peer financial context score (0–100) measures financial scale — how big this organization is relative to similar groups. The peer financial context signal (Healthy, Stable, or Needs Support) measures how well it manages its resources within that peer group. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
+                Two signals work together on every page. The peer financial context score (0–100) measures months of operating reserves as a percentile within a peer group. The peer financial context signal (Healthy, Stable, or Needs Support) adds a plain-language summary of financial health. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
               </Callout>
             </Section>
 
@@ -196,48 +196,48 @@ export default function Methodology() {
 
             <Section id="peer-financial-context" label="The financial picture" title="How peer financial context works">
               <p>
-                This number sits quietly behind the lamp. It is not a grade and it is not a judgment. It says nothing about the quality of the work, the people, or the good they do. All it does is compare one organization's financial size to other groups doing similar work at a similar scale. The lamp is the journey. This is just one fact along the way.
+                This number sits quietly behind the lamp. It is not a grade and it is not a judgment. It says nothing about the quality of the work, the people, or the good they do. All it does is measure one organization's financial reserves compared to genuinely similar groups. The lamp is the journey. This is just one fact along the way.
               </p>
               <p>
-                We use two dimensions to define "similar":
+                We use two dimensions to find organizations that are truly comparable:
               </p>
               <div className="mt-2 space-y-3">
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
-                  <p className="font-body text-[14px] font-semibold text-deep-navy">Type of work</p>
+                  <p className="font-body text-[14px] font-semibold text-deep-navy">Funding model</p>
                   <p className="font-body text-[14px] text-cool-grey mt-1">
-                    Each nonprofit is placed in one of nine operating model groups based on how it actually runs — Activity and Programming, Direct Delivery, Community and Human Services, Clinical and Health, Emergency and Logistics, Cause and Research, Intermediary and Philanthropy, Faith Community, and Membership and Mutual Benefit. A food bank is compared to other food banks at the same scale, not to universities or hospitals.
+                    Each nonprofit is placed into one of three funding archetypes: Donation-Funded Programs (organizations that rely on community fundraising), Fee-for-Service Operators (organizations that earn revenue by providing services), or Endowment-Funded Grantmakers (organizations funded by endowment returns). A food bank is compared to other donation-funded programs, not to consulting firms or family foundations.
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
                   <p className="font-body text-[14px] font-semibold text-deep-navy">Revenue band</p>
                   <p className="font-body text-[14px] text-cool-grey mt-1">
-                    A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. Each operating model has five to eight revenue bands, set from that model's own distribution — so a small food bank is sized against other small food banks, not against small hospitals. Your $80K community garden is compared against other community gardens of a similar size.
+                    A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. We use three universal revenue bands: Micro (under $150K), Professional ($150K–$700K), and Established (over $700K). A small food bank is compared to other donation-funded programs in the Micro band, not to large hospitals or international NGOs.
                   </p>
                 </div>
               </div>
               <p className="mt-4">
-                Each peer cell needs at least 30 organizations to be meaningful. In practice, most cells have thousands. The metrics that matter differ by group: reserves are weighted less for food banks (where thin savings means mission delivery) and more for land trusts (where reserves are the mission).
+                Within each peer group, organizations are ranked by one metric: months of operating reserves. This is how many months an organization could keep operating on its unrestricted net assets if income stopped completely. It comes directly from the most recent IRS Form 990 filing and is calculated the same way for every organization, regardless of funding model or size.
               </p>
 
               <div className="mt-6">
-                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the number means</p>
+                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the score means</p>
                 <p className="font-body text-[13px] text-cool-grey mb-3 max-w-[640px]">
-                  It only tells you how big an organization is financially next to others doing similar work. A smaller organization is not a worse one. This number says nothing about the work, the people, or the good they do.
+                  The 0–100 score is a percentile: where this organization's reserves fall compared to similar organizations. A score of 75 means stronger reserves than 75% of its peers. This is not about size or budget; it is about financial resilience.
                 </p>
                 <div className="bg-white rounded-xl border border-light-grey p-4">
-                  <TierRow score="90 to 100" label="Among the largest like it" description="A bigger budget and stronger savings than almost every group doing similar work." />
-                  <TierRow score="75 to 89" label="Larger than most like it" description="Financially bigger than most groups doing similar work." />
-                  <TierRow score="60 to 74" label="A bit larger than most" description="A little bigger than the typical group doing this kind of work." />
-                  <TierRow score="40 to 59" label="About average in size" description="A normal size for the kind of work it does." />
-                  <TierRow score="0 to 39" label="Smaller than most like it" description="One of the smaller groups doing this work. Often newer, or running lean. It says nothing about how good the work is." />
+                  <TierRow score="90 to 100" label="Top 10% in reserves" description="Holds more reserves than nearly all similar organizations. A strong financial cushion." />
+                  <TierRow score="75 to 89" label="Top quarter in reserves" description="Holds more reserves than most similar organizations." />
+                  <TierRow score="50 to 74" label="Above median reserves" description="Financial position is comparable to or slightly better than the peer median." />
+                  <TierRow score="25 to 49" label="Below median reserves" description="Holds fewer reserves than the peer median. Often because resources go directly into programs." />
+                  <TierRow score="0 to 24" label="Lowest reserves" description="Among the lowest reserves in its peer group. Often a sign of lean operations focused on mission delivery, not weakness." />
                 </div>
               </div>
 
               <p className="mt-5 font-body text-[15px] text-cool-grey leading-[1.7]">
-                When you visit an organization's page, the primary signal you'll see is a <strong className="text-deep-navy font-medium">peer financial context signal</strong>: Healthy, Stable, or Needs Support. That is a different measure from the 0–100 number above. The number shows financial scale. The signal shows how well the organization manages its resources within that peer group, independent of size. A small organization can be Healthy; a large one can show Needs Support.
+                When you visit an organization's page, you also see a <strong className="text-deep-navy font-medium">peer financial context signal</strong>: Healthy, Stable, or Needs Support. This is separate from the percentile number. The percentile shows where reserves fall among peers. The signal shows financial health: whether the organization is building reserves, holding steady, or operating with limited cushion. A small organization can have healthy reserves for its size; a large one can show Needs Support.
               </p>
               <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
-                <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower signal does not mean a lesser organization. It often points to a group doing essential work within tight means. That is exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
+                <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower reserve position does not mean a lesser organization. It often means a group doing essential work within tight means, investing its resources directly into mission rather than building savings. That is exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
               </p>
             </Section>
 
@@ -406,6 +406,12 @@ export default function Methodology() {
                   Contact us
                 </Link>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
+                  <Link to="/about" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                    About Daanaa →
+                  </Link>
+                  <Link to="/research" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                    Research & data →
+                  </Link>
                   <Link to="/directory" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
                     Browse the directory →
                   </Link>

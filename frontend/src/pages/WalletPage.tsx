@@ -34,7 +34,7 @@ export default function WalletPage() {
   )
 
   const navigate = useNavigate()
-  const { user, signInWithGoogle } = useAuth()
+  const { user, signInWithGoogle, signOut } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
   const {
     entries,
@@ -437,13 +437,103 @@ export default function WalletPage() {
         <div className={`flex flex-col gap-2 ${hydrating ? 'opacity-60' : ''}`}>
           {filteredEntries.map(entry => {
             const apiOrg = orgDataMap.get(entry.ein) ?? null
-            if (!apiOrg) {
+            const haslogs = (entry.donations?.length ?? 0) > 0 || (entry.volunteerHours?.length ?? 0) > 0
+
+            if (!apiOrg && !haslogs) {
+              // No API data and no logs — show loading skeleton
               return (
                 <div key={entry.ein} className="bg-white border border-light-grey rounded-xl px-5 py-4 animate-pulse flex items-center gap-4">
                   <div className="flex-1 space-y-1.5">
                     <div className="h-4 w-3/4 bg-light-grey rounded" />
                     <div className="h-3 w-1/2 bg-light-grey rounded" />
                   </div>
+                </div>
+              )
+            }
+
+            if (!apiOrg && haslogs) {
+              // No API data but has logs — show fallback card with logs
+              const logOpen = expandedLogs.has(entry.ein)
+              const donationCount = entry.donations?.length ?? 0
+              const volCount = entry.volunteerHours?.length ?? 0
+              return (
+                <div key={entry.ein} className="group">
+                  {/* Fallback card for unsaved org with logs */}
+                  <div className="bg-white border border-light-grey rounded-xl px-5 py-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-body text-sm font-semibold text-deep-navy">{entry.ein}</p>
+                        <p className="font-body text-xs text-cool-grey/70 mt-1">(removed from wallet — logs preserved)</p>
+                      </div>
+                      <button
+                        onClick={e => { e.preventDefault(); handleRemove(entry.ein) }}
+                        title="Remove from wallet"
+                        className="w-6 h-6 flex items-center justify-center rounded-full bg-white border border-light-grey text-cool-grey hover:text-red-500 hover:border-red-300 transition-all"
+                      >
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Log action strip */}
+                  <div className="flex items-center gap-3 px-5 py-2 bg-white border border-t-0 border-light-grey rounded-b-xl">
+                    <button
+                      onClick={() => toggleLog(entry.ein)}
+                      className="inline-flex items-center gap-1.5 font-body text-[12px] text-deep-navy hover:text-soft-gold transition-colors font-medium"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 5v14M5 12h14"/>
+                      </svg>
+                      {logOpen ? 'Hide log' : 'View log'}
+                    </button>
+                    {donationCount > 0 && (
+                      <span className="font-body text-[11px] text-green-600">
+                        {donationCount} donation{donationCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {volCount > 0 && (
+                      <span className="font-body text-[11px] text-red-500">
+                        {volCount} volunteer session{volCount !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {logOpen && (
+                      <svg className="ml-auto" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                    )}
+                  </div>
+
+                  {/* Expandable log panel */}
+                  {logOpen && (
+                    <div className="border border-t-0 border-light-grey rounded-b-xl bg-warm-cream px-5 py-5 space-y-6">
+                      {donationCount > 0 && (
+                        <div>
+                          <p className="font-body text-[11px] font-semibold text-deep-navy uppercase tracking-wide mb-2">Donations</p>
+                          <div className="space-y-1.5">
+                            {entry.donations!.map(d => (
+                              <div key={d.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
+                                <span className="text-stone-500 w-[90px] shrink-0">{d.date}</span>
+                                <span className="font-semibold text-green-700">${d.amount.toLocaleString()}</span>
+                                {d.notes && <span className="text-stone-600 truncate">{d.notes}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {volCount > 0 && (
+                        <div>
+                          <p className="font-body text-[11px] font-semibold text-deep-navy uppercase tracking-wide mb-2">Volunteer hours</p>
+                          <div className="space-y-1.5">
+                            {entry.volunteerHours!.map(v => (
+                              <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
+                                <span className="text-stone-500 w-[90px] shrink-0">{v.date}</span>
+                                <span className="font-semibold text-red-600">{v.hours}h</span>
+                                {v.notes && <span className="text-stone-600 truncate">{v.notes}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             }
@@ -595,7 +685,14 @@ export default function WalletPage() {
             )}
             {user && (
               <div className="shrink-0 text-right">
-                <p className="font-body text-xs text-cool-grey">✓ Backup enabled</p>
+                <p className="font-body text-xs text-cool-grey mb-1">✓ Backup enabled</p>
+                <p className="font-body text-xs text-deep-navy font-semibold mb-2 break-all">{user.email}</p>
+                <button
+                  onClick={() => signOut().catch(e => console.error('Sign out error:', e))}
+                  className="text-xs text-cool-grey hover:text-red-500 transition-colors font-medium"
+                >
+                  Sign out
+                </button>
               </div>
             )}
           </div>

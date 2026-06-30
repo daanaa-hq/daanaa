@@ -80,8 +80,14 @@ export default function Principles() {
           <div className="mt-12 pt-8 border-t border-light-grey">
             <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">Learn more</p>
             <div className="flex flex-wrap gap-6">
+              <Link to="/about" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
+                About Daanaa →
+              </Link>
               <Link to="/methodology" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
                 Methodology →
+              </Link>
+              <Link to="/research" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
+                Research & data →
               </Link>
               <Link to="/legal" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
                 Privacy & Legal →

@@ -384,7 +384,7 @@ export default function ForVendors() {
   const { data: vendorData } = useApi(() => getGuildBenefits(), [])
   const orgCountLabel = stats?.total_organizations
     ? `${(Math.round(stats.total_organizations / 100000) / 10).toFixed(1)}M`
-    : '1.8M+'
+    : '1.7M+'
   const memberCountLabel = memberData?.member_count
     ? memberData.member_count.toLocaleString()
     : '—'
@@ -509,7 +509,7 @@ export default function ForVendors() {
               <ul className="space-y-2 mb-6">
                 {[
                   'Formal contract with milestone pricing from day one',
-                  'Shared code for all 1.8M+ members',
+                  'Shared code for all 1.7M+ members',
                   'Monthly aggregate reporting + CAF invoice',
                   'Dedicated page at daanaa.org/guild/your-name',
                   'Rates improve automatically as guild spend grows',
@@ -540,7 +540,7 @@ export default function ForVendors() {
           </p>
           <div className="grid gap-3">
             {[
-              { title: 'Your customers are already here', body: "Most of your existing nonprofit clients are somewhere in our 1.8M+ index. Joining puts you in front of them and in front of the ones who haven't found you yet." },
+              { title: 'Your customers are already here', body: "Most of your existing nonprofit clients are somewhere in our 1.7M+ index. Joining puts you in front of them and in front of the ones who haven't found you yet." },
               { title: 'No individual account management', body: 'Community partners get a listing and members reach you directly. Network partners use one shared code. Daanaa handles distribution, you handle the relationship.' },
               { title: 'You earn trust by showing up', body: 'No paid placement. Members choose partners on price, quality, and reputation. The network rewards partners who genuinely show up for nonprofits.' },
               { title: 'Your referral link grows your own book', body: 'Every listed partner gets a shareable page they can put in their email signature or on their website. Any nonprofit who clicks and claims their Daanaa page can access your offer.' },

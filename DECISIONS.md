@@ -372,3 +372,15 @@ These can differ significantly (e.g. YES Prep: v4=58, v5=36). Chosen: keep v4 fo
 tier (stable, historically established) and show v5 to users (cleaner archetype model).
 Rejected: unifying to v5 for tier assignment — would require re-scoring all lamp tiers and
 could shift many orgs' displayed tier mid-session. Track for a future unified scorer pass.
+
+## 2026-06-29 — Public numbers auto-publish with a consistency gate
+Chose: a single source of truth for the canonical org filter (`scripts/registry_filters.py`
+`DEDUCTIBLE_FILTER` + `canonical_active_count`), imported by `precompute_content.py`,
+`export_research_snapshot.py`, and the overnight data-quality gate; a consistency gate
+(`check_number_consistency.py`) that asserts DB == homepage.json.gz == research-snapshot.json
+before any deploy; and `refresh_public_numbers.sh` wired as Step 12 of `overnight_pipeline.py`
+to regenerate → gate → deploy → restart → verify nightly (full auto-deploy, user-approved).
+Why: the headline count drifted across pages (1.7M/1.8M/1.87M) and the deployed
+homepage.json.gz went stale because nothing regenerated/redeployed it after re-scoring.
+Rejected: a guarded "regenerate + notify, deploy by hand" flow — relies on remembering;
+the consistency gate makes auto-deploy safe (drift aborts the deploy, old files stay live).

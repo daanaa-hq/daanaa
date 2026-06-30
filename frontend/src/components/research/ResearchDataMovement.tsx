@@ -15,10 +15,14 @@ export default function ResearchDataMovement({
 }: ResearchDataMovementProps) {
   const [loading, setLoading] = useState(true)
   const [monthlyData, setMonthlyData] = useState<any[]>([])
+  const [v5Total, setV5Total] = useState<number>(0)
 
   useEffect(() => {
     loadResearchSnapshot()
-      .then((snap) => setMonthlyData(snap.monthly_changes ?? []))
+      .then((snap) => {
+        setMonthlyData(snap.monthly_changes ?? [])
+        setV5Total(snap.v5?.total_scored ?? 0)
+      })
       .catch((error) => console.error('Failed to load snapshot:', error))
       .finally(() => setLoading(false))
   }, [])
@@ -40,8 +44,8 @@ export default function ResearchDataMovement({
       })
     : 'Unknown'
 
-  const totalOrgs = metadata?.total_organizations || 1871724
-  const revokedCount = 192889
+  const totalOrgs = metadata?.total_organizations || 1729314
+  const revokedCount = 192896
   const fullRegistry = totalOrgs + revokedCount
 
   // IRS SOI annual 990 filer data — sourced from IRS Statistics of Income extracts
@@ -244,19 +248,12 @@ export default function ResearchDataMovement({
                 <span className="text-xs text-cool-grey">As of {lastUpdate}</span>
               </div>
               <p className="text-sm text-slate mt-1">
-                We have curated mission information for all {(totalOrgs / 1_000_000).toFixed(1)}M active
-                nonprofits — from IRS 990 forms, scraped websites, and NTEE classification analysis.
-              </p>
-            </div>
-            <div className="border-l-4 border-soft-gold pl-4">
-              <div className="flex justify-between items-baseline">
-                <p className="font-semibold text-deep-navy">Verified websites</p>
-                <span className="text-xs text-cool-grey">As of {lastUpdate}</span>
-              </div>
-              <p className="text-sm text-slate mt-1">
-                We have verified working websites for approximately 130,000 organizations (7% of
-                the index). Many smaller nonprofits do not maintain a public web presence — this
-                is a reflection of the sector, not a gap in our effort.
+                We have mission information for all {(totalOrgs / 1_000_000).toFixed(1)}M active
+                nonprofits — drawn from IRS 990 forms and NTEE classification. Where no public
+                description exists, we generate an AI-assisted summary from the organization's
+                public filing data so the organization is still findable. These are clearly
+                labeled, and a nonprofit can replace its summary with its own words when it claims
+                its page — which also improves how it surfaces in search and cause tags.
               </p>
             </div>
             <div className="border-l-4 border-soft-gold pl-4">
@@ -265,10 +262,13 @@ export default function ResearchDataMovement({
                 <span className="text-xs text-cool-grey">As of {lastUpdate}</span>
               </div>
               <p className="text-sm text-slate mt-1">
-                We score {(411531).toLocaleString()} organizations (22% of the index) using recent
-                IRS 990 data. The other 78% lack sufficient financial disclosure to benchmark
-                fairly. This is not a judgment — many excellent nonprofits fall below the 990
-                filing threshold or are too new to have multi-year data.
+                We provide peer financial context for{' '}
+                {v5Total > 0
+                  ? `${v5Total.toLocaleString()} organizations (${Math.round((v5Total / totalOrgs) * 100)}% of the index)`
+                  : 'approximately 457,000 organizations (26% of the index)'}{' '}
+                using recent IRS 990 data. The remainder lack sufficient financial disclosure to
+                benchmark fairly — many excellent nonprofits fall below the 990 filing threshold
+                or are too new to have multi-year data.
               </p>
             </div>
           </div>

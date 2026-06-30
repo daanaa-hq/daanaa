@@ -171,6 +171,20 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
             )
           })()}
         </div>
+        {apiOrg?.cause_tags && apiOrg.cause_tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {apiOrg.cause_tags.map(tag => (
+              <Link
+                key={tag}
+                to={`/directory?cause=${encodeURIComponent(tag)}`}
+                onClick={e => e.stopPropagation()}
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[10px] hover:bg-soft-gold/20 transition-colors"
+              >
+                {tag}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Badges */}
@@ -308,6 +322,22 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
           </div>
         )
       })()}
+
+      {/* Cause tags */}
+      {apiOrg?.cause_tags && apiOrg.cause_tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2.5 -mt-1">
+          {apiOrg.cause_tags.map(tag => (
+            <Link
+              key={tag}
+              to={`/directory?cause=${encodeURIComponent(tag)}`}
+              onClick={e => e.stopPropagation()}
+              className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[10px] hover:bg-soft-gold/20 transition-colors"
+            >
+              {tag}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Mission snippet */}
       {!compact && org.mission && (

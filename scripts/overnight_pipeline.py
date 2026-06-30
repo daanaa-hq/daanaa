@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import datetime
 
 from website_normalize import normalize_website
+from registry_filters import DEDUCTIBLE_FILTER, canonical_active_count
 
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 LOG = Path.home() / 'meritgiving' / 'logs' / 'overnight.log'
@@ -181,13 +182,10 @@ def run_data_quality_gate():
         else:
             log('✅ Quality gate: no non-501(c)(3) orgs showing as deductible')
 
-        # Soft check: active deductible count should be between 1.5M and 2.2M
-        active = db.execute("""
-            SELECT COUNT(*) FROM registry_enriched
-            WHERE subsection = '3' AND deductibility = '1'
-              AND COALESCE(irs_revoked, 0) != 1
-              AND COALESCE(org_status, '') != 'revoked'
-        """).fetchone()[0]
+        # Soft check: active deductible count should be between 1.5M and 2.2M.
+        # Uses the canonical predicate (registry_filters.py) — same number the
+        # homepage, research snapshot, and consistency gate all derive from.
+        active = canonical_active_count(db)
         if active < 1_500_000 or active > 2_200_000:
             log(f'⚠️  Quality gate WARN: active deductible count {active:,} is outside expected range 1.5M–2.2M')
         else:
@@ -273,6 +271,32 @@ def run_export_snapshot():
             log(f'⚠️  Snapshot export failed (non-fatal): {result.stderr[:200]}')
     except Exception as e:
         log(f'⚠️  Snapshot export error (non-fatal): {str(e)[:100]}')
+
+
+def refresh_and_publish_numbers():
+    """Regenerate the public content artifacts from the fresh DB, gate on
+    cross-artifact consistency, and (only if every count agrees) deploy to the
+    droplet + restart + verify the live API. The consistency gate is the safety
+    that makes nightly auto-deploy safe: drifted numbers abort the deploy and
+    leave the old (correct) files live. See scripts/refresh_public_numbers.sh
+    and scripts/registry_filters.py."""
+    try:
+        import subprocess
+        log('Refreshing + publishing public numbers (content, snapshot, /api/stats)...')
+        result = subprocess.run(
+            ['bash', str(Path.home() / 'meritgiving' / 'scripts' / 'refresh_public_numbers.sh')],
+            capture_output=True, text=True, timeout=600,
+            cwd=str(Path.home() / 'meritgiving'),
+        )
+        for line in (result.stdout or '').strip().splitlines():
+            log(line)
+        if result.returncode != 0:
+            # Non-fatal to the pipeline, but loud — surfaces in the morning digest.
+            log(f'🚨 PUBLISH FAILED (numbers NOT updated live): {(result.stderr or "")[:300]}')
+        else:
+            log('✅ Public numbers published and verified live')
+    except Exception as e:
+        log(f'🚨 Publish step error (numbers NOT updated live): {str(e)[:200]}')
 
 
 def run_revocation_check():
@@ -561,6 +585,11 @@ def main():
 
     # Step 11: Purge e2e wallet rows idle for 90+ days (zero-knowledge — server never sees plaintext)
     purge_stale_wallets()
+
+    # Step 12: Publish — regenerate public artifacts, gate on consistency, and
+    # auto-deploy to the droplet so the live numbers never go stale. This is the
+    # step that was missing; without it homepage.json.gz drifted from the DB.
+    refresh_and_publish_numbers()
 
     log('=' * 60)
     log('Overnight Pipeline Complete')

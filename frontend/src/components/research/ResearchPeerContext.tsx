@@ -15,8 +15,8 @@ export default function ResearchPeerContext() {
         <div className="bg-soft-gold/10 rounded-lg p-4">
           <p className="font-semibold text-deep-navy mb-2">The Core Metric</p>
           <p className="text-sm">
-            Peer Financial Context = percentile rank of organization's revenue within its
-            financial archetype + revenue band peer group.
+            Peer Financial Context = percentile rank of months of operating reserves within
+            the organization's financial archetype + revenue band peer group.
           </p>
         </div>
 
@@ -29,12 +29,13 @@ export default function ResearchPeerContext() {
               revenue band (Micro, Professional, or Established).
             </li>
             <li>
-              <strong>Calculate position:</strong> Rank the organization by total revenue
-              within that peer group.
+              <strong>Calculate reserves:</strong> Compute months of operating reserves —
+              unrestricted net assets divided by average monthly expenses — from the
+              organization's most recent Form 990 filing.
             </li>
             <li>
               <strong>Express as percentile:</strong> If an org is in the 75th percentile, it
-              has stronger revenue than 75% of its peers within its archetype and band.
+              holds more reserves than 75% of its peers within the same archetype and band.
             </li>
           </ol>
         </div>
@@ -44,15 +45,15 @@ export default function ResearchPeerContext() {
           <div className="space-y-3">
             <div className="border-l-4 border-soft-gold pl-4">
               <p className="font-semibold text-deep-navy">High peer percentile (75+)</p>
-              <p className="text-sm">Organization has strong revenue relative to peers.</p>
+              <p className="text-sm">Organization holds stronger reserves relative to peers — a financial cushion against disruption.</p>
             </div>
             <div className="border-l-4 border-soft-gold pl-4">
               <p className="font-semibold text-deep-navy">Medium peer percentile (50-74)</p>
-              <p className="text-sm">Organization is comparable to peer median.</p>
+              <p className="text-sm">Organization's reserve position is comparable to the peer median.</p>
             </div>
             <div className="border-l-4 border-soft-gold pl-4">
               <p className="font-semibold text-deep-navy">Lower peer percentile (&lt;50)</p>
-              <p className="text-sm">Organization is smaller than peer median.</p>
+              <p className="text-sm">Organization holds fewer reserves than the peer median — often because demand for its services outpaces available funding, not because its work is less valuable.</p>
             </div>
           </div>
         </div>
@@ -60,9 +61,9 @@ export default function ResearchPeerContext() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm font-semibold text-deep-navy mb-2">⚠️ Important caveat</p>
           <p className="text-sm">
-            Peer Financial Context measures financial scale, not impact, sustainability, or
-            effectiveness. A 20th percentile organization may deliver superior value per
-            dollar spent. Daanaa provides context, not judgment.
+            Peer Financial Context measures reserve strength relative to peers — not impact,
+            program quality, or effectiveness. A 20th percentile organization may deliver
+            superior value per dollar spent. Daanaa provides context, not judgment.
           </p>
         </div>
 

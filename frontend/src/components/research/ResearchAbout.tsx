@@ -36,9 +36,11 @@ export default function ResearchAbout() {
 
         <div className="bg-soft-gold/10 rounded-lg p-4 mt-6">
           <p className="text-sm">
-            <strong>Privacy commitment:</strong> Daanaa uses no accounts, no tracking, and
-            stores your giving record only on your device. We believe in discovery, not
-            exposure.
+            <strong>Privacy commitment:</strong> Browsing the directory requires no account.
+            Optional sign-in enables cross-device wallet sync only — wallet data is
+            bookmarks and giving intent, never transactions, never shared, never used for
+            advertising. We use Plausible for analytics: no third-party tracking, no
+            advertising profiles.
           </p>
         </div>
       </div>

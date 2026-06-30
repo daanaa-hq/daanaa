@@ -15,16 +15,11 @@ from datetime import datetime
 DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
 OUTPUT_DIR = os.path.join(os.environ.get("PRECOMPUTE_OUT", "precompute_output"), "content")
 
-# Must match daanaa_api.py _DEDUCTIBILITY_FILTER exactly. Homepage stats describe
-# the nonprofits a donor can actually find and give a deductible gift to — the
-# same set browse/search returns — so revoked and non-deductible orgs are
-# excluded. Without this, counts included ~193K auto-revoked orgs and the
-# homepage reported 2.06M while the live browse set is 1.87M.
-DEDUCTIBLE = (
-    "subsection = '3' AND deductibility = '1' "
-    "AND COALESCE(irs_revoked, 0) != 1 "
-    "AND COALESCE(org_status, '') != 'revoked'"
-)
+# Canonical public-set predicate. Single source of truth lives in
+# registry_filters.py — import it so homepage stats can never drift from the
+# research snapshot / data-quality gate again. (Homepage stats describe the
+# nonprofits a donor can actually find and give a deductible gift to.)
+from registry_filters import DEDUCTIBLE_FILTER as DEDUCTIBLE
 
 
 # NTEE categories for homepage stats

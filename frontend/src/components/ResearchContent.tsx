@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { loadResearchSnapshot } from '../data/researchSnapshot'
+import RelatedPages from './RelatedPages'
 import ResearchOverview from './research/ResearchOverview'
 import ResearchAbout from './research/ResearchAbout'
 import ResearchProblem from './research/ResearchProblem'
@@ -65,7 +66,14 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
             </p>
             <p className="mt-4">{metadata.disclaimer}</p>
           </div>
-          <div className="pt-6 border-t border-cool-grey/20 flex items-center justify-between">
+          <RelatedPages
+            links={[
+              { to: '/methodology', label: 'How we score' },
+              { to: '/about', label: 'About Daanaa' },
+              { to: '/principles', label: 'Our principles' },
+            ]}
+          />
+          <div className="mt-12 pt-6 border-t border-cool-grey/20 flex items-center justify-between">
             <a
               href="/"
               className="text-soft-gold hover:text-bright-gold font-semibold text-sm transition-colors"

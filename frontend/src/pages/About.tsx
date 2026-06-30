@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import RelatedPages from '../components/RelatedPages'
 
 export default function About() {
   usePageMeta('About — Daanaa', 'Daanaa is an independent nonprofit discovery platform built to make giving discovery simpler, more contextual, and more respectful.')
@@ -105,7 +106,16 @@ export default function About() {
             ))}
           </div>
 
-          <div className="mt-16 pt-12 border-t border-light-grey text-center">
+          <RelatedPages
+            links={[
+              { to: '/methodology', label: 'How we score' },
+              { to: '/research', label: 'Research & data' },
+              { to: '/principles', label: 'Our principles' },
+              { to: '/directory', label: 'Browse the directory' },
+            ]}
+          />
+
+          <div className="mt-12 pt-8 border-t border-light-grey text-center">
             <p className="font-body text-[14px] text-cool-grey mb-6">Questions? <Link to="/feedback" className="text-soft-gold hover:text-bright-gold font-semibold">Get in touch</Link>.</p>
           </div>
 

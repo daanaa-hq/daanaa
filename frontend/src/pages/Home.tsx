@@ -1129,7 +1129,7 @@ export default function Home() {
   useJsonLd(websiteSchema({
     name: 'Daanaa',
     url: 'https://daanaa.org',
-    description: 'Independent nonprofit discovery platform. Search 1.8M US nonprofits with peer financial context, public data, and verified giving paths.',
+    description: 'Independent nonprofit discovery platform. Search 1.7M US nonprofits with peer financial context, public data, and verified giving paths.',
   }))
 
   return (

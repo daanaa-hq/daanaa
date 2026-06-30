@@ -49,10 +49,10 @@ export default function ResearchSpending({
       const item = props.payload[0].payload
       return (
         <div className="bg-deep-navy text-warm-cream p-3 rounded shadow-lg text-sm border border-soft-gold">
-          <p className="font-semibold">{item.name}</p>
-          <p className="text-xs text-cool-grey mt-1">Median spending: <span className="text-soft-gold font-bold">{item.median.toFixed(1)}%</span></p>
-          <p className="text-xs text-cool-grey">Middle 50%: {item.p25.toFixed(1)}% – {item.p75.toFixed(1)}%</p>
-          <p className="text-xs text-cool-grey mt-1">{item.count.toLocaleString()} orgs</p>
+          <p className="font-semibold text-warm-cream">{item.name}</p>
+          <p className="text-xs text-warm-cream/80 mt-1">Median spending: <span className="text-soft-gold font-bold">{item.median.toFixed(1)}%</span></p>
+          <p className="text-xs text-warm-cream/80">Middle 50%: {item.p25.toFixed(1)}% – {item.p75.toFixed(1)}%</p>
+          <p className="text-xs text-warm-cream/80 mt-1">{item.count.toLocaleString()} orgs</p>
         </div>
       )
     }

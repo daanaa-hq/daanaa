@@ -12,6 +12,12 @@ const ARCHETYPE_COLORS = {
   'Endowment-Funded Grantmakers': '#B8902F',
 }
 
+const V5_ARCHETYPES = new Set([
+  'Donation-Funded Programs',
+  'Fee-for-Service Operators',
+  'Endowment-Funded Grantmakers',
+])
+
 const BAND_LABELS = {
   'Micro (<$150K)': '0',
   'Professional ($150K–$700K)': '1',
@@ -80,14 +86,23 @@ export default function ResearchFinancialArchetypes({
   const healthTotals = v5Data.health_totals || { healthy: 0, stable: 0, caution: 0 }
   const totalScored = v5Data.total_scored || 0
 
-  // Composition bar
-  const archetypeCompositionRows = archetypes.map((a: any) => ({
-    key: a.archetype,
-    label: a.archetype,
-    pct: a.pct,
-    color: ARCHETYPE_COLORS[a.archetype as keyof typeof ARCHETYPE_COLORS] || '#999',
-    count: a.count,
-  }))
+  // Only v5 archetypes in composition; remainder shown as grey "partial data" segment
+  const archetypeCompositionRows = archetypes
+    .filter((a: any) => V5_ARCHETYPES.has(a.archetype))
+    .map((a: any) => ({
+      key: a.archetype,
+      label: a.archetype,
+      pct: a.pct,
+      color: ARCHETYPE_COLORS[a.archetype as keyof typeof ARCHETYPE_COLORS] || '#999',
+      count: a.count,
+    }))
+  const partialPct = parseFloat(
+    (100 - archetypeCompositionRows.reduce((s: number, r: any) => s + r.pct, 0)).toFixed(1)
+  )
+  const partialCount = archetypes
+    .filter((a: any) => !V5_ARCHETYPES.has(a.archetype))
+    .reduce((s: number, a: any) => s + a.count, 0)
+  const v5Cells = cells.filter((c: any) => V5_ARCHETYPES.has(c.archetype))
 
   // Health signal percentages
   const healthTotal = healthTotals.healthy + healthTotals.stable + healthTotals.caution
@@ -123,6 +138,12 @@ export default function ResearchFinancialArchetypes({
               title={`${r.label}: ${r.pct}%`}
             />
           ))}
+          {partialPct > 0 && (
+            <div
+              style={{ width: `${partialPct}%`, backgroundColor: '#C9BBA3' }}
+              title={`Partial financial data: ${partialPct}%`}
+            />
+          )}
         </div>
 
         {/* Archetype rows */}
@@ -140,6 +161,19 @@ export default function ResearchFinancialArchetypes({
               </p>
             </div>
           ))}
+          {partialCount > 0 && (
+            <div>
+              <div className="flex items-baseline gap-3 mb-2">
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: '#C9BBA3' }} />
+                <span className="font-display text-2xl text-cool-grey">{partialPct}%</span>
+                <span className="text-sm font-medium text-cool-grey">Partial financial data</span>
+                <span className="text-xs text-cool-grey">({partialCount.toLocaleString()})</span>
+              </div>
+              <p className="text-sm text-cool-grey ml-6 leading-relaxed max-w-xl">
+                Organizations with some financial data but insufficient for full v5 archetype classification. Reserves are calculated but funding model is not fully determined.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -165,7 +199,7 @@ export default function ResearchFinancialArchetypes({
               </tr>
             </thead>
             <tbody>
-              {cells.map((cell: any, idx: number) => (
+              {v5Cells.map((cell: any, idx: number) => (
                 <tr key={idx} className="border-b border-light-grey hover:bg-deep-navy/[0.02]">
                   <td className="px-4 py-3 text-deep-navy font-medium">
                     <div className="flex items-center gap-2">
@@ -262,7 +296,7 @@ export default function ResearchFinancialArchetypes({
           </div>
 
           <div className="flex gap-4">
-            <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: '#F59E0B' }} />
+            <div className="w-3 h-3 rounded-full flex-shrink-0 mt-1" style={{ backgroundColor: '#EF4444' }} />
             <div>
               <div className="font-semibold text-deep-navy">
                 Needs support ({healthPcts.caution}%)

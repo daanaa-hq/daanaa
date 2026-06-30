@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { ApiOrganization } from '../data/api'
+import { InfoTerm, InfoTip } from './InfoTerm'
 
 interface V5ContextData {
   archetype: { key: string; label: string }
@@ -56,15 +57,19 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
             Financial Context
           </p>
           <p className="font-body text-[16px] font-semibold text-deep-navy leading-snug">
-            {v5.archetype.label}
+            <InfoTerm tip="Its primary funding model. We group nonprofits as Donation-Funded, Fee-for-Service, or Endowment-Funded so each is compared only to peers with the same financial shape.">
+              {v5.archetype.label}
+            </InfoTerm>
           </p>
           <p className="font-body text-[12px] text-cool-grey mt-0.5">
             Compared to {v5.peer_group.org_count.toLocaleString()} similar organizations
           </p>
         </div>
-        <span className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full text-[12px] font-semibold border ${style.badge}`}>
-          {label}
-        </span>
+        <InfoTip tip="A plain-language summary of reserve strength versus peers. “Needs support” means lower reserves — often because resources go straight into programs, not a judgment of the work's quality.">
+          <span className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full text-[12px] font-semibold border ${style.badge}`}>
+            {label}
+          </span>
+        </InfoTip>
       </div>
 
       {/* Key stat — percentile for healthy/stable; supportive note for CAUTION */}
@@ -87,7 +92,11 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
       {hasOwnReserves && hasPeerBench && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="font-body text-[12px] font-medium text-deep-navy">Months of reserve</span>
+            <span className="font-body text-[12px] font-medium text-deep-navy">
+              <InfoTerm tip="How many months the organization could keep operating on its unrestricted reserves if income stopped. Calculated from its most recent IRS Form 990.">
+                Months of reserve
+              </InfoTerm>
+            </span>
             <span className={`font-body text-[13px] font-semibold ${style.text}`}>
               {Number.isInteger(reserves.your_value!) ? reserves.your_value! : reserves.your_value!.toFixed(1)} months
             </span>
@@ -105,7 +114,11 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
       {/* Show reserve value only (no bar) when peer benchmark data is unavailable */}
       {hasOwnReserves && !hasPeerBench && (
         <div className="mb-5 flex items-center justify-between">
-          <span className="font-body text-[12px] font-medium text-deep-navy">Months of reserve</span>
+          <span className="font-body text-[12px] font-medium text-deep-navy">
+              <InfoTerm tip="How many months the organization could keep operating on its unrestricted reserves if income stopped. Calculated from its most recent IRS Form 990.">
+                Months of reserve
+              </InfoTerm>
+            </span>
           <span className={`font-body text-[13px] font-semibold ${style.text}`}>
             {Number.isInteger(reserves.your_value!) ? reserves.your_value! : reserves.your_value!.toFixed(1)} months
           </span>

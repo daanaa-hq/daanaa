@@ -1565,6 +1565,10 @@ _SPA_PREFIXES = {
 @app.route('/<path:path>')
 def serve_spa(path):
     if FRONTEND_DIR.exists():
+        # 301 .html suffix → clean URL (e.g. /about.html → /about)
+        if path and path.endswith('.html'):
+            clean = '/' + path[:-5].lstrip('/')
+            return redirect(clean, code=301)
         # 301 legacy/merged routes to their canonical destination.
         target = _LEGACY_REDIRECTS.get((path or '').strip('/'))
         if target:

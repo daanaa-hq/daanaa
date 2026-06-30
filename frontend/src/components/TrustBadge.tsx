@@ -112,10 +112,10 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
     },
     {
       id: 'peer_score',
-      label: 'Financial scale',
-      description: 'Revenue and reserves compared to similar nonprofits. Not a quality or impact rating.',
+      label: 'Peer financial context',
+      description: 'Operating reserves compared to similar nonprofits. Not a quality or impact rating.',
       status: hasPeerScore ? 'met' : hasBroadScore ? 'partial' : 'unavailable',
-      shortFact: 'Financial scale',
+      shortFact: 'Peer context',
     },
     {
       id: 'financial_health',

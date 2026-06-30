@@ -11,7 +11,7 @@ export default function ResearchLimitations() {
             What Daanaa Doesn't Measure
           </h3>
           <p>
-            Our methodology is intentionally narrow. We measure financial scale and data
+            Our methodology is intentionally narrow. We measure operating reserves and data
             completeness—not these important factors:
           </p>
           <ul className="list-disc pl-5 space-y-2 mt-3">

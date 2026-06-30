@@ -305,7 +305,7 @@ export default function SectorHealth() {
               Direct Service organizations average 10.3 months of reserves. Research & Academia averages 8.8 months, since they're grant-heavy and spend the money on programs. Foundations average 34.3 months because they hold capital for strategic deployment. Religion & Spiritual organizations average 20.2 months. These differences reflect how organizations are structured, not how well they're managed.
             </p>
             <p className="mt-3 font-body text-[13px] text-cool-grey">
-              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. This data covers 71,473 organizations with complete financial filings. It does not represent all 1.87 million indexed nonprofits. Patterns in the data reflect organizations with detailed filings. Many small and simplified filers report less financial detail.
+              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. This data covers 71,473 organizations with complete financial filings. It does not represent all 1.7 million indexed nonprofits. Patterns in the data reflect organizations with detailed filings. Many small and simplified filers report less financial detail.
             </p>
           </div>
 
@@ -445,7 +445,7 @@ export default function SectorHealth() {
           {/* Methodology note */}
           <div className="mt-12 pt-8 border-t border-light-grey">
             <p className="font-body text-[13px] text-cool-grey leading-[1.6] max-w-[680px]">
-              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data, approximately 19% of the 1.87 million donation eligible nonprofits Daanaa indexes. The remaining 76.3% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
+              <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data, approximately 21% of the 1.7 million donation eligible nonprofits Daanaa indexes. The remaining 79% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
               <span className="inline-flex items-center gap-1.5 font-body text-[12px] text-cool-grey">

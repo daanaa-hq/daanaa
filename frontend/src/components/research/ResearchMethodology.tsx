@@ -26,18 +26,21 @@ export default function ResearchMethodology() {
               Historical 990 data, searchable and verifiable.
             </li>
             <li>
-              <strong className="text-deep-navy">Organization websites:</strong> Mission
-              statements, leadership, and official websites verified via direct outreach.
+              <strong className="text-deep-navy">Organization websites:</strong> Official
+              websites verified programmatically and cross-referenced against IRS records.
             </li>
           </ul>
         </div>
 
         <div className="bg-soft-gold/10 rounded-lg p-4">
           <p className="text-sm font-semibold text-deep-navy mb-2">
-            🔒 We never use proprietary scoring models or machine learning predictions
+            🔒 Financial scores derive solely from public IRS data
           </p>
           <p className="text-sm">
-            All findings are traceable to public records and explicit calculation rules.
+            All peer context scores and health signals are deterministic: traceable to
+            public Form 990 filings and explicit calculation rules, with no black-box
+            algorithms or paid data providers. Mission summaries and cause tags are generated
+            by a local AI model and are labeled accordingly — they do not affect scores.
           </p>
         </div>
 

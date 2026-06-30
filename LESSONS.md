@@ -235,3 +235,22 @@ probe the filter (use COALESCE/expression to force filter-first).
 - **Root cause:** The running service (`droplet_api:app` from `/opt/daanaa/droplet_api.py`, deployed ~2026-06-22 22:00) joins `org_fts s, registry_enriched o`. But the live `/data/precompute/v1/search.db` only had the older `org_search` FTS table — no `org_fts`. The API code shipped without a matching search.db; the FTS query hit a missing table and the handler returned the error shape. Browse survived because it reads `registry_enriched` directly.
 - **Fix:** `scripts/build_search_db.py` (new) assembles the deployable search.db = `registry_enriched` (live 41-col parity) + `org_fts` (1.86M, now incl. `metro`), both copied from canonical `merit_registry.db`, with integrity_check + join sanity built in. Atomic deploy: upload to `search.db.new`, integrity-gate on droplet, rename-swap (`search.db`→`.bak`), restart. Restored search + shipped metro in one swap.
 - **Rule:** The droplet search.db and the running `droplet_api.py` are a CONTRACT: the API's FTS table name (`org_fts`) and the `registry_enriched` columns it joins/filters MUST exist in the deployed search.db. Never ship one without the other. The API's startup health check FATALs on a missing `org_fts`/`registry_enriched` — but gunicorn workers were already up, so it didn't catch a hot DB swap. Rebuild search.db with `scripts/build_search_db.py` whenever the API's search schema changes. Keep `search.db.bak` for instant rollback until verified.
+
+## 2026-06-29 — Public-facing numbers went stale and out of sync
+- **Symptom:** `/api/stats` served 1,871,724 while the research page showed 1,729,314 and
+  marketing said "1.8M" — three different headline counts; a reviewer hopping pages would
+  see the contradiction. ForVendors computed "1.9M" from the stale API.
+- **Root cause:** (1) the canonical filter was copy-pasted in 3+ files and one stayed on an
+  older definition; (2) `/api/stats` serves a STATIC `homepage.json.gz` precompute that
+  nothing regenerated/redeployed after the 2026-06-27 revoked-status sync dropped the true
+  count by ~143K; (3) a `kill -HUP` does NOT reliably cycle all gunicorn workers, so some
+  kept serving the old number from per-worker cache.
+- **Fix:** single source of truth (`scripts/registry_filters.py`), a consistency gate that
+  refuses to deploy drifted numbers (`check_number_consistency.py`), and a
+  regenerate→gate→deploy→`systemctl restart daanaa`→verify step wired into the nightly
+  pipeline (`refresh_public_numbers.sh` as Step 12 of `overnight_pipeline.py`).
+- **Rule:** Any user-facing count MUST derive from `DEDUCTIBLE_FILTER` (never re-spell it).
+  Droplet content files (`/data/precompute/v1/content/*.json.gz`) and `research-snapshot.json`
+  in the frontend dist are derived artifacts — regenerate AND redeploy them whenever the DB
+  changes, then full-RESTART the service (HUP is not enough). Cloudflare does NOT cache
+  `/api/stats` (cf-cache-status: DYNAMIC), so origin/public splits are the worker cache.
