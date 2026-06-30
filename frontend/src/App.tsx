@@ -26,6 +26,7 @@ const AdminPage = lazy(() => import('./pages/AdminPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const About = lazy(() => import('./pages/About'))
 const Principles = lazy(() => import('./pages/Principles'))
+const Approach = lazy(() => import('./pages/Approach'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
 const ClaimSuccess = lazy(() => import('./pages/ClaimSuccess'))
@@ -89,6 +90,7 @@ export default function App() {
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
             <Route path="/about" element={<About />} />
             <Route path="/principles" element={<Principles />} />
+            <Route path="/approach" element={<Navigate to="/about" replace />} />
             {/* Legacy routes for backward compatibility */}
             <Route path="/governance" element={<Principles />} />
             <Route path="/stewardship" element={<Principles />} />

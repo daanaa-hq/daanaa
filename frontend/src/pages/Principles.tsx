@@ -54,11 +54,15 @@ export default function Principles() {
           <section className="max-w-[720px] mb-12">
             <h2 className="font-display text-deep-navy text-[26px] md:text-[30px] leading-[1.15] mb-4">Our Purpose</h2>
             <div className="space-y-3 font-body text-[15px] text-cool-grey leading-[1.6]">
-              <p>
-                Daanaa exists to help people discover causes they care about and support them with confidence.
+              <p className="font-medium text-deep-navy text-[16px]">
+                Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy, recordable, seamless, and repeatable.
               </p>
               <p>
-                Every decision we make is measured against that purpose. If a feature, partnership, or opportunity does not help people make informed giving decisions, it does not belong.
+                Independent of paid influence. Evidence-based from public IRS data. No ratings. Every organization benchmarked within its true peer group — with equal dignity for the small org doing extraordinary work as for the large one everyone has heard of.
+              </p>
+              <p>
+                These principles are not policies written after the fact. They are the structure the platform is built on. Every decision we make is measured against them. If a feature, partnership, or opportunity does not serve that purpose, it does not belong.{' '}
+                <Link to="/about" className="text-soft-gold hover:text-bright-gold font-medium">How we do it →</Link>
               </p>
             </div>
           </section>

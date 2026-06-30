@@ -21,6 +21,7 @@ const NAV_COLS = [
   {
     heading: 'Learn',
     links: [
+      { label: 'About Daanaa',     to: '/about' },
       { label: 'How it works',    to: '/methodology' },
       { label: 'FAQ',             to: '/methodology#faq' },
       { label: 'Principles',      to: '/principles' },
