@@ -322,7 +322,7 @@ export default function Methodology() {
                     Sourced from IRS public records. Objective, fact checked, timestamped. Organizations cannot edit this layer.
                   </p>
                   <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
-                    {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Daanaa financial ranking', 'Data source & year'].map(i => (
+                    {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Peer financial context score', 'Data source & year'].map(i => (
                       <li key={i} className="flex items-center gap-2">
                         <span className="w-1 h-1 rounded-full bg-cool-grey shrink-0" />{i}
                       </li>
@@ -355,7 +355,7 @@ export default function Methodology() {
                   { freq: 'Monthly', what: 'ProPublica data for organizations with new financial reports' },
                   { freq: 'Monthly', what: 'IRS financial data update for newly published years' },
                   { freq: 'Monthly', what: 'IRS tax-exempt status check against the federal auto-revocation list' },
-                  { freq: 'Ongoing', what: 'Financial rankings recalculated after bulk revenue updates' },
+                  { freq: 'Ongoing', what: 'Peer financial context scores recalculated after bulk revenue updates' },
                 ].map(({ freq, what }, i) => (
                   <div key={`${freq}-${i}`} className="flex gap-4 items-start">
                     <span className="shrink-0 font-body text-[13px] font-semibold text-soft-gold w-20">{freq}</span>

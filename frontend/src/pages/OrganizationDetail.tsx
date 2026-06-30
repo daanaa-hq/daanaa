@@ -117,8 +117,8 @@ function scoreSignals(org: ApiOrganization): { label: string; ok: boolean; warn:
     const m = org.months_of_reserve
     signals.push({
       label: m >= 3 ? 'Healthy financial cushion'
-           : m >= 1 ? 'Thin reserves'
-           : 'Little financial safety net',
+           : m >= 1 ? 'Modest reserves (per IRS data)'
+           : 'Limited reserves (per IRS data)',
       ok: m >= 3,
       warn: m < 1,
     })
@@ -129,7 +129,7 @@ function scoreSignals(org: ApiOrganization): { label: string; ok: boolean; warn:
     signals.push({
       label: ratio >= 1.05 ? 'Bringing in more than they spend'
            : ratio >= 0.95 ? 'Roughly breaking even'
-           : 'Spending more than they raise',
+           : 'Expenses exceeded revenue (IRS filing)',
       ok: ratio >= 0.95,
       warn: ratio < 0.95,
     })
@@ -141,7 +141,7 @@ function scoreSignals(org: ApiOrganization): { label: string; ok: boolean; warn:
 function summaryLine(org: ApiOrganization): string {
   if (org.months_of_reserve != null) {
     const m = Math.round(org.months_of_reserve)
-    const feel = m >= 6 ? 'a strong cushion' : m >= 3 ? 'a healthy buffer' : 'limited runway'
+    const feel = m >= 6 ? 'a strong cushion' : m >= 3 ? 'a healthy buffer' : 'limited operating reserves'
     return `They carry about ${m} months of savings, ${feel}.`
   }
   return `Ranked within a peer group of ${org.peer_total ? org.peer_total.toLocaleString() : 'similar'} nonprofits.`
@@ -462,7 +462,10 @@ export default function OrganizationDetail() {
                       </div>
                     )}
                   </div>
-
+                  <p className="font-body text-[11px] text-muted-cream/70 leading-[1.5]">
+                    Public financial data from IRS filings. Not a rating, endorsement, or recommendation.{' '}
+                    <a href="/methodology" className="underline underline-offset-2 hover:text-muted-cream transition-colors">How this works →</a>
+                  </p>
                 </div>
               )}
 
@@ -513,8 +516,8 @@ export default function OrganizationDetail() {
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   {apiOrg!.months_of_reserve < 0
-                    ? 'Negative net assets. This group owes more than it owns.'
-                    : `Net assets cover only ${Math.round(apiOrg!.months_of_reserve)} months of costs`}
+                    ? 'Negative net assets per most recent IRS filing.'
+                    : `Approximately ${Math.round(apiOrg!.months_of_reserve)} months of operating reserves per IRS data`}
                 </div>
               )}
 
