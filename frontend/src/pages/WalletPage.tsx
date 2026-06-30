@@ -537,25 +537,27 @@ export default function WalletPage() {
                 </div>
               )
             }
+            // At this point apiOrg is guaranteed to exist (either we returned already or it exists)
+            const org = apiOrg!
             const cardOrg = {
-              id: apiOrg.EIN,
-              name: apiOrg.organization_name,
-              ein: apiOrg.EIN,
-              city: apiOrg.CITY || '',
-              state: apiOrg.STATE || '',
-              category: apiOrg.NTEE1 || '',
-              subcategory: apiOrg.NTEECC || apiOrg.NTEE1 || '',
-              meritScore: Math.round(apiOrg.peer_percentile ?? apiOrg.ntee1_percentile ?? 0),
-              hasScore: (apiOrg.peer_percentile ?? apiOrg.ntee1_percentile) !== null,
-              revenueBand: apiOrg.revenue_band ?? null,
-              dataSource: apiOrg.data_source ?? null,
-              latestTaxYear: apiOrg.latest_tax_year ?? null,
-              ntee1TotalOrgs: apiOrg.ntee1_total_orgs ?? null,
-              hasMission: apiOrg.has_mission ?? null,
-              hasWebsite: apiOrg.has_website ?? null,
-              revenue: apiOrg.total_revenue ?? 0,
+              id: org.EIN,
+              name: org.organization_name,
+              ein: org.EIN,
+              city: org.CITY || '',
+              state: org.STATE || '',
+              category: org.NTEE1 || '',
+              subcategory: org.NTEECC || org.NTEE1 || '',
+              meritScore: Math.round(org.peer_percentile ?? org.ntee1_percentile ?? 0),
+              hasScore: (org.peer_percentile ?? org.ntee1_percentile) !== null,
+              revenueBand: org.revenue_band ?? null,
+              dataSource: org.data_source ?? null,
+              latestTaxYear: org.latest_tax_year ?? null,
+              ntee1TotalOrgs: org.ntee1_total_orgs ?? null,
+              hasMission: org.has_mission ?? null,
+              hasWebsite: org.has_website ?? null,
+              revenue: org.total_revenue ?? 0,
               assets: 0, employees: 0, founded: 0,
-              mission: apiOrg.mission || '',
+              mission: org.mission || '',
               programs: [] as string[],
               leadership: [] as { name: string; title: string; initials: string }[],
               boardSize: 0,
@@ -571,11 +573,11 @@ export default function WalletPage() {
               <div key={entry.ein} className="group">
                 {/* Row + action strip */}
                 <div className="relative">
-                  <OrgCardRow org={cardOrg} apiOrg={apiOrg} hideCompare />
+                  <OrgCardRow org={cardOrg} apiOrg={org} hideCompare />
                   <button
                     onClick={e => { e.preventDefault(); handleRemove(entry.ein) }}
                     title="Remove from wallet"
-                    aria-label={`Remove ${apiOrg.organization_name} from wallet`}
+                    aria-label={`Remove ${org.organization_name} from wallet`}
                     className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-full bg-white border border-light-grey text-cool-grey hover:text-red-500 hover:border-red-300 opacity-0 group-hover:opacity-100 transition-all duration-150 z-10"
                   >
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -647,10 +649,10 @@ export default function WalletPage() {
                     {/* Logger forms */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       {showDonationLogger && (
-                        <DonationLogger ein={entry.ein} orgName={apiOrg.organization_name} />
+                        <DonationLogger ein={entry.ein} orgName={org.organization_name} />
                       )}
                       {showVolunteerLogger && (
-                        <VolunteerLogger ein={entry.ein} orgName={apiOrg.organization_name} />
+                        <VolunteerLogger ein={entry.ein} orgName={org.organization_name} />
                       )}
                     </div>
                   </div>
