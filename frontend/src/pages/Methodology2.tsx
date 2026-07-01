@@ -15,6 +15,7 @@ const TOC = [
   { id: 'not-measured', label: 'What we don’t measure' },
   { id: 'data-limits', label: 'Data limits' },
   { id: 'lamp-tiers', label: 'Visibility levels' },
+  { id: 'hidden-gems', label: 'Hidden gems' },
   { id: 'two-layers', label: 'What the organization controls' },
   { id: 'updates', label: 'How data stays current' },
   { id: 'faq', label: 'Frequently asked questions' },
@@ -310,6 +311,42 @@ export default function Methodology() {
                   Full tier reference →
                 </Link>
               </div>
+            </Section>
+
+            <Section id="hidden-gems" label="Hidden gems" title="What makes an organization a hidden gem">
+              <p>
+                A hidden gem is a small organization that ranks near the top of its peer group — genuinely strong financial health for its size, but not well known. The feature exists because small nonprofits doing excellent work often get overlooked in favor of larger, more visible organizations. Daanaa surfaces them specifically.
+              </p>
+              <p className="mt-4">
+                Three criteria must all be true, based entirely on public IRS data:
+              </p>
+              <div className="mt-4 space-y-3">
+                {[
+                  {
+                    label: 'Top 15% within its peer group',
+                    detail: 'A peer financial context score of 85 or above — stronger reserves than at least 85% of organizations with the same funding model and revenue band.',
+                  },
+                  {
+                    label: 'Annual revenue under $500,000',
+                    detail: 'The organization is genuinely small. Revenue must be verified from IRS filings — organizations with no reported revenue don\'t qualify.',
+                  },
+                  {
+                    label: 'Has a mission statement',
+                    detail: 'There is a readable description of what the organization does, sourced from IRS filings or the organization\'s own public records.',
+                  },
+                ].map(({ label, detail }) => (
+                  <div key={label} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey">
+                    <div className="shrink-0 w-2 h-2 mt-2 rounded-full bg-soft-gold" />
+                    <div>
+                      <p className="font-body text-[14px] font-semibold text-deep-navy">{label}</p>
+                      <p className="font-body text-[14px] text-cool-grey mt-1">{detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Callout>
+                Hidden gem status is determined algorithmically from public IRS data — not by editorial judgment, paid promotion, or any relationship with Daanaa. An organization either meets all three criteria or it doesn't. About 33,000 organizations currently qualify, including micro-organizations with as little as $7,000 in annual revenue that rank at the top of their peer group.
+              </Callout>
             </Section>
 
             <Section id="two-layers" label="Two layer model" title="What the organization controls">
