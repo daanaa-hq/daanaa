@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # gpu_night.sh — run the GPU mission-gen pipeline only during the cool overnight
-# window (cron starts at 22:00, stops at 06:00). Keeps the house from heating up
+# window (cron starts at 21:00, stops at 09:00). Keeps the house from heating up
 # during the day. Usage: gpu_night.sh {start|stop}
 #
 # Cron (user crontab):
-#   0 22 * * * /home/akbar/meritgiving/scripts/gpu_night.sh start >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
-#   0 6  * * * /home/akbar/meritgiving/scripts/gpu_night.sh stop  >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
+#   0 21 * * * /home/akbar/meritgiving/scripts/gpu_night.sh start >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
+#   0 9  * * * /home/akbar/meritgiving/scripts/gpu_night.sh stop  >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
+#   5 9  * * * /home/akbar/meritgiving/scripts/gpu_night.sh stop_embed_server >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
 
 set -u
 
@@ -61,10 +62,9 @@ start() {
   #   nohup bash "$BASE/scripts/web_night.sh" >> "$LOG_DIR/web_night.log" 2>&1 &
   # fi
 
-  # Cause tag enrichment: fills the 249K gap (orgs with no cause_tags).
-  # Runs after mission generation — both share the llama-server on :11437.
-  # 5000/night quota set in overnight_pipeline; this runs the same script
-  # directly on the GPU window for maximum throughput (7-8 hrs available).
+  # Cause tag enrichment: requires mission IS NOT NULL — runs in parallel with
+  # mission generation on the same llama-server (:11437). Tags orgs that already
+  # have missions; new missions written tonight will be tagged in the next cycle.
   if pgrep -f "scripts/enrich_cause_tags_llm.py" >/dev/null; then
     echo "[$(ts)] start: cause-tag enrichment already running — skipping"
   else
@@ -105,7 +105,17 @@ stop() {
   # belt-and-suspenders: free the mission port
   fuser -k "${PORT}/tcp" 2>/dev/null
   # NOTE: embed_server (port 11436) is kept running until web_finder completes.
-  # See stop_embed_server() cron job (runs at 08:00).
+  # See stop_embed_server() cron job (runs at 09:05).
+
+  # Rebuild FTS index so missions written overnight are immediately searchable.
+  # Runs after workers are killed so there are no competing DB writes.
+  echo "[$(ts)] stop: rebuilding FTS index (new missions from tonight)"
+  source "$BASE/venv/bin/activate"
+  cd "$BASE" || exit 1
+  python3 scripts/build_fts_index.py --rebuild >> "$LOG_DIR/gpu_night.log" 2>&1 \
+    && echo "[$(ts)] stop: FTS rebuild complete" \
+    || echo "[$(ts)] stop: FTS rebuild FAILED — check logs"
+
   echo "[$(ts)] stop: done (GPU freed, embed_server still running for web_finder)"
 }
 
