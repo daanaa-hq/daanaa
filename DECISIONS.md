@@ -384,3 +384,13 @@ Why: the headline count drifted across pages (1.7M/1.8M/1.87M) and the deployed
 homepage.json.gz went stale because nothing regenerated/redeployed it after re-scoring.
 Rejected: a guarded "regenerate + notify, deploy by hand" flow — relies on remembering;
 the consistency gate makes auto-deploy safe (drift aborts the deploy, old files stay live).
+
+## 2026-07-01 — E5 "Open to volunteers" filter as coming-soon (not live)
+Chose: non-interactive dashed "Soon" badge instead of an active filter.
+Why: `org_claims` is excluded from `search.db` for privacy (sync_db.sh), so the filter returns 0 results on production. A silent 0-result state is worse UX than a clear "coming soon" signal.
+Rejected: routing the filter through the home-server tunnel — adds latency + couples the droplet to the tunnel for a feature with no data yet.
+
+## 2026-07-01 — Parallel sprint agents use isolated worktrees
+Chose: isolated git worktrees per agent, merge files manually into main repo after all agents complete.
+Why: no merge conflicts between E2/E5/E6+E7 (different files); parallel execution saves time.
+Rejected: sequential single-agent — slower; rejected shared worktree — collision risk on concurrent writes.

@@ -91,8 +91,8 @@ export default function VolunteerSubmission() {
         </div>
 
         {success && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 text-green-700">
-            ✓ Your volunteer hours have been submitted successfully. The organization's director will review and verify them.
+          <div className="bg-soft-gold/10 border border-soft-gold/30 rounded-lg p-4 mb-6 font-body text-sm text-deep-navy">
+            Your volunteer hours have been submitted. The organization's director will review and verify them.
           </div>
         )}
 
@@ -104,7 +104,7 @@ export default function VolunteerSubmission() {
 
         <form onSubmit={handleSubmit} className="bg-white rounded-lg p-8 border border-light-grey space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-deep-navy mb-2">
+            <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
               Organization EIN
             </label>
             <input
@@ -122,7 +122,7 @@ export default function VolunteerSubmission() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-deep-navy mb-2">
+              <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
                 Your Name
               </label>
               <input
@@ -137,7 +137,7 @@ export default function VolunteerSubmission() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-deep-navy mb-2">
+              <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
                 Your Email
               </label>
               <input
@@ -154,7 +154,7 @@ export default function VolunteerSubmission() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-deep-navy mb-2">
+              <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
                 Hours Volunteered
               </label>
               <input
@@ -172,7 +172,7 @@ export default function VolunteerSubmission() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-deep-navy mb-2">
+              <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
                 Service Date
               </label>
               <input
@@ -187,7 +187,7 @@ export default function VolunteerSubmission() {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-deep-navy mb-2">
+            <label className="block font-body text-sm font-semibold text-deep-navy mb-2">
               What did you do?
             </label>
             <textarea

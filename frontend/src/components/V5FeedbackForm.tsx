@@ -58,118 +58,69 @@ export default function V5FeedbackForm({ org, archetype }: V5FeedbackProps) {
 
   if (submitted) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-700">
-        ✓ Thanks for your feedback. It helps us improve this comparison system.
+      <div className="rounded-lg border border-soft-gold/40 bg-soft-gold/10 p-4 font-body text-sm text-deep-navy">
+        Thanks for your feedback. It helps us improve this comparison.
       </div>
     )
   }
 
+  const radioClass = "w-4 h-4 accent-[#C9A96E]"
+  const inputClass = "w-full px-3 py-2.5 border border-light-grey rounded-lg font-body text-sm text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/50 focus:border-soft-gold"
+  const labelClass = "block font-body text-[13px] font-medium text-deep-navy mb-1.5"
+
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4 text-sm">
-      <p className="font-semibold text-gray-900">We'd appreciate your feedback on this financial comparison</p>
+    <form onSubmit={handleSubmit} className="rounded-lg border border-light-grey bg-light-cream/40 p-4 space-y-4">
+      <p className="font-body text-[13px] font-semibold text-deep-navy">Help us improve this financial comparison</p>
 
       {/* Clarity */}
       <div className="space-y-2">
-        <label className="font-medium text-gray-700">1. Does this financial comparison make sense to you?</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="clarity"
-              value="yes"
-              checked={clarity === 'yes'}
-              onChange={(e) => setClarity(e.target.value)}
-              className="w-4 h-4"
-            />
-            <span>Yes, it's clear</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="clarity"
-              value="no"
-              checked={clarity === 'no'}
-              onChange={(e) => setClarity(e.target.value)}
-              className="w-4 h-4"
-            />
-            <span>Not really</span>
-          </label>
+        <label className={labelClass}>1. Does this financial comparison make sense to you?</label>
+        <div className="flex gap-5">
+          {[['yes', 'Yes, it\'s clear'], ['no', 'Not really']].map(([val, lbl]) => (
+            <label key={val} className="flex items-center gap-2 font-body text-sm text-deep-navy cursor-pointer">
+              <input type="radio" name="clarity" value={val} checked={clarity === val}
+                onChange={e => setClarity(e.target.value)} className={radioClass} />
+              {lbl}
+            </label>
+          ))}
         </div>
       </div>
 
       {/* Help text */}
       {clarity === 'no' && (
-        <div className="space-y-2">
-          <label htmlFor="help" className="block text-gray-700">What would help you understand better?</label>
-          <textarea
-            id="help"
-            value={help}
-            onChange={(e) => setHelp(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows={2}
-            placeholder="e.g., more explanation of what 'peer group' means"
-          />
+        <div className="space-y-1.5">
+          <label htmlFor="help" className={labelClass}>What would help you understand better?</label>
+          <textarea id="help" value={help} onChange={e => setHelp(e.target.value)}
+            className={inputClass} rows={2}
+            placeholder="e.g., more explanation of what 'peer group' means" />
         </div>
       )}
 
       {/* Preference */}
       <div className="space-y-2">
-        <label className="font-medium text-gray-700">2. Is peer comparison more helpful than a single number score?</label>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="preference"
-              value="peer"
-              checked={preference === 'peer'}
-              onChange={(e) => setPreference(e.target.value)}
-              className="w-4 h-4"
-            />
-            <span>Peer comparison is better</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="preference"
-              value="single"
-              checked={preference === 'single'}
-              onChange={(e) => setPreference(e.target.value)}
-              className="w-4 h-4"
-            />
-            <span>Single score is better</span>
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="preference"
-              value="both"
-              checked={preference === 'both'}
-              onChange={(e) => setPreference(e.target.value)}
-              className="w-4 h-4"
-            />
-            <span>Both are useful</span>
-          </label>
+        <label className={labelClass}>2. Is peer comparison more helpful than a single number score?</label>
+        <div className="flex flex-wrap gap-5">
+          {[['peer', 'Peer comparison is better'], ['single', 'Single score is better'], ['both', 'Both are useful']].map(([val, lbl]) => (
+            <label key={val} className="flex items-center gap-2 font-body text-sm text-deep-navy cursor-pointer">
+              <input type="radio" name="preference" value={val} checked={preference === val}
+                onChange={e => setPreference(e.target.value)} className={radioClass} />
+              {lbl}
+            </label>
+          ))}
         </div>
       </div>
 
       {/* NTEE (conditional) */}
       {['B', 'C', 'E', 'L', 'N', 'S', 'U'].includes(org.NTEE1 || '') && (
-        <div className="space-y-2">
-          <label htmlFor="ntee" className="block font-medium text-gray-700">
-            3. For this org, what's the primary funding source?
-          </label>
-          <select
-            id="ntee"
-            value={ntee}
-            onChange={(e) => setNtee(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+        <div className="space-y-1.5">
+          <label htmlFor="ntee" className={labelClass}>3. For this org, what's the primary funding source?</label>
+          <select id="ntee" value={ntee} onChange={e => setNtee(e.target.value)} className={inputClass}>
             <option value="">Select one...</option>
             <option value="donations">Donations from individuals</option>
-            <option value="grants">Grants from foundations/government</option>
+            <option value="grants">Grants from foundations or government</option>
             <option value="fees">Fees for services</option>
             <option value="membership">Membership dues</option>
-            <option value="endowment">Endowment/investment income</option>
+            <option value="endowment">Endowment or investment income</option>
             <option value="mixed">Mix of the above</option>
             <option value="unsure">Not sure</option>
           </select>
@@ -177,28 +128,19 @@ export default function V5FeedbackForm({ org, archetype }: V5FeedbackProps) {
       )}
 
       {/* Other feedback */}
-      <div className="space-y-2">
-        <label htmlFor="other" className="block text-gray-700">4. Any other feedback?</label>
-        <textarea
-          id="other"
-          value={otherFeedback}
-          onChange={(e) => setOtherFeedback(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows={2}
-          placeholder="Optional: anything else we should know"
-        />
+      <div className="space-y-1.5">
+        <label htmlFor="other" className={labelClass}>4. Any other feedback?</label>
+        <textarea id="other" value={otherFeedback} onChange={e => setOtherFeedback(e.target.value)}
+          className={inputClass} rows={2} placeholder="Optional — anything else we should know" />
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
-      >
-        {loading ? 'Sending...' : 'Send Feedback'}
+      <button type="submit" disabled={loading}
+        className="w-full px-4 py-2.5 bg-soft-gold text-deep-navy font-body text-sm font-semibold rounded-lg hover:bg-bright-gold transition-colors disabled:opacity-50">
+        {loading ? 'Sending...' : 'Send feedback'}
       </button>
 
-      <p className="text-xs text-gray-500 text-center">
-        Your feedback is anonymous and helps us improve this system.
+      <p className="font-body text-[11px] text-cool-grey text-center">
+        Anonymous — helps us improve the comparison system.
       </p>
     </form>
   )

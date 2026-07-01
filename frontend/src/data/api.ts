@@ -226,6 +226,7 @@ export async function getOrganizations(params?: {
   has_website?: boolean;      // true = only orgs with a verified, live website
   hidden_gem?: boolean;       // true = only hidden gems (small, healthy, low-profile)
   needs_funding?: boolean;    // true = only orgs with under 6 months of reserve
+  open_to_volunteers?: boolean; // true = only orgs with a claimed volunteer contact
   cause?: string;             // matches a cause tag (e.g. "food bank", "mental health")
 }): Promise<{
   organizations: ApiOrganization[];
@@ -251,6 +252,7 @@ export async function getOrganizations(params?: {
   if (params?.has_website) sp.set('has_website', '1');
   if (params?.hidden_gem) sp.set('hidden_gem', '1');
   if (params?.needs_funding) sp.set('needs_funding', '1');
+  if (params?.open_to_volunteers) sp.set('open_to_volunteers', '1');
   if (params?.cause) sp.set('cause', params.cause);
   return fetchJson(`/api/organizations?${sp.toString()}`);
 }

@@ -18,7 +18,7 @@ import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
-import { getPrimaryExternalLink, normalizeExternalUrl } from '../utils/externalLink'
+import { getPrimaryExternalLink } from '../utils/externalLink'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import { useAuth } from '../contexts/AuthContext'
@@ -117,8 +117,8 @@ function scoreSignals(org: ApiOrganization): { label: string; ok: boolean; warn:
     const m = org.months_of_reserve
     signals.push({
       label: m >= 3 ? 'Healthy financial cushion'
-           : m >= 1 ? 'Modest reserves (per IRS data)'
-           : 'Limited reserves (per IRS data)',
+           : m >= 1 ? 'Thin reserves'
+           : 'Little financial safety net',
       ok: m >= 3,
       warn: m < 1,
     })
@@ -129,7 +129,7 @@ function scoreSignals(org: ApiOrganization): { label: string; ok: boolean; warn:
     signals.push({
       label: ratio >= 1.05 ? 'Bringing in more than they spend'
            : ratio >= 0.95 ? 'Roughly breaking even'
-           : 'Expenses exceeded revenue (IRS filing)',
+           : 'Spending more than they raise',
       ok: ratio >= 0.95,
       warn: ratio < 0.95,
     })
@@ -141,7 +141,7 @@ function scoreSignals(org: ApiOrganization): { label: string; ok: boolean; warn:
 function summaryLine(org: ApiOrganization): string {
   if (org.months_of_reserve != null) {
     const m = Math.round(org.months_of_reserve)
-    const feel = m >= 6 ? 'a strong cushion' : m >= 3 ? 'a healthy buffer' : 'limited operating reserves'
+    const feel = m >= 6 ? 'a strong cushion' : m >= 3 ? 'a healthy buffer' : 'limited runway'
     return `They carry about ${m} months of savings, ${feel}.`
   }
   return `Ranked within a peer group of ${org.peer_total ? org.peer_total.toLocaleString() : 'similar'} nonprofits.`
@@ -223,6 +223,8 @@ export default function OrganizationDetail() {
   const [portalError, setPortalError]     = useState<string | null>(null)
   const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
+  // 990 Part VII — public compensation disclosure
+  const [ppLeadership, setPpLeadership] = useState<{name:string;title:string;initials:string;compensation?:number}[]>([])
 
 
   // Hook must run unconditionally — keep it above any early return (Rules of Hooks)
@@ -272,6 +274,35 @@ export default function OrganizationDetail() {
     if (ein.length !== 9) return
     const base = import.meta.env.VITE_API_URL || ''
     fetch(`${base}/api/org/${ein}/view`, { method: 'POST' }).catch(() => {})
+  }, [id])
+
+  // E6: Pull leadership from ProPublica 990 Part VII — public compensation disclosure
+  useEffect(() => {
+    if (!id) return
+    const ein = id.replace(/\D/g, '').slice(0, 9)
+    if (ein.length !== 9) return
+    fetch(`https://projects.propublica.org/nonprofits/api/v2/organizations/${ein}.json`)
+      .then(r => { if (!r.ok) throw new Error('pp_not_ok'); return r.json() })
+      .then((data: {filings_with_data?: Array<{people?: Array<{name:string;title:string;compensation?:number}>}>; filings?: Array<{people?: Array<{name:string;title:string;compensation?:number}>}>}) => {
+        const filings = data?.filings_with_data ?? data?.filings ?? []
+        if (!filings.length) return
+        const people = filings[0]?.people ?? []
+        if (!people.length) return
+        const mapped = people.slice(0, 6).map((p) => {
+          const parts = (p.name || '').trim().split(/\s+/)
+          const initials = parts.length >= 2
+            ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+            : (parts[0]?.[0] ?? '?').toUpperCase()
+          return {
+            name: p.name || '',
+            title: p.title || '',
+            initials,
+            compensation: (p.compensation && p.compensation > 0) ? p.compensation : undefined,
+          }
+        }).filter(p => p.name)
+        setPpLeadership(mapped)
+      })
+      .catch(() => {})
   }, [id])
 
   const org = apiOrg ? adaptOrg(apiOrg) : null
@@ -355,6 +386,16 @@ export default function OrganizationDetail() {
 
   return (
     <div className="min-h-[100dvh]">
+      {/* E7: Print stylesheet — hides chrome, keeps org content */}
+      <style media="print">{`
+        @media print {
+          nav, footer, .print-hide { display: none !important; }
+          body { background: white !important; color: #0A1628 !important; }
+          .bg-deep-navy { background: white !important; color: #0A1628 !important; }
+          .text-warm-cream, .text-muted-cream { color: #0A1628 !important; }
+          .text-cool-grey { color: #374151 !important; }
+        }
+      `}</style>
       {/* Profile Header */}
       <div className="bg-deep-navy pt-[72px] relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, #0A1628 70%, transparent)' }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 md:py-12 lg:py-16">
@@ -462,10 +503,7 @@ export default function OrganizationDetail() {
                       </div>
                     )}
                   </div>
-                  <p className="font-body text-[11px] text-muted-cream/70 leading-[1.5]">
-                    Public financial data from IRS filings. Not a rating, endorsement, or recommendation.{' '}
-                    <a href="/methodology" className="underline underline-offset-2 hover:text-muted-cream transition-colors">How this works →</a>
-                  </p>
+
                 </div>
               )}
 
@@ -516,8 +554,8 @@ export default function OrganizationDetail() {
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   {apiOrg!.months_of_reserve < 0
-                    ? 'Negative net assets per most recent IRS filing.'
-                    : `Approximately ${Math.round(apiOrg!.months_of_reserve)} months of operating reserves per IRS data`}
+                    ? 'Negative net assets. This group owes more than it owns.'
+                    : `Net assets cover only ${Math.round(apiOrg!.months_of_reserve)} months of costs`}
                 </div>
               )}
 
@@ -608,7 +646,7 @@ export default function OrganizationDetail() {
                         </p>
                       )}
                       <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                        This link takes you to an external site that Daanaa does not own or operate. Your giving goes directly to that organization. Daanaa is not responsible for the content, accuracy, or security of third party sites. Confirm you are on the correct official page before giving.</p>
+                        Your giving goes directly to the organization. External link from our public records. If this link is broken, search for them by name.</p>
                     </div>
                   );
                 }
@@ -669,6 +707,15 @@ export default function OrganizationDetail() {
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
                         </a>
                       )}
+                      {/* E7: Print / Save */}
+                      <button
+                        onClick={() => window.print()}
+                        title="Print or save this page"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-warm-cream/30 font-body text-[12px] text-warm-cream/70 hover:text-warm-cream hover:border-warm-cream/50 transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Print
+                      </button>
                     </div>
                     {!link.url && (
                       <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 max-w-[480px]">
@@ -914,6 +961,7 @@ export default function OrganizationDetail() {
               </div>
 
               {/* Manage / Claim CTA */}
+              <div className="print-hide">
               {apiOrg!.claim_status === 'active' ? (
                 /* Claimed — show "Edit this page" for the org rep */
                 <div className="rounded-xl border border-soft-gold/30 bg-soft-gold/[0.04] px-5 py-4">
@@ -976,6 +1024,7 @@ export default function OrganizationDetail() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>
@@ -1007,11 +1056,13 @@ export default function OrganizationDetail() {
               </div>
             )}
             <div>
-              {org.leadership.length > 0 ? (
+              {(() => {
+                const leaders = ppLeadership.length > 0 ? ppLeadership : org.leadership
+                return leaders.length > 0 ? (
                 <>
                   <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">LEADERSHIP</span>
                   <div className="mt-4 space-y-4">
-                    {org.leadership.map((person) => (
+                    {leaders.map((person) => (
                       <div key={person.name} className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-soft-gold/20 flex items-center justify-center">
                           <span className="font-body text-[14px] font-semibold text-soft-gold">{person.initials}</span>
@@ -1019,12 +1070,20 @@ export default function OrganizationDetail() {
                         <div>
                           <p className="font-body text-[14px] font-medium text-deep-navy">{person.name}</p>
                           <p className="font-body text-[12px] text-cool-grey">{person.title}</p>
+                          {'compensation' in person && (person as {compensation?:number}).compensation != null && (
+                            <p className="font-body text-[11px] text-cool-grey/70">
+                              ${((person as {compensation?:number}).compensation!).toLocaleString()} / yr
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
+                  {ppLeadership.length > 0 && (
+                    <p className="font-body text-[11px] text-cool-grey mt-3">Source: IRS 990 filing via ProPublica · public record</p>
+                  )}
                 </>
-              ) : (
+                ) : (
                 <div className="pt-2">
                   <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">DATA SOURCE</span>
                   <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 font-body text-[13px] text-cool-grey">
@@ -1072,7 +1131,8 @@ export default function OrganizationDetail() {
                     </a>
                   </p>
                 </div>
-              )}
+                )
+              })()}
             </div>
           </div>
         </div>
@@ -1168,9 +1228,9 @@ export default function OrganizationDetail() {
       {serviceArea?.area_type && serviceArea.area_type !== 'local' && (
         <div className="bg-warm-cream py-8 border-t border-light-grey">
           <div className="max-w-[900px] mx-auto px-6 lg:px-12">
-            <h2 className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase mb-2">
+            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-2">
               Where they serve
-            </h2>
+            </p>
             <p className="font-body text-[15px] text-deep-navy">
               {serviceArea.area_type === 'nationwide' && 'Serves communities nationwide across the US'}
               {serviceArea.area_type === 'international' && (
@@ -1194,9 +1254,9 @@ export default function OrganizationDetail() {
       {volunteerEvents.length > 0 && (
         <div className="bg-warm-cream py-12 border-t border-light-grey">
           <div className="max-w-[900px] mx-auto px-6 lg:px-12">
-            <h2 className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase mb-4">
+            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-4">
               Volunteer opportunities
-            </h2>
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {volunteerEvents.map(ev => {
                 const parts = ev.event_date?.split('-') ?? []
@@ -1210,7 +1270,7 @@ export default function OrganizationDetail() {
                   <div key={ev.id} className="bg-white rounded-xl border border-light-cream p-5 flex flex-col gap-3">
                     <div>
                       <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase mb-1 ${
-                        ev.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/10 text-link-gold'
+                        ev.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/10 text-soft-gold'
                       }`}>
                         {ev.is_virtual ? 'Virtual' : 'In Person'}
                       </span>
@@ -1226,7 +1286,7 @@ export default function OrganizationDetail() {
                       {ev.signup_url ? (
                         <a
                           href={ev.signup_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-link-gold font-semibold hover:text-deep-gold transition-colors"
+                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
                         >
                           Sign up
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1236,7 +1296,7 @@ export default function OrganizationDetail() {
                       ) : ev.contact_email ? (
                         <a
                           href={`mailto:${ev.contact_email}`}
-                          className="font-body text-[13px] text-link-gold font-semibold hover:text-deep-gold transition-colors"
+                          className="font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
                         >
                           Contact to volunteer
                         </a>
@@ -1246,7 +1306,7 @@ export default function OrganizationDetail() {
                 )
               })}
             </div>
-            <p className="mt-6 font-body text-[12px] text-cool-grey">
+            <p className="mt-6 font-body text-[12px] text-muted-cream">
               Sign-ups are handled by the organization directly. Daanaa does not collect volunteer information.
             </p>
           </div>
@@ -1255,7 +1315,7 @@ export default function OrganizationDetail() {
 
       {/* Similar Organizations */}
       {similarOrgs.length > 0 ? (
-        <div className="bg-deep-navy py-16 md:py-24">
+        <div className="print-hide bg-deep-navy py-16 md:py-24">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">
               MORE LIKE THIS
@@ -1461,9 +1521,9 @@ export default function OrganizationDetail() {
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
             </button>
-            {hasVerifiedSite && normalizeExternalUrl(apiOrg?.website) && (
+            {hasVerifiedSite && (
               <a
-                href={normalizeExternalUrl(apiOrg!.website)!}
+                href={apiOrg!.website!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg hover:bg-bright-gold transition-colors"

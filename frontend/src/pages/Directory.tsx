@@ -131,7 +131,7 @@ export default function Directory() {
   const qParam        = searchParams.get('q') || ''
   usePageMeta(
     qParam ? `"${qParam}" · Causes & Organizations` : 'Explore Causes & Organizations',
-    'Search 1.7 million+ tax-deductible 501(c)(3) organizations recognized by the IRS, by cause, category, and location.'
+    'Search 1.8 million+ tax-deductible 501(c)(3) organizations recognized by the IRS, by cause, category, and location.'
   )
   const stateParam    = searchParams.get('state') || ''
   const revenueParam  = searchParams.get('revenue') || ''
@@ -355,7 +355,6 @@ export default function Directory() {
     searchParams.delete('has_website')
     searchParams.delete('hidden_gem')
     searchParams.delete('needs_funding')
-    searchParams.delete('cause')
     setSearchParams(searchParams)
   }
 
@@ -543,6 +542,17 @@ export default function Directory() {
                 </svg>
                 Has a website
               </button>
+              {/* Open to volunteers — coming soon */}
+              <div
+                title="Volunteer listings are coming soon. Claim your organization to be among the first."
+                className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-[12px] font-medium border border-dashed border-cool-grey/30 text-cool-grey/50 cursor-default select-none"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 11V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12"/><path d="M14 22l4-4-4-4"/><line x1="14" y1="18" x2="22" y2="18"/>
+                </svg>
+                Open to volunteers
+                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-soft-gold/15 text-[10px] font-semibold text-soft-gold leading-none">Soon</span>
+              </div>
               {/* Visibility level (lamp tier) */}
               <div className="relative">
                 <select
@@ -707,8 +717,8 @@ export default function Directory() {
                   {effectiveHiddenGem && (
                     <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
                       <span>Small, overlooked organizations · a fresh set each week.</span>
-                      <button onClick={handleSeeAll} className="font-semibold text-link-gold hover:text-deep-gold transition-colors">
-                        See all 1.7M →
+                      <button onClick={handleSeeAll} className="font-semibold text-soft-gold hover:text-bright-gold transition-colors">
+                        See all 1.8M →
                       </button>
                     </p>
                   )}
@@ -725,7 +735,7 @@ export default function Directory() {
                   )}
 
                   {/* Active filter chips */}
-                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier || visTier || cause) && (
+                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier || visTier) && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-[11px]">
@@ -733,7 +743,7 @@ export default function Directory() {
                         </span>
                       )}
                       {useFusedResults && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-link-gold font-body text-[11px]" title="Results ranked by combining keyword matching and meaning, not by size or revenue">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-soft-gold font-body text-[11px]" title="Results ranked by combining keyword matching and meaning, not by size or revenue">
                           Name + meaning
                         </span>
                       )}
@@ -741,7 +751,7 @@ export default function Directory() {
                         <button
                           key={f}
                           onClick={() => handleFilterChange(f)}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {RAIL_CATEGORIES.find(c => c.id === f)?.label} ×
                         </button>
@@ -758,7 +768,7 @@ export default function Directory() {
                       {stateFilter && (
                         <button
                           onClick={() => handleStateChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {stateFilter} ×
                         </button>
@@ -766,7 +776,7 @@ export default function Directory() {
                       {revenueFilter && (
                         <button
                           onClick={() => handleRevenueChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {revLabel} ×
                         </button>
@@ -774,7 +784,7 @@ export default function Directory() {
                       {scoreTier && (
                         <button
                           onClick={() => handleScoreTierChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {scoreLabel} ×
                         </button>
@@ -782,17 +792,9 @@ export default function Directory() {
                       {visTier && (
                         <button
                           onClick={() => handleVisTierChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {visTier} ×
-                        </button>
-                      )}
-                      {cause && (
-                        <button
-                          onClick={() => { setCause(''); setDebouncedCause(''); const sp = new URLSearchParams(window.location.search); sp.delete('cause'); setSearchParams(sp) }}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
-                        >
-                          {cause} ×
                         </button>
                       )}
                       <button onClick={handleClearAll} className="font-body text-[11px] text-cool-grey hover:text-deep-navy transition-colors">

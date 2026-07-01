@@ -14,6 +14,7 @@ import re
 import sqlite3
 import urllib.error
 import urllib.request
+from math import radians, cos, sin, asin, sqrt
 from pathlib import Path
 
 import html as _htmllib
@@ -50,21 +51,14 @@ def set_security_headers(response):
         "base-uri 'self'; "
         "form-action 'self';"
     )
-    response.headers["Permissions-Policy"] = (
-        "camera=(), microphone=(), geolocation=(), payment=(), usb=(), "
-        "interest-cohort=()"
-    )
-    # Blocks cross-origin no-cors reads of our API responses.
-    response.headers["Cross-Origin-Resource-Policy"] = "same-site"
     # HSTS — daanaa.org is HTTPS-only via Cloudflare.
     response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
 
 
-DATA_DIR      = Path(os.environ.get('PRECOMPUTE_DIR', '/data/precompute/v1'))
-CLAIMS_DIR    = Path(os.environ.get('CLAIMS_DIR', '/data/claims'))
-FRONTEND_DIR  = Path(os.environ.get('FRONTEND_DIR', '/opt/daanaa/frontend/dist'))
-ANALYTICS_DB  = Path(os.environ.get('ANALYTICS_DB', '/opt/daanaa/analytics.db'))
+DATA_DIR     = Path(os.environ.get('PRECOMPUTE_DIR', '/data/precompute/v1'))
+CLAIMS_DIR   = Path(os.environ.get('CLAIMS_DIR', '/data/claims'))
+FRONTEND_DIR = Path(os.environ.get('FRONTEND_DIR', '/opt/daanaa/frontend/dist'))
 
 _json_cache: dict = {}
 _multi_cache: dict = {}
@@ -74,82 +68,6 @@ _TOP_STATES = ['CA', 'TX', 'NY', 'FL', 'PA', 'OH', 'IL', 'GA', 'NC', 'MI',
 _ALL_NTEE1  = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 PER_PAGE_DEFAULT = 25
-
-
-# ── Analytics DB (search impressions + agent events) ─────────────────────────
-
-def _init_analytics_db() -> None:
-    """Create analytics.db with persistent tables. Runs in background thread — never blocks startup."""
-    import threading
-    import time as _time
-
-    def _create():
-        for _attempt in range(10):
-            try:
-                ANALYTICS_DB.parent.mkdir(parents=True, exist_ok=True)
-                with sqlite3.connect(str(ANALYTICS_DB), timeout=10) as db:
-                    db.execute("PRAGMA journal_mode=WAL")
-                    # Per-org search impression counts — feeds the weekly claimed-org digest.
-                    # Stewardship P2: aggregate counts only; individual query strings are
-                    # truncated to 80 chars and never linked to a user or session.
-                    db.execute("""
-                        CREATE TABLE IF NOT EXISTS search_impressions (
-                            day     TEXT NOT NULL,
-                            ein     TEXT NOT NULL,
-                            query   TEXT NOT NULL,
-                            count   INTEGER NOT NULL DEFAULT 1,
-                            PRIMARY KEY (day, ein, query)
-                        )
-                    """)
-                    # Shared memory bus for all vertical agent teams.
-                    db.execute("""
-                        CREATE TABLE IF NOT EXISTS agent_events (
-                            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                            agent_name  TEXT NOT NULL,
-                            event_type  TEXT NOT NULL,
-                            ein         TEXT,
-                            payload     TEXT,
-                            status      TEXT NOT NULL DEFAULT 'pending',
-                            created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
-                        )
-                    """)
-                    db.execute("CREATE INDEX IF NOT EXISTS idx_si_ein ON search_impressions(ein, day)")
-                    db.execute("CREATE INDEX IF NOT EXISTS idx_ae_type ON agent_events(event_type, status, created_at)")
-                    db.commit()
-                return
-            except sqlite3.OperationalError as e:
-                if "locked" in str(e).lower() and _attempt < 9:
-                    _time.sleep(1)
-                else:
-                    print(f"analytics.db init warning: {e}")
-                    return
-
-    threading.Thread(target=_create, daemon=True).start()
-
-
-_init_analytics_db()
-
-
-def _log_search_impressions(eins: list, query: str) -> None:
-    """Log per-EIN search impressions for the weekly digest. Synchronous but fast (<5ms). Never raises."""
-    if not eins or not query:
-        return
-    from datetime import datetime
-    day = datetime.utcnow().strftime('%Y-%m-%d')
-    q = query.strip().lower()[:80]
-    rows = [(day, str(ein), q) for ein in eins if ein]
-    if not rows:
-        return
-    try:
-        with sqlite3.connect(str(ANALYTICS_DB), timeout=2) as db:
-            db.executemany(
-                "INSERT INTO search_impressions (day, ein, query, count) VALUES (?, ?, ?, 1) "
-                "ON CONFLICT(day, ein, query) DO UPDATE SET count = count + 1",
-                rows,
-            )
-            db.commit()
-    except Exception:
-        pass
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -182,53 +100,80 @@ def get_search_db():
     return conn
 
 
-_FTS5_BOOL  = frozenset({'AND', 'OR', 'NOT'})
-_FTS5_STRIP = re.compile(r"""[*"^(){}|<>&~\[\],\.']""")
-_FTS5_NOISE = frozenset({
-    'nonprofit', 'nonprofits', 'charity', 'charities',
-    'organization', 'organizations', '501c3', 'ngo',
-    'find', 'search', 'best', 'top', 'local', 'near',
-    'metro', 'greater', 'region', 'area',
-})
-_ZIP_RE = re.compile(r'\b(\d{5})\b')
+# Cached at first use: org_claims is excluded from search.db for privacy (sync_db.sh),
+# so the volunteer filter gracefully returns no matches when the table is absent.
+_SEARCH_DB_HAS_CLAIMS: bool | None = None
 
-def _extract_zip(text: str) -> tuple[str, str | None]:
-    """Strip first 5-digit zip from query; return (remainder, zip_or_None)."""
-    m = _ZIP_RE.search(text)
-    if not m:
-        return text, None
-    return (text[:m.start()] + text[m.end():]).strip(), m.group(1)
+def _search_db_has_org_claims(conn) -> bool:
+    """Return True if org_claims table is present in search.db (cached)."""
+    global _SEARCH_DB_HAS_CLAIMS
+    if _SEARCH_DB_HAS_CLAIMS is None:
+        row = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='org_claims'"
+        ).fetchone()
+        _SEARCH_DB_HAS_CLAIMS = row is not None
+    return _SEARCH_DB_HAS_CLAIMS
 
-def _fts_where(q: str, state: str = '') -> tuple[list, list, str | None]:
+
+def _haversine_mi(lat1, lon1, lat2, lon2):
+    R = 3958.8
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat, dlon = lat2 - lat1, lon2 - lon1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    return 2 * R * asin(sqrt(a))
+
+
+def _zips_within_radius(conn, lat, lon, radius_mi):
+    dlat = radius_mi / 69.0
+    dlon = radius_mi / (69.0 * cos(radians(lat)))
+    rows = conn.execute(
+        "SELECT zip, lat, lon FROM zip_codes WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
+        (lat - dlat, lat + dlat, lon - dlon, lon + dlon)
+    ).fetchall()
+    return {r["zip"] for r in rows if _haversine_mi(lat, lon, r["lat"], r["lon"]) <= radius_mi}
+
+
+def _resolve_location(conn, near_raw):
+    """Resolve free-text location to (lat, lon, city, state). Returns None if unresolvable."""
+    near = near_raw.strip()
+    if near.isdigit() and len(near) == 5:
+        row = conn.execute("SELECT lat, lon, city, state_id FROM zip_codes WHERE zip=?", (near,)).fetchone()
+        if row:
+            return row["lat"], row["lon"], row["city"], row["state_id"]
+    m = re.match(r'^(.+?)[,\s]+([A-Z]{2})$', near.upper())
+    if m:
+        city_q, state_q = m.group(1).strip(), m.group(2)
+        row = conn.execute(
+            "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? AND state_id=? LIMIT 1",
+            (city_q, state_q)
+        ).fetchone()
+        if row:
+            return row["lat"], row["lon"], row["city"], row["state_id"]
+    row = conn.execute(
+        "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? LIMIT 1",
+        (near.upper(),)
+    ).fetchone()
+    if row:
+        return row["lat"], row["lon"], row["city"], row["state_id"]
+    return None
+
+
+def _fts_where(q: str, state: str = '') -> tuple:
     """Build base FTS WHERE conditions and params for q + state.
-
-    Returns (conditions, params, zip_code_or_None).
-    Caller checks zip_code: if truthy AND conditions has no MATCH (bare zip),
-    route to _db_filter_browse with zip_prefix instead of _fts_directory.
-
-    Mixed queries ('food bank 97701') strip the zip from FTS but add a
-    zipcode LIKE condition so results are narrowed to that area.
-    """
-    q, zip_code = _extract_zip(q)
-    clean = _FTS5_STRIP.sub(' ', q)
-    words = [w for w in clean.split() if len(w) >= 2 and w.lower() not in _FTS5_NOISE]
-    fts_q = ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words) if words else None
-
-    if fts_q:
-        conditions = ["s.ein = o.EIN", "org_fts MATCH ?"]
-        params: list = [fts_q]
-        if zip_code:
-            conditions.append("o.zipcode LIKE ?")
-            params.append(zip_code + '%')
-    else:
-        # No keyword terms — bare zip. Signal caller to use direct DB browse.
-        conditions = []
-        params = []
-
-    if state and fts_q:
+    Returns (conditions, params, detected_zip_or_None)."""
+    # Extract a trailing 5-digit zip from the query so it can drive proximity.
+    detected_zip = None
+    words = q.split()
+    if words and re.match(r'^\d{5}$', words[-1]):
+        detected_zip = words[-1]
+        words = words[:-1]
+    fts_q = ' '.join(f'{w}*' for w in words if w) or ' '.join(f'{w}*' for w in q.split() if w)
+    conditions: list = ["s.ein = o.EIN", "org_fts MATCH ?"]
+    params: list = [fts_q]
+    if state:
         conditions.append("o.STATE = ?")
         params.append(state)
-    return conditions, params, zip_code
+    return conditions, params, detected_zip
 
 
 def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias=''):
@@ -540,9 +485,10 @@ def get_organizations():
         per_page = min(100, max(1, int(request.args.get('per_page', PER_PAGE_DEFAULT))))
     except (ValueError, TypeError):
         return jsonify({'error': 'invalid page or per_page parameter'}), 400
-    hidden_gem    = request.args.get('hidden_gem', '').strip() == '1'
-    needs_funding = request.args.get('needs_funding', '').strip() == '1'
-    has_website   = request.args.get('has_website', '').strip() == '1'
+    hidden_gem         = request.args.get('hidden_gem', '').strip() == '1'
+    needs_funding      = request.args.get('needs_funding', '').strip() == '1'
+    has_website        = request.args.get('has_website', '').strip() == '1'
+    open_to_volunteers = request.args.get('open_to_volunteers', '').strip() == '1'
     order = request.args.get('order', '').strip()
     tier  = request.args.get('tier', '').strip()
     min_rev = request.args.get('min_revenue', type=float)
@@ -552,16 +498,38 @@ def get_organizations():
     ntee_list = [x.strip()[:1] for x in ntee.split(',') if x.strip()][:26]
     sub_list  = [x.strip()[:4] for x in sub.split(',') if x.strip()][:40]
 
+    # ── Proximity: resolve near/radius → zip set ──────────────────────────
+    nearby_zips: set = set()
+    nearby_meta: dict | None = None
+    near_raw = request.args.get('near', '').strip()
+    try:
+        radius_mi = int(request.args.get('radius', 0))
+    except (ValueError, TypeError):
+        radius_mi = 0
+    if near_raw and radius_mi > 0:
+        _conn = get_search_db()
+        if _conn:
+            try:
+                loc = _resolve_location(_conn, near_raw)
+                if loc:
+                    lat, lon, city, state_resolved = loc
+                    nearby_zips = _zips_within_radius(_conn, lat, lon, radius_mi)
+                    nearby_meta = {"city": city, "state": state_resolved, "radius_mi": radius_mi}
+            finally:
+                _conn.close()
+
     # ── Text search: route to FTS ──────────────────────────────────────────
     if q and len(q) >= 2:
         return _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                               state, sort, page, per_page,
-                              hidden_gem, needs_funding, has_website, order, tier)
+                              hidden_gem, needs_funding, has_website, order, tier,
+                              open_to_volunteers=open_to_volunteers,
+                              nearby_zips=nearby_zips, nearby_meta=nearby_meta)
 
     # ── Hidden gems: static files (no other signals) ──────────────────────────
     if (hidden_gem and not q and not ntee and not sub and not state and
-        not needs_funding and not has_website and not bool(tier) and
-        min_rev is None and max_rev is None):
+        not needs_funding and not has_website and not open_to_volunteers and not bool(tier) and
+        not nearby_zips and min_rev is None and max_rev is None):
         gems_file = DATA_DIR / 'browse' / 'hidden_gems' / f"ALL_{page}.json.gz"
         data = load_json_gz(gems_file)
         if data:
@@ -569,12 +537,14 @@ def get_organizations():
         # Fall through to DB query if file not found
 
     # ── Filter browse: DB query when flags, revenue, or multi-select used ───
-    any_filter = hidden_gem or needs_funding or has_website or bool(tier)
+    any_filter = hidden_gem or needs_funding or has_website or open_to_volunteers or bool(tier) or bool(nearby_zips)
     multi_select = len(ntee_list) > 1 or len(sub_list) > 1 or (ntee_list and sub_list)
     if any_filter or multi_select or min_rev is not None or max_rev is not None:
         return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                                  state, sort, page, per_page,
-                                 hidden_gem, needs_funding, has_website, order, tier)
+                                 hidden_gem, needs_funding, has_website, order, tier,
+                                 open_to_volunteers=open_to_volunteers,
+                                 nearby_zips=nearby_zips, nearby_meta=nearby_meta)
 
     # ── Browse: precomputed files ──────────────────────────────────────────
     category = sub if sub else ntee
@@ -616,7 +586,7 @@ def get_organizations():
 def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                       state, sort, page, per_page,
                       hidden_gem, needs_funding, has_website, order='', tier='',
-                      zip_prefix: str | None = None):
+                      open_to_volunteers=False, nearby_zips=None, nearby_meta=None):
     """Query orgs table directly with filter conditions but no FTS match."""
     conn = get_search_db()
     if not conn:
@@ -624,9 +594,6 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                         'page': page, 'per_page': per_page})
     try:
         conditions, params = _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev)
-        if zip_prefix:
-            conditions.append("zipcode LIKE ?")
-            params.append(zip_prefix + '%')
         if state:
             conditions.append("STATE = ?")
             params.append(state)
@@ -636,6 +603,14 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
             conditions.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
         if has_website:
             conditions.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
+        if open_to_volunteers and _search_db_has_org_claims(conn):
+            conditions.append(
+                "EIN IN (SELECT ein FROM org_claims WHERE volunteer_contact_email IS NOT NULL AND volunteer_contact_email != '')"
+            )
+        if nearby_zips:
+            placeholders = ','.join('?' * len(nearby_zips))
+            conditions.append(f"SUBSTR(zipcode, 1, 5) IN ({placeholders})")
+            params.extend(nearby_zips)
         tier_cond, tier_params = _tier_condition(tier)
         if tier_cond:
             conditions.append(tier_cond)
@@ -655,8 +630,11 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
         ).fetchall()
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
-        return jsonify({'organizations': orgs, 'total': total,
-                        'page': page, 'per_page': per_page, 'pages': pages})
+        resp = {'organizations': orgs, 'total': total,
+                'page': page, 'per_page': per_page, 'pages': pages}
+        if nearby_meta:
+            resp['nearby'] = nearby_meta
+        return jsonify(resp)
     except Exception as e:
         print(f"DB filter browse error: {e}")
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
@@ -667,22 +645,15 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
 
 def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                    state, sort, page, per_page,
-                   hidden_gem, needs_funding, has_website, order='', tier=''):
+                   hidden_gem, needs_funding, has_website, order='', tier='',
+                   open_to_volunteers=False, nearby_zips=None, nearby_meta=None):
     """FTS search against search.db orgs table, returns full org objects."""
-    conditions, params, zip_code = _fts_where(q, state)
-
-    # Bare zip (no keyword terms) — route to direct DB browse with zip filter.
-    if not conditions and zip_code:
-        return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
-                                 state, sort, page, per_page,
-                                 hidden_gem, needs_funding, has_website, order, tier,
-                                 zip_prefix=zip_code)
-
     conn = get_search_db()
     if not conn:
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
                         'page': page, 'per_page': per_page, 'search_type': 'fts'})
     try:
+        conditions, params = _fts_where(q, state)
         cat_conds, cat_params = _cat_rev_conditions(
             ntee_list, sub_list, min_rev, max_rev, alias='o.')
         conditions.extend(cat_conds)
@@ -694,6 +665,14 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
             conditions.append("o.months_of_reserve IS NOT NULL AND o.months_of_reserve < 6")
         if has_website:
             conditions.append("o.website IS NOT NULL AND o.website != '' AND o.website_status = 'ok'")
+        if open_to_volunteers and _search_db_has_org_claims(conn):
+            conditions.append(
+                "o.EIN IN (SELECT ein FROM org_claims WHERE volunteer_contact_email IS NOT NULL AND volunteer_contact_email != '')"
+            )
+        if nearby_zips:
+            placeholders = ','.join('?' * len(nearby_zips))
+            conditions.append(f"SUBSTR(o.zipcode, 1, 5) IN ({placeholders})")
+            params.extend(nearby_zips)
         tier_cond, tier_params = _tier_condition(tier, alias='o.')
         if tier_cond:
             conditions.append(tier_cond)
@@ -718,9 +697,12 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         rows = conn.execute(rows_sql, params_page).fetchall()
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
-        return jsonify({'organizations': orgs, 'total': total,
-                        'page': page, 'per_page': per_page,
-                        'pages': pages, 'search_type': 'fts'})
+        resp = {'organizations': orgs, 'total': total,
+                'page': page, 'per_page': per_page,
+                'pages': pages, 'search_type': 'fts'}
+        if nearby_meta:
+            resp['nearby'] = nearby_meta
+        return jsonify(resp)
     except Exception as e:
         print(f"FTS directory error: {e}")
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
@@ -906,7 +888,7 @@ def search():
         return jsonify({'results': [], 'query': query, 'total': 0, 'mode': 'unavailable'})
 
     try:
-        conditions, params = _fts_where(query, state)
+        conditions, params, _zip = _fts_where(query, state)
         cat_conds, cat_params = _cat_rev_conditions(
             [x.strip()[:1] for x in ntee.split(',') if x.strip()], [], None, None, alias='o.')
         conditions.extend(cat_conds)
@@ -916,7 +898,6 @@ def search():
                f"FROM org_fts s, registry_enriched o WHERE {' AND '.join(conditions)} LIMIT ?")
         rows = conn.execute(sql, params).fetchall()
         results = [dict(r) for r in rows]
-        _log_search_impressions([r['EIN'] for r in results], query)
         return jsonify({'results': results, 'query': query,
                         'total': len(results), 'mode': 'fts'})
     except Exception as e:
@@ -949,7 +930,7 @@ def fused_search():
                         'page': page, 'per_page': per_page, 'search_type': 'unavailable'})
 
     try:
-        conditions, params = _fts_where(q, state)
+        conditions, params, _zip = _fts_where(q, state)
         cat_conds, cat_params = _cat_rev_conditions(
             [x.strip()[:1] for x in ntee.split(',') if x.strip()], [], None, None, alias='o.')
         conditions.extend(cat_conds)
@@ -965,7 +946,6 @@ def fused_search():
                f"LIMIT ? OFFSET ?")
         rows = conn.execute(sql, params + [per_page, offset]).fetchall()
         orgs = [_row_to_org(r) for r in rows]
-        _log_search_impressions([o.get('EIN') for o in orgs], q)
         pages = max(1, (total + per_page - 1) // per_page)
         return jsonify({'organizations': orgs, 'query': q,
                         'total': total, 'pages': pages,
@@ -1159,78 +1139,6 @@ def org_volunteer_events_proxy(ein):
     return _live_proxy(f"/api/org/{ein}/volunteer-events")
 
 
-# Events platform — all new routes proxy to live backend
-@app.route('/api/events/<int:event_id>', methods=['GET'])
-def event_detail_proxy(event_id):
-    return _live_proxy(f"/api/events/{event_id}")
-
-@app.route('/api/events/<int:event_id>/signup', methods=['POST'])
-def event_signup_proxy(event_id):
-    return _live_proxy(f"/api/events/{event_id}/signup")
-
-@app.route('/api/events/<int:event_id>/cancel-booking', methods=['POST'])
-def event_cancel_booking_proxy(event_id):
-    return _live_proxy(f"/api/events/{event_id}/cancel-booking")
-
-@app.route('/api/events/<int:event_id>/qr.png', methods=['GET'])
-def event_qr_proxy(event_id):
-    return _live_proxy(f"/api/events/{event_id}/qr.png")
-
-@app.route('/api/events/<int:event_id>/calendar.ics', methods=['GET'])
-def event_ical_proxy(event_id):
-    return _live_proxy(f"/api/events/{event_id}/calendar.ics")
-
-@app.route('/api/portal/events', methods=['GET', 'POST'])
-def portal_events_proxy():
-    return _live_proxy("/api/portal/events")
-
-@app.route('/api/portal/events/<int:event_id>', methods=['PATCH', 'DELETE'])
-def portal_event_proxy(event_id):
-    return _live_proxy(f"/api/portal/events/{event_id}")
-
-@app.route('/api/portal/events/<int:event_id>/attendees', methods=['GET'])
-def portal_event_attendees_proxy(event_id):
-    return _live_proxy(f"/api/portal/events/{event_id}/attendees")
-
-@app.route('/api/portal/events/<int:event_id>/verify-hours', methods=['POST'])
-def portal_verify_hours_proxy(event_id):
-    return _live_proxy(f"/api/portal/events/{event_id}/verify-hours")
-
-@app.route('/api/portal/contacts', methods=['GET', 'PUT'])
-def portal_contacts_proxy():
-    return _live_proxy("/api/portal/contacts")
-
-@app.route('/api/org/<ein>/contacts', methods=['GET'])
-def org_contacts_proxy(ein):
-    return _live_proxy(f"/api/org/{ein}/contacts")
-
-
-class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
-    """Prevents urlopen from following 3xx — lets the caller handle them."""
-    def redirect_request(self, *args, **kwargs):
-        return None
-
-
-@app.route('/e/<short_id>', methods=['GET'])
-def event_short_redirect(short_id):
-    """Short URL: /e/{short_id} → 301 → /events/{id}. Proxy the redirect from the backend."""
-    import re as _re
-    if not _re.match(r'^[A-Za-z0-9_-]{6,16}$', short_id):
-        return 'Not found', 404
-    url = f"{LIVE_UPSTREAM}/e/{short_id}"
-    opener = urllib.request.build_opener(_NoRedirectHandler())
-    try:
-        with opener.open(url, timeout=10) as _resp:
-            return 'Not found', 404
-    except urllib.error.HTTPError as e:
-        if e.code in (301, 302):
-            loc = e.headers.get('Location', '/')
-            return redirect(loc, code=301)
-        return 'Not found', 404
-    except Exception:
-        return 'Not found', 404
-
-
 @app.route('/api/org/<ein>/service-area', methods=['GET', 'PUT'])
 def service_area_proxy(ein):
     return _live_proxy(f"/api/org/{ein}/service-area")
@@ -1385,13 +1293,10 @@ _STATIC_META = {
         'Daanaa is an independent civic platform that helps people discover '
         'nonprofits using public IRS data, presented with context and respect.',
     ),
-    'privacy': (
-        'Privacy Policy — Daanaa',
-        'How Daanaa collects, uses, stores, and protects information. Includes data retention schedule and your rights under CCPA and other state privacy laws.',
-    ),
-    'security': (
-        'Security Disclosure — Daanaa',
-        'How to report a security vulnerability to Daanaa. Our responsible disclosure policy and safe harbor commitment for security researchers.',
+    'principles': (
+        'Our Principles — Daanaa',
+        'The stewardship principles behind Daanaa: evidence-based trust signals, '
+        'structural donor privacy, and protected independence.',
     ),
     'for-nonprofits': (
         'For Nonprofits — Claim Your Page on Daanaa',
@@ -1434,26 +1339,6 @@ _HOMEPAGE_JSONLD = {
         },
     ],
 }
-
-_DIRECTORY_JSONLD = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    'name': 'U.S. Nonprofit Directory — Daanaa',
-    'description': 'Search every IRS-recognized 501(c)(3) by cause, location, and peer financial context.',
-    'url': 'https://daanaa.org/directory',
-    'numberOfItems': 1800000,
-    'itemListElement': [
-        {'@type': 'ListItem', 'position': 1, 'name': 'Arts & Culture', 'url': 'https://daanaa.org/category/A'},
-        {'@type': 'ListItem', 'position': 2, 'name': 'Education', 'url': 'https://daanaa.org/category/B'},
-        {'@type': 'ListItem', 'position': 3, 'name': 'Environment & Animals', 'url': 'https://daanaa.org/category/C'},
-        {'@type': 'ListItem', 'position': 4, 'name': 'Health', 'url': 'https://daanaa.org/category/E'},
-        {'@type': 'ListItem', 'position': 5, 'name': 'Human Services', 'url': 'https://daanaa.org/category/P'},
-        {'@type': 'ListItem', 'position': 6, 'name': 'Community Development', 'url': 'https://daanaa.org/category/S'},
-        {'@type': 'ListItem', 'position': 7, 'name': 'Religion', 'url': 'https://daanaa.org/category/X'},
-        {'@type': 'ListItem', 'position': 8, 'name': 'Public Benefit', 'url': 'https://daanaa.org/category/W'},
-    ],
-}
-
 
 def _org_jsonld(org: dict, ein: str) -> dict:
     name = org.get('organization_name') or 'Nonprofit'
@@ -1502,105 +1387,10 @@ def _meta_for_path(path: str):
                 f"{name}{(' in ' + loc) if loc else ''}: public IRS record, peer "
                 f"financial context, and mission on Daanaa.")
             return (f"{name} — Daanaa", desc, f"https://daanaa.org/org/{ein}", _org_jsonld(org, ein))
-    if p.startswith('events/'):
-        parts = p.split('/')
-        if len(parts) >= 2:
-            try:
-                eid = int(parts[1])
-            except ValueError:
-                return None
-            event = _fetch_event_for_meta(eid)
-            if event:
-                return _event_meta(event, eid)
     if p in _STATIC_META:
         title, desc = _STATIC_META[p]
-        jsonld = _DIRECTORY_JSONLD if p == 'directory' else None
-        return (title, desc, f"https://daanaa.org/{p}", jsonld)
+        return (title, desc, f"https://daanaa.org/{p}", None)
     return None
-
-
-def _fetch_event_for_meta(event_id: int) -> dict | None:
-    """Fetch event data from the live backend for SEO meta injection."""
-    try:
-        url = f"{LIVE_UPSTREAM}/api/events/{event_id}"
-        with urllib.request.urlopen(url, timeout=5) as resp:
-            import json as _json
-            return _json.loads(resp.read())
-    except Exception:
-        return None
-
-
-def _event_meta(event: dict, event_id: int):
-    """Build (title, desc, url, jsonld) tuple for an event page."""
-    title     = event.get('title', 'Volunteer Event')
-    org_name  = event.get('org_name', '')
-    date_str  = event.get('event_date', '')
-    city      = event.get('location_city') or ''
-    state     = event.get('location_state') or ''
-    loc_str   = f"{city}, {state}".strip(', ') if (city or state) else ('Virtual' if event.get('is_virtual') else '')
-    desc_raw  = event.get('description') or ''
-    desc      = desc_raw[:200] if desc_raw else (
-        f"{title} — {org_name}" if org_name else title
-    )
-    page_url  = f"https://daanaa.org/events/{event_id}"
-
-    # Build start/end datetimes for JSON-LD (local time without tz — most events don't store tz)
-    ev_date    = date_str.replace('-', '')
-    start_time = (event.get('start_time') or '09:00').replace(':', '')
-    end_time   = (event.get('end_time')   or '10:00').replace(':', '')
-    dtstart    = f"{ev_date}T{start_time}00"
-    dtend      = f"{ev_date}T{end_time}00"
-
-    capacity  = event.get('capacity')
-    confirmed = event.get('signup_count', 0)
-    remaining = (capacity - confirmed) if capacity is not None else None
-
-    location_block: dict
-    if event.get('is_virtual'):
-        location_block = {'@type': 'VirtualLocation', 'url': page_url}
-        attendance_mode = 'OnlineEventAttendanceMode'
-    else:
-        location_block = {
-            '@type': 'Place',
-            'address': {
-                '@type': 'PostalAddress',
-                'addressLocality': city,
-                'addressRegion': state,
-                'postalCode': event.get('location_zip') or '',
-                'addressCountry': 'US',
-            },
-        }
-        attendance_mode = 'OfflineEventAttendanceMode'
-
-    jsonld: dict = {
-        '@context': 'https://schema.org',
-        '@type': 'Event',
-        'name': title,
-        'startDate': dtstart,
-        'endDate': dtend,
-        'description': desc_raw[:500],
-        'url': page_url,
-        'eventStatus': 'EventScheduled',
-        'eventAttendanceMode': f'https://schema.org/{attendance_mode}',
-        'location': location_block,
-        'offers': {
-            '@type': 'Offer',
-            'price': '0',
-            'priceCurrency': 'USD',
-            'availability': 'https://schema.org/InStock',
-            'url': page_url,
-        },
-    }
-    if org_name:
-        jsonld['organizer'] = {'@type': 'Organization', 'name': org_name}
-    if remaining is not None:
-        jsonld['remainingAttendeeCapacity'] = max(0, remaining)
-    min_age = event.get('min_age')
-    if min_age:
-        jsonld['typicalAgeRange'] = f'{min_age}-'
-
-    page_title = f"{title} — {org_name} · Daanaa" if org_name else f"{title} · Daanaa"
-    return (page_title, desc, page_url, jsonld)
 
 # Known SPA route prefixes — anything not in this set and not a static file returns 404.
 # Prevents probe paths (/.env, /.git/config, /backup.zip) from getting a soft 200.
@@ -1610,18 +1400,14 @@ _SPA_PREFIXES = {
     'principles', 'governance', 'stewardship', 'why-daanaa-exists', 'tiers',
     'methodology', 'sector-health', 'learn', 'guides', 'faq', 'feedback',
     'partners', 'for-vendors', 'vendor-policy', 'terms', 'guild', 'member',
-    'volunteer', 'events', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
-    'nonprofit', 'vendor', 'claim', 'admin', 'sector-health', 'privacy', 'security',
+    'volunteer', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
+    'nonprofit', 'vendor', 'claim', 'admin', 'sector-health',
 }
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_spa(path):
     if FRONTEND_DIR.exists():
-        # 301 .html suffix → clean URL (e.g. /about.html → /about)
-        if path and path.endswith('.html'):
-            clean = '/' + path[:-5].lstrip('/')
-            return redirect(clean, code=301)
         # 301 legacy/merged routes to their canonical destination.
         target = _LEGACY_REDIRECTS.get((path or '').strip('/'))
         if target:

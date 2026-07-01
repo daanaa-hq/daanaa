@@ -4,6 +4,7 @@ Daanaa API — Peer-context nonprofit directory backend
 Serves registry_enriched + v4 scores to frontend
 """
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets, logging, sys
+from math import radians, cos, sin, asin, sqrt
 from datetime import datetime
 
 # Sentry error tracking — activate by setting SENTRY_DSN env var.
@@ -1515,6 +1516,49 @@ def set_security_headers(response):
         response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
     return response
 
+def _haversine_mi(lat1, lon1, lat2, lon2):
+    R = 3958.8
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat, dlon = lat2 - lat1, lon2 - lon1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    return 2 * R * asin(sqrt(a))
+
+
+def _zips_within_radius(db, lat, lon, radius_mi):
+    dlat = radius_mi / 69.0
+    dlon = radius_mi / (69.0 * cos(radians(lat)))
+    rows = db.execute(
+        "SELECT zip, lat, lon FROM zip_codes WHERE lat BETWEEN ? AND ? AND lon BETWEEN ? AND ?",
+        (lat - dlat, lat + dlat, lon - dlon, lon + dlon)
+    ).fetchall()
+    return {r["zip"] for r in rows if _haversine_mi(lat, lon, r["lat"], r["lon"]) <= radius_mi}
+
+
+def _resolve_location(db, near_raw):
+    """Resolve free-text location to (lat, lon, city, state). Returns None if unresolvable."""
+    near = near_raw.strip()
+    if near.isdigit() and len(near) == 5:
+        row = db.execute("SELECT lat, lon, city, state_id FROM zip_codes WHERE zip=?", (near,)).fetchone()
+        if row:
+            return row["lat"], row["lon"], row["city"], row["state_id"]
+    m = re.match(r'^(.+?)[,\s]+([A-Z]{2})$', near.upper())
+    if m:
+        city_q, state_q = m.group(1).strip(), m.group(2)
+        row = db.execute(
+            "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? AND state_id=? LIMIT 1",
+            (city_q, state_q)
+        ).fetchone()
+        if row:
+            return row["lat"], row["lon"], row["city"], row["state_id"]
+    row = db.execute(
+        "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? LIMIT 1",
+        (near.upper(),)
+    ).fetchone()
+    if row:
+        return row["lat"], row["lon"], row["city"], row["state_id"]
+    return None
+
+
 @app.route('/health')
 @limiter.exempt
 def health():
@@ -1590,8 +1634,14 @@ def list_organizations():
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
+    open_to_volunteers = request.args.get('open_to_volunteers', '').strip() == '1'
     recent = request.args.get('recent', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
+    near_raw = request.args.get('near', '').strip()
+    try:
+        radius_mi = int(request.args.get('radius', 0))
+    except (ValueError, TypeError):
+        radius_mi = 0
     sort_by = request.args.get('sort', 'merit_score')
     order = request.args.get('order', 'desc')
 
@@ -1656,6 +1706,22 @@ def list_organizations():
         where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
     if has_website:
         where_clauses.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
+    if open_to_volunteers:
+        where_clauses.append("r.EIN IN (SELECT ein FROM org_claims WHERE volunteer_contact_email IS NOT NULL AND volunteer_contact_email != '')")
+    nearby_meta = None
+    if near_raw and radius_mi > 0:
+        try:
+            loc = _resolve_location(db, near_raw)
+            if loc:
+                lat, lon, city, state_resolved = loc
+                nearby_zips = _zips_within_radius(db, lat, lon, radius_mi)
+                if nearby_zips:
+                    placeholders = ','.join('?' * len(nearby_zips))
+                    where_clauses.append(f"SUBSTR(r.zipcode, 1, 5) IN ({placeholders})")
+                    params.extend(nearby_zips)
+                    nearby_meta = {"city": city, "state": state_resolved, "radius_mi": radius_mi}
+        except Exception:
+            pass
     if recent:
         where_clauses.append("latest_tax_year IS NOT NULL AND latest_tax_year >= 2022")
     if cause:
@@ -1779,6 +1845,8 @@ def list_organizations():
         "per_page": per_page,
         "pages": (total + per_page - 1) // per_page,
     }
+    if nearby_meta:
+        payload["nearby"] = nearby_meta
     _cset(ck, payload)
     return jsonify(payload)
 

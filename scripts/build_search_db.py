@@ -6,6 +6,7 @@ on `s.ein = o.EIN`. So the deployable search.db must carry BOTH tables:
 
   - registry_enriched : full registry (org detail fallback + browse/filter)
   - org_fts           : FTS5 index incl. metro + cause_tags (keyword search)
+  - zip_codes         : 41K US zip centroids for radius/proximity search
 
 Both are copied from the canonical data/merit_registry.db so the artifact is
 reproducible. Output is written to a temp path and integrity-checked before it
@@ -116,6 +117,29 @@ def main():
     n_fts = db.execute("SELECT count(*) FROM org_fts").fetchone()[0]
     print(f"  org_fts rows: {n_fts:,}  ({time.time()-t0:.0f}s)", flush=True)
 
+    # --- zip_codes: lat/lon lookup for proximity (radius) search ---
+    db.execute("""
+        CREATE TABLE zip_codes (
+            zip         TEXT PRIMARY KEY,
+            city        TEXT,
+            state_id    TEXT,
+            state_name  TEXT,
+            county_name TEXT,
+            county_fips TEXT,
+            lat         REAL,
+            lon         REAL
+        )
+    """)
+    print("copying zip_codes ...", flush=True)
+    db.execute(
+        "INSERT INTO zip_codes "
+        "SELECT zip, city, state_id, state_name, county_name, county_fips, lat, lon "
+        "FROM src.zip_codes"
+    )
+    db.commit()
+    n_zips = db.execute("SELECT count(*) FROM zip_codes").fetchone()[0]
+    print(f"  zip_codes rows: {n_zips:,}  ({time.time()-t0:.0f}s)", flush=True)
+
     # --- verification ---
     print("verifying ...", flush=True)
     ok = db.execute("PRAGMA integrity_check").fetchone()[0]
@@ -130,6 +154,10 @@ def main():
         "SELECT COUNT(*) FROM org_fts WHERE org_fts MATCH ?", ('"Boston, MA"',)
     ).fetchone()[0]
     print(f"  metro 'Boston, MA' matches: {metro_hits:,}")
+    zip_check = db.execute(
+        "SELECT COUNT(*) FROM zip_codes WHERE lat BETWEEN 45.4 AND 45.6 AND lon BETWEEN -122.8 AND -122.5"
+    ).fetchone()[0]
+    print(f"  zip_codes Portland OR sanity: {zip_check} zips")
     db.close()
 
     size_gb = os.path.getsize(args.out) / 1e9

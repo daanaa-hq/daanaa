@@ -254,3 +254,8 @@ probe the filter (use COALESCE/expression to force filter-first).
   in the frontend dist are derived artifacts — regenerate AND redeploy them whenever the DB
   changes, then full-RESTART the service (HUP is not enough). Cloudflare does NOT cache
   `/api/stats` (cf-cache-status: DYNAMIC), so origin/public splits are the worker cache.
+
+## 2026-07-01 — Uncommitted changes wiped by worktree merge
+Symptom: E4 proximity search (working on production) disappeared after deploying E5 sprint. Both `daanaa_api.py` and `scripts/droplet_api.py` lost `_haversine_mi`, `_zips_within_radius`, `_resolve_location` and all proximity wiring.
+Root cause: E4 changes were never committed. Worktrees are created from the last commit, not the working tree. When E5 agents ran, they got the pre-E4 committed versions. Merging their files overwrote the uncommitted E4 modifications.
+Rule: **Commit (or stash) any working changes before launching worktree agents.** Worktrees branch from HEAD — they cannot see uncommitted edits in the main working tree. If a deploy is approved, commit first; then spawn agents on the new HEAD.

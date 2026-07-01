@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import LampMark from '../components/LampMark'
 import { useApi } from '../hooks/useApi'
-import { getStats, getCategories, getOrganizations, searchVolunteerEvents, type ApiOrganization, type VolunteerEvent } from '../data/api'
+import { getStats, getCategories, getOrganizations, type ApiOrganization } from '../data/api'
 import { TIER_COLORS } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
@@ -103,10 +103,86 @@ function HeroSection() {
 
         <p
           className={`mt-6 font-body text-[13px] transition-opacity duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
-          style={{ color: 'rgba(245,240,235,0.82)', transitionDelay: '600ms' }}
+          style={{ color: 'rgba(245,240,235,0.65)', transitionDelay: '600ms' }}
         >
           Independent · Built on public records · Not a rating agency
         </p>
+      </div>
+    </section>
+  )
+}
+
+// ─── Persona Tiles ────────────────────────────────────────────────────────────
+function PersonaTiles() {
+  const { ref, inView } = useInView()
+
+  const tiles: { to: string; label: string; sub: string; icon: ReactNode }[] = [
+    {
+      to: '/directory?sort=merit_score&order=desc',
+      label: 'I want to give',
+      sub: 'Give / Cause filters / Financial health',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      ),
+    },
+    {
+      to: '/directory?q=volunteer',
+      label: 'I want to volunteer',
+      sub: 'Find orgs near you',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      ),
+    },
+    {
+      to: '/directory?q=',
+      label: 'I work in nonprofits',
+      sub: 'EIN lookup · peer benchmarks',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      ),
+    },
+    {
+      to: '/research',
+      label: "I'm researching",
+      sub: 'Methodology · public data',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      ),
+    },
+  ]
+
+  return (
+    <section className="bg-warm-cream pt-6 md:pt-8">
+      <div ref={ref} className="max-w-[1120px] mx-auto px-6 md:px-12 pb-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {tiles.map((tile, i) => (
+            <Link
+              key={tile.label}
+              to={tile.to}
+              className={`bg-white border border-light-grey rounded-2xl p-5 hover:shadow-md transition-all duration-700 ease-out flex flex-col ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+              style={{ transitionDelay: inView ? `${i * 80}ms` : '0ms' }}
+            >
+              <div className="w-10 h-10 rounded-full bg-soft-gold/15 flex items-center justify-center mb-3 shrink-0">
+                {tile.icon}
+              </div>
+              <p className="font-body text-[15px] font-semibold text-deep-navy">{tile.label}</p>
+              <p className="font-body text-[12px] text-cool-grey mt-1">{tile.sub}</p>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   )
@@ -184,7 +260,7 @@ function PeerFinancialContextSection() {
             </p>
             <Link
               to="/methodology"
-              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-medium text-link-gold hover:text-deep-gold transition-colors"
+              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
             >
               Learn more about methodology →
             </Link>
@@ -461,7 +537,7 @@ function BrowseCauses() {
 
         {/* Section header */}
         <div className="mb-10">
-          <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-[#6B4F1A] uppercase mb-2">
+          <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-deep-gold uppercase mb-2">
             Find by Cause
           </p>
           <h2
@@ -537,7 +613,7 @@ function BrowseCauses() {
                   {cat.name}
                 </p>
                 {count != null && (
-                  <p className="font-body text-[10px] text-deep-navy/75">{count.toLocaleString()}</p>
+                  <p className="font-body text-[10px] text-cool-grey">{count.toLocaleString()}</p>
                 )}
               </Link>
             )
@@ -548,7 +624,7 @@ function BrowseCauses() {
         <div className="mt-8 text-center">
           <Link
             to="/directory"
-            className="inline-flex items-center gap-2 font-body text-[14px] text-link-gold hover:text-deep-gold transition-colors"
+            className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
           >
             Search all organizations
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -564,7 +640,7 @@ function BrowseCauses() {
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 function StatsBar() {
   const { data: stats } = useApi(() => getStats(), [])
-  const count = stats?.total_organizations ?? 1_800_000
+  const count = stats?.total_organizations ?? 1_600_000
   const finRecords = stats?.financial_records ?? 1_785_000
   // at_risk bucket in stats API now covers 0–6 months (matches the directory filter threshold)
   const needsFundingSoon = (stats?.reserve_health?.insolvent ?? 0) + (stats?.reserve_health?.at_risk ?? 0)
@@ -646,7 +722,7 @@ function TiersStrip() {
 
           {/* Label column */}
           <div className="md:w-[200px] shrink-0">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-link-gold uppercase mb-1">
+            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
               Public Data Completeness
             </p>
             <p className="font-body text-[14px] text-cool-grey leading-[1.5]">
@@ -654,7 +730,7 @@ function TiersStrip() {
             </p>
             <Link
               to="/tiers"
-              className="mt-2 inline-block font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
+              className="mt-2 inline-block font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
             >
               How tiers work →
             </Link>
@@ -743,7 +819,7 @@ function WalletSection() {
             <div className="bg-[#0F1F38] border border-white/8 rounded-2xl p-6 shadow-2xl">
               <div className="flex items-center justify-between mb-5">
                 <span className="font-display italic text-[18px] text-warm-cream">Your Giving Wallet</span>
-                <span className="font-body text-[11px] tracking-[0.04em]" style={{ color: 'rgba(168,159,148,0.85)' }}>3 saved</span>
+                <span className="font-body text-[11px] tracking-[0.04em]" style={{ color: 'rgba(168,159,148,0.55)' }}>3 saved</span>
               </div>
               <div className="space-y-3">
                 {[
@@ -810,7 +886,7 @@ function HiddenGemsSection() {
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className={`flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 transition-all duration-700 ease-out ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
-            <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-link-gold uppercase">
+            <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase">
               Worth discovering
             </span>
             <h2 className="mt-2 font-display italic text-deep-navy leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 38px)' }}>
@@ -823,7 +899,7 @@ function HiddenGemsSection() {
           </div>
           <Link
             to="/directory?hidden_gem=1"
-            className="shrink-0 font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors flex items-center gap-1.5"
+            className="shrink-0 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors flex items-center gap-1.5"
           >
             See more
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -885,133 +961,6 @@ function HiddenGemsSection() {
   )
 }
 
-// ─── Volunteer Events ─────────────────────────────────────────────────────────
-function formatEventDate(d: string) {
-  const [y, m, day] = d.split('-')
-  return new Date(Number(y), Number(m) - 1, Number(day)).toLocaleDateString('en-US', {
-    weekday: 'short', month: 'short', day: 'numeric',
-  })
-}
-
-function EventMiniCard({ event }: { event: VolunteerEvent }) {
-  const location = event.is_virtual
-    ? 'Virtual'
-    : [event.location_city, event.location_state].filter(Boolean).join(', ') || null
-
-  return (
-    <Link
-      to={`/events/${event.id}`}
-      className="bg-white border border-light-cream rounded-2xl p-5 flex flex-col gap-3 hover:border-soft-gold/40 hover:shadow-sm transition-all"
-    >
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase ${
-          event.event_type === 'volunteer' ? 'bg-green-50 text-green-700'
-          : event.event_type === 'community' ? 'bg-soft-gold/10 text-link-gold'
-          : event.event_type === 'fundraiser' ? 'bg-blue-50 text-blue-600'
-          : 'bg-purple-50 text-purple-600'
-        }`}>
-          {event.event_type ?? 'Event'}
-        </span>
-        {event.is_virtual && (
-          <span className="inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase bg-blue-50 text-blue-600">
-            Virtual
-          </span>
-        )}
-      </div>
-      <div>
-        <h3 className="font-display italic text-deep-navy text-[17px] leading-tight line-clamp-2">{event.title}</h3>
-        {event.org_name && (
-          <p className="font-body text-[12px] text-cool-grey mt-0.5">{event.org_name}</p>
-        )}
-      </div>
-      <div className="flex items-center gap-1 text-cool-grey">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        <span className="font-body text-[12px]">{formatEventDate(event.event_date)}</span>
-        {location && <span className="font-body text-[12px] text-cool-grey">· {location}</span>}
-      </div>
-      {event.description && (
-        <p className="font-body text-[13px] text-cool-grey leading-[1.6] line-clamp-2">{event.description}</p>
-      )}
-      <div className="mt-auto">
-        <span className="font-body text-[12px] text-link-gold font-semibold">See details →</span>
-      </div>
-    </Link>
-  )
-}
-
-function VolunteerEventsSection() {
-  const [events, setEvents] = useState<VolunteerEvent[]>([])
-  const [loaded, setLoaded] = useState(false)
-  const { ref, inView } = useInView(0.1)
-
-  useEffect(() => {
-    if (!inView || loaded) return
-    setLoaded(true)
-    searchVolunteerEvents({ virtual: false })
-      .then(res => setEvents(res.events.slice(0, 4)))
-      .catch(() => {})
-  }, [inView, loaded])
-
-  if (loaded && events.length === 0) return null
-
-  return (
-    <section className="bg-white border-t border-light-grey py-14 md:py-20">
-      <div ref={ref} className="max-w-[1200px] mx-auto px-6 lg:px-12">
-        <div className="flex items-end justify-between gap-4 mb-8">
-          <div>
-            <p className="font-body text-[12px] font-semibold tracking-[0.1em] text-link-gold uppercase mb-2">
-              Volunteer
-            </p>
-            <h2 className="font-display italic text-deep-navy text-[28px] md:text-[36px] leading-[1.1] tracking-[-0.01em]">
-              Give your time
-            </h2>
-            <p className="mt-3 font-body text-[15px] text-cool-grey max-w-[520px] leading-[1.65]">
-              Nonprofit organizations post volunteer opportunities directly on Daanaa. Show up, meet the people behind the mission.
-            </p>
-          </div>
-          <Link
-            to="/volunteer"
-            className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-link-gold/40 text-link-gold font-body text-[13px] font-semibold hover:bg-link-gold/8 transition-colors shrink-0"
-          >
-            Find opportunities
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 18 15 12 9 6"/>
-            </svg>
-          </Link>
-        </div>
-
-        {events.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {events.map(ev => <EventMiniCard key={ev.id} event={ev} />)}
-            </div>
-            <div className="mt-6 text-center md:hidden">
-              <Link
-                to="/volunteer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
-              >
-                Find opportunities near you
-              </Link>
-            </div>
-          </>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-light-cream rounded-2xl h-[200px] animate-pulse" />
-            ))}
-          </div>
-        )}
-
-        <p className="mt-6 font-body text-[12px] text-cool-grey text-center">
-          Sign-ups go directly to the organization. Daanaa does not collect volunteer information.
-        </p>
-      </div>
-    </section>
-  )
-}
-
 // ─── Advisor teaser ───────────────────────────────────────────────────────────
 function AdvisorTeaser() {
   return (
@@ -1033,7 +982,7 @@ function AdvisorTeaser() {
           </div>
 
           <div className="flex-1 text-center md:text-left">
-            <p className="font-body text-[11px] font-semibold tracking-[0.1em] text-link-gold uppercase mb-2">
+            <p className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase mb-2">
               Cause Finder
             </p>
             <h2
@@ -1109,7 +1058,7 @@ function FooterCTA() {
         <p className="mt-5 font-body text-[14px]">
           <Link
             to="/the-invisible-97"
-            className="text-link-gold hover:text-deep-gold transition-colors"
+            className="text-soft-gold hover:text-bright-gold transition-colors"
           >
             See the invisible 97% →
           </Link>
@@ -1129,17 +1078,17 @@ export default function Home() {
   useJsonLd(websiteSchema({
     name: 'Daanaa',
     url: 'https://daanaa.org',
-    description: 'Independent nonprofit discovery platform. Search 1.7M US nonprofits with peer financial context, public data, and verified giving paths.',
+    description: 'Independent nonprofit discovery platform. Search 1.8M US nonprofits with peer financial context, public data, and verified giving paths.',
   }))
 
   return (
     <div>
       <HeroSection />
+      <PersonaTiles />
       <WhatDaanaaDoesSection />
       <HowDiscoveryWorks />
       <FeaturedCause />
       <HiddenGemsSection />
-      <VolunteerEventsSection />
       <BrowseCauses />
 
       <PeerFinancialContextSection />
