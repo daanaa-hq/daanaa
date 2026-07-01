@@ -11,7 +11,7 @@ export default function TrustNav() {
 
   return (
     <div className="border-t border-light-grey pt-10 mt-16">
-      <p className="font-body text-[11px] tracking-[0.1em] text-soft-gold uppercase mb-5">Also in this series</p>
+      <p className="font-body text-[11px] tracking-[0.1em] text-link-gold uppercase mb-5">Also in this series</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {PAGES.map(({ to, label, sub }) => {
           const active = pathname === to || pathname.startsWith(to + '#')

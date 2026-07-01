@@ -56,7 +56,7 @@ export default function VolunteerInterest({
         <div className="bg-warm-cream px-6 pt-5 pb-4 border-b border-light-grey">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-body text-[11px] font-semibold text-soft-gold uppercase tracking-widest mb-0.5">Volunteer interest</p>
+              <p className="font-body text-[11px] font-semibold text-link-gold uppercase tracking-widest mb-0.5">Volunteer interest</p>
               <h3 className="font-display text-[20px] text-deep-navy leading-snug">{orgName}</h3>
             </div>
             <button

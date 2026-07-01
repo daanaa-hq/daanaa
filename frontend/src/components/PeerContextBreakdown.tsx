@@ -129,7 +129,7 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
                 {row.label}
               </p>
               {row.value && (
-                <p className="font-body text-[13px] text-soft-gold font-semibold mt-1">
+                <p className="font-body text-[13px] text-link-gold font-semibold mt-1">
                   {row.value}
                 </p>
               )}

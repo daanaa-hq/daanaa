@@ -149,7 +149,7 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
         )}
         <div className="flex items-center gap-2 flex-wrap">
           {inlineFact && (
-            <span className="font-body text-[11px] text-soft-gold">{inlineFact}</span>
+            <span className="font-body text-[11px] text-link-gold">{inlineFact}</span>
           )}
           {inlineFact && (org.city || org.subcategory) && (
             <span className="text-cool-grey/30">·</span>
@@ -275,7 +275,7 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
             {org.name}
           </h3>
           {inlineFact && (
-            <p className="font-body text-[11px] text-soft-gold mt-0.5 leading-none">{inlineFact}</p>
+            <p className="font-body text-[11px] text-link-gold mt-0.5 leading-none">{inlineFact}</p>
           )}
           {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
             <p className="font-body text-[10px] text-cool-grey mt-0.5 leading-none">
@@ -349,7 +349,7 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
       {/* Revenue (secondary) */}
       {!compact && !org.mission && scored && (
         <p className="font-body text-[12px] text-cool-grey mb-2.5">
-          {org.latestTaxYear && <span className="text-soft-gold font-medium mr-1.5">FY {org.latestTaxYear}</span>}
+          {org.latestTaxYear && <span className="text-link-gold font-medium mr-1.5">FY {org.latestTaxYear}</span>}
           Revenue: {formatCurrency(org.revenue)}
         </p>
       )}

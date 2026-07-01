@@ -156,7 +156,7 @@ export default function SearchBar({
             onMouseDown={e => { e.preventDefault(); submit() }}
             className="w-full flex items-center justify-between px-4 py-3 border-t border-light-grey hover:bg-warm-cream transition-colors"
           >
-            <span className="font-body text-[12px] text-soft-gold">
+            <span className="font-body text-[12px] text-link-gold">
               See all results for "{value}"
             </span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

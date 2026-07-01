@@ -123,7 +123,7 @@ export default function FilterSheet({
           {/* Cause — free text against the LLM cause tags */}
           {onCauseChange && (
             <div>
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Cause</span>
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Cause</span>
               <input
                 type="text"
                 value={cause}
@@ -136,7 +136,7 @@ export default function FilterSheet({
 
           {/* Category */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Category</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Category</span>
             <div className="flex flex-wrap gap-2">
               {FILTER_CATEGORIES.map(cat => (
                 <button
@@ -157,7 +157,7 @@ export default function FilterSheet({
 
           {/* State */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">State</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">State</span>
             <div className="relative">
               <select
                 value={stateFilter}
@@ -187,7 +187,7 @@ export default function FilterSheet({
 
           {/* Revenue */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Revenue</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Revenue</span>
             <div className="grid grid-cols-2 gap-2">
               {REVENUE_PRESETS.map(preset => (
                 <button
@@ -209,7 +209,7 @@ export default function FilterSheet({
 
           {/* Sort */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase block mb-3">Sort By</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Sort By</span>
             <div className="flex gap-2">
               {[
                 { value: 'organization_name', label: 'Name A to Z' },

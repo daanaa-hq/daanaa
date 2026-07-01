@@ -96,7 +96,7 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
   return (
     <div className="bg-white border border-light-grey rounded-xl p-6">
       <div className="mb-6">
-        <div className="font-body text-[11px] tracking-[0.06em] text-soft-gold uppercase font-semibold mb-2">
+        <div className="font-body text-[11px] tracking-[0.06em] text-link-gold uppercase font-semibold mb-2">
           Daanaa Impact
         </div>
         <h3 className="font-display text-[28px] text-deep-navy">

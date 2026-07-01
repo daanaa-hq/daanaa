@@ -115,7 +115,7 @@ export default function About() {
               >
                 {/* Left */}
                 <div className="md:pt-1">
-                  <p className="font-body text-[11px] tracking-[0.1em] text-soft-gold uppercase mb-2">{section.tag}</p>
+                  <p className="font-body text-[11px] tracking-[0.1em] text-link-gold uppercase mb-2">{section.tag}</p>
                   <h3 className="font-display italic text-deep-navy text-[20px] md:text-[24px] leading-[1.2]">{section.title}</h3>
                 </div>
 
@@ -128,12 +128,12 @@ export default function About() {
                   </div>
                   <div className="mt-5 flex flex-wrap gap-5">
                     {'link' in section && section.link && (
-                      <Link to={section.link.to} className="font-body text-[13px] font-medium text-soft-gold hover:text-bright-gold transition-colors">
+                      <Link to={section.link.to} className="font-body text-[13px] font-medium text-link-gold hover:text-bright-gold transition-colors">
                         {section.link.label} →
                       </Link>
                     )}
                     {'links' in section && section.links && section.links.map(l => (
-                      <Link key={l.to} to={l.to} className="font-body text-[13px] font-medium text-soft-gold hover:text-bright-gold transition-colors">
+                      <Link key={l.to} to={l.to} className="font-body text-[13px] font-medium text-link-gold hover:text-bright-gold transition-colors">
                         {l.label} →
                       </Link>
                     ))}
@@ -226,7 +226,7 @@ export default function About() {
           {/* How we use AI */}
           <div className="mt-14 pt-10 border-t border-light-grey grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-8 md:gap-16">
             <div className="md:pt-1">
-              <p className="font-body text-[11px] tracking-[0.1em] text-soft-gold uppercase mb-2">A note on AI</p>
+              <p className="font-body text-[11px] tracking-[0.1em] text-link-gold uppercase mb-2">A note on AI</p>
               <h2 className="font-display italic text-deep-navy text-[20px] md:text-[24px] leading-[1.2]">How we use AI responsibly</h2>
             </div>
             <div className="space-y-4">
@@ -259,7 +259,7 @@ export default function About() {
               className="flex items-center justify-between px-6 py-5 bg-white border border-light-grey rounded-xl hover:border-soft-gold transition-colors group"
             >
               <div>
-                <p className="font-body text-[11px] tracking-[0.08em] text-soft-gold uppercase mb-1">Go deeper</p>
+                <p className="font-body text-[11px] tracking-[0.08em] text-link-gold uppercase mb-1">Go deeper</p>
                 <p className="font-display italic text-deep-navy text-[18px]">Sector data and research</p>
               </div>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" className="shrink-0 group-hover:translate-x-1 transition-transform">
@@ -270,7 +270,7 @@ export default function About() {
 
           <div className="mt-10 text-center">
             <p className="font-body text-[14px] text-cool-grey">
-              Questions? <Link to="/feedback" className="text-soft-gold hover:text-bright-gold font-semibold">Get in touch</Link>.
+              Questions? <Link to="/feedback" className="text-link-gold hover:text-bright-gold font-semibold">Get in touch</Link>.
             </p>
           </div>
 

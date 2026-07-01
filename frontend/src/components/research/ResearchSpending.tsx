@@ -124,7 +124,7 @@ export default function ResearchSpending({
             </div>
             <div className="space-y-1">
               <p className="text-xs text-cool-grey">
-                <span className="font-semibold text-soft-gold">{item.median.toFixed(1)}%</span> median spending
+                <span className="font-semibold text-link-gold">{item.median.toFixed(1)}%</span> median spending
               </p>
               <p className="text-xs text-cool-grey">
                 Middle 50%: {item.p25.toFixed(1)}% – {item.p75.toFixed(1)}%

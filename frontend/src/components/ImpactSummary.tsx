@@ -51,7 +51,7 @@ export default function ImpactSummary() {
         <p className="text-xs text-cool-grey uppercase tracking-wide font-semibold mb-1">
           {impact.currentYear} Funded
         </p>
-        <p className="font-display text-2xl text-soft-gold">{usd(impact.ytdFunded)}</p>
+        <p className="font-display text-2xl text-link-gold">{usd(impact.ytdFunded)}</p>
         <p className="text-xs text-cool-grey mt-1">
           {impact.ytdFunded > 0 ? 'this year' : 'Start giving'}
         </p>

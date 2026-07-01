@@ -90,7 +90,7 @@ export default function TierBreakdown({ org, tier, onClose }: TierBreakdownProps
       {/* Next tier path */}
       {nextPath && (
         <div className="rounded-xl px-4 py-3 mb-5" style={{ background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.22)' }}>
-          <p className="font-body text-[10px] font-semibold tracking-[0.07em] text-soft-gold uppercase mb-1">Path to next tier</p>
+          <p className="font-body text-[10px] font-semibold tracking-[0.07em] text-link-gold uppercase mb-1">Path to next tier</p>
           <p className="font-body text-[13px] text-deep-navy/80 leading-[1.5]">{nextPath}</p>
         </div>
       )}

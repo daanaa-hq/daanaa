@@ -107,7 +107,7 @@ export default function ForNonprofits() {
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-16">
             <div className="max-w-[680px]">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">For organizations</span>
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">For organizations</span>
               <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
                 Your public record may already be listed. Add the story only you can tell.
               </h1>
@@ -129,7 +129,7 @@ export default function ForNonprofits() {
       {/* What you get */}
       <div className="bg-warm-cream py-10 md:py-16 lg:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-          <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">What you can add for free</span>
+          <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">What you can add for free</span>
           <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-10">
             Tell your story in your own words
           </h2>
@@ -176,7 +176,7 @@ export default function ForNonprofits() {
               },
             ].map(({ n, title, description, phase2 }) => (
               <div key={n} className={`flex gap-5 ${phase2 ? 'opacity-55' : ''}`}>
-                <div className="shrink-0 w-8 h-8 rounded-full bg-soft-gold/15 border border-soft-gold/30 text-soft-gold font-body text-[13px] font-semibold flex items-center justify-center mt-0.5">
+                <div className="shrink-0 w-8 h-8 rounded-full bg-soft-gold/15 border border-soft-gold/30 text-link-gold font-body text-[13px] font-semibold flex items-center justify-center mt-0.5">
                   {n}
                 </div>
                 <div>
@@ -198,7 +198,7 @@ export default function ForNonprofits() {
       <div className="bg-white py-10 md:py-16 border-t border-light-grey">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="max-w-[680px]">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Trust by design</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">Trust by design</span>
             <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-6">
               Government records and your story, clearly separated
             </h2>
@@ -212,7 +212,7 @@ export default function ForNonprofits() {
 
           <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-[680px]">
             <div className="p-5 bg-warm-cream rounded-xl border border-light-grey">
-              <p className="font-body text-[11px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-3">IRS public data</p>
+              <p className="font-body text-[11px] tracking-[0.06em] text-link-gold uppercase font-medium mb-3">IRS public data</p>
               <ul className="space-y-2 font-body text-[13px] text-cool-grey">
                 {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Daanaa financial ranking', 'Year & data source'].map(i => (
                   <li key={i} className="flex items-center gap-2">
@@ -223,7 +223,7 @@ export default function ForNonprofits() {
               <p className="mt-3 font-body text-[11px] text-cool-grey">Not editable · Always shown</p>
             </div>
             <div className="p-5 rounded-xl border-2 border-dashed border-soft-gold/30">
-              <p className="font-body text-[11px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-3">Your claimed content</p>
+              <p className="font-body text-[11px] tracking-[0.06em] text-link-gold uppercase font-medium mb-3">Your claimed content</p>
               <ul className="space-y-2 font-body text-[13px] text-cool-grey">
                 {['Mission & programs', 'Leadership team', 'Impact metrics', 'Events & opportunities', 'Photos & reports'].map(i => (
                   <li key={i} className="flex items-center gap-2">
@@ -258,7 +258,7 @@ export default function ForNonprofits() {
       <div className="bg-warm-cream py-10 md:py-16 border-t border-light-grey">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="max-w-[520px]">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How claiming works</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">How claiming works</span>
             <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-8">
               Simple. No cost. No middleman.
             </h2>
@@ -306,7 +306,7 @@ export default function ForNonprofits() {
         return (
           <div className="bg-white py-10 md:py-16 border-t border-light-grey">
             <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Your visibility journey</span>
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">Your visibility journey</span>
               <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-3">
                 Improve your visibility
               </h2>
@@ -350,7 +350,7 @@ export default function ForNonprofits() {
       {/* Return portal — signed-in nonprofits jump straight to their editor */}
       <div className="bg-warm-cream border-t border-light-grey py-10">
         <div className="max-w-[520px] mx-auto px-6">
-          <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-3">
+          <p className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase mb-3">
             Already claimed your page?
           </p>
           {!user ? (
@@ -411,25 +411,25 @@ export default function ForNonprofits() {
                 </div>
                 <h3 className="font-display italic text-warm-cream text-[28px] mb-3">
                   Claim received. We'll call you
-                  {orgName && <span className="block text-soft-gold text-[20px] mt-1">{orgName}</span>}
+                  {orgName && <span className="block text-link-gold text-[20px] mt-1">{orgName}</span>}
                 </h3>
                 <p className="font-body text-[15px] text-muted-cream leading-[1.6] mb-4">
                   A member of the Daanaa team will call the number you provided, usually within 1 to 2 business days, to confirm your role.
                 </p>
                 <p className="font-body text-[14px] text-muted-cream leading-[1.6] mb-6">
                   On the call we give you a 6-digit PIN. Enter it at{' '}
-                  <Link to="/claim/verify" className="text-soft-gold hover:text-bright-gold underline underline-offset-2 transition-colors">
+                  <Link to="/claim/verify" className="text-link-gold hover:text-bright-gold underline underline-offset-2 transition-colors">
                     daanaa.org/claim/verify
                   </Link>{' '}
                   to unlock your page.
                 </p>
-                <Link to="/directory" className="inline-block font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
+                <Link to="/directory" className="inline-block font-body text-[14px] text-link-gold hover:text-bright-gold transition-colors">
                   Browse the directory →
                 </Link>
               </div>
             ) : (
               <>
-                <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">
+                <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">
                   Claim your page
                 </span>
                 <h2 className="font-display italic text-warm-cream mt-3 text-[32px] leading-[1.1] mb-3">
@@ -450,7 +450,7 @@ export default function ForNonprofits() {
                 <form onSubmit={handleSubmit} className="space-y-3">
                   <div>
                     <label className="block font-body text-[12px] text-muted-cream mb-1.5">
-                      Organization tax ID (EIN) <span className="text-soft-gold">*</span>
+                      Organization tax ID (EIN) <span className="text-link-gold">*</span>
                     </label>
                     <input
                       type="text"
@@ -477,7 +477,7 @@ export default function ForNonprofits() {
 
                   <div>
                     <label className="block font-body text-[12px] text-muted-cream mb-1.5">
-                      Your name <span className="text-soft-gold">*</span>
+                      Your name <span className="text-link-gold">*</span>
                     </label>
                     <input
                       type="text"
@@ -491,7 +491,7 @@ export default function ForNonprofits() {
 
                   <div>
                     <label className="block font-body text-[12px] text-muted-cream mb-1.5">
-                      Your title / role <span className="text-soft-gold">*</span>
+                      Your title / role <span className="text-link-gold">*</span>
                     </label>
                     <input
                       type="text"
@@ -505,7 +505,7 @@ export default function ForNonprofits() {
 
                   <div>
                     <label className="block font-body text-[12px] text-muted-cream mb-1.5">
-                      Your email <span className="text-soft-gold">*</span>
+                      Your email <span className="text-link-gold">*</span>
                     </label>
                     <input
                       type="email"
@@ -519,7 +519,7 @@ export default function ForNonprofits() {
 
                   <div>
                     <label className="block font-body text-[12px] text-muted-cream mb-1.5">
-                      Phone number <span className="text-soft-gold">*</span>
+                      Phone number <span className="text-link-gold">*</span>
                     </label>
                     <input
                       type="tel"

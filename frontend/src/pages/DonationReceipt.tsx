@@ -136,7 +136,7 @@ export default function DonationReceipt() {
 
               <div>
                 <p className="text-xs text-cool-grey uppercase tracking-wide">Donation Amount</p>
-                <p className="font-display text-xl text-soft-gold">
+                <p className="font-display text-xl text-link-gold">
                   ${donation.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
                 <p className="text-sm text-cool-grey">
