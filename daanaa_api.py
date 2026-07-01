@@ -411,11 +411,25 @@ _FTS5_BOOL = frozenset({'AND', 'OR', 'NOT'})
 
 # Words people commonly type before/around a location or cause that don't
 # appear in org records — stripping them prevents 0-result dead ends.
+# 'metro' and 'greater' are geographic modifiers: "Portland metro" / "Greater LA"
+# — the metro column stores "Portland-Vancouver-Hillsboro, OR-WA", not "metro Portland"
 _FTS5_NOISE = frozenset({
     'nonprofit', 'nonprofits', 'charity', 'charities',
     'organization', 'organizations', '501c3', 'ngo',
     'find', 'search', 'best', 'top', 'local', 'near',
+    'metro', 'greater', 'region', 'area',
 })
+
+# Detect a standalone 5-digit US zip code anywhere in a query string.
+_ZIP_RE = re.compile(r'\b(\d{5})\b')
+
+def _extract_zip(text: str) -> tuple[str, str | None]:
+    """Return (text_without_zip, zip_code_or_None).
+    Strips the first 5-digit zip found so FTS doesn't choke on numbers."""
+    m = _ZIP_RE.search(text)
+    if not m:
+        return text, None
+    return (text[:m.start()] + text[m.end():]).strip(), m.group(1)
 
 def _sanitize_fts_query(text: str) -> str:
     """Convert a donor query string to a valid FTS5 MATCH expression.
@@ -427,6 +441,9 @@ def _sanitize_fts_query(text: str) -> str:
       - "L'Anse MI"            apostrophe stripped → 'L* Anse* MI*'
       - 'Bend OR'              OR lowercased → 'Bend* or*' (not boolean op)
       - 'nonprofits in Bend'   noise word stripped → 'in* Bend*'
+      - 'Portland metro'       metro stripped → 'Portland*'
+      - 'Greater Portland'     greater stripped → 'Portland*'
+      - 'food bank 97701'      zip stripped by caller (_extract_zip) before here
       - 'find charities near'  noise words stripped → fallback empty query
     """
     clean = _FTS5_STRIP.sub(' ', text)
@@ -4354,36 +4371,42 @@ def fused_search():
         return jsonify({"error": "q param required"}), 400
 
     # ── Zip code intercept ────────────────────────────────────────────────────
-    # If query is a 5-digit zip, resolve it to city+county+state and expand
-    # results to include orgs that serve that area (via org_service_areas) plus
-    # orgs headquartered in that city/state. Return augmented results with a
-    # "zip_resolved" meta field so the UI can show "Showing results for 60614 (Chicago, IL)".
+    # Detect a 5-digit zip anywhere in the query ("97701", "food bank 97701",
+    # "Bend OR 97701"). Resolve it to city+state via zip_codes table, substitute
+    # the city name into the FTS query, and surface a "zip_resolved" banner in
+    # the UI ("Showing results near Bend, OR").
     zip_meta: dict | None = None
     area_eins: list[str] = []
-    if q.isdigit() and len(q) == 5:
+    q, detected_zip = _extract_zip(q)
+    if detected_zip:
         db_zip = get_db()
-        zrow = db_zip.execute("SELECT * FROM zip_codes WHERE zip=?", (q,)).fetchone()
+        zrow = db_zip.execute("SELECT * FROM zip_codes WHERE zip=?", (detected_zip,)).fetchone()
         if zrow:
             zrow = dict(zrow)
             zip_meta = zrow
-            # Expand query: search by city name so FTS finds orgs in that city
-            # Also collect EINs from org_service_areas matching this state/county
+            # Replace zip with city name so FTS finds orgs in that city.
+            # For bare zip ("97701") q is empty — set q to city.
+            # For mixed query ("food bank 97701") q has keywords — append city.
+            city = zrow.get('city', '')
+            if city:
+                q = f"{q} {city}".strip() if q and city.lower() not in q.lower() else (q or city)
+        elif not q:
+            q = detected_zip   # unknown zip, no city: use raw digits as FTS fallback
             state = zrow.get('state_id', '')
             county = zrow.get('county_name', '')
-            city = zrow.get('city', '')
-            q_expanded = city if city else q   # fall back to raw zip if no city
             # Find orgs whose service area includes this state or county
-            area_eins: list[str] = []
             if state:
-                sa_rows = db_zip.execute(
-                    "SELECT ein FROM org_service_areas WHERE "
-                    "area_type='nationwide' OR "
-                    "(area_type='statewide' AND area_values LIKE ?) OR "
-                    "(area_type IN ('county','local') AND area_values LIKE ?)",
-                    (f'%"{state}"%', f'%"{county}%"')
-                ).fetchall()
-                area_eins = [r[0] for r in sa_rows]
-            q = q_expanded  # use city name for FTS/semantic search
+                try:
+                    sa_rows = db_zip.execute(
+                        "SELECT ein FROM org_service_areas WHERE "
+                        "area_type='nationwide' OR "
+                        "(area_type='statewide' AND area_values LIKE ?) OR "
+                        "(area_type IN ('county','local') AND area_values LIKE ?)",
+                        (f'%"{state}"%', f'%"{county}%"')
+                    ).fetchall()
+                    area_eins = [r[0] for r in sa_rows]
+                except sqlite3.OperationalError:
+                    area_eins = []
 
     ck = _ck('fused', q, zip_meta['zip'] if zip_meta else '')
     cached = _cget(ck, 'search')

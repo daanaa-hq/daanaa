@@ -188,15 +188,39 @@ _FTS5_NOISE = frozenset({
     'nonprofit', 'nonprofits', 'charity', 'charities',
     'organization', 'organizations', '501c3', 'ngo',
     'find', 'search', 'best', 'top', 'local', 'near',
+    'metro', 'greater', 'region', 'area',
 })
+_ZIP_RE = re.compile(r'\b(\d{5})\b')
+
+def _extract_zip(text: str) -> tuple[str, str | None]:
+    """Strip first 5-digit zip from query; return (remainder, zip_or_None)."""
+    m = _ZIP_RE.search(text)
+    if not m:
+        return text, None
+    return (text[:m.start()] + text[m.end():]).strip(), m.group(1)
 
 def _fts_where(q: str, state: str = '') -> tuple:
-    """Build base FTS WHERE conditions and params for q + state."""
+    """Build base FTS WHERE conditions and params for q + state.
+
+    Zip codes are detected and routed to a zipcode LIKE filter so '97701'
+    or 'food bank 97701' returns results from that zip instead of 0.
+    """
+    q, zip_code = _extract_zip(q)
     clean = _FTS5_STRIP.sub(' ', q)
     words = [w for w in clean.split() if len(w) >= 2 and w.lower() not in _FTS5_NOISE]
     fts_q = ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words) if words else '""'
-    conditions: list = ["s.ein = o.EIN", "org_fts MATCH ?"]
-    params: list = [fts_q]
+
+    if fts_q == '""' and zip_code:
+        # Bare zip with no other keywords: skip FTS entirely, use zipcode filter
+        conditions: list = ["s.ein = o.EIN", "o.zipcode LIKE ?"]
+        params: list = [zip_code + '%']
+    else:
+        conditions = ["s.ein = o.EIN", "org_fts MATCH ?"]
+        params = [fts_q]
+        if zip_code:
+            conditions.append("o.zipcode LIKE ?")
+            params.append(zip_code + '%')
+
     if state:
         conditions.append("o.STATE = ?")
         params.append(state)
