@@ -407,15 +407,20 @@ _fts_available: bool | None = None  # None = not yet checked
 
 _FTS5_STRIP = re.compile(r'[*"^(){}|<>&~\[\]]')
 
+_FTS5_BOOL = frozenset({'AND', 'OR', 'NOT'})
+
 def _sanitize_fts_query(text: str) -> str:
     """Convert a donor query string to FTS5 MATCH syntax.
     Each word becomes a prefix token (cancer* matches cancer, cancers).
-    Multiple words are implicitly ANDed by FTS5."""
+    Multiple words are implicitly ANDed by FTS5.
+    FTS5 boolean keywords (AND/OR/NOT) are lowercased so they are treated
+    as regular tokens, not operators — prevents parse errors on queries like
+    'Bend OR' or 'Austin AND'."""
     clean = _FTS5_STRIP.sub(' ', text)
     words = [w.strip() for w in clean.split() if len(w.strip()) >= 2]
     if not words:
         return '""'
-    return ' '.join(f'{w}*' for w in words)
+    return ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words)
 
 def _check_fts(db: sqlite3.Connection) -> bool:
     global _fts_available
