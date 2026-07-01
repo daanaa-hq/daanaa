@@ -182,13 +182,19 @@ def get_search_db():
     return conn
 
 
-_FTS5_BOOL = frozenset({'AND', 'OR', 'NOT'})
+_FTS5_BOOL  = frozenset({'AND', 'OR', 'NOT'})
+_FTS5_STRIP = re.compile(r"""[*"^(){}|<>&~\[\],\.']""")
+_FTS5_NOISE = frozenset({
+    'nonprofit', 'nonprofits', 'charity', 'charities',
+    'organization', 'organizations', '501c3', 'ngo',
+    'find', 'search', 'best', 'top', 'local', 'near',
+})
 
 def _fts_where(q: str, state: str = '') -> tuple:
     """Build base FTS WHERE conditions and params for q + state."""
-    # Lowercase FTS5 boolean keywords so 'Bend OR' → 'Bend* or*' (prefix token)
-    # rather than a syntax error (uppercase OR/AND/NOT are FTS5 operators).
-    fts_q = ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in q.split() if w)
+    clean = _FTS5_STRIP.sub(' ', q)
+    words = [w for w in clean.split() if len(w) >= 2 and w.lower() not in _FTS5_NOISE]
+    fts_q = ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words) if words else '""'
     conditions: list = ["s.ein = o.EIN", "org_fts MATCH ?"]
     params: list = [fts_q]
     if state:

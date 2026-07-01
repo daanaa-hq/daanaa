@@ -405,19 +405,32 @@ OLLAMA_EMBED_MODEL = "mxbai-embed-large"
 # Set True once we confirm org_fts exists. Checked at first search request.
 _fts_available: bool | None = None  # None = not yet checked
 
-_FTS5_STRIP = re.compile(r'[*"^(){}|<>&~\[\]]')
+_FTS5_STRIP = re.compile(r"""[*"^(){}|<>&~\[\],\.']""")
 
 _FTS5_BOOL = frozenset({'AND', 'OR', 'NOT'})
 
+# Words people commonly type before/around a location or cause that don't
+# appear in org records — stripping them prevents 0-result dead ends.
+_FTS5_NOISE = frozenset({
+    'nonprofit', 'nonprofits', 'charity', 'charities',
+    'organization', 'organizations', '501c3', 'ngo',
+    'find', 'search', 'best', 'top', 'local', 'near',
+})
+
 def _sanitize_fts_query(text: str) -> str:
-    """Convert a donor query string to FTS5 MATCH syntax.
-    Each word becomes a prefix token (cancer* matches cancer, cancers).
-    Multiple words are implicitly ANDed by FTS5.
-    FTS5 boolean keywords (AND/OR/NOT) are lowercased so they are treated
-    as regular tokens, not operators — prevents parse errors on queries like
-    'Bend OR' or 'Austin AND'."""
+    """Convert a donor query string to a valid FTS5 MATCH expression.
+
+    Handles the common location search patterns that would otherwise error
+    or return 0 results:
+      - 'Bend, OR'             comma stripped → 'Bend* or*'
+      - 'St. Louis MO'         period stripped → 'St* Louis* MO*'
+      - "L'Anse MI"            apostrophe stripped → 'L* Anse* MI*'
+      - 'Bend OR'              OR lowercased → 'Bend* or*' (not boolean op)
+      - 'nonprofits in Bend'   noise word stripped → 'in* Bend*'
+      - 'find charities near'  noise words stripped → fallback empty query
+    """
     clean = _FTS5_STRIP.sub(' ', text)
-    words = [w.strip() for w in clean.split() if len(w.strip()) >= 2]
+    words = [w for w in clean.split() if len(w) >= 2 and w.lower() not in _FTS5_NOISE]
     if not words:
         return '""'
     return ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words)
