@@ -199,32 +199,36 @@ def _extract_zip(text: str) -> tuple[str, str | None]:
         return text, None
     return (text[:m.start()] + text[m.end():]).strip(), m.group(1)
 
-def _fts_where(q: str, state: str = '') -> tuple:
+def _fts_where(q: str, state: str = '') -> tuple[list, list, str | None]:
     """Build base FTS WHERE conditions and params for q + state.
 
-    Zip codes are detected and routed to a zipcode LIKE filter so '97701'
-    or 'food bank 97701' returns results from that zip instead of 0.
+    Returns (conditions, params, zip_code_or_None).
+    Caller checks zip_code: if truthy AND conditions has no MATCH (bare zip),
+    route to _db_filter_browse with zip_prefix instead of _fts_directory.
+
+    Mixed queries ('food bank 97701') strip the zip from FTS but add a
+    zipcode LIKE condition so results are narrowed to that area.
     """
     q, zip_code = _extract_zip(q)
     clean = _FTS5_STRIP.sub(' ', q)
     words = [w for w in clean.split() if len(w) >= 2 and w.lower() not in _FTS5_NOISE]
-    fts_q = ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words) if words else '""'
+    fts_q = ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words) if words else None
 
-    if fts_q == '""' and zip_code:
-        # Bare zip with no other keywords: skip FTS entirely, use zipcode filter
-        conditions: list = ["s.ein = o.EIN", "o.zipcode LIKE ?"]
-        params: list = [zip_code + '%']
-    else:
+    if fts_q:
         conditions = ["s.ein = o.EIN", "org_fts MATCH ?"]
-        params = [fts_q]
+        params: list = [fts_q]
         if zip_code:
             conditions.append("o.zipcode LIKE ?")
             params.append(zip_code + '%')
+    else:
+        # No keyword terms — bare zip. Signal caller to use direct DB browse.
+        conditions = []
+        params = []
 
-    if state:
+    if state and fts_q:
         conditions.append("o.STATE = ?")
         params.append(state)
-    return conditions, params
+    return conditions, params, zip_code
 
 
 def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias=''):
@@ -611,7 +615,8 @@ def get_organizations():
 
 def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                       state, sort, page, per_page,
-                      hidden_gem, needs_funding, has_website, order='', tier=''):
+                      hidden_gem, needs_funding, has_website, order='', tier='',
+                      zip_prefix: str | None = None):
     """Query orgs table directly with filter conditions but no FTS match."""
     conn = get_search_db()
     if not conn:
@@ -619,6 +624,9 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                         'page': page, 'per_page': per_page})
     try:
         conditions, params = _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev)
+        if zip_prefix:
+            conditions.append("zipcode LIKE ?")
+            params.append(zip_prefix + '%')
         if state:
             conditions.append("STATE = ?")
             params.append(state)
@@ -661,12 +669,20 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                    state, sort, page, per_page,
                    hidden_gem, needs_funding, has_website, order='', tier=''):
     """FTS search against search.db orgs table, returns full org objects."""
+    conditions, params, zip_code = _fts_where(q, state)
+
+    # Bare zip (no keyword terms) — route to direct DB browse with zip filter.
+    if not conditions and zip_code:
+        return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
+                                 state, sort, page, per_page,
+                                 hidden_gem, needs_funding, has_website, order, tier,
+                                 zip_prefix=zip_code)
+
     conn = get_search_db()
     if not conn:
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
                         'page': page, 'per_page': per_page, 'search_type': 'fts'})
     try:
-        conditions, params = _fts_where(q, state)
         cat_conds, cat_params = _cat_rev_conditions(
             ntee_list, sub_list, min_rev, max_rev, alias='o.')
         conditions.extend(cat_conds)
