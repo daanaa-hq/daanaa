@@ -44,11 +44,11 @@ start() {
   if pgrep -f "scripts/generate_missions" >/dev/null; then
     echo "[$(ts)] start: mission generation already running — skipping"
   else
-    echo "[$(ts)] start: launching mission generation (standard scope, then IRS_BMF backlog)"
+    echo "[$(ts)] start: launching mission generation (upgrade template_ntee → AI, then IRS_BMF backlog)"
     # shellcheck disable=SC1091
     source "$BASE/venv/bin/activate"
     cd "$BASE" || exit 1
-    nohup bash -c "python3 scripts/generate_missions.py --workers 6 && python3 scripts/generate_missions_irs_bmf.py --workers 6" >> "$GEN_LOG" 2>&1 &
+    nohup bash -c "python3 scripts/generate_missions.py --workers 6 --upgrade-templates && python3 scripts/generate_missions_irs_bmf.py --workers 6 --upgrade-templates" >> "$GEN_LOG" 2>&1 &
   fi
 
   # Website discovery: DISABLED 2026-06-22 per directive — "we are not doing

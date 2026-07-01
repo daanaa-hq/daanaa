@@ -145,15 +145,20 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, batch_size: 
                 conn.rollback()
                 time.sleep(10 * (attempt + 1))
 
-def main(limit=None, workers=1):
+def main(limit=None, workers=1, upgrade_templates=False):
     conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
 
-    query = """
+    mission_filter = (
+        "(mission IS NULL OR mission='' OR mission_source='template_ntee')"
+        if upgrade_templates else
+        "(mission IS NULL OR mission='')"
+    )
+    query = f"""
         SELECT EIN, organization_name, NTEE1, CITY, STATE, total_revenue
         FROM registry_enriched
-        WHERE source='IRS_BMF'
-        AND (mission IS NULL OR mission='')
+        WHERE source IN ('IRS_BMF', 'bmf_stub')
+        AND {mission_filter}
         AND organization_name IS NOT NULL
         ORDER BY COALESCE(total_revenue, 0) DESC
     """
@@ -168,7 +173,8 @@ def main(limit=None, workers=1):
         conn.close()
         return
 
-    print(f"Generating {total:,} IRS_BMF missions  model={MODEL}  workers={workers}", flush=True)
+    label = "template upgrades" if upgrade_templates else "new missions"
+    print(f"Generating {total:,} IRS_BMF/bmf_stub {label}  model={MODEL}  workers={workers}", flush=True)
 
     # Build batches
     batches = [rows[i:i+BATCH_SIZE] for i in range(0, total, BATCH_SIZE)]
@@ -213,5 +219,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int)
     ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--upgrade-templates", action="store_true",
+                    help="Replace template_ntee missions with AI-generated ones")
     args = ap.parse_args()
-    main(limit=args.limit, workers=args.workers)
+    main(limit=args.limit, workers=args.workers, upgrade_templates=args.upgrade_templates)
