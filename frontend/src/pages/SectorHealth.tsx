@@ -350,9 +350,9 @@ export default function SectorHealth() {
                   <tr className="border-b border-light-grey">
                     <Th label="Sector" sortBy="name" tip="A broad category the IRS assigns to every 501(c)(3). Click a row to see the organizations in it." />
                     <Th label="Orgs" sortBy="total_orgs" right tip="How many active nonprofits the IRS recognizes in this category." />
-                    <Th label="At risk %" sortBy="at_risk_pct" right tip="Share of organizations showing fewer than 3 months of operating reserves in their most recent public filing. The 3-month threshold follows the Nonprofit Finance Fund standard for operating reserve adequacy. Filings may be 1 to 3 years old. This is an indicator from available data, not a judgment of organizational health." />
+                    <Th label="Low-reserve %" sortBy="at_risk_pct" right tip="Share of organizations showing fewer than 3 months of operating reserves in their most recent public filing. The 3-month threshold follows the Nonprofit Finance Fund standard for operating reserve adequacy. Filings may be 1 to 3 years old. This is an indicator from available data, not a judgment of organizational health." />
                     <Th label="Avg reserves (mo)" sortBy="avg_months_reserve" right tip="On average, how many months an organization in this category could keep operating if revenue stopped, among those with reserve data." />
-                    <Th label="Avg program %" sortBy="avg_program_pct" right tip="On average, the share of spending that goes directly to the mission rather than overhead." />
+                    <Th label="Avg program %" sortBy="avg_program_pct" right tip="On average, the share of spending that goes directly to programs and services." />
                   </tr>
                 </thead>
                 <tbody>
@@ -430,7 +430,7 @@ export default function SectorHealth() {
           {/* Reserve breakdown legend */}
           <div className="mt-8 flex flex-wrap gap-4">
             {[
-              { color: '#EF4444', label: 'Critical (<3 mo)' },
+              { color: '#EF4444', label: 'Limited (<3 mo)' },
               { color: '#F59E0B', label: 'Moderate (3 to 12 mo)' },
               { color: '#4ADE80', label: 'Adequate (12 to 36 mo)' },
               { color: '#60A5FA', label: 'Strong (36+ mo)' },

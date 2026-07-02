@@ -116,7 +116,7 @@ export default function TiersPage() {
           {/* Quick explainer */}
           <div className="max-w-[720px] mb-14">
             <p className="font-body text-[16px] leading-[1.7] text-cool-grey">
-              The government publishes financial reports from nonprofits, but how much is available varies widely. Some organizations have years of detailed records; others are registered but have nothing else on file. Daanaa's five tiers make that gap visible at a glance, so you know what you're working with before you give.
+              The government publishes financial reports from nonprofits, but how much is available varies widely. Some organizations have years of detailed records; others are registered but have nothing else on file. Daanaa's four visibility levels make that gap visible at a glance, so you know what you're working with before you give.
             </p>
             <p className="font-body text-[16px] leading-[1.7] text-cool-grey mt-4">
               Tiers are calculated automatically from public records and updated monthly. No organization can pay to change its tier.

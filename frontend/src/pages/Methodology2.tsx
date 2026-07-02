@@ -82,7 +82,7 @@ function Callout({ children }: { children: React.ReactNode }) {
 function TierRow({ score, label, description }: { score: string; label: string; description: string }) {
   // Reserve strength is not a danger gradient. Stronger reserves get a gentle
   // green; everything else is calm slate. Lower reserves are not "worse".
-  const color = label === 'Top 10% in reserves' || label === 'Top quarter in reserves'
+  const color = label === '90th percentile or above' || label === '75th–89th percentile'
     ? '#5a9e6f'
     : '#8a8f98'
   return (
@@ -225,8 +225,8 @@ export default function Methodology() {
                   The 0–100 score is a percentile: where this organization's reserves fall compared to similar organizations. A score of 75 means stronger reserves than 75% of its peers. This is not about size or budget; it is about financial resilience.
                 </p>
                 <div className="bg-white rounded-xl border border-light-grey p-4">
-                  <TierRow score="90 to 100" label="Top 10% in reserves" description="Holds more reserves than nearly all similar organizations. A strong financial cushion." />
-                  <TierRow score="75 to 89" label="Top quarter in reserves" description="Holds more reserves than most similar organizations." />
+                  <TierRow score="90 to 100" label="90th percentile or above" description="Holds more reserves than nearly all similar organizations. A strong financial cushion." />
+                  <TierRow score="75 to 89" label="75th–89th percentile" description="Holds more reserves than most similar organizations." />
                   <TierRow score="50 to 74" label="Above median reserves" description="Financial position is comparable to or slightly better than the peer median." />
                   <TierRow score="25 to 49" label="Below median reserves" description="Holds fewer reserves than the peer median. Often because resources go directly into programs." />
                   <TierRow score="0 to 24" label="Lowest reserves" description="Among the lowest reserves in its peer group. Often a sign of lean operations focused on mission delivery, not weakness." />
@@ -323,7 +323,7 @@ export default function Methodology() {
               <div className="mt-4 space-y-3">
                 {[
                   {
-                    label: 'Top 15% within its peer group',
+                    label: '85th percentile or above within peer group',
                     detail: 'A peer financial context score of 85 or above — stronger reserves than at least 85% of organizations with the same funding model and revenue band.',
                   },
                   {

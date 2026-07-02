@@ -904,7 +904,7 @@ function HiddenGemsSection() {
               The ones doing quiet, steady work
             </h2>
             <p className="mt-3 font-body text-[15px] text-cool-grey max-w-xl leading-[1.6]">
-              Small nonprofits under $500K in revenue that rank near the top of their peer group.
+              Small nonprofits under $500K in revenue with strong peer financial context scores relative to similar organizations.
               Starting points for your own research, not verdicts.
             </p>
           </div>

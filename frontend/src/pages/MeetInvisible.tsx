@@ -116,7 +116,7 @@ export default function MeetInvisible() {
       <div className="max-w-[820px] mx-auto px-6 py-14 text-center">
         <div className="w-px h-12 bg-gradient-to-b from-transparent via-soft-gold/40 to-transparent mx-auto mb-4" />
         <p className="font-display italic text-warm-cream text-[26px]">The rest of the story</p>
-        <p className="font-body text-[14px] text-muted-cream mt-2">Organizations that deserve to be found and supported.</p>
+        <p className="font-body text-[14px] text-muted-cream mt-2">Organizations doing meaningful work in their communities.</p>
       </div>
 
       {/* Real invisible orgs */}

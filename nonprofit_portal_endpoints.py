@@ -144,12 +144,11 @@ def register_nonprofit_endpoints(app):
 
     @app.route('/api/nonprofit/dashboard', methods=['GET'])
     def nonprofit_dashboard():
-        """Get nonprofit dashboard (pending letters, credits)."""
-        auth = request.headers.get('Authorization', '')
-        nonprofit_ein = auth.split(' ')[-1] if auth else None
-
-        if not nonprofit_ein:
-            return jsonify({'error': 'Unauthorized'}), 401
+        """Disabled: requires verified nonprofit auth, not yet implemented."""
+        return jsonify({
+            'error': 'Nonprofit dashboard requires verified account authorization. '
+                     'EIN-only access is not supported.'
+        }), 401
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -1774,28 +1773,11 @@ def register_phase3_endpoints(app):
 
     @app.route('/api/nonprofit/dashboard/impact', methods=['GET'])
     def get_impact_metrics():
-        """Get comprehensive impact metrics for ED dashboard.
-
-        GET /api/nonprofit/dashboard/impact?period=last_30_days
-        Headers: Authorization: Bearer {nonprofit_ein}
-
-        Returns: {
-            "nonprofit_ein": "12-3456789",
-            "period": "last_30_days",
-            "metrics": {
-                "credit_utilization": {...},
-                "donor_engagement": {...},
-                "volunteer_impact": {...},
-                "revenue_equivalent": {...},
-                "forecast": {...}
-            }
-        }
-        """
-        auth = request.headers.get('Authorization', '')
-        nonprofit_ein = auth.split(' ')[-1] if auth else None
-
-        if not nonprofit_ein:
-            return jsonify({'error': 'Unauthorized'}), 401
+        """Disabled: requires verified nonprofit auth, not yet implemented."""
+        return jsonify({
+            'error': 'Impact metrics require verified account authorization. '
+                     'EIN-only access is not supported.'
+        }), 401
 
         period = request.args.get('period', 'last_30_days')
 

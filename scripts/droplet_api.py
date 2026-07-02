@@ -1154,6 +1154,12 @@ def impact_proxy():
     return _live_proxy("/api/impact")
 
 
+@app.route('/api/vendors', methods=['GET'])
+@app.route('/api/vendors/', methods=['GET'])
+def vendors_proxy():
+    return _live_proxy("/api/vendors/")
+
+
 @app.route('/api/impact/summary', methods=['GET'])
 def impact_summary():
     """Per-org or period-based impact summary. Returns placeholder data."""
@@ -1317,6 +1323,33 @@ _STATIC_META = {
         'Sector Research — Daanaa',
         'Public data on U.S. nonprofit financial health across sectors. '
         'Drawn from IRS Form 990 filings. Context, not rankings.',
+    ),
+    'wallet': (
+        'Giving Wallet — Daanaa',
+        'Your private bookmarks and giving notes. Stored on your device by default. '
+        'No account required. No data shared or used for advertising.',
+    ),
+    'volunteer': (
+        'Volunteer Opportunities — Daanaa',
+        'Find volunteer opportunities with nonprofits near you. Browse by cause, '
+        'location, and organization type.',
+    ),
+    'nonprofit': (
+        'Nonprofit Portal — Daanaa',
+        'Claim and manage your organization page on Daanaa. Free for nonprofits.',
+    ),
+    'donation': (
+        'Donation — Daanaa',
+        'Daanaa is a discovery platform. All giving goes directly to the nonprofit. '
+        'Daanaa never handles or processes donations.',
+    ),
+    'partners': (
+        'Community Partners — Daanaa',
+        'Businesses offering services to nonprofits through the Daanaa Impact Network.',
+    ),
+    'terms': (
+        'Terms of Service — Daanaa',
+        'Terms governing use of daanaa.org, operated by EcoMargins Consulting LLC.',
     ),
 }
 
