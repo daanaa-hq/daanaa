@@ -225,6 +225,7 @@ export default function OrganizationDetail() {
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
   // 990 Part VII — public compensation disclosure
   const [ppLeadership, setPpLeadership] = useState<{name:string;title:string;initials:string;compensation?:number}[]>([])
+  const [ppFilingYear, setPpFilingYear] = useState<number|null>(null)
 
 
   // Hook must run unconditionally — keep it above any early return (Rules of Hooks)
@@ -283,10 +284,12 @@ export default function OrganizationDetail() {
     if (ein.length !== 9) return
     fetch(`https://projects.propublica.org/nonprofits/api/v2/organizations/${ein}.json`)
       .then(r => { if (!r.ok) throw new Error('pp_not_ok'); return r.json() })
-      .then((data: {filings_with_data?: Array<{people?: Array<{name:string;title:string;compensation?:number}>}>; filings?: Array<{people?: Array<{name:string;title:string;compensation?:number}>}>}) => {
+      .then((data: {filings_with_data?: Array<{tax_prd_yr?: number; people?: Array<{name:string;title:string;compensation?:number}>}>; filings?: Array<{tax_prd_yr?: number; people?: Array<{name:string;title:string;compensation?:number}>}>}) => {
         const filings = data?.filings_with_data ?? data?.filings ?? []
         if (!filings.length) return
-        const people = filings[0]?.people ?? []
+        const filing = filings[0]
+        if (filing?.tax_prd_yr) setPpFilingYear(filing.tax_prd_yr)
+        const people = filing?.people ?? []
         if (!people.length) return
         const mapped = people.slice(0, 6).map((p) => {
           const parts = (p.name || '').trim().split(/\s+/)
@@ -1080,7 +1083,9 @@ export default function OrganizationDetail() {
                     ))}
                   </div>
                   {ppLeadership.length > 0 && (
-                    <p className="font-body text-[11px] text-cool-grey mt-3">Source: IRS 990 filing via ProPublica · public record</p>
+                    <p className="font-body text-[11px] text-cool-grey mt-3">
+                      Source: IRS Form 990{ppFilingYear ? `, ${ppFilingYear} filing` : ''} via ProPublica · public record
+                    </p>
                   )}
                 </>
                 ) : (

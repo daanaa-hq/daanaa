@@ -390,6 +390,11 @@ Chose: non-interactive dashed "Soon" badge instead of an active filter.
 Why: `org_claims` is excluded from `search.db` for privacy (sync_db.sh), so the filter returns 0 results on production. A silent 0-result state is worse UX than a clear "coming soon" signal.
 Rejected: routing the filter through the home-server tunnel — adds latency + couples the droplet to the tunnel for a feature with no data yet.
 
+## 2026-07-01 — E6 ProPublica client-side fetch for 990 Part VII leadership
+Chose: client-side browser fetch from the ProPublica public API (`/api/v2/organizations/${ein}.json`) for leadership names, titles, and compensation.
+Why: ProPublica's API is explicitly public and CORS-enabled; this avoids proxying third-party data through our own server; compensation is IRS-mandated public disclosure (990 Part VII); citation + filing year shown in attribution line per P3.
+Rejected: server-side proxying — adds a dependency and latency; rejected scraping — fragile and rate-limited; rejected omitting compensation — donors legitimately use this to assess org governance and value alignment.
+
 ## 2026-07-01 — Parallel sprint agents use isolated worktrees
 Chose: isolated git worktrees per agent, merge files manually into main repo after all agents complete.
 Why: no merge conflicts between E2/E5/E6+E7 (different files); parallel execution saves time.
