@@ -6380,6 +6380,7 @@ def _aggregate_vendor_stats(vendor_id: str):
 
 
 @app.route('/api/vendors', methods=['GET'])
+@app.route('/api/vendors/', methods=['GET'])
 def get_vendors():
     """List all active vendors with aggregated stats."""
     db = get_db()

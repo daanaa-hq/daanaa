@@ -1157,7 +1157,7 @@ def impact_proxy():
 @app.route('/api/vendors', methods=['GET'])
 @app.route('/api/vendors/', methods=['GET'])
 def vendors_proxy():
-    return _live_proxy("/api/vendors/")
+    return _live_proxy("/api/vendors")
 
 
 @app.route('/api/impact/summary', methods=['GET'])
