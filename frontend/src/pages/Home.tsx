@@ -118,9 +118,9 @@ function PersonaTiles() {
 
   const tiles: { to: string; label: string; sub: string; icon: ReactNode }[] = [
     {
-      to: '/directory?sort=merit_score&order=desc',
+      to: '/directory',
       label: 'I want to give',
-      sub: 'Give / Cause filters / Financial health',
+      sub: 'Cause filters · financial health',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -128,22 +128,9 @@ function PersonaTiles() {
       ),
     },
     {
-      to: '/directory?q=volunteer',
-      label: 'I want to volunteer',
-      sub: 'Find orgs near you',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      ),
-    },
-    {
-      to: '/directory?q=',
+      to: '/for-nonprofits',
       label: 'I work in nonprofits',
-      sub: 'EIN lookup · peer benchmarks',
+      sub: 'Claim your page · peer data',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -162,12 +149,35 @@ function PersonaTiles() {
         </svg>
       ),
     },
+    {
+      to: '/for-vendors',
+      label: 'Vendors & partners',
+      sub: 'Impact Network · reach nonprofits',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="5" r="3"/>
+          <circle cx="19" cy="19" r="3"/>
+          <circle cx="5" cy="19" r="3"/>
+          <line x1="12" y1="8" x2="19" y2="16"/>
+          <line x1="12" y1="8" x2="5" y2="16"/>
+        </svg>
+      ),
+    },
   ]
+
+  const volunteerIcon = (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  )
 
   return (
     <section className="bg-warm-cream pt-6 md:pt-8">
       <div ref={ref} className="max-w-[1120px] mx-auto px-6 md:px-12 pb-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {tiles.map((tile, i) => (
             <Link
               key={tile.label}
@@ -182,6 +192,21 @@ function PersonaTiles() {
               <p className="font-body text-[12px] text-cool-grey mt-1">{tile.sub}</p>
             </Link>
           ))}
+          {/* Volunteer — coming soon */}
+          <div
+            title="Volunteer matching is coming soon"
+            className={`bg-white border border-dashed border-cool-grey/30 rounded-2xl p-5 flex flex-col cursor-default select-none transition-all duration-700 ease-out ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}
+            style={{ transitionDelay: inView ? `${tiles.length * 80}ms` : '0ms' }}
+          >
+            <div className="w-10 h-10 rounded-full bg-cool-grey/8 flex items-center justify-center mb-3 shrink-0 text-cool-grey/40">
+              {volunteerIcon}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-body text-[15px] font-semibold text-cool-grey/50">I want to volunteer</p>
+              <span className="px-1.5 py-0.5 rounded-full bg-soft-gold/15 text-[10px] font-semibold text-soft-gold leading-none">Soon</span>
+            </div>
+            <p className="font-body text-[12px] text-cool-grey/40 mt-1">Volunteer matching</p>
+          </div>
         </div>
       </div>
     </section>
