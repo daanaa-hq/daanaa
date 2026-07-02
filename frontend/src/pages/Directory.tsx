@@ -564,43 +564,80 @@ export default function Directory() {
               </div>
               {/* Proximity search */}
               <div className="inline-flex items-center gap-1 h-[34px]">
-                <input
-                  type="text"
-                  value={nearInput}
-                  onChange={e => setNearInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
+                <div className="relative inline-flex">
+                  <input
+                    type="text"
+                    value={nearInput}
+                    onChange={e => setNearInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        const v = nearInput.trim()
+                        setNear(v); setCurrentPage(1); scrollTop()
+                        if (v) { searchParams.set('near', v); searchParams.set('radius_mi', String(radiusMi)) }
+                        else { searchParams.delete('near'); searchParams.delete('radius_mi') }
+                        setSearchParams(searchParams)
+                      }
+                      if (e.key === 'Escape') {
+                        setNearInput(''); setNear(''); setCurrentPage(1); scrollTop()
+                        searchParams.delete('near'); searchParams.delete('radius_mi')
+                        setSearchParams(searchParams)
+                      }
+                    }}
+                    onBlur={() => {
                       const v = nearInput.trim()
-                      setNear(v); setCurrentPage(1); scrollTop()
-                      if (v) { searchParams.set('near', v); searchParams.set('radius_mi', String(radiusMi)) }
-                      else { searchParams.delete('near'); searchParams.delete('radius_mi') }
-                      setSearchParams(searchParams)
-                    }
-                    if (e.key === 'Escape') {
-                      setNearInput(''); setNear(''); setCurrentPage(1); scrollTop()
-                      searchParams.delete('near'); searchParams.delete('radius_mi')
-                      setSearchParams(searchParams)
-                    }
-                  }}
-                  onBlur={() => {
-                    const v = nearInput.trim()
-                    if (v !== near) {
-                      setNear(v); setCurrentPage(1); scrollTop()
-                      if (v) { searchParams.set('near', v); searchParams.set('radius_mi', String(radiusMi)) }
-                      else { searchParams.delete('near'); searchParams.delete('radius_mi') }
-                      setSearchParams(searchParams)
-                    }
-                  }}
-                  placeholder="Zip or city, state"
-                  aria-label="Filter by location (zip code or city, state)"
-                  className="h-[34px] pl-3 pr-2 w-[148px] rounded-l-full font-body text-[12px] border outline-none transition-all duration-150"
-                  style={{
-                    backgroundColor: near ? '#C9A96E15' : 'transparent',
-                    color: '#374151',
-                    borderColor: near ? '#C9A96E' : '#E5E0DB',
-                    borderRight: 'none',
-                  }}
-                />
+                      if (v !== near) {
+                        setNear(v); setCurrentPage(1); scrollTop()
+                        if (v) { searchParams.set('near', v); searchParams.set('radius_mi', String(radiusMi)) }
+                        else { searchParams.delete('near'); searchParams.delete('radius_mi') }
+                        setSearchParams(searchParams)
+                      }
+                    }}
+                    placeholder="Zip or city, state"
+                    aria-label="Filter by location (zip code or city, state)"
+                    className="h-[34px] pl-3 pr-8 w-[148px] rounded-l-full font-body text-[12px] border outline-none transition-all duration-150"
+                    style={{
+                      backgroundColor: near ? '#C9A96E15' : 'transparent',
+                      color: '#374151',
+                      borderColor: near ? '#C9A96E' : '#E5E0DB',
+                      borderRight: 'none',
+                    }}
+                  />
+                  {/* Use my location button */}
+                  <button
+                    type="button"
+                    title="Use my current location"
+                    aria-label="Use my current location"
+                    onClick={() => {
+                      if (!navigator.geolocation) return
+                      navigator.geolocation.getCurrentPosition(
+                        ({ coords }) => {
+                          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, {
+                            headers: { 'Accept-Language': 'en', 'User-Agent': 'daanaa.org nonprofit directory' }
+                          })
+                            .then(r => r.json())
+                            .then(d => {
+                              const city = d.address?.city || d.address?.town || d.address?.village || ''
+                              const state = d.address?.state_code || d.address?.state || ''
+                              const loc = city && state ? `${city}, ${state}` : d.address?.postcode || ''
+                              if (!loc) return
+                              setNearInput(loc); setNear(loc); setCurrentPage(1); scrollTop()
+                              searchParams.set('near', loc); searchParams.set('radius_mi', String(radiusMi))
+                              setSearchParams(searchParams)
+                            })
+                            .catch(() => {})
+                        },
+                        () => {}
+                      )
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-cool-grey/40 hover:text-soft-gold transition-colors"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+                      <path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" strokeWidth="1.5"/>
+                    </svg>
+                  </button>
+                </div>
                 <select
                   value={radiusMi}
                   onChange={e => {
@@ -626,7 +663,7 @@ export default function Directory() {
                   <option value={25}>25mi</option>
                   <option value={50}>50mi</option>
                 </select>
-              </div>
+              </div> {/* end proximity */}
               {/* Visibility level (lamp tier) */}
               <div className="relative">
                 <select
