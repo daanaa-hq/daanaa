@@ -1073,11 +1073,6 @@ export default function OrganizationDetail() {
                         <div>
                           <p className="font-body text-[14px] font-medium text-deep-navy">{person.name}</p>
                           <p className="font-body text-[12px] text-cool-grey">{person.title}</p>
-                          {'compensation' in person && (person as {compensation?:number}).compensation != null && (
-                            <p className="font-body text-[11px] text-cool-grey/70">
-                              ${((person as {compensation?:number}).compensation!).toLocaleString()} / yr
-                            </p>
-                          )}
                         </div>
                       </div>
                     ))}
