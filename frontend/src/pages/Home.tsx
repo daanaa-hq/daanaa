@@ -149,20 +149,6 @@ function PersonaTiles() {
         </svg>
       ),
     },
-    {
-      to: '/for-vendors',
-      label: 'Vendors & partners',
-      sub: 'Impact Network · reach nonprofits',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="5" r="3"/>
-          <circle cx="19" cy="19" r="3"/>
-          <circle cx="5" cy="19" r="3"/>
-          <line x1="12" y1="8" x2="19" y2="16"/>
-          <line x1="12" y1="8" x2="5" y2="16"/>
-        </svg>
-      ),
-    },
   ]
 
   const volunteerIcon = (
@@ -177,7 +163,7 @@ function PersonaTiles() {
   return (
     <section className="bg-warm-cream pt-6 md:pt-8">
       <div ref={ref} className="max-w-[1120px] mx-auto px-6 md:px-12 pb-10">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {tiles.map((tile, i) => (
             <Link
               key={tile.label}
