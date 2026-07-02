@@ -399,3 +399,8 @@ Rejected: server-side proxying — adds a dependency and latency; rejected scrap
 Chose: isolated git worktrees per agent, merge files manually into main repo after all agents complete.
 Why: no merge conflicts between E2/E5/E6+E7 (different files); parallel execution saves time.
 Rejected: sequential single-agent — slower; rejected shared worktree — collision risk on concurrent writes.
+
+## 2026-07-02 — "Use my location" button uses Nominatim reverse geocode
+Chose: browser Geolocation API → Nominatim (OpenStreetMap) reverse geocode → extract city + state_code → populate the near text field. Coordinates go to Nominatim, never to daanaa.org.
+Why: stewardship P2 constraint (documented in STEWARDSHIP.md 2026-07-01 entry) prohibits raw browser coordinates from reaching our server. Nominatim is privacy-respecting, free, and CORS-enabled. Result is city+state ("Portland, OR"), which is the format our haversine radius search already accepts.
+Rejected: reverse geocode on our server — violates P2 constraint; rejected browser zip-code lookup (no such API exists natively); rejected skipping the button entirely — friction reduction for local searches improves utility for donors.
