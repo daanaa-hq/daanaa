@@ -228,6 +228,8 @@ export async function getOrganizations(params?: {
   needs_funding?: boolean;    // true = only orgs with under 6 months of reserve
   open_to_volunteers?: boolean; // true = only orgs with a claimed volunteer contact
   cause?: string;             // matches a cause tag (e.g. "food bank", "mental health")
+  near?: string;              // zip or "City, ST" — filters by proximity
+  radius_mi?: number;         // radius in miles (default 25)
 }): Promise<{
   organizations: ApiOrganization[];
   total: number;
@@ -254,6 +256,8 @@ export async function getOrganizations(params?: {
   if (params?.needs_funding) sp.set('needs_funding', '1');
   if (params?.open_to_volunteers) sp.set('open_to_volunteers', '1');
   if (params?.cause) sp.set('cause', params.cause);
+  if (params?.near) sp.set('near', params.near);
+  if (params?.radius_mi) sp.set('radius_mi', String(params.radius_mi));
   return fetchJson(`/api/organizations?${sp.toString()}`);
 }
 

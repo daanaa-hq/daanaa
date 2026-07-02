@@ -168,6 +168,9 @@ export default function Directory() {
   // Land on hidden gems by default (the gems-default lens); explicit ?hidden_gem=0 disables
   const [hiddenGem, setHiddenGem] = useState(searchParams.has('hidden_gem') ? searchParams.get('hidden_gem') === '1' : true)
   const [needsSupport, setNeedsSupport] = useState(searchParams.get('needs_funding') === '1')
+  const [near, setNear] = useState(searchParams.get('near') || '')
+  const [nearInput, setNearInput] = useState(searchParams.get('near') || '')
+  const [radiusMi, setRadiusMi] = useState(Number(searchParams.get('radius_mi') || '25'))
   const [visTier, setVisTier] = useState(searchParams.get('tier') || '')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
@@ -247,8 +250,10 @@ export default function Directory() {
       hidden_gem: effectiveHiddenGem || undefined,
       needs_funding: needsSupport || undefined,
       cause: debouncedCause.trim() || undefined,
+      near: near || undefined,
+      radius_mi: near ? radiusMi : undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, revenueFilter, scoreTier, visTier, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, revenueFilter, scoreTier, visTier, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
@@ -341,6 +346,8 @@ export default function Directory() {
     setVisTier('')
     setHasWebsite(false)
     setNeedsSupport(false)
+    setNear(''); setNearInput('')
+    setRadiusMi(25)
     setHiddenGem(true)
     setCause('')
     setDebouncedCause('')
@@ -355,6 +362,8 @@ export default function Directory() {
     searchParams.delete('has_website')
     searchParams.delete('hidden_gem')
     searchParams.delete('needs_funding')
+    searchParams.delete('near')
+    searchParams.delete('radius_mi')
     setSearchParams(searchParams)
   }
 
@@ -553,6 +562,71 @@ export default function Directory() {
                 Open to volunteers
                 <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-soft-gold/15 text-[10px] font-semibold text-soft-gold leading-none">Soon</span>
               </div>
+              {/* Proximity search */}
+              <div className="inline-flex items-center gap-1 h-[34px]">
+                <input
+                  type="text"
+                  value={nearInput}
+                  onChange={e => setNearInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const v = nearInput.trim()
+                      setNear(v); setCurrentPage(1); scrollTop()
+                      if (v) { searchParams.set('near', v); searchParams.set('radius_mi', String(radiusMi)) }
+                      else { searchParams.delete('near'); searchParams.delete('radius_mi') }
+                      setSearchParams(searchParams)
+                    }
+                    if (e.key === 'Escape') {
+                      setNearInput(''); setNear(''); setCurrentPage(1); scrollTop()
+                      searchParams.delete('near'); searchParams.delete('radius_mi')
+                      setSearchParams(searchParams)
+                    }
+                  }}
+                  onBlur={() => {
+                    const v = nearInput.trim()
+                    if (v !== near) {
+                      setNear(v); setCurrentPage(1); scrollTop()
+                      if (v) { searchParams.set('near', v); searchParams.set('radius_mi', String(radiusMi)) }
+                      else { searchParams.delete('near'); searchParams.delete('radius_mi') }
+                      setSearchParams(searchParams)
+                    }
+                  }}
+                  placeholder="Zip or city, state"
+                  aria-label="Filter by location (zip code or city, state)"
+                  className="h-[34px] pl-3 pr-2 w-[148px] rounded-l-full font-body text-[12px] border outline-none transition-all duration-150"
+                  style={{
+                    backgroundColor: near ? '#C9A96E15' : 'transparent',
+                    color: '#374151',
+                    borderColor: near ? '#C9A96E' : '#E5E0DB',
+                    borderRight: 'none',
+                  }}
+                />
+                <select
+                  value={radiusMi}
+                  onChange={e => {
+                    const r = Number(e.target.value)
+                    setRadiusMi(r)
+                    if (near) {
+                      searchParams.set('radius_mi', String(r))
+                      setSearchParams(searchParams)
+                    }
+                  }}
+                  aria-label="Search radius in miles"
+                  className="h-[34px] pl-2 pr-6 rounded-r-full font-body text-[12px] border outline-none appearance-none cursor-pointer transition-all duration-150"
+                  style={{
+                    backgroundColor: near ? '#C9A96E15' : 'transparent',
+                    color: near ? '#0A1628' : '#9CA3AF',
+                    borderColor: near ? '#C9A96E' : '#E5E0DB',
+                    borderLeft: '1px solid',
+                    borderLeftColor: near ? '#C9A96E80' : '#E5E0DB',
+                  }}
+                >
+                  <option value={5}>5mi</option>
+                  <option value={10}>10mi</option>
+                  <option value={25}>25mi</option>
+                  <option value={50}>50mi</option>
+                </select>
+              </div>
               {/* Visibility level (lamp tier) */}
               <div className="relative">
                 <select
@@ -735,7 +809,7 @@ export default function Directory() {
                   )}
 
                   {/* Active filter chips */}
-                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier || visTier) && (
+                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier || visTier || near) && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-[11px]">
@@ -795,6 +869,18 @@ export default function Directory() {
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {visTier} ×
+                        </button>
+                      )}
+                      {near && (
+                        <button
+                          onClick={() => {
+                            setNear(''); setNearInput(''); setCurrentPage(1); scrollTop()
+                            searchParams.delete('near'); searchParams.delete('radius_mi')
+                            setSearchParams(searchParams)
+                          }}
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                        >
+                          {near} · {radiusMi}mi ×
                         </button>
                       )}
                       <button onClick={handleClearAll} className="font-body text-[11px] text-cool-grey hover:text-deep-navy transition-colors">

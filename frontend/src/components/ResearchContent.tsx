@@ -62,7 +62,12 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
         <footer className="mt-20 pt-8 border-t border-cool-grey/20">
           <div className="text-xs text-cool-grey mb-6">
             <p className="mb-2">
-              Data current as of: {new Date(metadata.data_period).toLocaleDateString()}
+              Data period: {new Date(metadata.data_period).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              {metadata.generated_at && (
+                <span className="ml-3 text-cool-grey/60">
+                  · Snapshot generated {new Date(metadata.generated_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
+              )}
             </p>
             <p>
               Total organizations indexed: {metadata.total_organizations?.toLocaleString()}
