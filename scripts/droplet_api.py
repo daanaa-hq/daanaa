@@ -503,7 +503,7 @@ def get_organizations():
     nearby_meta: dict | None = None
     near_raw = request.args.get('near', '').strip()
     try:
-        radius_mi = int(request.args.get('radius', 0))
+        radius_mi = int(request.args.get('radius_mi') or request.args.get('radius') or 0)
     except (ValueError, TypeError):
         radius_mi = 0
     if near_raw and radius_mi > 0:

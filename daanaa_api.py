@@ -1639,7 +1639,7 @@ def list_organizations():
     cause = request.args.get('cause', '').strip()[:60]
     near_raw = request.args.get('near', '').strip()
     try:
-        radius_mi = int(request.args.get('radius', 0))
+        radius_mi = int(request.args.get('radius_mi') or request.args.get('radius') or 0)
     except (ValueError, TypeError):
         radius_mi = 0
     sort_by = request.args.get('sort', 'merit_score')
