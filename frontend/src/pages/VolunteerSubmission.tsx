@@ -41,11 +41,14 @@ export default function VolunteerSubmission() {
     setError(null)
 
     try {
-      // Convert EIN to auth token format (nonprofit uses EIN as bearer token)
+      // EIN-only auth removed — EINs are public and cannot serve as credentials.
+      // This feature requires a verified nonprofit account before it can go live.
+      throw new Error('Volunteer hour logging requires a verified nonprofit account. This feature is coming soon.')
+
+      // eslint-disable-next-line no-unreachable
       const response = await fetch('/api/nonprofit/volunteer-hours', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${form.ein}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

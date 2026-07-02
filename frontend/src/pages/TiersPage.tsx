@@ -197,7 +197,7 @@ export default function TiersPage() {
                       {nextPath ? (
                         <>
                           <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-3">
-                            Path to next tier
+                            What enables greater visibility
                           </p>
                           <p className="font-body text-[13px] leading-[1.6] text-cool-grey">
                             {nextPath}
@@ -209,7 +209,7 @@ export default function TiersPage() {
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                           </svg>
                           <p className="font-body text-[13px] leading-[1.6]" style={{ color }}>
-                            Highest tier. All public data criteria met.
+                            All public data criteria present. Fully visible in discovery.
                           </p>
                         </div>
                       )}

@@ -7366,7 +7366,15 @@ def restore_wallet():
 
 @app.route('/api/wallet/donation-receipt', methods=['POST'])
 def generate_donation_receipt():
-    """Generate IRS-compliant donation receipt PDF."""
+    """Disabled: Daanaa does not issue tax receipts. Receipts come from the nonprofit directly."""
+    return jsonify({
+        'error': 'Daanaa does not generate tax receipts. '
+                 'Contact the nonprofit directly for an official acknowledgment letter.'
+    }), 410
+
+def _generate_donation_receipt_disabled():
+    """Archived: was generating IRS receipt PDFs from user-supplied wallet data without
+    verifying the donation occurred. Disabled — see DECISIONS.md 2026-07-02."""
     try:
         from scripts.letter_generator import generate_donation_letter
 

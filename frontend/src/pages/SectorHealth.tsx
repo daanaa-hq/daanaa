@@ -305,7 +305,7 @@ export default function SectorHealth() {
               Direct Service organizations average 10.3 months of reserves. Research & Academia averages 8.8 months, since they're grant-heavy and spend the money on programs. Foundations average 34.3 months because they hold capital for strategic deployment. Religion & Spiritual organizations average 20.2 months. These differences reflect how organizations are structured, not how well they're managed.
             </p>
             <p className="mt-3 font-body text-[13px] text-cool-grey">
-              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. This data covers 71,473 organizations with complete financial filings. It does not represent all 1.7 million indexed nonprofits. Patterns in the data reflect organizations with detailed filings. Many small and simplified filers report less financial detail.
+              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. The operating model patterns above are drawn from 71,473 organizations with sufficiently detailed filings to classify by model — a subset of the 356,000 organizations with complete financial data used for the sector benchmarks below. The remaining 79% of indexed nonprofits file simplified returns or are exempt from filing; they are visible in the directory but not scored.
             </p>
           </div>
 

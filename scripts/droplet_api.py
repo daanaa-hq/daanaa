@@ -1280,7 +1280,7 @@ _STATIC_META = {
     'methodology': (
         'Methodology — How Daanaa Works',
         'How Daanaa organizes public nonprofit information: data sources, Peer '
-        'Financial Context, Lamp Tiers, what we don’t measure, data limits, '
+        'Financial Context, Lamp Tiers, what we do not measure, data limits, '
         'and answers to common questions.',
     ),
     'directory': (
@@ -1300,8 +1300,23 @@ _STATIC_META = {
     ),
     'for-nonprofits': (
         'For Nonprofits — Claim Your Page on Daanaa',
-        'Claim and update your organization’s page on Daanaa for free. Add '
+        'Claim and update your organization\'s page on Daanaa for free. Add '
         'your mission, website, and programs. No paid placement, ever.',
+    ),
+    'security': (
+        'Security — Daanaa',
+        'How Daanaa protects your data: no tracking, no advertising profiles, '
+        'device-first wallet storage, and responsible disclosure.',
+    ),
+    'legal': (
+        'Legal & Privacy — Daanaa',
+        'Daanaa terms of service, privacy policy, and data practices. '
+        'No advertising profiles. Wallet data stays on your device by default.',
+    ),
+    'research': (
+        'Sector Research — Daanaa',
+        'Public data on U.S. nonprofit financial health across sectors. '
+        'Drawn from IRS Form 990 filings. Context, not rankings.',
     ),
 }
 
@@ -1312,6 +1327,7 @@ _LEGACY_REDIRECTS = {
     'learn': '/methodology',
     'guides': '/methodology',
     'faq': '/methodology#faq',
+    'privacy': '/legal',
 }
 
 _HOMEPAGE_JSONLD = {
@@ -1401,7 +1417,8 @@ _SPA_PREFIXES = {
     'methodology', 'sector-health', 'learn', 'guides', 'faq', 'feedback',
     'partners', 'for-vendors', 'vendor-policy', 'terms', 'guild', 'member',
     'volunteer', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
-    'nonprofit', 'vendor', 'claim', 'admin', 'sector-health',
+    'nonprofit', 'vendor', 'claim', 'admin',
+    'security', 'privacy', 'meet-the-invisible', 'invisible',
 }
 
 @app.route('/', defaults={'path': ''})

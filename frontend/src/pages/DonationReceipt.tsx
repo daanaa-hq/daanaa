@@ -1,189 +1,76 @@
-import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import React from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 
-interface DonationRecord {
-  id: string
-  org_name: string
-  ein: string
-  amount: number
-  date: string
-  donor_name?: string
-}
-
 export default function DonationReceipt() {
-  usePageMeta('Donation Receipt | Daanaa', 'Download your tax-deductible donation receipt')
+  usePageMeta('Giving Record | Daanaa', 'Your personal giving record from your Daanaa wallet')
 
   const [searchParams] = useSearchParams()
-  const [donation, setDonation] = useState<DonationRecord | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [downloading, setDownloading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const donationId = searchParams.get('id')
-
-  useEffect(() => {
-    const fetchDonation = async () => {
-      if (!donationId) {
-        setError('No donation ID provided')
-        setLoading(false)
-        return
-      }
-
-      try {
-        const wallet = localStorage.getItem('daanaa_wallet')
-        if (!wallet) {
-          throw new Error('No wallet found')
-        }
-
-        const walletData = JSON.parse(wallet)
-        const donations = walletData.donations || []
-        const found = donations.find((d: DonationRecord) => d.id === donationId)
-
-        if (!found) {
-          throw new Error('Donation not found')
-        }
-
-        setDonation(found)
-        setError(null)
-      } catch (err) {
-        setError((err as Error).message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchDonation()
-  }, [donationId])
-
-  const handleDownload = async () => {
-    if (!donation) return
-
-    setDownloading(true)
-    try {
-      const response = await fetch('/api/wallet/donation-receipt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          donation_id: donation.id,
-          org_name: donation.org_name,
-          ein: donation.ein,
-          amount: donation.amount,
-          date: donation.date,
-          donor_name: donation.donor_name || 'Honored Donor',
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to generate receipt')
-      }
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `donation_receipt_${donation.ein}_${donation.date.split('T')[0]}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (err) {
-      setError((err as Error).message)
-    } finally {
-      setDownloading(false)
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-soft-cream p-6 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-soft-gold border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (error || !donation) {
-    return (
-      <div className="min-h-screen bg-soft-cream p-6">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700 text-center">
-            <p className="font-semibold mb-2">Unable to Load Receipt</p>
-            <p>{error || 'Donation record not found'}</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const orgName = searchParams.get('org') || ''
+  const ein = searchParams.get('ein') || ''
+  const date = searchParams.get('date') || ''
 
   return (
     <div className="min-h-screen bg-soft-cream p-6">
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
-          <h1 className="font-display text-3xl text-deep-navy mb-2">Donation Receipt</h1>
-          <p className="text-cool-grey">Tax-deductible donation documentation</p>
+          <h1 className="font-display text-3xl text-deep-navy mb-2">Giving Record</h1>
+          <p className="text-cool-grey">Your personal note from your Daanaa wallet</p>
         </div>
 
         <div className="bg-white rounded-lg p-8 border border-light-grey space-y-6">
-          <div className="bg-soft-cream rounded p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-cool-grey uppercase tracking-wide">Organization</p>
-                <p className="font-display text-xl text-deep-navy">{donation.org_name}</p>
-                <p className="text-sm text-cool-grey">EIN: {donation.ein}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-cool-grey uppercase tracking-wide">Donation Amount</p>
-                <p className="font-display text-xl text-link-gold">
-                  ${donation.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
+          {orgName && (
+            <div className="bg-soft-cream rounded p-4">
+              <p className="text-xs text-cool-grey uppercase tracking-wide mb-1">Organization</p>
+              <p className="font-display text-xl text-deep-navy">{orgName}</p>
+              {ein && <p className="text-sm text-cool-grey mt-0.5">EIN: {ein}</p>}
+              {date && (
                 <p className="text-sm text-cool-grey">
-                  {new Date(donation.date).toLocaleDateString()}
+                  {new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-light-grey pt-6">
-            <h2 className="text-sm font-semibold text-deep-navy mb-3">Tax Documentation</h2>
-            <div className="space-y-2 text-sm text-cool-grey">
-              <p>✓ This donation is tax-deductible under IRS section 501(c)(3).</p>
-              <p>
-                ✓ No goods or services were provided in return for this donation.
-              </p>
-              <p>
-                ✓ This receipt documents your contribution for tax purposes. Please retain for your
-                records.
-              </p>
-            </div>
-          </div>
-
-          {donation.donor_name && donation.donor_name !== 'Honored Donor' && (
-            <div className="border-t border-light-grey pt-6">
-              <p className="text-sm text-cool-grey mb-2">Donor: {donation.donor_name}</p>
+              )}
             </div>
           )}
 
-          <div className="border-t border-light-grey pt-6">
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              className="w-full py-3 rounded-lg bg-soft-gold text-deep-navy font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
-            >
-              {downloading ? 'Generating PDF...' : '↓ Download PDF Receipt'}
-            </button>
-            <p className="text-xs text-cool-grey text-center mt-3">
-              Your PDF receipt will include the IRS-compliant letter for your records.
+          <div className="border border-amber-200 bg-amber-50 rounded-lg p-5 space-y-3">
+            <p className="font-semibold text-amber-900 text-sm">For your official tax receipt</p>
+            <p className="text-sm text-amber-800 leading-relaxed">
+              Daanaa is a discovery platform — we don't process donations or issue tax documentation.
+              Your official receipt for tax purposes comes directly from the nonprofit you gave to.
+            </p>
+            <p className="text-sm text-amber-800 leading-relaxed">
+              Contact {orgName || 'the organization'} directly and reference their EIN
+              {ein ? <strong> ({ein})</strong> : ''} to request an acknowledgment letter.
+              For gifts of $250 or more, the IRS requires a written acknowledgment from the organization itself — not from a third party.
             </p>
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded p-4">
-            <p className="text-xs text-blue-700">
-              <span className="font-semibold">Privacy Note:</span> This receipt is generated locally and
-              stored only in your Giving Wallet. Daanaa does not retain copies of donation receipts.
+          <div className="border-t border-light-grey pt-6 space-y-2">
+            <p className="text-xs text-cool-grey leading-relaxed">
+              This wallet entry is a personal record you created. It is stored only on your device
+              and not shared with Daanaa or any third party.
             </p>
+            <p className="text-xs text-cool-grey">
+              IRS Publication 526 covers charitable contribution rules. For deductibility,
+              always verify the organization's 501(c)(3) status at{' '}
+              <a
+                href="https://apps.irs.gov/app/eos/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                IRS Tax Exempt Organization Search
+              </a>.
+            </p>
+          </div>
+
+          <div className="border-t border-light-grey pt-6">
+            <Link
+              to="/wallet"
+              className="inline-flex items-center gap-2 font-body text-sm text-soft-gold hover:text-bright-gold transition-colors"
+            >
+              ← Back to your wallet
+            </Link>
           </div>
         </div>
       </div>

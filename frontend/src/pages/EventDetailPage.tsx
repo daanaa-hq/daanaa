@@ -612,7 +612,7 @@ export default function EventDetailPage() {
               Your privacy
             </p>
             <p className="font-body text-[13px] text-cool-grey leading-[1.65]">
-              When you sign up, your name and email go directly to the organizing nonprofit — Daanaa does not retain or use your contact information. Daanaa does not verify event accessibility accommodations; contact the organizer directly with any questions.
+              When you sign up, your name and email are shared with the organizing nonprofit and stored to manage your reservation and process cancellations. Daanaa does not use this information for marketing. You can cancel anytime using the link in your confirmation. Daanaa does not verify event accessibility accommodations; contact the organizer directly with any questions.
             </p>
           </section>
 

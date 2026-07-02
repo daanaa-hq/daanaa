@@ -71,7 +71,7 @@ function HeroSection() {
           className={`mt-6 font-body text-[18px] leading-[1.65] max-w-[620px] mx-auto transition-all duration-700 ease-out delay-150 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
           style={{ color: 'rgba(245,240,235,0.80)' }}
         >
-          {orgCount.toLocaleString()}+ U.S. nonprofits, public records, peer context. No ads, no rankings, no pressure.
+          {orgCount.toLocaleString()}+ U.S. nonprofits, public records, peer context. No ads, no paid placement, no pressure.
         </p>
 
         <div className={`mt-8 max-w-[560px] mx-auto transition-all duration-700 ease-out delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
@@ -210,7 +210,7 @@ function WhatDaanaaDoesSection() {
             What Daanaa does
           </h2>
           <p className={`mt-6 font-body text-[16px] text-cool-grey leading-[1.65] max-w-[720px] transition-all duration-700 ease-out delay-100 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
-            Daanaa organizes public nonprofit information so people can discover organizations with more context. It does not rank nonprofits, process donations, or tell people where they must give.
+            Daanaa organizes public nonprofit information so people can discover organizations with more context. It does not take paid placement, process donations, or tell people where they must give.
           </p>
         </div>
 
@@ -338,7 +338,7 @@ function StewardshipSection() {
           </div>
           <div className="space-y-4">
             {[
-              'We do not rank nonprofits',
+              'We do not take paid placement',
               'We do not process donations',
               'We do not sell donor data',
               'We remain independent',
