@@ -322,12 +322,11 @@ def register_nonprofit_endpoints(app):
 
     @app.route('/api/nonprofit/volunteer-hours', methods=['GET'])
     def get_volunteer_hours():
-        """List volunteer hour submissions for ED review."""
-        auth = request.headers.get('Authorization', '')
-        nonprofit_ein = auth.split(' ')[-1] if auth else None
-
-        if not nonprofit_ein:
-            return jsonify({'error': 'Unauthorized'}), 401
+        """Disabled: volunteer hour feature requires verified nonprofit auth, not yet implemented."""
+        return jsonify({
+            'error': 'Volunteer hour logging is not yet available. '
+                     'This feature requires verified nonprofit account authorization.'
+        }), 503
 
         filter_status = request.args.get('status', 'all')  # all|pending|verified|rejected
 
@@ -372,12 +371,11 @@ def register_nonprofit_endpoints(app):
 
     @app.route('/api/nonprofit/volunteer-hours', methods=['POST'])
     def submit_volunteer_hours():
-        """Submit volunteer hours for approval."""
-        auth = request.headers.get('Authorization', '')
-        nonprofit_ein = auth.split(' ')[-1] if auth else None
-
-        if not nonprofit_ein:
-            return jsonify({'error': 'Unauthorized'}), 401
+        """Disabled: EIN-only auth is not a valid credential; feature not yet live."""
+        return jsonify({
+            'error': 'Volunteer hour submission is not yet available. '
+                     'This feature requires verified nonprofit account authorization.'
+        }), 503
 
         data = request.json or {}
         volunteer_name = data.get('volunteer_name', '').strip()

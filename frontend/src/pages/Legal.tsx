@@ -131,12 +131,17 @@ export default function Legal() {
               publicly disclosed under 26 U.S.C. § 6104.
             </p>
             <p className="mt-3">
-              <strong className="text-deep-navy">We do not passively collect personal information from visitors.</strong> We
-              do not use cookies for tracking, do not run behavioral analytics, and do not sell or
-              share any user data with third parties.
+              <strong className="text-deep-navy">We do not use tracking cookies or build advertising profiles.</strong> We
+              do not sell or share user data with third parties. We use <strong className="text-deep-navy">Plausible Analytics</strong> — a cookieless, privacy-respecting service — to collect anonymous page-view counts. Plausible does not identify individual visitors, does not use cookies, and does not track you across sites. No personal data is collected by analytics.
             </p>
             <p className="mt-3">
               When you voluntarily submit information — such as an email address in the claim form, feedback form, or waitlist — we store that information to respond to your request. We do not use it for marketing, share it with third parties, or connect it to your browsing activity.
+            </p>
+            <p className="mt-3">
+              <strong className="text-deep-navy">When you register for an event</strong> through a nonprofit's event page, your name and email are shared with the organizing nonprofit and stored by Daanaa to manage your reservation and process cancellations. We do not use this information for marketing. You can cancel at any time using the link in your confirmation email, and your information will be removed within 30 days of cancellation or event completion.
+            </p>
+            <p className="mt-3">
+              <strong className="text-deep-navy">When you log an impact record</strong> (such as volunteer hours or a donation note) through an organization's page, that record is stored in your device wallet and — if synced — associated with your account. Impact records are personal notes for your own reference; they are never shared publicly or with the nonprofit without your explicit action.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">When you claim your organization's page</strong>, we collect your

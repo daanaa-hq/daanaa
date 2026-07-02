@@ -77,11 +77,7 @@ export default function Terms() {
           <section>
             <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">4. The Giving Wallet</h2>
             <p>
-              The Giving Wallet is a free bookmarking tool that requires a Google account to use. Sign in with
-              Google to save organizations and access your wallet across devices. Your wallet holds bookmarks and
-              giving intent only — never transaction records. It is never shown publicly, never used for marketing
-              or outreach, and can be deleted in full at any time. Browsing the directory does not require an
-              account.
+              The Giving Wallet is a free bookmarking tool. No account is required — wallet data is stored on your device by default. You may optionally sign in with Google to enable cross-device sync. Your wallet holds bookmarks and giving intent only — never transaction records. It is never shown publicly, never used for marketing or outreach, and can be deleted in full at any time. Browsing the directory does not require an account.
             </p>
           </section>
 
@@ -212,7 +208,7 @@ export default function Terms() {
             <ul className="mt-3 ml-4 space-y-1 list-disc">
               <li>We do not use cookies for tracking and do not run behavioral analytics.</li>
               <li>We do not sell personal information.</li>
-              <li>The Giving Wallet requires a free Google account. Wallet data is never shown publicly and can be deleted at any time.</li>
+              <li>The Giving Wallet requires no account. Wallet data is stored on your device by default; Google sign-in is optional for cross-device sync. Wallet data is never shown publicly and can be deleted at any time.</li>
               <li>If you submit personal information (claim form, feedback form), we use it only to respond to your request.</li>
               <li>California residents have CCPA rights as described on our Legal page.</li>
               <li>EU and UK residents have GDPR rights as described on our Legal page. Daanaa is a U.S.-directed service; EcoMargins Consulting LLC is the data controller.</li>
