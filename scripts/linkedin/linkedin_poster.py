@@ -175,6 +175,69 @@ def post_carousel(pdf_path: str, caption: str, company_id: str):
         browser.close()
 
 
+def post_text(text: str, company_id: str):
+    """Post a plain text update to the Daanaa LinkedIn company page."""
+    state_file = SESSION_DIR / "state.json"
+    if not state_file.exists():
+        print("No session found. Run with --setup first.")
+        sys.exit(1)
+
+    sync_playwright = _get_playwright()
+    print(f"\n  Posting text update to company page: {company_id}")
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--no-sandbox", "--disable-dev-shm-usage"]
+        )
+        ctx = browser.new_context(
+            storage_state=str(state_file),
+            viewport={"width": 1280, "height": 900},
+            user_agent=(
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
+        )
+        page = ctx.new_page()
+
+        company_url = f"https://www.linkedin.com/company/{company_id}/admin/posts-activity/"
+        page.goto(company_url, wait_until="networkidle", timeout=30000)
+        time.sleep(2)
+
+        post_btn = page.locator(
+            "button:has-text('Start a post'), "
+            "button:has-text('Create a post'), "
+            "[data-control-name='share.sharebox_create_post']"
+        ).first
+        post_btn.wait_for(timeout=10000)
+        post_btn.click()
+        time.sleep(1.5)
+
+        text_area = page.locator(
+            ".ql-editor, [data-placeholder*='talk about'], [aria-label*='Text editor']"
+        ).first
+        text_area.wait_for(timeout=8000)
+        text_area.click()
+        text_area.type(text, delay=15)
+        time.sleep(1)
+
+        post_submit = page.locator(
+            "button:has-text('Post'), button[aria-label*='Post now']"
+        ).last
+        post_submit.wait_for(timeout=10000)
+        post_submit.click()
+        time.sleep(4)
+
+        if "feed" in page.url or page.locator("text=Your post is being processed").is_visible(timeout=5000):
+            print("\n  Posted successfully.")
+        else:
+            screenshot = SESSION_DIR / "text_post_result.png"
+            page.screenshot(path=str(screenshot))
+            print(f"\n  Uncertain outcome. Screenshot saved: {screenshot}")
+
+        browser.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Daanaa LinkedIn Poster")
     parser.add_argument("--setup", action="store_true",

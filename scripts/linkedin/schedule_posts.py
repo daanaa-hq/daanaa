@@ -24,6 +24,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
 import post_carousel as pc
+import daily_gem_post as gem
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,6 +61,29 @@ def monday_carousel():
     except Exception as e:
         log.error(f"Carousel failed: {e}")
         log.info("Manual fallback: run post_carousel.py --type hidden_gems")
+
+
+def daily_gem():
+    """Post one hidden gem nonprofit. Skips weekends (Mon–Fri only)."""
+    if datetime.today().weekday() >= 5:
+        return
+    log.info("Daily gem post: picking org...")
+    try:
+        org = gem.pick_gem()
+        if not org:
+            log.warning("No unfeatured gems left — reset .featured_gems.json")
+            return
+        name = org["organization_name"].title()
+        log.info(f"  Gem: {name} ({org['EIN']})")
+        li_page = gem.find_linkedin_page(org["organization_name"])
+        post_text = gem.generate_post(org, li_page)
+        log.info(f"  Post generated ({len(post_text)} chars)")
+        import linkedin_poster as poster
+        poster.post_text(post_text, "133385169")
+        gem.mark_featured(org["EIN"])
+        log.info(f"  Done. {name} featured and marked.")
+    except Exception as e:
+        log.error(f"Daily gem failed: {e}")
 
 
 def thursday_text():
@@ -119,6 +143,7 @@ def main():
 
     schedule.every().monday.at("09:00").do(monday_carousel)
     schedule.every().thursday.at("09:00").do(thursday_text)
+    schedule.every().day.at("11:00").do(daily_gem)   # Mon–Fri hidden gem (weekends skipped inside)
 
     if args.next:
         show_next_runs()
@@ -129,8 +154,9 @@ def main():
         return
 
     log.info("Daanaa LinkedIn scheduler started")
-    log.info(f"  Monday 09:00 → carousel ({_carousel_type_this_week()} this week)")
-    log.info("  Thursday 09:00 → text post stat")
+    log.info(f"  Monday 09:00   → carousel ({_carousel_type_this_week()} this week)")
+    log.info("  Thursday 09:00 → sector stat text post")
+    log.info("  Daily 11:00    → hidden gem feature (Mon–Fri)")
     log.info("Ctrl-C to stop")
 
     while True:
