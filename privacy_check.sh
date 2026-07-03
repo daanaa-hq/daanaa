@@ -233,20 +233,31 @@ fi
 echo ""
 echo "GATE 6: Config File Safety"
 
-SECRETS_PATTERNS=(
-  '.env'
-  '.env.local'
-  '.env.*.local'
-  'secrets.json'
-  'config/production.*'
-  'credentials.*'
-  'private_key*'
-)
-
 SECRETS_VIOLATIONS=0
-for pattern in "${SECRETS_PATTERNS[@]}"; do
+
+# Any staged .env* file is blocked, EXCEPT .env*.example templates (which must
+# hold no real values). This catches .env.claim / .env.production / etc. by
+# filename — the exact class that leaked on 2026-06-16 because the hook was not
+# yet installed. Matching is on the basename, anchored, so paths like
+# deploy/environment.md do not false-positive.
+# Only added/modified (A/M) secret files are violations — deleting/untracking a
+# secret file (D) is the desired remediation and must not be blocked.
+while IFS=$'\t' read -r status staged; do
+  case "$status" in D*) continue ;; esac
+  base="$(basename "$staged")"
+  case "$base" in
+    *.example) continue ;;                 # templates allowed
+    .env|.env.*)
+      warn "Secret/config file '$staged' in staging area (.env* files must never be committed)"
+      SECRETS_VIOLATIONS=$((SECRETS_VIOLATIONS + 1))
+      ;;
+  esac
+done < <(git diff --cached --name-status)
+
+# Non-.env secret file conventions
+for pattern in 'secrets\.json' 'config/production\.' 'credentials\.' 'private_key'; do
   if git diff --cached --name-only | grep -qE "$pattern"; then
-    warn "Secret/config file '$pattern' in staging area"
+    warn "Secret/config file matching '$pattern' in staging area"
     SECRETS_VIOLATIONS=$((SECRETS_VIOLATIONS + 1))
   fi
 done
