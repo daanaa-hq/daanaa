@@ -1,4 +1,15 @@
 #!/bin/bash
+# RETIRED 2026-07-03 — DO NOT RE-ADD TO CRON.
+# This script (a) ran `PRAGMA integrity_check` against the LIVE merit_registry.db
+# without mode=ro/busy_timeout, so it false-failed under gunicorn write load and
+# spammed "integrity check failed" for ~2 weeks while the DB was actually healthy,
+# and (b) tar'd the live DB file, producing torn/inconsistent backups.
+# Superseded by scripts/ops/daanaa_backup.sh, which uses SQLite's online `.backup`
+# for a consistent snapshot (weekly full + nightly critical dump) and ships offsite
+# via rclone to Google Drive. Restore validation: infrastructure/backup/test_restore.sh.
+echo "RETIRED: use scripts/ops/daanaa_backup.sh. See header. Not running." >&2
+exit 0
+
 # Daily backup of merit_registry.db — run at 2 AM via cron
 # Encrypted AES-256, point-in-time recovery, 30-day retention
 
