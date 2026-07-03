@@ -63,19 +63,22 @@ def monday_carousel():
         log.info("Manual fallback: run post_carousel.py --type hidden_gems")
 
 
-def daily_gem():
-    """Post one hidden gem nonprofit. Skips weekends (Mon–Fri only)."""
+def _post_gem(slot: int):
+    """Post one hidden gem. slot 0 = top follower count, slot 1 = second."""
     if datetime.today().weekday() >= 5:
         return
-    log.info("Daily gem post: picking org...")
+    label = "morning" if slot == 0 else "afternoon"
+    log.info(f"Gem post ({label}, slot={slot}): picking org...")
     try:
-        org = gem.pick_gem()
+        org = gem.pick_gem(slot=slot)
         if not org:
             log.warning("No unfeatured gems left — reset .featured_gems.json")
             return
         name = org["organization_name"].title()
         log.info(f"  Gem: {name} ({org['EIN']})")
-        li_page = gem.find_linkedin_page(org["organization_name"])
+        li_page = gem.find_linkedin_page(org["organization_name"], ein=org["EIN"])
+        if li_page:
+            log.info(f"  LinkedIn: {li_page['name']} ({li_page['followers']:,} followers)")
         post_text = gem.generate_post(org, li_page)
         log.info(f"  Post generated ({len(post_text)} chars)")
         import linkedin_poster as poster
@@ -83,7 +86,15 @@ def daily_gem():
         gem.mark_featured(org["EIN"])
         log.info(f"  Done. {name} featured and marked.")
     except Exception as e:
-        log.error(f"Daily gem failed: {e}")
+        log.error(f"Gem post (slot {slot}) failed: {e}")
+
+
+def daily_gem_morning():
+    _post_gem(slot=0)
+
+
+def daily_gem_afternoon():
+    _post_gem(slot=1)
 
 
 def thursday_text():
@@ -143,7 +154,8 @@ def main():
 
     schedule.every().monday.at("09:00").do(monday_carousel)
     schedule.every().thursday.at("09:00").do(thursday_text)
-    schedule.every().day.at("11:00").do(daily_gem)   # Mon–Fri hidden gem (weekends skipped inside)
+    schedule.every().day.at("10:00").do(daily_gem_morning)    # top gem by LinkedIn followers
+    schedule.every().day.at("14:00").do(daily_gem_afternoon)  # second gem by LinkedIn followers
 
     if args.next:
         show_next_runs()
@@ -156,7 +168,8 @@ def main():
     log.info("Daanaa LinkedIn scheduler started")
     log.info(f"  Monday 09:00   → carousel ({_carousel_type_this_week()} this week)")
     log.info("  Thursday 09:00 → sector stat text post")
-    log.info("  Daily 11:00    → hidden gem feature (Mon–Fri)")
+    log.info("  Daily 10:00    → gem #1 (highest LinkedIn followers, Mon–Fri)")
+    log.info("  Daily 14:00    → gem #2 (second highest, Mon–Fri)")
     log.info("Ctrl-C to stop")
 
     while True:

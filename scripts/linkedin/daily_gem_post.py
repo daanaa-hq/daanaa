@@ -25,6 +25,7 @@ from pathlib import Path
 BASE = Path(__file__).parent
 DB_PATH = BASE.parent.parent / "data" / "merit_registry.db"
 FEATURED_LOG = BASE / ".featured_gems.json"
+LINKEDIN_INDEX = BASE / ".gem_linkedin_index.json"
 SESSION_FILE = BASE / ".session" / "state.json"
 
 OLLAMA_URL = "http://localhost:11434/api/generate"
@@ -61,7 +62,17 @@ def mark_featured(ein: str):
 # ---------------------------------------------------------------------------
 # Org selection
 # ---------------------------------------------------------------------------
-def pick_gem(ein: str = None) -> dict:
+def _load_linkedin_index() -> dict:
+    if LINKEDIN_INDEX.exists():
+        return json.loads(LINKEDIN_INDEX.read_text())
+    return {}
+
+
+def pick_gem(ein: str = None, slot: int = 0) -> dict:
+    """
+    Pick a hidden gem. slot=0 → highest followers, slot=1 → second highest.
+    Falls back to random if LinkedIn index is sparse.
+    """
     db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
 
@@ -77,9 +88,35 @@ def pick_gem(ein: str = None) -> dict:
         return dict(row) if row else None
 
     featured = load_featured()
+    li_index = _load_linkedin_index()
+
+    # Build ranked candidate list from LinkedIn index (found pages, not featured yet)
+    ranked = sorted(
+        [
+            (v["followers"], ein)
+            for ein, v in li_index.items()
+            if v.get("found") and ein not in featured
+        ],
+        reverse=True,
+    )
+
+    # Pick by slot (0 = top, 1 = second)
+    if len(ranked) > slot:
+        target_ein = ranked[slot][1]
+        row = db.execute("""
+            SELECT EIN, organization_name, CITY, STATE, NTEE1, mission,
+                   website, merit_score, merit_health_signal_v5,
+                   merit_band_v5_label, peer_percentile, total_revenue,
+                   ruling_date, cause_tags
+            FROM registry_enriched WHERE EIN = ? AND org_status = 'active'
+        """, (target_ein,)).fetchone()
+        if row:
+            db.close()
+            return dict(row)
+
+    # Fallback: random from DB (index not yet populated)
     featured_list = list(featured) if featured else [""]
     placeholders = ",".join("?" * len(featured_list))
-
     row = db.execute(f"""
         SELECT EIN, organization_name, CITY, STATE, NTEE1, mission,
                website, merit_score, merit_health_signal_v5,
@@ -92,17 +129,25 @@ def pick_gem(ein: str = None) -> dict:
           AND website IS NOT NULL
           AND merit_health_signal_v5 = 'HEALTHY'
           AND EIN NOT IN ({placeholders})
-        ORDER BY RANDOM() LIMIT 1
-    """, featured_list).fetchone()
+        ORDER BY peer_percentile DESC
+        LIMIT {slot + 1}
+    """, featured_list).fetchall()
     db.close()
-    return dict(row) if row else None
+    return dict(row[slot]) if row and len(row) > slot else None
 
 
 # ---------------------------------------------------------------------------
 # LinkedIn company search
 # ---------------------------------------------------------------------------
-def find_linkedin_page(org_name: str) -> dict | None:
-    """Return {name, url, id} if confident match found, else None."""
+def find_linkedin_page(org_name: str, ein: str = None) -> dict | None:
+    """Return {name, url, followers} if confident match found, else None.
+    Checks enrichment index first to avoid live API calls."""
+    if ein:
+        index = _load_linkedin_index()
+        if ein in index and index[ein].get("found"):
+            entry = index[ein]
+            return {"name": entry["name"], "url": entry["url"], "followers": entry["followers"]}
+
     creds_file = BASE / ".session" / "linkedin_creds.json"
     if not creds_file.exists():
         return None
@@ -113,20 +158,19 @@ def find_linkedin_page(org_name: str) -> dict | None:
         results = client.search_companies(keywords=[org_name], limit=3)
         if not results:
             return None
-        # Confidence check: first result name should overlap significantly
         top = results[0]
         top_name = top.get("name", "").lower()
-        query_words = set(org_name.lower().split())
-        match_words = set(top_name.split())
-        overlap = query_words & match_words
-        if len(overlap) < max(1, len(query_words) // 2):
-            return None  # too fuzzy — skip tagging
-        urn = top.get("urn", "")
-        company_id = re.search(r'\d+', urn).group() if re.search(r'\d+', urn) else None
+        query_words = set(w for w in org_name.lower().split() if len(w) > 3)
+        overlap = query_words & set(top_name.split())
+        if not overlap and len(query_words) > 1:
+            return None
+        urn_id = top.get("urn_id", "")
+        followers = int(re.search(r'([\d,]+)\s+follower', top.get("subline") or "", re.I).group(1).replace(",", "")) \
+            if re.search(r'([\d,]+)\s+follower', top.get("subline") or "", re.I) else 0
         return {
             "name": top.get("name", ""),
-            "url": f"https://www.linkedin.com/company/{company_id}/" if company_id else None,
-            "id": company_id,
+            "url": f"https://www.linkedin.com/company/{urn_id}/" if urn_id else None,
+            "followers": followers,
         }
     except Exception:
         return None
@@ -234,13 +278,15 @@ def post_to_linkedin(text: str, company_id: str = "133385169"):
 def main():
     parser = argparse.ArgumentParser(description="Daanaa daily hidden gem LinkedIn post")
     parser.add_argument("--ein", help="Feature a specific EIN")
+    parser.add_argument("--slot", type=int, default=0,
+                        help="0 = top gem (morning), 1 = second gem (afternoon)")
     parser.add_argument("--dry-run", action="store_true", help="Print post, don't publish")
     parser.add_argument("--no-llm", action="store_true", help="Use template (skip LLM)")
     parser.add_argument("--company-id", default="133385169")
     args = parser.parse_args()
 
     # 1. Pick org
-    org = pick_gem(args.ein)
+    org = pick_gem(args.ein, slot=args.slot)
     if not org:
         print("No unfeatured hidden gems available. Reset .featured_gems.json to restart.")
         return
@@ -250,9 +296,9 @@ def main():
     print(f"  Sector: {NTEE_LABELS.get(org['NTEE1'], 'Unknown')}")
     print(f"  Health: {org['merit_health_signal_v5']} | Peer %ile: {org['peer_percentile']:.0f}")
 
-    # 2. Find LinkedIn page
-    print(f"  Searching LinkedIn for company page...")
-    li_page = find_linkedin_page(org["organization_name"])
+    # 2. Find LinkedIn page (index first, live search as fallback)
+    print(f"  Looking up LinkedIn page...")
+    li_page = find_linkedin_page(org["organization_name"], ein=org["EIN"])
     if li_page:
         print(f"  LinkedIn: {li_page['name']} → {li_page['url']}")
     else:
