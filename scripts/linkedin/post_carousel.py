@@ -89,6 +89,19 @@ PLACEHOLDER = {
 }
 
 
+def run(carousel_type: str = "hidden_gems", context: str = "", company_id: str = "133385169") -> tuple[Path, str]:
+    """Callable API for scheduler and other scripts. Returns (pdf_path, caption)."""
+    fonts = gen.load_fonts()
+    content = gen.generate_content(carousel_type, context)
+    pages = gen.render_carousel(content, fonts)
+    ts = datetime.now().strftime("%Y%m%d_%H%M")
+    pdf = OUTPUT / f"daanaa_{carousel_type}_{ts}.pdf"
+    gen.save_pdf(pages, pdf)
+    caption = CAPTIONS.get(carousel_type, CAPTIONS["hidden_gems"])
+    poster.post_carousel(str(pdf), caption, company_id)
+    return pdf, caption
+
+
 def find_latest_pdf(carousel_type: str) -> Path | None:
     pdfs = sorted(OUTPUT.glob(f"daanaa_{carousel_type}_*.pdf"), reverse=True)
     return pdfs[0] if pdfs else None

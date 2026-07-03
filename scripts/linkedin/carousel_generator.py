@@ -227,6 +227,33 @@ def slide_cta(fonts, headline: str, body: str,
 # ---------------------------------------------------------------------------
 OLLAMA_URL = "http://localhost:11434/api/generate"
 
+# Model routing: rich carousel copy uses 30b; short text posts use 7b
+MODELS = {
+    "carousel": "qwen3:30b",   # richer, slower — for 8-slide carousels
+    "text":     "qwen2.5:7b",  # fast — for single text posts and captions
+}
+
+# Content cache — avoid re-generating identical carousel types on the same day
+_CACHE_DIR = BASE / ".cache"
+_CACHE_DIR.mkdir(exist_ok=True)
+
+def _cache_key(carousel_type: str, context: str) -> str:
+    import hashlib, datetime
+    day = datetime.date.today().isoformat()
+    return hashlib.md5(f"{carousel_type}:{context}:{day}".encode()).hexdigest()[:12]
+
+def _load_cache(key: str) -> dict | None:
+    p = _CACHE_DIR / f"{key}.json"
+    if p.exists():
+        import json as _json
+        print("  Using cached content (same type+context today).")
+        return _json.loads(p.read_text())
+    return None
+
+def _save_cache(key: str, content: dict):
+    import json as _json
+    (_CACHE_DIR / f"{key}.json").write_text(_json.dumps(content, indent=2))
+
 PROMPTS = {
     "hidden_gems": lambda ctx: f"""You are writing copy for a LinkedIn carousel for Daanaa, a nonprofit discovery platform.
 Topic: Hidden Gems — small nonprofits under $500K revenue with strong peer financial health.
@@ -356,13 +383,22 @@ DEFAULT_CONTEXTS = {
 }
 
 
-def generate_content(carousel_type: str, extra_context: str = "") -> dict:
+def generate_content(carousel_type: str, extra_context: str = "", use_cache: bool = True) -> dict:
     ctx = DEFAULT_CONTEXTS.get(carousel_type, "") + (" " + extra_context if extra_context else "")
+
+    if use_cache:
+        key = _cache_key(carousel_type, ctx)
+        cached = _load_cache(key)
+        if cached:
+            return cached
+
     prompt_fn = PROMPTS.get(carousel_type, PROMPTS["hidden_gems"])
     prompt = prompt_fn(ctx)
 
+    # Route to right model: carousels need quality; text posts need speed
+    model = MODELS["carousel"]
     payload = json.dumps({
-        "model": "qwen2.5:7b",
+        "model": model,
         "prompt": prompt,
         "stream": False,
         "options": {"temperature": 0.7, "num_predict": 2048},
@@ -372,15 +408,19 @@ def generate_content(carousel_type: str, extra_context: str = "") -> dict:
         OLLAMA_URL, data=payload,
         headers={"Content-Type": "application/json"}, method="POST"
     )
-    print("  Generating content with local LLM...")
-    with urllib.request.urlopen(req, timeout=120) as resp:
+    print(f"  Generating content with {model}...")
+    with urllib.request.urlopen(req, timeout=180) as resp:
         raw = json.loads(resp.read())["response"]
 
     # Extract JSON from response (model may add prose around it)
     match = re.search(r'\{.*\}', raw, re.DOTALL)
     if not match:
         raise ValueError(f"LLM did not return valid JSON:\n{raw[:500]}")
-    return json.loads(match.group())
+    result = json.loads(match.group())
+
+    if use_cache:
+        _save_cache(key, result)
+    return result
 
 
 # ---------------------------------------------------------------------------
