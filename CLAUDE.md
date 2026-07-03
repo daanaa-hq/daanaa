@@ -114,7 +114,7 @@ npm run build                 # builds to frontend/dist/
 
 ### Which backend is canonical
 
-**`daanaa_api.py` is the only backend** (Flask + SQLite, port 5000, ~2,700 lines, all
+**`daanaa_api.py` is the only backend** (Flask + SQLite, port 5000, ~7,800 lines, all
 routes). The old `merit_api.py` and `app.py` were removed in the daanaa rename; the
 dormant FastAPI specialist (`api/main.py`) was archived to `archive/api_fastapi_20260609/`
 on 2026-06-09 (its endpoints sorted by revenue, violating the no-size-ranking principle).
@@ -276,3 +276,9 @@ Key routing rules:
 - Ship/deploy/PR → invoke /ship or /land-and-deploy
 - Save progress → invoke /context-save
 - Resume context → invoke /context-restore
+
+### Marketing skills
+- LinkedIn carousel (generate + post) → invoke /marketing-carousel
+- Outreach email or DM drafting → invoke /marketing-outreach
+- Content calendar / post ideas → invoke /marketing-content
+- Weekly marketing sprint (carousel + outreach + analytics) → invoke /marketing-weekly
