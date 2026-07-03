@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import post_carousel as pc
 import daily_gem_post as gem
+import prebatch_gem_posts as prebatch
 
 logging.basicConfig(
     level=logging.INFO,
@@ -97,6 +98,20 @@ def daily_gem_afternoon():
     _post_gem(slot=1)
 
 
+def nightly_prebatch():
+    """02:00 — GPU generates next week's gem posts while machine is otherwise idle."""
+    remaining = len(prebatch.load_queue())
+    if remaining >= 14:   # 7 days × 2 posts — already stocked
+        log.info(f"Prebatch: queue has {remaining} posts, skipping.")
+        return
+    log.info(f"Prebatch: queue has {remaining} posts, generating 7 more days...")
+    try:
+        prebatch.prebatch(days=7, workers=4)
+        log.info(f"Prebatch: done. Queue: {len(prebatch.load_queue())} posts ready.")
+    except Exception as e:
+        log.error(f"Prebatch failed: {e}")
+
+
 def thursday_text():
     """Generate a data-backed text post and print it for manual review/copy."""
     try:
@@ -156,6 +171,7 @@ def main():
     schedule.every().thursday.at("09:00").do(thursday_text)
     schedule.every().day.at("10:00").do(daily_gem_morning)    # top gem by LinkedIn followers
     schedule.every().day.at("14:00").do(daily_gem_afternoon)  # second gem by LinkedIn followers
+    schedule.every().day.at("02:00").do(nightly_prebatch)     # GPU generates next week's queue while idle
 
     if args.next:
         show_next_runs()
@@ -170,6 +186,7 @@ def main():
     log.info("  Thursday 09:00 → sector stat text post")
     log.info("  Daily 10:00    → gem #1 (highest LinkedIn followers, Mon–Fri)")
     log.info("  Daily 14:00    → gem #2 (second highest, Mon–Fri)")
+    log.info("  Daily 02:00    → GPU pre-generates next week's posts (if queue < 14)")
     log.info("Ctrl-C to stop")
 
     while True:

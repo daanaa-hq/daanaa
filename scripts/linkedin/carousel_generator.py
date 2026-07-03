@@ -223,15 +223,11 @@ def slide_cta(fonts, headline: str, body: str,
     return img
 
 # ---------------------------------------------------------------------------
-# LLM content generation (Ollama — qwen2.5:7b is fast, qwen3:30b is richer)
+# LLM content generation — routed through GPU server (port 11437, Vulkan)
 # ---------------------------------------------------------------------------
-OLLAMA_URL = "http://localhost:11434/api/generate"
-
-# Model routing: rich carousel copy uses 30b; short text posts use 7b
-MODELS = {
-    "carousel": "qwen3:30b",   # richer, slower — for 8-slide carousels
-    "text":     "qwen2.5:7b",  # fast — for single text posts and captions
-}
+import sys as _sys
+_sys.path.insert(0, str(BASE))
+import llm_client as _llm
 
 # Content cache — avoid re-generating identical carousel types on the same day
 _CACHE_DIR = BASE / ".cache"
@@ -395,22 +391,8 @@ def generate_content(carousel_type: str, extra_context: str = "", use_cache: boo
     prompt_fn = PROMPTS.get(carousel_type, PROMPTS["hidden_gems"])
     prompt = prompt_fn(ctx)
 
-    # Route to right model: carousels need quality; text posts need speed
-    model = MODELS["carousel"]
-    payload = json.dumps({
-        "model": model,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"temperature": 0.7, "num_predict": 2048},
-    }).encode()
-
-    req = urllib.request.Request(
-        OLLAMA_URL, data=payload,
-        headers={"Content-Type": "application/json"}, method="POST"
-    )
-    print(f"  Generating content with {model}...")
-    with urllib.request.urlopen(req, timeout=180) as resp:
-        raw = json.loads(resp.read())["response"]
+    print(f"  Generating carousel content via GPU server...")
+    raw = _llm.generate(prompt, max_tokens=2048, temperature=0.7)
 
     # Extract JSON from response (model may add prose around it)
     match = re.search(r'\{.*\}', raw, re.DOTALL)

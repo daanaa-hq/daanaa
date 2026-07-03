@@ -28,8 +28,9 @@ FEATURED_LOG = BASE / ".featured_gems.json"
 LINKEDIN_INDEX = BASE / ".gem_linkedin_index.json"
 SESSION_FILE = BASE / ".session" / "state.json"
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL = "qwen2.5:7b"   # short post — no need for 30b
+import sys as _sys
+_sys.path.insert(0, str(BASE))
+import llm_client as _llm
 
 NTEE_LABELS = {
     "A": "Arts & Culture", "B": "Education", "C": "Environment",
@@ -246,20 +247,8 @@ Rules:
 
 Return ONLY the post text, no explanation."""
 
-    payload = json.dumps({
-        "model": MODEL,
-        "prompt": prompt,
-        "stream": False,
-        "options": {"temperature": 0.8, "num_predict": 400},
-    }).encode()
-
-    req = urllib.request.Request(
-        OLLAMA_URL, data=payload,
-        headers={"Content-Type": "application/json"}, method="POST"
-    )
-    print(f"  Generating post with {MODEL}...")
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        return json.loads(resp.read())["response"].strip()
+    print("  Generating post via GPU server...")
+    return _llm.generate(prompt, max_tokens=400, temperature=0.8)
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +274,28 @@ def main():
     parser.add_argument("--company-id", default="133385169")
     args = parser.parse_args()
 
-    # 1. Pick org
+    # 1. Check pre-generated queue first (fast path)
+    import prebatch_gem_posts as queue_mod
+    if not args.ein:
+        queued = queue_mod.pop_next(slot=args.slot)
+        if queued:
+            print(f"\nUsing pre-generated post (queue runway: {len(queue_mod.load_queue())} remaining)")
+            print(f"  Org: {queued['name']} | {queued['followers']:,} LinkedIn followers")
+            print("\n" + "─" * 60)
+            print(queued["text"])
+            print("─" * 60)
+            if args.dry_run:
+                print("\nDry run — not posted.")
+                return
+            if not SESSION_FILE.exists():
+                print("\nNo LinkedIn session. Run linkedin_poster.py --setup first.")
+                return
+            post_to_linkedin(queued["text"], args.company_id)
+            mark_featured(queued["ein"])
+            print(f"Done.")
+            return
+
+    # 1b. No queue — live pick
     org = pick_gem(args.ein, slot=args.slot)
     if not org:
         print("No unfeatured hidden gems available. Reset .featured_gems.json to restart.")

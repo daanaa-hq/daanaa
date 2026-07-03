@@ -76,7 +76,46 @@ def fetch_candidates(limit: int, already_indexed: set) -> list[dict]:
     return candidates
 
 
-def enrich_batch(batch_size: int = 100, sleep_secs: float = 2.0):
+def _search_one(args: tuple) -> tuple[str, dict]:
+    """Worker: search LinkedIn for one org. Returns (ein, result_dict)."""
+    ein, name, client, sleep_secs = args
+    time.sleep(sleep_secs)  # rate-limit per worker
+    try:
+        results = client.search_companies(keywords=[name], limit=3)
+    except Exception as e:
+        return ein, {"name": name, "found": False, "followers": 0, "url": None, "error": str(e)}
+
+    if not results:
+        return ein, {"name": name, "found": False, "followers": 0, "url": None}
+
+    top = results[0]
+    top_name = (top.get("name") or "").lower()
+    query_words = set(w for w in name.lower().split() if len(w) > 3)
+    overlap = query_words & set(top_name.split())
+    if not overlap and len(query_words) > 1:
+        return ein, {"name": name, "found": False, "followers": 0, "url": None}
+
+    urn_id = top.get("urn_id", "")
+    followers = parse_followers(top.get("subline") or top.get("headline"))
+    url = f"https://www.linkedin.com/company/{urn_id}/" if urn_id else None
+    return ein, {
+        "name": top.get("name", name),
+        "found": True,
+        "followers": followers,
+        "url": url,
+        "urn_id": urn_id,
+    }
+
+
+def enrich_batch(batch_size: int = 100, sleep_secs: float = 2.0, workers: int = 4):
+    """
+    Parallel enrichment using CPU thread pool.
+    workers=4 → 4x throughput vs serial; each worker sleeps sleep_secs between its own calls.
+    LinkedIn's rate limit is per-session, not per-IP, so multiple workers share the same
+    session — keep workers ≤ 4 to stay safe.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     index = load_index()
     already = set(index.keys())
     candidates = fetch_candidates(batch_size, already)
@@ -85,61 +124,30 @@ def enrich_batch(batch_size: int = 100, sleep_secs: float = 2.0):
         print("All hidden gems already indexed.")
         return
 
-    print(f"Enriching {len(candidates)} gems (sleep={sleep_secs}s between requests)...")
+    print(f"Enriching {len(candidates)} gems | {workers} workers | {sleep_secs}s sleep each")
     client = get_client()
     found = 0
+    lock_data: dict = {}
 
-    for i, org in enumerate(candidates):
-        ein = org["EIN"]
-        name = org["organization_name"]
-        print(f"  [{i+1}/{len(candidates)}] {name[:50]}...", end=" ", flush=True)
+    args_list = [(org["EIN"], org["organization_name"], client, sleep_secs)
+                 for org in candidates]
 
-        try:
-            results = client.search_companies(keywords=[name], limit=3)
-        except Exception as e:
-            print(f"ERROR: {e}")
-            index[ein] = {"name": name, "found": False, "followers": 0, "url": None}
-            time.sleep(sleep_secs)
-            continue
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(_search_one, a): a[0] for a in args_list}
+        completed = 0
+        for fut in as_completed(futures):
+            ein, result = fut.result()
+            index[ein] = result
+            completed += 1
+            if result.get("found"):
+                found += 1
+                print(f"  ✓ [{completed}/{len(candidates)}] {result['name'][:40]} — {result['followers']:,} followers")
+            else:
+                print(f"  · [{completed}/{len(candidates)}] {result['name'][:40]} — not found")
 
-        if not results:
-            print("not found")
-            index[ein] = {"name": name, "found": False, "followers": 0, "url": None}
-            time.sleep(sleep_secs)
-            continue
-
-        # Confidence check: name must overlap
-        top = results[0]
-        top_name = (top.get("name") or "").lower()
-        query_words = set(w for w in name.lower().split() if len(w) > 3)
-        match_words = set(top_name.split())
-        overlap = query_words & match_words
-
-        if not overlap and len(query_words) > 1:
-            print(f"low confidence ({top_name[:30]})")
-            index[ein] = {"name": name, "found": False, "followers": 0, "url": None}
-            time.sleep(sleep_secs)
-            continue
-
-        urn_id = top.get("urn_id", "")
-        followers = parse_followers(top.get("subline") or top.get("headline"))
-        url = f"https://www.linkedin.com/company/{urn_id}/" if urn_id else None
-
-        print(f"✓ {top_name[:30]} — {followers:,} followers")
-        index[ein] = {
-            "name": top.get("name", name),
-            "found": True,
-            "followers": followers,
-            "url": url,
-            "urn_id": urn_id,
-        }
-        found += 1
-        time.sleep(sleep_secs)
-
-        # Save every 25 to preserve progress
-        if (i + 1) % 25 == 0:
-            save_index(index)
-            print(f"  (saved checkpoint at {i+1})")
+            if completed % 25 == 0:
+                save_index(index)
+                print(f"  (checkpoint saved at {completed})")
 
     save_index(index)
     with_page = sum(1 for v in index.values() if v.get("found"))
@@ -167,14 +175,15 @@ def show_stats():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--batch", type=int, default=100, help="Gems to process this run")
-    parser.add_argument("--sleep", type=float, default=2.0, help="Seconds between API calls")
+    parser.add_argument("--sleep", type=float, default=2.0, help="Seconds between API calls per worker")
+    parser.add_argument("--workers", type=int, default=4, help="Parallel workers (≤4 recommended)")
     parser.add_argument("--stats", action="store_true", help="Show index stats")
     args = parser.parse_args()
 
     if args.stats:
         show_stats()
     else:
-        enrich_batch(args.batch, args.sleep)
+        enrich_batch(args.batch, args.sleep, args.workers)
 
 
 if __name__ == "__main__":
