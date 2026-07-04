@@ -7696,6 +7696,99 @@ def volunteer_claim_hours():
 
     return jsonify({'status': 'claimed', 'message': 'Hours claimed. Nonprofit will review.'}), 200
 
+@app.route('/api/nonprofit/<ein>/volunteer/pending', methods=['GET'])
+def nonprofit_pending_approvals(ein: str):
+    """Get pending volunteer hours awaiting nonprofit approval.
+
+    Response: [{id, volunteer_name, volunteer_email, hours, service_date, activity_description, status}]
+    """
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
+
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = get_db()
+    claim = db.execute(
+        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
+        (ein, uid)
+    ).fetchone()
+
+    if not claim:
+        return jsonify({'error': 'You do not own this nonprofit'}), 403
+
+    hours = db.execute('''
+        SELECT id, volunteer_name, volunteer_email, hours, service_date, activity_description, status
+        FROM volunteer_hours
+        WHERE nonprofit_ein=? AND status IN ("confirmed", "pending")
+        ORDER BY submitted_at DESC
+    ''', (ein,)).fetchall()
+
+    return jsonify([dict(h) for h in hours]), 200
+
+@app.route('/api/nonprofit/<ein>/volunteer/<hour_id>/approve', methods=['POST'])
+@limiter.limit("60 per hour")
+def nonprofit_approve_hours(ein: str, hour_id: str):
+    """Approve submitted volunteer hours."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
+
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = get_db()
+    claim = db.execute(
+        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
+        (ein, uid)
+    ).fetchone()
+
+    if not claim:
+        return jsonify({'error': 'You do not own this nonprofit'}), 403
+
+    try:
+        db.execute(
+            'UPDATE volunteer_hours SET status=?, approved_by=?, approved_at=? WHERE id=? AND nonprofit_ein=?',
+            ('approved', uid, datetime.now().isoformat(), hour_id, ein)
+        )
+        db.commit()
+    except Exception as e:
+        return jsonify({'error': f'Approval failed: {str(e)}'}), 500
+
+    return jsonify({'status': 'approved'}), 200
+
+@app.route('/api/nonprofit/<ein>/volunteer/<hour_id>/reject', methods=['POST'])
+@limiter.limit("60 per hour")
+def nonprofit_reject_hours(ein: str, hour_id: str):
+    """Reject submitted volunteer hours."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
+
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    data = request.get_json(silent=True) or {}
+    reason = (data.get('reason') or '').strip()
+
+    db = get_db()
+    claim = db.execute(
+        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
+        (ein, uid)
+    ).fetchone()
+
+    if not claim:
+        return jsonify({'error': 'You do not own this nonprofit'}), 403
+
+    try:
+        db.execute(
+            'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND nonprofit_ein=?',
+            ('rejected', uid, datetime.now().isoformat(), reason, hour_id, ein)
+        )
+        db.commit()
+    except Exception as e:
+        return jsonify({'error': f'Rejection failed: {str(e)}'}), 500
+
+    return jsonify({'status': 'rejected'}), 200
+
 @app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
 def nonprofit_dashboard_analytics(claim_token: str):
     """
