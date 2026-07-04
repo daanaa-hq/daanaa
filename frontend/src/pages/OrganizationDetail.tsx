@@ -28,6 +28,7 @@ import CohortContext from '../components/CohortContext'
 import PeerContextBreakdown from '../components/PeerContextBreakdown'
 import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
+import GuildSection from '../components/GuildSection'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -938,6 +939,9 @@ export default function OrganizationDetail() {
               <ImpactWidget orgEin={apiOrg.EIN} size="small" />
             </div>
           )}
+
+          {/* Guild/Partner Membership */}
+          {apiOrg && <GuildSection ein={apiOrg.EIN} />}
 
 
           {/* About this listing + the org's claimable spaces get the full width

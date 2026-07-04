@@ -7103,6 +7103,55 @@ def org_grants(ein):
         })
     return jsonify({'grants': grants}), 200
 
+@app.route('/api/org/<ein>/guild', methods=['GET'])
+@limiter.limit("60 per minute")
+def org_guild_membership(ein):
+    """Get guild (partner) membership for an org.
+
+    Returns: {guild_id, guild_name, slug, tier, benefits: [{tier, feature_name, description}]}
+    Empty object {} if no membership.
+    """
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if len(ein) != 9:
+        return jsonify({}), 200
+
+    db = get_db()
+
+    try:
+        # Query membership + guild info
+        row = db.execute('''
+            SELECT g.guild_id, g.name, g.slug, g.website, gm.tier
+            FROM guild_membership gm
+            JOIN guild g ON gm.guild_id = g.guild_id
+            WHERE gm.ein=?
+        ''', (ein,)).fetchone()
+
+        if not row:
+            return jsonify({}), 200
+
+        guild_id, guild_name, slug, website, tier = row['guild_id'], row['name'], row['slug'], row['website'], row['tier']
+
+        # Get benefits for this guild + tier
+        benefits = db.execute('''
+            SELECT tier, feature_name, description
+            FROM guild_benefits
+            WHERE guild_id=? AND tier=?
+            ORDER BY tier, feature_name
+        ''', (guild_id, tier)).fetchall()
+
+        return jsonify({
+            'guild_id': guild_id,
+            'guild_name': guild_name,
+            'slug': slug,
+            'website': website,
+            'tier': tier,
+            'benefits': [dict(b) for b in benefits],
+        }), 200
+
+    except Exception as e:
+        # Table not yet created or other error — return empty
+        return jsonify({}), 200
+
 def e2e_wallet_init():
     """Issue a random salt for a new wallet. Salt is not secret."""
     import base64 as _b64
