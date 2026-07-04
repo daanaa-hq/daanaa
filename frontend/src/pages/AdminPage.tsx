@@ -217,7 +217,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
         <ol className="mt-3 space-y-1.5 font-body text-[13px] text-cool-grey list-decimal pl-5">
           <li>Confirm you are speaking with the person named on the claim and that their role matches the title given.</li>
           <li>Ask how they are connected to the organization. If anything feels off, call back through a number from the org's own website or public records.</li>
-          <li>Once satisfied, read them the 6 digit PIN and remind them it stays good for 30 days at daanaa.org/claim/verify.</li>
+          <li>Once satisfied, read them the 6 digit PIN and remind them it stays good for 7 days at daanaa.org/claim/verify.</li>
           <li>Press Mark called and write one line about how identity was confirmed.</li>
         </ol>
       </details>

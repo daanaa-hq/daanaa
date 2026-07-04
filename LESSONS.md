@@ -259,3 +259,14 @@ probe the filter (use COALESCE/expression to force filter-first).
 Symptom: E4 proximity search (working on production) disappeared after deploying E5 sprint. Both `daanaa_api.py` and `scripts/droplet_api.py` lost `_haversine_mi`, `_zips_within_radius`, `_resolve_location` and all proximity wiring.
 Root cause: E4 changes were never committed. Worktrees are created from the last commit, not the working tree. When E5 agents ran, they got the pre-E4 committed versions. Merging their files overwrote the uncommitted E4 modifications.
 Rule: **Commit (or stash) any working changes before launching worktree agents.** Worktrees branch from HEAD — they cannot see uncommitted edits in the main working tree. If a deploy is approved, commit first; then spawn agents on the new HEAD.
+
+## 2026-07-02 — EINs are public data, not credentials
+- **Symptom:** `VolunteerSubmission.tsx` used an EIN entered by the user as a proxy for nonprofit identity — if you know the EIN, you can submit hours on behalf of any org.
+- **Root cause:** EINs appear on every 990, ProPublica, and the IRS database; they are public record. Using a public identifier as an auth token is no auth at all — anyone can harvest EINs and submit on behalf of any org.
+- **Rule:** Never treat a public identifier (EIN, NTEE code, state registration number) as a credential. Auth for nonprofit-facing features requires a verified account (email-confirmed or OAuth). Until that exists, gate the feature behind a clear "coming soon" error rather than shipping it with a false security boundary.
+
+## 2026-07-02 — Curly quotes in Python string literals crash Python 3.12
+- **Symptom:** After editing `droplet_api.py` in a context window and deploying, gunicorn refused to start with a `SyntaxError` — `ast.parse()` caught U+2018/U+2019 (curly apostrophes) inside string literals.
+- **Root cause:** LLM output and Markdown editors commonly substitute typographic curly quotes (`'`/`'`, `"`/`"`) for straight ASCII quotes. Python 3.12 is strict: those Unicode code points are invalid inside string literals even if the surrounding delimiters are fine. The error only surfaces at parse time — tests running with exec/eval may not catch it.
+- **Fix used:** Binary replacement pass before redeploy — `sed -i "s/\xe2\x80\x98/'/g; s/\xe2\x80\x99/'/g" droplet_api.py`, then verified with `python3 -c "import ast; ast.parse(open('droplet_api.py').read())"`.
+- **Rule:** Before deploying any Python file that was generated or edited inside a context window, run `python3 -c "import ast; ast.parse(open('<file>').read())"`. A curly-quote `SyntaxError` is silent at rsync and only surfaces when gunicorn tries to load the module — the site goes down. Add this check to the deploy checklist alongside syntax/lint.

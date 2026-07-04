@@ -69,6 +69,11 @@ export default function Partners() {
 
           {loading ? (
             <div className="text-center py-12 text-cool-grey">Loading...</div>
+          ) : sorted.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-lg border border-light-grey">
+              <p className="font-body text-cool-grey text-[16px]">No partners available yet.</p>
+              <p className="font-body text-cool-grey/60 text-[14px] mt-2">We're building our community partnership network. Check back soon.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {sorted.map((v) => (

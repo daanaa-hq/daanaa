@@ -1642,8 +1642,10 @@ def list_organizations():
         radius_mi = int(request.args.get('radius_mi') or request.args.get('radius') or 0)
     except (ValueError, TypeError):
         radius_mi = 0
-    sort_by = request.args.get('sort', 'merit_score')
-    order = request.args.get('order', 'desc')
+    # Neutral default (2026-07-04): name A-Z, never a score ranking (STEWARDSHIP
+    # P7 posture — merit_score sort stays available only as an explicit opt-in).
+    sort_by = request.args.get('sort', 'organization_name')
+    order = request.args.get('order') or ('asc' if sort_by == 'organization_name' else 'desc')
 
     offset = (page - 1) * per_page
 
@@ -1743,12 +1745,12 @@ def list_organizations():
         where_clauses.append("merit_tier = ?")
         params.append(tier)
 
-    # total_revenue exposed as a sort option; peer-benchmarked merit_score remains the
-    # default. P4 note: callers should prefer merit_score for org discovery.
+    # total_revenue and merit_score are opt-in sorts; the default is neutral
+    # name order so browse never implies a ranking.
     allowed_sorts = ['organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY',
                      'total_revenue']
     if sort_by not in allowed_sorts:
-        sort_by = 'merit_score'
+        sort_by = 'organization_name'
     if order not in ['asc', 'desc']:
         order = 'desc'
 
@@ -2748,7 +2750,7 @@ _CLAIM_STATUSES = {'pending', 'verified', 'active', 'revoked', 'letter_sent'}
 def admin_today():
     """The daily worklist — the system says what needs attention so nothing
     is scanned for or remembered. Buckets: claims waiting for the
-    verification call, and called claims whose PIN expires within 7 days."""
+    verification call, and called claims whose PIN expires within 2 days."""
     db = get_db()
     to_call = [dict(r) for r in db.execute("""
         SELECT c.ein, r.organization_name, c.rep_name, c.rep_title, c.phone, c.created_at,
@@ -2761,7 +2763,7 @@ def admin_today():
                CAST(julianday(c.pin_expires_at) - julianday('now') AS INTEGER) AS days_left
         FROM org_claims c LEFT JOIN registry_enriched r ON r.EIN = c.ein
         WHERE c.claim_status = 'pending' AND c.called_at IS NOT NULL
-          AND datetime(c.pin_expires_at) < datetime('now', '+7 days')
+          AND datetime(c.pin_expires_at) < datetime('now', '+2 days')
         ORDER BY c.pin_expires_at ASC""").fetchall()]
     return jsonify({
         'to_call': to_call,
@@ -2987,7 +2989,7 @@ def _notify_admin_new_claim(ein: str, org_name: str, email: str, phone: str, tit
         f"Contact:      {email}\n"
         f"Phone:        {_format_phone(phone)}\n"
         f"Title/role:   {title}\n"
-        f"PIN:          {pin}  (expires in 30 days)\n\n"
+        f"PIN:          {pin}  (expires in 7 days)\n\n"
         f"Org page:     https://daanaa.org/org/{ein}\n"
         f"They enter the PIN at https://daanaa.org/claim/verify?ein={ein}&email={email}\n",
     )
@@ -3005,7 +3007,7 @@ def _claim_received_email_body(org_name: str, ein: str, phone: str, rep_name: st
         f"{_format_phone(phone)} within a few business days to confirm that you represent the "
         f"organization. On that call we will give you a 6 digit PIN.\n\n"
         f"When you have your PIN, enter it at https://daanaa.org/claim/verify?ein={ein} "
-        f"and your page opens for editing. The PIN stays good for 30 days.\n\n"
+        f"and your page opens for editing. The PIN stays good for 7 days.\n\n"
         f"A couple of things worth knowing. Daanaa is a free public directory of "
         f"nonprofits built from IRS records. We never charge organizations and we "
         f"never handle donations. Your phone number and email are used only for "
@@ -3055,7 +3057,7 @@ def _claim_received_email_html(org_name: str, ein: str, phone: str, rep_name: st
       </p>
       <table style="border-collapse:collapse;margin:0 0 24px;">{steps_html}</table>
       <p style="font-size:13px;line-height:1.65;color:{grey};margin:0 0 8px;">
-        The PIN stays good for 30 days. Your phone number and email are used only
+        The PIN stays good for 7 days. Your phone number and email are used only
         for this verification and neither is shown publicly.
       </p>
       <p style="font-size:13px;line-height:1.65;color:{grey};margin:0 0 24px;">
@@ -3136,7 +3138,7 @@ def claim_start():
                                      "contact orgs@daanaa.org if you believe this is an error."}), 403
 
     pin            = str(secrets.randbelow(900000) + 100000)
-    pin_expires_at = db.execute("SELECT datetime('now', '+30 days')").fetchone()[0]
+    pin_expires_at = db.execute("SELECT datetime('now', '+7 days')").fetchone()[0]
 
     db.execute("""
         INSERT INTO org_claims (ein, email, irs_address, pin, pin_expires_at, claim_status,
@@ -7608,15 +7610,11 @@ def report_bookmark():
 @app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
 def nonprofit_dashboard_analytics(claim_token: str):
     """
-    Nonprofit Donor Interest Dashboard (authenticated via claim token).
+    Nonprofit Donor Interest Dashboard (disabled for launch).
 
-    Returns aggregated, anonymized donor interest metrics for an org that has
-    claimed their profile. Shows bookmarks by cause, location, trending tags,
-    profile completeness, and actionable improvement tips.
-
-    Stewardship Principle #2: Privacy structural (no individual user tracking,
-    only aggregated stats). Principle #3: Evidence-based (real bookmark data).
+    This feature is planned for Phase 2. Returns 501 until ready.
     """
+    return jsonify({'error': 'Dashboard coming soon'}), 501
     try:
         # Verify claim token (should be a JWT-like token from claim process)
         # For now, simple approach: token is base64(ein:email:timestamp)

@@ -404,3 +404,13 @@ Rejected: sequential single-agent — slower; rejected shared worktree — colli
 Chose: browser Geolocation API → Nominatim (OpenStreetMap) reverse geocode → extract city + state_code → populate the near text field. Coordinates go to Nominatim, never to daanaa.org.
 Why: stewardship P2 constraint (documented in STEWARDSHIP.md 2026-07-01 entry) prohibits raw browser coordinates from reaching our server. Nominatim is privacy-respecting, free, and CORS-enabled. Result is city+state ("Portland, OR"), which is the format our haversine radius search already accepts.
 Rejected: reverse geocode on our server — violates P2 constraint; rejected browser zip-code lookup (no such API exists natively); rejected skipping the button entirely — friction reduction for local searches improves utility for donors.
+
+## 2026-07-04 — Neutral default sort: name A-Z everywhere, score is opt-in only
+Chose: organization_name ASC as the default sort in Directory.tsx, daanaa_api.py browse, droplet_api.py `_order_clause` + `_merge_orgs`, and precompute_browse.py ORDER BY. Peer Financial Context remains available as an explicit dropdown choice.
+Why: 2026-07-03 audit found the merit_score default quietly contradicted the "no ranking" posture (STEWARDSHIP P7/P5) — browse pages implied a best-to-worst verdict. Approved by founder 2026-07-04.
+Rejected: removing the score sort entirely — donors who want peer context should still get it, it just cannot be the unasked-for default. Note: existing precompute browse files are still percentile-ordered until the next precompute regen + droplet rsync.
+
+## 2026-07-04 — Claim PIN expiry shortened 30 → 7 days
+Chose: `datetime('now','+7 days')` at PIN creation; all admin/email/UI copy updated; admin /api/admin/today expiring-PIN window narrowed 7 → 2 days so it flags urgency instead of every claim.
+Why: audit flagged the 6-digit PIN fallback (900K space, rate-limited only) as MEDIUM; a 30-day window is 4x more exposure than needed since verification calls happen within days.
+Rejected: dropping the raw-PIN path now — it stays until the HMAC token flow is universal (documented follow-up).

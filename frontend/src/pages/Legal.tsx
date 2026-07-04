@@ -158,9 +158,9 @@ export default function Legal() {
             <p className="mt-3">
               <strong className="text-deep-navy">The Giving Wallet requires no account.</strong> Wallet data
               is stored on your device by default. You may optionally sign in with Google to enable cross-device
-              sync. Your wallet holds bookmarks and giving intent only — never transaction records. It is never
-              shown publicly, never used for marketing or outreach, and can be deleted in full at any time.
-              We do not track your browsing activity on the site.
+              sync. Your wallet holds bookmarks and giving intent only — never transaction records, event registrations,
+              or impact reports. It is never shown publicly, never used for marketing or outreach, and can be deleted in
+              full at any time. We do not track your browsing activity on the site.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">Partner inquiries</strong> sent through our partners page go to our

@@ -158,21 +158,50 @@ def _resolve_location(conn, near_raw):
     return None
 
 
-def _fts_where(q: str, state: str = '') -> tuple:
+def _fts_where(q: str, state: str = '', conn=None) -> tuple:
     """Build base FTS WHERE conditions and params for q + state.
-    Returns (conditions, params, detected_zip_or_None)."""
-    # Extract a trailing 5-digit zip from the query so it can drive proximity.
+    Returns (conditions, params, detected_zip_or_None).
+    If conn is provided, resolves zip to city name so FTS can find orgs."""
     detected_zip = None
     words = q.split()
-    if words and re.match(r'^\d{5}$', words[-1]):
-        detected_zip = words[-1]
-        words = words[:-1]
-    fts_q = ' '.join(f'{w}*' for w in words if w) or ' '.join(f'{w}*' for w in q.split() if w)
+    # Extract any standalone 5-digit zip from any position in the query.
+    non_zip_words = []
+    for w in words:
+        if re.match(r'^\d{5}$', w) and detected_zip is None:
+            detected_zip = w
+        else:
+            non_zip_words.append(w)
+
+    zip_city = None
+    zip_state = None
+    if detected_zip and conn:
+        zrow = conn.execute(
+            "SELECT city, state_id FROM zip_codes WHERE zip=?", (detected_zip,)
+        ).fetchone()
+        if zrow:
+            zip_city = zrow["city"]
+            zip_state = zrow["state_id"]
+
+    # Build FTS query: if bare zip (no other keywords), search by resolved city.
+    # If mixed ("food bank 97701"), keep keywords and append city to help location.
+    if non_zip_words:
+        fts_terms = non_zip_words
+        if zip_city and zip_city.lower() not in ' '.join(non_zip_words).lower():
+            fts_terms = non_zip_words + [zip_city]
+    elif zip_city:
+        fts_terms = [zip_city]
+    else:
+        # Unknown zip or no conn: fall back to raw query so we return something
+        fts_terms = words
+
+    fts_q = ' '.join(f'{w}*' for w in fts_terms if w) or '""'
     conditions: list = ["s.ein = o.EIN", "org_fts MATCH ?"]
     params: list = [fts_q]
-    if state:
+    # State filter: prefer explicit param, fall back to zip-resolved state
+    resolved_state = state or zip_state or ''
+    if resolved_state:
         conditions.append("o.STATE = ?")
-        params.append(state)
+        params.append(resolved_state)
     return conditions, params, detected_zip
 
 
@@ -225,18 +254,20 @@ def _tier_condition(tier: str, alias: str = ''):
 def _order_clause(sort: str, order: str, alias: str = '') -> str:
     """ORDER BY body honoring an asc/desc direction. Name defaults A-Z,
     revenue/score default high-first; an explicit order param overrides.
+    Unspecified sort falls back to neutral name order (2026-07-04: browse must
+    never imply a ranking; merit_score sort is explicit opt-in only).
     COALESCE keeps NULLs last (and, per the 2026-06-09 note, avoids the score
     index forcing a row-by-row probe on filtered browses)."""
     o = (order or '').strip().lower()
-    if sort in ('name', 'organization_name'):
-        d = 'DESC' if o == 'desc' else 'ASC'
-        return f"{alias}organization_name {d}"
     if sort in ('revenue', 'total_revenue'):
         d = 'ASC' if o == 'asc' else 'DESC'
         return f"COALESCE({alias}total_revenue, -1) {d}"
-    # default + explicit merit_score
-    d = 'ASC' if o == 'asc' else 'DESC'
-    return f"COALESCE({alias}merit_score, -1) {d}"
+    if sort == 'merit_score':
+        d = 'ASC' if o == 'asc' else 'DESC'
+        return f"COALESCE({alias}merit_score, -1) {d}"
+    # default + explicit name sort
+    d = 'DESC' if o == 'desc' else 'ASC'
+    return f"{alias}organization_name {d}"
 
 
 # Legal posture (2026-06-10): no donation links on public surfaces. Donate data
@@ -725,7 +756,9 @@ def _merge_orgs(orgs_lists, per_page, page):
             if ein and ein not in seen:
                 seen.add(ein)
                 merged.append(o)
-    merged.sort(key=lambda o: o.get('merit_score') or 0, reverse=True)
+    # Neutral name order (2026-07-04): merged browse pages must not imply a
+    # score ranking; merit_score sort is explicit opt-in only.
+    merged.sort(key=lambda o: (o.get('organization_name') or '').lower())
     total = len(merged)
     pages = max(1, (total + per_page - 1) // per_page)
     start = (page - 1) * per_page
@@ -888,7 +921,7 @@ def search():
         return jsonify({'results': [], 'query': query, 'total': 0, 'mode': 'unavailable'})
 
     try:
-        conditions, params, _zip = _fts_where(query, state)
+        conditions, params, _zip = _fts_where(query, state, conn=conn)
         cat_conds, cat_params = _cat_rev_conditions(
             [x.strip()[:1] for x in ntee.split(',') if x.strip()], [], None, None, alias='o.')
         conditions.extend(cat_conds)
@@ -930,7 +963,7 @@ def fused_search():
                         'page': page, 'per_page': per_page, 'search_type': 'unavailable'})
 
     try:
-        conditions, params, _zip = _fts_where(q, state)
+        conditions, params, _zip = _fts_where(q, state, conn=conn)
         cat_conds, cat_params = _cat_rev_conditions(
             [x.strip()[:1] for x in ntee.split(',') if x.strip()], [], None, None, alias='o.')
         conditions.extend(cat_conds)
@@ -1360,7 +1393,21 @@ _LEGACY_REDIRECTS = {
     'learn': '/methodology',
     'guides': '/methodology',
     'faq': '/methodology#faq',
-    'privacy': '/legal',
+    # 'privacy' removed 2026-07-03: the SPA now has a real /privacy page
+    # (App.tsx routes it to <Privacy />); redirecting to /legal made it unreachable.
+}
+
+# NTEE major-group letter names — mirrors frontend/src/data/ntee.ts so
+# /category/<letter> pages get real server-rendered titles for crawlers.
+_NTEE_LETTER_NAMES = {
+    'A': 'Arts & Culture', 'B': 'Education', 'C': 'Environment', 'D': 'Animals',
+    'E': 'Health', 'F': 'Mental Health', 'G': 'Disease Research',
+    'H': 'Medical Research', 'I': 'Crime & Legal', 'J': 'Employment',
+    'K': 'Food & Nutrition', 'L': 'Housing & Shelter', 'M': 'Public Safety',
+    'N': 'Sports & Recreation', 'O': 'Youth Development', 'P': 'Human Services',
+    'Q': 'International', 'R': 'Civil Rights', 'S': 'Community',
+    'T': 'Philanthropy', 'U': 'Science & Technology', 'V': 'Social Science',
+    'W': 'Public Benefit', 'X': 'Faith', 'Y': 'Mutual Benefit', 'Z': 'Unclassified',
 }
 
 _HOMEPAGE_JSONLD = {
@@ -1436,6 +1483,13 @@ def _meta_for_path(path: str):
                 f"{name}{(' in ' + loc) if loc else ''}: public IRS record, peer "
                 f"financial context, and mission on Daanaa.")
             return (f"{name} — Daanaa", desc, f"https://daanaa.org/org/{ein}", _org_jsonld(org, ein))
+    if p.startswith('category/'):
+        letter = p.split('/', 1)[1].split('/')[0].strip().upper()
+        if letter in _NTEE_LETTER_NAMES:
+            cat_name = _NTEE_LETTER_NAMES[letter]
+            title = f"{cat_name} Organizations — Daanaa"
+            desc = f"Discover IRS-recognized nonprofits in {cat_name} with peer financial context and public records."
+            return (title, desc, f"https://daanaa.org/category/{letter}", None)
     if p in _STATIC_META:
         title, desc = _STATIC_META[p]
         return (title, desc, f"https://daanaa.org/{p}", None)

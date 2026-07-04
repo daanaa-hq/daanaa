@@ -189,7 +189,6 @@ function PersonaTiles() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <p className="font-body text-[15px] font-semibold text-cool-grey/50">I want to volunteer</p>
-              <span className="px-1.5 py-0.5 rounded-full bg-soft-gold/15 text-[10px] font-semibold text-soft-gold leading-none">Soon</span>
             </div>
             <p className="font-body text-[12px] text-cool-grey/40 mt-1">Volunteer matching</p>
           </div>

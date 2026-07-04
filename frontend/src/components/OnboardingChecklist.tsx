@@ -24,9 +24,8 @@ export default function OnboardingChecklist({ ein, onDismiss }: OnboardingCheckl
     {
       id: 'letters-ready',
       label: 'Donation letters enabled',
-      description: 'You can approve and generate donation letters for donors',
-      completed: true,
-      action: { label: 'Manage letters', href: `/nonprofit/dashboard/${ein}` },
+      description: 'You can approve and generate donation letters for donors (coming soon)',
+      completed: false,
     },
     {
       id: 'volunteer-hours',

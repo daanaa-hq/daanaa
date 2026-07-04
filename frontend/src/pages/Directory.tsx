@@ -19,9 +19,11 @@ const FILTER_CATEGORIES = [
 
 const SCORES_ENABLED = import.meta.env.VITE_ENABLE_SCORES !== 'false'
 
+// Neutral default (2026-07-04 stewardship fix): name A to Z, never a score
+// ranking. Peer Financial Context stays available as an explicit opt-in sort.
 const SORT_OPTIONS = [
-  ...(SCORES_ENABLED ? [{ id: 'merit_score', label: 'Peer Financial Context' }] : []),
   { id: 'organization_name', label: 'Name A to Z' },
+  ...(SCORES_ENABLED ? [{ id: 'merit_score', label: 'Peer Financial Context' }] : []),
   { id: 'total_revenue', label: 'Revenue' },
 ]
 
@@ -148,7 +150,8 @@ export default function Directory() {
   })
   const [subFilters, setSubFilters] = useState<string[]>(subParamList)
   const [stateFilter, setStateFilter] = useState(stateParam)
-  const [sortBy, setSortBy] = useState(SCORES_ENABLED ? 'merit_score' : 'total_revenue')
+  const [sortBy, setSortBy] = useState('organization_name')
+  const sessionShuffleRef = useRef(Math.random().toString(36).slice(2, 11))
 
   // Sync filter state with URL params whenever they change
   useEffect(() => {
@@ -172,7 +175,7 @@ export default function Directory() {
   const [nearInput, setNearInput] = useState(searchParams.get('near') || '')
   const [radiusMi, setRadiusMi] = useState(Number(searchParams.get('radius_mi') || '25'))
   const [visTier, setVisTier] = useState(searchParams.get('tier') || '')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
@@ -339,8 +342,8 @@ export default function Directory() {
     setActiveFilters([])
     setSubFilters([])
     setStateFilter('')
-    setSortBy(SCORES_ENABLED ? 'merit_score' : 'total_revenue')
-    setSortOrder('desc')
+    setSortBy('organization_name')
+    setSortOrder('asc')
     setRevenueFilter('')
     setScoreTier('')
     setVisTier('')
@@ -378,10 +381,37 @@ export default function Directory() {
     setSearchParams(searchParams)
   }
 
+  // Deterministic shuffle using session ID as seed. Produces same order within
+  // a session, but different order on each fresh visit to browse-all (no filters).
+  const seededShuffle = (arr: any[], seed: string): any[] => {
+    const result = [...arr]
+    let hash = 0
+    for (let i = 0; i < seed.length; i++) {
+      hash = ((hash << 5) - hash) + seed.charCodeAt(i)
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    const random = (index: number): number => {
+      const x = Math.sin(hash + index) * 10000
+      return x - Math.floor(x)
+    }
+    for (let i = result.length - 1; i > 0; i--) {
+      const j: number = Math.floor(random(i) * (i + 1))
+      ;[result[i], result[j]] = [result[j], result[i]]
+    }
+    return result
+  }
+
   // Use fused results when available, fall back to FTS5 keyword
   const fusedResults = fusedData?.results
   const useFusedResults = isFusedMode && !!fusedResults && fusedResults.length >= 1
-  const organizations = useFusedResults ? fusedResults : (orgsData?.organizations || [])
+  let organizations = useFusedResults ? fusedResults : (orgsData?.organizations || [])
+
+  // Apply shuffle when browsing all orgs with no filters/search (discover mode)
+  const shouldShuffle = effectiveHiddenGem && !useFusedResults && !debouncedQuery.trim() && activeFilters.length === 0 && !stateFilter && !revenueFilter && !scoreTier && !visTier
+  if (shouldShuffle && organizations.length > 0) {
+    organizations = seededShuffle(organizations, sessionShuffleRef.current)
+  }
+
   const total = useFusedResults ? fusedResults.length : (orgsData?.total || 0)
   const totalPages = useFusedResults ? 1 : (orgsData?.pages || 1)
   const activeLoading = useFusedResults ? fusedLoading : orgsLoading
@@ -415,7 +445,7 @@ export default function Directory() {
     !!visTier,
     hasWebsite,
     needsSupport,
-    sortBy !== (SCORES_ENABLED ? 'merit_score' : 'total_revenue'),
+    sortBy !== 'organization_name',
   ].filter(Boolean).length
 
   return (
@@ -941,7 +971,12 @@ export default function Directory() {
                       <span className="font-body text-[14px] text-cool-grey">Sort:</span>
                       <select
                         value={sortBy}
-                        onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1) }}
+                        onChange={(e) => {
+                          setSortBy(e.target.value)
+                          // Name reads A-Z; score/revenue read high-first
+                          setSortOrder(e.target.value === 'organization_name' ? 'asc' : 'desc')
+                          setCurrentPage(1)
+                        }}
                         aria-label="Sort organizations by"
                         className="bg-transparent font-body text-[14px] text-deep-navy outline-none cursor-pointer"
                       >

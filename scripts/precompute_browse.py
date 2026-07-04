@@ -158,10 +158,9 @@ def main():
                 -- Only surface orgs where donating is currently tax-deductible:
                 -- deductible 501(c)(3) AND not IRS-revoked. Fail closed on revocation.
                 WHERE NTEE1 = ? AND STATE = ? AND deductibility = 1 AND org_status = 'active'
-                ORDER BY
-                    CASE WHEN peer_percentile IS NOT NULL THEN peer_percentile ELSE ntee1_percentile END DESC NULLS LAST,
-                    total_revenue DESC NULLS LAST,
-                    organization_name ASC
+                -- Neutral name order (2026-07-04): browse pages must not imply
+                -- a ranking; percentile/score ordering removed per stewardship.
+                ORDER BY organization_name ASC
             """, (cat_code, state))
 
             all_orgs = [org_to_dict(row) for row in cursor.fetchall()]
@@ -221,10 +220,9 @@ def main():
             FROM registry_enriched
             -- Only surface orgs where donating is currently tax-deductible (see above).
             WHERE NTEE1 = ? AND deductibility = 1 AND org_status = 'active'
-            ORDER BY
-                CASE WHEN peer_percentile IS NOT NULL THEN peer_percentile ELSE ntee1_percentile END DESC NULLS LAST,
-                total_revenue DESC NULLS LAST,
-                organization_name ASC
+            -- Neutral name order (2026-07-04): browse pages must not imply
+            -- a ranking; percentile/score ordering removed per stewardship.
+            ORDER BY organization_name ASC
         """, (cat_code,))
 
         all_orgs = [org_to_dict(row) for row in cursor.fetchall()]
