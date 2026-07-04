@@ -7152,6 +7152,77 @@ def org_guild_membership(ein):
         # Table not yet created or other error — return empty
         return jsonify({}), 200
 
+@app.route('/api/guild/<slug>', methods=['GET'])
+@limiter.limit("60 per minute")
+def guild_detail(slug: str):
+    """Get guild (partner) info + member organizations.
+
+    Response: {
+      guild_id, name, slug, website,
+      benefits: {free: [], pro: [], enterprise: []},
+      members: [{ein, organization_name, city, state}]
+    }
+    """
+    slug = (slug or '').lower().strip()
+    if not slug:
+        return jsonify({'error': 'Guild not found'}), 404
+
+    db = get_db()
+
+    try:
+        # Get guild info
+        guild = db.execute(
+            'SELECT guild_id, name, slug, website FROM guild WHERE slug=?',
+            (slug,)
+        ).fetchone()
+
+        if not guild:
+            return jsonify({'error': 'Guild not found'}), 404
+
+        guild_id = guild['guild_id']
+
+        # Get benefits by tier
+        benefits_rows = db.execute('''
+            SELECT tier, feature_name, description
+            FROM guild_benefits
+            WHERE guild_id=?
+            ORDER BY tier, feature_name
+        ''', (guild_id,)).fetchall()
+
+        benefits = {'free': [], 'pro': [], 'enterprise': []}
+        for row in benefits_rows:
+            tier = row['tier']
+            if tier in benefits:
+                benefits[tier].append({
+                    'feature_name': row['feature_name'],
+                    'description': row['description'],
+                })
+
+        # Get member orgs (limit 50)
+        members_rows = db.execute('''
+            SELECT r.EIN, r.organization_name, r.city, r.state
+            FROM guild_membership gm
+            JOIN registry_enriched r ON gm.ein = r.EIN
+            WHERE gm.guild_id=?
+            ORDER BY r.organization_name
+            LIMIT 50
+        ''', (guild_id,)).fetchall()
+
+        members = [dict(m) for m in members_rows]
+
+        return jsonify({
+            'guild_id': guild_id,
+            'name': guild['name'],
+            'slug': guild['slug'],
+            'website': guild['website'],
+            'benefits': benefits,
+            'member_count': len(members),
+            'members': members,
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': f'Error loading guild: {str(e)}'}), 500
+
 def e2e_wallet_init():
     """Issue a random salt for a new wallet. Salt is not secret."""
     import base64 as _b64

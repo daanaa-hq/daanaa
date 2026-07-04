@@ -55,6 +55,7 @@ const AdminOperations = lazy(() => import('./pages/AdminOperations'))
 const VolunteerApproval = lazy(() => import('./pages/nonprofit/VolunteerApproval'))
 const VolunteerSubmission = lazy(() => import('./pages/VolunteerSubmission'))
 const DonationReceipt = lazy(() => import('./pages/DonationReceipt'))
+const GuildPage = lazy(() => import('./pages/GuildPage'))
 
 function PageLoader() {
   return (
@@ -115,6 +116,7 @@ export default function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/security" element={<Security />} />
             <Route path="/guild/:slug" element={<GuildReferral />} />
+            <Route path="/partner/:slug" element={<GuildPage />} />
             <Route path="/member/benefits" element={<MemberBenefits />} />
             <Route path="/volunteer" element={<VolunteerSearch />} />
             <Route path="/volunteer/submit" element={<VolunteerSubmission />} />

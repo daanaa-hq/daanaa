@@ -67,7 +67,7 @@ export default function GuildSection({ ein }: GuildSectionProps) {
             </a>
           )}
         </div>
-        <Link to={`/guild/${guild.slug}`} className="text-soft-gold hover:underline text-[13px] font-semibold">
+        <Link to={`/partner/${guild.slug}`} className="text-soft-gold hover:underline text-[13px] font-semibold">
           View benefits
         </Link>
       </div>
