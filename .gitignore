@@ -111,3 +111,7 @@ dist/
 
 # Patch manifests (scratch output from patch_precompute_v5_context.py)
 precompute_output/v5_patch_changed.txt
+
+# Session/agent state and generated marketing artifacts — never track
+.superpowers/
+scripts/linkedin/output/
