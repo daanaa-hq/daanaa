@@ -7607,6 +7607,57 @@ def report_bookmark():
         return jsonify({'error': 'Failed to record bookmark'}), 500
 
 
+@app.route('/api/nonprofit/<ein>/volunteer/submit', methods=['POST'])
+@limiter.limit("30 per hour")
+def nonprofit_volunteer_submit(ein: str):
+    """Submit volunteer hours for approval.
+
+    Request: {volunteer_name, volunteer_email, hours, service_date, activity_description}
+    Response: {claim_code, claim_url}
+    """
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
+
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    # Verify ownership
+    db = get_db()
+    claim = db.execute(
+        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
+        (ein, uid)
+    ).fetchone()
+
+    if not claim:
+        return jsonify({'error': 'You do not own this nonprofit'}), 403
+
+    data = request.get_json(silent=True) or {}
+    name = (data.get('volunteer_name') or '').strip()
+    email = (data.get('volunteer_email') or '').strip()
+    hours = float(data.get('hours') or 0)
+    service_date = (data.get('service_date') or '').strip()
+    activity = (data.get('activity_description') or '').strip()
+
+    if not all([name, email, hours > 0, service_date, activity]):
+        return jsonify({'error': 'All fields required'}), 400
+
+    import uuid
+    claim_code = f"VOL-{uuid.uuid4().hex[:12].upper()}"
+
+    try:
+        db.execute('''
+            INSERT INTO volunteer_hours (
+                id, nonprofit_ein, volunteer_name, volunteer_email,
+                hours, service_date, activity_description, status, submitted_at, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+        ''', (claim_code, ein, name, email, hours, service_date, activity,
+              datetime.now().isoformat(), datetime.now().isoformat()))
+        db.commit()
+    except Exception as e:
+        return jsonify({'error': f'Submit failed: {str(e)}'}), 500
+
+    return jsonify({'claim_code': claim_code, 'claim_url': f'https://daanaa.org/volunteer/claim?code={claim_code}'}), 201
+
 @app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
 def nonprofit_dashboard_analytics(claim_token: str):
     """
