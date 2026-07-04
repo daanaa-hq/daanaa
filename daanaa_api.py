@@ -7658,6 +7658,44 @@ def nonprofit_volunteer_submit(ein: str):
 
     return jsonify({'claim_code': claim_code, 'claim_url': f'https://daanaa.org/volunteer/claim?code={claim_code}'}), 201
 
+@app.route('/api/volunteer/claim', methods=['POST'])
+@limiter.limit("30 per hour")
+def volunteer_claim_hours():
+    """Volunteer claims hours they completed.
+
+    Request: {code, email}
+    Response: {status: 'claimed'}
+    """
+    data = request.get_json(silent=True) or {}
+    code = (data.get('code') or '').strip()
+    email = (data.get('email') or '').strip()
+
+    if not code or not email:
+        return jsonify({'error': 'Code and email required'}), 400
+
+    db = get_db()
+    hours = db.execute(
+        'SELECT id, nonprofit_ein, volunteer_email FROM volunteer_hours WHERE id=?',
+        (code,)
+    ).fetchone()
+
+    if not hours:
+        return jsonify({'error': 'Invalid claim code'}), 404
+
+    if hours['volunteer_email'].lower() != email.lower():
+        return jsonify({'error': 'Email does not match'}), 403
+
+    try:
+        db.execute(
+            'UPDATE volunteer_hours SET status=? WHERE id=?',
+            ('confirmed', code)
+        )
+        db.commit()
+    except Exception as e:
+        return jsonify({'error': f'Claim failed: {str(e)}'}), 500
+
+    return jsonify({'status': 'claimed', 'message': 'Hours claimed. Nonprofit will review.'}), 200
+
 @app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
 def nonprofit_dashboard_analytics(claim_token: str):
     """
