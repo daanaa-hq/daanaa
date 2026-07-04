@@ -43,8 +43,9 @@ function SkeletonCard() {
 
 // ── Org card ───────────────────────────────────────────────────────────────────
 
-function OrgCard({ org, onEditProfile, loadingEin }: {
+function OrgCard({ org, onDashboard, onEditProfile, loadingEin }: {
   org: ClaimedOrg
+  onDashboard: (ein: string) => void
   onEditProfile: (ein: string) => void
   loadingEin: string | null
 }) {
@@ -86,6 +87,13 @@ function OrgCard({ org, onEditProfile, loadingEin }: {
 
         {(status === 'verified' || status === 'active') && (
           <>
+            <button
+              onClick={() => onDashboard(org.ein)}
+              disabled={isLoading}
+              className="px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold disabled:opacity-50 transition-colors"
+            >
+              Dashboard
+            </button>
             <button
               onClick={() => onEditProfile(org.ein)}
               disabled={isLoading}
@@ -145,7 +153,7 @@ export default function MyOrgsPage() {
     fetchOrgs()
   }, [getIdToken, navigate, signOut])
 
-  async function navigateWithToken(ein: string) {
+  async function navigateWithToken(ein: string, destination: 'dashboard' | 'edit' = 'edit') {
     setLoadingEin(ein)
     try {
       const idToken = await getIdToken()
@@ -154,7 +162,10 @@ export default function MyOrgsPage() {
         return
       }
       const token = await getPortalToken(ein, idToken)
-      navigate(`/claim/edit?ein=${encodeURIComponent(ein)}&token=${encodeURIComponent(token)}`)
+      const path = destination === 'dashboard'
+        ? `/nonprofit/dashboard/${encodeURIComponent(ein)}`
+        : `/claim/edit?ein=${encodeURIComponent(ein)}&token=${encodeURIComponent(token)}`
+      navigate(path)
     } catch {
       setError('Could not load portal access. Please try again.')
     } finally {
@@ -239,6 +250,7 @@ export default function MyOrgsPage() {
               <OrgCard
                 key={org.ein}
                 org={org}
+                onDashboard={ein => navigateWithToken(ein, 'dashboard')}
                 onEditProfile={ein => navigateWithToken(ein)}
                 loadingEin={loadingEin}
               />

@@ -44,7 +44,7 @@ const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
 const NonprofitDashboard = lazy(() => import('./pages/NonprofitDashboard'))
 const NonprofitLogin = lazy(() => import('./pages/nonprofit/NonprofitLogin'))
 const MyOrgsPage = lazy(() => import('./pages/nonprofit/MyOrgsPage'))
-// const NonprofitDashboardPage = lazy(() => import('./pages/nonprofit/NonprofitDashboardPage'))  // Dashboard disabled for launch
+const NonprofitDashboardPage = lazy(() => import('./pages/nonprofit/NonprofitDashboardPage'))
 const NonprofitVerifyEmail = lazy(() => import('./pages/nonprofit/NonprofitVerification'))
 const Partners = lazy(() => import('./pages/Partners'))
 const PartnerDetail = lazy(() => import('./pages/PartnerDetail'))
@@ -130,6 +130,7 @@ export default function App() {
           <Route path="/nonprofit/letters/signup" element={<NonprofitSignup />} />
           <Route element={<NonprofitRoute />}>
             <Route path="/nonprofit/my-orgs" element={<MyOrgsPage />} />
+            <Route path="/nonprofit/dashboard/:ein" element={<NonprofitDashboardPage />} />
             <Route path="/nonprofit/volunteer-approval" element={<VolunteerApproval />} />
           </Route>
           <Route path="/vendor/login" element={<VendorLoginPage />} />
