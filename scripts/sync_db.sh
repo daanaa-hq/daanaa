@@ -16,7 +16,7 @@ rm -f "$LEAN_DB"
 
 # Back up the droplet's live DB (user-generated data) BEFORE touching the catalog.
 mkdir -p "$LIVE_BACKUP_DIR"
-rsync -az -e "ssh -i /home/akbar/.ssh/daanaa_do -o StrictHostKeyChecking=no" \
+rsync -az -e "ssh -i /home/akbar/.ssh/daanaa_do_cron -o StrictHostKeyChecking=no" \
     root@162.243.97.179:/opt/daanaa/data/daanaa_live.db \
     "$LIVE_BACKUP_DIR/daanaa_live_$(date +%Y%m%d).db" 2>/dev/null \
     && echo "$LOG Live DB backed up to $LIVE_BACKUP_DIR" \
@@ -44,11 +44,11 @@ conn.close()
 "
 
 echo "$LOG Lean DB ready. Syncing to droplet..."
-rsync -az -e "ssh -i /home/akbar/.ssh/daanaa_do -o StrictHostKeyChecking=no" \
+rsync -az -e "ssh -i /home/akbar/.ssh/daanaa_do_cron -o StrictHostKeyChecking=no" \
     "$LEAN_DB" root@162.243.97.179:/opt/daanaa/data/merit_registry.db
 
 echo "$LOG Restarting cloud service..."
-ssh -i /home/akbar/.ssh/daanaa_do root@162.243.97.179 "systemctl restart daanaa"
+ssh -i /home/akbar/.ssh/daanaa_do_cron root@162.243.97.179 "systemctl restart daanaa"
 
 echo "$LOG Sync complete."
 rm -f "$LEAN_DB"

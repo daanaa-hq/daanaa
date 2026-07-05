@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mailer import send_ops_email
 
 STATE_FILE = Path.home() / "meritgiving/logs/watchdog_state.json"
-SSH_KEY = str(Path.home() / ".ssh/daanaa_do")
+SSH_KEY = str(Path.home() / ".ssh/daanaa_do_cron")  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 DROPLET = "root@162.243.97.179"
 DISK_ALERT_PCT = 85
 REALERT_HOURS = 6

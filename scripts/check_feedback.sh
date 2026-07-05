@@ -4,7 +4,7 @@
 set -e
 
 DROPLET="root@162.243.97.179"
-SSH_KEY="/home/akbar/.ssh/daanaa_do"
+SSH_KEY="/home/akbar/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 LIVE_DB="/tmp/daanaa_live_check.db"
 LOG="/home/akbar/meritgiving/logs/feedback_live.log"
 SEEN_FILE="/home/akbar/meritgiving/logs/feedback_last_rowid"

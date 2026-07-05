@@ -5,7 +5,7 @@
 set -e
 
 DROPLET_IP="162.243.97.179"
-SSH_KEY="$HOME/.ssh/daanaa_do"
+SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 DROPLET_DB="/opt/daanaa/data/merit_registry.db"
 LOCAL_DB="$HOME/meritgiving/data/merit_registry.db"
 LOCAL_DB_BAK="$LOCAL_DB.bak-$(date +%Y%m%d_%H%M%S)"

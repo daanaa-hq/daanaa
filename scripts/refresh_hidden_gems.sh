@@ -6,7 +6,7 @@
 
 set -e
 DROPLET="daanaa-droplet"
-SSH_KEY="$HOME/.ssh/daanaa_do"
+SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 LOCAL_GEMS="$HOME/meritgiving/precompute_output/browse/hidden_gems"
 REMOTE_GEMS="/data/precompute/v1/browse/hidden_gems"
 

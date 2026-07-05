@@ -5,7 +5,7 @@ set -e
 
 DROPLET_IP="162.243.97.179"
 DROPLET_USER="root"
-SSH_KEY="$HOME/.ssh/daanaa_do"
+SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 REPO_DIR="$HOME/meritgiving"
 LOG_DIR="$REPO_DIR/logs"
 LOG_FILE="$LOG_DIR/deployment.log"

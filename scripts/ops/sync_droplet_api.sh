@@ -14,7 +14,7 @@ set -euo pipefail
 BASE="$HOME/meritgiving"
 LOCAL_API="$BASE/scripts/droplet_api.py"
 REMOTE_API="/opt/daanaa/droplet_api.py"
-SSH_KEY="$HOME/.ssh/daanaa_do"
+SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 DROPLET="root@162.243.97.179"
 SSH="ssh -i $SSH_KEY -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=accept-new $DROPLET"
 LOG="$BASE/logs/sync_droplet_api.log"
