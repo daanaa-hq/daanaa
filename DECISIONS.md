@@ -420,3 +420,13 @@ Rejected: removing the score sort entirely — donors who want peer context shou
 Chose: `datetime('now','+7 days')` at PIN creation; all admin/email/UI copy updated; admin /api/admin/today expiring-PIN window narrowed 7 → 2 days so it flags urgency instead of every claim.
 Why: audit flagged the 6-digit PIN fallback (900K space, rate-limited only) as MEDIUM; a 30-day window is 4x more exposure than needed since verification calls happen within days.
 Rejected: dropping the raw-PIN path now — it stays until the HMAC token flow is universal (documented follow-up).
+
+## 2026-07-05 — Outage response: roll droplet back to lean scripts/droplet_api.py
+Chose: redeploy `scripts/droplet_api.py` (HEAD, md5 7c3074) as the droplet API; take last night's unapproved "recall endpoints" (8,284-line home-API copy) off production; harden all three ops deploy scripts + watchdog instead of adding new monitoring tools.
+Why: the big API requires org_embeddings/v4_scores tables and a ~2GB embeddings load the 961MB droplet can never provide — keyword search and stats were 500ing with no path to green. The lean API is the documented droplet architecture (precompute + search.db contract).
+Rejected: shipping v4_scores + embeddings to the droplet (multi-GB, still OOMs); keeping pages on the big API with search proxied home (two sources of truth, more tunnels). Recall endpoints return via the planned blueprint refactor, reviewed and approved this time.
+
+## 2026-07-05 — Autonomy policy split: backend autonomous, frontend still reviewed
+Chose: droplet API deploys, ops scripts, data/scoring pipeline, and backend git commits/pushes no longer stop for approval, conditional on every autonomous deploy running a smoke test (homepage + core API return 200) with auto-rollback to last-known-good on failure. Frontend/UI changes still require explicit review before build+deploy. Database schema/migration and spending money remain gated.
+Why: explicit founder decision after the 2026-07-05 outage response, made specifically so incident response and routine backend ops don't bottleneck on availability — while keeping a human in the loop for user-facing UI (higher blast radius on taste/UX) and irreversible-ish actions (schema, money).
+Rejected: full autonomy including frontend — rejected same session; rejected leaving the old blanket gate in place — it was already being routed around by ad hoc sessions (see LESSONS.md 2026-07-05 outage entry), so an unenforced gate was worse than a scoped one with a real safety net (smoke test + rollback).

@@ -45,9 +45,19 @@ Senior-engineer bar. The system gets smarter every session. Read this file,
 - **Boy-scout rule.** Leave touched files better. **Secrets only from env/config**,
   never logged, never in code.
 
-### Autonomy (set 2026-06-01, site is live)
+### Autonomy (revised 2026-07-05 — see DECISIONS.md for why)
 - Local edits, research, reads, builds, local tests → just do them.
-- **Deploy to the droplet, push to GitHub, or spend money → stop, show, get approval.**
+- **Backend is autonomous.** Droplet API (`droplet_api.py` / `scripts/droplet_api.py`),
+  ops scripts, the data/scoring pipeline, and backend git commits/pushes may be deployed
+  and shipped without stopping for approval — but every autonomous deploy MUST pass its
+  smoke test (homepage + one core API return 200 from the public URL) before being
+  considered done, and MUST auto-rollback to the last known-good version on failure
+  (see `scripts/ops/sync_droplet_api.sh`). A deploy that "restarts the service" but
+  doesn't verify real pages render is not verified — this exact gap caused the
+  2026-07-05 outage (see LESSONS.md).
+- **Frontend still requires review.** Any change under `frontend/` (React/TS/UI) →
+  stop, show the diff, get explicit approval before building or deploying.
+- **Spending money → stop, show, get approval.** Unchanged.
 
 ### Learning loop (do without being asked)
 - Non-obvious choice → 2-line entry in `DECISIONS.md` (chose / why / rejected).
@@ -248,14 +258,19 @@ misuse and enforce structural guardrails on sensitive operations.
 - Blocks: token patterns, log leakage, env var fallbacks, exfiltration vectors, data source mismatches
 - See `privacy_check.sh` for full rules aligned with STEWARDSHIP.md Principles #2 and #3
 
-### Approval Gates (Autonomy Rule)
-These operations **require explicit approval** before execution:
-- Writing to shared repo (`git push`, `git commit` on branches)
-- Deploying to production (`safe_deploy_droplet.sh`, droplet API restart)
+### Approval Gates (Autonomy Rule — revised 2026-07-05)
+**Backend is autonomous** (see DECISIONS.md 2026-07-05): committing/pushing backend
+code, deploying to the droplet, and restarting the droplet API do NOT require
+approval — but every autonomous backend deploy MUST run its smoke test and
+auto-rollback on failure (`scripts/ops/sync_droplet_api.sh` is the reference
+pattern). Log what shipped and why in DECISIONS.md/LESSONS.md as usual.
+
+These operations still **require explicit approval** before execution:
+- Any change under `frontend/` reaching the droplet (build + deploy)
 - Spending budget (cloud APIs, services)
 - Anything touching the database schema or migration
 
-**Pattern:** I show the proposed change, you approve it before it ships.
+**Pattern for the gated items above:** I show the proposed change, you approve it before it ships.
 
 ---
 

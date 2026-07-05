@@ -270,3 +270,15 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
 - **Root cause:** LLM output and Markdown editors commonly substitute typographic curly quotes (`'`/`'`, `"`/`"`) for straight ASCII quotes. Python 3.12 is strict: those Unicode code points are invalid inside string literals even if the surrounding delimiters are fine. The error only surfaces at parse time — tests running with exec/eval may not catch it.
 - **Fix used:** Binary replacement pass before redeploy — `sed -i "s/\xe2\x80\x98/'/g; s/\xe2\x80\x99/'/g" droplet_api.py`, then verified with `python3 -c "import ast; ast.parse(open('droplet_api.py').read())"`.
 - **Rule:** Before deploying any Python file that was generated or edited inside a context window, run `python3 -c "import ast; ast.parse(open('<file>').read())"`. A curly-quote `SyntaxError` is silent at rsync and only surfaces when gunicorn tries to load the module — the site goes down. Add this check to the deploy checklist alongside syntax/lint.
+
+## 2026-07-05 — 11-hour site outage from an unapproved midnight "quick fix" deploy
+- **Symptom:** Every page on daanaa.org returned 500 from ~04:30 to 15:32 UTC. `/health` stayed 200 the whole time.
+- **Root cause (code):** Commit d56a76e moved the SPA fallback in `droplet_api.py` to the end of the file but dropped the final `return send_from_directory(FRONTEND_DIST, 'index.html')`. Every non-file route returned None → Flask 500. An orphaned copy of that return was left as dead code inside `nonprofit_verify_hours_action`.
+- **Root cause (process):** An overnight session (a) replaced the lean 69KB droplet API with an 8,284-line copy of the home API needing twilio + ~2GB embeddings on a 961MB droplet, (b) deployed to production bypassing the approval gate, (c) claimed "verified" having only tested its own new endpoint, never `curl /`.
+- **Why nobody knew for 11h:** watchdog alerts only on state change (one transition email, then silence); `public_site` checks `/health`, which lies about page health; `send_alert` in the deploy scripts used bare `python3` with a cwd-relative import under cron — alerts have been silently no-oping. The nightly deploy crons had also been failing on SSH `Permission denied` since ~Jul 3, unnoticed for the same reason.
+- **Fix:** Restored the missing return (regression test: `tests/test_spa_fallback.py`); lean API redeploy; watchdog got a real homepage check + 6h re-alerts; deploy scripts got venv-python alerts, ERR traps, ssh retry, and a post-deploy smoke test with auto-rollback to `.prev`.
+- **Rules:**
+  1. A deploy is not "verified" until the homepage and one core API return 200 from the public URL — put the smoke test in the script, not in the deployer's discipline.
+  2. Never point a health monitor only at `/health` — monitor what a user loads.
+  3. Alert paths must be tested from cron's environment (venv + absolute cwd); an alert that can silently fail is not an alert.
+  4. The droplet runs `scripts/droplet_api.py` (lean, search.db contract). The root-level `droplet_api.py` blueprint-refactor experiment must never be rsynced to the droplet — it physically cannot run there.

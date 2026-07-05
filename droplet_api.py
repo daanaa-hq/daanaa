@@ -6932,9 +6932,6 @@ def nonprofit_verify_hours_action():
         return jsonify({'error': 'Failed to verify hours'}), 500
 
 
-    return send_from_directory(FRONTEND_DIST, 'index.html')
-
-
 # ── Vendor self-service portal ───────────────────────────────────────────────
 # Vendors are businesses that serve nonprofits. They self-register, manage
 # their own listing, and pay for premium placement. Nonprofits always free.
@@ -8282,3 +8279,4 @@ if __name__ == '__main__':
 def serve_frontend(path):
     if path and os.path.exists(os.path.join(FRONTEND_DIST, path)):
         return send_from_directory(FRONTEND_DIST, path)
+    return send_from_directory(FRONTEND_DIST, 'index.html')

@@ -20,6 +20,18 @@ CONFIG="$BASE/.aws-backup-config"
 mkdir -p "$(dirname "$LOG")"
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
+alert() {
+    ( cd "$BASE" && ./venv/bin/python3 - "$1" "$2" <<'PYEOF'
+import sys
+sys.path.insert(0, '.')
+from scripts.ops.mailer import send_ops_email
+send_ops_email("security@daanaa.org", sys.argv[1], sys.argv[2])
+PYEOF
+    ) || log "WARN: alert email failed to send"
+}
+
+trap 'log "FATAL(trap): failed at line $LINENO"; alert "[Daanaa ALERT] frontend deploy FAILED" "frontend_deploy.sh died at line $LINENO. Log: $LOG"' ERR
+
 [ -f "$CONFIG" ] && source "$CONFIG"
 
 # Current SHA of frontend/src tree (changes when any source file changes)

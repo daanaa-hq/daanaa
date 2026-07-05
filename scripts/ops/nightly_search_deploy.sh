@@ -46,11 +46,14 @@ cd "$BASE"
 source venv/bin/activate 2>/dev/null || die "venv not found"
 
 send_alert() {
-    python3 - "$1" <<'PYEOF' 2>/dev/null || true
+    # venv python + repo cwd: the old bare `python3` with cwd-relative import
+    # failed silently under cron (2>/dev/null), so FATALs never emailed.
+    ( cd "$BASE" && ./venv/bin/python3 - "$1" <<'PYEOF'
 import sys; sys.path.insert(0, '.')
 from scripts.ops.mailer import send_ops_email
 send_ops_email("security@daanaa.org", "[Daanaa ALERT] nightly_search_deploy failed", sys.argv[1])
 PYEOF
+    ) || log "WARN: alert email failed to send"
 }
 
 # ── Step 1: Rebuild FTS5 index ──────────────────────────────────────────────
