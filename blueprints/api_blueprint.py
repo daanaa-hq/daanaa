@@ -1,94 +1,31 @@
-#!/usr/bin/env python3
 """
-Daanaa API — Peer-context nonprofit directory backend
-Serves registry_enriched + v4 scores to frontend
+Daanaa API Routes (Flask Blueprint)
+
+This blueprint contains ALL /api/*, /health, and other API endpoints.
+Registered FIRST in droplet_api.py to ensure API routes are matched
+before the SPA fallback.
+
+Limiter is injected by droplet_api.py during app setup.
 """
-import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets, logging, sys
-from math import radians, cos, sin, asin, sqrt
-from datetime import datetime
 
-# Sentry error tracking — activate by setting SENTRY_DSN env var.
-import sentry_sdk
-_sentry_dsn = os.environ.get("SENTRY_DSN", "")
-if _sentry_dsn:
-    sentry_sdk.init(
-        dsn=_sentry_dsn,
-        traces_sample_rate=0.1,   # 10% of requests traced
-        profiles_sample_rate=0.05,
-        environment=os.environ.get("DAANAA_ENV", "production"),
-        release=os.environ.get("GIT_COMMIT", "unknown"),
-        # Never capture PII — no user emails, IPs, or request bodies in Sentry
-        send_default_pii=False,
-    )
-import numpy as np
-import requests as _http
-from flask import Flask, jsonify, request, g, abort, send_from_directory, Blueprint
-from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from twilio.twiml.voice_response import VoiceResponse
-from twilio.twiml.messaging_response import MessagingResponse
-from twilio.request_validator import RequestValidator
+from flask import Blueprint
 
+api_bp = Blueprint('api', __name__)
 
-def _run_migrations(db_path: str):
-    """Run pending database migrations from migrations/ directory."""
-    try:
-        migration_dir = os.path.join(os.path.dirname(__file__), 'migrations')
-        if not os.path.isdir(migration_dir):
-            return
+# Limiter will be set by droplet_api.py after initialization
+_limiter = None
 
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+def set_limiter(limiter):
+    """Called by droplet_api.py to inject the limiter."""
+    global _limiter
+    _limiter = limiter
 
-        # Get list of already-run migrations from metadata table (if it exists)
-        try:
-            cursor.execute('SELECT migration_name FROM _migration_log')
-            run_migrations = {row[0] for row in cursor.fetchall()}
-        except sqlite3.OperationalError:
-            # Create log table if it doesn't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS _migration_log (
-                    migration_name TEXT PRIMARY KEY,
-                    run_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            run_migrations = set()
+def get_limiter():
+    """Get the configured limiter."""
+    return _limiter
 
-        # Run .sql files in alphabetical order
-        for filename in sorted(os.listdir(migration_dir)):
-            if not filename.endswith('.sql'):
-                continue
-
-            if filename in run_migrations:
-                continue
-
-            migration_path = os.path.join(migration_dir, filename)
-            with open(migration_path, 'r') as f:
-                sql = f.read()
-
-            # Execute migration (can be multiple statements)
-            for statement in sql.split(';'):
-                stmt = statement.strip()
-                if stmt:
-                    cursor.execute(stmt)
-
-            # Log that we ran it
-            cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
-            _logger.info(f'Ran migration: {filename}')
-
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        _logger.error(f'Migration error: {e}', exc_info=True)
-        # Don't fail startup — migrations are best-effort
-
-# Add scripts directory to path for email service
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
-try:
-    from email_service import (
-        get_email_service,
-        hours_verified_email,
+# The rest of the blueprint code follows...
+# (All the route handlers from the original api_blueprint.py)
         hours_rejected_email,
         claim_received_email,
         claim_verified_email,
@@ -1559,7 +1496,7 @@ def _resolve_location(db, near_raw):
     return None
 
 
-@app.route('/health')
+@api_bp.route('/health')
 @limiter.exempt
 def health():
     return jsonify({"status": "ok", "db_exists": os.path.exists(DB_PATH)})
@@ -1583,7 +1520,7 @@ def v1_health():
 app.register_blueprint(api_v1)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@app.route('/api/log/search', methods=['POST'])
+@api_bp.route('/api/log/search', methods=['POST'])
 @limiter.limit("500 per minute")
 def log_search():
     """Log a search query for surge detection. Called by frontend after search."""
@@ -1605,7 +1542,7 @@ def log_search():
     return jsonify({"status": "logged"})
 
 
-@app.route('/api/organizations')
+@api_bp.route('/api/organizations')
 @limiter.limit("100 per minute")
 def list_organizations():
     # Build cache key from all query params before parsing
@@ -1852,7 +1789,7 @@ def list_organizations():
     _cset(ck, payload)
     return jsonify(payload)
 
-@app.route('/api/organizations/<ein>')
+@api_bp.route('/api/organizations/<ein>')
 @limiter.limit("60 per minute")
 def get_organization(ein):
     # Sanitize EIN — digits only, max 10 chars
@@ -2039,7 +1976,7 @@ def get_organization(ein):
     result['_disclosures'] = disclosures
     return jsonify(result)
 
-@app.route('/api/organizations/<ein>/recall')
+@api_bp.route('/api/organizations/<ein>/recall')
 @limiter.limit("60 per minute")
 def get_recall_packet(ein):
     """Recall packet: unified context layer (public record + peer + macro + KG)"""
@@ -2138,7 +2075,7 @@ def get_recall_packet(ein):
 
     return jsonify(recall_packet)
 
-@app.route('/api/organizations/<ein>/macro-context')
+@api_bp.route('/api/organizations/<ein>/macro-context')
 @limiter.limit("60 per minute")
 def get_macro_context(ein):
     """Macro economic context from FRED"""
@@ -2167,7 +2104,7 @@ def get_macro_context(ein):
         "confidence": macro_row.get("confidence"),
     })
 
-@app.route('/api/organizations/<ein>/knowledge-graph')
+@api_bp.route('/api/organizations/<ein>/knowledge-graph')
 @limiter.limit("60 per minute")
 def get_knowledge_graph(ein):
     """Knowledge graph entities and relationships"""
@@ -2212,7 +2149,7 @@ def get_knowledge_graph(ein):
         "total_relationships": len(relationships),
     })
 
-@app.route('/api/organizations/<ein>/score-history')
+@api_bp.route('/api/organizations/<ein>/score-history')
 @limiter.limit("60 per minute")
 def get_score_history(ein):
     ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
@@ -2238,7 +2175,7 @@ def get_score_history(ein):
         "total": len(rows),
     })
 
-@app.route('/api/organizations/<ein>/financials')
+@api_bp.route('/api/organizations/<ein>/financials')
 @limiter.limit("60 per minute")
 def get_financials(ein):
     ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
@@ -2276,7 +2213,7 @@ def get_financials(ein):
         "total": 1,
     })
 
-@app.route('/api/ntee-categories')
+@api_bp.route('/api/ntee-categories')
 @limiter.exempt
 def ntee_categories():
     cached = _cget('ntee_cats', 'ntee')
@@ -2355,7 +2292,7 @@ def _is_revoked(db, ein):
     except Exception:
         return False  # table missing → fail OPEN on revocation only; basic gate still applies
 
-@app.route('/api/ntee-coverage')
+@api_bp.route('/api/ntee-coverage')
 @limiter.limit("30 per minute")
 def ntee_coverage():
     """Per-category visibility coverage for qualified orgs — drives the
@@ -2383,7 +2320,7 @@ def ntee_coverage():
     _cset('ntee_coverage', payload)
     return jsonify(payload)
 
-@app.route('/api/stats')
+@api_bp.route('/api/stats')
 @limiter.limit("60 per minute")
 def stats():
     cached = _cget('stats', 'stats')
@@ -2444,7 +2381,7 @@ def stats():
     _cset('stats', payload)
     return jsonify(payload)
 
-@app.route('/api/sector-health')
+@api_bp.route('/api/sector-health')
 @limiter.limit("30 per minute")
 def sector_health():
     cached = _cget('sector_health', 'sector')
@@ -2495,7 +2432,7 @@ def sector_health():
     _cset('sector_health', payload)
     return jsonify(payload)
 
-@app.route('/api/scoring-runs')
+@api_bp.route('/api/scoring-runs')
 @limiter.limit("20 per minute")
 @require_admin_key
 def scoring_runs():
@@ -2528,7 +2465,7 @@ def scoring_runs():
 _VALID_SOURCES  = {'newsletter', 'claiming'}
 _VALID_STATUSES = {'new', 'contacted', 'converted', 'dismissed'}
 
-@app.route('/api/waitlist', methods=['POST'])
+@api_bp.route('/api/waitlist', methods=['POST'])
 @limiter.limit("5 per minute; 20 per hour")
 def waitlist_submit():
     data  = request.get_json(silent=True) or {}
@@ -2550,7 +2487,7 @@ def waitlist_submit():
 
 _VALID_LINK_REASONS = {'not_found', 'broken'}
 
-@app.route('/api/link-feedback', methods=['POST'])
+@api_bp.route('/api/link-feedback', methods=['POST'])
 @limiter.limit("30 per minute")
 def link_feedback_submit():
     # Anonymous. We deliberately accept and store ONLY ein + reason.
@@ -2571,7 +2508,7 @@ def link_feedback_submit():
     return ('', 204)
 
 
-@app.route('/api/handoff', methods=['POST'])
+@api_bp.route('/api/handoff', methods=['POST'])
 @limiter.limit("20 per minute")
 def donate_handoff():
     # Anonymous realized-impact signal. We accept ONLY an EIN and increment a
@@ -2592,7 +2529,7 @@ def donate_handoff():
     return ('', 204)
 
 
-@app.route('/api/interest', methods=['POST'])
+@api_bp.route('/api/interest', methods=['POST'])
 @limiter.limit("20 per minute")
 def org_interest_signal():
     # Anonymous demand signal toward an org. Accept ONLY an EIN and a kind.
@@ -2612,7 +2549,7 @@ def org_interest_signal():
     return ('', 204)
 
 
-@app.route('/api/interest/<ein>')
+@api_bp.route('/api/interest/<ein>')
 def org_interest_counts(ein):
     # Readback of the anonymous demand tally for an org, for the claim flow to
     # show the organization ("3 people wanted to give, 1 to volunteer"). Counts
@@ -2643,7 +2580,7 @@ def _normalize_path(p: str) -> str:
     return p[:120] or '/'
 
 
-@app.route('/api/feedback', methods=['POST'])
+@api_bp.route('/api/feedback', methods=['POST'])
 @limiter.limit("5 per minute; 20 per hour")
 def submit_feedback():
     # Anonymous site feedback. message required; email OPTIONAL (only if the
@@ -2666,7 +2603,7 @@ def submit_feedback():
     return ('', 204)
 
 
-@app.route('/api/v5_feedback', methods=['POST'])
+@api_bp.route('/api/v5_feedback', methods=['POST'])
 @limiter.limit("10 per minute; 50 per hour")
 def submit_v5_feedback():
     # Week 3 beta feedback collection: structured form for v5 peer taxonomy.
@@ -2702,7 +2639,7 @@ def submit_v5_feedback():
 _EVENT_TYPES = {'pageview', 'search', 'give_click', 'save_org', 'compare', 'wallet_export'}
 
 
-@app.route('/api/event', methods=['POST'])
+@api_bp.route('/api/event', methods=['POST'])
 @limiter.limit("60 per minute")
 def track_event():
     # First-party, aggregate-only analytics. We count events, never people.
@@ -2745,7 +2682,7 @@ def track_event():
 # ORG SELF-REPORTING: Unscored orgs submit financial data to get scored
 # ─────────────────────────────────────────────────────────────────────────────
 
-@app.route('/api/org/submit-financial-data', methods=['POST'])
+@api_bp.route('/api/org/submit-financial-data', methods=['POST'])
 @limiter.limit("10 per hour")
 def org_submit_data():
     """Org submits its revenue + expenses to get scored via Tier D (self-reported)."""
@@ -2806,7 +2743,7 @@ def org_submit_data():
         return jsonify({"error": "Submission failed. Please try again."}), 500
 
 
-@app.route('/api/org/<ein>/submission-status', methods=['GET'])
+@api_bp.route('/api/org/<ein>/submission-status', methods=['GET'])
 @limiter.limit("60 per minute")
 def org_submission_status(ein):
     """Check if org has submitted data and when it will be scored."""
@@ -2849,7 +2786,7 @@ def org_submission_status(ein):
     }), 200
 
 
-@app.route('/api/unscored-search', methods=['GET'])
+@api_bp.route('/api/unscored-search', methods=['GET'])
 @limiter.limit("60 per minute")
 def unscored_search():
     """Search for unscored orgs by name/location to include in results with 'unscored' marker."""
@@ -2918,7 +2855,7 @@ def unscored_search():
 _CLAIM_STATUSES = {'pending', 'verified', 'active', 'revoked', 'letter_sent'}
 
 
-@app.route('/api/admin/today', methods=['GET'])
+@api_bp.route('/api/admin/today', methods=['GET'])
 @require_admin_key
 def admin_today():
     """The daily worklist — the system says what needs attention so nothing
@@ -2945,7 +2882,7 @@ def admin_today():
     })
 
 
-@app.route('/api/admin/activity/<ein>', methods=['GET'])
+@api_bp.route('/api/admin/activity/<ein>', methods=['GET'])
 @require_admin_key
 def admin_org_activity(ein):
     ein = ''.join(c for c in ein if c.isdigit())[:10]
@@ -2956,7 +2893,7 @@ def admin_org_activity(ein):
     return jsonify({'activity': [dict(r) for r in rows]})
 
 
-@app.route('/api/admin/claims', methods=['GET'])
+@api_bp.route('/api/admin/claims', methods=['GET'])
 @require_admin_key
 def admin_claims_list():
     status = request.args.get('status', '').strip()
@@ -2977,7 +2914,7 @@ def admin_claims_list():
     return jsonify({'claims': [dict(r) for r in rows], 'total': len(rows)})
 
 
-@app.route('/api/admin/claims/<ein>', methods=['PATCH'])
+@api_bp.route('/api/admin/claims/<ein>', methods=['PATCH'])
 @require_admin_key
 def admin_claims_update(ein):
     data   = request.get_json(silent=True) or {}
@@ -3011,7 +2948,7 @@ def admin_claims_update(ein):
     return jsonify({"error": "Unknown action. Use mark_called or revoke."}), 400
 
 
-@app.route('/api/admin/analytics', methods=['GET'])
+@api_bp.route('/api/admin/analytics', methods=['GET'])
 @require_admin_key
 def admin_analytics():
     # Hidden (admin-only) aggregate dashboard data. Never exposed publicly.
@@ -3036,7 +2973,7 @@ def admin_analytics():
     })
 
 
-@app.route('/api/admin/feedback', methods=['GET'])
+@api_bp.route('/api/admin/feedback', methods=['GET'])
 @require_admin_key
 def admin_feedback():
     db = get_db()
@@ -3046,7 +2983,7 @@ def admin_feedback():
     return jsonify({'feedback': rows, 'total': len(rows)})
 
 
-@app.route('/api/admin/waitlist', methods=['GET'])
+@api_bp.route('/api/admin/waitlist', methods=['GET'])
 @require_admin_key
 def admin_waitlist_list():
     source = request.args.get('source', '').strip()
@@ -3068,7 +3005,7 @@ def admin_waitlist_list():
     return jsonify({'entries': [dict(r) for r in rows], 'total': total})
 
 
-@app.route('/api/admin/waitlist/<int:wid>', methods=['PATCH'])
+@api_bp.route('/api/admin/waitlist/<int:wid>', methods=['PATCH'])
 @require_admin_key
 def admin_waitlist_update(wid):
     data   = request.get_json(silent=True) or {}
@@ -3091,7 +3028,7 @@ def admin_waitlist_update(wid):
     return jsonify(dict(row))
 
 
-@app.route('/api/admin/waitlist/<int:wid>', methods=['DELETE'])
+@api_bp.route('/api/admin/waitlist/<int:wid>', methods=['DELETE'])
 @require_admin_key
 def admin_waitlist_delete(wid):
     db = get_db()
@@ -3257,7 +3194,7 @@ def _send_claim_received_email(ein: str, org_name: str, email: str, phone: str, 
                        from_addr="Daanaa <verify@daanaa.org>")
 
 
-@app.route('/api/claim/start', methods=['POST'])
+@api_bp.route('/api/claim/start', methods=['POST'])
 @limiter.limit("3 per hour")
 def claim_start():
     data  = request.get_json(silent=True) or {}
@@ -3360,7 +3297,7 @@ def claim_start():
     return jsonify({"status": claim_status, "org_name": org_name, "address_preview": preview})
 
 
-@app.route('/api/claim/login', methods=['POST'])
+@api_bp.route('/api/claim/login', methods=['POST'])
 @limiter.limit("5 per hour")
 def claim_login():
     """Re-entry magic link for a verified claimant who lost their edit link.
@@ -3409,7 +3346,7 @@ def claim_login():
     return jsonify(neutral)
 
 
-@app.route('/api/claim/verify', methods=['POST'])
+@api_bp.route('/api/claim/verify', methods=['POST'])
 @limiter.limit("10 per minute")
 def claim_verify():
     data  = request.get_json(silent=True) or {}
@@ -3492,7 +3429,7 @@ def claim_verify():
     })
 
 
-@app.route('/api/claim/link-firebase', methods=['POST'])
+@api_bp.route('/api/claim/link-firebase', methods=['POST'])
 @limiter.limit("20 per hour")
 def claim_link_firebase():
     """
@@ -3518,7 +3455,7 @@ def claim_link_firebase():
     return jsonify({'ok': True})
 
 
-@app.route('/api/claim/my-orgs', methods=['GET'])
+@api_bp.route('/api/claim/my-orgs', methods=['GET'])
 @limiter.limit("60 per minute")
 def claim_my_orgs():
     """Return all verified claims belonging to the authenticated Firebase user."""
@@ -3535,7 +3472,7 @@ def claim_my_orgs():
     return jsonify({'orgs': [dict(r) for r in rows]})
 
 
-@app.route('/api/claim/portal-token', methods=['GET'])
+@api_bp.route('/api/claim/portal-token', methods=['GET'])
 @limiter.limit("30 per minute")
 def claim_portal_token():
     """
@@ -3562,7 +3499,7 @@ def claim_portal_token():
     })
 
 
-@app.route('/api/claim/update', methods=['POST'])
+@api_bp.route('/api/claim/update', methods=['POST'])
 def claim_update():
     """Update claimed org profile — mission, description, cause tags, donate URL."""
     data  = request.get_json(silent=True) or {}
@@ -3652,7 +3589,7 @@ def claim_update():
         return jsonify({'error': 'Update failed. Please try again.'}), 500
 
 
-@app.route('/api/claim/profile', methods=['PATCH'])
+@api_bp.route('/api/claim/profile', methods=['PATCH'])
 @limiter.limit("20 per minute")
 def claim_profile_update():
     data = request.get_json(silent=True) or {}
@@ -3695,7 +3632,7 @@ def claim_profile_update():
     return jsonify({"status": "updated"})
 
 
-@app.route('/api/claim/contacts', methods=['PATCH'])
+@api_bp.route('/api/claim/contacts', methods=['PATCH'])
 @limiter.limit("20 per minute")
 def claim_contacts_update():
     """Update nonprofit contact preferences for volunteers/donors."""
@@ -3851,7 +3788,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
 # better placement. The market decides which vendor members use.
 # ---------------------------------------------------------------------------
 
-@app.route('/api/guild/benefits')
+@api_bp.route('/api/guild/benefits')
 @limiter.limit("120 per minute")
 def guild_benefits():
     """Active vendor discount codes — public; powers the member dashboard."""
@@ -3864,7 +3801,7 @@ def guild_benefits():
     return jsonify([dict(r) for r in rows])
 
 
-@app.route('/api/guild/member-count')
+@api_bp.route('/api/guild/member-count')
 @limiter.limit("120 per minute")
 def guild_member_count():
     """Live count of verified claimed orgs — shown on ForVendors as proof of distribution."""
@@ -3878,7 +3815,7 @@ def guild_member_count():
         return jsonify({"member_count": 0})
 
 
-@app.route('/api/admin/guild/codes', methods=['GET'])
+@api_bp.route('/api/admin/guild/codes', methods=['GET'])
 def admin_guild_codes_list():
     require_admin()
     db = get_db()
@@ -3890,7 +3827,7 @@ def admin_guild_codes_list():
     return jsonify([dict(r) for r in rows])
 
 
-@app.route('/api/admin/guild/codes', methods=['POST'])
+@api_bp.route('/api/admin/guild/codes', methods=['POST'])
 def admin_guild_codes_create():
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -3920,7 +3857,7 @@ def admin_guild_codes_create():
     return jsonify(dict(row)), 201
 
 
-@app.route('/api/admin/guild/codes/<int:code_id>', methods=['PATCH'])
+@api_bp.route('/api/admin/guild/codes/<int:code_id>', methods=['PATCH'])
 def admin_guild_codes_update(code_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -3957,7 +3894,7 @@ def admin_guild_codes_update(code_id):
     return jsonify(dict(row))
 
 
-@app.route('/api/admin/guild/audit')
+@api_bp.route('/api/admin/guild/audit')
 def admin_guild_audit():
     """P7 audit trail: last 100 vendor code changes."""
     require_admin()
@@ -3970,7 +3907,7 @@ def admin_guild_audit():
     return jsonify([dict(r) for r in rows])
 
 
-@app.route('/api/admin/guild/codes/<int:code_id>/spend', methods=['POST'])
+@api_bp.route('/api/admin/guild/codes/<int:code_id>/spend', methods=['POST'])
 def admin_guild_spend_report(code_id):
     """Log a vendor's monthly spend report and check milestone thresholds."""
     require_admin()
@@ -4008,7 +3945,7 @@ def admin_guild_spend_report(code_id):
     })
 
 
-@app.route('/api/guild/nominate', methods=['POST'])
+@api_bp.route('/api/guild/nominate', methods=['POST'])
 @limiter.limit("10 per hour")
 def guild_nominate():
     """
@@ -4055,7 +3992,7 @@ def guild_nominate():
     return jsonify({"status": "received"})
 
 
-@app.route('/api/guild/referral/<slug>')
+@api_bp.route('/api/guild/referral/<slug>')
 @limiter.limit("120 per minute")
 def guild_referral_page(slug):
     """
@@ -4075,7 +4012,7 @@ def guild_referral_page(slug):
     return jsonify(dict(row))
 
 
-@app.route('/api/admin/guild/nominations', methods=['GET'])
+@api_bp.route('/api/admin/guild/nominations', methods=['GET'])
 def admin_guild_nominations():
     require_admin()
     db = get_db()
@@ -4085,7 +4022,7 @@ def admin_guild_nominations():
     return jsonify([dict(r) for r in rows])
 
 
-@app.route('/api/admin/guild/nominations/<int:nom_id>', methods=['PATCH'])
+@api_bp.route('/api/admin/guild/nominations/<int:nom_id>', methods=['PATCH'])
 def admin_guild_nomination_update(nom_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -4099,7 +4036,7 @@ def admin_guild_nomination_update(nom_id):
     return jsonify(dict(row))
 
 
-@app.route('/api/guild/eligibility')
+@api_bp.route('/api/guild/eligibility')
 @limiter.limit("60 per minute")
 def guild_eligibility():
     """
@@ -4113,7 +4050,7 @@ def guild_eligibility():
     return jsonify({"eligible": eligible, "reason": reason})
 
 
-@app.route('/api/guild/community-partner', methods=['POST'])
+@api_bp.route('/api/guild/community-partner', methods=['POST'])
 @limiter.limit("10 per hour")
 def guild_community_partner_apply():
     """
@@ -4214,7 +4151,7 @@ def guild_community_partner_apply():
     return jsonify({"ok": True, "id": cur.lastrowid}), 201
 
 
-@app.route('/api/guild/directory')
+@api_bp.route('/api/guild/directory')
 @limiter.limit("120 per minute")
 def guild_directory():
     """
@@ -4258,7 +4195,7 @@ def guild_directory():
     return jsonify({"network": network, "community": community})
 
 
-@app.route('/api/impact')
+@api_bp.route('/api/impact')
 @limiter.limit("60 per minute")
 def impact_stats():
     """
@@ -4318,7 +4255,7 @@ def impact_stats():
     return jsonify(result)
 
 
-@app.route('/api/impact/summary', methods=['GET'])
+@api_bp.route('/api/impact/summary', methods=['GET'])
 @limiter.limit("60 per minute")
 def impact_summary():
     """
@@ -4376,7 +4313,7 @@ def admin_community_partners_list():
     return jsonify([dict(r) for r in rows])
 
 
-@app.route('/api/admin/guild/partners-review', methods=['GET'])
+@api_bp.route('/api/admin/guild/partners-review', methods=['GET'])
 def admin_partners_review():
     """
     View all pending and rejected partners for follow-up and coaching.
@@ -4418,7 +4355,7 @@ def admin_partners_review():
     })
 
 
-@app.route('/api/admin/guild/community-partners/<int:cp_id>', methods=['PATCH'])
+@api_bp.route('/api/admin/guild/community-partners/<int:cp_id>', methods=['PATCH'])
 def admin_community_partner_update(cp_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -4440,7 +4377,7 @@ def admin_community_partner_update(cp_id):
     return jsonify(dict(row))
 
 
-@app.route('/api/admin/guild/approve-partner/<int:cp_id>', methods=['GET'])
+@api_bp.route('/api/admin/guild/approve-partner/<int:cp_id>', methods=['GET'])
 def admin_community_partner_approve(cp_id):
     """
     One-click approve link sent in the notification email.
@@ -4506,7 +4443,7 @@ _PARTNER_TYPES = {
 }
 
 
-@app.route('/api/partner/contact', methods=['POST'])
+@api_bp.route('/api/partner/contact', methods=['POST'])
 @limiter.limit("5 per hour")
 def partner_contact():
     data = request.get_json(silent=True) or {}
@@ -4543,7 +4480,7 @@ def partner_contact():
     return jsonify({"status": "received"})
 
 
-@app.route('/api/organizations/<ein>/similar')
+@api_bp.route('/api/organizations/<ein>/similar')
 @limiter.limit("60 per minute")
 def get_similar_organizations(ein):
     ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
@@ -4571,7 +4508,7 @@ def get_similar_organizations(ein):
 
 
 # ── Semantic search ────────────────────────────────────────────────────────────
-@app.route('/api/search/semantic')
+@api_bp.route('/api/search/semantic')
 @limiter.limit("30 per minute")
 def semantic_search():
     q = (request.args.get('q') or '').strip()
@@ -4598,7 +4535,7 @@ def semantic_search():
 
 
 # ── Fused search (RRF: FTS5 keyword + semantic vector) ─────────────────────────
-@app.route('/api/search')
+@api_bp.route('/api/search')
 @limiter.limit("60 per minute")
 def fused_search():
     """Reciprocal Rank Fusion of FTS5 keyword + semantic vector search.
@@ -4811,7 +4748,7 @@ def fused_search():
 
 # ── Zip code lookup ────────────────────────────────────────────────────────
 
-@app.route('/api/zip/<zip_code>')
+@api_bp.route('/api/zip/<zip_code>')
 @limiter.limit("120 per minute")
 def zip_lookup(zip_code: str):
     """
@@ -4831,7 +4768,7 @@ def zip_lookup(zip_code: str):
 
 # ── Service area endpoints ──────────────────────────────────────────────────
 
-@app.route('/api/org/<ein>/service-area', methods=['GET'])
+@api_bp.route('/api/org/<ein>/service-area', methods=['GET'])
 @limiter.limit("120 per minute")
 def org_service_area_get(ein: str):
     """Return an org's self-reported service area. Public."""
@@ -4851,7 +4788,7 @@ def org_service_area_get(ein: str):
     return jsonify(d)
 
 
-@app.route('/api/org/<ein>/service-area', methods=['PUT'])
+@api_bp.route('/api/org/<ein>/service-area', methods=['PUT'])
 @limiter.limit("30 per hour")
 def org_service_area_put(ein: str):
     """
@@ -4953,7 +4890,7 @@ def _format_event(row, signup_count: int = 0) -> dict:
     }
 
 
-@app.route('/api/volunteer-events', methods=['GET'])
+@api_bp.route('/api/volunteer-events', methods=['GET'])
 @limiter.limit("120 per minute")
 def volunteer_events_search():
     """Public search for events by location/date/cause/type. No auth required."""
@@ -5011,7 +4948,7 @@ def volunteer_events_search():
     return jsonify({"events": events, "count": len(events)})
 
 
-@app.route('/api/org/<ein>/volunteer-events', methods=['GET'])
+@api_bp.route('/api/org/<ein>/volunteer-events', methods=['GET'])
 @limiter.limit("120 per minute")
 def org_volunteer_events_list(ein: str):
     """Public: all active/upcoming events for a given org."""
@@ -5033,7 +4970,7 @@ def org_volunteer_events_list(ein: str):
     return jsonify({"events": [_format_event(r) for r in rows]})
 
 
-@app.route('/api/org/<ein>/volunteer-events', methods=['POST'])
+@api_bp.route('/api/org/<ein>/volunteer-events', methods=['POST'])
 @limiter.limit("20 per minute")
 def org_volunteer_events_create(ein: str):
     """Create a volunteer event. Requires valid verification_token for this EIN."""
@@ -5102,7 +5039,7 @@ def org_volunteer_events_create(ein: str):
     return jsonify(_format_event(row)), 201
 
 
-@app.route('/api/volunteer-events/<int:event_id>', methods=['PATCH'])
+@api_bp.route('/api/volunteer-events/<int:event_id>', methods=['PATCH'])
 @limiter.limit("30 per minute")
 def volunteer_event_update(event_id: int):
     """Update a volunteer event. Requires verification_token matching the event's EIN."""
@@ -5151,7 +5088,7 @@ def volunteer_event_update(event_id: int):
     return jsonify(_format_event(row))
 
 
-@app.route('/api/volunteer-events/<int:event_id>', methods=['DELETE'])
+@api_bp.route('/api/volunteer-events/<int:event_id>', methods=['DELETE'])
 @limiter.limit("20 per minute")
 def volunteer_event_delete(event_id: int):
     """Cancel a volunteer event. Requires verification_token matching the event's EIN."""
@@ -5183,7 +5120,7 @@ def _event_signup_count(db, event_id: int) -> int:
     return row["n"] if row else 0
 
 
-@app.route('/api/events/<int:event_id>', methods=['GET'])
+@api_bp.route('/api/events/<int:event_id>', methods=['GET'])
 @limiter.limit("120 per minute")
 def event_detail(event_id: int):
     """Public single-event detail with signup count (no attendee names)."""
@@ -5204,7 +5141,7 @@ def event_detail(event_id: int):
     return jsonify(e)
 
 
-@app.route('/e/<short_id>', methods=['GET'])
+@api_bp.route('/e/<short_id>', methods=['GET'])
 def event_short_redirect(short_id: str):
     """Short URL: /e/{short_id} → 301 → /events/{id}. Used in QR codes and SMS."""
     if not re.match(r'^[A-Za-z0-9_-]{6,16}$', short_id):
@@ -5217,7 +5154,7 @@ def event_short_redirect(short_id: str):
     return redirect(f"/events/{row['id']}", code=301)
 
 
-@app.route('/api/events/<int:event_id>/qr.png', methods=['GET'])
+@api_bp.route('/api/events/<int:event_id>/qr.png', methods=['GET'])
 @limiter.limit("30 per minute")
 def event_qr_code(event_id: int):
     """Generate a QR code PNG pointing to this event's short URL."""
@@ -5248,7 +5185,7 @@ def event_qr_code(event_id: int):
     return resp
 
 
-@app.route('/api/events/<int:event_id>/calendar.ics', methods=['GET'])
+@api_bp.route('/api/events/<int:event_id>/calendar.ics', methods=['GET'])
 @limiter.limit("60 per minute")
 def event_ical(event_id: int):
     """iCal download for any event. Works with Google, Outlook, and Apple Calendar."""
@@ -5296,7 +5233,7 @@ def event_ical(event_id: int):
 
 # ── Events: public signup ──────────────────────────────────────────────────
 
-@app.route('/api/events/<int:event_id>/signup', methods=['POST'])
+@api_bp.route('/api/events/<int:event_id>/signup', methods=['POST'])
 @limiter.limit("20 per minute")
 def event_signup_create(event_id: int):
     """Group signup for an event. No auth required. Returns HMAC booking token for cancellation."""
@@ -5450,7 +5387,7 @@ def event_signup_create(event_id: int):
     }), 201
 
 
-@app.route('/api/events/<int:event_id>/cancel-booking', methods=['POST'])
+@api_bp.route('/api/events/<int:event_id>/cancel-booking', methods=['POST'])
 @limiter.limit("20 per minute")
 def event_signup_cancel(event_id: int):
     """Cancel a signup via HMAC booking token. No auth required — token IS the proof."""
@@ -5491,7 +5428,7 @@ def _assert_org_claim(uid: str, ein: str, db) -> None:
         abort(403)
 
 
-@app.route('/api/portal/events', methods=['GET'])
+@api_bp.route('/api/portal/events', methods=['GET'])
 @limiter.limit("60 per minute")
 def portal_events_list():
     """Firebase-auth: list events for the org's verified claim."""
@@ -5520,7 +5457,7 @@ def portal_events_list():
     return jsonify({"events": [_format_event(r, r["signup_count"]) for r in rows]})
 
 
-@app.route('/api/portal/events', methods=['POST'])
+@api_bp.route('/api/portal/events', methods=['POST'])
 @limiter.limit("20 per minute")
 def portal_events_create():
     """Firebase-auth: create a new event. Replaces token-based creation for portal users."""
@@ -5593,7 +5530,7 @@ def portal_events_create():
     return jsonify(_format_event(row)), 201
 
 
-@app.route('/api/portal/events/<int:event_id>', methods=['PATCH'])
+@api_bp.route('/api/portal/events/<int:event_id>', methods=['PATCH'])
 @limiter.limit("30 per minute")
 def portal_events_update(event_id: int):
     """Firebase-auth: update an event owned by the authenticated org."""
@@ -5640,7 +5577,7 @@ def portal_events_update(event_id: int):
     return jsonify(_format_event(row, signup_count=_event_signup_count(db, event_id)))
 
 
-@app.route('/api/portal/events/<int:event_id>', methods=['DELETE'])
+@api_bp.route('/api/portal/events/<int:event_id>', methods=['DELETE'])
 @limiter.limit("10 per minute")
 def portal_events_cancel(event_id: int):
     """Firebase-auth: cancel an event and notify all confirmed signups."""
@@ -5687,7 +5624,7 @@ def portal_events_cancel(event_id: int):
     return jsonify({"ok": True, "notified": len(signups)})
 
 
-@app.route('/api/portal/events/<int:event_id>/attendees', methods=['GET'])
+@api_bp.route('/api/portal/events/<int:event_id>/attendees', methods=['GET'])
 @limiter.limit("60 per minute")
 def portal_event_attendees(event_id: int):
     """Firebase-auth: list signups for an event (contact info + attendee list)."""
@@ -5721,7 +5658,7 @@ def portal_event_attendees(event_id: int):
                                                   if s["status"] == "confirmed")})
 
 
-@app.route('/api/portal/events/<int:event_id>/verify-hours', methods=['POST'])
+@api_bp.route('/api/portal/events/<int:event_id>/verify-hours', methods=['POST'])
 @limiter.limit("30 per minute")
 def portal_verify_hours(event_id: int):
     """Firebase-auth: verify volunteer hours for one or more signups after the event."""
@@ -5777,7 +5714,7 @@ _PUBLIC_CONTACT_FIELDS = (
 _ALL_CONTACT_FIELDS = _PUBLIC_CONTACT_FIELDS + ("volunteer_phone",)
 
 
-@app.route('/api/org/<ein>/contacts', methods=['GET'])
+@api_bp.route('/api/org/<ein>/contacts', methods=['GET'])
 @limiter.limit("120 per minute")
 def org_contacts_public(ein: str):
     """Public: structured contact directory for a claimed org."""
@@ -5791,7 +5728,7 @@ def org_contacts_public(ein: str):
     return jsonify({"contacts": {f: row[f] for f in _PUBLIC_CONTACT_FIELDS if row[f]}})
 
 
-@app.route('/api/portal/contacts', methods=['GET'])
+@api_bp.route('/api/portal/contacts', methods=['GET'])
 @limiter.limit("60 per minute")
 def portal_contacts_get():
     """Firebase-auth: full contact record for the org."""
@@ -5807,7 +5744,7 @@ def portal_contacts_get():
     return jsonify({"contacts": dict(row)})
 
 
-@app.route('/api/portal/contacts', methods=['PUT'])
+@api_bp.route('/api/portal/contacts', methods=['PUT'])
 @limiter.limit("20 per minute")
 def portal_contacts_update():
     """Firebase-auth: upsert contact directory for a claimed org."""
@@ -5862,7 +5799,7 @@ def portal_contacts_update():
 
 
 # ── Well-known / security ──────────────────────────────────────────────────
-@app.route('/.well-known/security.txt')
+@api_bp.route('/.well-known/security.txt')
 def security_txt():
     return app.response_class(
         response="""Contact: mailto:security@daanaa.org\nPreferred-Languages: en\nPolicy: https://daanaa.org/legal\nExpires: 2027-06-01T00:00:00.000Z\n""",
@@ -5872,7 +5809,7 @@ def security_txt():
 
 
 # ── Admin: Surge monitoring (human oversight of AI agent actions) ──────────────
-@app.route('/api/admin/surge-boosts', methods=['GET'])
+@api_bp.route('/api/admin/surge-boosts', methods=['GET'])
 @limiter.exempt
 def admin_surge_boosts():
     """[ADMIN ONLY] View active surge boosts and metrics. Principle #6/#10: oversight."""
@@ -5890,7 +5827,7 @@ def admin_surge_boosts():
     """).fetchall()
     return jsonify({"boosts": [dict(b) for b in boosts], "count": len(boosts)})
 
-@app.route('/api/admin/surge-boosts/<int:boost_id>/override', methods=['POST'])
+@api_bp.route('/api/admin/surge-boosts/<int:boost_id>/override', methods=['POST'])
 @limiter.exempt
 def admin_override_boost(boost_id):
     """[ADMIN ONLY] Pause/override a surge boost. Principle #6: correct mistakes quickly."""
@@ -5915,7 +5852,7 @@ def admin_override_boost(boost_id):
 # old passcode/session gate was removed 2026-06-09 (audit Session 2): the
 # frontend reads a static snapshot anyway, and the passcode lived in source.
 
-@app.route('/api/research/summary/operating-models')
+@api_bp.route('/api/research/summary/operating-models')
 @limiter.exempt
 def research_operating_models():
     """Operating model distribution chart data."""
@@ -5966,7 +5903,7 @@ def research_operating_models():
         'last_updated': rows[0]['period'] if rows else None
     })
 
-@app.route('/api/research/summary/revenue-bands')
+@api_bp.route('/api/research/summary/revenue-bands')
 @limiter.exempt
 def research_revenue_bands():
     """Revenue band matrix by operating model."""
@@ -6019,7 +5956,7 @@ def research_revenue_bands():
         'last_updated': rows[0]['period'] if rows else None
     })
 
-@app.route('/api/research/summary/lamp-tiers')
+@api_bp.route('/api/research/summary/lamp-tiers')
 @limiter.exempt
 def research_lamp_tiers():
     """Lamp tier (Beacon/Torch/Candle/Spark) distribution."""
@@ -6054,7 +5991,7 @@ def research_lamp_tiers():
         'last_updated': rows[0]['period'] if rows else None
     })
 
-@app.route('/api/research/summary/data-coverage')
+@api_bp.route('/api/research/summary/data-coverage')
 @limiter.exempt
 def research_data_coverage():
     """Data availability across key fields."""
@@ -6080,7 +6017,7 @@ def research_data_coverage():
         'last_updated': rows[0]['period'] if rows else None
     })
 
-@app.route('/api/research/summary/categories')
+@api_bp.route('/api/research/summary/categories')
 @limiter.exempt
 def research_categories():
     """NTEE1 category distribution."""
@@ -6113,7 +6050,7 @@ def research_categories():
         'last_updated': rows[0]['period'] if rows else None
     })
 
-@app.route('/api/research/summary/states')
+@api_bp.route('/api/research/summary/states')
 @limiter.exempt
 def research_states():
     """State-level distribution."""
@@ -6140,7 +6077,7 @@ def research_states():
         'last_updated': rows[0]['period'] if rows else None
     })
 
-@app.route('/api/research/summary/spending-by-model')
+@api_bp.route('/api/research/summary/spending-by-model')
 @limiter.exempt
 def research_spending_by_model():
     """Program spending distribution by operating model."""
@@ -6200,7 +6137,7 @@ def research_spending_by_model():
 
     return jsonify({'data': data})
 
-@app.route('/api/research/metadata')
+@api_bp.route('/api/research/metadata')
 @limiter.exempt
 def research_metadata():
     """Metadata about the research dataset."""
@@ -6269,7 +6206,7 @@ def claim_phone_callback():
     return str(resp), 200, {'Content-Type': 'text/xml'}
 
 
-@app.route('/api/claim/phone-record', methods=['POST'])
+@api_bp.route('/api/claim/phone-record', methods=['POST'])
 def claim_phone_record():
     """
     Handle the recording from an incoming voice call.
@@ -6313,7 +6250,7 @@ def claim_phone_record():
     return str(resp), 200, {'Content-Type': 'text/xml'}
 
 
-@app.route('/api/claim/sms-callback', methods=['POST'])
+@api_bp.route('/api/claim/sms-callback', methods=['POST'])
 def claim_sms_callback():
     """
     Twilio incoming SMS webhook.
@@ -6410,7 +6347,7 @@ def nonprofit_pending_verifications(ein: str):
         return jsonify({'error': 'Internal server error'}), 500
 
 
-@app.route('/api/nonprofit/<ein>/verify-hours/<log_id>', methods=['POST'])
+@api_bp.route('/api/nonprofit/<ein>/verify-hours/<log_id>', methods=['POST'])
 def nonprofit_verify_hours(ein: str, log_id: str):
     """Confirm volunteer hours. Creates a volunteer_hour_confirmation record.
 
@@ -6554,8 +6491,8 @@ def _aggregate_vendor_stats(vendor_id: str):
     db.commit()
 
 
-@app.route('/api/vendors', methods=['GET'])
-@app.route('/api/vendors/', methods=['GET'])
+@api_bp.route('/api/vendors', methods=['GET'])
+@api_bp.route('/api/vendors/', methods=['GET'])
 def get_vendors():
     """List all active vendors with aggregated stats."""
     db = get_db()
@@ -6586,7 +6523,7 @@ def get_vendors():
     return jsonify({'vendors': result})
 
 
-@app.route('/api/vendors/<vendor_id>', methods=['GET'])
+@api_bp.route('/api/vendors/<vendor_id>', methods=['GET'])
 def get_vendor(vendor_id: str):
     """Get vendor detail with stats."""
     db = get_db()
@@ -6616,7 +6553,7 @@ def get_vendor(vendor_id: str):
     })
 
 
-@app.route('/api/vendors/<vendor_id>/ratings', methods=['POST'])
+@api_bp.route('/api/vendors/<vendor_id>/ratings', methods=['POST'])
 def submit_vendor_rating(vendor_id: str):
     """
     Submit a rating for a vendor.
@@ -6704,7 +6641,7 @@ def submit_vendor_rating(vendor_id: str):
         return jsonify({'error': 'Internal server error'}), 500
 
 
-@app.route('/api/vendors/<vendor_id>/ratings', methods=['GET'])
+@api_bp.route('/api/vendors/<vendor_id>/ratings', methods=['GET'])
 def get_vendor_ratings(vendor_id: str):
     """
     Get all ratings for a vendor (public view, anonymous).
@@ -6730,7 +6667,7 @@ def get_vendor_ratings(vendor_id: str):
     })
 
 
-@app.route('/api/vendors/<vendor_id>/stats', methods=['GET'])
+@api_bp.route('/api/vendors/<vendor_id>/stats', methods=['GET'])
 def get_vendor_stats(vendor_id: str):
     """Get aggregated stats for a vendor."""
     db = get_db()
@@ -6758,7 +6695,7 @@ def get_vendor_stats(vendor_id: str):
 
 # ── Nonprofit Hour Verification (Simplified API) ────────────────────────────
 
-@app.route('/api/nonprofit/hours-pending', methods=['GET'])
+@api_bp.route('/api/nonprofit/hours-pending', methods=['GET'])
 @limiter.limit("60 per minute")
 def nonprofit_hours_pending():
     """Volunteer hour logs awaiting rep confirmation for all orgs claimed by this user."""
@@ -6805,7 +6742,7 @@ def nonprofit_hours_pending():
     return jsonify({'hours': hours_list, 'total': len(hours_list)}), 200
 
 
-@app.route('/api/nonprofit/verify-hours', methods=['POST'])
+@api_bp.route('/api/nonprofit/verify-hours', methods=['POST'])
 def nonprofit_verify_hours_action():
     """Verify or reject volunteer hours.
 
@@ -6932,1353 +6869,3 @@ def nonprofit_verify_hours_action():
         return jsonify({'error': 'Failed to verify hours'}), 500
 
 
-    return send_from_directory(FRONTEND_DIST, 'index.html')
-
-
-# ── Vendor self-service portal ───────────────────────────────────────────────
-# Vendors are businesses that serve nonprofits. They self-register, manage
-# their own listing, and pay for premium placement. Nonprofits always free.
-
-def _ensure_vendor_portal_schema():
-    """Add firebase_uid + portal columns to vendors table if not present."""
-    db = get_db()
-    existing = {row[1] for row in db.execute("PRAGMA table_info(vendors)").fetchall()}
-    migrations = [
-        ("firebase_uid",   "TEXT"),
-        ("tagline",        "TEXT"),
-        ("services",       "TEXT"),   # JSON array
-        ("service_areas",  "TEXT"),   # JSON array
-        ("founded_year",   "INTEGER"),
-        ("team_size",      "TEXT"),
-        ("portal_status",  "TEXT DEFAULT 'pending'"),  # pending|active|suspended
-        ("portal_notes",   "TEXT"),
-        ("approved_at",    "TEXT"),
-    ]
-    for col, typedef in migrations:
-        if col not in existing:
-            db.execute(f"ALTER TABLE vendors ADD COLUMN {col} {typedef}")
-    db.execute("CREATE INDEX IF NOT EXISTS idx_vendors_firebase ON vendors(firebase_uid)")
-    db.commit()
-
-
-@app.route('/api/vendor/apply', methods=['POST'])
-@limiter.limit("5 per hour")
-def vendor_apply():
-    """
-    Vendor self-registers. Creates a pending listing.
-    Requires Firebase auth. Idempotent — existing vendor returns their record.
-
-    Body:
-      name, category, description, tagline, website, contact_email,
-      contact_phone, service_areas (list), discount_description
-    """
-    uid = _require_firebase_user()
-    _ensure_vendor_portal_schema()
-    db = get_db()
-
-    # Idempotent — if they already applied, return their record
-    existing = db.execute(
-        "SELECT vendor_id, portal_status FROM vendors WHERE firebase_uid=?", (uid,)
-    ).fetchone()
-    if existing:
-        return jsonify({
-            "vendor_id": existing["vendor_id"],
-            "portal_status": existing["portal_status"],
-            "message": "Application already on file",
-        })
-
-    data = request.get_json(silent=True) or {}
-    name = (data.get("name") or "").strip()[:100]
-    category = (data.get("category") or "").strip()[:60]
-    description = (data.get("description") or "").strip()[:500]
-    tagline = (data.get("tagline") or "").strip()[:120]
-    website = (data.get("website") or "").strip()[:200]
-    contact_email = (data.get("contact_email") or "").strip()[:100]
-    contact_phone = (data.get("contact_phone") or "").strip()[:30]
-    service_areas = data.get("service_areas") or []
-    discount_description = (data.get("discount_description") or "").strip()[:300]
-
-    if not name or not category or not contact_email:
-        return jsonify({"error": "name, category, and contact_email are required"}), 400
-
-    vendor_id = secrets.token_urlsafe(10)
-    db.execute("""
-        INSERT INTO vendors
-          (vendor_id, firebase_uid, name, category, description, tagline, website,
-           contact_email, contact_phone, service_areas, discount_description,
-           portal_status, active, created_at, updated_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,'pending',0,datetime('now'),datetime('now'))
-    """, (vendor_id, uid, name, category, description, tagline, website,
-          contact_email, contact_phone, json.dumps(service_areas), discount_description))
-    db.commit()
-
-    # Notify the team
-    _log_org_activity(vendor_id, "vendor_apply",
-                      f"New vendor application: {name} ({category})", actor="vendor")
-
-    # Send confirmation email to the applicant
-    if get_email_service:
-        try:
-            svc = get_email_service()
-            svc.send(
-                contact_email,
-                f"We received your Daanaa vendor application: {name}",
-                f"""<p>Hi,</p>
-<p>We received your application to join the Daanaa Vendor Network as <strong>{name}</strong>.</p>
-<p>Our team reviews all applications within 2 business days. We'll email you at {contact_email} with next steps.</p>
-<p>In the meantime, you can reach us at <a href="mailto:partners@daanaa.org">partners@daanaa.org</a>.</p>
-<p>The Daanaa Team</p>""",
-                f"Hi,\n\nWe received your vendor application for {name}. "
-                f"We review applications within 2 business days and will email you next steps.\n\n"
-                f"Questions? partners@daanaa.org\n\nThe Daanaa Team",
-            )
-        except Exception as _e:
-            _logger.warning(f"vendor apply email failed: {_e}")
-
-    return jsonify({
-        "vendor_id": vendor_id,
-        "portal_status": "pending",
-        "message": "Application received. We review within 2 business days.",
-    }), 201
-
-
-@app.route('/api/vendor/me', methods=['GET'])
-@limiter.limit("60 per minute")
-def vendor_me():
-    """Return the authenticated vendor's own listing and stats."""
-    uid = _require_firebase_user()
-    _ensure_vendor_portal_schema()
-    db = get_db()
-
-    row = db.execute("""
-        SELECT v.*, s.avg_rating, s.rating_count, s.total_savings, s.nonprofits_contributed
-        FROM vendors v
-        LEFT JOIN vendor_stats s ON v.vendor_id = s.vendor_id
-        WHERE v.firebase_uid = ?
-    """, (uid,)).fetchone()
-
-    if not row:
-        return jsonify({"error": "No vendor account found. Apply at /api/vendor/apply"}), 404
-
-    return jsonify({
-        "vendor_id": row["vendor_id"],
-        "portal_status": row["portal_status"],
-        "name": row["name"],
-        "category": row["category"],
-        "description": row["description"],
-        "tagline": row["tagline"],
-        "website": row["website"],
-        "contact_email": row["contact_email"],
-        "contact_phone": row["contact_phone"],
-        "service_areas": json.loads(row["service_areas"] or "[]"),
-        "discount_description": row["discount_description"],
-        "discount_code": row["discount_code"],
-        "logo_url": row["logo_url"],
-        "active": bool(row["active"]),
-        "approved_at": row["approved_at"],
-        "created_at": row["created_at"],
-        "stats": {
-            "avg_rating": row["avg_rating"],
-            "rating_count": row["rating_count"] or 0,
-            "total_savings": row["total_savings"] or 0,
-            "nonprofits_contributed": row["nonprofits_contributed"] or 0,
-        },
-    })
-
-
-@app.route('/api/vendor/me', methods=['PATCH'])
-@limiter.limit("20 per hour")
-def vendor_me_update():
-    """
-    Vendor updates their own listing.
-    Only allowed fields — vendor cannot change portal_status or active flag.
-    """
-    uid = _require_firebase_user()
-    _ensure_vendor_portal_schema()
-    db = get_db()
-
-    vendor = db.execute(
-        "SELECT vendor_id, portal_status FROM vendors WHERE firebase_uid=?", (uid,)
-    ).fetchone()
-    if not vendor:
-        return jsonify({"error": "No vendor account found"}), 404
-
-    data = request.get_json(silent=True) or {}
-    allowed = {
-        "name": str, "description": str, "tagline": str,
-        "website": str, "contact_phone": str, "discount_description": str,
-    }
-    updates = {}
-    for field, cast in allowed.items():
-        if field in data:
-            updates[field] = cast(data[field])[:500] if data[field] else ""
-
-    if "service_areas" in data and isinstance(data["service_areas"], list):
-        updates["service_areas"] = json.dumps(data["service_areas"][:20])
-
-    if not updates:
-        return jsonify({"error": "No updatable fields provided"}), 400
-
-    set_clause = ", ".join(f"{k}=?" for k in updates)
-    db.execute(
-        f"UPDATE vendors SET {set_clause}, updated_at=datetime('now') WHERE firebase_uid=?",
-        (*updates.values(), uid),
-    )
-    db.commit()
-    return jsonify({"ok": True, "updated": list(updates.keys())})
-
-
-@app.route('/api/admin/vendor/<vendor_id>/approve', methods=['POST'])
-@limiter.limit("30 per minute")
-def admin_vendor_approve(vendor_id: str):
-    """Admin approves a vendor application — makes them active and visible."""
-    _require_admin()
-    _ensure_vendor_portal_schema()
-    db = get_db()
-    vendor = db.execute(
-        "SELECT vendor_id, name, contact_email FROM vendors WHERE vendor_id=?", (vendor_id,)
-    ).fetchone()
-    if not vendor:
-        return jsonify({"error": "Vendor not found"}), 404
-
-    db.execute("""
-        UPDATE vendors SET portal_status='active', active=1,
-        approved_at=datetime('now'), updated_at=datetime('now')
-        WHERE vendor_id=?
-    """, (vendor_id,))
-    db.commit()
-
-    # Notify vendor
-    if get_email_service and vendor["contact_email"]:
-        try:
-            get_email_service().send(
-                vendor["contact_email"],
-                f"Your Daanaa vendor listing is live: {vendor['name']}",
-                f"""<p>Hi,</p>
-<p>Your vendor listing for <strong>{vendor['name']}</strong> is now live on Daanaa.</p>
-<p>Nonprofits in our network can now find you, leave ratings, and request your discount code.</p>
-<p>Manage your listing at <a href="https://daanaa.org/vendor/dashboard">daanaa.org/vendor/dashboard</a>.</p>
-<p>The Daanaa Team</p>""",
-                f"Hi,\n\nYour vendor listing for {vendor['name']} is live on Daanaa. "
-                f"Manage it at https://daanaa.org/vendor/dashboard\n\nThe Daanaa Team",
-            )
-        except Exception as _e:
-            _logger.warning(f"vendor approve email failed: {_e}")
-
-    return jsonify({"ok": True, "vendor_id": vendor_id, "status": "active"})
-
-
-# ── Org view tracking ─────────────────────────────────────────────────────────
-
-@app.route('/api/org/<ein>/view', methods=['POST'])
-@limiter.limit("30 per minute")
-def track_org_view(ein):
-    """Anonymous page view counter. Called fire-and-forget by org detail page."""
-    ein = ''.join(c for c in ein if c.isdigit())[:10]
-    if len(ein) != 9:
-        return '', 204
-    db = get_db()
-    _ensure_donor_tables(db)
-    db.execute("INSERT INTO org_view_events (ein) VALUES (?)", (ein,))
-    db.commit()
-    return '', 204
-
-
-@app.route('/api/org/<ein>/view-stats', methods=['GET'])
-@limiter.limit("60 per minute")
-def org_view_stats(ein):
-    """Aggregate view + wallet-save counts for nonprofit dashboard. Requires claim."""
-    uid = _require_firebase_user()
-    ein = ''.join(c for c in ein if c.isdigit())[:10]
-    if len(ein) != 9:
-        return jsonify({'error': 'Invalid EIN'}), 400
-    db = get_db()
-    claim = db.execute(
-        "SELECT 1 FROM org_claims WHERE ein=? AND firebase_uid=? "
-        "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
-        (ein, uid),
-    ).fetchone()
-    if not claim:
-        return jsonify({'error': 'Unauthorized'}), 403
-    _ensure_donor_tables(db)
-    vrow = db.execute("""
-        SELECT
-            COUNT(*) AS total,
-            SUM(CASE WHEN view_date >= date('now','-30 days') THEN 1 ELSE 0 END) AS d30,
-            SUM(CASE WHEN view_date >= date('now','-7 days')  THEN 1 ELSE 0 END) AS d7
-        FROM org_view_events WHERE ein=?
-    """, (ein,)).fetchone()
-    wrow = db.execute(
-        "SELECT COUNT(*) AS n FROM org_wallet_saves WHERE ein=?", (ein,)
-    ).fetchone()
-    return jsonify({
-        'ein': ein,
-        'views_total': vrow['total'] or 0,
-        'views_30d':   vrow['d30']   or 0,
-        'views_7d':    vrow['d7']    or 0,
-        'wallet_saves': wrow['n'] if wrow else 0,
-    }), 200
-
-
-@app.route('/api/org/<ein>/grants', methods=['GET'])
-@limiter.limit("30 per minute")
-def org_grants(ein):
-    """Federal grant opportunities discovered for this org. Requires claim."""
-    uid = _require_firebase_user()
-    ein = ''.join(c for c in ein if c.isdigit())[:10]
-    if len(ein) != 9:
-        return jsonify({'error': 'Invalid EIN'}), 400
-    db = get_db()
-    claim = db.execute(
-        "SELECT 1 FROM org_claims WHERE ein=? AND firebase_uid=? "
-        "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
-        (ein, uid),
-    ).fetchone()
-    if not claim:
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    try:
-        rows = db.execute("""
-            SELECT grant_id, title, agency, close_date, cfda, url, found_at
-            FROM grant_opportunities
-            WHERE ein=?
-            ORDER BY found_at DESC
-            LIMIT 10
-        """, (ein,)).fetchall()
-    except Exception:
-        # Table not yet created (agent hasn't run)
-        return jsonify({'grants': []}), 200
-
-    from datetime import datetime, timedelta
-    cutoff = datetime.utcnow() - timedelta(days=7)
-    grants = []
-    for r in rows:
-        close_str = r['close_date'] or ''
-        if close_str:
-            try:
-                close_dt = datetime.strptime(close_str, "%m/%d/%Y")
-                if close_dt < cutoff:
-                    continue
-            except ValueError:
-                pass
-        grants.append({
-            'grant_id': r['grant_id'],
-            'title': r['title'],
-            'agency': r['agency'],
-            'close_date': close_str,
-            'cfda': r['cfda'],
-            'url': r['url'],
-        })
-    return jsonify({'grants': grants}), 200
-
-@app.route('/api/org/<ein>/guild', methods=['GET'])
-@limiter.limit("60 per minute")
-def org_guild_membership(ein):
-    """Get guild (partner) membership for an org.
-
-    Returns: {guild_id, guild_name, slug, tier, benefits: [{tier, feature_name, description}]}
-    Empty object {} if no membership.
-    """
-    ein = ''.join(c for c in ein if c.isdigit())[:10]
-    if len(ein) != 9:
-        return jsonify({}), 200
-
-    db = get_db()
-
-    try:
-        # Query membership + guild info
-        row = db.execute('''
-            SELECT g.guild_id, g.name, g.slug, g.website, gm.tier
-            FROM guild_membership gm
-            JOIN guild g ON gm.guild_id = g.guild_id
-            WHERE gm.ein=?
-        ''', (ein,)).fetchone()
-
-        if not row:
-            return jsonify({}), 200
-
-        guild_id, guild_name, slug, website, tier = row['guild_id'], row['name'], row['slug'], row['website'], row['tier']
-
-        # Get benefits for this guild + tier
-        benefits = db.execute('''
-            SELECT tier, feature_name, description
-            FROM guild_benefits
-            WHERE guild_id=? AND tier=?
-            ORDER BY tier, feature_name
-        ''', (guild_id, tier)).fetchall()
-
-        return jsonify({
-            'guild_id': guild_id,
-            'guild_name': guild_name,
-            'slug': slug,
-            'website': website,
-            'tier': tier,
-            'benefits': [dict(b) for b in benefits],
-        }), 200
-
-    except Exception as e:
-        # Table not yet created or other error — return empty
-        return jsonify({}), 200
-
-@app.route('/api/guild/<slug>', methods=['GET'])
-@limiter.limit("60 per minute")
-def guild_detail(slug: str):
-    """Get guild (partner) info + member organizations.
-
-    Response: {
-      guild_id, name, slug, website,
-      benefits: {free: [], pro: [], enterprise: []},
-      members: [{ein, organization_name, city, state}]
-    }
-    """
-    slug = (slug or '').lower().strip()
-    if not slug:
-        return jsonify({'error': 'Guild not found'}), 404
-
-    db = get_db()
-
-    try:
-        # Get guild info
-        guild = db.execute(
-            'SELECT guild_id, name, slug, website FROM guild WHERE slug=?',
-            (slug,)
-        ).fetchone()
-
-        if not guild:
-            return jsonify({'error': 'Guild not found'}), 404
-
-        guild_id = guild['guild_id']
-
-        # Get benefits by tier
-        benefits_rows = db.execute('''
-            SELECT tier, feature_name, description
-            FROM guild_benefits
-            WHERE guild_id=?
-            ORDER BY tier, feature_name
-        ''', (guild_id,)).fetchall()
-
-        benefits = {'free': [], 'pro': [], 'enterprise': []}
-        for row in benefits_rows:
-            tier = row['tier']
-            if tier in benefits:
-                benefits[tier].append({
-                    'feature_name': row['feature_name'],
-                    'description': row['description'],
-                })
-
-        # Get member orgs (limit 50)
-        members_rows = db.execute('''
-            SELECT r.EIN, r.organization_name, r.city, r.state
-            FROM guild_membership gm
-            JOIN registry_enriched r ON gm.ein = r.EIN
-            WHERE gm.guild_id=?
-            ORDER BY r.organization_name
-            LIMIT 50
-        ''', (guild_id,)).fetchall()
-
-        members = [dict(m) for m in members_rows]
-
-        return jsonify({
-            'guild_id': guild_id,
-            'name': guild['name'],
-            'slug': guild['slug'],
-            'website': guild['website'],
-            'benefits': benefits,
-            'member_count': len(members),
-            'members': members,
-        }), 200
-
-    except Exception as e:
-        return jsonify({'error': f'Error loading guild: {str(e)}'}), 500
-
-def e2e_wallet_init():
-    """Issue a random salt for a new wallet. Salt is not secret."""
-    import base64 as _b64
-    salt = _b64.b64encode(secrets.token_bytes(16)).decode()
-    return jsonify({'salt': salt})
-
-
-@app.route('/api/wallet/token', methods=['POST'])
-def e2e_wallet_token():
-    """Issue short-lived JWT for wallet sync (security fix: no raw key bytes in browser).
-
-    POST { keyHash }  → { token, expiresIn }
-
-    Token is httpOnly-safe and expires in 5 minutes.
-    Used by WalletContext to sync without storing raw AES key bytes in sessionStorage.
-    """
-    body = request.get_json(silent=True) or {}
-    key_hash = body.get('keyHash', '')
-
-    if not key_hash or len(key_hash) != 64 or not all(c in '0123456789abcdef' for c in key_hash):
-        return jsonify({'error': 'invalid key_hash'}), 400
-
-    db = get_db()
-    _ensure_e2e_wallet_sync_table(db)
-
-    # Verify wallet exists
-    row = db.execute(
-        'SELECT 1 FROM e2e_wallet_sync WHERE key_hash=?',
-        [key_hash]
-    ).fetchone()
-    if not row:
-        return jsonify({'error': 'wallet not found'}), 404
-
-    # Issue JWT: payload = {keyHash, exp, iat}
-    import base64 as _b64
-    secret = os.environ.get('WALLET_JWT_SECRET', os.urandom(32).hex())
-    now = int(time.time())
-    token = _pyjwt.encode(
-        {'keyHash': key_hash, 'exp': now + 300, 'iat': now},  # 5-min expiry
-        secret,
-        algorithm='HS256'
-    )
-
-    return jsonify({'token': token, 'expiresIn': 300})
-
-
-@app.route('/api/wallet/sync', methods=['GET', 'POST', 'DELETE'])
-def e2e_wallet_sync():
-    """Dumb ciphertext locker. Server cannot read wallet contents.
-
-    GET  ?keyHash=<hex64> | Authorization: Bearer <token>  → { found, ciphertext, iv, salt, updatedAt }
-    POST { keyHash, ... } | Authorization: Bearer <token>  → { ok }
-    DELETE { keyHash } | Authorization: Bearer <token>     → { ok }
-
-    Supports both legacy keyHash in body + new JWT auth (security fix).
-    """
-    import base64 as _b64
-
-    # Extract keyHash: try JWT first, fall back to body/query
-    key_hash = None
-    auth_header = request.headers.get('Authorization', '')
-    if auth_header.startswith('Bearer '):
-        token = auth_header[7:]
-        try:
-            secret = os.environ.get('WALLET_JWT_SECRET', '')
-            if secret:
-                payload = _pyjwt.decode(token, secret, algorithms=['HS256'])
-                key_hash = payload.get('keyHash', '')
-        except Exception:
-            pass  # Fall through to body/query parsing
-
-    # Fall back: extract from body/query string (legacy)
-    if not key_hash:
-        if request.method == 'GET':
-            body = {}
-            key_hash = request.args.get('keyHash', '')
-        else:
-            body = request.get_json(silent=True) or {}
-            key_hash = body.get('keyHash', '')
-    else:
-        body = request.get_json(silent=True) or {}
-
-    if not key_hash or len(key_hash) != 64 or not all(c in '0123456789abcdef' for c in key_hash):
-        return jsonify({'error': 'invalid key_hash'}), 400
-
-    db = get_db()
-    _ensure_e2e_wallet_sync_table(db)
-
-    if request.method == 'POST':
-        ip = request.remote_addr or 'unknown'
-        now = time.time()
-        window = [t for t in _wallet_rate[ip] if now - t < 60]
-        if len(window) >= _WALLET_RATE_LIMIT:
-            return jsonify({'error': 'rate limit exceeded'}), 429
-        _wallet_rate[ip] = window + [now]
-
-        ct = body.get('ciphertext', '')
-        iv = body.get('iv', '')
-        salt = body.get('salt', '')
-        if not ct or not iv or not salt:
-            return jsonify({'error': 'missing fields'}), 400
-        if len(ct) > _WALLET_MAX_BYTES:
-            return jsonify({'error': 'payload too large'}), 400
-
-        db.execute(
-            'INSERT INTO e2e_wallet_sync (key_hash, ciphertext, iv, salt, updated_at)'
-            ' VALUES (?, ?, ?, ?, ?)'
-            ' ON CONFLICT(key_hash) DO UPDATE SET'
-            ' ciphertext=excluded.ciphertext, iv=excluded.iv, updated_at=excluded.updated_at',
-            [key_hash, ct, iv, salt, int(time.time())]
-        )
-        db.commit()
-        return jsonify({'ok': True})
-
-    if request.method == 'DELETE':
-        db.execute('DELETE FROM e2e_wallet_sync WHERE key_hash=?', [key_hash])
-        db.commit()
-        return jsonify({'ok': True})
-
-    # GET
-    row = db.execute(
-        'SELECT ciphertext, iv, salt, updated_at FROM e2e_wallet_sync WHERE key_hash=?',
-        [key_hash]
-    ).fetchone()
-    if not row:
-        return jsonify({'found': False}), 404
-    return jsonify({'found': True, 'ciphertext': row[0], 'iv': row[1],
-                    'salt': row[2], 'updatedAt': row[3]})
-
-
-def _lean_entry(entry: dict) -> dict:
-    """Strip deprecated/derived fields — only persist what's needed for cross-device restore."""
-    lean: dict = {
-        'ein': entry.get('ein', ''),
-        'bookmarkedAt': entry.get('bookmarkedAt', 0),
-    }
-    if entry.get('inFunding') is not None:
-        lean['inFunding'] = bool(entry['inFunding'])
-    if entry.get('inVolunteering') is not None:
-        lean['inVolunteering'] = bool(entry['inVolunteering'])
-    if entry.get('donations'):
-        lean['donations'] = [
-            {
-                'id': d.get('id', ''),
-                'amount': d.get('amount', 0),
-                'date': d.get('date', ''),
-                'notes': d.get('notes', '') or '',
-                'helpedDaanaa': bool(d.get('helpedDaanaa', False)),
-                'letterRequested': bool(d.get('letterRequested', False)),
-            }
-            for d in entry['donations'] if d.get('id') and d.get('amount')
-        ]
-    if entry.get('volunteerHours'):
-        lean['volunteerHours'] = [
-            {
-                'id': v.get('id', ''),
-                'hours': v.get('hours', 0),
-                'date': v.get('date', ''),
-                'notes': v.get('notes', '') or '',
-                'helpedDaanaa': bool(v.get('helpedDaanaa', False)),
-            }
-            for v in entry['volunteerHours'] if v.get('id') and v.get('hours')
-        ]
-    return lean
-
-
-def _get_dynamo_table():
-    """Return DynamoDB Table resource. Raises if not configured."""
-    import boto3
-    region = os.environ.get('AWS_REGION', 'us-east-1')
-    table_name = os.environ.get('WALLET_DYNAMO_TABLE', 'daanaa_wallets')
-    dynamodb = boto3.resource(
-        'dynamodb',
-        region_name=region,
-        aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
-    )
-    return dynamodb.Table(table_name)
-
-
-def _firebase_uid_from_request() -> str:
-    """Verify Firebase ID token from Authorization header, return uid."""
-    from firebase_admin import auth as fb_auth
-    token = request.headers.get('Authorization', '').split(' ')[-1]
-    if not token:
-        raise ValueError('missing token')
-    decoded = fb_auth.verify_id_token(token)
-    return decoded['uid']
-
-
-@app.route('/api/wallet/backup', methods=['POST'])
-def backup_wallet():
-    """Back up wallet to DynamoDB (lean format, Firebase auth required)."""
-    user_id = _require_firebase_user()
-
-    data = request.json or {}
-    raw_entries = data.get('entries', [])
-    if not raw_entries:
-        return jsonify({'error': 'No entries to backup'}), 400
-
-    lean = [_lean_entry(e) for e in raw_entries if e.get('ein')]
-    backed_at = datetime.now().isoformat()
-
-    try:
-        table = _get_dynamo_table()
-        table.put_item(Item={
-            'user_id': user_id,
-            'entries': json.dumps(lean, separators=(',', ':')),
-            'entry_count': len(lean),
-            'updated_at': backed_at,
-            'version': 1,
-        })
-        return jsonify({'success': True, 'backed_up_at': backed_at, 'entry_count': len(lean)}), 200
-    except Exception as dynamo_err:
-        # Fallback: SQLite (local dev / DynamoDB not yet provisioned)
-        logging.warning('DynamoDB backup failed, falling back to SQLite: %s', dynamo_err)
-        try:
-            conn = sqlite3.connect(DB_PATH)
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS wallet_backups (
-                    user_id TEXT PRIMARY KEY,
-                    entries TEXT NOT NULL,
-                    backed_up_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            conn.execute(
-                'INSERT OR REPLACE INTO wallet_backups (user_id, entries, backed_up_at) VALUES (?, ?, ?)',
-                (user_id, json.dumps(lean), backed_at),
-            )
-            conn.commit()
-            conn.close()
-            return jsonify({'success': True, 'backed_up_at': backed_at, 'entry_count': len(lean)}), 200
-        except Exception as e:
-            return jsonify({'error': f'Backup failed: {e}'}), 500
-
-
-@app.route('/api/wallet/restore', methods=['GET'])
-def restore_wallet():
-    """Restore wallet from DynamoDB (Firebase auth required)."""
-    user_id = _require_firebase_user()
-
-    try:
-        table = _get_dynamo_table()
-        resp = table.get_item(Key={'user_id': user_id})
-        item = resp.get('Item')
-        if not item:
-            return jsonify({'entries': [], 'found': False}), 200
-        entries = json.loads(item['entries'])
-        return jsonify({'entries': entries, 'found': True, 'updated_at': item.get('updated_at')}), 200
-    except Exception as dynamo_err:
-        # Fallback: SQLite
-        logging.warning('DynamoDB restore failed, falling back to SQLite: %s', dynamo_err)
-        try:
-            conn = sqlite3.connect(DB_PATH)
-            row = conn.execute('SELECT entries FROM wallet_backups WHERE user_id = ?', (user_id,)).fetchone()
-            conn.close()
-            if not row:
-                return jsonify({'entries': [], 'found': False}), 200
-            entries = json.loads(row[0])
-            return jsonify({'entries': entries, 'found': True}), 200
-        except Exception as e:
-            return jsonify({'error': f'Restore failed: {e}'}), 500
-
-
-@app.route('/api/wallet/donation-receipt', methods=['POST'])
-def generate_donation_receipt():
-    """Disabled: Daanaa does not issue tax receipts. Receipts come from the nonprofit directly."""
-    return jsonify({
-        'error': 'Daanaa does not generate tax receipts. '
-                 'Contact the nonprofit directly for an official acknowledgment letter.'
-    }), 410
-
-def _generate_donation_receipt_disabled():
-    """Archived: was generating IRS receipt PDFs from user-supplied wallet data without
-    verifying the donation occurred. Disabled — see DECISIONS.md 2026-07-02."""
-    try:
-        from scripts.letter_generator import generate_donation_letter
-
-        data = request.json or {}
-        org_name = data.get('org_name', '').strip()
-        ein = data.get('ein', '').strip()
-        amount = data.get('amount', 0)
-        donation_date = data.get('date', '').strip()
-        donor_name = data.get('donor_name', 'Honored Donor').strip()
-
-        if not all([org_name, ein, amount, donation_date]):
-            return jsonify({'error': 'Missing required fields'}), 400
-
-        pdf_bytes = generate_donation_letter(
-            nonprofit_name=org_name,
-            nonprofit_ein=ein,
-            donor_name=donor_name,
-            amount=amount,
-            donation_date=donation_date,
-            nonprofit_address=org_name
-        )
-
-        from io import BytesIO
-        return send_file(
-            BytesIO(pdf_bytes),
-            mimetype='application/pdf',
-            as_attachment=True,
-            download_name=f'receipt_{ein}_{donation_date.split("T")[0]}.pdf'
-        )
-    except ImportError:
-        return jsonify({'error': 'PDF generation service unavailable'}), 503
-    except Exception as e:
-        return jsonify({'error': f'Failed to generate receipt: {str(e)}'}), 500
-
-
-# ── Community Impact Logging ───────────────────────────────────────────────────
-
-@app.route('/api/impact/log', methods=['POST'])
-@limiter.limit("100 per hour")
-def log_impact():
-    """Log opted-in giving/volunteer activity for community impact tracking.
-
-    No user ID required—anonymous. Donation/volunteer is logged server-side
-    for daily aggregation and monthly community reporting.
-
-    Payload:
-      - ein: str (9-digit)
-      - type: 'giving' | 'volunteer'
-      - amount: int (cents) — for giving only
-      - hours: float — for volunteer only
-      - date: str (ISO date)
-    """
-    try:
-        data = request.get_json()
-        ein = data.get('ein', '').strip()
-        log_type = data.get('type', '').lower()
-        amount = data.get('amount')
-        hours = data.get('hours')
-        log_date = data.get('date', datetime.now().isoformat().split('T')[0])
-
-        # Validation
-        if not ein or not re.match(r'^\d{9}$', ein):
-            return jsonify({'error': 'Invalid EIN'}), 400
-        if log_type not in ('giving', 'volunteer'):
-            return jsonify({'error': 'Invalid type'}), 400
-        if log_type == 'giving' and (not isinstance(amount, (int, float)) or amount < 1):
-            return jsonify({'error': 'Invalid amount'}), 400
-        if log_type == 'volunteer' and (not isinstance(hours, (int, float)) or hours < 0.25):
-            return jsonify({'error': 'Invalid hours'}), 400
-
-        # Insert into impact_logs
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        log_id = f"{log_type}_{ein}_{log_date}_{secrets.token_hex(4)}"
-
-        cursor.execute('''
-            INSERT INTO impact_logs (id, ein, type, amount, hours, log_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (log_id, ein, log_type, amount if log_type == 'giving' else None,
-              hours if log_type == 'volunteer' else None, log_date))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({'success': True, 'log_id': log_id}), 201
-    except Exception as e:
-        logging.error(f'Impact log error: {e}')
-        return jsonify({'error': str(e)}), 500
-
-
-@app.route('/api/impact/community-stats', methods=['GET'])
-@limiter.limit("100 per hour")
-def get_community_stats():
-    """Get aggregated community impact stats (updated daily)."""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-
-        # Get latest aggregate (today or most recent date)
-        cursor.execute('''
-            SELECT total_dollars, total_hours, donation_count, volunteer_count,
-                   org_count, active_volunteers, aggregate_date
-            FROM impact_aggregates
-            ORDER BY aggregate_date DESC
-            LIMIT 1
-        ''')
-        row = cursor.fetchone()
-        conn.close()
-
-        if not row:
-            # No aggregates yet — compute from raw logs
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT
-                  COALESCE(SUM(amount), 0) as total_dollars,
-                  COALESCE(SUM(hours), 0) as total_hours,
-                  SUM(CASE WHEN type='giving' THEN 1 ELSE 0 END) as donation_count,
-                  SUM(CASE WHEN type='volunteer' THEN 1 ELSE 0 END) as volunteer_count,
-                  COUNT(DISTINCT ein) as org_count
-                FROM impact_logs
-            ''')
-            stats_row = cursor.fetchone()
-            conn.close()
-            if stats_row:
-                total_dollars, total_hours, donation_count, volunteer_count, org_count = stats_row
-                volunteer_hourly_value = 31.80  # Placeholder BAL for 2026
-                lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
-                return jsonify({
-                    'total_dollars': total_dollars or 0,
-                    'total_hours': round(total_hours or 0, 2),
-                    'donation_count': donation_count or 0,
-                    'volunteer_count': volunteer_count or 0,
-                    'org_count': org_count or 0,
-                    'active_volunteers': volunteer_count or 0,
-                    'lifetime_value': lifetime_value,
-                    'as_of_date': datetime.now().isoformat().split('T')[0],
-                }), 200
-            else:
-                return jsonify({
-                    'total_dollars': 0, 'total_hours': 0, 'donation_count': 0,
-                    'volunteer_count': 0, 'org_count': 0, 'active_volunteers': 0,
-                    'lifetime_value': 0, 'as_of_date': datetime.now().isoformat().split('T')[0],
-                }), 200
-
-        total_dollars, total_hours, donation_count, volunteer_count, org_count, active_volunteers, aggregate_date = row
-        volunteer_hourly_value = 31.80
-        lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
-
-        return jsonify({
-            'total_dollars': total_dollars,
-            'total_hours': round(total_hours, 2),
-            'donation_count': donation_count,
-            'volunteer_count': volunteer_count,
-            'org_count': org_count,
-            'active_volunteers': active_volunteers,
-            'lifetime_value': lifetime_value,
-            'as_of_date': aggregate_date,
-        }), 200
-    except Exception as e:
-        logging.error(f'Community stats error: {e}')
-        return jsonify({'error': str(e)}), 500
-
-
-# ── Nonprofit Dashboard: Donor Interest Analytics ────────────────────────────
-
-@app.route('/api/wallet/report-bookmark', methods=['POST'])
-def report_bookmark():
-    """
-    Anonymous opt-in bookmark analytics collection.
-
-    Clients call this when a user bookmarks an org to populate the nonprofit
-    dashboard with donor interest metrics. Completely anonymized, no user tracking,
-    respects privacy-first design (Stewardship Principle #2).
-
-    POST body: { "ein": "123456789", "causes": ["Food Justice", "Community Empowerment"],
-                 "state": "CA", "city": "San Francisco" }
-    """
-    try:
-        data = request.get_json() or {}
-        ein = data.get('ein', '').strip()
-        causes = data.get('causes', []) or []
-        state = data.get('state', 'XX')[:2].upper()
-        city = data.get('city', 'Unknown')[:50]
-
-        if not ein or len(ein) != 9 or not ein.isdigit():
-            return jsonify({'error': 'Invalid EIN'}), 400
-
-        db = get_db()
-        cursor = db.cursor()
-
-        # Record root bookmark (for org total count)
-        cursor.execute('''
-            INSERT INTO wallet_analytics (ein, bookmark_count)
-            VALUES (?, 1)
-            ON CONFLICT(ein) DO UPDATE SET
-                bookmark_count = bookmark_count + 1,
-                last_updated = CURRENT_TIMESTAMP
-        ''', (ein,))
-
-        # Record by cause (if causes provided)
-        for cause in causes[:5]:  # Max 5 causes per bookmark to prevent spam
-            cause = cause.strip()[:100]
-            if cause:
-                cursor.execute('''
-                    INSERT INTO wallet_analytics (ein, cause_tag, bookmark_count)
-                    VALUES (?, ?, 1)
-                    ON CONFLICT(ein, cause_tag) DO UPDATE SET
-                        bookmark_count = bookmark_count + 1,
-                        last_updated = CURRENT_TIMESTAMP
-                ''', (ein, cause))
-
-        # Record by location (if provided)
-        if state != 'XX' and city != 'Unknown':
-            cursor.execute('''
-                INSERT INTO wallet_analytics (ein, location_state, location_city, bookmark_count)
-                VALUES (?, ?, ?, 1)
-                ON CONFLICT(ein, location_state, location_city) DO UPDATE SET
-                    bookmark_count = bookmark_count + 1,
-                    last_updated = CURRENT_TIMESTAMP
-            ''', (ein, state, city))
-
-        db.commit()
-        return jsonify({'status': 'ok'}), 200
-    except Exception as e:
-        _logger.error(f'Bookmark report error: {e}')
-        return jsonify({'error': 'Failed to record bookmark'}), 500
-
-
-@app.route('/api/nonprofit/<ein>/volunteer/submit', methods=['POST'])
-@limiter.limit("30 per hour")
-def nonprofit_volunteer_submit(ein: str):
-    """Submit volunteer hours for approval.
-
-    Request: {volunteer_name, volunteer_email, hours, service_date, activity_description}
-    Response: {claim_code, claim_url}
-    """
-    uid = _require_firebase_user()
-    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
-
-    if not ein:
-        return jsonify({'error': 'Invalid EIN'}), 400
-
-    # Verify ownership
-    db = get_db()
-    claim = db.execute(
-        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
-        (ein, uid)
-    ).fetchone()
-
-    if not claim:
-        return jsonify({'error': 'You do not own this nonprofit'}), 403
-
-    data = request.get_json(silent=True) or {}
-    name = (data.get('volunteer_name') or '').strip()
-    email = (data.get('volunteer_email') or '').strip()
-    hours = float(data.get('hours') or 0)
-    service_date = (data.get('service_date') or '').strip()
-    activity = (data.get('activity_description') or '').strip()
-
-    if not all([name, email, hours > 0, service_date, activity]):
-        return jsonify({'error': 'All fields required'}), 400
-
-    import uuid
-    claim_code = f"VOL-{uuid.uuid4().hex[:12].upper()}"
-
-    try:
-        db.execute('''
-            INSERT INTO volunteer_hours (
-                id, nonprofit_ein, volunteer_name, volunteer_email,
-                hours, service_date, activity_description, status, submitted_at, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-        ''', (claim_code, ein, name, email, hours, service_date, activity,
-              datetime.now().isoformat(), datetime.now().isoformat()))
-        db.commit()
-    except Exception as e:
-        return jsonify({'error': f'Submit failed: {str(e)}'}), 500
-
-    return jsonify({'claim_code': claim_code, 'claim_url': f'https://daanaa.org/volunteer/claim?code={claim_code}'}), 201
-
-@app.route('/api/volunteer/claim', methods=['POST'])
-@limiter.limit("30 per hour")
-def volunteer_claim_hours():
-    """Volunteer claims hours they completed.
-
-    Request: {code, email}
-    Response: {status: 'claimed'}
-    """
-    data = request.get_json(silent=True) or {}
-    code = (data.get('code') or '').strip()
-    email = (data.get('email') or '').strip()
-
-    if not code or not email:
-        return jsonify({'error': 'Code and email required'}), 400
-
-    db = get_db()
-    hours = db.execute(
-        'SELECT id, nonprofit_ein, volunteer_email FROM volunteer_hours WHERE id=?',
-        (code,)
-    ).fetchone()
-
-    if not hours:
-        return jsonify({'error': 'Invalid claim code'}), 404
-
-    if hours['volunteer_email'].lower() != email.lower():
-        return jsonify({'error': 'Email does not match'}), 403
-
-    try:
-        db.execute(
-            'UPDATE volunteer_hours SET status=? WHERE id=?',
-            ('confirmed', code)
-        )
-        db.commit()
-    except Exception as e:
-        return jsonify({'error': f'Claim failed: {str(e)}'}), 500
-
-    return jsonify({'status': 'claimed', 'message': 'Hours claimed. Nonprofit will review.'}), 200
-
-@app.route('/api/nonprofit/<ein>/volunteer/pending', methods=['GET'])
-def nonprofit_pending_approvals(ein: str):
-    """Get pending volunteer hours awaiting nonprofit approval.
-
-    Response: [{id, volunteer_name, volunteer_email, hours, service_date, activity_description, status}]
-    """
-    uid = _require_firebase_user()
-    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
-
-    if not ein:
-        return jsonify({'error': 'Invalid EIN'}), 400
-
-    db = get_db()
-    claim = db.execute(
-        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
-        (ein, uid)
-    ).fetchone()
-
-    if not claim:
-        return jsonify({'error': 'You do not own this nonprofit'}), 403
-
-    hours = db.execute('''
-        SELECT id, volunteer_name, volunteer_email, hours, service_date, activity_description, status
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status IN ("confirmed", "pending")
-        ORDER BY submitted_at DESC
-    ''', (ein,)).fetchall()
-
-    return jsonify([dict(h) for h in hours]), 200
-
-@app.route('/api/nonprofit/<ein>/volunteer/<hour_id>/approve', methods=['POST'])
-@limiter.limit("60 per hour")
-def nonprofit_approve_hours(ein: str, hour_id: str):
-    """Approve submitted volunteer hours."""
-    uid = _require_firebase_user()
-    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
-
-    if not ein:
-        return jsonify({'error': 'Invalid EIN'}), 400
-
-    db = get_db()
-    claim = db.execute(
-        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
-        (ein, uid)
-    ).fetchone()
-
-    if not claim:
-        return jsonify({'error': 'You do not own this nonprofit'}), 403
-
-    try:
-        db.execute(
-            'UPDATE volunteer_hours SET status=?, approved_by=?, approved_at=? WHERE id=? AND nonprofit_ein=?',
-            ('approved', uid, datetime.now().isoformat(), hour_id, ein)
-        )
-        db.commit()
-    except Exception as e:
-        return jsonify({'error': f'Approval failed: {str(e)}'}), 500
-
-    return jsonify({'status': 'approved'}), 200
-
-@app.route('/api/nonprofit/<ein>/volunteer/<hour_id>/reject', methods=['POST'])
-@limiter.limit("60 per hour")
-def nonprofit_reject_hours(ein: str, hour_id: str):
-    """Reject submitted volunteer hours."""
-    uid = _require_firebase_user()
-    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
-
-    if not ein:
-        return jsonify({'error': 'Invalid EIN'}), 400
-
-    data = request.get_json(silent=True) or {}
-    reason = (data.get('reason') or '').strip()
-
-    db = get_db()
-    claim = db.execute(
-        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
-        (ein, uid)
-    ).fetchone()
-
-    if not claim:
-        return jsonify({'error': 'You do not own this nonprofit'}), 403
-
-    try:
-        db.execute(
-            'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND nonprofit_ein=?',
-            ('rejected', uid, datetime.now().isoformat(), reason, hour_id, ein)
-        )
-        db.commit()
-    except Exception as e:
-        return jsonify({'error': f'Rejection failed: {str(e)}'}), 500
-
-    return jsonify({'status': 'rejected'}), 200
-
-@app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
-def nonprofit_dashboard_analytics(claim_token: str):
-    """
-    Nonprofit Donor Interest Dashboard (disabled for launch).
-
-    This feature is planned for Phase 2. Returns 501 until ready.
-    """
-    return jsonify({'error': 'Dashboard coming soon'}), 501
-    try:
-        # Verify claim token (should be a JWT-like token from claim process)
-        # For now, simple approach: token is base64(ein:email:timestamp)
-        # In production, use proper JWT validation with claim_status = 'approved'
-
-        try:
-            import base64
-            decoded = base64.b64decode(claim_token).decode('utf-8')
-            parts = decoded.split(':')
-            if len(parts) < 2:
-                return jsonify({'error': 'Invalid token'}), 401
-            ein, claimed_email = parts[0], parts[1]
-        except Exception:
-            return jsonify({'error': 'Invalid token format'}), 401
-
-        # Verify org is actually claimed by this email
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('''
-            SELECT ein, email, claim_status FROM org_claims
-            WHERE ein = ? AND email = ? AND claim_status IN ('approved', 'verified')
-            LIMIT 1
-        ''', (ein, claimed_email))
-        claim = cursor.fetchone()
-
-        if not claim:
-            return jsonify({'error': 'Org not claimed or claim not verified'}), 403
-
-        # Get this month's analytics
-        from datetime import datetime, timedelta
-        now = datetime.now()
-        current_month = now.strftime('%Y-%m')
-        prev_month = (now - timedelta(days=30)).strftime('%Y-%m')
-
-        # Total bookmarks this month
-        cursor.execute('''
-            SELECT COALESCE(SUM(bookmark_count), 0) FROM wallet_analytics
-            WHERE ein = ? AND last_updated >= date('now', 'start of month')
-        ''', (ein,))
-        bookmarks_this_month = cursor.fetchone()[0]
-
-        # Total bookmarks last month
-        cursor.execute('''
-            SELECT COALESCE(SUM(bookmark_count), 0) FROM wallet_analytics
-            WHERE ein = ? AND last_updated >= date('now', '-1 month', 'start of month')
-            AND last_updated < date('now', 'start of month')
-        ''', (ein,))
-        bookmarks_prev_month = cursor.fetchone()[0]
-
-        # Bookmarks by cause
-        cursor.execute('''
-            SELECT cause_tag, SUM(bookmark_count) as count
-            FROM wallet_analytics
-            WHERE ein = ? AND cause_tag IS NOT NULL
-            GROUP BY cause_tag
-            ORDER BY count DESC
-            LIMIT 10
-        ''', (ein,))
-        causes = [{'cause': row[0], 'count': row[1]} for row in cursor.fetchall()]
-
-        # Bookmarks by location
-        cursor.execute('''
-            SELECT location_state, location_city, SUM(bookmark_count) as count
-            FROM wallet_analytics
-            WHERE ein = ? AND location_state IS NOT NULL
-            GROUP BY location_state, location_city
-            ORDER BY count DESC
-            LIMIT 10
-        ''', (ein,))
-        locations = [{'state': row[0], 'city': row[1], 'count': row[2]} for row in cursor.fetchall()]
-
-        # Get org data for profile completeness check
-        cursor.execute('''
-            SELECT mission, website, website_status, donate_url, custom_mission
-            FROM registry_enriched
-            WHERE EIN = ?
-        ''', (ein,))
-        org_row = cursor.fetchone()
-
-        profile_checks = {
-            'mission_status': 'fresh' if org_row and org_row[0] else 'missing',
-            'website_status': 'verified' if org_row and org_row[2] == 'verified' else 'unverified',
-            'donate_url_status': 'working' if org_row and org_row[3] else 'missing',
-            'cause_tags_count': len(causes),
-        }
-
-        # Get all distinct cause tags in taxonomy for recommendations
-        cursor.execute('''
-            SELECT DISTINCT cause_tag FROM wallet_analytics
-            WHERE cause_tag IS NOT NULL
-            ORDER BY cause_tag ASC
-        ''')
-        all_tags = [row[0] for row in cursor.fetchall()]
-
-        # Recommended tags (high-interest, org doesn't have yet)
-        org_tags = {c['cause'] for c in causes}
-        recommended = [
-            tag for tag in all_tags
-            if tag not in org_tags
-        ][:5]
-
-        return jsonify({
-            'ein': ein,
-            'this_month': {
-                'bookmarks_total': bookmarks_this_month,
-                'bookmarks_prev_month': bookmarks_prev_month,
-                'bookmarks_growth_pct': round(
-                    ((bookmarks_this_month - bookmarks_prev_month) / max(bookmarks_prev_month, 1)) * 100
-                ),
-                'bookmarks_by_cause': causes,
-                'bookmarks_by_location': locations,
-            },
-            'profile_completeness': profile_checks,
-            'recommended_cause_tags': recommended[:3],
-            'tips': [
-                'Orgs with 5+ cause tags get 2.3x more bookmarks',
-                'Update your mission every 6 months to stay in "Recently Updated" feed',
-                f'Adding "{recommended[0]}" tag would reach ~500+ interested donors' if recommended else None,
-            ]
-        }), 200
-
-    except Exception as e:
-        _logger.error(f'Dashboard error: {e}')
-        return jsonify({'error': 'Failed to load dashboard'}), 500
-
-
-# ── Volunteer interest counter ────────────────────────────────────────────────
-# Anonymous aggregate: counts how many people expressed interest in volunteering
-# at each org. No user IDs stored — just a tally. Only surfaces to claimed orgs
-# when count >= 5 (prevents re-identification at count=1). Rate-limited per-worker
-# in-memory (low-stakes feature; per-worker is good enough to deter obvious abuse).
-
-_volunteer_rate: dict[str, list[float]] = {}
-
-def _vol_rate_ok(ip: str, limit: int = 20, window: int = 3600) -> bool:
-    import time as _time
-    now = _time.time()
-    hits = [t for t in _volunteer_rate.get(ip, []) if now - t < window]
-    if len(hits) >= limit:
-        return False
-    _volunteer_rate[ip] = hits + [now]
-    return True
-
-def _ensure_volunteer_interest_table(db: sqlite3.Connection) -> None:
-    db.execute('''CREATE TABLE IF NOT EXISTS volunteer_interest
-                  (EIN TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0)''')
-
-@app.route('/api/volunteer-interest/<ein>', methods=['POST', 'DELETE'])
-def volunteer_interest(ein: str):
-    import re as _re2
-    if not _re2.match(r'^\d{9}$', ein):
-        return jsonify({'error': 'invalid EIN'}), 400
-    ip = request.remote_addr or 'unknown'
-    if not _vol_rate_ok(ip):
-        return jsonify({'error': 'rate limit'}), 429
-    db = get_db()
-    _ensure_volunteer_interest_table(db)
-    if request.method == 'POST':
-        db.execute('''INSERT INTO volunteer_interest (EIN, count) VALUES (?, 1)
-                      ON CONFLICT(EIN) DO UPDATE SET count = count + 1''', (ein,))
-    else:
-        db.execute('''UPDATE volunteer_interest SET count = MAX(0, count - 1)
-                      WHERE EIN = ?''', (ein,))
-    db.commit()
-    row = db.execute('SELECT count FROM volunteer_interest WHERE EIN = ?', (ein,)).fetchone()
-    return jsonify({'ein': ein, 'count': row[0] if row else 0}), 200
-
-@app.route('/api/volunteer-interest/<ein>', methods=['GET'])
-def volunteer_interest_get(ein: str):
-    """For claimed org dashboards — returns count only if >= 5 (privacy threshold)."""
-    import re as _re2
-    if not _re2.match(r'^\d{9}$', ein):
-        return jsonify({'error': 'invalid EIN'}), 400
-    db = get_db()
-    _ensure_volunteer_interest_table(db)
-    row = db.execute('SELECT count FROM volunteer_interest WHERE EIN = ?', (ein,)).fetchone()
-    count = row[0] if row else 0
-    return jsonify({'ein': ein, 'count': count if count >= 5 else None, 'threshold': 5}), 200
-
-
-# ── Eager load embeddings ──────────────────────────────────────────────────────
-
-# Eager load so gunicorn --preload populates the matrix in the master process
-# before forking workers. Workers inherit via CoW without re-reading the DB.
-# DAANAA_SKIP_EMBEDDINGS=1 (tests) avoids the ~2 GB load on import.
-if not os.environ.get("DAANAA_SKIP_EMBEDDINGS"):
-    _load_embeddings()
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
-
-# ─── SPA Fallback (MOVED TO END) ───
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    if path and os.path.exists(os.path.join(FRONTEND_DIST, path)):
-        return send_from_directory(FRONTEND_DIST, path)
