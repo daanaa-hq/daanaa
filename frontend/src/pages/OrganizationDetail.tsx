@@ -13,9 +13,9 @@ import MistakeRegistry from '../components/MistakeRegistry'
 import { useApi } from '../hooks/useApi'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { useWallet } from '../contexts/WalletContext'
-import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
+import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken, getRecallPacket } from '../data/api'
 import { getNteeLabel } from '../data/ntee'
-import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
+import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea, RecallPacket } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 import { getPrimaryExternalLink } from '../utils/externalLink'
@@ -29,6 +29,8 @@ import PeerContextBreakdown from '../components/PeerContextBreakdown'
 import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
 import GuildSection from '../components/GuildSection'
+import MacroContextCard from '../components/MacroContextCard'
+import KnowledgeGraphCard from '../components/KnowledgeGraphCard'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -264,6 +266,12 @@ export default function OrganizationDetail() {
   )
   const serviceArea = serviceAreaData ?? null
   const similarApiOrgs: ApiOrganization[] = (similarData?.results ?? []) as ApiOrganization[]
+
+  // Context & Recall System
+  const { data: recallData } = useApi(
+    () => id ? getRecallPacket(id) : Promise.resolve(null),
+    [id]
+  )
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -943,6 +951,20 @@ export default function OrganizationDetail() {
           {/* Guild/Partner Membership */}
           {apiOrg && <GuildSection ein={apiOrg.EIN} />}
 
+          {/* Context & Recall System: Macro Context & Knowledge Graph */}
+          {recallData && (
+            <>
+              <MacroContextCard
+                context={recallData.macro_context}
+                archetype={recallData.peer_context?.merit_archetype_v5 || null}
+                filingYear={recallData.macro_context?.filing_year || apiOrg?.latest_tax_year || null}
+              />
+              <KnowledgeGraphCard
+                entities={recallData.knowledge_graph?.entities || []}
+                relationships={recallData.knowledge_graph?.relationships || []}
+              />
+            </>
+          )}
 
           {/* About this listing + the org's claimable spaces get the full width
               and are clearly defined. The wide revenue trend chart moves to its

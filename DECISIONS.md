@@ -217,6 +217,12 @@ links visible-but-flagged (donor-confusion risk, violates 2026-06-09 fail-closed
 **Why:** All three were broken (two crashed on missing psutil — 1,446 tracebacks; the pusher used `source` under cron's /bin/sh and never ran once). Had they worked, they'd have spawned the legacy mission_generation_pipeline.py against gpu_night's GPU with no already-running check. gpu_night.sh is the single nightly orchestrator (T1 doc); cause tags stay covered by the 02:35 agent.
 **Rejected:** Installing psutil to "fix" them (would activate an unaudited duplicate orchestrator mid-consolidation).
 
+## 2026-07-05: Flask Blueprints for API/SPA routing separation (PENDING IMPLEMENTATION)
+**Chose:** Refactor droplet_api.py (8282 lines) into Flask Blueprints: `api_blueprint.py` (all /api/* routes, registered FIRST) and `frontend_blueprint.py` (SPA fallback, registered LAST).
+**Why:** The current mixed architecture (8K lines of API routes + SPA fallback in one file) is fragile: easy to accidentally define a route after the SPA fallback, shadowing it. Blueprints enforce deterministic routing by registration order. The recall endpoints exist in code but may not route correctly due to this mixed architecture. Blueprints also improve code clarity and make routing testable. Cost: 1 day refactoring + tests; payoff: safety against future routing bugs and faster feature velocity.
+**Implementation:** See ROUTING_FIX_PLAN.md for detailed plan. Refactor script at scripts/refactor_blueprints.py. Tests at tests/test_routing.py (10+ routing safety assertions).
+**Rejected:** Quick patch (moving routes around) — doesn't solve the root issue and risks breaking other routes during future edits.
+
 ## 2026-06-10: Credential scrub v2 — surgical index-filter, not filter-repo
 **Chose:** git filter-branch --index-filter swapping only the 2 dirty blobs (batch_import.py, daily_sync.sh) for redacted ones, across all 502 commits incl. backup branches.
 **Why:** git-filter-repo --replace-text OOM-crashed ("stream ends early") loading the 6.5GB FAISS blobs on a 30GB-RAM box; index-filter never streams blob contents. Full pre-scrub bundle at ~/daanaa_prescrub_20260610.bundle.
