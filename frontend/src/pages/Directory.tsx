@@ -222,9 +222,11 @@ export default function Directory() {
   // Resolve revenue preset to API params
   const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
-  // A search query searches the whole directory, so the gems-default lens is
-  // dropped while typing (otherwise search would only ever find ~34k gems).
-  const effectiveHiddenGem = hiddenGem && !debouncedQuery.trim()
+  // A search query, or an explicit location filter, means the user is asking
+  // "what's here" — so the gems-default lens is dropped (otherwise a zip/city
+  // search would silently narrow to the ~34k gems subset and often return
+  // few or zero results near a given location, a bad first impression).
+  const effectiveHiddenGem = hiddenGem && !debouncedQuery.trim() && !near
 
   // Fused search mode: any meaningful query with no active structured filters
   const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || hasWebsite || needsSupport || !!visTier || !!debouncedCause.trim()
