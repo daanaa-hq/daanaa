@@ -239,6 +239,9 @@ export default function Methodology() {
               <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
                 <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower reserve position does not mean a lesser organization. It often means a group doing essential work within tight means, investing its resources directly into mission rather than building savings. That is exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
               </p>
+              <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
+                <strong className="text-deep-navy font-medium">Economic context.</strong> On some organization pages, you'll also see a short note about the broader economy in that filing year, things like unemployment or interest rates. This is background, not part of the score. It doesn't change the percentile or the health signal. It's there so a lean reserve position in a hard year reads differently than the same position in a strong one.
+              </p>
             </Section>
 
             <Section id="not-measured" label="Honest limits" title="What Daanaa does not measure">
