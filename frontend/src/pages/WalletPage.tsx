@@ -72,7 +72,6 @@ export default function WalletPage() {
 
   const [activeTab, setActiveTab] = useState<WalletTab>('funding')
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
-  const [showCloseTheLoopPrompt, setShowCloseTheLoopPrompt] = useState(true)
   const toggleLog = useCallback((ein: string) => {
     setExpandedLogs(prev => { const n = new Set(prev); n.has(ein) ? n.delete(ein) : n.add(ein); return n })
   }, [])
@@ -318,14 +317,11 @@ export default function WalletPage() {
           </div>
         </div>
 
-        {/* Close-the-loop prompt — optional prompt to log recent donations */}
-        {showCloseTheLoopPrompt && (
-          <CloseTheLoopPrompt
-            walletEntries={entries}
-            orgDataMap={orgDataMap}
-            onDismiss={() => setShowCloseTheLoopPrompt(false)}
-          />
-        )}
+        {/* Close-the-loop prompt — log recent donations */}
+        <CloseTheLoopPrompt
+          walletEntries={entries}
+          orgDataMap={orgDataMap}
+        />
 
         {/* Funding / Volunteering tabs */}
         <div className="flex gap-2 mb-8">
