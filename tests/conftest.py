@@ -54,5 +54,27 @@ _seed_conn.executescript("""
         avg_revenue REAL, avg_financial_health_score REAL,
         pct_with_website REAL, avg_peer_percentile REAL, period TEXT
     );
+    CREATE TABLE IF NOT EXISTS macro_context_snapshots (
+        id INTEGER PRIMARY KEY,
+        ein TEXT UNIQUE,
+        filing_year INTEGER,
+        cpi_year REAL,
+        unemployment_rate REAL,
+        gdp_growth REAL,
+        interest_rate_federal REAL,
+        population_change REAL,
+        housing_price_index REAL,
+        source TEXT DEFAULT 'fred',
+        source_update_date TEXT,
+        confidence TEXT DEFAULT 'high',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE TABLE IF NOT EXISTS knowledge_graph_entities (
+        ein TEXT, entity_type TEXT, entity_value TEXT,
+        confidence REAL, source TEXT
+    );
+    CREATE TABLE IF NOT EXISTS knowledge_graph_relationships (
+        ein_from TEXT, relationship_type TEXT, ein_to TEXT, confidence REAL
+    );
 """)
 _seed_conn.close()

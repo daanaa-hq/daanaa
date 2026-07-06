@@ -2088,6 +2088,7 @@ def get_recall_packet(ein):
             "unemployment_rate": macro_row.get("unemployment_rate"),
             "cpi": macro_row.get("cpi_year"),
             "gdp_growth": macro_row.get("gdp_growth"),
+            "interest_rate_federal": macro_row.get("interest_rate_federal"),
             "source": "fred",
             "confidence": macro_row.get("confidence"),
             "filing_year": macro_row.get("filing_year"),

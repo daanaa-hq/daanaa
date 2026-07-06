@@ -40,28 +40,28 @@ export default function MacroContextCard({ context, archetype, filingYear }: Mac
       </p>
 
       <div className="grid grid-cols-2 gap-3 text-sm">
-        {context.unemployment_rate !== null && (
+        {context.unemployment_rate != null && (
           <div className="bg-navy-mid/5 px-3 py-2 rounded">
             <div className="text-cool-grey/70">Unemployment Rate</div>
             <div className="font-semibold text-cool-grey">{context.unemployment_rate.toFixed(1)}%</div>
           </div>
         )}
 
-        {context.cpi !== null && (
+        {context.cpi != null && (
           <div className="bg-navy-mid/5 px-3 py-2 rounded">
             <div className="text-cool-grey/70">CPI (Inflation)</div>
             <div className="font-semibold text-cool-grey">{context.cpi.toFixed(1)}%</div>
           </div>
         )}
 
-        {context.gdp_growth !== null && (
+        {context.gdp_growth != null && (
           <div className="bg-navy-mid/5 px-3 py-2 rounded">
             <div className="text-cool-grey/70">GDP Growth</div>
             <div className="font-semibold text-cool-grey">{context.gdp_growth.toFixed(1)}%</div>
           </div>
         )}
 
-        {context.interest_rate_federal !== null && (
+        {context.interest_rate_federal != null && (
           <div className="bg-navy-mid/5 px-3 py-2 rounded">
             <div className="text-cool-grey/70">Fed Funds Rate</div>
             <div className="font-semibold text-cool-grey">{context.interest_rate_federal.toFixed(2)}%</div>
