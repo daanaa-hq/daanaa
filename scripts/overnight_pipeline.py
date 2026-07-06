@@ -477,7 +477,7 @@ def fetch_org_websites():
         log('Fetching org websites to populate page_cache (before mission generation)...')
         script = Path.home() / 'meritgiving' / 'scripts' / 'fetch_org_websites.py'
         result = subprocess.run(
-            ['python3', str(script), '--workers', '4'],  # 4 concurrent fetch workers
+            ['python3', str(script), '--workers', '8'],  # 8 concurrent fetch workers (network-bound, scales well)
             capture_output=True, text=True, timeout=3600,  # 1 hour timeout
             cwd=str(Path.home() / 'meritgiving'),
         )
