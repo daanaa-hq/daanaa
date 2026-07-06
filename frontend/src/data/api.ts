@@ -128,6 +128,9 @@ export interface ApiOrganization {
   mission_source?: string | null;        // 'ai_ntee'|'ai_haiku'|'ai_web'|'lucido'|'claimed'|null
   website?: string | null;
   website_status?: string | null;        // 'ok' = verified live & on-domain; else fall back to EIN record
+  donate_url?: string | null;            // Donation link (ai_suggested or claimed)
+  donate_url_status?: string | null;     // 'ai_suggested' | 'claimed' | null
+  donate_confidence?: number | null;     // 0-100 confidence score
   phone?: string | null;                 // Organization phone number from 990
   // Data provenance — which fields are AI-generated vs verified
   data_badges?: {

@@ -1558,6 +1558,25 @@ export default function OrganizationDetail() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
               </a>
             )}
+            {apiOrg?.donate_url && apiOrg?.donate_url_status === 'ai_suggested' && (
+              <div className="flex-1 flex flex-col gap-1">
+                <a
+                  href={apiOrg.donate_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={apiOrg.donate_confidence && apiOrg.donate_confidence < 90 ? 'Give directly (AI suggested, not verified)' : 'Give directly'}
+                  className="py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg hover:bg-bright-gold transition-colors"
+                >
+                  Give directly
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                </a>
+                {apiOrg.donate_confidence && apiOrg.donate_confidence < 90 && (
+                  <span className="text-center px-2 py-1 text-[11px] font-medium text-cool-grey bg-navy-mid/10 rounded">
+                    AI suggested
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         )
         // Desktop reuses the same sticky treatment as mobile (audit
