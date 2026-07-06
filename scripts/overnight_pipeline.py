@@ -477,7 +477,7 @@ def fetch_org_websites():
         log('Fetching org websites to populate page_cache (before mission generation)...')
         script = Path.home() / 'meritgiving' / 'scripts' / 'fetch_org_websites.py'
         result = subprocess.run(
-            ['python3', str(script), '--batch-size', '50'],
+            ['python3', str(script), '--workers', '4'],  # 4 concurrent fetch workers
             capture_output=True, text=True, timeout=3600,  # 1 hour timeout
             cwd=str(Path.home() / 'meritgiving'),
         )
@@ -619,8 +619,8 @@ def run_parallel_enrichment():
 
     tasks = [
         ('missions', lambda: run_mission_generation(workers=cpu_count)),  # All 16 cores
-        ('donate links', lambda: extract_donate_links_batch(batch_size=10000)),  # 2x batch
-        ('cause tags', lambda: generate_cause_tags_batch(batch_size=10000)),  # 2x batch for GPU
+        ('donate links', lambda: extract_donate_links_batch(batch_size=5000)),  # 5K/night rolling
+        ('cause tags', lambda: generate_cause_tags_batch(batch_size=5000)),  # 5K/night GPU
     ]
 
     with ThreadPoolExecutor(max_workers=3) as executor:
