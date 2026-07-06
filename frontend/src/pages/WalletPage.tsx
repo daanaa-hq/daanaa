@@ -8,6 +8,7 @@ import ImpactSummary from '../components/ImpactSummary'
 import WalletAccountLink from '../components/WalletAccountLink'
 import DonationLogger from '../components/DonationLogger'
 import VolunteerLogger from '../components/VolunteerLogger'
+import CloseTheLoopPrompt from '../components/CloseTheLoopPrompt'
 import type { ApiOrganization } from '../data/api'
 import { API_BASE } from '../lib/platform'
 import {
@@ -71,6 +72,7 @@ export default function WalletPage() {
 
   const [activeTab, setActiveTab] = useState<WalletTab>('funding')
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set())
+  const [showCloseTheLoopPrompt, setShowCloseTheLoopPrompt] = useState(true)
   const toggleLog = useCallback((ein: string) => {
     setExpandedLogs(prev => { const n = new Set(prev); n.has(ein) ? n.delete(ein) : n.add(ein); return n })
   }, [])
@@ -315,6 +317,15 @@ export default function WalletPage() {
             </button>
           </div>
         </div>
+
+        {/* Close-the-loop prompt — optional prompt to log recent donations */}
+        {showCloseTheLoopPrompt && (
+          <CloseTheLoopPrompt
+            walletEntries={entries}
+            orgDataMap={orgDataMap}
+            onDismiss={() => setShowCloseTheLoopPrompt(false)}
+          />
+        )}
 
         {/* Funding / Volunteering tabs */}
         <div className="flex gap-2 mb-8">
