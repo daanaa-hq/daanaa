@@ -52,6 +52,17 @@ retry() {
 
 log "Checking droplet_api.py drift..."
 
+# Wrong-file guard (2026-07-06, second occurrence of this failure): the root
+# droplet_api.py / daanaa_api.py home-API variants query v4_scores,
+# org_embeddings, and registry_enriched.subsection — schema that exists only in
+# the home merit_registry.db, never in the droplet search.db contract. Shipping
+# one takes down every DB-backed route. Refuse before anything else runs.
+if grep -qE "v4_scores|org_embeddings" "$LOCAL_API"; then
+    log "REFUSING DEPLOY: $LOCAL_API references home-only schema (v4_scores/org_embeddings). Wrong file — see LESSONS.md 2026-07-06."
+    alert "[Daanaa ALERT] droplet_api deploy REFUSED" "scripts/droplet_api.py references v4_scores/org_embeddings — the home-API variant has overwritten the lean droplet API in the repo. Not deployed. See LESSONS.md 2026-07-06."
+    exit 1
+fi
+
 LOCAL_MD5=$(md5sum "$LOCAL_API" | awk '{print $1}')
 REMOTE_MD5=$(retry $SSH "md5sum $REMOTE_API 2>/dev/null | awk '{print \$1}'" || echo "missing")
 
@@ -103,7 +114,11 @@ smoke() {
     home_body=$(curl -sS --max-time 20 https://daanaa.org/ 2>>"$LOG" | head -c 300) || return 1
     echo "$home_body" | grep -qi '<!doctype html' || return 1
     curl -sS --max-time 20 -o /dev/null -w '%{http_code}' \
-        'https://daanaa.org/api/search?q=food+bank&limit=1' 2>>"$LOG" | grep -q '^200$'
+        'https://daanaa.org/api/search?q=food+bank&limit=1' 2>>"$LOG" | grep -q '^200$' || return 1
+    # Directory listing route — died independently of /api/search in the
+    # 2026-07-06 incident ("no such column: subsection"), so check it too.
+    curl -sS --max-time 20 -o /dev/null -w '%{http_code}' \
+        'https://daanaa.org/api/organizations?state=TX&limit=1' 2>>"$LOG" | grep -q '^200$'
 }
 
 if [ "$STATUS" = "OK" ] && ! smoke; then
