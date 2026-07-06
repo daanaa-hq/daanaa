@@ -19,14 +19,27 @@ def test_mock_qwen_fixture(mock_qwen):
 
 
 def test_mock_embeddings_fixture(mock_embeddings):
-    """Verify mock_embeddings fixture returns 1024-dim vectors."""
+    """Verify mock_embeddings fixture accepts a list of texts and returns a list of 1024-dim vectors."""
     assert callable(mock_embeddings), "mock_embeddings must be callable"
 
-    # Generate test vector
-    vector = mock_embeddings("test query")
-    assert isinstance(vector, list), "mock_embeddings must return a list"
+    # Generate test vectors from a list of texts (matches SemanticLookup's calling convention)
+    vectors = mock_embeddings(["test query"])
+    assert isinstance(vectors, list), "mock_embeddings must return a list"
+    assert len(vectors) == 1, "mock_embeddings must return one vector per input text"
+
+    vector = vectors[0]
+    assert isinstance(vector, list), "each vector must be a list"
     assert len(vector) == 1024, "mock_embeddings must return 1024-dim vectors (mxbai-embed-large)"
     assert all(isinstance(x, float) for x in vector), "all dimensions must be floats"
+
+    # Batch call with multiple texts should preserve order and count
+    batch = mock_embeddings(["alpha", "beta", "gamma"])
+    assert len(batch) == 3, "mock_embeddings must return one vector per input text in a batch"
+    assert batch[0] != batch[1], "different texts should produce different vectors"
+
+    # Same text should produce the same vector (determinism)
+    assert mock_embeddings(["repeat me"])[0] == mock_embeddings(["repeat me"])[0], \
+        "identical text must produce identical vector"
 
 
 def test_test_db_fixture(test_db):

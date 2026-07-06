@@ -20,33 +20,38 @@ def mock_qwen():
     In real use, this connects to llama-server on port 11437.
     For testing, it returns deterministic, safe responses.
     """
-    def _qwen_response(prompt: str, seed: int = 42) -> str:
+    def _qwen_response(prompt: str, max_tokens: int = 200) -> str:
         """Simulate Qwen response based on prompt content.
 
         Args:
-            prompt: Input prompt (unused for deterministic output)
-            seed: Random seed for reproducibility
+            prompt: Input prompt. Determinism is derived from a hash of the
+                prompt text itself, so identical prompts always yield the
+                same response without requiring callers to pass a seed.
+            max_tokens: Accepted for call-signature compatibility with the
+                real Qwen client (unused for deterministic mock output).
 
         Returns:
             A string simulating Qwen's response (e.g., cause tags or website suggestion)
         """
-        random.seed(seed)
+        # Local PRNG seeded from the prompt hash: same prompt -> same output,
+        # without touching the shared module-level random state.
+        rng = random.Random(hash(prompt) % (2**31))
 
         # Simulate different response types based on prompt keywords
         if "cause_tags" in prompt.lower() or "tags" in prompt.lower():
             tags = ["Community Development", "Education", "Health Services", "Arts & Culture", "Environment"]
-            selected = random.sample(tags, k=random.randint(2, 4))
-            return f"Recommended cause tags: {', '.join(selected)}. Confidence: 0.78"
+            selected = rng.sample(tags, k=rng.randint(2, 4))
+            return ', '.join(selected)
 
         elif "website" in prompt.lower() or "domain" in prompt.lower():
             extensions = [".org", ".com", ".net"]
             org_name = "testorg"
-            ext = random.choice(extensions)
-            return f"Suggested domain: {org_name}{ext}. This follows nonprofit naming conventions. Confidence: 0.82"
+            ext = rng.choice(extensions)
+            return f"{org_name}{ext}"
 
         else:
             # Generic response for other prompts
-            return f"Mock response from Qwen. Confidence: 0.75"
+            return "Mock response from Qwen"
 
     return _qwen_response
 
@@ -58,25 +63,30 @@ def mock_embeddings():
     mxbai-embed-large produces 1024-dimensional vectors.
     For testing, we generate deterministic vectors using seeded randomness.
     """
-    def _embedding_response(text: str, seed: int = 42) -> list:
-        """Generate a 1024-dimensional embedding vector for testing.
+    def _single_vector(text: str) -> list:
+        """Generate a deterministic 1024-dimensional vector for one text.
 
-        Args:
-            text: Input text to embed
-            seed: Random seed for reproducibility (allows same text to produce same vector)
-
-        Returns:
-            List of 1024 floats (standard for mxbai-embed-large)
+        Uses a local Random instance seeded from the text hash so identical
+        text always produces the identical vector, without mutating the
+        shared module-level random state.
         """
-        # Seed PRNG with text hash for determinism: same text → same vector
-        hash_seed = seed + hash(text) % (2**31)
-        random.seed(hash_seed)
+        rng = random.Random(hash(text) % (2**31))
 
         # Generate 1024 random floats in [-1, 1] range (typical for embeddings)
         # Real mxbai vectors are normalized and roughly in this range
-        vector = [random.uniform(-1.0, 1.0) for _ in range(1024)]
+        return [rng.uniform(-1.0, 1.0) for _ in range(1024)]
 
-        return vector
+    def _embedding_response(texts: list) -> list:
+        """Generate 1024-dimensional embedding vectors for a batch of texts.
+
+        Args:
+            texts: List of input strings to embed.
+
+        Returns:
+            List of vectors (each a list of 1024 floats, mxbai-embed-large
+            dimensionality), one per input text, in the same order.
+        """
+        return [_single_vector(text) for text in texts]
 
     return _embedding_response
 
