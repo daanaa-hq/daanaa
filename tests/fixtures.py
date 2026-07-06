@@ -306,3 +306,24 @@ def sample_orgs():
             'merit_tier': 'Candle'
         }
     ]
+
+
+@pytest.fixture
+def enrich_config():
+    """Load the enrichment batch configuration from scripts/enrich_batch_config.json.
+
+    Returns:
+        Dict with batch config, server settings, thresholds, and prompt templates
+    """
+    import json
+    import os
+
+    config_path = os.path.join(
+        os.path.dirname(__file__),
+        '..',
+        'scripts',
+        'enrich_batch_config.json'
+    )
+
+    with open(config_path, 'r') as f:
+        return json.load(f)
