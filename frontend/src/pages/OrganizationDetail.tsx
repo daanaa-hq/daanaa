@@ -1560,9 +1560,17 @@ export default function OrganizationDetail() {
             )}
           </div>
         )
+        // Desktop reuses the same sticky treatment as mobile (audit
+        // 2026-07-03: primary CTA sits ~40% down the page) — no BottomNav
+        // to clear on desktop, so it sits lower and stays right-aligned
+        // within the standard page width instead of spanning full-bleed.
         return (
-          <div className="md:hidden fixed bottom-[60px] left-0 right-0 z-40 px-4 pb-2">
-            {heartButtons}
+          <div className="fixed bottom-[60px] md:bottom-6 left-0 right-0 z-40 px-4 md:px-6 pb-2 md:pb-0">
+            <div className="md:max-w-[1200px] md:mx-auto md:flex md:justify-end">
+              <div className="md:w-full md:max-w-sm">
+                {heartButtons}
+              </div>
+            </div>
           </div>
         )
       })()}
