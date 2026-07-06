@@ -1,0 +1,36 @@
+{
+  "version": "1.0",
+  "batch": {
+    "max_workers": 6,
+    "batch_size_per_inference": 20,
+    "timeout_seconds": 300
+  },
+  "servers": {
+    "qwen_port": 11437,
+    "embeddings_port": 11436
+  },
+  "thresholds": {
+    "cause_tags_min_confidence": 0.65,
+    "quality_regression_alert": 0.10,
+    "accuracy_target": 0.75,
+    "validity_target": 0.80
+  },
+  "prompts": {
+    "v1.0": {
+      "cause_tags": "Similar high-performing orgs are tagged with: {similar_tags}. This organization has the mission: {mission}. NTEE category: {ntee}. Suggest 3-5 cause tags that best describe this organization's focus area.",
+      "website": "Similar organizations in {city}, {state} use domains like: {similar_domains}. This organization is named: {org_name}. Suggest the most likely domain name (e.g., myorg.org)."
+    },
+    "v1.1": {
+      "cause_tags": "Similar high-performing orgs in {ntee} are tagged with: {similar_tags}. This organization has the mission: {mission}. NTEE category: {ntee}. For {ntee_label} organizations, emphasize: {ntee_emphasis}. Suggest 3-5 cause tags.",
+      "website": "Similar organizations in {city}, {state} use domains like: {similar_domains}. This organization is named: {org_name}. Common patterns in {state}: {state_patterns}. Suggest the most likely domain."
+    }
+  },
+  "cohorts": [
+    {"id": "All", "filter": ""},
+    {"id": "NTEE_A", "filter": "ntee1 = 'A'"},
+    {"id": "NTEE_B", "filter": "ntee1 = 'B'"},
+    {"id": "size_micro", "filter": "total_revenue < 150000"},
+    {"id": "size_professional", "filter": "total_revenue BETWEEN 150000 AND 700000"},
+    {"id": "size_established", "filter": "total_revenue > 700000"}
+  ]
+}
