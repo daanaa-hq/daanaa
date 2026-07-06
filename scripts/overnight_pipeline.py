@@ -495,16 +495,17 @@ def fetch_org_websites():
         log(f'⚠️  Website fetch exception (non-fatal): {str(e)[:100]}')
 
 
-def run_mission_generation():
+def run_mission_generation(workers=8):
     """Generate missions + extract donate links for scored orgs using cached HTML.
     Runs AFTER page_cache is populated. Extracts both missions and donate URLs
-    from website HTML if available. Non-fatal if errors — pipeline continues."""
+    from website HTML if available. Non-fatal if errors — pipeline continues.
+    Uses multiple workers for parallelism (default 8)."""
     try:
         import subprocess
-        log('Generating missions + extracting donate links (from cached HTML)...')
+        log(f'Generating missions + extracting donate links ({workers} workers, from cached HTML)...')
         script = Path.home() / 'meritgiving' / 'scripts' / 'generate_missions.py'
         result = subprocess.run(
-            ['python3', str(script)],
+            ['python3', str(script), '--workers', str(workers)],
             capture_output=True, text=True, timeout=86400,  # 24 hours (long GPU task)
             cwd=str(Path.home() / 'meritgiving'),
         )
@@ -602,6 +603,34 @@ List 3-5 cause tags (comma-separated, concise): """
         log(f'⚠️  Cause tags failed (non-fatal): {str(e)[:100]}')
         return 0
 
+
+def run_parallel_enrichment():
+    """Run mission generation, donate link extraction, and cause tags in parallel.
+    These operate on different org sets and can run concurrently."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    log('Starting parallel enrichment (missions, donate links, cause tags)...')
+    start = time.time()
+
+    tasks = [
+        ('missions', lambda: run_mission_generation(workers=8)),
+        ('donate links', lambda: extract_donate_links_batch(batch_size=5000)),
+        ('cause tags', lambda: generate_cause_tags_batch(batch_size=5000)),
+    ]
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = {executor.submit(task[1]): task[0] for task in tasks}
+        for future in as_completed(futures):
+            task_name = futures[future]
+            try:
+                future.result()
+            except Exception as e:
+                log(f'⚠️  {task_name} task exception: {str(e)[:100]}')
+
+    elapsed = time.time() - start
+    log(f'✅ Parallel enrichment complete in {elapsed/60:.1f} minutes')
+
+
 def main():
     log('=' * 60)
     log('Overnight Pipeline Started')
@@ -646,17 +675,12 @@ def main():
     # This ensures fresh HTML is available for mission extraction AND donate link discovery
     fetch_org_websites()
 
-    # Step 6.6: Generate missions + extract donate links from cached HTML
-    # Runs after website fetch so cached HTML is available
-    run_mission_generation()
-
-    # Step 6.6b: Extract donation links from all orgs (rolling refresh, independent of missions)
-    # Processes 5K orgs/night; refreshes stale links every 30 days
-    extract_donate_links_batch(batch_size=5000)
-
-    # Step 6.7: Generate cause tags for orgs missing them (GPU-backed)
-    # Increased from 1000 → 5000/night to close the 249K gap in ~50 nights.
-    generate_cause_tags_batch(batch_size=5000)
+    # Steps 6.6–6.7: Parallel enrichment (missions, donate links, cause tags)
+    # These run concurrently since they operate on different org sets
+    # - Mission gen: orgs without missions (focused + fast)
+    # - Donate links: all orgs with cached HTML (rolling refresh)
+    # - Cause tags: orgs without tags (GPU-backed, 5K/night)
+    run_parallel_enrichment()
 
     # Step 7: Expire past volunteer events
     try:
