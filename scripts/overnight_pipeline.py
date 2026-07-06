@@ -479,7 +479,7 @@ def fetch_org_websites():
         conn = get_db()
         cutoff = (datetime.now() - timedelta(days=7)).isoformat()
         stale_count = conn.execute(
-            "SELECT COUNT(*) FROM page_cache WHERE html_gz IS NULL OR fetch_time < ?",
+            "SELECT COUNT(*) FROM page_cache WHERE html_gz IS NULL OR fetched_at < ?",
             (cutoff,)
         ).fetchone()[0]
         conn.close()

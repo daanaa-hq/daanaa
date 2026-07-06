@@ -253,8 +253,8 @@ def run(limit: int = 0, workers: int = 8, no_mission_only: bool = False, increme
 
     if incremental:
         # Only fetch orgs without cached HTML OR cache older than 7 days
-        cutoff = datetime.now(timezone.utc).replace(day=datetime.now().day-7).isoformat()
-        cache_filter = f"AND (p.html_gz IS NULL OR p.fetch_time < '{cutoff}')"
+        cutoff = (datetime.now(timezone.utc) - __import__('datetime').timedelta(days=7)).isoformat()
+        cache_filter = f"AND (p.html_gz IS NULL OR p.fetched_at < '{cutoff}')"
         query = f"""
             SELECT r.EIN, r.website
             FROM registry_enriched r
@@ -263,7 +263,7 @@ def run(limit: int = 0, workers: int = 8, no_mission_only: bool = False, increme
               AND r.website IS NOT NULL AND r.website != ''
               {mission_filter}
               {cache_filter}
-            ORDER BY p.fetch_time ASC NULLS FIRST, r.merit_score DESC NULLS LAST
+            ORDER BY p.fetched_at ASC NULLS FIRST, r.merit_score DESC NULLS LAST
         """
     else:
         # Original behavior: skip all cached orgs
