@@ -855,7 +855,7 @@ export default function Directory() {
               <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
                 <div>
                   <span className="font-body text-[20px] font-semibold tracking-[-0.02em] text-deep-navy">
-                    {total.toLocaleString()} {effectiveHiddenGem ? 'hidden gems' : (searchQuery || activeFilters.length > 0 || stateFilter ? 'results' : 'organizations')}
+                    {total.toLocaleString()} {effectiveHiddenGem ? 'orgs you may not have heard of' : (searchQuery || activeFilters.length > 0 || stateFilter ? 'results' : 'organizations')}
                   </span>
                   {effectiveHiddenGem && (
                     <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">

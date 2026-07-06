@@ -15,7 +15,7 @@ const TOC = [
   { id: 'not-measured', label: 'What we don’t measure' },
   { id: 'data-limits', label: 'Data limits' },
   { id: 'lamp-tiers', label: 'Visibility levels' },
-  { id: 'hidden-gems', label: 'Hidden gems' },
+  { id: 'hidden-gems', label: 'Orgs you may not have heard of' },
   { id: 'two-layers', label: 'What the organization controls' },
   { id: 'updates', label: 'How data stays current' },
   { id: 'faq', label: 'Frequently asked questions' },
@@ -316,9 +316,9 @@ export default function Methodology() {
               </div>
             </Section>
 
-            <Section id="hidden-gems" label="Hidden gems" title="What makes an organization a hidden gem">
+            <Section id="hidden-gems" label="Orgs you may not have heard of" title="Organizations you may not have heard of">
               <p>
-                A hidden gem is a small organization that ranks near the top of its peer group — genuinely strong financial health for its size, but not well known. The feature exists because small nonprofits doing excellent work often get overlooked in favor of larger, more visible organizations. Daanaa surfaces them specifically.
+                These are small organizations with strong financial health for their size — solid reserve funds, reasonable expense ratios, and mission-driven operations. They often get overlooked in favor of larger, more visible nonprofits. Daanaa surfaces them specifically because they deserve to be found.
               </p>
               <p className="mt-4">
                 Three criteria must all be true, based entirely on public IRS data:
