@@ -561,7 +561,8 @@ def extract_donate_links_batch(batch_size=5000):
 
 
 def generate_cause_tags_batch(batch_size=200):
-    """Generate cause tags for orgs missing them using Qwen on port 11437."""
+    """Generate cause tags using Mistral-7B on port 8090 (fast categorization).
+    Uses Mistral instead of Qwen3-30B for 4x speed while maintaining quality for categorization."""
     try:
         conn = get_db()
         batch = conn.execute("""
@@ -586,7 +587,8 @@ Mission: {org['mission'][:200]}
 
 List 3-5 cause tags (comma-separated, concise): """
 
-                r = requests.post('http://127.0.0.1:11437/completion', json={
+                # Use Mistral-7B (port 8090) for fast categorization
+                r = requests.post('http://127.0.0.1:8090/completion', json={
                     'prompt': prompt,
                     'n_predict': 80,
                     'temperature': 0.3,
