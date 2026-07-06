@@ -26,10 +26,11 @@ _errors = 0
 _skipped = 0
 
 
-def extract_batch(batch_size=5000, refresh_days=30, limit=None):
+def extract_batch(batch_size=5000, refresh_days=30, limit=None, force_all=False):
     """
     Extract donation links from all orgs with cached HTML.
     Refreshes links that haven't been checked in refresh_days.
+    If force_all=True, re-check all orgs regardless of last check time.
     """
     global _extracted, _errors, _skipped
 
@@ -37,23 +38,33 @@ def extract_batch(batch_size=5000, refresh_days=30, limit=None):
     conn.row_factory = sqlite3.Row
 
     # Select orgs with cached HTML that haven't been checked recently
-    refresh_cutoff = (datetime.now() - timedelta(days=refresh_days)).isoformat()
-
-    query = """
-    SELECT re.EIN, re.organization_name
-    FROM registry_enriched re
-    INNER JOIN page_cache pc ON pc.ein = re.EIN
-    WHERE pc.html_gz IS NOT NULL
-      AND (re.donate_checked_at IS NULL OR re.donate_checked_at < ?)
-    ORDER BY re.donate_checked_at ASC NULLS FIRST
-    """
+    if force_all:
+        query = """
+        SELECT re.EIN, re.organization_name
+        FROM registry_enriched re
+        INNER JOIN page_cache pc ON pc.ein = re.EIN
+        WHERE pc.html_gz IS NOT NULL
+        ORDER BY re.donate_checked_at ASC NULLS FIRST
+        """
+        params = ()
+    else:
+        refresh_cutoff = (datetime.now() - timedelta(days=refresh_days)).isoformat()
+        query = """
+        SELECT re.EIN, re.organization_name
+        FROM registry_enriched re
+        INNER JOIN page_cache pc ON pc.ein = re.EIN
+        WHERE pc.html_gz IS NOT NULL
+          AND (re.donate_checked_at IS NULL OR re.donate_checked_at < ?)
+        ORDER BY re.donate_checked_at ASC NULLS FIRST
+        """
+        params = (refresh_cutoff,)
 
     if limit:
         query += f" LIMIT {limit}"
     else:
         query += f" LIMIT {batch_size}"
 
-    rows = conn.execute(query, (refresh_cutoff,)).fetchall()
+    rows = conn.execute(query, params).fetchall()
     total = len(rows)
 
     if total == 0:
@@ -132,13 +143,15 @@ if __name__ == "__main__":
     ap.add_argument("--batch-size", type=int, default=5000, help="Orgs per run")
     ap.add_argument("--limit", type=int, help="Test run limit")
     ap.add_argument("--refresh-days", type=int, default=30, help="Re-check links older than N days")
+    ap.add_argument("--all", action="store_true", help="Force re-check all orgs (ignore refresh-days)")
     args = ap.parse_args()
 
     try:
         count = extract_batch(
             batch_size=args.batch_size,
             refresh_days=args.refresh_days,
-            limit=args.limit
+            limit=args.limit,
+            force_all=args.all
         )
         print(f"\nDone: {_extracted} extracted, {_errors} errors, {_skipped} skipped")
     except Exception as e:
