@@ -522,6 +522,30 @@ def run_mission_generation():
         log(f'⚠️  Mission generation exception (non-fatal): {str(e)[:100]}')
 
 
+def extract_donate_links_batch(batch_size=5000):
+    """Extract donation links from all orgs on a rolling refresh (independent of missions)."""
+    try:
+        import subprocess
+        log('Extracting donation links from all orgs (rolling refresh)...')
+        script = Path.home() / 'meritgiving' / 'scripts' / 'extract_donate_links.py'
+        result = subprocess.run(
+            ['python3', str(script), '--batch-size', str(batch_size)],
+            capture_output=True, text=True, timeout=3600,  # 1 hour
+            cwd=str(Path.home() / 'meritgiving'),
+        )
+        if result.stdout:
+            for line in (result.stdout or '').strip().splitlines()[-3:]:
+                log(line)
+        if result.returncode == 0:
+            log('✅ Donation link extraction complete')
+        else:
+            log(f'⚠️  Donation link extraction had errors (non-fatal): {result.stderr[:200]}')
+    except subprocess.TimeoutExpired:
+        log('⚠️  Donation link extraction timeout (1h limit reached, resumable)')
+    except Exception as e:
+        log(f'⚠️  Donation link extraction exception (non-fatal): {str(e)[:100]}')
+
+
 def generate_cause_tags_batch(batch_size=200):
     """Generate cause tags for orgs missing them using Qwen on port 11437."""
     try:
@@ -625,6 +649,10 @@ def main():
     # Step 6.6: Generate missions + extract donate links from cached HTML
     # Runs after website fetch so cached HTML is available
     run_mission_generation()
+
+    # Step 6.6b: Extract donation links from all orgs (rolling refresh, independent of missions)
+    # Processes 5K orgs/night; refreshes stale links every 30 days
+    extract_donate_links_batch(batch_size=5000)
 
     # Step 6.7: Generate cause tags for orgs missing them (GPU-backed)
     # Increased from 1000 → 5000/night to close the 249K gap in ~50 nights.
