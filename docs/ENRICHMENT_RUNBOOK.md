@@ -27,17 +27,19 @@ bash scripts/run_enrichment_dryrun.sh 5000 2
 
 **Output:** JSON stats printed to stdout, including orgs processed, tags generated, websites generated, and elapsed time.
 
-**Example output:**
+**Example output (for 100 orgs):**
 ```json
 {
   "run_date": "2026-07-06",
-  "elapsed_seconds": 30.01,
-  "orgs_processed": 100,
-  "tags_generated": 50,
-  "websites_generated": 50,
+  "elapsed_seconds": 60.1501100063324,
+  "orgs_processed": 200,
+  "tags_generated": 100,
+  "websites_generated": 100,
   "dry_run": true
 }
 ```
+
+**Note:** `orgs_processed` in this output counts enrichment records (tags + websites combined per org), not distinct organizations. With 100 orgs and both a tag and website generated per org, the count is ~200. This is a known labeling quirk in `scripts/enrich_batch.py`'s stats dict.
 
 ### Full Batch Run (Database Write)
 

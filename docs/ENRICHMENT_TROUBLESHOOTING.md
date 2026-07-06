@@ -159,7 +159,7 @@ python3 scripts/monitor_batch.py
 Quality measurement currently uses **placeholder empty dicts** for corrections and validations:
 
 ```python
-# From scripts/measure_quality_cron.py (lines 52-55)
+# From scripts/measure_quality_cron.py (lines 54-55)
 tag_corrections = {}      # Placeholder: no real corrections wired in
 website_validations = {}  # Placeholder: no real website validations wired in
 
