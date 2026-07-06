@@ -19,11 +19,14 @@ Usage:
     python3 scripts/generate_missions.py --workers 2      # parallel batches
 """
 
-import sqlite3, json, time, argparse, sys, re, zlib
+import sqlite3, json, time, argparse, sys, re, zlib, datetime
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
+
+# Import donation URL extraction logic from check_link_health
+from check_link_health import extract_donate_url
 
 DB_PATH    = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 GEN_URL    = "http://127.0.0.1:11437/v1/chat/completions"
@@ -65,6 +68,7 @@ _NTEE_LABELS = {
 _write_lock = Lock()
 _written    = 0
 _errors     = 0
+_donate_extracted = 0  # Track donation links extracted during mission generation
 
 
 def _ensure_column(conn: sqlite3.Connection):
@@ -131,6 +135,26 @@ def _get_web_context(eins: list[str], conn: sqlite3.Connection) -> dict[str, str
                 snippet = _extract_web_context(html_bytes)
                 if snippet:
                     results[ein] = snippet
+            except Exception:
+                pass
+    return results
+
+
+def _get_cached_html(eins: list[str], conn: sqlite3.Connection) -> dict[str, str]:
+    """Returns {ein: html_string} for orgs with cached page HTML.
+    Used for donation link extraction."""
+    results: dict[str, str] = {}
+    for ein in eins:
+        row = conn.execute(
+            "SELECT html_gz FROM page_cache WHERE ein=? AND html_gz IS NOT NULL ORDER BY fetched_at DESC LIMIT 1",
+            (ein,)
+        ).fetchone()
+        if row and row[0]:
+            try:
+                html_bytes = zlib.decompress(row[0])
+                html_str = html_bytes.decode("utf-8", errors="replace")
+                if html_str:
+                    results[ein] = html_str
             except Exception:
                 pass
     return results
@@ -237,13 +261,20 @@ def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> dict[str, str]:
         return {}
 
 
-def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dict[str, str], batch_size: int):
-    """Write missions with per-org source: ai_web if that org had web context, else ai_ntee."""
-    global _written, _errors
+def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dict[str, str],
+                  batch_size: int, donate_data: dict[str, tuple] = None):
+    """Write missions with per-org source: ai_web if that org had web context, else ai_ntee.
+    Also writes donation URLs extracted from cached HTML (donate_data: {ein: (url, platform)})."""
+    global _written, _errors, _donate_extracted
     if not results:
         _errors += batch_size
         return
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    donate_data = donate_data or {}
+
     with _write_lock:
+        # Write missions
         conn.executemany(
             "UPDATE registry_enriched SET mission=?, mission_source=? WHERE EIN=?",
             [
@@ -251,6 +282,29 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dic
                 for ein, mission in results.items()
             ]
         )
+
+        # Write donation URLs if found (confidence 85 for AI-extracted, status 'ai_suggested')
+        if donate_data:
+            donate_updates = []
+            for ein, (donate_url, platform) in donate_data.items():
+                if donate_url:  # Only write if URL was actually extracted
+                    donate_updates.append((
+                        donate_url,
+                        platform or "",
+                        85,  # confidence: AI-extracted, not yet verified
+                        "ai_suggested",  # status: org can claim to make official
+                        now,  # checked_at timestamp
+                        ein
+                    ))
+
+            if donate_updates:
+                conn.executemany(
+                    "UPDATE registry_enriched SET donate_url=?, donate_platform=?, "
+                    "donate_confidence=?, donate_url_status=?, donate_checked_at=? WHERE EIN=?",
+                    donate_updates
+                )
+                _donate_extracted += len(donate_updates)
+
         conn.commit()
         _written += len(results)
         _errors  += batch_size - len(results)
@@ -320,8 +374,19 @@ def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False, small_fi
         try:
             eins = [o["EIN"] for o in batch]
             web_ctx = _get_web_context(eins, tconn)
+            html_cache = _get_cached_html(eins, tconn)
+
+            # Generate missions
             results = _call_llm(batch, web_ctx)
-            _write_batch(results, tconn, web_ctx, len(batch))
+
+            # Extract donation URLs from cached HTML
+            donate_data = {}
+            for ein, html_str in html_cache.items():
+                donate_url, platform = extract_donate_url(html_str)
+                if donate_url:  # Only track if a URL was found
+                    donate_data[ein] = (donate_url, platform)
+
+            _write_batch(results, tconn, web_ctx, len(batch), donate_data)
         finally:
             tconn.close()
 
@@ -343,7 +408,7 @@ def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False, small_fi
             )
 
     elapsed = time.time() - start
-    print(f"\n\nDone in {elapsed/60:.1f} min — {_written:,} missions written, {_errors:,} errors", flush=True)
+    print(f"\n\nDone in {elapsed/60:.1f} min — {_written:,} missions written, {_errors:,} errors, {_donate_extracted:,} donation links extracted", flush=True)
     conn.close()
 
 

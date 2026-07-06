@@ -467,6 +467,61 @@ def run_cohort_context():
         log(f'⚠️  cohort_context exception (non-fatal): {str(e)[:100]}')
 
 
+def fetch_org_websites():
+    """Fetch and cache org homepages to page_cache table.
+    Runs BEFORE mission generation so mission extraction has fresh HTML to work with.
+    Priority: orgs with website_status='ok', ordered by merit_score DESC.
+    Non-fatal if it errors — mission generation will use stale cache or skip org."""
+    try:
+        import subprocess
+        log('Fetching org websites to populate page_cache (before mission generation)...')
+        script = Path.home() / 'meritgiving' / 'scripts' / 'fetch_org_websites.py'
+        result = subprocess.run(
+            ['python3', str(script), '--batch-size', '50'],
+            capture_output=True, text=True, timeout=3600,  # 1 hour timeout
+            cwd=str(Path.home() / 'meritgiving'),
+        )
+        # Log output lines (script logs fetch stats)
+        if result.stdout:
+            for line in (result.stdout or '').strip().splitlines()[-10:]:  # Last 10 lines of output
+                log(line)
+        if result.returncode == 0:
+            log('✅ Website fetch complete — page_cache populated')
+        else:
+            log(f'⚠️  Website fetch had errors (non-fatal): {result.stderr[:200]}')
+    except subprocess.TimeoutExpired:
+        log('⚠️  Website fetch timeout (1h limit reached, resumable) — mission generation will use cache')
+    except Exception as e:
+        log(f'⚠️  Website fetch exception (non-fatal): {str(e)[:100]}')
+
+
+def run_mission_generation():
+    """Generate missions + extract donate links for scored orgs using cached HTML.
+    Runs AFTER page_cache is populated. Extracts both missions and donate URLs
+    from website HTML if available. Non-fatal if errors — pipeline continues."""
+    try:
+        import subprocess
+        log('Generating missions + extracting donate links (from cached HTML)...')
+        script = Path.home() / 'meritgiving' / 'scripts' / 'generate_missions.py'
+        result = subprocess.run(
+            ['python3', str(script)],
+            capture_output=True, text=True, timeout=86400,  # 24 hours (long GPU task)
+            cwd=str(Path.home() / 'meritgiving'),
+        )
+        # Log final summary lines
+        if result.stdout:
+            for line in (result.stdout or '').strip().splitlines()[-5:]:
+                log(line)
+        if result.returncode == 0:
+            log('✅ Mission generation + donate link extraction complete')
+        else:
+            log(f'⚠️  Mission generation had errors (non-fatal): {result.stderr[:200]}')
+    except subprocess.TimeoutExpired:
+        log('⚠️  Mission generation timeout (24h limit reached, resumable)')
+    except Exception as e:
+        log(f'⚠️  Mission generation exception (non-fatal): {str(e)[:100]}')
+
+
 def generate_cause_tags_batch(batch_size=200):
     """Generate cause tags for orgs missing them using Qwen on port 11437."""
     try:
@@ -563,7 +618,15 @@ def main():
     # Step 6: Rebuild cause-cohort context from fresh scores
     run_cohort_context()
 
-    # Step 6.5: Generate cause tags for orgs missing them (GPU-backed)
+    # Step 6.5: Fetch org websites to page_cache BEFORE mission generation
+    # This ensures fresh HTML is available for mission extraction AND donate link discovery
+    fetch_org_websites()
+
+    # Step 6.6: Generate missions + extract donate links from cached HTML
+    # Runs after website fetch so cached HTML is available
+    run_mission_generation()
+
+    # Step 6.7: Generate cause tags for orgs missing them (GPU-backed)
     # Increased from 1000 → 5000/night to close the 249K gap in ~50 nights.
     generate_cause_tags_batch(batch_size=5000)
 
@@ -590,6 +653,9 @@ def main():
     # auto-deploy to the droplet so the live numbers never go stale. This is the
     # step that was missing; without it homepage.json.gz drifted from the DB.
     refresh_and_publish_numbers()
+
+    # Step 13: Log final stats
+    log('Nightly pipeline completed — website cache populated, missions generated, metrics updated')
 
     log('=' * 60)
     log('Overnight Pipeline Complete')
