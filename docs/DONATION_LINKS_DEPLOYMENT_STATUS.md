@@ -25,64 +25,88 @@
 
 ---
 
-## Deployment Blocker
+## Deployment Blocker (Resolved Below)
 
-**Issue:** Droplet `/opt/daanaa/data/` disk full (28 error)  
-**Size:** `merit_registry.db` = ~2.4GB (with 3,680 new links)  
-**Impact:** Cannot sync new database to droplet
+**Issue:** Database size mismatch  
+**Local:** `merit_registry.db` = 12GB (full registry with 3,680 new donation links)  
+**Droplet:** Only 1.7GB free disk space after cleanup  
+**Impact:** Direct rsync impossible
 
-**Root Cause:** Droplet disk space is constrained; previous cleanups didn't fully free space  
+**Root Cause:** Droplet stores pre-computed artifacts + old database. Upgrading from 2GB old DB to 12GB new DB requires infrastructure upgrade.  
 
 ---
 
-## Solution Options
+## Solution Options (Evaluated)
 
-### Option A: Incremental Sync (Recommended)
-Instead of full DB sync, sync only the donation links:
-```sql
--- On local
-sqlite3 data/merit_registry.db "SELECT EIN, donate_url, donate_platform, donate_confidence FROM registry_enriched WHERE donate_url IS NOT NULL;" > /tmp/donate_links.csv
+### Option A: Incremental Sync ✅ BEST
+Update existing droplet DB with donation links via SQL:
+```bash
+# Extract donation links from local DB
+sqlite3 data/merit_registry.db "SELECT EIN, donate_url, donate_platform, donate_confidence, donate_status FROM registry_enriched WHERE donate_url IS NOT NULL;" > /tmp/donate_links.csv
 
--- On droplet (run script to UPDATE existing rows)
+# On droplet: UPDATE registry_enriched with new links
 ```
-- Pros: Small payload (~500KB), no full DB replacement
-- Cons: Requires custom update script
-- Time: 1 hour
+- **Payload:** ~500KB (just the 3,680 links)
+- **Downtime:** <1 min
+- **Risk:** Minimal (UPDATE-only, rollback simple)
+- **Time:** 2 hours
 
-### Option B: Clean Droplet & Rebuild
-1. Stop API
-2. Backup current DB
-3. Clean temp files / old artifacts
-4. Sync new merged database
-5. Restart API
-- Pros: Fresh state, reliable
-- Cons: Requires ~30 min downtime
-- Time: 2-3 hours with verification
+### Option B: S3 Staging (User Suggestion) ✨ SCALABLE
+Upload to S3, download on droplet:
+```bash
+# Local: upload to S3
+aws s3 cp data/merit_registry.db s3://meritgiving/staging/
 
-### Option C: Keep as-is Until Scheduled Maintenance
-- Deploy donation links at next scheduled DB refresh (when droplet gets decommissioned/rebuilt)
-- Pros: No risk, minimal effort
-- Cons: Feature waits for infrastructure maintenance
-- Time: TBD (next maintenance window)
+# On droplet: download and swap
+aws s3 cp s3://meritgiving/staging/merit_registry.db /opt/daanaa/data/merit_registry.db.new
+# Verify, then swap
+```
+- **Payload:** Streamed via S3 (handles large files)
+- **Downtime:** 2-3 min
+- **Risk:** Low (keep backup, rollback ready)
+- **Time:** 1.5 hours
+- **Bonus:** Scales for future 20GB+ DBs
+
+### Option C: Droplet Storage Upgrade
+Upgrade droplet from 33GB to 50GB+ via DO:
+- **Cost:** ~$12/month more
+- **Downtime:** ~5 min
+- **Time:** 30 min + billing
+- **Future-proof:** Handles DB growth
+
+### Option D: Wait for Maintenance Window
+- Keep old DB, deploy donation links next refresh
+- **Risk:** None
+- **Time:** Unknown (could be weeks)
 
 ---
 
 ## Recommendation
 
-**Option A (Incremental Sync)** because:
-- Smallest change, lowest risk
-- No downtime
-- Can ship donation links today/tomorrow
-- Aligns with "results need to be reliable"
+**Option A (Incremental Sync)** — ship donation links in 2 hours, no cost, minimal risk
+
+**Then plan Option B (S3)** for future DB upgrades (scalable architecture)
 
 ---
 
 ## Next Steps
 
-1. **Choose option A/B/C above**
-2. If A: Create `sync_donate_links.sh` script (1 hour)
-3. If B: Schedule droplet maintenance window
-4. If C: Document for next refresh cycle
+### Immediate (2 hours)
+1. Execute **Option A: Incremental Sync**
+   - Extract 3,680 donation links to CSV
+   - SSH to droplet, UPDATE registry_enriched table
+   - Test API returns donate fields
+   - Verify "Give directly" button live
+
+### Short-term (Next sprint)
+2. Document and implement **Option B: S3 Staging**
+   - Set up S3 bucket for DB staging
+   - Create deployment script using S3
+   - Test with next larger DB
+   - Update deployment runbooks
+
+### Medium-term (If needed)
+3. If DB growth exceeds 20GB, upgrade droplet storage (Option C)
 
 ---
 
