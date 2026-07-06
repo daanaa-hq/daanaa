@@ -26,6 +26,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 import post_carousel as pc
 import daily_gem_post as gem
 import prebatch_gem_posts as prebatch
+import bluesky_gem_post as bsky_gem
+
+BLUESKY_CREDS = Path(__file__).parent / ".session" / "bluesky_creds.json"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -149,6 +152,27 @@ def thursday_text():
         log.error(f"Thursday text post failed: {e}")
 
 
+def bluesky_hourly():
+    """Business-hours hourly Bluesky gem post. No-op until bluesky_creds.json exists."""
+    if datetime.today().weekday() >= 5:
+        return
+    if not BLUESKY_CREDS.exists():
+        log.info("Bluesky post skipped: no .session/bluesky_creds.json yet")
+        return
+    try:
+        org = bsky_gem.pick_gem_bluesky()
+        if not org:
+            log.warning("No unfeatured gems left for Bluesky — reset .featured_gems_bluesky.json")
+            return
+        post_text = gem.generate_post(org, linkedin_page=None)
+        import bluesky_poster as bsky
+        uri = bsky.post_text(post_text)
+        bsky_gem.mark_featured(org["EIN"])
+        log.info(f"Bluesky posted: {org['organization_name'].title()} ({org['EIN']}) -> {uri}")
+    except Exception as e:
+        log.error(f"Bluesky post failed: {e}")
+
+
 def show_next_runs():
     jobs = schedule.get_jobs()
     if not jobs:
@@ -172,6 +196,8 @@ def main():
     schedule.every().day.at("10:00").do(daily_gem_morning)    # top gem by LinkedIn followers
     schedule.every().day.at("14:00").do(daily_gem_afternoon)  # second gem by LinkedIn followers
     schedule.every().day.at("02:00").do(nightly_prebatch)     # GPU generates next week's queue while idle
+    for hour in range(8, 18):                                  # Bluesky hourly 08:00-17:00, Mon-Fri
+        schedule.every().day.at(f"{hour:02d}:00").do(bluesky_hourly)
 
     if args.next:
         show_next_runs()
@@ -187,6 +213,7 @@ def main():
     log.info("  Daily 10:00    → gem #1 (highest LinkedIn followers, Mon–Fri)")
     log.info("  Daily 14:00    → gem #2 (second highest, Mon–Fri)")
     log.info("  Daily 02:00    → GPU pre-generates next week's posts (if queue < 14)")
+    log.info("  Hourly 08-17   → Bluesky gem post, Mon-Fri (no-op until bluesky_creds.json exists)")
     log.info("Ctrl-C to stop")
 
     while True:

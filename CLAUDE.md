@@ -297,3 +297,4 @@ Key routing rules:
 - Outreach email or DM drafting → invoke /marketing-outreach
 - Content calendar / post ideas → invoke /marketing-content
 - Weekly marketing sprint (carousel + outreach + analytics) → invoke /marketing-weekly
+- Any outbound comms review before send (factual/voice/stewardship check) → invoke /comms-steward

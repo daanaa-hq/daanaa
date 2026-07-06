@@ -1,6 +1,6 @@
 # Daanaa — Traction Brief
 
-*Auto-generated from live platform data, 2026-06-29 05:35. Every number is queryable and real.*
+*Auto-generated from live platform data, 2026-07-06 05:35. Every number is queryable and real.*
 
 ## Platform scale
 
@@ -21,7 +21,7 @@
 | Nonprofit profile claims | 4 |
 | Newsletter / waitlist signups | 0 |
 | Donate hand-offs, last 30 days | 2 |
-| Pageviews, last 30 days (first-party, cookieless) | 460 |
+| Pageviews, last 30 days (first-party, cookieless) | 498 |
 
 ## What Daanaa is
 
