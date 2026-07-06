@@ -7,6 +7,7 @@ Tests the daily cron jobs that wire the enrichment pipeline:
 These tests use real temp SQLite databases (not mocks) to ensure the scripts
 can actually interact with the schema they'll run against in production.
 """
+import json
 import sqlite3
 import tempfile
 import pytest
@@ -85,7 +86,7 @@ def test_measure_quality_cron_with_data(tmp_path):
     assert isinstance(result, dict), f"Expected dict, got {type(result)}"
 
 
-def test_improve_prompts_cron_runs_without_error(tmp_path, enrich_config):
+def test_improve_prompts_cron_runs_without_error(tmp_path):
     """Test that improve_prompts_cron.main() executes without exception.
 
     Verifies:
@@ -145,20 +146,38 @@ def test_improve_prompts_cron_detects_need_for_improvement(tmp_path, enrich_conf
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from scripts.improve_prompts_cron import main
 
-    # Use tmp_path for the prompt versions file
+    # Use tmp_path for the prompt versions file so this test never touches the
+    # real production prompt_versions.json (that file defaults to
+    # ~/meritgiving/data/enrichment/prompt_versions.json inside PromptImprovement
+    # when no path is given).
     prompt_file = tmp_path / "prompt_versions.json"
 
-    # Call main with overrides
-    # We need to pass the prompt file path somehow... let's check the implementation
-    # For now, we'll just call main and verify it doesn't crash
-    result = main(db_path=str(db_path))
+    result = main(db_path=str(db_path), prompt_versions_file=str(prompt_file))
 
-    # Assert that something was returned (version string or None)
-    assert result is None or isinstance(result, str), \
-        f"Expected None or str, got {type(result)}"
+    # main() loads its prompt config from the real (checked-in)
+    # scripts/enrich_batch_config.json when no config_path is given, which is
+    # the same file the enrich_config fixture reads. Derive the expected
+    # version bump from it instead of hardcoding a version string, so the
+    # assertion doesn't rot if the config's prompt versions change.
+    current_version = max(enrich_config['prompts'].keys(), key=lambda v: float(v[1:]))
+    major, minor = current_version[1:].split('.')
+    expected_version = f"v{major}.{int(minor) + 1}"
+
+    assert result == expected_version, (
+        f"Expected improvement to trigger and bump to {expected_version}, got {result!r}"
+    )
+
+    # Verify the new version was actually persisted to the temp file (and only
+    # the temp file, never the production path).
+    assert prompt_file.exists(), "Expected prompt_versions_file to be written to the temp path"
+    with open(prompt_file) as f:
+        saved_versions = json.load(f)
+    assert expected_version in saved_versions, (
+        f"Expected {expected_version} in saved prompt_versions.json, got keys {list(saved_versions.keys())}"
+    )
 
 
-def test_improve_prompts_cron_skips_improvement_when_quality_good(tmp_path, enrich_config):
+def test_improve_prompts_cron_skips_improvement_when_quality_good(tmp_path):
     """Test that improve_prompts_cron skips improvement when quality is good.
 
     Setup:
