@@ -84,6 +84,43 @@ def test_measure_tag_accuracy_no_matches(test_db):
     assert accuracy == 0.0, f"Expected 0.0, got {accuracy}"
 
 
+def test_tag_accuracy_ignores_comma_spacing_differences(test_db):
+    """Regression test: tag matching must not be understated by whitespace
+    differences in comma-separated tag strings.
+
+    Setup:
+    - generated: "Education, Community" (space after comma -> splits to
+      ['education', ' community'] before the fix)
+    - correction: "education,community" (no space -> splits to
+      ['education', 'community'])
+    Before the .strip() fix, ' community' != 'community' as set members, so
+    only 1 of 2 tags would match (0.5 accuracy) despite being semantically
+    identical. After the fix, both match (1.0 accuracy).
+    """
+    from scripts.quality_measurement import QualityMeasurement
+
+    cursor = test_db.cursor()
+    run_date = "2026-07-06"
+
+    cursor.execute(
+        """INSERT INTO enrichment_run
+           (run_date, org_ein, enrichment_type, generated_value, confidence_score, prompt_version)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (run_date, "611234567", "cause_tags", "Education, Community", 0.9, "v1.0")
+    )
+    test_db.commit()
+
+    corrections = {"611234567": "education,community"}
+
+    qm = QualityMeasurement(test_db)
+    accuracy = qm._calculate_tag_accuracy(run_date, corrections)
+
+    assert accuracy == 1.0, (
+        f"Expected 1.0 (full match once whitespace is stripped), got {accuracy} - "
+        "comma-spacing differences must not understate real tag accuracy"
+    )
+
+
 def test_measure_website_validity(test_db):
     """Test website validity measurement from validation results.
 

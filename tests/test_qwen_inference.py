@@ -278,3 +278,55 @@ class TestQwenInference:
         # Unknown state should return default
         xx_patterns = qwen._get_state_domain_patterns('XX')
         assert '.org' in xx_patterns
+
+    def test_ntee_label_handles_none_and_empty(self, enrich_config):
+        """Regression test: NULL/empty NTEE1 must not crash _ntee_label.
+
+        287,293 real orgs in merit_registry.db have NULL or empty NTEE1.
+        Previously `ntee[0]` raised TypeError on None and IndexError on ''.
+        Both must now fall back to the default label without raising.
+        """
+        def echo_qwen(prompt: str, max_tokens: int = 200) -> str:
+            return prompt
+
+        qwen = QwenInference(qwen_fn=echo_qwen, config=enrich_config)
+
+        assert qwen._ntee_label(None) == 'Nonprofit Organization'
+        assert qwen._ntee_label('') == 'Nonprofit Organization'
+
+    def test_ntee_emphasis_handles_none_and_empty(self, enrich_config):
+        """Regression test: NULL/empty NTEE1 must not crash _get_ntee_emphasis.
+
+        Same root cause as test_ntee_label_handles_none_and_empty - both
+        methods indexed ntee[0] directly.
+        """
+        def echo_qwen(prompt: str, max_tokens: int = 200) -> str:
+            return prompt
+
+        qwen = QwenInference(qwen_fn=echo_qwen, config=enrich_config)
+
+        assert qwen._get_ntee_emphasis(None) == 'community impact, service type'
+        assert qwen._get_ntee_emphasis('') == 'community impact, service type'
+
+    def test_generate_tags_with_null_ntee_does_not_crash(self, mock_qwen, enrich_config):
+        """Integration-level regression test: generate_tags must succeed (not
+        raise) for an org whose ntee is None, since _build_cause_tags_prompt
+        calls _ntee_label/_get_ntee_emphasis before generate_tags' own
+        try/except is ever reached.
+        """
+        qwen = QwenInference(qwen_fn=mock_qwen, config=enrich_config)
+
+        org_data = {
+            'EIN': '999999999',
+            'name': 'Org With Missing NTEE',
+            'mission': 'Serves the community in an unspecified way',
+            'ntee': None,
+            'state': 'CA',
+            'city': 'Fresno'
+        }
+
+        result = qwen.generate_tags(org_data, [])
+
+        assert result is not None
+        assert isinstance(result, str)
+        assert len(result) > 0

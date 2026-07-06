@@ -77,8 +77,8 @@ class QualityMeasurement:
             if ein not in generated:
                 continue
 
-            gen_tags = set(generated[ein].lower().split(','))
-            corr_tags = set(corrected_tags.lower().split(','))
+            gen_tags = set(tag.strip() for tag in generated[ein].lower().split(','))
+            corr_tags = set(tag.strip() for tag in corrected_tags.lower().split(','))
 
             overlap = len(gen_tags & corr_tags)
             total = len(gen_tags)

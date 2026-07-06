@@ -41,10 +41,10 @@ class QwenInference:
                     time.sleep(1)
                     continue
                 else:
-                    print(f"[ERROR] Qwen timeout generating tags for {org_data['EIN']}")
+                    print(f"[ERROR] Qwen timeout generating tags for {org_data.get('EIN', 'unknown')}")
                     return None
             except Exception as e:
-                print(f"[ERROR] Qwen error for {org_data['EIN']}: {e}")
+                print(f"[ERROR] Qwen error for {org_data.get('EIN', 'unknown')}: {e}")
                 return None
 
         return None
@@ -67,10 +67,10 @@ class QwenInference:
                     time.sleep(1)
                     continue
                 else:
-                    print(f"[ERROR] Qwen timeout generating website for {org_data['EIN']}")
+                    print(f"[ERROR] Qwen timeout generating website for {org_data.get('EIN', 'unknown')}")
                     return None
             except Exception as e:
-                print(f"[ERROR] Qwen error for {org_data['EIN']}: {e}")
+                print(f"[ERROR] Qwen error for {org_data.get('EIN', 'unknown')}: {e}")
                 return None
 
         return None
@@ -122,7 +122,7 @@ class QwenInference:
             state_patterns=state_patterns
         )
 
-    def _ntee_label(self, ntee: str) -> str:
+    def _ntee_label(self, ntee: Optional[str]) -> str:
         ntee_labels = {
             'A': 'Arts, Culture & Humanities', 'B': 'Educational Institutions',
             'C': 'Environmental Quality', 'D': 'Animal-Related', 'E': 'Health Care',
@@ -136,9 +136,9 @@ class QwenInference:
             'U': 'Science & Technology', 'V': 'Social Science', 'W': 'Public Benefit',
             'X': 'Religion', 'Y': 'Mutual/Membership Benefit', 'Z': 'Unknown'
         }
-        return ntee_labels.get(ntee[0], 'Nonprofit Organization')
+        return ntee_labels.get((ntee or '?')[0:1], 'Nonprofit Organization')
 
-    def _get_ntee_emphasis(self, ntee: str) -> str:
+    def _get_ntee_emphasis(self, ntee: Optional[str]) -> str:
         emphasis_map = {
             'A': 'accessibility, audience engagement, art form',
             'B': 'grade level served, subject matter, educational approach',
@@ -146,7 +146,7 @@ class QwenInference:
             'O': 'age group, youth development area, activity type',
             'P': 'service population, type of assistance, community focus'
         }
-        return emphasis_map.get(ntee[0], 'community impact, service type')
+        return emphasis_map.get((ntee or '?')[0:1], 'community impact, service type')
 
     def _get_state_domain_patterns(self, state: str) -> str:
         state_abbrev = state.lower()[:2]

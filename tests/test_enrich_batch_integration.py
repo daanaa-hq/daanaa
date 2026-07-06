@@ -103,3 +103,63 @@ class TestEnrichBatchIntegration:
         cursor.execute("SELECT COUNT(*) FROM enrichment_run")
         count = cursor.fetchone()[0]
         assert count == 0, "dry_run=True must not write any rows to enrichment_run"
+
+    def test_enrich_batch_survives_one_bad_org(
+        self, test_db, mock_qwen, mock_embeddings, sample_orgs, enrich_config
+    ):
+        """Regression test: one org that blows up inside the per-org enrichment
+        body must not abort the whole batch (final whole-branch review finding).
+
+        Root cause this guards against: any per-org failure raising inside
+        _enrich_layer's loop and killing every other org's results along with
+        it - e.g. the NTEE NULL/empty crash (fixed separately in
+        qwen_inference.py), or any other unexpected failure mode that might
+        surface later. _enrich_layer now wraps the per-org body in a
+        try/except that logs and continues, so this test injects a failure
+        via self.qwen.generate_tags directly (bypassing generate_tags' own
+        internal try/except entirely, the way an error in prompt-building or
+        semantic lookup would) to prove the OUTER guard in _enrich_layer is
+        what saves the run, not just generate_tags' internal handling.
+
+        Two orgs are inserted; the first (EIN 611234567) is rigged to raise
+        when generate_tags is called for it - since the exception fires
+        before that org's tags/website results are appended, per-org
+        atomicity means NEITHER of its results survives. The second org
+        behaves normally via mock_qwen and still produces its usual 2
+        results (1 tags + 1 website). The batch must not crash, and must not
+        lose the healthy org's results because of the poisoned one.
+        """
+        for org in sample_orgs[:2]:
+            _insert_org_needing_enrichment(test_db, org)
+
+        poison_ein = sample_orgs[0]['ein']  # '611234567' (Tech for Good Foundation)
+
+        batch = EnrichmentBatch(
+            db_con=test_db, qwen_fn=mock_qwen, embeddings_fn=mock_embeddings,
+            config=enrich_config
+        )
+
+        real_generate_tags = batch.qwen.generate_tags
+
+        def flaky_generate_tags(org_data, similar_orgs, max_retries=1):
+            if org_data.get('EIN') == poison_ein:
+                raise RuntimeError("simulated unexpected per-org failure")
+            return real_generate_tags(org_data, similar_orgs, max_retries)
+
+        batch.qwen.generate_tags = flaky_generate_tags
+
+        # Must complete without raising (this is the main assertion: a bad
+        # org must not propagate an exception out of run()/_enrich_layer).
+        stats = batch.run(dry_run=True, max_orgs=2)
+
+        # Only the healthy org's 2 results (1 tags + 1 website) survive -
+        # the poisoned org contributes 0 results, not partial/corrupt ones.
+        assert stats['orgs_processed'] == 2
+        assert stats['tags_generated'] == 1
+        assert stats['websites_generated'] == 1
+
+        # And dry_run still holds even on the failure path - no partial
+        # writes from the poisoned org's aborted iteration.
+        cursor = test_db.cursor()
+        cursor.execute("SELECT COUNT(*) FROM enrichment_run")
+        assert cursor.fetchone()[0] == 0

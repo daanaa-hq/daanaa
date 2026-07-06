@@ -129,6 +129,8 @@ class EnrichmentBatch:
 
         logger.info("Layer 1: Semantic lookup + Qwen inference")
         enrich_results = self._enrich_layer(max_orgs=max_orgs, batch_size=batch_size)
+        # Quality measurement + prompt improvement run separately via cron
+        # (measure_quality_cron.py, improve_prompts_cron.py) - not called inline here.
 
         if not dry_run:
             logger.info("Writing enrichment results to DB")
@@ -166,28 +168,36 @@ class EnrichmentBatch:
 
         results = []
         for ein, name, mission, ntee, city, state in orgs:
-            org_data = {
-                'EIN': ein, 'name': name, 'mission': mission,
-                'ntee': ntee, 'city': city, 'state': state
-            }
+            try:
+                org_data = {
+                    'EIN': ein, 'name': name, 'mission': mission,
+                    'ntee': ntee, 'city': city, 'state': state
+                }
 
-            similar_orgs = self.semantic.find_similar_orgs(org_ein=ein, count=5)
+                similar_orgs = self.semantic.find_similar_orgs(org_ein=ein, count=5)
 
-            tags = self.qwen.generate_tags(org_data, similar_orgs)
-            if tags:
-                results.append({
-                    'org_ein': ein, 'enrichment_type': 'cause_tags',
-                    'generated_value': tags, 'confidence_score': 0.7,
-                    'context_used': json.dumps({'similar_count': len(similar_orgs)})
-                })
+                tags = self.qwen.generate_tags(org_data, similar_orgs)
+                if tags:
+                    results.append({
+                        'org_ein': ein, 'enrichment_type': 'cause_tags',
+                        'generated_value': tags, 'confidence_score': 0.7,
+                        'context_used': json.dumps({'similar_count': len(similar_orgs)})
+                    })
 
-            website = self.qwen.generate_website(org_data, similar_orgs)
-            if website:
-                results.append({
-                    'org_ein': ein, 'enrichment_type': 'website',
-                    'generated_value': website, 'confidence_score': 0.7,
-                    'context_used': json.dumps({'similar_count': len(similar_orgs)})
-                })
+                website = self.qwen.generate_website(org_data, similar_orgs)
+                if website:
+                    results.append({
+                        'org_ein': ein, 'enrichment_type': 'website',
+                        'generated_value': website, 'confidence_score': 0.7,
+                        'context_used': json.dumps({'similar_count': len(similar_orgs)})
+                    })
+            except Exception as e:
+                # Defense in depth: qwen_inference.py guards against the known
+                # NULL/empty NTEE crash, but one org's unexpected failure
+                # (here or in any future per-org failure mode) must never take
+                # down a 1.7M-org nightly run. Log and move to the next org.
+                logger.error(f"Failed to enrich org {ein}: {e}")
+                continue
 
         return results
 

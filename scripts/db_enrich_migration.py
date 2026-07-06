@@ -10,7 +10,8 @@ DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 
 def migrate(con=None):
     """Create enrichment tables if they don't exist."""
-    if con is None:
+    owns_connection = con is None
+    if owns_connection:
         con = sqlite3.connect(str(DB_PATH), timeout=180)
 
     cursor = con.cursor()
@@ -59,6 +60,12 @@ def migrate(con=None):
 
     con.commit()
     print("✓ Enrichment tables created/verified")
+
+    # Only close the connection if migrate() opened it itself (con=None was
+    # passed). If the caller passed in their own connection, they own its
+    # lifecycle and migrate() must not close it out from under them.
+    if owns_connection:
+        con.close()
 
 if __name__ == "__main__":
     migrate()
