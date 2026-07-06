@@ -10,7 +10,19 @@ Provides mocks for:
 import sqlite3
 import random
 import string
+import hashlib
 import pytest
+
+
+def _stable_seed(text: str) -> int:
+    """Derive a stable PRNG seed from text, independent of PYTHONHASHSEED.
+
+    Python's built-in hash() for strings is salted per-process unless
+    PYTHONHASHSEED is pinned, which breaks "same input -> same output"
+    determinism across process runs (and thus across test invocations).
+    SHA-256 has no such salting, so this is stable everywhere.
+    """
+    return int(hashlib.sha256(text.encode()).hexdigest(), 16) % (2**31)
 
 
 @pytest.fixture
@@ -33,9 +45,10 @@ def mock_qwen():
         Returns:
             A string simulating Qwen's response (e.g., cause tags or website suggestion)
         """
-        # Local PRNG seeded from the prompt hash: same prompt -> same output,
-        # without touching the shared module-level random state.
-        rng = random.Random(hash(prompt) % (2**31))
+        # Local PRNG seeded from a stable hash of the prompt: same prompt ->
+        # same output, without touching the shared module-level random state
+        # and without depending on PYTHONHASHSEED (see _stable_seed).
+        rng = random.Random(_stable_seed(prompt))
 
         # Simulate different response types based on prompt keywords
         if "cause_tags" in prompt.lower() or "tags" in prompt.lower():
@@ -66,11 +79,12 @@ def mock_embeddings():
     def _single_vector(text: str) -> list:
         """Generate a deterministic 1024-dimensional vector for one text.
 
-        Uses a local Random instance seeded from the text hash so identical
-        text always produces the identical vector, without mutating the
-        shared module-level random state.
+        Uses a local Random instance seeded from a stable hash of the text so
+        identical text always produces the identical vector, without
+        mutating the shared module-level random state and without depending
+        on PYTHONHASHSEED (see _stable_seed).
         """
-        rng = random.Random(hash(text) % (2**31))
+        rng = random.Random(_stable_seed(text))
 
         # Generate 1024 random floats in [-1, 1] range (typical for embeddings)
         # Real mxbai vectors are normalized and roughly in this range

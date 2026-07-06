@@ -4,7 +4,25 @@ Tests the SemanticLookup class that finds similar nonprofits by embedding
 cosine similarity.
 """
 
+import math
+
 import pytest
+
+
+def _cosine_sim(a, b):
+    """Local, independent cosine similarity helper for test-side ground truth.
+
+    Deliberately re-implemented here (rather than imported from
+    scripts.semantic_lookup) so that the expected ranking in
+    test_similarity_score_ranking is computed independently of the system
+    under test's own math/sort, not merely re-derived from its output.
+    """
+    dot = sum(x * y for x, y in zip(a, b))
+    mag_a = math.sqrt(sum(x**2 for x in a))
+    mag_b = math.sqrt(sum(x**2 for x in b))
+    if mag_a == 0 or mag_b == 0:
+        return 0.0
+    return dot / (mag_a * mag_b)
 
 
 class TestSemanticLookup:
@@ -110,7 +128,10 @@ class TestSemanticLookup:
         """Test that returned orgs include cause_tags as context.
 
         The cause_tags should be included in the result for each similar org,
-        enabling the context-aware generation in Task 4.
+        enabling the context-aware generation in Task 4. This asserts against
+        a specific known cause_tags value on a specific candidate org, rather
+        than a conditional check that can pass vacuously if cause_tags never
+        comes through correctly.
         """
         from scripts.semantic_lookup import SemanticLookup
 
@@ -124,26 +145,49 @@ class TestSemanticLookup:
                 (org['ein'], org['organization_name'], org['ntee1'],
                  org['mission'], org['cause_tags'], org['website'])
             )
+
+        # Add a candidate org with a specific, known non-empty cause_tags
+        # value that we assert on directly below.
+        known_cause_tags = 'Education,Mentorship'
+        cursor.execute(
+            """INSERT INTO registry_enriched
+               (EIN, organization_name, NTEE1, mission, cause_tags, website)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            ('671789012', 'Youth Mentorship Collective', 'O',
+             'Pairs volunteer mentors with at-risk youth for tutoring and guidance',
+             known_cause_tags, 'youthmentorship.org')
+        )
         test_db.commit()
 
-        # Create SemanticLookup and query
+        # Create SemanticLookup and query. similarity_threshold is set below
+        # zero so this test never depends on the sign of the mock's
+        # pseudo-random cosine similarity for the known candidate — the
+        # point here is verifying cause_tags pass-through, not filtering.
         lookup = SemanticLookup(test_db, mock_embeddings)
-        results = lookup.find_similar_orgs('611234567', count=5)
+        results = lookup.find_similar_orgs('611234567', count=10, similarity_threshold=-1.0)
 
-        # Verify cause_tags present
-        assert len(results) > 0
-        for result in results:
-            # cause_tags should be present (even if empty string for null)
-            assert 'cause_tags' in result
-            # At least some results should have non-empty cause_tags
-            if result['cause_tags']:
-                assert isinstance(result['cause_tags'], str)
+        # The known org must appear in results with its exact cause_tags intact.
+        matching = [r for r in results if r['EIN'] == '671789012']
+        assert len(matching) == 1, (
+            "Expected candidate org 671789012 to appear in similar orgs results"
+        )
+        assert matching[0]['cause_tags'] == known_cause_tags, (
+            f"Expected cause_tags {known_cause_tags!r} to pass through unchanged, "
+            f"got {matching[0]['cause_tags']!r}"
+        )
 
     def test_similarity_score_ranking(self, test_db, mock_embeddings, sample_orgs):
-        """Test that results are ranked by similarity score in descending order.
+        """Test that results are ranked by similarity score in descending order,
+        matching an independently-computed ground truth ordering.
 
-        This verifies that the similarity scoring and sorting mechanism works
-        correctly: results should be sorted from highest to lowest similarity score.
+        Rather than only checking that the returned scores happen to be
+        non-increasing (which is guaranteed by find_similar_orgs's own
+        `.sort(reverse=True)` regardless of whether the underlying similarity
+        computation means anything), this test computes the expected ranking
+        itself: it calls mock_embeddings directly to get vectors for the
+        query mission and each candidate mission, computes cosine similarity
+        locally via `_cosine_sim`, and asserts that SemanticLookup.find_similar_orgs
+        returns EINs in that same independently-derived order.
         """
         from scripts.semantic_lookup import SemanticLookup
 
@@ -194,19 +238,41 @@ class TestSemanticLookup:
             )
         test_db.commit()
 
-        # Query for similar orgs to the tech education org
+        # --- Independently compute the expected ranking ---
+        # Call mock_embeddings directly (not through SemanticLookup) to get
+        # the query and candidate vectors, then compute cosine similarity
+        # ourselves. This ground truth is derived without ever calling
+        # find_similar_orgs, so it can't just be echoing the SUT's own sort.
+        query_org = test_orgs[0]
+        candidate_orgs = test_orgs[1:]
+
+        query_vector = mock_embeddings([query_org['mission']])[0]
+        candidate_vectors = mock_embeddings([org['mission'] for org in candidate_orgs])
+
+        expected_ranking = sorted(
+            (
+                (org['ein'], _cosine_sim(query_vector, vec))
+                for org, vec in zip(candidate_orgs, candidate_vectors)
+            ),
+            key=lambda pair: pair[1],
+            reverse=True,
+        )
+        expected_ein_order = [ein for ein, _ in expected_ranking]
+
+        # --- Compare against the system under test ---
         lookup = SemanticLookup(test_db, mock_embeddings)
         results = lookup.find_similar_orgs('111111111', count=10)
 
-        # Should have at least 1 result
-        assert len(results) >= 1
+        assert len(results) == len(expected_ein_order), (
+            f"Expected {len(expected_ein_order)} results, got {len(results)}"
+        )
 
-        # Verify results are sorted by similarity score in descending order
-        similarity_scores = [r['similarity_score'] for r in results]
-        for i in range(len(similarity_scores) - 1):
-            assert similarity_scores[i] >= similarity_scores[i + 1], \
-                f"Results should be sorted by similarity in descending order. " \
-                f"Got scores: {similarity_scores}"
+        actual_ein_order = [r['EIN'] for r in results]
+        assert actual_ein_order == expected_ein_order, (
+            "Returned EIN order should match the independently-computed "
+            f"cosine similarity ranking. Expected {expected_ein_order}, "
+            f"got {actual_ein_order}"
+        )
 
         # Verify all results have valid similarity scores
         for result in results:
