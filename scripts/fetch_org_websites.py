@@ -241,32 +241,50 @@ def crawl_one(ein: str, website: str, conn: sqlite3.Connection, db_lock: threadi
     return True
 
 
-def run(limit: int = 0, workers: int = 8, no_mission_only: bool = False):
+def run(limit: int = 0, workers: int = 8, no_mission_only: bool = False, incremental: bool = False):
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
-    log(f"fetch_org_websites.py starting — workers={workers} limit={limit or 'all'} no_mission_only={no_mission_only}")
+    log(f"fetch_org_websites.py starting — workers={workers} limit={limit or 'all'} incremental={incremental}")
 
     conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     db_lock = threading.Lock()
 
     mission_filter = "AND (r.mission IS NULL OR r.mission = '')" if no_mission_only else ""
-    query = f"""
-        SELECT r.EIN, r.website
-        FROM registry_enriched r
-        WHERE r.website_status = 'ok'
-          AND r.website IS NOT NULL AND r.website != ''
-          {mission_filter}
-          AND r.EIN NOT IN (
-              SELECT ein FROM page_cache WHERE ein IS NOT NULL
-          )
-        ORDER BY r.merit_score DESC NULLS LAST
-    """
+
+    if incremental:
+        # Only fetch orgs without cached HTML OR cache older than 7 days
+        cutoff = datetime.now(timezone.utc).replace(day=datetime.now().day-7).isoformat()
+        cache_filter = f"AND (p.html_gz IS NULL OR p.fetch_time < '{cutoff}')"
+        query = f"""
+            SELECT r.EIN, r.website
+            FROM registry_enriched r
+            LEFT JOIN page_cache p ON p.ein = r.EIN
+            WHERE r.website_status = 'ok'
+              AND r.website IS NOT NULL AND r.website != ''
+              {mission_filter}
+              {cache_filter}
+            ORDER BY p.fetch_time ASC NULLS FIRST, r.merit_score DESC NULLS LAST
+        """
+    else:
+        # Original behavior: skip all cached orgs
+        query = f"""
+            SELECT r.EIN, r.website
+            FROM registry_enriched r
+            WHERE r.website_status = 'ok'
+              AND r.website IS NOT NULL AND r.website != ''
+              {mission_filter}
+              AND r.EIN NOT IN (
+                  SELECT ein FROM page_cache WHERE ein IS NOT NULL
+              )
+            ORDER BY r.merit_score DESC NULLS LAST
+        """
+
     if limit:
         query += f" LIMIT {limit}"
 
     rows = [(r["EIN"], r["website"]) for r in conn.execute(query)]
     total = len(rows)
-    log(f"  {total:,} orgs to crawl")
+    log(f"  {total:,} orgs to crawl (incremental={incremental})")
     if not total:
         log("Nothing to do.")
         conn.close()
@@ -295,5 +313,6 @@ if __name__ == "__main__":
     ap.add_argument("--limit",   type=int, default=0, help="Max orgs to crawl (0=all)")
     ap.add_argument("--workers", type=int, default=8, help="Concurrent fetch threads")
     ap.add_argument("--no-mission-only", action="store_true", help="Only crawl orgs that have no mission yet")
+    ap.add_argument("--incremental", action="store_true", help="Only crawl uncached or stale (>7 days) orgs")
     args = ap.parse_args()
-    run(limit=args.limit, workers=args.workers, no_mission_only=args.no_mission_only)
+    run(limit=args.limit, workers=args.workers, no_mission_only=args.no_mission_only, incremental=args.incremental)

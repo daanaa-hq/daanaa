@@ -468,29 +468,42 @@ def run_cohort_context():
 
 
 def fetch_org_websites():
-    """Fetch and cache org homepages to page_cache table.
-    Runs BEFORE mission generation so mission extraction has fresh HTML to work with.
-    Priority: orgs with website_status='ok', ordered by merit_score DESC.
-    Non-fatal if it errors — mission generation will use stale cache or skip org."""
+    """Fetch and cache org homepages to page_cache table (incremental).
+    Only fetches orgs without cached HTML OR cache older than 7 days.
+    Runs in parallel with enrichment to eliminate sequential bottleneck.
+    Non-fatal if errors — enrichment continues with partial cache."""
     try:
         import subprocess
-        log('Fetching org websites to populate page_cache (before mission generation)...')
+        from datetime import datetime, timedelta
+
+        conn = get_db()
+        cutoff = (datetime.now() - timedelta(days=7)).isoformat()
+        stale_count = conn.execute(
+            "SELECT COUNT(*) FROM page_cache WHERE html_gz IS NULL OR fetch_time < ?",
+            (cutoff,)
+        ).fetchone()[0]
+        conn.close()
+
+        if stale_count == 0:
+            log('✅ Website cache fresh (all orgs cached within 7 days) — skipping fetch')
+            return
+
+        log(f'Fetching org websites (incremental: {stale_count:,} new/stale, 8 workers)...')
         script = Path.home() / 'meritgiving' / 'scripts' / 'fetch_org_websites.py'
         result = subprocess.run(
-            ['python3', str(script), '--workers', '8'],  # 8 concurrent fetch workers (network-bound, scales well)
-            capture_output=True, text=True, timeout=3600,  # 1 hour timeout
+            ['python3', str(script), '--workers', '8', '--incremental'],  # Only fetch uncached/stale
+            capture_output=True, text=True, timeout=3600,
             cwd=str(Path.home() / 'meritgiving'),
         )
-        # Log output lines (script logs fetch stats)
         if result.stdout:
-            for line in (result.stdout or '').strip().splitlines()[-10:]:  # Last 10 lines of output
+            for line in (result.stdout or '').strip().splitlines()[-5:]:
                 log(line)
         if result.returncode == 0:
-            log('✅ Website fetch complete — page_cache populated')
+            log('✅ Website fetch complete (incremental)')
         else:
-            log(f'⚠️  Website fetch had errors (non-fatal): {result.stderr[:200]}')
+            log(f'⚠️  Website fetch had errors (non-fatal): {result.stderr[:100]}')
     except subprocess.TimeoutExpired:
-        log('⚠️  Website fetch timeout (1h limit reached, resumable) — mission generation will use cache')
+        log('⚠️  Website fetch timeout (resumable)')
     except Exception as e:
         log(f'⚠️  Website fetch exception (non-fatal): {str(e)[:100]}')
 
@@ -676,16 +689,23 @@ def main():
     # Step 6: Rebuild cause-cohort context from fresh scores
     run_cohort_context()
 
-    # Step 6.5: Fetch org websites to page_cache BEFORE mission generation
-    # This ensures fresh HTML is available for mission extraction AND donate link discovery
-    fetch_org_websites()
+    # Steps 6.5–6.7: PARALLEL FETCH + ENRICHMENT
+    # Website fetch runs CONCURRENTLY with parallel enrichment (missions + donate + tags)
+    # Fetch populates page_cache while enrichment uses existing cache + processes
+    # This eliminates the sequential bottleneck and keeps GPU/CPU fully utilized
+    from concurrent.futures import ThreadPoolExecutor
 
-    # Steps 6.6–6.7: Parallel enrichment (missions, donate links, cause tags)
-    # These run concurrently since they operate on different org sets
-    # - Mission gen: orgs without missions (focused + fast)
-    # - Donate links: all orgs with cached HTML (rolling refresh)
-    # - Cause tags: orgs without tags (GPU-backed, 5K/night)
-    run_parallel_enrichment()
+    log('Starting concurrent fetch + enrichment (max resource utilization)...')
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        # Fetch websites in parallel with enrichment tasks
+        fetch_future = executor.submit(fetch_org_websites)
+        enrich_future = executor.submit(run_parallel_enrichment)
+
+        # Wait for both to complete
+        fetch_future.result()
+        enrich_future.result()
+
+    log('✅ Concurrent fetch + enrichment complete')
 
     # Step 7: Expire past volunteer events
     try:
