@@ -606,16 +606,21 @@ List 3-5 cause tags (comma-separated, concise): """
 
 def run_parallel_enrichment():
     """Run mission generation, donate link extraction, and cause tags in parallel.
-    These operate on different org sets and can run concurrently."""
+    These operate on different org sets and can run concurrently.
+    Resource-aggressive: uses all 16 CPU cores + GPU for maximum throughput."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
+    import multiprocessing
 
-    log('Starting parallel enrichment (missions, donate links, cause tags)...')
+    log('Starting parallel enrichment (max CPU/GPU utilization)...')
     start = time.time()
 
+    cpu_count = multiprocessing.cpu_count()  # 16 cores
+    log(f'  Available: {cpu_count} CPU cores, 30GB RAM, GPU')
+
     tasks = [
-        ('missions', lambda: run_mission_generation(workers=8)),
-        ('donate links', lambda: extract_donate_links_batch(batch_size=5000)),
-        ('cause tags', lambda: generate_cause_tags_batch(batch_size=5000)),
+        ('missions', lambda: run_mission_generation(workers=cpu_count)),  # All 16 cores
+        ('donate links', lambda: extract_donate_links_batch(batch_size=10000)),  # 2x batch
+        ('cause tags', lambda: generate_cause_tags_batch(batch_size=10000)),  # 2x batch for GPU
     ]
 
     with ThreadPoolExecutor(max_workers=3) as executor:
