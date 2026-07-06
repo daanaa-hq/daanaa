@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { loadResearchSnapshot } from '../../data/researchSnapshot'
 
 interface ResearchFindingsProps {
@@ -92,8 +93,10 @@ export default function ResearchFindings({
                     </div>
                     <div className="flex gap-1 text-xs relative">
                       {tierData.map((tier) => (
-                        <div
+                        <Link
                           key={tier.label}
+                          to={`/directory?ntee=${item.ntee1}&tier=${tier.label.toLowerCase()}`}
+                          aria-label={`See ${item.ntee_label} organizations in the ${tier.label} tier`}
                           style={{
                             width: `${tier.pct || 0}%`,
                             backgroundColor: tier.color,
@@ -121,6 +124,7 @@ export default function ResearchFindings({
                                 <p className="text-warm-cream/80 mt-1">{tier.desc}</p>
                                 <p className="text-soft-gold mt-2 font-bold">{(tier.count || 0).toLocaleString()} orgs</p>
                                 <p className="text-warm-cream/80 mt-1">{(tier.pct || 0).toFixed(1)}% of {item.ntee_label}</p>
+                                <p className="text-warm-cream/60 mt-2 italic">Click to see these organizations →</p>
                               </div>
                             )
                           }
@@ -128,6 +132,13 @@ export default function ResearchFindings({
                         })}
                       </div>
                     )}
+
+                    <Link
+                      to={`/directory?ntee=${item.ntee1}`}
+                      className="inline-block mt-2 text-xs text-soft-gold hover:text-deep-navy transition-colors"
+                    >
+                      See all {item.ntee_label} organizations →
+                    </Link>
                   </div>
                 )
               })}

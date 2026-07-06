@@ -62,6 +62,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
             {[
               { label: 'Discover', path: '/directory' },
               { label: 'Volunteer', path: '/volunteer' },
+              { label: 'Methodology', path: '/methodology' },
               { label: 'Claim your page', path: '/for-nonprofits' },
             ].map((item) => (
               <Link
