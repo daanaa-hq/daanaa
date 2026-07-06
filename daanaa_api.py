@@ -656,10 +656,13 @@ _DONATE_FIELDS = (
 )
 
 def _strip_scores(org: dict) -> dict:
-    """Public-response scrub: drop internal donate fields always; null score
-    fields when ENABLE_SCORES is false. Applied to every public org payload."""
-    for k in _DONATE_FIELDS:
-        org.pop(k, None)
+    """Public-response scrub: null score fields when ENABLE_SCORES is false.
+    Applied to every public org payload. Donate fields are now returned for
+    frontend display (AI-assisted status, org can claim to verify)."""
+    # Note: _DONATE_FIELDS are now returned publicly (2026-07-05 decision).
+    # Backend extracts donate links nightly; frontend displays with 'ai_suggested'
+    # status. Orgs can claim/verify in the claim flow. Legal posture: discovery
+    # platform, hand-off to org's own processor (never handle funds).
     if ENABLE_SCORES:
         return org
     return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
