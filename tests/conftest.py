@@ -1,5 +1,8 @@
 import os, sqlite3, tempfile
 
+# Load fixtures from fixtures.py for enrichment pipeline tests
+pytest_plugins = ['tests.fixtures']
+
 # Skip the ~2GB embedding load — tests never need the vector matrix.
 os.environ.setdefault("DAANAA_SKIP_EMBEDDINGS", "1")
 
