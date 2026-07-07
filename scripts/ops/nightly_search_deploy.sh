@@ -82,10 +82,13 @@ log "Integrity OK. registry_enriched rows: $ROW_COUNT"
 log "Step 4/6: Rsyncing search.db to droplet..."
 rsync --checksum --progress \
     -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new" \
-    "$OUT" "$DROPLET:/data/search.db.staging" >> "$LOG" 2>&1 \
+    "$OUT" "$DROPLET:/data/precompute/v1/search.db.staging" >> "$LOG" 2>&1 \
     || die "rsync search.db failed"
 # Atomic swap
-$SSH "mv /data/search.db.staging /data/search.db" 2>>"$LOG" \
+# Target is the path the lean API actually reads (DATA_DIR/'search.db', see
+# scripts/droplet_api.py:93). Shipping to /data/search.db was a silent no-op —
+# the serving catalog never refreshed (found 2026-07-06, see LESSONS.md).
+$SSH "mv /data/precompute/v1/search.db.staging /data/precompute/v1/search.db" 2>>"$LOG" \
     || die "atomic swap failed on droplet"
 log "search.db deployed."
 
