@@ -161,17 +161,23 @@ def build_states(db):
 
 
 def build_spending(db):
+    """V5-compatible spending data: program expense percentiles by funding archetype."""
     data = []
-    for model in VALID_MODELS:
+    archetypes = [
+        'Donation-Funded',
+        'Fee-for-Service',
+        'Endowment-Funded'
+    ]
+    for archetype in archetypes:
         vals = [
             row['p'] for row in db.execute("""
-                SELECT CAST(r.program_expense_pct AS FLOAT) as p
-                FROM v4_scores v
-                LEFT JOIN registry_enriched r ON v.EIN = r.EIN
-                WHERE v.operating_model = ?
-                  AND r.program_expense_pct IS NOT NULL
-                ORDER BY r.program_expense_pct
-            """, [model]).fetchall()
+                SELECT CAST(program_expense_pct AS FLOAT) as p
+                FROM registry_enriched
+                WHERE merit_archetype_v5_label = ?
+                  AND program_expense_pct IS NOT NULL
+                  AND deductibility = '1'
+                ORDER BY program_expense_pct
+            """, [archetype]).fetchall()
         ]
         if not vals:
             continue
@@ -179,7 +185,7 @@ def build_spending(db):
         p25 = _percentile(vals, 0.25)
         p75 = _percentile(vals, 0.75)
         data.append({
-            'operating_model': model,
+            'archetype': archetype,
             'count': len(vals),
             'median_program_spend': round(median, 1) if median is not None else None,
             'p25_program_spend': round(p25, 1) if p25 is not None else None,
