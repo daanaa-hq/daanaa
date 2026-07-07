@@ -319,6 +319,52 @@ class TestConsolidatedEnrichment:
         assert mission == 'Existing mission'  # untouched
         assert cause_tags == ''  # untouched (empty, not corrupted)
 
+    def test_mission_promotion_guard_does_not_overwrite_strong_existing_source(
+        self, test_db, mock_qwen, mock_embeddings, enrich_config
+    ):
+        """Task 6 fix: _promote_to_registry's mission branch now re-checks the
+        same "is this mission weak?" condition (mission empty, or
+        mission_source in (None, 'ai_ntee', 'template_ntee')) at the point of
+        writing, as defense-in-depth against overwriting a genuinely good
+        mission with a guess - matching the never-overwrite-good-data pattern
+        already used for cause_tags/website/donate_url.
+
+        This directly constructs a 'mission' enrichment result for an org
+        whose registry_enriched.mission_source is 'scraped' (a strong,
+        non-weak source not in the regenerate-trigger list) and calls
+        _promote_to_registry directly, bypassing the upstream _enrich_layer
+        gate entirely - proving the DB-level guard itself is what blocks the
+        overwrite, not just the upstream decision not to regenerate.
+        """
+        cursor = test_db.cursor()
+        cursor.execute("""
+            INSERT INTO registry_enriched
+            (EIN, organization_name, NTEE1, mission, mission_source, cause_tags, website)
+            VALUES ('555444333', 'Strong Source Org', 'B', 'A real, human-written mission.', 'scraped', '', '')
+        """)
+        test_db.commit()
+
+        from scripts.enrich_batch import EnrichmentBatch
+        batch = EnrichmentBatch(
+            db_con=test_db, qwen_fn=mock_qwen, embeddings_fn=mock_embeddings,
+            config=enrich_config
+        )
+        batch._promote_to_registry([{
+            'org_ein': '555444333',
+            'enrichment_type': 'mission',
+            'generated_value': 'A generated replacement mission.',
+            'confidence_score': 0.85,
+            'context_used': '{"mission_source": "ai_web_grounded"}',
+        }])
+
+        cursor.execute(
+            "SELECT mission, mission_source FROM registry_enriched WHERE EIN = ?",
+            ('555444333',)
+        )
+        mission, mission_source = cursor.fetchone()
+        assert mission == 'A real, human-written mission.'  # untouched
+        assert mission_source == 'scraped'  # untouched
+
     def test_donate_url_below_threshold_flagged_for_human_review(self, test_db, mock_embeddings, enrich_config):
         """Low-confidence donate_url candidates must set donate_human_review=1
         and NOT be written as the live donate_url — existing pattern from

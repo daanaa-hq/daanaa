@@ -400,8 +400,20 @@ class EnrichmentBatch:
                 elif etype == 'mission':
                     context = json.loads(result.get('context_used') or '{}')
                     mission_source = context.get('mission_source', 'ai_web_grounded')
+                    # Defense-in-depth guard, mirroring the same "is this
+                    # mission weak?" condition _enrich_layer already used to
+                    # decide whether to generate a replacement (mission_source
+                    # in (None, 'ai_ntee', 'template_ntee') or mission empty).
+                    # Recomputing it here means promotion still refuses to
+                    # overwrite a genuinely good mission (e.g. one already
+                    # scraped or human-provided) even if it's ever called
+                    # outside that upstream gate - consistent with the
+                    # cause_tags/website/donate_url guards below, which never
+                    # overwrite existing non-empty values with a guess.
                     cursor.execute(
-                        "UPDATE registry_enriched SET mission = ?, mission_source = ? WHERE EIN = ?",
+                        "UPDATE registry_enriched SET mission = ?, mission_source = ? "
+                        "WHERE EIN = ? AND (mission IS NULL OR mission = '' "
+                        "OR mission_source IS NULL OR mission_source IN ('ai_ntee', 'template_ntee'))",
                         (value, mission_source, ein)
                     )
                 elif etype == 'donate_url':
