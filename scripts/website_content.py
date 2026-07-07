@@ -19,7 +19,6 @@ correctly, which real nonprofit websites are full of.
 import re
 import zlib
 import sqlite3
-import datetime
 from typing import Optional, Dict
 from urllib.parse import urljoin
 
@@ -27,10 +26,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scripts.donate_confidence import identity_match
-
-UA = ("Mozilla/5.0 (compatible; DaanaaLinkVerifier/1.0; "
-      "+https://daanaa.org/about)")
-TIMEOUT = 10
+from scripts.donation_link_pipeline import UA, TIMEOUT, _now
 
 _VOLUNTEER_PATTERNS = re.compile(
     r'volunteer|get[\s-]?involved', re.IGNORECASE
@@ -81,8 +77,9 @@ def _cache_page(db_con: sqlite3.Connection, ein: str, url: str, body: bytes, sta
             content_len INTEGER
         )
     """)
+    db_con.execute("CREATE INDEX IF NOT EXISTS idx_pc_ein ON page_cache(ein)")
     compressed = zlib.compress(body, level=6)
-    fetched_at = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    fetched_at = _now()
     db_con.execute("""
         INSERT OR REPLACE INTO page_cache (url, ein, fetched_at, status_code, html_gz, content_len)
         VALUES (?,?,?,?,?,?)
