@@ -79,9 +79,19 @@ def test_keyword_search_with_filters(client):
     d = client.get(
         '/api/organizations?q=legal&ntee=R,I&min_revenue=50000&max_revenue=100000&per_page=5'
     ).get_json()
+    assert d['search_type'] == 'fts'
+    assert d['total'] > 0
     # accuracy over volume: every result honors every filter
     for o in d['organizations']:
         assert o['NTEE1'] in ('R', 'I') and 50000 <= o['total_revenue'] <= 100000
+
+
+
+def test_keyword_directory_search_returns_fts_results(client):
+    d = client.get('/api/organizations?q=food&per_page=5').get_json()
+    assert d['search_type'] == 'fts'
+    assert d['total'] > 0
+    assert d['organizations']
 
 
 def test_filter_indexes_exist():

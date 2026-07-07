@@ -684,7 +684,7 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
                         'page': page, 'per_page': per_page, 'search_type': 'fts'})
     try:
-        conditions, params = _fts_where(q, state)
+        conditions, params, _detected_zip = _fts_where(q, state, conn)
         cat_conds, cat_params = _cat_rev_conditions(
             ntee_list, sub_list, min_rev, max_rev, alias='o.')
         conditions.extend(cat_conds)
