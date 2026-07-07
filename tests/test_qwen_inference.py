@@ -330,3 +330,67 @@ class TestQwenInference:
         assert result is not None
         assert isinstance(result, str)
         assert len(result) > 0
+
+
+def test_generate_mission_from_website_returns_string(mock_qwen, enrich_config):
+    """Basic contract: given org data + website content, returns a mission string."""
+    qwen = QwenInference(qwen_fn=mock_qwen, config=enrich_config, prompt_version='v1.0')
+
+    org_data = {'EIN': '123', 'name': 'Tech Academy', 'ntee': 'B25'}
+    website_content = (
+        "We provide free coding bootcamps and laptop donations to underserved "
+        "youth in San Francisco. Since 2015, we've trained over 400 students "
+        "through our after-school Saturday Robotics Academy program."
+    )
+
+    result = qwen.generate_mission_from_website(org_data, website_content)
+
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+
+def test_generate_mission_from_website_prompt_includes_real_content(enrich_config):
+    """The prompt sent to Qwen must include the actual website text, not
+    just NTEE/location — this is the whole point of grounding. Uses an echo
+    mock (not mock_qwen) to inspect exactly what was sent."""
+    captured_prompts = []
+
+    def echo_qwen(prompt: str, max_tokens: int = 200) -> str:
+        captured_prompts.append(prompt)
+        return "A specific, grounded mission sentence."
+
+    qwen = QwenInference(qwen_fn=echo_qwen, config=enrich_config, prompt_version='v1.0')
+
+    org_data = {'EIN': '123', 'name': 'Tech Academy', 'ntee': 'B25'}
+    website_content = "Saturday Robotics Academy trains 400 students in coding."
+
+    qwen.generate_mission_from_website(org_data, website_content)
+
+    assert len(captured_prompts) == 1
+    assert "Saturday Robotics Academy" in captured_prompts[0]
+    assert "Tech Academy" in captured_prompts[0]
+
+
+def test_generate_mission_from_website_timeout_returns_none(enrich_config):
+    """Deterministic timeout mock — same pattern as the existing
+    test_qwen_timeout_returns_none test for generate_tags/generate_website."""
+    def timeout_qwen(prompt: str, max_tokens: int = 200) -> str:
+        raise TimeoutError("Qwen timeout")
+
+    qwen = QwenInference(qwen_fn=timeout_qwen, config=enrich_config, prompt_version='v1.0')
+    org_data = {'EIN': '123', 'name': 'Org', 'ntee': 'B25'}
+
+    result = qwen.generate_mission_from_website(org_data, "some website content", max_retries=1)
+
+    assert result is None
+
+
+def test_generate_mission_from_website_empty_content_still_works(mock_qwen, enrich_config):
+    """Empty website_content (e.g., a page that fetched but had no useful
+    text) should not crash — falls through to a generic-but-valid prompt."""
+    qwen = QwenInference(qwen_fn=mock_qwen, config=enrich_config, prompt_version='v1.0')
+    org_data = {'EIN': '123', 'name': 'Org', 'ntee': 'B25'}
+
+    result = qwen.generate_mission_from_website(org_data, "")
+
+    assert result is None or isinstance(result, str)

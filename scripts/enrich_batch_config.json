@@ -18,11 +18,13 @@
   "prompts": {
     "v1.0": {
       "cause_tags": "Similar high-performing orgs are tagged with: {similar_tags}. This organization has the mission: {mission}. NTEE category: {ntee}. Suggest 3-5 cause tags that best describe this organization's focus area.",
-      "website": "Similar organizations in {city}, {state} use domains like: {similar_domains}. This organization is named: {org_name}. Suggest the most likely domain name (e.g., myorg.org)."
+      "website": "Similar organizations in {city}, {state} use domains like: {similar_domains}. This organization is named: {org_name}. Suggest the most likely domain name (e.g., myorg.org).",
+      "mission": "This organization is named: {org_name}. Here is real text from their website:\n\n{website_content}\n\nWrite a specific, one-sentence mission statement for this organization based on what their website actually says they do. Be concrete — mention specific programs, populations served, or activities if the website describes them. Do not write a generic sentence that could apply to any nonprofit in their sector."
     },
     "v1.1": {
       "cause_tags": "Similar high-performing orgs in {ntee} are tagged with: {similar_tags}. This organization has the mission: {mission}. NTEE category: {ntee}. For {ntee_label} organizations, emphasize: {ntee_emphasis}. Suggest 3-5 cause tags.",
-      "website": "Similar organizations in {city}, {state} use domains like: {similar_domains}. This organization is named: {org_name}. Common patterns in {state}: {state_patterns}. Suggest the most likely domain."
+      "website": "Similar organizations in {city}, {state} use domains like: {similar_domains}. This organization is named: {org_name}. Common patterns in {state}: {state_patterns}. Suggest the most likely domain.",
+      "mission": "This organization is named: {org_name}. Here is real text from their website:\n\n{website_content}\n\nWrite a specific, one-sentence mission statement for this organization based on what their website actually says they do. Be concrete — mention specific programs, populations served, or activities if the website describes them. Do not write a generic sentence that could apply to any nonprofit in their sector."
     }
   },
   "cohorts": [

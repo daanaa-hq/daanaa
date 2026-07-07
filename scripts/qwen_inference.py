@@ -75,6 +75,52 @@ class QwenInference:
 
         return None
 
+    def generate_mission_from_website(
+        self,
+        org_data: Dict[str, Any],
+        website_content: str,
+        max_retries: int = 1
+    ) -> Optional[str]:
+        """Generate a mission statement grounded in real website text.
+
+        This is the fix for generic, template-like missions (e.g. "Provides
+        educational services in City, State") — instead of guessing from
+        NTEE code + city/state alone, this grounds generation in what the
+        org's own website actually says, when a validated site is available.
+        Callers should fall back to NTEE-based generation (not this method)
+        when no validated website content exists.
+        """
+        prompt = self._build_mission_prompt(org_data, website_content)
+
+        for attempt in range(max_retries):
+            try:
+                result = self.qwen_fn(prompt=prompt, max_tokens=150)
+                if result:
+                    return result.strip()
+            except TimeoutError:
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"[ERROR] Qwen timeout generating mission for {org_data.get('EIN', 'unknown')}")
+                    return None
+            except Exception as e:
+                print(f"[ERROR] Qwen error generating mission for {org_data.get('EIN', 'unknown')}: {e}")
+                return None
+
+        return None
+
+    def _build_mission_prompt(
+        self,
+        org_data: Dict[str, Any],
+        website_content: str
+    ) -> str:
+        template = self.prompts.get('mission', '')
+        return template.format(
+            org_name=org_data.get('name', ''),
+            website_content=website_content or 'No specific content available.'
+        )
+
     def _build_cause_tags_prompt(
         self,
         org_data: Dict[str, Any],
