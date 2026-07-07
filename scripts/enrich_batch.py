@@ -254,7 +254,8 @@ class EnrichmentBatch:
                     results.append({
                         'org_ein': ein, 'enrichment_type': 'cause_tags',
                         'generated_value': tags, 'confidence_score': 0.7,
-                        'context_used': json.dumps({'similar_count': len(similar_orgs)})
+                        'context_used': json.dumps({'similar_count': len(similar_orgs)}),
+                        'prompt_version': self.qwen.prompt_version
                     })
 
                 website = self.qwen.generate_website(org_data, similar_orgs)
@@ -262,7 +263,8 @@ class EnrichmentBatch:
                     results.append({
                         'org_ein': ein, 'enrichment_type': 'website',
                         'generated_value': website, 'confidence_score': 0.7,
-                        'context_used': json.dumps({'similar_count': len(similar_orgs)})
+                        'context_used': json.dumps({'similar_count': len(similar_orgs)}),
+                        'prompt_version': self.qwen.prompt_version
                     })
             except Exception as e:
                 # Defense in depth: qwen_inference.py guards against the known
@@ -279,11 +281,12 @@ class EnrichmentBatch:
         for result in results:
             cursor.execute(
                 """INSERT INTO enrichment_run
-                   (run_date, org_ein, enrichment_type, generated_value, confidence_score, context_used)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                   (run_date, org_ein, enrichment_type, generated_value, confidence_score, context_used, prompt_version)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (
                     str(date.today()), result['org_ein'], result['enrichment_type'],
-                    result['generated_value'], result['confidence_score'], result['context_used']
+                    result['generated_value'], result['confidence_score'], result['context_used'],
+                    result.get('prompt_version', 'v1.0')
                 )
             )
         self.db.commit()

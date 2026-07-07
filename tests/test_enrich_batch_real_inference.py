@@ -251,6 +251,64 @@ class TestPromptVersionFeedbackLoop:
         else:
             assert batch.qwen.prompt_version == "v1.1"
 
+    def test_recorded_prompt_version_matches_resolved_version_not_schema_default(
+        self, test_db, mock_qwen, mock_embeddings, enrich_config, sample_orgs, tmp_path
+    ):
+        """Regression test for the review finding: _enrich_layer()'s result
+        dicts and _write_results()'s INSERT previously omitted
+        prompt_version entirely, so every row silently fell back to the
+        enrichment_run schema's DEFAULT 'v1.0' regardless of which prompt
+        version actually generated it - which would defeat the entire point
+        of the feedback loop this class tests: an auto-improved v1.2 being
+        *used* is meaningless if the DB record then lies about which version
+        actually produced the row (you can't measure "did v1.2 improve
+        quality" if every row claims v1.0).
+
+        Seeds a non-default v1.2 prompt version, runs a REAL (non-dry-run)
+        batch against the isolated test_db, and queries enrichment_run
+        directly (not the returned stats dict) to confirm the recorded
+        prompt_version is 'v1.2' - not the schema default 'v1.0'.
+        """
+        prompt_file = tmp_path / "prompt_versions.json"
+        seeded_versions = {
+            "v1.0": {"cause_tags": "old v1.0 template {mission}", "website": "old v1.0 website {org_name}"},
+            "v1.2": {"cause_tags": "auto-improved v1.2 template {mission}", "website": "auto-improved v1.2 website {org_name}"},
+        }
+        prompt_file.write_text(json.dumps(seeded_versions))
+
+        org = sample_orgs[0]
+        cursor = test_db.cursor()
+        cursor.execute(
+            """INSERT INTO registry_enriched
+               (EIN, organization_name, NTEE1, mission, city, state, cause_tags, website)
+               VALUES (?, ?, ?, ?, ?, ?, '', '')""",
+            (org['ein'], org['organization_name'], org['ntee1'], org['mission'], org['city'], org['state'])
+        )
+        test_db.commit()
+
+        batch = EnrichmentBatch(
+            db_con=test_db, qwen_fn=mock_qwen, embeddings_fn=mock_embeddings,
+            config=enrich_config, prompt_versions_file=str(prompt_file)
+        )
+        # Sanity check: the resolved version really is the non-default v1.2,
+        # matching test_picks_up_preexisting_improved_version above.
+        assert batch.qwen.prompt_version == "v1.2"
+
+        stats = batch.run(dry_run=False, max_orgs=1)
+        # 1 org x (1 tags result + 1 website result) = 2 results written.
+        assert stats['orgs_processed'] == 2
+
+        cursor.execute("SELECT prompt_version FROM enrichment_run ORDER BY enrichment_type")
+        recorded = [row[0] for row in cursor.fetchall()]
+
+        assert recorded == ["v1.2", "v1.2"], (
+            f"Expected both enrichment_run rows to record prompt_version "
+            f"'v1.2' (the version actually resolved and used for "
+            f"generation), got {recorded}. If this is ['v1.0', 'v1.0'], "
+            "prompt_version is silently falling back to the schema DEFAULT "
+            "instead of being written explicitly by _write_results()."
+        )
+
 
 class TestMockFlagSelection:
     """main()'s --mock flag must select the mock qwen/embeddings functions;
