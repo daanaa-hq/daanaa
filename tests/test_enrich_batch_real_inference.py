@@ -346,7 +346,8 @@ class TestMockFlagSelection:
         con.executescript("""
             CREATE TABLE registry_enriched (
                 EIN TEXT PRIMARY KEY, organization_name TEXT, mission TEXT,
-                NTEE1 TEXT, city TEXT, state TEXT, cause_tags TEXT, website TEXT
+                NTEE1 TEXT, city TEXT, state TEXT, cause_tags TEXT, website TEXT,
+                mission_source TEXT, donate_url TEXT
             );
             CREATE TABLE enrichment_run (
                 run_id INTEGER PRIMARY KEY AUTOINCREMENT, run_date DATE, org_ein TEXT,
@@ -355,8 +356,8 @@ class TestMockFlagSelection:
             );
         """)
         con.execute(
-            "INSERT INTO registry_enriched VALUES (?,?,?,?,?,?,'','')",
-            ("111111111", "Test Org", "helps people", "P", "Austin", "TX")
+            "INSERT INTO registry_enriched VALUES (?,?,?,?,?,?,?,?,?,?)",
+            ("111111111", "Test Org", "helps people", "P", "Austin", "TX", "", "", None, None)
         )
         con.commit()
         con.close()
