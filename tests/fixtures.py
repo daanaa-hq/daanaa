@@ -144,7 +144,8 @@ def test_db():
             donate_confidence REAL, donate_source_page TEXT,
             donate_identity_match INTEGER, donate_human_review INTEGER,
             donate_checked_at TEXT,
-            street_address TEXT, cohort_context TEXT
+            street_address TEXT, cohort_context TEXT,
+            volunteer_url TEXT
         )
     """)
 

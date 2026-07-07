@@ -58,6 +58,16 @@ def migrate(con=None):
         ON quality_log(date, metric_type, cohort)
     """)
 
+    # Add volunteer_url to registry_enriched if it exists and is missing the column
+    # (idempotent — same pattern donation_link_pipeline.py uses for its own new columns).
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='registry_enriched'"
+    )
+    if cursor.fetchone():
+        existing_cols = {r[1] for r in cursor.execute("PRAGMA table_info(registry_enriched)")}
+        if 'volunteer_url' not in existing_cols:
+            cursor.execute("ALTER TABLE registry_enriched ADD COLUMN volunteer_url TEXT")
+
     con.commit()
     print("✓ Enrichment tables created/verified")
 

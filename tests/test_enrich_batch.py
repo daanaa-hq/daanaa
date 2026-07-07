@@ -76,3 +76,25 @@ def test_quality_log_schema():
         assert col in columns, f"Column {col} missing from quality_log"
 
     con.close()
+
+
+def test_migrate_adds_volunteer_url_column():
+    """volunteer_url must exist on registry_enriched after migrate() runs,
+    since Task 2's website_content.py discovers this and Task 6 needs
+    somewhere to write it."""
+    import sqlite3
+    con = sqlite3.connect(':memory:')
+    cursor = con.cursor()
+    cursor.execute("""
+        CREATE TABLE registry_enriched (
+            EIN TEXT PRIMARY KEY, organization_name TEXT
+        )
+    """)
+    con.commit()
+
+    from scripts.db_enrich_migration import migrate
+    migrate(con)
+
+    cols = {row[1] for row in cursor.execute("PRAGMA table_info(registry_enriched)")}
+    assert 'volunteer_url' in cols
+    con.close()
