@@ -97,6 +97,60 @@ def get_embeddings_fn() -> Callable:
     return mock_embeddings
 
 
+def get_real_qwen_fn(port: int = 11437, timeout: int = 60) -> Callable:
+    """Real Qwen inference via local llama-server HTTP API.
+
+    Talks to the OpenAI-compatible chat completions endpoint served by
+    llama-server on `port` (default 11437, the Qwen2.5-32B-Instruct
+    Vulkan1 server documented in CLAUDE.md). Any connection failure,
+    timeout, or non-2xx response raises - QwenInference.generate_tags/
+    generate_website already wrap their qwen_fn call in a bare
+    `except Exception` that logs and returns None, so this is safe to let
+    bubble up rather than swallowing errors here.
+    """
+    import requests
+
+    def qwen_call(prompt: str, max_tokens: int = 200) -> str:
+        resp = requests.post(
+            f"http://localhost:{port}/v1/chat/completions",
+            json={
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens
+            },
+            timeout=timeout
+        )
+        resp.raise_for_status()
+        return resp.json()['choices'][0]['message']['content']
+
+    return qwen_call
+
+
+def get_real_embeddings_fn(port: int = 11436, timeout: int = 60) -> Callable:
+    """Real embeddings via local llama-server HTTP API.
+
+    Talks to the llama.cpp embedding endpoint on `port` (default 11436,
+    the mxbai-embed-large Vulkan1 server documented in CLAUDE.md). The
+    response is doubly nested - `data[i]['embedding']` is a
+    single-element list wrapping the actual 1024-dim vector - so this
+    unwraps `['embedding'][0]` to return a flat list of vectors, matching
+    the shape SemanticLookup/embeddings_fn callers already expect from
+    the mock embeddings function.
+    """
+    import requests
+
+    def embeddings_call(texts: list) -> list:
+        resp = requests.post(
+            f"http://localhost:{port}/embedding",
+            json={"content": texts},
+            timeout=timeout
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return [item['embedding'][0] for item in data]
+
+    return embeddings_call
+
+
 class EnrichmentBatch:
     """Orchestrate enrichment batch with all four layers."""
 
@@ -105,7 +159,8 @@ class EnrichmentBatch:
         db_con: sqlite3.Connection,
         qwen_fn: Callable,
         embeddings_fn: Callable,
-        config: Dict[str, Any]
+        config: Dict[str, Any],
+        prompt_versions_file: Optional[str] = None
     ):
         self.db = db_con
         self.qwen_fn = qwen_fn
@@ -113,9 +168,27 @@ class EnrichmentBatch:
         self.config = config
 
         self.semantic = SemanticLookup(db_con=db_con, embeddings_fn=embeddings_fn)
-        self.qwen = QwenInference(qwen_fn=qwen_fn, config=config)
         self.quality = QualityMeasurement(db_con=db_con)
-        self.improver = PromptImprovement(db_con=db_con, config=config)
+        self.improver = PromptImprovement(
+            db_con=db_con, config=config, prompt_versions_file=prompt_versions_file
+        )
+
+        # Close the self-improvement feedback loop: PromptImprovement already
+        # loaded whatever prompt versions exist - either an auto-improved set
+        # from prompt_versions_file (if generate_improved_prompt() has ever
+        # written one) or, when no such file exists yet, the static
+        # config['prompts'] fallback (see PromptImprovement._load_prompt_versions).
+        # Either way, self.improver.prompt_versions is the source of truth for
+        # "what prompt versions exist" - QwenInference must be built from that,
+        # not from the raw static config, or an overnight-improved v1.2 would
+        # never actually get used by tonight's batch.
+        latest_version = max(
+            self.improver.prompt_versions.keys(),
+            key=lambda v: float(v[1:])
+        )
+        qwen_config = dict(config)
+        qwen_config['prompts'] = self.improver.prompt_versions
+        self.qwen = QwenInference(qwen_fn=qwen_fn, config=qwen_config, prompt_version=latest_version)
 
     def run(
         self,
@@ -224,14 +297,32 @@ def main():
     parser.add_argument('--max-orgs', type=int, help='Limit orgs processed (for testing)')
     parser.add_argument('--workers', type=int, default=1, help='Parallel workers')
     parser.add_argument('--batch-size', type=int, default=20, help='Orgs per inference batch')
+    parser.add_argument(
+        '--mock', action='store_true',
+        help='Use mock Qwen/embeddings functions instead of the real local '
+             'inference servers (for testing/offline use without servers running)'
+    )
+    parser.add_argument(
+        '--qwen-port', type=int, default=11437,
+        help='Port for the real Qwen llama-server (default 11437; ignored with --mock)'
+    )
+    parser.add_argument(
+        '--embeddings-port', type=int, default=11436,
+        help='Port for the real embeddings llama-server (default 11436; ignored with --mock)'
+    )
 
     args = parser.parse_args()
 
     config = load_config()
     db = sqlite3.connect(str(DB_PATH), timeout=180)
 
-    qwen_fn = get_mock_qwen_fn()
-    embeddings_fn = get_embeddings_fn()
+    if args.mock:
+        qwen_fn = get_mock_qwen_fn()
+        embeddings_fn = get_embeddings_fn()
+    else:
+        qwen_fn = get_real_qwen_fn(port=args.qwen_port)
+        embeddings_fn = get_real_embeddings_fn(port=args.embeddings_port)
+
     batch = EnrichmentBatch(
         db_con=db, qwen_fn=qwen_fn, embeddings_fn=embeddings_fn, config=config
     )
