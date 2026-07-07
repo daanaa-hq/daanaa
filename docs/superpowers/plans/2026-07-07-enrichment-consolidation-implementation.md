@@ -481,15 +481,20 @@ and looks for a volunteer/get-involved page link.
 This is deliberately a single targeted fetch, not the broader crawling
 approach (web_finder_agent.py) paused 2026-06-22 for being network-bound —
 see DECISIONS.md 2026-07-07 for why this is a different, lighter mechanism.
+
+Uses BeautifulSoup (already a project dependency, bs4>=4.14) for HTML
+parsing rather than hand-rolled regex — handles malformed/nested markup
+correctly, which real nonprofit websites are full of.
 """
 import re
 import zlib
 import sqlite3
 import datetime
 from typing import Optional, Dict
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 import requests
+from bs4 import BeautifulSoup
 
 from scripts.donate_confidence import identity_match
 
@@ -501,23 +506,17 @@ _VOLUNTEER_PATTERNS = re.compile(
     r'volunteer|get[\s-]?involved', re.IGNORECASE
 )
 
-_TAG_RE = re.compile(r'<[^>]+>')
-_SCRIPT_STYLE_RE = re.compile(
-    r'<(script|style|nav|header|footer)[^>]*>.*?</\1>',
-    re.IGNORECASE | re.DOTALL
-)
-_WHITESPACE_RE = re.compile(r'\s+')
-
 
 def extract_text_content(html: str) -> str:
-    """Strip HTML tags, scripts, styles, and nav/header/footer chrome,
-    returning cleaned body text suitable for LLM grounding context."""
+    """Strip scripts, styles, and nav/header/footer chrome, returning
+    cleaned body text suitable for LLM grounding context."""
     if not html:
         return ""
-    stripped = _SCRIPT_STYLE_RE.sub(' ', html)
-    stripped = _TAG_RE.sub(' ', stripped)
-    stripped = _WHITESPACE_RE.sub(' ', stripped).strip()
-    return stripped
+    soup = BeautifulSoup(html, 'html.parser')
+    for tag in soup(['script', 'style', 'nav', 'header', 'footer']):
+        tag.decompose()
+    text = soup.get_text(separator=' ', strip=True)
+    return re.sub(r'\s+', ' ', text).strip()
 
 
 def find_volunteer_link(html: str, base_url: str) -> Optional[str]:
@@ -525,8 +524,10 @@ def find_volunteer_link(html: str, base_url: str) -> Optional[str]:
     Returns the absolute URL, or None if no such link is found."""
     if not html:
         return None
-    for match in re.finditer(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>([^<]*)</a>', html, re.IGNORECASE):
-        href, link_text = match.group(1), match.group(2)
+    soup = BeautifulSoup(html, 'html.parser')
+    for a in soup.find_all('a', href=True):
+        href = a['href']
+        link_text = a.get_text(strip=True)
         if _VOLUNTEER_PATTERNS.search(href) or _VOLUNTEER_PATTERNS.search(link_text):
             return urljoin(base_url, href)
     return None
