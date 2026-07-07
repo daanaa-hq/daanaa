@@ -27,9 +27,10 @@ class QwenInference:
         self,
         org_data: Dict[str, Any],
         similar_orgs: list[Dict[str, Any]],
-        max_retries: int = 1
+        max_retries: int = 1,
+        grounding_context: Optional[str] = None
     ) -> Optional[str]:
-        prompt = self._build_cause_tags_prompt(org_data, similar_orgs)
+        prompt = self._build_cause_tags_prompt(org_data, similar_orgs, grounding_context)
 
         for attempt in range(max_retries):
             try:
@@ -124,7 +125,8 @@ class QwenInference:
     def _build_cause_tags_prompt(
         self,
         org_data: Dict[str, Any],
-        similar_orgs: list[Dict[str, Any]]
+        similar_orgs: list[Dict[str, Any]],
+        grounding_context: Optional[str] = None
     ) -> str:
         similar_tags = ', '.join([
             org.get('cause_tags', '').split(',')[0]
@@ -136,7 +138,7 @@ class QwenInference:
         ntee_emphasis = self._get_ntee_emphasis(ntee_label)
 
         template = self.prompts.get('cause_tags', '')
-        return template.format(
+        prompt = template.format(
             similar_tags=similar_tags or 'Community, Education',
             org_name=org_data.get('name', ''),
             mission=org_data.get('mission', ''),
@@ -144,6 +146,11 @@ class QwenInference:
             ntee_label=self._ntee_label(ntee_label),
             ntee_emphasis=ntee_emphasis
         )
+
+        if grounding_context:
+            prompt += f"\n\nAdditional context from the organization's website: {grounding_context}"
+
+        return prompt
 
     def _build_website_prompt(
         self,

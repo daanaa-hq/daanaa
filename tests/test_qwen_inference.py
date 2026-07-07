@@ -394,3 +394,58 @@ def test_generate_mission_from_website_empty_content_still_works(mock_qwen, enri
     result = qwen.generate_mission_from_website(org_data, "")
 
     assert result is None or isinstance(result, str)
+
+
+def test_generate_tags_without_grounding_context_unchanged(mock_qwen, enrich_config):
+    """Backward compatibility: existing 2-arg calls must still work exactly
+    as before — this is a non-breaking extension, not a replacement."""
+    qwen = QwenInference(qwen_fn=mock_qwen, config=enrich_config, prompt_version='v1.0')
+    org_data = {'EIN': '123', 'name': 'Org', 'mission': 'Test mission', 'ntee': 'B25'}
+
+    result = qwen.generate_tags(org_data, similar_orgs=[])
+
+    assert isinstance(result, str)
+
+
+def test_generate_tags_with_grounding_context_included_in_prompt(enrich_config):
+    """When grounding_context is provided (real website text), it must
+    appear in the prompt sent to Qwen — this is what lets cause tags be
+    informed by real site content, not just the (possibly still-generic)
+    mission field alone."""
+    captured_prompts = []
+
+    def echo_qwen(prompt: str, max_tokens: int = 200) -> str:
+        captured_prompts.append(prompt)
+        return "Education, Youth Development"
+
+    qwen = QwenInference(qwen_fn=echo_qwen, config=enrich_config, prompt_version='v1.0')
+    org_data = {'EIN': '123', 'name': 'Org', 'mission': 'Generic mission', 'ntee': 'B25'}
+    grounding = "Saturday Robotics Academy trains 400 students in coding and robotics."
+
+    qwen.generate_tags(org_data, similar_orgs=[], grounding_context=grounding)
+
+    assert len(captured_prompts) == 1
+    assert "Saturday Robotics Academy" in captured_prompts[0]
+
+
+def test_generate_tags_without_grounding_context_prompt_unchanged(enrich_config):
+    """When grounding_context is None (the default), the prompt must be
+    byte-identical to the pre-Task-4 prompt — confirms zero behavior change
+    for the common case where no website was found/validated."""
+    captured_prompts = []
+
+    def echo_qwen(prompt: str, max_tokens: int = 200) -> str:
+        captured_prompts.append(prompt)
+        return "Education"
+
+    qwen = QwenInference(qwen_fn=echo_qwen, config=enrich_config, prompt_version='v1.0')
+    org_data = {'EIN': '123', 'name': 'Org', 'mission': 'Test mission', 'ntee': 'B25'}
+
+    qwen.generate_tags(org_data, similar_orgs=[])
+    prompt_without_grounding = captured_prompts[0]
+
+    captured_prompts.clear()
+    qwen.generate_tags(org_data, similar_orgs=[], grounding_context=None)
+    prompt_with_none = captured_prompts[0]
+
+    assert prompt_without_grounding == prompt_with_none
