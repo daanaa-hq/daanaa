@@ -62,16 +62,19 @@ start() {
   #   nohup bash "$BASE/scripts/web_night.sh" >> "$LOG_DIR/web_night.log" 2>&1 &
   # fi
 
-  # Cause tag enrichment: requires mission IS NOT NULL — runs in parallel with
-  # mission generation on the same llama-server (:11437). Tags orgs that already
-  # have missions; new missions written tonight will be tagged in the next cycle.
-  if pgrep -f "scripts/enrich_cause_tags_llm.py" >/dev/null; then
-    echo "[$(ts)] start: cause-tag enrichment already running — skipping"
-  else
-    echo "[$(ts)] start: launching LLM cause-tag enrichment (249K gap)"
-    nohup "$BASE/venv/bin/python3" "$BASE/scripts/enrich_cause_tags_llm.py" \
-      >> "$LOG_DIR/cause_tags_llm.log" 2>&1 &
-  fi
+  # Cause tag enrichment: PAUSED 2026-07-07 for validation week — retired in
+  # favor of the consolidated enrichment pipeline (scripts/enrich_batch.py),
+  # which generates cause tags + mission + website + donate_url together
+  # with shared context. Re-enable this block if quality_log shows the new
+  # pipeline's tag accuracy regresses vs this script's baseline. See
+  # DECISIONS.md 2026-07-07 and docs/superpowers/specs/2026-07-07-*.
+  # if pgrep -f "scripts/enrich_cause_tags_llm.py" >/dev/null; then
+  #   echo "[$(ts)] start: cause-tag enrichment already running — skipping"
+  # else
+  #   echo "[$(ts)] start: launching LLM cause-tag enrichment (249K gap)"
+  #   nohup "$BASE/venv/bin/python3" "$BASE/scripts/enrich_cause_tags_llm.py" \
+  #     >> "$LOG_DIR/cause_tags_llm.log" 2>&1 &
+  # fi
 
   # Re-embed orgs whose mission was (re)written so semantic search stays current.
   # The watchdog runs its own embed server on :11436 (separate from the mission
@@ -86,14 +89,34 @@ start() {
   echo "[$(ts)] start: done"
 }
 
+start_exclusive() {
+  echo "[$(ts)] start_exclusive: launching embed_server only (mission-gen/reembed paused for backlog clear)"
+  bash "$BASE/scripts/embed_server.sh" start
+
+  if pgrep -f "llama-server.*--port ${PORT}" >/dev/null; then
+    echo "[$(ts)] start_exclusive: llama-server already running — skipping"
+  else
+    echo "[$(ts)] start_exclusive: launching llama-server $(basename "$MODEL")"
+    nohup "$SERVER_BIN" -m "$MODEL" --device Vulkan1 -ngl 99 -fa 1 \
+      --parallel 6 --ctx-size 24576 --cont-batching \
+      --port "$PORT" --host 127.0.0.1 --jinja \
+      > "$SERVER_LOG" 2>&1 &
+    for _ in $(seq 1 60); do
+      grep -q "server is listening\|all slots are idle" "$SERVER_LOG" 2>/dev/null && break
+      sleep 3
+    done
+  fi
+  echo "[$(ts)] start_exclusive: done — mission-gen and reembed_watchdog intentionally NOT launched"
+}
+
 stop() {
   echo "[$(ts)] stop: halting web_night discovery loop"
   pkill -f "scripts/web_night.sh" 2>/dev/null
   pkill -f "scripts/web_finder_agent.py" 2>/dev/null
   echo "[$(ts)] stop: halting mission generation"
   pkill -f "scripts/generate_missions" 2>/dev/null
-  echo "[$(ts)] stop: halting LLM cause-tag enrichment"
-  pkill -f "scripts/enrich_cause_tags_llm.py" 2>/dev/null
+  # echo "[$(ts)] stop: halting LLM cause-tag enrichment"
+  # pkill -f "scripts/enrich_cause_tags_llm.py" 2>/dev/null
   sleep 2
   echo "[$(ts)] stop: halting reembed_watchdog"
   pkill -f "scripts/reembed_watchdog.py" 2>/dev/null
@@ -126,7 +149,8 @@ stop_embed_server() {
 
 case "${1:-}" in
   start)              start ;;
+  start_exclusive)    start_exclusive ;;
   stop)               stop ;;
   stop_embed_server)  stop_embed_server ;;
-  *) echo "usage: $0 {start|stop|stop_embed_server}" >&2; exit 1 ;;
+  *) echo "usage: $0 {start|start_exclusive|stop|stop_embed_server}" >&2; exit 1 ;;
 esac
