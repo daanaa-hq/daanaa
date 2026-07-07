@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { ALL_CATEGORIES } from '../data/categories'
 import LampMark from './LampMark'
 import { TIER_COLORS } from './TrustBadge'
+import RevenueRangeInput from './RangeSlider'
 import type { TierName } from './TrustBadge'
 
 const FILTER_CATEGORIES = [
@@ -31,16 +32,6 @@ const MILITARY_STATES = [
   ['AA','Armed Forces Americas'],['AE','Armed Forces Europe'],['AP','Armed Forces Pacific'],
 ] as const
 
-// ids must match REVENUE_PRESETS in Directory.tsx (min/max resolved there). Small first.
-const REVENUE_PRESETS = [
-  { id: 'tiny',        label: 'Tiny (under $50K)' },
-  { id: 'grassroots',  label: 'Grassroots ($50K to $250K)' },
-  { id: 'community',   label: 'Community ($250K to $1M)' },
-  { id: 'established', label: 'Established ($1M to $10M)' },
-  { id: 'large',       label: 'Large ($10M to $100M)' },
-  { id: 'national',    label: 'National (over $100M)' },
-] as const
-
 const SCORE_TIERS: { id: TierName; label: string }[] = [
   { id: 'Beacon',  label: 'Beacon' },
   { id: 'Torch',   label: 'Torch +' },
@@ -53,13 +44,15 @@ interface FilterSheetProps {
   activeCategory: string
   stateFilter: string
   sortBy: string
-  revenueFilter: string
+  minRevenue: number
+  maxRevenue: number
   scoreTier: string
   cause?: string
   onCategoryChange: (id: string) => void
   onStateChange: (state: string) => void
   onSortChange: (sort: string) => void
-  onRevenueChange: (id: string) => void
+  onMinRevenueChange: (value: number) => void
+  onMaxRevenueChange: (value: number) => void
   onScoreTierChange: (id: string) => void
   onCauseChange?: (v: string) => void
   onClearAll: () => void
@@ -68,8 +61,8 @@ interface FilterSheetProps {
 
 export default function FilterSheet({
   open, onClose,
-  activeCategory, stateFilter, sortBy, revenueFilter, scoreTier, cause = '',
-  onCategoryChange, onStateChange, onSortChange, onRevenueChange, onScoreTierChange,
+  activeCategory, stateFilter, sortBy, minRevenue, maxRevenue, scoreTier, cause = '',
+  onCategoryChange, onStateChange, onSortChange, onMinRevenueChange, onMaxRevenueChange, onScoreTierChange,
   onCauseChange, onClearAll, resultCount,
 }: FilterSheetProps) {
   useEffect(() => {
@@ -79,10 +72,12 @@ export default function FilterSheet({
 
   if (!open) return null
 
+  const hasRevenueFilter = minRevenue > 0 || maxRevenue < 500_000_000
+
   const activeCount = [
     activeCategory !== 'all',
     !!stateFilter,
-    !!revenueFilter,
+    hasRevenueFilter,
     !!scoreTier,
     !!cause,
   ].filter(Boolean).length
@@ -187,24 +182,13 @@ export default function FilterSheet({
 
           {/* Revenue */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Revenue</span>
-            <div className="grid grid-cols-2 gap-2">
-              {REVENUE_PRESETS.map(preset => (
-                <button
-                  key={preset.id}
-                  onClick={() => onRevenueChange(revenueFilter === preset.id ? '' : preset.id)}
-                  className="px-3 py-2.5 rounded-xl font-body text-[13px] border text-left transition-all"
-                  style={{
-                    backgroundColor: revenueFilter === preset.id ? 'rgba(201,169,110,0.10)' : '#F5F0EB',
-                    color: revenueFilter === preset.id ? '#C9A96E' : '#6B7280',
-                    borderColor: revenueFilter === preset.id ? '#C9A96E' : 'transparent',
-                    fontWeight: revenueFilter === preset.id ? '600' : '400',
-                  }}
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Revenue Range</span>
+            <RevenueRangeInput
+              min={minRevenue}
+              max={maxRevenue}
+              onMinChange={onMinRevenueChange}
+              onMaxChange={onMaxRevenueChange}
+            />
           </div>
 
           {/* Sort */}

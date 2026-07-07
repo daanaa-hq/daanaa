@@ -30,17 +30,6 @@ const SORT_OPTIONS = [
 // Small first. This is the mission: the smallest groups are the hardest to find.
 // Eight donor-facing size bands (mirrors the methodology's eight-band thinking
 // with simple, universal dollar breakpoints).
-const REVENUE_PRESETS = [
-  { id: 'b1', label: 'Under $50K',     min: undefined,   max: 49_999 },
-  { id: 'b2', label: '$50K – $100K',   min: 50_000,      max: 99_999 },
-  { id: 'b3', label: '$100K – $250K',  min: 100_000,     max: 249_999 },
-  { id: 'b4', label: '$250K – $1M',    min: 250_000,     max: 999_999 },
-  { id: 'b5', label: '$1M – $5M',      min: 1_000_000,   max: 4_999_999 },
-  { id: 'b6', label: '$5M – $25M',     min: 5_000_000,   max: 24_999_999 },
-  { id: 'b7', label: '$25M – $100M',   min: 25_000_000,  max: 99_999_999 },
-  { id: 'b8', label: 'Over $100M',     min: 100_000_000, max: undefined },
-] as const
-
 const SCORE_TIERS: { id: TierName; label: string }[] = [
   { id: 'Beacon',  label: 'Beacon' },
   { id: 'Torch',   label: 'Torch +' },
@@ -56,7 +45,6 @@ const VISIBILITY_TIERS = [
   { id: 'Spark', label: 'Spark', description: 'Minimal public info' },
 ] as const
 
-type RevenueId = typeof REVENUE_PRESETS[number]['id'] | ''
 type ScoreTierId = TierName | ''
 
 function hasKnownDataSource(src: string | null) {
@@ -136,7 +124,8 @@ export default function Directory() {
     'Search 1.8 million+ tax-deductible 501(c)(3) organizations recognized by the IRS, by cause, category, and location.'
   )
   const stateParam    = searchParams.get('state') || ''
-  const revenueParam  = searchParams.get('revenue') || ''
+  const minRevenueParam = Number(searchParams.get('min_revenue') || '0')
+  const maxRevenueParam = Number(searchParams.get('max_revenue') || '500000000')
   const tierParam     = searchParams.get('min_tier') || ''
 
   const [searchQuery, setSearchQuery] = useState(qParam)
@@ -161,9 +150,8 @@ export default function Directory() {
     setSubFilters(subParamList)
     setStateFilter(stateParam)
   }, [categoryParam, subParam, stateParam])
-  const [revenueFilter, setRevenueFilter] = useState<RevenueId>(
-    REVENUE_PRESETS.some(p => p.id === revenueParam) ? revenueParam as RevenueId : ''
-  )
+  const [minRevenue, setMinRevenue] = useState(minRevenueParam)
+  const [maxRevenue, setMaxRevenue] = useState(maxRevenueParam)
   const [scoreTier, setScoreTier] = useState<ScoreTierId>(
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
@@ -219,8 +207,6 @@ export default function Directory() {
     return () => clearTimeout(t)
   }, [cause])
 
-  // Resolve revenue preset to API params
-  const revPreset = REVENUE_PRESETS.find(p => p.id === revenueFilter)
 
   // A search query, or an explicit location filter, means the user is asking
   // "what's here" — so the gems-default lens is dropped (otherwise a zip/city
@@ -229,7 +215,8 @@ export default function Directory() {
   const effectiveHiddenGem = hiddenGem && !debouncedQuery.trim() && !near
 
   // Fused search mode: any meaningful query with no active structured filters
-  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || !!revenueFilter || !!scoreTier || hasWebsite || needsSupport || !!visTier || !!debouncedCause.trim()
+  const hasRevenueFilter = minRevenue > 0 || maxRevenue < 500_000_000
+  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || hasRevenueFilter || !!scoreTier || hasWebsite || needsSupport || !!visTier || !!debouncedCause.trim()
   const isFusedMode = !hasAnyFilter && debouncedQuery.trim().length >= 2
 
   // Categories the user drilled into (picked specific subcats) are represented by
@@ -247,8 +234,8 @@ export default function Directory() {
       order: sortOrder,
       page: currentPage,
       per_page: itemsPerPage,
-      min_revenue: revPreset?.min,
-      max_revenue: revPreset?.max,
+      min_revenue: minRevenue > 0 ? minRevenue : undefined,
+      max_revenue: maxRevenue < 500_000_000 ? maxRevenue : undefined,
       min_tier: scoreTier || undefined,
       tier: visTier || undefined,
       has_website: hasWebsite || undefined,
@@ -258,7 +245,7 @@ export default function Directory() {
       near: near || undefined,
       radius_mi: near ? radiusMi : undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, revenueFilter, scoreTier, visTier, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, scoreTier, visTier, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
@@ -313,11 +300,19 @@ export default function Directory() {
     setSearchParams(searchParams)
   }
 
-  const handleRevenueChange = (id: RevenueId) => {
-    setRevenueFilter(id)
+  const handleMinRevenueChange = (value: number) => {
+    setMinRevenue(value)
     setCurrentPage(1)
     scrollTop()
-    if (id) { searchParams.set('revenue', id) } else { searchParams.delete('revenue') }
+    if (value > 0) { searchParams.set('min_revenue', String(value)) } else { searchParams.delete('min_revenue') }
+    setSearchParams(searchParams)
+  }
+
+  const handleMaxRevenueChange = (value: number) => {
+    setMaxRevenue(value)
+    setCurrentPage(1)
+    scrollTop()
+    if (value < 500_000_000) { searchParams.set('max_revenue', String(value)) } else { searchParams.delete('max_revenue') }
     setSearchParams(searchParams)
   }
 
@@ -346,7 +341,8 @@ export default function Directory() {
     setStateFilter('')
     setSortBy('organization_name')
     setSortOrder('asc')
-    setRevenueFilter('')
+    setMinRevenue(0)
+    setMaxRevenue(500_000_000)
     setScoreTier('')
     setVisTier('')
     setHasWebsite(false)
@@ -361,7 +357,8 @@ export default function Directory() {
     searchParams.delete('sub')
     searchParams.delete('q')
     searchParams.delete('state')
-    searchParams.delete('revenue')
+    searchParams.delete('min_revenue')
+    searchParams.delete('max_revenue')
     searchParams.delete('min_tier')
     searchParams.delete('tier')
     searchParams.delete('has_website')
@@ -409,7 +406,7 @@ export default function Directory() {
   let organizations = useFusedResults ? fusedResults : (orgsData?.organizations || [])
 
   // Apply shuffle when browsing all orgs with no filters/search (discover mode)
-  const shouldShuffle = effectiveHiddenGem && !useFusedResults && !debouncedQuery.trim() && activeFilters.length === 0 && !stateFilter && !revenueFilter && !scoreTier && !visTier
+  const shouldShuffle = effectiveHiddenGem && !useFusedResults && !debouncedQuery.trim() && activeFilters.length === 0 && !stateFilter && !hasRevenueFilter && !scoreTier && !visTier
   if (shouldShuffle && organizations.length > 0) {
     organizations = seededShuffle(organizations, sessionShuffleRef.current)
   }
@@ -433,7 +430,12 @@ export default function Directory() {
   }
 
   // Readable label for active revenue filter
-  const revLabel = revPreset?.label ?? ''
+  const formatRevenue = (val: number) => {
+    if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(0)}M`
+    if (val >= 1_000) return `$${(val / 1_000).toFixed(0)}K`
+    return `$${val}`
+  }
+  const revLabel = hasRevenueFilter ? `${formatRevenue(minRevenue)}–${formatRevenue(maxRevenue)}` : ''
 
   // Readable label for active score tier
   const scoreLabel = SCORE_TIERS.find(t => t.id === scoreTier)?.label ?? ''
@@ -442,7 +444,7 @@ export default function Directory() {
     activeFilters.length > 0,
     subFilters.length > 0,
     !!stateFilter,
-    !!revenueFilter,
+    hasRevenueFilter,
     !!scoreTier,
     !!visTier,
     hasWebsite,
@@ -724,25 +726,42 @@ export default function Directory() {
                 <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
               {/* Revenue band */}
-              <div className="relative">
-                <select
-                  value={revenueFilter}
-                  onChange={e => handleRevenueChange((e.target.value || '') as RevenueId)}
-                  title="Filter by the organization's annual revenue size"
-                  aria-label="Filter by revenue size"
-                  className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
-                  style={{
-                    backgroundColor: revenueFilter ? '#C9A96E' : 'transparent',
-                    color: revenueFilter ? '#0A1628' : '#4B5563',
-                    borderColor: revenueFilter ? '#C9A96E' : '#E5E0DB',
-                  }}
-                >
-                  <option value="">Any size</option>
-                  {REVENUE_PRESETS.map(p => (
-                    <option key={p.id} value={p.id}>{p.label}</option>
-                  ))}
-                </select>
-                <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 max-w-[120px]">
+                  <input
+                    type="text"
+                    value={minRevenue > 0 ? `$${(minRevenue / 1_000).toFixed(0)}K` : '$0'}
+                    onChange={(e) => {
+                      const num = parseInt(e.target.value.replace(/[^\d]/g, ''), 10)
+                      if (!isNaN(num)) handleMinRevenueChange(num)
+                    }}
+                    title="Minimum annual revenue"
+                    aria-label="Minimum revenue"
+                    className="h-[34px] px-2.5 rounded-full font-body text-[12px] border outline-none focus:border-soft-gold transition-all"
+                    style={{
+                      borderColor: hasRevenueFilter ? '#C9A96E' : '#E5E0DB',
+                      backgroundColor: hasRevenueFilter ? 'rgba(201,169,110,0.05)' : 'transparent',
+                    }}
+                  />
+                </div>
+                <span className="text-cool-grey text-[12px]">to</span>
+                <div className="flex-1 max-w-[120px]">
+                  <input
+                    type="text"
+                    value={maxRevenue < 500_000_000 ? `$${(maxRevenue / 1_000_000).toFixed(0)}M` : '$500M+'}
+                    onChange={(e) => {
+                      const num = parseInt(e.target.value.replace(/[^\d]/g, ''), 10)
+                      if (!isNaN(num)) handleMaxRevenueChange(num * 1_000_000)
+                    }}
+                    title="Maximum annual revenue"
+                    aria-label="Maximum revenue"
+                    className="h-[34px] px-2.5 rounded-full font-body text-[12px] border outline-none focus:border-soft-gold transition-all"
+                    style={{
+                      borderColor: hasRevenueFilter ? '#C9A96E' : '#E5E0DB',
+                      backgroundColor: hasRevenueFilter ? 'rgba(201,169,110,0.05)' : 'transparent',
+                    }}
+                  />
+                </div>
               </div>
               {/* State */}
               <div className="relative">
@@ -827,13 +846,15 @@ export default function Directory() {
             activeCategory={activeFilters[0] ?? 'all'}
             stateFilter={stateFilter}
             sortBy={sortBy}
-            revenueFilter={revenueFilter}
+            minRevenue={minRevenue}
+            maxRevenue={maxRevenue}
             scoreTier={scoreTier}
             cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
             onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
-            onRevenueChange={(id) => handleRevenueChange(id as RevenueId)}
+            onMinRevenueChange={handleMinRevenueChange}
+            onMaxRevenueChange={handleMaxRevenueChange}
             onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
             onCauseChange={setCause}
             onClearAll={handleClearAll}
@@ -878,7 +899,7 @@ export default function Directory() {
                   )}
 
                   {/* Active filter chips */}
-                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || revenueFilter || scoreTier || visTier || near) && (
+                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || hasRevenueFilter || scoreTier || visTier || near) && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-[11px]">
@@ -916,9 +937,9 @@ export default function Directory() {
                           {stateFilter} ×
                         </button>
                       )}
-                      {revenueFilter && (
+                      {hasRevenueFilter && (
                         <button
-                          onClick={() => handleRevenueChange('')}
+                          onClick={() => { handleMinRevenueChange(0); handleMaxRevenueChange(500_000_000) }}
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {revLabel} ×
