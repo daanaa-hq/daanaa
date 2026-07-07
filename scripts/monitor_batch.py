@@ -45,6 +45,7 @@ def check_batch_health(
           or None if no metrics found
         - quality_trend (str|None): Trend indicator ('↑' up, '↓' down, '→' flat),
           or None if insufficient data
+        - by_type (dict): Mapping of enrichment_type to count for the checked date
     """
     if check_date is None:
         check_date = str(date.today() - timedelta(days=1))
@@ -58,6 +59,13 @@ def check_batch_health(
     )
     enrichment_count = cursor.fetchone()[0]
     batch_ran = enrichment_count > 0
+
+    # Get per-type breakdown for the checked date
+    cursor.execute(
+        "SELECT enrichment_type, COUNT(*) FROM enrichment_run WHERE run_date = ? GROUP BY enrichment_type",
+        (check_date,)
+    )
+    by_type = {row[0]: row[1] for row in cursor.fetchall()}
 
     # Get quality metrics from past 3 days (including the check_date)
     check_date_obj = date.fromisoformat(check_date)
@@ -101,7 +109,8 @@ def check_batch_health(
         'enrichment_count': enrichment_count,
         'checked_date': check_date,
         'quality_avg': quality_avg,
-        'quality_trend': quality_trend
+        'quality_trend': quality_trend,
+        'by_type': by_type
     }
 
 
@@ -123,6 +132,8 @@ def main(db_path: Optional[str] = None, check_date: Optional[str] = None):
 
     if health['batch_ran']:
         print(f"✓ Batch ran: {health['enrichment_count']} enrichments")
+        for etype, count in sorted(health['by_type'].items()):
+            print(f"    {etype}: {count:,}")
     else:
         print(f"⚠ Batch MISSING ({checked_date})")
 

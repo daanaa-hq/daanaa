@@ -229,3 +229,30 @@ def test_check_batch_health_mixed_enrichment_types(test_db):
 
     assert health['batch_ran'] is True
     assert health['enrichment_count'] == 5
+
+
+def test_check_batch_health_includes_per_type_breakdown(test_db):
+    """Test that check_batch_health returns per-enrichment-type breakdown.
+
+    Setup:
+    - 2 cause_tags, 1 mission, 1 website from today
+    - Expected by_type: {'cause_tags': 2, 'mission': 1, 'website': 1}
+    """
+    from scripts.monitor_batch import check_batch_health
+
+    today = str(date.today())
+    cursor = test_db.cursor()
+    cursor.execute("""
+        INSERT INTO enrichment_run
+        (run_date, org_ein, enrichment_type, generated_value, confidence_score, prompt_version)
+        VALUES
+        (?, '111', 'cause_tags', 'Education', 0.7, 'v1.0'),
+        (?, '111', 'mission', 'Some mission', 0.85, 'v1.0'),
+        (?, '222', 'cause_tags', 'Health', 0.7, 'v1.0'),
+        (?, '222', 'website', 'example.org', 0.9, 'v1.0')
+    """, (today, today, today, today))
+    test_db.commit()
+
+    health = check_batch_health(test_db, check_date=today)
+
+    assert health['by_type'] == {'cause_tags': 2, 'mission': 1, 'website': 1}
