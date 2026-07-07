@@ -173,7 +173,10 @@ def test_db():
             run_id INTEGER PRIMARY KEY AUTOINCREMENT,
             run_date DATE NOT NULL,
             org_ein TEXT NOT NULL,
-            enrichment_type TEXT NOT NULL CHECK(enrichment_type IN ('cause_tags', 'website')),
+            enrichment_type TEXT NOT NULL CHECK(enrichment_type IN (
+                'cause_tags', 'website', 'mission', 'volunteer_url',
+                'donate_url', 'donate_url_review'
+            )),
             generated_value TEXT NOT NULL,
             confidence_score REAL CHECK(confidence_score >= 0.0 AND confidence_score <= 1.0),
             context_used TEXT,

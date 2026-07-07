@@ -163,7 +163,11 @@ class QwenInference:
             if org.get('website')
         ])
 
-        state = org_data.get('state', 'CA')
+        # org_data['state'] may be present but None (e.g. an org row with no
+        # STATE value on file) - dict.get's default only applies when the key
+        # is *missing*, not when it's None, so an explicit `or` fallback is
+        # required here to actually avoid passing None through.
+        state = org_data.get('state') or 'CA'
         state_patterns = self._get_state_domain_patterns(state)
 
         template = self.prompts.get('website', '')
@@ -202,7 +206,10 @@ class QwenInference:
         return emphasis_map.get((ntee or '?')[0:1], 'community impact, service type')
 
     def _get_state_domain_patterns(self, state: str) -> str:
-        state_abbrev = state.lower()[:2]
+        # Defense in depth: guard against None even though _build_website_prompt
+        # already normalizes state before calling this, in case a future
+        # caller invokes this helper directly with a None/missing state.
+        state_abbrev = (state or '').lower()[:2]
         patterns_map = {
             'ca': '.org, .ngo, nonprofit-ca.org', 'ny': '.org, nonprofit-ny.org, charitable.org',
             'tx': '.org, .net, nonprofit-tx.org', 'fl': '.org, .net, nonprofit-fl.org',

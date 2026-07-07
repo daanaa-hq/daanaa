@@ -44,6 +44,8 @@ from scripts.semantic_lookup import SemanticLookup
 from scripts.qwen_inference import QwenInference
 from scripts.quality_measurement import QualityMeasurement
 from scripts.prompt_improvement import PromptImprovement
+from scripts.website_content import validate_and_fetch_website
+from scripts.donate_confidence import score_confidence, identity_match
 
 logging.basicConfig(
     level=logging.INFO,
@@ -230,17 +232,18 @@ class EnrichmentBatch:
         cursor = self.db.cursor()
 
         query = """
-            SELECT EIN, organization_name, mission, NTEE1, city, state
+            SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url
             FROM registry_enriched
             WHERE (cause_tags IS NULL OR cause_tags = '')
                OR (website IS NULL OR website = '')
+               OR (mission_source IN ('ai_ntee', 'template_ntee') OR mission_source IS NULL)
             LIMIT ?
         """
         cursor.execute(query, (max_orgs or 1000000,))
         orgs = cursor.fetchall()
 
         results = []
-        for ein, name, mission, ntee, city, state in orgs:
+        for ein, name, mission, mission_source, ntee, city, state, existing_donate_url in orgs:
             try:
                 org_data = {
                     'EIN': ein, 'name': name, 'mission': mission,
@@ -249,7 +252,53 @@ class EnrichmentBatch:
 
                 similar_orgs = self.semantic.find_similar_orgs(org_ein=ein, count=5)
 
-                tags = self.qwen.generate_tags(org_data, similar_orgs)
+                # Website: guess a candidate domain, then validate with a
+                # single fetch + identity check (not a crawl/search loop).
+                candidate_website = self.qwen.generate_website(org_data, similar_orgs)
+                website_result = None
+                if candidate_website:
+                    website_result = validate_and_fetch_website(
+                        db_con=self.db, ein=ein, org_name=name,
+                        candidate_url=candidate_website
+                    )
+
+                if website_result:
+                    results.append({
+                        'org_ein': ein, 'enrichment_type': 'website',
+                        'generated_value': website_result['url'], 'confidence_score': 0.9,
+                        'context_used': json.dumps({'identity_level': website_result['identity_level']}),
+                        'prompt_version': self.qwen.prompt_version
+                    })
+                    if website_result.get('volunteer_url'):
+                        results.append({
+                            'org_ein': ein, 'enrichment_type': 'volunteer_url',
+                            'generated_value': website_result['volunteer_url'], 'confidence_score': 0.9,
+                            'context_used': '{}', 'prompt_version': self.qwen.prompt_version
+                        })
+
+                # Mission: grounded in real website content if validated,
+                # else fall back to the existing NTEE/similar-org approach —
+                # but only regenerate if the current mission is weak/missing.
+                grounding_context = website_result['content_text'] if website_result else None
+                if mission_source in (None, 'ai_ntee', 'template_ntee') or not mission:
+                    if grounding_context:
+                        new_mission = self.qwen.generate_mission_from_website(org_data, grounding_context)
+                        new_mission_source = 'ai_web_grounded'
+                    else:
+                        new_mission = None
+                        new_mission_source = None
+                    if new_mission:
+                        results.append({
+                            'org_ein': ein, 'enrichment_type': 'mission',
+                            'generated_value': new_mission, 'confidence_score': 0.85,
+                            'context_used': json.dumps({'mission_source': new_mission_source}),
+                            'prompt_version': self.qwen.prompt_version
+                        })
+                        org_data['mission'] = new_mission  # feed forward to tags below
+
+                # Cause tags: informed by (possibly-regenerated) mission +
+                # website content when available.
+                tags = self.qwen.generate_tags(org_data, similar_orgs, grounding_context=grounding_context)
                 if tags:
                     results.append({
                         'org_ein': ein, 'enrichment_type': 'cause_tags',
@@ -258,14 +307,36 @@ class EnrichmentBatch:
                         'prompt_version': self.qwen.prompt_version
                     })
 
-                website = self.qwen.generate_website(org_data, similar_orgs)
-                if website:
-                    results.append({
-                        'org_ein': ein, 'enrichment_type': 'website',
-                        'generated_value': website, 'confidence_score': 0.7,
-                        'context_used': json.dumps({'similar_count': len(similar_orgs)}),
-                        'prompt_version': self.qwen.prompt_version
-                    })
+                # Donate URL: only attempt if none exists yet, gated through
+                # the proven score_confidence()/identity_match() logic —
+                # below-threshold candidates are flagged for human review,
+                # never written as the live donate_url.
+                if not existing_donate_url:
+                    donate_candidate = self.qwen.generate_website(
+                        {**org_data, 'name': f"{name} donate"}, similar_orgs
+                    )
+                    if donate_candidate:
+                        page_text = website_result['content_text'] if website_result else ''
+                        level, ratio = identity_match(name, page_text)
+                        factors = {
+                            'found_on_official_website': bool(website_result),
+                            'nonprofit_name_visible': level in ('exact', 'strong'),
+                        }
+                        confidence = score_confidence(factors)
+                        if confidence >= 65:
+                            results.append({
+                                'org_ein': ein, 'enrichment_type': 'donate_url',
+                                'generated_value': donate_candidate, 'confidence_score': confidence / 100.0,
+                                'context_used': json.dumps({'identity_level': level}),
+                                'prompt_version': self.qwen.prompt_version
+                            })
+                        else:
+                            results.append({
+                                'org_ein': ein, 'enrichment_type': 'donate_url_review',
+                                'generated_value': donate_candidate, 'confidence_score': confidence / 100.0,
+                                'context_used': json.dumps({'identity_level': level}),
+                                'prompt_version': self.qwen.prompt_version
+                            })
             except Exception as e:
                 # Defense in depth: qwen_inference.py guards against the known
                 # NULL/empty NTEE crash, but one org's unexpected failure
@@ -289,6 +360,63 @@ class EnrichmentBatch:
                     result.get('prompt_version', 'v1.0')
                 )
             )
+        self.db.commit()
+        self._promote_to_registry(results)
+
+    def _promote_to_registry(self, results: list) -> None:
+        """Write passing enrichment results directly to registry_enriched.
+
+        This closes the gap where the previous build wrote only to the
+        enrichment_run staging table, which nothing else ever read from —
+        nothing it produced was ever visible on daanaa.org. Each org's
+        promotion is independent (one failure doesn't affect others), and
+        never overwrites existing data with a lower-confidence guess:
+        cause_tags/website/mission only promote when the corresponding
+        registry_enriched field is currently empty/weak; donate_url only
+        promotes above the confidence threshold, otherwise flags human_review.
+        """
+        cursor = self.db.cursor()
+        for result in results:
+            try:
+                ein = result['org_ein']
+                etype = result['enrichment_type']
+                value = result['generated_value']
+
+                if etype == 'cause_tags':
+                    cursor.execute(
+                        "UPDATE registry_enriched SET cause_tags = ? WHERE EIN = ? AND (cause_tags IS NULL OR cause_tags = '')",
+                        (value, ein)
+                    )
+                elif etype == 'website':
+                    cursor.execute(
+                        "UPDATE registry_enriched SET website = ? WHERE EIN = ? AND (website IS NULL OR website = '')",
+                        (value, ein)
+                    )
+                elif etype == 'volunteer_url':
+                    cursor.execute(
+                        "UPDATE registry_enriched SET volunteer_url = ? WHERE EIN = ?",
+                        (value, ein)
+                    )
+                elif etype == 'mission':
+                    context = json.loads(result.get('context_used') or '{}')
+                    mission_source = context.get('mission_source', 'ai_web_grounded')
+                    cursor.execute(
+                        "UPDATE registry_enriched SET mission = ?, mission_source = ? WHERE EIN = ?",
+                        (value, mission_source, ein)
+                    )
+                elif etype == 'donate_url':
+                    cursor.execute(
+                        "UPDATE registry_enriched SET donate_url = ?, donate_confidence = ?, donate_human_review = 0 WHERE EIN = ? AND (donate_url IS NULL OR donate_url = '')",
+                        (value, result['confidence_score'], ein)
+                    )
+                elif etype == 'donate_url_review':
+                    cursor.execute(
+                        "UPDATE registry_enriched SET donate_human_review = 1, donate_confidence = ? WHERE EIN = ? AND (donate_url IS NULL OR donate_url = '')",
+                        (result['confidence_score'], ein)
+                    )
+            except Exception as e:
+                logger.error(f"Failed to promote {result.get('enrichment_type')} for org {result.get('org_ein')}: {e}")
+                continue
         self.db.commit()
 
 
