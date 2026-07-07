@@ -401,3 +401,87 @@ class TestConsolidatedEnrichment:
         donate_url, donate_human_review = cursor.fetchone()
         assert donate_url is None  # not written — below threshold
         assert donate_human_review == 1  # flagged for review
+
+
+class TestFullConsolidatedFlow:
+    """One realistic org through the entire sequenced pipeline, verifying
+    every stage's output lands correctly — this is the test that would have
+    caught 'nothing promotes to registry_enriched' if it had existed before
+    the original 10-task build shipped."""
+
+    def test_realistic_org_full_flow(self, test_db, mock_embeddings, enrich_config):
+        cursor = test_db.cursor()
+        cursor.execute("""
+            INSERT INTO registry_enriched
+            (EIN, organization_name, NTEE1, CITY, STATE, mission, mission_source,
+             cause_tags, website, donate_url, donate_human_review)
+            VALUES ('123456789', 'Riverside Youth Robotics', 'B25', 'Portland', 'OR',
+                    'Provides educational services in Portland, OR.', 'ai_ntee',
+                    '', '', NULL, NULL)
+        """)
+        test_db.commit()
+
+        fake_website = {
+            'url': 'https://riversideyouthrobotics.org',
+            'content_text': (
+                'Riverside Youth Robotics runs free after-school robotics '
+                'and coding clubs for 6th-8th graders across three Portland '
+                'middle schools, serving 150 students per year.'
+            ),
+            'identity_level': 'exact',
+            'identity_ratio': 1.0,
+            'volunteer_url': 'https://riversideyouthrobotics.org/volunteer',
+        }
+
+        def realistic_qwen(prompt: str, max_tokens: int = 200) -> str:
+            if 'website' in prompt.lower() and 'donate' not in prompt.lower():
+                return 'riversideyouthrobotics.org'
+            if 'donate' in prompt.lower():
+                return 'riversideyouthrobotics.org/donate'
+            if 'robotics and coding clubs' in prompt.lower() or 'saturday' in prompt.lower() or 'middle schools' in prompt.lower():
+                return 'Runs free after-school robotics and coding clubs for 150 middle schoolers across three Portland schools.'
+            if 'tags' in prompt.lower():
+                return 'Youth Development, STEM Education, Robotics'
+            return 'generic response'
+
+        from scripts.enrich_batch import EnrichmentBatch
+
+        with patch('scripts.enrich_batch.validate_and_fetch_website', return_value=fake_website):
+            batch = EnrichmentBatch(
+                db_con=test_db, qwen_fn=realistic_qwen, embeddings_fn=mock_embeddings,
+                config=enrich_config
+            )
+            stats = batch.run(dry_run=False, max_orgs=1)
+
+        cursor.execute("""
+            SELECT mission, mission_source, cause_tags, website, volunteer_url,
+                   donate_url, donate_human_review, donate_confidence
+            FROM registry_enriched WHERE EIN = '123456789'
+        """)
+        row = cursor.fetchone()
+        mission, mission_source, cause_tags, website, volunteer_url, donate_url, donate_review, donate_conf = row
+
+        # Mission was regenerated and grounded — no longer the generic template
+        assert mission != 'Provides educational services in Portland, OR.'
+        assert 'robotics' in mission.lower() or 'coding' in mission.lower()
+        assert mission_source == 'ai_web_grounded'
+
+        # Website was validated and promoted
+        assert website == 'https://riversideyouthrobotics.org'
+
+        # Volunteer page was captured, even though nothing displays it yet
+        assert volunteer_url == 'https://riversideyouthrobotics.org/volunteer'
+
+        # Cause tags were generated
+        assert cause_tags
+
+        # Donate URL: with found_on_official_website + exact identity match,
+        # confidence clears 65 threshold, so it's live (or under review — the
+        # test just needs to confirm ONE of these two consistent states,
+        # not silently written with no evidence trail either way)
+        assert (donate_url is not None) or (donate_review == 1)
+        assert donate_conf is not None
+
+        # Sanity on stats
+        assert stats['orgs_processed'] > 0
+        assert not stats['dry_run']
