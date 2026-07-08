@@ -8,6 +8,7 @@ import { getTierFromOrg, getInlineVerifiedFact } from './TrustBadge'
 import LampMark from './LampMark'
 import type { ApiOrganization } from '../data/api'
 import { normalizeExternalUrl } from '../utils/externalLink'
+import OrgSignals from './OrgSignals'
 import { getCardBadges } from '../utils/badges'
 import { useCompare } from '../contexts/CompareContext'
 import { useWallet } from '../contexts/WalletContext'
@@ -344,6 +345,20 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
         <p className="font-body text-[12px] text-cool-grey/80 leading-[1.55] line-clamp-2 mb-2.5 -mt-1">
           {org.mission}
         </p>
+      )}
+
+      {/* Evidence signals: website, mission clarity, data freshness, cause tags */}
+      {!compact && apiOrg && (
+        <div className="mb-2.5">
+          <OrgSignals
+            website={apiOrg.website}
+            website_status={apiOrg.website_status}
+            mission_source={apiOrg.mission_source}
+            cause_tags={apiOrg.cause_tags}
+            latest_tax_year={apiOrg.latest_tax_year}
+            total_revenue={apiOrg.total_revenue}
+          />
+        </div>
       )}
 
       {/* Revenue (secondary) */}
