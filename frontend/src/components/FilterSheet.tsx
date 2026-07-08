@@ -207,6 +207,7 @@ export default function FilterSheet({
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Sort By</span>
             <div className="flex gap-2">
               {[
+                { value: 'merit_score', label: 'Peer Context' },
                 { value: 'organization_name', label: 'Name A to Z' },
                 { value: 'total_revenue',     label: 'Revenue' },
               ].map(opt => (

@@ -139,7 +139,7 @@ export default function Directory() {
   })
   const [subFilters, setSubFilters] = useState<string[]>(subParamList)
   const [stateFilter, setStateFilter] = useState(stateParam)
-  const [sortBy, setSortBy] = useState('organization_name')
+  const [sortBy, setSortBy] = useState('merit_score')
   const sessionShuffleRef = useRef(Math.random().toString(36).slice(2, 11))
 
   // Sync filter state with URL params whenever they change
@@ -157,8 +157,12 @@ export default function Directory() {
   )
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
   const [verifiedRevenueOnly, setVerifiedRevenueOnly] = useState(searchParams.get('verified_revenue') === '1')
-  // Land on hidden gems by default (the gems-default lens); explicit ?hidden_gem=0 disables
-  const [hiddenGem, setHiddenGem] = useState(searchParams.has('hidden_gem') ? searchParams.get('hidden_gem') === '1' : true)
+  // Hidden gems default only when no filters active; any filter click disables it (unless explicitly ?hidden_gem=1)
+  const hasActiveFilters = categoryParam !== 'all' || subParam || stateParam ||
+    (minRevenueParam > 0 || maxRevenueParam < 500000000) || tierParam
+  const [hiddenGem, setHiddenGem] = useState(
+    searchParams.has('hidden_gem') ? searchParams.get('hidden_gem') === '1' : !hasActiveFilters
+  )
   const [needsSupport, setNeedsSupport] = useState(searchParams.get('needs_funding') === '1')
   const [near, setNear] = useState(searchParams.get('near') || '')
   const [nearInput, setNearInput] = useState(searchParams.get('near') || '')
