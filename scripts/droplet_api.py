@@ -21,11 +21,24 @@ import html as _htmllib
 from flask import Flask, request, jsonify, send_file, send_from_directory, Response, redirect
 from flask_cors import CORS
 
+try:
+    import boto3
+    S3_AVAILABLE = True
+except (ImportError, ModuleNotFoundError):
+    S3_AVAILABLE = False
+    boto3 = None
+
 app = Flask(__name__, static_folder=None)
 # Restrict CORS to the production origins. The SPA is served same-origin, so
 # this only governs cross-origin API calls — no need to allow the whole web.
 CORS(app, origins=["https://daanaa.org", "https://www.daanaa.org"],
      supports_credentials=False)
+
+# Log S3 enrichment availability at startup
+if S3_AVAILABLE:
+    print("[INFO] S3 enrichment layer: AVAILABLE (Phase 2a)", flush=True)
+else:
+    print("[INFO] S3 enrichment layer: NOT AVAILABLE (boto3 missing or AWS creds not set)", flush=True)
 
 
 @app.after_request
@@ -432,6 +445,40 @@ def _patch_v5_benchmarks(data: dict) -> None:
                 f"in reserve. This one has {reserves:.1f} months. {health_desc} "
                 f"This comparison is based on public IRS 990 data from {peer_count:,} similar organizations."
             )
+
+
+def _fetch_s3_enrichment(ein: str) -> dict:
+    """Fetch contact + programs enrichment data from S3 (Phase 2a).
+
+    Returns dict with 'contact' and 'programs' keys, or empty dict if S3 unavailable.
+    """
+    enrichment = {}
+
+    if not S3_AVAILABLE:
+        return enrichment
+
+    try:
+        s3 = boto3.client('s3', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+
+        # Fetch contact data
+        try:
+            response = s3.get_object(Bucket='daanaa-enrichment', Key=f'contact/{ein}.json')
+            enrichment['contact'] = json.loads(response['Body'].read())
+        except:
+            pass  # S3 NoSuchKey is expected for orgs without enrichment
+
+        # Fetch programs data
+        try:
+            response = s3.get_object(Bucket='daanaa-enrichment', Key=f'programs/{ein}.json')
+            enrichment['programs'] = json.loads(response['Body'].read())
+        except:
+            pass
+
+    except Exception as e:
+        # Silent fail: S3 unavailable or credentials missing - just don't include enrichment
+        pass
+
+    return enrichment
 
 
 def load_org_detail(ein: str) -> dict | None:
@@ -848,6 +895,13 @@ def get_organization(ein):
     if not org_data:
         return jsonify({'error': 'org not found'}), 404
     org_data = merge_claims(org_data, ein)
+
+    # Optional: load enrichment data from S3 (Phase 2a)
+    if request.args.get('include_enrichment') == '1':
+        enrichment = _fetch_s3_enrichment(ein)
+        if enrichment:
+            org_data.update(enrichment)
+
     return jsonify(org_data)
 
 
