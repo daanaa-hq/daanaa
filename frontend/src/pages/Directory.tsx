@@ -308,16 +308,20 @@ export default function Directory() {
     setMinRevenue(value)
     setCurrentPage(1)
     scrollTop()
-    if (value > 0) { searchParams.set('min_revenue', String(value)) } else { searchParams.delete('min_revenue') }
-    setSearchParams(searchParams)
+    setSearchParams((sp) => {
+      if (value > 0) { sp.set('min_revenue', String(value)) } else { sp.delete('min_revenue') }
+      return sp
+    })
   }
 
   const handleMaxRevenueChange = (value: number) => {
     setMaxRevenue(value)
     setCurrentPage(1)
     scrollTop()
-    if (value < 500_000_000) { searchParams.set('max_revenue', String(value)) } else { searchParams.delete('max_revenue') }
-    setSearchParams(searchParams)
+    setSearchParams((sp) => {
+      if (value < 500_000_000) { sp.set('max_revenue', String(value)) } else { sp.delete('max_revenue') }
+      return sp
+    })
   }
 
   const handleScoreTierChange = (id: ScoreTierId) => {
