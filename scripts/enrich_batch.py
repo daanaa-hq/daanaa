@@ -46,6 +46,9 @@ from scripts.quality_measurement import QualityMeasurement
 from scripts.prompt_improvement import PromptImprovement
 from scripts.website_content import validate_and_fetch_website
 from scripts.donate_confidence import score_confidence, identity_match
+from scripts.contact_extraction import extract_contact_signals
+from scripts.programs_extraction import extract_program_signals
+from scripts.s3_enrichment import upload_contact_data, upload_programs_data, get_s3_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -169,6 +172,11 @@ class EnrichmentBatch:
         self.embeddings_fn = embeddings_fn
         self.config = config
 
+        # S3 client for enrichment storage (Phase 2a)
+        self.s3_client = get_s3_client()
+        if not self.s3_client:
+            logger.warning("S3 client unavailable - enrichment data will not be stored")
+
         self.semantic = SemanticLookup(db_con=db_con, embeddings_fn=embeddings_fn)
         self.quality = QualityMeasurement(db_con=db_con)
         self.improver = PromptImprovement(
@@ -210,6 +218,11 @@ class EnrichmentBatch:
         if not dry_run:
             logger.info("Writing enrichment results to DB")
             self._write_results(enrich_results)
+
+            # Phase 2a: Extract contact + programs signals to S3
+            if self.s3_client:
+                logger.info("Layer 2: Extracting contact + programs signals")
+                self._extract_and_store_enrichment()
 
         elapsed = time.time() - start_time
         stats = {
@@ -430,6 +443,73 @@ class EnrichmentBatch:
                 logger.error(f"Failed to promote {result.get('enrichment_type')} for org {result.get('org_ein')}: {e}")
                 continue
         self.db.commit()
+
+    def _extract_and_store_enrichment(self) -> None:
+        """Phase 2a: Extract contact + programs signals and store in S3.
+
+        For each org with recent enrichment, collect:
+        - Contact info (email, phone, executive name, board size)
+        - Program signals (years active, accreditations, service area)
+        Store to S3, update DB flags.
+        """
+        cursor = self.db.cursor()
+
+        try:
+            # Get all orgs (prioritize those with websites or recent activity)
+            cursor.execute(
+                """SELECT EIN, organization_name, street_address, ruling_date,
+                          website, mission FROM registry_enriched
+                   WHERE website IS NOT NULL OR website_status = 'ok'
+                   LIMIT 1000"""
+            )
+            orgs = cursor.fetchall()
+
+            contact_count = 0
+            programs_count = 0
+
+            for org_row in orgs:
+                try:
+                    org = {
+                        'EIN': org_row[0],
+                        'organization_name': org_row[1],
+                        'street_address': org_row[2],
+                        'ruling_date': org_row[3],
+                        'website': org_row[4],
+                        'mission': org_row[5]
+                    }
+
+                    # Extract contact signals
+                    contact = extract_contact_signals(org)
+                    if contact:
+                        if upload_contact_data(org['EIN'], contact):
+                            contact_count += 1
+                            cursor.execute(
+                                "UPDATE registry_enriched SET contact_available = 1 WHERE EIN = ?",
+                                (org['EIN'],)
+                            )
+
+                    # Extract program signals
+                    programs = extract_program_signals(org)
+                    if programs:
+                        if upload_programs_data(org['EIN'], programs):
+                            programs_count += 1
+                            # Update years_active in DB (queryable field)
+                            years = programs.get('years_active')
+                            cursor.execute(
+                                "UPDATE registry_enriched SET programs_available = 1, years_active = ? WHERE EIN = ?",
+                                (years, org['EIN'])
+                            )
+
+                except Exception as e:
+                    logger.warning(f"Enrichment extraction failed for {org['EIN']}: {e}")
+                    continue
+
+            self.db.commit()
+            logger.info(f"Enrichment extraction complete: {contact_count} contact, {programs_count} programs uploaded")
+
+        except Exception as e:
+            logger.error(f"Enrichment extraction layer failed: {e}")
+            return
 
 
 def main():
