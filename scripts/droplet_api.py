@@ -270,24 +270,6 @@ def _order_clause(sort: str, order: str, alias: str = '') -> str:
     return f"{alias}organization_name {d}"
 
 
-# Legal posture (2026-06-10): no donation links on public surfaces. Donate data
-# stays internal; strip it from every payload — including precomputed files
-# generated before the policy change.
-_DONATE_FIELDS = (
-    'donate_url', 'donate_platform', 'donate_url_status', 'donate_confidence',
-    'donate_source_page', 'donate_identity_match', 'donate_human_review',
-    'donate_checked_at',
-)
-
-def _strip_donate(d: dict) -> dict:
-    for k in _DONATE_FIELDS:
-        d.pop(k, None)
-    badges = d.get('data_badges')
-    if isinstance(badges, dict):
-        badges.pop('donate', None)
-    return d
-
-
 # Peer benchmark stats per (archetype, band) — mirrors enrich_api_responses.py
 _V5_BENCHMARKS = {
     ('donation_funded', 'micro'):         {'p25': 6.2,   'p50': 19.2, 'p75': 61.8,  'hr': 49.0},
@@ -383,7 +365,7 @@ def _row_to_org(row) -> dict:
     # Assemble v5_context from v5 columns (present after search.db rebuild with v5 fields)
     if 'merit_archetype_v5' in d:
         d['v5_context'] = _assemble_v5_context(d)
-    return _strip_donate(d)
+    return d
 
 
 def _patch_v5_benchmarks(data: dict) -> None:
@@ -454,7 +436,7 @@ def load_org_detail(ein: str) -> dict | None:
         elif isinstance(data.get('data_badges'), dict) and 'mission' not in data['data_badges']:
             data['data_badges']['mission'] = data.get('mission_source')
         _patch_v5_benchmarks(data)
-        return _strip_donate(data)
+        return data
 
     # Fallback: serve from search.db registry_enriched table (IRS_BMF / bmf_stub orgs)
     conn = get_search_db()
