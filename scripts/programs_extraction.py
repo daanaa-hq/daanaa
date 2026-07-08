@@ -66,26 +66,25 @@ def extract_program_signals(
         html_content: Optional pre-fetched HTML
 
     Returns:
-        Dict with program signals: descriptions, service_area, years_active, accreditations
+        Dict with program signals (or empty dict if no meaningful data found).
+        Only returns if years_active, accreditations, or service_area hints exist.
     """
-    programs = {
-        'programs_verified_date': datetime.now().isoformat(),
-        'program_sources': []
-    }
+    programs = {}
+    has_data = False
 
     # 1. Years active (from ruling date - high confidence)
     if org.get('ruling_date'):
         years_active = calculate_years_active(org['ruling_date'])
         if years_active is not None:
             programs['years_active'] = years_active
-            programs['program_sources'].append('irs_ruling_date')
+            has_data = True
 
     # 2. Accreditations from website
     if html_content:
         accreditations = detect_accreditations(html_content)
         if accreditations:
             programs['accreditations'] = accreditations
-            programs['program_sources'].append('website_badges')
+            has_data = True
 
     # 3. Basic service area hints from mission (simple extraction)
     if org.get('mission'):
@@ -93,6 +92,18 @@ def extract_program_signals(
         # Detect common service area keywords
         if any(x in mission for x in ['houston', 'texas', 'tx', 'metro']):
             programs['service_area_hints'] = ['Houston area', 'Texas']
+            has_data = True
+
+    # Only return if we found something meaningful
+    if has_data:
+        programs['programs_verified_date'] = datetime.now().isoformat()
+        # Track which sources provided data
+        programs['program_sources'] = []
+        if 'years_active' in programs:
+            programs['program_sources'].append('irs_ruling_date')
+        if 'accreditations' in programs:
+            programs['program_sources'].append('website_badges')
+        if 'service_area_hints' in programs:
             programs['program_sources'].append('mission_text')
 
     return programs
