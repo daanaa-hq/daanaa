@@ -16,11 +16,17 @@ AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
 
 
 def get_s3_client():
-    """Get AWS S3 client. Uses AWS credentials from environment."""
+    """Get AWS S3 client. Uses AWS credentials from environment.
+
+    Connectivity check uses list_objects_v2 scoped to enrichment/ rather than
+    head_bucket - the pipeline's IAM policy intentionally grants ListBucket
+    only when filtered to that prefix (least privilege), so head_bucket
+    (which sends no prefix) gets denied even with valid, working credentials.
+    """
     try:
         client = boto3.client('s3', region_name=AWS_REGION)
-        # Test connection
-        client.head_bucket(Bucket=BUCKET_NAME)
+        # Test connection (matches the actual scoped permission, not head_bucket)
+        client.list_objects_v2(Bucket=BUCKET_NAME, Prefix='enrichment/', MaxKeys=1)
         return client
     except Exception as e:
         logger.error(f"S3 connection failed: {e}")
