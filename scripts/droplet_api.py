@@ -162,6 +162,17 @@ def _resolve_location(conn, near_raw):
         ).fetchone()
         if row:
             return row["lat"], row["lon"], row["city"], row["state_id"]
+        # If not found, try state abbreviation as full state name (fallback)
+        state_names = {'AL': 'Alabama', 'TX': 'Texas', 'CA': 'California', 'NY': 'New York',
+                       'FL': 'Florida', 'IL': 'Illinois', 'PA': 'Pennsylvania', 'OH': 'Ohio'}
+        state_full = state_names.get(state_q)
+        if state_full:
+            row = conn.execute(
+                "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? AND state_id=? LIMIT 1",
+                (city_q, state_full)
+            ).fetchone()
+            if row:
+                return row["lat"], row["lon"], row["city"], row["state_id"]
     row = conn.execute(
         "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? LIMIT 1",
         (near.upper(),)
