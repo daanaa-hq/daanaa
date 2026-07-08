@@ -648,7 +648,10 @@ export default function Directory() {
                     title="Use my current location"
                     aria-label="Use my current location"
                     onClick={() => {
-                      if (!navigator.geolocation) return
+                      if (!navigator.geolocation) {
+                        alert('Geolocation not available in your browser')
+                        return
+                      }
                       navigator.geolocation.getCurrentPosition(
                         ({ coords }) => {
                           fetch(`https://nominatim.openstreetmap.org/reverse?lat=${coords.latitude}&lon=${coords.longitude}&format=json`, {
@@ -659,14 +662,27 @@ export default function Directory() {
                               const city = d.address?.city || d.address?.town || d.address?.village || ''
                               const state = d.address?.state_code || d.address?.state || ''
                               const loc = city && state ? `${city}, ${state}` : d.address?.postcode || ''
-                              if (!loc) return
-                              setNearInput(loc); setNear(loc); setCurrentPage(1); scrollTop()
-                              searchParams.set('near', loc); searchParams.set('radius_mi', String(radiusMi))
+                              if (!loc) {
+                                alert('Could not determine location from coordinates')
+                                return
+                              }
+                              setNearInput(loc)
+                              setNear(loc)
+                              searchParams.set('near', loc)
+                              searchParams.set('radius_mi', String(radiusMi))
                               setSearchParams(searchParams)
+                              setCurrentPage(1)
+                              scrollTop()
                             })
-                            .catch(() => {})
+                            .catch(err => {
+                              console.error('Reverse geocoding failed:', err)
+                              alert('Location lookup failed. Try typing your city name.')
+                            })
                         },
-                        () => {}
+                        (error) => {
+                          console.warn('Geolocation permission denied or unavailable:', error.message)
+                          alert('Permission denied. Allow location access to use this feature.')
+                        }
                       )
                     }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-cool-grey/40 hover:text-soft-gold transition-colors"
