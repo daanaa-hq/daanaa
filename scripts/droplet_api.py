@@ -245,12 +245,16 @@ def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias='', verifie
         rev_parts = []
         if not verified_revenue_only:
             rev_parts.append(f"{alias}total_revenue IS NULL")
+        # Range conditions (min AND max) in a subgroup
+        range_parts = []
         if min_rev is not None:
-            rev_parts.append(f"{alias}total_revenue >= ?")
+            range_parts.append(f"{alias}total_revenue >= ?")
             params.append(min_rev)
         if max_rev is not None:
-            rev_parts.append(f"{alias}total_revenue <= ?")
+            range_parts.append(f"{alias}total_revenue <= ?")
             params.append(max_rev)
+        if range_parts:
+            rev_parts.append('(' + ' AND '.join(range_parts) + ')')
         conds.append('(' + ' OR '.join(rev_parts) + ')')
     return conds, params
 
