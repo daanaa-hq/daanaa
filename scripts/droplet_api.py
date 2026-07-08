@@ -458,18 +458,19 @@ def _fetch_s3_enrichment(ein: str) -> dict:
         return enrichment
 
     try:
-        s3 = boto3.client('s3', region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+        s3 = boto3.client('s3', region_name=os.environ.get('AWS_REGION', 'us-east-2'))
+        bucket = os.environ.get('DAANAA_ENRICHMENT_BUCKET', 'daanaa-nonprofit-data')
 
         # Fetch contact data
         try:
-            response = s3.get_object(Bucket='daanaa-enrichment', Key=f'contact/{ein}.json')
+            response = s3.get_object(Bucket=bucket, Key=f'enrichment/contact/{ein}.json')
             enrichment['contact'] = json.loads(response['Body'].read())
         except:
             pass  # S3 NoSuchKey is expected for orgs without enrichment
 
         # Fetch programs data
         try:
-            response = s3.get_object(Bucket='daanaa-enrichment', Key=f'programs/{ein}.json')
+            response = s3.get_object(Bucket=bucket, Key=f'enrichment/programs/{ein}.json')
             enrichment['programs'] = json.loads(response['Body'].read())
         except:
             pass

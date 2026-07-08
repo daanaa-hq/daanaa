@@ -9,9 +9,10 @@ from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-# S3 configuration
-BUCKET_NAME = 'daanaa-enrichment'
-AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
+# S3 configuration — uses the existing daanaa-nonprofit-data bucket (public
+# org enrichment data), not the donor-wallet bucket which holds private data.
+BUCKET_NAME = os.environ.get('DAANAA_ENRICHMENT_BUCKET', 'daanaa-nonprofit-data')
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-2')
 
 
 def get_s3_client():
@@ -71,7 +72,7 @@ def upload_contact_data(ein: str, contact: Dict) -> bool:
         import json
         from datetime import datetime
 
-        s3_path = f'contact/{ein}.json'
+        s3_path = f'enrichment/contact/{ein}.json'
         client.put_object(
             Bucket=BUCKET_NAME,
             Key=s3_path,
@@ -82,7 +83,7 @@ def upload_contact_data(ein: str, contact: Dict) -> bool:
         logger.debug(f"✓ Uploaded {s3_path}")
         return True
     except Exception as e:
-        logger.error(f"Upload failed for contact/{ein}.json: {e}")
+        logger.error(f"Upload failed for enrichment/contact/{ein}.json: {e}")
         return False
 
 
@@ -96,7 +97,7 @@ def upload_programs_data(ein: str, programs: Dict) -> bool:
         import json
         from datetime import datetime
 
-        s3_path = f'programs/{ein}.json'
+        s3_path = f'enrichment/programs/{ein}.json'
         client.put_object(
             Bucket=BUCKET_NAME,
             Key=s3_path,
@@ -107,7 +108,7 @@ def upload_programs_data(ein: str, programs: Dict) -> bool:
         logger.debug(f"✓ Uploaded {s3_path}")
         return True
     except Exception as e:
-        logger.error(f"Upload failed for programs/{ein}.json: {e}")
+        logger.error(f"Upload failed for enrichment/programs/{ein}.json: {e}")
         return False
 
 
@@ -119,12 +120,12 @@ def get_contact_data(ein: str) -> Optional[Dict]:
 
     try:
         import json
-        response = client.get_object(Bucket=BUCKET_NAME, Key=f'contact/{ein}.json')
+        response = client.get_object(Bucket=BUCKET_NAME, Key=f'enrichment/contact/{ein}.json')
         return json.loads(response['Body'].read())
     except client.exceptions.NoSuchKey:
         return None
     except Exception as e:
-        logger.warning(f"Retrieval failed for contact/{ein}.json: {e}")
+        logger.warning(f"Retrieval failed for enrichment/contact/{ein}.json: {e}")
         return None
 
 
@@ -136,12 +137,12 @@ def get_programs_data(ein: str) -> Optional[Dict]:
 
     try:
         import json
-        response = client.get_object(Bucket=BUCKET_NAME, Key=f'programs/{ein}.json')
+        response = client.get_object(Bucket=BUCKET_NAME, Key=f'enrichment/programs/{ein}.json')
         return json.loads(response['Body'].read())
     except client.exceptions.NoSuchKey:
         return None
     except Exception as e:
-        logger.warning(f"Retrieval failed for programs/{ein}.json: {e}")
+        logger.warning(f"Retrieval failed for enrichment/programs/{ein}.json: {e}")
         return None
 
 
@@ -154,16 +155,16 @@ def list_enriched_orgs(prefix: str = '') -> list:
     try:
         eins = set()
         paginator = client.get_paginator('list_objects_v2')
-        pages = paginator.paginate(Bucket=BUCKET_NAME, Prefix=prefix)
+        pages = paginator.paginate(Bucket=BUCKET_NAME, Prefix=f'enrichment/{prefix}')
 
         for page in pages:
             if 'Contents' not in page:
                 continue
             for obj in page['Contents']:
-                # Extract EIN from key like 'contact/123456789.json'
+                # Extract EIN from key like 'enrichment/contact/123456789.json'
                 parts = obj['Key'].split('/')
-                if len(parts) == 2:
-                    ein = parts[1].replace('.json', '')
+                if len(parts) == 3:
+                    ein = parts[2].replace('.json', '')
                     eins.add(ein)
 
         return sorted(list(eins))
