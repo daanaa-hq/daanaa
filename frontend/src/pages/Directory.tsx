@@ -732,41 +732,37 @@ export default function Directory() {
                 <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
               {/* Revenue band */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 max-w-[120px]">
-                  <input
-                    type="text"
-                    value={minRevenue > 0 ? `$${(minRevenue / 1_000).toFixed(0)}K` : '$0'}
-                    onChange={(e) => {
-                      const num = parseInt(e.target.value.replace(/[^\d]/g, ''), 10)
-                      if (!isNaN(num)) handleMinRevenueChange(num)
-                    }}
+              <div className="inline-flex gap-3">
+                <div>
+                  <select
+                    value={minRevenue}
+                    onChange={(e) => handleMinRevenueChange(parseInt(e.target.value, 10))}
+                    className="h-[34px] px-3 rounded-full bg-warm-cream border border-light-grey font-body text-[12px] font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
                     title="Minimum annual revenue"
-                    aria-label="Minimum revenue"
-                    className="h-[34px] px-2.5 rounded-full font-body text-[12px] border outline-none focus:border-soft-gold transition-all"
-                    style={{
-                      borderColor: hasRevenueFilter ? '#C9A96E' : '#E5E0DB',
-                      backgroundColor: hasRevenueFilter ? 'rgba(201,169,110,0.05)' : 'transparent',
-                    }}
-                  />
+                  >
+                    <option value={0}>$0</option>
+                    <option value={150_000}>$150K</option>
+                    <option value={700_000}>$700K</option>
+                    <option value={5_000_000}>$5M</option>
+                    <option value={25_000_000}>$25M</option>
+                    <option value={100_000_000}>$100M</option>
+                  </select>
                 </div>
-                <span className="text-cool-grey text-[12px]">to</span>
-                <div className="flex-1 max-w-[120px]">
-                  <input
-                    type="text"
-                    value={maxRevenue < 500_000_000 ? `$${(maxRevenue / 1_000_000).toFixed(0)}M` : '$500M+'}
-                    onChange={(e) => {
-                      const num = parseInt(e.target.value.replace(/[^\d]/g, ''), 10)
-                      if (!isNaN(num)) handleMaxRevenueChange(num * 1_000_000)
-                    }}
+                <span className="text-cool-grey text-[12px] flex items-center">to</span>
+                <div>
+                  <select
+                    value={maxRevenue === 500_000_000 ? 'unlimited' : maxRevenue}
+                    onChange={(e) => handleMaxRevenueChange(e.target.value === 'unlimited' ? 500_000_000 : parseInt(e.target.value, 10))}
+                    className="h-[34px] px-3 rounded-full bg-warm-cream border border-light-grey font-body text-[12px] font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
                     title="Maximum annual revenue"
-                    aria-label="Maximum revenue"
-                    className="h-[34px] px-2.5 rounded-full font-body text-[12px] border outline-none focus:border-soft-gold transition-all"
-                    style={{
-                      borderColor: hasRevenueFilter ? '#C9A96E' : '#E5E0DB',
-                      backgroundColor: hasRevenueFilter ? 'rgba(201,169,110,0.05)' : 'transparent',
-                    }}
-                  />
+                  >
+                    <option value={150_000}>$150K</option>
+                    <option value={700_000}>$700K</option>
+                    <option value={5_000_000}>$5M</option>
+                    <option value={25_000_000}>$25M</option>
+                    <option value={100_000_000}>$100M</option>
+                    <option value="unlimited">No limit</option>
+                  </select>
                 </div>
               </div>
               {/* State */}
