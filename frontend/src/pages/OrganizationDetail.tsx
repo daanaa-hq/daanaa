@@ -1558,7 +1558,7 @@ export default function OrganizationDetail() {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
               </a>
             )}
-            {apiOrg?.donate_url && apiOrg?.donate_url_status === 'ai_suggested' && (
+            {apiOrg?.donate_url && (apiOrg?.donate_url_status === 'ai_suggested' || apiOrg?.donate_url_status === 'beta') && (
               <div className="flex-1 flex flex-col gap-1">
                 <a
                   href={apiOrg.donate_url}
