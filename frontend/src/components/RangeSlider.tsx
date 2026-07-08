@@ -61,25 +61,25 @@ export default function RevenueRangeInput({
       {/* Input fields */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="font-body text-[11px] font-medium text-cool-grey uppercase block mb-1.5">Min</label>
+          <label className="font-body text-[11px] font-semibold text-cool-grey uppercase block mb-1.5">Min</label>
           <input
             type="text"
             value={minInput}
             onChange={(e) => handleMinChange(e.target.value)}
             onBlur={() => setMinInput(formatDisplay(min))}
             placeholder="$0"
-            className="w-full h-[44px] px-3 rounded-lg bg-warm-cream border border-light-grey font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold transition-colors"
+            className="w-full h-[44px] px-3 rounded-lg bg-warm-cream border border-light-grey font-body text-[14px] font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors"
           />
         </div>
         <div>
-          <label className="font-body text-[11px] font-medium text-cool-grey uppercase block mb-1.5">Max</label>
+          <label className="font-body text-[11px] font-semibold text-cool-grey uppercase block mb-1.5">Max</label>
           <input
             type="text"
             value={maxInput}
             onChange={(e) => handleMaxChange(e.target.value)}
             onBlur={() => setMaxInput(formatDisplay(max))}
             placeholder="$500M"
-            className="w-full h-[44px] px-3 rounded-lg bg-warm-cream border border-light-grey font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold transition-colors"
+            className="w-full h-[44px] px-3 rounded-lg bg-warm-cream border border-light-grey font-body text-[14px] font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors"
           />
         </div>
       </div>
