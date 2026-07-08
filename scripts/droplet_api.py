@@ -205,12 +205,15 @@ def _fts_where(q: str, state: str = '', conn=None) -> tuple:
     return conditions, params, detected_zip
 
 
-def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias=''):
+def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias='', verified_revenue_only=False):
     """Category + revenue WHERE fragments, mirroring the home daanaa_api
     semantics: any ticked category (NTEE1) or subcategory (NTEECC prefix)
     matches, AND revenue within [min_rev, max_rev]. The old code took only
     the first character of the ntee param, so 'R,I' matched nothing and
-    revenue was ignored entirely (0-results bug on production, 2026-06-09)."""
+    revenue was ignored entirely (0-results bug on production, 2026-06-09).
+
+    verified_revenue_only: if True, exclude orgs with NULL revenue. Default False
+    includes all orgs (Stewardship Principle 4)."""
     conds: list = []
     params: list = []
     cat_parts: list = []
@@ -224,10 +227,11 @@ def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias=''):
         params.append(s + '*')
     if cat_parts:
         conds.append('(' + ' OR '.join(cat_parts) + ')')
-    # Include orgs with unknown revenue (NULL) to avoid silently excluding 1.3M small/data-dark nonprofits
-    # Aligns with Stewardship Principle 4: "Small organizations deserve fairness"
+    # Revenue filter: include no-data orgs by default (stewardship), optionally exclude them
     if min_rev is not None or max_rev is not None:
-        rev_parts = [f"{alias}total_revenue IS NULL"]
+        rev_parts = []
+        if not verified_revenue_only:
+            rev_parts.append(f"{alias}total_revenue IS NULL")
         if min_rev is not None:
             rev_parts.append(f"{alias}total_revenue >= ?")
             params.append(min_rev)
@@ -511,6 +515,7 @@ def get_organizations():
     tier  = request.args.get('tier', '').strip()
     min_rev = request.args.get('min_revenue', type=float)
     max_rev = request.args.get('max_revenue', type=float)
+    verified_revenue_only = request.args.get('verified_revenue', '').strip() == '1'
     # Comma-separated multi-select, same contract as the home daanaa_api:
     # ntee=R,I (category letters) and sub=E21,A82 (NTEECC prefixes), OR-combined.
     ntee_list = [x.strip()[:1] for x in ntee.split(',') if x.strip()][:26]
@@ -562,7 +567,8 @@ def get_organizations():
                                  state, sort, page, per_page,
                                  hidden_gem, needs_funding, has_website, order, tier,
                                  open_to_volunteers=open_to_volunteers,
-                                 nearby_zips=nearby_zips, nearby_meta=nearby_meta)
+                                 nearby_zips=nearby_zips, nearby_meta=nearby_meta,
+                                 verified_revenue_only=verified_revenue_only)
 
     # ── Browse: precomputed files ──────────────────────────────────────────
     category = sub if sub else ntee
@@ -604,14 +610,14 @@ def get_organizations():
 def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                       state, sort, page, per_page,
                       hidden_gem, needs_funding, has_website, order='', tier='',
-                      open_to_volunteers=False, nearby_zips=None, nearby_meta=None):
+                      open_to_volunteers=False, nearby_zips=None, nearby_meta=None, verified_revenue_only=False):
     """Query orgs table directly with filter conditions but no FTS match."""
     conn = get_search_db()
     if not conn:
         return jsonify({'organizations': [], 'total': 0, 'pages': 0,
                         'page': page, 'per_page': per_page})
     try:
-        conditions, params = _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev)
+        conditions, params = _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, verified_revenue_only=verified_revenue_only)
         if state:
             conditions.append("STATE = ?")
             params.append(state)

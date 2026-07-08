@@ -46,6 +46,7 @@ interface FilterSheetProps {
   sortBy: string
   minRevenue: number
   maxRevenue: number
+  verifiedRevenueOnly: boolean
   scoreTier: string
   cause?: string
   onCategoryChange: (id: string) => void
@@ -53,6 +54,7 @@ interface FilterSheetProps {
   onSortChange: (sort: string) => void
   onMinRevenueChange: (value: number) => void
   onMaxRevenueChange: (value: number) => void
+  onVerifiedRevenueChange: (checked: boolean) => void
   onScoreTierChange: (id: string) => void
   onCauseChange?: (v: string) => void
   onClearAll: () => void
@@ -61,8 +63,8 @@ interface FilterSheetProps {
 
 export default function FilterSheet({
   open, onClose,
-  activeCategory, stateFilter, sortBy, minRevenue, maxRevenue, scoreTier, cause = '',
-  onCategoryChange, onStateChange, onSortChange, onMinRevenueChange, onMaxRevenueChange, onScoreTierChange,
+  activeCategory, stateFilter, sortBy, minRevenue, maxRevenue, verifiedRevenueOnly, scoreTier, cause = '',
+  onCategoryChange, onStateChange, onSortChange, onMinRevenueChange, onMaxRevenueChange, onVerifiedRevenueChange, onScoreTierChange,
   onCauseChange, onClearAll, resultCount,
 }: FilterSheetProps) {
   useEffect(() => {
@@ -77,7 +79,7 @@ export default function FilterSheet({
   const activeCount = [
     activeCategory !== 'all',
     !!stateFilter,
-    hasRevenueFilter,
+    hasRevenueFilter || verifiedRevenueOnly,
     !!scoreTier,
     !!cause,
   ].filter(Boolean).length
@@ -189,6 +191,15 @@ export default function FilterSheet({
               onMinChange={onMinRevenueChange}
               onMaxChange={onMaxRevenueChange}
             />
+            <label className="flex items-center gap-2.5 mt-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={verifiedRevenueOnly}
+                onChange={(e) => onVerifiedRevenueChange(e.target.checked)}
+                className="w-5 h-5 rounded border-light-grey checked:bg-soft-gold checked:border-soft-gold cursor-pointer"
+              />
+              <span className="font-body text-[13px] text-deep-navy">Verified revenue only</span>
+            </label>
           </div>
 
           {/* Sort */}

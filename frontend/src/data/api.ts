@@ -227,6 +227,7 @@ export async function getOrganizations(params?: {
   min_tier?: string;          // 'Beacon' | 'Torch' | 'Candle' | 'Spark'
   tier?: string;              // visibility level: 'beacon' | 'torch' | 'candle' | 'spark'
   has_website?: boolean;      // true = only orgs with a verified, live website
+  verified_revenue?: boolean; // true = only orgs with verified revenue data (exclude unknown)
   hidden_gem?: boolean;       // true = only hidden gems (small, healthy, low-profile)
   needs_funding?: boolean;    // true = only orgs with under 6 months of reserve
   open_to_volunteers?: boolean; // true = only orgs with a claimed volunteer contact
@@ -255,6 +256,7 @@ export async function getOrganizations(params?: {
   if (params?.min_tier) sp.set('min_tier', params.min_tier);
   if (params?.tier) sp.set('tier', params.tier);
   if (params?.has_website) sp.set('has_website', '1');
+  if (params?.verified_revenue) sp.set('verified_revenue', '1');
   if (params?.hidden_gem) sp.set('hidden_gem', '1');
   if (params?.needs_funding) sp.set('needs_funding', '1');
   if (params?.open_to_volunteers) sp.set('open_to_volunteers', '1');

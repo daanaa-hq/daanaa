@@ -156,6 +156,7 @@ export default function Directory() {
     SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
   )
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
+  const [verifiedRevenueOnly, setVerifiedRevenueOnly] = useState(searchParams.get('verified_revenue') === '1')
   // Land on hidden gems by default (the gems-default lens); explicit ?hidden_gem=0 disables
   const [hiddenGem, setHiddenGem] = useState(searchParams.has('hidden_gem') ? searchParams.get('hidden_gem') === '1' : true)
   const [needsSupport, setNeedsSupport] = useState(searchParams.get('needs_funding') === '1')
@@ -236,6 +237,7 @@ export default function Directory() {
       per_page: itemsPerPage,
       min_revenue: minRevenue > 0 ? minRevenue : undefined,
       max_revenue: maxRevenue < 500_000_000 ? maxRevenue : undefined,
+      verified_revenue: verifiedRevenueOnly || undefined,
       min_tier: scoreTier || undefined,
       tier: visTier || undefined,
       has_website: hasWebsite || undefined,
@@ -245,7 +247,7 @@ export default function Directory() {
       near: near || undefined,
       radius_mi: near ? radiusMi : undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, scoreTier, visTier, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, verifiedRevenueOnly, scoreTier, visTier, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
@@ -848,6 +850,7 @@ export default function Directory() {
             sortBy={sortBy}
             minRevenue={minRevenue}
             maxRevenue={maxRevenue}
+            verifiedRevenueOnly={verifiedRevenueOnly}
             scoreTier={scoreTier}
             cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
@@ -855,6 +858,7 @@ export default function Directory() {
             onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
             onMinRevenueChange={handleMinRevenueChange}
             onMaxRevenueChange={handleMaxRevenueChange}
+            onVerifiedRevenueChange={(checked) => { setVerifiedRevenueOnly(checked); setCurrentPage(1) }}
             onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
             onCauseChange={setCause}
             onClearAll={handleClearAll}
