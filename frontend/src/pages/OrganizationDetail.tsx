@@ -28,6 +28,7 @@ import CohortContext from '../components/CohortContext'
 import PeerContextBreakdown from '../components/PeerContextBreakdown'
 import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
+import OrgEnrichmentCard from '../components/OrgEnrichmentCard'
 import GuildSection from '../components/GuildSection'
 import MacroContextCard from '../components/MacroContextCard'
 import KnowledgeGraphCard from '../components/KnowledgeGraphCard'
@@ -229,6 +230,8 @@ export default function OrganizationDetail() {
   // 990 Part VII — public compensation disclosure
   const [ppLeadership, setPpLeadership] = useState<{name:string;title:string;initials:string;compensation?:number}[]>([])
   const [ppFilingYear, setPpFilingYear] = useState<number|null>(null)
+  const [enrichmentData, setEnrichmentData] = useState<any>(null)
+  const [enrichmentLoading, setEnrichmentLoading] = useState(false)
 
 
   // Hook must run unconditionally — keep it above any early return (Rules of Hooks)
@@ -276,6 +279,26 @@ export default function OrganizationDetail() {
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [id])
+
+  // Fetch Phase 2a enrichment data (contact + programs) from S3
+  useEffect(() => {
+    if (!id || !apiOrg) return
+
+    setEnrichmentLoading(true)
+    fetch(`/api/organizations/${id}?include_enrichment=1`)
+      .then(r => r.json())
+      .then(data => {
+        setEnrichmentData({
+          contact: data.contact || null,
+          programs: data.programs || null
+        })
+        setEnrichmentLoading(false)
+      })
+      .catch(err => {
+        console.debug('Enrichment fetch failed (expected if S3 unavailable):', err)
+        setEnrichmentLoading(false)
+      })
+  }, [id, apiOrg])
 
   // Fire anonymous view event (fire-and-forget, never awaited)
   useEffect(() => {
