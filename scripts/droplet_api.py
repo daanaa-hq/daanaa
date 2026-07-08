@@ -224,12 +224,17 @@ def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias=''):
         params.append(s + '*')
     if cat_parts:
         conds.append('(' + ' OR '.join(cat_parts) + ')')
-    if min_rev is not None:
-        conds.append(f"{alias}total_revenue >= ?")
-        params.append(min_rev)
-    if max_rev is not None:
-        conds.append(f"{alias}total_revenue <= ?")
-        params.append(max_rev)
+    # Include orgs with unknown revenue (NULL) to avoid silently excluding 1.3M small/data-dark nonprofits
+    # Aligns with Stewardship Principle 4: "Small organizations deserve fairness"
+    if min_rev is not None or max_rev is not None:
+        rev_parts = [f"{alias}total_revenue IS NULL"]
+        if min_rev is not None:
+            rev_parts.append(f"{alias}total_revenue >= ?")
+            params.append(min_rev)
+        if max_rev is not None:
+            rev_parts.append(f"{alias}total_revenue <= ?")
+            params.append(max_rev)
+        conds.append('(' + ' OR '.join(rev_parts) + ')')
     return conds, params
 
 
