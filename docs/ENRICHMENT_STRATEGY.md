@@ -98,6 +98,81 @@ tail -f logs/reembed_watchdog.log     # re-embedding
 
 ---
 
+## Phase 2: Extended Enrichment (S3-backed) — APPROVED 2026-07-08
+
+**Rationale:** Surface no-data orgs fairly by collecting capability signals + contact info.
+Aligns with Stewardship Principle 4 (small orgs deserve fairness).
+
+### Data Collection (Nightly Enrichment + S3)
+
+**Keep in Registry DB (lean, search-fast):**
+- Core org fields: name, EIN, location, website, mission, cause_tags
+- Score fields: merit_score, merit_tier
+- Timestamps: ruling_date (calculate years_active), website_checked_at
+- Flags: contact_available, programs_available
+
+**Store in S3 (detailed, lazy-loaded):**
+- `s3://daanaa-enrichment/contact/{EIN}.json` — Contact signals
+  ```json
+  {
+    "email": "info@org.org",
+    "phone": "+1-555-0000",
+    "street_address": "123 Main St",
+    "executive_name": "Jane Doe",
+    "board_size": 12,
+    "contact_verified_date": "2026-07-08",
+    "contact_sources": ["website_contact_page", "990_filing"]
+  }
+  ```
+  
+- `s3://daanaa-enrichment/programs/{EIN}.json` — Capability signals
+  ```json
+  {
+    "program_descriptions": ["Food bank serving...", "Education program..."],
+    "service_area": "Houston, TX metro",
+    "years_active": 18,
+    "accreditations": ["Charity Navigator: 4-star", "GiveWell research org"],
+    "years_active_verified_date": "2026-07-08"
+  }
+  ```
+
+### Query Performance (Unchanged)
+
+- Browse/search: Hits DB only (core fields, 1.7M orgs)
+- FTS index: No changes
+- Detail page: Async loads S3 contact + programs JSON on click
+- Caching: Contact data cached in browser (1h TTL)
+
+### Cost
+
+- S3 storage: ~$0.023/month per 1M enrichment records (~$25/month for full registry)
+- No API calls on search (S3 only on detail page view)
+- Bandwidth: ~1-2GB/month detail views (~$0.10)
+- **Total: ~$25-30/month**
+
+### Privacy & Independence (Stewardship Principles 2, 3, 7)
+
+- All contact data from public sources (websites, IRS 990, ProPublica)
+- No donor data collected or exposed
+- Contact data never sold or shared with vendors
+- Sources documented in each S3 record for transparency
+- Org claims system allows corrections ("That's not our current email")
+
+### Frontend: Discovery Flow
+
+1. **Browse/Search (DB only)**: Show signal badges "Has contact info" ← DB flag
+2. **Org detail page**: Async load S3, display contact card
+3. **Small org with no data**: Shows "Contact available · verify directly"
+4. **All data traced**: Each contact field links to source
+
+### Migration Path
+
+- Phase 2a (Week 1): Enrichment pipeline collects contact + program data → S3
+- Phase 2b (Week 2): API endpoints return S3 data on detail page
+- Phase 2c (Week 3): Frontend displays contact + program cards on org detail
+
+---
+
 ## Heat & Power Notes
 
 **Ryzen 9700X + R9700 GPU (Vulkan1):**
