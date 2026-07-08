@@ -157,11 +157,9 @@ export default function Directory() {
   )
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
   const [verifiedRevenueOnly, setVerifiedRevenueOnly] = useState(searchParams.get('verified_revenue') === '1')
-  // Hidden gems default only when no filters active; any filter click disables it (unless explicitly ?hidden_gem=1)
-  const hasActiveFilters = categoryParam !== 'all' || subParam || stateParam ||
-    (minRevenueParam > 0 || maxRevenueParam < 500000000) || tierParam
+  // Hidden gems are off by default (user must explicitly toggle them on)
   const [hiddenGem, setHiddenGem] = useState(
-    searchParams.has('hidden_gem') ? searchParams.get('hidden_gem') === '1' : !hasActiveFilters
+    searchParams.has('hidden_gem') ? searchParams.get('hidden_gem') === '1' : false
   )
   const [needsSupport, setNeedsSupport] = useState(searchParams.get('needs_funding') === '1')
   const [near, setNear] = useState(searchParams.get('near') || '')
