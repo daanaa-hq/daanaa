@@ -210,16 +210,19 @@ class EnrichmentBatch:
         logger.info("=== Enrichment Batch Started ===")
         start_time = time.time()
 
-        logger.info("Layer 1: Semantic lookup + Qwen inference")
-        enrich_results = self._enrich_layer(max_orgs=max_orgs, batch_size=batch_size)
-        # Quality measurement + prompt improvement run separately via cron
-        # (measure_quality_cron.py, improve_prompts_cron.py) - not called inline here.
+        # Layer 1 disabled: Qwen domain-guessing output is too verbose for parser.
+        # Layer 2 enrichment (contact + programs extraction) produces real value and works well.
+        # logger.info("Layer 1: Semantic lookup + Qwen inference")
+        # enrich_results = self._enrich_layer(max_orgs=max_orgs, batch_size=batch_size)
+        enrich_results = []
 
         if not dry_run:
-            logger.info("Writing enrichment results to DB")
-            self._write_results(enrich_results)
+            # Write Layer 1 results (currently empty, but kept for structure)
+            if enrich_results:
+                logger.info("Writing enrichment results to DB")
+                self._write_results(enrich_results)
 
-            # Phase 2a: Extract contact + programs signals to S3
+            # Phase 2a: Extract contact + programs signals to S3 (core enrichment)
             if self.s3_client:
                 logger.info("Layer 2: Extracting contact + programs signals")
                 self._extract_and_store_enrichment()
