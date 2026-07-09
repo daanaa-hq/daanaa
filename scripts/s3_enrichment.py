@@ -179,6 +179,31 @@ def list_enriched_orgs(prefix: str = '') -> list:
         return []
 
 
+def upload_embedding_data(ein: str, embedding_data: Dict) -> bool:
+    """Upload org embedding (semantic vector) to S3."""
+    client = get_s3_client()
+    if not client:
+        return False
+
+    try:
+        import json
+        from datetime import datetime
+
+        s3_path = f'enrichment/embeddings/{ein}.json'
+        client.put_object(
+            Bucket=BUCKET_NAME,
+            Key=s3_path,
+            Body=json.dumps(embedding_data, default=str),
+            ContentType='application/json',
+            Metadata={'last_updated': datetime.now().isoformat()}
+        )
+        logger.debug(f"✓ Uploaded {s3_path}")
+        return True
+    except Exception as e:
+        logger.error(f"Upload failed for enrichment/embeddings/{ein}.json: {e}")
+        return False
+
+
 def get_bucket_stats() -> Dict:
     """Get S3 bucket storage stats."""
     client = get_s3_client()

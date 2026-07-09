@@ -48,7 +48,8 @@ from scripts.website_content import validate_and_fetch_website
 from scripts.donate_confidence import score_confidence, identity_match
 from scripts.contact_extraction import extract_contact_signals
 from scripts.programs_extraction import extract_program_signals
-from scripts.s3_enrichment import upload_contact_data, upload_programs_data, get_s3_client
+from scripts.embedding_extraction import generate_org_embedding, upload_embedding
+from scripts.s3_enrichment import upload_contact_data, upload_programs_data, upload_embedding_data, get_s3_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -210,21 +211,20 @@ class EnrichmentBatch:
         logger.info("=== Enrichment Batch Started ===")
         start_time = time.time()
 
-        # Layer 1 disabled: Qwen domain-guessing output is too verbose for parser.
-        # Layer 2 enrichment (contact + programs extraction) produces real value and works well.
-        # logger.info("Layer 1: Semantic lookup + Qwen inference")
-        # enrich_results = self._enrich_layer(max_orgs=max_orgs, batch_size=batch_size)
+        # Layer 1 DISABLED: Qwen verbose output causes parsing errors, wasting CPU.
+        # Layer 2 (CPU contact + programs extraction) produces real value. Use all resources there.
+        logger.info("Layer 1: Disabled (Qwen output too verbose). All resources → Layer 2 enrichment.")
         enrich_results = []
 
         if not dry_run:
-            # Write Layer 1 results (currently empty, but kept for structure)
+            # Write Layer 1 results (GPU work - non-critical)
             if enrich_results:
-                logger.info("Writing enrichment results to DB")
+                logger.info("Writing Layer 1 results to DB")
                 self._write_results(enrich_results)
 
-            # Phase 2a: Extract contact + programs signals to S3 (core enrichment)
+            # Phase 2a: Extract contact + programs signals to S3 (core enrichment on CPU)
             if self.s3_client:
-                logger.info("Layer 2: Extracting contact + programs signals")
+                logger.info("Layer 2: CPU extracting contact + programs signals")
                 self._extract_and_store_enrichment()
 
         elapsed = time.time() - start_time
@@ -469,8 +469,10 @@ class EnrichmentBatch:
 
             contact_count = 0
             programs_count = 0
+            embedding_count = 0
+            org_processed = 0
 
-            for org_row in orgs:
+            for idx, org_row in enumerate(orgs, 1):
                 try:
                     org = {
                         'EIN': org_row[0],
@@ -480,8 +482,9 @@ class EnrichmentBatch:
                         'website': org_row[4],
                         'mission': org_row[5]
                     }
+                    org_processed += 1
 
-                    # Extract contact signals
+                    # Extract contact signals (CPU)
                     contact = extract_contact_signals(org)
                     if contact:
                         if upload_contact_data(org['EIN'], contact):
@@ -491,7 +494,7 @@ class EnrichmentBatch:
                                 (org['EIN'],)
                             )
 
-                    # Extract program signals
+                    # Extract program signals (CPU)
                     programs = extract_program_signals(org)
                     if programs:
                         if upload_programs_data(org['EIN'], programs):
@@ -503,12 +506,22 @@ class EnrichmentBatch:
                                 (years, org['EIN'])
                             )
 
+                    # Generate embedding (GPU - parallel)
+                    embedding = generate_org_embedding(org)
+                    if embedding:
+                        if upload_embedding_data(org['EIN'], {"embedding": embedding, "dims": len(embedding)}):
+                            embedding_count += 1
+
+                    # Log progress every 100 orgs
+                    if idx % 100 == 0:
+                        logger.info(f"Layer 2 progress: {idx} orgs processed | programs: {programs_count} | embeddings: {embedding_count}")
+
                 except Exception as e:
-                    logger.warning(f"Enrichment extraction failed for {org['EIN']}: {e}")
+                    logger.warning(f"Enrichment extraction failed for {org_row[0]}: {e}")
                     continue
 
             self.db.commit()
-            logger.info(f"Enrichment extraction complete: {contact_count} contact, {programs_count} programs uploaded")
+            logger.info(f"Layer 2 complete: {contact_count} contact | {programs_count} programs | {embedding_count} embeddings from {org_processed} orgs")
 
         except Exception as e:
             logger.error(f"Enrichment extraction layer failed: {e}")
