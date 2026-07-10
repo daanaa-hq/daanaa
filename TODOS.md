@@ -97,6 +97,28 @@ exists and phase 1 doesn't remove it) — just don't plan future phases assuming
 loop works until claim-rate data says so. Track claim conversions from no-data-card
 impressions once phase 1 ships.
 
+### P2 — 51 pre-existing test failures in tests/ unrelated to tonight's work
+Found 2026-07-10 while verifying a v4_scores schema-drift fix via a full-suite
+A/B run (`git stash` comparison against an isolated DB copy). Baseline was 53
+failed/261 passed BEFORE any of tonight's changes — these are pre-existing, not
+caused by this session. Spans wallet-sync (`test_wallet_sync.py` — spot-checked
+`test_wallet_requires_auth`: `/api/wallet` doesn't exist as a route anymore,
+falls through to the SPA catch-all and returns 200 HTML instead of 401 JSON —
+stale test coverage for a removed/refactored endpoint, NOT a live auth bypass,
+but worth confirming that for every failure in this cluster, not just the one
+spot-checked), nonprofit-portal (`test_nonprofit_endpoints*.py`, Stripe webhook
++ letter-credit tests), SPA/routing (`test_spa_fallback.py`, `test_routing.py`),
+enrichment integration (`test_enrich_batch_integration.py`), and v5 scorer
+validation (`test_merit_scorer_v5_0.py`). Not triaged individually — only one
+spot-check was done to rule out an urgent security issue.
+Context: run `DB_PATH=data/merit_registry.db.bak-<latest> python3 -m pytest tests/`
+(the live dev gunicorn holds a persistent DB lock; use a backup copy to test
+standalone) to reproduce the current failure list.
+Depends on: nothing blocking — this is stale test debt, not a production issue,
+but a large cluster of `assert 200 == 401`/`assert 405 == 200` results across
+one subsystem (wallet-sync) is worth a dedicated look in case it's one shared
+root cause (e.g. a route rename) rather than 15 independent bugs.
+
 ---
 
 ## Ops / launch (see LAUNCH-CHECKLIST.md for the full gate list)
