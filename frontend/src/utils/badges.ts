@@ -33,15 +33,24 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   const isScored = score != null && (org.data_source === 'propublica' || org.data_source === 'irs_soi')
   const sector = getSectorName(org.NTEE1)
 
-  // 1. Tax-deductible — every org in our DB is an active 501(c)(3)
-  badges.push({
-    id: 'tax_deductible',
-    label: 'Tax-deductible',
-    detail: 'Confirmed active 501(c)(3) in the IRS Business Master File, listed as eligible to receive tax-deductible contributions.',
-    source: 'IRS Business Master File',
-    color: 'green',
-    icon: 'check-shield',
-  })
+  // 1. Tax-deductible — stale assumption fixed 2026-07-10: this used to
+  // unconditionally claim "every org in our DB is an active 501(c)(3)",
+  // but revoked orgs ARE reachable on this page (direct/stale link ->
+  // search.db fallback, see AnswerCard.tsx's revoked branch), and this
+  // badge was rendering "Tax-deductible" directly under a banner saying
+  // donations would NOT be tax-deductible. Caught by visual testing, not
+  // code review -- the contradiction only shows up rendered.
+  const isRevoked = org.org_status === 'revoked' || org.irs_revoked === 1
+  if (!isRevoked) {
+    badges.push({
+      id: 'tax_deductible',
+      label: 'Tax-deductible',
+      detail: 'Confirmed active 501(c)(3) in the IRS Business Master File, listed as eligible to receive tax-deductible contributions.',
+      source: 'IRS Business Master File',
+      color: 'green',
+      icon: 'check-shield',
+    })
+  }
 
   // 2. Financial performance — moved to detail page "How is this scored?" section
   // Card shows only lamp tier (primary signal). Financial Health details available on demand.
