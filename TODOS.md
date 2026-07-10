@@ -125,3 +125,27 @@ root cause (e.g. a route rename) rather than 15 independent bugs.
 - P2 — Minova disclosure + written consent before any public/LinkedIn announcement (task #20).
 - P3 — Cloudflare SSL Full(strict) + origin cert before heavy launch (currently Flexible for beta).
 - P3 — DKIM record for daanaa.org (Google Workspace → Authenticate email).
+
+### P3 — Rebuild enrichment loop properly (Layer 1 Qwen parsing fix) before re-enabling cron
+The 2am `enrichment_loop_8pm_8am.sh` cron was disabled 2026-07-10 (see DECISIONS.md):
+Layer 1 (missions/cause tags/websites/donate links — the stages that actually feed the
+site) was already disabled due to Qwen verbose-output parse errors, and Layer 2
+(contact/programs/S3 embeddings) was removed as zero-yield. To resume enrichment growth:
+fix the Qwen response parsing in `scripts/qwen_inference.py` (or constrain output via
+grammar/JSON mode on the llama-server), re-enable Layer 1, verify yield on a 100-org
+dry run, then restore the cron line (backup of the old crontab was in session scratchpad;
+the line is commented in place). If contact/programs enrichment is ever wanted again,
+wire the already-fetched website HTML (`scripts/website_content.py`) into the extractors
+and remove the hardcoded Houston/Texas service-area heuristic in
+`scripts/programs_extraction.py`. Note: 8 pre-existing test failures in
+`tests/test_enrich_batch_integration.py` + `test_enrich_batch_real_inference.py` test the
+consolidated Layer 1 flow and should pass again once Layer 1 is fixed.
+
+### P3 — Recall-system backend is dormant with no consumer — drop or rebuild
+Frontend consumers deleted 2026-07-10 (MacroContextCard, KnowledgeGraphCard, api.ts
+types). Backend remains: `/api/organizations/<ein>/recall` in daanaa_api.py, tables
+knowledge_graph_entities (60K rows of NTEE-letter junk), knowledge_graph_relationships
+(30K), macro_context_snapshots (1K, CPI index stored where inflation % expected),
+context_recall_orchestrator*.py, expand_macro_context.py. Not on cron, costs nothing.
+Next cleanup pass: either drop the tables + endpoint + scripts, or rebuild with real
+data (FRED inflation %, real entity extraction) if the product ever wants macro context.

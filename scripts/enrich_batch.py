@@ -46,10 +46,7 @@ from scripts.quality_measurement import QualityMeasurement
 from scripts.prompt_improvement import PromptImprovement
 from scripts.website_content import validate_and_fetch_website
 from scripts.donate_confidence import score_confidence, identity_match
-from scripts.contact_extraction import extract_contact_signals
-from scripts.programs_extraction import extract_program_signals
-from scripts.embedding_extraction import generate_org_embedding, upload_embedding
-from scripts.s3_enrichment import upload_contact_data, upload_programs_data, upload_embedding_data, get_s3_client
+from scripts.s3_enrichment import get_s3_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -212,20 +209,21 @@ class EnrichmentBatch:
         start_time = time.time()
 
         # Layer 1 DISABLED: Qwen verbose output causes parsing errors, wasting CPU.
-        # Layer 2 (CPU contact + programs extraction) produces real value. Use all resources there.
-        logger.info("Layer 1: Disabled (Qwen output too verbose). All resources → Layer 2 enrichment.")
+        # Layer 2 REMOVED 2026-07-10 (founder-approved enrichment alignment
+        # review): contact extraction yielded 0 rows ever (extractor needs
+        # website HTML that was never passed; ProPublica call is a placeholder),
+        # programs extraction hardcoded Houston/Texas service areas for orgs
+        # nationwide, and S3 embedding uploads had no reader (search uses the
+        # local org_embeddings table). Removing stops nightly ProPublica
+        # traffic and S3 spend for unread data. See DECISIONS.md 2026-07-10.
+        # With both layers gone this batch is a no-op until Layer 1's Qwen
+        # parsing is fixed — the 2am cron entry is disabled to match.
+        logger.info("Layer 1: Disabled (Qwen output too verbose). Layer 2: removed 2026-07-10. Nothing to do.")
         enrich_results = []
 
-        if not dry_run:
-            # Write Layer 1 results (GPU work - non-critical)
-            if enrich_results:
-                logger.info("Writing Layer 1 results to DB")
-                self._write_results(enrich_results)
-
-            # Phase 2a: Extract contact + programs signals to S3 (core enrichment on CPU)
-            if self.s3_client:
-                logger.info("Layer 2: CPU extracting contact + programs signals")
-                self._extract_and_store_enrichment()
+        if not dry_run and enrich_results:
+            logger.info("Writing Layer 1 results to DB")
+            self._write_results(enrich_results)
 
         elapsed = time.time() - start_time
         stats = {
@@ -446,105 +444,6 @@ class EnrichmentBatch:
                 logger.error(f"Failed to promote {result.get('enrichment_type')} for org {result.get('org_ein')}: {e}")
                 continue
         self.db.commit()
-
-    def _extract_and_store_enrichment(self) -> None:
-        """Phase 2a: Extract contact + programs signals and store in S3.
-
-        For each org with recent enrichment, collect:
-        - Contact info (email, phone, executive name, board size)
-        - Program signals (years active, accreditations, service area)
-        Store to S3, update DB flags.
-        """
-        cursor = self.db.cursor()
-
-        # Keyset cursor: without it every batch re-selects the same first 1000
-        # rows (the 2026-07-09 all-night spin). File avoids a schema change.
-        cursor_file = Path(__file__).resolve().parent.parent / 'logs' / 'enrich_l2_cursor.txt'
-        last_ein = ''
-        try:
-            last_ein = cursor_file.read_text().strip()
-        except FileNotFoundError:
-            pass
-
-        try:
-            cursor.execute(
-                """SELECT EIN, organization_name, street_address, ruling_date,
-                          website, mission FROM registry_enriched
-                   WHERE (website IS NOT NULL OR website_status = 'ok')
-                     AND EIN > ?
-                   ORDER BY EIN
-                   LIMIT 1000""",
-                (last_ein,)
-            )
-            orgs = cursor.fetchall()
-            if not orgs and last_ein:
-                # Wrapped the full table: reset for the next refresh pass.
-                cursor_file.write_text('')
-                logger.info("Layer 2 cursor wrapped — all eligible orgs visited; reset for next pass")
-                return
-            if orgs:
-                cursor_file.write_text(str(orgs[-1][0]))
-
-            contact_count = 0
-            programs_count = 0
-            embedding_count = 0
-            org_processed = 0
-
-            for idx, org_row in enumerate(orgs, 1):
-                try:
-                    org = {
-                        'EIN': org_row[0],
-                        'organization_name': org_row[1],
-                        'street_address': org_row[2],
-                        'ruling_date': org_row[3],
-                        'website': org_row[4],
-                        'mission': org_row[5]
-                    }
-                    org_processed += 1
-
-                    # Extract contact signals (CPU)
-                    contact = extract_contact_signals(org)
-                    if contact:
-                        if upload_contact_data(org['EIN'], contact):
-                            contact_count += 1
-                            cursor.execute(
-                                "UPDATE registry_enriched SET contact_available = 1 WHERE EIN = ?",
-                                (org['EIN'],)
-                            )
-
-                    # Extract program signals (CPU)
-                    programs = extract_program_signals(org)
-                    if programs:
-                        if upload_programs_data(org['EIN'], programs):
-                            programs_count += 1
-                            # Update years_active in DB (queryable field)
-                            years = programs.get('years_active')
-                            cursor.execute(
-                                "UPDATE registry_enriched SET programs_available = 1, years_active = ? WHERE EIN = ?",
-                                (years, org['EIN'])
-                            )
-
-                    # Generate embedding (GPU - parallel)
-                    embedding = generate_org_embedding(org)
-                    if embedding:
-                        if upload_embedding_data(org['EIN'], {"embedding": embedding, "dims": len(embedding)}):
-                            embedding_count += 1
-
-                    # Log progress every 100 orgs
-                    if idx % 100 == 0:
-                        logger.info(f"Layer 2 progress: {idx} orgs processed | programs: {programs_count} | embeddings: {embedding_count}")
-
-                except Exception as e:
-                    logger.warning(f"Enrichment extraction failed for {org_row[0]}: {e}")
-                    continue
-
-            self.db.commit()
-            logger.info(f"Layer 2 complete: {contact_count} contact | {programs_count} programs | {embedding_count} embeddings from {org_processed} orgs")
-
-        except Exception as e:
-            logger.error(f"Enrichment extraction layer failed: {e}")
-            return
-
 
 def main():
     parser = argparse.ArgumentParser(

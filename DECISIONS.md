@@ -455,3 +455,17 @@ Chose: show a public "Donate" button on org pages, gated on `donate_url_status I
 Why: this is a SEPARATE decision from the 2026-07-07 reversal above, which only re-authorized the enrichment *pipeline generating* donate_url data — it explicitly said the fail-closed gate and donation_link_pipeline.py "continue as internal enrichment," and project memory (`no-public-donation-ctas`, 2026-06-10 legal counsel directive) still said no donation CTAs on any public surface, unreversed until now. Conflating the two would have shipped a public donate button believing a data-generation decision had cleared a display decision — caught before shipping by re-reading the actual memory text (not just its title) rather than assuming from the design doc's shorthand "re-scoped 2026-07-07."
 Rejected: gating on `donate_confidence >= 90` (only 9 orgs in the whole 2M-row DB have a non-null high-confidence score — would make the button nearly invisible).
 Follow-up required: the pre-launch attorney consult (tracked in project memory since 2026-06-22, still not completed) explicitly has NOT reviewed public donate-link display specifically — this decision ships to test/build against and matches the founder's stated product direction (AI-suggested → org-verified promotion path), not a substitute for that legal review before wide public launch. The claim flow's promotion of `donate_url_status` from `beta` to `claimed` on org confirmation is assumed but not yet built — verify it exists before relying on the badge-removal behavior.
+
+## 2026-07-10 — Cut broken enrichment stages + recall UI (founder-approved alignment review)
+Chose to remove the nightly Layer 2 enrichment (contact/programs extraction + S3 embedding
+uploads) and disable the 2am cron loop. Why: founder spotted junk "Economic Context" data on
+the org page, which triggered a scraping-alignment review — contact extraction had yielded 0
+rows ever (extractor needs website HTML that enrich_batch never passed; ProPublica call is a
+placeholder), programs extraction hardcoded Houston/Texas service areas for orgs nationwide,
+S3 embedding uploads had no reader (search uses the local org_embeddings table), and Layer 1
+was already disabled — so the 12h loop was 100% waste (ProPublica traffic + S3 spend for
+nothing). Also deleted the recall-system frontend (MacroContextCard, KnowledgeGraphCard, api.ts
+types/fetchers): CPI index level was displayed as "inflation: 310%", KG "entities" were raw
+NTEE code letters. Rejected: fixing the extractors in place — no consumer justifies the spend
+today; rebuild properly (real HTML input, correct labels) if/when the product needs it.
+Backend recall tables + /recall endpoint left dormant (no cost, no consumer).
