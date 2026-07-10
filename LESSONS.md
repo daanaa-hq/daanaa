@@ -343,3 +343,12 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
 - **Rules:**
   1. Any batch job with `LIMIT` MUST have a progress mechanism (keyset cursor, offset state, or processed-marker) — and the identical log line repeating across batches is the tell; a loop that logs the same counts twice in a row should alarm, not reassure.
   2. Per-org `except: continue` blocks hide schema mismatches — verify every column a pipeline writes actually exists in the live DB before a run (PRAGMA table_info check at startup).
+
+## 2026-07-09 — Crontab clobbered: ~60 jobs silently reduced to 2 for 26+ hours (found during "all deployed?" check)
+- **Symptom:** watchdog.log, gpu_temp.log, and nightly_search_deploy.log all stop at Jul 8 ~20:30. Crontab contained only 2 entries (enrichment loop + morning deploy). Site monitoring, alerting, nightly scoring, search.db shipping, revocation sync, backups monitoring, and email triage were all dead — nobody noticed because the watchdog that would notice was among the casualties.
+- **Root cause:** a session scheduling the enrichment window installed a fresh crontab (`crontab file`) instead of appending to the existing one, replacing ~60 jobs. The clobber was invisible: cron doesn't log removals, and the tonight-log looked healthy.
+- **Fix:** restored critical-ops subset (watchdogs, metrics/alerts, overnight pipeline, nightly search deploy, revocation sync, backups, GPU window, email triage) from `backups/crontab.backup_20260622.txt`, verified each script exists first, excluded known-dead entries (night_batch_launcher, retired daily_backup.sh, AWS backup, hardcoded rotated Plausible key). Full review of remaining ~40 entries pending.
+- **Rules:**
+  1. NEVER `crontab <file>` from a constructed file without first `crontab -l >> file`. Append, don't replace. Always save `crontab -l` to `backups/crontab.backup_YYYYMMDD_HHMM.txt` before any crontab write.
+  2. The watchdog can't watch itself — add a cron-integrity check to the watchdog (alert if crontab entry count drops below a floor).
+  3. Secrets never belong in crontab lines (the Jun 22 backup carries a hardcoded Plausible API key — move to env file before restoring that job).
