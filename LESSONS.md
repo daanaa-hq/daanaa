@@ -335,3 +335,11 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
   2. The droplet runs `droplet_api.py` + precompute + search.db BY DESIGN, not as a compromise — that is the correct architecture for a 2GB box. `daanaa_api.py` is home-server/testing only unless the droplet is resized to 4GB+ RAM (a spend decision → ask).
   3. `Restart=always` + startup OOM = self-DoS. Any service whose startup can OOM needs `StartLimitBurst`/`RestartSec` tuning or a memory check in ExecStartPre.
   4. A stale search.db artifact fails soft (`mode:error`, search silently empty). After any search.db ship, smoke test `/api/search?q=food+bank` and require `"mode":"fts"` with hits.
+
+## 2026-07-09 — Enrichment Layer 2 spun on the same 1,000 orgs all night (51+ batches, zero progress)
+- **Symptom:** every batch logged the identical line `0 contact | 4 programs | 0 embeddings from 1000 orgs`. 115,702 orgs eligible; only 1,000 ever touched.
+- **Root cause:** the Layer-2 SELECT had `LIMIT 1000` with no ORDER BY, no cursor, and no processed-marker filter — SQLite returned the same first rows every invocation. A yield-flag filter alone wouldn't fix it either: 99.6% of orgs produce no extract, get no flag, and would be re-selected forever. Bonus defect: the script UPDATEs `volunteer_url`, a column that doesn't exist in the live DB — those writes fail silently inside the per-org try/except.
+- **Fix:** keyset pagination via `logs/enrich_l2_cursor.txt` (`WHERE EIN > ? ORDER BY EIN`), cursor written after each batch, auto-reset on wrap. No schema change needed. `volunteer_url` migration pending founder approval.
+- **Rules:**
+  1. Any batch job with `LIMIT` MUST have a progress mechanism (keyset cursor, offset state, or processed-marker) — and the identical log line repeating across batches is the tell; a loop that logs the same counts twice in a row should alarm, not reassure.
+  2. Per-org `except: continue` blocks hide schema mismatches — verify every column a pipeline writes actually exists in the live DB before a run (PRAGMA table_info check at startup).

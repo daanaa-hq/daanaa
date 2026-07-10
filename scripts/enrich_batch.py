@@ -457,15 +457,33 @@ class EnrichmentBatch:
         """
         cursor = self.db.cursor()
 
+        # Keyset cursor: without it every batch re-selects the same first 1000
+        # rows (the 2026-07-09 all-night spin). File avoids a schema change.
+        cursor_file = Path(__file__).resolve().parent.parent / 'logs' / 'enrich_l2_cursor.txt'
+        last_ein = ''
         try:
-            # Get all orgs (prioritize those with websites or recent activity)
+            last_ein = cursor_file.read_text().strip()
+        except FileNotFoundError:
+            pass
+
+        try:
             cursor.execute(
                 """SELECT EIN, organization_name, street_address, ruling_date,
                           website, mission FROM registry_enriched
-                   WHERE website IS NOT NULL OR website_status = 'ok'
-                   LIMIT 1000"""
+                   WHERE (website IS NOT NULL OR website_status = 'ok')
+                     AND EIN > ?
+                   ORDER BY EIN
+                   LIMIT 1000""",
+                (last_ein,)
             )
             orgs = cursor.fetchall()
+            if not orgs and last_ein:
+                # Wrapped the full table: reset for the next refresh pass.
+                cursor_file.write_text('')
+                logger.info("Layer 2 cursor wrapped — all eligible orgs visited; reset for next pass")
+                return
+            if orgs:
+                cursor_file.write_text(str(orgs[-1][0]))
 
             contact_count = 0
             programs_count = 0
