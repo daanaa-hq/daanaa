@@ -52,6 +52,19 @@ start() {
     nohup bash -c "python3 scripts/generate_missions.py --workers 6 --upgrade-templates && python3 scripts/generate_missions_irs_bmf.py --workers 6 --upgrade-templates" >> "$GEN_LOG" 2>&1 &
   fi
 
+  # Donate-link night loop (phase 0 audit + phase 1/2 discovery-release).
+  # cpu_night.sh's header always claimed gpu_night starts it, but the wiring
+  # was never added — casualty of the 2026-06-22 "no websites or donate
+  # links" pause, which the founder superseded on 2026-07-07. Wired for real
+  # on 2026-07-10; this is why displayable donate links froze at 82 since
+  # the Jul 5 launch.
+  if pgrep -f "scripts/cpu_night.sh" >/dev/null; then
+    echo "[$(ts)] start: cpu_night donate loop already running — skipping"
+  else
+    echo "[$(ts)] start: launching cpu_night donate-link loop"
+    nohup bash "$BASE/scripts/cpu_night.sh" >> "$LOG_DIR/cpu_night.log" 2>&1 &
+  fi
+
   # Website discovery: DISABLED 2026-06-22 per directive — "we are not doing
   # websites or donate links." The web_finder_agent loop is network-bound and
   # off-mission; do not relaunch it. Left in place (commented) for traceability.
@@ -110,6 +123,9 @@ start_exclusive() {
 }
 
 stop() {
+  echo "[$(ts)] stop: halting cpu_night donate-link loop"
+  pkill -f "scripts/cpu_night.sh" 2>/dev/null
+  pkill -f "scripts/donation_link_pipeline.py" 2>/dev/null
   echo "[$(ts)] stop: halting web_night discovery loop"
   pkill -f "scripts/web_night.sh" 2>/dev/null
   pkill -f "scripts/web_finder_agent.py" 2>/dev/null
