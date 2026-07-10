@@ -1773,10 +1773,10 @@ def list_organizations():
     ).fetchone())
 
     if has_v4_scores:
-        v4_cols = ", v4.tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band, v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"
+        v4_cols = ""
         join_clause = "LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN"
     else:
-        v4_cols = ", NULL as tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band, NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json"
+        v4_cols = ", "
         join_clause = ""
 
     sql = f"""
@@ -1872,7 +1872,7 @@ def get_organization(ein):
                         v4_data.percentiles_json
                  FROM registry_enriched r
                  LEFT JOIN (
-                    SELECT EIN, tier, financial_health, operating_model,
+                    SELECT EIN,
                            revenue_band, peer_cell_size, metrics_json, percentiles_json
                     FROM v4_scores
                  ) v4_data ON r.EIN = v4_data.EIN
@@ -3759,17 +3759,13 @@ def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[
         return []
     cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
-              r.latest_tax_year, r.data_source, r.updated_at,
-              r.merit_tier, r.merit_score, r.merit_band,
-              v4.tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
+              r.latest_tax_year, r.data_source, r.updated_at"""
     placeholders = ",".join("?" * len(eins))
     # active_only=True enforces the same deductibility + revocation filter used by
     # /api/organizations so revoked orgs can't surface via vector/semantic paths.
     dedup_clause = f" AND {_DEDUCTIBILITY_FILTER}" if active_only else ""
     rows = db.execute(
         f"""SELECT {cols} FROM registry_enriched r
-            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
             WHERE r.EIN IN ({placeholders}){dedup_clause}""", eins
     ).fetchall()
     order = {e: i for i, e in enumerate(eins)}
@@ -3785,10 +3781,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
     """Similar orgs: vector cosine similarity when available, SQL bucket fallback."""
     cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
-              r.latest_tax_year, r.data_source, r.updated_at,
-              r.merit_tier, r.merit_score, r.merit_band,
-              v4.tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
+              r.latest_tax_year, r.data_source, r.updated_at"""
 
     # ── Vector path ────────────────────────────────────────────────────────────
     vec = _get_org_vec(ein_clean)
@@ -4752,8 +4745,8 @@ def fused_search():
               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
               (r.website  IS NOT NULL AND r.website  != '') as has_website,
-              v4.tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
+              v4.tier,
+              v4.peer_cell_size"""
     rows = db.execute(
         f"""SELECT {cols} FROM registry_enriched r
             LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
