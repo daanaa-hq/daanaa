@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
-import { useJsonLd, organizationSchema } from '../hooks/useJsonLd'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
@@ -363,19 +362,12 @@ export default function OrganizationDetail() {
 
   usePageMeta(metaTitle, { description: metaDesc, ogImage })
 
-  const jsonLdSchema = useMemo(() => {
-    if (!apiOrg) return null
-    return organizationSchema({
-      name: apiOrg.organization_name,
-      ein: apiOrg.EIN,
-      description: apiOrg.mission || undefined,
-      url: `https://daanaa.org/organizations/${apiOrg.EIN}`,
-      address: apiOrg.CITY && apiOrg.STATE ? `${apiOrg.CITY}, ${apiOrg.STATE}` : undefined,
-      state: apiOrg.STATE || undefined,
-    })
-  }, [apiOrg])
-
-  useJsonLd(jsonLdSchema)
+  // JSON-LD is server-rendered into the initial HTML (_org_jsonld in droplet_api.py,
+  // @type NGO) so crawlers see it without executing JS. This client-side hook used to
+  // overwrite that correct value with a worse one (@type LocalBusiness, fewer fields,
+  // and a wrong URL path -- /organizations/ instead of the real /org/ route) on every
+  // page load. Removed 2026-07-10 eng review finding 1A -- do not re-add without also
+  // updating droplet_api.py's _org_jsonld to match, or the two will fight again.
 
   if (orgLoading) {
     return (

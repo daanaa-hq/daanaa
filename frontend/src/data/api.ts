@@ -126,9 +126,12 @@ export interface ApiOrganization {
   mission_source?: string | null;        // 'ai_ntee'|'ai_haiku'|'ai_web'|'lucido'|'claimed'|null
   website?: string | null;
   website_status?: string | null;        // 'ok' = verified live & on-domain; else fall back to EIN record
-  donate_url?: string | null;            // Donation link (ai_suggested or claimed)
-  donate_url_status?: string | null;     // 'ai_suggested' | 'claimed' | null
-  donate_confidence?: number | null;     // 0-100 confidence score
+  donate_url?: string | null;            // Donation link -- ONLY render if donate_url_status is 'beta' or 'claimed'
+  donate_url_status?: string | null;     // real values seen in prod: dead|no_link_found|blocked_or_restricted|
+                                          // mismatch|rejected|withheld|human_review|unknown|beta|claimed (2026-07-10:
+                                          // comment corrected -- 'ai_suggested' never appears in the live data)
+  donate_confidence?: number | null;     // 0-100; NULL for ~99.7% of orgs -- do not gate on this, use status instead
+  volunteer_url?: string | null;         // Volunteer signup/interest link (added 2026-07-10, pipeline-sourced)
   phone?: string | null;                 // Organization phone number from 990
   // Data provenance — which fields are AI-generated vs verified
   data_badges?: {
