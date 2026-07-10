@@ -15,12 +15,11 @@ import MistakeRegistry from '../components/MistakeRegistry'
 import { useApi } from '../hooks/useApi'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { useWallet } from '../contexts/WalletContext'
-import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken, getRecallPacket } from '../data/api'
+import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
 import { getNteeLabel } from '../data/ntee'
-import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea, RecallPacket } from '../data/api'
+import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
-import { normalizeExternalUrl } from '../utils/externalLink'
 import { getActionRowLinks } from '../utils/actionRow'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
@@ -33,8 +32,6 @@ import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
 import OrgEnrichmentCard from '../components/OrgEnrichmentCard'
 import GuildSection from '../components/GuildSection'
-import MacroContextCard from '../components/MacroContextCard'
-import KnowledgeGraphCard from '../components/KnowledgeGraphCard'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -298,12 +295,6 @@ export default function OrganizationDetail() {
   )
   const serviceArea = serviceAreaData ?? null
   const similarApiOrgs: ApiOrganization[] = (similarData?.results ?? []) as ApiOrganization[]
-
-  // Context & Recall System
-  const { data: recallData } = useApi(
-    () => id ? getRecallPacket(id) : Promise.resolve(null),
-    [id]
-  )
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -990,21 +981,6 @@ export default function OrganizationDetail() {
             />
           )}
 
-          {/* Context & Recall System: Macro Context & Knowledge Graph */}
-          {recallData && (
-            <>
-              <MacroContextCard
-                context={recallData.macro_context}
-                archetype={recallData.peer_context?.merit_archetype_v5 || null}
-                filingYear={recallData.macro_context?.filing_year || apiOrg?.latest_tax_year || null}
-              />
-              <KnowledgeGraphCard
-                entities={recallData.knowledge_graph?.entities || []}
-                relationships={recallData.knowledge_graph?.relationships || []}
-              />
-            </>
-          )}
-
           {/* About this listing + the org's claimable spaces get the full width
               and are clearly defined. The wide revenue trend chart moves to its
               own full-width block below this (see "Revenue Trend" section). */}
@@ -1552,86 +1528,6 @@ export default function OrganizationDetail() {
           </div>
         </div>
       )}
-
-      {/* Mobile sticky CTA — two heart buttons + optional website */}
-      {(() => {
-        const hasVerifiedSite = apiOrg?.website_status === 'ok' && apiOrg?.website
-        const fundingActive = isInFunding(org.ein)
-        const volunteeringActive = isInVolunteering(org.ein)
-        const heartButtons = (
-          <div className="flex gap-2">
-            <button
-              onClick={() => fundingActive ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
-              title={fundingActive ? 'Remove from funding list' : 'Fund this org'}
-              aria-label={fundingActive ? 'Remove from funding list' : 'Fund this org'}
-              className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all"
-              style={{ background: fundingActive ? '#22c55e20' : 'white', border: `1.5px solid ${fundingActive ? '#22c55e' : '#e5e7eb'}` }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24"
-                fill={fundingActive ? '#22c55e' : 'none'}
-                stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </button>
-            <button
-              onClick={() => volunteeringActive ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
-              title={volunteeringActive ? 'Remove from volunteer list' : 'Volunteer here'}
-              aria-label={volunteeringActive ? 'Remove from volunteer list' : 'Volunteer here'}
-              className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all"
-              style={{ background: volunteeringActive ? '#ef444420' : 'white', border: `1.5px solid ${volunteeringActive ? '#ef4444' : '#e5e7eb'}` }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24"
-                fill={volunteeringActive ? '#ef4444' : 'none'}
-                stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </button>
-            {hasVerifiedSite && (
-              <a
-                href={normalizeExternalUrl(apiOrg!.website!)!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg hover:bg-bright-gold transition-colors"
-              >
-                Visit website
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-              </a>
-            )}
-            {apiOrg?.donate_url && (apiOrg?.donate_url_status === 'ai_suggested' || apiOrg?.donate_url_status === 'beta') && (
-              <div className="flex-1 flex flex-col gap-1">
-                <a
-                  href={apiOrg.donate_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={apiOrg.donate_confidence && apiOrg.donate_confidence < 90 ? 'Give directly (AI suggested, not verified)' : 'Give directly'}
-                  className="py-3.5 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold flex items-center justify-center gap-2 shadow-lg hover:bg-bright-gold transition-colors"
-                >
-                  Give directly
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-                </a>
-                {apiOrg.donate_confidence && apiOrg.donate_confidence < 90 && (
-                  <span className="text-center px-2 py-1 text-[11px] font-medium text-cool-grey bg-navy-mid/10 rounded">
-                    AI suggested
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )
-        // Desktop reuses the same sticky treatment as mobile (audit
-        // 2026-07-03: primary CTA sits ~40% down the page) — no BottomNav
-        // to clear on desktop, so it sits lower and stays right-aligned
-        // within the standard page width instead of spanning full-bleed.
-        return (
-          <div className="fixed bottom-[60px] md:bottom-6 left-0 right-0 z-40 px-4 md:px-6 pb-2 md:pb-0">
-            <div className="md:max-w-[1200px] md:mx-auto md:flex md:justify-end">
-              <div className="md:w-full md:max-w-sm">
-                {heartButtons}
-              </div>
-            </div>
-          </div>
-        )
-      })()}
 
       {promptState && (
         <DonationReturnPrompt

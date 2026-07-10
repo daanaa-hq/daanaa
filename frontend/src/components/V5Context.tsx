@@ -133,7 +133,7 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
           .replace(/\bBelow the typical level for similar organizations\./g, 'Many nonprofits actively invest their resources into their work rather than building large reserves.')
           .replace(/\bBelow the typical level\b/g, 'investing actively in their mission')
           .replace(/\bThis organization is a ([A-Z])/g, (_, c) => `This is a ${c}`)
-          .replace(/\ba ([A-Z][a-z-]+-[A-Z])/g, (_, w) => `an ${w}`)
+          .replace(/\ba ([A-Z][a-z-]+-[A-Z])/g, (m, w) => /^[AEIOU]/.test(w) ? `an ${w}` : m)
           .replace(/\.\s*\./g, '.')
           .trim()
         }

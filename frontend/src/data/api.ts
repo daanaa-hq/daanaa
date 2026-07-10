@@ -862,72 +862,9 @@ export async function getPortalToken(ein: string, idToken: string): Promise<stri
   return data.verification_token
 }
 
-// ── Context & Recall System ──────────────────────────────────────────────────
-
-export interface MacroContext {
-  unemployment_rate: number | null;
-  cpi: number | null;
-  gdp_growth: number | null;
-  interest_rate_federal: number | null;
-  filing_year: number | null;
-  source: string;
-  confidence: number | null;
-}
-
-export interface KGEntity {
-  entity_type: string;
-  entity_value: string;
-  confidence: number | null;
-  source: string;
-}
-
-export interface KGRelationship {
-  relationship_type: string;
-  ein_to: string;
-  confidence: number | null;
-}
-
-export interface RecallPacket {
-  public_record: {
-    organization_name: string | null;
-    ein: string | null;
-    location: string | null;
-    sector: string | null;
-    mission: string | null;
-  };
-  peer_context: {
-    merit_score: number | null;
-    merit_health_signal_v5: string | null;
-    merit_archetype_v5: string | null;
-    merit_band_v5_label: string | null;
-    percentile_rank: number | null;
-  };
-  macro_context: MacroContext | null;
-  knowledge_graph: {
-    entities: KGEntity[];
-    relationships: KGRelationship[];
-  };
-  limitations: {
-    data_freshness: string;
-    confidence_note: string;
-  };
-}
-
-export async function getRecallPacket(ein: string): Promise<RecallPacket> {
-  return fetchJson(`${API_BASE}/api/organizations/${ein}/recall`)
-}
-
-export async function getMacroContext(ein: string): Promise<MacroContext> {
-  return fetchJson(`${API_BASE}/api/organizations/${ein}/macro-context`)
-}
-
-export async function getKnowledgeGraph(ein: string): Promise<{
-  ein: string;
-  entities: KGEntity[];
-  relationships: KGRelationship[];
-  total_entities: number;
-  total_relationships: number;
-}> {
-  return fetchJson(`${API_BASE}/api/organizations/${ein}/knowledge-graph`)
-}
+// Context & Recall System types/fetchers removed 2026-07-10 — the feature's
+// UI (MacroContextCard, KnowledgeGraphCard) was cut after founder review:
+// CPI index level was mislabeled as inflation %, and the "knowledge graph"
+// entities were raw NTEE code letters. Backend tables + /recall endpoint
+// still exist with no consumer; see memory finding-macro-context-card-crash.
 
