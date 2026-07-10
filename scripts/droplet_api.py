@@ -146,6 +146,23 @@ def _zips_within_radius(conn, lat, lon, radius_mi):
     return {r["zip"] for r in rows if _haversine_mi(lat, lon, r["lat"], r["lon"]) <= radius_mi}
 
 
+_STATE_NAME_TO_ABBR = {
+    'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR',
+    'CALIFORNIA': 'CA', 'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE',
+    'FLORIDA': 'FL', 'GEORGIA': 'GA', 'HAWAII': 'HI', 'IDAHO': 'ID',
+    'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA', 'KANSAS': 'KS',
+    'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
+    'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS',
+    'MISSOURI': 'MO', 'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV',
+    'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM', 'NEW YORK': 'NY',
+    'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH', 'OKLAHOMA': 'OK',
+    'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+    'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT',
+    'VERMONT': 'VT', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV',
+    'WISCONSIN': 'WI', 'WYOMING': 'WY', 'DISTRICT OF COLUMBIA': 'DC',
+    'PUERTO RICO': 'PR',
+}
+
 def _resolve_location(conn, near_raw):
     """Resolve free-text location to (lat, lon, city, state). Returns None if unresolvable."""
     near = near_raw.strip()
@@ -162,17 +179,21 @@ def _resolve_location(conn, near_raw):
         ).fetchone()
         if row:
             return row["lat"], row["lon"], row["city"], row["state_id"]
-        # If not found, try state abbreviation as full state name (fallback)
-        state_names = {'AL': 'Alabama', 'TX': 'Texas', 'CA': 'California', 'NY': 'New York',
-                       'FL': 'Florida', 'IL': 'Illinois', 'PA': 'Pennsylvania', 'OH': 'Ohio'}
-        state_full = state_names.get(state_q)
-        if state_full:
-            row = conn.execute(
-                "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? AND state_id=? LIMIT 1",
-                (city_q, state_full)
-            ).fetchone()
-            if row:
-                return row["lat"], row["lon"], row["city"], row["state_id"]
+    # Full state name ("Houston Texas", "Houston, New York"): users type this
+    # constantly and it used to be silently ignored (filter looked applied,
+    # did nothing — 2026-07-10). Match the trailing state name, map to the
+    # 2-letter code zip_codes actually stores.
+    up = near.upper()
+    for full, abbr in _STATE_NAME_TO_ABBR.items():
+        if up.endswith(' ' + full) or up.endswith(',' + full) or up.endswith(', ' + full):
+            city_q = up[: len(up) - len(full)].rstrip(' ,').strip()
+            if city_q:
+                row = conn.execute(
+                    "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? AND state_id=? LIMIT 1",
+                    (city_q, abbr)
+                ).fetchone()
+                if row:
+                    return row["lat"], row["lon"], row["city"], row["state_id"]
     row = conn.execute(
         "SELECT lat, lon, city, state_id FROM zip_codes WHERE UPPER(city)=? LIMIT 1",
         (near.upper(),)
