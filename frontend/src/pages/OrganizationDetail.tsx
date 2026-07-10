@@ -3,6 +3,8 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import AnswerCard from '../components/AnswerCard'
+import DonationReturnPrompt from '../components/DonationReturnPrompt'
+import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
 import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
@@ -247,6 +249,7 @@ export default function OrganizationDetail() {
   const { user, getIdToken } = useAuth()
   const { isInFunding, isInVolunteering, addToFunding, addToVolunteering,
           removeFromFunding, removeFromVolunteering } = useWallet()
+  const { trackDonateClick, promptState, dismiss: dismissDonationPrompt } = useDonationReturnPrompt()
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalError, setPortalError]     = useState<string | null>(null)
@@ -659,6 +662,7 @@ export default function OrganizationDetail() {
                           href={donateUrl}
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => trackDonateClick(apiOrg!.EIN, apiOrg!.organization_name)}
                           className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-emerald-500 text-deep-navy px-7 py-3 rounded-full hover:bg-emerald-400 transition-colors"
                         >
                           Donate
@@ -1633,6 +1637,13 @@ export default function OrganizationDetail() {
         )
       })()}
 
+      {promptState && (
+        <DonationReturnPrompt
+          state={promptState}
+          onDismiss={dismissDonationPrompt}
+          onLogged={dismissDonationPrompt}
+        />
+      )}
     </div>
   )
 }
