@@ -4,6 +4,9 @@
 # Logs to: /home/akbar/meritgiving/logs/deploy-morning-YYYYMMDD.log
 
 set -e
+# Cron has no nvm PATH — without this the build dies with "npm: command not found"
+# (2026-07-09 morning deploy failure).
+export PATH="/home/akbar/.nvm/versions/node/v22.22.2/bin:$PATH"
 REPO="/home/akbar/meritgiving"
 VENV="$REPO/venv/bin/activate"
 LOG_DIR="$REPO/logs"
