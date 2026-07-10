@@ -904,7 +904,28 @@ export default function Directory() {
                     <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
                       <span>Small, overlooked organizations · a fresh set each week.</span>
                       <button onClick={handleSeeAll} className="font-semibold text-soft-gold hover:text-bright-gold transition-colors">
-                        See all 1.8M →
+                        See all 1.7M →
+                      </button>
+                    </p>
+                  )}
+                  {/* Location feedback: an unresolved location must never fail
+                      silently — the results would look filtered while being
+                      nationwide (2026-07-10 "Houston Texas" incident). */}
+                  {near && !orgsLoading && orgsData && !orgsData.nearby && (
+                    <p className="font-body text-[12px] text-alert-amber mt-1" role="status">
+                      We couldn't find "{near}" — showing results without the location filter.
+                      Try "City, ST" (like Houston, TX) or a zip code.
+                    </p>
+                  )}
+                  {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
+                    <p className="font-body text-[12px] text-cool-grey mt-1" role="status">
+                      Includes organizations that haven't reported revenue — smaller nonprofits often file
+                      a simpler return.{' '}
+                      <button
+                        onClick={() => { setVerifiedRevenueOnly(true); setCurrentPage(1) }}
+                        className="font-semibold text-soft-gold hover:text-bright-gold transition-colors"
+                      >
+                        Show only reported revenue
                       </button>
                     </p>
                   )}

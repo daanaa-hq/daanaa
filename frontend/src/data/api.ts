@@ -256,6 +256,10 @@ export async function getOrganizations(params?: {
   page: number;
   per_page: number;
   pages: number;
+  // Present only when the API resolved a `near` location; its absence while
+  // `near` was sent means the location could not be resolved (show feedback,
+  // never silently drop the filter).
+  nearby?: { city: string; state: string; radius_mi: number };
 }> {
   const sp = new URLSearchParams();
   if (params?.ntee)     sp.set('ntee', params.ntee);
