@@ -20,7 +20,8 @@ import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea, RecallPacket } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
-import { getPrimaryExternalLink, normalizeExternalUrl } from '../utils/externalLink'
+import { normalizeExternalUrl } from '../utils/externalLink'
+import { getActionRowLinks } from '../utils/actionRow'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import { useAuth } from '../contexts/AuthContext'
@@ -635,25 +636,21 @@ export default function OrganizationDetail() {
                   outstanding per project memory -- this ships to test/build
                   against, not a substitute for that review before wide launch. */}
               {(() => {
-                const websiteVerified = apiOrg?.website_status === 'ok' || apiOrg?.website_status === 'beta';
-                const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
-                const donateOk = apiOrg?.donate_url_status === 'beta' || apiOrg?.donate_url_status === 'claimed';
-                const donateUrl = donateOk ? normalizeExternalUrl(apiOrg?.donate_url ?? '') : null;
-                const volunteerUrl = apiOrg?.volunteer_url ? normalizeExternalUrl(apiOrg.volunteer_url) : null;
+                const { websiteUrl, websiteLabel, isWebsiteBeta, donateUrl, isDonateBeta, volunteerUrl, hasAnyLink } = getActionRowLinks(apiOrg)
 
-                if (!link.url && !donateUrl && !volunteerUrl) return null;
+                if (!hasAnyLink) return null;
 
                 return (
                   <div className="mt-5">
                     <div className="flex flex-wrap items-center gap-3">
-                      {link.url && (
+                      {websiteUrl && (
                         <a
-                          href={link.url}
+                          href={websiteUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
                         >
-                          {link.label}
+                          {websiteLabel}
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
                       )}
@@ -681,7 +678,7 @@ export default function OrganizationDetail() {
                         </a>
                       )}
                     </div>
-                    {(apiOrg!.website_status === 'beta' || apiOrg?.donate_url_status === 'beta') && (
+                    {(isWebsiteBeta || isDonateBeta) && (
                       <p className="mt-1.5 font-body text-[11px] text-cool-grey flex items-center gap-1.5">
                         <AiBadge title="Found by AI from public records. Not yet confirmed by the organization." />
                         <span>·</span>
@@ -713,8 +710,7 @@ export default function OrganizationDetail() {
 
               {/* Volunteer + public record fallback */}
               {(() => {
-                const websiteVerified = apiOrg?.website_status === 'ok' || apiOrg?.website_status === 'beta';
-                const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
+                const { websiteUrl } = getActionRowLinks(apiOrg)
 
                 return (
                   <>
@@ -737,7 +733,7 @@ export default function OrganizationDetail() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill={isInVolunteering(org.ein) ? '#ef4444' : 'none'} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                         {isInVolunteering(org.ein) ? 'In volunteer list' : 'Add to volunteer list'}
                       </button>
-                      {!link.url && (
+                      {!websiteUrl && (
                         <a
                           href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
                           target="_blank"
