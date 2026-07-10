@@ -361,3 +361,9 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
   1. The droplet is BOTH file-served (browse/orgs precompute) AND search.db-served — restoring one without the other yields a half-alive site whose /health is green. Any droplet restore checklist must include: search.db, browse/, orgs/, content/, frontend/dist.
   2. Indefinite in-process caches (`_multi_cache`, `_real_total_cache`) memoize outage-era emptiness; after any data-file restore, a service restart is part of the fix, and caches that can memoize an error state should never cache falsy values.
   3. Every browse/filter/search surface must apply the public-eligibility filter; the raw registry (with revoked orgs) exists only for org-detail fallback.
+
+## 2026-07-10 — Radius search silently missed 60% of orgs: zipcode was 40% populated
+- **Symptom:** Houston (4th largest US city) + has-website returned 0 orgs; proximity totals generally low.
+- **Root cause:** proximity matches `SUBSTR(zipcode,1,5) IN (...)` and zipcode was NULL for 1.22M of 2.04M rows — NULL never matches, so those orgs were invisible to every "near me" query. Same class of bug as the "Houston Texas" resolver: filters that silently drop rows look like working filters.
+- **Fix:** `scripts/backfill_zipcodes.py` fills zipcode from `data/bmf.csv` (EIN→ZIP, never overwrites): 821,507 → 1,977,541 (96.8%) in 346s. Ships to droplet via the nightly search.db build. Also moved `nightly_search_deploy.sh` cron 04:00 → 08:15 — the 04:00 run died on "database is locked" against the overnight enrichment loop's writes.
+- **Rule:** any filter implemented as `column IN/=/LIKE` must have its column's NULL-coverage checked at design time; a filter over a 40%-populated column is a 60% silent exclusion, not a filter.
