@@ -1,6 +1,18 @@
-"""Legal posture (2026-06-10): Daanaa is a discovery platform, not a fundraising
-platform. Public API responses must contain NO donation URL fields — donate data
-stays internal (claim flow + admin only). docs/audit/donation_cta_removal_phase1.md
+"""Legal posture, updated 2026-07-10 (see DECISIONS.md 2026-07-10 and
+project memory project_no_public_donation_ctas.md): the blanket 2026-06-10
+"no donate fields anywhere" directive was reversed for the ORG DETAIL
+endpoint only. A donate action may render publicly there, gated on
+donate_url_status IN ('beta', 'claimed') -- never on donate_confidence,
+which is NULL for ~99.7% of orgs with a URL. List/search/similar/summary
+endpoints still must never expose donate fields; a donor never needs a
+donate button on a card in a results grid, only on the org's own page.
+
+If donate_url is exposed on org detail, donate_url_status MUST be exposed
+alongside it -- a URL with no status is ungateable and the frontend would
+have to either show it unconditionally (violates fail-closed) or hide it
+always (defeats the point of exposing it). This is the actual invariant
+this file now guards on org detail; the blanket ban still holds everywhere
+else. docs/audit/donation_cta_removal_phase1.md (historical, pre-reversal).
 """
 
 import pytest
@@ -55,11 +67,22 @@ def test_org_list_has_no_donation_fields(client):
     _assert_clean(client.get("/api/organizations?per_page=10"), "/api/organizations")
 
 
-def test_org_detail_has_no_donation_fields(client):
+def test_org_detail_donate_fields_are_gateable(client):
+    """Org detail MAY expose donate_url (2026-07-10 reversal, org-detail only)
+    -- but ONLY alongside donate_url_status, so a consumer can gate on it.
+    A donate_url with no status would be ungateable and unsafe to render."""
     ein = _an_ein_with_donate_url(client)
     if not ein:
         pytest.skip("no org with internal donate_url in DB")
-    _assert_clean(client.get(f"/api/organizations/{ein}"), "/api/organizations/<ein>")
+    resp = client.get(f"/api/organizations/{ein}")
+    assert resp.status_code == 200, f"/api/organizations/<ein> returned {resp.status_code}"
+    body = resp.get_json()
+    if body.get("donate_url"):
+        assert "donate_url_status" in body, (
+            "donate_url is exposed without donate_url_status -- the frontend "
+            "cannot gate it (must be status IN beta/claimed to render), so an "
+            "ungated donate_url on org detail is a fail-closed violation."
+        )
 
 
 def test_search_has_no_donation_fields(client):

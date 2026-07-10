@@ -2792,15 +2792,21 @@ def org_submission_status(ein):
 
     db = get_db()
 
-    # Check if already scored
+    # Check if already scored. financial_health lives on registry_enriched,
+    # not v4_scores (fixed 2026-07-10 -- v4_scores is a 5-column table:
+    # EIN, score, tier, band, operating_model; financial_health and the
+    # 'visibility_tier' key name here were stale references to a schema
+    # that no longer exists, so this endpoint 500'd for any scored EIN).
     scored = db.execute(
-        "SELECT tier, financial_health FROM v4_scores WHERE EIN = ?",
+        """SELECT v4.tier, r.financial_health
+           FROM v4_scores v4 JOIN registry_enriched r ON r.EIN = v4.EIN
+           WHERE v4.EIN = ?""",
         (ein_clean,)
     ).fetchone()
     if scored:
         return jsonify({
             "status": "scored",
-            "visibility_tier": scored['visibility_tier'],
+            "visibility_tier": scored['tier'],
             "financial_health": scored['financial_health']
         }), 200
 
@@ -4718,6 +4724,11 @@ def fused_search():
         return jsonify({"results": [], "query": q, "mode": "fused", "total": 0})
 
     placeholders = ",".join("?" * fetch_n)
+    # v4 JOIN removed 2026-07-10: same schema-drift bug as get_organization()
+    # (v4_scores is now 5 columns: EIN, score, tier, band, operating_model --
+    # peer_cell_size never existed). This 500'd /api/search on every query.
+    # The joined columns fed _attach_v4_scores(), a documented no-op, and
+    # weren't referenced anywhere downstream in this function.
     cols = """r.EIN, r.organization_name, r.NTEE1, r.CITY, r.STATE, r.total_revenue,
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
               r.latest_tax_year, r.data_source, r.merit_tier, r.merit_score, r.merit_band,
@@ -4726,12 +4737,9 @@ def fused_search():
               r.net_assets, r.is_hidden_gem, r.cause_tags,
               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
-              (r.website  IS NOT NULL AND r.website  != '') as has_website,
-              v4.tier,
-              v4.peer_cell_size"""
+              (r.website  IS NOT NULL AND r.website  != '') as has_website"""
     rows = db.execute(
         f"""SELECT {cols} FROM registry_enriched r
-            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
             WHERE r.EIN IN ({placeholders}) AND {_DEDUCTIBILITY_FILTER}""",
         fused_eins[:fetch_n]
     ).fetchall()
