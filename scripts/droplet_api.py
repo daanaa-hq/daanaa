@@ -681,6 +681,7 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                         'page': page, 'per_page': per_page})
     try:
         conditions, params = _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, verified_revenue_only=verified_revenue_only)
+        conditions.append(_public_filter(conn))
         if state:
             conditions.append("STATE = ?")
             params.append(state)
@@ -741,6 +742,7 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                         'page': page, 'per_page': per_page, 'search_type': 'fts'})
     try:
         conditions, params, _detected_zip = _fts_where(q, state, conn)
+        conditions.append(_public_filter(conn, alias='o.'))
         cat_conds, cat_params = _cat_rev_conditions(
             ntee_list, sub_list, min_rev, max_rev, alias='o.')
         conditions.extend(cat_conds)
@@ -836,8 +838,33 @@ def _multi_state_page(ntee1, nteecc_filter, page, per_page):
 
 _real_total_cache: dict = {}
 
+# Public-eligibility filter: browse/filter surfaces must only show active,
+# tax-deductible 501(c)(3) orgs (public number 1,729,314), never revoked ones.
+# The full registry stays in search.db for org-detail fallback. Fails open to
+# no filter when an older search.db artifact lacks the columns.
+_PUBLIC_FILTER = ("subsection = '3' AND deductibility = '1' "
+                  "AND COALESCE(irs_revoked, 0) != 1 "
+                  "AND COALESCE(org_status, '') != 'revoked'")
+_public_filter_ok: bool | None = None
+
+def _public_filter(conn, alias: str = '') -> str:
+    global _public_filter_ok
+    if _public_filter_ok is None:
+        try:
+            conn.execute(f"SELECT 1 FROM registry_enriched WHERE {_PUBLIC_FILTER} LIMIT 1")
+            _public_filter_ok = True
+        except Exception:
+            _public_filter_ok = False
+    if not _public_filter_ok:
+        return "1=1"
+    if alias:
+        return (f"{alias}subsection = '3' AND {alias}deductibility = '1' "
+                f"AND COALESCE({alias}irs_revoked, 0) != 1 "
+                f"AND COALESCE({alias}org_status, '') != 'revoked'")
+    return _PUBLIC_FILTER
+
 def _get_real_total(state: str = '') -> int:
-    """Return the true org count from search.db, cached indefinitely per state."""
+    """Public org count from search.db (active deductible only), cached per state."""
     key = state or '_all'
     if key in _real_total_cache:
         return _real_total_cache[key]
@@ -845,10 +872,11 @@ def _get_real_total(state: str = '') -> int:
     if not conn:
         return 0
     try:
+        pf = _public_filter(conn)
         if state:
-            n = conn.execute("SELECT COUNT(*) FROM registry_enriched WHERE STATE = ?", (state,)).fetchone()[0]
+            n = conn.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {pf} AND STATE = ?", (state,)).fetchone()[0]
         else:
-            n = conn.execute("SELECT COUNT(*) FROM registry_enriched").fetchone()[0]
+            n = conn.execute(f"SELECT COUNT(*) FROM registry_enriched WHERE {pf}").fetchone()[0]
         _real_total_cache[key] = n
         return n
     except Exception:

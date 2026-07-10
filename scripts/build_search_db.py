@@ -41,6 +41,10 @@ LIVE_COLS = [
     "merit_archetype_v5", "merit_archetype_v5_label", "merit_band_v5",
     "merit_band_v5_label", "merit_score_v5", "merit_health_signal_v5",
     "merit_peer_group_v5", "merit_peer_count_v5",
+    # Public-eligibility columns (2026-07-10): lets the droplet exclude revoked
+    # and non-deductible orgs from browse/filter counts and results while the
+    # full registry stays available for org-detail fallback (revoked card state).
+    "subsection", "deductibility", "org_status", "irs_revoked",
 ]
 
 # Indexes the API relies on (browse filters, FTS join, ordering). EIN PK comes
@@ -56,6 +60,7 @@ INDEXES = [
     "CREATE INDEX idx_orgs_ntee1_rev ON registry_enriched(NTEE1, total_revenue DESC)",
     "CREATE INDEX idx_orgs_state_city ON registry_enriched(STATE, CITY)",
     "CREATE INDEX idx_orgs_name      ON registry_enriched(organization_name)",
+    "CREATE INDEX idx_orgs_public    ON registry_enriched(subsection, deductibility)",
 ]
 
 
