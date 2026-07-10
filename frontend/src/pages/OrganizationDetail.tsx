@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
+import AnswerCard from '../components/AnswerCard'
 import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
@@ -211,6 +212,31 @@ function HeroMission({ mission, missionSrc }: { mission: string; missionSrc: str
         </span>
       )}
     </div>
+  )
+}
+
+function EinCopyButton({ ein }: { ein: string }) {
+  const [copied, setCopied] = useState(false)
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(ein)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`shrink-0 px-2 py-1 rounded-md font-body text-[11px] font-semibold transition-all ${
+        copied ? 'bg-emerald-500/20 text-emerald-300' : 'bg-soft-gold/15 text-soft-gold hover:bg-soft-gold/25'
+      }`}
+    >
+      {copied ? 'Copied!' : 'Copy'}
+    </button>
   )
 }
 
@@ -492,59 +518,10 @@ export default function OrganizationDetail() {
                 <HeroMission mission={org.mission} missionSrc={apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? ''} />
               )}
 
-              {/* FINANCIAL TRUST LINE + PEER CONTEXT (Hero) */}
-              {apiOrg! && (apiOrg!.v5_context || apiOrg!.cohort_context) && (
-                <div className="mt-6 space-y-4">
-                  <div className="flex flex-wrap gap-3">
-                    {apiOrg!.program_expense_pct != null && apiOrg!.program_expense_pct > 0 && (
-                      <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
-                        <span className="font-display text-[26px] text-warm-cream leading-none">
-                          {apiOrg!.program_expense_pct.toFixed(0)}¢
-                        </span>
-                        <span className="font-body text-[11px] text-muted-cream text-center mt-1">per dollar to programs</span>
-                      </div>
-                    )}
-                    {apiOrg!.v5_context?.score?.health_signal && apiOrg!.v5_context?.score?.percentile != null && (
-                      <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
-                        <span className="font-display text-[26px] text-warm-cream leading-none">
-                          Top {Math.max(1, 100 - apiOrg!.v5_context.score.percentile)}%
-                        </span>
-                        <span className="font-body text-[11px] text-muted-cream text-center mt-1">of peer nonprofits</span>
-                      </div>
-                    )}
-                    {apiOrg!.v5_context?.score?.health_signal && (
-                      <div className={`flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl border min-w-[130px] ${
-                        apiOrg!.v5_context.score.health_signal === 'HEALTHY' ? 'bg-emerald-500/15 border-emerald-500/25' :
-                        apiOrg!.v5_context.score.health_signal === 'STABLE' ? 'bg-blue-500/10 border-blue-500/20' :
-                        'bg-amber-500/10 border-amber-500/20'
-                      }`}>
-                        <span className={`font-body text-[13px] font-semibold leading-none ${
-                          apiOrg!.v5_context.score.health_signal === 'HEALTHY' ? 'text-emerald-300' :
-                          apiOrg!.v5_context.score.health_signal === 'STABLE' ? 'text-blue-300' :
-                          'text-amber-300'
-                        }`}>
-                          {apiOrg!.v5_context.score.health_signal === 'HEALTHY' ? 'Financially healthy' :
-                           apiOrg!.v5_context.score.health_signal === 'STABLE' ? 'Financially stable' :
-                           'Needs support'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              )}
-
-              {/* Stub banner -- shown when org is IRS-registered but has no 990 data */}
-              {apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null && (
-                <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-white/8 border border-white/12">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                  <p className="font-body text-[13px] text-muted-cream leading-[1.55]">
-                    This is a registered US nonprofit. No annual financial report is on file yet, so detailed data and a score aren't available.
-                  </p>
-                </div>
-              )}
+              {/* Answer card: legit / deductible / healthy in <10s, for every
+                  org including the ~82% with no financial score and revoked
+                  orgs reached by direct/stale link. See AnswerCard.tsx. */}
+              {apiOrg! && <AnswerCard org={apiOrg!} />}
 
               {/* Badge row -- click any badge to see what earned it */}
               <div className="mt-4 flex flex-wrap gap-2">
@@ -642,18 +619,31 @@ export default function OrganizationDetail() {
                 ))}
               </div>
 
-              {/* Official external link. Discovery posture (2026-06-10): the
-                  yellow CTA goes to the org's own website when we have one
-                  (verified 'ok' or discovered 'beta'); otherwise a quiet
-                  IRS-backed public-record link. Never a donation page. */}
+              {/* Action row: Website / Donate / Volunteer. Donate re-authorized
+                  2026-07-10 (founder decision, reversing the 2026-06-10 legal-
+                  counsel "no public donation CTAs" directive that previously
+                  gated this) -- ONLY for donate_url_status IN (beta, claimed),
+                  matching the T3 gate (donate_confidence is NULL for 99.7% of
+                  orgs, do not use it). 'beta' links carry the same AiBadge used
+                  for AI-assisted missions -- unverified until the org claims
+                  its page and confirms the link; the claim flow is expected to
+                  promote status to 'claimed' at that point (see DECISIONS.md).
+                  Pre-launch attorney consult on donate-link display is still
+                  outstanding per project memory -- this ships to test/build
+                  against, not a substitute for that review before wide launch. */}
               {(() => {
                 const websiteVerified = apiOrg?.website_status === 'ok' || apiOrg?.website_status === 'beta';
                 const link = websiteVerified ? getPrimaryExternalLink({ website: apiOrg?.website }) : { url: null, label: null, type: null };
+                const donateOk = apiOrg?.donate_url_status === 'beta' || apiOrg?.donate_url_status === 'claimed';
+                const donateUrl = donateOk ? normalizeExternalUrl(apiOrg?.donate_url ?? '') : null;
+                const volunteerUrl = apiOrg?.volunteer_url ? normalizeExternalUrl(apiOrg.volunteer_url) : null;
 
-                if (link.url) {
-                  return (
-                    <div className="mt-5">
-                      <div className="flex flex-wrap items-center gap-3">
+                if (!link.url && !donateUrl && !volunteerUrl) return null;
+
+                return (
+                  <div className="mt-5">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {link.url && (
                         <a
                           href={link.url}
                           target="_blank"
@@ -663,22 +653,42 @@ export default function OrganizationDetail() {
                           {link.label}
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
-                      </div>
-                      {apiOrg!.website_status === 'beta' && (
-                        <p className="mt-1.5 font-body text-[11px] text-cool-grey flex items-center gap-1.5">
-                          <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5">⚠️ discovered</span>
-                          <span>·</span>
-                          <span>Not confirmed by the organization.</span>
-                          <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Verify</Link>
-                        </p>
                       )}
-                      <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                        Your giving goes directly to the organization. External link from our public records. If this link is broken, search for them by name.</p>
+                      {donateUrl && (
+                        <a
+                          href={donateUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-emerald-500 text-deep-navy px-7 py-3 rounded-full hover:bg-emerald-400 transition-colors"
+                        >
+                          Donate
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                      )}
+                      {volunteerUrl && (
+                        <a
+                          href={volunteerUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 font-body text-[14px] font-medium border border-warm-cream/30 text-warm-cream px-5 py-2.5 rounded-full hover:border-warm-cream/50 transition-colors"
+                        >
+                          Volunteer
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
+                      )}
                     </div>
-                  );
-                }
-
-                return null;
+                    {(apiOrg!.website_status === 'beta' || apiOrg?.donate_url_status === 'beta') && (
+                      <p className="mt-1.5 font-body text-[11px] text-cool-grey flex items-center gap-1.5">
+                        <AiBadge title="Found by AI from public records. Not yet confirmed by the organization." />
+                        <span>·</span>
+                        <span>Not confirmed by the organization.</span>
+                        <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Verify</Link>
+                      </p>
+                    )}
+                    <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
+                      Your giving goes directly to the organization. External link from our public records. If this link is broken, search for them by name.</p>
+                  </div>
+                );
               })()}
 
               {/* Contact phone */}
@@ -744,33 +754,37 @@ export default function OrganizationDetail() {
                         Print
                       </button>
                     </div>
-                    {!link.url && (
-                      <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 max-w-[480px]">
-                        <p className="font-body text-[11px] tracking-[0.06em] uppercase font-medium text-muted-cream mb-3">How to give</p>
-                        <div className="flex flex-col gap-2.5">
-                          <div className="flex items-start gap-2">
-                            <span className="font-body text-[12px] text-muted-cream shrink-0 mt-0.5">EIN:</span>
-                            <div>
+                    {/* Give by EIN: always present, never blank (design doc
+                        "empty action row" requirement) -- previously only
+                        shown when there was no website link. */}
+                    <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 max-w-[480px]">
+                      <p className="font-body text-[11px] tracking-[0.06em] uppercase font-medium text-muted-cream mb-3">How to give</p>
+                      <div className="flex flex-col gap-2.5">
+                        <div className="flex items-start gap-2">
+                          <span className="font-body text-[12px] text-muted-cream shrink-0 mt-0.5">EIN:</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
                               <span className="font-body text-[13px] font-semibold text-warm-cream">{apiOrg!.EIN}</span>
-                              <p className="font-body text-[11px] text-muted-cream/70 mt-0.5">Use this for a donor-advised fund gift or when writing a check.</p>
+                              <EinCopyButton ein={apiOrg!.EIN} />
                             </div>
+                            <p className="font-body text-[11px] text-muted-cream/70 mt-0.5">Use this for a donor-advised fund gift or when writing a check.</p>
                           </div>
-                          {apiOrg!.street_address && (
-                            <div className="flex items-start gap-2">
-                              <span className="font-body text-[12px] text-muted-cream shrink-0 mt-0.5">Address:</span>
-                              <span className="font-body text-[12px] text-warm-cream/90">
-                                {[apiOrg!.street_address, apiOrg!.CITY, apiOrg!.STATE, apiOrg!.zipcode].filter(Boolean).join(', ')}
-                              </span>
-                            </div>
-                          )}
                         </div>
-                        {!apiOrg!.street_address && (
-                          <p className="mt-2.5 font-body text-[11px] text-muted-cream/60">
-                            Most donor-advised funds accept gifts to any IRS-recognized nonprofit by EIN alone.
-                          </p>
+                        {apiOrg!.street_address && (
+                          <div className="flex items-start gap-2">
+                            <span className="font-body text-[12px] text-muted-cream shrink-0 mt-0.5">Address:</span>
+                            <span className="font-body text-[12px] text-warm-cream/90">
+                              {[apiOrg!.street_address, apiOrg!.CITY, apiOrg!.STATE, apiOrg!.zipcode].filter(Boolean).join(', ')}
+                            </span>
+                          </div>
                         )}
                       </div>
-                    )}
+                      {!apiOrg!.street_address && (
+                        <p className="mt-2.5 font-body text-[11px] text-muted-cream/60">
+                          Most donor-advised funds accept gifts to any IRS-recognized nonprofit by EIN alone.
+                        </p>
+                      )}
+                    </div>
                   </>
                 );
               })()}
@@ -779,7 +793,8 @@ export default function OrganizationDetail() {
                   Appears under whichever CTA rendered. */}
             </div>
 
-            {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) && (
+            {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) &&
+             apiOrg!.org_status !== 'revoked' && apiOrg!.irs_revoked !== 1 && (
             <div className="flex flex-col items-center gap-3 lg:pt-4">
               {/* LampMark lg -- tappable, opens TierBreakdown inline */}
               <LampMark

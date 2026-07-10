@@ -112,6 +112,11 @@ export interface ApiOrganization {
   ruling_date: string | null;         // IRS ruling date for tax-exempt status
   zipcode: string | null;
   street_address: string | null;
+  // Only present on the search.db-fallback path (revoked orgs never get a
+  // precomputed file -- precompute_orgs.py filters org_status='active' at
+  // the source, so a revoked org's page is only reachable via this fallback).
+  org_status?: string | null;
+  irs_revoked?: number | null;
   activ1: string | null;              // NTEE activity code 1 (NCCS)
   activ2: string | null;
   activ3: string | null;
@@ -442,6 +447,12 @@ export async function deleteWaitlistEntry(id: number, adminKey: string): Promise
 
 export interface SimilarResult extends ApiOrganization {
   similarity_score: number;
+  // true = same city/state match (Tiers 1-3); false = nationwide NTEE1
+  // fallback (Tier 4) with no locality guarantee -- the UI must not claim
+  // "near [CITY]" when this is false (2026-07-10 eng review, cross-model
+  // tension 2). Optional because precompute_similar_orgs.py needs a full
+  // production run to backfill every org; older cached entries lack it.
+  is_local?: boolean;
 }
 
 export async function getSimilarOrgs(ein: string, options?: {
