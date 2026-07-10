@@ -1855,34 +1855,16 @@ def get_organization(ein):
 
     db = get_db()
 
-    # Check if v4_scores table exists
-    has_v4_scores = bool(db.execute(
-        "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name='v4_scores' LIMIT 1"
-    ).fetchone())
-
-    if has_v4_scores:
-        # Use subquery to avoid column name conflicts between registry_enriched and v4_scores
-        sql = """SELECT r.*,
-                        v4_data.tier,
-                        v4_data.financial_health,
-                        v4_data.operating_model,
-                        v4_data.revenue_band as v4_revenue_band,
-                        v4_data.peer_cell_size,
-                        v4_data.metrics_json,
-                        v4_data.percentiles_json
-                 FROM registry_enriched r
-                 LEFT JOIN (
-                    SELECT EIN,
-                           revenue_band, peer_cell_size, metrics_json, percentiles_json
-                    FROM v4_scores
-                 ) v4_data ON r.EIN = v4_data.EIN
-                 WHERE r.EIN = ?"""
-    else:
-        sql = """SELECT r.*,
-                        NULL as tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band,
-                        NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json
-                 FROM registry_enriched r
-                 WHERE r.EIN = ?"""
+    # v4_data JOIN removed 2026-07-10: v4_scores was migrated to a 5-column
+    # schema (EIN, score, tier, band, operating_model) at some point after
+    # this query was written, and nobody updated it -- every call to this
+    # endpoint 500'd with "no such column: revenue_band" (v4_scores never
+    # had peer_cell_size/metrics_json/percentiles_json either). The joined
+    # columns fed _attach_v4_scores(), which is itself a documented no-op
+    # ("V4 scores disabled (v5 only). Returns org unchanged.") -- dropping
+    # the join changes no served data, just removes a broken query that was
+    # crashing every org-detail request on this backend.
+    sql = "SELECT r.* FROM registry_enriched r WHERE r.EIN = ?"
 
     row = db.execute(sql, (ein_clean,)).fetchone()
     if row is None:
