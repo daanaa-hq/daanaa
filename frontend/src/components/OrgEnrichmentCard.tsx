@@ -13,6 +13,7 @@ interface ContactData {
 interface ProgramsData {
   program_descriptions?: string[]
   service_area?: string
+  service_area_hints?: string[]
   years_active?: number
   accreditations?: string[]
   programs_verified_date?: string
@@ -98,7 +99,7 @@ export default function OrgEnrichmentCard({ contact, programs, loading }: OrgEnr
       )}
 
       {/* Programs Card */}
-      {programs && Object.keys(programs).filter(k => k !== 'programs_verified_date' && k !== 'program_sources').length > 0 && (
+      {programs && Object.keys(programs).filter(k => k !== 'programs_verified_date' && k !== 'program_sources' && programs[k as keyof ProgramsData]).length > 0 && (
         <div className="space-y-3">
           <h3 className="font-body text-[14px] font-semibold text-deep-navy uppercase tracking-[0.08em]">
             Organization Profile
@@ -113,12 +114,21 @@ export default function OrgEnrichmentCard({ contact, programs, loading }: OrgEnr
                 </div>
               </div>
             )}
-            {programs.service_area && (
+            {(programs.service_area || programs.service_area_hints?.length) && (
               <div className="flex items-start gap-3">
                 <span className="text-[16px]">🗺️</span>
                 <div>
                   <p className="font-body text-[12px] text-cool-grey uppercase tracking-[0.05em]">Service Area</p>
-                  <p className="font-body text-[13px] text-deep-navy">{programs.service_area}</p>
+                  {programs.service_area && (
+                    <p className="font-body text-[13px] text-deep-navy">{programs.service_area}</p>
+                  )}
+                  {programs.service_area_hints && programs.service_area_hints.length > 0 && (
+                    <div className="space-y-1">
+                      {programs.service_area_hints.map((area, idx) => (
+                        <p key={idx} className="font-body text-[13px] text-deep-navy">{area}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -238,7 +238,7 @@ export default function OrganizationDetail() {
   const showPeerContextBreakdown = useFeatureFlag('peer_context_breakdown', 1) // 1% rollout
 
   const { data: apiOrg, loading: orgLoading, error: orgError } = useApi(
-    () => getOrganization(id || ''),
+    () => getOrganization(id || '', { includeEnrichment: true }),
     [id]
   )
 
@@ -973,6 +973,15 @@ export default function OrganizationDetail() {
 
           {/* Guild/Partner Membership */}
           {apiOrg && <GuildSection ein={apiOrg.EIN} />}
+
+          {/* Enrichment Data: Contact & Programs */}
+          {apiOrg && (
+            <OrgEnrichmentCard
+              contact={apiOrg.contact || null}
+              programs={apiOrg.programs || null}
+              loading={orgLoading}
+            />
+          )}
 
           {/* Context & Recall System: Macro Context & Knowledge Graph */}
           {recallData && (

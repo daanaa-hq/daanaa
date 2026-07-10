@@ -668,9 +668,8 @@ def _strip_scores(org: dict) -> dict:
     return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
 
 def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
-    """Attach v4.0 financial health scores to org response if available and enabled."""
-    if not ENABLE_V4_SCORES or v4_row is None:
-        return org
+    """V4 scores disabled (v5 only). Returns org unchanged."""
+    return org
     v4 = dict(v4_row)
     org['visibility_tier'] = v4.get('visibility_tier')
     org['financial_health'] = v4.get('financial_health')
@@ -1736,12 +1735,6 @@ def list_organizations():
         params.append(f'%{cause}%')
 
     _TIER_HIERARCHY = ['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark']
-    if min_tier and min_tier in _TIER_HIERARCHY:
-        idx = _TIER_HIERARCHY.index(min_tier)
-        included = _TIER_HIERARCHY[:idx + 1]
-        placeholders = ','.join('?' * len(included))
-        where_clauses.append(f'merit_tier IN ({placeholders})')
-        params.extend(included)
     # Exact visibility tier filter (e.g., show only Beacon orgs)
     _VISIBILITY_TIERS = ['Beacon', 'Torch', 'Lantern', 'Candle', 'Ember', 'Spark']
     if tier and tier in _VISIBILITY_TIERS:
@@ -1750,7 +1743,7 @@ def list_organizations():
 
     # total_revenue and merit_score are opt-in sorts; the default is neutral
     # name order so browse never implies a ranking.
-    allowed_sorts = ['organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY',
+    allowed_sorts = ['organization_name', 'ntee1_percentile', 'EIN', 'STATE', 'CITY',
                      'total_revenue']
     if sort_by not in allowed_sorts:
         sort_by = 'organization_name'
@@ -1780,10 +1773,10 @@ def list_organizations():
     ).fetchone())
 
     if has_v4_scores:
-        v4_cols = ", v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band, v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"
+        v4_cols = ", v4.tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band, v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"
         join_clause = "LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN"
     else:
-        v4_cols = ", NULL as visibility_tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band, NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json"
+        v4_cols = ", NULL as tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band, NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json"
         join_clause = ""
 
     sql = f"""
@@ -1791,7 +1784,6 @@ def list_organizations():
                r.total_revenue, r.ntee1_percentile, r.ntee1_total_orgs, r.source,
                r.latest_tax_year, r.data_source, r.updated_at,
                r.revenue_band, r.peer_percentile, r.peer_rank, r.peer_total, r.peer_group,
-               r.merit_tier, r.merit_score, r.merit_band,
                CASE WHEN r.months_of_reserve BETWEEN -120 AND 120 THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
                r.net_assets, r.total_expenses,
                r.employee_count, r.ruling_date, r.zipcode, r.is_hidden_gem, r.cause_tags,
@@ -1801,9 +1793,7 @@ def list_organizations():
                (r.website IS NOT NULL AND r.website != '') as has_website,
                r.merit_score_v5, r.merit_health_signal_v5, r.merit_archetype_v5,
                r.merit_archetype_v5_label, r.merit_peer_count_v5
-               {v4_cols}
         FROM registry_enriched r
-        {join_clause}
         WHERE {where_sql}
         ORDER BY {sort_col} {_sort_dir_suffix}
         LIMIT ? OFFSET ?
@@ -1873,7 +1863,7 @@ def get_organization(ein):
     if has_v4_scores:
         # Use subquery to avoid column name conflicts between registry_enriched and v4_scores
         sql = """SELECT r.*,
-                        v4_data.visibility_tier,
+                        v4_data.tier,
                         v4_data.financial_health,
                         v4_data.operating_model,
                         v4_data.revenue_band as v4_revenue_band,
@@ -1882,14 +1872,14 @@ def get_organization(ein):
                         v4_data.percentiles_json
                  FROM registry_enriched r
                  LEFT JOIN (
-                    SELECT EIN, visibility_tier, financial_health, operating_model,
+                    SELECT EIN, tier, financial_health, operating_model,
                            revenue_band, peer_cell_size, metrics_json, percentiles_json
                     FROM v4_scores
                  ) v4_data ON r.EIN = v4_data.EIN
                  WHERE r.EIN = ?"""
     else:
         sql = """SELECT r.*,
-                        NULL as visibility_tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band,
+                        NULL as tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band,
                         NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json
                  FROM registry_enriched r
                  WHERE r.EIN = ?"""
@@ -2822,7 +2812,7 @@ def org_submission_status(ein):
 
     # Check if already scored
     scored = db.execute(
-        "SELECT visibility_tier, financial_health FROM v4_scores WHERE EIN = ?",
+        "SELECT tier, financial_health FROM v4_scores WHERE EIN = ?",
         (ein_clean,)
     ).fetchone()
     if scored:
@@ -3771,7 +3761,7 @@ def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
               r.latest_tax_year, r.data_source, r.updated_at,
               r.merit_tier, r.merit_score, r.merit_band,
-              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
     placeholders = ",".join("?" * len(eins))
     # active_only=True enforces the same deductibility + revocation filter used by
@@ -3797,7 +3787,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
               r.latest_tax_year, r.data_source, r.updated_at,
               r.merit_tier, r.merit_score, r.merit_band,
-              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
 
     # ── Vector path ────────────────────────────────────────────────────────────
@@ -4762,7 +4752,7 @@ def fused_search():
               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
               (r.website  IS NOT NULL AND r.website  != '') as has_website,
-              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
+              v4.tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
               v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
     rows = db.execute(
         f"""SELECT {cols} FROM registry_enriched r

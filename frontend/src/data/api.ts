@@ -1,17 +1,15 @@
 // API client for Daanaa backend — maps to daanaa_api.py (Flask, port 5000)
 export const API_BASE = import.meta.env.VITE_API_URL || '';
 
-// Nonprofit endpoints route to the home server API instead of the droplet
-// This keeps the droplet stateless (browse/search only) while nonprofit features
-// (analytics, approval) use the full daanaa_api.py backend
+// All API calls route to home server (droplet is stateless — frontend only).
+// On localhost, port 5000 is daanaa_api.py (Flask). On production, Cloudflare
+// routes /api/* to the home server backend (never to the droplet).
 const getApiBase = (path: string): string => {
-  if (path.startsWith('/api/nonprofit/')) {
-    // On production (daanaa.org via Cloudflare), nonprofit API routes through home server
-    // On localhost, use port 5000 (which is daanaa_api.py)
+  if (path.startsWith('/api/')) {
     if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
       return 'http://localhost:5000';
     }
-    // On production, fetch through the same origin (Cloudflare routes /api/nonprofit to home)
+    // On production, fetch through same origin — Cloudflare worker routes /api/* to home
     return '';
   }
   return API_BASE;
@@ -164,6 +162,24 @@ export interface ApiOrganization {
   seeking_board_members?: boolean | null;
   // Events (claimed orgs with posted volunteer events)
   upcoming_events_count?: number | null;
+  // Phase 2 enrichment: contact & programs signals (AI-assisted)
+  contact?: {
+    email?: string;
+    phone?: string;
+    street_address?: string;
+    executive_name?: string;
+    board_size?: number;
+    contact_verified_date?: string;
+    contact_sources?: string[];
+  } | null;
+  programs?: {
+    program_descriptions?: string[];
+    service_area?: string;
+    years_active?: number;
+    accreditations?: string[];
+    programs_verified_date?: string;
+    program_sources?: string[];
+  } | null;
 }
 
 export interface ApiCategory {
@@ -267,8 +283,9 @@ export async function getOrganizations(params?: {
 }
 
 // GET /api/organizations/:ein
-export async function getOrganization(ein: string): Promise<ApiOrganization> {
-  return fetchJson(`/api/organizations/${ein}`);
+export async function getOrganization(ein: string, options?: { includeEnrichment?: boolean }): Promise<ApiOrganization> {
+  const url = options?.includeEnrichment ? `/api/organizations/${ein}?include_enrichment=1` : `/api/organizations/${ein}`;
+  return fetchJson(url);
 }
 
 // GET /api/search/semantic — vector similarity search
