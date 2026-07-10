@@ -126,7 +126,10 @@ root cause (e.g. a route rename) rather than 15 independent bugs.
 - P3 — Cloudflare SSL Full(strict) + origin cert before heavy launch (currently Flexible for beta).
 - P3 — DKIM record for daanaa.org (Google Workspace → Authenticate email).
 
-### P3 — Rebuild enrichment loop properly (Layer 1 Qwen parsing fix) before re-enabling cron
+### ✅ DONE 2026-07-10 — Rebuild enrichment loop properly (Layer 1 Qwen parsing fix) before re-enabling cron
+Resolved same day: structured output via response_format json_schema + fail-closed
+parsing (see DECISIONS.md 2026-07-10); cron re-enabled; 5-org live run verified.
+Original entry kept below for context.
 The 2am `enrichment_loop_8pm_8am.sh` cron was disabled 2026-07-10 (see DECISIONS.md):
 Layer 1 (missions/cause tags/websites/donate links — the stages that actually feed the
 site) was already disabled due to Qwen verbose-output parse errors, and Layer 2

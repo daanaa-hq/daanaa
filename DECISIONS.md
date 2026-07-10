@@ -469,3 +469,25 @@ types/fetchers): CPI index level was displayed as "inflation: 310%", KG "entitie
 NTEE code letters. Rejected: fixing the extractors in place — no consumer justifies the spend
 today; rebuild properly (real HTML input, correct labels) if/when the product needs it.
 Backend recall tables + /recall endpoint left dormant (no cost, no consumer).
+
+## 2026-07-10 — Layer 1 enrichment repaired via grammar-constrained JSON output
+Chose llama-server's OpenAI-style `response_format: json_schema` (schema kwarg on qwen_fn →
+GBNF grammar enforced during sampling) + fail-closed JSON parsing in qwen_inference.py, then
+re-enabled Layer 1 and the 2am cron. Why: the 2026-07-08 disable was caused by verbose
+instruct-model prose that raw `.strip()` handling wrote downstream as garbage; grammar
+constraint makes verbose output impossible, and fail-closed parsing guarantees junk never
+reaches registry_enriched even on older servers (400 → prompt-instructed JSON fallback).
+generate_tags now returns a JSON-array string matching the cause_tags column (the old
+comma-prose return was itself a format mismatch). Verified live: unconstrained Qwen produced
+the exact markdown mess; constrained produced clean JSON; 5-org real run staged + promoted
+correctly with donate_human_review flagging. Rejected: prompt-only "respond with JSON"
+(kept as fallback, but sampling-level enforcement is the guarantee).
+
+## 2026-07-10 — Two empty drifted tables rebuilt in place (page_cache, enrichment_run)
+Chose to DROP+CREATE both to the schema all code expects. Why: live page_cache had a stale
+3-column shape (every writer expects 6 columns — CREATE TABLE IF NOT EXISTS never upgrades),
+and enrichment_run's CHECK only allowed ('cause_tags','website') though the consolidated flow
+emits mission/volunteer_url/donate_url/donate_url_review — proof the consolidated pipeline
+never ran end-to-end in production. Both tables held 0 rows, so the schema-change gate's
+data-loss concern didn't apply; flagged post-hoc in session summary per the gate's intent.
+Rejected: code-side workarounds (tolerating a broken staging schema hides the next drift).

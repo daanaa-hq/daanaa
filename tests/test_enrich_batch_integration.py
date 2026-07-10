@@ -39,6 +39,7 @@ values, so the newer mission-regeneration and donate_url-discovery paths
 (also added in Task 6) stay inert here and don't add extra, unasserted
 result rows that would throw off the exact counts these tests check.
 """
+import json
 import sqlite3
 from unittest.mock import patch
 
@@ -382,8 +383,10 @@ class TestConsolidatedEnrichment:
         # 'unknown' -> score_confidence stays low -> must be flagged, not written.
         def low_confidence_qwen(prompt: str, max_tokens: int = 200) -> str:
             if "donate" in prompt.lower():
-                return "unrelatedcharity.org/give"
-            return "Education, Community"
+                return '{"domain": "unrelatedcharity.org"}'
+            if '"tags"' in prompt:
+                return '{"tags": ["Education", "Community"]}'
+            return '{"domain": "unrelatedcharity.org"}'
 
         from scripts.enrich_batch import EnrichmentBatch
 
@@ -434,14 +437,16 @@ class TestFullConsolidatedFlow:
         }
 
         def realistic_qwen(prompt: str, max_tokens: int = 200) -> str:
-            if 'website' in prompt.lower() and 'donate' not in prompt.lower():
-                return 'riversideyouthrobotics.org'
-            if 'donate' in prompt.lower():
-                return 'riversideyouthrobotics.org/donate'
-            if 'robotics and coding clubs' in prompt.lower() or 'saturday' in prompt.lower() or 'middle schools' in prompt.lower():
-                return 'Runs free after-school robotics and coding clubs for 150 middle schoolers across three Portland schools.'
-            if 'tags' in prompt.lower():
-                return 'Youth Development, STEM Education, Robotics'
+            # JSON shapes per the structured-output contract (2026-07-10).
+            # Dispatch on the appended response-shape instruction — the tags
+            # prompt also embeds the website grounding text, so content
+            # keywords alone would mis-route it to the mission branch.
+            if '{"tags"' in prompt:
+                return '{"tags": ["Youth Development", "STEM Education", "Robotics"]}'
+            if '{"mission"' in prompt:
+                return json.dumps({"mission": "Runs free after-school robotics and coding clubs for 150 middle schoolers across three Portland schools."})
+            if '{"domain"' in prompt:
+                return '{"domain": "riversideyouthrobotics.org"}'
             return 'generic response'
 
         from scripts.enrich_batch import EnrichmentBatch

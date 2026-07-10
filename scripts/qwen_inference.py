@@ -1,10 +1,77 @@
 #!/usr/bin/env python3
 """
 Qwen-32B inference for generating cause tags and websites.
+
+Structured-output contract (2026-07-10 Layer 1 repair): every generator asks
+for a JSON object (grammar-enforced server-side when qwen_fn supports the
+`schema` kwarg — see get_real_qwen_fn in enrich_batch.py), parses it, and
+fails closed. Verbose prose that can't be parsed returns None; a garbage
+value must never reach registry_enriched. This replaced the raw
+`.strip()` handling that got Layer 1 disabled on 2026-07-08.
 """
 import json
+import re
 from typing import Callable, Optional, Dict, Any
 import time
+
+
+_JSON_OBJ_RE = re.compile(r'\{.*\}', re.DOTALL)
+# Bare hostname: labels of [a-z0-9-], at least one dot, alpha TLD. No paths,
+# no spaces — anything else means the model didn't answer with a domain.
+_DOMAIN_RE = re.compile(r'^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$')
+
+TAGS_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "minItems": 1,
+            "maxItems": 5,
+        }
+    },
+    "required": ["tags"],
+}
+WEBSITE_SCHEMA = {
+    "type": "object",
+    "properties": {"domain": {"type": "string"}},
+    "required": ["domain"],
+}
+MISSION_SCHEMA = {
+    "type": "object",
+    "properties": {"mission": {"type": "string"}},
+    "required": ["mission"],
+}
+
+
+def _parse_json_obj(text: Optional[str]) -> Optional[dict]:
+    """Extract a JSON object from a model response, or None.
+
+    Tries a strict parse first, then the outermost {...} span (handles code
+    fences and stray prose around the object). Fails closed on anything else.
+    """
+    if not text:
+        return None
+    for candidate in (text, *( [m.group(0)] if (m := _JSON_OBJ_RE.search(text)) else [] )):
+        try:
+            obj = json.loads(candidate)
+            if isinstance(obj, dict):
+                return obj
+        except (json.JSONDecodeError, ValueError):
+            continue
+    return None
+
+
+def _normalize_domain(raw: Optional[str]) -> Optional[str]:
+    """Reduce a model-suggested domain to a bare validated hostname, or None."""
+    if not raw or not isinstance(raw, str):
+        return None
+    d = raw.strip().lower()
+    d = re.sub(r'^https?://', '', d)
+    d = d.split('/', 1)[0].split('?', 1)[0]
+    if d.startswith('www.'):
+        d = d[4:]
+    return d if _DOMAIN_RE.match(d) else None
 
 
 class QwenInference:
@@ -23,6 +90,18 @@ class QwenInference:
         self.timeout_seconds = timeout_seconds
         self.prompts = config['prompts'].get(prompt_version, config['prompts']['v1.0'])
 
+    def _call(self, prompt: str, max_tokens: int, schema: dict) -> Optional[str]:
+        """Invoke qwen_fn, passing the JSON schema when the fn supports it.
+
+        Legacy qwen_fns (old mocks, callers built before the structured-output
+        contract) only accept (prompt, max_tokens) — fall back for those so
+        the schema stays a server-side enforcement upgrade, not a hard break.
+        """
+        try:
+            return self.qwen_fn(prompt=prompt, max_tokens=max_tokens, schema=schema)
+        except TypeError:
+            return self.qwen_fn(prompt=prompt, max_tokens=max_tokens)
+
     def generate_tags(
         self,
         org_data: Dict[str, Any],
@@ -31,12 +110,22 @@ class QwenInference:
         grounding_context: Optional[str] = None
     ) -> Optional[str]:
         prompt = self._build_cause_tags_prompt(org_data, similar_orgs, grounding_context)
+        prompt += '\n\nRespond with only a JSON object: {"tags": ["tag1", "tag2", ...]}'
 
         for attempt in range(max_retries):
             try:
-                result = self.qwen_fn(prompt=prompt, max_tokens=150)
-                if result:
-                    return result.strip()
+                result = self._call(prompt, max_tokens=150, schema=TAGS_SCHEMA)
+                obj = _parse_json_obj(result)
+                if not obj or not isinstance(obj.get('tags'), list):
+                    return None  # fail closed: verbose/unparseable output never reaches the DB
+                seen = []
+                for t in obj['tags']:
+                    if isinstance(t, str) and t.strip() and t.strip().lower() not in seen:
+                        seen.append(t.strip().lower())
+                    if len(seen) == 5:
+                        break
+                # JSON-array string, matching the cause_tags column format
+                return json.dumps(seen) if seen else None
             except TimeoutError:
                 if attempt < max_retries - 1:
                     time.sleep(1)
@@ -57,12 +146,15 @@ class QwenInference:
         max_retries: int = 1
     ) -> Optional[str]:
         prompt = self._build_website_prompt(org_data, similar_orgs)
+        prompt += '\n\nRespond with only a JSON object: {"domain": "example.org"}'
 
         for attempt in range(max_retries):
             try:
-                result = self.qwen_fn(prompt=prompt, max_tokens=50)
-                if result:
-                    return result.strip().lower()
+                result = self._call(prompt, max_tokens=50, schema=WEBSITE_SCHEMA)
+                obj = _parse_json_obj(result)
+                if not obj:
+                    return None  # fail closed
+                return _normalize_domain(obj.get('domain'))
             except TimeoutError:
                 if attempt < max_retries - 1:
                     time.sleep(1)
@@ -92,12 +184,18 @@ class QwenInference:
         when no validated website content exists.
         """
         prompt = self._build_mission_prompt(org_data, website_content)
+        prompt += '\n\nRespond with only a JSON object: {"mission": "..."}'
 
         for attempt in range(max_retries):
             try:
-                result = self.qwen_fn(prompt=prompt, max_tokens=150)
-                if result:
-                    return result.strip()
+                result = self._call(prompt, max_tokens=150, schema=MISSION_SCHEMA)
+                obj = _parse_json_obj(result)
+                if not obj:
+                    return None  # fail closed
+                mission = obj.get('mission')
+                if isinstance(mission, str) and len(mission.strip()) >= 20:
+                    return mission.strip()
+                return None
             except TimeoutError:
                 if attempt < max_retries - 1:
                     time.sleep(1)

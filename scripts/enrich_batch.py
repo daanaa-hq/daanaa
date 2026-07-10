@@ -113,15 +113,31 @@ def get_real_qwen_fn(port: int = 11437, timeout: int = 60) -> Callable:
     """
     import requests
 
-    def qwen_call(prompt: str, max_tokens: int = 200) -> str:
+    def qwen_call(prompt: str, max_tokens: int = 200, schema: Optional[dict] = None) -> str:
+        payload = {
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": max_tokens
+        }
+        if schema:
+            # llama-server converts the schema to a GBNF grammar and enforces
+            # it during sampling — the model physically cannot answer with the
+            # verbose prose that got Layer 1 disabled on 2026-07-08.
+            payload["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {"name": "enrichment", "strict": True, "schema": schema},
+            }
         resp = requests.post(
             f"http://localhost:{port}/v1/chat/completions",
-            json={
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": max_tokens
-            },
-            timeout=timeout
+            json=payload, timeout=timeout
         )
+        if resp.status_code == 400 and schema:
+            # Older llama-server builds reject response_format — fall back to
+            # prompt-instructed JSON; QwenInference still parses fail-closed.
+            payload.pop("response_format")
+            resp = requests.post(
+                f"http://localhost:{port}/v1/chat/completions",
+                json=payload, timeout=timeout
+            )
         resp.raise_for_status()
         return resp.json()['choices'][0]['message']['content']
 
@@ -208,18 +224,13 @@ class EnrichmentBatch:
         logger.info("=== Enrichment Batch Started ===")
         start_time = time.time()
 
-        # Layer 1 DISABLED: Qwen verbose output causes parsing errors, wasting CPU.
-        # Layer 2 REMOVED 2026-07-10 (founder-approved enrichment alignment
-        # review): contact extraction yielded 0 rows ever (extractor needs
-        # website HTML that was never passed; ProPublica call is a placeholder),
-        # programs extraction hardcoded Houston/Texas service areas for orgs
-        # nationwide, and S3 embedding uploads had no reader (search uses the
-        # local org_embeddings table). Removing stops nightly ProPublica
-        # traffic and S3 spend for unread data. See DECISIONS.md 2026-07-10.
-        # With both layers gone this batch is a no-op until Layer 1's Qwen
-        # parsing is fixed — the 2am cron entry is disabled to match.
-        logger.info("Layer 1: Disabled (Qwen output too verbose). Layer 2: removed 2026-07-10. Nothing to do.")
-        enrich_results = []
+        # Layer 1 re-enabled 2026-07-10: outputs are now grammar-constrained
+        # JSON (schema kwarg → llama-server response_format) and parsed
+        # fail-closed in qwen_inference.py, fixing the verbose-output problem
+        # that got this disabled on 2026-07-08. Layer 2 (contact/programs/S3
+        # embeddings) stays removed — zero-yield, see DECISIONS.md 2026-07-10.
+        logger.info("Layer 1: Semantic lookup + Qwen inference (structured output)")
+        enrich_results = self._enrich_layer(max_orgs=max_orgs, batch_size=batch_size)
 
         if not dry_run and enrich_results:
             logger.info("Writing Layer 1 results to DB")

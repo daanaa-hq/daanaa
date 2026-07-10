@@ -7,6 +7,7 @@ Provides mocks for:
 - Sample organization data for testing
 """
 
+import json
 import sqlite3
 import random
 import string
@@ -51,16 +52,22 @@ def mock_qwen():
         rng = random.Random(_stable_seed(prompt))
 
         # Simulate different response types based on prompt keywords
-        if "cause_tags" in prompt.lower() or "tags" in prompt.lower():
+        # Responses follow the structured-output contract (2026-07-10):
+        # generators parse a JSON object fail-closed, so the mock answers in
+        # the same JSON shapes the grammar-constrained production server does.
+        if "mission statement" in prompt.lower() or '"mission"' in prompt:
+            return json.dumps({"mission": "Provides community programs and services to local residents in need."})
+
+        elif "cause_tags" in prompt.lower() or "tags" in prompt.lower():
             tags = ["Community Development", "Education", "Health Services", "Arts & Culture", "Environment"]
             selected = rng.sample(tags, k=rng.randint(2, 4))
-            return ', '.join(selected)
+            return json.dumps({"tags": selected})
 
         elif "website" in prompt.lower() or "domain" in prompt.lower():
             extensions = [".org", ".com", ".net"]
             org_name = "testorg"
             ext = rng.choice(extensions)
-            return f"{org_name}{ext}"
+            return json.dumps({"domain": f"{org_name}{ext}"})
 
         else:
             # Generic response for other prompts

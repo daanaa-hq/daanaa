@@ -79,12 +79,10 @@ class TestQwenInference:
         substantive content from similar orgs and the target org, not just placeholder
         values. It checks the actual string content of prompts.
         """
-        # Create a deterministic mock qwen that just returns the prompt it receives
-        # This allows us to inspect the actual prompt that would be sent to Qwen
-        def echo_qwen(prompt: str, max_tokens: int = 200) -> str:
-            return prompt
-
-        qwen = QwenInference(qwen_fn=echo_qwen, config=enrich_config)
+        # Inspect prompts via the builder methods directly — generate_* now
+        # parses responses as JSON fail-closed (structured-output contract),
+        # so the old echo-the-prompt-through-generate trick no longer applies.
+        qwen = QwenInference(qwen_fn=lambda prompt, max_tokens=200: '', config=enrich_config)
 
         org_data = {
             'EIN': '611234567',
@@ -115,7 +113,7 @@ class TestQwenInference:
         ]
 
         # Test cause tags prompt includes similar org tags and target mission
-        tags_prompt = qwen.generate_tags(org_data, similar_orgs)
+        tags_prompt = qwen._build_cause_tags_prompt(org_data, similar_orgs, None)
 
         # Verify essential content is in the prompt (similar orgs' first tags and target mission)
         assert 'Technology' in tags_prompt, "First similar org's cause tag not in prompt"
@@ -205,9 +203,9 @@ class TestQwenInference:
 
     def test_generate_website_lowercase_normalization(self, mock_qwen, enrich_config):
         """Test that generate_website returns lowercase domain names."""
-        # Mock qwen that returns uppercase domain
+        # Mock qwen that returns uppercase domain (structured-output JSON shape)
         def uppercase_qwen(prompt: str, max_tokens: int = 200) -> str:
-            return "MyOrgSite.ORG"
+            return '{"domain": "MyOrgSite.ORG"}'
 
         qwen = QwenInference(qwen_fn=uppercase_qwen, config=enrich_config)
 
