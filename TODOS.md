@@ -53,6 +53,52 @@ Do NOT build the empty component now (YAGNI — no caller yet).
 
 ---
 
+## Answer Card sprint (phase 1 → phase 2 gate)
+
+### P2 — Gate homepage/causes phases on proven indexation, not calendar weeks
+Outside-voice finding (Codex, 2026-07-10 eng review): the whole answer-card strategy
+bets on Google distributing 1.7M org pages, but Search Console indexation status is
+still unverified (the design doc's own open Assignment item). Before starting phase 2
+(homepage, weeks 3-4), check: how many org pages are indexed, impressions/CTR by page
+state (scored vs no-data vs revoked), and external website/donate handoff rate — not
+just the 3-person hallway test. If indexation is weak, redesigning the homepage
+decorates pages Google is ignoring instead of compounding the real bottleneck.
+Context: `~/.gstack/projects/meritgiving/akbar-master-design-20260710-000500.md`
+(Recommended Approach, phase sequencing). Revisit via /plan-ceo-review if the numbers
+come back weak — don't silently proceed on the calendar.
+Depends on: Search Console access (already a design-doc dependency).
+
+### P2 — Trace and restore the sitemap deploy pipeline to data.daanaa.org
+`scripts/generate_visibility_exports.py`'s ORDER BY was fixed 2026-07-10 (richest
+orgs first, was raw EIN order) and verified against live data — that part is done
+and committed. What's NOT done: getting fresh output actually live. Three unresolved
+questions block this: (1) `generate_visibility_exports.py` defaults to writing
+`dist/sitemaps/*` (repo root `dist/`) but `visibility/scripts/build_overlay.py`
+reads from `visibility/public/` — trace how (or if) content flows between these two
+directories today. (2) `visibility/scripts/run_visibility_pipeline.sh` is the
+8-step orchestrator that ends in a Cloudflare Pages deploy (`DEPLOY=1`) — step 3
+(`build_growth_opportunity_report.py`) crashed with `sqlite3.DatabaseError:
+malformed database schema (Beacon)` on its last logged run (`logs/visibility/weekly.log`,
+matches the already-logged `fts-rebuild-lock-contention` pitfall); `set -euo pipefail`
+means that crash blocks steps 4-8 including deploy. (3) The whole `visibility/`
+subsystem (S3 backup, IndexNow, growth reports, content targets) wasn't in the
+16 jobs restored from the June crontab clobber — its last-known schedule is unknown.
+Context: `scripts/generate_visibility_exports.py`, `visibility/scripts/run_visibility_pipeline.sh`,
+`visibility/scripts/build_overlay.py`. Live sitemap at data.daanaa.org is currently
+9+ days stale (dated Jul 1) and will stay stale until this is traced properly.
+Depends on: reproducing the Beacon crash to confirm root cause before trusting
+this pipeline with an automated schedule again.
+
+### P3 — Track claim-flywheel evidence before treating it as a growth pillar
+Outside-voice finding (Codex): `org_claims` currently has 3 rows. The design doc frames
+"claim this page" as a core growth loop for the invisible 97%, but there's essentially
+no evidence yet that the loop converts. Not blocking phase 1 (the claim CTA already
+exists and phase 1 doesn't remove it) — just don't plan future phases assuming this
+loop works until claim-rate data says so. Track claim conversions from no-data-card
+impressions once phase 1 ships.
+
+---
+
 ## Ops / launch (see LAUNCH-CHECKLIST.md for the full gate list)
 - P2 — Minova disclosure + written consent before any public/LinkedIn announcement (task #20).
 - P3 — Cloudflare SSL Full(strict) + origin cert before heavy launch (currently Flexible for beta).

@@ -82,6 +82,10 @@ def open_readonly(db_path: Path) -> sqlite3.Connection:
 
 
 def iter_orgs(conn: sqlite3.Connection) -> Iterable[dict[str, str]]:
+    # Ordered richest-first (2026-07-10 eng review finding 1E) so Google's
+    # crawl budget hits scored/enriched org pages before empty stub pages --
+    # the sitemap previously shipped in raw EIN order with no prioritization
+    # at all. Query timed at 0.33s against the live 1.7M-row table.
     sql = """
         SELECT EIN, organization_name, CITY, STATE, NTEE1, NTEECC
         FROM registry_enriched
@@ -91,7 +95,11 @@ def iter_orgs(conn: sqlite3.Connection) -> Iterable[dict[str, str]]:
           AND organization_name != ''
           AND org_status = 'active'
           AND CAST(deductibility AS TEXT) = '1'
-        ORDER BY EIN
+        ORDER BY
+          (merit_score_v5 IS NOT NULL) DESC,
+          (website IS NOT NULL AND website != '') DESC,
+          (donate_url IS NOT NULL AND donate_url != '') DESC,
+          EIN
     """
     for row in conn.execute(sql):
         ein = normalized_ein(row["EIN"])

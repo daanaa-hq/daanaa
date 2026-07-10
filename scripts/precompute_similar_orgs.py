@@ -7,13 +7,18 @@ Monthly re-run on home server; upload org files to droplet.
 """
 import gzip
 import json
+import os
 import random
 from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
 
-ORGS_DIR = Path("precompute_output/orgs")
-BROWSE_DIR = Path("precompute_output/browse")
+# Matches precompute_orgs.py's env var so this script honors the same
+# sandbox when invoked from safe_deploy_droplet.sh (PRECOMPUTE_OUT points
+# at the deploy's scratch dir, not the repo's live precompute_output/).
+_OUT = os.environ.get("PRECOMPUTE_OUT", "precompute_output")
+ORGS_DIR = Path(_OUT) / "orgs"
+BROWSE_DIR = Path(_OUT) / "browse"
 SIMILAR_COUNT = 9
 
 # ─── Load all orgs from pre-computed files ────────────────────────────────
@@ -128,12 +133,17 @@ def find_similar(ein, org, orgs, by_nteecc_city, by_nteecc_state, by_ntee1_state
 
     # Take top SIMILAR_COUNT
     result = []
-    for _, e in candidates[:SIMILAR_COUNT]:
+    for tier, e in candidates[:SIMILAR_COUNT]:
         c = orgs.get(e)
         if c:
             entry = dict(c)
             entry.pop("similar_organizations", None)  # don't nest
-            entry["similarity_score"] = 1.0 if _ == 3 else (0.9 if _ == 2 else (0.75 if _ == 1 else 0.6))
+            entry["similarity_score"] = 1.0 if tier == 3 else (0.9 if tier == 2 else (0.75 if tier == 1 else 0.6))
+            # is_local: tiers 1-3 share the org's city or state; tier 0 is the
+            # nationwide NTEE1 fallback with no locality guarantee. The frontend
+            # must not claim "near [CITY]" for is_local=False matches (2026-07-10
+            # eng review finding — the old code made that claim regardless of tier).
+            entry["is_local"] = tier > 0
             result.append(entry)
 
     return result

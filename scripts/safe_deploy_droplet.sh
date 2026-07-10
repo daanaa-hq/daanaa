@@ -143,6 +143,15 @@ precompute() {
   run_stage "faiss_index"  "$PRECOMPUTE/faiss_index.bin"  env FAISS_PQ=1 python3 scripts/build_faiss_index.py
   python3 scripts/precompute_browse.py  >>"$LOG" 2>&1 || die "browse precompute failed"
   SKIP_FAISS=1 python3 scripts/precompute_orgs.py    >>"$LOG" 2>&1 || die "orgs precompute failed"
+  # precompute_orgs.py always writes similar_organizations=[] (its FAISS-based
+  # path is dead code, never called from main()) -- this second pass patches
+  # real tiered matches into every org file in place. Must run after
+  # precompute_orgs.py (needs the full org set on disk to build its buckets)
+  # and before content precompute so exports see the final data.
+  # Fixed 2026-07-10: every full deploy was shipping empty similar-orgs lists
+  # (verified live) because this was only running on a separate, unwired
+  # monthly cron that any deploy in between silently wiped out.
+  python3 scripts/precompute_similar_orgs.py >>"$LOG" 2>&1 || die "similar-orgs precompute failed"
   python3 scripts/precompute_content.py >>"$LOG" 2>&1 || die "content precompute failed"
 
   # Required artifacts present?

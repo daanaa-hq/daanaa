@@ -1554,7 +1554,10 @@ def _org_jsonld(org: dict, ein: str) -> dict:
     ntee_label = org.get('ntee1_label') or org.get('ntee_label') or ''
     ld: dict = {
         '@context': 'https://schema.org',
-        '@type': 'Organization',
+        # NGO is schema.org's actual nonprofit subtype (fixed 2026-07-10 eng
+        # review finding 1B -- "NonprofitOrganization" is not a real schema.org
+        # type; NGO is what Google's structured-data docs reference).
+        '@type': 'NGO',
         'name': name,
         'url': f'https://daanaa.org/org/{ein}',
         'identifier': ein,

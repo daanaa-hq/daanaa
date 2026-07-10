@@ -80,12 +80,19 @@ def org_to_dict(row):
         'website': row[34],
         'website_status': row[35],
         'cause_tags': json.loads(row[36]) if row[36] else None,
-        # donate_* fields intentionally not emitted (2026-06-10): no donation
-        # links on public surfaces — data stays internal for the claim flow.
         'activ1': row[37],
         'activ2': row[38],
         'activ3': row[39],
         'is_hidden_gem': bool(row[48]) if row[48] is not None else False,
+        # donate_url re-scoped 2026-07-07 (superseded the 2026-06-10 blanket
+        # omission — see DECISIONS.md): confidence-gated, fail-closed hand-off
+        # links only. donate_confidence must be checked by the caller before
+        # rendering any donate action (validate_link_integrity.py already
+        # gates this same field before every deploy).
+        'donate_url': row[49],
+        'donate_url_status': row[50],
+        'donate_confidence': row[51],
+        'donate_platform': row[52],
     }
     # v5.0 peer-based financial context. Built from the org's own v5 fields
     # (archetype=row[40], labels/band/score/health/peer at row[41..47],
@@ -195,7 +202,8 @@ def main():
             merit_archetype_v5,
             merit_archetype_v5_label, merit_band_v5, merit_band_v5_label,
             merit_score_v5, merit_health_signal_v5, merit_peer_group_v5,
-            merit_peer_count_v5, is_hidden_gem
+            merit_peer_count_v5, is_hidden_gem,
+            donate_url, donate_url_status, donate_confidence, donate_platform
         FROM registry_enriched
         WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN
