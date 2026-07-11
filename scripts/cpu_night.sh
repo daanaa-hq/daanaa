@@ -20,9 +20,15 @@ echo "[$(ts)] phase 0: audit existing donate links (promote verified -> beta, cl
 python3 scripts/donation_link_pipeline.py --phase 0
 
 while true; do
+  # Hard wall-clock caps: one hung socket inside the pipeline must not freeze
+  # the whole night's loop (2026-07-10: phase 1 slept 5.5h on a dead peer —
+  # a 200-org batch normally finishes in ~15 min). timeout kills and the
+  # loop simply starts the next batch.
   echo "[$(ts)] discover up to 200 candidates from verified websites"
-  python3 scripts/donation_link_pipeline.py --phase 1 --orgs 200
+  timeout 30m python3 scripts/donation_link_pipeline.py --phase 1 --orgs 200 \
+    || echo "[$(ts)] phase 1 exited $? (timeout or error) — continuing"
   echo "[$(ts)] release verified batch (confidence-gated, <=50)"
-  python3 scripts/donation_link_pipeline.py --phase 2
+  timeout 15m python3 scripts/donation_link_pipeline.py --phase 2 \
+    || echo "[$(ts)] phase 2 exited $? (timeout or error) — continuing"
   sleep 30
 done
