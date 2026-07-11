@@ -8278,6 +8278,10 @@ if __name__ == '__main__':
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
+    # Unknown /api/* paths must return JSON, never the SPA shell — API
+    # clients parsing HTML as JSON fail confusingly (test_routing.py pins this).
+    if path == 'api' or path.startswith('api/'):
+        return jsonify({'error': 'Not found'}), 404
     if path and os.path.exists(os.path.join(FRONTEND_DIST, path)):
         return send_from_directory(FRONTEND_DIST, path)
     return send_from_directory(FRONTEND_DIST, 'index.html')
