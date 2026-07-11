@@ -1,5 +1,5 @@
 # MAKE GIVING EASY
-Library Document 007 · Version 0.1 DRAFT — drafted from corpus WITHOUT founder brief; awaiting founder review and brief
+Library Document 007 · Version 0.2 DRAFT — corpus draft amended by founder rulings 2026-07-11; awaiting final founder review
 
 ## The Mission in Three Words
 
@@ -163,3 +163,15 @@ The mission fits in three words so that no one can misremember it. The
 work of a century fits behind them.
 
 The work continues.
+
+## Founder Ruling (2026-07-11) — Protective Friction
+
+Friction that verifies identity, protects donor privacy, or guards
+deliberate intent is protective and is kept, even at the cost of speed.
+All other friction is obstructive and is removed. Easy does not mean
+impulsive: the letter that verifies an organization, the gate that holds an
+unverified donation link, the absence of one-click impulse mechanics — these
+are the mission working, not the mission failing. "Make Giving Easy" may
+never be cited to argue a protection away. (Resolves this draft's
+protective-vs-obstructive Open Question. Classification: Stewardship
+Principle, founder-ruled.)

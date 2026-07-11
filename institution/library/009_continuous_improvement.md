@@ -1,5 +1,5 @@
 # CONTINUOUS IMPROVEMENT AS INSTITUTIONAL PRACTICE
-Library Document 009 · Version 0.1 DRAFT — drafted from corpus WITHOUT founder brief; awaiting founder review and brief
+Library Document 009 · Version 0.2 DRAFT — corpus draft amended by founder rulings 2026-07-11; awaiting final founder review
 
 ## The Standing Assumption
 
@@ -156,3 +156,12 @@ line, because the world does not stop changing. The institution assumes it
 is wrong somewhere, always — including in this document — and goes looking.
 
 The work continues.
+
+## Founder Ruling (2026-07-11) — Who Reviews the Reviewer
+
+The steward review cycle runs monthly. The founder audits the steward's
+reviews quarterly. Disagreements between auditor and steward become Open
+Questions on the record; they are never silently resolved by either party.
+(Resolves this draft's unaccountable-center Open Question. Classification:
+Operational Practice, founder-ruled; candidate Institutional Principle after
+four audited cycles.)
