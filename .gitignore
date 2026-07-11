@@ -105,7 +105,11 @@ scores_v5_0_20260615.json
 .aws-backup-config
 
 # Visibility/overlay generated artifacts (regenerate via scripts/generate_visibility_exports.py)
-visibility/
+# — but the pipeline scripts are hand-written source, not artifacts: track them.
+# (visibility/config stays ignored: it holds the IndexNow key.)
+visibility/*
+!visibility/scripts/
+visibility/scripts/__pycache__/
 dist/
 .wrangler/
 
