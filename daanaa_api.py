@@ -7373,8 +7373,15 @@ def guild_detail(slug: str):
     except Exception as e:
         return jsonify({'error': f'Error loading guild: {str(e)}'}), 500
 
+@app.route('/api/wallet/init', methods=['POST'])
 def e2e_wallet_init():
-    """Issue a random salt for a new wallet. Salt is not secret."""
+    """Issue a random salt for a new wallet. Salt is not secret.
+
+    Route decorator was accidentally dropped in ffcb46f7731 (2026-06-21) —
+    that commit's message explicitly lists /api/wallet/init as preserved,
+    and the shipped frontend (WalletContext.tsx) still POSTs here for new
+    wallet creation. Restored 2026-07-10; guarded by test_wallet_e2e.py.
+    """
     import base64 as _b64
     salt = _b64.b64encode(secrets.token_bytes(16)).decode()
     return jsonify({'salt': salt})
