@@ -18,9 +18,79 @@ DB_PATH = os.environ.get('DB_PATH', 'data/merit_registry.db')
 
 @pytest.fixture
 def db():
-    """Get database connection with test setup."""
+    """Get database connection with the canonical Phase 3 schema.
+
+    Tables are created ONCE here with the schema the code in
+    nonprofit_portal_endpoints.py actually reads/writes. Previously each
+    test carried its own conflicting CREATE TABLE IF NOT EXISTS — the
+    first definition to run won and later tests failed on missing
+    columns / NOT NULL mismatches.
+
+    NB: the live DB's donor_messages/donor_message_events tables are
+    MISSING several of these columns (open_count, link_clicks,
+    first_opened_at, sent_at, template_id, updated_at; ip_address,
+    user_agent, referer) — the deployed endpoints 500 on them. Tracked
+    in TODOS.md; fixing needs a gated schema migration.
+    """
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS letter_credit_purchases (
+            id TEXT PRIMARY KEY,
+            nonprofit_ein TEXT NOT NULL,
+            stripe_payment_intent_id TEXT UNIQUE,
+            amount_cents INTEGER NOT NULL,
+            letters_acquired INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            idempotency_key TEXT UNIQUE,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            stripe_customer_id TEXT,
+            currency TEXT DEFAULT 'usd',
+            payment_method_type TEXT,
+            completed_at TEXT,
+            webhook_received_at TEXT,
+            error_message TEXT,
+            FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
+        );
+        CREATE TABLE IF NOT EXISTS letter_credits (
+            id TEXT PRIMARY KEY,
+            nonprofit_ein TEXT NOT NULL,
+            letters_remaining INTEGER DEFAULT 100,
+            purchased_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            expires_at TEXT,
+            FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
+        );
+        CREATE TABLE IF NOT EXISTS donor_messages (
+            id TEXT PRIMARY KEY,
+            nonprofit_ein TEXT NOT NULL,
+            donor_email TEXT NOT NULL,
+            donor_name TEXT,
+            message_subject TEXT NOT NULL,
+            message_body TEXT NOT NULL,
+            template_id TEXT,
+            tracking_pixel_id TEXT,
+            tracking_pixel_url TEXT,
+            delivery_status TEXT,
+            sent_at TEXT,
+            open_count INTEGER DEFAULT 0,
+            link_clicks INTEGER DEFAULT 0,
+            first_opened_at TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
+        );
+        CREATE TABLE IF NOT EXISTS donor_message_events (
+            id TEXT PRIMARY KEY,
+            message_id TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            event_timestamp TEXT NOT NULL,
+            ip_address TEXT,
+            user_agent TEXT,
+            referer TEXT,
+            FOREIGN KEY (message_id) REFERENCES donor_messages(id)
+        );
+    ''')
+    conn.commit()
     yield conn
     conn.close()
 
@@ -73,21 +143,6 @@ class TestLetterCreditPurchase:
     def test_purchase_idempotency_key_prevents_double_charge(self, db, test_nonprofit):
         """Same idempotency key returns same purchase (no duplicate charge)."""
         cursor = db.cursor()
-
-        # Ensure letter_credit_purchases table exists
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS letter_credit_purchases (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                stripe_payment_intent_id TEXT UNIQUE,
-                amount_cents INTEGER NOT NULL,
-                letters_acquired INTEGER NOT NULL,
-                status TEXT DEFAULT 'pending',
-                idempotency_key TEXT UNIQUE,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
 
         # First purchase with idempotency key
         purchase_id_1 = str(uuid.uuid4())
@@ -142,18 +197,6 @@ class TestLetterCreditBalance:
         """Response includes all required fields."""
         cursor = db.cursor()
 
-        # Create letter credits table if needed
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS letter_credits (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                letters_remaining INTEGER DEFAULT 100,
-                purchased_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                expires_at TEXT,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
-
         credit_id = str(uuid.uuid4())
         cursor.execute('''
             INSERT INTO letter_credits (id, nonprofit_ein, letters_remaining)
@@ -182,16 +225,6 @@ class TestLetterCreditBalance:
     def test_balance_sums_multiple_credit_records(self, db, test_nonprofit):
         """Balance sums across multiple letter_credits rows."""
         cursor = db.cursor()
-
-        # Create table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS letter_credits (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                letters_remaining INTEGER,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
 
         # Insert multiple credit records
         for i, letters in enumerate([100, 150, 75]):
@@ -234,24 +267,11 @@ class TestStripeWebhook:
         """On payment_intent.succeeded, updates purchase to 'succeeded'."""
         cursor = db.cursor()
 
-        # Ensure tables exist
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS letter_credit_purchases (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                stripe_payment_intent_id TEXT,
-                status TEXT,
-                completed_at TEXT,
-                webhook_received_at TEXT,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
-
         purchase_id = str(uuid.uuid4())
         cursor.execute('''
             INSERT INTO letter_credit_purchases
-            (id, nonprofit_ein, status)
-            VALUES (?, ?, 'pending')
+            (id, nonprofit_ein, amount_cents, letters_acquired, status)
+            VALUES (?, ?, 1000, 100, 'pending')
         ''', (purchase_id, test_nonprofit['ein']))
 
         db.commit()
@@ -267,16 +287,6 @@ class TestStripeWebhook:
     def test_webhook_creates_letter_credits_record(self, db, test_nonprofit):
         """On success, webhook inserts into letter_credits table."""
         cursor = db.cursor()
-
-        # Create tables
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS letter_credits (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                letters_remaining INTEGER,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
 
         # Webhook should INSERT new row with 100 letters
         # After webhook processes: SELECT COUNT(*) FROM letter_credits WHERE nonprofit_ein
@@ -314,22 +324,6 @@ class TestDonorMessageTracking:
         """POST creates row in donor_messages table."""
         cursor = db.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS donor_messages (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                donor_email TEXT NOT NULL,
-                donor_name TEXT,
-                message_subject TEXT NOT NULL,
-                message_body TEXT NOT NULL,
-                tracking_pixel_id TEXT,
-                tracking_pixel_url TEXT,
-                delivery_status TEXT,
-                created_at TEXT,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
-
         message_id = str(uuid.uuid4())
         cursor.execute('''
             INSERT INTO donor_messages
@@ -365,25 +359,13 @@ class TestDonorMessageTracking:
         """Supports limit and offset query params."""
         cursor = db.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS donor_messages (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                donor_email TEXT NOT NULL,
-                message_subject TEXT NOT NULL,
-                delivery_status TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
-
         # Insert test messages
         for i in range(3):
             cursor.execute('''
                 INSERT INTO donor_messages
-                (id, nonprofit_ein, donor_email, message_subject, delivery_status)
-                VALUES (?, ?, ?, ?, 'sent')
-            ''', (f'msg_{i}', test_nonprofit['ein'], f'donor{i}@test.com', f'Subject {i}'))
+                (id, nonprofit_ein, donor_email, message_subject, message_body, delivery_status)
+                VALUES (?, ?, ?, ?, ?, 'sent')
+            ''', (f'msg_{i}', test_nonprofit['ein'], f'donor{i}@test.com', f'Subject {i}', f'Body {i}'))
 
         db.commit()
 
@@ -398,24 +380,17 @@ class TestDonorMessageTracking:
         """Supports status query param (draft|queued|sent|failed)."""
         cursor = db.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS donor_messages (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                delivery_status TEXT,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
-
         # Insert messages with different statuses
         cursor.execute('''
-            INSERT INTO donor_messages (id, nonprofit_ein, delivery_status)
-            VALUES (?, ?, 'sent')
+            INSERT INTO donor_messages
+            (id, nonprofit_ein, donor_email, message_subject, message_body, delivery_status)
+            VALUES (?, ?, 'a@test.com', 'Subj', 'Body', 'sent')
         ''', (str(uuid.uuid4()), test_nonprofit['ein']))
 
         cursor.execute('''
-            INSERT INTO donor_messages (id, nonprofit_ein, delivery_status)
-            VALUES (?, ?, 'draft')
+            INSERT INTO donor_messages
+            (id, nonprofit_ein, donor_email, message_subject, message_body, delivery_status)
+            VALUES (?, ?, 'b@test.com', 'Subj', 'Body', 'draft')
         ''', (str(uuid.uuid4()), test_nonprofit['ein']))
 
         db.commit()
@@ -446,16 +421,6 @@ class TestPixelTracking:
         """GET logs event in donor_message_events table."""
         cursor = db.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS donor_message_events (
-                id TEXT PRIMARY KEY,
-                message_id TEXT NOT NULL,
-                event_type TEXT NOT NULL,
-                event_timestamp TEXT NOT NULL,
-                FOREIGN KEY (message_id) REFERENCES donor_messages(id)
-            )
-        ''')
-
         # After pixel GET, should have event with type='open'
         message_id = str(uuid.uuid4())
         event_id = str(uuid.uuid4())
@@ -480,20 +445,11 @@ class TestPixelTracking:
         """Pixel access increments donor_messages.open_count."""
         cursor = db.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS donor_messages (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                open_count INTEGER DEFAULT 0,
-                first_opened_at TEXT,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
-
         message_id = str(uuid.uuid4())
         cursor.execute('''
-            INSERT INTO donor_messages (id, nonprofit_ein, open_count)
-            VALUES (?, ?, 0)
+            INSERT INTO donor_messages
+            (id, nonprofit_ein, donor_email, message_subject, message_body, open_count)
+            VALUES (?, ?, 'donor@test.com', 'Subj', 'Body', 0)
         ''', (message_id, test_nonprofit['ein']))
 
         db.commit()
@@ -517,21 +473,14 @@ class TestPixelTracking:
         """First pixel open sets first_opened_at timestamp."""
         cursor = db.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS donor_messages (
-                id TEXT PRIMARY KEY,
-                first_opened_at TEXT,
-                FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
-            )
-        ''')
-
         message_id = str(uuid.uuid4())
         now = datetime.now().isoformat()
 
         cursor.execute('''
-            INSERT INTO donor_messages (id, first_opened_at)
-            VALUES (?, ?)
-        ''', (message_id, now))
+            INSERT INTO donor_messages
+            (id, nonprofit_ein, donor_email, message_subject, message_body, first_opened_at)
+            VALUES (?, ?, 'donor@test.com', 'Subj', 'Body', ?)
+        ''', (message_id, test_nonprofit['ein'], now))
 
         db.commit()
 
@@ -595,20 +544,6 @@ class TestDatabaseSchema:
         """letter_credit_purchases table with correct schema."""
         cursor = db.cursor()
 
-        # Create the table (or assume it exists)
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS letter_credit_purchases (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                stripe_payment_intent_id TEXT,
-                amount_cents INTEGER,
-                letters_acquired INTEGER,
-                status TEXT,
-                idempotency_key TEXT,
-                created_at TEXT
-            )
-        ''')
-
         cursor.execute("PRAGMA table_info(letter_credit_purchases)")
         columns = {row[1] for row in cursor.fetchall()}
 
@@ -619,23 +554,6 @@ class TestDatabaseSchema:
         """donor_messages table with correct schema."""
         cursor = db.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS donor_messages (
-                id TEXT PRIMARY KEY,
-                nonprofit_ein TEXT NOT NULL,
-                donor_email TEXT NOT NULL,
-                message_subject TEXT,
-                message_body TEXT,
-                tracking_pixel_id TEXT,
-                tracking_pixel_url TEXT,
-                delivery_status TEXT,
-                open_count INTEGER,
-                link_clicks INTEGER,
-                first_opened_at TEXT,
-                created_at TEXT
-            )
-        ''')
-
         cursor.execute("PRAGMA table_info(donor_messages)")
         columns = {row[1] for row in cursor.fetchall()}
 
@@ -645,17 +563,6 @@ class TestDatabaseSchema:
     def test_donor_message_events_table_exists(self, db):
         """donor_message_events table for tracking opens/clicks."""
         cursor = db.cursor()
-
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS donor_message_events (
-                id TEXT PRIMARY KEY,
-                message_id TEXT NOT NULL,
-                event_type TEXT NOT NULL,
-                event_timestamp TEXT NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT
-            )
-        ''')
 
         cursor.execute("PRAGMA table_info(donor_message_events)")
         columns = {row[1] for row in cursor.fetchall()}

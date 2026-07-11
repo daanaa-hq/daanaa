@@ -80,10 +80,12 @@ def test_org(db):
         SELECT 1 FROM registry_enriched WHERE EIN = ?
     ''', (ein,))
     if not cursor.fetchone():
+        # NB: registry_enriched has org_status (default 'active'), not
+        # organization_status — that column never existed in any schema.
         cursor.execute('''
-            INSERT OR IGNORE INTO registry_enriched (EIN, organization_name, organization_status)
-            VALUES (?, ?, ?)
-        ''', (ein, 'Test Nonprofit Foundation', 'ACTIVE'))
+            INSERT OR IGNORE INTO registry_enriched (EIN, organization_name)
+            VALUES (?, ?)
+        ''', (ein, 'Test Nonprofit Foundation'))
         db.commit()
 
     return ein

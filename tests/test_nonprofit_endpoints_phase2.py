@@ -13,9 +13,41 @@ DB_PATH = os.environ.get('DB_PATH', 'data/merit_registry.db')
 
 @pytest.fixture
 def db():
-    """Get database connection with test setup."""
+    """Get database connection with test setup.
+
+    Creates background_jobs + donor_templates mirroring the production DDL
+    (those tables were created directly in the live DB when the feature
+    shipped; nonprofit_portal_endpoints.py uses but never creates them).
+    """
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS background_jobs (
+            id TEXT PRIMARY KEY,
+            nonprofit_ein TEXT NOT NULL,
+            job_type TEXT NOT NULL DEFAULT 'export_volunteer_hours',
+            status TEXT DEFAULT 'pending',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            started_at TEXT,
+            completed_at TEXT,
+            result_path TEXT,
+            error_message TEXT,
+            params TEXT,
+            FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
+        );
+        CREATE TABLE IF NOT EXISTS donor_templates (
+            id TEXT PRIMARY KEY,
+            nonprofit_ein TEXT NOT NULL,
+            template_name TEXT NOT NULL,
+            template_body TEXT NOT NULL,
+            is_default BOOLEAN DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein),
+            UNIQUE(nonprofit_ein, template_name)
+        );
+    ''')
+    conn.commit()
     yield conn
     conn.close()
 
