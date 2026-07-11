@@ -68,26 +68,30 @@ Context: `~/.gstack/projects/meritgiving/akbar-master-design-20260710-000500.md`
 come back weak — don't silently proceed on the calendar.
 Depends on: Search Console access (already a design-doc dependency).
 
-### P2 — Trace and restore the sitemap deploy pipeline to data.daanaa.org
-`scripts/generate_visibility_exports.py`'s ORDER BY was fixed 2026-07-10 (richest
-orgs first, was raw EIN order) and verified against live data — that part is done
-and committed. What's NOT done: getting fresh output actually live. Three unresolved
-questions block this: (1) `generate_visibility_exports.py` defaults to writing
-`dist/sitemaps/*` (repo root `dist/`) but `visibility/scripts/build_overlay.py`
-reads from `visibility/public/` — trace how (or if) content flows between these two
-directories today. (2) `visibility/scripts/run_visibility_pipeline.sh` is the
-8-step orchestrator that ends in a Cloudflare Pages deploy (`DEPLOY=1`) — step 3
-(`build_growth_opportunity_report.py`) crashed with `sqlite3.DatabaseError:
-malformed database schema (Beacon)` on its last logged run (`logs/visibility/weekly.log`,
-matches the already-logged `fts-rebuild-lock-contention` pitfall); `set -euo pipefail`
-means that crash blocks steps 4-8 including deploy. (3) The whole `visibility/`
-subsystem (S3 backup, IndexNow, growth reports, content targets) wasn't in the
-16 jobs restored from the June crontab clobber — its last-known schedule is unknown.
-Context: `scripts/generate_visibility_exports.py`, `visibility/scripts/run_visibility_pipeline.sh`,
-`visibility/scripts/build_overlay.py`. Live sitemap at data.daanaa.org is currently
-9+ days stale (dated Jul 1) and will stay stale until this is traced properly.
-Depends on: reproducing the Beacon crash to confirm root cause before trusting
-this pipeline with an automated schedule again.
+### P2 — Sitemap deploy pipeline: daanaa.org DONE 2026-07-10; data.daanaa.org refresh blocked on Cloudflare token
+Resolved 2026-07-10: richness-first org sitemaps are now live on daanaa.org itself —
+`https://daanaa.org/sitemap-index.xml` + `/sitemaps/orgs-0001..0035.xml` (1,746,595
+URLs, scored orgs first). Files live at droplet `/opt/daanaa/visibility/` (deliberately
+OUTSIDE `/opt/daanaa/frontend/dist`, which `deploy_morning.sh` rsyncs with `--delete`)
+and are served by two new nginx locations in `/etc/nginx/sites-available/daanaa`
+(backup: `/root/nginx-daanaa.bak-20260711014934`). Redeploy any time with
+`scripts/ops/deploy_org_sitemaps.sh` (generate → rsync → public smoke test).
+The three blocking questions were answered: (1) directory mismatch was a non-issue —
+`build_overlay.py` already invokes `generate_visibility_exports.py` with
+`--dist visibility/public`; the `dist/` default only applies standalone and is what
+the droplet path now uses. (2) Beacon crash = transient schema-parse collision with a
+concurrent FTS rebuild (quick_check ok, not reproducible); step 3 of
+`run_visibility_pipeline.sh` is now non-fatal per founder decision so it can't block
+the deploy steps. (3) still open — no cron schedule for the visibility subsystem.
+REMAINING: data.daanaa.org (Cloudflare Pages overlay) is still serving the old
+EIN-ascending sitemaps from Jul 1. `visibility/public/` + `visibility/cloudflare-public/`
+are regenerated and ready, but `npx wrangler pages deploy` needs `CLOUDFLARE_API_TOKEN`
+(not stored anywhere on this box; past deploys were interactive via
+`deploy_cloudflare_pages_interactive.sh`). Founder: run
+`DEPLOY=1 visibility/scripts/deploy_cloudflare_pages.sh` with the token exported.
+Also recommended (frontend-gated, needs approval): add
+`Sitemap: https://daanaa.org/sitemap-index.xml` to `frontend/public/robots.txt`,
+and a weekly cron for `scripts/ops/deploy_org_sitemaps.sh`.
 
 ### P3 — Track claim-flywheel evidence before treating it as a growth pillar
 Outside-voice finding (Codex): `org_claims` currently has 3 rows. The design doc frames

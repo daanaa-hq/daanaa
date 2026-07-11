@@ -377,3 +377,20 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
   1. When a table gets migrated/simplified, grep the WHOLE codebase for its old column names before considering the migration done — `grep -n "v4_scores\|v4\." daanaa_api.py` found 3 more live call sites beyond the one I was originally fixing.
   2. `daanaa_api.py` holds a persistent DB connection once gunicorn starts (`--preload`), so a standalone `pytest` importing the same module hits `sqlite3.OperationalError: database is locked` at collection time even with a generous `busy_timeout` set on a manual test connection — the app's own connection-open path doesn't set one. Point `DB_PATH` at a read-only backup copy instead of fighting the lock.
   3. The `*/15 * * * * api_watchdog.sh` cron (restored 2026-07-09) auto-revives gunicorn within seconds of any kill — by design, but it means `fuser -k` + pytest doesn't reliably get a lock-free window; don't fight the watchdog, work around it (DB copy) instead.
+
+## 2026-07-10 — "Ship the sitemap" had three different serving surfaces; trace before wiring
+- **Symptom:** Task assumed daanaa.org/sitemap.xml contained org URLs that needed reordering.
+  Reality: that file is a 4KB static-pages sitemap from `frontend/public/`; the org sitemaps
+  only existed on data.daanaa.org (Cloudflare Pages, stale since Jul 1, EIN-ascending); and
+  daanaa.org/sitemaps/* 404'd because nginx proxies all non-aliased paths to the API.
+- **Root cause:** Three surfaces (frontend static file, droplet nginx, Cloudflare Pages
+  overlay) all answer "the sitemap" and are deployed by three unrelated mechanisms
+  (`deploy_morning.sh` --delete rsync, nginx aliases, interactive `wrangler pages deploy`).
+  Also a false lead: the documented `dist/` vs `visibility/public/` mismatch didn't exist —
+  `build_overlay.py` passes `--dist visibility/public` explicitly; the default only applies
+  standalone.
+- **Rule:** Before shipping any "static" artifact, curl the live URL AND read the nginx
+  config AND find every deploy job that writes the target directory. A file placed in a
+  directory that another cron rsyncs with `--delete` is not deployed, it's scheduled for
+  deletion. Org sitemaps therefore live at `/opt/daanaa/visibility/`, never in the
+  frontend dist.

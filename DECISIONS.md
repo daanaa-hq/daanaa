@@ -491,3 +491,22 @@ emits mission/volunteer_url/donate_url/donate_url_review — proof the consolida
 never ran end-to-end in production. Both tables held 0 rows, so the schema-change gate's
 data-loss concern didn't apply; flagged post-hoc in session summary per the gate's intent.
 Rejected: code-side workarounds (tolerating a broken staging schema hides the next drift).
+
+## 2026-07-10 — Org sitemaps served from daanaa.org nginx, not from the frontend dist
+Chose to rsync the 35 richness-first org sitemaps to droplet `/opt/daanaa/visibility/`
+with two dedicated nginx locations (`= /sitemap-index.xml`, `/sitemaps/`). Why: nginx
+proxies everything except explicitly aliased files to the API (which 404s them), and
+`deploy_morning.sh` rsyncs `/opt/daanaa/frontend/dist` with `--delete`, so anything
+placed there gets wiped daily. Rejected: dropping files into the frontend dist (clobbered),
+and waiting on the Cloudflare Pages overlay refresh (blocked — no `CLOUDFLARE_API_TOKEN`
+stored; past data.daanaa.org deploys were founder-interactive). Redeploy path:
+`scripts/ops/deploy_org_sitemaps.sh` (generate → rsync → public smoke test).
+
+## 2026-07-10 — Visibility pipeline step 3 (growth report) made non-fatal
+Chose `|| printf WARNING` around `build_growth_opportunity_report.py` in
+`run_visibility_pipeline.sh` per founder decision. Why: its one transient crash
+("malformed database schema (Beacon)", the logged fts-rebuild-lock-contention pitfall)
+blocked steps 4–8 including the sitemap deploy under `set -euo pipefail`; the report is
+advisory, the sitemaps are not. Rejected: retry loop inside the report script (more code
+for an advisory artifact; the real fix is the flock guard already proposed for
+`build_fts_index.py`).
