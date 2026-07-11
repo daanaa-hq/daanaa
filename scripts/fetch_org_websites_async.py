@@ -32,6 +32,38 @@ DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
 LOG_FILE = Path.home() / "meritgiving/logs/fetch_org_websites_async.log"
 UA = "Mozilla/5.0 (X11; Linux x86_64; compatible; Daanaa/1.0; +https://daanaa.org/about)"
 TIMEOUT = 10
+DNS_CONCURRENCY = 8  # systemd-resolved's stub drops lookups past ~16-wide (benchmarked 2026-07-11)
+
+
+class ThrottledResolver(aiohttp.resolver.ThreadedResolver):
+    """DNS resolver with a concurrency cap.
+
+    Root cause of the 2026-07-06 "aiohttp 100% failure" benchmark (and the
+    47%-success retest): bursts of concurrent getaddrinfo against the local
+    systemd-resolved stub start failing with "Name or service not known"
+    past ~16 parallel lookups (measured: 32-wide -> 277/500 DNS failures,
+    8-wide -> 2/500). Fetch concurrency can stay high — only resolution
+    needs the throttle, and a cached name costs nothing on re-lookup.
+    """
+
+    def __init__(self, *args, limit: int = DNS_CONCURRENCY, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._sem = asyncio.Semaphore(limit)
+
+    async def resolve(self, *args, **kwargs):
+        async with self._sem:
+            return await super().resolve(*args, **kwargs)
+
+
+def make_connector(concurrency: int = 32) -> aiohttp.TCPConnector:
+    """Connector tuned for the org-website workload: high fetch concurrency,
+    throttled DNS, 5-minute DNS cache, per-host politeness cap."""
+    return aiohttp.TCPConnector(
+        limit=concurrency,
+        limit_per_host=5,
+        ttl_dns_cache=300,
+        resolver=ThrottledResolver(),
+    )
 
 # Async-safe logging
 LOG_FILE.parent.mkdir(parents=True, exist_ok=True)

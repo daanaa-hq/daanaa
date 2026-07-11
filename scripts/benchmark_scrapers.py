@@ -70,13 +70,118 @@ def get_test_orgs(limit: int = 100) -> List[Tuple[str, str]]:
     return rows
 
 
-def create_scraper_config(name: str, fetch_func: Callable) -> dict:
-    """Register a scraper configuration."""
+def create_scraper_config(name: str, fetch_func: Callable, batch_func: Callable = None) -> dict:
+    """Register a scraper configuration.
+
+    fetch_func: sync single-URL fetcher, used by the serial harness.
+    batch_func: optional batch runner(test_orgs, deadline_sec) ->
+        (successful, failed, skipped, latencies_ms). When present it is used
+        instead of the serial loop — this is how concurrent scrapers
+        (threads, asyncio) get measured at their real throughput. The
+        2026-07-06 run rated "aiohttp" at 100% failure because the serial
+        harness called the coroutine without awaiting it; and it rated the
+        threaded scraper at serial speed because it never ran the threads.
+    """
     return {
         "name": name,
         "fetch_func": fetch_func,
-        "description": fetch_func.__doc__ or "No description"
+        "batch_func": batch_func,
+        "description": (fetch_func or batch_func).__doc__ or "No description"
     }
+
+
+def make_thread_batch(fetch_func: Callable, workers: int = 16) -> Callable:
+    """Batch runner: the sync fetcher at its real ThreadPool concurrency."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def batch(test_orgs, deadline_sec):
+        successful = failed = 0
+        latencies = []
+        start = time.time()
+
+        def one(website):
+            t0 = time.time()
+            status, body = fetch_func(website)
+            return status, body, (time.time() - t0) * 1000
+
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futs = {pool.submit(one, w): ein for ein, w in test_orgs}
+            done = 0
+            for fut in as_completed(futs):
+                done += 1
+                try:
+                    status, body, lat = fut.result()
+                    if status == 200 and body:
+                        successful += 1
+                        latencies.append(lat)
+                    else:
+                        failed += 1
+                except Exception:
+                    failed += 1
+                if done % 100 == 0:
+                    rate = done / (time.time() - start)
+                    print(f"   [{done}/{len(test_orgs)}] ok={successful} fail={failed} {rate:.1f}/s")
+                if time.time() - start > deadline_sec:
+                    for f in futs:
+                        f.cancel()
+                    break
+        skipped = len(test_orgs) - successful - failed
+        return successful, failed, max(skipped, 0), latencies
+
+    batch.__doc__ = f"{fetch_func.__doc__ or ''} (ThreadPool x{workers})"
+    return batch
+
+
+def make_aiohttp_batch(concurrency: int = 32) -> Callable:
+    """Batch runner: the async fetcher on a real event loop with a semaphore."""
+    import asyncio
+    import aiohttp
+    from fetch_org_websites_async import fetch_url as async_fetch, UA, TIMEOUT
+
+    def batch(test_orgs, deadline_sec):
+        async def run():
+            successful = failed = 0
+            latencies = []
+            start = time.time()
+            sem = asyncio.Semaphore(concurrency)
+            from fetch_org_websites_async import make_connector
+            connector = make_connector(concurrency)
+            done = 0
+
+            async def one(website):
+                async with sem:
+                    t0 = time.time()
+                    status, body = await async_fetch(website, session)
+                    return status, body, (time.time() - t0) * 1000
+
+            async with aiohttp.ClientSession(connector=connector) as session:
+                tasks = [asyncio.create_task(one(w)) for _, w in test_orgs]
+                for fut in asyncio.as_completed(tasks):
+                    nonlocal_vars = None  # py<3.12 closure clarity
+                    try:
+                        status, body, lat = await fut
+                        if status == 200 and body:
+                            successful += 1
+                            latencies.append(lat)
+                        else:
+                            failed += 1
+                    except Exception:
+                        failed += 1
+                    done += 1
+                    if done % 100 == 0:
+                        rate = done / (time.time() - start)
+                        print(f"   [{done}/{len(test_orgs)}] ok={successful} fail={failed} {rate:.1f}/s")
+                    if time.time() - start > deadline_sec:
+                        for t in tasks:
+                            t.cancel()
+                        break
+            skipped = len(test_orgs) - successful - failed
+            return successful, failed, max(skipped, 0), latencies
+
+        return asyncio.run(run())
+
+    batch.__doc__ = f"aiohttp async fetcher (semaphore x{concurrency})"
+    return batch
 
 
 def run_benchmark(
@@ -100,6 +205,26 @@ def run_benchmark(
 
     print(f"\n📊 Benchmarking: {config_name}")
     print(f"   Orgs to fetch: {len(test_orgs)}")
+
+    # Concurrent scrapers measure through their batch runner — the serial
+    # loop below systematically under-reports them (see create_scraper_config).
+    if config.get("batch_func"):
+        start_time = time.time()
+        successful, failed, skipped, total_latencies = config["batch_func"](test_orgs, timeout_sec)
+        duration = time.time() - start_time
+        avg_latency = sum(total_latencies) / len(total_latencies) if total_latencies else 0
+        return BenchmarkResult(
+            config_name=config_name,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            total_orgs=len(test_orgs),
+            successful=successful,
+            failed=failed,
+            skipped=skipped,
+            duration_sec=round(duration, 2),
+            throughput_per_sec=0,
+            errors_pct=0,
+            avg_latency_ms=round(avg_latency, 2)
+        )
 
     successful = 0
     failed = 0
@@ -298,15 +423,23 @@ def main():
     from fetch_org_websites import fetch_url as current_fetch
 
     configs = {
-        "current": create_scraper_config("current (requests + threads)", current_fetch),
+        "current": create_scraper_config("current (requests, serial)", current_fetch),
+        "threads16": create_scraper_config(
+            "current + ThreadPool x16", current_fetch,
+            batch_func=make_thread_batch(current_fetch, workers=16)),
+        "threads32": create_scraper_config(
+            "current + ThreadPool x32", current_fetch,
+            batch_func=make_thread_batch(current_fetch, workers=32)),
     }
 
-    # aiohttp variant will be added here when created
     try:
-        from fetch_org_websites_async import fetch_url as async_fetch
-        configs["aiohttp"] = create_scraper_config("aiohttp (async)", async_fetch)
+        import fetch_org_websites_async  # noqa: F401 — availability probe
+        configs["aiohttp32"] = create_scraper_config(
+            "aiohttp async x32", None, batch_func=make_aiohttp_batch(32))
+        configs["aiohttp64"] = create_scraper_config(
+            "aiohttp async x64", None, batch_func=make_aiohttp_batch(64))
     except ImportError:
-        pass  # Not available yet
+        pass  # aiohttp not installed
 
     # Filter configs
     if args.all_configs:
