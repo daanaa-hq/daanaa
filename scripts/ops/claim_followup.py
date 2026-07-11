@@ -126,7 +126,7 @@ def checkin_verified_claims(conn: sqlite3.Connection) -> int:
     for row in rows:
         name = row["rep_name"] or "there"
         org = row["organization_name"] or f"EIN {row['ein']}"
-        portal_url = f"https://daanaa.org/nonprofit/{row['ein']}/portal"
+        portal_url = f"https://daanaa.org/nonprofit/dashboard/{row['ein']}"
 
         body = f"""Hi {name},
 
@@ -180,7 +180,7 @@ def nudge_incomplete_profiles(conn: sqlite3.Connection) -> int:
     for row in rows:
         name = row["rep_name"] or "there"
         org  = row["organization_name"] or f"EIN {row['ein']}"
-        portal_url = f"https://daanaa.org/nonprofit/{row['ein']}/portal"
+        portal_url = f"https://daanaa.org/nonprofit/dashboard/{row['ein']}"
 
         body = f"""Hi {name},
 
