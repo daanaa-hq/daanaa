@@ -1,11 +1,13 @@
 """Comprehensive test suite for nonprofit portal."""
+import os
 import pytest
 import sqlite3
 import json
 from datetime import datetime
 from pathlib import Path
 
-DB_PATH = 'data/merit_registry.db'
+# Isolated DB via env (see conftest.py) — never write test rows into the live DB.
+DB_PATH = os.environ.get('DB_PATH', 'data/merit_registry.db')
 
 
 @pytest.fixture

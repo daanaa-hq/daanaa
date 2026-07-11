@@ -1,11 +1,16 @@
 """Test suite for nonprofit portal endpoints"""
+import os
 import pytest
 import sqlite3
 import json
 from datetime import datetime
 from pathlib import Path
 
-DB_PATH = 'data/merit_registry.db'
+# Never hardcode the live DB: conftest.py sets DB_PATH to an isolated temp DB
+# (or the runner points it at a backup copy). Writing fixtures into
+# data/merit_registry.db from tests corrupted live data and hit the dev
+# gunicorn's persistent lock.
+DB_PATH = os.environ.get('DB_PATH', 'data/merit_registry.db')
 
 @pytest.fixture
 def db():

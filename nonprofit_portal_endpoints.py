@@ -12,7 +12,12 @@ import json
 from datetime import datetime, timedelta
 from flask import request, jsonify, send_file
 
-DB_PATH = 'data/merit_registry.db'
+# Respect the DB_PATH env override (same contract as daanaa_api.py). The old
+# hardcoded relative literal meant tests could never isolate this module from
+# the live DB — every portal endpoint 500'd under pytest ("database is locked"
+# by the dev gunicorn) and test fixtures wrote rows into production data.
+# Prod behavior is unchanged: DB_PATH is not set in .env or systemd.
+DB_PATH = os.environ.get('DB_PATH', 'data/merit_registry.db')
 
 # Email service (imported from scripts/)
 try:
