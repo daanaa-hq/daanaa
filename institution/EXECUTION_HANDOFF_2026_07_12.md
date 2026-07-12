@@ -25,8 +25,10 @@ STOP and ask the founder — do not improvise strategy.
 
 ## T0 — APPLY CLOUDFLARE CACHE RULES (blocked on founder approval)
 
-**Status:** Ruleset designed, validated against the droplet route map, NOT yet applied
-(auto-mode permission gate). JSON saved at scratchpad `cache_rules.json`; reproduce below.
+**Status:** ✅ APPLIED & VERIFIED 2026-07-12 (ruleset 40e4b952c8154602ac8773d65cf6729e).
+Live checks: org API second request = HIT; wallet/search/health = DYNAMIC (bypassed);
+homepage renders. Founder ran the PUT via `!` command. Payload note: the entrypoint
+endpoint accepts `{"rules": [...]}` only — no name/kind/phase fields.
 
 **Design rationale (the judgment, already made):**
 - CACHE rule: `/api/organizations*` (detail/similar/financials/score-history/browse),
