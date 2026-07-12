@@ -38,13 +38,41 @@ _seed_conn.executescript("""
         donate_confidence REAL, donate_source_page TEXT,
         donate_identity_match INTEGER, donate_human_review INTEGER,
         donate_checked_at TEXT,
-        street_address TEXT, cohort_context TEXT
+        street_address TEXT, cohort_context TEXT,
+        program_expense_pct REAL, total_assets REAL, total_liabilities REAL,
+        merit_score_v5 REAL, merit_archetype_v5 TEXT, merit_archetype_v5_label TEXT,
+        merit_band_v5 TEXT, merit_band_v5_label TEXT, merit_health_signal_v5 TEXT,
+        merit_peer_group_v5 TEXT, merit_peer_count_v5 INTEGER
     );
+    -- Mirror the FULL production org_claims DDL (sqlite3 data/merit_registry.db
+    -- '.schema org_claims'). A 4-column seed caused order-dependent failures:
+    -- tests passed only when another file had already imported daanaa_api and
+    -- its migrations ALTER-added the missing columns.
     CREATE TABLE IF NOT EXISTS org_claims (
-        ein TEXT PRIMARY KEY,
-        claim_status TEXT,
-        verified_at TEXT,
-        firebase_uid TEXT
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        ein              TEXT NOT NULL UNIQUE,
+        email            TEXT NOT NULL,
+        irs_address      TEXT NOT NULL,
+        pin              TEXT NOT NULL,
+        pin_expires_at   TEXT NOT NULL,
+        letter_sent_at   TEXT,
+        lob_letter_id    TEXT,
+        claim_status     TEXT DEFAULT 'pending',
+        verified_at      TEXT,
+        custom_mission   TEXT,
+        custom_description TEXT,
+        donate_confirmed INTEGER DEFAULT 0,
+        processor_auth   INTEGER DEFAULT 0,
+        created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
+        revoked_at       TEXT,
+        revoke_reason    TEXT,
+        phone TEXT, rep_title TEXT, attested_at TEXT, attestation_version TEXT,
+        called_at TEXT, call_notes TEXT, rep_name TEXT, firebase_uid TEXT,
+        contact_preference TEXT DEFAULT 'unified',
+        volunteer_contact_name TEXT, volunteer_contact_email TEXT, volunteer_contact_phone TEXT,
+        donor_contact_name TEXT, donor_contact_email TEXT, donor_contact_phone TEXT,
+        website_url TEXT, nudge_sent_at TEXT, checkin_sent_at TEXT,
+        profile_nudge_sent_at TEXT DEFAULT NULL
     );
     CREATE TABLE IF NOT EXISTS wallet_sync (
         firebase_uid TEXT PRIMARY KEY,
@@ -80,4 +108,20 @@ _seed_conn.executescript("""
         ein_from TEXT, relationship_type TEXT, ein_to TEXT, confidence REAL
     );
 """)
+
+# Run the real production migrations against the temp DB so the test schema can
+# never drift from what daanaa_api._run_migrations() produces (statement-level
+# tolerance mirrors its semantics: ALTERs for already-present columns are skipped).
+import glob as _glob
+_mig_dir = os.path.join(os.path.dirname(__file__), "..", "migrations")
+for _mig in sorted(_glob.glob(os.path.join(_mig_dir, "*.sql"))):
+    with open(_mig) as _f:
+        for _stmt in _f.read().split(";"):
+            _stmt = _stmt.strip()
+            if _stmt:
+                try:
+                    _seed_conn.execute(_stmt)
+                except sqlite3.OperationalError:
+                    pass  # duplicate column/table from the base seed — fine
+_seed_conn.commit()
 _seed_conn.close()
