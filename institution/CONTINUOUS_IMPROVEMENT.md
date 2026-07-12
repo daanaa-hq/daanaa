@@ -30,7 +30,7 @@ When the same failure occurs twice, conduct a retrospective and improve the rele
 ## Current Improvement Candidates
 
 - Reconcile agent approval rules across `CLAUDE.md`, `institution/`, and deploy lessons.
-- Add ESLint flat config so frontend lint becomes a real gate.
+- Verify and guard the `/api/search` schema-drift path so recent log errors are either reproduced with tests or closed with evidence.
 - Reduce wrong-file deploy risk between root `droplet_api.py` and `scripts/droplet_api.py`.
-- Convert weekly review to scheduled automation only after two useful manual runs.
+- Convert weekly review to scheduled automation only after two useful manual runs and the current highest constraint is resolved.
 

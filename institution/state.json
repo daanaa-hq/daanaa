@@ -13,21 +13,21 @@
     ],
     "retirement_condition": "Retire when replaced by a maintained state system with equivalent auditability"
   },
-  "last_updated": "2026-07-10",
+  "last_updated": "2026-07-11",
   "mission_status": {
     "state": "active",
     "summary": "Core nonprofit search remains intact while stewardship controls run alongside the product.",
     "confidence": "high"
   },
   "current_highest_constraint": {
-    "id": "constraint-operational-unknowns-001",
-    "summary": "Financial and infrastructure unknowns outside the repo limit responsible planning more than code quality now.",
+    "id": "constraint-search-reliability-001",
+    "summary": "Recent backend search failures are a higher immediate constraint than the remaining institutional unknowns.",
     "evidence": [
-      "FR-2026-07-10-001 through FR-2026-07-10-004 remain open",
-      "GPU/CPU/cloud usage telemetry is still unknown",
-      "Budget state remains in survival posture"
+      "Sampled daanaa_api log still contains recent /api/search exceptions tied to v4 schema drift",
+      "R-013 is open in the institutional risk register",
+      "Current automated checks do not directly exercise the failing search path against the live backend"
     ],
-    "recommended_action": "Keep safe local improvements moving and request only the minimum founder inputs needed for spend, backup, and credential decisions.",
+    "recommended_action": "Verify the current /api/search path against the live backend shape and add targeted regression coverage before treating the reliability risk as closed.",
     "confidence": "medium"
   },
   "current_top_priorities": [
@@ -115,19 +115,18 @@
   },
   "infrastructure_utilization": {
     "local_services_detected": [
-      "2183 /usr/local/bin/ollama serve",
-      "3891 java -XX:+IgnoreUnrecognizedVMOptions -Dfile.encoding=UTF-8 -Dlogfile.path=target/log -XX:+CrashOnOutOfMemoryError -server --add-opens java.base/java.nio=ALL-UNNAMED -jar /app/metabase.jar",
-      "4429 node /usr/local/bin/n8n",
-      "7659 /usr/local/bin/cloudflared tunnel --config /home/akbar/.cloudflared/config.yml run",
-      "7695 /usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared/config.yml tunnel run",
-      "376571 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
-      "376600 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
-      "376601 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
-      "376603 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
-      "376604 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
-      "378965 /usr/local/bin/ollama runner --ollama-engine --model /usr/share/ollama/.ollama/models/blobs/sha256-819c2adf5ce6df2b6bd2ae4ca90d2a69f060afeb438d0c171db57daa02e39c3d --port 45649",
-      "1399790 /home/akbar/warehouse/llama-swap --config /home/akbar/warehouse/config.yaml --listen 127.0.0.1:8080",
-      "1473500 node --disallow-code-generation-from-strings --disable-proto=delete /usr/local/lib/node_modules/n8n/node_modules/.pnpm/@n8n+task-runner@file+packages+@n8n+task-runner_@opentelemetry+api@1.9.0_@opentelemetry_bd25ea1f047b3163759a25985b9c52da/node_modules/@n8n/task-runner/dist/start.js"
+      "2436 /home/akbar/warehouse/llama-swap --config /home/akbar/warehouse/config.yaml --listen 127.0.0.1:8080",
+      "2437 /usr/local/bin/ollama serve",
+      "3505 java -XX:+IgnoreUnrecognizedVMOptions -Dfile.encoding=UTF-8 -Dlogfile.path=target/log -XX:+CrashOnOutOfMemoryError -server --add-opens java.base/java.nio=ALL-UNNAMED -jar /app/metabase.jar",
+      "3917 node /usr/local/bin/n8n",
+      "4164 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
+      "5887 node --disallow-code-generation-from-strings --disable-proto=delete /usr/local/lib/node_modules/n8n/node_modules/.pnpm/@n8n+task-runner@file+packages+@n8n+task-runner_@opentelemetry+api@1.9.0_@opentelemetry_bd25ea1f047b3163759a25985b9c52da/node_modules/@n8n/task-runner/dist/start.js",
+      "7123 /usr/local/bin/cloudflared tunnel --config /home/akbar/.cloudflared/config.yml run",
+      "7129 /usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared/config.yml tunnel run",
+      "7610 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
+      "7611 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
+      "7612 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app",
+      "7613 /home/akbar/meritgiving/venv/bin/python3 /home/akbar/meritgiving/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 -b 0.0.0.0:8880 --timeout 120 --preload --access-logfile /home/akbar/meritgiving/logs/gunicorn_access.log --access-logformat %(t)s \"%(r)s\" %(s)s %(b)s %(M)sms --error-logfile /home/akbar/meritgiving/logs/daanaa_api.log --pid /home/akbar/meritgiving/logs/daanaa_api.pid daanaa_api:app"
     ],
     "local_models": [
       "NAME                        ID              SIZE      MODIFIED    ",
@@ -201,13 +200,13 @@
     "DR-2026-07-10-005"
   ],
   "last_successful_review": {
-    "date": "2026-07-10",
-    "artifact": "institution/reviews/2026-07-10-weekly-review.md"
+    "date": "2026-07-11",
+    "artifact": "institution/reviews/2026-07-11-weekly-review.md"
   },
   "evidence_freshness": {
-    "git_state": "2026-07-10",
-    "database_snapshot": "2026-07-10",
-    "validation_run": "2026-07-10",
+    "git_state": "2026-07-11",
+    "database_snapshot": "2026-07-11",
+    "validation_run": "2026-07-11",
     "billing_state": "unknown",
     "provider_console_state": "unknown"
   },
@@ -250,12 +249,12 @@
     "org_fts": "1746595",
     "org_embeddings": "2042897",
     "org_claims": "3",
-    "analytics_daily": "72",
+    "analytics_daily": "78",
     "analytics_search": "0",
     "feedback": "0",
     "v5_feedback": "1",
-    "org_interest": "1",
-    "org_view_events": "64",
+    "org_interest": "3",
+    "org_view_events": "125",
     "wallet_analytics": "0",
     "agent_job_log": "5",
     "quality_log": "0",

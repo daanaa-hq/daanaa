@@ -1,5 +1,5 @@
 # GLOBAL PRINCIPLES, LOCAL IMPLEMENTATION
-Library Document 010 · Version 0.1 DRAFT — drafted from corpus WITHOUT founder brief; awaiting founder review and brief
+Library Document 010 · Version 0.2 DRAFT — corpus draft amended by founder rulings 2026-07-11; awaiting final founder review
 
 ## The Third Responsibility
 
@@ -156,3 +156,12 @@ aided by whatever wisdom travels well.
 
 Principles universal. Implementation local. The work continues — here, and
 anywhere.
+
+## Founder Ruling (2026-07-11) — Record Plus Advisory
+
+Daanaa's export is the published record — principles, methodology, research,
+and lessons, offered openly for local adaptation — plus a willingness to
+advise foreign efforts that ask. Relationships are permitted; operations are
+not. Daanaa never operates, franchises, or governs charitable efforts
+outside the United States. (Resolves this draft's inspiring-versus-operating
+Open Question. Classification: Institutional Principle, founder-ruled.)

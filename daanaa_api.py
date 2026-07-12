@@ -1205,9 +1205,17 @@ def _init_org_claims_table():
         # Migration for org_claims tables created before phone verification.
         # called_at/call_notes are the audit trail that the verification call
         # actually happened — written from the admin claims queue.
+        # Contact + nudge columns exist on the live DB but were added ad hoc;
+        # listed here so code-created DBs (tests, fresh installs) match it.
         for col in ("phone TEXT", "rep_title TEXT", "attested_at TEXT", "attestation_version TEXT",
                     "called_at TEXT", "call_notes TEXT", "rep_name TEXT",
-                    "firebase_uid TEXT", "website_url TEXT"):
+                    "firebase_uid TEXT", "website_url TEXT",
+                    "contact_preference TEXT",
+                    "volunteer_contact_name TEXT", "volunteer_contact_email TEXT",
+                    "volunteer_contact_phone TEXT",
+                    "donor_contact_name TEXT", "donor_contact_email TEXT",
+                    "donor_contact_phone TEXT",
+                    "nudge_sent_at TEXT", "checkin_sent_at TEXT", "profile_nudge_sent_at TEXT"):
             try:
                 db.execute(f"ALTER TABLE org_claims ADD COLUMN {col}")
             except sqlite3.OperationalError:
@@ -2993,6 +3001,129 @@ def admin_claims_update(ein):
     return jsonify({"error": "Unknown action. Use mark_called or revoke."}), 400
 
 
+def _normalize_spoken_url(raw: str) -> str:
+    """Phone callers say 'ourorg.org', not 'https://ourorg.org' — prefix the
+    scheme on a bare domain so the shared http(s)-only guard can accept it.
+    Anything that doesn't look like a domain passes through unchanged (and
+    the guard then drops it)."""
+    u = (raw or '').strip()
+    if u and not u.lower().startswith(('http://', 'https://')) \
+            and re.match(r'^[a-z0-9]', u, re.IGNORECASE) \
+            and '.' in u.split('/')[0] and ' ' not in u:
+        return 'https://' + u
+    return u
+
+
+@app.route('/api/admin/concierge/confirm', methods=['POST'])
+@require_admin_key
+def admin_concierge_confirm():
+    """Operator confirms a concierge-call Quick-Start draft (pilot T2).
+
+    DISCLOSURE STANDARD (Stewardship Board 2026-07-11):
+    Before confirming any profile via this endpoint, the human operator on
+    the call MUST disclose to the organization that Daanaa prepared a draft
+    using publicly available information. Recommended language:
+
+      "Hello, this is ____ from Daanaa. We've prepared a draft of your
+       public nonprofit profile using publicly available information to save
+       your team time. We'd like to review it with you, make any corrections
+       you feel are appropriate, and only publish enhancements you approve."
+
+    This endpoint itself does NOT make the disclosure (the human does via
+    phone). The endpoint exists only to record that the human has confirmed
+    the organization's consent AFTER the disclosure. AI is infrastructure,
+    never deception. Remain unobtrusive, never undisclosed.
+
+    TECHNICAL BOUNDARY:
+    Writes through the SAME field-update semantics as /api/claim/update
+    (shared _sanitize/_write helpers — never forked), authenticated by the
+    admin key. The org's verification token is NEVER accepted or replayed
+    on this path. Verification boundary (stewardship P3): only claims
+    already 'verified' or 'active' can be written — everything else is 403
+    and no field changes. The human operator confirms every write (P10).
+    """
+    data = request.get_json(silent=True) or {}
+
+    # This path never handles org credentials — reject them outright rather
+    # than silently ignoring, so a miswired client fails loudly.
+    if any(k in data for k in ('verification_token', 'token', 'pin')):
+        return jsonify({'error': 'This endpoint never accepts org verification credentials'}), 400
+
+    ein = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    call_sid = re.sub(r'[^A-Za-z0-9_-]', '', data.get('call_sid') or '')[:64]
+    operator_note = (data.get('operator_note') or '').strip()[:500]
+    if not ein:
+        return jsonify({'error': 'EIN required'}), 400
+    if not call_sid:
+        return jsonify({'error': 'call_sid required — every concierge write must trace to a call'}), 400
+
+    db = get_db()
+    row = db.execute('SELECT claim_status FROM org_claims WHERE ein = ?', (ein,)).fetchone()
+    if not row or row['claim_status'] not in ('verified', 'active'):
+        # Hard verification boundary: the concierge path completes profiles
+        # for verified orgs; it must never become a verification bypass.
+        return jsonify({'error': 'Organization claim is not verified. '
+                                 'Concierge writes require a verified claim.'}), 403
+
+    # Map Quick-Start field names onto the claim editor's schema, then run
+    # the exact same sanitization the editor uses.
+    f = _sanitize_claim_profile_fields({
+        'custom_mission':   data.get('mission'),
+        'donate_confirmed': data.get('donate_confirmed', False),
+        'donate_url':       _normalize_spoken_url(data.get('donate_url') or ''),
+        'website_url':      _normalize_spoken_url(data.get('website') or ''),
+    })
+    written = _write_claimed_fields_to_registry(db, ein, f)
+
+    # Public contact — same unified-contact semantics as /api/claim/contacts.
+    contact_email = (data.get('contact_email') or '').strip()[:254] or None
+    contact_phone = (data.get('contact_phone') or '').strip()[:30] or None
+    if contact_email or contact_phone:
+        db.execute("""
+            UPDATE org_claims
+            SET contact_preference='unified',
+                volunteer_contact_email=?, volunteer_contact_phone=?,
+                donor_contact_email=?, donor_contact_phone=?
+            WHERE ein=?
+        """, (contact_email, contact_phone, contact_email, contact_phone, ein))
+        written.append('contact')
+
+    volunteer_note = (data.get('volunteer_note') or '').strip()[:300] or None
+    if volunteer_note:
+        written.append('volunteer_note')
+
+    # Provenance on org_claims — source, call linkage, attestation version,
+    # operator summary. No schema change: structured into call_notes, with
+    # the full record in org_activity (explainable later, P9).
+    if f['custom_mission']:
+        db.execute("UPDATE org_claims SET custom_mission=? WHERE ein=?",
+                   (f['custom_mission'], ein))
+    if f['website_url']:
+        db.execute("UPDATE org_claims SET website_url=? WHERE ein=?",
+                   (f['website_url'], ein))
+    if f['donate_confirmed'] and f['donate_url']:
+        db.execute("UPDATE org_claims SET donate_confirmed=1 WHERE ein=?", (ein,))
+    note = f"source=concierge_call; call_sid={call_sid}; attestation={CLAIM_ATTESTATION_VERSION}"
+    if volunteer_note:
+        note += f"; volunteer_note={volunteer_note}"
+    if operator_note:
+        note += f"; operator_note={operator_note}"
+    db.execute(
+        "UPDATE org_claims SET called_at=datetime('now'), call_notes=? WHERE ein=?",
+        (note[:1000], ein))
+    db.commit()
+
+    # Evict org cache entries for this EIN (same as claim_update)
+    stale = [k for k in _CACHE if ein in k]
+    for k in stale:
+        _CACHE.pop(k, None)
+
+    _log_org_activity(ein, 'concierge_draft_confirmed',
+                      f"call_sid={call_sid}; fields={','.join(written) or 'none'}; "
+                      f"note={operator_note}", actor='admin')
+    return jsonify({'success': True, 'saved': written})
+
+
 @app.route('/api/admin/analytics', methods=['GET'])
 @require_admin_key
 def admin_analytics():
@@ -3544,6 +3675,73 @@ def claim_portal_token():
     })
 
 
+def _sanitize_claim_profile_fields(data: dict) -> dict:
+    """Sanitize the claim editor's profile fields (one source of truth).
+
+    Shared by /api/claim/update (org rep, verification token) and
+    /api/admin/concierge/confirm (operator, admin key) so the two paths can
+    never drift on what a claim may write or how values are cleaned (P3/P7).
+    """
+    donate_url  = (data.get('donate_url') or '').strip()[:500]
+    website_url = (data.get('website_url') or '').strip()[:500]
+    # Validate URLs — anything that isn't http(s) is dropped, never stored
+    if donate_url and not donate_url.startswith(('http://', 'https://')):
+        donate_url = ''
+    if website_url and not website_url.startswith(('http://', 'https://')):
+        website_url = ''
+    return {
+        'custom_mission':     (data.get('custom_mission') or '').strip()[:300],
+        'custom_description': (data.get('custom_description') or '').strip()[:500],
+        'cause_tags_json':    (data.get('cause_tags_json') or '[]').strip(),
+        'donate_confirmed':   bool(data.get('donate_confirmed', False)),
+        'donate_url':         donate_url,
+        'website_url':        website_url,
+    }
+
+
+def _write_claimed_fields_to_registry(db, ein: str, f: dict) -> list:
+    """Apply sanitized claim fields to registry_enriched with source='claimed'.
+
+    The ONLY way claim-editor and concierge writes reach the public registry.
+    Donate URL flips to 'claimed' only with an explicit confirm — same guard
+    for every caller. Returns the list of fields written (for instrumentation).
+    Caller commits.
+    """
+    written = []
+    if f['custom_mission']:
+        db.execute("""
+            UPDATE registry_enriched
+            SET mission = ?, mission_source = 'claimed'
+            WHERE EIN = ?
+        """, (f['custom_mission'], ein))
+        written.append('mission')
+
+    if f['website_url']:
+        db.execute("""
+            UPDATE registry_enriched
+            SET website = ?, website_status = 'claimed'
+            WHERE EIN = ?
+        """, (f['website_url'], ein))
+        written.append('website')
+
+    if f['donate_url'] and f['donate_confirmed']:
+        db.execute("""
+            UPDATE registry_enriched
+            SET donate_url = ?, donate_confidence = 95, donate_url_status = 'claimed'
+            WHERE EIN = ?
+        """, (f['donate_url'], ein))
+        written.append('donate_url')
+
+    if f['cause_tags_json'] and f['cause_tags_json'] != '[]':
+        db.execute("""
+            UPDATE registry_enriched
+            SET cause_tags = ?, cause_tags_source = 'claimed'
+            WHERE EIN = ?
+        """, (f['cause_tags_json'], ein))
+        written.append('cause_tags')
+    return written
+
+
 @app.route('/api/claim/update', methods=['POST'])
 def claim_update():
     """Update claimed org profile — mission, description, cause tags, donate URL."""
@@ -3567,18 +3765,7 @@ def claim_update():
     if not valid_token:
         return jsonify({'error': 'Verification token is invalid or expired'}), 403
 
-    custom_mission     = (data.get('custom_mission') or '').strip()[:300]
-    custom_description = (data.get('custom_description') or '').strip()[:500]
-    cause_tags_json    = (data.get('cause_tags_json') or '[]').strip()
-    donate_confirmed   = bool(data.get('donate_confirmed', False))
-    donate_url         = (data.get('donate_url') or '').strip()[:500]
-    website_url        = (data.get('website_url') or '').strip()[:500]
-
-    # Validate URLs
-    if donate_url and not donate_url.startswith(('http://', 'https://')):
-        donate_url = ''
-    if website_url and not website_url.startswith(('http://', 'https://')):
-        website_url = ''
+    f = _sanitize_claim_profile_fields(data)
 
     try:
         # Update org_claims record
@@ -3591,36 +3778,10 @@ def claim_update():
                 donate_confirmed = ?,
                 website_url      = ?
             WHERE ein = ?
-        """, (custom_mission or None, custom_description or None, int(donate_confirmed), website_url or None, ein))
+        """, (f['custom_mission'] or None, f['custom_description'] or None,
+              int(f['donate_confirmed']), f['website_url'] or None, ein))
 
-        # Write custom fields to registry_enriched
-        if custom_mission:
-            db.execute("""
-                UPDATE registry_enriched
-                SET mission = ?, mission_source = 'claimed'
-                WHERE EIN = ?
-            """, (custom_mission, ein))
-
-        if website_url:
-            db.execute("""
-                UPDATE registry_enriched
-                SET website = ?, website_status = 'claimed'
-                WHERE EIN = ?
-            """, (website_url, ein))
-
-        if donate_url and donate_confirmed:
-            db.execute("""
-                UPDATE registry_enriched
-                SET donate_url = ?, donate_confidence = 95, donate_url_status = 'claimed'
-                WHERE EIN = ?
-            """, (donate_url, ein))
-
-        if cause_tags_json and cause_tags_json != '[]':
-            db.execute("""
-                UPDATE registry_enriched
-                SET cause_tags = ?, cause_tags_source = 'claimed'
-                WHERE EIN = ?
-            """, (cause_tags_json, ein))
+        _write_claimed_fields_to_registry(db, ein, f)
 
         db.commit()
         # Evict org cache entries for this EIN
