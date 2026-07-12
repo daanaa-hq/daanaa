@@ -206,6 +206,12 @@ optimization).** Pinned choices — use these, don't build equivalents:
 One-line justification in DECISIONS.md per new dependency, per CLAUDE.md. Verify licenses
 are permissive (all above are MIT/Apache) and pin versions.
 
+**GPU compute is free (founder ruling 2026-07-12).** Home-server GPU running costs are
+minimal — treat local inference/compute as zero-cost in every decision. Implications:
+run the largest local model that meets latency targets (don't downsize to "save" GPU);
+expand batch enrichment coverage rather than sampling; run T7/T8 experiments thoroughly;
+prefer a GPU-heavy local solution over ANY paid cloud service, always.
+
 **Use the project's skills** per CLAUDE.md routing (/investigate for bugs, /review before
 commits, /qa for site behavior, /ship for deploys, /context-save at milestones) — they
 encode the working agreements and save tokens vs. re-deriving process.

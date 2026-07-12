@@ -12,7 +12,7 @@ updates this file with every cost-bearing decision; founder reads it, never hunt
 | Cloudflare (Free plan) | $0.00 | — | DNS, edge caching (T0), DDoS protection |
 | Google Drive backups | $0.00 | — | Offsite DB backups (free tier) |
 | Domain daanaa.org | ~$1.00 | — | ($12/yr amortized) |
-| Local inference (home server) | $0.00* | — | Qwen-32B + mxbai embeddings (*electricity only) |
+| Local inference (home server) | $0.00 | — | Qwen-32B + mxbai embeddings. Founder ruling 2026-07-12: GPU running costs are minimal — treat local compute as free in all planning; never trade quality or coverage to save GPU cycles, and never move a GPU-solvable task to a paid cloud service. |
 | Twilio | usage-based | — | Concierge calls (pennies/min, low volume) |
 | Lob | usage-based | — | Claim-verification letters (per letter) |
 | **Total fixed** | **~$17/mo** | | |
