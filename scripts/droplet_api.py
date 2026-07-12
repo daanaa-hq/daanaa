@@ -1623,6 +1623,24 @@ _SPA_PREFIXES = {
     'security', 'privacy', 'meet-the-invisible', 'invisible',
 }
 
+@app.route('/api/voice/support', methods=['POST'])
+def voice_support_inbound():
+    """Inbound voice call handler — transfer to founder's personal phone."""
+    from_phone = (request.form.get('From') or '').strip()
+    call_sid = (request.form.get('CallSid') or '').strip()
+
+    print(f"[Support Call] Incoming from {from_phone}, CallSid={call_sid}", flush=True)
+
+    # Return TwiML response: transfer to founder's phone
+    twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="woman">Thank you for calling Daanaa. Connecting you now.</Say>
+  <Dial>+1-347-937-3555</Dial>
+</Response>"""
+
+    return twiml, 200, {'Content-Type': 'application/xml'}
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_spa(path):
