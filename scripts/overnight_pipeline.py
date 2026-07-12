@@ -763,6 +763,14 @@ def main():
     # Authority: Founder Ruling 2026-07-11 (enrichment pipeline integration)
     run_enrichment_pipeline()
 
+    # Step 6.9: Re-verify stale links (P7 independence + data safety)
+    # Authority: T11 Gap 1 (90-day SLA for link staleness checks)
+    try:
+        from reverify_stale_links import run as reverify_links
+        reverify_links(silent=False)
+    except Exception as exc:
+        log(f'[reverify_stale_links] error: {exc}')
+
     # Step 7: Expire past volunteer events
     try:
         from expire_volunteer_events import run as expire_events
@@ -788,7 +796,7 @@ def main():
     refresh_and_publish_numbers()
 
     # Step 13: Log final stats
-    log('Nightly pipeline completed — scoring updated, websites enriched, missions generated, donations extracted, metrics updated')
+    log('Nightly pipeline completed — scoring updated, websites enriched, missions generated, donations extracted, stale links reverified, metrics updated')
 
     log('=' * 60)
     log('Overnight Pipeline Complete')

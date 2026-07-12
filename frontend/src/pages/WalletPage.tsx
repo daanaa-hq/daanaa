@@ -517,9 +517,9 @@ export default function WalletPage() {
                           <div className="space-y-1.5">
                             {entry.donations!.map(d => (
                               <div key={d.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
-                                <span className="text-stone-500 w-[90px] shrink-0">{d.date}</span>
+                                <span className="text-cool-grey font-medium w-[90px] shrink-0">{d.date}</span>
                                 <span className="font-semibold text-green-700">${d.amount.toLocaleString()}</span>
-                                {d.notes && <span className="text-stone-600 truncate">{d.notes}</span>}
+                                {d.notes && <span className="text-cool-grey truncate">{d.notes}</span>}
                               </div>
                             ))}
                           </div>
@@ -531,9 +531,9 @@ export default function WalletPage() {
                           <div className="space-y-1.5">
                             {entry.volunteerHours!.map(v => (
                               <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
-                                <span className="text-stone-500 w-[90px] shrink-0">{v.date}</span>
+                                <span className="text-cool-grey font-medium w-[90px] shrink-0">{v.date}</span>
                                 <span className="font-semibold text-red-600">{v.hours}h</span>
-                                {v.notes && <span className="text-stone-600 truncate">{v.notes}</span>}
+                                {v.notes && <span className="text-cool-grey truncate">{v.notes}</span>}
                               </div>
                             ))}
                           </div>
@@ -628,9 +628,9 @@ export default function WalletPage() {
                         <div className="space-y-1.5">
                           {entry.donations!.map(d => (
                             <div key={d.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
-                              <span className="text-stone-500 w-[90px] shrink-0">{d.date}</span>
+                              <span className="text-cool-grey font-medium w-[90px] shrink-0">{d.date}</span>
                               <span className="font-semibold text-green-700">${d.amount.toLocaleString()}</span>
-                              {d.notes && <span className="text-stone-600 truncate">{d.notes}</span>}
+                              {d.notes && <span className="text-cool-grey truncate">{d.notes}</span>}
                             </div>
                           ))}
                         </div>
@@ -644,9 +644,9 @@ export default function WalletPage() {
                         <div className="space-y-1.5">
                           {entry.volunteerHours!.map(v => (
                             <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
-                              <span className="text-stone-500 w-[90px] shrink-0">{v.date}</span>
+                              <span className="text-cool-grey font-medium w-[90px] shrink-0">{v.date}</span>
                               <span className="font-semibold text-red-600">{v.hours}h</span>
-                              {v.notes && <span className="text-stone-600 truncate">{v.notes}</span>}
+                              {v.notes && <span className="text-cool-grey truncate">{v.notes}</span>}
                             </div>
                           ))}
                         </div>

@@ -11,6 +11,7 @@ import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
 import LampMark from '../components/LampMark'
 import type { TierName } from '../components/TrustBadge'
 import { RAIL_CATEGORIES, ALL_CATEGORIES, NTEE_SUBCATEGORIES } from '../data/categories'
+import { trackSearchMetrics } from '../lib/analytics'
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -459,6 +460,19 @@ export default function Directory() {
     needsSupport,
     sortBy !== 'organization_name',
   ].filter(Boolean).length
+
+  // T12 Phase 1: Track search metrics for zero-result analysis and query patterns
+  useEffect(() => {
+    if (!activeLoading && (debouncedQuery || hasAnyFilter)) {
+      trackSearchMetrics({
+        query_length: debouncedQuery.length,
+        result_count: total,
+        zero_results: total === 0 ? 'yes' : 'no',
+        filters_applied: activeFilterCount,
+        mode: useFusedResults ? 'fused' : (hasAnyFilter ? 'filtered' : 'keyword'),
+      })
+    }
+  }, [total, debouncedQuery, activeFilterCount, hasAnyFilter, activeLoading, useFusedResults])
 
   return (
     <div className="min-h-[100dvh]">

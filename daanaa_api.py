@@ -2744,6 +2744,29 @@ def track_event():
                 "ON CONFLICT(day, term) DO UPDATE SET count = count + 1",
                 (day, term),
             )
+        # T12 Phase 1: Extended search metrics for zero-result analysis
+        query_length = int(data.get('query_length', 0)) if isinstance(data.get('query_length'), int) else 0
+        result_count = int(data.get('result_count', 0)) if isinstance(data.get('result_count'), int) else 0
+        zero_results = 1 if data.get('zero_results') == 'yes' else 0
+        filters_applied = int(data.get('filters_applied', 0)) if isinstance(data.get('filters_applied'), int) else 0
+        search_mode = str(data.get('mode', 'keyword')).strip().lower()[:20]
+        if query_length > 0 or filters_applied > 0:
+            db.execute(
+                "INSERT INTO analytics_search_metrics (day, query_length, result_count, zero_results, filters_applied, search_mode) "
+                "VALUES (?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(day, query_length, result_count, zero_results, filters_applied) DO UPDATE SET "
+                "search_mode = excluded.search_mode",
+                (day, query_length, result_count, zero_results, filters_applied, search_mode),
+            )
+            # Log zero-result queries for pattern discovery
+            if zero_results and term:
+                db.execute(
+                    "INSERT INTO analytics_zero_result_queries (day, query, query_length, filters_applied, search_mode) "
+                    "VALUES (?, ?, ?, ?, ?) "
+                    "ON CONFLICT(day, query) DO UPDATE SET "
+                    "occurrence_count = occurrence_count + 1, last_seen_at = CURRENT_TIMESTAMP",
+                    (day, term, query_length, filters_applied, search_mode),
+                )
     db.commit()
     return ('', 204)
 

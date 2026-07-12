@@ -47,6 +47,19 @@ export function trackSearch(term: string, path = '/directory') {
   send({ type: 'search', path, term })
 }
 
+// T12 Phase 1: Extended search tracking with result metrics
+export interface SearchMetrics {
+  query_length: number
+  result_count: number
+  zero_results: 'yes' | 'no'
+  filters_applied: number
+  mode?: 'keyword' | 'fused' | 'filtered'
+}
+
+export function trackSearchMetrics(metrics: SearchMetrics, path = '/directory') {
+  send({ type: 'search', path, ...metrics })
+}
+
 export function trackEvent(type: Exclude<EventType, 'pageview' | 'search'>, path: string) {
   send({ type, path })
 }

@@ -510,3 +510,28 @@ blocked steps 4–8 including the sitemap deploy under `set -euo pipefail`; the 
 advisory, the sitemaps are not. Rejected: retry loop inside the report script (more code
 for an advisory artifact; the real fix is the flock guard already proposed for
 `build_fts_index.py`).
+
+## 2026-07-12 — 90-day link staleness SLA integrated into nightly pipeline (T11 Gap 1)
+Chose to add `reverify_stale_links.py` as a non-fatal step (Step 6.9) in `overnight_pipeline.py`.
+Why: STEWARDSHIP.md P7 (Independence) requires preventing domain takeovers + link rot via periodic
+re-verification. 90 days is conservative (catches drift, doesn't thrash), flagging as
+`stale_requires_reverification` surfaces staleness without requiring manual DB edits. Runs silent
+in pipeline, callable standalone with `--dry-run`, `--confirm`, `--silent`. Rejected: a separate
+cron job (harder to monitor), and cloud API dependency for bulk-checking (local SQLite queries
+are deterministic and auditable).
+
+## 2026-07-12 — ESLint rule for noopener noreferrer enforcement (T11 Gap 3)
+Chose to add `eslint-plugin-react` + `react/jsx-no-target-blank` rule (error level, dynamic links).
+Why: All `target="_blank"` links must have `rel="noopener noreferrer"` to prevent window.opener
+attacks (XSS/phishing vector). The rule catches violations at lint time, preventing regressions.
+Enforces on both static and dynamic hrefs. Rejected: ignoring the issue (security regression risk),
+and manual code review only (auto-enforceable patterns should use linting).
+
+## 2026-07-12 — T12 Phase 1 search metrics implementation (zero-result analysis)
+Chose to add client-side Plausible tracking + server-side logging of search metrics (query_length,
+result_count, zero_results, filters_applied, search_mode). Two new tables: analytics_search_metrics
+(aggregate daily metrics) + analytics_zero_result_queries (individual zero-result queries for pattern
+discovery). Founder can query with `python3 scripts/analyze_search_metrics.py --days 7 --show-queries`.
+Why: Baseline data is essential for Phase 2/3 gates (typo tolerance recall > 90%, synonym recall > 10%).
+Privacy: no raw query text in Plausible events, only aggregates. Rejected: external search analytics
+service (vendor independence per P7).
