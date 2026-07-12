@@ -394,3 +394,24 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
   directory that another cron rsyncs with `--delete` is not deployed, it's scheduled for
   deletion. Org sitemaps therefore live at `/opt/daanaa/visibility/`, never in the
   frontend dist.
+
+## 2026-07-12 — Concierge tests must seed the activity table before asserting audit logs
+- **Symptom:** `tests/test_concierge_confirm.py` passed the endpoint checks but failed on `org_activity` with `no such table: org_activity`.
+- **Root cause:** The fixture seeded `registry_enriched` and `org_claims` but forgot the audit table that `_log_org_activity()` writes to.
+- **Rule:** Any test that asserts event logging must create the audit table it inspects, or explicitly call the table-init helper before exercising the endpoint.
+
+## 2026-07-12 — A hand-rolled equivalent measures the wrong system
+- **Symptom:** First sqlite-vec benchmark (T7) logged a "fails on RAM" verdict (8GB > 2GB droplet)
+  that turned out wrong on re-test — real process RSS during an actual `vec0` KNN query was ~41MB.
+- **Root cause:** The first test loaded all 2.04M embeddings into Python/numpy arrays and brute-forced
+  cosine similarity by hand, instead of exercising sqlite-vec's own `vec0` virtual table and `MATCH`
+  query path. That measures "can Python hold 8GB of arrays," a different question than "can this
+  library answer a query within a memory budget."
+- **Real finding, on re-test with the actual API:** RAM is fine; the real bottleneck is that `vec0`
+  has no approximate-nearest-neighbor index — it's a brute-force scan, so latency scales linearly
+  with corpus size (67ms at 100K vectors → ~1.4s extrapolated at the full 2.04M corpus).
+- **Rule:** When benchmarking a specific library's claimed capability, call the library's actual API
+  under test, not a hand-written stand-in for what you assume it does internally. Correct openly per
+  STEWARDSHIP.md Principle #6 rather than let a wrong negative result stand as institutional memory
+  (see institution/research/DISCOVERIES.md, "CORRECTION to sqlite-vec on Droplet").
+
