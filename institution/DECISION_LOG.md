@@ -104,4 +104,39 @@
 - Actual outcome: Completed; lint passes with warnings and no errors.
 - Lessons: For legacy code, restoring a gate first is safer than forcing behavioral rewrites under a stewardship loop task.
 - Superseding decision: None.
+## DR-2026-07-12-006: Add Explicit Constitutional Hierarchy Doc
+
+- Identifier: DR-2026-07-12-006.
+- Date: 2026-07-12.
+- Issue: The board resolution established a Mission -> Constitution -> Library -> Policies -> Engineering -> Implementation chain that existed implicitly but was not yet explicit in-repo.
+- Context: Phase 2 of the board implementation plan needed a compact authority map so future stewards can resolve conflicts without inferring the hierarchy from scattered documents.
+- Sources: `institution/board/2026-07-11_board_resolution.md`, `institution/IMPLEMENTATION_PLAN.md`, `institution/SUCCESSION.md`.
+- Options considered: leave authority implicit, duplicate the hierarchy into multiple docs, or create one canonical hierarchy file and add short parent/child headers to the three tier documents.
+- Decision: Create `institution/CONSTITUTION_HIERARCHY.md`, add authority headers to `STEWARDSHIP.md`, `institution/CONSTITUTION.md`, and `institution/library/003_stewardship.md`, and index the hierarchy doc in `institution/README.md`.
+- Decision owner: Stewardship Systems Agent.
+- Expected outcome: authority order is visible at a glance and lower documents can point back to their parent layer.
+- Risks accepted: one more governance doc exists; mitigated by keeping it short and referencing the existing hierarchy instead of inventing new policy.
+- Review trigger: When the board revisits Phase 2 or if any authority conflict appears in the institutional docs.
+- Actual outcome: Completed in this session.
+- Lessons: Durable governance works better when the hierarchy is explicit once, then referenced lightly everywhere else.
+- Superseding decision: None.
+
+## DR-2026-07-12-007: B-Lite Infrastructure Path for Pre-Launch
+
+- Identifier: DR-2026-07-12-007.
+- Date: 2026-07-12.
+- Issue: Choose infrastructure investment strategy for pre-launch phase. Platform needs world-class reliability + global reach, but has zero users yet. Over-invest early (Path B, $300/mo) or invest selectively (Path B-Lite, $100/mo now → $230/mo at month 2)?
+- Context: Founder approved $100/mo additional budget for quality infrastructure. Long-term sustainability and 100-year institutional horizon are non-negotiable. Three major incidents (INC-001, INC-002, INC-003) proved that corners cut early become expensive later.
+- Sources: STANDING_CONSTRAINTS_2026_07.md, INCIDENTS_2026_07.md, CLAUDE.md, founder directive.
+- Options considered: Path A (lean $100/mo, add services as traffic demands; risk scaling issues), Path B (full $300/mo upfront; waste money if product fails), Path B-Lite (prove product first at $100/mo, upgrade to $230/mo when credibility/traction signals appear).
+- Board simulation summary: Mission (sustainability > growth velocity), Finance (prove before spending), Continuity (avoid tech debt from corner-cutting), Technology (commodity services scale better than custom), all perspectives favored Path B-Lite.
+- Stewardship principles applied: P1 (mission before growth; sustainability is the mission here), P9 (decisions must be explainable; this tradeoff is clear), evidence-based (upgrade trigger is measurable: 3+ advisors OR partnership OR 5K users).
+- Decision: Launch Phase 1 at $100/mo (Postgres, Redis, S3, Backups, Basic Monitoring). At week 8, upgrade to Phase 2 ($230/mo; add Elasticsearch + Datadog) if any trigger condition is met (credibility signal, partnership, 5K+ users). Otherwise hold at $100/mo.
+- Decision owner: Founder (Akbar Khowaja), AI Steward (autonomous execution within budget).
+- Expected outcome: Infrastructure ready for 100x scale without rework; prove product before investing in specialized services; sustainable long-term (infrastructure cost justified by revenue/partnerships).
+- Risks accepted: (1) Month 1–2 may have slower search (FTS5 vs. Elasticsearch), basic monitoring only. Mitigated: FTS5 handles 10K orgs fine; will upgrade if/when needed. (2) May feel "lean" vs. "world-class" for 8 weeks. Mitigated: institutional governance + research + advisor credibility are the real signals; infrastructure quality follows.
+- Review trigger: Week 8 decision gate (upgrade or hold); any incident showing $100/mo insufficient; or founder signals change in revenue model/timeline.
+- Actual outcome: Pending infrastructure provisioning (starting 2026-07-12 Week 1).
+- Lessons: Pending (will capture in month 2 decision gate).
+- Superseding decision: None.
 
