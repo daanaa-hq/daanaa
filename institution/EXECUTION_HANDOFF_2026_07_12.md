@@ -236,8 +236,16 @@ Stay in the SQLite family (bounded dataset, DR-008). Three upgrades, in order:
 3. **Baked synonyms (GPU is free):** nightly pipeline uses Qwen to generate synonym/
    related-term expansions per NTEE category + org keywords, written INTO the FTS index
    at bake time. Query path stays fast; intelligence moves to indexing.
-4. **Hybrid semantic:** if T7 (sqlite-vec) passes its decision rule, wire it into the
-   existing /api/fused-search for keyword+semantic fused ranking on the droplet.
+4. **Hybrid semantic, corrected design (2026-07-12 re-test):** full-corpus semantic
+   search on the droplet is confirmed infeasible — not on RAM (retracted, see
+   DISCOVERIES.md correction) but on latency: sqlite-vec's vec0 has no ANN index,
+   brute-force scan extrapolates to ~1.4s p50 at 2.04M vectors. Viable path: mirror
+   the home server's existing `/api/search` RRF pattern — FTS narrows to ~100
+   candidates first, THEN sqlite-vec reranks only those 100 (not all 2M) by semantic
+   distance. A 100-row vec0 scan is sub-millisecond; this fits the droplet easily.
+   Requires: (a) load only the candidate EINs' vectors into a per-request scratch
+   vec0 table or query pattern, (b) benchmark p95 on this narrowed design specifically
+   before shipping (do not assume — measure, per C-DEV-002).
 
 ## T13 — Wallet: zero-knowledge sync architecture (founder-raised 2026-07-12)
 
