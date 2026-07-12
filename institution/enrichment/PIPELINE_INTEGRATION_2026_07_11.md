@@ -1,71 +1,92 @@
 # Enrichment Pipeline Integration — 2026-07-11
 
 **Authority:** Founder Ruling 2026-07-11 (Operational Decisions, Item 2: AI Memory Migration)  
-**Status:** ACTIVE (integrated into overnight_pipeline.py)  
-**Effective:** 2026-07-12 (next nightly run at 02:30)  
+**Status:** ACTIVE (integrated into overnight_pipeline.py within 8pm–8am automation window)  
+**Effective:** 2026-07-12 (next automation cycle)  
+
+---
+
+## AUTOMATION WINDOW: 8pm–8am (20:00–08:00)
+
+**Master orchestration:**
+```
+21:00 (9pm) —— gpu_night.sh start
+              Launch GPU services (llama-server Qwen3-30B, embed server)
+              
+22:00-02:00 —— Autonomous background tasks
+              reembed_watchdog.py (embedding maintenance, 30-min intervals)
+              email_agent (email triage, 2-hour intervals)
+              
+02:00 (2am) —— enrichment_loop_8pm_8am.sh START
+              Continuous enrichment batches (enrich_batch.py) until 8am
+              All Priority 1-3 enrichment items run in loop
+              
+02:30 (2:30am) — overnight_pipeline.py START
+              [NEW] run_enrichment_pipeline() integrated here
+              Donation link extraction Phase 1 (200 orgs)
+              Scoring, backups, quality gates
+              
+02:30 (2:30am) — daanaa_backup.sh START (coordinated)
+              Critical tables dump + offsite push
+              Runs concurrently, no DB locks
+              
+03:00 (3am) —— monitor_backups.sh START
+              Backup health check + revocation sync
+              
+08:00 (8am) —— enrichment_loop_8pm_8am.sh STOP
+              Cutoff: no new batches after 8am
+              
+09:00 (9am) —— gpu_night.sh stop
+              Deactivate GPU, cool down (house thermal constraint)
+```
 
 ---
 
 ## SCOPE: Priority 1-5 Enrichment
 
-**What enriches every night (starting 02:30):**
+**What enriches during 8pm-8am window:**
 
-| Priority | Component | Stage | Status | Details |
-|----------|-----------|-------|--------|---------|
-| P1 | Website Discovery | Fetch | ✅ Running autonomously | crawl + verify, mark 'beta' |
-| P2 | Website Validation | Verify | ✅ Concurrent with scoring | HTTP HEAD/GET, HTTPS→HTTP |
-| P3 | Mission Generation | GPU batch | ✅ Running (Qwen3-30B) | 900+ missions/night, 12K line log |
-| P4 | Donation Link Extract | NEW INTEGRATION | 🔄 Phase 1 nightly | 200 orgs/run, confidence ≥90 |
-| P5 | Contact/Actions | Queued | ⏳ Future (Phase 6-10) | Post-P4 completion |
-
----
-
-## ORCHESTRATION: Nightly Pipeline (02:30 UTC)
-
-**Execution sequence:**
-```
-02:30 START overnight_pipeline.py
-
-  1. BMF sync (IRS classification)
-  2. Revocation check
-  3. Manual submissions
-  4. ProPublica enrichment
-  5. Nonprofit updates
-  6. v5.0 scoring (SLOW)
-  7. Cohort context rebuild
-  
-  8. [PARALLEL START]
-     - Fetch websites (concurrent)
-     - Parallel enrichment (missions + tags)
-     - → both complete ~45 min
-  
-  9. [NEW] Enrichment pipeline orchestration (Step 6.8)
-     - run_enrichment_pipeline()
-     - Donation link extraction Phase 1
-     - Coordinated logging
-  
-  10. Volunteer event expiry
-  11. Data quality gate
-  12. Export research snapshot
-  13. Cleanup stale scores
-  14. Purge stale wallets
-  15. Publish + deploy to droplet
-  
-  ~04:30 END (approx 2 hours total)
-```
+| Priority | Component | Orchestrator | Status | Details |
+|----------|-----------|---------------|--------|---------|
+| P1 | Website Discovery | enrichment_loop | ✅ Autonomous | crawl + verify, mark 'beta' |
+| P2 | Website Validation | enrichment_loop | ✅ Concurrent | HTTP verify, HTTPS→HTTP |
+| P3 | Mission Generation | gpu_night.sh + enrichment_loop | ✅ GPU batch | 900+/night, Qwen3-30B |
+| P4 | Donation Link Extract | overnight_pipeline (NEW) | ✅ at 02:30 | 200 orgs/run, conf≥90 |
+| P5 | Contact/Actions | enrichment_loop | ⏳ Future | Phase 6-10 queued |
 
 ---
 
-## BACKUP COORDINATION
+## OVERNIGHT_PIPELINE INTEGRATION (02:30)
 
-**Timing:**
-- 02:30 — overnight_pipeline.py starts (scoring + enrichment)
-- 02:30 — daanaa_backup.sh starts (critical tables dump)
-- 03:00 — monitor_backups.sh starts (health check + revocation sync)
+**Where donation_link_pipeline fits:**
+```
+overnight_pipeline.py 02:30 START
+  ...
+  6.5–6.7: Concurrent fetch + enrichment (missions, tags)
+  [NEW] 6.8: run_enrichment_pipeline()
+       └─ run_donation_link_pipeline()
+          Donation links Phase 1 (200 orgs)
+  ...
+  Scoring, quality gates, publish
+  ~04:30 END
+```
 
-**Design:** Both pipelines run independently; backups do NOT lock the database (SQLite read-only mode for exports).
+**Why 02:30, not earlier:** Allows enrichment_loop (starting 02:00) to populate cache + website data before donation extraction runs.
 
-**Robustness:** Backup script fixed (commit d86d422) to fail loudly on any error; enrichment pipeline includes error handling for donations/missions.
+---
+
+## BACKUP & MONITORING COORDINATION
+
+**Parallel execution (no conflicts):**
+- 02:30 — overnight_pipeline.py (scoring + enrichment)
+- 02:30 — daanaa_backup.sh (DB dump, SQLite read-only)
+- 03:00 — monitor_backups.sh (health check)
+
+**Design:** SQLite allows read-only dumps concurrently with writes; backup uses strict shell flags (set -Eeuo pipefail, ERR trap).
+
+**Robustness:** Backup script fixed (commit d86d422) to fail loudly; enrichment includes non-fatal error handling (logged, continues).
+
+**Monitoring:** All logs go to `/logs/overnight.log` + `/logs/backup.log` + `/logs/generate_missions_32b.log`.
 
 ---
 
