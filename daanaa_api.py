@@ -6493,6 +6493,39 @@ def claim_phone_record():
     return str(resp), 200, {'Content-Type': 'text/xml'}
 
 
+@app.route('/api/voice/support', methods=['POST'])
+def voice_support_inbound():
+    """
+    Inbound voice call handler for general nonprofit support.
+    All calls transfer to founder's personal number (+1-347-937-3555).
+    Phase A: Founder takes all calls directly.
+    """
+    from_phone = (request.form.get('From') or '').strip()
+    call_sid = (request.form.get('CallSid') or '').strip()
+
+    app.logger.info(f"[Support Call] Incoming from {from_phone}, CallSid={call_sid}")
+
+    # Log the call attempt
+    db = get_db()
+    try:
+        db.execute(
+            """INSERT INTO support_calls (from_phone, call_sid, received_at)
+               VALUES (?, ?, CURRENT_TIMESTAMP)""",
+            (from_phone, call_sid)
+        )
+        db.commit()
+    except sqlite3.OperationalError:
+        # Table doesn't exist yet; skip logging for now
+        pass
+
+    # Return TwiML response: transfer to founder's phone
+    resp = VoiceResponse()
+    resp.say("Thank you for calling Daanaa. Connecting you now.", voice='woman')
+    resp.dial('+1-347-937-3555')  # Founder's personal number
+
+    return str(resp), 200, {'Content-Type': 'text/xml'}
+
+
 @app.route('/api/claim/sms-callback', methods=['POST'])
 def claim_sms_callback():
     """
