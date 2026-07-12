@@ -4,6 +4,7 @@ Daanaa API — Peer-context nonprofit directory backend
 Serves registry_enriched + v4 scores to frontend
 """
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets, logging, sys
+import urllib.parse
 from math import radians, cos, sin, asin, sqrt
 from datetime import datetime
 
@@ -32,13 +33,28 @@ from twilio.request_validator import RequestValidator
 
 
 def _run_migrations(db_path: str):
-    """Run pending database migrations from migrations/ directory."""
-    try:
-        migration_dir = os.path.join(os.path.dirname(__file__), 'migrations')
-        if not os.path.isdir(migration_dir):
-            return
+    """Run pending database migrations from migrations/ directory.
 
-        conn = sqlite3.connect(db_path)
+    Statement-level tolerance (2026-07-12, see LESSONS.md): migrations
+    002 and 003 both CREATE TABLE org_nonprofit_updates with different
+    schemas. On a fresh DB, 002 runs first and "wins" (CREATE TABLE IF
+    NOT EXISTS no-ops for 003), so 003's own CREATE INDEX on a
+    003-only column then fails with "no such column". The old code had
+    no per-statement handling, so that exception propagated out, left
+    `conn` open (never committed/closed — a leaked lock on db_path), and
+    silently abandoned every later migration file including 004/phase3.
+    A concurrent connection to the same file (e.g. the next call in this
+    same startup) could then transiently hit "database is locked" until
+    the leaked connection was garbage-collected. Catching per-statement
+    and always closing the connection fixes both the schema-collision
+    symptom and the connection leak that caused it.
+    """
+    migration_dir = os.path.join(os.path.dirname(__file__), 'migrations')
+    if not os.path.isdir(migration_dir):
+        return
+
+    conn = sqlite3.connect(db_path)
+    try:
         cursor = conn.cursor()
 
         # Get list of already-run migrations from metadata table (if it exists)
@@ -67,21 +83,28 @@ def _run_migrations(db_path: str):
             with open(migration_path, 'r') as f:
                 sql = f.read()
 
-            # Execute migration (can be multiple statements)
+            # Execute migration (can be multiple statements). Continue past a
+            # failing statement instead of aborting the whole file — a
+            # collision on one CREATE/ALTER must not block every later
+            # migration file from running.
             for statement in sql.split(';'):
                 stmt = statement.strip()
                 if stmt:
-                    cursor.execute(stmt)
+                    try:
+                        cursor.execute(stmt)
+                    except sqlite3.OperationalError as e:
+                        _logger.warning(f'Migration statement skipped in {filename}: {e}')
 
             # Log that we ran it
             cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
             _logger.info(f'Ran migration: {filename}')
 
         conn.commit()
-        conn.close()
     except Exception as e:
         _logger.error(f'Migration error: {e}', exc_info=True)
         # Don't fail startup — migrations are best-effort
+    finally:
+        conn.close()
 
 # Add scripts directory to path for email service
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
@@ -3014,6 +3037,30 @@ def _normalize_spoken_url(raw: str) -> str:
     return u
 
 
+def _normalize_public_url(raw) -> str:
+    """Server-side mirror of frontend/src/utils/externalLink.ts normalizeExternalUrl
+    (T11 gap 2, EXECUTION_HANDOFF_2026_07_12.md). Every endpoint that persists a
+    caller-supplied URL (org claims, guild vendor codes, community partner
+    applications) must call this — not just startswith(http) — so a URL a UI
+    bug or a direct API call slips past is never stored: rejects javascript:/
+    data:/mailto: schemes, bare "https://" with no host, and any hostname with
+    no dot (e.g. "https://localhost"). Bare domains get "https://" prefixed.
+    """
+    u = (raw or '').strip()[:500]
+    if not u:
+        return ''
+    u = _normalize_spoken_url(u)
+    try:
+        parsed = urllib.parse.urlsplit(u)
+    except ValueError:
+        return ''
+    if parsed.scheme not in ('http', 'https'):
+        return ''
+    if not parsed.hostname or '.' not in parsed.hostname:
+        return ''
+    return u
+
+
 @app.route('/api/admin/concierge/confirm', methods=['POST'])
 @require_admin_key
 def admin_concierge_confirm():
@@ -3682,13 +3729,8 @@ def _sanitize_claim_profile_fields(data: dict) -> dict:
     /api/admin/concierge/confirm (operator, admin key) so the two paths can
     never drift on what a claim may write or how values are cleaned (P3/P7).
     """
-    donate_url  = (data.get('donate_url') or '').strip()[:500]
-    website_url = (data.get('website_url') or '').strip()[:500]
-    # Validate URLs — anything that isn't http(s) is dropped, never stored
-    if donate_url and not donate_url.startswith(('http://', 'https://')):
-        donate_url = ''
-    if website_url and not website_url.startswith(('http://', 'https://')):
-        website_url = ''
+    donate_url  = _normalize_public_url(data.get('donate_url'))
+    website_url = _normalize_public_url(data.get('website_url'))
     return {
         'custom_mission':     (data.get('custom_mission') or '').strip()[:300],
         'custom_description': (data.get('custom_description') or '').strip()[:500],
@@ -4045,7 +4087,7 @@ def admin_guild_codes_create():
             data['code'].strip()[:100],
             data['description'].strip()[:500],
             data['discount_label'].strip()[:100],
-            (data.get('website_url') or '').strip()[:500],
+            _normalize_public_url(data.get('website_url')),
             (data.get('how_to_use') or '').strip()[:500],
             int(data.get('milestone_tier', 1)),
             1 if data.get('is_active', True) else 0,
@@ -4296,7 +4338,7 @@ def guild_community_partner_apply():
             area_values,
             (data.get('contact_email') or '').strip()[:200],
             (data.get('contact_phone') or '').strip()[:50],
-            (data.get('website_url') or '').strip()[:500],
+            _normalize_public_url(data.get('website_url')),
             data['submitter_name'].strip()[:200],
             submitter_email[:200],
             (data.get('notes') or '').strip()[:1000],
