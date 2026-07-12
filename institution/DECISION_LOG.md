@@ -136,7 +136,26 @@
 - Expected outcome: Infrastructure ready for 100x scale without rework; prove product before investing in specialized services; sustainable long-term (infrastructure cost justified by revenue/partnerships).
 - Risks accepted: (1) Month 1–2 may have slower search (FTS5 vs. Elasticsearch), basic monitoring only. Mitigated: FTS5 handles 10K orgs fine; will upgrade if/when needed. (2) May feel "lean" vs. "world-class" for 8 weeks. Mitigated: institutional governance + research + advisor credibility are the real signals; infrastructure quality follows.
 - Review trigger: Week 8 decision gate (upgrade or hold); any incident showing $100/mo insufficient; or founder signals change in revenue model/timeline.
-- Actual outcome: Pending infrastructure provisioning (starting 2026-07-12 Week 1).
-- Lessons: Pending (will capture in month 2 decision gate).
+- Actual outcome: Superseded before execution — no money spent, no migration started.
+- Lessons: Captured in DR-2026-07-12-008 — the founder's "bounded dataset" fact invalidated the Postgres premise before provisioning.
+- Superseding decision: DR-2026-07-12-008.
+
+## DR-2026-07-12-008: Harden Baked-Data Architecture Instead of Postgres Migration
+
+- Identifier: DR-2026-07-12-008.
+- Date: 2026-07-12.
+- Issue: DR-2026-07-12-007 approved a Postgres + Redis migration path ($100/mo → $230/mo). Founder then surfaced the decisive constraint: the nonprofit public dataset is bounded (~1.7M US 501c3 orgs, will not grow materially) and demanded no rework, thorough thinking, and sustainability.
+- Context: The workload is bounded, read-heavy, write-once-nightly, with no server-side per-user state (Wallet is localStorage by design). This is the canonical baked-data case: compute offline, serve static artifacts. The existing architecture (home server bakes precompute + SQLite search.db nightly → lean droplet serves them) is already correct and was hardened by three incidents (INC-001/002/003).
+- Sources: Founder directive ("no rework / bounded dataset / think thoroughly"), STANDING_CONSTRAINTS_2026_07.md, INCIDENTS_2026_07.md, project_canonical_org_count memory (1.7M active 501c3).
+- Options considered: (a) proceed with Postgres migration per DR-007; (b) harden the existing baked-data architecture with CDN, snapshots, external monitoring, and two free fixes.
+- Board simulation summary: Continuity and finance strongly favored (b) — the Postgres migration was the largest rework risk in the plan and solved a scaling problem that cannot occur. Technology confirmed SQLite excels at bounded read-heavy datasets. Mission favored (b): ~$35–50/mo total run cost is sustainable indefinitely on zero revenue, the strongest longevity guarantee.
+- Stewardship principles applied: P1 (mission/sustainability before growth theater), P9 (explainable reversal, logged before execution), no-rework directive honored structurally.
+- Decision: Cancel Postgres/Redis/Elasticsearch path entirely. Execute instead: (1) SQLite WAL + test-isolation fix on home server (free — kills the pytest database lock), (2) passphrase-free automation SSH key (free — fixes nightly droplet sync), (3) S3 + CloudFront in front of precompute (~$10–15/mo), (4) DigitalOcean droplet snapshots (~$3/mo), (5) external real-page uptime monitoring ($0–10/mo). Postgres is re-considered only if server-side accounts or high-volume writes ever become real requirements; the CDN/static layer built now carries over unchanged in that case.
+- Decision owner: Founder (Akbar Khowaja, "Do the best you can"), AI Steward (autonomous execution).
+- Expected outcome: Every known infrastructure weakness closed at ~$15–30/mo incremental; zero migration risk; architecture locked in correctly before users arrive.
+- Risks accepted: FTS5 search quality ceiling (acceptable at this corpus size; embeddings/synonyms improvements run free on home GPU). Single droplet remains for the query API (mitigated by CDN absorbing page traffic and snapshots enabling fast rebuild).
+- Review trigger: Server-side user accounts, high-volume org-claim writes, or sustained traffic the droplet cannot serve.
+- Actual outcome: Pending (execution started 2026-07-12).
+- Lessons: A single domain fact (bounded dataset) can invalidate an entire infrastructure plan; surface load-bearing constraints before provisioning, not after.
 - Superseding decision: None.
 
