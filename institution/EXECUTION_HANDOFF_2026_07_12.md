@@ -160,6 +160,32 @@ Only after T0 has ≥1 week of cache analytics: consider caching the SPA shell/o
 (per-URL cache key, short TTL, respect the per-path meta injection). Requires evidence
 that HTML origin load matters. Do not do speculatively.
 
+## T11 — Outbound-link security hardening (founder-raised 2026-07-12)
+
+**Verified already in place (do not rebuild):** scheme validation via `new URL()` in
+`frontend/src/utils/externalLink.ts` (http/https only, javascript:/data: rejected, test
+exists), `rel="noopener noreferrer"` on external links, no open-redirect endpoint,
+pipeline identity matching (donate domain must match verified org website domain,
+confidence ≥90, HTTPS forced), public surfaces link to official website not donate pages.
+
+**Gap 1 — re-verification cadence (domain-takeover defense):** add a staleness SLA to the
+enrichment pipeline: any `donate_url`/`website` not re-verified in 90 days gets re-checked;
+if `website_final_domain` changes vs. the stored value, NULL the donate link and flag for
+`donate_human_review`. Implement inside the existing nightly enrichment loop (no new
+infra). Verification: pipeline log shows re-check counts; a test simulates a domain change
+and asserts the link is dropped.
+
+**Gap 2 — server-side URL validation at write:** the org-claim editor endpoints must
+reject any submitted website/donate URL that fails the same rules as
+`normalizeExternalUrl` (scheme http/https, dotted hostname). Port that logic to a Python
+helper used by every endpoint that writes URL fields. Verification: failing-first test
+posting `javascript:alert(1)` as a claimed org's website → 400.
+
+**Gap 3 — make noopener structural:** enable `react/jsx-no-target-blank` as an ESLint
+error in `frontend/eslint.config.js` so a missing `rel` fails lint instead of relying on
+reviewer discipline. (Frontend lint config change only — not a droplet deploy — but show
+the founder the diff per the frontend rule if it touches shipped code.)
+
 ---
 
 ## Standing rules for the executing model
