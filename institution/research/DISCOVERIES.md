@@ -27,3 +27,31 @@
 
 **Next steps:** Document in STANDING_CONSTRAINTS.md that semantic-search-on-droplet is infeasible; reaffirm home-server-only model for embeddings.
 
+
+## Litestream Continuous Replication: Viable for Critical-Tables Backup
+
+**Title:** Litestream achieves sub-second replication lag with verified restore correctness on critical tables
+
+**Summary:** Tested Litestream (open-source, MIT license, single static binary) as a continuous backup layer for critical tables (org_claims, score_snapshots subset) using local file-based replication as a stand-in for Cloudflare R2 (no R2 bucket created yet — avoided creating new external cloud resources without separate approval). All three pre-committed decision criteria passed.
+
+**Evidence:**
+- Replication lag: ~0.5s from write to confirmed replica sync (threshold: <60s)
+- Restore correctness: `litestream restore` produced a database with identical row count (4) and the specific test row (T8-TEST-001) present; `PRAGMA integrity_check` returned `ok` on both source and restored DB
+- Replica disk footprint: 36KB for a 3-row critical-tables test DB + one write — scales linearly, well under R2's 5GB target even at full org_claims volume (thousands of rows, not millions)
+
+**Confidence:** High for replication mechanics (measured directly). Medium for R2-specific behavior (network egress/latency to Cloudflare not yet tested — local file replica was the proxy).
+
+**Impact:** Continuous backup of the tables that change most often (claims, scoring) becomes feasible at near-zero cost, upgrading from "nightly snapshot" to "sub-second replication" for the data most likely to be lost in an incident window. Complements, does not replace, the existing Google Drive full-database nightly backup.
+
+**Replication status:** Local file-replica mechanics verified directly. R2 network behavior is the remaining unverified step — requires creating an R2 bucket (new external resource; needs separate approval per cost/resource-creation norms) before full adoption.
+
+**Publication opportunities:** None (using Litestream as documented; no novel technique).
+
+**Nonprofit benefit:** Faster recovery point objective for the org_claims table means a claimed nonprofit's profile edits or verification status is never more than ~1 second from being backed up, vs. up to 24 hours today.
+
+**Societal benefit:** Demonstrates that institutional-grade backup posture doesn't require paid infrastructure — reinforces the sustainability thesis (DR-2026-07-12-008).
+
+**Unexpected findings:** None — results matched expectations for a mature, widely-used tool.
+
+**Next steps:** Present to founder: (1) approve creating a Cloudflare R2 bucket (free tier, 10GB) to complete the R2-specific leg of the test, or (2) adopt file-based replication to a mounted network path as a lower-effort alternative. Either way, recommend adoption for org_claims + score_snapshots as a second backup layer alongside Google Drive.
+
