@@ -55,3 +55,24 @@
 
 **Next steps:** Present to founder: (1) approve creating a Cloudflare R2 bucket (free tier, 10GB) to complete the R2-specific leg of the test, or (2) adopt file-based replication to a mounted network path as a lower-effort alternative. Either way, recommend adoption for org_claims + score_snapshots as a second backup layer alongside Google Drive.
 
+
+## CORRECTION to "sqlite-vec on Droplet: RAM Constraint Blocks Hypothesis"
+
+**Per STEWARDSHIP.md Principle #6 (errors corrected openly and promptly):** the entry above tested the wrong mechanism and its stated failure reason is incorrect. Superseding this record rather than deleting it, per Principle #9 (decisions traceable).
+
+**What was wrong:** The original test loaded all 2.04M embeddings into Python-level numpy arrays to brute-force cosine similarity — that is not how sqlite-vec's `vec0` virtual table actually serves queries. It measures "can Python hold 8GB of arrays," not "can sqlite-vec answer a KNN query on a 2GB machine."
+
+**Corrected protocol:** Built a real `vec0` virtual table (`CREATE VIRTUAL TABLE org_vec USING vec0(ein TEXT, embedding float[1024])`), loaded 100K real production vectors, ran actual `WHERE embedding MATCH ? ORDER BY distance LIMIT 10` KNN queries.
+
+**Corrected evidence:**
+- Process RSS during query: ~41MB (not 8GB) — sqlite-vec correctly uses disk I/O, not full in-RAM materialization. The original RAM concern is **retracted**.
+- Query latency at 100K vectors: p50 67ms
+- Disk file size at 100K vectors: 396MB → extrapolated ~8GB at full 2.04M corpus (unavoidable: 2.04M × 1024-dim × 4 bytes ≈ 8GB regardless of storage medium)
+- **Real bottleneck found:** sqlite-vec's `vec0` performs brute-force distance computation with no approximate-nearest-neighbor index (confirmed limitation of the library as of this version). Latency scales linearly with corpus size. Extrapolated p50 at the full 2.04M corpus: **~1,380ms** — fails the <150ms decision threshold by ~9x.
+
+**Corrected verdict:** Hypothesis still **fails** — droplet semantic search remains infeasible — but for a latency reason (no ANN index in sqlite-vec), not a RAM reason. This matters because the fix path is different: a smaller/quantized embedding would not help (doesn't fix the O(n) scan); an actual ANN structure (HNSW-based service, or pre-filtering candidates via FTS keyword match before a small-N vector rerank — which is exactly what the home-server's `/api/search` fused RRF approach already does) would.
+
+**Confidence:** High (direct measurement of the real code path this time).
+
+**Lesson for future research (logged to LESSONS.md separately):** when testing a specific library's claimed capability, exercise the library's actual API — a hand-rolled equivalent measures the wrong system.
+
