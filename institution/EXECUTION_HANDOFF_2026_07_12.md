@@ -192,6 +192,24 @@ the founder the diff per the frontend rule if it touches shipped code.)
 
 ## Standing rules for the executing model
 
+**Prefer established OSS over hand-rolling (founder directive 2026-07-12, cost
+optimization).** Pinned choices — use these, don't build equivalents:
+- T7 vector search: `asg017/sqlite-vec` (pip `sqlite-vec`)
+- T8 continuous backup: `benbjohnson/litestream` (single static binary)
+- Phase B voice STT: `ggml-org/whisper.cpp` (Vulkan build, same stack as llama.cpp)
+- Phase B voice TTS: `rhasspy/piper` (fast local TTS, CPU is enough)
+- T4 monitoring: UptimeRobot free tier (external vantage) — optionally add self-hosted
+  `louislam/uptime-kuma` on the home server later for the droplet's second opinion;
+  never self-host as the ONLY monitor (a home-server outage would blind it)
+- T11 gap 3: `react/jsx-no-target-blank` from eslint-plugin-react (already a dep)
+- Open-data publishing (T9 proposal): `simonw/datasette`
+One-line justification in DECISIONS.md per new dependency, per CLAUDE.md. Verify licenses
+are permissive (all above are MIT/Apache) and pin versions.
+
+**Use the project's skills** per CLAUDE.md routing (/investigate for bugs, /review before
+commits, /qa for site behavior, /ship for deploys, /context-save at milestones) — they
+encode the working agreements and save tokens vs. re-deriving process.
+
 - Backend/scripts/tests: autonomous. Frontend to droplet: founder approval. Spend: only
   T5's ~$2–3/mo is pre-approved; anything else → ask.
 - Every droplet-touching change follows C-OP-001/002/005 (sync script only, direct IP,
