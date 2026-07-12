@@ -1631,12 +1631,12 @@ def voice_support_inbound():
 
     print(f"[Support Call] Incoming from {from_phone}, CallSid={call_sid}", flush=True)
 
-    # Return TwiML response: transfer to founder's phone
+    # Return TwiML response: play founder's greeting, then transfer to their phone
     # Note: Twilio <Dial> requires E.164 format (no dashes): +13479373555
     # Dial timeout defaults to 30s; ring 60s to give ample time
     twiml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="woman">Thank you for calling Daanaa. Connecting you now.</Say>
+  <Play>https://daanaa.org/static/greeting.m4a</Play>
   <Dial timeout="60">+13479373555</Dial>
 </Response>"""
 
