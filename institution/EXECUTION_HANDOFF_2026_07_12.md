@@ -260,3 +260,30 @@ never transits to Daanaa. Design doc + founder review REQUIRED before implementa
 guarantee — founder decides that posture; prepare a one-pager with both options).
 **Future-data gates:** any feature storing more donor data must pass: (a) never
 transactions, (b) E2EE mandatory, (c) founder ruling + PRIVACY-INVARIANTS.md update.
+
+## T14 — Nonprofit Manager Capacity Tools (founder decisions required)
+
+**Authority:** Stewardship Board Resolution 2026-07-11, Decision #6 (Capacity Stewardship).  
+**Test:** "What capability does this org have after this interaction that it didn't before?"  
+**Scope:** Build tools mapping to the 11 canonical capacity dimensions (Clarity, Financial,
+Leadership, Technology, Community, Governance, Sustainability, Data, Communication, Growth, Impact).
+
+**Full spec:** institution/NONPROFIT_MANAGER_TOOLS.md (read before deciding).
+
+**Phase 1 (3–4 weeks, if approved):** Self-assessment survey (11 questions, 5 min) +
+peer-benchmark dashboard (revenue-banded comparisons, no org names). Closes the "I don't
+know where to focus" problem for nonprofit managers, especially small orgs.
+
+**Phase 2/3:** Communication templates, peer-learning directory, sustainability modeling
+(gated on Phase 1 success metrics).
+
+**Founder decisions needed (before design starts):**
+1. Timeline: Phase 1 only (ship + measure) vs. commit to full roadmap?
+2. Advisory board: Should Daanaa convene nonprofit data experts to co-author guidance?
+3. Peer-learning directory scope: Just nonprofits, or include vendor recommendations (risks P7)?
+4. Email sequence: Optional 8-week onboarding emails if we build the tutorial?
+
+**Why this matters:** Board Resolution §6 explicitly binds the platform to this test. Every
+feature must build capacity. Right now Daanaa helps with Financial + Clarity (peer context,
+Mistake Registry); this fills the other 9 dimensions and gives small orgs words, models, and
+peer examples. Cost: ~2–3 weeks dev + advisory time. Benefit: structured to Daanaa's core mission.
