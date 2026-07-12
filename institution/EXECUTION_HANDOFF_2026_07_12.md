@@ -224,3 +224,31 @@ encode the working agreements and save tokens vs. re-deriving process.
   statuses in place.
 - Priority order: T0 (awaiting founder) → T1 → T2 → T3 → T4 → T5 (awaiting token) →
   T7 → T8 → T9 proposal → T10.
+
+## T12 — Search excellence, SQLite-native (founder-raised 2026-07-12)
+
+Stay in the SQLite family (bounded dataset, DR-008). Three upgrades, in order:
+1. **Measure first (C-DEV-002):** instrument zero-result rate + result-click position as
+   Plausible custom events (no PII, no query logging of anything user-identifying).
+   One week of data before tuning anything.
+2. **Typo tolerance:** SQLite trigram/spellfix1 layer for did-you-mean; verify against
+   the top-100 real misspellings observed in (1).
+3. **Baked synonyms (GPU is free):** nightly pipeline uses Qwen to generate synonym/
+   related-term expansions per NTEE category + org keywords, written INTO the FTS index
+   at bake time. Query path stays fast; intelligence moves to indexing.
+4. **Hybrid semantic:** if T7 (sqlite-vec) passes its decision rule, wire it into the
+   existing /api/fused-search for keyword+semantic fused ranking on the droplet.
+
+## T13 — Wallet: zero-knowledge sync architecture (founder-raised 2026-07-12)
+
+**Locked principle:** all synced donor data is encrypted client-side (WebCrypto) before
+leaving the device; servers store ciphertext only. "We cannot see your giving" — 
+structural, not policy. Current DynamoDB backup migrates to encrypted blobs.
+**Retained:** device-first default (no account), bookmarks+intent only (never
+transactions, P8), one-click full deletion, add one-click export (portability).
+**Key handling:** derive/wrap the encryption key client-side; the key or its passphrase
+never transits to Daanaa. Design doc + founder review REQUIRED before implementation
+(key-recovery UX is the hard tradeoff: lost key = lost wallet vs. escrow weakening the
+guarantee — founder decides that posture; prepare a one-pager with both options).
+**Future-data gates:** any feature storing more donor data must pass: (a) never
+transactions, (b) E2EE mandatory, (c) founder ruling + PRIVACY-INVARIANTS.md update.
