@@ -651,6 +651,56 @@ def run_parallel_enrichment():
     log(f'✅ Parallel enrichment complete in {elapsed/60:.1f} minutes')
 
 
+def run_donation_link_pipeline():
+    """Run donation link discovery Phase 1 — extract links from 200 orgs with verified websites.
+
+    Authority: Founder Ruling 2026-07-11 (enrichment pipeline integration).
+    This runs nightly as part of the enrichment orchestration.
+    """
+    try:
+        import subprocess
+        log('Starting donation link pipeline (Phase 1, 200 orgs)...')
+        script = Path.home() / 'meritgiving' / 'scripts' / 'donation_link_pipeline.py'
+        result = subprocess.run(
+            ['python3', str(script), '--phase', '1', '--orgs', '200'],
+            capture_output=True, text=True, timeout=600,  # 10 min timeout
+        )
+        for line in (result.stdout or '').strip().splitlines():
+            log(line)
+        if result.returncode != 0:
+            log(f'⚠️  Donation link pipeline non-zero exit: {result.stderr[:200]}')
+        else:
+            log('✅ Donation link pipeline complete')
+    except Exception as e:
+        log(f'⚠️  Donation link pipeline error (non-fatal): {str(e)[:100]}')
+
+
+def run_enrichment_pipeline():
+    """Coordinate Priority 1-5 enrichment (websites + missions + donations + contacts).
+
+    Authority: Founder Ruling 2026-07-11 (Item 2: AI Memory Migration, Item 3: Backup Robustness).
+    Enrichment pipeline integration with overnight scoring + backup cycle.
+
+    Pipeline stages:
+    1. Website discovery (already running autonomously, monitored here)
+    2. Mission generation (GPU batch, runs concurrently with fetch)
+    3. Donation link extraction (Phase 1 nightly)
+    4. Contact/action-link extraction (queued for future)
+    5. Readiness assessment (queued for future)
+    """
+    log('=' * 60)
+    log('ENRICHMENT PIPELINE — Parallel Stage Orchestration')
+    log('=' * 60)
+
+    # The parallel fetch + enrichment (missions) is already integrated above.
+    # Now add donation link extraction as a separate coordinated step.
+    run_donation_link_pipeline()
+
+    log('=' * 60)
+    log('Enrichment pipeline complete (websites, missions, donations orchestrated)')
+    log('=' * 60)
+
+
 def main():
     log('=' * 60)
     log('Overnight Pipeline Started')
@@ -709,6 +759,10 @@ def main():
 
     log('✅ Concurrent fetch + enrichment complete')
 
+    # Step 6.8: Enrichment pipeline orchestration (websites + missions + donations + contacts)
+    # Authority: Founder Ruling 2026-07-11 (enrichment pipeline integration)
+    run_enrichment_pipeline()
+
     # Step 7: Expire past volunteer events
     try:
         from expire_volunteer_events import run as expire_events
@@ -734,7 +788,7 @@ def main():
     refresh_and_publish_numbers()
 
     # Step 13: Log final stats
-    log('Nightly pipeline completed — website cache populated, missions generated, metrics updated')
+    log('Nightly pipeline completed — scoring updated, websites enriched, missions generated, donations extracted, metrics updated')
 
     log('=' * 60)
     log('Overnight Pipeline Complete')
