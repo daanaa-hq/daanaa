@@ -8611,137 +8611,171 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
     return jsonify({'status': 'rejected'}), 200
 
 @app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
-def nonprofit_dashboard_analytics(claim_token: str):
-    """
-    Nonprofit Donor Interest Dashboard (disabled for launch).
+def nonprofit_dashboard_legacy(claim_token: str):
+    """Legacy base64-token route, permanently retired (weak auth). Use POST
+    /api/nonprofit/dashboard with EIN + verification_token instead."""
+    return jsonify({'error': 'This endpoint has been replaced',
+                    'use': 'POST /api/nonprofit/dashboard'}), 410
 
-    This feature is planned for Phase 2. Returns 501 until ready.
+
+def _dashboard_financial_narrative(row) -> str:
+    """Encouraging, honest framing of the org's financial context.
+
+    Board condition (2026-07-13): the narrative encourages and never wounds.
+    Facts are never hidden — the signal and numbers ship alongside — but the
+    language is context, not a verdict, especially when the signal is CAUTION.
     """
-    return jsonify({'error': 'Dashboard coming soon'}), 501
+    signal = row['merit_health_signal_v5'] or 'UNKNOWN'
+    band = row['merit_band_v5_label'] or 'your size group'
+    archetype = row['merit_archetype_v5_label'] or 'your funding model'
+    peers = row['merit_peer_count_v5'] or 0
+    peer_phrase = f"compared with {peers} organizations that share your funding model and size" if peers else "within your peer group"
+
+    if signal == 'HEALTHY':
+        return (f"Your finances show a healthy pattern {peer_phrase}. "
+                f"As a {archetype} organization in the {band} range, your "
+                "fundamentals are working — steady resources supporting steady "
+                "mission work. That consistency is worth naming: it is rarer "
+                "than it looks.")
+    if signal == 'STABLE':
+        return (f"Your finances show a steady pattern {peer_phrase}. "
+                f"{archetype} organizations in the {band} range often run "
+                "close to their means, and holding stable there takes real "
+                "discipline. You are keeping the mission funded — that is the "
+                "job, and you are doing it.")
+    if signal == 'CAUTION':
+        return (f"Your recent filings show some financial pressure — a pattern "
+                f"shared by many {archetype} organizations in the {band} range. "
+                "This is context from public data, not a verdict on your work. "
+                "Small organizations move through tight seasons all the time; "
+                "if useful, your peer view shows how similar organizations are "
+                "resourced, and your profile tools can help more supporters "
+                "find you.")
+    return (f"We don't have enough recent public financial data to describe "
+            f"your position {peer_phrase}. That is a data gap, not a judgment — "
+            "many organizations your size file simplified returns.")
+
+
+@app.route('/api/nonprofit/dashboard', methods=['POST'])
+@limiter.limit("30 per minute")
+def nonprofit_self_dashboard():  # 'nonprofit_dashboard' endpoint name is taken
+                                 # by the dormant portal stub (GET 401)
+    """Self-discovery dashboard for verified claimants (pilot core surface).
+
+    Financial context in plain language, peer context (public Tier 1 data
+    only), donor interest aggregates, profile completeness. Auth matches
+    /api/claim/update: EIN + verification token.
+    """
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    claim, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    org = db.execute(
+        """SELECT organization_name, CITY, STATE, NTEE1, total_revenue,
+                  mission, website, website_status, donate_url,
+                  donate_url_status, is_hidden_gem,
+                  merit_score_v5, merit_archetype_v5_label, merit_band_v5_label,
+                  merit_health_signal_v5, merit_peer_group_v5, merit_peer_count_v5
+           FROM registry_enriched WHERE EIN = ?""", (ein,)).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # ── Financial context (Tier 1, plain language) ────────────────────────
+    financial_context = {
+        'health_signal': org['merit_health_signal_v5'],
+        'archetype': org['merit_archetype_v5_label'],
+        'band': org['merit_band_v5_label'],
+        'peer_count': org['merit_peer_count_v5'],
+        'is_hidden_gem': bool(org['is_hidden_gem']),
+        'narrative': _dashboard_financial_narrative(org),
+    }
+
+    # ── Peer context: up to 5 orgs in the same peer cell, public data only ─
+    peers = []
+    if org['merit_peer_group_v5']:
+        rows = db.execute(
+            """SELECT organization_name, CITY, STATE, total_revenue,
+                      merit_health_signal_v5, website
+               FROM registry_enriched
+               WHERE merit_peer_group_v5 = ? AND EIN != ?
+               ORDER BY ABS(COALESCE(total_revenue,0) - ?) LIMIT 5""",
+            (org['merit_peer_group_v5'], ein, org['total_revenue'] or 0)
+        ).fetchall()
+        peers = [{
+            'name': r['organization_name'],
+            'city': r['CITY'], 'state': r['STATE'],
+            'revenue': r['total_revenue'],
+            'health_signal': r['merit_health_signal_v5'],
+            'website': r['website'],
+        } for r in rows]
+    peer_context = {
+        'peers': peers,
+        'note': ('These are organizations with your funding model and size, '
+                 'closest to you in revenue — from public IRS data, shown for '
+                 'context, not competition.'),
+    }
+
+    # ── Donor interest: aggregate bookmarks (graceful when table absent) ───
+    bookmarks_now = bookmarks_prev = 0
     try:
-        # Verify claim token (should be a JWT-like token from claim process)
-        # For now, simple approach: token is base64(ein:email:timestamp)
-        # In production, use proper JWT validation with claim_status = 'approved'
+        bookmarks_now = db.execute(
+            "SELECT COALESCE(SUM(bookmark_count),0) FROM wallet_analytics "
+            "WHERE ein=? AND last_updated >= date('now','start of month')",
+            (ein,)).fetchone()[0]
+        bookmarks_prev = db.execute(
+            "SELECT COALESCE(SUM(bookmark_count),0) FROM wallet_analytics "
+            "WHERE ein=? AND last_updated >= date('now','-1 month','start of month') "
+            "AND last_updated < date('now','start of month')",
+            (ein,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        pass
+    donor_interest = {
+        'bookmarks_this_month': bookmarks_now,
+        'bookmarks_last_month': bookmarks_prev,
+        'note': ('Bookmarks are anonymous, aggregate counts of people saving '
+                 'your organization on Daanaa. They signal interest, not '
+                 'commitments — a starting point, not a promise.'),
+    }
 
-        try:
-            import base64
-            decoded = base64.b64decode(claim_token).decode('utf-8')
-            parts = decoded.split(':')
-            if len(parts) < 2:
-                return jsonify({'error': 'Invalid token'}), 401
-            ein, claimed_email = parts[0], parts[1]
-        except Exception:
-            return jsonify({'error': 'Invalid token format'}), 401
+    # ── Profile completeness: actionable, encouraging ─────────────────────
+    checks = {
+        'mission': bool(org['mission'] or claim['custom_mission']),
+        'website_verified': org['website_status'] == 'ok',
+        'donate_link_verified': org['donate_url_status'] == 'verified'
+                                and bool(org['donate_url']),
+    }
+    missing = [k for k, v in checks.items() if not v]
+    if not missing:
+        profile_narrative = ('Your public profile is complete — mission, '
+                             'website, and donation link are all verified. '
+                             'Donors who find you can act on what they find.')
+    else:
+        friendly = {'mission': 'a mission statement in your own words',
+                    'website_verified': 'a confirmed website',
+                    'donate_link_verified': 'a confirmed donation link'}
+        profile_narrative = ('One small step with real payoff: adding ' +
+                             ' and '.join(friendly[m] for m in missing) +
+                             ' helps donors who discover you take the next '
+                             'step with confidence.')
+    profile = {'checks': checks, 'narrative': profile_narrative}
 
-        # Verify org is actually claimed by this email
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('''
-            SELECT ein, email, claim_status FROM org_claims
-            WHERE ein = ? AND email = ? AND claim_status IN ('approved', 'verified')
-            LIMIT 1
-        ''', (ein, claimed_email))
-        claim = cursor.fetchone()
-
-        if not claim:
-            return jsonify({'error': 'Org not claimed or claim not verified'}), 403
-
-        # Get this month's analytics
-        from datetime import datetime, timedelta
-        now = datetime.now()
-        current_month = now.strftime('%Y-%m')
-        prev_month = (now - timedelta(days=30)).strftime('%Y-%m')
-
-        # Total bookmarks this month
-        cursor.execute('''
-            SELECT COALESCE(SUM(bookmark_count), 0) FROM wallet_analytics
-            WHERE ein = ? AND last_updated >= date('now', 'start of month')
-        ''', (ein,))
-        bookmarks_this_month = cursor.fetchone()[0]
-
-        # Total bookmarks last month
-        cursor.execute('''
-            SELECT COALESCE(SUM(bookmark_count), 0) FROM wallet_analytics
-            WHERE ein = ? AND last_updated >= date('now', '-1 month', 'start of month')
-            AND last_updated < date('now', 'start of month')
-        ''', (ein,))
-        bookmarks_prev_month = cursor.fetchone()[0]
-
-        # Bookmarks by cause
-        cursor.execute('''
-            SELECT cause_tag, SUM(bookmark_count) as count
-            FROM wallet_analytics
-            WHERE ein = ? AND cause_tag IS NOT NULL
-            GROUP BY cause_tag
-            ORDER BY count DESC
-            LIMIT 10
-        ''', (ein,))
-        causes = [{'cause': row[0], 'count': row[1]} for row in cursor.fetchall()]
-
-        # Bookmarks by location
-        cursor.execute('''
-            SELECT location_state, location_city, SUM(bookmark_count) as count
-            FROM wallet_analytics
-            WHERE ein = ? AND location_state IS NOT NULL
-            GROUP BY location_state, location_city
-            ORDER BY count DESC
-            LIMIT 10
-        ''', (ein,))
-        locations = [{'state': row[0], 'city': row[1], 'count': row[2]} for row in cursor.fetchall()]
-
-        # Get org data for profile completeness check
-        cursor.execute('''
-            SELECT mission, website, website_status, donate_url, custom_mission
-            FROM registry_enriched
-            WHERE EIN = ?
-        ''', (ein,))
-        org_row = cursor.fetchone()
-
-        profile_checks = {
-            'mission_status': 'fresh' if org_row and org_row[0] else 'missing',
-            'website_status': 'verified' if org_row and org_row[2] == 'verified' else 'unverified',
-            'donate_url_status': 'working' if org_row and org_row[3] else 'missing',
-            'cause_tags_count': len(causes),
-        }
-
-        # Get all distinct cause tags in taxonomy for recommendations
-        cursor.execute('''
-            SELECT DISTINCT cause_tag FROM wallet_analytics
-            WHERE cause_tag IS NOT NULL
-            ORDER BY cause_tag ASC
-        ''')
-        all_tags = [row[0] for row in cursor.fetchall()]
-
-        # Recommended tags (high-interest, org doesn't have yet)
-        org_tags = {c['cause'] for c in causes}
-        recommended = [
-            tag for tag in all_tags
-            if tag not in org_tags
-        ][:5]
-
-        return jsonify({
-            'ein': ein,
-            'this_month': {
-                'bookmarks_total': bookmarks_this_month,
-                'bookmarks_prev_month': bookmarks_prev_month,
-                'bookmarks_growth_pct': round(
-                    ((bookmarks_this_month - bookmarks_prev_month) / max(bookmarks_prev_month, 1)) * 100
-                ),
-                'bookmarks_by_cause': causes,
-                'bookmarks_by_location': locations,
-            },
-            'profile_completeness': profile_checks,
-            'recommended_cause_tags': recommended[:3],
-            'tips': [
-                'Orgs with 5+ cause tags get 2.3x more bookmarks',
-                'Update your mission every 6 months to stay in "Recently Updated" feed',
-                f'Adding "{recommended[0]}" tag would reach ~500+ interested donors' if recommended else None,
-            ]
-        }), 200
-
-    except Exception as e:
-        _logger.error(f'Dashboard error: {e}')
-        return jsonify({'error': 'Failed to load dashboard'}), 500
+    return jsonify({
+        'ein': ein,
+        'organization_name': org['organization_name'],
+        'financial_context': financial_context,
+        'peer_context': peer_context,
+        'donor_interest': donor_interest,
+        'profile': profile,
+        'derived_data': ('See what our AI derived about you, and correct it, '
+                         'via POST /api/claim/ai-derived'),
+    })
 
 
 # ── Volunteer interest counter ────────────────────────────────────────────────
