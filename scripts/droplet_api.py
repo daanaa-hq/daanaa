@@ -1444,6 +1444,12 @@ _STATIC_META = {
         'Daanaa is an independent civic platform that helps people discover '
         'nonprofits using public IRS data, presented with context and respect.',
     ),
+    'charter': (
+        'The Daanaa Charter',
+        'Ten promises Daanaa makes to the nonprofits and donors it serves: '
+        'never a cut of donations, never paid placement, never selling data. '
+        'Published so anyone can hold us to them.',
+    ),
     'principles': (
         'Our Principles — Daanaa',
         'The stewardship principles behind Daanaa: evidence-based trust signals, '
@@ -1620,7 +1626,7 @@ _SPA_PREFIXES = {
     'partners', 'for-vendors', 'vendor-policy', 'terms', 'guild', 'member',
     'volunteer', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
     'nonprofit', 'vendor', 'claim', 'admin',
-    'security', 'privacy', 'meet-the-invisible', 'invisible',
+    'security', 'privacy', 'meet-the-invisible', 'invisible', 'charter',
 }
 
 @app.route('/api/voice/support', methods=['POST'])
