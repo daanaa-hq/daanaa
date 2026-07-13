@@ -4909,6 +4909,35 @@ def fused_search():
         except Exception:
             kw_eins = []
 
+    # ── Path 1b: Semantic reranking of FTS results (T12 Phase 4) ──────────────
+    # If FTS returned results, optionally rerank by semantic similarity for better
+    # relevance (e.g., "food assistance" ranks above generic "nonprofit" matches)
+    if kw_eins and len(kw_eins) >= 5:  # Only rerank if we have meaningful FTS results
+        if not _emb_loaded:
+            _load_embeddings()
+        if _emb_matrix is not None and len(_emb_matrix) > 0:
+            vec = _embed_query(q)
+            if vec is not None:
+                # Rerank FTS results by semantic similarity to query
+                from numpy import dot
+                from numpy.linalg import norm
+                kw_sim_scores = {}
+                for ein in kw_eins:
+                    try:
+                        ein_idx = int(ein)
+                        if 0 <= ein_idx < len(_emb_matrix):
+                            org_vec = _emb_matrix[ein_idx]
+                            # Cosine similarity: dot / (norm1 * norm2)
+                            sim = dot(vec, org_vec) / (norm(vec) * norm(org_vec) + 1e-9)
+                            kw_sim_scores[ein] = sim
+                    except (ValueError, IndexError):
+                        pass
+                # Re-sort kw_eins by semantic similarity (descending)
+                if kw_sim_scores:
+                    kw_eins_reranked = sorted(kw_eins, key=lambda e: kw_sim_scores.get(e, -1), reverse=True)
+                    app.logger.info(f"semantic_reranking: q='{q}' reranked {len(kw_sim_scores)}/{len(kw_eins)} FTS results")
+                    kw_eins = kw_eins_reranked
+
     # ── FAST PATH: If FTS has enough results, skip semantic (avoid GPU) ─────────
     sem_eins: list[str] = []
     use_fast_path = len(kw_eins) >= RESULT_N  # If FTS has 20+, skip semantic
