@@ -229,12 +229,20 @@ class EnrichmentBatch:
         # fail-closed in qwen_inference.py, fixing the verbose-output problem
         # that got this disabled on 2026-07-08. Layer 2 (contact/programs/S3
         # embeddings) stays removed — zero-yield, see DECISIONS.md 2026-07-10.
+        #
+        # Checkpointed 2026-07-12: previously this called _enrich_layer() for
+        # the WHOLE query (default LIMIT 1,000,000 — effectively the entire
+        # registry, ~1.96M orgs matched the WHERE clause) and buffered every
+        # result in memory, writing to the DB only once at the very end. A
+        # process killed at the 8am cutoff, or any crash, lost 100% of that
+        # night's work with zero rows written — this is exactly what happened
+        # 2026-07-12 20:19-20:55 (35 min running, 0 rows written). Now writes
+        # + commits every `batch_size` orgs so a kill/crash loses at most one
+        # chunk, not the whole run.
         logger.info("Layer 1: Semantic lookup + Qwen inference (structured output)")
-        enrich_results = self._enrich_layer(max_orgs=max_orgs, batch_size=batch_size)
-
-        if not dry_run and enrich_results:
-            logger.info("Writing Layer 1 results to DB")
-            self._write_results(enrich_results)
+        enrich_results = self._enrich_layer(
+            max_orgs=max_orgs, batch_size=batch_size, dry_run=dry_run
+        )
 
         elapsed = time.time() - start_time
         stats = {
@@ -252,23 +260,32 @@ class EnrichmentBatch:
     def _enrich_layer(
         self,
         max_orgs: Optional[int] = None,
-        batch_size: int = 20
+        batch_size: int = 20,
+        dry_run: bool = False
     ) -> list:
         cursor = self.db.cursor()
 
-        query = """
+        # Cap default LIMIT: unset max_orgs previously defaulted to 1,000,000,
+        # which matched ~1.96M orgs (essentially the entire active registry)
+        # in one uncheckpointed run. 5,000 is a realistic single-invocation
+        # cap for one 8pm-8am window; the outer loop script re-invokes for
+        # more nights, and this can still be raised via --max-orgs.
+        cursor.execute(
+            """
             SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url
             FROM registry_enriched
             WHERE (cause_tags IS NULL OR cause_tags = '')
                OR (website IS NULL OR website = '')
                OR (mission_source IN ('ai_ntee', 'template_ntee') OR mission_source IS NULL)
             LIMIT ?
-        """
-        cursor.execute(query, (max_orgs or 1000000,))
+            """,
+            (max_orgs or 5000,)
+        )
         orgs = cursor.fetchall()
 
         results = []
-        for ein, name, mission, mission_source, ntee, city, state, existing_donate_url in orgs:
+        last_flushed = 0  # index into `results` up to which we've already written+committed
+        for i, (ein, name, mission, mission_source, ntee, city, state, existing_donate_url) in enumerate(orgs, 1):
             try:
                 org_data = {
                     'EIN': ein, 'name': name, 'mission': mission,
@@ -368,7 +385,20 @@ class EnrichmentBatch:
                 # (here or in any future per-org failure mode) must never take
                 # down a 1.7M-org nightly run. Log and move to the next org.
                 logger.error(f"Failed to enrich org {ein}: {e}")
-                continue
+            finally:
+                # Checkpoint every batch_size orgs (and on the final org) so a
+                # kill/crash mid-run loses at most one chunk instead of the
+                # entire night's work. `finally` ensures this runs even when
+                # the except branch above fired for this org.
+                if not dry_run and (i % batch_size == 0 or i == len(orgs)):
+                    new_results = results[last_flushed:]
+                    if new_results:
+                        self._write_results(new_results)
+                        logger.info(
+                            f"Checkpoint: flushed {len(new_results)} new rows "
+                            f"after {i}/{len(orgs)} orgs"
+                        )
+                    last_flushed = len(results)
 
         return results
 

@@ -415,3 +415,45 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
   STEWARDSHIP.md Principle #6 rather than let a wrong negative result stand as institutional memory
   (see institution/research/DISCOVERIES.md, "CORRECTION to sqlite-vec on Droplet").
 
+
+## 2026-07-12 — Enrichment ran "green" for a night while both inference servers were down
+- **Symptom:** 2026-07-12 enrichment yielded only ~408 orgs (vs ~1,700 typical). Log was a wall of
+  per-org "Connection refused" errors to :11437 (Qwen) and :11436 (embeddings), then a fatal
+  IntegrityError killed the batch mid-run. Nobody was alerted.
+- **Root cause (three stacked failures):** (1) llama-server instances aren't managed by systemd —
+  after a reboot/stop nothing restarts them, unlike ollama and llama-warehouse which are units;
+  (2) enrich_batch treats a refused connection as a per-org error and keeps burning through the
+  queue producing nothing; (3) the enrichment_run INSERT crashed on the UNIQUE constraint when
+  re-processing a same-day org, taking down the whole batch.
+- **Fixes shipped:** INSERT OR REPLACE (idempotent re-runs), flock single-instance guard on the
+  loop script, servers restarted (embed_server.sh + watchdog_llama.sh) and verified end-to-end
+  with a 20-org smoke batch before tonight's window.
+- **Preventing rule:** Before any overnight window, smoke-test the actual inference endpoints
+  (one real completion + one real embedding), not just process presence. Remaining gap to close:
+  systemd units for the :11436/:11437 servers so reboots can't silently kill enrichment again.
+
+## 2026-07-12 (later) — Uncheckpointed batch buffered a night's work in RAM, wrote nothing
+- **Symptom:** Tonight's freshly-launched enrichment loop ran 35+ minutes with 8 "workers" and
+  wrote zero rows to enrichment_run. Found while doing the founder-requested hourly review.
+- **Root cause:** `enrich_batch.py`'s default query had `LIMIT max_orgs or 1000000` — with no
+  `--max-orgs` flag (the loop script's normal invocation), this matched ~1.96M orgs (effectively
+  the entire active registry). All results were held in a Python list and written to the DB in
+  one `_write_results()` call only after the ENTIRE loop finished. A run that size would take
+  months; if killed at the 8am cutoff or by any crash, 100% of the night's work vanished with
+  nothing ever committed. Separately, `--workers 8` was accepted by argparse but never used —
+  the loop is single-threaded, so 4 of 5 Qwen concurrent slots sat idle the whole time.
+- **Why the earlier 20-org smoke test didn't catch it:** `--max-orgs 20` kept the in-memory
+  result set tiny, so the single end-of-run write was fast and looked fine. The bug only
+  manifests at the scale of a real unbounded run — same class of mistake as the sqlite-vec
+  benchmark lesson above (test the actual system under test, at the scale that matters).
+- **Fix shipped:** default LIMIT capped at 5,000 per invocation; `_enrich_layer` now checkpoints
+  (write + commit) every `batch_size` orgs via a `finally` block, so a kill/crash loses at most
+  one chunk. Verified live: a 150s-timeout smoke test was killed mid-run and 10 rows had already
+  landed on disk before the kill.
+- **Deferred, not fixed:** actually parallelizing the per-org Qwen calls to use the server's 5
+  idle slots. Founder said "credibility over speed" when I found this mid-review — a same-night
+  concurrency rewrite of the core enrichment pipeline was the wrong call under time pressure.
+  Do this in daylight, tested, not as a live-window hotfix.
+- **Preventing rule:** any batch job with an in-memory result list must checkpoint incrementally,
+  and any "workers" parameter must either be wired up or removed from the CLI — a silently dead
+  concurrency flag reads as "already parallelized" to the next person who benchmarks capacity.
