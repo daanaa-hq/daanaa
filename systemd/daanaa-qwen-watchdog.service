@@ -1,0 +1,18 @@
+[Unit]
+Description=Daanaa Qwen2.5-32B Watchdog (:11437)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=akbar
+Group=akbar
+WorkingDirectory=/home/akbar/meritgiving
+ExecStart=/bin/bash /home/akbar/meritgiving/scripts/watchdog_llama.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

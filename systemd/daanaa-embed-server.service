@@ -1,0 +1,19 @@
+[Unit]
+Description=Daanaa mxbai-embed-large Inference Server (:11436)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=akbar
+Group=akbar
+WorkingDirectory=/home/akbar/meritgiving
+ExecStart=/bin/bash /home/akbar/meritgiving/scripts/embed_server.sh start
+ExecStop=/bin/bash /home/akbar/meritgiving/scripts/embed_server.sh stop
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
