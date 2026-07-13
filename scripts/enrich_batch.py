@@ -46,6 +46,7 @@ from scripts.quality_measurement import QualityMeasurement
 from scripts.prompt_improvement import PromptImprovement
 from scripts.website_content import validate_and_fetch_website, fetch_known_website
 from scripts.donate_confidence import score_confidence, identity_match
+from scripts.website_normalize import normalize_website
 from scripts.s3_enrichment import get_s3_client
 
 logging.basicConfig(
@@ -499,12 +500,12 @@ class EnrichmentBatch:
                 elif etype == 'website':
                     cursor.execute(
                         "UPDATE registry_enriched SET website = ? WHERE EIN = ? AND (website IS NULL OR website = '')",
-                        (value, ein)
+                        (normalize_website(value), ein)
                     )
                 elif etype == 'volunteer_url':
                     cursor.execute(
                         "UPDATE registry_enriched SET volunteer_url = ? WHERE EIN = ?",
-                        (value, ein)
+                        (normalize_website(value), ein)
                     )
                 elif etype == 'mission':
                     context = json.loads(result.get('context_used') or '{}')
@@ -528,7 +529,7 @@ class EnrichmentBatch:
                 elif etype == 'donate_url':
                     cursor.execute(
                         "UPDATE registry_enriched SET donate_url = ?, donate_confidence = ?, donate_human_review = 0 WHERE EIN = ? AND (donate_url IS NULL OR donate_url = '')",
-                        (value, result['confidence_score'], ein)
+                        (normalize_website(value), result['confidence_score'], ein)
                     )
                 elif etype == 'donate_url_review':
                     cursor.execute(
