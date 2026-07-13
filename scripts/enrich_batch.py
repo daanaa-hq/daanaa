@@ -375,8 +375,12 @@ class EnrichmentBatch:
     def _write_results(self, results: list) -> None:
         cursor = self.db.cursor()
         for result in results:
+            # INSERT OR REPLACE: re-running an org on the same day updates its row
+            # instead of crashing the whole batch on UNIQUE(run_date, org_ein,
+            # enrichment_type) — this exact IntegrityError killed the 2026-07-12
+            # parallel batch mid-run (see logs/enrichment-parallel-batch-3.log).
             cursor.execute(
-                """INSERT INTO enrichment_run
+                """INSERT OR REPLACE INTO enrichment_run
                    (run_date, org_ein, enrichment_type, generated_value, confidence_score, context_used, prompt_version)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
                 (

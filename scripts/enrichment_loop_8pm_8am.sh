@@ -9,6 +9,15 @@ VENV="$REPO/venv/bin/activate"
 LOG_DIR="$REPO/logs"
 mkdir -p "$LOG_DIR"
 
+# Single-instance guard: if a loop is already running (e.g. started manually
+# at 8pm), the 2am cron invocation exits instead of doubling up workers.
+LOCK_FILE="/tmp/daanaa_enrichment_loop.lock"
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Another enrichment loop is already running — exiting." >> "$LOG_DIR/enrichment-loop-$(date +%Y%m%d).log"
+  exit 0
+fi
+
 LOG_FILE="$LOG_DIR/enrichment-loop-$(date +%Y%m%d).log"
 CUTOFF_HOUR=8  # Stop at 8am CST (stop processing new batches)
 
