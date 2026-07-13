@@ -16,12 +16,27 @@ export default function VolunteerLogger({ ein, orgName }: VolunteerLoggerProps) 
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  // Same window as donations: volunteer expenses/mileage follow the same
+  // 3-year IRS amendment reach, and hours can never be logged for the future.
+  const today = new Date().toISOString().split('T')[0]
+  const MIN_DATE = new Date(new Date().setFullYear(new Date().getFullYear() - 3))
+    .toISOString().split('T')[0]
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
 
     if (!hours || !date) {
       setError('Hours and date required')
+      return
+    }
+
+    if (date > today) {
+      setError('Date cannot be in the future')
+      return
+    }
+    if (date < MIN_DATE) {
+      setError('Dates more than 3 years back are outside the IRS amendment window — please check the year')
       return
     }
 
@@ -94,6 +109,8 @@ export default function VolunteerLogger({ ein, orgName }: VolunteerLoggerProps) 
           <input
             type="date"
             value={date}
+            min={MIN_DATE}
+            max={today}
             onChange={(e) => setDate(e.target.value)}
             className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
           />

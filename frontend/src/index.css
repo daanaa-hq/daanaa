@@ -64,6 +64,16 @@
     overflow-x: hidden;
   }
 
+  /* Form controls sit on white/cream cards — they must never inherit the
+     body's light-on-dark cream, or typed text becomes invisible. */
+  input, textarea, select {
+    color: var(--deep-navy);
+  }
+  input::placeholder, textarea::placeholder {
+    color: var(--cool-grey);
+    opacity: 0.65;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Cormorant Garamond', Georgia, serif;
   }
