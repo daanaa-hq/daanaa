@@ -25,6 +25,7 @@ const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const About = lazy(() => import('./pages/About'))
+const Charter = lazy(() => import('./pages/Charter'))
 const Approach = lazy(() => import('./pages/Approach'))
 const ClaimVerify = lazy(() => import('./pages/ClaimVerify'))
 const OrgClaimEditor = lazy(() => import('./pages/OrgClaimEditor'))
@@ -92,6 +93,7 @@ export default function App() {
             <Route path="/giving-wallet" element={<Navigate to="/wallet" replace />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
             <Route path="/about" element={<About />} />
+            <Route path="/charter" element={<Charter />} />
             <Route path="/principles" element={<Navigate to="/about" replace />} />
             <Route path="/approach" element={<Navigate to="/about" replace />} />
             {/* Legacy routes for backward compatibility */}

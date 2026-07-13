@@ -24,8 +24,7 @@ const NAV_COLS = [
     links: [
       { label: 'About Daanaa', to: '/about' },
       { label: 'How it works', to: '/methodology' },
-      { label: 'Research', to: '/research' },
-      { label: 'AI access', to: '/open-data' },
+      { label: 'Our Charter', to: '/charter' },
     ],
   },
   {

@@ -1,8 +1,8 @@
 # The Daanaa Charter
 
-**Status:** Draft v1.0 for founder review · 2026-07-13
-**Once approved:** published at daanaa.org/charter, referenced in STEWARDSHIP.md,
-and binding on every person, system, and AI agent operating as Daanaa.
+**Status:** Adopted v1.0 · reviewed and approved by the founder 2026-07-13
+**Published at:** daanaa.org/charter · referenced in STEWARDSHIP.md
+**Binding on:** every person, system, and AI agent operating as Daanaa.
 
 ---
 
