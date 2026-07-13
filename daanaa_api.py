@@ -6,7 +6,7 @@ Serves registry_enriched + v4 scores to frontend
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets, logging, sys
 import urllib.parse
 from math import radians, cos, sin, asin, sqrt
-from datetime import datetime
+from datetime import datetime, timezone
 from difflib import get_close_matches
 
 # Sentry error tracking — activate by setting SENTRY_DSN env var.
@@ -3982,6 +3982,92 @@ def claim_contacts_update():
 
     db.commit()
     return jsonify({"status": "updated", "contact_preference": contact_preference}), 200
+
+
+# ── Tier 2 privacy controls (Charter promise 9, Library Document 011) ─────────
+# Everything a claimant entrusted to Daanaa is exportable and deletable by them.
+# The public IRS record is not theirs to delete and remains untouched.
+
+# Secret material never leaves the server, not even to its owner: the PIN is a
+# live credential, and exporting it would turn every export into a phishing prize.
+_CLAIM_SECRET_FIELDS = {'pin', 'pin_expires_at'}
+
+
+def _authorize_claimant(db, ein: str, token: str):
+    """Shared auth for claimant data endpoints — same contract as /api/claim/update.
+
+    Returns (row, None) on success or (None, (response, status)) on failure.
+    """
+    row = db.execute('SELECT * FROM org_claims WHERE ein = ?', (ein,)).fetchone()
+    if not row:
+        return None, (jsonify({'error': 'No claim found for this EIN'}), 404)
+    if row['claim_status'] == 'revoked':
+        return None, (jsonify({'error': 'This claim has been revoked'}), 403)
+    stored_pin = row['pin']
+    if token != stored_pin and token != _make_verify_token(ein, stored_pin):
+        return None, (jsonify({'error': 'Verification token is invalid or expired'}), 403)
+    return row, None
+
+
+@app.route('/api/claim/my-data', methods=['POST'])
+@limiter.limit("10 per minute")
+def claim_my_data_export():
+    """Export every entrusted (Tier 2) field the claimant has given Daanaa."""
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    entrusted = {k: row[k] for k in row.keys() if k not in _CLAIM_SECRET_FIELDS}
+    return jsonify({
+        'ein': ein,
+        'exported_at': datetime.now(timezone.utc).isoformat(),
+        'entrusted_data': entrusted,
+        'note': ('This is everything your organization has entrusted to Daanaa. '
+                 'Public IRS data is not included; it remains public record. '
+                 'You can delete all of this at any time via /api/claim/my-data/delete.'),
+    })
+
+
+@app.route('/api/claim/my-data/delete', methods=['POST'])
+@limiter.limit("5 per minute")
+def claim_my_data_delete():
+    """Delete the claimant's entrusted data entirely. Public record remains."""
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    db.execute("DELETE FROM org_claims WHERE ein = ?", (ein,))
+    db.commit()
+
+    # Claimed overrides must vanish from public pages immediately
+    stale = [k for k in _CACHE if ein in k]
+    for k in stale:
+        _CACHE.pop(k, None)
+
+    # Audit that a deletion happened — never what was deleted (no PII in the log)
+    _log_org_activity(ein, 'claim_data_deleted',
+                      'entrusted data deleted at claimant request', actor='org')
+
+    return jsonify({
+        'success': True,
+        'message': ('All data your organization entrusted to Daanaa has been deleted. '
+                    'Your public IRS record remains, as it is public record. '
+                    'You are welcome to claim your profile again at any time.'),
+    })
 
 
 def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[dict]:
