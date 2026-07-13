@@ -32,6 +32,9 @@ from twilio.twiml.voice_response import VoiceResponse
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.request_validator import RequestValidator
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
+from ntee_synonyms import expand_query_with_synonyms
+
 
 def _run_migrations(db_path: str):
     """Run pending database migrations from migrations/ directory.
@@ -4988,6 +4991,36 @@ def fused_search():
                         break
             if typo_eins:
                 app.logger.info(f"typo_tolerance: q='{q}' kw={len(kw_eins)} + fuzzy={len(typo_eins)} -> {len(fused_eins)} total")
+
+    # ── NTEE synonym expansion (T12 Phase 3) ───────────────────────────────────
+    # If still too few results, expand query with nonprofit category synonyms
+    # (e.g., "animal rescue" → also search "animal shelter", "pet adoption", etc.)
+    if len(fused_eins) < 5:
+        synonyms = expand_query_with_synonyms(q)
+        if len(synonyms) > 1:  # More than just the original query
+            existing_set = set(fused_eins)
+            syn_eins = []
+            for syn_q in synonyms[1:]:  # Skip the first (original query)
+                if len(fused_eins) >= RESULT_N:
+                    break
+                try:
+                    fts_q = _sanitize_fts_query(syn_q)
+                    rows = db.execute(
+                        "SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+                        "ORDER BY bm25(org_fts, 10, 5, 1, 1) LIMIT ?",
+                        (fts_q, CAND_N)
+                    ).fetchall()
+                    for r in rows:
+                        ein = r[0]
+                        if ein not in existing_set:
+                            fused_eins.append(ein)
+                            syn_eins.append(ein)
+                            if len(fused_eins) >= RESULT_N:
+                                break
+                except Exception:
+                    pass
+            if syn_eins:
+                app.logger.info(f"synonym_expansion: q='{q}' synonyms={synonyms[1:]} added={len(syn_eins)} -> {len(fused_eins)} total")
 
     # ── Fetch org details (deductible 501c3s only) ────────────────────────────
     fetch_n = min(RESULT_N * 3, len(fused_eins))
