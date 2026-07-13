@@ -4070,6 +4070,86 @@ def claim_my_data_delete():
     })
 
 
+@app.route('/api/claim/ai-derived', methods=['POST'])
+@limiter.limit("20 per minute")
+def claim_ai_derived():
+    """Show a claimant exactly what was derived about their org, with provenance.
+
+    Stewardship P9/P10 + Library Doc 005: AI-generated facts are labeled at the
+    level of the individual fact, and the organization can always override them.
+    The AI value stays visible next to any override — comparison, not erasure.
+    """
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    claim, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    org = db.execute(
+        """SELECT mission, mission_source, cause_tags, website, website_status,
+                  donate_url, donate_confidence, donate_url_status
+           FROM registry_enriched WHERE EIN = ?""", (ein,)).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    _AI_MISSION_SOURCES = ('ai_ntee', 'ai_generated')
+    mission_source = org['mission_source'] or 'unknown'
+    derived = [
+        {
+            'field': 'mission',
+            'value': org['mission'],
+            'source': mission_source,
+            'is_ai': mission_source in _AI_MISSION_SOURCES,
+            'explanation': (
+                'This summary was written by our AI from your IRS filings and category.'
+                if mission_source in _AI_MISSION_SOURCES else
+                'This summary came from your own public materials.'),
+            'your_override': claim['custom_mission'],
+            'how_to_override': 'Edit your mission in your profile editor; your words replace ours everywhere.',
+        },
+        {
+            'field': 'cause_tags',
+            'value': org['cause_tags'],
+            'source': 'ai_extracted',
+            'is_ai': True,
+            'explanation': 'These tags were extracted by AI from your IRS category and public description.',
+            'your_override': claim['cause_tags_json'] if 'cause_tags_json' in claim.keys() else None,
+            'how_to_override': 'Set your own cause tags in your profile editor.',
+        },
+        {
+            'field': 'website',
+            'value': org['website'],
+            'source': f"discovered ({org['website_status'] or 'unchecked'})",
+            'is_ai': True,
+            'explanation': 'Found by our automated discovery pipeline and verified by status checks.',
+            'your_override': claim['website_url'] if 'website_url' in claim.keys() else None,
+            'how_to_override': 'Confirm or correct your website in your profile editor.',
+        },
+        {
+            'field': 'donate_url',
+            'value': org['donate_url'],
+            'source': f"discovered ({org['donate_url_status'] or 'unchecked'}, "
+                      f"confidence {org['donate_confidence'] or 0:.0f})",
+            'is_ai': True,
+            'explanation': 'Found by automated search of your website; marked beta until you confirm it.',
+            'your_override': claim['donate_url'] if 'donate_url' in claim.keys() else None,
+            'how_to_override': 'Confirm your donation link in your profile editor to remove the beta label.',
+        },
+    ]
+    return jsonify({
+        'ein': ein,
+        'derived': derived,
+        'note': ('Everything here was derived from public sources or by AI, and is '
+                 'labeled with where it came from. Your overrides always win, and '
+                 'the derived value stays visible to you for comparison.'),
+    })
+
+
 def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[dict]:
     if not eins:
         return []
