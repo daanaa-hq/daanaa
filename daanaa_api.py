@@ -7,6 +7,7 @@ import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
 import urllib.parse
 from math import radians, cos, sin, asin, sqrt
 from datetime import datetime
+from difflib import get_close_matches
 
 # Sentry error tracking — activate by setting SENTRY_DSN env var.
 import sentry_sdk
@@ -4771,6 +4772,34 @@ def get_similar_organizations(ein):
     return jsonify({'results': [_strip_scores(r) for r in results], 'mode': mode, 'diamonds_only': diamonds_only})
 
 
+# ── Typo tolerance helper (T12 Phase 2) ────────────────────────────────────────
+def _typo_tolerance_search(query: str, db) -> list[str]:
+    """Fuzzy-match query against org names when FTS returns zero results.
+
+    Used as a fallback when keyword search fails (likely due to typos).
+    Returns EINs of the best fuzzy matches (up to 5).
+
+    Example: "aniaml rescue" → "Animal Rescue" orgs via difflib similarity.
+    """
+    try:
+        # Fetch all org names (cached in memory on first call)
+        if not hasattr(_typo_tolerance_search, '_org_names_cache'):
+            rows = db.execute("SELECT EIN, organization_name FROM registry_enriched WHERE organization_name IS NOT NULL").fetchall()
+            _typo_tolerance_search._org_names_cache = {dict(r)['organization_name']: dict(r)['EIN'] for r in rows}
+
+        org_names = list(_typo_tolerance_search._org_names_cache.keys())
+
+        # Get close matches (cutoff=0.50 = 50% similarity, aggressive for typo tolerance)
+        # Returns up to 10 candidates to maximize recall
+        matches = get_close_matches(query, org_names, n=10, cutoff=0.50)
+        if matches:
+            return [_typo_tolerance_search._org_names_cache[name] for name in matches[:5]]
+    except Exception as e:
+        app.logger.debug(f"typo_tolerance_search error: {e}")
+
+    return []
+
+
 # ── Semantic search ────────────────────────────────────────────────────────────
 @app.route('/api/search/semantic')
 @limiter.limit("30 per minute")
@@ -4943,6 +4972,22 @@ def fused_search():
         fused_eins = existing_boosted + new_boosted + unboosted
         # Log that boosts were applied
         app.logger.info(f"search_surge_boost: q='{q}' existing={len(existing_boosted)} new={len(new_boosted)} event_types={set(b['event_type'] for b in boost_eins.values())}")
+
+    # ── Typo tolerance fallback (T12 Phase 2) ──────────────────────────────────
+    # If FTS + semantic returned too few results, try fuzzy matching on org names
+    # to catch typos and abbreviations that FTS might miss
+    if len(fused_eins) < 5:
+        typo_eins = _typo_tolerance_search(q, db)
+        if typo_eins:
+            # Blend: preserve high-scoring FTS results, add fuzzy matches for coverage
+            existing_set = set(fused_eins)
+            for ein in typo_eins:
+                if ein not in existing_set:
+                    fused_eins.append(ein)
+                    if len(fused_eins) >= RESULT_N:
+                        break
+            if typo_eins:
+                app.logger.info(f"typo_tolerance: q='{q}' kw={len(kw_eins)} + fuzzy={len(typo_eins)} -> {len(fused_eins)} total")
 
     # ── Fetch org details (deductible 501c3s only) ────────────────────────────
     fetch_n = min(RESULT_N * 3, len(fused_eins))
