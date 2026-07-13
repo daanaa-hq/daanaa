@@ -52,6 +52,7 @@ from check_link_health import (
     _DONATE_PLATFORMS, _PLATFORM_EXCLUDE, _FULL_URL_PLATFORMS, extract_donate_url
 )
 from donate_confidence import identity_match, score_confidence
+from website_normalize import normalize_website
 
 
 # ── Per-domain rate limiter ───────────────────────────────────────────────────
@@ -823,6 +824,7 @@ def phase1_discover_new(db: sqlite3.Connection, max_orgs=200, dry_run=False, wor
                 continue
 
             if dec == "new_candidate_verified":
+                normalized_url = normalize_website(res["donate_url"])
                 db.execute("""
                     UPDATE registry_enriched
                     SET donate_url=?, donate_platform=?,
@@ -830,7 +832,7 @@ def phase1_discover_new(db: sqlite3.Connection, max_orgs=200, dry_run=False, wor
                         donate_confidence=?, donate_source_page=?,
                         donate_identity_match=?, donate_checked_at=?
                     WHERE EIN=?
-                """, (res["donate_url"], res["donate_platform"], res["confidence"],
+                """, (normalized_url, res["donate_platform"], res["confidence"],
                       res["source_page"], res["match_level"], now, res["ein"]))
                 write_evidence(db, ein=res["ein"], legal_name=res["name"],
                                official_website=res["website"],
@@ -844,6 +846,7 @@ def phase1_discover_new(db: sqlite3.Connection, max_orgs=200, dry_run=False, wor
                 db.commit()
 
             elif dec == "human_review_required":
+                normalized_url = normalize_website(res["donate_url"])
                 db.execute("""
                     UPDATE registry_enriched
                     SET donate_url=?, donate_platform=?,
@@ -851,7 +854,7 @@ def phase1_discover_new(db: sqlite3.Connection, max_orgs=200, dry_run=False, wor
                         donate_confidence=?, donate_source_page=?,
                         donate_identity_match=?, donate_checked_at=?, donate_human_review=1
                     WHERE EIN=?
-                """, (res["donate_url"], res["donate_platform"], res["confidence"],
+                """, (normalized_url, res["donate_platform"], res["confidence"],
                       res["source_page"], res["match_level"], now, res["ein"]))
                 queue_for_review(db, ein=res["ein"], legal_name=res["name"],
                                  reason="confidence_75_89",
