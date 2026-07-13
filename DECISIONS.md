@@ -573,3 +573,18 @@ running semantic search (GPU cost, slow for simple keyword queries).
 
 Together, T12 Phase 3+4 aim to close remaining 2% recall gap from Phase 2
 (88% → 90%+) and improve relevance ranking across all search paths.
+
+## 2026-07-13 — Dual-brand structure + pilot foundation
+**Chose:** Two brands, one LLC (Daanaa stays DBA of EcoMargins; consulting under
+EcoMargins name only), separated by Tier 0/1/2 data classification (Library Doc
+011) enforced in privacy_check.sh GATE 8 + PRIVACY-INVARIANTS #8. 501(c)(3)
+spin-out deferred to post-pilot board gate. **Why:** paid services under a
+separate brand keeps the Daanaa never-list credible; entity formation before
+pilot validation is premature cost. **Rejected:** everything under Daanaa brand
+(contaminates trust promise); immediate 501(c)(3) (cost + delay).
+
+**Chose:** 25-org hand-invited pilot before any Phase 2/3 build; dashboard
+narrative tone enforced by test (shame-word denylist at worst-case inputs).
+**Why:** adoption risk dwarfs revenue risk; emotional tone of peer comparison
+is a P5 issue, so it's pinned by a failing-first test, not a style guide.
+**Rejected:** building all three phases before validating claim/return behavior.
