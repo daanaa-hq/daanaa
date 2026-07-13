@@ -42,6 +42,15 @@ Wire it as a pre-commit hook or CI step so the build fails if privacy regresses.
    disclosure. Daanaa stores no volunteer contact list, so there is nothing to harvest
    or spam.
 
+8. **Tier 2 entity firewall.** Data entrusted to Daanaa (org_claims contact,
+   attestation, and behavioral fields; waitlist; wallet; feedback; call records) is
+   never used for prospecting, lead scoring, marketing, or consulting by any entity —
+   including EcoMargins Consulting LLC, Daanaa's operating company — and is never sent
+   to external AI services (local inference only). Full classification:
+   `institution/library/011_data_classification.md`. Enforced by privacy_check.sh
+   GATE 8. *(Added 2026-07-13: dual-brand structure adopted — Daanaa free platform +
+   EcoMargins paid consulting under one LLC, separated by this firewall.)*
+
 ## Change protocol
 
 Any change that touches an invariant above must: (a) update this file with the reason,

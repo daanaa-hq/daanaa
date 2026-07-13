@@ -291,6 +291,57 @@ else
 fi
 
 # ============================================================
+# GATE 8: Tier 2 Entity Firewall (Library Document 011)
+# ============================================================
+# Entrusted data (org_claims contact/behavioral fields, waitlist, wallet,
+# feedback) may never feed prospecting/outreach/consulting code paths, and
+# may never be sent to external AI services (local inference only).
+echo ""
+echo "GATE 8: Tier 2 Entity Firewall"
+
+TIER2_VIOLATIONS=0
+
+# Tier 2 stores and columns (keep in sync with institution/library/011_data_classification.md)
+TIER2_REFS='org_claims|volunteer_contact_|donor_contact_|call_notes|rep_name|rep_title|contact_preference|wallet_analytics|waitlist|checkin_sent_at|nudge_sent_at'
+
+# 8a: Prospecting/outreach/consulting-named code must not touch Tier 2 stores.
+# Matched on filename — a file named for commercial outreach that reads
+# entrusted data is exactly the drift this gate exists to stop.
+while IFS= read -r file; do
+  if exclude_filter "$file"; then continue; fi
+  if [[ ! "$file" =~ \.(py|js|ts|tsx|sh)$ ]]; then continue; fi
+  base="$(basename "$file")"
+  if [[ "$base" =~ (prospect|outreach|marketing|leads|sales|ecomargins|consult|campaign) ]]; then
+    if git show ":$file" 2>/dev/null | grep -qE "$TIER2_REFS"; then
+      warn "Tier 2 firewall: '$file' (commercial-path filename) references entrusted data stores"
+      TIER2_VIOLATIONS=$((TIER2_VIOLATIONS + 1))
+    fi
+  fi
+done <<< "$STAGED_FILES"
+
+# 8b: Tier 2 data must never flow to external AI services. Flag added lines
+# that reference both a Tier 2 store and an external AI host. Local inference
+# (localhost:11434/11436/11437) is the sanctioned path.
+EXTERNAL_AI_HOSTS='api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis|api\.mistral\.ai|api\.together\.xyz|api\.groq\.com|openrouter\.ai'
+while IFS= read -r file; do
+  if exclude_filter "$file"; then continue; fi
+  if [[ ! "$file" =~ \.(py|js|ts|tsx)$ ]]; then continue; fi
+
+  added="$(staged_added_lines "$file" || true)"
+  if [ -n "$added" ] && grep -qE "$EXTERNAL_AI_HOSTS" <<< "$added" \
+     && git show ":$file" 2>/dev/null | grep -qE "$TIER2_REFS"; then
+    warn "Tier 2 firewall: '$file' touches entrusted data AND an external AI host (local inference only)"
+    TIER2_VIOLATIONS=$((TIER2_VIOLATIONS + 1))
+  fi
+done <<< "$STAGED_FILES"
+
+if [ $TIER2_VIOLATIONS -eq 0 ]; then
+  pass "Tier 2 entity firewall intact"
+else
+  VIOLATIONS=$((VIOLATIONS + TIER2_VIOLATIONS))
+fi
+
+# ============================================================
 # SUMMARY
 # ============================================================
 echo ""

@@ -97,6 +97,46 @@ This policy is not a contract on its own. Network Partners operate under a separ
 
 ---
 
+## Consulting clients of the operating company
+
+EcoMargins Consulting LLC, which operates Daanaa, also provides paid
+consulting services under its own name to businesses and, on request, to
+nonprofits. The following rules govern that relationship and apply in
+addition to everything above:
+
+**1. Client status confers nothing on Daanaa.** Being a consulting client of
+EcoMargins — past, present, or prospective — never affects any organization's
+score, visibility, ranking, search placement, description, or any other
+outcome on the Daanaa platform. The same published methodology runs for
+clients and non-clients alike. This mirrors, for our own clients, the
+independence rule that applies to vendors.
+
+**2. Affiliations are disclosed internally.** When an EcoMargins client (or
+its principals) has a known affiliation with a nonprofit listed on Daanaa —
+as founder, board member, funder, or corporate parent — that affiliation is
+recorded in the Daanaa compliance log. The purpose is auditability: anyone
+reviewing platform outcomes for that organization can verify the commercial
+relationship had no effect.
+
+**3. No platform data flows to consulting.** Information entrusted to Daanaa
+(claim contacts, custom content, platform behavior — Tier 2 under Library
+Document 011) is never available to EcoMargins consulting work, never used
+to identify prospects, and never used to shape a pitch. Consulting prospect
+research is limited to public records and published data, exactly as
+available to any member of the public.
+
+**4. The door opens from the inside only.** Daanaa never markets, suggests,
+or refers consulting services within the platform. A nonprofit that wants
+EcoMargins' help must initiate the request itself through an explicit
+opt-in. One opt-in covers one conversation, not a marketing relationship.
+
+**5. Quarterly self-audit.** Once per quarter, a written entry in the
+STEWARDSHIP.md compliance log answers: did any Tier 2 information influence
+any EcoMargins activity this quarter? This audit is mandatory whether or not
+any consulting activity occurred.
+
+---
+
 ## Connection to the Founding Stewardship Commitment
 
 This policy is a specific application of the Daanaa Founding Stewardship Commitment. In any conflict between this policy and that commitment, the Stewardship Commitment governs.
