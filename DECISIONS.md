@@ -544,3 +544,32 @@ all variants). Real-world search works: "homeless shelter" finds shelters, "ania
 rescue orgs (via FTS or fuzzy fallback). Why: fuzzy matching is portable (no external dep), fast,
 tunable cutoff (0.50 similarity). Lowered threshold from 0.60→0.50 to increase aggressive recall.
 Rejected: spellfix1 (not available), Levenshtein distance (higher complexity for similar accuracy).
+
+## 2026-07-13 — URL normalization in donation_link_pipeline (consistency)
+Chose to apply normalize_website() to donate_url before storing in donation_link_pipeline
+Phase 1. URLs now stored in canonical form (strip https://, lowercase host, preserve path/query,
+trim trailing slash) — matching the normalization already applied in enrich_batch.py. Applied at
+both `new_candidate_verified` and `human_review_required` write points. Why: ensures consistent
+storage format across all enrichment pipelines; prevents downstream comparison issues (same URL
+in two formats breaks de-duping); preserves query params (e.g., PayPal hosted_button_id, UTM
+tracking). Rejected: normalizing at discovery time (workers are distributed, harder to test).
+
+## 2026-07-13 — T12 Phase 3: NTEE-based synonym expansion (search)
+Chose query-time synonym expansion (not index-time) for nonprofit category
+mapping: animal shelter ↔ animal rescue, food bank ↔ hunger relief, etc.
+50+ mappings cover common synonyms across NTEE categories. Fires as third
+fallback when FTS + semantic + fuzzy return < 5 results. Why: avoids index
+rebuild (flexibility), fast at query time, composable with existing fallbacks.
+Reranked test data shows synonym expansion covers ~2% of the 90% typo-tolerance
+gate. Rejected: index-time expansion (complex, requires rebuild).
+
+## 2026-07-13 — T12 Phase 4: Semantic reranking of FTS results (search)
+Chose to rerank FTS top-100 by cosine similarity to query embedding when
+FTS returns >= 5 results. Improves relevance ordering while preserving fast
+keyword-only path. Example: "food assistance" query ranks mission-relevant
+food banks above generic nonprofits. Why: FTS is fast but term-order blind;
+semantic cosine ranking aligns results with query intent. Rejected: always
+running semantic search (GPU cost, slow for simple keyword queries).
+
+Together, T12 Phase 3+4 aim to close remaining 2% recall gap from Phase 2
+(88% → 90%+) and improve relevance ranking across all search paths.
