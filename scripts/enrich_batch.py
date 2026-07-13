@@ -44,7 +44,7 @@ from scripts.semantic_lookup import SemanticLookup
 from scripts.qwen_inference import QwenInference
 from scripts.quality_measurement import QualityMeasurement
 from scripts.prompt_improvement import PromptImprovement
-from scripts.website_content import validate_and_fetch_website
+from scripts.website_content import validate_and_fetch_website, fetch_known_website
 from scripts.donate_confidence import score_confidence, identity_match
 from scripts.s3_enrichment import get_s3_client
 
@@ -272,7 +272,8 @@ class EnrichmentBatch:
         # more nights, and this can still be raised via --max-orgs.
         cursor.execute(
             """
-            SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url
+            SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url,
+                   website, website_status
             FROM registry_enriched
             WHERE (cause_tags IS NULL OR cause_tags = '')
                OR (website IS NULL OR website = '')
@@ -285,7 +286,8 @@ class EnrichmentBatch:
 
         results = []
         last_flushed = 0  # index into `results` up to which we've already written+committed
-        for i, (ein, name, mission, mission_source, ntee, city, state, existing_donate_url) in enumerate(orgs, 1):
+        for i, (ein, name, mission, mission_source, ntee, city, state, existing_donate_url,
+                existing_website, existing_website_status) in enumerate(orgs, 1):
             try:
                 org_data = {
                     'EIN': ein, 'name': name, 'mission': mission,
@@ -294,28 +296,53 @@ class EnrichmentBatch:
 
                 similar_orgs = self.semantic.find_similar_orgs(org_ein=ein, count=5)
 
-                # Website: guess a candidate domain, then validate with a
-                # single fetch + identity check (not a crawl/search loop).
-                candidate_website = self.qwen.generate_website(org_data, similar_orgs)
+                # Website: prefer the org's EXISTING confirmed website (real
+                # page content, real donate/volunteer links) over asking Qwen
+                # to guess a candidate domain. Found 2026-07-12: this loop
+                # previously always guessed fresh regardless of whether a
+                # validated website was already on file — 22,792 orgs match
+                # this query with a confirmed website, and none of them ever
+                # got donate/volunteer scanning or real-content mission
+                # grounding because of it. fetch_known_website() reuses
+                # page_cache when fresh and skips the Qwen call entirely.
+                # Falls back to the original guess-and-validate flow when no
+                # confirmed website exists yet.
                 website_result = None
-                if candidate_website:
-                    website_result = validate_and_fetch_website(
-                        db_con=self.db, ein=ein, org_name=name,
-                        candidate_url=candidate_website
+                is_known_website = bool(existing_website) and existing_website_status in ('ok', 'live')
+                if is_known_website:
+                    website_result = fetch_known_website(
+                        db_con=self.db, ein=ein, org_name=name, known_url=existing_website
                     )
 
+                if website_result is None:
+                    is_known_website = False
+                    candidate_website = self.qwen.generate_website(org_data, similar_orgs)
+                    if candidate_website:
+                        website_result = validate_and_fetch_website(
+                            db_con=self.db, ein=ein, org_name=name,
+                            candidate_url=candidate_website
+                        )
+
                 if website_result:
-                    results.append({
-                        'org_ein': ein, 'enrichment_type': 'website',
-                        'generated_value': website_result['url'], 'confidence_score': 0.9,
-                        'context_used': json.dumps({'identity_level': website_result['identity_level']}),
-                        'prompt_version': self.qwen.prompt_version
-                    })
+                    if is_known_website:
+                        logger.info(
+                            f"known_website_scan: ein={ein} url={website_result['url']} "
+                            f"volunteer={bool(website_result.get('volunteer_url'))} "
+                            f"donate={bool(website_result.get('donate_url'))}"
+                        )
+                    else:
+                        results.append({
+                            'org_ein': ein, 'enrichment_type': 'website',
+                            'generated_value': website_result['url'], 'confidence_score': 0.9,
+                            'context_used': json.dumps({'identity_level': website_result['identity_level']}),
+                            'prompt_version': self.qwen.prompt_version
+                        })
                     if website_result.get('volunteer_url'):
                         results.append({
                             'org_ein': ein, 'enrichment_type': 'volunteer_url',
                             'generated_value': website_result['volunteer_url'], 'confidence_score': 0.9,
-                            'context_used': '{}', 'prompt_version': self.qwen.prompt_version
+                            'context_used': json.dumps({'source': 'scraped' if is_known_website else 'homepage_scan'}),
+                            'prompt_version': self.qwen.prompt_version
                         })
 
                 # Mission: grounded in real website content if validated,
@@ -353,30 +380,53 @@ class EnrichmentBatch:
                 # the proven score_confidence()/identity_match() logic —
                 # below-threshold candidates are flagged for human review,
                 # never written as the live donate_url.
+                #
+                # Prefer a real link scraped from the CONFIRMED homepage
+                # (find_donate_link, on the same already-fetched HTML as the
+                # volunteer link — zero extra network/GPU cost) over asking
+                # Qwen to guess a URL string. Falls back to the guess only
+                # when no donate link is visible on the homepage itself;
+                # donation_link_pipeline.py's Phase 1 (nightly, threaded)
+                # owns deeper discovery (subdomain candidates, processor
+                # recognition) for orgs where neither method finds one.
                 if not existing_donate_url:
-                    donate_candidate = self.qwen.generate_website(
-                        {**org_data, 'name': f"{name} donate"}, similar_orgs
-                    )
-                    if donate_candidate:
+                    scraped_donate = website_result.get('donate_url') if website_result else None
+                    if scraped_donate:
+                        donate_candidate = scraped_donate
+                        level = website_result['identity_level']
+                        factors = {
+                            'found_on_official_website': True,
+                            'nonprofit_name_visible': level in ('exact', 'strong'),
+                        }
+                    else:
+                        donate_candidate = self.qwen.generate_website(
+                            {**org_data, 'name': f"{name} donate"}, similar_orgs
+                        )
                         page_text = website_result['content_text'] if website_result else ''
                         level, ratio = identity_match(name, page_text)
                         factors = {
                             'found_on_official_website': bool(website_result),
                             'nonprofit_name_visible': level in ('exact', 'strong'),
                         }
+
+                    if donate_candidate:
                         confidence = score_confidence(factors)
+                        context = json.dumps({
+                            'identity_level': level,
+                            'source': 'scraped' if scraped_donate else 'qwen_guess',
+                        })
                         if confidence >= 65:
                             results.append({
                                 'org_ein': ein, 'enrichment_type': 'donate_url',
                                 'generated_value': donate_candidate, 'confidence_score': confidence / 100.0,
-                                'context_used': json.dumps({'identity_level': level}),
+                                'context_used': context,
                                 'prompt_version': self.qwen.prompt_version
                             })
                         else:
                             results.append({
                                 'org_ein': ein, 'enrichment_type': 'donate_url_review',
                                 'generated_value': donate_candidate, 'confidence_score': confidence / 100.0,
-                                'context_used': json.dumps({'identity_level': level}),
+                                'context_used': context,
                                 'prompt_version': self.qwen.prompt_version
                             })
             except Exception as e:
