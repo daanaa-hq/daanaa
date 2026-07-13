@@ -477,3 +477,13 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
   testing (not the full pipeline, which degrades gracefully to the non-cached path either way)
   surfaced it. When adding a new consumer of existing shared infrastructure, test that consumer's
   new code path directly, not just the pipeline it's embedded in.
+
+## 2026-07-13 — Deploy verifier: probe failure is not service failure (and must not skip rollback)
+**Symptom:** sync_droplet_api.sh reported "Service did not restart cleanly" while
+daanaa.org served every page fine; SSH was briefly refused mid-restart.
+**Root cause:** single `systemctl is-active` probe over SSH conflated transport
+failure with service failure — and the FAILED branch skipped the smoke test AND
+the rollback, so a genuinely broken deploy would have been left live.
+**Preventing rule:** health checks that gate rollback must (a) retry transient
+probes, and (b) treat the public smoke test as the source of truth — pages users
+see, not unit state. Rollback logic must be reachable from every failure path.

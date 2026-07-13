@@ -97,15 +97,20 @@ retry rsync -e "ssh -i $SSH_KEY -o BatchMode=yes -o StrictHostKeyChecking=accept
 log "Restarting daanaa service..."
 $SSH "systemctl restart daanaa" 2>>"$LOG"
 
-# Verify it came back
-sleep 5
-if $SSH "systemctl is-active daanaa" 2>/dev/null | grep -q "^active$"; then
-    STATUS="OK"
-    log "Service restarted successfully."
-else
-    STATUS="FAILED"
-    log "ERROR: Service did not restart cleanly."
-fi
+# Verify it came back. A single systemctl probe conflates a transient SSH
+# refusal with a dead service (false FAILED on 2026-07-13, sshd briefly
+# refused connections mid-restart) — retry, then let the public smoke test
+# below be the source of truth: users see pages, not systemd units.
+STATUS="FAILED"
+for _attempt in 1 2 3; do
+    sleep 5
+    if $SSH "systemctl is-active daanaa" 2>/dev/null | grep -q "^active$"; then
+        STATUS="OK"
+        log "Service restarted successfully."
+        break
+    fi
+    log "is-active probe attempt ${_attempt} inconclusive (service starting or SSH busy)..."
+done
 
 # Smoke test what users actually see. The 2026-07-05 outage shipped a build
 # where /health was 200 but every page 500'd — service "active" is not "up".
@@ -121,7 +126,15 @@ smoke() {
         'https://daanaa.org/api/organizations?state=TX&limit=1' 2>>"$LOG" | grep -q '^200$'
 }
 
-if [ "$STATUS" = "OK" ] && ! smoke; then
+# Smoke runs UNCONDITIONALLY and decides the outcome. Previously a FAILED
+# is-active probe skipped smoke AND rollback — a genuinely broken deploy
+# would have been left live with only an error email.
+if smoke; then
+    if [ "$STATUS" != "OK" ]; then
+        log "systemctl probe inconclusive but public pages serve — treating as OK."
+    fi
+    STATUS="OK"
+else
     STATUS="FAILED"
     log "SMOKE TEST FAILED: homepage or search not serving. Rolling back to ${REMOTE_API}.prev..."
     if $SSH "test -f ${REMOTE_API}.prev && cp ${REMOTE_API}.prev $REMOTE_API && systemctl restart daanaa"; then
