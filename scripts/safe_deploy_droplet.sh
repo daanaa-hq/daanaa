@@ -45,12 +45,13 @@ FRONTEND_DROPLET="/opt/daanaa/frontend/dist"   # FRONTEND_DIR that droplet_api s
 DROPLET_API_LIVE="/opt/daanaa/droplet_api.py"
 DROPLET_API_LOCAL="$BASE/scripts/droplet_api.py"
 
-FORCE=0; BUILD_ONLY=0; SHIP_ONLY=0
+FORCE=0; BUILD_ONLY=0; SHIP_ONLY=0; FRONTEND_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --force) FORCE=1 ;;
     --build-only) BUILD_ONLY=1 ;;
     --ship-only) SHIP_ONLY=1 ;;
+    --frontend-only) FRONTEND_ONLY=1 ;;   # SPA-only change: skip DB snapshot/precompute/data ship
     *) echo "Unknown arg: $arg"; exit 2 ;;
   esac
 done
@@ -284,6 +285,12 @@ frontend_ship() {
 
 # ---- Orchestrate ----
 preflight
+if [ "$FRONTEND_ONLY" = "1" ]; then
+  frontend_build
+  frontend_ship
+  log "===== FRONTEND-ONLY DEPLOY DONE ====="
+  exit 0
+fi
 if [ "$SHIP_ONLY" = "0" ]; then
   snapshot
   precompute
