@@ -4,36 +4,38 @@ const NAV_COLS = [
   {
     heading: 'Discover',
     links: [
-      { label: 'Directory',  to: '/directory' },
-      { label: 'Research',   to: '/research' },
-      { label: 'Wallet',     to: '/wallet' },
+      { label: 'Directory', to: '/directory' },
+      { label: 'Research', to: '/research' },
+      { label: 'Open data', to: '/open-data' },
+      { label: 'Wallet', to: '/wallet' },
     ],
   },
   {
     heading: 'Get Involved',
     links: [
-      { label: 'Claim your page',       to: '/for-nonprofits' },
-      { label: 'Volunteer',             to: '/volunteer' },
-      { label: 'Member benefits',       to: '/member/benefits' },
-      { label: 'Join the network',      to: '/for-vendors' },
+      { label: 'Claim your page', to: '/for-nonprofits' },
+      { label: 'Volunteer', to: '/volunteer' },
+      { label: 'Member benefits', to: '/member/benefits' },
+      { label: 'Join the network', to: '/for-vendors' },
     ],
   },
   {
     heading: 'Learn',
     links: [
-      { label: 'About Daanaa',  to: '/about' },
-      { label: 'How it works',  to: '/methodology' },
-      { label: 'Research',      to: '/research' },
+      { label: 'About Daanaa', to: '/about' },
+      { label: 'How it works', to: '/methodology' },
+      { label: 'Research', to: '/research' },
+      { label: 'AI access', to: '/open-data' },
     ],
   },
   {
     heading: 'Legal',
     links: [
-      { label: 'Privacy',   to: '/privacy' },
-      { label: 'Security',  to: '/security' },
-      { label: 'Terms',     to: '/terms' },
-      { label: 'Partners',  to: '/partners' },
-      { label: 'Contact',   to: '/feedback' },
+      { label: 'Privacy', to: '/privacy' },
+      { label: 'Security', to: '/security' },
+      { label: 'Terms', to: '/terms' },
+      { label: 'Partners', to: '/partners' },
+      { label: 'Contact', to: '/feedback' },
     ],
   },
 ]
@@ -78,6 +80,16 @@ export default function Footer() {
                       className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5"
                     >
                       Explore by location
+                    </a>
+                  </li>
+                )}
+                {heading === 'Discover' && (
+                  <li>
+                    <a
+                      href="/llms.txt"
+                      className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5"
+                    >
+                      AI access file
                     </a>
                   </li>
                 )}

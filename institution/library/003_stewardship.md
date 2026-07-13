@@ -1,4 +1,8 @@
 # THE DAANAA STEWARDSHIP CONSTITUTION
+
+**Authority:** Stewardship Library Elaboration
+**Parent:** `STEWARDSHIP.md`
+**Related:** `institution/CONSTITUTION.md`, `institution/IMPLEMENTATION_PLAN.md`
 Library Document 003 · First Draft · Version 1.0 (Living Document)
 Drafted 2026-07-11 under founder brief
 

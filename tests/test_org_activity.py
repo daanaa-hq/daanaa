@@ -92,11 +92,13 @@ def test_today_queue_buckets(client):
     assert body["to_call"][0]["organization_name"] == "Test Helpers Inc"
     assert body["counts"]["pin_expiring"] == 0
 
-    # After the call, with a PIN expiring inside 7 days → moves buckets
+    # After the call, with a PIN expiring inside 2 days → moves buckets.
+    # (Window tightened 7 → 2 days in 4bfda1f594d; the test previously used
+    # +3 days and silently fell outside the bucket.)
     client.patch("/api/admin/claims/111000111",
                  json={"action": "mark_called"}, headers={"X-Admin-Key": KEY})
     with sqlite3.connect(daanaa_api.DB_PATH) as conn:
-        conn.execute("UPDATE org_claims SET pin_expires_at = datetime('now', '+3 days') WHERE ein='111000111'")
+        conn.execute("UPDATE org_claims SET pin_expires_at = datetime('now', '+1 day') WHERE ein='111000111'")
     body = client.get("/api/admin/today", headers={"X-Admin-Key": KEY}).get_json()
     assert body["counts"]["to_call"] == 0
     assert body["counts"]["pin_expiring"] == 1

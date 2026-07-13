@@ -29,12 +29,26 @@ def client(tmp_path_factory):
     browse = ROOT / "precompute_output" / "browse"
     if browse.exists():
         (data_dir / "browse").symlink_to(browse)
+    old_precompute = os.environ.get("PRECOMPUTE_DIR")
     os.environ["PRECOMPUTE_DIR"] = str(data_dir)
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import droplet_api
-    # Module may have been imported with a different DATA_DIR; pin it.
-    droplet_api.DATA_DIR = Path(str(data_dir))
-    return droplet_api.app.test_client()
+    try:
+        # Load the SHIPPED droplet API under a distinct module name — do NOT
+        # `sys.path.insert + import droplet_api`: that steals the
+        # sys.modules['droplet_api'] slot from the root home-variant module
+        # that test_routing.py / test_spa_fallback.py target.
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "droplet_api_shipped_search", str(ROOT / "scripts" / "droplet_api.py"))
+        droplet_api = importlib.util.module_from_spec(spec)
+        sys.modules["droplet_api_shipped_search"] = droplet_api
+        spec.loader.exec_module(droplet_api)
+        droplet_api.DATA_DIR = Path(str(data_dir))
+        yield droplet_api.app.test_client()
+    finally:
+        if old_precompute is None:
+            os.environ.pop("PRECOMPUTE_DIR", None)
+        else:
+            os.environ["PRECOMPUTE_DIR"] = old_precompute
 
 
 def test_multi_category_returns_results(client):

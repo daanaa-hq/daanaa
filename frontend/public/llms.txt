@@ -1,0 +1,28 @@
+# Daanaa
+
+Daanaa is a public nonprofit discovery directory built from public IRS, NCCS, ProPublica, and Daanaa registry data.
+
+## Start here
+
+- Open data page: https://daanaa.org/open-data
+- Directory: https://daanaa.org/directory
+- Methodology: https://daanaa.org/methodology
+- Research: https://daanaa.org/research
+- Sitemap: https://daanaa.org/sitemap.xml
+- Sitemap index: https://daanaa.org/sitemap-index.xml
+
+## Machine-readable exports
+
+- Organization CSV: https://daanaa.org/data/orgs.csv
+- Open data HTML: https://daanaa.org/open-data.html
+- llms.txt: https://daanaa.org/llms.txt
+
+## What Daanaa is
+
+Daanaa helps people discover nonprofits using public records and plain-language context. It does not rate, rank, endorse, or process donations.
+
+## What to cite
+
+- Public nonprofit directory and organization pages
+- Peer Financial Context methodology for reserve comparisons
+- Research dashboard for aggregate sector data

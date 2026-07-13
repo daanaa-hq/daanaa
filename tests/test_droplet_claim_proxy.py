@@ -8,6 +8,7 @@ errors pass through as-is, and a dead tunnel degrades to a 503 without
 touching the rest of the site.
 """
 
+import importlib.util
 import io
 import json
 import sys
@@ -16,8 +17,18 @@ from pathlib import Path
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "scripts"))
-import droplet_api
+# Load the SHIPPED droplet API (scripts/droplet_api.py) under a distinct
+# module name. The old `sys.path.insert(0, scripts/); import droplet_api`
+# registered it as sys.modules['droplet_api'], so every later test that did
+# `import droplet_api` (test_routing.py, test_spa_fallback.py — which target
+# the ROOT home-variant droplet_api.py) silently got THIS module instead and
+# failed on missing routes/FRONTEND_DIST. Two files share that module name;
+# never let one steal the other's slot.
+_SCRIPTS_API = Path(__file__).parent.parent / "scripts" / "droplet_api.py"
+_spec = importlib.util.spec_from_file_location("droplet_api_shipped", _SCRIPTS_API)
+droplet_api = importlib.util.module_from_spec(_spec)
+sys.modules["droplet_api_shipped"] = droplet_api
+_spec.loader.exec_module(droplet_api)
 
 
 @pytest.fixture

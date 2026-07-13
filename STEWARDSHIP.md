@@ -1,5 +1,9 @@
 # Founding Stewardship Commitment — Daanaa
 
+**Authority:** Supreme Law
+**Parent:** Mission and board-approved constitutional commitments
+**Children:** `institution/CONSTITUTION.md`, `institution/library/`
+
 This commitment applies to every contributor connected to the platform,
 including founders, employees, volunteers, advisors, contractors, vendors,
 automation systems, and AI agents operating on behalf of the platform.

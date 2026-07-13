@@ -457,3 +457,23 @@ Rule: **Commit (or stash) any working changes before launching worktree agents.*
 - **Preventing rule:** any batch job with an in-memory result list must checkpoint incrementally,
   and any "workers" parameter must either be wired up or removed from the CLI — a silently dead
   concurrency flag reads as "already parallelized" to the next person who benchmarks capacity.
+
+## 2026-07-13 — page_cache had been write-only since it was built; nothing ever read it
+- **Symptom found while building tonight's known-website fix:** a new cache-read helper
+  (`_cached_page_html`) returned 0 chars on every call, even for rows that definitely existed.
+- **Root cause:** `_cache_page`'s `fetched_at` (via `donation_link_pipeline._now()`) stores a
+  timezone-AWARE UTC isoformat string. The new read function compared it against a naive
+  `datetime.now()` — Python raises TypeError subtracting aware from naive datetimes, which a
+  broad `except (ValueError, TypeError): return None` silently swallowed as "cache miss."
+- **Wider finding, not just this bug:** `page_cache` has existed for a while (used by both
+  `website_content.py` and `donation_link_pipeline.py`) but every caller only ever WROTE to it —
+  grep found zero pre-existing reads anywhere in the codebase. Every pipeline re-fetches pages it
+  already fetched, forever.
+- **Fix:** timezone-aware comparison in the new read path (`datetime.now(timezone.utc)`).
+  Verified: cache read returned real content in 0.2ms after the fix, vs. silent 0-byte failure
+  before it.
+- **Preventing rule:** a broad except clause around a datetime comparison hides exactly this kind
+  of bug — it fails the same way for "no row" and "comparison crashed," and only manual isolated
+  testing (not the full pipeline, which degrades gracefully to the non-cached path either way)
+  surfaced it. When adding a new consumer of existing shared infrastructure, test that consumer's
+  new code path directly, not just the pipeline it's embedded in.

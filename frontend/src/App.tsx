@@ -41,6 +41,7 @@ const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
 const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
+const OpenData = lazy(() => import('./pages/OpenData'))
 const NonprofitDashboard = lazy(() => import('./pages/NonprofitDashboard'))
 const NonprofitLogin = lazy(() => import('./pages/nonprofit/NonprofitLogin'))
 const MyOrgsPage = lazy(() => import('./pages/nonprofit/MyOrgsPage'))
@@ -123,6 +124,7 @@ export default function App() {
             <Route path="/events/:eventId" element={<EventDetailPage />} />
             <Route path="/donation/receipt" element={<DonationReceipt />} />
             <Route path="/research" element={<ResearchDashboard />} />
+            <Route path="/open-data" element={<OpenData />} />
           </Route>
           <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />

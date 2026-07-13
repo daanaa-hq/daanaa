@@ -1926,12 +1926,31 @@ def get_organization(ein):
         'tags':    org.get('cause_tags_source'),    # 'ai_generated' (beta) | 'claimed' | None
     }
 
-    # Claim status — check org_claims table (graceful fallback if table not yet created)
+    # Claim status + claimed overrides — LOCK-FREE architecture
+    # All nonprofit-claimed data lives in org_claims, keyed by EIN.
+    # Prefer claimed values over registry data if they exist.
     try:
         claim_row = db.execute(
-            "SELECT claim_status FROM org_claims WHERE ein = ?", (ein_clean,)
+            "SELECT claim_status, custom_mission, website_url, donate_url, cause_tags_json FROM org_claims WHERE ein = ?",
+            (ein_clean,)
         ).fetchone()
-        org['claim_status'] = claim_row['claim_status'] if claim_row else None
+        if claim_row:
+            org['claim_status'] = claim_row['claim_status']
+            # Override registry fields with claimed values if present
+            if claim_row['custom_mission']:
+                org['mission'] = claim_row['custom_mission']
+                org['mission_source'] = 'claimed'
+            if claim_row['website_url']:
+                org['website'] = claim_row['website_url']
+                org['website_status'] = 'claimed'
+            if claim_row['donate_url']:
+                org['donate_url'] = claim_row['donate_url']
+                org['donate_url_status'] = 'claimed'
+            if claim_row['cause_tags_json'] and claim_row['cause_tags_json'] != '[]':
+                org['cause_tags'] = claim_row['cause_tags_json']
+                org['cause_tags_source'] = 'claimed'
+        else:
+            org['claim_status'] = None
     except Exception:
         org['claim_status'] = None
 
@@ -3769,45 +3788,38 @@ def _sanitize_claim_profile_fields(data: dict) -> dict:
 
 
 def _write_claimed_fields_to_registry(db, ein: str, f: dict) -> list:
-    """Apply sanitized claim fields to registry_enriched with source='claimed'.
+    """Store sanitized claim fields in org_claims (LOCK-FREE, no registry writes).
 
-    The ONLY way claim-editor and concierge writes reach the public registry.
+    All nonprofit-claimed data stays in org_claims, keyed by EIN. API responses
+    JOIN org_claims + registry_enriched and prefer claimed values. This avoids
+    write locks on the immutable IRS data.
+
     Donate URL flips to 'claimed' only with an explicit confirm — same guard
     for every caller. Returns the list of fields written (for instrumentation).
     Caller commits.
     """
     written = []
+    # Build update dict with only non-null fields
+    updates = {}
     if f['custom_mission']:
-        db.execute("""
-            UPDATE registry_enriched
-            SET mission = ?, mission_source = 'claimed'
-            WHERE EIN = ?
-        """, (f['custom_mission'], ein))
+        updates['custom_mission'] = f['custom_mission']
         written.append('mission')
-
     if f['website_url']:
-        db.execute("""
-            UPDATE registry_enriched
-            SET website = ?, website_status = 'claimed'
-            WHERE EIN = ?
-        """, (f['website_url'], ein))
+        updates['website_url'] = f['website_url']
         written.append('website')
-
     if f['donate_url'] and f['donate_confirmed']:
-        db.execute("""
-            UPDATE registry_enriched
-            SET donate_url = ?, donate_confidence = 95, donate_url_status = 'claimed'
-            WHERE EIN = ?
-        """, (f['donate_url'], ein))
+        updates['donate_url'] = f['donate_url']
         written.append('donate_url')
-
     if f['cause_tags_json'] and f['cause_tags_json'] != '[]':
-        db.execute("""
-            UPDATE registry_enriched
-            SET cause_tags = ?, cause_tags_source = 'claimed'
-            WHERE EIN = ?
-        """, (f['cause_tags_json'], ein))
+        updates['cause_tags_json'] = f['cause_tags_json']
         written.append('cause_tags')
+
+    # Write all claimed fields to org_claims in one operation
+    if updates:
+        set_clause = ', '.join(f"{k} = ?" for k in updates.keys())
+        values = list(updates.values()) + [ein]
+        db.execute(f"UPDATE org_claims SET {set_clause} WHERE ein = ?", values)
+
     return written
 
 

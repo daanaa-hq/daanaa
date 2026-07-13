@@ -1,5 +1,9 @@
 # Constitution
 
+**Authority:** Governance Layer
+**Parent:** `STEWARDSHIP.md`
+**Children:** `institution/library/`
+
 ## Document Control
 
 | Field | Value |

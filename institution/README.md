@@ -18,6 +18,7 @@
 - `COVENANT.md` - universal stewardship commitments.
 - `CONSTITUTION.md` - protected rules and authority boundaries.
 - `AUTHORITY.md` - explicit order of authority and conflict-handling rule.
+- `CONSTITUTION_HIERARCHY.md` - authority chain from mission to implementation.
 - `STEWARDSHIP.md` - operating loop, evidence ladder, and decision review.
 - `GOVERNANCE.md` - decision tiers, board simulation, and approval gates.
 - `CURRENT_STATE.md` - repository and platform discovery state as of 2026-07-10.

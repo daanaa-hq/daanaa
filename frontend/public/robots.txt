@@ -9,6 +9,9 @@ Allow: /org/
 Allow: /about
 Allow: /how-it-works
 Allow: /methodology
+Allow: /open-data
+Allow: /open-data.html
+Allow: /llms.txt
 Allow: /the-invisible-97
 Allow: /guides
 Allow: /faq

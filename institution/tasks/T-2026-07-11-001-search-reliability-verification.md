@@ -18,8 +18,8 @@
 - Scope: Verify whether recent `/api/search` schema-drift errors still reproduce on the current backend and add targeted regression coverage if they do.
 - Affected paths: `daanaa_api.py`, `tests/`, `institution/RISK_REGISTER.md`, `institution/reviews/`
 - Higher-authority constraints checked: preserve product behavior; no spending; no deployment; no protected-principle change.
-- Status: proposed
-- Validation plan: reproduce or falsify the logged `/api/search` failure locally, add or update a regression test, run the targeted backend tests, then update `RISK_REGISTER.md` and the next weekly review evidence.
+- Status: completed
+- Validation plan: reproduce or falsify the logged `/api/search` failure locally, add or update a regression test, run the targeted backend tests, then update `RISK_REGISTER.md` and the next weekly review evidence. Completed 2026-07-11 with a minimal temp-DB regression test.
 - Review notes: 2026-07-11 manual review promoted R-013 above founder-only operational unknowns because recent sampled logs still show `/api/search` exceptions on `v4.peer_cell_size`.
 - Handoff target: Claude Code or product engineering owner for backend verification and test coverage.
-- Merge or close-out note: do not close R-013 on inference alone; either prove the log evidence is stale or add the regression guard that blocks recurrence.
+- Merge or close-out note: do not close R-013 on inference alone; either prove the log evidence is stale or add the regression guard that blocks recurrence. Regression guard now exists in `tests/test_search_reliability.py`.
