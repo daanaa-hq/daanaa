@@ -45,8 +45,9 @@ def render_carousel_from_json(json_data, output_dir=None):
     # Load fonts once
     fonts = gen.load_fonts()
 
-    # Render slides
+    # Render slides; collect clickable regions (image coords, top-left origin)
     slides = []
+    link_annots = []  # (page_index, (x0, y0, x1, y1), url)
     total_slides = len(json_data["slides"])
 
     for slide_num, slide in enumerate(json_data["slides"], start=1):
@@ -110,6 +111,24 @@ def render_carousel_from_json(json_data, output_dir=None):
         else:
             raise ValueError(f"Unknown slide type: {slide_type}")
 
+        page = slide_num - 1
+
+        # Per slide clickable regions (image pixel coords)
+        if slide_type == "content" and slide.get("link"):
+            url = slide["link"]
+            if not url.startswith("http"):
+                url = f"https://{url}"
+            # "See the data → ..." line sits at (56, H-150), label font is 22px
+            link_annots.append((page, (56, gen.H - 160, 700, gen.H - 115), url))
+        if slide_type == "cta":
+            # Gold button: [80, H-360, W-80, H-240]
+            link_annots.append((page, (80, gen.H - 360, gen.W - 80, gen.H - 240),
+                                "https://www.daanaa.org"))
+        # Footer www.daanaa.org on every slide that draws it
+        if slide_type != "cta":
+            link_annots.append((page, (gen.W // 2 - 130, gen.H - 55, gen.W // 2 + 130, gen.H - 10),
+                                "https://www.daanaa.org"))
+
         slides.append(img)
 
     pdf_path = output_dir / f"daanaa_{json_data['carousel_type']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
@@ -135,7 +154,30 @@ def render_carousel_from_json(json_data, output_dir=None):
             loop=0
         )
 
+        # Make the printed URLs genuinely clickable (PDF link annotations)
+        if link_annots:
+            _add_link_annotations(pdf_path, link_annots)
+
     return pdf_path
+
+
+def _add_link_annotations(pdf_path, annots):
+    """Overlay URI link annotations. Image coords are top-left origin;
+    PDF coords are bottom-left, and PIL writes pages at 1px = 1pt."""
+    from pypdf import PdfReader, PdfWriter
+    from pypdf.annotations import Link
+
+    reader = PdfReader(str(pdf_path))
+    writer = PdfWriter()
+    writer.append(reader)
+
+    page_h = float(reader.pages[0].mediabox.height)
+    for page_idx, (x0, y0, x1, y1), url in annots:
+        rect = (x0, page_h - y1, x1, page_h - y0)
+        writer.add_annotation(page_number=page_idx, annotation=Link(rect=rect, url=url))
+
+    with open(pdf_path, "wb") as f:
+        writer.write(f)
 
 def main():
     parser = argparse.ArgumentParser(description="Render Daanaa carousels from JSON")
