@@ -9915,6 +9915,238 @@ def donor_giving_profile(donor_id: str):
     }), 200
 
 
+# ── PHASE 11: Financial Health Coaching ────────────────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/financial-health', methods=['GET'])
+def nonprofit_financial_health(ein: str):
+    """Get financial health assessment (reserves, volatility, concentration, signal)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    health = db.execute(
+        """SELECT assessment_date, reserve_ratio, reserve_months_ideal, reserve_trend,
+                  revenue_volatility, expense_trend, revenue_concentration, funder_diversity_score,
+                  health_signal, signal_confidence
+           FROM nonprofit_financial_health WHERE ein=?
+           ORDER BY assessment_date DESC LIMIT 1""",
+        (ein,)
+    ).fetchone()
+
+    if not health:
+        return jsonify({'status': 'no_data', 'message': 'Health assessment not yet available for this org'}), 200
+
+    return jsonify({
+        'ein': ein,
+        'assessment_date': health[0],
+        'reserves': {
+            'current_months': health[1],
+            'ideal_months': health[2],
+            'status': health[3],
+            'message': f'{health[1]:.1f} months reserves (target: {health[2]} months)'
+        },
+        'revenue_quality': {
+            'volatility_score': health[4],
+            'expense_growth_rate': health[5],
+            'funder_concentration': health[6],
+            'diversity_score': health[7],
+            'interpretation': 'Higher diversity = lower risk'
+        },
+        'overall_signal': health[8],
+        'confidence': health[9],
+        'signal_color': {
+            'HEALTHY': 'green',
+            'STABLE': 'blue',
+            'CAUTION': 'yellow',
+            'CRISIS': 'red'
+        }.get(health[8], 'gray')
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/financial-guidance', methods=['GET'])
+def nonprofit_financial_guidance(ein: str):
+    """Get personalized financial health guidance and recommendations."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    guidance = db.execute(
+        """SELECT guidance_type, current_status, recommendation, urgency_level, peer_comparison, action_link
+           FROM financial_health_guidance WHERE ein=?
+           ORDER BY urgency_level DESC, created_at DESC""",
+        (ein,)
+    ).fetchall()
+
+    if not guidance:
+        return jsonify({'guidance_count': 0, 'guidance': []}), 200
+
+    guid_list = []
+    for row in guidance:
+        guid_list.append({
+            'type': row[0],
+            'current_status': row[1],
+            'recommendation': row[2],
+            'urgency': row[3],
+            'peer_context': row[4],
+            'action_link': row[5]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'guidance_count': len(guid_list),
+        'guidance': guid_list
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/stress-tests', methods=['GET'])
+def nonprofit_stress_tests(ein: str):
+    """Run financial stress tests (what if scenarios)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    tests = db.execute(
+        """SELECT test_type, test_scenario, current_reserves_months, post_shock_reserves_months,
+                  survival_months, risk_level, mitigation_strategies
+           FROM financial_stress_tests WHERE ein=?
+           ORDER BY risk_level DESC""",
+        (ein,)
+    ).fetchall()
+
+    if not tests:
+        return jsonify({'test_count': 0, 'tests': []}), 200
+
+    test_list = []
+    for row in tests:
+        test_list.append({
+            'scenario': row[0],
+            'description': row[1],
+            'current_reserves': row[2],
+            'reserves_after_shock': row[3],
+            'months_you_could_operate': row[4],
+            'risk_level': row[5],
+            'recommendations': row[6]  # JSON
+        })
+
+    return jsonify({
+        'ein': ein,
+        'test_count': len(test_list),
+        'stress_tests': test_list,
+        'summary': f'Your org is resilient in {len([t for t in test_list if t["risk_level"] in ("low", "moderate")])} of {len(test_list)} scenarios'
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/peer-benchmark', methods=['GET'])
+def nonprofit_peer_benchmark(ein: str):
+    """Compare financial metrics against peer organizations."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    metric = request.args.get('metric', '')  # reserve_ratio, revenue_volatility, etc.
+
+    db = get_db()
+
+    benchmarks = db.execute(
+        """SELECT metric_type, your_value, peer_median, peer_25th_percentile,
+                  peer_75th_percentile, your_rank, peer_total, interpretation
+           FROM peer_benchmarking WHERE ein=?""",
+        (ein,)
+    ).fetchall()
+
+    if metric:
+        benchmarks = [b for b in benchmarks if b[0] == metric]
+
+    if not benchmarks:
+        return jsonify({'benchmark_count': 0, 'benchmarks': []}), 200
+
+    bench_list = []
+    for row in benchmarks:
+        bench_list.append({
+            'metric': row[0],
+            'your_value': row[1],
+            'peer_statistics': {
+                'median': row[2],
+                'bottom_quartile': row[3],
+                'top_quartile': row[4]
+            },
+            'your_rank': f'{row[5]} of {row[6]}',
+            'percentile': int((row[5] / row[6]) * 100) if row[6] else 0,
+            'interpretation': row[7]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'benchmark_count': len(bench_list),
+        'benchmarks': bench_list,
+        'peer_context': 'You\'re being compared against orgs in your cause area, size bracket, and region'
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/financial-goals', methods=['GET'])
+def nonprofit_financial_goals(ein: str):
+    """Get financial goals and progress toward them."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    goals = db.execute(
+        """SELECT goal_type, goal_description, goal_target, goal_deadline,
+                  current_progress, progress_percent, status
+           FROM financial_goal_tracking WHERE ein=? AND status IN ('new', 'active')
+           ORDER BY goal_deadline ASC""",
+        (ein,)
+    ).fetchall()
+
+    goal_list = []
+    for row in goals:
+        goal_list.append({
+            'type': row[0],
+            'description': row[1],
+            'target': row[2],
+            'deadline': row[3],
+            'current_progress': row[4],
+            'progress_percent': row[5],
+            'status': row[6]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'goal_count': len(goal_list),
+        'goals': goal_list
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/financial-coaching', methods=['GET'])
+def nonprofit_coaching_history(ein: str):
+    """Get financial coaching history and recommendations."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    sessions = db.execute(
+        """SELECT session_type, topic, coach_type, session_notes, recommendations, status, completed_at
+           FROM financial_health_coaching_sessions WHERE ein=?
+           ORDER BY completed_at DESC LIMIT 5""",
+        (ein,)
+    ).fetchall()
+
+    session_list = []
+    for row in sessions:
+        session_list.append({
+            'type': row[0],
+            'topic': row[1],
+            'coach': row[2],
+            'notes': row[3],
+            'recommendations': row[4],  # JSON
+            'status': row[5],
+            'completed_at': row[6]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'session_count': len(session_list),
+        'recent_sessions': session_list
+    }), 200
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
