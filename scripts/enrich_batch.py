@@ -271,31 +271,81 @@ class EnrichmentBatch:
         # in one uncheckpointed run. 5,000 is a realistic single-invocation
         # cap for one 8pm-8am window; the outer loop script re-invokes for
         # more nights, and this can still be raised via --max-orgs.
+        # Optimization: prioritize orgs with known websites for donation link discovery.
+        # Phase 1: orgs with website but no donate_url (highest ROI) → extract from site
+        # Phase 2: orgs needing cause_tags or missions (nearly complete)
+        # Phase 3: orgs without website (blind discovery, lower success rate)
+        phase = 1
+
         cursor.execute(
             """
             SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url,
                    website, website_status
             FROM registry_enriched
-            WHERE (cause_tags IS NULL OR cause_tags = '')
-               OR (website IS NULL OR website = '')
-               OR (mission_source IN ('ai_ntee', 'template_ntee') OR mission_source IS NULL)
+            WHERE website IS NOT NULL
+              AND (donate_url IS NULL OR donate_url = '')
+            ORDER BY website_status = 'valid' DESC  -- prioritize working websites
             LIMIT ?
             """,
             (max_orgs or 5000,)
         )
         orgs = cursor.fetchall()
 
+        if len(orgs) < (max_orgs or 5000):
+            # Phase 2: fill remaining quota with cause_tags/mission work
+            phase = 2
+            remaining = (max_orgs or 5000) - len(orgs)
+            cursor.execute(
+                """
+                SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url,
+                       website, website_status
+                FROM registry_enriched
+                WHERE (cause_tags IS NULL OR cause_tags = '')
+                   OR (mission_source IN ('ai_ntee', 'template_ntee') OR mission_source IS NULL)
+                LIMIT ?
+                """,
+                (remaining,)
+            )
+            orgs.extend(cursor.fetchall())
+
+        if len(orgs) < (max_orgs or 5000):
+            # Phase 3: blind discovery for orgs without websites
+            phase = 3
+            remaining = (max_orgs or 5000) - len(orgs)
+            cursor.execute(
+                """
+                SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url,
+                       website, website_status
+                FROM registry_enriched
+                WHERE website IS NULL
+                  AND (donate_url IS NULL OR donate_url = '')
+                LIMIT ?
+                """,
+                (remaining,)
+            )
+            orgs.extend(cursor.fetchall())
+
         results = []
         last_flushed = 0  # index into `results` up to which we've already written+committed
         for i, (ein, name, mission, mission_source, ntee, city, state, existing_donate_url,
                 existing_website, existing_website_status) in enumerate(orgs, 1):
             try:
+                # Log phase context for hardware monitoring
+                if i == 1:
+                    logger.info(f"[PHASE {phase}] Starting enrichment batch with {len(orgs)} orgs")
                 org_data = {
                     'EIN': ein, 'name': name, 'mission': mission,
                     'ntee': ntee, 'city': city, 'state': state
                 }
 
-                similar_orgs = self.semantic.find_similar_orgs(org_ein=ein, count=5)
+                # Phase-aware enrichment: skip GPU-expensive tasks for low-ROI phases
+                similar_orgs = []
+                if phase == 1:
+                    # Phase 1: websites with no donate_url. Skip semantic lookup; focus on website scanning.
+                    pass
+                else:
+                    # Phase 2/3: do semantic lookup for mission/tag context
+                    similar_orgs = self.semantic.find_similar_orgs(org_ein=ein, count=5)
 
                 # Website: prefer the org's EXISTING confirmed website (real
                 # page content, real donate/volunteer links) over asking Qwen
@@ -349,8 +399,9 @@ class EnrichmentBatch:
                 # Mission: grounded in real website content if validated,
                 # else fall back to the existing NTEE/similar-org approach —
                 # but only regenerate if the current mission is weak/missing.
+                # Phase 1 (websites, donate_url focus) skips this to save GPU.
                 grounding_context = website_result['content_text'] if website_result else None
-                if mission_source in (None, 'ai_ntee', 'template_ntee') or not mission:
+                if phase != 1 and (mission_source in (None, 'ai_ntee', 'template_ntee') or not mission):
                     if grounding_context:
                         new_mission = self.qwen.generate_mission_from_website(org_data, grounding_context)
                         new_mission_source = 'ai_web_grounded'
@@ -368,14 +419,16 @@ class EnrichmentBatch:
 
                 # Cause tags: informed by (possibly-regenerated) mission +
                 # website content when available.
-                tags = self.qwen.generate_tags(org_data, similar_orgs, grounding_context=grounding_context)
-                if tags:
-                    results.append({
-                        'org_ein': ein, 'enrichment_type': 'cause_tags',
-                        'generated_value': tags, 'confidence_score': 0.7,
-                        'context_used': json.dumps({'similar_count': len(similar_orgs)}),
-                        'prompt_version': self.qwen.prompt_version
-                    })
+                # Phase 1 (websites, donate_url focus) skips this to save GPU.
+                if phase != 1:
+                    tags = self.qwen.generate_tags(org_data, similar_orgs, grounding_context=grounding_context)
+                    if tags:
+                        results.append({
+                            'org_ein': ein, 'enrichment_type': 'cause_tags',
+                            'generated_value': tags, 'confidence_score': 0.7,
+                            'context_used': json.dumps({'similar_count': len(similar_orgs)}),
+                            'prompt_version': self.qwen.prompt_version
+                        })
 
                 # Donate URL: only attempt if none exists yet, gated through
                 # the proven score_confidence()/identity_match() logic —
