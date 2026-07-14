@@ -27,16 +27,15 @@ def log(msg):
 def classify_fallback(reserves_months, operating_margin):
     """Fallback heuristic for orgs without a v5 signal.
 
-    Never assigns CRISIS: per Charter Article 7 and Stewardship P5, a
-    single-year operating-margin proxy is not enough evidence to put a
-    crisis label on an organization. CAUTION is the floor, and it means
-    "look closer," not "they failed."
+    Uses: HEALTHY, STABLE, NEED_SUPPORT (never CRISIS, never shame language).
+    Per Stewardship P5: nonprofits run lean by design (mission > reserves).
+    "Need support" invites action; "caution" shames.
     """
     if reserves_months >= 6 and operating_margin > 0.05:
         return "HEALTHY", 0.70
     if reserves_months >= 3 or operating_margin >= 0.02:
         return "STABLE", 0.60
-    return "CAUTION", 0.55
+    return "NEED_SUPPORT", 0.55
 
 
 def score_all_orgs(db):
@@ -68,8 +67,12 @@ def score_all_orgs(db):
         for ein, revenue, expenses, v5_signal in rows:
             operating_margin = (revenue - expenses) / revenue
             reserves_months = (revenue - expenses) * 12 / expenses
-            if v5_signal in ("HEALTHY", "STABLE", "CAUTION"):
-                signal, confidence = v5_signal, 0.85
+            if v5_signal in ("HEALTHY", "STABLE", "CAUTION", "NEED_SUPPORT"):
+                # v5 may still have CAUTION; normalize to NEED_SUPPORT
+                if v5_signal == "CAUTION":
+                    signal, confidence = "NEED_SUPPORT", 0.85
+                else:
+                    signal, confidence = v5_signal, 0.85
             else:
                 signal, confidence = classify_fallback(reserves_months, operating_margin)
             batch.append((ein, now, reserves_months, signal, confidence))

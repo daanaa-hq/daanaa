@@ -495,7 +495,7 @@ see, not unit state. Rollback logic must be reachable from every failure path.
 
 **Root cause:** New heuristic written from scratch instead of checking for the
 existing validated methodology. `merit_health_signal_v5` already covers 465K orgs
-and deliberately caps its worst label at CAUTION (never CRISIS) — the vocabulary
+and deliberately caps its worst label (NEED_SUPPORT, was CAUTION) — the vocabulary
 choice is a Charter Article 7 / Stewardship P5 decision, not a technical one.
 
 **Preventing rule:** Before writing any classifier that labels organizations,
@@ -505,5 +505,30 @@ methodology's vocabulary, that is a stewardship violation, not a tuning choice.
 A single-year snapshot is never enough evidence for a "crisis" verdict.
 
 **Fix:** Pipeline now sources health_signal from merit_health_signal_v5
-(confidence 0.85), falls back to a heuristic whose floor is CAUTION
-(confidence ≤0.55). Distribution now: 250K HEALTHY / 224K CAUTION / 64K STABLE.
+(confidence 0.85), falls back to a heuristic whose floor is NEED_SUPPORT
+(confidence ≤0.55). Distribution: 249,878 HEALTHY / 223,711 NEED_SUPPORT / 63,940 STABLE.
+
+---
+
+## 2026-07-15 — Language reframed from CAUTION to NEED_SUPPORT (Stewardship P5)
+
+**Decision:** Renamed health_signal category from CAUTION to NEED_SUPPORT across
+all tables, API responses, and documentation (migration 019, ~223K rows renamed).
+
+**Why:** Nonprofits are structurally designed to run lean and reinvest all surplus
+into mission. "CAUTION" shames them for healthy behavior (low reserves = mission-focused,
+not reckless). "NEED_SUPPORT" reframes the identical data as an action signal: "more
+supporters can help this org do more." Stewardship P5 (transparency without weaponization):
+language shapes behavior. Users reading "CAUTION" think risk; reading "NEED_SUPPORT"
+think opportunity. The financial reality is unchanged; the mission-aligned framing is not.
+
+**Implementation:** (1) `nonprofit_financial_health` table schema updated (CHECK constraint);
+(2) fallback heuristic in `populate_financial_health_full.py` returns NEED_SUPPORT;
+(3) API response in `nonprofit_financial_narrative()` reframed from "some financial pressure"
+to "ready for more supporters" — same data, different story; (4) CLAUDE.md updated with
+P5 note; (5) all docs using CAUTION renamed (no hardcoded strings remain in code or tests).
+
+**Verification:** `SELECT health_signal, COUNT(*) GROUP BY health_signal` returns expected
+distribution with zero CAUTION rows. API endpoint `/api/nonprofit/<ein>/financial-health`
+returns `signal: NEED_SUPPORT` + encouraging narrative. Frontend color mapping stays yellow
+(same as before, denotes "action needed," not "alarm").

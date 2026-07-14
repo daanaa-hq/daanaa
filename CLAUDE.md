@@ -144,7 +144,7 @@ Key columns of note (beyond the obvious name/location fields):
 | `merit_score_v5` | (v5) 0–100 financial context percentile rank within archetype + revenue band |
 | `merit_archetype_v5` / `merit_archetype_v5_label` | (v5) Funding model: Donation-Funded, Fee-for-Service, Endowment-Funded |
 | `merit_band_v5_label` | (v5) Revenue band: Micro (<$150K), Professional ($150K–$700K), Established (>$700K) |
-| `merit_health_signal_v5` | (v5) Financial health: HEALTHY, STABLE, or CAUTION |
+| `merit_health_signal_v5` | (v5) Financial health: HEALTHY, STABLE, or NEED_SUPPORT (P5: mission-aligned language, not shame) |
 | `merit_peer_group_v5` / `merit_peer_count_v5` | (v5) Peer cell size and ranking within cell |
 | `ntee1_percentile` | Percentile rank within the NTEE1 peer group |
 | `peer_percentile` / `peer_rank` / `peer_total` | Finer peer group stats |

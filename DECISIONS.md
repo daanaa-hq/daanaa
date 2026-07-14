@@ -618,3 +618,26 @@ in code" to "protected by machine-checked invariants and quarterly self-audits"
 to match actual implementation maturity. **Why:** public promises must not exceed
 enforceable controls; Charter credibility depends on wording accuracy. **Rejected:**
 keeping overstated "enforced in code" language before production audit evidence.
+
+## 2026-07-15 — Health signal language: CAUTION → NEED_SUPPORT (Stewardship P5)
+
+**Chose:** Renamed `health_signal` category from CAUTION to NEED_SUPPORT across
+all tables, API responses, code, docs, and tests (migration 019 + populate_financial_health_full.py
+updates; ~223K rows + schema + 3 code paths).
+
+**Why:** Nonprofits are structurally designed to run lean (mission > reserves). "CAUTION"
+shames them for healthy behavior; "NEED_SUPPORT" invites action. Language shapes behavior:
+users reading "CAUTION" think risk/alarm; reading "NEED_SUPPORT" think opportunity.
+The financial data is unchanged; the mission-aligned framing is Stewardship P5 ("do not
+weaponize transparency"). Founder feedback confirmed this: giving must be encouraged by
+labeling, not discouraged by shame language.
+
+**Implementation:** (1) `nonprofit_financial_health.health_signal` CHECK constraint updated;
+(2) fallback heuristic in `populate_financial_health_full.py` returns NEED_SUPPORT;
+(3) API narrative in `nonprofit_financial_narrative()` reframed from "financial pressure"
+to "ready for more supporters"; (4) CLAUDE.md updated with P5 note; (5) zero CAUTION strings
+in committed code (all documentation, strings, test fixtures verified clean).
+
+**Rejected:** Keeping CAUTION (reinforce shame for healthy behavior; misaligned to mission
+of encouraging giving); softening the label to MODERATE (vague, still negative). The chosen
+label is positive, action-oriented, and mission-true.
