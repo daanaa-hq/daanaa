@@ -2,7 +2,7 @@
 
 ## Structure for Maximum Impact
 
-### Head Section (SEO + Discoverability)
+### Head Section (SEO + Discoverability + Attribution)
 ```yaml
 ---
 title: "The State of U.S. Nonprofits 2026: What Our Data Really Shows"
@@ -14,6 +14,12 @@ published: "2026-08-01"
 updated: "2026-08-15"
 read_time: "12 min"
 difficulty: "Beginner-friendly"
+# Attribution & Transparency
+data_source: "IRS Form 990 (public record)"
+ai_components: "Analysis framework, narrative structure, chart generation"
+human_review: "Data validation, confidence assignment, editorial"
+confidence: "85% (well-measured IRS data, limited outcome metrics)"
+methodology_link: "/research/methodology"
 ---
 ```
 
@@ -162,6 +168,41 @@ Link: https://daanaa.org/research/state-of-nonprofits-2026
 
 ---
 
+## Attribution & Transparency Footer
+
+```markdown
+---
+
+## About This Article
+
+**Data sources:** IRS Form 990 (1.7M orgs), ProPublica API, Daanaa database
+
+**How we made it:**
+- Data queries: Automated from verified IRS records
+- Analysis: AI-assisted pattern detection, human-verified trends
+- Narrative: AI-drafted, human-reviewed for accuracy
+- Visualizations: AI-generated from data, verified for correctness
+
+**Confidence levels:**
+- Financial metrics (reserves, margin): 95% confident ✅
+- Trend direction: 85% confident ✅
+- Sector interpretation: 70% confident ⚠️
+
+**Limitations:**
+- IRS data is 2 months old (filing lag)
+- Can't measure impact or mission quality from financials
+- Small org data less detailed (simplified filings)
+
+**Verify yourself:**
+- Raw data: [ProPublica link]
+- Our methodology: [Link]
+- Download dataset: [CSV]
+
+**Questions?** [Email] | **Found an error?** [Report] | **Have data?** [Share]
+
+*Daanaa uses AI to analyze data faster, not to hide how we work. We disclose AI use because transparency builds trust.*
+```
+
 ## Meta (Not visible, for SEO/sharing)
 - Word count: 3,200
 - Reading time: 12 minutes
@@ -169,6 +210,8 @@ Link: https://daanaa.org/research/state-of-nonprofits-2026
 - Skills taught: 3
 - Interactive elements: 2
 - Visual elements: 4
+- AI-generated components: Analysis framework, narrative draft, chart generation
+- Human-reviewed: All confidence levels, limitations, key claims
 ```
 
 ---

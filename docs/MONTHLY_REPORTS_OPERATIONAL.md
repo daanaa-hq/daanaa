@@ -52,8 +52,22 @@ After each pipeline run, we publish a report showing:
 
 **Publish date:** First Monday after pipeline completes
 
+---
+
+## Attribution for Monthly Reports
+
+**Data processing:** Automated (IRS ingestion, new org detection, metric calculation)
+**Report generation:** AI-assisted with human review
+  - AI: Identifies trends, generates narrative, creates charts
+  - Human: Validates data, assigns confidence, approves CTAs
+**Transparency:** All sources, methods, limitations disclosed
+
+---
+
 ```
 # New Discoveries: 842 Organizations Added This Month
+
+*Data-driven report generated from Daanaa overnight pipeline (automated), narrative AI-assisted and human-reviewed*
 
 Our database grew from 1,701,158 to 1,702,000 active nonprofits.
 
