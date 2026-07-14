@@ -93,6 +93,41 @@ def _is_boilerplate(text: str) -> bool:
     return bool(_BOILERPLATE_RE.search(text))
 
 
+def _extract_mission_from_html(html_bytes: bytes) -> str:
+    """Extract nonprofit mission statement from website HTML.
+
+    Looks for: page title, h1, og:og:title, mission-specific selectors.
+    Returns the first mission-like text found (100-300 chars), or empty string."""
+    try:
+        html = html_bytes.decode("utf-8", errors="replace")
+    except Exception:
+        return ""
+
+    # Priority: mission-specific text, then page title, then og:og:title
+    patterns = [
+        # Typical mission patterns
+        r'(?:mission|purpose|vision|mission statement|about us)["\']?\s*[:=]\s*["\']?([^"\'<>{]{40,300})["\']?',
+        # og:og:title (most reliable single-sentence summary)
+        r'<meta[^>]+property=["\']og:og:title["\'][^>]+content=["\']([^"\']{40,300})["\']',
+        r'<meta[^>]+content=["\']([^"\']{40,300})["\'][^>]+property=["\']og:og:title["\']',
+        # Page <title> tag
+        r'<title[^>]*>([^<]{40,300})</title>',
+        # First <h1> tag (often the mission/tagline)
+        r'<h1[^>]*>([^<]{40,300})</h1>',
+    ]
+
+    for pattern in patterns:
+        m = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
+        if m:
+            text = re.sub(r'\s+', ' ', m.group(1)).strip()
+            # Clean up common suffixes
+            text = re.sub(r'\s*\|\s*(nonprofit|charity|.org|.net)$', '', text, flags=re.IGNORECASE)
+            if len(text) >= 40 and len(text) <= 300 and not _is_boilerplate(text):
+                return text
+
+    return ""
+
+
 def _extract_web_context(html_bytes: bytes, max_chars: int = 500) -> str:
     """Extract best text snippet from compressed HTML for LLM context."""
     try:
@@ -119,6 +154,24 @@ def _extract_web_context(html_bytes: bytes, max_chars: int = 500) -> str:
     if _is_boilerplate(body[:200]):
         return ""
     return body[:max_chars]
+
+
+def _get_website_missions(eins: list[str], conn: sqlite3.Connection) -> dict[str, str]:
+    """Returns {ein: mission_text} extracted from website HTML. Empty string if not found."""
+    missions = {}
+    for ein in eins:
+        try:
+            row = conn.execute(
+                "SELECT html_gz FROM page_cache WHERE ein=? AND html_gz IS NOT NULL ORDER BY fetched_at DESC LIMIT 1",
+                (ein,)).fetchone()
+            if row:
+                html_bytes = gzip.decompress(row[0])
+                mission = _extract_mission_from_html(html_bytes)
+                if mission:
+                    missions[ein] = mission
+        except Exception:
+            pass
+    return missions
 
 
 def _get_web_context(eins: list[str], conn: sqlite3.Connection) -> dict[str, str]:
@@ -262,8 +315,11 @@ def _call_llm(batch: list[dict], web_ctx: dict[str, str]) -> dict[str, str]:
 
 
 def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dict[str, str],
-                  batch_size: int, donate_data: dict[str, tuple] = None):
-    """Write missions with per-org source: ai_web if that org had web context, else ai_ntee.
+                  batch_size: int, donate_data: dict[str, tuple] = None,
+                  website_missions: dict[str, str] = None):
+    """Write missions with per-org source priority:
+    - "website" if mission extracted from org's own website
+    - "ai_generated" if AI-generated (used web context but no website mission found)
     Also writes donation URLs extracted from cached HTML (donate_data: {ein: (url, platform)})."""
     global _written, _errors, _donate_extracted
     if not results:
@@ -272,15 +328,22 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dic
 
     now = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
     donate_data = donate_data or {}
+    website_missions = website_missions or {}
 
     with _write_lock:
-        # Write missions
+        # Write missions: prefer website missions, else use AI-generated
+        missions_to_write = []
+        for ein, ai_mission in results.items():
+            if ein in website_missions:
+                # Organization's own website mission — use it
+                missions_to_write.append((website_missions[ein], "website", ein))
+            else:
+                # AI-generated mission (no website mission found)
+                missions_to_write.append((ai_mission, "ai_generated", ein))
+
         conn.executemany(
             "UPDATE registry_enriched SET mission=?, mission_source=? WHERE EIN=?",
-            [
-                (mission, "ai_web" if ein in web_ctx else "ai_ntee", ein)
-                for ein, mission in results.items()
-            ]
+            missions_to_write
         )
 
         # Write donation URLs if found (confidence 85 for AI-extracted, status 'ai_suggested')
@@ -316,8 +379,9 @@ def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False, small_fi
     _ensure_column(conn)
 
     scope = "" if all_orgs else "AND re.merit_score IS NOT NULL"
-    mission_filter = "(re.mission IS NULL OR re.mission = '' OR re.mission_source = 'template_ntee')" \
-                     if upgrade_templates else "(re.mission IS NULL OR re.mission = '')"
+    # Skip orgs that already have website-extracted or claimed missions (real sources, don't replace)
+    mission_filter = "(re.mission IS NULL OR re.mission = '' OR (re.mission_source = 'template_ntee' AND re.mission_source NOT IN ('website', 'claimed')))" \
+                     if upgrade_templates else "(re.mission IS NULL OR re.mission = '' OR re.mission_source IS NULL) AND re.mission_source NOT IN ('website', 'claimed')"
     # Ordering: default prioritises orgs with a cached web page (ai_web missions
     # beat ai_ntee) then highest merit. --small-first flips this to target the
     # invisible long tail — smallest/no-revenue orgs first — to lift search
@@ -375,8 +439,9 @@ def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False, small_fi
             eins = [o["EIN"] for o in batch]
             web_ctx = _get_web_context(eins, tconn)
             html_cache = _get_cached_html(eins, tconn)
+            website_missions = _get_website_missions(eins, tconn)  # Extract org's own mission statements
 
-            # Generate missions
+            # Generate missions (only for orgs without website missions)
             results = _call_llm(batch, web_ctx)
 
             # Extract donation URLs from cached HTML
@@ -386,7 +451,7 @@ def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False, small_fi
                 if donate_url:  # Only track if a URL was found
                     donate_data[ein] = (donate_url, platform)
 
-            _write_batch(results, tconn, web_ctx, len(batch), donate_data)
+            _write_batch(results, tconn, web_ctx, len(batch), donate_data, website_missions)
         finally:
             tconn.close()
 
