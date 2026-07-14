@@ -8840,6 +8840,179 @@ def volunteer_interest_get(ein: str):
     return jsonify({'ein': ein, 'count': count if count >= 5 else None, 'threshold': 5}), 200
 
 
+# ── Phase 4: Nonprofit Content (Voice Amplification) ─────────────────────────
+
+@app.route('/api/nonprofit/<ein>/content', methods=['POST'])
+def nonprofit_create_content(ein: str):
+    """Create/publish content for nonprofit (impact story, program, volunteer need, leadership).
+
+    Requires organization verification token (same as claim flow).
+    """
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    content_type = (data.get('content_type') or '').strip()
+    title = (data.get('title') or '').strip()[:200]
+    body = (data.get('body') or '').strip()
+
+    if content_type not in ('impact_story', 'program', 'volunteer_need', 'leadership'):
+        return jsonify({'error': 'invalid content_type'}), 400
+    if not title or not body:
+        return jsonify({'error': 'title and body required'}), 400
+    if len(body) < 50 or len(body) > 5000:
+        return jsonify({'error': 'body must be 50-5000 characters'}), 400
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+    author_email = row['email']
+    author_name = (data.get('author_name') or 'Organization').strip()[:100]
+    status = 'published' if data.get('publish', False) else 'draft'
+
+    db.execute(
+        """INSERT INTO nonprofit_content
+           (ein, content_type, title, body, author_email, author_name, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (ein, content_type, title, body, author_email, author_name, status, now, now)
+    )
+    db.commit()
+
+    result = db.execute(
+        "SELECT id, version, status FROM nonprofit_content WHERE ein=? AND content_type=? ORDER BY id DESC LIMIT 1",
+        (ein, content_type)
+    ).fetchone()
+
+    return jsonify({
+        'id': result[0],
+        'ein': ein,
+        'content_type': content_type,
+        'title': title,
+        'status': result[2],
+        'version': result[1],
+        'message': 'Content created. Visit your dashboard to publish.' if status == 'draft' else 'Content published.'
+    }), 201
+
+
+@app.route('/api/nonprofit/<ein>/content', methods=['GET'])
+def nonprofit_list_content(ein: str):
+    """List all published content for org (public endpoint)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+    rows = db.execute(
+        """SELECT id, content_type, title, body, published_at, author_name, version
+           FROM nonprofit_content
+           WHERE ein=? AND status='published'
+           ORDER BY published_at DESC""",
+        (ein,)
+    ).fetchall()
+
+    content = []
+    for row in rows:
+        content.append({
+            'id': row[0],
+            'type': row[1],
+            'title': row[2],
+            'body': row[3],
+            'published_at': row[4],
+            'author': row[5],
+            'version': row[6]
+        })
+
+    return jsonify({'ein': ein, 'content': content}), 200
+
+
+@app.route('/api/nonprofit/<ein>/content/<int:content_id>', methods=['PUT'])
+def nonprofit_edit_content(ein: str, content_id: int):
+    """Edit nonprofit content (creates new version, archives old)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    # Fetch current content
+    content = db.execute(
+        "SELECT id, ein, body, version FROM nonprofit_content WHERE id=?",
+        (content_id,)
+    ).fetchone()
+
+    if not content or content[1] != ein:
+        return jsonify({'error': 'Content not found or unauthorized'}), 404
+
+    new_body = (data.get('body') or '').strip()
+    if not new_body or len(new_body) < 50 or len(new_body) > 5000:
+        return jsonify({'error': 'body must be 50-5000 characters'}), 400
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+    new_version = content[3] + 1
+
+    # Archive old version
+    db.execute(
+        "INSERT INTO nonprofit_content_versions (content_id, version, body, archived_at) VALUES (?, ?, ?, ?)",
+        (content_id, content[3], content[2], now)
+    )
+
+    # Update with new version
+    db.execute(
+        "UPDATE nonprofit_content SET body=?, version=?, updated_at=? WHERE id=?",
+        (new_body, new_version, now, content_id)
+    )
+    db.commit()
+
+    return jsonify({
+        'id': content_id,
+        'version': new_version,
+        'message': 'Content updated. Old version archived.'
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/content/<int:content_id>/publish', methods=['POST'])
+def nonprofit_publish_content(ein: str, content_id: int):
+    """Publish draft content."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    content = db.execute(
+        "SELECT id, ein, status FROM nonprofit_content WHERE id=?",
+        (content_id,)
+    ).fetchone()
+
+    if not content or content[1] != ein:
+        return jsonify({'error': 'Content not found or unauthorized'}), 404
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+    db.execute(
+        "UPDATE nonprofit_content SET status='published', published_at=? WHERE id=?",
+        (now, content_id)
+    )
+    db.commit()
+
+    return jsonify({'id': content_id, 'status': 'published', 'published_at': now}), 200
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
