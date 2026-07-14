@@ -1,8 +1,14 @@
 """
-Daanaa LinkedIn Carousel Generator
------------------------------------
-Generates branded PDF carousels for LinkedIn.
-Each run: LLM writes the slide content, Pillow renders it, output is a PDF.
+Daanaa LinkedIn Carousel Generator — SIGNATURE DESIGN
+-------------------------------------------------------
+Generates premium, impactful branded carousels optimized for LinkedIn engagement.
+
+Signature design principles:
+- Dramatic data visualization (big numbers, visual bars)
+- Premium typography with intentional hierarchy
+- Strategic white space (luxury feel, not clutter)
+- Distinctive visual elements (Daanaa mark pattern)
+- Mission-aligned color use (gold for trust, navy for authority)
 
 Usage:
   python3 carousel_generator.py --type hidden_gems
@@ -71,6 +77,10 @@ def load_fonts():
 # ---------------------------------------------------------------------------
 # Drawing helpers
 # ---------------------------------------------------------------------------
+def strip_html_tags(text: str) -> str:
+    """Remove HTML tags from text (LLM sometimes outputs <i>, <b>, etc)."""
+    return re.sub(r'<[^>]+>', '', text).strip()
+
 def wrap_text(text: str, font: ImageFont.FreeTypeFont, max_w: int,
               draw: ImageDraw.ImageDraw) -> list[str]:
     words = text.split()
@@ -99,6 +109,39 @@ def draw_text_block(draw, text, font, color, x, y, max_w, line_gap=8):
 def gold_rule(draw, x, y, w=80, h=3):
     draw.rectangle([x, y, x + w, y + h], fill=SOFT_GOLD)
 
+def signature_accent(draw, x, y, size=40, variant="circle"):
+    """Draw signature Daanaa visual accent (circle or square pattern)."""
+    if variant == "circle":
+        draw.ellipse([x, y, x + size, y + size], fill=SOFT_GOLD, outline=BRIGHT_GOLD, width=2)
+    elif variant == "square":
+        draw.rectangle([x, y, x + size, y + size], fill=SOFT_GOLD, outline=BRIGHT_GOLD, width=2)
+
+def draw_stat_bar(draw, label, value, percentage, x, y, max_w=300, colors=None):
+    """Draw a visual percentage bar for a statistic.
+
+    Creates a dramatic visual representation of data:
+    [====40%===] 40% of nonprofits
+    """
+    if colors is None:
+        colors = {"bar": SOFT_GOLD, "bg": COOL_GREY, "text": WARM_CREAM}
+
+    bar_h = 12
+    bar_y = y + 30
+
+    # Background bar (unfilled)
+    draw.rectangle([x, bar_y, x + max_w, bar_y + bar_h], fill=colors["bg"])
+
+    # Filled portion
+    filled_w = max(int(max_w * (percentage / 100)), 4)
+    draw.rectangle([x, bar_y, x + filled_w, bar_y + bar_h], fill=colors["bar"])
+
+    # Label
+    draw.text((x, y), label, font=fonts.get("body_sm", None), fill=colors["text"])
+    # Percentage text
+    draw.text((x + max_w + 12, y + 8), f"{percentage}%", font=fonts.get("label_sm", None), fill=SOFT_GOLD)
+
+    return bar_y + bar_h + 20
+
 def slide_counter(draw, fonts, current, total):
     label = f"{current} / {total}"
     draw.text((W - 60, H - 50), label, font=fonts["label_sm"],
@@ -111,6 +154,12 @@ def logo_stamp(img, size=56):
     logo = Image.open(logo_path).convert("RGBA")
     logo.thumbnail((size, size), Image.LANCZOS)
     img.paste(logo, (48, H - size - 44), logo)
+
+def footer_url(draw, fonts):
+    """Add daanaa.org footer to bottom of slide."""
+    draw.text((W // 2, H - 20), "www.daanaa.org",
+              font=fonts["label_sm"],
+              fill=SOFT_GOLD, anchor="mb")
 
 def gradient_bg(size=(W, H), top=DEEP_NAVY, bottom=DARK_SURF):
     img = Image.new("RGB", size, top)
@@ -130,13 +179,16 @@ def slide_cover(fonts, headline: str, sub: str, slide_n: int, total: int) -> Ima
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
 
-    # Top label
+    # Top label + signature accent
     draw.text((56, 68), "DAANAA", font=fonts["label"], fill=SOFT_GOLD)
+    signature_accent(draw, 900, 68, size=30, variant="circle")
 
     # Decorative rule
     gold_rule(draw, 56, 108)
 
-    # Headline — large italic display
+    # Headline — large italic display with premium spacing
+    headline = strip_html_tags(headline)
+    sub = strip_html_tags(sub)
     y = 200
     y = draw_text_block(draw, headline, fonts["display_xl"], WARM_CREAM,
                         56, y, W - 112, line_gap=12)
@@ -152,6 +204,7 @@ def slide_cover(fonts, headline: str, sub: str, slide_n: int, total: int) -> Ima
               fill=SOFT_GOLD, anchor="mm")
 
     logo_stamp(img)
+    footer_url(draw, fonts)
     slide_counter(draw, fonts, slide_n, total)
     return img
 
@@ -162,30 +215,49 @@ def slide_content(fonts, label: str, headline: str, body: str,
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
 
-    # Slide label
+    # Signature accent top-right
+    signature_accent(draw, 900, 68, size=28, variant="circle")
+
+    # Slide label + decorative rule
     draw.text((56, 68), label.upper(), font=fonts["label"], fill=SOFT_GOLD)
     gold_rule(draw, 56, 102)
 
-    # Headline
+    # Headline with premium spacing
+    headline = strip_html_tags(headline)
+    body = strip_html_tags(body)
     y = 148
     y = draw_text_block(draw, headline, fonts["display_md"], WARM_CREAM,
                         56, y, W - 112, line_gap=10)
 
-    # Optional big stat
+    # SIGNATURE STAT BLOCK — visual hierarchy with supporting elements
     if accent_stat:
-        y += 40
-        draw.text((56, y), accent_stat, font=fonts["display_lg"], fill=BRIGHT_GOLD)
-        bbox = draw.textbbox((0, 0), accent_stat, font=fonts["display_lg"])
-        y += (bbox[3] - bbox[1]) + 8
-        if accent_label:
-            draw.text((56, y), accent_label, font=fonts["body_sm"], fill=MUTED_CREAM)
-            y += 36
+        accent_stat = strip_html_tags(accent_stat)
+        y += 50  # Extra breathing room before stat
 
-    # Body
-    y += 32
-    draw_text_block(draw, body, fonts["body_md"], MUTED_CREAM, 56, y, W - 112)
+        # Visual accent box (subtle background)
+        stat_box_x, stat_box_y = 48, y - 20
+        stat_box_w, stat_box_h = W - 96, 180
+        draw.rectangle([stat_box_x, stat_box_y, stat_box_x + stat_box_w, stat_box_y + stat_box_h],
+                       fill=DARK_SURF, outline=SOFT_GOLD, width=2)
+
+        # HUGE stat number
+        draw.text((56, y + 20), accent_stat, font=fonts["display_xl"], fill=BRIGHT_GOLD)
+        bbox = draw.textbbox((0, 0), accent_stat, font=fonts["display_xl"])
+        stat_height = bbox[3] - bbox[1]
+
+        # Stat label (description)
+        if accent_label:
+            accent_label = strip_html_tags(accent_label)
+            draw.text((56, y + stat_height + 28), accent_label, font=fonts["body_md"], fill=WARM_CREAM)
+
+        y += stat_box_h + 30
+
+    # Body text with generous spacing
+    y += 20
+    draw_text_block(draw, body, fonts["body_md"], MUTED_CREAM, 56, y, W - 112, line_gap=8)
 
     logo_stamp(img)
+    footer_url(draw, fonts)
     slide_counter(draw, fonts, slide_n, total)
     return img
 
@@ -195,27 +267,33 @@ def slide_cta(fonts, headline: str, body: str,
     img = gradient_bg(top=DARK_SURF, bottom=DEEP_NAVY)
     draw = ImageDraw.Draw(img)
 
+    # Signature accent top-right
+    signature_accent(draw, 900, 68, size=28, variant="square")
+
     # Centre everything vertically
-    draw.text((W // 2, 280), headline, font=fonts["display_md"],
+    headline = strip_html_tags(headline)
+    body = strip_html_tags(body)
+    draw.text((W // 2, 200), headline, font=fonts["display_md"],
               fill=WARM_CREAM, anchor="mm")
 
-    gold_rule(draw, W // 2 - 60, 360, w=120)
+    # Enhanced rule
+    gold_rule(draw, W // 2 - 80, 280, w=160)
 
-    y = 420
+    y = 350
     for line in body.split("\n"):
         draw.text((W // 2, y), line.strip(), font=fonts["body_md"],
-                  fill=MUTED_CREAM, anchor="mm")
-        y += 52
+                  fill=WARM_CREAM, anchor="mm")
+        y += 60
 
-    # CTA box
-    box_y = H - 340
-    draw.rounded_rectangle([120, box_y, W - 120, box_y + 100],
-                            radius=50, fill=SOFT_GOLD)
-    draw.text((W // 2, box_y + 50), "daanaa.org", font=fonts["display_sm"],
+    # Premium CTA button with visual presence
+    box_y = H - 360
+    draw.rounded_rectangle([80, box_y, W - 80, box_y + 120],
+                            radius=60, fill=SOFT_GOLD, outline=BRIGHT_GOLD, width=3)
+    draw.text((W // 2, box_y + 60), "daanaa.org", font=fonts["display_sm"],
               fill=DEEP_NAVY, anchor="mm")
 
-    # Follow line
-    draw.text((W // 2, H - 190), "Follow Daanaa for weekly nonprofit insights",
+    # Subtle follow line
+    draw.text((W // 2, H - 160), "Follow Daanaa for nonprofit insights",
               font=fonts["label_sm"], fill=MUTED_CREAM, anchor="mm")
 
     logo_stamp(img)
