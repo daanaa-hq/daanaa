@@ -1,57 +1,62 @@
 {
   "carousel_type": "sector_insight",
-  "title": "The Reserve Story",
+  "title": "The Reserve Divide",
   "slides": [
     {
       "slide_type": "cover",
-      "headline": "Nearly Half of Nonprofits Operate Month to Month",
-      "subheadline": "What steady giving makes possible for 1.7M organizations"
+      "headline": "What 465,000 IRS Filings Reveal About Nonprofit Reserves",
+      "subheadline": "The sector is stronger than headlines suggest, and more divided"
     },
     {
       "slide_type": "content",
-      "label": "Part 1: The Data",
-      "headline": "Every dollar goes to the mission",
-      "accent_stat": "48%",
-      "accent_label": "of nonprofits operate with slim emergency reserves",
-      "story": "Most nonprofits spend what they receive on the work itself. That commitment is real, and it leaves little room when a grant ends. Steady giving is what carries the work through.",
-      "source": "IRS 990 filings, 1.7M active U.S. nonprofits",
+      "label": "Part 1: The Surprise",
+      "headline": "Most nonprofits hold real cushion",
+      "accent_stat": "55%",
+      "accent_label": "hold more than a year of operating reserves",
+      "story": "The common story says nonprofits live hand to mouth. The filings say otherwise. More than half the sector could run a full year on what they hold today.",
+      "source": "IRS 990 filings, 465,306 U.S. nonprofits with reserve data",
       "link": "daanaa.org/sector-health"
     },
     {
       "slide_type": "content",
-      "label": "Part 2: The Smallest Give the Most",
-      "headline": "Small organizations run lean by choice",
-      "accent_stat": "40%",
-      "accent_label": "of small nonprofits hold less than 3 months of funds",
-      "story": "Organizations under $500K put nearly every dollar into programs. A donor who stays with them through a funding gap keeps services running for a whole community.",
-      "source": "Daanaa financial health analysis, 2024",
+      "label": "Part 2: The Divide",
+      "headline": "But the cushion is not shared evenly",
+      "story": "While half the sector holds a year of reserves, 42,473 organizations are operating on less than one month. Same sector, very different realities.",
+      "chart": [
+        {"label": "Over 12 months of reserves", "pct": 54.9},
+        {"label": "6 to 12 months", "pct": 17.2},
+        {"label": "3 to 6 months", "pct": 11.1},
+        {"label": "1 to 3 months", "pct": 7.7, "highlight": true},
+        {"label": "Under 1 month", "pct": 9.1, "highlight": true}
+      ],
+      "source": "IRS 990 filings, 465,306 U.S. nonprofits",
       "link": "daanaa.org/sector-health"
     },
     {
       "slide_type": "content",
-      "label": "Part 3: The Multiplier",
-      "headline": "Reserves turn stability into growth",
-      "accent_stat": "6 mo",
-      "accent_label": "of reserves lets a nonprofit plan years ahead",
-      "story": "A nonprofit with six months of reserves can weather funding shifts and commit to long range plans. Reserve support is not charity on top of charity. It is infrastructure.",
-      "source": "FSG nonprofit management research, 2023",
+      "label": "Part 3: The Small Org Myth",
+      "headline": "Small nonprofits hold their own",
+      "accent_stat": "14.9%",
+      "accent_label": "of micro nonprofits run under 3 months of reserves, a lower rate than large organizations at 18.3%",
+      "story": "The assumption is that small means precarious. The data disagrees. Micro nonprofits manage their reserves as carefully as the giants, often more so.",
+      "source": "Daanaa analysis of IRS 990 data by revenue band",
       "link": "daanaa.org/methodology"
     },
     {
       "slide_type": "content",
       "label": "Key Insight",
-      "headline": "Steady giving is an impact multiplier",
-      "accent_stat": "1 in 3",
-      "accent_label": "nonprofits could reach stable footing with steady support",
-      "story": "Donors who give steadily do more than fund programs. They give organizations the footing to plan, grow, and serve with confidence.",
-      "source": "Daanaa nonprofit analysis",
+      "headline": "Context beats assumptions",
+      "accent_stat": "1 in 6",
+      "accent_label": "nonprofits operates on under 3 months of reserves",
+      "story": "You cannot tell which organizations run lean from their size, their name, or their website. Public filings tell the real story, and that story is free to explore.",
+      "source": "Daanaa nonprofit analysis, 2026",
       "link": "daanaa.org/directory"
     },
     {
       "slide_type": "cta",
-      "headline": "Know the organizations you support",
+      "headline": "Look up any nonprofit's financial context",
       "body_lines": [
-        "Financial context for 1.7M nonprofits.",
+        "Financial context for 1.7M nonprofits, from public data.",
         "Free. Transparent. No rankings, no agenda."
       ]
     }

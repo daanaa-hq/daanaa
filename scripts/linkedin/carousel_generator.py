@@ -142,6 +142,31 @@ def parse_stat_visual(stat: str):
 
 VISUAL_H = 110  # vertical space a stat visual occupies
 
+CHART_ROW_H = 96  # per-bar height in a distribution chart
+
+def draw_bar_chart(draw, fonts, bars, x, y, max_w):
+    """Horizontal distribution chart from real data.
+
+    bars: list of {"label": str, "pct": float, "highlight": bool}
+    Returns bottom y.
+    """
+    max_pct = max(b["pct"] for b in bars)
+    for b in bars:
+        # Label above the bar
+        draw.text((x, y), b["label"], font=fonts["body_sm"], fill=WARM_CREAM)
+        bar_y = y + 40
+        bar_h = 30
+        # Track and fill scaled to the largest bucket
+        fill_w = max(int(max_w * 0.82 * b["pct"] / max_pct), 10)
+        color = BRIGHT_GOLD if b.get("highlight") else COOL_GREY
+        draw.rounded_rectangle([x, bar_y, x + fill_w, bar_y + bar_h], radius=6, fill=color)
+        # Percentage at the end of the bar
+        draw.text((x + fill_w + 16, bar_y + bar_h // 2), f'{b["pct"]:.0f}%',
+                  font=fonts["label"], fill=BRIGHT_GOLD if b.get("highlight") else MUTED_CREAM,
+                  anchor="lm")
+        y += CHART_ROW_H
+    return y
+
 def draw_stat_visual(draw, visual, x, y, max_w):
     """Render the visual proof of the stat. Returns bottom y."""
     kind, value, total = visual
@@ -251,7 +276,8 @@ def slide_cover(fonts, headline: str, sub: str, slide_n: int, total: int) -> Ima
 def slide_content(fonts, label: str, headline: str, body: str,
                   slide_n: int, total: int,
                   accent_stat: str = "", accent_label: str = "",
-                  source: str = "", link: str = "") -> Image.Image:
+                  source: str = "", link: str = "",
+                  chart: list = None) -> Image.Image:
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
 
@@ -272,11 +298,13 @@ def slide_content(fonts, label: str, headline: str, body: str,
 
     # Dry-run measure the stat/body/source block so we can vertically
     # center it between the headline and the link line (kills dead space)
-    visual = parse_stat_visual(strip_html_tags(accent_stat)) if accent_stat else None
+    visual = parse_stat_visual(strip_html_tags(accent_stat)) if (accent_stat and not chart) else None
 
     def _block_height():
         h = 0
-        if accent_stat:
+        if chart:
+            h += len(chart) * CHART_ROW_H + 20
+        if accent_stat and not chart:
             f = fonts["display_huge"] if len(strip_html_tags(accent_stat)) <= 5 else fonts["display_xl"]
             bb = draw.textbbox((56, 0), strip_html_tags(accent_stat), font=f)
             h += bb[3] + 28 + 3 + 28  # stat + gap + rule + gap
@@ -299,8 +327,13 @@ def slide_content(fonts, label: str, headline: str, body: str,
     slack = avail_bottom - header_bottom - block_h
     y = header_bottom + max(40, slack // 2)
 
+    # REAL DATA CHART — the slide's hero when present
+    if chart:
+        y = draw_bar_chart(draw, fonts, chart, 56, y, W - 112)
+        y += 20
+
     # THE NUMBER — dominant, measured placement (no overlap)
-    if accent_stat:
+    if accent_stat and not chart:
         accent_stat = strip_html_tags(accent_stat)
         # Scale down if the stat is long ("6 months" vs "48%")
         stat_font = fonts["display_huge"] if len(accent_stat) <= 5 else fonts["display_xl"]

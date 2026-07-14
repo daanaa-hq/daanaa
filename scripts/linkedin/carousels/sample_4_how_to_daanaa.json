@@ -1,0 +1,59 @@
+{
+  "carousel_type": "how_it_works",
+  "title": "How to Research a Nonprofit in 5 Minutes",
+  "slides": [
+    {
+      "slide_type": "cover",
+      "headline": "How to Research a Nonprofit in 5 Minutes",
+      "subheadline": "A free walkthrough using public IRS data on Daanaa"
+    },
+    {
+      "slide_type": "content",
+      "label": "Step 1",
+      "headline": "Search 1.7M organizations",
+      "accent_stat": "1",
+      "accent_label": "Search by name, cause, or location",
+      "story": "Every active 501(c)(3) in the U.S. is in the directory. Type a name you know, a cause you care about, or your own town. No account needed.",
+      "source": "IRS Business Master File, updated continuously",
+      "link": "daanaa.org/directory"
+    },
+    {
+      "slide_type": "content",
+      "label": "Step 2",
+      "headline": "Read the financial context",
+      "accent_stat": "2",
+      "accent_label": "Funding model, health signal, and true peers",
+      "story": "Each organization page shows how it is funded, how its finances compare to real peers of the same size and model, and where the numbers come from. Context, not scores out of context.",
+      "source": "IRS 990 filings via ProPublica, public record",
+      "link": "daanaa.org/methodology"
+    },
+    {
+      "slide_type": "content",
+      "label": "Step 3",
+      "headline": "Compare side by side",
+      "accent_stat": "3",
+      "accent_label": "Up to 4 organizations in one view",
+      "story": "Weighing similar organizations? Put them next to each other. Same data, same layout, no ranking. You see the differences and decide what matters.",
+      "source": "All data from public IRS filings",
+      "link": "daanaa.org/compare"
+    },
+    {
+      "slide_type": "content",
+      "label": "Step 4",
+      "headline": "Save privately as you go",
+      "accent_stat": "4",
+      "accent_label": "Your Giving Wallet stays on your device",
+      "story": "Bookmark organizations and note your giving intent. Nothing is public, nothing is tracked, and no account is required. Your giving is your business.",
+      "source": "Daanaa privacy commitment, daanaa.org/principles",
+      "link": "daanaa.org/giving-wallet"
+    },
+    {
+      "slide_type": "cta",
+      "headline": "Five minutes to informed giving",
+      "body_lines": [
+        "Public data on 1.7M nonprofits, made readable.",
+        "Free. Private. No rankings, no agenda."
+      ]
+    }
+  ]
+}

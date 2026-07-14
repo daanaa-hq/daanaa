@@ -70,6 +70,7 @@ def render_carousel_from_json(json_data, output_dir=None):
                 accent_label=slide.get("accent_label", ""),
                 source=slide.get("source", ""),
                 link=slide.get("link", ""),
+                chart=slide.get("chart"),
                 slide_n=slide_num,
                 total=total_slides
             )
