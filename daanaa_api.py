@@ -9252,6 +9252,237 @@ def nonprofit_publish_content(ein: str, content_id: int):
     return jsonify({'id': content_id, 'status': 'published', 'published_at': now}), 200
 
 
+# ── PHASE 10: Sector Health Diagnostics ────────────────────────────────────────
+
+@app.route('/api/sector/<cause_area>/health', methods=['GET'])
+def sector_health_snapshot(cause_area: str):
+    """Get cause area health metrics (org count, revenue, financial health distribution)."""
+    cause_area = cause_area.upper().strip()[:2]  # NTEE1 code
+
+    db = get_db()
+
+    # Get most recent snapshot
+    snapshot = db.execute(
+        """SELECT id, snapshot_date, org_count, total_revenue_millions, median_revenue,
+                  avg_financial_health_score, healthy_pct, stable_pct, caution_pct,
+                  growth_rate, median_reserve_months, leadership_turnover_pct,
+                  created_org_count, closed_org_count
+           FROM sector_health_snapshots
+           WHERE cause_area = ?
+           ORDER BY snapshot_date DESC
+           LIMIT 1""",
+        (cause_area,)
+    ).fetchone()
+
+    if not snapshot:
+        # Return null snapshot if none exists (not an error, just new cause area)
+        return jsonify({
+            'cause_area': cause_area,
+            'status': 'no_data',
+            'message': 'No health data yet for this cause area'
+        }), 200
+
+    return jsonify({
+        'cause_area': cause_area,
+        'snapshot_date': snapshot[1],
+        'metrics': {
+            'org_count': snapshot[2],
+            'total_revenue_millions': snapshot[3],
+            'median_revenue': snapshot[4],
+            'avg_financial_health_score': snapshot[5],
+            'distribution': {
+                'healthy_pct': snapshot[6],
+                'stable_pct': snapshot[7],
+                'caution_pct': snapshot[8]
+            },
+            'growth_rate_yoy': snapshot[9],
+            'median_reserve_months': snapshot[10],
+            'leadership_turnover_pct': snapshot[11],
+            'new_orgs_this_period': snapshot[12],
+            'closed_orgs_this_period': snapshot[13]
+        }
+    }), 200
+
+
+@app.route('/api/sector/<cause_area>/coverage-gaps', methods=['GET'])
+def sector_coverage_gaps(cause_area: str):
+    """Identify service gaps in a cause area (by region, service type, population)."""
+    cause_area = cause_area.upper().strip()[:2]
+    service_type = request.args.get('service_type', '')  # direct_service, policy, research, capacity_building
+
+    db = get_db()
+
+    query = "SELECT id, cause_area, geographic_region, service_type, target_population, coverage_assessment, org_count_in_gap, population_served_estimate, notes, last_assessed FROM sector_coverage_gaps WHERE cause_area = ?"
+    params = [cause_area]
+
+    if service_type:
+        query += " AND service_type = ?"
+        params.append(service_type)
+
+    query += " ORDER BY coverage_assessment ASC, last_assessed DESC"
+
+    rows = db.execute(query, params).fetchall()
+
+    gaps = []
+    for row in rows:
+        gaps.append({
+            'id': row[0],
+            'region': row[2],
+            'service_type': row[3],
+            'target_population': row[4],
+            'coverage_level': row[5],  # strong, moderate, weak, none
+            'orgs_in_gap': row[6],
+            'population_estimate': row[7],
+            'notes': row[8],
+            'last_assessed': row[9]
+        })
+
+    return jsonify({
+        'cause_area': cause_area,
+        'gap_count': len(gaps),
+        'gaps': gaps
+    }), 200
+
+
+@app.route('/api/sector/<cause_area>/collaboration-signals', methods=['GET'])
+def sector_collaboration_signals(cause_area: str):
+    """Find orgs with overlapping missions for co-funding or coordination."""
+    cause_area = cause_area.upper().strip()[:2]
+    min_strength = float(request.args.get('min_strength', 0.4))  # 0-1
+
+    db = get_db()
+
+    # Find all pairs of orgs in this cause area with high collaboration potential
+    rows = db.execute(
+        """SELECT cs.ein_1, cs.ein_2, cs.collaboration_strength,
+                  cs.target_population_overlap, cs.geographic_overlap,
+                  cs.suggested_action,
+                  r1.organization_name, r2.organization_name
+           FROM sector_collaboration_signals cs
+           JOIN registry_enriched r1 ON r1.EIN = cs.ein_1
+           JOIN registry_enriched r2 ON r2.EIN = cs.ein_2
+           WHERE r1.NTEE1 = ? AND r2.NTEE1 = ?
+             AND cs.collaboration_strength >= ?
+             AND cs.funding_opportunity = 1
+           ORDER BY cs.collaboration_strength DESC
+           LIMIT 50""",
+        (cause_area, cause_area, min_strength)
+    ).fetchall()
+
+    opportunities = []
+    for row in rows:
+        opportunities.append({
+            'org_1': {
+                'ein': row[0],
+                'name': row[6]
+            },
+            'org_2': {
+                'ein': row[1],
+                'name': row[7]
+            },
+            'collaboration_strength': row[2],
+            'target_population_overlap': row[3],
+            'geographic_overlap': row[4],
+            'suggested_action': row[5]
+        })
+
+    return jsonify({
+        'cause_area': cause_area,
+        'opportunity_count': len(opportunities),
+        'opportunities': opportunities
+    }), 200
+
+
+@app.route('/api/sector/research', methods=['GET'])
+def sector_research_browse():
+    """Browse published sector research datasets."""
+    cause_area = request.args.get('cause_area', '')
+    data_type = request.args.get('data_type', '')  # financial_trends, movement_health, impact_analysis, funder_flows, leadership_pipeline
+    limit = min(int(request.args.get('limit', 20)), 100)
+
+    db = get_db()
+
+    query = "SELECT id, research_name, cause_area, data_type, description, methodology, findings_summary, published_at, org_count_analyzed, years_covered, download_url FROM sector_research_datasets WHERE published_at IS NOT NULL"
+    params = []
+
+    if cause_area:
+        query += " AND cause_area = ?"
+        params.append(cause_area)
+
+    if data_type:
+        query += " AND data_type = ?"
+        params.append(data_type)
+
+    query += " ORDER BY published_at DESC LIMIT ?"
+    params.append(limit)
+
+    rows = db.execute(query, params).fetchall()
+
+    datasets = []
+    for row in rows:
+        datasets.append({
+            'id': row[0],
+            'name': row[1],
+            'cause_area': row[2],
+            'data_type': row[3],
+            'description': row[4],
+            'methodology': row[5],
+            'findings_summary': row[6],
+            'published_at': row[7],
+            'org_count_analyzed': row[8],
+            'years_covered': row[9],
+            'download_url': row[10]
+        })
+
+    return jsonify({
+        'research_count': len(datasets),
+        'datasets': datasets
+    }), 200
+
+
+@app.route('/api/sector/<cause_area>/funding-flows', methods=['GET'])
+def sector_funding_flows(cause_area: str):
+    """Analyze funding source distribution and concentration in a cause area."""
+    cause_area = cause_area.upper().strip()[:2]
+    period = request.args.get('period', '2026-Q2')  # e.g., '2026-Q2', '2025-FY'
+
+    db = get_db()
+
+    rows = db.execute(
+        """SELECT period, funding_source, total_funding_millions, top_funder_ein,
+                  top_funder_pct, concentration_score
+           FROM sector_funding_flows
+           WHERE cause_area = ? AND (? = '' OR period = ?)
+           ORDER BY funding_source ASC""",
+        (cause_area, period if period else '', period)
+    ).fetchall()
+
+    flows = []
+    total_millions = 0
+
+    for row in rows:
+        flows.append({
+            'funding_source': row[1],  # individual, foundation, government, corporate
+            'total_funding_millions': row[2],
+            'top_funder_ein': row[3],
+            'top_funder_pct': row[4],
+            'concentration_score': row[5]  # Gini coefficient, 0-1
+        })
+        if row[2]:
+            total_millions += row[2]
+
+    return jsonify({
+        'cause_area': cause_area,
+        'period': row[0] if rows else period,
+        'total_funding_millions': total_millions,
+        'funding_flows': flows,
+        'analysis': {
+            'summary': f'{len(flows)} funding sources tracked',
+            'concentration_note': 'Higher concentration_score indicates funding is concentrated in fewer funders'
+        }
+    }), 200
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
