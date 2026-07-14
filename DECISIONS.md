@@ -641,3 +641,25 @@ in committed code (all documentation, strings, test fixtures verified clean).
 **Rejected:** Keeping CAUTION (reinforce shame for healthy behavior; misaligned to mission
 of encouraging giving); softening the label to MODERATE (vague, still negative). The chosen
 label is positive, action-oriented, and mission-true.
+
+## 2026-07-14 — Retired "operating models" from user-facing pages; funding archetypes + NTEE sectors are the two public taxonomies
+
+**Chose:** Removed the hardcoded operating-model cards and lead-finding stats from
+/sector-health; retired "operating model" vocabulary from all user-facing frontend copy.
+Site now speaks exactly two classification languages: NTEE sector (what an org does,
+sector-health page) and v5 funding archetype (how it is funded, methodology + research pages).
+Deleted dead ResearchOperatingModels.tsx (unimported). Fixed silently-broken research
+Program Spending section (read `operating_model` key; snapshot ships `archetype` — .map threw,
+catch swallowed, section rendered empty in production).
+
+**Why (data-backed, 465,306 orgs with reserve data):** eta² on under-3-months-reserves:
+raw NTEE sector 1.74% (5.3x spread), funding archetype 0.65% (1.9x), operating-model groups
+0.41% (weakest). The op-model cards were also stale 2-3x (card: Direct Service 10.3 mo avg;
+live: ~30 mo), hardcoded from a 71,473-org 2026-06 snapshot while the table beside them
+described 465K orgs, and used an NTEE letter mapping that conflicted with the page's own
+filter tabs (doc: W=Religion, Y=Foundations; standard/tabs: X=Religion, T=Foundations).
+Removal is a Stewardship P6 correction, not a redesign.
+
+**Rejected:** (a) converting the cards to archetypes now — blocked by the archetype
+code/label scramble below; (b) rewriting the carousel to operating models — weakest
+classifier; (c) repointing carousel archetype slide — it already linked to /methodology.

@@ -9,7 +9,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '../com
 type SortKey = 'name' | 'total_orgs' | 'at_risk_pct' | 'avg_months_reserve' | 'avg_program_pct'
 type GroupFilter = 'all' | 'direct_service' | 'mission_infrastructure' | 'research_academia' | 'foundations' | 'membership_advocacy' | 'religion_spiritual' | 'international_development' | 'asset_stewards'
 
-// NTEE major code → operating model group
+// NTEE major code → browsing group (navigation buckets, not a scoring taxonomy)
 const NTEE_GROUP: Record<string, GroupFilter> = {
   D: 'direct_service',   // Animal-Related
   F: 'direct_service',   // Mental Health
@@ -82,7 +82,7 @@ function SortIcon({ active, asc }: { active: boolean; asc: boolean }) {
 export default function SectorHealth() {
   usePageMeta(
     'Peer financial context by sector',
-    'Understand public financial patterns across operating models and cause areas. How organizations in different sectors compare to their peers, based on available public records and financial filings.'
+    'Understand public financial patterns across cause areas. How organizations in different sectors compare to their peers, based on available public records and financial filings.'
   )
 
   const navigate = useNavigate()
@@ -161,7 +161,7 @@ export default function SectorHealth() {
             Where the sector stands
           </h1>
           <p className="font-body text-[18px] text-muted-cream/80 max-w-[580px] leading-[1.65]">
-            How nonprofit sectors compare by operating model. Peer financial context: reserve levels, expense ratios, and filing frequency. Many small or simplified filers don't report full financials, so this reflects patterns in available public records, not every organization.
+            How nonprofit sectors compare. Peer financial context: reserve levels, expense ratios, and filing frequency. Many small or simplified filers don't report full financials, so this reflects patterns in available public records, not every organization.
           </p>
           {data?.generated_at && (
             <p className="font-body text-[13px] text-muted-cream/60 mt-4">
@@ -171,7 +171,7 @@ export default function SectorHealth() {
                 day: 'numeric'
               })}
             </p>
-          </p>
+          )}
 
           {/* Key stat chips */}
           <div className="mt-10 flex flex-wrap gap-4">
@@ -193,128 +193,14 @@ export default function SectorHealth() {
       <div className="bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-16">
 
-          {/* Operating Model Groups */}
-          <div className="mb-10">
-            <h2 className="font-display italic text-deep-navy leading-tight mb-2" style={{ fontSize: 'clamp(22px, 2.8vw, 32px)' }}>
-              Eight operating models, eight different peer contexts
-            </h2>
-            <p className="font-body text-[15px] text-cool-grey leading-[1.7] mb-6 max-w-[680px]">
-              Peer financial context means different things depending on how an organization operates. A food bank with thin reserves may be deploying every dollar into direct service. A foundation holding capital deploys strategically over years. We compare organizations within their operating model to show meaningful peer context, not across all nonprofits.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                {
-                  name: 'Direct Service',
-                  orgs: '22,916',
-                  reserve: '10.3 mo',
-                  prog: '37.3%',
-                  desc: 'Food banks, job training, animal rescue, emergency response, mental health',
-                  color: 'border-emerald-200 bg-emerald-50',
-                  badge: 'text-emerald-700 bg-emerald-100',
-                  note: 'Lean by design, high program efficiency',
-                },
-                {
-                  name: 'Mission Infrastructure',
-                  orgs: '26,413',
-                  reserve: '13.4 mo',
-                  prog: '40.4%',
-                  desc: 'Schools, hospitals, health systems, arts organizations, libraries',
-                  color: 'border-blue-200 bg-blue-50',
-                  badge: 'text-blue-700 bg-blue-100',
-                  note: 'Assets support program delivery',
-                },
-                {
-                  name: 'Research & Academia',
-                  orgs: '10,729',
-                  reserve: '8.8 mo',
-                  prog: '66.1%',
-                  desc: 'Universities, medical research, scientific institutions',
-                  color: 'border-indigo-200 bg-indigo-50',
-                  badge: 'text-indigo-700 bg-indigo-100',
-                  note: 'Program-heavy with grant passthrough',
-                },
-                {
-                  name: 'Foundations',
-                  orgs: '3,266',
-                  reserve: '34.3 mo',
-                  prog: '34.2%',
-                  desc: 'Grantmakers, endowments, philanthropies',
-                  color: 'border-purple-200 bg-purple-50',
-                  badge: 'text-purple-700 bg-purple-100',
-                  note: 'Hold and deploy capital strategically',
-                },
-                {
-                  name: 'Membership & Advocacy',
-                  orgs: '2,940',
-                  reserve: '8.4 mo',
-                  prog: '33.1%',
-                  desc: 'Member organizations, advocacy networks, voluntarism centers',
-                  color: 'border-rose-200 bg-rose-50',
-                  badge: 'text-rose-700 bg-rose-100',
-                  note: 'Revenue driven by membership support',
-                },
-                {
-                  name: 'Religion & Spiritual',
-                  orgs: '3,764',
-                  reserve: '20.2 mo',
-                  prog: '14.2%',
-                  desc: 'Faith communities, congregations, spiritual organizations',
-                  color: 'border-amber-200 bg-amber-50',
-                  badge: 'text-amber-700 bg-amber-100',
-                  note: 'Often volunteer-heavy with community focus',
-                },
-                {
-                  name: 'International Development',
-                  orgs: '601',
-                  reserve: '9.5 mo',
-                  prog: '27.2%',
-                  desc: 'Cross-border development, humanitarian aid, international relief',
-                  color: 'border-cyan-200 bg-cyan-50',
-                  badge: 'text-cyan-700 bg-cyan-100',
-                  note: 'Efficient cross-border operations',
-                },
-                {
-                  name: 'Asset Stewards',
-                  orgs: '844',
-                  reserve: '11.4 mo',
-                  prog: '42.3%',
-                  desc: 'Nursing homes, hospitals, facilities with physical infrastructure',
-                  color: 'border-orange-200 bg-orange-50',
-                  badge: 'text-orange-700 bg-orange-100',
-                  note: 'Physical assets central to mission',
-                },
-              ].map(g => (
-                <div key={g.name} className={`p-4 rounded-xl border ${g.color}`}>
-                  <span className={`inline-block font-body text-[11px] font-semibold px-2 py-0.5 rounded-full mb-2 ${g.badge}`}>{g.name}</span>
-                  <p className="font-body text-[12px] text-cool-grey leading-[1.5] mb-3">{g.desc}</p>
-                  <p className="font-body text-[10px] font-medium text-cool-grey italic mb-2">{g.note}</p>
-                  <div className="flex gap-3 flex-wrap">
-                    <div>
-                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey uppercase">Orgs</p>
-                      <p className="font-body text-[13px] font-semibold text-deep-navy">{g.orgs}</p>
-                    </div>
-                    <div>
-                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey uppercase">Med reserve</p>
-                      <p className="font-body text-[13px] font-semibold text-deep-navy">{g.reserve}</p>
-                    </div>
-                    <div>
-                      <p className="font-body text-[9px] font-semibold tracking-[0.08em] text-cool-grey uppercase">Prog spend</p>
-                      <p className="font-body text-[13px] font-semibold text-deep-navy">{g.prog}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Lead finding */}
           <div className="mb-12 p-6 rounded-2xl bg-amber-50 border border-amber-200/80">
             <p className="font-body text-[15px] text-deep-navy leading-[1.7]">
-              <strong>Financial patterns differ dramatically by operating model.</strong>{' '}
-              Direct Service organizations average 10.3 months of reserves. Research & Academia averages 8.8 months, since they're grant-heavy and spend the money on programs. Foundations average 34.3 months because they hold capital for strategic deployment. Religion & Spiritual organizations average 20.2 months. These differences reflect how organizations are structured, not how well they're managed.
+              <strong>Financial patterns differ dramatically by sector.</strong>{' '}
+              The table below shows how reserve levels vary across cause areas. Sectors doing urgent, hands-on work often run with thinner cushions, while grantmakers and endowed institutions hold capital to deploy over years. These differences reflect how organizations are structured and funded, not how well they are managed.
             </p>
             <p className="mt-3 font-body text-[13px] text-cool-grey">
-              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. The operating model patterns above are drawn from 71,473 organizations with sufficiently detailed filings to classify by model — a subset of the 356,000 organizations with complete financial data used for the sector benchmarks below. The remaining 79% of indexed nonprofits file simplified returns or are exempt from filing; they are visible in the directory but not scored.
+              Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. Many small or simplified filers do not report full financials, so the benchmarks below reflect patterns in available public records. Every figure comes from the same live dataset, dated above.
             </p>
           </div>
 

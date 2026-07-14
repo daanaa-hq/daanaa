@@ -44,7 +44,7 @@ export interface ResearchSnapshot {
     avg_peer_percentile: number | null
   }>
   spending: Array<{
-    operating_model: string
+    archetype: string
     count: number
     median_program_spend: number | null
     p25_program_spend: number | null

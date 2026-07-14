@@ -8,15 +8,10 @@ interface ResearchSpendingProps {
 }
 
 const MODEL_COLORS: Record<string, string> = {
-  'Activity_Programming': '#D4B968',
-  'Direct_Delivery': '#B8902F',
-  'Community_Human_Services': '#E8C896',
-  'Clinical_Reimbursement': '#8B7355',
-  'Emergency_Logistics': '#7A6B5A',
-  'Cause_Advocacy_Research': '#A0826D',
-  'Intermediary_Public_Benefit': '#B8936F',
-  'Faith_Community': '#C9A876',
-  'Membership_Mutual_Benefit': '#9E8B6F',
+  'Donation-Funded': '#D4B968',
+  'Fee-for-Service': '#B8902F',
+  'Endowment-Funded': '#8B7355',
+  'Mutual-Benefit': '#A0826D',
 }
 
 export default function ResearchSpending({
@@ -31,8 +26,8 @@ export default function ResearchSpending({
       .then((snap) => {
         setData(
           snap.spending.map((item) => ({
-            name: item.operating_model.replace(/_/g, ' '),
-            model: item.operating_model,
+            name: item.archetype.replace(/-/g, ' '),
+            model: item.archetype,
             median: item.median_program_spend || 0,
             p25: item.p25_program_spend || 0,
             p75: item.p75_program_spend || 0,
@@ -62,14 +57,14 @@ export default function ResearchSpending({
   return (
     <div>
       <h2 className="text-3xl font-display text-deep-navy mb-6">
-        Program Spending by Operating Model
+        Program Spending by Funding Model
       </h2>
 
       <p className="text-cool-grey mb-4 max-w-2xl">
-        Median percentage of revenue spent directly on programs (vs. administration or fundraising) for each operating model.
+        Median percentage of revenue spent directly on programs (vs. administration or fundraising) for each funding model: organizations funded mainly by donations, by fees for services, or by endowment income.
       </p>
       <p className="text-cool-grey text-sm mb-8 max-w-2xl">
-        The "middle 50%" is the interquartile range: half of all organizations in that model fall within this band. Values outside it are not unusual, just less common. All figures are derived from the most recent IRS filings available.
+        The "middle 50%" is the interquartile range: half of all organizations in that group fall within this band. Values outside it are not unusual, just less common. All figures are derived from the most recent IRS filings available.
       </p>
 
       {loading ? (

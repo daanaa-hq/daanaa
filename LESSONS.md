@@ -532,3 +532,20 @@ P5 note; (5) all docs using CAUTION renamed (no hardcoded strings remain in code
 distribution with zero CAUTION rows. API endpoint `/api/nonprofit/<ein>/financial-health`
 returns `signal: NEED_SUPPORT` + encouraging narrative. Frontend color mapping stays yellow
 (same as before, denotes "action needed," not "alarm").
+
+## 2026-07-14 — Hardcoded stats in JSX go stale silently; typed data contracts catch key renames
+
+**Symptom:** /sector-health showed operating-model reserve averages 2-3x below live values
+(card: 10.3 mo, live: ~30 mo) for weeks. Separately, the research Program Spending section
+rendered an empty chart in production — component read `item.operating_model`, snapshot
+had renamed the key to `archetype`; the .map threw inside a .catch that only console.logged.
+
+**Root cause:** (1) Stats hardcoded into JSX from a one-time analysis snapshot have no
+refresh path and no freshness label — they cannot age gracefully. (2) The snapshot
+loader typed `spending` items with the old key, so tsc was satisfied while production
+data disagreed; the runtime error was swallowed by a catch-and-log.
+
+**Preventing rules:** Never hardcode derived statistics into JSX — render from the live
+payload (and ship `generated_at`, display "As of" on data pages). When a precompute/snapshot
+key is renamed, grep the frontend for the old key the same session. A .catch around data
+mapping must surface a visible fallback state, not an empty section.

@@ -54,8 +54,8 @@ export default function ResearchLimitations() {
               Revenue recognition, depreciation, and allocation methods vary widely.
             </li>
             <li>
-              <strong>Geographic blindness:</strong> Our operating model categories reflect
-              national patterns, not local context. A "Community Human Services" org in rural
+              <strong>Geographic blindness:</strong> Our funding model and sector categories reflect
+              national patterns, not local context. A human services org in rural
               Montana may operate nothing like its urban peer.
             </li>
           </ul>
