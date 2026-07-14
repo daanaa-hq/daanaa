@@ -7,117 +7,180 @@
 
 ## The Model
 
-**Daanaa** = The public platform (must stay true to charter)
+**Daanaa** = Nonprofit discovery platform (public good, charter-bound)
 - Free forever (core features)
 - No ads, no sponsored results, no paid placement
 - Never takes a cut of donations
 - Never handles funds
 - Never sells or uses donor data
-- Never shames organizations
-- Never lets money shape rankings
+- Never lets money shape truth or rankings
+- Zero revenue model (relies on EcoMargins + grants)
 
-**EcoMargins Consulting** = The operational backbone
-- Hires staff (Daanaa doesn't employ people directly initially)
-- Manages infrastructure (servers, databases, backups)
-- Provides boring operations work (payroll, legal, compliance)
-- Does consulting/services business under its own name
-- Completely separated from Daanaa via structural firewall
+**EcoMargins Consulting LLC** = Independent business consulting firm
+- Advisory firm helping companies improve margins ethically
+- Serves for-profit companies AND nonprofit organizations
+- Focus: sustainable, long-term business improvement (not extractive growth)
+- Hires consultants, builds IP, generates revenue independently
+- Uses public market data + research to deliver value
+- Completely separate legal entity with independent business model
 
-**The Firewall** (machine-checked + quarterly audits):
-- EcoMargins never markets to Daanaa users
-- EcoMargins services never appear inside Daanaa
-- Data is partitioned (Daanaa data stays in Daanaa)
-- Revenue doesn't influence Daanaa's truth/rankings
-- EcoMargins business success doesn't depend on Daanaa secrets
+**The Firewall** (structural + machine-checked):
+- EcoMargins never markets inside Daanaa
+- EcoMargins services never appear on Daanaa platform
+- Daanaa data access = public only (no secrets shared)
+- EcoMargins consultants don't influence Daanaa rankings
+- EcoMargins business doesn't depend on Daanaa' proprietary data
+- Completely separate brands, websites, teams
 
-**The Goal:** By 2028, EcoMargins generates enough to fund Daanaa's operations indefinitely, so Daanaa never needs to compromise the charter.
+**Why This Works:**
+- Daanaa stays pure (no revenue pressure, no compromises)
+- EcoMargins stands alone (not dependent on nonprofit niche)
+- For-profit consulting = bigger market than nonprofit-only consulting
+- Daanaa public data = useful context, but EcoMargins can operate without it
+- No conflict of interest (different markets, different missions)
 
----
-
-## What EcoMargins Does (Support Work)
-
-### Infrastructure & Operations
-- Manages Daanaa's servers, databases, backups
-- Handles hiring, payroll, legal compliance
-- Maintains infrastructure that Daanaa runs on
-- Provides 24/7 operational support
-- Does research and optimization work
-
-### Research & Services (Under EcoMargins Brand, NOT Inside Daanaa)
-- Offers consulting to nonprofits (financial health, succession, fundraising)
-- Publishes research based on anonymized Daanaa data
-- Provides training and workshops (separately, not on Daanaa platform)
-- Builds tools for organizations (outside Daanaa)
-
-**Key:** None of this ever appears inside Daanaa or influences Daanaa's platform.
+**The Goal:** By 2028, EcoMargins generates $1.5-2M ARR, fully funding Daanaa's operations and team growth, so Daanaa never needs to compromise the charter or chase revenue.
 
 ---
 
-## Revenue Opportunities (EcoMargins Business)
+## EcoMargins Consulting Services
 
-### Tier 1: Anonymized Research Data (No Firewall Risk)
-**What:** Publish research based on Daanaa's public data (never trades on Daanaa's trust)
+### Core Offering: Ethical Margin Improvement
+Help companies (for-profit + nonprofit) improve financial health sustainably:
+- Financial health diagnosis (reserves, sustainability, growth rate)
+- Operational efficiency (reduce waste, not people)
+- Sustainable growth strategy (long-term, not extraction)
+- Leadership transition planning (succession, knowledge transfer)
+- Organizational sustainability (board development, governance)
 
-**Opportunities:**
-1. **Academic Partnerships** ($5-50K/study)
-   - Universities studying nonprofit ecosystems
-   - Licensing anonymized datasets for research
-   - EcoMargins publishes under its own name (not Daanaa's)
-   - Example: "State of Education 2026" research paper
+### Market Positioning
+**"EcoMargins: Improve your margins ethically. Build for the long term."**
 
-2. **Sector Research Reports** ($0-20K cost, funded by future grants)
-   - Publish sector health analysis (why we do this: Daanaa's mission is clarity)
-   - Position EcoMargins as nonprofit research leader
-   - Use to attract consulting clients
-   - Never sells inside Daanaa, never premium versions
+Serves:
+- **For-profit SMBs** ($500K-$10M revenue) needing sustainable growth
+- **Nonprofits** (all sizes) needing financial health + sustainability
+- **Founders** planning leadership transitions
+- **Boards** wanting governance + sustainability strategy
 
-3. **Foundation & Investor Intelligence** (consulting arm, separate)
-   - EcoMargins offers consulting: "sector analysis for your giving"
-   - Uses public Daanaa data (already available)
-   - Separate from Daanaa, separate brand
-   - Doesn't influence what Daanaa shows
-
-**Revenue Model:** Consulting fees for analysis work, research grants  
-**Risk:** None (data is public, analysis is separate from platform)  
-**Margin:** Variable (research is mission-driven, consulting is profitable)
+### Service Delivery (Completely Separate from Daanaa)
+- Advisory engagements ($5-25K per project)
+- Fractional CFO/operations ($500-2000/month)
+- Workshops + training (team capacity building)
+- Research + publications (thought leadership)
+- Data consulting (uses public data, not Daanaa secrets)
 
 ---
 
-### Tier 2: Nonprofit Consulting Services (Separate from Daanaa)
-**What:** EcoMargins offers professional services using Daanaa's public insights (pure consulting)
+## EcoMargins Revenue Opportunities
 
-**Opportunities:**
-1. **Financial Health Coaching** ($100-300/month via EcoMargins, not Daanaa)
-   - EcoMargins hires fractional CFOs
-   - Offers quarterly financial reviews + planning
-   - Uses public benchmarks (available to all orgs)
-   - Peer cohorts (similar to what Daanaa shows, but private coaching)
-   
-   **Market:** 50K mid-stage nonprofits ($500K-$3M revenue)  
-   **Model:** Hire CFOs, charge 2-3x cost  
-   **Revenue at scale:** $1-2M annually (consulting margin)
-   **Key:** Service is separate from Daanaa; Daanaa users access Daanaa (free), then optionally hire EcoMargins
+### 1. Advisory & Consulting Engagements
+**Market:** For-profit SMBs + nonprofits needing financial/operational strategy
 
-2. **Succession & Board Development** ($2-10K per engagement via EcoMargins)
-   - EcoMargins hires organizational coaches
-   - Offers transition planning + board training
-   - Separate brand, separate contracts
-   - Doesn't appear inside Daanaa
-   
-   **Market:** 5K orgs/year in transition  
-   **Revenue at scale:** $500K-$1M annually  
+**Offerings:**
+- Financial health diagnostic ($3-5K per org)
+- Operational efficiency review ($5-10K per org)
+- Sustainability strategy planning ($10-25K per engagement)
+- Leadership transition planning ($8-15K per engagement)
 
-3. **Grant Writing & Development** (Marketplace model via EcoMargins)
-   - Partner with grant writers
-   - EcoMargins does matchmaking + coordination
-   - Takes small finder fee (3-5% of grants) or hourly fees
-   
-   **Market:** $1.5B annual grant volume  
-   **Revenue potential:** $500K-$1M annually  
+**Market Size:**
+- For-profit SMBs: ~500K companies in $500K-$10M range
+- Nonprofits: 1M+ organizations
+- TAM: $100M+ addressable market
 
-**Revenue Potential:** $2-4M at scale (Year 3)  
-**Margin:** 40-60% (requires hiring quality staff)  
-**Firewall:** All services are EcoMargins branded, not Daanaa. Never appear in platform.
+**Revenue Model:** Project-based consulting
+- Target: 20 engagements/year at avg $12K = $240K Year 1
+- Scale to 100 engagements/year = $1.2M by Year 3
+- Margin: 60-70%
+
+---
+
+### 2. Fractional CFO / Operations Services
+**Market:** Small organizations (for-profit + nonprofit) needing part-time finance leadership
+
+**Model:**
+- Hire experienced CFOs/controllers (hourly contractors)
+- Offer fractional services at premium to cost
+- Monthly retainers ($500-2000/month depending on org size)
+
+**Revenue Model:**
+- Start with 5 clients, $750/mo avg = $45K/year
+- Scale to 50 clients by Year 3 = $450K/year
+- Margin: 40-50% (split with fractional CFO)
+
+---
+
+### 3. Workshops & Training
+**Offerings:**
+- Financial health workshops for teams ($2-5K per workshop)
+- Board governance training ($3-8K per training)
+- Succession planning workshops ($2-5K)
+- Sustainability strategy training ($3-8K)
+
+**Revenue Model:**
+- 10 workshops/year at $4K avg = $40K Year 1
+- Scale to 40+ workshops/year = $150K+ Year 3
+- Margin: 70-80% (repeatable content)
+
+---
+
+### 4. Research & Thought Leadership
+**Offerings:**
+- Publish annual "State of Nonprofit Sustainability" report
+- Publish "SMB Financial Health Trends" quarterly
+- Speaking at industry conferences
+- Media appearances (builds brand)
+
+**Revenue Model:**
+- Mostly mission-driven (no direct revenue)
+- Attracts consulting clients (lead generation)
+- Occasional licensing to research firms ($5-20K)
+- Foundation grants for research ($10-50K)
+
+---
+
+### 5. Data Consulting (Using Public Data Only)
+**Offerings:**
+- "Where should we focus our giving?" analysis for foundations
+- "What does our sector health look like?" reports for nonprofits
+- Benchmarking studies for boards
+
+**Revenue Model:**
+- Project-based analysis ($5-25K per project)
+- Some foundation funding
+- Adds credibility to other services
+
+---
+
+## Total Revenue Projection
+
+```
+2026 (Launch)
+├─ Consulting (5 engagements):        $60K
+├─ Fractional CFO (5 clients):        $45K
+├─ Workshops (10):                    $40K
+├─ Infrastructure + hiring costs:    ($80K)
+└─ Net:                               +$65K
+
+2027 (Growth)
+├─ Consulting (40 engagements):      $480K
+├─ Fractional CFO (25 clients):      $225K
+├─ Workshops (30):                    $120K
+├─ Research/data consulting:          $50K
+├─ Infrastructure + team:            ($200K)
+└─ Total revenue:                     $875K → funds Daanaa ops
+
+2028 (Sustainable)
+├─ Consulting (100 engagements):    $1.2M
+├─ Fractional CFO (50 clients):      $450K
+├─ Workshops (50):                    $200K
+├─ Research/data projects:            $75K
+├─ Team + infrastructure:            ($400K)
+└─ Total revenue:                    $1.825M → funds Daanaa + team growth
+```
+
+**Target:** $1.5-2M ARR by 2028 = fully funds Daanaa operations + allows hiring staff
+**Margin:** 50-60% average across services
+**Key:** All independent consulting work, zero reliance on Daanaa exclusivity
 
 ---
 
@@ -246,26 +309,33 @@ Build permanent institutional knowledge so systems improve over time:
 
 ---
 
-## Governance Guardrails (P7 Independence + P8 No Fund Handling)
+## Governance Guardrails (Charter + Firewall)
 
 **Hard Firewall Between Daanaa + EcoMargins:**
 - Daanaa never ranks orgs based on EcoMargins partnerships
-- No preferential visibility for EcoMargins vendors
-- Daanaa pricing ≠ EcoMargins fees
-- Separate legal entities, separate P&Ls
-- Daanaa board/governance independent of EcoMargins revenue
+- No preferential visibility for EcoMargins in Daanaa
+- Daanaa platform never mentions EcoMargins services
+- Separate legal entities, separate bank accounts, separate P&Ls
+- Daanaa board/governance completely independent of EcoMargins
 
-**Data Sharing Rules:**
-- EcoMargins can license anonymized, aggregated data
-- Never individual org secrets or donor data
-- Data licensing visible in Daanaa + EcoMargins privacy policies
-- Opt-out mechanism for paranoid orgs (if they ask, we exclude their data)
+**Data Separation:**
+- EcoMargins uses only public data (Daanaa's research outputs)
+- Never accesses Daanaa's user data, wallet, bookmarks, activity
+- No cross-marketing of user lists
+- Data handling visible in both privacy policies
+- Nonprofits never feel pressure to use EcoMargins (it's optional)
+
+**Charter Compliance:**
+- Charter Article 2 (never sell inside Daanaa): ✅ Services are completely external
+- Charter Article 3 (never use data to market): ✅ Data is partitioned, no targeting
+- Charter Article 6 (money never shapes truth): ✅ Daanaa scoring is independent
+- Charter Article 9 (never lock you in): ✅ Using EcoMargins is purely optional
 
 **Fund Handling Rule:**
-- EcoMargins never touches donor money
-- Daanaa never takes fees from giving
-- All giving is direct org link-out or EIN-based router
-- Donor money ≠ EcoMargins revenue (revenue is from services to nonprofits + data licensing)
+- EcoMargins never touches Daanaa donor money
+- Daanaa never takes fees from giving (all direct to org)
+- EcoMargins revenue is completely separate (consulting fees, not donation related)
+- Giving is always through org's own channels or EIN router
 
 ---
 
