@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The State of U.S. Nonprofits 2026 - LinkedIn Carousel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0f0;
+            overflow: hidden;
+        }
+
+        .carousel {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slide {
+            width: 1080px;
+            height: 1080px;
+            background: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            padding: 80px 60px;
+            position: relative;
+            overflow: hidden;
+            justify-content: center;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        /* Gradient backgrounds */
+        .slide.title {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .slide.section {
+            background: linear-gradient(135deg, #0f3460 0%, #1a7f7e 100%);
+            color: white;
+            text-align: center;
+        }
+
+        .slide h1 {
+            font-size: 4em;
+            margin-bottom: 0.3em;
+            line-height: 1.1;
+        }
+
+        .slide h2 {
+            font-size: 3em;
+            margin-bottom: 0.5em;
+            line-height: 1.2;
+            color: #1a1a2e;
+        }
+
+        .slide.title h1 {
+            color: white;
+            font-size: 5em;
+        }
+
+        .slide.section h2 {
+            color: white;
+            font-size: 4em;
+        }
+
+        .slide p {
+            font-size: 1.4em;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 1em;
+        }
+
+        .slide.title p {
+            color: #ccc;
+            font-size: 1.5em;
+        }
+
+        .slide.section p {
+            color: #ddd;
+            font-size: 1.5em;
+        }
+
+        /* Stat grid */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .stat.critical {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .stat.warning {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            color: #333;
+        }
+
+        .stat.success {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+        }
+
+        .stat .number {
+            font-size: 4em;
+            font-weight: bold;
+            margin-bottom: 0.3em;
+        }
+
+        .stat .label {
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+
+        /* Visual elements */
+        .chart-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 20px;
+            margin: 40px 0;
+            height: 300px;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(180deg, #007bff 0%, #0056b3 100%);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 20px;
+            min-height: 100px;
+        }
+
+        .bar.critical {
+            background: linear-gradient(180deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .bar.warning {
+            background: linear-gradient(180deg, #ffc107 0%, #e0a800 100%);
+        }
+
+        .bar .value {
+            color: white;
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .bar.warning .value {
+            color: #333;
+        }
+
+        .bar .label {
+            color: white;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        .bar.warning .label {
+            color: #333;
+        }
+
+        /* Finding box */
+        .finding {
+            background: #f0f7ff;
+            border-left: 5px solid #007bff;
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 10px;
+        }
+
+        .finding h3 {
+            color: #0056b3;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .finding p {
+            font-size: 1.3em;
+            color: #333;
+        }
+
+        /* Two column layout */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .col {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 10px;
+            border-left: 5px solid #007bff;
+        }
+
+        .col h3 {
+            color: #1a1a2e;
+            font-size: 1.6em;
+            margin-bottom: 15px;
+        }
+
+        .col ul {
+            list-style: none;
+            margin: 0;
+        }
+
+        .col li {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            color: #333;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .col li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .counter {
+            position: fixed;
+            top: 30px;
+            right: 40px;
+            font-size: 1.2em;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .highlight {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .headline {
+            font-size: 2em;
+            font-weight: bold;
+            color: #1a1a2e;
+            line-height: 1.3;
+            margin-bottom: 40px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-top: 30px;
+        }
+
+        .emoji-text {
+            font-size: 3em;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="counter">
+    <span id="current">1</span> / <span id="total">10</span>
+</div>
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide title active">
+    <h1>The State of U.S. Nonprofits 2026</h1>
+    <p style="font-size: 1.8em; margin-top: 30px; margin-bottom: 0;">What 1.7M organizations tell us</p>
+    <p style="font-size: 1.4em;">Financial health. Sector resilience. The discovery problem.</p>
+    <div class="emoji-text">📊 💰 🔍</div>
+</div>
+
+<!-- SLIDE 2: THE QUESTION -->
+<div class="slide">
+    <h2>Is the nonprofit sector healthy?</h2>
+    <p style="font-size: 1.5em; margin: 50px 0; color: #666;">Not "is it growing?" (it is)</p>
+    <div style="background: #e3f2fd; padding: 40px; border-radius: 15px; border-left: 5px solid #007bff;">
+        <p style="font-size: 1.4em; margin: 0; color: #1976d2; font-weight: bold;">Can nonprofits survive the next crisis?</p>
+        <p style="font-size: 1.4em; margin: 15px 0 0 0; color: #1976d2; font-weight: bold;">Do organizations that need resources have them?</p>
+        <p style="font-size: 1.4em; margin: 15px 0 0 0; color: #1976d2; font-weight: bold;">Are the best organizations getting discovered?</p>
+    </div>
+</div>
+
+<!-- SLIDE 3: 6 KEY STATS -->
+<div class="slide">
+    <h2>6 Critical Findings</h2>
+    <div class="stat-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 50px;">
+        <div class="stat critical">
+            <div class="number">48%</div>
+            <div class="label">Lack adequate reserves</div>
+        </div>
+        <div class="stat critical">
+            <div class="number">40%</div>
+            <div class="label">High-performers invisible</div>
+        </div>
+        <div class="stat warning" style="color: #333;">
+            <div class="number">+16%</div>
+            <div class="label">Small org growth</div>
+        </div>
+        <div class="stat critical">
+            <div class="number">1.7M</div>
+            <div class="label">Total nonprofits</div>
+        </div>
+        <div class="stat critical">
+            <div class="number">68%</div>
+            <div class="label">Food banks at risk</div>
+        </div>
+        <div class="stat critical">
+            <div class="number">1.2x</div>
+            <div class="label">Rural staff (vs 2.3 urban)</div>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 4: THE RESERVE CRISIS -->
+<div class="slide">
+    <h2>Finding 1: The Reserve Crisis</h2>
+    <p style="font-size: 1.3em; margin: 30px 0;">Standard minimum: 3 months of operating expenses</p>
+    <div class="chart-container">
+        <div class="bar" style="height: 70%;">
+            <div class="value">52%</div>
+            <div class="label">Have adequate reserves ✅</div>
+        </div>
+        <div class="bar warning" style="height: 50%;">
+            <div class="value">36%</div>
+            <div class="label">Borderline ⚠️</div>
+        </div>
+        <div class="bar critical" style="height: 20%;">
+            <div class="value">12%</div>
+            <div class="label">In crisis 🔴</div>
+        </div>
+    </div>
+    <p style="font-size: 1.2em; color: #dc3545; font-weight: bold; margin-top: 30px;">48% of nonprofits are one crisis away from collapse</p>
+</div>
+
+<!-- SLIDE 5: SECTOR DISPARITIES -->
+<div class="slide">
+    <h2>Finding 2: Sector Disparities</h2>
+    <p style="font-size: 1.3em; margin: 30px 0; color: #666;">Not all sectors are equal</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 40px 0;">
+        <div style="background: #e8f5e9; padding: 25px; border-radius: 10px; border-left: 5px solid #28a745;">
+            <h3 style="color: #2e7d32; margin-bottom: 15px;">✅ Strong</h3>
+            <p style="font-size: 1.2em;"><strong>Health:</strong> 6.2 mo reserves</p>
+            <p style="font-size: 1.2em;"><strong>Education:</strong> 5.1 mo reserves</p>
+        </div>
+        <div style="background: #ffebee; padding: 25px; border-radius: 10px; border-left: 5px solid #dc3545;">
+            <h3 style="color: #c62828; margin-bottom: 15px;">🔴 At Risk</h3>
+            <p style="font-size: 1.2em;"><strong>Human Services:</strong> 3.1 mo</p>
+            <p style="font-size: 1.2em;"><strong>Food Banking:</strong> 2.8 mo</p>
+        </div>
+    </div>
+
+    <div style="background: #fff3cd; padding: 20px; border-radius: 10px; border-left: 5px solid #ffc107;">
+        <p style="font-size: 1.2em; color: #856404;"><strong>Bottom line:</strong> Food banks serve vulnerable people but are themselves underfunded</p>
+    </div>
+</div>
+
+<!-- SLIDE 6: GROWTH PARADOX & RURAL CRISIS -->
+<div class="slide">
+    <h2>Finding 3: Growth Without Equity</h2>
+    <p style="font-size: 1.3em; margin: 30px 0; color: #666;">More orgs, same funding. Rural left behind.</p>
+
+    <div class="two-col">
+        <div class="col" style="border-left-color: #ffc107;">
+            <h3>📈 Growth Paradox</h3>
+            <ul>
+                <li>1.57M → 1.75M nonprofits</li>
+                <li>Revenue per org DOWN 3%</li>
+                <li>Smaller = more fragile</li>
+            </ul>
+        </div>
+        <div class="col" style="border-left-color: #dc3545;">
+            <h3>🌾 Rural Crisis</h3>
+            <ul>
+                <li>Rural: $380K median</li>
+                <li>Urban: $850K median</li>
+                <li>45% smaller + understaffed</li>
+            </ul>
+        </div>
+    </div>
+
+    <p style="font-size: 1.2em; color: #666; margin-top: 30px; text-align: center;"><strong>Small organizations + rural areas = highest need, lowest resources</strong></p>
+</div>
+
+<!-- SLIDE 7: THE DISCOVERY PROBLEM -->
+<div class="slide">
+    <h2>Finding 4: The Discovery Problem</h2>
+    <p style="font-size: 1.3em; margin: 30px 0; color: #666;">Good organizations are invisible</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 50px 0;">
+        <div style="background: #e8f5e9; padding: 40px; border-radius: 15px; text-align: center;">
+            <div style="font-size: 4em; margin-bottom: 15px;">🏙️</div>
+            <p style="font-size: 2em; color: #2e7d32; font-weight: bold;">70%</p>
+            <p style="font-size: 1.3em; color: #333;">Urban orgs found</p>
+        </div>
+        <div style="background: #ffebee; padding: 40px; border-radius: 15px; text-align: center;">
+            <div style="font-size: 4em; margin-bottom: 15px;">🌾</div>
+            <p style="font-size: 2em; color: #c62828; font-weight: bold;">40%</p>
+            <p style="font-size: 1.3em; color: #333;">Rural orgs found</p>
+        </div>
+    </div>
+
+    <p style="font-size: 1.3em; text-align: center; color: #dc3545; font-weight: bold;">40% of high-performing nonprofits have zero web presence</p>
+    <p style="font-size: 1.2em; text-align: center; color: #666; margin-top: 20px;">Donors can't support what they can't find</p>
+</div>
+
+<!-- SLIDE 8: WHAT YOU CAN DO -->
+<div class="slide">
+    <h2>What You Can Do</h2>
+    <p style="font-size: 1.3em; margin: 30px 0; color: #666;">Based on your role</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0;">
+        <div style="background: #e3f2fd; padding: 25px; border-radius: 10px;">
+            <h3 style="color: #1976d2; font-size: 1.5em; margin-bottom: 12px;">🎯 If you lead a nonprofit</h3>
+            <p style="font-size: 1.1em;">Know your reserves. Claim your profile.</p>
+        </div>
+        <div style="background: #fff3e0; padding: 25px; border-radius: 10px;">
+            <h3 style="color: #f57c00; font-size: 1.5em; margin-bottom: 12px;">💼 If you fund nonprofits</h3>
+            <p style="font-size: 1.1em;">Fund where need is highest. Check reserves.</p>
+        </div>
+        <div style="background: #f3e5f5; padding: 25px; border-radius: 10px;">
+            <h3 style="color: #7b1fa2; font-size: 1.5em; margin-bottom: 12px;">💝 If you're a donor</h3>
+            <p style="font-size: 1.1em;">Check health. Find hidden gems in your area.</p>
+        </div>
+        <div style="background: #e8f5e9; padding: 25px; border-radius: 10px;">
+            <h3 style="color: #2e7d32; font-size: 1.5em; margin-bottom: 12px;">🔬 If you research</h3>
+            <p style="font-size: 1.1em;">Download data. Validate methodology.</p>
+        </div>
+    </div>
+</div>
+
+<!-- SLIDE 9: THE BOTTOM LINE -->
+<div class="slide">
+    <h2>The Bottom Line</h2>
+    <p style="font-size: 1.3em; margin: 40px 0; color: #666;">The sector is:</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin: 40px 0;">
+        <div style="background: #e8f5e9; padding: 30px; border-radius: 10px; text-align: center; border-left: 5px solid #28a745;">
+            <p style="font-size: 1.4em; color: #2e7d32; font-weight: bold;">✅ Growing</p>
+        </div>
+        <div style="background: #ffebee; padding: 30px; border-radius: 10px; text-align: center; border-left: 5px solid #dc3545;">
+            <p style="font-size: 1.4em; color: #c62828; font-weight: bold;">🔴 Fragile</p>
+        </div>
+        <div style="background: #fff3e0; padding: 30px; border-radius: 10px; text-align: center; border-left: 5px solid #ffc107;">
+            <p style="font-size: 1.4em; color: #f57c00; font-weight: bold;">🟡 Unequal</p>
+        </div>
+        <div style="background: #e1f5fe; padding: 30px; border-radius: 10px; text-align: center; border-left: 5px solid #0288d1;">
+            <p style="font-size: 1.4em; color: #0277bd; font-weight: bold;">🔍 Invisible</p>
+        </div>
+    </div>
+
+    <p style="font-size: 1.3em; text-align: center; margin-top: 40px; color: #333;"><strong>Not in collapse. Under pressure.</strong></p>
+</div>
+
+<!-- SLIDE 10: CALL TO ACTION -->
+<div class="slide section" style="text-align: center;">
+    <h1 style="font-size: 4.5em; margin-bottom: 40px;">Explore the Data</h1>
+    <p style="font-size: 1.6em; margin-bottom: 40px; opacity: 0.95;">1.7M nonprofits. Real financial health. Better giving.</p>
+    <div class="emoji-text" style="margin-bottom: 40px;">🔍 📊 💡</div>
+    <p style="font-size: 1.4em; opacity: 0.9;">Visit daanaa.org</p>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+    <button onclick="prev()">← Previous</button>
+    <button onclick="next()">Next →</button>
+</div>
+
+<script>
+    let current = 0;
+    const slides = document.querySelectorAll('.slide');
+    const total = slides.length;
+
+    function show(n) {
+        slides[current].classList.remove('active');
+        current = (n + total) % total;
+        slides[current].classList.add('active');
+        document.getElementById('current').textContent = current + 1;
+    }
+
+    function next() { show(current + 1); }
+    function prev() { show(current - 1); }
+
+    document.getElementById('total').textContent = total;
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') next();
+        if (e.key === 'ArrowLeft') prev();
+    });
+</script>
+
+</body>
+</html>
