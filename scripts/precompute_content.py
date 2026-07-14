@@ -268,19 +268,27 @@ def main():
             AVG(CASE WHEN program_expense_pct IS NOT NULL THEN program_expense_pct ELSE NULL END) as avg_program_pct,
             AVG(CASE WHEN total_revenue IS NOT NULL THEN total_revenue ELSE NULL END) as avg_revenue
         FROM registry_enriched
-        WHERE NTEE1 IS NOT NULL
+        WHERE NTEE1 IS NOT NULL AND NTEE1 != '' AND LENGTH(TRIM(NTEE1)) = 1
         GROUP BY NTEE1
     """)
 
+    # Valid NTEE1 codes from CATEGORIES
+    valid_codes = {code for code, _ in CATEGORIES}
+
     sectors = []
     for row in cursor.fetchall():
+        code = row['NTEE1']
+        # Skip junk rows with invalid codes
+        if code not in valid_codes:
+            continue
+
         at_risk_pct = 0
         if row['has_reserve'] > 0:
             at_risk_pct = (row['at_risk'] / row['has_reserve']) * 100
 
         sector = {
-            'code': row['NTEE1'] or 'UNKNOWN',
-            'name': dict(CATEGORIES).get(row['NTEE1'], 'Uncategorized') if row['NTEE1'] else 'Uncategorized',
+            'code': code,
+            'name': dict(CATEGORIES).get(code, 'Uncategorized'),
             'total_orgs': row['total_orgs'],
             'has_reserve': row['has_reserve'],
             'avg_months_reserve': row['avg_months_reserve'],
@@ -294,7 +302,10 @@ def main():
         }
         sectors.append(sector)
 
-    sector_health = {'sectors': sectors}
+    sector_health = {
+        'generated_at': datetime.utcnow().isoformat() + 'Z',
+        'sectors': sectors
+    }
     save_json_gz('sector_health.json.gz', sector_health)
 
     # 4. How it works (Lamp journey)

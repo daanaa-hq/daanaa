@@ -1,0 +1,50 @@
+{
+  "cover_headline": "Nonprofit Sector's Financial Health Insights",
+  "cover_sub": "Understanding the emergency reserves landscape across the nonprofit sector.",
+  "slides": [
+    {
+      "label": "Overview",
+      "headline": "Reserve Funding Crisis in U.S. Nonprofits",
+      "body": "48% of nonprofits lack adequate emergency reserves, indicating a critical need for financial stability. Data from IRS 990 filings highlights this issue.",
+      "accent_stat": "48%",
+      "accent_label": "Nonprofits Lacking Reserves"
+    },
+    {
+      "label": "General Sector",
+      "headline": "Operating Reserves in Nonprofits",
+      "body": "Approximately 40% of nonprofits have fewer than 3 months of operating reserves, underscoring the financial fragility of the sector.",
+      "accent_stat": "40%",
+      "accent_label": "Nonprofits with <3 Months Reserves"
+    },
+    {
+      "label": "Small Organizations",
+      "headline": "Small Orgs and Financial Reserves",
+      "body": "Organizations under $500K in revenue are more likely to have lean reserves, often reinvesting directly into programs.",
+      "accent_stat": "500K",
+      "accent_label": "Revenue Threshold"
+    },
+    {
+      "label": "Data Source",
+      "headline": "Public IRS 990 Filings",
+      "body": "This data is derived from public IRS 990 filings, providing a comprehensive view of financial health across the sector.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Leadership Perspective",
+      "headline": "Financial Stability for Nonprofit Leaders",
+      "body": "Nonprofit leaders must prioritize building and maintaining emergency reserves to ensure long-term sustainability and program delivery.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Funding Role",
+      "headline": "Role of Funders in Financial Health",
+      "body": "Funders play a crucial role by supporting nonprofits in building their reserves, ensuring they can weather financial storms and continue their missions.",
+      "accent_stat": "",
+      "accent_label": ""
+    }
+  ],
+  "cta_headline": "Secure Nonprofit Financial Health",
+  "cta_body": "Support emergency savings.\nPrioritize long-term sustainability."
+}

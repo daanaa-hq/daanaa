@@ -231,7 +231,7 @@ export interface ApiSectorHealth {
   avg_revenue: number | null;
 }
 
-export async function getSectorHealth(): Promise<{ sectors: ApiSectorHealth[] }> {
+export async function getSectorHealth(): Promise<{ generated_at?: string; sectors: ApiSectorHealth[] }> {
   return fetchJson('/api/sector-health');
 }
 

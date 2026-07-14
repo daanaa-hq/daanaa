@@ -1,0 +1,50 @@
+{
+  "cover_headline": "Nonprofit Sector Financial Insights",
+  "cover_sub": "Explore the financial health data across the nonprofit sector.",
+  "slides": [
+    {
+      "label": "Operating Reserves",
+      "headline": "40% of nonprofits with limited reserves",
+      "body": "Approximately 40% of nonprofits have fewer than 3 months of operating reserves, indicating financial vulnerability.",
+      "accent_stat": "40%",
+      "accent_label": "Nonprofits"
+    },
+    {
+      "label": "Small Organizations",
+      "headline": "Small orgs invest directly in programs",
+      "body": "Small nonprofits under $500K are more likely to have lean reserves, but this is due to direct investment in their programs.",
+      "accent_stat": "$500K",
+      "accent_label": "Small Nonprofits"
+    },
+    {
+      "label": "Funding Paradox",
+      "headline": "More orgs, less funding per organization",
+      "body": "Despite the increase in the number of nonprofits, average funding per nonprofit has declined by 3 percent.",
+      "accent_stat": "3%",
+      "accent_label": "Funding Decline"
+    },
+    {
+      "label": "Vulnerability",
+      "headline": "Small organizations particularly vulnerable",
+      "body": "Smaller organizations are disproportionately affected by the decrease in average funding, further straining their financial health.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Data Gap",
+      "headline": "Funders lack data on impact",
+      "body": "Funders often lack the necessary data to determine where their funding will have the most significant impact, affecting the sector's overall health.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Data Source",
+      "headline": "Data from public IRS 990 filings",
+      "body": "All the data presented here comes from public IRS 990 filings, offering a transparent and accurate snapshot of the nonprofit sector's financial health.",
+      "accent_stat": "",
+      "accent_label": ""
+    }
+  ],
+  "cta_headline": "Support Nonprofits, Drive Impact",
+  "cta_body": "Invest in organizations that need it most.\nEnsure your donation makes a difference."
+}

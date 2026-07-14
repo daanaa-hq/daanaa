@@ -1,0 +1,50 @@
+{
+  "cover_headline": "<i>Uncover Hidden Gems</i>",
+  "cover_sub": "Discover small nonprofits making a big impact.",
+  "slides": [
+    {
+      "label": "The Problem",
+      "headline": "Invisible Heroes",
+      "body": "Many small nonprofits lack online visibility, despite their vital community work.",
+      "accent_stat": "40%",
+      "accent_label": "High-impact nonprofits with no web presence"
+    },
+    {
+      "label": "Our Discovery",
+      "headline": "33,900+ Identified",
+      "body": "Daanaa found thousands of small nonprofits with strong financial health scores.",
+      "accent_stat": "33,900+",
+      "accent_label": "Small nonprofits found"
+    },
+    {
+      "label": "The Impact",
+      "headline": "Real Work, Real Results",
+      "body": "Organizations like food pantries, tutoring programs, and animal rescues are making a difference every day.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "The Solution",
+      "headline": "Connecting Donors",
+      "body": "Daanaa helps donors find and support these essential organizations.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Why It Matters",
+      "headline": "Every Dollar Counts",
+      "body": "Your support can make a significant difference in the lives of those they serve.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Join Us",
+      "headline": "Find Your Cause",
+      "body": "Explore and support the hidden gems near you with Daanaa.",
+      "accent_stat": "",
+      "accent_label": ""
+    }
+  ],
+  "cta_headline": "Explore Hidden Gems Today",
+  "cta_body": "Find your impact\nStart supporting now"
+}

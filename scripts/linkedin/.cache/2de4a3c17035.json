@@ -1,0 +1,50 @@
+{
+  "cover_headline": "Nonprofit Sector Financial Insights",
+  "cover_sub": "Explore the financial health data shaping the nonprofit landscape.",
+  "slides": [
+    {
+      "label": "Overview",
+      "headline": "Operating Reserves Across Nonprofits",
+      "body": "Approximately 40% of nonprofits maintain fewer than three months of operating reserves, a critical factor for sustainability.",
+      "accent_stat": "40%",
+      "accent_label": "Nonprofits with lean reserves"
+    },
+    {
+      "label": "Small Organizations",
+      "headline": "Small Nonprofits' Financial Profiles",
+      "body": "Organizations under $500K often invest directly in programs, resulting in leaner reserves, though not necessarily indicative of struggle.",
+      "accent_stat": "$500K",
+      "accent_label": "Threshold"
+    },
+    {
+      "label": "Funding Trends",
+      "headline": "Funding Decline Amid Growth",
+      "body": "Despite increasing numbers, the average funding per nonprofit has decreased by 3%, highlighting the funding paradox.",
+      "accent_stat": "3%",
+      "accent_label": "Funding Decline"
+    },
+    {
+      "label": "Vulnerability",
+      "headline": "Vulnerability of Small Organizations",
+      "body": "Small nonprofits are particularly vulnerable to financial pressures, as they often operate with limited reserves and resources.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Data Insight",
+      "headline": "The Role of Data in Nonprofit Funding",
+      "body": "Funders lack comprehensive data to identify where capital can have the most significant impact, making strategic support challenging.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Impact",
+      "headline": "The Importance of Informed Giving",
+      "body": "Understanding financial health data can guide more effective and impactful funding decisions, supporting nonprofits' missions.",
+      "accent_stat": "",
+      "accent_label": ""
+    }
+  ],
+  "cta_headline": "Unlock Nonprofit Potential",
+  "cta_body": "Discover how to support effectively\nExplore financial health insights"
+}

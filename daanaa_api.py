@@ -2521,7 +2521,10 @@ def sector_health():
         d['at_risk_pct'] = round((d['insolvent'] + d['at_risk']) / d['total_orgs'] * 100, 1)
         result.append(d)
 
-    payload = {"sectors": result}
+    payload = {
+        "generated_at": datetime.utcnow().isoformat() + 'Z',
+        "sectors": result
+    }
     _cset('sector_health', payload)
     return jsonify(payload)
 

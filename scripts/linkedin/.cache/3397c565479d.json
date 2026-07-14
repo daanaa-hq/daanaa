@@ -1,0 +1,50 @@
+{
+  "cover_headline": "Nonprofit Financial Health Insights",
+  "cover_sub": "Explore the sector's financial stability and reserves data.",
+  "slides": [
+    {
+      "label": "Overview",
+      "headline": "Nonprofit Financial Reserves",
+      "body": "Approximately 40% of nonprofits show fewer than 3 months of operating reserves. This highlights the need for financial stability across the sector.",
+      "accent_stat": "40%",
+      "accent_label": "Nonprofits with less than 3 months of reserves"
+    },
+    {
+      "label": "Sector Trends",
+      "headline": "Reserve Funding Crisis",
+      "body": "48% of nonprofits lack adequate emergency reserves, reflecting a critical need for more funding to ensure financial stability.",
+      "accent_stat": "48%",
+      "accent_label": "Lack adequate reserves"
+    },
+    {
+      "label": "Small Organizations",
+      "headline": "Small Orgs and Reserves",
+      "body": "Small organizations under $500K are more likely to have lean reserves, often due to direct investments in programs rather than financial struggles.",
+      "accent_stat": "$500K",
+      "accent_label": "Revenue Threshold"
+    },
+    {
+      "label": "Data Source",
+      "headline": "Reliable Data from IRS",
+      "body": "The data is sourced from public IRS 990 filings, providing a transparent and comprehensive view of the nonprofit sector\u2019s financial health.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Implications",
+      "headline": "Financial Stability Matters",
+      "body": "For nonprofit leaders and funders, understanding financial stability is crucial for long-term sustainability and the ability to respond to emergencies.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Call to Action",
+      "headline": "Support Nonprofit Stability",
+      "body": "Invest in nonprofits' financial reserves to ensure they can continue their vital work.",
+      "accent_stat": "",
+      "accent_label": ""
+    }
+  ],
+  "cta_headline": "Invest in Nonprofit Stability",
+  "cta_body": "Secure their future.\nSupport their financial health."
+}

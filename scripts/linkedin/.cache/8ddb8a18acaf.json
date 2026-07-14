@@ -1,0 +1,50 @@
+{
+  "cover_headline": "<i>Unseen Heroes: Small Nonprofits Making Big Differences</i>",
+  "cover_sub": "Discover the hidden gems in your community that need your support.",
+  "slides": [
+    {
+      "label": "The Problem",
+      "headline": "Invisible Impact, Critical Work",
+      "body": "Many small nonprofits with under $500K in revenue are invisible online, yet they do essential community work, from food pantries to animal rescues.",
+      "accent_stat": "33,900+",
+      "accent_label": "Hidden nonprofits identified"
+    },
+    {
+      "label": "The Scope",
+      "headline": "Critical Work, Underseen",
+      "body": "These organizations often lack a digital footprint, making it difficult for donors to find and support them, despite their strong financial health.",
+      "accent_stat": "40%",
+      "accent_label": "High-impact nonprofits with no web presence"
+    },
+    {
+      "label": "What We Found",
+      "headline": "Financial Health, Real Impact",
+      "body": "Daanaa discovered over 33,900 small nonprofits with robust financial health scores, indicating strong management and sustainability.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "The Need",
+      "headline": "Support Where It Counts",
+      "body": "These nonprofits, though small in budget, deliver crucial services. Your support can ensure their continued operation and community impact.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Our Mission",
+      "headline": "Discover and Support",
+      "body": "Daanaa's mission is to help donors find and support these vital organizations, ensuring they can continue their important work.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Join Us",
+      "headline": "Fund the Future",
+      "body": "By funding these hidden gems, you can make a meaningful difference in your community. Join us in supporting these essential organizations.",
+      "accent_stat": "",
+      "accent_label": ""
+    }
+  ],
+  "cta_headline": "Join Our Discovery",
+  "cta_body": "Find and support impactful nonprofits\nin your community today."
+}

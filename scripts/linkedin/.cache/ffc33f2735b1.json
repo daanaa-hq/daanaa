@@ -1,0 +1,50 @@
+{
+  "cover_headline": "Nonprofit Financial Health: Sector Insights",
+  "cover_sub": "Explore key financial trends affecting nonprofits today.",
+  "slides": [
+    {
+      "label": "Operating Reserves",
+      "headline": "40% of nonprofits have less than 3 months of reserves.",
+      "body": "Many nonprofits operate on thin margins, with only a few months of funds to cover expenses. This highlights the importance of financial planning and sustainability.",
+      "accent_stat": "40%",
+      "accent_label": "of nonprofits"
+    },
+    {
+      "label": "Small Organizations",
+      "headline": "Small orgs invest directly in programs.",
+      "body": "Organizations with budgets under $500K often have lean reserves but are not necessarily struggling. They prioritize program funding over reserves.",
+      "accent_stat": "$500K",
+      "accent_label": "budget threshold"
+    },
+    {
+      "label": "Nonprofit Growth",
+      "headline": "Sector grows, but funding per org declines.",
+      "body": "Despite a 10% increase in nonprofits, revenue per organization has dropped by 3%, indicating a need for smarter funding strategies.",
+      "accent_stat": "3%",
+      "accent_label": "revenue drop"
+    },
+    {
+      "label": "Funding Paradox",
+      "headline": "More nonprofits, less funding per org.",
+      "body": "The funding paradox shows that while the number of nonprofits has grown, the funding available per organization has decreased, affecting financial stability.",
+      "accent_stat": "10%",
+      "accent_label": "nonprofit increase"
+    },
+    {
+      "label": "Small Org Trends",
+      "headline": "Small organizations are getting smaller.",
+      "body": "Funding dynamics are causing small nonprofits to shrink further, impacting their ability to serve communities effectively.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Impactful Funding",
+      "headline": "Daanaa shows where capital makes a real difference.",
+      "body": "Daanaa helps funders understand where their capital will have the most significant impact, ensuring resources are directed effectively.",
+      "accent_stat": "",
+      "accent_label": ""
+    }
+  ],
+  "cta_headline": "Discover Impactful Nonprofit Insights",
+  "cta_body": "Explore Daanaa for sector-specific data.\nTransform funding with informed decisions."
+}

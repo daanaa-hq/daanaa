@@ -1,0 +1,42 @@
+{
+  "cover_headline": "<i>Discover Hidden Nonprofits</i>",
+  "cover_sub": "Uncover impactful small nonprofits with strong financial health, often overlooked online.",
+  "slides": [
+    {
+      "label": "The Problem",
+      "headline": "Invisibility of Small Nonprofits",
+      "body": "Despite their critical work, many small nonprofits remain invisible to potential donors due to a lack of online presence."
+    },
+    {
+      "label": "What We Found",
+      "headline": "Over 33,900 Identified",
+      "body": "Daanaa has identified over 33,900 small nonprofits with robust financial health, working quietly in communities across the country.",
+      "accent_stat": "33,900+",
+      "accent_label": "Small Nonprofits Identified"
+    },
+    {
+      "label": "Types of Work",
+      "headline": "From Food to Arts",
+      "body": "These organizations range from food pantries and tutoring programs to animal rescues and local arts initiatives."
+    },
+    {
+      "label": "Financial Health",
+      "headline": "Strong Peer Financial Health",
+      "body": "All identified nonprofits demonstrate strong financial health, ensuring your support goes directly to the community work they do."
+    },
+    {
+      "label": "Online Presence",
+      "headline": "40% Have No Web",
+      "body": "Surprisingly, 40% of high-impact nonprofits have zero web presence, making them invisible to many potential donors.",
+      "accent_stat": "40%",
+      "accent_label": "No Web Presence"
+    },
+    {
+      "label": "Impact Areas",
+      "headline": "Diverse Community Needs",
+      "body": "These hidden gems address a variety of community needs, from hunger and education to animal welfare and cultural enrichment."
+    }
+  ],
+  "cta_headline": "Support These Gems",
+  "cta_body": "Discover and fund impactful nonprofits.\nMake a difference in your community."
+}

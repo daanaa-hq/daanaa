@@ -1,0 +1,48 @@
+{
+  "carousel_type": "hidden_gems",
+  "title": "Discover Hidden Nonprofit Gems",
+  "description": "40% of high-impact nonprofits have zero web presence. Small organizations doing critical work are invisible to donors.",
+  "cta_text": "daanaa.org",
+  "slides": [
+    {
+      "slide_type": "cover",
+      "headline": "The Visibility Gap",
+      "subheadline": "Great nonprofits exist. You just can't find them."
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 1: The Problem",
+      "headline": "40% of Great Organizations Are Invisible",
+      "accent_stat": "40%",
+      "accent_label": "High-Impact Nonprofits with Zero Web Presence",
+      "story": "Food banks. Tutoring programs. Animal rescues. These organizations save lives every day. Yet 40% have zero online presence. Donors can't find them. Organizations can't find donors. The gap costs lives.",
+      "source": "Daanaa nonprofit discovery analysis, 2024"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 2: What Exists",
+      "headline": "33,900 Hidden Gems Waiting to Be Found",
+      "accent_stat": "33,900+",
+      "accent_label": "High-Performing Small Nonprofits Identified",
+      "story": "We indexed all 1.7M U.S. nonprofits. We found 33,900 with strong financial health, working quietly in communities across America. Most have never been discovered by a donor. They don't lack impact. They lack visibility.",
+      "source": "Daanaa nonprofit index, 2024"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 3: The Solution",
+      "headline": "Search Changes Everything",
+      "accent_stat": "1.7M",
+      "accent_label": "Nonprofits Searchable by Cause, Location, Health",
+      "story": "Donors get data. Search by cause. Search by neighborhood. See financial health. Find the exact organization you want to support—not the famous one everyone knows about. Discovery meets impact.",
+      "source": "Daanaa platform, live 2024"
+    },
+    {
+      "slide_type": "cta",
+      "headline": "Find Hidden Impact",
+      "body_lines": [
+        "Discover 1.7M nonprofits by cause & location.",
+        "Support the organizations nobody else found."
+      ]
+    }
+  ]
+}

@@ -163,6 +163,15 @@ export default function SectorHealth() {
           <p className="font-body text-[18px] text-muted-cream/80 max-w-[580px] leading-[1.65]">
             How nonprofit sectors compare by operating model. Peer financial context: reserve levels, expense ratios, and filing frequency. Many small or simplified filers don't report full financials, so this reflects patterns in available public records, not every organization.
           </p>
+          {data?.generated_at && (
+            <p className="font-body text-[13px] text-muted-cream/60 mt-4">
+              As of {new Date(data.generated_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </p>
+          </p>
 
           {/* Key stat chips */}
           <div className="mt-10 flex flex-wrap gap-4">

@@ -1,0 +1,50 @@
+{
+  "cover_headline": "Nonprofit Financial Health Across Sectors",
+  "cover_sub": "Explore the financial stability of nonprofits and how it impacts their operations.",
+  "slides": [
+    {
+      "label": "Operating Reserves",
+      "headline": "40% of Nonprofits Struggle with Short Runways",
+      "body": "Approximately 40% of nonprofits have fewer than 3 months of operating reserves, indicating potential financial instability.",
+      "accent_stat": "40%",
+      "accent_label": "Nonprofits with short runways"
+    },
+    {
+      "label": "Small Organizations",
+      "headline": "Small Orgs Invest Directly in Programs",
+      "body": "Nonprofits under $500K in revenue are more likely to have lean reserves, investing directly in programs rather than maintaining large reserves.",
+      "accent_stat": "$500K",
+      "accent_label": "Revenue threshold"
+    },
+    {
+      "label": "Reserve Crisis",
+      "headline": "48% Lack Adequate Reserves",
+      "body": "Nearly half of nonprofits do not have enough reserves to weather a funding gap, highlighting the importance of financial planning.",
+      "accent_stat": "48%",
+      "accent_label": "Lack adequate reserves"
+    },
+    {
+      "label": "Peer Context",
+      "headline": "Peer Financial Insight for Better Decisions",
+      "body": "Understanding the financial context of peers can help nonprofit leaders make informed decisions about their organizational stability and future.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Data Source",
+      "headline": "Data from Public IRS 990 Filings",
+      "body": "All the data presented is sourced from public IRS 990 filings, ensuring transparency and accuracy in our analysis.",
+      "accent_stat": "",
+      "accent_label": ""
+    },
+    {
+      "label": "Actionable Insights",
+      "headline": "Transform Data into Action",
+      "body": "Use this sector insight to better understand your financial health and take proactive steps towards securing your nonprofit's future.",
+      "accent_stat": "",
+      "accent_label": ""
+    }
+  ],
+  "cta_headline": "Empower Your Nonprofit with Financial Clarity",
+  "cta_body": "Explore sector insights on Daanaa\nMake informed decisions for stability"
+}

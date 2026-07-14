@@ -1,0 +1,48 @@
+{
+  "carousel_type": "sector_insight",
+  "title": "Reserve Funding Crisis in U.S. Nonprofits",
+  "description": "Financial stability matters. 48% of nonprofits lack adequate emergency reserves.",
+  "cta_text": "daanaa.org",
+  "slides": [
+    {
+      "slide_type": "cover",
+      "headline": "The Reserve Crisis",
+      "subheadline": "What 1.7M nonprofits tell us about financial stability."
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 1: The Problem",
+      "headline": "Nearly Half Can't Survive a Funding Gap",
+      "accent_stat": "48%",
+      "accent_label": "Nonprofits Lack Adequate Emergency Reserves",
+      "story": "When a major grant ends or a funder withdraws, nonprofits with weak reserves cannot survive the gap. Nearly half the sector faces this vulnerability. Programs shut down. Staff are laid off. Community suffers.",
+      "source": "IRS 990 Filings, 1.7M active U.S. nonprofits"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 2: Who's Vulnerable",
+      "headline": "Small Orgs Have Zero Cushion",
+      "accent_stat": "40%",
+      "accent_label": "Nonprofits with Less Than 3 Months of Operating Funds",
+      "story": "Organizations under $500K invest every dollar directly into programs—which is admirable. But it leaves zero cushion. One funding disruption shuts down critical services. Small nonprofits are one crisis away from collapse.",
+      "source": "Daanaa financial health analysis, 2024"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 3: The Solution",
+      "headline": "Strategic Reserve Funding Multiplies Impact",
+      "accent_stat": "6 months",
+      "accent_label": "Reserves Enables Long-Term Planning & Growth",
+      "story": "Funders who support reserve-building don't just save organizations—they multiply impact. A nonprofit with 6 months of reserves can weather storms, plan long-term, and serve communities with confidence. Strategic reserve grants are force multipliers.",
+      "source": "FSG nonprofit management research, 2023"
+    },
+    {
+      "slide_type": "cta",
+      "headline": "Fund Reserves. Stabilize Impact.",
+      "body_lines": [
+        "See which nonprofits need reserves most.",
+        "Explore daanaa.org"
+      ]
+    }
+  ]
+}
