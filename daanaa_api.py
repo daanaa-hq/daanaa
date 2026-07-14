@@ -10324,6 +10324,249 @@ def nonprofit_board_evolution(ein: str):
     }), 200
 
 
+# ── PHASE 8: Services Marketplace ──────────────────────────────────────────────
+
+@app.route('/api/marketplace/providers', methods=['GET'])
+def marketplace_providers():
+    """Browse service providers (consultants, trainers, vendors)."""
+    category = request.args.get('category', '')
+    availability = request.args.get('availability', 'available')
+    limit = min(int(request.args.get('limit', 20)), 100)
+
+    db = get_db()
+
+    query = "SELECT id, provider_name, service_category, specialization, experience_level, hourly_rate_low, hourly_rate_high, rating, testimonials_count FROM nonprofit_service_providers WHERE marketplace_status='active'"
+    params = []
+
+    if category:
+        query += " AND service_category = ?"
+        params.append(category)
+
+    if availability:
+        query += " AND availability = ?"
+        params.append(availability)
+
+    query += " ORDER BY rating DESC LIMIT ?"
+    params.append(limit)
+
+    rows = db.execute(query, params).fetchall()
+
+    providers = []
+    for row in rows:
+        providers.append({
+            'id': row[0],
+            'name': row[1],
+            'category': row[2],
+            'specialization': row[3],
+            'experience': row[4],
+            'rate_range': f'${row[5]}-{row[6]}/hr',
+            'rating': row[7],
+            'testimonials': row[8]
+        })
+
+    return jsonify({'provider_count': len(providers), 'providers': providers}), 200
+
+
+# ── PHASE 12: Succession Planning ──────────────────────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/succession-readiness', methods=['GET'])
+def nonprofit_succession_readiness(ein: str):
+    """Get succession planning readiness assessment."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    readiness = db.execute(
+        """SELECT assessment_date, leadership_pipeline_strength, board_strength,
+                  knowledge_transfer_status, organizational_readiness_score, risk_level,
+                  risk_factors, action_items
+           FROM succession_readiness WHERE ein=?""",
+        (ein,)
+    ).fetchone()
+
+    if not readiness:
+        return jsonify({'status': 'no_assessment'}), 200
+
+    return jsonify({
+        'ein': ein,
+        'assessment_date': readiness[0],
+        'readiness_scores': {
+            'leadership_pipeline': readiness[1],
+            'board_strength': readiness[2],
+            'knowledge_transfer': readiness[3],
+            'overall_readiness': readiness[4]
+        },
+        'risk_level': readiness[5],
+        'risk_factors': readiness[6],  # JSON
+        'action_items': readiness[7]  # JSON
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/transition-timeline', methods=['GET'])
+def nonprofit_transition_timeline(ein: str):
+    """Get leadership transition plan and timeline."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    timeline = db.execute(
+        """SELECT outgoing_leader_name, incoming_leader_name, transition_start_date,
+                  transition_end_date, phase, milestones, knowledge_transfer_plan
+           FROM transition_timeline WHERE ein=?
+           ORDER BY transition_start_date DESC LIMIT 1""",
+        (ein,)
+    ).fetchone()
+
+    if not timeline:
+        return jsonify({'status': 'no_transition'}), 200
+
+    return jsonify({
+        'ein': ein,
+        'outgoing_leader': timeline[0],
+        'incoming_leader': timeline[1],
+        'transition_period': {
+            'start': timeline[2],
+            'end': timeline[3]
+        },
+        'current_phase': timeline[4],
+        'milestones': timeline[5],  # JSON
+        'knowledge_transfer_plan': timeline[6]
+    }), 200
+
+
+# ── PHASE 13: Impact Measurement ───────────────────────────────────────────────
+
+@app.route('/api/cause/<cause_area>/outcome-templates', methods=['GET'])
+def cause_outcome_templates(cause_area: str):
+    """Get outcome measurement templates for a cause area."""
+    cause_area = cause_area.upper().strip()[:2]
+    program_type = request.args.get('program_type', '')
+
+    db = get_db()
+
+    query = "SELECT id, outcome_framework, description, key_metrics, measurement_methods, difficulty_to_measure FROM cause_outcome_templates WHERE cause_area=?"
+    params = [cause_area]
+
+    if program_type:
+        query += " AND program_type = ?"
+        params.append(program_type)
+
+    rows = db.execute(query, params).fetchall()
+
+    templates = []
+    for row in rows:
+        templates.append({
+            'id': row[0],
+            'framework': row[1],
+            'description': row[2],
+            'key_metrics': row[3],  # JSON
+            'measurement_methods': row[4],  # JSON
+            'difficulty': row[5]
+        })
+
+    return jsonify({'template_count': len(templates), 'templates': templates}), 200
+
+
+@app.route('/api/nonprofit/<ein>/impact-report', methods=['GET'])
+def nonprofit_impact_report(ein: str):
+    """Get nonprofit's impact outcomes (anonymized for research)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    period = request.args.get('period', '')
+
+    db = get_db()
+
+    query = "SELECT reporting_period, program_name, outcome_type, outcome_value, outcome_unit, confidence_level, measurement_method FROM nonprofit_impact_reports WHERE ein=?"
+    params = [ein]
+
+    if period:
+        query += " AND reporting_period = ?"
+        params.append(period)
+
+    query += " ORDER BY reported_at DESC"
+
+    rows = db.execute(query, params).fetchall()
+
+    outcomes = []
+    for row in rows:
+        outcomes.append({
+            'period': row[0],
+            'program': row[1],
+            'outcome': row[2],
+            'value': row[3],
+            'unit': row[4],
+            'confidence': row[5],
+            'method': row[6]
+        })
+
+    return jsonify({'ein': ein, 'outcome_count': len(outcomes), 'outcomes': outcomes}), 200
+
+
+@app.route('/api/cause/<cause_area>/impact-benchmarks', methods=['GET'])
+def cause_impact_benchmarks(cause_area: str):
+    """Get peer benchmarks for impact outcomes in a cause area."""
+    cause_area = cause_area.upper().strip()[:2]
+    outcome_type = request.args.get('outcome_type', '')
+
+    db = get_db()
+
+    query = "SELECT outcome_type, program_type, median_outcome_value, percentile_25, percentile_75, org_count_reporting, year_reported FROM peer_outcome_benchmarks WHERE cause_area=?"
+    params = [cause_area]
+
+    if outcome_type:
+        query += " AND outcome_type = ?"
+        params.append(outcome_type)
+
+    rows = db.execute(query, params).fetchall()
+
+    benchmarks = []
+    for row in rows:
+        benchmarks.append({
+            'outcome': row[0],
+            'program_type': row[1],
+            'median': row[2],
+            'peer_range': [row[3], row[4]],
+            'orgs_reporting': row[5],
+            'year': row[6]
+        })
+
+    return jsonify({'benchmark_count': len(benchmarks), 'benchmarks': benchmarks}), 200
+
+
+@app.route('/api/research/datasets', methods=['GET'])
+def research_datasets():
+    """Browse research-grade datasets (aggregated, anonymized)."""
+    cause_area = request.args.get('cause_area', '')
+    access_level = request.args.get('access', 'public')
+
+    db = get_db()
+
+    query = "SELECT dataset_name, cause_area, description, org_count, years_covered, access_level, download_url, published_at FROM research_grade_datasets WHERE published_at IS NOT NULL AND access_level IN (?, 'public')"
+    params = [access_level]
+
+    if cause_area:
+        query += " AND cause_area = ?"
+        params.append(cause_area)
+
+    query += " ORDER BY published_at DESC LIMIT 20"
+
+    rows = db.execute(query, params).fetchall()
+
+    datasets = []
+    for row in rows:
+        datasets.append({
+            'name': row[0],
+            'cause': row[1],
+            'description': row[2],
+            'orgs': row[3],
+            'years': row[4],
+            'access': row[5],
+            'url': row[6],
+            'published': row[7]
+        })
+
+    return jsonify({'dataset_count': len(datasets), 'datasets': datasets}), 200
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
