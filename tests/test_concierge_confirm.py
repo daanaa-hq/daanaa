@@ -46,8 +46,8 @@ def client(tmp_path, monkeypatch):
     for ein, name in ((EIN_VERIFIED, "Verified Helpers"), (EIN_PENDING, "Pending Org"),
                       (EIN_REVOKED, "Revoked Org"), (EIN_ACTIVE, "Active Org")):
         db.execute(
-            "INSERT INTO registry_enriched (EIN, organization_name, donate_url, donate_url_status)"
-            " VALUES (?, ?, 'https://old.example.org/give', 'ai_beta')", (ein, name))
+            "INSERT INTO registry_enriched (EIN, organization_name, donate_url, donate_url_status, donate_confidence)"
+            " VALUES (?, ?, 'https://old.example.org/give', 'ai_beta', 70)", (ein, name))
     db.commit()
     db.close()
 
@@ -56,6 +56,8 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(daanaa_api, "_ADMIN_KEY", KEY)
     daanaa_api._init_org_claims_table()
     daanaa_api._init_org_activity_table()
+    # Apply migration 007 to add donate_url and cause_tags_json columns
+    daanaa_api._run_migrations(db_path)
 
     with sqlite3.connect(db_path) as conn:
         for ein, status, revoked_at in (
@@ -66,9 +68,9 @@ def client(tmp_path, monkeypatch):
         ):
             conn.execute(
                 """INSERT INTO org_claims (ein, email, irs_address, pin, pin_expires_at,
-                                           claim_status, revoked_at)
+                                           claim_status, revoked_at, website_url)
                    VALUES (?, 'rep@example.org', 'x', '123456',
-                           datetime('now', '+30 days'), ?, ?)""",
+                           datetime('now', '+30 days'), ?, ?, NULL)""",
                 (ein, status, revoked_at))
 
     daanaa_api.limiter.enabled = False
@@ -100,10 +102,18 @@ def _payload(ein=EIN_VERIFIED, **over):
 
 
 def _registry(ein):
+    # Lock-free design: org_claims holds nonprofit claims, registry_enriched holds IRS data.
+    # For claimed fields, prefer org_claims; fall back to registry_enriched for IRS data.
+    # Return order: mission, mission_source, website, website_status, donate_url, donate_url_status, donate_confidence
     row = sqlite3.connect(daanaa_api.DB_PATH).execute(
-        "SELECT mission, mission_source, website, website_status,"
-        " donate_url, donate_url_status, donate_confidence"
-        " FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
+        "SELECT COALESCE(c.custom_mission, r.mission),"
+        "       CASE WHEN c.custom_mission IS NOT NULL THEN 'claimed' ELSE r.mission_source END,"
+        "       COALESCE(c.website_url, r.website),"
+        "       CASE WHEN c.website_url IS NOT NULL THEN 'claimed' ELSE r.website_status END,"
+        "       COALESCE(c.donate_url, r.donate_url), r.donate_url_status, r.donate_confidence"
+        " FROM registry_enriched r"
+        " LEFT JOIN org_claims c ON r.EIN = c.ein"
+        " WHERE r.EIN=?", (ein,)).fetchone()
     return row
 
 

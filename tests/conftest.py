@@ -72,7 +72,8 @@ _seed_conn.executescript("""
         volunteer_contact_name TEXT, volunteer_contact_email TEXT, volunteer_contact_phone TEXT,
         donor_contact_name TEXT, donor_contact_email TEXT, donor_contact_phone TEXT,
         website_url TEXT, nudge_sent_at TEXT, checkin_sent_at TEXT,
-        profile_nudge_sent_at TEXT DEFAULT NULL
+        profile_nudge_sent_at TEXT DEFAULT NULL,
+        donate_url TEXT, cause_tags_json TEXT
     );
     CREATE TABLE IF NOT EXISTS wallet_sync (
         firebase_uid TEXT PRIMARY KEY,

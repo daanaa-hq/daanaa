@@ -3820,6 +3820,14 @@ def _write_claimed_fields_to_registry(db, ein: str, f: dict) -> list:
         values = list(updates.values()) + [ein]
         db.execute(f"UPDATE org_claims SET {set_clause} WHERE ein = ?", values)
 
+    # Mark status fields in registry_enriched when claimed
+    if f['donate_url'] and f['donate_confirmed']:
+        db.execute("UPDATE registry_enriched SET donate_url_status='claimed', donate_confidence=95 WHERE EIN=?", (ein,))
+    if f['website_url']:
+        db.execute("UPDATE registry_enriched SET website_status='claimed' WHERE EIN=?", (ein,))
+    if f['custom_mission']:
+        db.execute("UPDATE registry_enriched SET mission_source='claimed' WHERE EIN=?", (ein,))
+
     return written
 
 
