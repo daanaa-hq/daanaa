@@ -9698,6 +9698,223 @@ def nonprofit_badge_progress(ein: str):
     }), 200
 
 
+# ── PHASE 6: Donor Learning System ────────────────────────────────────────────
+
+@app.route('/api/donor/learning-resources', methods=['GET'])
+def get_learning_resources():
+    """Browse learning resources (research, case studies, guides)."""
+    cause_area = request.args.get('cause_area', '')
+    resource_type = request.args.get('type', '')
+    limit = min(int(request.args.get('limit', 20)), 100)
+
+    db = get_db()
+
+    query = "SELECT id, resource_type, title, description, cause_area, url, published_at, view_count FROM learning_resources WHERE source IN ('daanaa', 'external_partner')"
+    params = []
+
+    if cause_area:
+        query += " AND cause_area = ?"
+        params.append(cause_area)
+
+    if resource_type:
+        query += " AND resource_type = ?"
+        params.append(resource_type)
+
+    query += " ORDER BY published_at DESC LIMIT ?"
+    params.append(limit)
+
+    rows = db.execute(query, params).fetchall()
+
+    resources = []
+    for row in rows:
+        resources.append({
+            'id': row[0],
+            'type': row[1],
+            'title': row[2],
+            'description': row[3],
+            'cause': row[4],
+            'url': row[5],
+            'published_at': row[6],
+            'views': row[7]
+        })
+
+    return jsonify({
+        'resource_count': len(resources),
+        'resources': resources
+    }), 200
+
+
+@app.route('/api/donor/cohorts', methods=['GET'])
+def get_donor_cohorts():
+    """Find learning cohorts by topic or focus."""
+    topic = request.args.get('topic', '')
+    cohort_type = request.args.get('type', '')
+
+    db = get_db()
+
+    query = "SELECT id, cohort_name, cohort_topic, cohort_type, member_count, duration_weeks, start_date, description FROM donor_learning_cohorts WHERE status='active'"
+    params = []
+
+    if topic:
+        query += " AND cohort_topic = ?"
+        params.append(topic)
+
+    if cohort_type:
+        query += " AND cohort_type = ?"
+        params.append(cohort_type)
+
+    query += " ORDER BY start_date DESC LIMIT 20"
+
+    rows = db.execute(query, params).fetchall()
+
+    cohorts = []
+    for row in rows:
+        cohorts.append({
+            'id': row[0],
+            'name': row[1],
+            'topic': row[2],
+            'type': row[3],
+            'members': row[4],
+            'duration_weeks': row[5],
+            'start_date': row[6],
+            'description': row[7]
+        })
+
+    return jsonify({
+        'cohort_count': len(cohorts),
+        'cohorts': cohorts
+    }), 200
+
+
+@app.route('/api/donor/<donor_id>/impact-summary', methods=['GET'])
+def donor_impact_summary(donor_id: str):
+    """Get personal impact summary (giving, learning, outcomes achieved)."""
+    donor_id = donor_id[:64]
+
+    db = get_db()
+
+    # Giving summary
+    giving = db.execute(
+        "SELECT SUM(intent_amount_estimate), COUNT(DISTINCT ein) FROM donor_giving_intent WHERE donor_id=? AND status='completed'",
+        (donor_id,)
+    ).fetchone()
+
+    total_giving = giving[0] or 0
+    org_count = giving[1] or 0
+
+    # Impact summary
+    outcomes = db.execute(
+        """SELECT outcome_type, SUM(outcome_value) FROM impact_tracking
+           WHERE donor_id=? AND report_source IN ('org_reported', 'third_party')
+           GROUP BY outcome_type""",
+        (donor_id,)
+    ).fetchall()
+
+    impact = {}
+    for row in outcomes:
+        impact[row[0]] = row[1]
+
+    # Learning summary
+    resources_engaged = db.execute(
+        "SELECT COUNT(DISTINCT resource_id) FROM learning_engagement WHERE donor_id=? AND engagement_type='completed'",
+        (donor_id,)
+    ).fetchone()
+
+    cohort_count = db.execute(
+        "SELECT COUNT(DISTINCT cohort_id) FROM cohort_participants WHERE donor_id=? AND status='completed'",
+        (donor_id,)
+    ).fetchone()
+
+    return jsonify({
+        'donor_id': donor_id,
+        'giving_summary': {
+            'total_amount': total_giving,
+            'orgs_supported': org_count,
+            'engagement_level': 'active' if org_count > 0 else 'exploring'
+        },
+        'impact_summary': {
+            'outcomes': impact,
+            'message': f'Your giving has supported impact across {len(impact)} outcome areas'
+        },
+        'learning_summary': {
+            'resources_completed': resources_engaged[0] or 0,
+            'cohorts_completed': cohort_count[0] or 0,
+            'message': f'You\'ve engaged with {(resources_engaged[0] or 0) + (cohort_count[0] or 0)} learning opportunities'
+        }
+    }), 200
+
+
+@app.route('/api/donor/<donor_id>/org-impact/<ein>', methods=['GET'])
+def donor_org_impact(donor_id: str, ein: str):
+    """Get impact from a specific organization you support."""
+    donor_id = donor_id[:64]
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    # Get org info
+    org = db.execute(
+        "SELECT organization_name, mission FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # Get impact outcomes
+    outcomes = db.execute(
+        """SELECT outcome_type, outcome_value, outcome_unit, outcome_timeframe, last_reported
+           FROM impact_tracking WHERE donor_id=? AND ein=?
+           ORDER BY last_reported DESC""",
+        (donor_id, ein)
+    ).fetchall()
+
+    impact_list = []
+    for row in outcomes:
+        impact_list.append({
+            'outcome': row[0],
+            'value': row[1],
+            'unit': row[2],
+            'timeframe': row[3],
+            'last_reported': row[4]
+        })
+
+    return jsonify({
+        'donor_id': donor_id,
+        'ein': ein,
+        'org_name': org[0],
+        'mission': org[1],
+        'impact_outcomes': impact_list,
+        'summary': f'{len(impact_list)} impact outcomes tracked from your support'
+    }), 200
+
+
+@app.route('/api/donor/<donor_id>/giving-profile', methods=['GET'])
+def donor_giving_profile(donor_id: str):
+    """Get donor's learning profile and giving preferences."""
+    donor_id = donor_id[:64]
+
+    db = get_db()
+
+    profile = db.execute(
+        """SELECT cause_interests, size_preference, giving_style, learning_preference, outcome_focus
+           FROM donor_learning_profiles WHERE donor_id=?""",
+        (donor_id,)
+    ).fetchone()
+
+    if not profile:
+        return jsonify({'status': 'no_profile', 'message': 'Create a profile to get personalized recommendations'}), 200
+
+    return jsonify({
+        'donor_id': donor_id,
+        'interests': profile[0],  # JSON
+        'size_preference': profile[1],
+        'giving_style': profile[2],
+        'learning_preference': profile[3],
+        'outcome_focus': profile[4]
+    }), 200
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
