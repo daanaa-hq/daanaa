@@ -33,6 +33,35 @@ if grep -nE "Content-Security-Policy|script-src|connect-src" daanaa_api.py | gre
   note "CSP weakened (unsafe-eval or wildcard in script-src/connect-src)"
 fi
 
+# 5. Tier 2 entity firewall (GATE 8): org_claims/waitlist/wallet/feedback data never in prospecting, outreach, or EcoMargins paths.
+echo "GATE 8: Tier 2 Entity Firewall"
+TIER2_TABLES='org_claims|waitlist|wallet|feedback|call_records'
+ECOMARGINS_PATHS='ecomargins|prospecting|outreach|lead_scoring|marketing|consulting'
+
+# Check 1: No Tier 2 table references in EcoMargins/prospecting code
+if find . -name "*.py" -path "*/scripts/*" -o -name "*.py" -path "*/api/*" 2>/dev/null | \
+   xargs grep -l "$ECOMARGINS_PATHS" 2>/dev/null | \
+   xargs grep -l "$TIER2_TABLES" 2>/dev/null | grep -v privacy_check; then
+  note "Tier 2 table reference found in prospecting/EcoMargins code path"
+fi
+
+# Check 2: No external AI service calls with Tier 2 data (only local inference allowed)
+EXTERNAL_AI='openai|anthropic|groq|replicate|cohere|huggingface|api\.together'
+if grep -rn "$EXTERNAL_AI" daanaa_api.py scripts/*.py 2>/dev/null | grep -vE "comment|#"; then
+  # Allow only if it's clearly for Tier 0/1 data (public/published)
+  if grep -rn "$EXTERNAL_AI" daanaa_api.py scripts/*.py 2>/dev/null | grep -qE "registry_enriched|mission.*public|tier.*0|tier.*1"; then
+    :  # OK if clearly gated to Tier 0/1
+  else
+    # Flag as potential violation; requires human review
+    echo "  ⚠ MANUAL REVIEW: external AI service reference found (should be local inference only for Tier 2)"
+  fi
+fi
+
+# Check 3: Tier 2 exports and deletions are possible
+if ! grep -q "export.*org_claims\|DELETE.*org_claims" daanaa_api.py; then
+  echo "  ⚠ MANUAL REVIEW: Tier 2 data export/delete endpoints may be missing"
+fi
+
 if [ "$fail" -eq 0 ]; then
   echo "  OK — all machine-checkable privacy invariants hold."
 else

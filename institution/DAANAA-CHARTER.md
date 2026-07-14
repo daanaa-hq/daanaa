@@ -31,8 +31,9 @@ We will never knock on it.
 entrust to Daanaa, your contact details, your custom mission, your notes,
 your activity on the platform, is used to operate Daanaa for you and for
 nothing else. It is never a lead, never a marketing signal, never shared
-with or used by any commercial arm, partner, or vendor. This is enforced in
-our code, not just in this sentence.
+with or used by any commercial arm, partner, or vendor. This is protected by
+machine-checked code invariants and quarterly self-audits that we publish
+in our governance log.
 
 **4. We will never sell or share your data.** Not to vendors, not to
 foundations, not to researchers without your explicit consent, not in
@@ -76,7 +77,7 @@ Daanaa operates under a Founding Stewardship Commitment, a governing
 constitution, and a data classification policy that separates, in code,
 what is public from what you have entrusted to us. Our operating company,
 EcoMargins Consulting LLC, does professional consulting under its own name;
-a structural firewall, audited quarterly and enforced at the code level,
+a structural firewall with machine-checked guards and quarterly audits
 keeps that business from ever reaching into what Daanaa holds in trust.
 When Daanaa becomes its own legal entity, this charter transfers with it,
 unchanged.
