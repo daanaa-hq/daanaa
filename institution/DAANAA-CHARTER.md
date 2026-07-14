@@ -74,11 +74,19 @@ inside or outside the organization, is entitled to call it out.
 ## What holds this up
 
 Daanaa operates under a Founding Stewardship Commitment, a governing
-constitution, and a data classification policy that separates, in code,
-what is public from what you have entrusted to us. Our operating company,
-EcoMargins Consulting LLC, does professional consulting under its own name;
-a structural firewall with machine-checked guards and quarterly audits
-keeps that business from ever reaching into what Daanaa holds in trust.
+constitution, a Core Platform Definition that commits seven features to
+"free forever," and a Donation Boundary Policy that keeps money flows
+outside Daanaa entirely. A data classification policy separates, in code,
+what is public from what you have entrusted to us.
+
+Our operating company, EcoMargins Consulting LLC, does professional
+consulting under its own name; a structural firewall with machine-checked
+guards and quarterly audits keeps that business from ever reaching into
+what Daanaa holds in trust.
+
+Read the full commitments:
+- `institution/CORE_PLATFORM_DEFINITION.md` — what remains free
+- `institution/DONATION_BOUNDARY_POLICY.md` — where money never goes
 When Daanaa becomes its own legal entity, this charter transfers with it,
 unchanged.
 

@@ -588,3 +588,33 @@ narrative tone enforced by test (shame-word denylist at worst-case inputs).
 **Why:** adoption risk dwarfs revenue risk; emotional tone of peer comparison
 is a P5 issue, so it's pinned by a failing-first test, not a style guide.
 **Rejected:** building all three phases before validating claim/return behavior.
+
+## 2026-07-14 — Core platform definition (FD-002)
+**Chose:** Seven features remain free forever (discovery, peer financial context,
+profiles, corrections, nonprofit dashboard, export, delete) with zero paywall.
+Optional paid services (advanced reporting, bulk API, white-label, consulting)
+never influence visibility or core access. **Why:** core mission of informed
+giving requires free access; operating cost is low; growth revenue must not
+override free guarantee. **Rejected:** freemium model where small orgs are
+hidden by default or require payment to be found; tiered access to peer
+context (erodes trust in rankings). See CORE_PLATFORM_DEFINITION.md.
+
+## 2026-07-14 — Donation boundary policy (FD-003)
+**Chose:** Daanaa never receives, holds, routes, or takes a percentage of
+donations. Daanaa only links to organization's own donation page and verifies
+the link works. Optional features (private giving plan, export intents, manual
+handoff) store data in user's own wallet, not merchant-processing on behalf of
+orgs. **Why:** keeps Daanaa independent from money-transmitter and charitable-
+solicitation regulations; maintains neutrality (no incentive to take a cut);
+operationalizes Charter Promise #1. **Rejected:** donation processing, escrow,
+percentage fees, donor list consolidation, merchant-of-record role. See
+DONATION_BOUNDARY_POLICY.md.
+
+## 2026-07-14 — GATE 8 firewall verification (F-001)
+**Chose:** Implemented machine-checked privacy_check.sh GATE 8 to enforce Tier
+2 entity firewall: org_claims/waitlist/feedback data never flows to external
+AI or prospecting/EcoMargins code paths. Revised Charter language from "enforced
+in code" to "protected by machine-checked invariants and quarterly self-audits"
+to match actual implementation maturity. **Why:** public promises must not exceed
+enforceable controls; Charter credibility depends on wording accuracy. **Rejected:**
+keeping overstated "enforced in code" language before production audit evidence.
