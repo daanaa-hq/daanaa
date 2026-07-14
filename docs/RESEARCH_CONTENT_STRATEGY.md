@@ -57,14 +57,14 @@
 
 ### Content Calendar
 
-| Month | Report | White Paper | Hubs |
-|-------|--------|-------------|------|
-| July | Food Banking Q2 | — | Food Assistance (3 topics) |
-| Aug | Education Trends | — | Youth (3 topics) |
-| Sept | — | State of Nonprofit Sustainability | Senior Services |
-| Oct | Health Services Q3 | — | Health (3 topics) |
-| Nov | — | Why Small Orgs Win | Community |
-| Dec | Annual Wrap-Up | — | All causes (featured) |
+| Content Type | Frequency | Trigger | Purpose |
+|---|---|---|---|
+| **Monthly pipeline report** | 1x/month | After overnight pipeline completes | What changed in data (new orgs, score updates, trends) |
+| **Quarterly white papers** | 4x/year | Calendar | Thought leadership & methodology |
+| **Sector deep-dives** | 1-2x/month | As needed | Deep analysis linked from monthly report |
+| **Research articles** | As needed | Seasonal/topical | Explain findings + teach skills |
+
+**Monthly reports are the heartbeat** — everything else hangs off them.
 
 ---
 
