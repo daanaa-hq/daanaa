@@ -8840,6 +8840,245 @@ def volunteer_interest_get(ein: str):
     return jsonify({'ein': ein, 'count': count if count >= 5 else None, 'threshold': 5}), 200
 
 
+# ── Phase 9: Nonprofit Peer Network (Keystone) ───────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/peers', methods=['GET'])
+def nonprofit_find_peers(ein: str):
+    """Find similar orgs (peers by cause, size, geography, focus)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    cause = request.args.get('cause', '')
+    state = request.args.get('state', '')
+    size = request.args.get('size', '')  # micro, professional, established
+
+    db = get_db()
+    org = db.execute(
+        "SELECT NTEE1, STATE, total_revenue, merit_band_v5_label FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # Build peer query: similar cause, geography, size
+    query = """
+        SELECT DISTINCT re.EIN, re.organization_name, re.NTEE1, re.STATE, re.total_revenue,
+               re.merit_band_v5_label, re.merit_score_v5, re.mission
+        FROM registry_enriched re
+        WHERE re.EIN != ?
+          AND re.NTEE1 = ?
+          AND (? = '' OR re.STATE = ?)
+          AND (? = '' OR re.merit_band_v5_label = ?)
+        ORDER BY re.merit_score_v5 DESC
+        LIMIT 20
+    """
+
+    rows = db.execute(query, (ein, org[0], state, state, size, size)).fetchall()
+
+    peers = []
+    for row in rows:
+        peers.append({
+            'ein': row[0],
+            'name': row[1],
+            'cause': row[2],
+            'state': row[3],
+            'revenue': row[4],
+            'size_bracket': row[5],
+            'financial_context_score': row[6],
+            'mission': row[7]
+        })
+
+    return jsonify({'ein': ein, 'peer_count': len(peers), 'peers': peers}), 200
+
+
+@app.route('/api/nonprofit/<ein>/connect', methods=['POST'])
+def nonprofit_request_connection(ein: str):
+    """Request peer connection with another org."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    peer_ein = ''.join(c for c in data.get('peer_ein', '') if c.isdigit())[:10]
+    connection_type = (data.get('connection_type') or 'learning_peer').strip()
+    context = (data.get('context_note') or '').strip()[:500]
+
+    if not peer_ein or connection_type not in ('peer_mentor', 'collab_partner', 'learning_peer', 'sector_neighbor'):
+        return jsonify({'error': 'peer_ein and valid connection_type required'}), 400
+
+    # Check if peer exists
+    peer = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (peer_ein,)).fetchone()
+    if not peer:
+        return jsonify({'error': 'Peer organization not found'}), 404
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+
+    try:
+        db.execute(
+            """INSERT INTO nonprofit_peer_connections
+               (ein_from, ein_to, connection_type, status, initiated_by, initiated_at, context_note)
+               VALUES (?, ?, ?, 'pending', ?, ?, ?)""",
+            (ein, peer_ein, connection_type, ein, now, context)
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Connection already requested or exists'}), 409
+
+    return jsonify({
+        'ein_from': ein,
+        'ein_to': peer_ein,
+        'peer_name': peer[0],
+        'connection_type': connection_type,
+        'status': 'pending',
+        'message': 'Connection request sent. Peer org will be notified.'
+    }), 201
+
+
+@app.route('/api/nonprofit/<ein>/connections', methods=['GET'])
+def nonprofit_list_connections(ein: str):
+    """List all peer connections (incoming + outgoing)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    status = request.args.get('status', 'active')  # active, pending, all
+
+    db = get_db()
+
+    status_filter = f"AND status='{status}'" if status != 'all' else ""
+
+    query = f"""
+        SELECT ein_from, ein_to, connection_type, status, initiated_at
+        FROM nonprofit_peer_connections
+        WHERE (ein_from = ? OR ein_to = ?) {status_filter}
+        ORDER BY initiated_at DESC
+    """
+
+    rows = db.execute(query, (ein, ein)).fetchall()
+
+    connections = []
+    for row in rows:
+        is_initiator = row[0] == ein
+        other_ein = row[1] if is_initiator else row[0]
+        org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (other_ein,)).fetchone()
+
+        connections.append({
+            'org_ein': other_ein,
+            'org_name': org[0] if org else 'Unknown',
+            'type': row[2],
+            'status': row[3],
+            'you_initiated': is_initiator,
+            'created_at': row[4]
+        })
+
+    return jsonify({'ein': ein, 'connections': connections}), 200
+
+
+@app.route('/api/nonprofit/<ein>/case-study', methods=['POST'])
+def nonprofit_publish_case_study(ein: str):
+    """Publish a case study (what worked, what we learned)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    title = (data.get('title') or '').strip()[:200]
+    problem = (data.get('problem_statement') or '').strip()
+    solution = (data.get('solution_description') or '').strip()
+    results = (data.get('results_achieved') or '').strip()
+    lessons = (data.get('lessons_learned') or '').strip()
+    author_name = (data.get('author_name') or 'Organization').strip()[:100]
+    author_title = (data.get('author_title') or '').strip()[:100]
+
+    if not all([title, problem, solution, results, lessons]):
+        return jsonify({'error': 'All fields required (title, problem, solution, results, lessons)'}), 400
+
+    if any(len(x) < 20 for x in [problem, solution, results, lessons]):
+        return jsonify({'error': 'Descriptions must be at least 20 characters'}), 400
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+
+    db.execute(
+        """INSERT INTO nonprofit_case_studies
+           (ein, title, problem_statement, solution_description, results_achieved, lessons_learned,
+            author_name, author_title, published_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (ein, title, problem, solution, results, lessons, author_name, author_title, now)
+    )
+    db.commit()
+
+    study = db.execute(
+        "SELECT id FROM nonprofit_case_studies WHERE ein=? ORDER BY id DESC LIMIT 1",
+        (ein,)
+    ).fetchone()
+
+    return jsonify({
+        'id': study[0],
+        'ein': ein,
+        'title': title,
+        'published_at': now,
+        'message': 'Case study published. Other orgs will learn from your experience.'
+    }), 201
+
+
+@app.route('/api/nonprofit/case-studies', methods=['GET'])
+def nonprofit_list_case_studies():
+    """List published case studies (searchable by cause, challenge)."""
+    cause = request.args.get('cause', '')
+    keyword = request.args.get('keyword', '')
+    limit = request.args.get('limit', 20, type=int)
+
+    db = get_db()
+
+    query = """
+        SELECT cs.id, cs.ein, re.organization_name, cs.title,
+               cs.problem_statement, cs.results_achieved, cs.published_at, cs.helpful_count
+        FROM nonprofit_case_studies cs
+        JOIN registry_enriched re ON cs.ein = re.EIN
+        WHERE 1=1
+    """
+    params = []
+
+    if cause:
+        query += " AND re.NTEE1 = ?"
+        params.append(cause)
+
+    if keyword:
+        keyword_pattern = f"%{keyword}%"
+        query += " AND (cs.title LIKE ? OR cs.problem_statement LIKE ? OR cs.solution_description LIKE ?)"
+        params.extend([keyword_pattern, keyword_pattern, keyword_pattern])
+
+    query += " ORDER BY cs.published_at DESC LIMIT ?"
+    params.append(limit)
+
+    rows = db.execute(query, params).fetchall()
+
+    studies = []
+    for row in rows:
+        studies.append({
+            'id': row[0],
+            'ein': row[1],
+            'org_name': row[2],
+            'title': row[3],
+            'problem': row[4],
+            'results': row[5],
+            'published_at': row[6],
+            'helpful_count': row[7]
+        })
+
+    return jsonify({'count': len(studies), 'case_studies': studies}), 200
+
+
 # ── Phase 4: Nonprofit Content (Voice Amplification) ─────────────────────────
 
 @app.route('/api/nonprofit/<ein>/content', methods=['POST'])
