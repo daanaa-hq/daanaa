@@ -199,6 +199,8 @@ Every 6 months, or when adding a new steward, run this verification:
 - [ ] Spot-check 5 LESSONS.md entries are dated with evidence
 - [ ] Restore latest DB backup locally; verify 10 claims rows intact
 - [ ] Verify offsite backup exists (rclone) dated within last 24 hours
+- [ ] Review latest backup restore evidence in `institution/reviews/`
+- [ ] Review provider ownership and second-admin status in `institution/PROVIDER_ACCESS_MAP.md`
 - [ ] Verify droplet database is NEVER treated as source of truth
 - [ ] Verify successor can read SUCCESSION.md without contacting founder
 

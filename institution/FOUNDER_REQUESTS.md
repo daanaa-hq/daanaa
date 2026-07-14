@@ -62,3 +62,15 @@
 - Deadline: Before larger ingestion or outreach.
 - Can work continue: Yes, but avoid deleting local backups.
 
+
+### FR-2026-07-14-001: Complete Provider Access Map And Second Admin Assignment
+
+- Decision or input needed: Name the trusted second GitHub admin and confirm current owner/recovery status for domain/DNS, Cloudflare, DigitalOcean, Google Drive/rclone backup, Firebase/Google Cloud, AWS/S3 legacy paths, Stripe, Plausible, Sentry, Twilio/Jambonz, n8n/Chatwoot, and Metabase.
+- Why Daanaa cannot determine it safely: Provider-console access, billing ownership, MFA status, recovery codes, and admin lists are outside repository evidence and must not be guessed.
+- Recommended default: Treat all unverified providers as founder-dependent until confirmed in `institution/PROVIDER_ACCESS_MAP.md`.
+- Alternatives: If a provider is inactive or retired, mark it retired and document the replacement or removal path.
+- Expected impact: Reduces founder-only continuity risk and makes emergency recovery executable by a qualified successor.
+- Risk of delay: High for GitHub, DNS, DigitalOcean, and offsite backup; medium for inactive or experimental providers.
+- Required founder time: 30-60 minutes with agent support.
+- Deadline: Before public launch escalation, production credential rotation, or any larger outreach campaign.
+- Can work continue: Yes, but do not claim provider resilience or offsite disaster recovery is complete until verified.
