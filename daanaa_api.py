@@ -10147,6 +10147,183 @@ def nonprofit_coaching_history(ein: str):
     }), 200
 
 
+# ── PHASE 7: Institutional Memory ──────────────────────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/timeline', methods=['GET'])
+def nonprofit_timeline(ein: str):
+    """Get organizational timeline (founding, leadership, milestones, crises)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    events = db.execute(
+        """SELECT event_date, event_type, event_title, event_description, impact, sources
+           FROM org_timeline WHERE ein=?
+           ORDER BY event_date DESC""",
+        (ein,)
+    ).fetchall()
+
+    timeline = []
+    for row in events:
+        timeline.append({
+            'date': row[0],
+            'type': row[1],
+            'title': row[2],
+            'description': row[3],
+            'impact': row[4],
+            'sources': row[5]  # JSON
+        })
+
+    return jsonify({
+        'ein': ein,
+        'event_count': len(timeline),
+        'timeline': timeline
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/leadership-history', methods=['GET'])
+def nonprofit_leadership_history(ein: str):
+    """Get leadership history and transitions."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    leaders = db.execute(
+        """SELECT leader_name, position, start_date, end_date, tenure_years,
+                  background, accomplishments, successor_name
+           FROM org_leadership_history WHERE ein=?
+           ORDER BY start_date DESC""",
+        (ein,)
+    ).fetchall()
+
+    history = []
+    for row in leaders:
+        history.append({
+            'name': row[0],
+            'position': row[1],
+            'tenure': {
+                'start': row[2],
+                'end': row[3],
+                'years': row[4]
+            },
+            'background': row[5],
+            'accomplishments': row[6],
+            'successor': row[7]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'leader_count': len(history),
+        'leadership_history': history
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/knowledge-base', methods=['GET'])
+def nonprofit_knowledge_base(ein: str):
+    """Access organizational knowledge base (processes, contacts, history)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    knowledge_type = request.args.get('type', '')
+
+    db = get_db()
+
+    query = "SELECT knowledge_type, topic, content, owner_name, owner_contact, criticality, last_updated FROM org_knowledge_base WHERE ein=?"
+    params = [ein]
+
+    if knowledge_type:
+        query += " AND knowledge_type = ?"
+        params.append(knowledge_type)
+
+    query += " ORDER BY criticality DESC, last_updated DESC"
+
+    rows = db.execute(query, params).fetchall()
+
+    knowledge = []
+    for row in rows:
+        knowledge.append({
+            'type': row[0],
+            'topic': row[1],
+            'content': row[2],
+            'owner': row[3],
+            'owner_contact': row[4],
+            'criticality': row[5],
+            'last_updated': row[6]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'knowledge_count': len(knowledge),
+        'knowledge_base': knowledge
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/decision-log', methods=['GET'])
+def nonprofit_decision_log(ein: str):
+    """Get decision log and organizational learning."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    decisions = db.execute(
+        """SELECT decision_date, decision_title, decision_context, decision_details,
+                  decision_maker, rationale, outcomes, lessons
+           FROM org_decision_log WHERE ein=?
+           ORDER BY decision_date DESC LIMIT 20""",
+        (ein,)
+    ).fetchall()
+
+    log = []
+    for row in decisions:
+        log.append({
+            'date': row[0],
+            'title': row[1],
+            'context': row[2],
+            'decision': row[3],
+            'maker': row[4],
+            'rationale': row[5],
+            'outcomes': row[6],
+            'lessons': row[7]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'decision_count': len(log),
+        'decisions': log
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/board-evolution', methods=['GET'])
+def nonprofit_board_evolution(ein: str):
+    """Track board composition and governance evolution."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    snapshots = db.execute(
+        """SELECT snapshot_date, board_size, board_composition, board_diversity_score,
+                  key_committees, governance_improvements
+           FROM board_evolution WHERE ein=?
+           ORDER BY snapshot_date DESC""",
+        (ein,)
+    ).fetchall()
+
+    evolution = []
+    for row in snapshots:
+        evolution.append({
+            'date': row[0],
+            'board_size': row[1],
+            'composition': row[2],  # JSON
+            'diversity_score': row[3],
+            'committees': row[4],  # JSON
+            'improvements': row[5]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'snapshot_count': len(evolution),
+        'board_evolution': evolution
+    }), 200
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
