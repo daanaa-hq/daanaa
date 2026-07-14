@@ -1,158 +1,161 @@
-# EcoMargins Opportunity Strategy
-**Purpose:** Sustainable funding for Daanaa's long-term independence  
-**Authority:** Autonomous opportunity identification + planning  
-**Alignment:** Stewardship Principles P1 (mission), P7 (independence), P8 (never handle funds)  
+# EcoMargins Operational Strategy
+**Purpose:** Provide infrastructure + operations so Daanaa can stay pure  
+**Authority:** Support system (never influences platform)  
+**Governance:** Daanaa Charter v1.0 (10 binding nevers) + structural firewall  
 
 ---
 
-## Strategic Foundation
+## The Model
 
-**Daanaa Mission:** Help people make informed, sincere giving decisions  
-**EcoMargins Role:** Fund Daanaa's independence through aligned services  
-**Separation:** Daanaa platform ≠ EcoMargins services (firewall in institution/VENDOR-POLICY.md)  
+**Daanaa** = The public platform (must stay true to charter)
+- Free forever (core features)
+- No ads, no sponsored results, no paid placement
+- Never takes a cut of donations
+- Never handles funds
+- Never sells or uses donor data
+- Never shames organizations
+- Never lets money shape rankings
 
-**The Goal:** By 2028, EcoMargins generates enough revenue that Daanaa can operate indefinitely without external funding, VC, or donor pressure.
+**EcoMargins Consulting** = The operational backbone
+- Hires staff (Daanaa doesn't employ people directly initially)
+- Manages infrastructure (servers, databases, backups)
+- Provides boring operations work (payroll, legal, compliance)
+- Does consulting/services business under its own name
+- Completely separated from Daanaa via structural firewall
+
+**The Firewall** (machine-checked + quarterly audits):
+- EcoMargins never markets to Daanaa users
+- EcoMargins services never appear inside Daanaa
+- Data is partitioned (Daanaa data stays in Daanaa)
+- Revenue doesn't influence Daanaa's truth/rankings
+- EcoMargins business success doesn't depend on Daanaa secrets
+
+**The Goal:** By 2028, EcoMargins generates enough to fund Daanaa's operations indefinitely, so Daanaa never needs to compromise the charter.
 
 ---
 
-## Revenue Opportunity Tiers
+## What EcoMargins Does (Support Work)
 
-### Tier 1: Data Licensing (Low Effort, High Margin)
-**What:** Anonymized, aggregated nonprofit data for research + impact investing
+### Infrastructure & Operations
+- Manages Daanaa's servers, databases, backups
+- Handles hiring, payroll, legal compliance
+- Maintains infrastructure that Daanaa runs on
+- Provides 24/7 operational support
+- Does research and optimization work
+
+### Research & Services (Under EcoMargins Brand, NOT Inside Daanaa)
+- Offers consulting to nonprofits (financial health, succession, fundraising)
+- Publishes research based on anonymized Daanaa data
+- Provides training and workshops (separately, not on Daanaa platform)
+- Builds tools for organizations (outside Daanaa)
+
+**Key:** None of this ever appears inside Daanaa or influences Daanaa's platform.
+
+---
+
+## Revenue Opportunities (EcoMargins Business)
+
+### Tier 1: Anonymized Research Data (No Firewall Risk)
+**What:** Publish research based on Daanaa's public data (never trades on Daanaa's trust)
 
 **Opportunities:**
-1. **Academic Licensing** ($5-50K/study)
+1. **Academic Partnerships** ($5-50K/study)
    - Universities studying nonprofit ecosystems
-   - Research on sector health, funding flows, impact
-   - Our 1.7M org database + financial context = unique research asset
-   - Example: "State of [Cause] 2026" reports (Phase 13 output)
+   - Licensing anonymized datasets for research
+   - EcoMargins publishes under its own name (not Daanaa's)
+   - Example: "State of Education 2026" research paper
 
-2. **Impact Investor Intelligence** ($10-100K/year)
-   - Foundations wanting sector-level insights
-   - Funding flow analysis (who's underfunded?)
-   - Coverage gap maps (where service is weak?)
-   - Peer benchmarking for portfolio construction
-   - Data: Phase 10 (sector diagnostics) + Phase 13 (impact measurement)
+2. **Sector Research Reports** ($0-20K cost, funded by future grants)
+   - Publish sector health analysis (why we do this: Daanaa's mission is clarity)
+   - Position EcoMargins as nonprofit research leader
+   - Use to attract consulting clients
+   - Never sells inside Daanaa, never premium versions
 
-3. **Nonprofit Network Analysis** ($5-25K)
-   - Peer connection maps (who should collaborate?)
-   - Funders wanting to find complementary organizations
-   - Data: Phase 9 (peer network) + Phase 10 (collaboration signals)
+3. **Foundation & Investor Intelligence** (consulting arm, separate)
+   - EcoMargins offers consulting: "sector analysis for your giving"
+   - Uses public Daanaa data (already available)
+   - Separate from Daanaa, separate brand
+   - Doesn't influence what Daanaa shows
 
-**Revenue Model:** Annual licenses, per-dataset fees, consortium pricing  
-**Risk:** None (data is anonymized, aggregated, public-sourced)  
-**Margin:** 85%+ (minimal ops cost once pipeline is built)
-
----
-
-### Tier 2: Premium Nonprofit Tools (Medium Effort, Medium Margin)
-**What:** Paid tiers of Phase 11-12 features (financial coaching + succession planning)
-
-**Opportunities:**
-1. **Premium Financial Coaching** ($50-200/month per org)
-   - Quarterly financial health reviews (Phase 11)
-   - Peer benchmarking + trend analysis
-   - Stress testing scenarios
-   - Goal tracking + milestone planning
-   - Peer-to-peer learning cohorts
-   - Access to CFO mentor network (Phase 8 marketplace)
-   
-   **Market:** 50K mid-stage nonprofits (annual revenue $500K-$3M) struggling with financial discipline  
-   **Pricing:** $100/month = $1.2M ARR at 10% penetration  
-   **Data source:** Phase 11 (financial health coaching)
-
-2. **Succession Planning Toolkit** ($50-100/month, annual onboarding)
-   - Readiness assessment (Phase 12)
-   - Transition planning templates
-   - Board development coaching
-   - Knowledge transfer documentation
-   - Peer cohort for leaders going through transition
-   
-   **Market:** ~5K nonprofits/year in leadership transition  
-   **Pricing:** $600 one-time + $50/month for 12-month process = $1.2M potential  
-   **Data source:** Phase 12 (succession planning)
-
-3. **Impact Measurement Consulting** ($2-10K per project)
-   - Help orgs implement outcome frameworks (Phase 13)
-   - Validation of impact claims
-   - Report generation for funders
-   - Integration with donor impact tracking (Phase 6)
-   
-   **Market:** Foundations requiring impact measurement from grantees  
-   **Pricing:** $5K × 500 orgs/year = $2.5M potential  
-
-**Revenue Potential:** $3-5M at scale (Year 3)  
-**Margin:** 60-70% (requires staff for coaching)
+**Revenue Model:** Consulting fees for analysis work, research grants  
+**Risk:** None (data is public, analysis is separate from platform)  
+**Margin:** Variable (research is mission-driven, consulting is profitable)
 
 ---
 
-### Tier 3: Institutional Services (High Effort, Transformative)
-**What:** Build organizational capacity for small nonprofits
+### Tier 2: Nonprofit Consulting Services (Separate from Daanaa)
+**What:** EcoMargins offers professional services using Daanaa's public insights (pure consulting)
 
 **Opportunities:**
-1. **Nonprofit CFO Services** (Via EcoMargins Consulting)
-   - Financial management for orgs too small for full-time CFO ($500K-$2M revenue)
-   - Bookkeeping, budgeting, grant compliance
-   - Real-time financial dashboards
-   - Quarterly strategic reviews
+1. **Financial Health Coaching** ($100-300/month via EcoMargins, not Daanaa)
+   - EcoMargins hires fractional CFOs
+   - Offers quarterly financial reviews + planning
+   - Uses public benchmarks (available to all orgs)
+   - Peer cohorts (similar to what Daanaa shows, but private coaching)
    
-   **Market:** 20K small nonprofits underserved by traditional consulting  
-   **Pricing:** $500-1500/month = $6-36M market  
-   **Model:** Hire remote fractional CFOs, charge 2-3x cost  
-   **Margin:** 40-50%  
-   **Risk:** Requires actual staff (not just data/software)
+   **Market:** 50K mid-stage nonprofits ($500K-$3M revenue)  
+   **Model:** Hire CFOs, charge 2-3x cost  
+   **Revenue at scale:** $1-2M annually (consulting margin)
+   **Key:** Service is separate from Daanaa; Daanaa users access Daanaa (free), then optionally hire EcoMargins
 
-2. **Nonprofit Board Development** (Via marketplace + services)
-   - Recruit + train board members
-   - Governance consulting
-   - Board effectiveness assessments
-   - Peer-learning board cohorts
+2. **Succession & Board Development** ($2-10K per engagement via EcoMargins)
+   - EcoMargins hires organizational coaches
+   - Offers transition planning + board training
+   - Separate brand, separate contracts
+   - Doesn't appear inside Daanaa
    
-   **Market:** Orgs struggling with board dysfunction  
-   **Pricing:** $2-5K per engagement  
-   **Revenue at scale:** $1-2M  
+   **Market:** 5K orgs/year in transition  
+   **Revenue at scale:** $500K-$1M annually  
 
-3. **Grant Writing Services** (Via marketplace partnerships)
-   - Partner with expert grant writers
-   - Provide market intelligence from Phase 10 (where funding flows)
-   - Help match orgs to funders algorithmically
-   - Charge finder's fee (% of grant awarded)
+3. **Grant Writing & Development** (Marketplace model via EcoMargins)
+   - Partner with grant writers
+   - EcoMargins does matchmaking + coordination
+   - Takes small finder fee (3-5% of grants) or hourly fees
    
-   **Market:** $1.5B in grants awarded annually to nonprofits  
-   **Fee model:** 2-5% of grant size  
-   **Risk:** Low (marketplace model, not direct responsibility)
+   **Market:** $1.5B annual grant volume  
+   **Revenue potential:** $500K-$1M annually  
+
+**Revenue Potential:** $2-4M at scale (Year 3)  
+**Margin:** 40-60% (requires hiring quality staff)  
+**Firewall:** All services are EcoMargins branded, not Daanaa. Never appear in platform.
+
+---
+
 
 ---
 
 ## Revenue Projection (3-Year Plan)
 
 ```
-2026 (Pilot)
-├─ Data licensing:           $50K
-├─ Premium coaching (beta):  $10K
-├─ Consulting (ad-hoc):      $5K
-└─ Total:                    $65K
+2026 (Foundation)
+├─ Research/publishing:      $20K (grant-funded)
+├─ Consulting (pilot):       $10K (1-2 clients)
+├─ Infrastructure costs:     ($50K) from founder
+└─ Net:                      -$20K (building foundation)
 
-2027 (Scale)
-├─ Data licensing:           $200K
-├─ Premium coaching:         $500K
-├─ Succession planning:      $300K
-├─ Consulting partnerships:  $150K
-└─ Total:                    $1.15M
+2027 (Growth)
+├─ Financial coaching:       $300K (20+ orgs @ $100-150/mo)
+├─ Board development:        $150K (15-20 engagements)
+├─ Grant writing services:   $100K (finder fees)
+├─ Research grants:          $50K (from foundations)
+└─ Total:                    $600K → covers 60% of Daanaa ops
 
 2028 (Sustainable)
-├─ Data licensing:           $500K
-├─ Premium nonprofit tools:  $2M
-├─ Institutional services:   $1.5M
-├─ Partnership finder fees:  $500K
-└─ Total:                    $4.5M → covers Daanaa ops indefinitely
+├─ Financial coaching:       $800K (80+ orgs scaling)
+├─ Board development:        $300K (scaling + reputation)
+├─ Grant writing:            $250K (network effect)
+├─ Research & publications:  $100K (grants + licensing)
+├─ Other consulting:         $200K (ad-hoc projects)
+└─ Total:                    $1.65M → covers 100%+ of Daanaa ops
 ```
 
-**Target:** $3-5M ARR by 2028 = $30-50K/month = sustainable ops budget for Daanaa
+**Target:** $1.5-2M ARR by 2028 = $125-165K/month = sustainable ops for Daanaa + team growth
+
+**Why lower than original plan:** Daanaa doesn't need $3-5M. Modest consulting revenue + grants cover ops. Keeps EcoMargins focused on quality, not growth pressure.
 
 ---
 
-## Autonomous Work to Enable Revenue
+## Autonomous Work to Enable EcoMargins Operations
 
 ### Data Pipeline (Week 1-2)
 - [x] Build financial health scoring
@@ -162,25 +165,23 @@
 - [ ] Build funding flow analysis
 - [ ] Create coverage gap reports
 
-**Output:** Data feeds Phase 13 (research datasets) + Tier 1 revenue
+**Output:** Public data for research + sector intelligence
 
-### Premium Tool Setup (Week 2-3)
-- [ ] Build coaching dashboard (Phase 11 UI)
-- [ ] Create succession tracker (Phase 12 UI)
-- [ ] Payment integration (Stripe)
-- [ ] Access control + billing system
-- [ ] Org onboarding flow
+### Internal Operations (Founder Work)
+- [ ] Legal structure (EcoMargins LLC as operating company)
+- [ ] Hiring plan (first consultant/CFO hire)
+- [ ] Service pricing + positioning
+- [ ] Client acquisition strategy
 
-**Output:** Enables Tier 2 revenue ($50-200/month offerings)
+**Output:** EcoMargins operations can begin
 
-### Marketplace Infrastructure (Week 3-4)
-- [ ] Vendor discovery + matching algorithm
-- [ ] Service provider ratings + reviews
-- [ ] Engagement tracking + outcome recording
-- [ ] Payment + commission splitting
-- [ ] Quality assurance framework
+### Consulting Delivery (Not Platform)
+- [ ] Develop financial coaching curriculum
+- [ ] Create succession planning templates
+- [ ] Build grant writing partner network
+- [ ] Quality assurance process
 
-**Output:** Enables Tier 3 revenue (services + partnerships)
+**Output:** EcoMargins can deliver paid services without touching Daanaa
 
 ---
 
