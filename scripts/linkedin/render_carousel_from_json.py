@@ -61,19 +61,15 @@ def render_carousel_from_json(json_data, output_dir=None):
                 total=total_slides
             )
         elif slide_type == "content":
-            # Combine story + source into body
-            body_text = slide.get("story", "")
-            source_text = slide.get("source", "")
-            if source_text:
-                body_text += f"\n\n— {source_text}"
-
             img = gen.slide_content(
                 fonts,
                 label=slide["label"],
                 headline=slide["headline"],
-                body=body_text,
+                body=slide.get("story", ""),
                 accent_stat=slide.get("accent_stat", ""),
                 accent_label=slide.get("accent_label", ""),
+                source=slide.get("source", ""),
+                link=slide.get("link", ""),
                 slide_n=slide_num,
                 total=total_slides
             )

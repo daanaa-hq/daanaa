@@ -63,6 +63,7 @@ def _font(name: str, size: int) -> ImageFont.FreeTypeFont:
 
 def load_fonts():
     return {
+        "display_huge": _font("CormorantGaramond-Italic.ttf", 190),
         "display_xl":  _font("CormorantGaramond-Italic.ttf", 108),
         "display_lg":  _font("CormorantGaramond-Italic.ttf", 80),
         "display_md":  _font("CormorantGaramond-Italic.ttf", 60),
@@ -116,31 +117,69 @@ def signature_accent(draw, x, y, size=40, variant="circle"):
     elif variant == "square":
         draw.rectangle([x, y, x + size, y + size], fill=SOFT_GOLD, outline=BRIGHT_GOLD, width=2)
 
-def draw_stat_bar(draw, label, value, percentage, x, y, max_w=300, colors=None):
-    """Draw a visual percentage bar for a statistic.
+def draw_link_line(draw, fonts, text, y):
+    """Engagement line pointing readers at the platform. Gold, centered."""
+    draw.text((56, y), text, font=fonts["label"], fill=BRIGHT_GOLD)
 
-    Creates a dramatic visual representation of data:
-    [====40%===] 40% of nonprofits
+def parse_stat_visual(stat: str):
+    """Infer a data visual from the stat text.
+
+    '48%'   -> ('bar', 48, 100)
+    '1 in 3' -> ('dots', 1, 3)
+    '6 mo'  -> ('segments', 6, 12)
     """
-    if colors is None:
-        colors = {"bar": SOFT_GOLD, "bg": COOL_GREY, "text": WARM_CREAM}
+    stat = stat.strip().lower()
+    m = re.match(r'^(\d+)\s*%$', stat)
+    if m:
+        return ("bar", int(m.group(1)), 100)
+    m = re.match(r'^(\d+)\s+in\s+(\d+)$', stat)
+    if m:
+        return ("dots", int(m.group(1)), int(m.group(2)))
+    m = re.match(r'^(\d+)\s*mo', stat)
+    if m:
+        return ("segments", int(m.group(1)), 12)
+    return None
 
-    bar_h = 12
-    bar_y = y + 30
+VISUAL_H = 110  # vertical space a stat visual occupies
 
-    # Background bar (unfilled)
-    draw.rectangle([x, bar_y, x + max_w, bar_y + bar_h], fill=colors["bg"])
+def draw_stat_visual(draw, visual, x, y, max_w):
+    """Render the visual proof of the stat. Returns bottom y."""
+    kind, value, total = visual
 
-    # Filled portion
-    filled_w = max(int(max_w * (percentage / 100)), 4)
-    draw.rectangle([x, bar_y, x + filled_w, bar_y + bar_h], fill=colors["bar"])
+    if kind == "bar":
+        bar_h = 44
+        # Track
+        draw.rounded_rectangle([x, y, x + max_w, y + bar_h], radius=8, fill=COOL_GREY)
+        # Fill
+        fill_w = max(int(max_w * value / total), 12)
+        draw.rounded_rectangle([x, y, x + fill_w, y + bar_h], radius=8, fill=SOFT_GOLD)
+        return y + bar_h + 24
 
-    # Label
-    draw.text((x, y), label, font=fonts.get("body_sm", None), fill=colors["text"])
-    # Percentage text
-    draw.text((x + max_w + 12, y + 8), f"{percentage}%", font=fonts.get("label_sm", None), fill=SOFT_GOLD)
+    if kind == "dots":
+        # Big circles: value filled, rest outlined
+        d = 84
+        gap = 36
+        cx = x
+        for i in range(total):
+            if i < value:
+                draw.ellipse([cx, y, cx + d, y + d], fill=SOFT_GOLD)
+            else:
+                draw.ellipse([cx, y, cx + d, y + d], outline=COOL_GREY, width=4)
+            cx += d + gap
+        return y + d + 24
 
-    return bar_y + bar_h + 20
+    if kind == "segments":
+        # Month blocks: value filled of total
+        seg_w = (max_w - (total - 1) * 10) // total
+        seg_h = 44
+        cx = x
+        for i in range(total):
+            color = SOFT_GOLD if i < value else COOL_GREY
+            draw.rounded_rectangle([cx, y, cx + seg_w, y + seg_h], radius=6, fill=color)
+            cx += seg_w + 10
+        return y + seg_h + 24
+
+    return y
 
 def slide_counter(draw, fonts, current, total):
     label = f"{current} / {total}"
@@ -211,7 +250,8 @@ def slide_cover(fonts, headline: str, sub: str, slide_n: int, total: int) -> Ima
 
 def slide_content(fonts, label: str, headline: str, body: str,
                   slide_n: int, total: int,
-                  accent_stat: str = "", accent_label: str = "") -> Image.Image:
+                  accent_stat: str = "", accent_label: str = "",
+                  source: str = "", link: str = "") -> Image.Image:
     img = gradient_bg()
     draw = ImageDraw.Draw(img)
 
@@ -222,39 +262,82 @@ def slide_content(fonts, label: str, headline: str, body: str,
     draw.text((56, 68), label.upper(), font=fonts["label"], fill=SOFT_GOLD)
     gold_rule(draw, 56, 102)
 
-    # Headline with premium spacing
+    # Headline
     headline = strip_html_tags(headline)
     body = strip_html_tags(body)
-    y = 148
+    y = 150
     y = draw_text_block(draw, headline, fonts["display_md"], WARM_CREAM,
                         56, y, W - 112, line_gap=10)
+    header_bottom = y
 
-    # SIGNATURE STAT BLOCK — visual hierarchy with supporting elements
+    # Dry-run measure the stat/body/source block so we can vertically
+    # center it between the headline and the link line (kills dead space)
+    visual = parse_stat_visual(strip_html_tags(accent_stat)) if accent_stat else None
+
+    def _block_height():
+        h = 0
+        if accent_stat:
+            f = fonts["display_huge"] if len(strip_html_tags(accent_stat)) <= 5 else fonts["display_xl"]
+            bb = draw.textbbox((56, 0), strip_html_tags(accent_stat), font=f)
+            h += bb[3] + 28 + 3 + 28  # stat + gap + rule + gap
+            if accent_label:
+                lines = wrap_text(strip_html_tags(accent_label), fonts["body_lg"], W - 112, draw)
+                bb = draw.textbbox((0, 0), "Ag", font=fonts["body_lg"])
+                h += len(lines) * ((bb[3] - bb[1]) + 8)
+            if visual:
+                h += 36 + VISUAL_H
+        h += 44
+        lines = wrap_text(body, fonts["body_lg"], W - 112, draw)
+        bb = draw.textbbox((0, 0), "Ag", font=fonts["body_lg"])
+        h += len(lines) * ((bb[3] - bb[1]) + 12)
+        if source:
+            h += 36 + 30
+        return h
+
+    avail_bottom = H - 210  # above the link line
+    block_h = _block_height()
+    slack = avail_bottom - header_bottom - block_h
+    y = header_bottom + max(40, slack // 2)
+
+    # THE NUMBER — dominant, measured placement (no overlap)
     if accent_stat:
         accent_stat = strip_html_tags(accent_stat)
-        y += 50  # Extra breathing room before stat
+        # Scale down if the stat is long ("6 months" vs "48%")
+        stat_font = fonts["display_huge"] if len(accent_stat) <= 5 else fonts["display_xl"]
+        draw.text((56, y), accent_stat, font=stat_font, fill=BRIGHT_GOLD)
+        # Measure the ACTUAL rendered extent at this position
+        stat_bbox = draw.textbbox((56, y), accent_stat, font=stat_font)
+        y = stat_bbox[3] + 28
 
-        # Visual accent box (subtle background)
-        stat_box_x, stat_box_y = 48, y - 20
-        stat_box_w, stat_box_h = W - 96, 180
-        draw.rectangle([stat_box_x, stat_box_y, stat_box_x + stat_box_w, stat_box_y + stat_box_h],
-                       fill=DARK_SURF, outline=SOFT_GOLD, width=2)
+        # Gold rule anchors number to its meaning
+        gold_rule(draw, 56, y, w=120)
+        y += 28
 
-        # HUGE stat number
-        draw.text((56, y + 20), accent_stat, font=fonts["display_xl"], fill=BRIGHT_GOLD)
-        bbox = draw.textbbox((0, 0), accent_stat, font=fonts["display_xl"])
-        stat_height = bbox[3] - bbox[1]
-
-        # Stat label (description)
         if accent_label:
             accent_label = strip_html_tags(accent_label)
-            draw.text((56, y + stat_height + 28), accent_label, font=fonts["body_md"], fill=WARM_CREAM)
+            y = draw_text_block(draw, accent_label, fonts["body_lg"], WARM_CREAM,
+                                56, y, W - 112, line_gap=8)
 
-        y += stat_box_h + 30
+        # Visual proof of the number (bar / dots / segments)
+        if visual:
+            y += 36
+            y = draw_stat_visual(draw, visual, 56, y, W - 112)
 
-    # Body text with generous spacing
-    y += 20
-    draw_text_block(draw, body, fonts["body_md"], MUTED_CREAM, 56, y, W - 112, line_gap=8)
+    # Body — larger type, fills the slide
+    y += 44
+    y = draw_text_block(draw, body, fonts["body_lg"], MUTED_CREAM,
+                        56, y, W - 112, line_gap=12)
+
+    # Source — its own quiet line, never merged into the body
+    if source:
+        source = strip_html_tags(source)
+        y += 36
+        draw.text((56, y), f"Source: {source}", font=fonts["body_sm"], fill=MUTED_CREAM)
+
+    # Engagement line — every slide points at the platform
+    if link:
+        draw.text((56, H - 150), f"See the data  →  {link}",
+                  font=fonts["label"], fill=BRIGHT_GOLD)
 
     logo_stamp(img)
     footer_url(draw, fonts)

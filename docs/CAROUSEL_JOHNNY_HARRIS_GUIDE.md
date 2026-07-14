@@ -267,6 +267,30 @@ Each of these 20 topics works with the investigative structure:
 
 ---
 
+## The Stewardship Gate (required before publishing)
+
+Investigation without shame. Every carousel must pass STEWARDSHIP.md
+P4 (small orgs deserve fairness) and P5 (we do not weaponize transparency):
+
+**Reframe deficit language into giving language:**
+
+| Judgmental (never publish) | Stewardship voice (publish) |
+|---|---|
+| "Small orgs have zero cushion" | "Small organizations run lean by choice" |
+| "One crisis away from closing" | "A donor who stays with them keeps services running" |
+| "Admirable, but fragile" | "That commitment is real, and steady giving carries it through" |
+| "See who needs reserves most" | "Know the organizations you support" |
+| "Who's failing" | "What steady giving makes possible" |
+
+**The test:** Would a small nonprofit founder reading this slide feel
+exposed, or feel seen? If exposed, rewrite. The data stays; the frame
+shifts from *their weakness* to *the donor's opportunity*.
+
+**CTA rule:** Never invite donors to browse struggling organizations.
+Invite them to understand and stand behind the ones they support.
+
+---
+
 ## Testing Your Johnny Harris Carousel
 
 Before publishing, ask:

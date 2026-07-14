@@ -1,0 +1,59 @@
+{
+  "carousel_type": "sector_insight",
+  "title": "The Reserve Story",
+  "slides": [
+    {
+      "slide_type": "cover",
+      "headline": "Nearly Half of Nonprofits Operate Month to Month",
+      "subheadline": "What steady giving makes possible for 1.7M organizations"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 1: The Data",
+      "headline": "Every dollar goes to the mission",
+      "accent_stat": "48%",
+      "accent_label": "of nonprofits operate with slim emergency reserves",
+      "story": "Most nonprofits spend what they receive on the work itself. That commitment is real, and it leaves little room when a grant ends. Steady giving is what carries the work through.",
+      "source": "IRS 990 filings, 1.7M active U.S. nonprofits",
+      "link": "daanaa.org/sector-health"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 2: The Smallest Give the Most",
+      "headline": "Small organizations run lean by choice",
+      "accent_stat": "40%",
+      "accent_label": "of small nonprofits hold less than 3 months of funds",
+      "story": "Organizations under $500K put nearly every dollar into programs. A donor who stays with them through a funding gap keeps services running for a whole community.",
+      "source": "Daanaa financial health analysis, 2024",
+      "link": "daanaa.org/sector-health"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 3: The Multiplier",
+      "headline": "Reserves turn stability into growth",
+      "accent_stat": "6 mo",
+      "accent_label": "of reserves lets a nonprofit plan years ahead",
+      "story": "A nonprofit with six months of reserves can weather funding shifts and commit to long range plans. Reserve support is not charity on top of charity. It is infrastructure.",
+      "source": "FSG nonprofit management research, 2023",
+      "link": "daanaa.org/methodology"
+    },
+    {
+      "slide_type": "content",
+      "label": "Key Insight",
+      "headline": "Steady giving is an impact multiplier",
+      "accent_stat": "1 in 3",
+      "accent_label": "nonprofits could reach stable footing with steady support",
+      "story": "Donors who give steadily do more than fund programs. They give organizations the footing to plan, grow, and serve with confidence.",
+      "source": "Daanaa nonprofit analysis",
+      "link": "daanaa.org/directory"
+    },
+    {
+      "slide_type": "cta",
+      "headline": "Know the organizations you support",
+      "body_lines": [
+        "Financial context for 1.7M nonprofits.",
+        "Free. Transparent. No rankings, no agenda."
+      ]
+    }
+  ]
+}
