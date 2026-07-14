@@ -9483,6 +9483,221 @@ def sector_funding_flows(cause_area: str):
     }), 200
 
 
+# ── PHASE 5: Trust Verification ────────────────────────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/verifications', methods=['GET'])
+def nonprofit_get_verifications(ein: str):
+    """Get all verifications for an org (public, shows badge credibility)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    # Get all active verifications
+    rows = db.execute(
+        """SELECT verification_type, status, confidence_score, verified_at, expires_at, notes
+           FROM nonprofit_verifications
+           WHERE ein = ? AND status IN ('verified', 'expired')
+           ORDER BY verified_at DESC""",
+        (ein,)
+    ).fetchall()
+
+    verifications = []
+    for row in rows:
+        verifications.append({
+            'type': row[0],
+            'status': row[1],
+            'confidence': row[2],
+            'verified_at': row[3],
+            'expires_at': row[4],
+            'notes': row[5]
+        })
+
+    # Get badges
+    badges = db.execute(
+        """SELECT badge_type, badge_name, badge_description, earned_at
+           FROM nonprofit_badges
+           WHERE ein = ? AND is_active = 1
+           ORDER BY display_order ASC""",
+        (ein,)
+    ).fetchall()
+
+    badge_list = []
+    for row in badges:
+        badge_list.append({
+            'type': row[0],
+            'name': row[1],
+            'description': row[2],
+            'earned_at': row[3]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'verification_count': len(verifications),
+        'badge_count': len(badge_list),
+        'verifications': verifications,
+        'badges': badge_list
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/verify/<verification_type>', methods=['POST'])
+def nonprofit_start_verification(ein: str, verification_type: str):
+    """Request verification of a specific claim (website, donation link, mission, etc)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    if verification_type not in ('website_active', 'donate_link_verified', 'mission_claimed', 'leadership_verified', 'financial_filed'):
+        return jsonify({'error': 'invalid verification_type'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+
+    try:
+        db.execute(
+            """INSERT INTO nonprofit_verifications
+               (ein, verification_type, status, verification_method, created_at, updated_at)
+               VALUES (?, ?, 'pending', 'self_attested', ?, ?)""",
+            (ein, verification_type, now, now)
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Verification already in progress for this type'}), 409
+
+    # Log in audit trail
+    db.execute(
+        """INSERT INTO verification_audit_log
+           (ein, action, actor, reason, created_at)
+           VALUES (?, 'verification_started', 'nonprofit', ?, ?)""",
+        (ein, f'Requested {verification_type} verification', now)
+    )
+    db.commit()
+
+    return jsonify({
+        'ein': ein,
+        'verification_type': verification_type,
+        'status': 'pending',
+        'message': 'Verification request submitted. We will review within 48 hours.'
+    }), 201
+
+
+@app.route('/api/nonprofit/<ein>/verification-timeline', methods=['GET'])
+def nonprofit_verification_timeline(ein: str):
+    """Get chronological verification timeline for transparency."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    rows = db.execute(
+        """SELECT event, event_type, status, result, details, created_at
+           FROM verification_timeline
+           WHERE ein = ?
+           ORDER BY created_at DESC""",
+        (ein,)
+    ).fetchall()
+
+    timeline = []
+    for row in rows:
+        timeline.append({
+            'event': row[0],
+            'type': row[1],
+            'status': row[2],
+            'result': row[3],
+            'details': row[4],
+            'timestamp': row[5]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'event_count': len(timeline),
+        'timeline': timeline
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/badge-progress', methods=['GET'])
+def nonprofit_badge_progress(ein: str):
+    """Show which badges org is eligible for and progress toward each."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    # Get org details
+    org = db.execute(
+        "SELECT organization_name, website, donate_url FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # Check eligibility for each badge type
+    progress = {}
+
+    # Verified Org: website active + donate link + mission
+    website_v = db.execute(
+        "SELECT status FROM nonprofit_verifications WHERE ein=? AND verification_type='website_active'",
+        (ein,)
+    ).fetchone()
+    donate_v = db.execute(
+        "SELECT status FROM nonprofit_verifications WHERE ein=? AND verification_type='donate_link_verified'",
+        (ein,)
+    ).fetchone()
+    mission_v = db.execute(
+        "SELECT status FROM nonprofit_verifications WHERE ein=? AND verification_type='mission_claimed'",
+        (ein,)
+    ).fetchone()
+
+    verified_steps = sum([website_v and website_v[0]=='verified', donate_v and donate_v[0]=='verified', mission_v and mission_v[0]=='verified'])
+    progress['verified_org'] = {
+        'name': 'Verified Organization',
+        'description': 'Claims verified: website active, donation link working, mission current',
+        'progress': f'{verified_steps}/3',
+        'earned': verified_steps == 3
+    }
+
+    # Active Mission: mission claimed and on website
+    mission_claimed = mission_v and mission_v[0] == 'verified'
+    progress['active_mission'] = {
+        'name': 'Active Mission',
+        'description': 'Mission statement verified on organization website',
+        'progress': '1/1' if mission_claimed else '0/1',
+        'earned': mission_claimed
+    }
+
+    # Financial Health: 990 filed in last 2 years
+    financial_v = db.execute(
+        "SELECT status FROM nonprofit_verifications WHERE ein=? AND verification_type='financial_filed'",
+        (ein,)
+    ).fetchone()
+    progress['financial_health'] = {
+        'name': 'Financial Health',
+        'description': 'Recent 990 Form filed on public record',
+        'progress': '1/1' if financial_v and financial_v[0]=='verified' else '0/1',
+        'earned': financial_v and financial_v[0]=='verified'
+    }
+
+    # Responsive: replies to queries within 30 days
+    progress['responsive'] = {
+        'name': 'Responsive',
+        'description': 'Responds to donor inquiries and verifications promptly',
+        'progress': 'In Progress',
+        'earned': False
+    }
+
+    return jsonify({
+        'ein': ein,
+        'org_name': org[0],
+        'badge_progress': progress,
+        'total_badges_earned': sum([1 for v in progress.values() if v['earned']])
+    }), 200
+
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
