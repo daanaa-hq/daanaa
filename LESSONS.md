@@ -487,3 +487,23 @@ the rollback, so a genuinely broken deploy would have been left live.
 **Preventing rule:** health checks that gate rollback must (a) retry transient
 probes, and (b) treat the public smoke test as the source of truth — pages users
 see, not unit state. Rollback logic must be reachable from every failure path.
+
+## 2026-07-15 — Crude health heuristic nearly labeled 49% of nonprofits "CRISIS"
+
+**Symptom:** First full run of the Phase 11 financial health pipeline classified
+264K of 537K orgs (49%) as CRISIS, based on a single-year operating-margin proxy.
+
+**Root cause:** New heuristic written from scratch instead of checking for the
+existing validated methodology. `merit_health_signal_v5` already covers 465K orgs
+and deliberately caps its worst label at CAUTION (never CRISIS) — the vocabulary
+choice is a Charter Article 7 / Stewardship P5 decision, not a technical one.
+
+**Preventing rule:** Before writing any classifier that labels organizations,
+check whether a validated scorer already exists (grep for `_v5`, check
+registry_enriched columns). If a user-facing label is harsher than the existing
+methodology's vocabulary, that is a stewardship violation, not a tuning choice.
+A single-year snapshot is never enough evidence for a "crisis" verdict.
+
+**Fix:** Pipeline now sources health_signal from merit_health_signal_v5
+(confidence 0.85), falls back to a heuristic whose floor is CAUTION
+(confidence ≤0.55). Distribution now: 250K HEALTHY / 224K CAUTION / 64K STABLE.
