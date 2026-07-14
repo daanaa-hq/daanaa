@@ -8631,7 +8631,8 @@ def _dashboard_financial_narrative(row) -> str:
 
     Board condition (2026-07-13): the narrative encourages and never wounds.
     Facts are never hidden — the signal and numbers ship alongside — but the
-    language is context, not a verdict, especially when the signal is CAUTION.
+    language is mission-aligned: nonprofits run lean by design. "Need support"
+    invites action; "caution" shames for healthy behavior.
     """
     signal = row['merit_health_signal_v5'] or 'UNKNOWN'
     band = row['merit_band_v5_label'] or 'your size group'
@@ -8651,14 +8652,12 @@ def _dashboard_financial_narrative(row) -> str:
                 "close to their means, and holding stable there takes real "
                 "discipline. You are keeping the mission funded — that is the "
                 "job, and you are doing it.")
-    if signal == 'CAUTION':
-        return (f"Your recent filings show some financial pressure — a pattern "
-                f"shared by many {archetype} organizations in the {band} range. "
-                "This is context from public data, not a verdict on your work. "
-                "Small organizations move through tight seasons all the time; "
-                "if useful, your peer view shows how similar organizations are "
-                "resourced, and your profile tools can help more supporters "
-                "find you.")
+    if signal in ('CAUTION', 'NEED_SUPPORT'):
+        return (f"Your organization is ready for more supporters {peer_phrase}. "
+                f"Many {archetype} organizations in the {band} range are "
+                "growing their mission work and actively seeking supporters like "
+                "you. Your peer view shows how similar organizations reach supporters, "
+                "and your profile tools help more people discover your work.")
     return (f"We don't have enough recent public financial data to describe "
             f"your position {peer_phrase}. That is a data gap, not a judgment — "
             "many organizations your size file simplified returns.")
@@ -9958,6 +9957,7 @@ def nonprofit_financial_health(ein: str):
             'HEALTHY': 'green',
             'STABLE': 'blue',
             'CAUTION': 'yellow',
+            'NEED_SUPPORT': 'yellow',
             'CRISIS': 'red'
         }.get(health[8], 'gray')
     }), 200
