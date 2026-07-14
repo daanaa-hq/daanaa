@@ -1,27 +1,27 @@
 {
   "carousel_type": "sector_insight",
-  "title": "The Reserve Divide",
+  "title": "The Reserve Story",
   "slides": [
     {
       "slide_type": "cover",
-      "headline": "What 465,000 IRS Filings Reveal About Nonprofit Reserves",
-      "subheadline": "The sector is stronger than headlines suggest, and more divided"
+      "headline": "How Much Cushion Does the Nonprofit Sector Really Have?",
+      "subheadline": "465,000 IRS filings and the sector surveys, read together"
     },
     {
       "slide_type": "content",
-      "label": "Part 1: The Surprise",
-      "headline": "Most nonprofits hold real cushion",
-      "accent_stat": "55%",
-      "accent_label": "hold more than a year of operating reserves",
-      "story": "The common story says nonprofits live hand to mouth. The filings say otherwise. More than half the sector could run a full year on what they hold today.",
-      "source": "IRS 990 filings, 465,306 U.S. nonprofits with reserve data",
+      "label": "Part 1: Two Lenses",
+      "headline": "Cash is tight. Assets run deeper.",
+      "accent_stat": "52%",
+      "accent_label": "of nonprofits report 3 months or less of cash on hand",
+      "story": "That number comes from the Nonprofit Finance Fund's 2025 survey. Our analysis of IRS filings shows a different layer: only 1 in 6 falls that low on total reserves. Cash runs out before assets do. Both numbers are true, and the gap between them is where the real story lives.",
+      "source": "NFF State of the Sector Survey 2025; IRS 990 filings via Daanaa",
       "link": "daanaa.org/sector-health"
     },
     {
       "slide_type": "content",
       "label": "Part 2: The Divide",
-      "headline": "But the cushion is not shared evenly",
-      "story": "While half the sector holds a year of reserves, 42,473 organizations are operating on less than one month. Same sector, very different realities.",
+      "headline": "The cushion is not shared evenly",
+      "story": "More than half the sector could run a full year on reserves. Meanwhile 42,473 organizations hold less than one month. Same sector, very different realities.",
       "chart": [
         {"label": "Over 12 months of reserves", "pct": 54.9},
         {"label": "6 to 12 months", "pct": 17.2},
@@ -29,32 +29,61 @@
         {"label": "1 to 3 months", "pct": 7.7, "highlight": true},
         {"label": "Under 1 month", "pct": 9.1, "highlight": true}
       ],
-      "source": "IRS 990 filings, 465,306 U.S. nonprofits",
+      "source": "IRS 990 filings, 465,306 U.S. nonprofits with reserve data",
       "link": "daanaa.org/sector-health"
     },
     {
       "slide_type": "content",
-      "label": "Part 3: The Small Org Myth",
+      "label": "Part 3: Funding Model Matters",
+      "headline": "How you are funded shapes your cushion",
+      "story": "Grantmakers with endowments rarely run thin. Organizations that depend on yearly donations and program fees carry the most risk when funding shifts.",
+      "chart": [
+        {"label": "Fee for service operators", "pct": 17.6, "highlight": true},
+        {"label": "Donation funded programs", "pct": 17.1, "highlight": true},
+        {"label": "Mutual benefit organizations", "pct": 9.1},
+        {"label": "Endowment funded grantmakers", "pct": 9.2}
+      ],
+      "source": "Share under 3 months of reserves, by funding model. IRS 990 data",
+      "link": "daanaa.org/methodology"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 4: The Front Lines Run Thinnest",
+      "headline": "Urgent work, thin cushion",
+      "story": "The sectors doing the most immediate human work hold the least. Housing groups run thin at five times the rate of public safety organizations.",
+      "chart": [
+        {"label": "Housing and shelter", "pct": 29.4, "highlight": true},
+        {"label": "Mental health", "pct": 23.8, "highlight": true},
+        {"label": "Human services", "pct": 21.3},
+        {"label": "Sector average", "pct": 16.8},
+        {"label": "Public safety", "pct": 5.6}
+      ],
+      "source": "Share under 3 months of reserves, by sector. IRS 990 data",
+      "link": "daanaa.org/directory"
+    },
+    {
+      "slide_type": "content",
+      "label": "Part 5: The Small Org Myth",
       "headline": "Small nonprofits hold their own",
       "accent_stat": "14.9%",
       "accent_label": "of micro nonprofits run under 3 months of reserves, a lower rate than large organizations at 18.3%",
-      "story": "The assumption is that small means precarious. The data disagrees. Micro nonprofits manage their reserves as carefully as the giants, often more so.",
+      "story": "The assumption is that small means precarious. The filings disagree. Micro nonprofits manage reserves as carefully as the giants, often more so.",
       "source": "Daanaa analysis of IRS 990 data by revenue band",
       "link": "daanaa.org/methodology"
     },
     {
       "slide_type": "content",
       "label": "Key Insight",
-      "headline": "Context beats assumptions",
-      "accent_stat": "1 in 6",
-      "accent_label": "nonprofits operates on under 3 months of reserves",
-      "story": "You cannot tell which organizations run lean from their size, their name, or their website. Public filings tell the real story, and that story is free to explore.",
+      "headline": "Context beats headlines",
+      "accent_stat": "2",
+      "accent_label": "numbers to ask about: cash on hand today, and total reserves behind it",
+      "story": "A housing nonprofit running lean is normal for its field. A grantmaker running lean is unusual. The same number means different things in different contexts, and context is exactly what public filings can give you.",
       "source": "Daanaa nonprofit analysis, 2026",
-      "link": "daanaa.org/directory"
+      "link": "daanaa.org/sector-health"
     },
     {
       "slide_type": "cta",
-      "headline": "Look up any nonprofit's financial context",
+      "headline": "See any nonprofit in full context",
       "body_lines": [
         "Financial context for 1.7M nonprofits, from public data.",
         "Free. Transparent. No rankings, no agenda."
