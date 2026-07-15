@@ -3,11 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle, XCircle, Edit2, AlertCircle, Activity, Zap, CheckCheck, Brain, Mail } from 'lucide-react'
+import { CheckCircle, XCircle, Edit2, AlertCircle, Activity, Zap, CheckCheck, Brain, Mail, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { LearningDashboard } from './LearningDashboard'
 import { EmailAutomationDashboard } from './EmailAutomationDashboard'
+import { SocialManagerDashboard } from './SocialManagerDashboard'
 
 interface LinkItem {
   ein: number
@@ -169,27 +170,30 @@ export function DashboardHub() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="verification" className="gap-2">
-              <CheckCheck size={16} /> Verify
+          <TabsList className="grid w-full grid-cols-8">
+            <TabsTrigger value="verification" className="gap-1">
+              <CheckCheck size={14} /> Verify
             </TabsTrigger>
-            <TabsTrigger value="discovery" className="gap-2">
-              <Activity size={16} /> Discovery
+            <TabsTrigger value="discovery" className="gap-1">
+              <Activity size={14} /> Discovery
             </TabsTrigger>
-            <TabsTrigger value="social" className="gap-2">
+            <TabsTrigger value="social" className="gap-1">
               📱 Social
             </TabsTrigger>
-            <TabsTrigger value="recommendations" className="gap-2">
+            <TabsTrigger value="recommendations" className="gap-1">
               💡 Recommend
             </TabsTrigger>
-            <TabsTrigger value="learning" className="gap-2">
-              <Brain size={16} /> Learning
+            <TabsTrigger value="manager" className="gap-1">
+              <Sparkles size={14} /> Manager
             </TabsTrigger>
-            <TabsTrigger value="email" className="gap-2">
-              <Mail size={16} /> Email
+            <TabsTrigger value="learning" className="gap-1">
+              <Brain size={14} /> Learning
             </TabsTrigger>
-            <TabsTrigger value="health" className="gap-2">
-              <Zap size={16} /> Health
+            <TabsTrigger value="email" className="gap-1">
+              <Mail size={14} /> Email
+            </TabsTrigger>
+            <TabsTrigger value="health" className="gap-1">
+              <Zap size={14} /> Health
             </TabsTrigger>
           </TabsList>
 
@@ -448,6 +452,11 @@ export function DashboardHub() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ========== SOCIAL MANAGER TAB ========== */}
+          <TabsContent value="manager" className="space-y-6">
+            <SocialManagerDashboard />
           </TabsContent>
 
           {/* ========== EMAIL TAB ========== */}

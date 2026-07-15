@@ -1661,6 +1661,13 @@ try:
 except ImportError:
     pass  # Telemetry API optional
 
+# Register social media manager API (autonomous theme curation + commenting)
+try:
+    from social_manager_api import social_manager_bp
+    app.register_blueprint(social_manager_bp)
+except ImportError:
+    pass  # Social manager API optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])
