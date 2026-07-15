@@ -1626,6 +1626,13 @@ try:
 except ImportError:
     pass  # Discovery status API optional
 
+# Register verification dashboard API
+try:
+    from verification_api import verification_bp
+    app.register_blueprint(verification_bp)
+except ImportError:
+    pass  # Verification API optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])
