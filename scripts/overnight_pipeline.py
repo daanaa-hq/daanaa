@@ -763,6 +763,16 @@ def main():
     # Authority: Founder Ruling 2026-07-11 (enrichment pipeline integration)
     run_enrichment_pipeline()
 
+    # Step 6.85: Active website discovery enrichment (donation links, volunteer pages, GitHub, skills.sh)
+    # Complements ProPublica/cached data with active web scraping for real-time accuracy
+    log('Starting active website discovery enrichment (10K orgs max)...')
+    try:
+        from enrich_discovery_nightly import run_discovery_enrichment
+        processed, donations, volunteers, errors = run_discovery_enrichment(batch_size=100, max_orgs=10000)
+        log(f'Discovery enrichment: {processed} processed, {donations} donations, {volunteers} volunteers, {errors} errors')
+    except Exception as e:
+        log(f'⚠️  Discovery enrichment error (non-fatal): {str(e)[:200]}')
+
     # Step 6.9: Re-verify stale links (P7 independence + data safety)
     # Authority: T11 Gap 1 (90-day SLA for link staleness checks)
     try:

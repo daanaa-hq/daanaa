@@ -94,9 +94,22 @@ class DiscoveryBatchProcessor:
                 updates['volunteer_url'] = volunteer_link['url']
                 self.stats['volunteer_links_found'] += 1
 
-            # GitHub repos (store in discovery data for now)
+            # GitHub repos
             if discovery_result['github_repos']:
+                github_link = discovery_result['github_repos'][0]
+                updates['github_repo'] = github_link['url']
                 self.stats['github_repos_found'] += 1
+
+            # Skills.sh profiles
+            if discovery_result['skills_profiles']:
+                skills_link = discovery_result['skills_profiles'][0]
+                updates['skills_sh_profile'] = skills_link['url']
+
+            # Donate button text (from first donate link)
+            if discovery_result['donation_links'] and not current_donate_url:
+                donate_link = discovery_result['donation_links'][0]
+                if donate_link.get('text'):
+                    updates['donate_button_text'] = donate_link['text']
 
             if updates:
                 self._update_org(ein, updates)
