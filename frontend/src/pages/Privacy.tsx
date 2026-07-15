@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 
-const EFFECTIVE_DATE = 'June 30, 2026'
+const EFFECTIVE_DATE = 'July 15, 2026'
 
 export default function Privacy() {
   usePageMeta(
