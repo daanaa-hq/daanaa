@@ -122,37 +122,66 @@ class ContinuousDiscoveryDaemon:
             return {'status': 'error', 'reason': str(e)[:100]}
 
     def queue_verified_links(self, ein, links):
-        """Queue verified links for batch deployment (deduped)."""
+        """Queue verified links, filtering by 90% confidence threshold.
+
+        Links with 90%+ confidence go to approval queue.
+        Links <90% confidence go to under_review status.
+        """
         db = sqlite3.connect(str(DB))
         cursor = db.cursor()
 
-        # Create queue table if it doesn't exist
+        # Create queue table with status column
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS link_deployment_queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ein INTEGER NOT NULL UNIQUE,
+                ein INTEGER NOT NULL,
                 links JSON NOT NULL,
+                status TEXT DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                deployed_at TIMESTAMP
+                deployed_at TIMESTAMP,
+                UNIQUE(ein, status)
             )
         """)
 
-        # Check if this org is already queued (dedup)
-        cursor.execute("SELECT id FROM link_deployment_queue WHERE ein = ? AND deployed_at IS NULL", (ein,))
-        existing = cursor.fetchone()
+        # Separate links by confidence threshold (90%)
+        high_confidence = [l for l in links if l.get('confidence', 0) >= 0.9]
+        under_review = [l for l in links if l.get('confidence', 0) < 0.9]
 
-        if existing:
-            # Update existing queue entry with new links
-            cursor.execute(
-                "UPDATE link_deployment_queue SET links = ? WHERE ein = ?",
-                (json.dumps(links), ein)
-            )
-        else:
-            # Insert new queue entry
-            cursor.execute("""
-                INSERT INTO link_deployment_queue (ein, links)
-                VALUES (?, ?)
-            """, (ein, json.dumps(links)))
+        # Queue high-confidence links for approval
+        if high_confidence:
+            cursor.execute("SELECT id FROM link_deployment_queue WHERE ein = ? AND status = 'pending'", (ein,))
+            existing = cursor.fetchone()
+
+            if existing:
+                cursor.execute(
+                    "UPDATE link_deployment_queue SET links = ? WHERE ein = ? AND status = 'pending'",
+                    (json.dumps(high_confidence), ein)
+                )
+            else:
+                cursor.execute("""
+                    INSERT INTO link_deployment_queue (ein, links, status)
+                    VALUES (?, ?, 'pending')
+                """, (ein, json.dumps(high_confidence)))
+
+            logger.info(f"✓ {ein}: {len(high_confidence)} links queued for approval (90%+ confidence)")
+
+        # Log under-review links separately
+        if under_review:
+            cursor.execute("SELECT id FROM link_deployment_queue WHERE ein = ? AND status = 'under_review'", (ein,))
+            existing = cursor.fetchone()
+
+            if existing:
+                cursor.execute(
+                    "UPDATE link_deployment_queue SET links = ? WHERE ein = ? AND status = 'under_review'",
+                    (json.dumps(under_review), ein)
+                )
+            else:
+                cursor.execute("""
+                    INSERT INTO link_deployment_queue (ein, links, status)
+                    VALUES (?, ?, 'under_review')
+                """, (ein, json.dumps(under_review)))
+
+            logger.info(f"~ {ein}: {len(under_review)} links under review (<90% confidence)")
 
         db.commit()
         db.close()
@@ -187,13 +216,22 @@ class ContinuousDiscoveryDaemon:
                     # Rate limit
                     time.sleep(0.5)
 
-                # Log progress
+                # Log progress with confidence breakdown
+                db = sqlite3.connect(str(DB))
+                cursor = db.cursor()
+                cursor.execute("SELECT COUNT(*) FROM link_deployment_queue WHERE status = 'pending'")
+                high_conf = cursor.fetchone()[0] or 0
+                cursor.execute("SELECT COUNT(*) FROM link_deployment_queue WHERE status = 'under_review'")
+                under_review = cursor.fetchone()[0] or 0
+                db.close()
+
                 logger.info(
                     f"[Iteration {iteration}] Progress: "
                     f"discovered={self.stats['discovered']}, "
                     f"verified={self.stats['verified']}, "
                     f"queued={self.stats['queued']}, "
-                    f"errors={self.stats['errors']}"
+                    f"errors={self.stats['errors']} | "
+                    f"Queue: {high_conf} (90%+) | {under_review} (under review)"
                 )
 
                 # Sleep between batches

@@ -52,13 +52,13 @@ def init_verification_table():
 
 @verification_bp.route('/pending', methods=['GET'])
 def get_pending_links():
-    """Get next batch of unverified links."""
+    """Get next batch of high-confidence (90%+) links for approval."""
     limit = request.args.get('limit', 10, type=int)
 
     db = get_db()
     cursor = db.cursor()
 
-    # Get pending links from test queue or deployment queue (with website)
+    # Get high-confidence pending links (90%+ confidence threshold)
     cursor.execute("""
         SELECT
             ldq.ein,
@@ -67,7 +67,7 @@ def get_pending_links():
             ldq.links
         FROM link_deployment_queue ldq
         JOIN registry_enriched re ON ldq.ein = re.EIN
-        WHERE ldq.deployed_at IS NULL
+        WHERE ldq.status = 'pending' AND ldq.deployed_at IS NULL
         ORDER BY ldq.created_at ASC
         LIMIT ?
     """, (limit,))
@@ -99,6 +99,55 @@ def get_pending_links():
     })
 
 
+@verification_bp.route('/under-review', methods=['GET'])
+def get_under_review_links():
+    """Get links below 90% confidence threshold for manual review."""
+    limit = request.args.get('limit', 10, type=int)
+
+    db = get_db()
+    cursor = db.cursor()
+
+    # Get lower-confidence links that need manual review
+    cursor.execute("""
+        SELECT
+            ldq.ein,
+            re.organization_name,
+            re.website,
+            ldq.links
+        FROM link_deployment_queue ldq
+        JOIN registry_enriched re ON ldq.ein = re.EIN
+        WHERE ldq.status = 'under_review' AND ldq.deployed_at IS NULL
+        ORDER BY ldq.created_at ASC
+        LIMIT ?
+    """, (limit,))
+
+    rows = cursor.fetchall()
+    db.close()
+
+    items = []
+    for row in rows:
+        links = json.loads(row['links'])
+        website = row['website']
+        # Add scheme if missing
+        if website and not website.startswith(('http://', 'https://')):
+            website = 'https://' + website
+
+        items.append({
+            'ein': row['ein'],
+            'org_name': row['organization_name'],
+            'website': website,
+            'donate_url': links.get('donate_url', ''),
+            'volunteer_url': links.get('volunteer_url', ''),
+            'donate_button_text': links.get('donate_button_text', ''),
+            'status': 'under_review'
+        })
+
+    return jsonify({
+        'total_under_review': len(items),
+        'items': items
+    })
+
+
 @verification_bp.route('/approve', methods=['POST'])
 def approve_link():
     """Approve a link for deployment."""
@@ -113,10 +162,10 @@ def approve_link():
     db = get_db()
     cursor = db.cursor()
 
-    # Mark as deployed
+    # Mark as deployed (works for both 'pending' and 'under_review' statuses)
     cursor.execute("""
         UPDATE link_deployment_queue
-        SET deployed_at = ?
+        SET deployed_at = ?, status = 'approved'
         WHERE ein = ? AND deployed_at IS NULL
     """, (datetime.now().isoformat(), ein))
 
@@ -217,26 +266,30 @@ def edit_link():
 
 @verification_bp.route('/stats', methods=['GET'])
 def get_stats():
-    """Get verification stats."""
+    """Get verification stats including confidence breakdown."""
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM link_deployment_queue WHERE deployed_at IS NULL")
-    pending = cursor.fetchone()[0]
+    # High-confidence (90%+) pending approval
+    cursor.execute("SELECT COUNT(*) FROM link_deployment_queue WHERE status = 'pending' AND deployed_at IS NULL")
+    high_conf_pending = cursor.fetchone()[0]
 
+    # Lower-confidence under review
+    cursor.execute("SELECT COUNT(*) FROM link_deployment_queue WHERE status = 'under_review' AND deployed_at IS NULL")
+    under_review = cursor.fetchone()[0]
+
+    # Approved/deployed
     cursor.execute("SELECT COUNT(*) FROM link_deployment_queue WHERE deployed_at IS NOT NULL")
     approved = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM link_test_queue")
-    rejected = cursor.fetchone()[0]
 
     db.close()
 
     return jsonify({
-        'pending': pending,
+        'pending': high_conf_pending,
+        'under_review': under_review,
         'approved': approved,
-        'rejected': rejected,
-        'total': pending + approved + rejected
+        'rejected': 0,
+        'total': high_conf_pending + under_review + approved
     })
 
 

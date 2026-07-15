@@ -325,7 +325,7 @@ export default function Privacy() {
             </p>
             <p className="mt-2">
               EcoMargins Consulting LLC d/b/a Daanaa<br />
-              Austin, Texas, United States
+              Houston, Texas, United States
             </p>
           </section>
 

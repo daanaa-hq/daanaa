@@ -34,11 +34,12 @@ interface DiscoveryStatus {
   deployment: { next_window: string; schedule: string }
 }
 
-export function DashboardHub() {
+export default function DashboardHub() {
   const [activeTab, setActiveTab] = useState('verification')
 
   // Verification state
   const [verificationItems, setVerificationItems] = useState<LinkItem[]>([])
+  const [underReviewItems, setUnderReviewItems] = useState<LinkItem[]>([])
   const [verificationStats, setVerificationStats] = useState<Stats>({ pending: 0, approved: 0, rejected: 0, total: 0 })
   const [editingEin, setEditingEin] = useState<number | null>(null)
   const [editValues, setEditValues] = useState<{ donate: string; volunteer: string }>({ donate: '', volunteer: '' })
@@ -74,11 +75,13 @@ export function DashboardHub() {
   // ============ VERIFICATION ============
   const fetchVerification = async () => {
     try {
-      const [pending, stats] = await Promise.all([
+      const [pending, underReview, stats] = await Promise.all([
         fetch('/api/verification/pending?limit=20').then(r => r.json()),
+        fetch('/api/verification/under-review?limit=20').then(r => r.json()),
         fetch('/api/verification/stats').then(r => r.json())
       ])
       setVerificationItems(pending.items || [])
+      setUnderReviewItems(underReview.items || [])
       setVerificationStats(stats)
     } catch (error) {
       console.error('Failed to fetch verification:', error)
@@ -351,6 +354,68 @@ export function DashboardHub() {
                 ))
               )}
             </div>
+
+            {/* Under Review Section */}
+            {underReviewItems.length > 0 && (
+              <div className="space-y-4 border-t pt-6">
+                <h3 className="text-lg font-semibold text-gray-700">
+                  Under Review ({underReviewItems.length})
+                </h3>
+                <p className="text-sm text-gray-600">
+                  These links scored below 90% confidence. Review manually before approval.
+                </p>
+                <div className="space-y-3">
+                  {underReviewItems.map((item) => (
+                    <Card key={item.ein} className="border-l-4 border-l-orange-400 bg-orange-50">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="text-base">{item.org_name}</CardTitle>
+                            <CardDescription>EIN: {item.ein}</CardDescription>
+                          </div>
+                          <Badge variant="secondary" className="bg-orange-200 text-orange-800">Under Review</Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {item.donate_url && (
+                          <div className="text-sm">
+                            <p className="font-medium text-gray-700">Donate:</p>
+                            <a href={item.donate_url} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline break-all">
+                              {item.donate_url}
+                            </a>
+                          </div>
+                        )}
+                        {item.volunteer_url && (
+                          <div className="text-sm">
+                            <p className="font-medium text-gray-700">Volunteer:</p>
+                            <a href={item.volunteer_url} target="_blank" rel="noopener noreferrer" className="text-orange-600 hover:underline break-all">
+                              {item.volunteer_url}
+                            </a>
+                          </div>
+                        )}
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            onClick={() => handleApprove(item.ein)}
+                            disabled={loading}
+                            className="bg-green-600 hover:bg-green-700 text-xs flex-1"
+                          >
+                            Approve Anyway
+                          </Button>
+                          <Button
+                            onClick={() => handleReject(item.ein)}
+                            disabled={loading}
+                            variant="outline"
+                            className="text-xs flex-1"
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           {/* ========== DISCOVERY TAB ========== */}

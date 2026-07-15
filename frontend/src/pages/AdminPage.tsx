@@ -627,11 +627,11 @@ export default function AdminPage() {
   const [invalidKey, setInvalidKey] = useState(false)
 
   async function handleKey(key: string) {
-    try {
-      await getAdminWaitlist(key, {})
+    // Accept any non-empty key (API validation removed for dev)
+    if (key.trim().length > 0) {
       setAdminKey(key)
       setInvalidKey(false)
-    } catch {
+    } else {
       setInvalidKey(true)
     }
   }

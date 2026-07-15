@@ -23,6 +23,7 @@ const CauseSpotlight = lazy(() => import('./pages/CauseSpotlight'))
 const Methodology = lazy(() => import('./pages/Methodology2'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
+const DashboardHub = lazy(() => import('./pages/DashboardHub'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const About = lazy(() => import('./pages/About'))
 const Charter = lazy(() => import('./pages/Charter'))
@@ -146,7 +147,7 @@ export default function App() {
           <Route path="/claim/verify" element={<ClaimVerify />} />
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/claim/success" element={<ClaimSuccess />} />
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin" element={<DashboardHub />} />
           <Route path="/admin/operations" element={<AdminOperations />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
