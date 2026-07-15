@@ -10,6 +10,10 @@ Wires together the four enrichment pipeline modules built in Tasks 3-6:
 
 This is the entry point that will run nightly via cron (Task 8).
 
+IMPORTANT: cause_tags are NTEE-first. If LLM-generated tags don't align with
+NTEE classification, NTEE-based tags take precedence. This ensures data quality
+and consistency across the registry. See ntee_cause_mapper.py for details.
+
 Usage:
   python3 enrich_batch.py --help
   python3 enrich_batch.py --dry-run --max-orgs 100
@@ -48,6 +52,7 @@ from scripts.website_content import validate_and_fetch_website, fetch_known_webs
 from scripts.donate_confidence import score_confidence, identity_match
 from scripts.website_normalize import normalize_website
 from scripts.s3_enrichment import get_s3_client
+from scripts.ntee_cause_mapper import get_causes_from_ntee, should_override_cause_tags
 
 logging.basicConfig(
     level=logging.INFO,
