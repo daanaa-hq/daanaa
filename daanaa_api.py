@@ -1633,6 +1633,20 @@ try:
 except ImportError:
     pass  # Verification API optional
 
+# Register social media metrics API (learning engine backend)
+try:
+    from social_metrics_api import social_metrics_bp
+    app.register_blueprint(social_metrics_bp)
+except ImportError:
+    pass  # Social metrics API optional
+
+# Register learning engine API (continuous improvement status)
+try:
+    from learning_api import learning_bp
+    app.register_blueprint(learning_bp)
+except ImportError:
+    pass  # Learning API optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])

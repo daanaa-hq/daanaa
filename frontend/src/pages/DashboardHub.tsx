@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle, XCircle, Edit2, AlertCircle, Activity, Zap, CheckCheck } from 'lucide-react'
+import { CheckCircle, XCircle, Edit2, AlertCircle, Activity, Zap, CheckCheck, Brain } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { LearningDashboard } from './LearningDashboard'
 
 interface LinkItem {
   ein: number
@@ -167,7 +168,7 @@ export function DashboardHub() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="verification" className="gap-2">
               <CheckCheck size={16} /> Verify
             </TabsTrigger>
@@ -179,6 +180,9 @@ export function DashboardHub() {
             </TabsTrigger>
             <TabsTrigger value="recommendations" className="gap-2">
               💡 Recommend
+            </TabsTrigger>
+            <TabsTrigger value="learning" className="gap-2">
+              <Brain size={16} /> Learning
             </TabsTrigger>
             <TabsTrigger value="health" className="gap-2">
               <Zap size={16} /> Health
@@ -440,6 +444,11 @@ export function DashboardHub() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ========== LEARNING TAB ========== */}
+          <TabsContent value="learning" className="space-y-6">
+            <LearningDashboard />
           </TabsContent>
 
           {/* ========== HEALTH TAB ========== */}
