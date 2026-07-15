@@ -20,7 +20,7 @@ class CarouselRenderer:
     def render_linkedin_caption(self) -> str:
         """
         Render LinkedIn post caption (text-only, no carousel markup)
-        Includes hashtags and CTA
+        Includes hashtags, CTA, and AI disclosure for legal compliance
         """
         caption_parts = []
 
@@ -50,6 +50,10 @@ class CarouselRenderer:
         if cta_slide:
             caption_parts.append('')
             caption_parts.append(cta_slide.get('headline', ''))
+
+        # AI disclosure (legal compliance)
+        caption_parts.append('')
+        caption_parts.append('🤖 AI-assisted: Carousel research, data visualization, and copy optimization by Claude AI. All underlying data is from public IRS/ProPublica sources. Founder review required before posting.')
 
         return '\n'.join(caption_parts)
 

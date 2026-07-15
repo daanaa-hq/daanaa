@@ -120,7 +120,9 @@ def create_campaign():
     return jsonify({
         'id': campaign_id,
         'status': 'draft',
-        'created_at': datetime.now().isoformat()
+        'created_at': datetime.now().isoformat(),
+        'ai_assisted': True,
+        'ai_disclosure': '🤖 This campaign was researched, written, and designed with Claude AI assistance. All underlying data is from public IRS/ProPublica sources. Human review required before posting.'
     }), 201
 
 @campaigns_bp.route('/<campaign_id>', methods=['GET'])
@@ -138,6 +140,8 @@ def get_campaign(campaign_id):
 
     campaign = dict(row)
     campaign['content'] = json.loads(campaign['content'])
+    campaign['ai_assisted'] = True
+    campaign['ai_disclosure'] = '🤖 This campaign was researched, written, and designed with Claude AI assistance. All underlying data is from public IRS/ProPublica sources. Human review required before posting.'
     return jsonify(campaign)
 
 @campaigns_bp.route('/<campaign_id>', methods=['PUT'])
@@ -183,7 +187,12 @@ def list_campaigns():
     campaigns = [dict(row) for row in cursor.fetchall()]
     conn.close()
 
-    return jsonify({'campaigns': campaigns, 'count': len(campaigns)})
+    return jsonify({
+        'campaigns': campaigns,
+        'count': len(campaigns),
+        'ai_assisted': True,
+        'ai_disclosure': '🤖 All campaigns are AI-assisted content requiring human review.'
+    })
 
 @campaigns_bp.route('/<campaign_id>/submit-for-approval', methods=['POST'])
 def submit_for_approval(campaign_id):

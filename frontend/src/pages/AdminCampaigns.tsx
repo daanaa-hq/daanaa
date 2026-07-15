@@ -119,6 +119,12 @@ export function AdminCampaigns() {
       <div>
         <h1 className="text-3xl font-bold">Campaign Manager</h1>
         <p className="text-gray-600 mt-2">Create, review, and schedule LinkedIn carousels</p>
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-900">
+            🤖 <strong>AI-Assisted Content:</strong> All carousels are researched, written, and designed with Claude AI assistance.
+            <strong> Human review required before posting.</strong> All claims must be verified against public IRS/ProPublica data.
+          </p>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={(val) => {
@@ -198,12 +204,13 @@ export function AdminCampaigns() {
                           <Button
                             size="sm"
                             variant="default"
+                            title="🤖 Approve this AI-generated carousel (you will review for accuracy before posting)"
                             onClick={(e) => {
                               e.stopPropagation()
                               handleApprove(campaign.id)
                             }}
                           >
-                            Approve
+                            ✓ Approve (AI-generated)
                           </Button>
                         )}
                         {campaign.status === 'approved' && (
