@@ -1647,6 +1647,13 @@ try:
 except ImportError:
     pass  # Learning API optional
 
+# Register email automation API (governance + approvals)
+try:
+    from email_automation_api import email_automation_bp
+    app.register_blueprint(email_automation_bp)
+except ImportError:
+    pass  # Email automation API optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])

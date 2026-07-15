@@ -3,10 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { CheckCircle, XCircle, Edit2, AlertCircle, Activity, Zap, CheckCheck, Brain } from 'lucide-react'
+import { CheckCircle, XCircle, Edit2, AlertCircle, Activity, Zap, CheckCheck, Brain, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { LearningDashboard } from './LearningDashboard'
+import { EmailAutomationDashboard } from './EmailAutomationDashboard'
 
 interface LinkItem {
   ein: number
@@ -168,7 +169,7 @@ export function DashboardHub() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="verification" className="gap-2">
               <CheckCheck size={16} /> Verify
             </TabsTrigger>
@@ -183,6 +184,9 @@ export function DashboardHub() {
             </TabsTrigger>
             <TabsTrigger value="learning" className="gap-2">
               <Brain size={16} /> Learning
+            </TabsTrigger>
+            <TabsTrigger value="email" className="gap-2">
+              <Mail size={16} /> Email
             </TabsTrigger>
             <TabsTrigger value="health" className="gap-2">
               <Zap size={16} /> Health
@@ -444,6 +448,11 @@ export function DashboardHub() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ========== EMAIL TAB ========== */}
+          <TabsContent value="email" className="space-y-6">
+            <EmailAutomationDashboard />
           </TabsContent>
 
           {/* ========== LEARNING TAB ========== */}
