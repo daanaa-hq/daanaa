@@ -773,6 +773,16 @@ def main():
     except Exception as e:
         log(f'⚠️  Discovery enrichment error (non-fatal): {str(e)[:200]}')
 
+    # Step 6.86: Verify discovered links before exposing to users
+    # Only verified links (HTTP 200 + content validation) are deployed
+    log('Verifying discovered links (removing dead/incorrect links)...')
+    try:
+        from verify_discovered_links import batch_verify_links
+        verified, failed = batch_verify_links(limit=1000)
+        log(f'Link verification: {verified} verified, {failed} removed (dead/incorrect)')
+    except Exception as e:
+        log(f'⚠️  Link verification error (non-fatal): {str(e)[:200]}')
+
     # Step 6.9: Re-verify stale links (P7 independence + data safety)
     # Authority: T11 Gap 1 (90-day SLA for link staleness checks)
     try:

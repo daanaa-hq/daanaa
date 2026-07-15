@@ -3,10 +3,12 @@
 Batch discovery enrichment for all organizations.
 
 Finds websites, donation links, volunteer opportunities, GitHub repos, and skills.sh profiles
-for all 2M organizations in the registry. Runs in phases:
-- Phase 1: Query organizations with no website but known donation/volunteer activity
-- Phase 2: Web search + discovery for orgs with websites
-- Phase 3: Full discovery run for remaining orgs
+for all 2M organizations in the registry. ONLY STORES VERIFIED LINKS.
+
+Verification process:
+- Donation links: HTTP 200 + payment keywords or payment processor detected
+- Volunteer links: HTTP 200 + volunteer keywords found
+- GitHub/skills.sh: Detected and stored (no content verification needed)
 """
 
 import sqlite3
@@ -14,6 +16,7 @@ import json
 import requests
 from datetime import datetime
 from website_discovery_comprehensive import WebsiteDiscovery
+from verify_discovered_links import LinkVerifier
 import logging
 import time
 
@@ -27,11 +30,14 @@ class DiscoveryBatchProcessor:
     def __init__(self, db_path='/home/akbar/meritgiving/data/merit_registry.db'):
         self.db_path = db_path
         self.discovery = WebsiteDiscovery(timeout=15)
+        self.verifier = LinkVerifier(timeout=10)
         self.stats = {
             'total_processed': 0,
             'websites_found': 0,
             'donation_links_found': 0,
+            'donation_links_verified': 0,
             'volunteer_links_found': 0,
+            'volunteer_links_verified': 0,
             'github_repos_found': 0,
             'errors': 0,
             'skipped': 0
@@ -81,18 +87,36 @@ class DiscoveryBatchProcessor:
             # Extract results
             updates = {}
 
-            # Donation links
+            # Donation links — verify before storing
             if discovery_result['donation_links'] and not current_donate_url:
                 donate_link = discovery_result['donation_links'][0]
-                updates['donate_url'] = donate_link['url']
-                updates['donate_confidence'] = int(donate_link.get('confidence', 0.85) * 100)
                 self.stats['donation_links_found'] += 1
 
-            # Volunteer links
+                # Verify the link
+                verification = self.verifier.verify_donation_link(donate_link['url'])
+                if verification.get('verified'):
+                    updates['donate_url'] = donate_link['url']
+                    updates['donate_confidence'] = int(donate_link.get('confidence', 0.85) * 100)
+                    updates['donate_url_status'] = 'verified'
+                    updates['donate_checked_at'] = datetime.now().isoformat()
+                    self.stats['donation_links_verified'] += 1
+                else:
+                    # Link failed verification, don't store it
+                    logger.info(f"Donation link rejected for {ein}: {verification.get('reason')}")
+
+            # Volunteer links — verify before storing
             if discovery_result['volunteer_links'] and not current_volunteer_url:
                 volunteer_link = discovery_result['volunteer_links'][0]
-                updates['volunteer_url'] = volunteer_link['url']
                 self.stats['volunteer_links_found'] += 1
+
+                # Verify the link
+                verification = self.verifier.verify_volunteer_link(volunteer_link['url'])
+                if verification.get('verified'):
+                    updates['volunteer_url'] = volunteer_link['url']
+                    self.stats['volunteer_links_verified'] += 1
+                else:
+                    # Link failed verification, don't store it
+                    logger.info(f"Volunteer link rejected for {ein}: {verification.get('reason')}")
 
             # GitHub repos
             if discovery_result['github_repos']:
