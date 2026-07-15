@@ -145,6 +145,39 @@ def get_real_qwen_fn(port: int = 11437, timeout: int = 60) -> Callable:
     return qwen_call
 
 
+def get_claude_qwen_fn(api_key: Optional[str] = None) -> Callable:
+    """High-quality Qwen replacement using Claude API.
+
+    For Phase 1 website discovery, use Claude (Opus) instead of Qwen2.5-32B
+    for higher accuracy in generating nonprofit website URLs.
+    Falls back to local Qwen if API key unavailable.
+    """
+    import anthropic
+    import os
+
+    key = api_key or os.getenv("ANTHROPIC_API_KEY")
+    if not key:
+        logger.warning("Claude API key not found; falling back to local Qwen")
+        return get_real_qwen_fn()
+
+    client = anthropic.Anthropic(api_key=key)
+
+    def claude_call(prompt: str, max_tokens: int = 200, schema: Optional[dict] = None) -> str:
+        """Call Claude for enrichment tasks. For website discovery, use Opus for accuracy."""
+        try:
+            msg = client.messages.create(
+                model="claude-opus-4-8",  # Best reasoning for website URL generation
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return msg.content[0].text
+        except Exception as e:
+            logger.warning(f"Claude API error: {e}. Falling back to Qwen.")
+            return get_real_qwen_fn()(prompt, max_tokens, schema)
+
+    return claude_call
+
+
 def get_real_embeddings_fn(port: int = 11436, timeout: int = 60) -> Callable:
     """Real embeddings via local llama-server HTTP API.
 
@@ -629,7 +662,8 @@ def main():
         qwen_fn = get_mock_qwen_fn()
         embeddings_fn = get_embeddings_fn()
     else:
-        qwen_fn = get_real_qwen_fn(port=args.qwen_port)
+        # Use Claude for Phase 1 (website discovery) if API key available, else local Qwen
+        qwen_fn = get_claude_qwen_fn() if __import__('os').getenv("ANTHROPIC_API_KEY") else get_real_qwen_fn(port=args.qwen_port)
         embeddings_fn = get_real_embeddings_fn(port=args.embeddings_port)
 
     batch = EnrichmentBatch(
