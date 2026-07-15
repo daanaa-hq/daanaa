@@ -1654,6 +1654,13 @@ try:
 except ImportError:
     pass  # Email automation API optional
 
+# Register telemetry API (usage patterns + adaptive UI)
+try:
+    from telemetry_api import telemetry_bp
+    app.register_blueprint(telemetry_bp)
+except ImportError:
+    pass  # Telemetry API optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])
