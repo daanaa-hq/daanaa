@@ -420,25 +420,8 @@ class EnrichmentBatch:
 
                 if website_result is None:
                     is_known_website = False
-                    # Phase 1 optimization: extract domain patterns from similar orgs WITH websites
-                    # This improves Qwen's candidate generation without API calls (pattern-based discovery)
-                    similar_org_websites = []
-                    if phase == 1 and similar_orgs:
-                        # Query similar org websites to extract domain patterns
-                        try:
-                            cursor_tmp = self.db.cursor()
-                            ein_list = [str(o.get('EIN', '')) for o in similar_orgs if o.get('EIN')]
-                            if ein_list:
-                                placeholders = ','.join(['?' for _ in ein_list])
-                                cursor_tmp.execute(
-                                    f"SELECT website FROM registry_enriched WHERE EIN IN ({placeholders}) AND website IS NOT NULL LIMIT 10",
-                                    ein_list
-                                )
-                                similar_org_websites = [row[0] for row in cursor_tmp.fetchall()]
-                        except:
-                            pass  # Continue if pattern extraction fails
-
-                    # Generate website candidate (Qwen uses org context + similar org patterns)
+                    # Phase 1: Website discovery with expanded similar-org context (20 instead of 5)
+                    # Qwen uses richer semantic context for better website URL generation
                     candidate_website = self.qwen.generate_website(org_data, similar_orgs)
                     if candidate_website:
                         website_result = validate_and_fetch_website(
