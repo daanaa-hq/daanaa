@@ -271,20 +271,20 @@ class EnrichmentBatch:
         # in one uncheckpointed run. 5,000 is a realistic single-invocation
         # cap for one 8pm-8am window; the outer loop script re-invokes for
         # more nights, and this can still be raised via --max-orgs.
-        # Optimization: prioritize orgs with known websites for donation link discovery.
-        # Phase 1: orgs with website but no donate_url (highest ROI) → extract from site
-        # Phase 2: orgs needing cause_tags or missions (nearly complete)
-        # Phase 3: orgs without website (blind discovery, lower success rate)
+        # DISCOVERY MODE: Prioritize finding new websites over donation links.
+        # Phase 1: orgs WITHOUT website (1.9M backlog) → generate websites via Qwen
+        # Phase 2: orgs WITH website but no donate_url → extract donation links
+        # Phase 3: metadata-deficient orgs (cause_tags, missions)
         phase = 1
 
+        # Phase 1: Website discovery for website-less orgs (highest gap coverage)
         cursor.execute(
             """
             SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url,
                    website, website_status
             FROM registry_enriched
-            WHERE website IS NOT NULL
-              AND (donate_url IS NULL OR donate_url = '')
-            ORDER BY website_status = 'valid' DESC  -- prioritize working websites
+            WHERE website IS NULL OR website = ''
+            ORDER BY RANDOM()  -- randomize to avoid duplicate attempts
             LIMIT ?
             """,
             (max_orgs or 5000,)
@@ -292,8 +292,26 @@ class EnrichmentBatch:
         orgs = cursor.fetchall()
 
         if len(orgs) < (max_orgs or 5000):
-            # Phase 2: fill remaining quota with cause_tags/mission work
+            # Phase 2: Donation link extraction from known websites
             phase = 2
+            remaining = (max_orgs or 5000) - len(orgs)
+            cursor.execute(
+                """
+                SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url,
+                       website, website_status
+                FROM registry_enriched
+                WHERE website IS NOT NULL
+                  AND (donate_url IS NULL OR donate_url = '')
+                ORDER BY website_status = 'valid' DESC
+                LIMIT ?
+                """,
+                (remaining,)
+            )
+            orgs.extend(cursor.fetchall())
+
+        if len(orgs) < (max_orgs or 5000):
+            # Phase 3: Metadata (missions, cause_tags)
+            phase = 3
             remaining = (max_orgs or 5000) - len(orgs)
             cursor.execute(
                 """
@@ -302,23 +320,6 @@ class EnrichmentBatch:
                 FROM registry_enriched
                 WHERE (cause_tags IS NULL OR cause_tags = '')
                    OR (mission_source IN ('ai_ntee', 'template_ntee') OR mission_source IS NULL)
-                LIMIT ?
-                """,
-                (remaining,)
-            )
-            orgs.extend(cursor.fetchall())
-
-        if len(orgs) < (max_orgs or 5000):
-            # Phase 3: blind discovery for orgs without websites
-            phase = 3
-            remaining = (max_orgs or 5000) - len(orgs)
-            cursor.execute(
-                """
-                SELECT EIN, organization_name, mission, mission_source, NTEE1, city, state, donate_url,
-                       website, website_status
-                FROM registry_enriched
-                WHERE website IS NULL
-                  AND (donate_url IS NULL OR donate_url = '')
                 LIMIT ?
                 """,
                 (remaining,)
@@ -338,13 +339,16 @@ class EnrichmentBatch:
                     'ntee': ntee, 'city': city, 'state': state
                 }
 
-                # Phase-aware enrichment: skip GPU-expensive tasks for low-ROI phases
+                # Phase-aware enrichment: GPU allocation by discovery goal
                 similar_orgs = []
                 if phase == 1:
-                    # Phase 1: websites with no donate_url. Skip semantic lookup; focus on website scanning.
+                    # Phase 1: Website discovery. Need semantic lookup + Qwen for website generation.
+                    similar_orgs = self.semantic.find_similar_orgs(org_ein=ein, count=5)
+                elif phase == 2:
+                    # Phase 2: Donation link extraction. Skip semantic; focus on website scanning.
                     pass
                 else:
-                    # Phase 2/3: do semantic lookup for mission/tag context
+                    # Phase 3: Metadata. Do semantic lookup for mission/tag context.
                     similar_orgs = self.semantic.find_similar_orgs(org_ein=ein, count=5)
 
                 # Website: prefer the org's EXISTING confirmed website (real
@@ -399,9 +403,9 @@ class EnrichmentBatch:
                 # Mission: grounded in real website content if validated,
                 # else fall back to the existing NTEE/similar-org approach —
                 # but only regenerate if the current mission is weak/missing.
-                # Phase 1 (websites, donate_url focus) skips this to save GPU.
+                # Phase 2 (donation link extraction) skips this to save GPU.
                 grounding_context = website_result['content_text'] if website_result else None
-                if phase != 1 and (mission_source in (None, 'ai_ntee', 'template_ntee') or not mission):
+                if phase != 2 and (mission_source in (None, 'ai_ntee', 'template_ntee') or not mission):
                     if grounding_context:
                         new_mission = self.qwen.generate_mission_from_website(org_data, grounding_context)
                         new_mission_source = 'ai_web_grounded'
@@ -419,8 +423,8 @@ class EnrichmentBatch:
 
                 # Cause tags: informed by (possibly-regenerated) mission +
                 # website content when available.
-                # Phase 1 (websites, donate_url focus) skips this to save GPU.
-                if phase != 1:
+                # Phase 2 (donation link extraction) skips this to save GPU.
+                if phase != 2:
                     tags = self.qwen.generate_tags(org_data, similar_orgs, grounding_context=grounding_context)
                     if tags:
                         results.append({
