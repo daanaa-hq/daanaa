@@ -1668,6 +1668,13 @@ try:
 except ImportError:
     pass  # Social manager API optional
 
+# Register nonprofit claims API (data governance + org corrections)
+try:
+    from nonprofit_claims_api import claims_bp
+    app.register_blueprint(claims_bp)
+except ImportError:
+    pass  # Claims API optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])
