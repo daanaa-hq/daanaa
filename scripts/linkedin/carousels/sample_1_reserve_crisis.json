@@ -1,48 +1,39 @@
 {
+  "id": "sample_1_reserve_crisis",
+  "title": "The Reserve Crisis",
   "carousel_type": "sector_insight",
-  "title": "Reserve Funding Crisis in U.S. Nonprofits",
-  "description": "Financial stability matters. 48% of nonprofits lack adequate emergency reserves.",
-  "cta_text": "daanaa.org",
   "slides": [
     {
-      "slide_type": "cover",
-      "headline": "The Reserve Crisis",
-      "subheadline": "What 1.7M nonprofits tell us about financial stability."
+      "slide_number": 1,
+      "text": "How much cushion does the nonprofit sector really have?"
     },
     {
-      "slide_type": "content",
-      "label": "Part 1: The Problem",
-      "headline": "Nearly Half Can't Survive a Funding Gap",
-      "accent_stat": "48%",
-      "accent_label": "Nonprofits Lack Adequate Emergency Reserves",
-      "story": "When a major grant ends or a funder withdraws, nonprofits with weak reserves cannot survive the gap. Nearly half the sector faces this vulnerability. Programs shut down. Staff are laid off. Community suffers.",
-      "source": "IRS 990 Filings, 1.7M active U.S. nonprofits"
+      "slide_number": 2,
+      "text": "We analyzed 465,306 IRS Form 990s to find out."
     },
     {
-      "slide_type": "content",
-      "label": "Part 2: Who's Vulnerable",
-      "headline": "Small Orgs Have Zero Cushion",
-      "accent_stat": "40%",
-      "accent_label": "Nonprofits with Less Than 3 Months of Operating Funds",
-      "story": "Organizations under $500K invest every dollar directly into programs—which is admirable. But it leaves zero cushion. One funding disruption shuts down critical services. Small nonprofits are one crisis away from collapse.",
-      "source": "Daanaa financial health analysis, 2024"
+      "slide_number": 3,
+      "text": "54.9% of nonprofits have 12+ months of reserve"
     },
     {
-      "slide_type": "content",
-      "label": "Part 3: The Solution",
-      "headline": "Strategic Reserve Funding Multiplies Impact",
-      "accent_stat": "6 months",
-      "accent_label": "Reserves Enables Long-Term Planning & Growth",
-      "story": "Funders who support reserve-building don't just save organizations—they multiply impact. A nonprofit with 6 months of reserves can weather storms, plan long-term, and serve communities with confidence. Strategic reserve grants are force multipliers.",
-      "source": "FSG nonprofit management research, 2023"
+      "slide_number": 4,
+      "text": "42,473 nonprofits operate with less than 1 month"
     },
     {
-      "slide_type": "cta",
-      "headline": "Fund Reserves. Stabilize Impact.",
-      "body_lines": [
-        "See which nonprofits need reserves most.",
-        "Explore daanaa.org"
-      ]
+      "slide_number": 5,
+      "text": "The gap is where the real story lives"
+    },
+    {
+      "slide_number": 6,
+      "text": "Stability matters. Financial context matters."
+    },
+    {
+      "slide_number": 7,
+      "text": "Explore sector data at daanaa.org/sector-health"
+    },
+    {
+      "slide_number": 8,
+      "text": "No rankings. No agenda. Just public data made readable."
     }
   ]
 }

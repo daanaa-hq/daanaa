@@ -1,48 +1,39 @@
 {
+  "id": "sample_3_funding_paradox",
+  "title": "The Funding Paradox",
   "carousel_type": "sector_insight",
-  "title": "The Funding Paradox in U.S. Nonprofits",
-  "description": "More nonprofits exist than ever, but average funding per organization is declining.",
-  "cta_text": "daanaa.org",
   "slides": [
     {
-      "slide_type": "cover",
-      "headline": "The Funding Paradox",
-      "subheadline": "More nonprofits exist. But are they getting funded?"
+      "slide_number": 1,
+      "text": "Here's the paradox: Small organizations often have the least fundraising capacity"
     },
     {
-      "slide_type": "content",
-      "label": "Part 1: The Trend",
-      "headline": "Growth Without Matching Funding",
-      "accent_stat": "1.7M",
-      "accent_label": "Active Nonprofits (up from 1.57M in 2015)",
-      "story": "The nonprofit sector grew by 180,000+ organizations in a decade. Sounds like victory. But here's the catch: average funding per nonprofit declined 3%. We added organizations—but diluted the funding pool. The pie didn't grow. It was divided more ways.",
-      "source": "IRS SOI data & Daanaa analysis, 2024"
+      "slide_number": 2,
+      "text": "Yet they serve some of the most vulnerable communities"
     },
     {
-      "slide_type": "content",
-      "label": "Part 2: Who Gets Squeezed",
-      "headline": "Small Nonprofits Compete Harder for Less",
-      "accent_stat": "40%",
-      "accent_label": "Small Nonprofits with Declining Funding Access",
-      "story": "Organizations under $500K face the most pressure. More competitors. Same donor dollars. Less visibility. No marketing budget. They do incredible work but get squeezed by pure competition. Donors have no way to identify which small orgs are actually thriving.",
-      "source": "Nonprofit sector analysis, Daanaa 2024"
+      "slide_number": 3,
+      "text": "They're not less impactful. Just less visible."
     },
     {
-      "slide_type": "content",
-      "label": "Part 3: The Answer",
-      "headline": "Data Directs Funding Where It Works",
-      "accent_stat": "1 in 3",
-      "accent_label": "High-Performing Small Nonprofits Go Underfunded",
-      "story": "Funders who use financial data identify strong small nonprofits others miss. You see resilience, not just scale. You fund impact, not visibility. Strategic funding based on real data changes outcomes. That's leverage.",
-      "source": "Daanaa financial intelligence platform"
+      "slide_number": 4,
+      "text": "Financial health isn't about size. It's about sustainability."
     },
     {
-      "slide_type": "cta",
-      "headline": "Fund Smarter. Fund Smaller.",
-      "body_lines": [
-        "See which nonprofits are actually thriving.",
-        "Direct your support strategically."
-      ]
+      "slide_number": 5,
+      "text": "A small org with 12 months of reserve is stable."
+    },
+    {
+      "slide_number": 6,
+      "text": "A large org with 2 months is fragile."
+    },
+    {
+      "slide_number": 7,
+      "text": "Context matters. Data matters. Transparency matters."
+    },
+    {
+      "slide_number": 8,
+      "text": "Understand nonprofit financial health at daanaa.org"
     }
   ]
 }

@@ -1,0 +1,39 @@
+{
+  "id": "sample_2_invisible_97_donors",
+  "title": "The Invisible 97%",
+  "carousel_type": "sector_insight",
+  "slides": [
+    {
+      "slide_number": 1,
+      "text": "1.6 million nonprofits exist in the US"
+    },
+    {
+      "slide_number": 2,
+      "text": "But most donors discover only the visible 3%"
+    },
+    {
+      "slide_number": 3,
+      "text": "67% of donors give up after searching for 5 minutes"
+    },
+    {
+      "slide_number": 4,
+      "text": "The other 97% go undiscovered"
+    },
+    {
+      "slide_number": 5,
+      "text": "Not because they're small. Because they're invisible."
+    },
+    {
+      "slide_number": 6,
+      "text": "What if finding them was easier?"
+    },
+    {
+      "slide_number": 7,
+      "text": "Search by cause. See funding models. Make informed decisions."
+    },
+    {
+      "slide_number": 8,
+      "text": "Discover nonprofits you've never heard of at daanaa.org"
+    }
+  ]
+}

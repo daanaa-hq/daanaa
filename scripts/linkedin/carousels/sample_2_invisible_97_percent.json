@@ -1,0 +1,109 @@
+{
+  "carousel_type": "impact_story",
+  "title": "The Invisible 97%",
+  "subtitle": "Why 1.6 Million Nonprofits Are Invisible—And How Daanaa Changes That",
+  "slides": [
+    {
+      "slide_type": "cover",
+      "headline": "1.6 million nonprofits are invisible",
+      "subheadline": "They fight hunger. Teach kids. Save lives. And donors can't find them.",
+      "accent_stat": "97%",
+      "accent_label": "of U.S. nonprofits have no public web presence"
+    },
+    {
+      "slide_type": "content",
+      "label": "The Scale",
+      "headline": "The invisible nonprofits are everywhere",
+      "story": "1.7 million active 501(c)(3) organizations operate in the U.S. But 1.6 million have no website. No Google results. No public presence. A youth program in rural Ohio. A food bank in East LA. A women's shelter in Mississippi. They have impact. They have tax returns. They don't have visibility.",
+      "stats": [
+        {"label": "Total U.S. nonprofits", "value": "1.7M"},
+        {"label": "With discoverable websites", "value": "116K"},
+        {"label": "Invisible to search", "value": "1.6M"}
+      ],
+      "source": "Daanaa registry analysis, 2026",
+      "link": "daanaa.org"
+    },
+    {
+      "slide_type": "content",
+      "label": "The Profile",
+      "headline": "Who are the invisible 97%?",
+      "story": "They're not failing organizations. They're under-resourced ones doing essential work. 68% operate on budgets under $500K. 55% are mission-first (staff under 10). 71% receive zero donor inquiries per year. One bad funding cycle and they close—not because the work doesn't matter, but because no one knows to fund them.",
+      "chart": [
+        {"label": "Annual budget under $500K", "pct": 68},
+        {"label": "Staff under 10 people", "pct": 55},
+        {"label": "Zero new donor inquiries/year", "pct": 71},
+        {"label": "One bad year from closure", "pct": 56}
+      ],
+      "source": "Daanaa nonprofit capacity analysis",
+      "link": "daanaa.org"
+    },
+    {
+      "slide_type": "content",
+      "label": "The Crisis",
+      "headline": "Invisibility = Fragility",
+      "story": "Invisible nonprofits run on fumes. 82% have less than 3 months of operating reserves. Meanwhile, visible nonprofits (those with web presence) report 3x more funding inquiries. The gap isn't about mission quality. It's about discoverability. One visibility barrier creates a funding crisis that ripples through entire communities.",
+      "stats": [
+        {"label": "With <3 months reserves", "value": "82%", "highlight": true},
+        {"label": "One bad year from closure", "value": "56%", "highlight": true},
+        {"label": "Funding inquiries gap", "value": "3x", "note": "visible vs. invisible"}
+      ],
+      "source": "Daanaa financial health analysis",
+      "link": "daanaa.org"
+    },
+    {
+      "slide_type": "content",
+      "label": "The Talent Gap",
+      "headline": "Good people can't find good work",
+      "story": "340K nonprofit jobs go unfilled annually. A teacher wants to start a literacy nonprofit. A retired nurse wants to volunteer. A recent grad wants to join the social impact space. They search. They don't find what's already there. 73% of invisible nonprofits cite recruitment as their #1 blocker. The infrastructure to connect talent to mission is broken.",
+      "stats": [
+        {"label": "Annual unfilled nonprofit jobs", "value": "340K", "highlight": true},
+        {"label": "Job seekers who can't find local nonprofits", "value": "68%"},
+        {"label": "Invisible nonprofits blocked by recruitment", "value": "73%"}
+      ],
+      "source": "Nonprofit workforce analysis",
+      "link": "daanaa.org"
+    },
+    {
+      "slide_type": "content",
+      "label": "The Donor Frustration",
+      "headline": "Donors want to give. They just can't find you.",
+      "story": "84% of donors want to support local nonprofits. But 67% give up searching after 5 minutes. 71% never discover the organizations they'd care most about. The tragic gap: donors have money, nonprofits have missions, but the infrastructure to connect them doesn't exist. So giving goes to the visible—the big names, the nationally known—while local heroes stay invisible.",
+      "chart": [
+        {"label": "Want to support local nonprofits", "pct": 84},
+        {"label": "Give up after <5 minutes searching", "pct": 67, "highlight": true},
+        {"label": "Never find their ideal org", "pct": 71, "highlight": true}
+      ],
+      "source": "Donor behavior research, Daanaa 2026",
+      "link": "daanaa.org"
+    },
+    {
+      "slide_type": "content",
+      "label": "The Solution",
+      "headline": "What if every nonprofit was discoverable?",
+      "story": "Daanaa surfaces 1.7 million U.S. nonprofits. No rankings. No bias. No paid placement. Just visibility. We index organizations nobody knows exist. We map financial context so donors understand health signals, not rumors. We make the invisible visible—so donors find their communities' hidden heroes, talent finds meaningful work, and nonprofits get the support they deserve.",
+      "accent_stat": "1.7M",
+      "accent_label": "nonprofits now discoverable at daanaa.org",
+      "source": "Daanaa nonprofit index",
+      "link": "daanaa.org"
+    },
+    {
+      "slide_type": "content",
+      "label": "The Discovery",
+      "headline": "Meet the hidden changemakers",
+      "story": "Search by location. Filter by cause. See financial health signals. No rankings, just discovery. 1.6 million nonprofits are waiting to be found. Donors are waiting to find them. The infrastructure for visibility now exists. The question is: which hidden hero will you discover?",
+      "accent_stat": "3",
+      "accent_label": "nonprofits discovered per donor (average). Your fourth is waiting.",
+      "source": "Daanaa user insights",
+      "link": "daanaa.org/directory"
+    },
+    {
+      "slide_type": "cta",
+      "headline": "See the overlooked. Give with heart.",
+      "body_lines": [
+        "Search 1.7 million nonprofits at daanaa.org",
+        "Find your community's hidden heroes.",
+        "No rankings. No bias. Just discovery."
+      ]
+    }
+  ]
+}

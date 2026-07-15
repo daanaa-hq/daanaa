@@ -1,0 +1,39 @@
+{
+  "id": "sample_2_fundraising_tax",
+  "title": "The Fundraising Tax",
+  "carousel_type": "sector_insight",
+  "slides": [
+    {
+      "slide_number": 1,
+      "text": "Nonprofits spend 768 million hours per year fundraising"
+    },
+    {
+      "slide_number": 2,
+      "text": "That's time not spent on mission"
+    },
+    {
+      "slide_number": 3,
+      "text": "Every dollar of fundraising overhead is a dollar not serving communities"
+    },
+    {
+      "slide_number": 4,
+      "text": "But some nonprofit models have less overhead than others"
+    },
+    {
+      "slide_number": 5,
+      "text": "Service-based nonprofits vs donation-funded organizations"
+    },
+    {
+      "slide_number": 6,
+      "text": "Fee-for-service vs endowment-funded models"
+    },
+    {
+      "slide_number": 7,
+      "text": "Understanding how organizations fund themselves matters"
+    },
+    {
+      "slide_number": 8,
+      "text": "See nonprofit funding models at daanaa.org"
+    }
+  ]
+}

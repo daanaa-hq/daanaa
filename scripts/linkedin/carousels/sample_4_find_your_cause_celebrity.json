@@ -1,0 +1,39 @@
+{
+  "id": "sample_4_find_your_cause_celebrity",
+  "title": "Find Your Cause",
+  "carousel_type": "discovery",
+  "slides": [
+    {
+      "slide_number": 1,
+      "text": "A big news story just broke about your cause"
+    },
+    {
+      "slide_number": 2,
+      "text": "You want to help. Where do you start?"
+    },
+    {
+      "slide_number": 3,
+      "text": "Google? Reddit? Asking friends?"
+    },
+    {
+      "slide_number": 4,
+      "text": "What if you could search by cause, location, and funding model?"
+    },
+    {
+      "slide_number": 5,
+      "text": "What if you could see how they actually fund their work?"
+    },
+    {
+      "slide_number": 6,
+      "text": "What if finding the right organization took minutes, not hours?"
+    },
+    {
+      "slide_number": 7,
+      "text": "Search when you're ready. No pressure. No judgment."
+    },
+    {
+      "slide_number": 8,
+      "text": "Discover organizations doing the work at daanaa.org"
+    }
+  ]
+}

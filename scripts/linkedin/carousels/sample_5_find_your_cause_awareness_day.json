@@ -1,0 +1,39 @@
+{
+  "id": "sample_5_find_your_cause_awareness_day",
+  "title": "Today is [Awareness Day]",
+  "carousel_type": "awareness",
+  "slides": [
+    {
+      "slide_number": 1,
+      "text": "Today is [Awareness Day] for [cause]"
+    },
+    {
+      "slide_number": 2,
+      "text": "You're thinking about the issue. Considering support."
+    },
+    {
+      "slide_number": 3,
+      "text": "But which organizations actually do this work?"
+    },
+    {
+      "slide_number": 4,
+      "text": "What are different approaches to solving this?"
+    },
+    {
+      "slide_number": 5,
+      "text": "How can you tell which ones are sustainable?"
+    },
+    {
+      "slide_number": 6,
+      "text": "Daanaa shows you the data. All funding models. All approaches."
+    },
+    {
+      "slide_number": 7,
+      "text": "No rankings. No recommendations. Just information."
+    },
+    {
+      "slide_number": 8,
+      "text": "Explore [cause] organizations at daanaa.org"
+    }
+  ]
+}
