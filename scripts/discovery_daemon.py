@@ -122,7 +122,7 @@ class ContinuousDiscoveryDaemon:
             return {'status': 'error', 'reason': str(e)[:100]}
 
     def queue_verified_links(self, ein, links):
-        """Queue verified links for batch deployment."""
+        """Queue verified links for batch deployment (deduped)."""
         db = sqlite3.connect(str(DB))
         cursor = db.cursor()
 
@@ -130,17 +130,29 @@ class ContinuousDiscoveryDaemon:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS link_deployment_queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ein INTEGER NOT NULL,
+                ein INTEGER NOT NULL UNIQUE,
                 links JSON NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 deployed_at TIMESTAMP
             )
         """)
 
-        cursor.execute("""
-            INSERT INTO link_deployment_queue (ein, links)
-            VALUES (?, ?)
-        """, (ein, json.dumps(links)))
+        # Check if this org is already queued (dedup)
+        cursor.execute("SELECT id FROM link_deployment_queue WHERE ein = ? AND deployed_at IS NULL", (ein,))
+        existing = cursor.fetchone()
+
+        if existing:
+            # Update existing queue entry with new links
+            cursor.execute(
+                "UPDATE link_deployment_queue SET links = ? WHERE ein = ?",
+                (json.dumps(links), ein)
+            )
+        else:
+            # Insert new queue entry
+            cursor.execute("""
+                INSERT INTO link_deployment_queue (ein, links)
+                VALUES (?, ?)
+            """, (ein, json.dumps(links)))
 
         db.commit()
         db.close()

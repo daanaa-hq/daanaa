@@ -1618,6 +1618,14 @@ def v1_health():
     })
 
 app.register_blueprint(api_v1)
+
+# Register discovery status API
+try:
+    from discovery_status_api import discovery_status_bp
+    app.register_blueprint(discovery_status_bp)
+except ImportError:
+    pass  # Discovery status API optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])
