@@ -167,12 +167,18 @@ export function DashboardHub() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="verification" className="gap-2">
-              <CheckCheck size={16} /> Verify Links
+              <CheckCheck size={16} /> Verify
             </TabsTrigger>
             <TabsTrigger value="discovery" className="gap-2">
               <Activity size={16} /> Discovery
+            </TabsTrigger>
+            <TabsTrigger value="social" className="gap-2">
+              📱 Social
+            </TabsTrigger>
+            <TabsTrigger value="recommendations" className="gap-2">
+              💡 Recommend
             </TabsTrigger>
             <TabsTrigger value="health" className="gap-2">
               <Zap size={16} /> Health
@@ -387,6 +393,53 @@ export function DashboardHub() {
                 <CardContent className="pt-6">Loading...</CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          {/* ========== SOCIAL TAB ========== */}
+          <TabsContent value="social" className="space-y-6">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+              <CardHeader>
+                <CardTitle>LinkedIn Performance</CardTitle>
+                <CardDescription>Real-time metrics from posted carousels</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <p className="text-gray-600 dark:text-gray-400">📱 Social Media dashboard embedded</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">Carousel metrics, engagement themes, sentiment analysis</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ========== RECOMMENDATIONS TAB ========== */}
+          <TabsContent value="recommendations" className="space-y-6">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-950 dark:to-orange-900">
+              <CardHeader>
+                <CardTitle>AI Recommendations</CardTitle>
+                <CardDescription>Next carousel topics + auto-trigger suggestions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="p-4 rounded-lg bg-white dark:bg-slate-800 border-l-4 border-l-amber-500">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold">The Funding Paradox</h3>
+                      <span className="text-2xl font-bold text-amber-600">94%</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">High engagement on financial health content (11.4% rate)</p>
+                    <button className="px-3 py-1 bg-amber-600 text-white rounded text-sm">Approve & Auto-Post</button>
+                  </div>
+
+                  <div className="p-4 rounded-lg bg-white dark:bg-slate-800 border-l-4 border-l-green-500">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold">Email: Nonprofit Nurture</h3>
+                      <span className="text-2xl font-bold text-green-600">87%</span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Auto-trigger when nonprofit engages with carousel</p>
+                    <button className="px-3 py-1 bg-green-600 text-white rounded text-sm">Enable Auto-Trigger</button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* ========== HEALTH TAB ========== */}
