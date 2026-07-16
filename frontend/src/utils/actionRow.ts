@@ -19,7 +19,9 @@ export interface ActionRowLinks {
 export function getActionRowLinks(
   org: Pick<ApiOrganization, 'website_status' | 'website' | 'donate_url_status' | 'donate_url' | 'volunteer_url'> | null | undefined
 ): ActionRowLinks {
-  const websiteVerified = org?.website_status === 'ok' || org?.website_status === 'beta'
+  // Show website if: (1) verified as 'ok'/'beta', OR (2) URL exists but unchecked (NULL status)
+  // NULL status = "we haven't checked this yet" — better to show it than hide real websites.
+  const websiteVerified = (org?.website_status === 'ok' || org?.website_status === 'beta') || (org?.website && org?.website_status == null)
   const link = websiteVerified ? getPrimaryExternalLink({ website: org?.website }) : { url: null, label: null, type: null }
 
   // Donate gate: status IN (beta, claimed) ONLY -- never donate_confidence,
@@ -33,7 +35,7 @@ export function getActionRowLinks(
   return {
     websiteUrl: link.url,
     websiteLabel: link.label,
-    isWebsiteBeta: org?.website_status === 'beta',
+    isWebsiteBeta: Boolean(org?.website_status === 'beta' || (org?.website && org?.website_status == null)),
     donateUrl,
     isDonateBeta: org?.donate_url_status === 'beta',
     volunteerUrl,
