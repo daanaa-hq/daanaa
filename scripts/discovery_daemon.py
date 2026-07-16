@@ -122,15 +122,15 @@ class ContinuousDiscoveryDaemon:
             return {'status': 'error', 'reason': str(e)[:100]}
 
     def queue_verified_links(self, ein, links):
-        """Queue verified links, filtering by 90% confidence threshold.
+        """Queue verified links for approval.
 
-        Links with 90%+ confidence go to approval queue.
-        Links <90% confidence go to under_review status.
+        All verified links from discovery go to pending queue.
+        These are already verified by the verification pipeline.
         """
         db = sqlite3.connect(str(DB))
         cursor = db.cursor()
 
-        # Create queue table with status column
+        # Create queue table if it doesn't exist
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS link_deployment_queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,58 +138,37 @@ class ContinuousDiscoveryDaemon:
                 links JSON NOT NULL,
                 status TEXT DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                deployed_at TIMESTAMP,
-                UNIQUE(ein, status)
+                deployed_at TIMESTAMP
             )
         """)
 
-        # Separate links by confidence threshold (90%)
-        high_confidence = [l for l in links if l.get('confidence', 0) >= 0.9]
-        under_review = [l for l in links if l.get('confidence', 0) < 0.9]
+        # Queue all verified links for approval
+        cursor.execute("SELECT id FROM link_deployment_queue WHERE ein = ? AND deployed_at IS NULL", (ein,))
+        existing = cursor.fetchone()
 
-        # Queue high-confidence links for approval
-        if high_confidence:
-            cursor.execute("SELECT id FROM link_deployment_queue WHERE ein = ? AND status = 'pending'", (ein,))
-            existing = cursor.fetchone()
+        if existing:
+            # Update existing entry
+            cursor.execute(
+                "UPDATE link_deployment_queue SET links = ? WHERE ein = ? AND deployed_at IS NULL",
+                (json.dumps(links), ein)
+            )
+        else:
+            # Insert new entry
+            cursor.execute("""
+                INSERT INTO link_deployment_queue (ein, links, status)
+                VALUES (?, ?, 'pending')
+            """, (ein, json.dumps(links)))
 
-            if existing:
-                cursor.execute(
-                    "UPDATE link_deployment_queue SET links = ? WHERE ein = ? AND status = 'pending'",
-                    (json.dumps(high_confidence), ein)
-                )
-            else:
-                cursor.execute("""
-                    INSERT INTO link_deployment_queue (ein, links, status)
-                    VALUES (?, ?, 'pending')
-                """, (ein, json.dumps(high_confidence)))
-
-            logger.info(f"✓ {ein}: {len(high_confidence)} links queued for approval (90%+ confidence)")
-
-        # Log under-review links separately
-        if under_review:
-            cursor.execute("SELECT id FROM link_deployment_queue WHERE ein = ? AND status = 'under_review'", (ein,))
-            existing = cursor.fetchone()
-
-            if existing:
-                cursor.execute(
-                    "UPDATE link_deployment_queue SET links = ? WHERE ein = ? AND status = 'under_review'",
-                    (json.dumps(under_review), ein)
-                )
-            else:
-                cursor.execute("""
-                    INSERT INTO link_deployment_queue (ein, links, status)
-                    VALUES (?, ?, 'under_review')
-                """, (ein, json.dumps(under_review)))
-
-            logger.info(f"~ {ein}: {len(under_review)} links under review (<90% confidence)")
+        logger.info(f"✓ {ein}: {len(links)} links queued for approval")
 
         db.commit()
         db.close()
 
-    def run_continuous_loop(self, batch_size=50, sleep_between_batches=5):
+    def run_continuous_loop(self, batch_size=50, sleep_between_batches=5, sleep_between_orgs=0.5):
         """Run discovery continuously."""
         logger.info("=" * 60)
         logger.info("🚀 CONTINUOUS DISCOVERY DAEMON STARTED")
+        logger.info(f"   Batch size: {batch_size} | Sleep: {sleep_between_orgs}s/org, {sleep_between_batches}s/batch")
         logger.info("=" * 60)
 
         iteration = 0
@@ -214,7 +193,7 @@ class ContinuousDiscoveryDaemon:
                         logger.warning(f"❌ {name} ({ein}): {result.get('reason')}")
 
                     # Rate limit
-                    time.sleep(0.5)
+                    time.sleep(sleep_between_orgs)
 
                 # Log progress with confidence breakdown
                 db = sqlite3.connect(str(DB))
@@ -249,4 +228,10 @@ class ContinuousDiscoveryDaemon:
 if __name__ == '__main__':
     daemon = ContinuousDiscoveryDaemon()
     batch_size = int(sys.argv[1]) if len(sys.argv) > 1 else 50
-    daemon.run_continuous_loop(batch_size=batch_size)
+    sleep_between_orgs = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
+    sleep_between_batches = float(sys.argv[3]) if len(sys.argv) > 3 else 5
+    daemon.run_continuous_loop(
+        batch_size=batch_size,
+        sleep_between_orgs=sleep_between_orgs,
+        sleep_between_batches=sleep_between_batches
+    )
