@@ -108,8 +108,17 @@ class BatchHTTPFetcher:
         Returns:
             Dict mapping EIN -> HTML content
         """
-        connector = aiohttp.TCPConnector(limit=self.max_concurrent)
-        timeout = aiohttp.ClientTimeout(total=self.timeout)
+        import ssl
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+
+        connector = aiohttp.TCPConnector(
+            limit=self.max_concurrent,
+            ssl=ssl_context,
+            force_close=True
+        )
+        timeout = aiohttp.ClientTimeout(total=self.timeout, connect=5, sock_connect=5)
 
         results = {}
         semaphore = asyncio.Semaphore(self.max_concurrent)
@@ -117,9 +126,11 @@ class BatchHTTPFetcher:
         async def fetch_one(session, ein, url):
             async with semaphore:
                 try:
-                    async with session.get(url, timeout=timeout, ssl=False) as resp:
+                    async with session.get(url, timeout=timeout, ssl=ssl_context, allow_redirects=True) as resp:
                         if resp.status == 200:
-                            results[ein] = await resp.text()
+                            html = await resp.text()
+                            if html and len(html) > 100:  # Sanity check
+                                results[ein] = html
                         else:
                             logger.debug(f"  {ein}: HTTP {resp.status}")
                 except asyncio.TimeoutError:
@@ -127,7 +138,7 @@ class BatchHTTPFetcher:
                 except Exception as e:
                     logger.debug(f"  {ein}: Fetch failed - {str(e)[:50]}")
 
-        async with aiohttp.ClientSession(connector=connector) as session:
+        async with aiohttp.ClientSession(connector=connector, trust_env=True) as session:
             await asyncio.gather(
                 *[fetch_one(session, ein, url) for ein, url in org_websites],
                 return_exceptions=True

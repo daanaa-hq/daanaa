@@ -40,8 +40,11 @@ class CharityNavigatorVerifier:
             if CN_API_KEY and CN_API_KEY != "YOUR_KEY_HERE":
                 params["apiKey"] = CN_API_KEY
 
-            resp = self.session.get(url, params=params, timeout=self.timeout)
+            headers = {"User-Agent": "Daanaa/1.0"}
+
+            resp = self.session.get(url, params=params, timeout=self.timeout, headers=headers)
             if resp.status_code != 200:
+                logger.debug(f"CN HTTP {resp.status_code} for EIN {ein}")
                 return None
 
             data = resp.json()
@@ -49,10 +52,16 @@ class CharityNavigatorVerifier:
                 return None
 
             org = data[0]
+            donate_url = org.get("donateUrl")
+
+            # CN might return URL without protocol
+            if donate_url and not donate_url.startswith(('http://', 'https://')):
+                donate_url = f"https://{donate_url}"
+
             return {
                 "name": org.get("charityName"),
                 "website": org.get("websiteURL"),
-                "donation_url": org.get("donateUrl"),  # CN provides direct donate link
+                "donation_url": donate_url,
                 "ein": org.get("ein"),
                 "source": "charity_navigator",
             }
