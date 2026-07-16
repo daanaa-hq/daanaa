@@ -29,9 +29,9 @@ logging.basicConfig(
 )
 
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
-BATCH_SIZE = 100  # Org batch per cycle
-CONCURRENT_FETCHES = 50  # Async HTTP connections
-PARSE_WORKERS = 16  # CPU workers for HTML parsing
+BATCH_SIZE = 200  # Org batch per cycle (2x)
+CONCURRENT_FETCHES = 100  # Async HTTP connections (2x)
+PARSE_WORKERS = 32  # CPU workers for HTML parsing (2x)
 QUALITY_THRESHOLD = 0.85  # Confidence gate (0-1.0)
 
 # Link type patterns (for high-quality extraction)
@@ -94,7 +94,7 @@ class QualityGate:
 class BatchHTTPFetcher:
     """Async batch HTTP fetcher (GPU-equivalent parallelization)."""
 
-    def __init__(self, max_concurrent=CONCURRENT_FETCHES, timeout=10):
+    def __init__(self, max_concurrent=CONCURRENT_FETCHES, timeout=5):
         self.max_concurrent = max_concurrent
         self.timeout = timeout
 
