@@ -222,11 +222,12 @@ class ContinuousDiscoveryDaemon:
 
         All verified links from discovery go to pending queue.
         These are already verified by the verification pipeline.
+        Handles duplicate EINs by merging links (no UNIQUE constraint issues).
         """
         db = sqlite3.connect(str(DB))
         cursor = db.cursor()
 
-        # Create queue table if it doesn't exist
+        # Create queue table if it doesn't exist (no UNIQUE constraint — duplicates handled by merge)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS link_deployment_queue (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -238,24 +239,35 @@ class ContinuousDiscoveryDaemon:
             )
         """)
 
-        # Queue all verified links for approval
-        cursor.execute("SELECT id FROM link_deployment_queue WHERE ein = ? AND deployed_at IS NULL", (ein,))
+        # Check if org already queued (pending deployment)
+        cursor.execute("SELECT id, links FROM link_deployment_queue WHERE ein = ? AND deployed_at IS NULL", (ein,))
         existing = cursor.fetchone()
 
         if existing:
-            # Update existing entry
+            # Merge new links with existing queued links (no duplicates)
+            existing_id, existing_links_json = existing
+            existing_links = json.loads(existing_links_json) if existing_links_json else {}
+            merged = {**existing_links, **links}  # New links override old ones for same key
             cursor.execute(
-                "UPDATE link_deployment_queue SET links = ? WHERE ein = ? AND deployed_at IS NULL",
-                (json.dumps(links), ein)
+                "UPDATE link_deployment_queue SET links = ?, created_at = CURRENT_TIMESTAMP WHERE id = ?",
+                (json.dumps(merged), existing_id)
             )
+            logger.debug(f"✓ {ein}: merged {len(links)} links (total now: {len(merged)})")
         else:
             # Insert new entry
-            cursor.execute("""
-                INSERT INTO link_deployment_queue (ein, links, status)
-                VALUES (?, ?, 'pending')
-            """, (ein, json.dumps(links)))
-
-        logger.info(f"✓ {ein}: {len(links)} links queued for approval")
+            try:
+                cursor.execute("""
+                    INSERT INTO link_deployment_queue (ein, links, status)
+                    VALUES (?, ?, 'pending')
+                """, (ein, json.dumps(links)))
+                logger.info(f"✓ {ein}: {len(links)} links queued for approval")
+            except sqlite3.IntegrityError as e:
+                # Fallback: if insert fails (edge case), update instead
+                cursor.execute(
+                    "UPDATE link_deployment_queue SET links = ? WHERE ein = ? AND deployed_at IS NULL",
+                    (json.dumps(links), ein)
+                )
+                logger.debug(f"✓ {ein}: {len(links)} links queued (duplicate handled)")
 
         db.commit()
         db.close()
