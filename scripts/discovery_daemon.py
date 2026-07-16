@@ -44,6 +44,17 @@ logger = logging.getLogger(__name__)
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 
 
+def _json_safe(obj):
+    """JSON default: coerce numpy scalars to native Python types.
+
+    Guards json.dumps against numpy float32/int64 leaking in from GPU
+    verification (not JSON serializable → would crash the queue write).
+    """
+    if hasattr(obj, 'item'):  # numpy scalar
+        return obj.item()
+    return str(obj)
+
+
 class ContinuousDiscoveryDaemon:
     """Runs discovery continuously, queuing verified links."""
 
@@ -119,11 +130,12 @@ class ContinuousDiscoveryDaemon:
             self.stats['gpu_verified'] += len(verified)
 
             # Enrich links with GPU semantic match scores
+            # Cast to native float — numpy float32 is not JSON serializable
             for i, link_type in enumerate(link_types):
                 if i < len(verified):
                     key_name = f'{link_type}_url'
                     if key_name in links_dict:
-                        links_dict[f'{key_name}_semantic_match'] = verified[i].get('semantic_match', 0.0)
+                        links_dict[f'{key_name}_semantic_match'] = round(float(verified[i].get('semantic_match', 0.0)), 4)
         except Exception as e:
             logger.debug(f"GPU enhancement failed (non-blocking): {e}")
 
@@ -251,7 +263,7 @@ class ContinuousDiscoveryDaemon:
             merged = {**existing_links, **links}  # New links override old ones for same key
             cursor.execute(
                 "UPDATE link_deployment_queue SET links = ?, created_at = CURRENT_TIMESTAMP WHERE id = ?",
-                (json.dumps(merged), existing_id)
+                (json.dumps(merged, default=_json_safe), existing_id)
             )
             logger.debug(f"✓ {ein}: merged {len(links)} links (total now: {len(merged)})")
         else:
@@ -260,13 +272,13 @@ class ContinuousDiscoveryDaemon:
                 cursor.execute("""
                     INSERT INTO link_deployment_queue (ein, links, status)
                     VALUES (?, ?, 'pending')
-                """, (ein, json.dumps(links)))
+                """, (ein, json.dumps(links, default=_json_safe)))
                 logger.info(f"✓ {ein}: {len(links)} links queued for approval")
             except sqlite3.IntegrityError as e:
                 # Fallback: if insert fails (edge case), update instead
                 cursor.execute(
                     "UPDATE link_deployment_queue SET links = ? WHERE ein = ? AND deployed_at IS NULL",
-                    (json.dumps(links), ein)
+                    (json.dumps(links, default=_json_safe), ein)
                 )
                 logger.debug(f"✓ {ein}: {len(links)} links queued (duplicate handled)")
 
