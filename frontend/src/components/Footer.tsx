@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom'
 
+// Rebalanced 2026-07-16: Discover had 7 links, Legal had 5 (two of them not
+// legal). Non-legal items moved to their natural columns; low-traffic utility
+// links (Settings, Member benefits, AI access file) live in the bottom bar.
 const NAV_COLS = [
   {
     heading: 'Discover',
     links: [
       { label: 'Directory', to: '/directory' },
+      { label: 'Explore by location', href: 'https://data.daanaa.org/nonprofits/state/index.html' },
+      { label: 'Wallet', to: '/wallet' },
       { label: 'Research', to: '/research' },
       { label: 'Open data', to: '/open-data' },
-      { label: 'Wallet', to: '/wallet' },
-      { label: 'Settings', to: '/settings' },
     ],
   },
   {
@@ -16,7 +19,7 @@ const NAV_COLS = [
     links: [
       { label: 'Claim your page', to: '/for-nonprofits' },
       { label: 'Volunteer', to: '/volunteer' },
-      { label: 'Member benefits', to: '/member/benefits' },
+      { label: 'Partners', to: '/partners' },
       { label: 'Join the network', to: '/for-vendors' },
     ],
   },
@@ -26,6 +29,7 @@ const NAV_COLS = [
       { label: 'About Daanaa', to: '/about' },
       { label: 'How it works', to: '/methodology' },
       { label: 'Our Charter', to: '/charter' },
+      { label: 'Contact', to: '/feedback' },
     ],
   },
   {
@@ -34,8 +38,6 @@ const NAV_COLS = [
       { label: 'Privacy', to: '/privacy' },
       { label: 'Security', to: '/security' },
       { label: 'Terms', to: '/terms' },
-      { label: 'Partners', to: '/partners' },
-      { label: 'Contact', to: '/feedback' },
     ],
   },
 ]
@@ -63,36 +65,25 @@ export default function Footer() {
                 {heading}
               </p>
               <ul className="space-y-1">
-                {links.map(({ label, to }) => (
+                {links.map(({ label, to, href }: { label: string; to?: string; href?: string }) => (
                   <li key={label}>
-                    <Link
-                      to={to}
-                      className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5"
-                    >
-                      {label}
-                    </Link>
+                    {to ? (
+                      <Link
+                        to={to}
+                        className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5"
+                      >
+                        {label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={href}
+                        className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5"
+                      >
+                        {label}
+                      </a>
+                    )}
                   </li>
                 ))}
-                {heading === 'Discover' && (
-                  <li>
-                    <a
-                      href="https://data.daanaa.org/nonprofits/state/index.html"
-                      className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5"
-                    >
-                      Explore by location
-                    </a>
-                  </li>
-                )}
-                {heading === 'Discover' && (
-                  <li>
-                    <a
-                      href="/llms.txt"
-                      className="font-body text-[14px] text-muted-cream hover:text-warm-cream transition-colors duration-150 block py-1.5"
-                    >
-                      AI access file
-                    </a>
-                  </li>
-                )}
               </ul>
             </div>
           ))}
@@ -101,6 +92,13 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-6 border-t border-navy-mid space-y-2">
+        <p className="font-body text-[13px] tracking-[0.02em] text-muted-cream pb-2">
+          <Link to="/settings" className="hover:text-warm-cream transition-colors">Settings</Link>
+          <span className="mx-2 opacity-50">·</span>
+          <Link to="/member/benefits" className="hover:text-warm-cream transition-colors">Member benefits</Link>
+          <span className="mx-2 opacity-50">·</span>
+          <a href="/llms.txt" className="hover:text-warm-cream transition-colors">AI access file</a>
+        </p>
         <p className="font-body text-[12px] tracking-[0.02em] text-muted-cream">
           Daanaa is an independent nonprofit discovery platform. Not affiliated with the IRS, the federal government, or any nonprofit rating agency.
         </p>
