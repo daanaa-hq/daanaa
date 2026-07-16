@@ -686,3 +686,33 @@ Relabeling is the conservative/honest direction (adds a caveat badge, never remo
 EINs backed up for reversibility. Rejected: widening the frontend gate to include 'verified'
 (would drop the AI badge → presents unconfirmed links as authoritative, breaks the trust model).
 Website links unaffected (86,954 'ok' render fine); volunteer links have no status gate.
+
+## 2026-07-16 — Phase 2 parallel discovery (steps 1-4) for website coverage push to 50%
+Current state: 6% website coverage (109K of 1.85M orgs). Real nonprofits almost always
+have websites — even if just a page. Discovery gap, not data gap. User asked for 50%+
+target. Built Phase 2a (runs parallel with Phase 2b Charity Navigator) targeting orgs
+WITH financial data that have stale/missing websites.
+
+Implements steps 1-4:
+1. Domain guessing: slugify org name + try .org/.ngo/.nonprofit TLDs (0 cost, fast)
+2. DuckDuckGo search fallback: "org name nonprofit" query (free, reliable)
+3. Staleness detection: rediscover orgs not checked 90+ days (captures moved sites)
+4. Playwright browser automation: fetch JS-heavy sites that direct HTTP misses
+
+Architecture: Phase 1 (basic website discovery) → Phase 2a+2b parallel:
+  - Phase 2a processes high-financial-value orgs needing better search
+  - Phase 2b Charity Navigator covers no-data orgs simultaneously
+  - Both feed link_deployment_queue; daemon deploys every 4 hours
+
+Dependencies added: duckduckgo-search, httpx, playwright (all lightweight, no cloud APIs).
+Phase orchestrator updated to activate Phase 2 (parallel) when Phase 1 saturates.
+
+Why not: wider web scraping (fragile, slow), DNS reverse lookup (unreliable for nonprofits),
+whois queries (rate-limited, slow). Why yes: DuckDuckGo is free and specific (nonprofit
+search naturally filters spam). Playwright only for stale sites (expensive).
+
+Expected impact: 6% → ~25-30% in Phase 2a from steps 1-3; Playwright adds 5-10% more.
+Full 50% target requires SerpAPI integration (future, if needed after measuring Phase 2a).
+
+Rejected: changing display order to revenue (would break peer-group financial context
+principle — display stays principle-driven; orchestration only).
