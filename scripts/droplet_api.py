@@ -1727,6 +1727,7 @@ _SPA_PREFIXES = {
     'volunteer', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
     'nonprofit', 'vendor', 'claim', 'admin',
     'security', 'privacy', 'meet-the-invisible', 'invisible', 'charter',
+    'settings', 'events', 'open-data',
 }
 
 @app.route('/api/voice/support', methods=['POST'])

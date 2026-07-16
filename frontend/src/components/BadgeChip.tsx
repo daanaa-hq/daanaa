@@ -14,10 +14,12 @@ const COLOR_STYLES = {
     blue:  { bg: 'rgba(96,165,250,0.10)',  border: 'rgba(96,165,250,0.30)',  text: '#3B82F6' },
     gold:  { bg: 'rgba(201,169,110,0.12)', border: 'rgba(201,169,110,0.35)', text: '#C9A96E' },
   },
+  // 'dark' variant sits on theme-flipping surfaces — its text colors are CSS
+  // vars (declared in index.css) so they darken when the light theme is active.
   dark: {
-    green: { bg: 'rgba(42,107,69,0.15)',   border: 'rgba(42,107,69,0.35)',   text: '#5CA878' },
-    blue:  { bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.30)',  text: '#93C5FD' },
-    gold:  { bg: 'rgba(201,169,110,0.15)', border: 'rgba(201,169,110,0.40)', text: '#C9A96E' },
+    green: { bg: 'rgba(42,107,69,0.15)',   border: 'rgba(42,107,69,0.35)',   text: 'var(--badge-green, #5CA878)' },
+    blue:  { bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.30)',  text: 'var(--badge-blue, #93C5FD)' },
+    gold:  { bg: 'rgba(201,169,110,0.15)', border: 'rgba(201,169,110,0.40)', text: 'var(--soft-gold)' },
   },
 }
 

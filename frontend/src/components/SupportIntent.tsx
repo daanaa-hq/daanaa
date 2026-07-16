@@ -38,7 +38,7 @@ export default function SupportIntent({ orgName, ein }: { orgName: string; ein: 
       <div className="flex flex-wrap gap-2">
         <button
           onClick={signal}
-          className="rounded-full border border-soft-gold/40 px-3.5 py-1.5 font-body text-[12px] font-medium text-soft-gold hover:bg-soft-gold/10 transition-colors"
+          className="rounded-full border border-deep-gold/50 px-3.5 py-1.5 font-body text-[12px] font-medium text-deep-gold hover:bg-soft-gold/10 transition-colors"
         >
           I'd volunteer here
         </button>

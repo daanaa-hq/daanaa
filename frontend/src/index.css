@@ -25,34 +25,66 @@
     --ring: 38 35% 61%;
     --radius: 0.625rem;
 
-    --deep-navy: #0A1628;
-    --dark-surface: #111D2E;
-    --navy-mid: #1A2744;
-    --warm-cream: #F5F0EB;
-    --soft-gold: #C9A96E;
-    --bright-gold: #D4B87A;
-    --pale-gold: #E8D5A3;
-    --muted-cream: #D4CCBF;
-    --cool-grey: #374151;
-    --light-cream: #EDE8E0;
-    --light-grey: #E5E0DB;
-    --deep-gold: #8B7340;
-    --success-green: #4ADE80;
-    --alert-amber: #F59E0B;
-    /* New brand tokens */
-    --merit-navy:  #0D1C36;
-    --merit-gold:  #C9A84C;
-    --civic-teal:  #1A4A4A;
-    --teal-light:  #2D7070;
-    --merit-cream: #FAF8F3;
-    --charcoal:    #1E2530;
-    --slate:       #4B5563;
-    /* Tier colors */
-    --tier-beacon:  #B8902F;
-    --tier-lantern: #C9A84C;
-    --tier-flame:   #D4B968;
-    --tier-ember:   #D9A876;
-    --tier-spark:   #E8C896;
+    /* Brand palette as RGB channels — single source of truth for both
+       the utility classes below AND tailwind.config.js (which uses
+       rgb(var(--x-rgb) / <alpha-value>) so opacity variants like
+       text-warm-cream/70 also follow the active theme). */
+    --deep-navy-rgb: 10 22 40;
+    --dark-surface-rgb: 17 29 46;
+    --navy-mid-rgb: 26 39 68;
+    --warm-cream-rgb: 245 240 235;
+    --soft-gold-rgb: 201 169 110;
+    --bright-gold-rgb: 212 184 122;
+    --pale-gold-rgb: 232 213 163;
+    --muted-cream-rgb: 212 204 191;
+    --cool-grey-rgb: 55 65 81;
+    --light-cream-rgb: 237 232 224;
+    --light-grey-rgb: 229 224 219;
+    --deep-gold-rgb: 139 115 64;
+    --success-green-rgb: 74 222 128;
+    --alert-amber-rgb: 245 158 11;
+    --merit-navy-rgb: 13 28 54;
+    --merit-gold-rgb: 201 168 76;
+    --civic-teal-rgb: 26 74 74;
+    --teal-light-rgb: 45 112 112;
+    --merit-cream-rgb: 250 248 243;
+    --charcoal-rgb: 30 37 48;
+    --slate-rgb: 75 85 99;
+    --tier-beacon-rgb: 184 144 47;
+    --tier-lantern-rgb: 201 168 76;
+    --tier-flame-rgb: 212 185 104;
+    --tier-ember-rgb: 217 168 118;
+    --tier-spark-rgb: 232 200 150;
+    /* BadgeChip 'dark' variant text (used on theme-flipping surfaces) */
+    --badge-green: #5CA878;
+    --badge-blue: #93C5FD;
+
+    --deep-navy: rgb(var(--deep-navy-rgb));
+    --dark-surface: rgb(var(--dark-surface-rgb));
+    --navy-mid: rgb(var(--navy-mid-rgb));
+    --warm-cream: rgb(var(--warm-cream-rgb));
+    --soft-gold: rgb(var(--soft-gold-rgb));
+    --bright-gold: rgb(var(--bright-gold-rgb));
+    --pale-gold: rgb(var(--pale-gold-rgb));
+    --muted-cream: rgb(var(--muted-cream-rgb));
+    --cool-grey: rgb(var(--cool-grey-rgb));
+    --light-cream: rgb(var(--light-cream-rgb));
+    --light-grey: rgb(var(--light-grey-rgb));
+    --deep-gold: rgb(var(--deep-gold-rgb));
+    --success-green: rgb(var(--success-green-rgb));
+    --alert-amber: rgb(var(--alert-amber-rgb));
+    --merit-navy: rgb(var(--merit-navy-rgb));
+    --merit-gold: rgb(var(--merit-gold-rgb));
+    --civic-teal: rgb(var(--civic-teal-rgb));
+    --teal-light: rgb(var(--teal-light-rgb));
+    --merit-cream: rgb(var(--merit-cream-rgb));
+    --charcoal: rgb(var(--charcoal-rgb));
+    --slate: rgb(var(--slate-rgb));
+    --tier-beacon: rgb(var(--tier-beacon-rgb));
+    --tier-lantern: rgb(var(--tier-lantern-rgb));
+    --tier-flame: rgb(var(--tier-flame-rgb));
+    --tier-ember: rgb(var(--tier-ember-rgb));
+    --tier-spark: rgb(var(--tier-spark-rgb));
   }
 
   body {
@@ -65,9 +97,10 @@
   }
 
   /* Form controls sit on white/cream cards — they must never inherit the
-     body's light-on-dark cream, or typed text becomes invisible. */
+     body's light-on-dark cream, or typed text becomes invisible. Charcoal is
+     theme-constant (deep-navy inverts to near-white in light mode). */
   input, textarea, select {
-    color: var(--deep-navy);
+    color: var(--charcoal);
   }
   input::placeholder, textarea::placeholder {
     color: var(--cool-grey);
@@ -159,3 +192,147 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--soft-gold);
 }
+
+/* ── Light Theme ──────────────────────────────────────────────────────────
+   The site's bg/text/border utilities (defined above) read CSS
+   custom properties, so light mode = swapping the palette at the root.
+   Semantic inversion: --deep-navy (page bg) becomes near-white, --warm-cream
+   (body text) becomes charcoal, golds darken to keep AA contrast on white.
+   Toggled from /settings; persisted as localStorage 'daanaa-theme'. */
+[data-theme="light"] {
+  color-scheme: light;
+  --background: 45 40% 95%;
+  --foreground: 240 20% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 20% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 20% 10%;
+  --primary: 38 60% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 20% 10%;
+  --secondary-foreground: 45 40% 95%;
+  --muted: 220 15% 60%;
+  --muted-foreground: 220 15% 40%;
+  --accent: 38 60% 50%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 220 15% 80%;
+  --input: 220 15% 92%;
+  --ring: 38 60% 50%;
+
+  --deep-navy-rgb: 248 247 245;
+  --dark-surface-rgb: 255 255 255;
+  --navy-mid-rgb: 229 224 216;
+  --warm-cream-rgb: 30 37 48;
+  --soft-gold-rgb: 139 111 71;
+  --bright-gold-rgb: 157 126 82;
+  --pale-gold-rgb: 139 111 71; /* darker in light mode: section labels on near-white */
+  --muted-cream-rgb: 107 98 87;
+  --cool-grey-rgb: 75 85 99;
+  --light-cream-rgb: 237 232 224; /* constant: card borders/bg */
+  --light-grey-rgb: 229 224 219; /* constant: card borders/bg */
+  --deep-gold-rgb: 107 90 61;
+  --success-green-rgb: 22 163 74;
+  --alert-amber-rgb: 217 119 6;
+  --merit-navy-rgb: 26 46 74;
+  --merit-gold-rgb: 139 111 71;
+  --civic-teal-rgb: 15 74 74;
+  --teal-light-rgb: 26 107 107;
+  --merit-cream-rgb: 250 248 243; /* constant: light card bg */
+  --charcoal-rgb: 30 37 48;
+  --slate-rgb: 75 85 99;
+  --tier-beacon-rgb: 139 111 71;
+  --tier-lantern-rgb: 157 126 82;
+  --tier-flame-rgb: 138 115 80;
+  --tier-ember-rgb: 143 122 80;
+  --tier-spark-rgb: 133 113 76;
+  --badge-green: #1F6B45;
+  --badge-blue: #1E40AF;
+}
+
+[data-theme="light"] body {
+  background-color: #F8F7F5;
+  color: #1E2530;
+}
+
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  color: #1E2530;
+  background-color: #FFFFFF;
+  border-color: #D4CFCA;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #8B8680;
+  opacity: 0.75;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: #F8F7F5;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #D4CFCA;
+  border-radius: 4px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #8B6F47;
+}
+
+/* ── Light-theme semantic pins ────────────────────────────────────────────
+   Some tokens carry two meanings: deep-navy is both "dark page surface"
+   (must flip light) and "dark ink on a white/cream card" (must stay dark);
+   warm-cream / soft-gold are both "light text on dark" (channel flips to
+   ink) and "light card / button surface" (must stay light). The channel
+   flip serves the dominant usage; these pins fix the exceptions.
+   Generated from the actual built-CSS class inventory — see DECISIONS.md. */
+
+[data-theme="light"] .text-deep-navy,
+[data-theme="light"] .hover\:text-deep-navy:hover { color: rgb(30 37 48); }
+[data-theme="light"] .text-deep-navy\/85 { color: rgb(30 37 48 / 0.85); }
+[data-theme="light"] .text-deep-navy\/80 { color: rgb(30 37 48 / 0.80); }
+[data-theme="light"] .text-deep-navy\/70 { color: rgb(30 37 48 / 0.70); }
+[data-theme="light"] .text-deep-navy\/60 { color: rgb(30 37 48 / 0.60); }
+[data-theme="light"] .bg-warm-cream,
+[data-theme="light"] .hover\:bg-warm-cream:hover { background-color: rgb(245 240 235); }
+[data-theme="light"] .bg-warm-cream\/60,
+[data-theme="light"] .hover\:bg-warm-cream\/60:hover { background-color: rgb(245 240 235 / 0.60); }
+[data-theme="light"] .bg-warm-cream\/50,
+[data-theme="light"] .hover\:bg-warm-cream\/50:hover { background-color: rgb(245 240 235 / 0.50); }
+[data-theme="light"] .bg-warm-cream\/40,
+[data-theme="light"] .hover\:bg-warm-cream\/40:hover { background-color: rgb(245 240 235 / 0.40); }
+[data-theme="light"] .bg-warm-cream\/30,
+[data-theme="light"] .hover\:bg-warm-cream\/30:hover { background-color: rgb(245 240 235 / 0.30); }
+[data-theme="light"] .bg-warm-cream\/20,
+[data-theme="light"] .hover\:bg-warm-cream\/20:hover { background-color: rgb(245 240 235 / 0.20); }
+[data-theme="light"] .bg-warm-cream\/5,
+[data-theme="light"] .hover\:bg-warm-cream\/5:hover { background-color: rgb(245 240 235 / 0.05); }
+[data-theme="light"] .bg-soft-gold,
+[data-theme="light"] .hover\:bg-soft-gold:hover { background-color: rgb(201 169 110); }
+[data-theme="light"] .bg-soft-gold\/90,
+[data-theme="light"] .hover\:bg-soft-gold\/90:hover { background-color: rgb(201 169 110 / 0.90); }
+[data-theme="light"] .bg-soft-gold\/50,
+[data-theme="light"] .hover\:bg-soft-gold\/50:hover { background-color: rgb(201 169 110 / 0.50); }
+[data-theme="light"] .bg-soft-gold\/25,
+[data-theme="light"] .hover\:bg-soft-gold\/25:hover { background-color: rgb(201 169 110 / 0.25); }
+[data-theme="light"] .bg-soft-gold\/20,
+[data-theme="light"] .hover\:bg-soft-gold\/20:hover { background-color: rgb(201 169 110 / 0.20); }
+[data-theme="light"] .bg-soft-gold\/15,
+[data-theme="light"] .hover\:bg-soft-gold\/15:hover { background-color: rgb(201 169 110 / 0.15); }
+[data-theme="light"] .bg-soft-gold\/10,
+[data-theme="light"] .hover\:bg-soft-gold\/10:hover { background-color: rgb(201 169 110 / 0.10); }
+[data-theme="light"] .bg-soft-gold\/5,
+[data-theme="light"] .hover\:bg-soft-gold\/5:hover { background-color: rgb(201 169 110 / 0.05); }
+[data-theme="light"] .bg-bright-gold,
+[data-theme="light"] .hover\:bg-bright-gold:hover { background-color: rgb(212 184 122); }
+[data-theme="light"] .text-light-grey { color: #4B5563; }
+[data-theme="light"] .text-amber-300 { color: #92400E; }
+[data-theme="light"] .text-blue-300 { color: #1E40AF; }
+[data-theme="light"] .text-emerald-300 { color: #065F46; }
+[data-theme="light"] .text-emerald-400 { color: #065F46; }
+[data-theme="light"] .text-emerald-500 { color: #047857; }
+[data-theme="light"] .text-violet-300 { color: #6D28D9; }

@@ -200,7 +200,7 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
         )}
       </div>
       {website && (
-        <p className="font-body text-[10px] text-cool-grey/50 mt-2 leading-relaxed">
+        <p className="font-body text-[10px] text-cool-grey/75 mt-2 leading-relaxed">
           Link from our records. Websites can change. If it is broken, search for them by name.
         </p>
       )}

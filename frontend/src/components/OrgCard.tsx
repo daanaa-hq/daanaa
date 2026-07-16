@@ -35,7 +35,7 @@ function getNteeInfo(code: string): { major: string; sub: string | null } {
 
 
 function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; canAdd: boolean; onClick: (e: React.MouseEvent) => void }) {
-  const color = inCompare ? '#C9A96E' : '#A89F94'
+  const color = inCompare ? '#8B6F47' : '#7A7166'
   return (
     <button
       onClick={onClick}
@@ -292,7 +292,7 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
 
       {/* Location */}
       <div className="flex items-center gap-1.5 mb-2">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7A7166" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
         </svg>
         <span className="font-body text-[12px] text-cool-grey">

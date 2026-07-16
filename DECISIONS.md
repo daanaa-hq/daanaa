@@ -716,3 +716,31 @@ Full 50% target requires SerpAPI integration (future, if needed after measuring 
 
 Rejected: changing display order to revenue (would break peer-group financial context
 principle — display stays principle-driven; orchestration only).
+
+## 2026-07-16: Theme system — light/dark toggle with semantic color layers
+
+Chose: theme toggle at /settings; palette lives as CSS RGB-channel variables
+(src/index.css) that tailwind.config.js reads via rgb(var(--x-rgb) / <alpha-value>),
+so every Tailwind class — including opacity variants like text-warm-cream/70 —
+follows the active theme. Preference in localStorage ('daanaa-theme'), applied
+pre-hydration by an inline script in index.html (no wrong-theme flash), never
+sent to the server (P2-consistent).
+
+Key learning: several tokens carry two meanings — deep-navy is both "dark page
+surface" (must flip) and "dark ink on white card" (must stay dark); warm-cream
+and soft-gold have the mirrored problem. Channel flip serves the dominant usage;
+a generated [data-theme="light"] override block pins the exceptions (built from
+the compiled-CSS class inventory, not by hand).
+
+Also fixed pre-existing dark-mode contrast bugs found by an automated WCAG
+audit (agent-browser walking all text nodes): soft-gold links on cream cards
+(~2:1) now use link-gold/deep-gold ink tokens; AiBadge disclosure chip was
+1.7:1 on the dark hero, now muted-cream (theme-aware); disclosure texts at /50
+opacity raised to /70-75. Both themes now audit at 0 real failures on Home,
+Directory, Org detail, Settings.
+
+Added 'settings', 'events', 'open-data' to droplet _SPA_PREFIXES (events and
+open-data were pre-existing 404s on the droplet).
+
+Rejected: separate light stylesheet (drift risk), per-component dark: variants
+(832 call sites), flipping only some pages (inconsistent UX).

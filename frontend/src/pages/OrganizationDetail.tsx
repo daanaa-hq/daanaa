@@ -56,7 +56,7 @@ function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
   return (
     <div className="mt-4 flex flex-wrap gap-2">
       {yearLabel && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] font-medium">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-soft-gold/15 text-deep-gold font-body text-[11px] font-medium">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
           </svg>
@@ -445,7 +445,7 @@ export default function OrganizationDetail() {
         }
       `}</style>
       {/* Profile Header */}
-      <div className="bg-deep-navy pt-[72px] relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, #0A1628 70%, transparent)' }}>
+      <div className="bg-deep-navy pt-[72px] relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgb(var(--deep-navy-rgb)) 70%, transparent)' }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 md:py-12 lg:py-16">
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2">
@@ -462,7 +462,7 @@ export default function OrganizationDetail() {
                 title={isInFunding(org.ein) ? 'Remove from funding list' : 'Add to funding list'}
                 aria-label={isInFunding(org.ein) ? 'Remove from funding list' : 'Fund this org'}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150"
-                style={{ background: isInFunding(org.ein) ? '#22c55e20' : 'rgba(255,255,255,0.08)', border: `1px solid ${isInFunding(org.ein) ? '#22c55e' : 'rgba(255,255,255,0.2)'}` }}
+                style={{ background: isInFunding(org.ein) ? '#22c55e20' : 'rgb(var(--warm-cream-rgb) / 0.08)', border: `1px solid ${isInFunding(org.ein) ? '#22c55e' : 'rgb(var(--warm-cream-rgb) / 0.2)'}` }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24"
                   fill={isInFunding(org.ein) ? '#22c55e' : 'none'}
@@ -476,7 +476,7 @@ export default function OrganizationDetail() {
                 title={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'I want to volunteer here'}
                 aria-label={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'Volunteer here'}
                 className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150"
-                style={{ background: isInVolunteering(org.ein) ? '#ef444420' : 'rgba(255,255,255,0.08)', border: `1px solid ${isInVolunteering(org.ein) ? '#ef4444' : 'rgba(255,255,255,0.2)'}` }}
+                style={{ background: isInVolunteering(org.ein) ? '#ef444420' : 'rgb(var(--warm-cream-rgb) / 0.08)', border: `1px solid ${isInVolunteering(org.ein) ? '#ef4444' : 'rgb(var(--warm-cream-rgb) / 0.2)'}` }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24"
                   fill={isInVolunteering(org.ein) ? '#ef4444' : 'none'}
@@ -708,7 +708,7 @@ export default function OrganizationDetail() {
                         onClick={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
                         title={isInFunding(org.ein) ? 'Remove from donation list' : 'Add to donation list'}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-150"
-                        style={{ background: isInFunding(org.ein) ? '#22c55e20' : 'rgba(255,255,255,0.08)', border: `1px solid ${isInFunding(org.ein) ? '#22c55e' : 'rgba(255,255,255,0.2)'}`, color: isInFunding(org.ein) ? '#22c55e' : '#d4cfc8' }}
+                        style={{ background: isInFunding(org.ein) ? '#22c55e20' : 'rgb(var(--warm-cream-rgb) / 0.08)', border: `1px solid ${isInFunding(org.ein) ? '#22c55e' : 'rgb(var(--warm-cream-rgb) / 0.2)'}`, color: isInFunding(org.ein) ? '#22c55e' : 'var(--warm-cream)' }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill={isInFunding(org.ein) ? '#22c55e' : 'none'} stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                         {isInFunding(org.ein) ? 'In donation list' : 'Add to donation list'}
@@ -717,7 +717,7 @@ export default function OrganizationDetail() {
                         onClick={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
                         title={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'Add to volunteer list'}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-150"
-                        style={{ background: isInVolunteering(org.ein) ? '#ef444420' : 'rgba(255,255,255,0.08)', border: `1px solid ${isInVolunteering(org.ein) ? '#ef4444' : 'rgba(255,255,255,0.2)'}`, color: isInVolunteering(org.ein) ? '#ef4444' : '#d4cfc8' }}
+                        style={{ background: isInVolunteering(org.ein) ? '#ef444420' : 'rgb(var(--warm-cream-rgb) / 0.08)', border: `1px solid ${isInVolunteering(org.ein) ? '#ef4444' : 'rgb(var(--warm-cream-rgb) / 0.2)'}`, color: isInVolunteering(org.ein) ? '#ef4444' : 'var(--warm-cream)' }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill={isInVolunteering(org.ein) ? '#ef4444' : 'none'} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                         {isInVolunteering(org.ein) ? 'In volunteer list' : 'Add to volunteer list'}
@@ -825,7 +825,7 @@ export default function OrganizationDetail() {
                   <Link
                     to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
                     title="Is this your nonprofit? Claim your page free."
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-cool-grey/30 text-cool-grey hover:border-soft-gold/50 hover:text-soft-gold font-body text-[11px] transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-muted-cream/40 text-muted-cream hover:border-soft-gold/60 hover:text-soft-gold font-body text-[11px] transition-colors"
                   >
                     Unclaimed
                   </Link>
@@ -989,15 +989,15 @@ export default function OrganizationDetail() {
                 {apiOrg!.NTEE1 && (
                   <Link
                     to={`/category/${apiOrg!.NTEE1}`}
-                    className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors"
+                    className="font-body text-[12px] text-link-gold hover:text-deep-gold transition-colors"
                   >
                     Browse {getNteeLabel(apiOrg!.NTEE1 || '')} orgs →
                   </Link>
                 )}
-                <Link to="/methodology" className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors">
+                <Link to="/methodology" className="font-body text-[12px] text-link-gold hover:text-deep-gold transition-colors">
                   How we score →
                 </Link>
-                <Link to="/research" className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors">
+                <Link to="/research" className="font-body text-[12px] text-link-gold hover:text-deep-gold transition-colors">
                   Sector research →
                 </Link>
               </div>
@@ -1055,7 +1055,7 @@ export default function OrganizationDetail() {
                     </div>
                     <Link
                       to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
-                      className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-soft-gold/50 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
+                      className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-deep-gold/50 text-deep-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
                     >
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -1087,7 +1087,7 @@ export default function OrganizationDetail() {
                 )}
                 {org.programs.length > 0 && (
                   <>
-                    <span className="block mt-8 font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">PROGRAMS</span>
+                    <span className="block mt-8 font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">PROGRAMS</span>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {org.programs.map((program) => (
                         <span key={program} className="px-3 py-1.5 rounded-full bg-navy-mid/10 text-deep-navy font-body text-[13px]">{program}</span>
@@ -1102,12 +1102,12 @@ export default function OrganizationDetail() {
                 const leaders = ppLeadership.length > 0 ? ppLeadership : org.leadership
                 return leaders.length > 0 ? (
                 <>
-                  <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">LEADERSHIP</span>
+                  <span className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">LEADERSHIP</span>
                   <div className="mt-4 space-y-4">
                     {leaders.map((person) => (
                       <div key={person.name} className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-soft-gold/20 flex items-center justify-center">
-                          <span className="font-body text-[14px] font-semibold text-soft-gold">{person.initials}</span>
+                          <span className="font-body text-[14px] font-semibold text-deep-gold">{person.initials}</span>
                         </div>
                         <div>
                           <p className="font-body text-[14px] font-medium text-deep-navy">{person.name}</p>
@@ -1124,7 +1124,7 @@ export default function OrganizationDetail() {
                 </>
                 ) : (
                 <div className="pt-2">
-                  <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">DATA SOURCE</span>
+                  <span className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">DATA SOURCE</span>
                   <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 font-body text-[13px] text-cool-grey">
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">Type</p>
@@ -1165,7 +1165,7 @@ export default function OrganizationDetail() {
                   <p className="mt-3">
                     <a href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
                        target="_blank" rel="noopener noreferrer"
-                       className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors">
+                       className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors">
                       View on ProPublica Nonprofit Explorer →
                     </a>
                   </p>
@@ -1206,7 +1206,7 @@ export default function OrganizationDetail() {
             </div>
             <button
               onClick={() => setShowBreakdown(s => !s)}
-              className="ml-auto shrink-0 font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors flex items-center gap-1"
+              className="ml-auto shrink-0 font-body text-[12px] text-link-gold hover:text-deep-gold transition-colors flex items-center gap-1"
             >
               {showBreakdown ? 'Hide breakdown' : 'See full breakdown'}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1243,17 +1243,17 @@ export default function OrganizationDetail() {
                   <a
                     href="https://apps.irs.gov/app/eos/"
                     target="_blank" rel="noopener noreferrer"
-                    className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+                    className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
                   >IRS Tax Exempt Search →</a>
                   <a
                     href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
                     target="_blank" rel="noopener noreferrer"
-                    className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+                    className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
                   >ProPublica Nonprofit Explorer →</a>
                   <a
                     href="https://www.nasconet.org/resources/state-government/"
                     target="_blank" rel="noopener noreferrer"
-                    className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+                    className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
                   >State Charity Registry →</a>
                 </div>
               </div>
@@ -1267,7 +1267,7 @@ export default function OrganizationDetail() {
       {serviceArea?.area_type && serviceArea.area_type !== 'local' && (
         <div className="bg-warm-cream py-8 border-t border-light-grey">
           <div className="max-w-[900px] mx-auto px-6 lg:px-12">
-            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-2">
+            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase mb-2">
               Where they serve
             </p>
             <p className="font-body text-[15px] text-deep-navy">
@@ -1293,7 +1293,7 @@ export default function OrganizationDetail() {
       {volunteerEvents.length > 0 && (
         <div className="bg-warm-cream py-12 border-t border-light-grey">
           <div className="max-w-[900px] mx-auto px-6 lg:px-12">
-            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-4">
+            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase mb-4">
               Volunteer opportunities
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1309,7 +1309,7 @@ export default function OrganizationDetail() {
                   <div key={ev.id} className="bg-white rounded-xl border border-light-cream p-5 flex flex-col gap-3">
                     <div>
                       <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase mb-1 ${
-                        ev.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/10 text-soft-gold'
+                        ev.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/15 text-deep-gold'
                       }`}>
                         {ev.is_virtual ? 'Virtual' : 'In Person'}
                       </span>
@@ -1325,7 +1325,7 @@ export default function OrganizationDetail() {
                       {ev.signup_url ? (
                         <a
                           href={ev.signup_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
+                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-link-gold font-semibold hover:text-deep-gold transition-colors"
                         >
                           Sign up
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1335,7 +1335,7 @@ export default function OrganizationDetail() {
                       ) : ev.contact_email ? (
                         <a
                           href={`mailto:${ev.contact_email}`}
-                          className="font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
+                          className="font-body text-[13px] text-link-gold font-semibold hover:text-deep-gold transition-colors"
                         >
                           Contact to volunteer
                         </a>
@@ -1421,7 +1421,7 @@ export default function OrganizationDetail() {
       {scoreHistory.length > 1 && (
         <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Financial history</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">Financial history</span>
             <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
               How they've tracked over time
             </h2>
@@ -1464,7 +1464,7 @@ export default function OrganizationDetail() {
             </div>
             <p className="mt-4 font-body text-[12px] text-cool-grey leading-[1.5]">
               Updated as new annual reports are filed. Each row reflects where this organization stood among peers at that point in time — not a verdict, just context.{' '}
-              <Link to="/methodology" className="text-soft-gold hover:text-bright-gold transition-colors">
+              <Link to="/methodology" className="text-link-gold hover:text-deep-gold transition-colors">
                 How scoring works →
               </Link>
             </p>
@@ -1476,7 +1476,7 @@ export default function OrganizationDetail() {
       {financials.length > 0 && (
         <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Annual filings</span>
+            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">Annual filings</span>
             <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
               Financial history
             </h2>
@@ -1508,7 +1508,7 @@ export default function OrganizationDetail() {
                             href={f.pdf_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-body text-[11px] text-soft-gold hover:text-bright-gold transition-colors"
+                            className="inline-flex items-center gap-1 font-body text-[11px] text-link-gold hover:text-deep-gold transition-colors"
                           >
                             PDF
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>

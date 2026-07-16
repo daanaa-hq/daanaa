@@ -46,6 +46,15 @@
     <script src="/plausible-init.js?v=2"></script>
   </head>
   <body>
+    <!-- Apply saved theme before React mounts to avoid a flash of the wrong theme -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('daanaa-theme');
+          if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        } catch (e) { /* private mode / storage blocked: default dark */ }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

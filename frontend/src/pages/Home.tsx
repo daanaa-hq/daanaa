@@ -7,7 +7,7 @@ import SearchBar from '../components/SearchBar'
 import LampMark from '../components/LampMark'
 import { useApi } from '../hooks/useApi'
 import { getStats, getCategories, getOrganizations, type ApiOrganization } from '../data/api'
-import { TIER_COLORS } from '../components/TrustBadge'
+import { TIER_INK } from '../components/TrustBadge'
 import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { getFeaturedCategory } from '../data/featuredCategory'
@@ -69,7 +69,7 @@ function HeroSection() {
 
         <p
           className={`mt-6 font-body text-[18px] leading-[1.65] max-w-[620px] mx-auto transition-all duration-700 ease-out delay-150 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}
-          style={{ color: 'rgba(245,240,235,0.80)' }}
+          style={{ color: 'rgb(var(--warm-cream-rgb) / 0.80)' }}
         >
           {orgCount.toLocaleString()}+ U.S. nonprofits, public records, peer context. No ads, no paid placement, no pressure.
         </p>
@@ -86,7 +86,7 @@ function HeroSection() {
 
         <p
           className={`mt-5 font-body text-[14px] transition-all duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
-          style={{ color: 'rgba(245,240,235,0.55)', transitionDelay: '450ms' }}
+          style={{ color: 'rgb(var(--warm-cream-rgb) / 0.55)', transitionDelay: '450ms' }}
         >
           or{' '}
           <Link to="/directory" className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2">browse the directory</Link>
@@ -103,7 +103,7 @@ function HeroSection() {
 
         <p
           className={`mt-6 font-body text-[13px] transition-opacity duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
-          style={{ color: 'rgba(245,240,235,0.65)', transitionDelay: '600ms' }}
+          style={{ color: 'rgb(var(--warm-cream-rgb) / 0.65)', transitionDelay: '600ms' }}
         >
           Independent · Built on public records · Not a rating agency
         </p>
@@ -188,9 +188,9 @@ function PersonaTiles() {
               {volunteerIcon}
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-body text-[15px] font-semibold text-cool-grey/50">I want to volunteer</p>
+              <p className="font-body text-[15px] font-semibold text-cool-grey/70">I want to volunteer</p>
             </div>
-            <p className="font-body text-[12px] text-cool-grey/40 mt-1">Volunteer matching</p>
+            <p className="font-body text-[12px] text-cool-grey/60 mt-1">Volunteer matching</p>
           </div>
         </div>
       </div>
@@ -270,7 +270,7 @@ function PeerFinancialContextSection() {
             </p>
             <Link
               to="/methodology"
-              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
+              className="mt-6 inline-flex items-center gap-2 font-body text-[14px] font-medium text-link-gold hover:text-deep-gold transition-colors"
             >
               Learn more about methodology →
             </Link>
@@ -322,10 +322,10 @@ function StewardshipSection() {
             <h2 className="font-display italic text-warm-cream text-[32px] md:text-[40px] leading-[1.15] tracking-[-0.01em]">
               Built on stewardship
             </h2>
-            <p className="mt-6 font-body text-[16px] leading-[1.65]" style={{ color: 'rgba(245,240,235,0.80)' }}>
+            <p className="mt-6 font-body text-[16px] leading-[1.65]" style={{ color: 'rgb(var(--warm-cream-rgb) / 0.80)' }}>
               Stewardship means caring for donors, organizations, and the public record at the same time.
             </p>
-            <p className="mt-4 font-body text-[16px] leading-[1.65]" style={{ color: 'rgba(245,240,235,0.75)' }}>
+            <p className="mt-4 font-body text-[16px] leading-[1.65]" style={{ color: 'rgb(var(--warm-cream-rgb) / 0.75)' }}>
               Daanaa is built to support discovery without turning giving into judgment. We avoid ranking language, welcome corrections, protect privacy, and remain independent.
             </p>
             <Link
@@ -634,7 +634,7 @@ function BrowseCauses() {
         <div className="mt-8 text-center">
           <Link
             to="/directory"
-            className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
+            className="inline-flex items-center gap-2 font-body text-[14px] text-link-gold hover:text-deep-gold transition-colors"
           >
             Search all organizations
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -732,7 +732,7 @@ function TiersStrip() {
 
           {/* Label column */}
           <div className="md:w-[200px] shrink-0">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
+            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-deep-gold uppercase mb-1">
               Public Data Completeness
             </p>
             <p className="font-body text-[14px] text-cool-grey leading-[1.5]">
@@ -758,7 +758,7 @@ function TiersStrip() {
                 <LampMark tier={name} size="sm" />
                 <span
                   className="font-body text-[11px] font-semibold tracking-[0.03em] text-center"
-                  style={{ fontFamily: 'Cinzel, serif', color: TIER_COLORS[name] }}
+                  style={{ fontFamily: 'Cinzel, serif', color: TIER_INK[name] }}
                 >
                   {name}
                 </span>
@@ -795,7 +795,7 @@ function WalletSection() {
             >
               Save the ones<br />that matter to you
             </h2>
-            <p className="mt-5 font-body text-[16px] leading-[1.7]" style={{ color: 'rgba(245,240,235,0.65)' }}>
+            <p className="mt-5 font-body text-[16px] leading-[1.7]" style={{ color: 'rgb(var(--warm-cream-rgb) / 0.65)' }}>
               Your Giving Wallet holds the nonprofits you want to support.
               Track your intent for each one. Everything stays private: your account, your list, no one else's.
             </p>
@@ -805,7 +805,7 @@ function WalletSection() {
                 'Set your giving intent: amount, volunteering, or board interest',
                 'Sync across devices with your Google account',
               ].map(item => (
-                <li key={item} className="flex items-start gap-3 font-body text-[15px]" style={{ color: 'rgba(245,240,235,0.75)' }}>
+                <li key={item} className="flex items-start gap-3 font-body text-[15px]" style={{ color: 'rgb(var(--warm-cream-rgb) / 0.75)' }}>
                   <svg className="shrink-0 mt-0.5" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
@@ -826,10 +826,10 @@ function WalletSection() {
 
           {/* Wallet mockup */}
           <div>
-            <div className="bg-[#0F1F38] border border-white/8 rounded-2xl p-6 shadow-2xl">
+            <div className="bg-dark-surface border border-warm-cream/10 rounded-2xl p-6 shadow-2xl">
               <div className="flex items-center justify-between mb-5">
                 <span className="font-display italic text-[18px] text-warm-cream">Your Giving Wallet</span>
-                <span className="font-body text-[11px] tracking-[0.04em]" style={{ color: 'rgba(168,159,148,0.55)' }}>3 saved</span>
+                <span className="font-body text-[11px] tracking-[0.04em]" style={{ color: 'rgb(var(--muted-cream-rgb) / 0.8)' }}>3 saved</span>
               </div>
               <div className="space-y-3">
                 {[
@@ -844,7 +844,7 @@ function WalletSection() {
                         <span className="font-body text-[10px] px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 shrink-0">Hidden gem</span>
                       )}
                     </div>
-                    <p className="font-body text-[11px] text-cool-grey mb-2">{d.location}</p>
+                    <p className="font-body text-[11px] text-muted-cream mb-2">{d.location}</p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`font-body text-[10px] px-2 py-0.5 rounded-full ${d.healthClass}`}>{d.health}</span>
                       {d.intent && (
@@ -896,7 +896,7 @@ function HiddenGemsSection() {
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className={`flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8 transition-all duration-700 ease-out ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           <div>
-            <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-soft-gold uppercase">
+            <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-deep-gold uppercase">
               Worth discovering
             </span>
             <h2 className="mt-2 font-display italic text-deep-navy leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 38px)' }}>
@@ -909,7 +909,7 @@ function HiddenGemsSection() {
           </div>
           <Link
             to="/directory?hidden_gem=1"
-            className="shrink-0 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors flex items-center gap-1.5"
+            className="shrink-0 font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors flex items-center gap-1.5"
           >
             See more
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
@@ -944,7 +944,7 @@ function HiddenGemsSection() {
                     {['ai_ntee','ai_haiku','ai_web','ai_generated'].includes((org as any).mission_source ?? '') && (
                       <span
                         title="Generated by AI from public records. Not confirmed by the organization."
-                        className="mt-1 inline-block border border-cool-grey/40 text-cool-grey/50 rounded text-[9px] px-1.5 py-0.5 font-body tracking-[0.04em]"
+                        className="mt-1 inline-block border border-cool-grey/60 text-cool-grey/75 rounded text-[9px] px-1.5 py-0.5 font-body tracking-[0.04em]"
                       >
                         AI assisted
                       </span>

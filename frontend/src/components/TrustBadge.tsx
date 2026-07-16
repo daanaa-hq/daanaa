@@ -56,11 +56,23 @@ export function financialContextLabel(value: string | null | undefined): string 
   return FINANCIAL_CONTEXT_LABEL[value as 'Strong' | 'Stable' | 'Inspiring'] ?? value
 }
 
+// CSS vars (index.css) so tier accents darken in light mode — these feed
+// inline style/fill attributes, which plain CSS overrides can't reach.
 export const TIER_COLORS: Record<TierName, string> = {
-  Beacon:  '#B8902F',
-  Torch:   '#D4B968',
-  Candle:  '#E8C896',
-  Spark:   '#F0D8B0',
+  Beacon:  'var(--tier-beacon, #B8902F)',
+  Torch:   'var(--tier-flame, #D4B968)',
+  Candle:  'var(--tier-ember, #E8C896)',
+  Spark:   'var(--tier-spark, #F0D8B0)',
+}
+
+// Darker tier accents for text on constant-light surfaces (e.g. the Home tier
+// strip on its cream section) where the theme-flipping TIER_COLORS would be
+// too pale in dark mode.
+export const TIER_INK: Record<TierName, string> = {
+  Beacon:  '#8A6D23',
+  Torch:   '#8A7350',
+  Candle:  '#8F7A50',
+  Spark:   '#85714C',
 }
 
 // Microcopy frames the lamp as a VISIBILITY JOURNEY, never a quality verdict.

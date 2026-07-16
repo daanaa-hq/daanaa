@@ -64,7 +64,7 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
           Are you with this organization?{' '}
           <Link
             to={`/claim/verify?ein=${encodeURIComponent(ein)}`}
-            className="text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2"
+            className="text-link-gold hover:text-deep-gold transition-colors underline underline-offset-2"
           >
             Claim this page for free.
           </Link>

@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { CompareProvider } from './contexts/CompareContext'
 import { AuthProvider } from './contexts/AuthContext'
+import { ThemeProvider } from './contexts/ThemeContext'
 import NonprofitRoute from './components/NonprofitRoute'
 
 const Home = lazy(() => import('./pages/Home'))
@@ -60,6 +61,7 @@ const VolunteerApproval = lazy(() => import('./pages/nonprofit/VolunteerApproval
 const VolunteerSubmission = lazy(() => import('./pages/VolunteerSubmission'))
 const DonationReceipt = lazy(() => import('./pages/DonationReceipt'))
 const GuildPage = lazy(() => import('./pages/GuildPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 function PageLoader() {
   return (
@@ -76,6 +78,7 @@ function WalletSyncBridge() {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <ErrorBoundary>
     <AuthProvider>
     <WalletSyncBridge />
@@ -129,6 +132,7 @@ export default function App() {
             <Route path="/donation/receipt" element={<DonationReceipt />} />
             <Route path="/research" element={<ResearchDashboard />} />
             <Route path="/open-data" element={<OpenData />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="/the-invisible-97" element={<MeetInvisible />} />
           <Route path="/invisible-preview" element={<MeetInvisible />} />
@@ -155,5 +159,6 @@ export default function App() {
     </CompareProvider>
     </AuthProvider>
     </ErrorBoundary>
+    </ThemeProvider>
   )
 }

@@ -19,7 +19,9 @@ export default function BetaBanner() {
       >
         Beta
       </span>
-      <p className="font-body text-[12px] text-muted-cream">
+      {/* hardcoded color to match the hardcoded dark bg above — the banner
+          stays dark in both themes, so its text must not flip with the theme */}
+      <p className="font-body text-[12px]" style={{ color: '#D4CCBF' }}>
         Daanaa is in early access. The data is real, and some features are still being refined.{' '}
         <Link
           to="/feedback"

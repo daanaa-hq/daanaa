@@ -610,13 +610,13 @@ export default function Directory() {
               {/* Open to volunteers — coming soon */}
               <div
                 title="Volunteer listings are coming soon. Claim your organization to be among the first."
-                className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-[12px] font-medium border border-dashed border-cool-grey/30 text-cool-grey/50 cursor-default select-none"
+                className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-[12px] font-medium border border-dashed border-cool-grey/50 text-cool-grey/70 cursor-default select-none"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 11V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12"/><path d="M14 22l4-4-4-4"/><line x1="14" y1="18" x2="22" y2="18"/>
                 </svg>
                 Open to volunteers
-                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-soft-gold/15 text-[10px] font-semibold text-soft-gold leading-none">Soon</span>
+                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-soft-gold/20 text-[10px] font-semibold text-deep-gold leading-none">Soon</span>
               </div>
               {/* Proximity search */}
               <div className="inline-flex items-center gap-1 h-[34px]">

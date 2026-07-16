@@ -8,6 +8,7 @@ const NAV_COLS = [
       { label: 'Research', to: '/research' },
       { label: 'Open data', to: '/open-data' },
       { label: 'Wallet', to: '/wallet' },
+      { label: 'Settings', to: '/settings' },
     ],
   },
   {
