@@ -43,6 +43,15 @@ else:
 
 @app.after_request
 def set_security_headers(response):
+    # ── Cache policy (2026-07-16 loading-speed pass) ──────────────────────
+    # /assets/* are content-hashed by Vite: immutable forever → Cloudflare
+    # edge-caches them globally (was 4h default + MISS). HTML must always
+    # revalidate so a deployed SPA update is picked up immediately — a stale
+    # cached index.html referencing purged chunk names 404s the whole app.
+    if request.path.startswith('/assets/'):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif response.mimetype == 'text/html':
+        response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -102,15 +111,57 @@ def load_json_gz(path):
         return None
 
 
+class _PersistentConn:
+    """Wraps the shared per-worker sqlite connection; .close() is a no-op so
+    existing `finally: conn.close()` call sites don't tear it down. Lifecycle
+    is handled by get_search_db()'s inode check (reopens after atomic swap)."""
+    __slots__ = ('_c',)
+
+    def __init__(self, c):
+        self._c = c
+
+    def __getattr__(self, name):
+        return getattr(self._c, name)
+
+    def close(self):
+        pass
+
+
+_search_conn = None
+_search_db_ino = None
+
+
 def get_search_db():
+    """Per-worker persistent connection (2026-07-16 speed pass).
+
+    Opening sqlite per request threw away the page cache on every search.
+    We keep one connection per gunicorn worker and check the file inode per
+    request: the nightly deploy replaces search.db via atomic mv (new inode),
+    which triggers a clean reopen — no stale data, no service restart needed.
+    """
+    global _search_conn, _search_db_ino, _SEARCH_DB_HAS_CLAIMS
     fts_path = DATA_DIR / 'search.db'
-    if not fts_path.exists():
+    try:
+        ino = fts_path.stat().st_ino
+    except OSError:
         return None
-    conn = sqlite3.connect(str(fts_path), timeout=10)
+    if _search_conn is not None and ino == _search_db_ino:
+        return _search_conn
+    if _search_conn is not None:
+        try:
+            _search_conn._c.close()
+        except Exception:
+            pass
+        _SEARCH_DB_HAS_CLAIMS = None  # re-detect against the new file
+    conn = sqlite3.connect(str(fts_path), timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     # Serve cold page reads from the OS page cache; big win on filter scans.
     conn.execute("PRAGMA mmap_size=1073741824")
-    return conn
+    conn.execute("PRAGMA cache_size=-65536")   # 64MB page cache per worker
+    conn.execute("PRAGMA query_only=1")        # this API never writes search.db
+    _search_conn = _PersistentConn(conn)
+    _search_db_ino = ino
+    return _search_conn
 
 
 # Cached at first use: org_claims is excluded from search.db for privacy (sync_db.sh),
@@ -1039,8 +1090,12 @@ def search():
         conditions.extend(cat_conds)
         params.extend(cat_params)
         params.append(limit)
+        # ORDER BY s.rank (bm25): best matches first instead of storage order
+        # (2026-07-16 searchability pass). Costs ~ms — the quick search LIMIT
+        # keeps the ranked set small.
         sql = (f"SELECT o.EIN, o.organization_name, o.NTEE1, o.NTEECC, o.CITY, o.STATE, o.mission, o.merit_score "
-               f"FROM org_fts s, registry_enriched o WHERE {' AND '.join(conditions)} LIMIT ?")
+               f"FROM org_fts s, registry_enriched o WHERE {' AND '.join(conditions)} "
+               f"ORDER BY s.rank LIMIT ?")
         rows = conn.execute(sql, params).fetchall()
         results = [dict(r) for r in rows]
         return jsonify({'results': results, 'query': query,
@@ -1076,24 +1131,69 @@ def fused_search():
 
     try:
         conditions, params, _zip = _fts_where(q, state, conn=conn)
-        cat_conds, cat_params = _cat_rev_conditions(
-            [x.strip()[:1] for x in ntee.split(',') if x.strip()], [], None, None, alias='o.')
+        ntee_list = [x.strip()[:1] for x in ntee.split(',') if x.strip()]
+        cat_conds, cat_params = _cat_rev_conditions(ntee_list, [], None, None, alias='o.')
         conditions.extend(cat_conds)
         params.extend(cat_params)
 
+        # ── Speed pass 2026-07-16 ─────────────────────────────────────────
+        # The old plan sorted EVERY FTS match by merit_score (broad prefix
+        # terms match 200K+ rows) and ran an uncapped COUNT over the join:
+        # 16-20s per search on the droplet. New plan:
+        #   1. bm25-rank inside FTS5 and take a bounded candidate set
+        #   2. merit-sort only the candidates (relevance-bounded, <400ms)
+        #   3. cap COUNT at 10001 (the UI never pages past that anyway)
+        # conditions[0] is the join clause, conditions[1] the MATCH (param 0);
+        # everything after is o.* filters usable inside the CTE plan.
+        fts_q = params[0]
+        o_conditions = conditions[2:]
+        o_params = params[1:]
+        # State filter also goes INTO the MATCH (state is an indexed FTS
+        # column) so the bm25 candidates are already state-correct.
+        resolved_state = state or ''
+        if not resolved_state:
+            for c_i, cond in enumerate(o_conditions):
+                if cond == "o.STATE = ?":
+                    resolved_state = o_params[c_i]
+                    break
+        # Sanitize before interpolating into the MATCH string (user input):
+        # only a bare 2-letter state token may enter FTS syntax.
+        if resolved_state and not re.match(r'^[A-Za-z]{2}$', str(resolved_state)):
+            resolved_state = ''
+        fts_match = f"({fts_q}) AND state:{resolved_state.upper()}" if resolved_state else fts_q
+        # NTEE category is not an exact-token FTS column — widen the candidate
+        # pool when a category filter must be applied after ranking.
+        cand_cap = 20000 if ntee_list else 3000
+
+        o_where = (' AND ' + ' AND '.join(o_conditions)) if o_conditions else ''
+        # total = matches reachable through pagination (counted INSIDE the
+        # bounded candidate set — never an unbounded join). A pure-FTS probe
+        # (no join, capped) sets total_capped so the UI can render "N+".
         total = conn.execute(
-            f"SELECT COUNT(*) FROM org_fts s, registry_enriched o WHERE {' AND '.join(conditions)}", params
+            f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+            f"ORDER BY rank LIMIT {cand_cap}) "
+            f"SELECT COUNT(*) FROM c JOIN registry_enriched o ON o.EIN = c.ein "
+            f"WHERE 1=1{o_where}",
+            [fts_match] + o_params
         ).fetchone()[0]
+        fts_probe = conn.execute(
+            f"SELECT COUNT(*) FROM (SELECT 1 FROM org_fts WHERE org_fts MATCH ? LIMIT {cand_cap + 1})",
+            [fts_match]
+        ).fetchone()[0]
+        total_capped = fts_probe > cand_cap
+
         offset = (page - 1) * per_page
-        sql = (f"SELECT o.* FROM org_fts s, registry_enriched o "
-               f"WHERE {' AND '.join(conditions)} "
+        sql = (f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+               f"ORDER BY rank LIMIT {cand_cap}) "
+               f"SELECT o.* FROM c JOIN registry_enriched o ON o.EIN = c.ein "
+               f"WHERE 1=1{o_where} "
                f"ORDER BY COALESCE(o.merit_score, -1) DESC "
                f"LIMIT ? OFFSET ?")
-        rows = conn.execute(sql, params + [per_page, offset]).fetchall()
+        rows = conn.execute(sql, [fts_match] + o_params + [per_page, offset]).fetchall()
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
         return jsonify({'organizations': orgs, 'query': q,
-                        'total': total, 'pages': pages,
+                        'total': total, 'total_capped': total_capped, 'pages': pages,
                         'page': page, 'per_page': per_page, 'search_type': 'fts'})
     except Exception as e:
         print(f"Fused search error: {e}")
