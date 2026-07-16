@@ -580,3 +580,24 @@ pipeline is visible without a manual repro. Any confidence/quality-gate formula 
 real production data must be sanity-checked against realistic sample inputs before deploy —
 "0 output for a day" should trigger an immediate look at the gate math, not just the fetch
 layer.
+
+## 2026-07-16 — Link verification under network contention marked 324 live links dead
+
+**Symptom:** Batch link verifier (8 threads) reported 35% pass rate on links that
+dry-ran at 96% minutes earlier. 324 links were flipped to 'dead'; sequential re-check
+showed 14/15 were alive.
+
+**Root cause:** Two compounding effects. (1) The GPU discovery pipeline was fetching
+200 sites every ~8s on the same connection — verification timeouts were local
+congestion, not dead links. (2) Many donate links funnel through shared hosts
+(PayPal, Zeffy, GivingFuel) that rate-limit per IP; concurrent HEADs triggered 429s,
+which the verifier counted as failures.
+
+**Preventing rules:** A verdict that writes 'dead' to the database must distinguish
+definitive failures (404/410/401/403) from inconclusive ones (timeout, 429, 5xx) —
+inconclusive keeps its prior status for a later retry, never gets condemned. Retry
+failures sequentially before any negative verdict. When another bulk-network process
+is running on the same box, verification concurrency must stay low (2 workers).
+Restore path: status flips carry donate_checked_at timestamps, so a bad batch is
+precisely reversible by timestamp window — this is why promotion is a status flip
+and not a destructive write.
