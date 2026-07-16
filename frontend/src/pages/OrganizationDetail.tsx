@@ -666,9 +666,9 @@ export default function OrganizationDetail() {
                       <div className="flex items-start gap-2 mb-3 p-2 rounded bg-white/5">
                         <AiBadge title="Found by AI from public records. Not yet confirmed by the organization." />
                         <div className="flex-1">
-                          <p className="font-body text-[12px] text-cool-grey">
+                          <p className="font-body text-[12px] text-muted-cream">
                             {isDonateBeta ? 'Donation link found by AI, not yet confirmed by the organization.' : 'Website found by AI, not yet confirmed by the organization.'}
-                            <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="ml-1.5 underline underline-offset-2 hover:text-cool-grey transition-colors">Verify here.</Link>
+                            <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="ml-1.5 underline underline-offset-2 hover:text-warm-cream transition-colors">Verify here.</Link>
                           </p>
                         </div>
                       </div>
