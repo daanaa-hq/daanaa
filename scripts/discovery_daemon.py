@@ -23,6 +23,12 @@ from pathlib import Path
 from website_discovery_comprehensive import WebsiteDiscovery
 from verify_discovered_links import LinkVerifier
 
+try:
+    from charity_navigator_verify import CharityNavigatorVerifier
+    CN_AVAILABLE = True
+except ImportError:
+    CN_AVAILABLE = False
+
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] %(message)s',
@@ -39,14 +45,16 @@ DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 class ContinuousDiscoveryDaemon:
     """Runs discovery continuously, queuing verified links."""
 
-    def __init__(self):
+    def __init__(self, use_cn_fallback=True):
         self.discovery = WebsiteDiscovery(timeout=15)
         self.verifier = LinkVerifier(timeout=10)
+        self.cn_verifier = CharityNavigatorVerifier(timeout=10) if CN_AVAILABLE and use_cn_fallback else None
         self.stats = {
             'discovered': 0,
             'verified': 0,
             'queued': 0,
-            'errors': 0
+            'errors': 0,
+            'cn_verified': 0
         }
 
     def get_orgs_needing_discovery(self, batch_size=50):
@@ -55,7 +63,7 @@ class ContinuousDiscoveryDaemon:
         cursor = db.cursor()
 
         cursor.execute("""
-            SELECT EIN, organization_name, website
+            SELECT EIN, organization_name, website, STATE
             FROM registry_enriched
             WHERE website IS NOT NULL
             AND website != ''
@@ -72,7 +80,7 @@ class ContinuousDiscoveryDaemon:
         db.close()
         return results
 
-    def discover_and_verify_org(self, ein, name, website):
+    def discover_and_verify_org(self, ein, name, website, state=None):
         """Discover and verify links for one org."""
         try:
             # Discover
@@ -108,6 +116,15 @@ class ContinuousDiscoveryDaemon:
             # skills.sh (no verification needed)
             if result.get('skills_profiles'):
                 verified_links['skills_sh_profile'] = result['skills_profiles'][0]['url']
+
+            # Fallback to Charity Navigator if no donation link found (90% confidence gate)
+            if not verified_links.get('donate_url') and self.cn_verifier:
+                cn_result = self.cn_verifier.verify_link(ein, name, state)
+                if cn_result and cn_result.get('donation_url'):
+                    verified_links['donate_url'] = cn_result['donation_url']
+                    verified_links['donate_source'] = 'charity_navigator'
+                    self.stats['cn_verified'] += 1
+                    self.stats['verified'] += 1
 
             if verified_links:
                 self.queue_verified_links(ein, verified_links)
@@ -183,8 +200,8 @@ class ContinuousDiscoveryDaemon:
                     time.sleep(60)
                     continue
 
-                for ein, name, website in orgs:
-                    result = self.discover_and_verify_org(ein, name, website)
+                for ein, name, website, state in orgs:
+                    result = self.discover_and_verify_org(ein, name, website, state)
                     if result['status'] == 'success':
                         logger.info(f"✅ {name} ({ein}): {result['verified']} links verified")
                     elif result['status'] == 'no_links':
@@ -209,6 +226,7 @@ class ContinuousDiscoveryDaemon:
                     f"discovered={self.stats['discovered']}, "
                     f"verified={self.stats['verified']}, "
                     f"queued={self.stats['queued']}, "
+                    f"cn_verified={self.stats['cn_verified']}, "
                     f"errors={self.stats['errors']} | "
                     f"Queue: {high_conf} (90%+) | {under_review} (under review)"
                 )
@@ -226,10 +244,12 @@ class ContinuousDiscoveryDaemon:
 
 
 if __name__ == '__main__':
-    daemon = ContinuousDiscoveryDaemon()
     batch_size = int(sys.argv[1]) if len(sys.argv) > 1 else 50
     sleep_between_orgs = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
     sleep_between_batches = float(sys.argv[3]) if len(sys.argv) > 3 else 5
+    use_cn = sys.argv[4].lower() != 'no_cn' if len(sys.argv) > 4 else True
+
+    daemon = ContinuousDiscoveryDaemon(use_cn_fallback=use_cn)
     daemon.run_continuous_loop(
         batch_size=batch_size,
         sleep_between_orgs=sleep_between_orgs,
