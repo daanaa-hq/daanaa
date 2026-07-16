@@ -58,21 +58,21 @@ class ContinuousDiscoveryDaemon:
         }
 
     def get_orgs_needing_discovery(self, batch_size=50):
-        """Get organizations with websites but missing links."""
+        """Get ALL organizations missing links (prioritize website-having)."""
         db = sqlite3.connect(str(DB))
         cursor = db.cursor()
 
         cursor.execute("""
             SELECT EIN, organization_name, website, STATE
             FROM registry_enriched
-            WHERE website IS NOT NULL
-            AND website != ''
-            AND (
+            WHERE (
                 donate_url IS NULL
                 OR volunteer_url IS NULL
             )
             AND EIN > 0
-            ORDER BY RANDOM()
+            ORDER BY
+                CASE WHEN website IS NOT NULL AND website != '' THEN 0 ELSE 1 END,
+                RANDOM()
             LIMIT ?
         """, (batch_size,))
 
@@ -81,16 +81,44 @@ class ContinuousDiscoveryDaemon:
         return results
 
     def discover_and_verify_org(self, ein, name, website, state=None):
-        """Discover and verify links for one org."""
+        """Discover and verify links for one org (website or CN fallback)."""
         try:
-            # Discover
-            result = self.discovery.discover_all(website)
-            if 'error' in result:
-                return {'status': 'error', 'reason': result['error']}
-
             verified_links = {}
 
-            # Verify donation link
+            # If no website, skip to CN fallback immediately
+            if not website or website.strip() == '':
+                if self.cn_verifier:
+                    cn_result = self.cn_verifier.verify_link(ein, name, state)
+                    if cn_result and cn_result.get('donation_url'):
+                        verified_links['donate_url'] = cn_result['donation_url']
+                        verified_links['donate_source'] = 'charity_navigator'
+                        self.stats['cn_verified'] += 1
+                        self.stats['verified'] += 1
+
+                if verified_links:
+                    self.queue_verified_links(ein, verified_links)
+                    self.stats['queued'] += 1
+                    return {'status': 'success', 'verified': len(verified_links)}
+                else:
+                    return {'status': 'no_links'}
+
+            # Discover from website
+            result = self.discovery.discover_all(website)
+            if 'error' in result:
+                # Fall back to CN if website fetch fails
+                if self.cn_verifier:
+                    cn_result = self.cn_verifier.verify_link(ein, name, state)
+                    if cn_result and cn_result.get('donation_url'):
+                        verified_links['donate_url'] = cn_result['donation_url']
+                        verified_links['donate_source'] = 'charity_navigator'
+                        self.stats['cn_verified'] += 1
+                        self.stats['verified'] += 1
+                        self.queue_verified_links(ein, verified_links)
+                        self.stats['queued'] += 1
+                        return {'status': 'success', 'verified': len(verified_links)}
+                return {'status': 'error', 'reason': result['error']}
+
+            # Verify donation link from website
             if result.get('donation_links'):
                 donate_url = result['donation_links'][0]['url']
                 verification = self.verifier.verify_donation_link(donate_url)
@@ -100,7 +128,7 @@ class ContinuousDiscoveryDaemon:
                     self.stats['verified'] += 1
                 self.stats['discovered'] += 1
 
-            # Verify volunteer link
+            # Verify volunteer link from website
             if result.get('volunteer_links'):
                 volunteer_url = result['volunteer_links'][0]['url']
                 verification = self.verifier.verify_volunteer_link(volunteer_url)
