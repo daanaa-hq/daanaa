@@ -671,3 +671,18 @@ Chose to run Phase 1 (website-based link discovery) and Phase 2 (Charity Navigat
 ## 2026-07-16 — Phase 1 aggressive saturation mode (thermal limit testing)
 Chose to restart discovery daemon with 10x throughput boost: batch_size 100→400, sleep 0.5s→0.05s between orgs, 5s→0.5s between batches. Why: maximize link discovery throughput and exercise GPU/CPU up to thermal limits to measure Phase 1 completion velocity. GitHub repos + skills.sh profiles already extracted as part of standard discovery. Monitoring continues autonomously (memory monitor, phase orchestrator, deployment pipeline). Rejected: conservative pacing — user wants to see saturation limits and phase completion time.
 
+
+## 2026-07-16 — Discovered donate links are 'beta', not 'verified' (trust-model + gate fix)
+The discovery pipeline (deploy_queued_links.py) wrote donate_url_status='verified', but the
+frontend donate gate (actionRow.ts) renders ONLY status IN ('beta','claimed') — so ~28K
+discovered donate links (22K verified + 6K gpu_verified) were invisible on the public site
+even after deploy. Chose to (a) fix the pipeline to write 'beta' going forward and (b) migrate
+existing 'verified'/'gpu_verified' → 'beta' (30,851 links now beta). Why: these are AI-discovered,
+HTTP-checked but NOT org-confirmed links. 'beta' is the established honest label — it renders the
+link WITH the "found by AI, not yet confirmed by the organization" badge (isDonateBeta). Writing
+'verified' both hid the links (gate mismatch) AND, if the gate were widened to include it, would
+present AI links as authoritative — violating Stewardship P3 (trust signals evidence-based).
+Relabeling is the conservative/honest direction (adds a caveat badge, never removes one). Affected
+EINs backed up for reversibility. Rejected: widening the frontend gate to include 'verified'
+(would drop the AI badge → presents unconfirmed links as authoritative, breaks the trust model).
+Website links unaffected (86,954 'ok' render fine); volunteer links have no status gate.

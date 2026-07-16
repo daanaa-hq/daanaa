@@ -53,8 +53,15 @@ def deploy_queued_links():
             values = []
 
             if 'donate_url' in links:
+                # Status 'beta' (NOT 'verified'): these are AI-discovered links,
+                # HTTP-checked but NOT org-confirmed. The frontend donate gate
+                # renders status IN ('beta','claimed') and 'beta' shows the
+                # "found by AI, not yet confirmed by the organization" badge.
+                # Writing 'verified' left ~28K discovered links invisible on the
+                # site (gate mismatch) AND would present AI links as authoritative,
+                # violating the Stewardship trust model (P3). See DECISIONS.md 2026-07-16.
                 updates.append("donate_url = ?")
-                updates.append("donate_url_status = 'verified'")
+                updates.append("donate_url_status = 'beta'")
                 updates.append("donate_checked_at = ?")
                 values.extend([links['donate_url'], datetime.now().isoformat()])
 
