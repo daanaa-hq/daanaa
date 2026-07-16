@@ -614,35 +614,27 @@ export default function OrganizationDetail() {
                 ))}
               </div>
 
-              {/* Action row: Website / Donate / Volunteer. Donate re-authorized
-                  2026-07-10 (founder decision, reversing the 2026-06-10 legal-
-                  counsel "no public donation CTAs" directive that previously
-                  gated this) -- ONLY for donate_url_status IN (beta, claimed),
-                  matching the T3 gate (donate_confidence is NULL for 99.7% of
-                  orgs, do not use it). 'beta' links carry the same AiBadge used
-                  for AI-assisted missions -- unverified until the org claims
-                  its page and confirms the link; the claim flow is expected to
-                  promote status to 'claimed' at that point (see DECISIONS.md).
-                  Pre-launch attorney consult on donate-link display is still
-                  outstanding per project memory -- this ships to test/build
-                  against, not a substitute for that review before wide launch. */}
+              {/* Ways to Support card: dedicated buttons for Website / Donate / Volunteer
+                  with verification status and role clarity disclaimer. */}
               {(() => {
                 const { websiteUrl, websiteLabel, isWebsiteBeta, donateUrl, isDonateBeta, volunteerUrl, hasAnyLink } = getActionRowLinks(apiOrg)
 
                 if (!hasAnyLink) return null;
 
                 return (
-                  <div className="mt-5">
-                    <div className="flex flex-wrap items-center gap-3">
+                  <div className="mt-8 p-6 rounded-lg border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+                    <h3 className="font-body text-[14px] font-semibold text-soft-gold uppercase tracking-[0.05em] mb-4">Ways to Support</h3>
+
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
                       {websiteUrl && (
                         <a
                           href={websiteUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-7 py-3 rounded-full hover:bg-bright-gold transition-colors"
+                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-6 py-3 rounded-lg hover:bg-bright-gold transition-colors"
                         >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                           {websiteLabel}
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
                       )}
                       {donateUrl && (
@@ -651,10 +643,10 @@ export default function OrganizationDetail() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={() => trackDonateClick(apiOrg!.EIN, apiOrg!.organization_name)}
-                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-emerald-500 text-deep-navy px-7 py-3 rounded-full hover:bg-emerald-400 transition-colors"
+                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-emerald-500 text-deep-navy px-6 py-3 rounded-lg hover:bg-emerald-400 transition-colors"
                         >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                           Donate
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
                       )}
                       {volunteerUrl && (
@@ -662,23 +654,29 @@ export default function OrganizationDetail() {
                           href={volunteerUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 font-body text-[14px] font-medium border border-warm-cream/30 text-warm-cream px-5 py-2.5 rounded-full hover:border-warm-cream/50 transition-colors"
+                          className="inline-flex items-center gap-2 font-body text-[14px] font-semibold border border-warm-cream/40 text-warm-cream px-5 py-2.5 rounded-lg hover:border-warm-cream/60 hover:bg-warm-cream/5 transition-colors"
                         >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                           Volunteer
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         </a>
                       )}
                     </div>
+
                     {(isWebsiteBeta || isDonateBeta) && (
-                      <p className="mt-1.5 font-body text-[11px] text-cool-grey flex items-center gap-1.5">
+                      <div className="flex items-start gap-2 mb-3 p-2 rounded bg-white/5">
                         <AiBadge title="Found by AI from public records. Not yet confirmed by the organization." />
-                        <span>·</span>
-                        <span>Not confirmed by the organization.</span>
-                        <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="underline underline-offset-2 hover:text-cool-grey transition-colors">Verify</Link>
-                      </p>
+                        <div className="flex-1">
+                          <p className="font-body text-[12px] text-cool-grey">
+                            {isDonateBeta ? 'Donation link found by AI, not yet confirmed by the organization.' : 'Website found by AI, not yet confirmed by the organization.'}
+                            <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="ml-1.5 underline underline-offset-2 hover:text-cool-grey transition-colors">Verify here.</Link>
+                          </p>
+                        </div>
+                      </div>
                     )}
-                    <p className="mt-2.5 font-body text-[12px] text-muted-cream leading-[1.5] max-w-[360px]">
-                      Your giving goes directly to the organization. External link from our public records. If this link is broken, search for them by name.</p>
+
+                    <p className="font-body text-[12px] text-muted-cream leading-[1.6]">
+                      All links are direct to the organization. <strong>Daanaa doesn't process donations</strong> — you give directly to them, on their site. External links from public records.
+                    </p>
                   </div>
                 );
               })()}
