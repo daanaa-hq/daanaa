@@ -43,7 +43,7 @@ except ImportError:
     print("WARNING: httpx not installed — pip install httpx[http2]")
 
 try:
-    from playwright.sync_browser import sync_playwright
+    from playwright.sync_api import sync_playwright
     PLAYWRIGHT_AVAILABLE = True
 except ImportError:
     PLAYWRIGHT_AVAILABLE = False
