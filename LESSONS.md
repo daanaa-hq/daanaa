@@ -549,3 +549,34 @@ data disagreed; the runtime error was swallowed by a catch-and-log.
 payload (and ship `generated_at`, display "As of" on data pages). When a precompute/snapshot
 key is renamed, grep the frontend for the old key the same session. A .catch around data
 mapping must surface a visible fallback state, not an empty section.
+
+## 2026-07-16 — GPU discovery pipeline ran for a full day at 0 verified links; two silent-failure bugs stacked
+
+**Symptom:** `gpu_optimized_discovery.py` (33 processes: 1 async fetcher + 32-worker parse
+pool) logged "Verified 0 high-quality links" on every single batch since launch, despite
+running continuously. Meanwhile the 9 plain `discovery_daemon.py` instances worked fine and
+did all the actual link discovery.
+
+**Root cause (two independent bugs, both silent):**
+1. `registry_enriched.website` stores bare domains for 97.3% of rows (`hsctwarriors.org`,
+   not `https://hsctwarriors.org`). `website_discovery_comprehensive.py` (used by the
+   daemons) normalizes this with `https://` prepend; `BatchHTTPFetcher.fetch_batch` in the
+   GPU pipeline never got the same normalization, so aiohttp raised `InvalidUrlClientError`
+   on ~97% of fetches — caught by a bare `except Exception` and logged at `logger.debug`,
+   invisible under the module's `INFO` root log level. Fetch success was 1-7/200 per batch.
+2. Even after fixing (1), fetch success jumped to 60-70% but verified links stayed at 0.
+   `QualityGate.link_context_match()` returns `matches / 3.0` where `matches` counts how
+   many of ~9 keyword patterns appear in one anchor's text. The call site required
+   `>= 0.7`, i.e. 3 simultaneous keyword hits in a single link's text — but a real donate
+   button ("Donate Now") only ever matches one pattern, scoring 0.33. The gate was
+   mathematically unpassable by any real-world anchor text.
+
+**Preventing rules:** When a batch/pipeline script duplicates logic from an existing
+working module (URL fetching, normalization, parsing), grep the working module for
+edge-case handling first — do not re-derive it from scratch. Never let per-item fetch/parse
+exceptions log at `debug` inside a loop meant to run for hours; log a periodic aggregate
+count at `info` (e.g. "X/Y fetch failures this batch, most common: ...") so a stalled
+pipeline is visible without a manual repro. Any confidence/quality-gate formula that gates
+real production data must be sanity-checked against realistic sample inputs before deploy —
+"0 output for a day" should trigger an immediate look at the gate math, not just the fetch
+layer.

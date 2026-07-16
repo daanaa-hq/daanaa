@@ -175,17 +175,20 @@ def parse_html_for_links(html_content: Tuple[str, str]) -> Dict:
                 continue
 
             # Donate link detection
+            # link_context_match returns matches/3.0 — a real anchor ("Donate
+            # Now") only ever hits one keyword (score 0.33), so 0.7 was an
+            # unpassable gate. 0.3 lets a single genuine keyword hit through.
             if not links['donate_url']:
                 if any(p in text for p in DONATE_PATTERNS):
                     quality, confidence = QualityGate.url_sanity(href)
-                    if quality and QualityGate.link_context_match(text, href, 'donate') >= 0.7:
+                    if quality and QualityGate.link_context_match(text, href, 'donate') >= 0.3:
                         links['donate_url'] = href
 
             # Volunteer link detection
             if not links['volunteer_url']:
                 if any(p in text for p in VOLUNTEER_PATTERNS):
                     quality, confidence = QualityGate.url_sanity(href)
-                    if quality and QualityGate.link_context_match(text, href, 'volunteer') >= 0.7:
+                    if quality and QualityGate.link_context_match(text, href, 'volunteer') >= 0.3:
                         links['volunteer_url'] = href
 
         return {ein: {k: v for k, v in links.items() if v}}
@@ -216,7 +219,12 @@ class GPUOptimizedDiscovery:
         logger.info(f"[Batch] Fetching {len(org_batch)} orgs...")
 
         # STAGE 1: Async batch HTTP fetch
-        websites = [(ein, website) for ein, name, website, state in org_batch if website]
+        # DB stores bare domains (97% lack http(s)://); aiohttp raises
+        # InvalidUrlClientError without a scheme, so normalize here.
+        websites = [
+            (ein, website if website.lower().startswith(('http://', 'https://')) else f'https://{website}')
+            for ein, name, website, state in org_batch if website
+        ]
         html_map = await self.fetcher.fetch_batch(websites)
 
         if not html_map:
