@@ -22,6 +22,7 @@ from datetime import datetime
 from pathlib import Path
 from website_discovery_comprehensive import WebsiteDiscovery
 from verify_discovered_links import LinkVerifier
+from gpu_link_verifier import GPULinkVerifier
 
 try:
     from charity_navigator_verify import CharityNavigatorVerifier
@@ -48,13 +49,15 @@ class ContinuousDiscoveryDaemon:
     def __init__(self, use_cn_fallback=True):
         self.discovery = WebsiteDiscovery(timeout=15)
         self.verifier = LinkVerifier(timeout=10)
+        self.gpu_verifier = GPULinkVerifier()  # GPU-accelerated semantic verification
         self.cn_verifier = CharityNavigatorVerifier(timeout=10) if CN_AVAILABLE and use_cn_fallback else None
         self.stats = {
             'discovered': 0,
             'verified': 0,
             'queued': 0,
             'errors': 0,
-            'cn_verified': 0
+            'cn_verified': 0,
+            'gpu_verified': 0
         }
 
     def get_orgs_needing_discovery(self, batch_size=50):
@@ -81,6 +84,50 @@ class ContinuousDiscoveryDaemon:
         db.close()
         return results
 
+    def apply_gpu_enhancement(self, links_dict):
+        """Apply GPU semantic verification to boost confidence (non-blocking, fail-fast)."""
+        if not links_dict:
+            return links_dict
+
+        # Build candidates for GPU verification
+        candidates = []
+        link_types = []
+
+        if 'donate_url' in links_dict:
+            candidates.append({
+                'url': links_dict['donate_url'],
+                'text': links_dict.get('donate_button_text', 'Donate'),
+                'link_type': 'donate'
+            })
+            link_types.append('donate')
+
+        if 'volunteer_url' in links_dict:
+            candidates.append({
+                'url': links_dict['volunteer_url'],
+                'text': 'Volunteer',
+                'link_type': 'volunteer'
+            })
+            link_types.append('volunteer')
+
+        if not candidates:
+            return links_dict
+
+        # Run GPU verification (non-blocking with short timeout)
+        try:
+            verified = self.gpu_verifier.verify_batch(candidates)
+            self.stats['gpu_verified'] += len(verified)
+
+            # Enrich links with GPU semantic match scores
+            for i, link_type in enumerate(link_types):
+                if i < len(verified):
+                    key_name = f'{link_type}_url'
+                    if key_name in links_dict:
+                        links_dict[f'{key_name}_semantic_match'] = verified[i].get('semantic_match', 0.0)
+        except Exception as e:
+            logger.debug(f"GPU enhancement failed (non-blocking): {e}")
+
+        return links_dict
+
     def discover_and_verify_org(self, ein, name, website, state=None):
         """Discover and verify links for one org (website or CN fallback)."""
         try:
@@ -97,6 +144,7 @@ class ContinuousDiscoveryDaemon:
                         self.stats['verified'] += 1
 
                 if verified_links:
+                    verified_links = self.apply_gpu_enhancement(verified_links)
                     self.queue_verified_links(ein, verified_links)
                     self.stats['queued'] += 1
                     return {'status': 'success', 'verified': len(verified_links)}
@@ -114,6 +162,7 @@ class ContinuousDiscoveryDaemon:
                         verified_links['donate_source'] = 'charity_navigator'
                         self.stats['cn_verified'] += 1
                         self.stats['verified'] += 1
+                        verified_links = self.apply_gpu_enhancement(verified_links)
                         self.queue_verified_links(ein, verified_links)
                         self.stats['queued'] += 1
                         return {'status': 'success', 'verified': len(verified_links)}
@@ -156,6 +205,7 @@ class ContinuousDiscoveryDaemon:
                     self.stats['verified'] += 1
 
             if verified_links:
+                verified_links = self.apply_gpu_enhancement(verified_links)
                 self.queue_verified_links(ein, verified_links)
                 self.stats['queued'] += 1
                 return {'status': 'success', 'verified': len(verified_links)}
@@ -254,6 +304,7 @@ class ContinuousDiscoveryDaemon:
                     f"[Iteration {iteration}] Progress: "
                     f"discovered={self.stats['discovered']}, "
                     f"verified={self.stats['verified']}, "
+                    f"gpu_enhanced={self.stats['gpu_verified']}, "
                     f"queued={self.stats['queued']}, "
                     f"cn_verified={self.stats['cn_verified']}, "
                     f"errors={self.stats['errors']} | "
