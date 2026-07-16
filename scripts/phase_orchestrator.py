@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+"""
+Phase 1 → Phase 2 orchestrator.
+
+Monitors discovery daemon progress. When Phase 1 shows saturation
+(org batches < 50 for 5+ consecutive iterations), auto-activates
+Phase 2 (Charity Navigator rate-limited scraper).
+
+Runs continuously, checks every 30 minutes.
+"""
+
+import sqlite3
+import subprocess
+import time
+import logging
+import json
+from datetime import datetime
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(message)s',
+    handlers=[
+        logging.FileHandler('/home/akbar/meritgiving/logs/phase_orchestrator.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
+STATE_FILE = Path.home() / 'meritgiving' / 'logs' / '.phase_state.json'
+PHASE2_TRIGGER_LOG = Path.home() / 'meritgiving' / 'logs' / 'phase2_activation.log'
+
+CHECK_INTERVAL = 1800  # 30 minutes
+SATURATION_BATCH_THRESHOLD = 50
+SATURATION_ITERATIONS = 5
+
+
+def load_state():
+    """Load phase state from disk."""
+    if STATE_FILE.exists():
+        try:
+            with open(STATE_FILE) as f:
+                return json.load(f)
+        except:
+            pass
+    return {
+        'phase': 1,
+        'started': datetime.now().isoformat(),
+        'low_batch_count': 0,
+        'last_batch_size': 0,
+        'phase2_activated': False
+    }
+
+
+def save_state(state):
+    """Save phase state to disk."""
+    with open(STATE_FILE, 'w') as f:
+        json.dump(state, f, indent=2)
+
+
+def get_org_batch_size():
+    """Get count of orgs awaiting discovery in this iteration."""
+    db = sqlite3.connect(str(DB))
+    cursor = db.cursor()
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM registry_enriched
+        WHERE donate_url IS NULL AND EIN > 0
+    """)
+    count = cursor.fetchone()[0]
+    db.close()
+    return count
+
+
+def get_link_queue_count():
+    """Get pending links in queue."""
+    db = sqlite3.connect(str(DB))
+    cursor = db.cursor()
+    cursor.execute("SELECT COUNT(*) FROM link_deployment_queue WHERE status='pending'")
+    count = cursor.fetchone()[0]
+    db.close()
+    return count
+
+
+def activate_phase2():
+    """Activate Charity Navigator scraper (Phase 2)."""
+    logger.info("=" * 70)
+    logger.info("🚀 ACTIVATING PHASE 2: Charity Navigator Rate-Limited Scraper")
+    logger.info("=" * 70)
+
+    # Start Phase 2 scraper
+    try:
+        script = Path.home() / 'meritgiving' / 'scripts' / 'cn_rate_limited_scraper.py'
+        if script.exists():
+            subprocess.Popen(
+                ['python3', str(script)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                start_new_session=True
+            )
+            logger.info("✅ Phase 2 scraper started")
+
+            with open(PHASE2_TRIGGER_LOG, 'a') as f:
+                f.write(f"[{datetime.now().isoformat()}] Phase 2 activated\n")
+
+            return True
+        else:
+            logger.warning(f"⚠️  Phase 2 script not found: {script}")
+            return False
+    except Exception as e:
+        logger.error(f"❌ Failed to activate Phase 2: {e}")
+        return False
+
+
+def main():
+    logger.info("Phase Orchestrator started")
+
+    while True:
+        try:
+            state = load_state()
+            batch_size = get_org_batch_size()
+            queue_count = get_link_queue_count()
+
+            logger.info(
+                f"Phase {state['phase']} | "
+                f"Orgs needing discovery: {batch_size} | "
+                f"Links queued: {queue_count}"
+            )
+
+            # Track saturation (Phase 1 → Phase 2 transition)
+            if state['phase'] == 1:
+                if batch_size < SATURATION_BATCH_THRESHOLD:
+                    state['low_batch_count'] += 1
+                    logger.info(
+                        f"⚠️  Low batch detected ({batch_size} orgs), "
+                        f"count: {state['low_batch_count']}/{SATURATION_ITERATIONS}"
+                    )
+                else:
+                    state['low_batch_count'] = 0
+
+                if state['low_batch_count'] >= SATURATION_ITERATIONS and not state['phase2_activated']:
+                    logger.warning(
+                        f"🔔 Phase 1 saturation detected: "
+                        f"{SATURATION_ITERATIONS} consecutive batches < {SATURATION_BATCH_THRESHOLD} orgs"
+                    )
+                    if activate_phase2():
+                        state['phase'] = 2
+                        state['phase2_activated'] = True
+                        logger.info("✅ Transitioned to Phase 2")
+
+            state['last_batch_size'] = batch_size
+            save_state(state)
+
+        except Exception as e:
+            logger.error(f"Error in orchestrator: {e}", exc_info=True)
+
+        time.sleep(CHECK_INTERVAL)
+
+
+if __name__ == '__main__':
+    main()

@@ -663,3 +663,11 @@ Removal is a Stewardship P6 correction, not a redesign.
 **Rejected:** (a) converting the cards to archetypes now — blocked by the archetype
 code/label scramble below; (b) rewriting the carousel to operating models — weakest
 classifier; (c) repointing carousel archetype slide — it already linked to /methodology.
+
+## 2026-07-16 — Phase 1 & 2 autonomy: discovery daemon + Phase 2 auto-trigger
+Chose to run Phase 1 (website-based link discovery) and Phase 2 (Charity Navigator scraper) autonomously without approval between phases. Why: backend autonomy per CLAUDE.md 2026-07-05 update (daemons deploy/restart/scale without friction, guarded by smoke tests + auto-rollback). Phase 1 is stable (6K→30K links in 24h, deployment working), Phase 2 is low-risk (1 req/sec rate-limit), and auto-transition logic is deterministic (5 consecutive batches <50 orgs). Orchestrator monitors saturation, activates Phase 2 at transition, logs to disk. Memory monitor (auto-pause at 27GB) prevents OOM recurrence. Rejected: waiting for manual approval between phases (slows discovery velocity). Rejected: manually scraping CN (automation is safer, faster, and prevents human bottleneck).
+
+
+## 2026-07-16 — Phase 1 aggressive saturation mode (thermal limit testing)
+Chose to restart discovery daemon with 10x throughput boost: batch_size 100→400, sleep 0.5s→0.05s between orgs, 5s→0.5s between batches. Why: maximize link discovery throughput and exercise GPU/CPU up to thermal limits to measure Phase 1 completion velocity. GitHub repos + skills.sh profiles already extracted as part of standard discovery. Monitoring continues autonomously (memory monitor, phase orchestrator, deployment pipeline). Rejected: conservative pacing — user wants to see saturation limits and phase completion time.
+

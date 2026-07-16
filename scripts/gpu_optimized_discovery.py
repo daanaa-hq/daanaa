@@ -29,9 +29,9 @@ logging.basicConfig(
 )
 
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
-BATCH_SIZE = 200  # Org batch per cycle (2x)
-CONCURRENT_FETCHES = 100  # Async HTTP connections (2x)
-PARSE_WORKERS = 32  # CPU workers for HTML parsing (2x)
+BATCH_SIZE = 200  # Org batch per cycle
+CONCURRENT_FETCHES = 30  # Async HTTP connections (tuned for 2GB RAM headroom after OOM 2026-07-16)
+PARSE_WORKERS = 8  # CPU workers for HTML parsing (tuned to prevent memory pressure)
 QUALITY_THRESHOLD = 0.85  # Confidence gate (0-1.0)
 
 # Link type patterns (for high-quality extraction)

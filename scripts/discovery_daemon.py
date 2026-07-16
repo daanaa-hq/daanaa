@@ -58,7 +58,7 @@ class ContinuousDiscoveryDaemon:
         }
 
     def get_orgs_needing_discovery(self, batch_size=50):
-        """Get ALL organizations missing links (prioritize website-having)."""
+        """Get ALL active 501c3 organizations missing links, ordered by revenue (high to low)."""
         db = sqlite3.connect(str(DB))
         cursor = db.cursor()
 
@@ -70,9 +70,10 @@ class ContinuousDiscoveryDaemon:
                 OR volunteer_url IS NULL
             )
             AND EIN > 0
+            AND org_status = 'active'
             ORDER BY
                 CASE WHEN website IS NOT NULL AND website != '' THEN 0 ELSE 1 END,
-                RANDOM()
+                total_revenue DESC NULLS LAST
             LIMIT ?
         """, (batch_size,))
 
