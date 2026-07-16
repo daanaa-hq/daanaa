@@ -109,7 +109,7 @@ class GPULinkVerifier:
         Returns:
             [{"url": "...", "confidence": 0.0-1.0, "semantic_match": float, ...}, ...]
         """
-        if not candidates or not self.pattern_embeddings:
+        if not candidates or self.pattern_embeddings is None:
             return candidates
 
         # Extract text for embedding
