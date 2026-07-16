@@ -17,6 +17,7 @@ import sqlite3
 import time
 import json
 import sys
+import os
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -272,17 +273,88 @@ class ContinuousDiscoveryDaemon:
         db.commit()
         db.close()
 
+    def auto_regulate(self, base_sleep_org, base_sleep_batch):
+        """Self-tune pacing based on live system health.
+
+        Reads load average, available memory, and API health, then returns
+        adjusted (sleep_org, sleep_batch). Backs off under pressure, speeds
+        up when idle. Keeps the system safe without manual tuning.
+        """
+        try:
+            # CPU load (normalized to core count)
+            load_1min = os.getloadavg()[0]
+            cpu_count = os.cpu_count() or 16
+            load_ratio = load_1min / cpu_count
+
+            # Available memory (fraction free)
+            mem_available_gb = 0
+            with open('/proc/meminfo') as f:
+                for line in f:
+                    if line.startswith('MemAvailable:'):
+                        mem_available_gb = int(line.split()[1]) / (1024 * 1024)
+                        break
+
+            # Decide multiplier: >1 slows down, <1 speeds up
+            multiplier = 1.0
+            reason = "nominal"
+
+            # Memory pressure (hard guardrail — back off aggressively)
+            if mem_available_gb < 3:
+                multiplier = 4.0
+                reason = f"LOW MEM ({mem_available_gb:.1f}GB free)"
+            elif mem_available_gb < 6:
+                multiplier = 2.0
+                reason = f"mem caution ({mem_available_gb:.1f}GB free)"
+            # CPU pressure
+            elif load_ratio > 0.9:
+                multiplier = 3.0
+                reason = f"HIGH LOAD ({load_ratio:.2f})"
+            elif load_ratio > 0.6:
+                multiplier = 1.5
+                reason = f"load caution ({load_ratio:.2f})"
+            # Idle — speed up (system has headroom)
+            elif load_ratio < 0.3 and mem_available_gb > 12:
+                multiplier = 0.5
+                reason = f"idle, speeding up (load {load_ratio:.2f}, {mem_available_gb:.0f}GB free)"
+
+            # API health check (if API is struggling, back off hard)
+            try:
+                import urllib.request
+                with urllib.request.urlopen('http://localhost:5000/health', timeout=3) as resp:
+                    if resp.status != 200:
+                        multiplier = max(multiplier, 3.0)
+                        reason = f"API unhealthy (HTTP {resp.status})"
+            except Exception:
+                multiplier = max(multiplier, 3.0)
+                reason = "API unreachable — backing off"
+
+            # Apply, with floors/ceilings to stay sane
+            adj_org = max(0.05, min(2.0, base_sleep_org * multiplier))
+            adj_batch = max(0.5, min(30.0, base_sleep_batch * multiplier))
+
+            if abs(multiplier - 1.0) > 0.01:
+                logger.info(f"⚙️  Auto-regulate: {reason} → sleep {adj_org:.2f}s/org, {adj_batch:.1f}s/batch")
+
+            return adj_org, adj_batch
+        except Exception as e:
+            logger.debug(f"Auto-regulate failed (using base): {e}")
+            return base_sleep_org, base_sleep_batch
+
     def run_continuous_loop(self, batch_size=50, sleep_between_batches=5, sleep_between_orgs=0.5):
-        """Run discovery continuously."""
+        """Run discovery continuously with auto-regulation."""
         logger.info("=" * 60)
-        logger.info("🚀 CONTINUOUS DISCOVERY DAEMON STARTED")
-        logger.info(f"   Batch size: {batch_size} | Sleep: {sleep_between_orgs}s/org, {sleep_between_batches}s/batch")
+        logger.info("🚀 CONTINUOUS DISCOVERY DAEMON STARTED (auto-regulating)")
+        logger.info(f"   Batch size: {batch_size} | Base sleep: {sleep_between_orgs}s/org, {sleep_between_batches}s/batch")
+        logger.info("   Pacing self-tunes on load, memory, and API health")
         logger.info("=" * 60)
 
         iteration = 0
         while True:
             iteration += 1
             try:
+                # Auto-regulate pacing for this batch based on live system health
+                adj_sleep_org, adj_sleep_batch = self.auto_regulate(sleep_between_orgs, sleep_between_batches)
+
                 logger.info(f"[Iteration {iteration}] Fetching {batch_size} orgs needing discovery...")
                 orgs = self.get_orgs_needing_discovery(batch_size)
 
@@ -300,8 +372,8 @@ class ContinuousDiscoveryDaemon:
                     else:
                         logger.warning(f"❌ {name} ({ein}): {result.get('reason')}")
 
-                    # Rate limit
-                    time.sleep(sleep_between_orgs)
+                    # Rate limit (auto-regulated)
+                    time.sleep(adj_sleep_org)
 
                 # Log progress with confidence breakdown
                 db = sqlite3.connect(str(DB))
@@ -323,9 +395,9 @@ class ContinuousDiscoveryDaemon:
                     f"Queue: {high_conf} (90%+) | {under_review} (under review)"
                 )
 
-                # Sleep between batches
-                logger.info(f"Sleeping {sleep_between_batches}s before next batch...")
-                time.sleep(sleep_between_batches)
+                # Sleep between batches (auto-regulated)
+                logger.info(f"Sleeping {adj_sleep_batch:.1f}s before next batch...")
+                time.sleep(adj_sleep_batch)
 
             except KeyboardInterrupt:
                 logger.info("⏹️  Daemon stopped by user")
