@@ -83,34 +83,61 @@ def get_link_queue_count():
     return count
 
 
-def activate_phase2():
-    """Activate Charity Navigator scraper (Phase 2)."""
+def activate_phase2_parallel():
+    """Activate Phase 2a (Advanced website discovery) + Phase 2b (Charity Navigator) in parallel.
+
+    Phase 2a: Website discovery for orgs WITH financial data (stale/missing)
+    Phase 2b: Charity Navigator fallback for orgs WITH NO financial data
+    """
     logger.info("=" * 70)
-    logger.info("🚀 ACTIVATING PHASE 2: Charity Navigator Rate-Limited Scraper")
+    logger.info("🚀 ACTIVATING PHASE 2 (PARALLEL):")
+    logger.info("  Phase 2a: Advanced website discovery (financial data orgs)")
+    logger.info("  Phase 2b: Charity Navigator scraper (no-data orgs)")
     logger.info("=" * 70)
 
-    # Start Phase 2 scraper
+    success = True
+
+    # Phase 2a: Advanced website discovery (steps 1-4)
     try:
-        script = Path.home() / 'meritgiving' / 'scripts' / 'cn_rate_limited_scraper.py'
-        if script.exists():
+        script_2a = Path.home() / 'meritgiving' / 'scripts' / 'website_discovery_advanced.py'
+        if script_2a.exists():
             subprocess.Popen(
-                ['python3', str(script)],
+                ['python3', str(script_2a), '50', '0.3'],  # batch=50, sleep=0.3s
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 start_new_session=True
             )
-            logger.info("✅ Phase 2 scraper started")
-
-            with open(PHASE2_TRIGGER_LOG, 'a') as f:
-                f.write(f"[{datetime.now().isoformat()}] Phase 2 activated\n")
-
-            return True
+            logger.info("✅ Phase 2a (Advanced discovery) started")
         else:
-            logger.warning(f"⚠️  Phase 2 script not found: {script}")
-            return False
+            logger.warning(f"⚠️  Phase 2a script not found: {script_2a}")
+            success = False
     except Exception as e:
-        logger.error(f"❌ Failed to activate Phase 2: {e}")
-        return False
+        logger.error(f"❌ Failed to start Phase 2a: {e}")
+        success = False
+
+    # Phase 2b: Charity Navigator scraper (existing)
+    try:
+        script_2b = Path.home() / 'meritgiving' / 'scripts' / 'cn_rate_limited_scraper.py'
+        if script_2b.exists():
+            subprocess.Popen(
+                ['python3', str(script_2b)],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                start_new_session=True
+            )
+            logger.info("✅ Phase 2b (Charity Navigator) started")
+        else:
+            logger.warning(f"⚠️  Phase 2b script not found: {script_2b}")
+            success = False
+    except Exception as e:
+        logger.error(f"❌ Failed to start Phase 2b: {e}")
+        success = False
+
+    if success:
+        with open(PHASE2_TRIGGER_LOG, 'a') as f:
+            f.write(f"[{datetime.now().isoformat()}] Phase 2 (2a+2b parallel) activated\n")
+
+    return success
 
 
 def main():
@@ -144,10 +171,10 @@ def main():
                         f"🔔 Phase 1 saturation detected: "
                         f"{SATURATION_ITERATIONS} consecutive batches < {SATURATION_BATCH_THRESHOLD} orgs"
                     )
-                    if activate_phase2():
+                    if activate_phase2_parallel():
                         state['phase'] = 2
                         state['phase2_activated'] = True
-                        logger.info("✅ Transitioned to Phase 2")
+                        logger.info("✅ Transitioned to Phase 2 (2a+2b running in parallel)")
 
             state['last_batch_size'] = batch_size
             save_state(state)
