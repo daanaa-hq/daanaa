@@ -271,53 +271,62 @@ async def run_gpu_optimized_blitz():
     while True:
         iteration += 1
 
-        # Fetch batch
-        db = sqlite3.connect(str(DB))
-        cursor = db.cursor()
+        try:
+            # Fetch batch
+            # timeout=30: 9 discovery_daemon.py instances + this pipeline all
+            # write the same SQLite file; default 5s lock-wait was raising
+            # OperationalError and killing the whole process (see LESSONS.md
+            # 2026-07-16).
+            db = sqlite3.connect(str(DB), timeout=30)
+            cursor = db.cursor()
 
-        cursor.execute("""
-            SELECT EIN, organization_name, website, STATE
-            FROM registry_enriched
-            WHERE website IS NOT NULL AND website != ''
-            AND (donate_url IS NULL OR volunteer_url IS NULL)
-            AND EIN > 0
-            ORDER BY RANDOM()
-            LIMIT ?
-        """, (BATCH_SIZE,))
+            cursor.execute("""
+                SELECT EIN, organization_name, website, STATE
+                FROM registry_enriched
+                WHERE website IS NOT NULL AND website != ''
+                AND (donate_url IS NULL OR volunteer_url IS NULL)
+                AND EIN > 0
+                ORDER BY RANDOM()
+                LIMIT ?
+            """, (BATCH_SIZE,))
 
-        org_batch = cursor.fetchall()
-        db.close()
+            org_batch = cursor.fetchall()
+            db.close()
 
-        if not org_batch:
-            logger.info("No orgs needing discovery. Waiting...")
-            await asyncio.sleep(60)
-            continue
+            if not org_batch:
+                logger.info("No orgs needing discovery. Waiting...")
+                await asyncio.sleep(60)
+                continue
 
-        logger.info(f"\n[Iteration {iteration}] Starting batch discovery ({len(org_batch)} orgs)...")
+            logger.info(f"\n[Iteration {iteration}] Starting batch discovery ({len(org_batch)} orgs)...")
 
-        # Discover batch
-        verified_links = await discovery.discover_batch(org_batch)
+            # Discover batch
+            verified_links = await discovery.discover_batch(org_batch)
 
-        # Store results
-        db = sqlite3.connect(str(DB))
-        cursor = db.cursor()
+            # Store results
+            db = sqlite3.connect(str(DB), timeout=30)
+            cursor = db.cursor()
 
-        for ein, links in verified_links.items():
-            if links.get('donate_url'):
-                cursor.execute(
-                    "UPDATE registry_enriched SET donate_url = ?, donate_url_status = 'gpu_verified' WHERE EIN = ?",
-                    (links['donate_url'], ein)
-                )
-            if links.get('volunteer_url'):
-                cursor.execute(
-                    "UPDATE registry_enriched SET volunteer_url = ? WHERE EIN = ?",
-                    (links['volunteer_url'], ein)
-                )
+            for ein, links in verified_links.items():
+                if links.get('donate_url'):
+                    cursor.execute(
+                        "UPDATE registry_enriched SET donate_url = ?, donate_url_status = 'gpu_verified' WHERE EIN = ?",
+                        (links['donate_url'], ein)
+                    )
+                if links.get('volunteer_url'):
+                    cursor.execute(
+                        "UPDATE registry_enriched SET volunteer_url = ? WHERE EIN = ?",
+                        (links['volunteer_url'], ein)
+                    )
 
-        db.commit()
-        db.close()
+            db.commit()
+            db.close()
 
-        logger.info(f"[Iteration {iteration}] Complete - stored {len(verified_links)} link sets")
+            logger.info(f"[Iteration {iteration}] Complete - stored {len(verified_links)} link sets")
+
+        except sqlite3.OperationalError as e:
+            logger.warning(f"[Iteration {iteration}] DB error, retrying next iteration: {e}")
+            await asyncio.sleep(2)
 
 
 if __name__ == '__main__':
