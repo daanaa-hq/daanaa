@@ -93,6 +93,9 @@ def org_to_dict(row):
         'donate_url_status': row[50],
         'donate_confidence': row[51],
         'donate_platform': row[52],
+        # volunteer_url added 2026-07-16: discovered volunteer hand-off links,
+        # surfaced alongside donate. Same public-data, fail-closed posture.
+        'volunteer_url': row[53],
     }
     # v5.0 peer-based financial context. Built from the org's own v5 fields
     # (archetype=row[40], labels/band/score/health/peer at row[41..47],
@@ -203,7 +206,8 @@ def main():
             merit_archetype_v5_label, merit_band_v5, merit_band_v5_label,
             merit_score_v5, merit_health_signal_v5, merit_peer_group_v5,
             merit_peer_count_v5, is_hidden_gem,
-            donate_url, donate_url_status, donate_confidence, donate_platform
+            donate_url, donate_url_status, donate_confidence, donate_platform,
+            volunteer_url
         FROM registry_enriched
         WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN

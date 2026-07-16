@@ -37,7 +37,7 @@ LIVE_COLS = [
     "total_revenue", "total_expenses", "net_assets", "months_of_reserve",
     "program_expense_pct", "employee_count", "latest_tax_year", "ruling_date",
     "website", "website_status", "donate_url", "donate_platform",
-    "donate_url_status", "cause_tags", "is_hidden_gem", "data_source", "source",
+    "donate_url_status", "volunteer_url", "cause_tags", "is_hidden_gem", "data_source", "source",
     "merit_archetype_v5", "merit_archetype_v5_label", "merit_band_v5",
     "merit_band_v5_label", "merit_score_v5", "merit_health_signal_v5",
     "merit_peer_group_v5", "merit_peer_count_v5",
