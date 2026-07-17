@@ -3887,8 +3887,8 @@ def guild_member_count():
         return jsonify({"member_count": 0})
 
 
-@require_admin_key
 @app.route('/api/admin/guild/codes', methods=['GET'])
+@require_admin_key
 def admin_guild_codes_list():
     require_admin()
     db = get_db()
@@ -3900,8 +3900,8 @@ def admin_guild_codes_list():
     return jsonify([dict(r) for r in rows])
 
 
-@require_admin_key
 @app.route('/api/admin/guild/codes', methods=['POST'])
+@require_admin_key
 def admin_guild_codes_create():
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -3931,8 +3931,8 @@ def admin_guild_codes_create():
     return jsonify(dict(row)), 201
 
 
-@require_admin_key
 @app.route('/api/admin/guild/codes/<int:code_id>', methods=['PATCH'])
+@require_admin_key
 def admin_guild_codes_update(code_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -3969,8 +3969,8 @@ def admin_guild_codes_update(code_id):
     return jsonify(dict(row))
 
 
-@require_admin_key
 @app.route('/api/admin/guild/audit')
+@require_admin_key
 def admin_guild_audit():
     """P7 audit trail: last 100 vendor code changes."""
     require_admin()
@@ -3983,8 +3983,8 @@ def admin_guild_audit():
     return jsonify([dict(r) for r in rows])
 
 
-@require_admin_key
 @app.route('/api/admin/guild/codes/<int:code_id>/spend', methods=['POST'])
+@require_admin_key
 def admin_guild_spend_report(code_id):
     """Log a vendor's monthly spend report and check milestone thresholds."""
     require_admin()
@@ -4089,8 +4089,8 @@ def guild_referral_page(slug):
     return jsonify(dict(row))
 
 
-@require_admin_key
 @app.route('/api/admin/guild/nominations', methods=['GET'])
+@require_admin_key
 def admin_guild_nominations():
     require_admin()
     db = get_db()
@@ -4100,8 +4100,8 @@ def admin_guild_nominations():
     return jsonify([dict(r) for r in rows])
 
 
-@require_admin_key
 @app.route('/api/admin/guild/nominations/<int:nom_id>', methods=['PATCH'])
+@require_admin_key
 def admin_guild_nomination_update(nom_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -4392,8 +4392,8 @@ def admin_community_partners_list():
     return jsonify([dict(r) for r in rows])
 
 
-@require_admin_key
 @app.route('/api/admin/guild/partners-review', methods=['GET'])
+@require_admin_key
 def admin_partners_review():
     """
     View all pending and rejected partners for follow-up and coaching.
@@ -4435,8 +4435,8 @@ def admin_partners_review():
     })
 
 
-@require_admin_key
 @app.route('/api/admin/guild/community-partners/<int:cp_id>', methods=['PATCH'])
+@require_admin_key
 def admin_community_partner_update(cp_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -4458,8 +4458,8 @@ def admin_community_partner_update(cp_id):
     return jsonify(dict(row))
 
 
-@require_admin_key
 @app.route('/api/admin/guild/approve-partner/<int:cp_id>', methods=['GET'])
+@require_admin_key
 def admin_community_partner_approve(cp_id):
     """
     One-click approve link sent in the notification email.

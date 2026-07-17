@@ -3072,8 +3072,8 @@ def admin_today():
     })
 
 
-@require_admin_key
 @app.route('/api/admin/activity/<ein>', methods=['GET'])
+@require_admin_key
 def admin_org_activity(ein):
     ein = ''.join(c for c in ein if c.isdigit())[:10]
     db = get_db()
@@ -3083,8 +3083,8 @@ def admin_org_activity(ein):
     return jsonify({'activity': [dict(r) for r in rows]})
 
 
-@require_admin_key
 @app.route('/api/admin/claims', methods=['GET'])
+@require_admin_key
 def admin_claims_list():
     status = request.args.get('status', '').strip()
     where, params = '', []
@@ -3104,8 +3104,8 @@ def admin_claims_list():
     return jsonify({'claims': [dict(r) for r in rows], 'total': len(rows)})
 
 
-@require_admin_key
 @app.route('/api/admin/claims/<ein>', methods=['PATCH'])
+@require_admin_key
 def admin_claims_update(ein):
     data   = request.get_json(silent=True) or {}
     action = (data.get('action') or '').strip()
@@ -3175,8 +3175,8 @@ def _normalize_public_url(raw) -> str:
     return u
 
 
-@require_admin_key
 @app.route('/api/admin/concierge/confirm', methods=['POST'])
+@require_admin_key
 def admin_concierge_confirm():
     """Operator confirms a concierge-call Quick-Start draft (pilot T2).
 
@@ -3285,8 +3285,8 @@ def admin_concierge_confirm():
     return jsonify({'success': True, 'saved': written})
 
 
-@require_admin_key
 @app.route('/api/admin/analytics', methods=['GET'])
+@require_admin_key
 def admin_analytics():
     # Hidden (admin-only) aggregate dashboard data. Never exposed publicly.
     db = get_db()
@@ -3310,8 +3310,8 @@ def admin_analytics():
     })
 
 
-@require_admin_key
 @app.route('/api/admin/feedback', methods=['GET'])
+@require_admin_key
 def admin_feedback():
     db = get_db()
     rows = [dict(r) for r in db.execute(
@@ -3320,8 +3320,8 @@ def admin_feedback():
     return jsonify({'feedback': rows, 'total': len(rows)})
 
 
-@require_admin_key
 @app.route('/api/admin/waitlist', methods=['GET'])
+@require_admin_key
 def admin_waitlist_list():
     source = request.args.get('source', '').strip()
     status = request.args.get('status', '').strip()
@@ -3342,8 +3342,8 @@ def admin_waitlist_list():
     return jsonify({'entries': [dict(r) for r in rows], 'total': total})
 
 
-@require_admin_key
 @app.route('/api/admin/waitlist/<int:wid>', methods=['PATCH'])
+@require_admin_key
 def admin_waitlist_update(wid):
     data   = request.get_json(silent=True) or {}
     status = str(data.get('status', '')).strip()
@@ -3365,8 +3365,8 @@ def admin_waitlist_update(wid):
     return jsonify(dict(row))
 
 
-@require_admin_key
 @app.route('/api/admin/waitlist/<int:wid>', methods=['DELETE'])
+@require_admin_key
 def admin_waitlist_delete(wid):
     db = get_db()
     db.execute("DELETE FROM waitlist WHERE id = ?", (wid,))
@@ -4337,8 +4337,8 @@ def guild_member_count():
         return jsonify({"member_count": 0})
 
 
-@require_admin_key
 @app.route('/api/admin/guild/codes', methods=['GET'])
+@require_admin_key
 def admin_guild_codes_list():
     require_admin()
     db = get_db()
@@ -4350,8 +4350,8 @@ def admin_guild_codes_list():
     return jsonify([dict(r) for r in rows])
 
 
-@require_admin_key
 @app.route('/api/admin/guild/codes', methods=['POST'])
+@require_admin_key
 def admin_guild_codes_create():
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -4381,8 +4381,8 @@ def admin_guild_codes_create():
     return jsonify(dict(row)), 201
 
 
-@require_admin_key
 @app.route('/api/admin/guild/codes/<int:code_id>', methods=['PATCH'])
+@require_admin_key
 def admin_guild_codes_update(code_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -4419,8 +4419,8 @@ def admin_guild_codes_update(code_id):
     return jsonify(dict(row))
 
 
-@require_admin_key
 @app.route('/api/admin/guild/audit')
+@require_admin_key
 def admin_guild_audit():
     """P7 audit trail: last 100 vendor code changes."""
     require_admin()
@@ -4433,8 +4433,8 @@ def admin_guild_audit():
     return jsonify([dict(r) for r in rows])
 
 
-@require_admin_key
 @app.route('/api/admin/guild/codes/<int:code_id>/spend', methods=['POST'])
+@require_admin_key
 def admin_guild_spend_report(code_id):
     """Log a vendor's monthly spend report and check milestone thresholds."""
     require_admin()
@@ -4539,8 +4539,8 @@ def guild_referral_page(slug):
     return jsonify(dict(row))
 
 
-@require_admin_key
 @app.route('/api/admin/guild/nominations', methods=['GET'])
+@require_admin_key
 def admin_guild_nominations():
     require_admin()
     db = get_db()
@@ -4550,8 +4550,8 @@ def admin_guild_nominations():
     return jsonify([dict(r) for r in rows])
 
 
-@require_admin_key
 @app.route('/api/admin/guild/nominations/<int:nom_id>', methods=['PATCH'])
+@require_admin_key
 def admin_guild_nomination_update(nom_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -4842,8 +4842,8 @@ def admin_community_partners_list():
     return jsonify([dict(r) for r in rows])
 
 
-@require_admin_key
 @app.route('/api/admin/guild/partners-review', methods=['GET'])
+@require_admin_key
 def admin_partners_review():
     """
     View all pending and rejected partners for follow-up and coaching.
@@ -4885,8 +4885,8 @@ def admin_partners_review():
     })
 
 
-@require_admin_key
 @app.route('/api/admin/guild/community-partners/<int:cp_id>', methods=['PATCH'])
+@require_admin_key
 def admin_community_partner_update(cp_id):
     require_admin()
     data = request.get_json(silent=True) or {}
@@ -4908,8 +4908,8 @@ def admin_community_partner_update(cp_id):
     return jsonify(dict(row))
 
 
-@require_admin_key
 @app.route('/api/admin/guild/approve-partner/<int:cp_id>', methods=['GET'])
+@require_admin_key
 def admin_community_partner_approve(cp_id):
     """
     One-click approve link sent in the notification email.

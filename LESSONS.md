@@ -601,3 +601,14 @@ is running on the same box, verification concurrency must stay low (2 workers).
 Restore path: status flips carry donate_checked_at timestamps, so a bad batch is
 precisely reversible by timestamp window — this is why promotion is a status flip
 and not a destructive write.
+
+## 2026-07-17: Flask decorator order made 19 auth guards silent no-ops
+**Symptom:** After adding `@require_admin_key` to all admin routes and deploying, live `/api/admin/claims` still returned 200 with PII to unauthenticated callers. Fix was "complete and committed" but the vulnerability was still live.
+**Root cause (three stacked gaps):**
+1. Batch script inserted `@require_admin_key` ABOVE `@app.route(...)`. Decorators apply bottom-up, so Flask registered the unwrapped function — the guard existed but never executed.
+2. The fixed file was never loaded: home gunicorn kept running pre-fix code (no restart), and the droplet copy was scp'd to `/opt/daanaa/app.py` while gunicorn loads `droplet_api:app`.
+3. Verification was misread: "HTTP 200 without key" was noted but attributed to caching instead of being treated as a failed fix.
+**Preventing rules:**
+- `@app.route` must always be the TOP decorator; auth/behavior decorators go below it. Grep-verify order after any scripted decorator insertion: `grep -A1 '@require_admin_key' | grep '@app.route'` must be empty.
+- A security fix is not done until the failing request is re-run against the LIVE path and returns the expected denial (same principle as the 2026-07-05 deploy-verification lesson — restarting a service is not verifying it).
+- Before shipping to a server, read the service's ExecStart to learn the real entrypoint filename; never assume.
