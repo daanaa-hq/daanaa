@@ -100,11 +100,47 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
         return 0.0
     return float(np.dot(a, b) / (a_norm * b_norm))
 
+STOPWORDS = {'inc', 'incorporated', 'the', 'of', 'for', 'and', 'a', 'an',
+             'foundation', 'fund', 'corp', 'corporation', 'assn', 'association',
+             'co', 'ltd', 'llc', 'trust'}
+
+
+def llm_candidate_domains(org_name: str, city: str, state: str) -> list[str]:
+    """Second candidate tier (board decision 2026-07-17): ask the local LLM
+    for the domains a real org with this name would plausibly register —
+    acronyms, abbreviations, shortened forms the token guesser can't produce
+    (e.g. "Vermont Land Trust Inc" → vlt.org). Local Qwen on 11437, zero
+    external cost. Verification thresholds downstream stay unchanged."""
+    try:
+        prompt = (
+            f'Nonprofit: "{org_name}" in {city or "?"}, {state or "?"}. '
+            'List the 4 most plausible website domains this organization would '
+            'register, favoring .org, including acronym forms. Reply with ONLY '
+            'the bare domains, one per line, no explanations.')
+        resp = requests.post(
+            LLM_URL,
+            json={"model": "qwen", "max_tokens": 80, "temperature": 0.2,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=20)
+        if resp.status_code != 200:
+            return []
+        text = resp.json()["choices"][0]["message"]["content"]
+        out = []
+        for line in text.strip().splitlines():
+            d = line.strip().lower().strip('-• ').rstrip('/')
+            d = re.sub(r'^https?://', '', d).replace('www.', '')
+            if re.fullmatch(r'[a-z0-9][a-z0-9-]{1,60}\.(org|com|net|us)', d):
+                out.append(d)
+        return out[:4]
+    except Exception:
+        return []  # LLM down (e.g., outside GPU-night window) → heuristics only
+
+
 def search_website(org_name: str, city: str, state: str) -> list[str]:
     """
     Search for org website candidates. Prioritize .org over .com (nonprofits ~99% use .org).
-    Strategy: Try heuristic patterns first, then semantic search via existing websites.
-    In production, can integrate SerpAPI or Google Custom Search.
+    Tier 1: heuristic token patterns. Tier 2: LLM-proposed domains (acronyms,
+    abbreviations). Ownership verification downstream is unchanged either way.
     """
     candidates = []  # Use list to preserve order; .org first
 
@@ -118,13 +154,28 @@ def search_website(org_name: str, city: str, state: str) -> list[str]:
     if len(first_word) > 2:
         candidates.append(f"{first_word}.org")
 
-    # Pattern 3: City + org pattern (e.g., "bostonchildrensmuseum.org")
+    # Pattern 3: Acronym of significant words (Vermont Land Trust → vlt.org)
+    words = [w for w in re.findall(r"[a-zA-Z]+", org_name.lower()) if w not in STOPWORDS]
+    if len(words) >= 2:
+        acronym = ''.join(w[0] for w in words)
+        if 2 <= len(acronym) <= 8:
+            candidates.append(f"{acronym}.org")
+    # Pattern 3b: Stopword-stripped name (drops Inc/The/Foundation noise)
+    if words:
+        stripped = ''.join(words)
+        if stripped != org_clean:
+            candidates.append(f"{stripped}.org")
+
+    # Pattern 4: City + org pattern (e.g., "bostonchildrensmuseum.org")
     if city:
         city_clean = city.lower().replace(' ', '')
         candidates.append(f"{city_clean}{org_clean}.org")
 
+    # Tier 2: LLM-proposed domains (appended after heuristics; dedupe keeps order)
+    candidates.extend(llm_candidate_domains(org_name, city, state))
+
     # Return top candidates to try (deduped, .org-first)
-    return list(dict.fromkeys(candidates))[:5]
+    return list(dict.fromkeys(candidates))[:9]
 
 def llm_domain_guesses(org_name: str, city: str = '', state: str = '') -> list[str]:
     """
