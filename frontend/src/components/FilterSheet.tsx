@@ -1,9 +1,6 @@
 import { useEffect } from 'react'
 import { ALL_CATEGORIES } from '../data/categories'
-import LampMark from './LampMark'
-import { TIER_COLORS } from './TrustBadge'
 import RevenueRangeInput from './RangeSlider'
-import type { TierName } from './TrustBadge'
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All', emoji: '' },
@@ -32,12 +29,6 @@ const MILITARY_STATES = [
   ['AA','Armed Forces Americas'],['AE','Armed Forces Europe'],['AP','Armed Forces Pacific'],
 ] as const
 
-const SCORE_TIERS: { id: TierName; label: string }[] = [
-  { id: 'Beacon',  label: 'Beacon' },
-  { id: 'Torch',   label: 'Torch +' },
-  { id: 'Candle',  label: 'Candle +' },
-]
-
 interface FilterSheetProps {
   open: boolean
   onClose: () => void
@@ -47,7 +38,6 @@ interface FilterSheetProps {
   minRevenue: number
   maxRevenue: number
   verifiedRevenueOnly: boolean
-  scoreTier: string
   cause?: string
   onCategoryChange: (id: string) => void
   onStateChange: (state: string) => void
@@ -55,7 +45,6 @@ interface FilterSheetProps {
   onMinRevenueChange: (value: number) => void
   onMaxRevenueChange: (value: number) => void
   onVerifiedRevenueChange: (checked: boolean) => void
-  onScoreTierChange: (id: string) => void
   onCauseChange?: (v: string) => void
   onClearAll: () => void
   resultCount: number
@@ -63,8 +52,8 @@ interface FilterSheetProps {
 
 export default function FilterSheet({
   open, onClose,
-  activeCategory, stateFilter, sortBy, minRevenue, maxRevenue, verifiedRevenueOnly, scoreTier, cause = '',
-  onCategoryChange, onStateChange, onSortChange, onMinRevenueChange, onMaxRevenueChange, onVerifiedRevenueChange, onScoreTierChange,
+  activeCategory, stateFilter, sortBy, minRevenue, maxRevenue, verifiedRevenueOnly, cause = '',
+  onCategoryChange, onStateChange, onSortChange, onMinRevenueChange, onMaxRevenueChange, onVerifiedRevenueChange,
   onCauseChange, onClearAll, resultCount,
 }: FilterSheetProps) {
   useEffect(() => {
@@ -80,7 +69,6 @@ export default function FilterSheet({
     activeCategory !== 'all',
     !!stateFilter,
     hasRevenueFilter || verifiedRevenueOnly,
-    !!scoreTier,
     !!cause,
   ].filter(Boolean).length
 

@@ -58,12 +58,12 @@ Format:
   (STEWARDSHIP P8, "Never handle funds" non-negotiable). The audit's framing is
   corrected here for the record; no payment flow will ever be added.
 
-## [escalated] Donor-facing terminology glossary (audit: vocabulary drift, High)
+## [resolved] Donor-facing terminology glossary (audit: vocabulary drift, High)
 - Raised: 2026-07-17 by third-party system audit
 - Principles touched: P3 (honest signals), P5 (careful language), P9
 - Data gathered: yes — live census: rank 0, percentile 0, score 6, context 7, tier 16
 - Simulation: docs/BOARD_SIMULATION_2026_07_17_EVENING.md
-- Resolution: AWAITING FOUNDER — approve glossary (financial context / health signal / peer context) + decide directory visibility-tier filter's fate.
+- Resolution: FOUNDER APPROVED 2026-07-17 ("i agree with the board, if its not helping lets remove it from the filters"). Glossary adopted: financial context / health signal / peer context. Visibility-tier filter removed from directory (both inline select and FilterSheet plumbing). Lint test remains as engineering task with the contract guard.
 
 ## [resolved] AI-output human-review policy (which outputs need review pre-publication)
 - Raised: 2026-07-17 by third-party system audit

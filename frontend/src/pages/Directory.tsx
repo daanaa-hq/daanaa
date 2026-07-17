@@ -28,26 +28,6 @@ const SORT_OPTIONS = [
   { id: 'total_revenue', label: 'Revenue' },
 ]
 
-// Small first. This is the mission: the smallest groups are the hardest to find.
-// Eight donor-facing size bands (mirrors the methodology's eight-band thinking
-// with simple, universal dollar breakpoints).
-const SCORE_TIERS: { id: TierName; label: string }[] = [
-  { id: 'Beacon',  label: 'Beacon' },
-  { id: 'Torch',   label: 'Torch +' },
-  { id: 'Candle',  label: 'Candle +' },
-]
-
-const VISIBILITY_TIERS = [
-  { id: 'Beacon', label: 'Beacon', description: 'Largest & well-documented' },
-  { id: 'Torch', label: 'Torch', description: 'Established & stable' },
-  { id: 'Lantern', label: 'Lantern', description: 'Growing organizations' },
-  { id: 'Candle', label: 'Candle', description: 'Emerging organizations' },
-  { id: 'Ember', label: 'Ember', description: 'Limited financial data' },
-  { id: 'Spark', label: 'Spark', description: 'Minimal public info' },
-] as const
-
-type ScoreTierId = TierName | ''
-
 function hasKnownDataSource(src: string | null) {
   return src === 'propublica' || src === 'irs_soi'
 }
@@ -127,7 +107,6 @@ export default function Directory() {
   const stateParam    = searchParams.get('state') || ''
   const minRevenueParam = Number(searchParams.get('min_revenue') || '0')
   const maxRevenueParam = Number(searchParams.get('max_revenue') || '500000000')
-  const tierParam     = searchParams.get('min_tier') || ''
 
   const [searchQuery, setSearchQuery] = useState(qParam)
   const [debouncedQuery, setDebouncedQuery] = useState(qParam)
@@ -153,9 +132,6 @@ export default function Directory() {
   }, [categoryParam, subParam, stateParam])
   const [minRevenue, setMinRevenue] = useState(minRevenueParam)
   const [maxRevenue, setMaxRevenue] = useState(maxRevenueParam)
-  const [scoreTier, setScoreTier] = useState<ScoreTierId>(
-    SCORE_TIERS.some(t => t.id === tierParam) ? tierParam as ScoreTierId : ''
-  )
   const [hasWebsite, setHasWebsite] = useState(searchParams.get('has_website') === '1')
   const [verifiedRevenueOnly, setVerifiedRevenueOnly] = useState(searchParams.get('verified_revenue') === '1')
   // Hidden gems are off by default (user must explicitly toggle them on)
@@ -166,7 +142,6 @@ export default function Directory() {
   const [near, setNear] = useState(searchParams.get('near') || '')
   const [nearInput, setNearInput] = useState(searchParams.get('near') || '')
   const [radiusMi, setRadiusMi] = useState(Number(searchParams.get('radius_mi') || '25'))
-  const [visTier, setVisTier] = useState(searchParams.get('tier') || '')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
@@ -220,7 +195,7 @@ export default function Directory() {
 
   // Fused search mode: any meaningful query with no active structured filters
   const hasRevenueFilter = minRevenue > 0 || maxRevenue < 500_000_000
-  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || hasRevenueFilter || !!scoreTier || hasWebsite || needsSupport || !!visTier || !!debouncedCause.trim()
+  const hasAnyFilter = activeFilters.length > 0 || subFilters.length > 0 || !!stateFilter || hasRevenueFilter || hasWebsite || needsSupport || !!debouncedCause.trim()
   const isFusedMode = !hasAnyFilter && debouncedQuery.trim().length >= 2
 
   // Categories the user drilled into (picked specific subcats) are represented by
@@ -241,8 +216,6 @@ export default function Directory() {
       min_revenue: minRevenue > 0 ? minRevenue : undefined,
       max_revenue: maxRevenue < 500_000_000 ? maxRevenue : undefined,
       verified_revenue: verifiedRevenueOnly || undefined,
-      min_tier: scoreTier || undefined,
-      tier: visTier || undefined,
       has_website: hasWebsite || undefined,
       hidden_gem: effectiveHiddenGem || undefined,
       needs_funding: needsSupport || undefined,
@@ -250,7 +223,7 @@ export default function Directory() {
       near: near || undefined,
       radius_mi: near ? radiusMi : undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, verifiedRevenueOnly, scoreTier, visTier, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, verifiedRevenueOnly, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
@@ -325,21 +298,7 @@ export default function Directory() {
     })
   }
 
-  const handleScoreTierChange = (id: ScoreTierId) => {
-    setScoreTier(id)
-    setCurrentPage(1)
-    scrollTop()
-    if (id) { searchParams.set('min_tier', id) } else { searchParams.delete('min_tier') }
-    setSearchParams(searchParams)
-  }
 
-  const handleVisTierChange = (tier: string) => {
-    setVisTier(tier)
-    setCurrentPage(1)
-    scrollTop()
-    if (tier) { searchParams.set('tier', tier) } else { searchParams.delete('tier') }
-    setSearchParams(searchParams)
-  }
 
   // Clear all filters returns to the default landing (hidden gems on).
   const handleClearAll = () => {
@@ -352,7 +311,6 @@ export default function Directory() {
     setSortOrder('asc')
     setMinRevenue(0)
     setMaxRevenue(500_000_000)
-    setScoreTier('')
     setVisTier('')
     setHasWebsite(false)
     setNeedsSupport(false)
@@ -415,7 +373,7 @@ export default function Directory() {
   let organizations = useFusedResults ? fusedResults : (orgsData?.organizations || [])
 
   // Apply shuffle when browsing all orgs with no filters/search (discover mode)
-  const shouldShuffle = effectiveHiddenGem && !useFusedResults && !debouncedQuery.trim() && activeFilters.length === 0 && !stateFilter && !hasRevenueFilter && !scoreTier && !visTier
+  const shouldShuffle = effectiveHiddenGem && !useFusedResults && !debouncedQuery.trim() && activeFilters.length === 0 && !stateFilter && !hasRevenueFilter
   if (shouldShuffle && organizations.length > 0) {
     organizations = seededShuffle(organizations, sessionShuffleRef.current)
   }
@@ -447,15 +405,12 @@ export default function Directory() {
   const revLabel = hasRevenueFilter ? `${formatRevenue(minRevenue)}–${formatRevenue(maxRevenue)}` : ''
 
   // Readable label for active score tier
-  const scoreLabel = SCORE_TIERS.find(t => t.id === scoreTier)?.label ?? ''
 
   const activeFilterCount = [
     activeFilters.length > 0,
     subFilters.length > 0,
     !!stateFilter,
     hasRevenueFilter,
-    !!scoreTier,
-    !!visTier,
     hasWebsite,
     needsSupport,
     sortBy !== 'organization_name',
@@ -746,33 +701,9 @@ export default function Directory() {
                   <option value={50}>50mi</option>
                 </select>
               </div> {/* end proximity */}
-              {/* Visibility level (lamp tier) */}
-              <div className="relative">
-                <select
-                  value={visTier}
-                  onChange={e => {
-                    const v = e.target.value
-                    setVisTier(v); setCurrentPage(1); scrollTop()
-                    if (v) { searchParams.set('tier', v) } else { searchParams.delete('tier') }
-                    setSearchParams(searchParams)
-                  }}
-                  title="Filter by visibility level: how much public data backs this page"
-                  aria-label="Filter by visibility level"
-                  className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
-                  style={{
-                    backgroundColor: visTier ? '#C9A96E' : 'transparent',
-                    color: visTier ? '#0A1628' : '#4B5563',
-                    borderColor: visTier ? '#C9A96E' : '#E5E0DB',
-                  }}
-                >
-                  <option value="">Any visibility</option>
-                  <option value="beacon">Beacon</option>
-                  <option value="torch">Torch</option>
-                  <option value="candle">Candle</option>
-                  <option value="spark">Spark</option>
-                </select>
-                <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-              </div>
+              {/* Visibility-tier filter removed 2026-07-17 (founder + board:
+                  tiers retired from all donor-facing surfaces — see
+                  docs/BOARD_SIMULATION_2026_07_17_EVENING.md) */}
               {/* Revenue band */}
               <div className="inline-flex gap-3">
                 <div>
@@ -893,7 +824,6 @@ export default function Directory() {
             minRevenue={minRevenue}
             maxRevenue={maxRevenue}
             verifiedRevenueOnly={verifiedRevenueOnly}
-            scoreTier={scoreTier}
             cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
@@ -901,7 +831,6 @@ export default function Directory() {
             onMinRevenueChange={handleMinRevenueChange}
             onMaxRevenueChange={handleMaxRevenueChange}
             onVerifiedRevenueChange={(checked) => { setVerifiedRevenueOnly(checked); setCurrentPage(1) }}
-            onScoreTierChange={(id) => handleScoreTierChange(id as ScoreTierId)}
             onCauseChange={setCause}
             onClearAll={handleClearAll}
             resultCount={total}
@@ -966,7 +895,7 @@ export default function Directory() {
                   )}
 
                   {/* Active filter chips */}
-                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || hasRevenueFilter || scoreTier || visTier || near) && (
+                  {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || hasRevenueFilter || near) && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {searchQuery && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-[11px]">
@@ -1010,22 +939,6 @@ export default function Directory() {
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
                         >
                           {revLabel} ×
-                        </button>
-                      )}
-                      {scoreTier && (
-                        <button
-                          onClick={() => handleScoreTierChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
-                        >
-                          {scoreLabel} ×
-                        </button>
-                      )}
-                      {visTier && (
-                        <button
-                          onClick={() => handleVisTierChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
-                        >
-                          {visTier} ×
                         </button>
                       )}
                       {near && (
