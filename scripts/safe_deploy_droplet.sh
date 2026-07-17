@@ -271,7 +271,10 @@ frontend_ship() {
     rsync -a --ignore-existing ${FRONTEND_DROPLET}/assets/ ${FRONTEND_DROPLET}.new/assets/ 2>/dev/null || true" \
     >>"$LOG" 2>&1
   # Atomic swap: promote .new → live, keep .old until smoke tests pass.
-  $SSH "( [ -d ${FRONTEND_DROPLET} ] && mv ${FRONTEND_DROPLET} ${FRONTEND_DROPLET}.old || true ) && \
+  # rm stale .old first: a leftover .old from an interrupted prior run makes
+  # `mv dist dist.old` fail and abort the swap (bit us 2026-07-17).
+  $SSH "rm -rf ${FRONTEND_DROPLET}.old && \
+        ( [ -d ${FRONTEND_DROPLET} ] && mv ${FRONTEND_DROPLET} ${FRONTEND_DROPLET}.old || true ) && \
         mv ${FRONTEND_DROPLET}.new ${FRONTEND_DROPLET}" >>"$LOG" 2>&1 \
     || die "frontend swap failed on droplet"
   # Smoke-test SPA routes + one hashed JS chunk (catches asset-404 regressions).
