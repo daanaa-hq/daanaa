@@ -783,3 +783,35 @@ Rejected: separate light stylesheet (drift risk), per-component dark: variants
 
 **Status:** Code fixes complete and deployed; live verification pending droplet SSH restoration.
 
+
+---
+## 2026-07-17 (Morning): 100K Donation Links in 7 Days — Strategic Pivot
+
+**Decision:** Abandon Phase 2 (leadership enrichment). Go 100% on Phase 1 (donation link coverage).
+
+**Why:**
+- Leadership data doesn't make giving easier (governance context ≠ donation friction)
+- 990 filings are 18-24 months stale (not current)
+- Other platforms already own this (Charity Navigator, GiveWell)
+- **Real bottleneck**: 1.8M orgs need donation links. Currently 20.5K have them (1.1%).
+
+**What makes giving easier:**
+1. Find org → See "Donate" button → Click → Give
+2. Current state: Find org → No button → Hunt for link → Abandon (50%+ friction loss)
+3. Solution: Verified donation links visible on every org page
+
+**Execution (7 days, autonomous):**
+- **Phase 1 intensive** (GPU 100%): Discover & verify donation links for 100K+ orgs
+- **Parallel SEO** (CPU only): Build cause/geography landing pages, schema markup, API for LLM search
+- **Auto-deploy at milestones**: Every 5K new links → live deployment (faster feedback, fresh content signals)
+
+**Success metric:** 100K+ donation links live on daanaa.org by 2026-07-24, driving giving directly.
+
+**Stewardship alignment:**
+- P1 (mission): Informed giving → we surface the donate button
+- P3 (trust signals): Verified links ARE the trust signal
+- P8 (never handle funds): We just link to org pages, don't process money
+
+**Skipped:** Phase 2 (leadership) uses resources that don't move the needle on "make giving easier".
+**Queued:** Phase 3 (mission grounding) after Phase 1 reaches 100K.
+
