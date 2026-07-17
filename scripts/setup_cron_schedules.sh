@@ -88,6 +88,9 @@ cat > "$CRONTAB_TMP" << 'CRON'
 # Decision queue check: every 12h (08:00 + 20:00) — surfaces open decisions for board simulation (docs/DECISION_WORKFLOW.md)
 0 8,20 * * * bash /home/akbar/meritgiving/scripts/check_decision_queue.sh
 
+# AI-output sample audit: 1st of month 06:00 (policy: BOARD_SIMULATION_2026_07_17_EVENING point 2)
+0 6 1 * * cd /home/akbar/meritgiving && venv/bin/python3 scripts/ai_output_sample_audit.py >> logs/ai_audit/cron.log 2>&1
+
 # ---------- Weekly ----------
 # Token review: Mondays 08:00
 0 8 * * 1 bash /home/akbar/meritgiving/scripts/ops/token_review.sh >> /home/akbar/meritgiving/logs/token_review/cron.log 2>&1
