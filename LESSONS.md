@@ -655,3 +655,19 @@ precompute export, deploy) must run AFTER the revocation guard for the same
 batch. sync_irs_data.py now marks new-org revocations before its FTS insert.
 The API's serve-time filters (org_status='active') remain the fail-closed
 backstop — they prevented any user exposure here.
+
+## 2026-07-17 — deploy snapshot livelocked against continuous writers
+
+**Symptom:** safe_deploy_droplet.sh sat in "Taking online .backup snapshot" for
+34 minutes with the snapshot file stalled at 11.1GB of 15GB.
+
+**Root cause:** SQLite's online backup restarts from page 0 whenever another
+connection commits to the source DB. The 24/7 discovery daemon commits
+constantly, so the backup could never finish a full pass — a livelock, not a
+hang. Proof: after SIGSTOPping the writers, the snapshot completed in 39 s.
+
+**Preventing rule:** Any full-DB .backup on the live registry must briefly
+quiesce continuous writers first. SIGSTOP/SIGCONT is the right tool — pauses
+in place, loses no work, and a shell EXIT trap guarantees resume even if the
+deploy dies mid-snapshot. safe_deploy_droplet.sh now does this automatically
+for discovery_daemon, reverify_donate_pages, and enrich_batch.

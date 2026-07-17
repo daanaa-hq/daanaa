@@ -98,9 +98,28 @@ snapshot() {
     rm -f "$SNAPSHOT" "$SNAPSHOT-wal" "$SNAPSHOT-shm"
     # .backup uses SQLite's online backup API: a consistent copy taken while
     # gunicorn keeps reading/writing the live DB. No locks held against :5000.
+    #
+    # Write-quiesce (2026-07-17): .backup RESTARTS from page 0 every time a
+    # writer commits, and the discovery daemon commits constantly — a 15GB
+    # snapshot livelocked for 34 min, then finished in 39 s once writers were
+    # paused. SIGSTOP/SIGCONT pauses them in place (no lost work); the trap
+    # guarantees resume even if the snapshot dies.
+    QUIESCED_PIDS=$(pgrep -f "discovery_daemon.py|reverify_donate_pages.py|enrich_batch.py" || true)
+    if [ -n "$QUIESCED_PIDS" ]; then
+      log "Pausing DB writers during snapshot: $(echo $QUIESCED_PIDS | tr '\n' ' ')"
+      # shellcheck disable=SC2086
+      kill -STOP $QUIESCED_PIDS 2>/dev/null || true
+      trap 'kill -CONT $QUIESCED_PIDS 2>/dev/null || true' EXIT
+    fi
     log "Taking online .backup snapshot (live API undisturbed)..."
     sqlite3 "$LIVE_DB" ".backup '$SNAPSHOT'" || die "snapshot failed"
     log "✓ snapshot written ($(du -h "$SNAPSHOT" | cut -f1))"
+    if [ -n "$QUIESCED_PIDS" ]; then
+      # shellcheck disable=SC2086
+      kill -CONT $QUIESCED_PIDS 2>/dev/null || true
+      trap - EXIT
+      log "DB writers resumed"
+    fi
   fi
 
   # THE safeguard: never let a corrupt snapshot proceed to precompute/deploy.

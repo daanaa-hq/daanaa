@@ -511,8 +511,14 @@ def _attach_cohort_context(data: dict) -> None:
     if data.get('cohort_context') is not None:
         return
     # Only fill a genuinely blank financial section — never compete with a
-    # real assessment.
-    if data.get('financial_health') is not None or data.get('months_of_reserve') is not None:
+    # real assessment. "Real" means actual numbers (reserves) or a v5 health
+    # signal; a v4 tier label with no numbers behind it still renders an empty
+    # financial panel (V5Context returns null without a health_signal), so it
+    # must not block the cohort fallback — 37K orgs hit that empty state.
+    if data.get('months_of_reserve') is not None:
+        return
+    v5_score = (data.get('v5_context') or {}).get('score') or {}
+    if v5_score.get('health_signal'):
         return
     ctx = _load_cohort_ctx()
     nteecc, ntee1 = data.get('NTEECC'), data.get('NTEE1')
