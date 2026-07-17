@@ -815,3 +815,40 @@ Rejected: separate light stylesheet (drift risk), per-component dark: variants
 **Skipped:** Phase 2 (leadership) uses resources that don't move the needle on "make giving easier".
 **Queued:** Phase 3 (mission grounding) after Phase 1 reaches 100K.
 
+---
+## 2026-07-17: Hybrid Scoring Schedule — Delta-Nightly + Full-Weekly
+
+**Decision:** New organizations added to the registry receive financial context scores within 24 hours
+instead of waiting up to 6 days for the next Saturday full refresh.
+
+**Why:**
+- Phase 1 adds ~500 new orgs weekly via IRS refresh (Mondays)
+- Discovery daemon finds donation links for new orgs immediately
+- Without financial context, new links lack trust signals (health status, archetype, band)
+- Donors see "Donate" button but not "HEALTHY/STABLE/NEED_SUPPORT" context
+- Full trust signal (link + financial health) = confident giving
+
+**What:**
+- **Nightly delta scorer** (Sun–Fri 02:00 UTC): Scores only `merit_score_v5 IS NULL` orgs (~500/week)
+  - Uses existing `merit_scorer_v5_0.py` on new orgs only
+  - Loads via `load_v5_scores_delta.py` (skips already-scored orgs)
+  - ~5 min runtime (delta is 0.1% of full refresh)
+- **Full weekly refresh** (Saturday 01:30 UTC): Unchanged
+  - Re-scores all 1.8M orgs for staleness/data freshness
+- **Daily revocation check** (Daily 03:30 UTC): Detects newly-revoked organizations
+  - Uses lightweight `sync_irs_revocations.py --check` (cached data, no download)
+  - Full sync still runs as part of Saturday pipeline
+
+**How:**
+- Created `/scripts/delta_scorer_v5_nightly.py` (orchestrator)
+- Created `/scripts/load_v5_scores_delta.py` (delta-only database loader)
+- Installed via `setup_cron_schedules.sh`:
+  - `0 2 * * 1 refresh_irs_data.sh` (Monday 02:00 UTC — IRS refresh)
+  - `0 2 * * 0-5 delta_scorer_v5_nightly.py` (Sun–Fri 02:00 UTC — scores new orgs)
+  - `30 1 * * 6 overnight_pipeline.py` (Saturday 01:30 UTC — full refresh)
+  - `30 3 * * * sync_irs_revocations.py --check` (Daily 03:30 UTC — revocation detection)
+
+**Status:** Cron schedule installed and active.
+
+**Rejected:** Keeping weekly-only scoring (leaves 5-day gap where new links lack context).
+
