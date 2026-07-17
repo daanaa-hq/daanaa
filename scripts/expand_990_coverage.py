@@ -45,18 +45,20 @@ def connect():
 
 
 def load_gap_eins(db) -> dict[str, dict]:
-    """Load Flame orgs eligible for Lantern if website confirmed."""
+    """Any active deductible org missing a website is a gap org.
+
+    Broadened 2026-07-17 (was Flame-tier-only, which matched 0 orgs after the
+    tier retirement): the 990 e-file WebsiteAddressTxt is the org's own filing
+    — the most trustworthy website source we have, so every website-less org
+    qualifies. Revenue-ordered so the most-searched orgs are covered first.
+    """
     rows = db.execute("""
         SELECT EIN, peer_percentile, ntee1_percentile, total_revenue
         FROM registry_enriched
-        WHERE merit_tier = 'Flame'
-          AND mission IS NOT NULL AND TRIM(mission) != ''
-          AND COALESCE(peer_percentile, ntee1_percentile) IS NOT NULL
-          AND latest_tax_year >= 2022
-          AND total_revenue > 0
+        WHERE deductibility = '1'
+          AND org_status = 'active'
           AND (website IS NULL OR TRIM(website) = '')
-          AND (merit_band IS NULL OR merit_band != 'Concerns')
-        ORDER BY COALESCE(peer_percentile, ntee1_percentile) DESC
+        ORDER BY total_revenue DESC NULLS LAST
     """).fetchall()
     return {r[0].zfill(9): {"pct": r[1] or r[2], "revenue": r[3]} for r in rows}
 

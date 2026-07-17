@@ -51,6 +51,11 @@ cat > "$CRONTAB_TMP" << 'CRON'
 # Daily data audit: 00:30
 30 0 * * * python3 /home/akbar/meritgiving/scripts/daily_data_audit.py >> /home/akbar/meritgiving/logs/daily_data_audit.log 2>&1
 
+# GT990 e-file index refresh: Sundays 01:00 (public S3, no auth)
+0 1 * * 0 bash /home/akbar/meritgiving/scripts/cron_refresh_gt990.sh >> /home/akbar/meritgiving/logs/gt990_refresh.log 2>&1
+# 990 website expansion: Sundays 05:00 — extracts org-attested websites from fresh filings
+0 5 * * 0 cd /home/akbar/meritgiving && venv/bin/python3 scripts/expand_990_coverage.py --workers 12 >> logs/expand_990_coverage.log 2>&1
+
 # ---------- Discovery & deployment ----------
 # Deploy queued verified links every 4 hours
 0 */4 * * * python3 /home/akbar/meritgiving/scripts/deploy_queued_links.py >> /home/akbar/meritgiving/logs/deployment_cron.log 2>&1
@@ -62,7 +67,7 @@ cat > "$CRONTAB_TMP" << 'CRON'
 0 14 * * * /home/akbar/meritgiving/scripts/deploy_morning.sh
 
 # Nonprofit discovery orchestrator: 11:00 daily (multi-source website batch)
-0 11 * * * source venv/bin/activate && python3 scripts/nonprofit_discovery_orchestrator.py >> logs/discovery_orchestrator.log 2>&1
+0 11 * * * cd /home/akbar/meritgiving && venv/bin/python3 scripts/nonprofit_discovery_orchestrator.py >> logs/discovery_orchestrator.log 2>&1
 # Discovery efficiency monitor: every 30 min (80%-of-peak reconnect signal)
 */30 * * * * cd /home/akbar/meritgiving && venv/bin/python3 scripts/monitor_discovery_efficiency.py >> logs/efficiency_monitor.log 2>&1
 
