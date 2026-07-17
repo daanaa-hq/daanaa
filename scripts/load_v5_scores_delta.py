@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Load v5.0 scores from JSON into registry_enriched table — DELTA MODE ONLY.
+Load v5.0 scores from JSON into registry_enriched — DELTA MODE.
 
-Delta mode: Only update orgs that have merit_score_v5 IS NULL.
-Use after scoring new orgs added since last full refresh.
+Only updates orgs whose merit_score_v5 is currently NULL. Already-scored
+orgs are untouched (the Saturday full refresh handles staleness).
 
 Usage:
-    python3 scripts/load_v5_scores_delta.py scores_v5_0.json
+    python3 scripts/load_v5_scores_delta.py <scores.json>
 """
 import sqlite3
 import json
@@ -38,61 +38,45 @@ log(f"Loading v5.0 scores from {scores_file} (delta mode)")
 with open(scores_file) as f:
     data = json.load(f)
 
-# Handle both direct list and wrapped format
 scores = data if isinstance(data, list) else data.get('scores', [])
-log(f"Loaded {len(scores)} v5.0 scores total")
+log(f"Scorer output contains {len(scores):,} scores")
 
 conn = sqlite3.connect(db_path)
 c = conn.cursor()
 
-# Get count of unscored orgs
-c.execute("SELECT COUNT(*) FROM registry_enriched WHERE deductibility = '1' AND merit_score_v5 IS NULL")
-unscored_count = c.fetchone()[0]
-log(f"Unscored orgs in database: {unscored_count:,}")
+# One pass: collect all currently-unscored EINs into a set (fast membership test)
+unscored_eins = {
+    row[0] for row in c.execute(
+        "SELECT EIN FROM registry_enriched WHERE deductibility = '1' AND merit_score_v5 IS NULL"
+    )
+}
+log(f"Unscored orgs in database: {len(unscored_eins):,}")
 
-# Update only unscored orgs
-loaded = 0
-skipped = 0
-for score_data in scores:
-    ein = score_data.get('ein')
-    if not ein:
-        skipped += 1
+updates = []
+for s in scores:
+    ein = s.get('ein')
+    if not ein or ein not in unscored_eins:
         continue
-
-    # Check if this org is currently unscored
-    c.execute("SELECT merit_score_v5 FROM registry_enriched WHERE EIN = ?", (ein,))
-    result = c.fetchone()
-    if result and result[0] is not None:
-        # Already scored, skip
-        skipped += 1
-        continue
-
-    merit_score_v5 = score_data.get('reserves_percentile')
-    archetype_label = score_data.get('archetype')
-    band_label = score_data.get('band')
-    health_signal = score_data.get('health_signal')
-
-    c.execute("""
-        UPDATE registry_enriched
-        SET merit_score_v5 = ?,
-            merit_archetype_v5_label = ?,
-            merit_band_v5_label = ?,
-            merit_health_signal_v5 = ?
-        WHERE EIN = ? AND merit_score_v5 IS NULL
-    """, (
-        merit_score_v5,
-        archetype_label,
-        band_label,
-        health_signal,
-        ein
+    updates.append((
+        s.get('reserves_percentile'),
+        s.get('archetype'),
+        s.get('band'),
+        s.get('health_signal'),
+        ein,
     ))
-    loaded += 1
-    if loaded % 10000 == 0:
-        log(f"  [{loaded}/{unscored_count}] ...")
 
-# Record this scoring run
+log(f"New scores to load: {len(updates):,} (skipping {len(scores) - len(updates):,} already-scored)")
+
+c.executemany("""
+    UPDATE registry_enriched
+    SET merit_score_v5 = ?,
+        merit_archetype_v5_label = ?,
+        merit_band_v5_label = ?,
+        merit_health_signal_v5 = ?
+    WHERE EIN = ? AND merit_score_v5 IS NULL
+""", updates)
+
 run_ts = datetime.now(timezone.utc).isoformat()
-
 c.execute("""
     INSERT INTO scoring_runs (
         run_id, scorer_version, started_at, completed_at,
@@ -102,17 +86,15 @@ c.execute("""
 """, (
     f'v5_0_delta_{run_ts}',
     'v5.0-delta',
+    run_ts,
     datetime.now(timezone.utc).isoformat(),
-    datetime.now(timezone.utc).isoformat(),
-    unscored_count,
+    len(unscored_eins),
     len(scores),
-    loaded,
-    f'Delta scoring: {loaded}/{unscored_count} unscored orgs updated (skipped {skipped} already-scored)'
+    len(updates),
+    f'Delta load: {len(updates)} newly-scored orgs (already-scored untouched)',
 ))
 
 conn.commit()
 conn.close()
 
-log(f"✅ Updated {loaded:,} new organizations with v5.0 scores")
-log(f"✅ Skipped {skipped:,} already-scored orgs")
-log(f"✅ Scores last updated: {run_ts}")
+log(f"Loaded {len(updates):,} new v5.0 scores (delta run {run_ts})")

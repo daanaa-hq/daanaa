@@ -1,59 +1,84 @@
 #!/bin/bash
-# setup_cron_schedules.sh — Configure automated scoring and revocation checks
+# setup_cron_schedules.sh — install the FULL Daanaa crontab.
+#
+# This file is the single source of truth for the crontab. It REPLACES the
+# whole crontab on install, so every job must be listed here.
+# Schedule evidence recovered from /var/log/syslog on 2026-07-17 after an
+# earlier version of this script accidentally wiped the pre-existing jobs
+# (see LESSONS.md 2026-07-17).
+#
+# All times are LOCAL server time (America/Chicago, UTC-5 in summer).
 
 set -euo pipefail
 
-VENV="$HOME/meritgiving/venv"
 REPO="$HOME/meritgiving"
-
-echo "Setting up cron schedules for Daanaa Phase 1..."
-echo ""
-
-# Ensure we're in the repo
 cd "$REPO"
+mkdir -p logs
 
-# Read current crontab (if exists)
+# Backup current crontab before replacing (kept in repo logs, timestamped)
+crontab -l > "logs/crontab_backup_$(date +%Y%m%d_%H%M%S).txt" 2>/dev/null || true
+
 CRONTAB_TMP=$(mktemp)
-crontab -l > "$CRONTAB_TMP" 2>/dev/null || true
+cat > "$CRONTAB_TMP" << 'CRON'
+# ============================================================
+# DAANAA CRONTAB — installed by scripts/setup_cron_schedules.sh
+# Edit that script, not this crontab directly.
+# ============================================================
 
-# Remove any existing entries for our scripts (to avoid duplication)
-grep -v "delta_scorer_v5_nightly\|sync_irs_revocations\|overnight_pipeline" "$CRONTAB_TMP" > "$CRONTAB_TMP.new" || true
+# ---------- Monitoring & watchdogs ----------
+* * * * * cd /home/akbar/meritgiving && source venv/bin/activate && python3 infrastructure/monitoring/metrics_collector.py >> /tmp/daanaa_metrics.log 2>&1
+* * * * * cd /home/akbar/meritgiving && source venv/bin/activate && python3 infrastructure/monitoring/alert_manager.py >> /tmp/daanaa_alerts.log 2>&1
+*/5 * * * * cd ~/meritgiving && venv/bin/python3 scripts/ops/daanaa_watchdog.py >> logs/watchdog.log 2>&1
+*/15 * * * * /home/akbar/meritgiving/scripts/api_watchdog.sh
+*/5 * * * * /home/akbar/meritgiving/scripts/watchdog_discovery.sh
+0 * * * * python3 /home/akbar/meritgiving/scripts/monitor_discovery_health.py >> /home/akbar/meritgiving/logs/health_monitor_cron.log 2>&1
+0 9 * * * cd /home/akbar/meritgiving && source venv/bin/activate && python3 infrastructure/monitoring/alert_manager.py digest >> /tmp/daanaa_alerts.log 2>&1
 
-cat > "$CRONTAB_TMP.new" << 'CRON'
-# ========== DAANAA DATA PIPELINE ==========
-# Authority: Phase 1 Acceleration (July 16, 2026)
-# All times UTC. Email output to root@localhost (logs/cron.log).
+# ---------- Backups ----------
+30 2 * * * bash ~/meritgiving/scripts/ops/daanaa_backup.sh >> ~/meritgiving/logs/backup.log 2>&1
+0 3 * * * bash ~/meritgiving/scripts/ops/monitor_backups.sh >> ~/meritgiving/logs/backup_monitor.log 2>&1
 
-# Revocation check: DAILY at 03:30 UTC
-# Lightweight check using cached IRS data; detects newly-revoked organizations
-30 3 * * * source $HOME/meritgiving/venv/bin/activate && cd $HOME/meritgiving && python3 scripts/sync_irs_revocations.py --check >> logs/cron.log 2>&1
+# ---------- Data pipeline ----------
+# IRS EO data refresh: Mondays 02:00 (downloads BMF, delta-loads new orgs + FTS)
+0 2 * * 1 bash /home/akbar/meritgiving/scripts/refresh_irs_data.sh >> /home/akbar/meritgiving/logs/cron.log 2>&1
+# Delta scorer: nightly 02:00 (Sun-Fri) — scores newly-added orgs same day
+0 2 * * 0,2-6 cd /home/akbar/meritgiving && source venv/bin/activate && python3 scripts/delta_scorer_v5_nightly.py >> logs/cron.log 2>&1
+# Overnight pipeline: daily 02:30 (scoring, FTS, enrichment, snapshot)
+30 2 * * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 scripts/overnight_pipeline.py >> logs/overnight.log 2>&1
+# IRS revocation sync: daily 03:00 (full sync — marks revoked orgs inactive)
+0 3 * * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 scripts/sync_irs_revocations.py >> logs/irs_revocations.log 2>&1
+# Daily data audit: 00:30
+30 0 * * * python3 /home/akbar/meritgiving/scripts/daily_data_audit.py >> /home/akbar/meritgiving/logs/daily_data_audit.log 2>&1
 
-# Delta scorer: NIGHTLY (except Saturday) at 02:00 UTC
-# Scores newly-added organizations within 24 hours of IRS refresh
-0 2 * * 0-5 source $HOME/meritgiving/venv/bin/activate && cd $HOME/meritgiving && python3 scripts/delta_scorer_v5_nightly.py >> logs/cron.log 2>&1
+# ---------- Discovery & deployment ----------
+# Deploy queued verified links every 4 hours
+0 */4 * * * python3 /home/akbar/meritgiving/scripts/deploy_queued_links.py >> /home/akbar/meritgiving/logs/deployment_cron.log 2>&1
+# Discovery progress report every 6 hours
+0 */6 * * * /home/akbar/meritgiving/scripts/discovery_progress_report.sh >> /home/akbar/meritgiving/logs/discovery_progress.log 2>&1
+# Nightly search DB deploy to droplet: 08:15
+15 8 * * * bash /home/akbar/meritgiving/scripts/ops/nightly_search_deploy.sh >> /home/akbar/meritgiving/logs/nightly_search_deploy.log 2>&1
+# Morning deploy: 14:00
+0 14 * * * /home/akbar/meritgiving/scripts/deploy_morning.sh
 
-# Overnight full pipeline: SATURDAY at 01:30 UTC
-# Comprehensive refresh: revocation sync, full rescoring, FTS rebuild, enrichment
-30 1 * * 6 source $HOME/meritgiving/venv/bin/activate && cd $HOME/meritgiving && python3 scripts/overnight_pipeline.py >> logs/cron.log 2>&1
+# ---------- GPU night mode ----------
+0 21 * * * /home/akbar/meritgiving/scripts/gpu_night.sh start >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
+0 2 * * * /home/akbar/meritgiving/scripts/enrichment_loop_8pm_8am.sh
+0 9 * * * /home/akbar/meritgiving/scripts/gpu_night.sh stop >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
+5 9 * * * /home/akbar/meritgiving/scripts/gpu_night.sh stop_embed_server >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
 
-# ========== IRS DATA REFRESH ==========
-# IRS data sync: MONDAY at 02:00 UTC (before delta scorer runs)
-# Downloads weekly IRS Exempt Organizations list, delta-loads new EINs
-0 2 * * 1 source $HOME/meritgiving/venv/bin/activate && cd $HOME/meritgiving && python3 scripts/refresh_irs_data.sh >> logs/cron.log 2>&1
+# ---------- Marketing / campaigns ----------
+*/5 * * * * cd /home/akbar/meritgiving && python3 scripts/campaigns_orchestrator.py --action monitor_posted_campaigns >> logs/cron_monitor.log 2>&1
+0 18 * * * cd /home/akbar/meritgiving && python3 scripts/campaigns_orchestrator.py --action collect_daily_metrics >> logs/cron_metrics.log 2>&1
+
+# ---------- Email agent ----------
+0 */2 * * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 -m scripts.email_agent.run --limit 50 --query 'newer_than:2d -label:daanaa/triaged' >> /home/akbar/meritgiving/logs/email_agent.log 2>&1
+
+# ---------- Weekly ----------
+# Token review: Mondays 08:00
+0 8 * * 1 bash /home/akbar/meritgiving/scripts/ops/token_review.sh >> /home/akbar/meritgiving/logs/token_review/cron.log 2>&1
 CRON
 
-# Install the new crontab
-crontab "$CRONTAB_TMP.new"
-rm -f "$CRONTAB_TMP" "$CRONTAB_TMP.new"
+crontab "$CRONTAB_TMP"
+rm -f "$CRONTAB_TMP"
 
-echo "✅ Cron schedule installed:"
-echo ""
-crontab -l | grep -A 20 "DAANAA DATA PIPELINE"
-echo ""
-echo "Schedule summary:"
-echo "  - Revocation check: Daily at 03:30 UTC"
-echo "  - Delta scorer: Nightly (Sun-Fri) at 02:00 UTC"
-echo "  - Full pipeline: Saturdays at 01:30 UTC"
-echo "  - IRS refresh: Mondays at 02:00 UTC"
-echo ""
-echo "Logs: $REPO/logs/cron.log"
+echo "Crontab installed ($(crontab -l | grep -c '^[0-9*]') jobs). Backup of previous crontab in logs/."

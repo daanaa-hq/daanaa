@@ -2,8 +2,14 @@
 """
 delta_scorer_v5_nightly.py — Score only new/unscored organizations.
 
-This runs nightly to score organizations added since the last full refresh.
-Full scoring (all orgs) still happens Saturday.
+Runs nightly to score orgs added since the last full refresh (e.g. by the
+Monday IRS data load). Full scoring of all orgs still happens Saturday via
+overnight_pipeline.py.
+
+An org is "scorable" when total_revenue, months_of_reserve and
+program_expense_pct are all present — the same requirement merit_scorer_v5_0
+enforces in extract_metrics(). Orgs missing financial data are never scored
+(evidence-based trust signals, STEWARDSHIP P3).
 
 Run:
     source ~/meritgiving/venv/bin/activate
@@ -13,15 +19,23 @@ Logs to: logs/delta_scorer_nightly.log
 """
 
 import sqlite3
-import json
 import sys
-import time
 import subprocess
 from pathlib import Path
 from datetime import datetime
 
 DB = Path.home() / "meritgiving/data/merit_registry.db"
 LOG = Path.home() / "meritgiving/logs/delta_scorer_nightly.log"
+SCORES_JSON = Path.home() / "meritgiving/logs/delta_scores_v5.json"
+
+SCORABLE_UNSCORED_SQL = """
+    SELECT COUNT(*) FROM registry_enriched
+    WHERE deductibility = '1'
+      AND merit_score_v5 IS NULL
+      AND total_revenue IS NOT NULL
+      AND months_of_reserve IS NOT NULL
+      AND program_expense_pct IS NOT NULL
+"""
 
 def log(msg: str) -> None:
     ts = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -31,75 +45,64 @@ def log(msg: str) -> None:
     with open(LOG, 'a') as fh:
         fh.write(line + '\n')
 
-def count_unscored() -> int:
-    """Count orgs with merit_score_v5 IS NULL"""
+def count_scorable_unscored() -> int:
     try:
         conn = sqlite3.connect(DB)
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT COUNT(*) FROM registry_enriched
-            WHERE deductibility = '1' AND merit_score_v5 IS NULL
-        """)
-        count = cursor.fetchone()[0]
+        count = conn.execute(SCORABLE_UNSCORED_SQL).fetchone()[0]
         conn.close()
         return count
     except Exception as e:
-        log(f'Error counting unscored orgs: {e}')
-        return 0
+        log(f'Error counting scorable unscored orgs: {e}')
+        return -1
 
-def run_delta_score():
-    """Run v5 scorer on unscored orgs only"""
-    unscored = count_unscored()
-
+def run_delta_score() -> bool:
+    unscored = count_scorable_unscored()
+    if unscored < 0:
+        return False
     if unscored == 0:
-        log('✅ No new orgs to score. Exiting.')
+        log('No scorable unscored orgs. Nothing to do.')
         return True
 
-    log(f'Found {unscored:,} unscored orgs. Starting delta scoring...')
+    log(f'Found {unscored:,} scorable unscored orgs. Running v5 scorer...')
 
-    # Run the full scorer but with a filter for unscored orgs
-    # The merit_scorer_v5_0.py will hit the DB and score everything;
-    # we'll filter in the load step
     try:
-        # Run full scorer to get scores
         result = subprocess.run(
             [
                 'python3',
                 str(Path(__file__).parent / 'merit_scorer_v5_0.py'),
-                '--output', '/tmp/delta_scores_v5.json',
+                '--output', str(SCORES_JSON),
             ],
             capture_output=True,
             text=True,
             timeout=3600,
         )
-
         if result.returncode != 0:
-            log(f'Scorer failed: {result.stderr}')
+            log(f'Scorer failed: {result.stderr[-2000:]}')
             return False
 
-        log(f'Scorer completed. Loading scores into database...')
+        log('Scorer completed. Loading delta scores into database...')
 
-        # Load scores, filtering for unscored orgs only
         result = subprocess.run(
             [
                 'python3',
                 str(Path(__file__).parent / 'load_v5_scores_delta.py'),
-                '/tmp/delta_scores_v5.json',
+                str(SCORES_JSON),
             ],
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=1800,
         )
-
         if result.returncode != 0:
-            log(f'Load failed: {result.stderr}')
+            log(f'Load failed: {result.stderr[-2000:]}')
             return False
 
-        log(f'✅ Delta scoring complete.')
+        remaining = count_scorable_unscored()
+        log(f'Delta scoring complete. Scorable unscored remaining: {remaining:,}')
+        SCORES_JSON.unlink(missing_ok=True)
         return True
 
     except subprocess.TimeoutExpired:
-        log(f'Delta scorer timed out after 1 hour')
+        log('Delta scorer timed out')
         return False
     except Exception as e:
         log(f'Delta scorer error: {e}')
@@ -107,5 +110,5 @@ def run_delta_score():
 
 if __name__ == '__main__':
     log('Starting nightly delta scorer...')
-    success = run_delta_score()
-    sys.exit(0 if success else 1)
+    ok = run_delta_score()
+    sys.exit(0 if ok else 1)

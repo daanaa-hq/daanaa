@@ -612,3 +612,46 @@ and not a destructive write.
 - `@app.route` must always be the TOP decorator; auth/behavior decorators go below it. Grep-verify order after any scripted decorator insertion: `grep -A1 '@require_admin_key' | grep '@app.route'` must be empty.
 - A security fix is not done until the failing request is re-run against the LIVE path and returns the expected denial (same principle as the 2026-07-05 deploy-verification lesson — restarting a service is not verifying it).
 - Before shipping to a server, read the service's ExecStart to learn the real entrypoint filename; never assume.
+
+## 2026-07-17 — setup_cron_schedules.sh wiped the entire existing crontab
+
+**Symptom:** A new "install cron schedule" script was meant to add 4 pipeline jobs.
+Its merge logic wrote the filtered old crontab to a temp file, then immediately
+overwrote that same temp file with a heredoc containing only the new jobs —
+silently deleting ~22 active jobs (backups, watchdogs, alerting, link deploys,
+GPU night mode, email agent).
+
+**Root cause:** `grep -v ... > "$TMP.new"` followed by `cat > "$TMP.new"` —
+the second redirect truncates the first. Untested merge path; no diff shown
+before `crontab` install.
+
+**Recovery:** /var/log/syslog logs every cron execution with its exact command
+line (`CRON[pid]: (user) CMD (...)`). Parsing timestamps per command recovered
+all 25 jobs AND their schedules (run-count per day → interval). Full crontab
+rebuilt and reinstalled same morning; no scheduled window was missed.
+
+**Preventing rules:**
+1. A crontab installer must be the single source of truth listing EVERY job
+   (ours now is), or it must never use `crontab` (replace mode) — only append.
+2. Always `crontab -l > backup` to a *persistent* path (repo logs/, not mktemp)
+   before installing. The installer now does this.
+3. After any crontab change, diff against the backup and count job lines.
+4. Docs said overnight_pipeline ran "Saturdays"; syslog showed it ran daily at
+   02:30. When scheduling around an existing job, verify its real schedule from
+   syslog/logs, not from documentation.
+
+## 2026-07-17 — new-org FTS insert ran before revocation marking
+
+**Symptom:** Weekly IRS BMF delta-load inserted 13,937 new orgs into the FTS
+search index; 1,101 of them were already on the IRS revocation list and entered
+the index as searchable.
+
+**Root cause:** The BMF (source of new orgs) lags the revocation list — a
+newly-listed org can already be revoked. The sync inserted to FTS before
+checking revocations.
+
+**Preventing rule:** Any step that makes an org publicly visible (FTS insert,
+precompute export, deploy) must run AFTER the revocation guard for the same
+batch. sync_irs_data.py now marks new-org revocations before its FTS insert.
+The API's serve-time filters (org_status='active') remain the fail-closed
+backstop — they prevented any user exposure here.
