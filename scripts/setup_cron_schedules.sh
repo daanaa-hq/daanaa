@@ -41,7 +41,9 @@ cat > "$CRONTAB_TMP" << 'CRON'
 # ---------- Data pipeline ----------
 # IRS EO data refresh: Mondays 02:00 (downloads BMF, delta-loads new orgs + FTS)
 0 2 * * 1 bash /home/akbar/meritgiving/scripts/refresh_irs_data.sh >> /home/akbar/meritgiving/logs/cron.log 2>&1
-# Delta scorer: nightly 02:00 (Sun-Fri) — scores newly-added orgs same day
+# Delta scorer: nightly 02:00 every day except Monday (IRS refresh owns that
+# slot; Tuesday's run scores Monday's new orgs). Saturday overlap with the
+# 02:30 overnight pipeline is harmless — delta finishes in ~5 min.
 0 2 * * 0,2-6 cd /home/akbar/meritgiving && source venv/bin/activate && python3 scripts/delta_scorer_v5_nightly.py >> logs/cron.log 2>&1
 # Overnight pipeline: daily 02:30 (scoring, FTS, enrichment, snapshot)
 30 2 * * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 scripts/overnight_pipeline.py >> logs/overnight.log 2>&1

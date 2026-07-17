@@ -197,17 +197,23 @@ def delta_load() -> int:
     # Make new orgs searchable now instead of waiting for Saturday's FTS rebuild
     if added > 0:
         fts_added = 0
-        for ein in new_eins:
+        fts_errors = 0
+        for i, ein in enumerate(new_eins, 1):
             try:
                 cur = con.execute(FTS_INSERT_SQL, (ein,))
-                fts_added += cur.rowcount if cur.rowcount > 0 else 0
-                if fts_added % BATCH == 0:
-                    con.commit()
+                if cur.rowcount > 0:
+                    fts_added += 1
             except sqlite3.OperationalError as e:
-                log(f"FTS insert warning for {ein}: {e}")
-                break
+                # Keep going — one locked/failed insert must not strand the
+                # rest of the batch outside the search index until Saturday.
+                fts_errors += 1
+                if fts_errors <= 3:
+                    log(f"FTS insert warning for {ein}: {e}")
+            if i % BATCH == 0:
+                con.commit()
         con.commit()
-        log(f"FTS index: {fts_added:,} new orgs added incrementally")
+        log(f"FTS index: {fts_added:,} new orgs added incrementally"
+            + (f" ({fts_errors} errors — Saturday rebuild will reconcile)" if fts_errors else ""))
 
     con.close()
     return added

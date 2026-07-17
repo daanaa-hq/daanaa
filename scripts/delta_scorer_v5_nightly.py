@@ -98,7 +98,6 @@ def run_delta_score() -> bool:
 
         remaining = count_scorable_unscored()
         log(f'Delta scoring complete. Scorable unscored remaining: {remaining:,}')
-        SCORES_JSON.unlink(missing_ok=True)
         return True
 
     except subprocess.TimeoutExpired:
@@ -107,6 +106,9 @@ def run_delta_score() -> bool:
     except Exception as e:
         log(f'Delta scorer error: {e}')
         return False
+    finally:
+        # Scores JSON is ~hundreds of MB — never leave it behind, success or not
+        SCORES_JSON.unlink(missing_ok=True)
 
 if __name__ == '__main__':
     log('Starting nightly delta scorer...')
