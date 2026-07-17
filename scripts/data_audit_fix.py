@@ -29,6 +29,9 @@ def ts() -> str:
 def run(dry_run: bool, verbose: bool):
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
+    # Live DB has concurrent writers (discovery daemon, deploy snapshot) —
+    # wait for the WAL writer slot instead of failing instantly.
+    conn.execute("PRAGMA busy_timeout=120000")
     cur = conn.cursor()
 
     report = {

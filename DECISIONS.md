@@ -852,3 +852,25 @@ instead of waiting up to 6 days for the next Saturday full refresh.
 
 **Rejected:** Keeping weekly-only scoring (leaves 5-day gap where new links lack context).
 
+
+---
+## 2026-07-17: Scoring inputs — derive from primary data, never impute
+
+**Decision:** When a scoring input (program_expense_pct, months_of_reserve) is missing but its
+raw components exist in public 990 data, compute it before scoring. Never default a missing
+metric to zero to force a score; orgs without evidence stay unscored and get labeled cohort
+context instead.
+
+**Why (board reasoning):** P3 — a derived ratio from real Part IX filings is evidence; an
+imputed zero is fabrication. P4 — imputing "0 months reserve" would smear healthy small orgs.
+P9 — derivations use the already-published formulas (reserves = net assets / monthly expenses).
+
+**Result today:** backfill_program_expenses.py filled 457,806 expense ratios from NCCS Part IX;
+data_audit_fix.py derived 13,650 reserve values from net_assets/total_expenses; delta scorer
+then scored 12,393 newly-evidenced orgs (coverage 364,369 → 376,762).
+
+**Queued:** NCCS Part X (balance sheet) backfill of net_assets could unlock ~106K more orgs
+that now have expense ratios but lack reserve inputs.
+
+**Rejected:** relaxing the scorer to score on reserves alone when program_expense_pct is
+missing (would create two silent scoring regimes; deriving the missing input is strictly better).
