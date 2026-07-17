@@ -1,3 +1,19 @@
+## 2026-07-17 — Autonomy build-out: four board-approved automations shipped
+
+**Chose:** (1) Weekly 990 e-file website expansion (index Sun 01:00, extraction
+Sun 05:00) with selection broadened from dead Flame-tier criteria to all
+website-less active orgs — 69.5K matched, 41% hit rate on top orgs. (2) Monthly
+AI-output sample audit (1st, 06:00) operationalizing the adopted review policy.
+(3) Stewardship-archive auto-sync post-commit hook. (4) web_finder LLM candidate
+tier (local Qwen) per board diagnosis + contract-drift/terminology tests in the
+principle suite.
+
+**Why:** Founder directive "take the lead" on the autonomy audit; all four are
+zero-spend, local-hardware, within backend autonomy.
+
+**Rejected:** Automating board simulations via headless Claude sessions —
+spends API budget, deferred to founder.
+
 ## 2026-07-17 — Decision-making workflow adopted (founder-directed)
 
 **Chose:** Four-gate protocol for all open decisions: (1) principles check vs
