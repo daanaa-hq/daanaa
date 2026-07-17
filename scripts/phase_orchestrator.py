@@ -115,19 +115,15 @@ def activate_phase2_parallel():
         logger.error(f"❌ Failed to start Phase 2a: {e}")
         success = False
 
-    # Phase 2b: Charity Navigator scraper (existing)
-    try:
-        script_2b = Path.home() / 'meritgiving' / 'scripts' / 'cn_rate_limited_scraper.py'
-        if script_2b.exists():
-            subprocess.Popen(
-                ['python3', str(script_2b)],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                start_new_session=True
-            )
-            logger.info("✅ Phase 2b (Charity Navigator) started")
-        else:
-            logger.warning(f"⚠️  Phase 2b script not found: {script_2b}")
+    # Phase 2b: Charity Navigator scraper — PERMANENTLY DISABLED 2026-07-17.
+    # CN's Terms of Use explicitly prohibit "data mining, robots, or similar
+    # data gathering and extraction methods" and republishing without written
+    # consent (verified 2026-07-17, board decision — see
+    # docs/BOARD_SIMULATION_2026_07_17_EVENING.md). Never re-enable scraping.
+    # The sanctioned path, if CN data is ever wanted, is their official API
+    # program with written consent — a founder-gated decision.
+    logger.info("Phase 2b (Charity Navigator scraper) skipped — disabled per ToS, "
+                "board decision 2026-07-17")
             success = False
     except Exception as e:
         logger.error(f"❌ Failed to start Phase 2b: {e}")

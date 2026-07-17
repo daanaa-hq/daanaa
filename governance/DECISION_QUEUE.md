@@ -58,41 +58,40 @@ Format:
   (STEWARDSHIP P8, "Never handle funds" non-negotiable). The audit's framing is
   corrected here for the record; no payment flow will ever be added.
 
-## [open] Donor-facing terminology glossary (audit: vocabulary drift, High)
+## [escalated] Donor-facing terminology glossary (audit: vocabulary drift, High)
 - Raised: 2026-07-17 by third-party system audit
 - Principles touched: P3 (honest signals), P5 (careful language), P9
-- Data gathered: partial — audit documents drift across score/context/ranking terms
-- Simulation: pending next cycle; founder approval needed on final term list
-- Resolution: —
+- Data gathered: yes — live census: rank 0, percentile 0, score 6, context 7, tier 16
+- Simulation: docs/BOARD_SIMULATION_2026_07_17_EVENING.md
+- Resolution: AWAITING FOUNDER — approve glossary (financial context / health signal / peer context) + decide directory visibility-tier filter's fate.
 
-## [open] AI-output human-review policy (which outputs need review pre-publication)
+## [resolved] AI-output human-review policy (which outputs need review pre-publication)
 - Raised: 2026-07-17 by third-party system audit
 - Principles touched: P3, P10
-- Data gathered: partial — current practice: missions/cause tags batch-reviewed;
-  AI-discovered links labeled "found by AI, not yet confirmed" at serve time
-- Simulation: pending next cycle
-- Resolution: —
+- Data gathered: yes — current practice documented
+- Simulation: docs/BOARD_SIMULATION_2026_07_17_EVENING.md
+- Resolution: 5-point policy adopted (new claim types human-reviewed first; scale outputs verified+labeled+sampled monthly; give-path links always content-verified; comms always gated; scoring stays deterministic).
 
-## [open] Full-backend vs droplet contract drift guard (audit: High)
+## [resolved] Full-backend vs droplet contract drift guard (audit: High)
 - Raised: 2026-07-17 by third-party system audit
 - Principles touched: P9; ops reliability
 - Data gathered: yes — drift is real (2026-07-05 outage was this class of failure)
 - Proposed: contract test asserting droplet_api routes/headers match daanaa_api
   for the shared surface; wire into principle test suite + terminology lint (audit's
   recommended Codex task)
-- Simulation: pending next cycle
-- Resolution: —
+- Simulation: docs/BOARD_SIMULATION_2026_07_17_EVENING.md
+- Resolution: approved — contract test + terminology lint into principle suite (engineering task).
 
-## [open] Charity Navigator fallback — implement live API checks?
+## [resolved] Charity Navigator fallback — implement live API checks?
 - Raised: 2026-07-17 by founder (verify low-confidence links legally, without getting blocked)
 - Principles touched: P3 (evidence-based links), P7 (disclosed source), legal/ToS compliance
-- Data gathered: partial — CN fallback pool = 500 high-revenue orgs without donate links; CN ToS review NOT yet done
-- Simulation: pending next cycle
-- Resolution: —
+- Data gathered: yes — CN ToS read 2026-07-17: prohibits automated extraction + republishing
+- Simulation: docs/BOARD_SIMULATION_2026_07_17_EVENING.md
+- Resolution: NO scraping ever (Phase 2b auto-activation disabled); API fallback retired (produced 1 link); official-API-with-consent is the only future path, founder-gated.
 
-## [open] web_finder success rate — is 14% acceptable or does strategy need rework?
+## [resolved] web_finder success rate — is 14% acceptable or does strategy need rework?
 - Raised: 2026-07-17 from orchestrator test run (14 verified / 100 attempted)
 - Principles touched: P3 (only verified sites go live), resource stewardship
-- Data gathered: partial — need breakdown of failure reasons (no domain exists vs. verification too strict)
-- Simulation: pending next cycle
-- Resolution: —
+- Data gathered: yes — misses are narrow candidate generation (acronym domains like vlt.org never guessed), not strict verification
+- Simulation: docs/BOARD_SIMULATION_2026_07_17_EVENING.md
+- Resolution: keep verification thresholds; add LLM candidate tier (Qwen 11437); re-measure.

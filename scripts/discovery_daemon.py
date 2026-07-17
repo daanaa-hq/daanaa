@@ -423,7 +423,10 @@ if __name__ == '__main__':
     batch_size = int(sys.argv[1]) if len(sys.argv) > 1 else 50
     sleep_between_orgs = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
     sleep_between_batches = float(sys.argv[3]) if len(sys.argv) > 3 else 5
-    use_cn = sys.argv[4].lower() != 'no_cn' if len(sys.argv) > 4 else True
+    # CN fallback retired 2026-07-17 (board decision): CN ToS prohibits automated
+    # extraction; the unkeyed API path produced 1 link total. Re-enabling requires
+    # written CN consent + founder approval (see governance/DECISION_QUEUE.md).
+    use_cn = False
 
     daemon = ContinuousDiscoveryDaemon(use_cn_fallback=use_cn)
     daemon.run_continuous_loop(
