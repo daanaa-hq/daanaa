@@ -471,10 +471,10 @@ class TestFullConsolidatedFlow:
         assert 'robotics' in mission.lower() or 'coding' in mission.lower()
         assert mission_source == 'ai_web_grounded'
 
-        # Website was validated and promoted
-        assert website == 'https://riversideyouthrobotics.org'
+        # Website was validated and promoted (stored as canonical bare-host form)
+        assert website == 'riversideyouthrobotics.org'
 
-        # Volunteer page was captured, even though nothing displays it yet
+        # Volunteer page was captured (stored as full URL for direct href rendering)
         assert volunteer_url == 'https://riversideyouthrobotics.org/volunteer'
 
         # Cause tags were generated

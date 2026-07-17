@@ -616,9 +616,14 @@ class EnrichmentBatch:
                         (normalize_website(value), ein)
                     )
                 elif etype == 'volunteer_url':
+                    # Stored as a FULL absolute URL, unlike `website` (canonical
+                    # bare-host form). volunteer_url is rendered directly as an
+                    # href by consumers, and the discovery pipeline (the main
+                    # writer) stores full URLs — normalize_website() here was
+                    # stripping https:// and breaking that contract.
                     cursor.execute(
                         "UPDATE registry_enriched SET volunteer_url = ? WHERE EIN = ?",
-                        (normalize_website(value), ein)
+                        (value, ein)
                     )
                 elif etype == 'mission':
                     context = json.loads(result.get('context_used') or '{}')
