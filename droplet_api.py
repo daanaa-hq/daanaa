@@ -767,14 +767,22 @@ _ADMIN_KEY = (
     or os.environ.get("MERIT_ADMIN_KEY", "")  # backward compat
 )
 
+def _check_admin_auth():
+    """Check admin auth header; abort(401) if invalid."""
+    provided = request.headers.get("X-Admin-Key", "")
+    if not provided or not hmac.compare_digest(provided, _ADMIN_KEY):
+        abort(401)
+
 def require_admin_key(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        provided = request.headers.get("X-Admin-Key", "")
-        if not _ADMIN_KEY or not hmac.compare_digest(provided, _ADMIN_KEY):
-            abort(401)
+        _check_admin_auth()
         return f(*args, **kwargs)
     return wrapper
+
+def require_admin():
+    """Callable guard for inline auth checks in route handlers."""
+    _check_admin_auth()
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -3879,6 +3887,7 @@ def guild_member_count():
         return jsonify({"member_count": 0})
 
 
+@require_admin_key
 @app.route('/api/admin/guild/codes', methods=['GET'])
 def admin_guild_codes_list():
     require_admin()
@@ -3891,6 +3900,7 @@ def admin_guild_codes_list():
     return jsonify([dict(r) for r in rows])
 
 
+@require_admin_key
 @app.route('/api/admin/guild/codes', methods=['POST'])
 def admin_guild_codes_create():
     require_admin()
@@ -3921,6 +3931,7 @@ def admin_guild_codes_create():
     return jsonify(dict(row)), 201
 
 
+@require_admin_key
 @app.route('/api/admin/guild/codes/<int:code_id>', methods=['PATCH'])
 def admin_guild_codes_update(code_id):
     require_admin()
@@ -3958,6 +3969,7 @@ def admin_guild_codes_update(code_id):
     return jsonify(dict(row))
 
 
+@require_admin_key
 @app.route('/api/admin/guild/audit')
 def admin_guild_audit():
     """P7 audit trail: last 100 vendor code changes."""
@@ -3971,6 +3983,7 @@ def admin_guild_audit():
     return jsonify([dict(r) for r in rows])
 
 
+@require_admin_key
 @app.route('/api/admin/guild/codes/<int:code_id>/spend', methods=['POST'])
 def admin_guild_spend_report(code_id):
     """Log a vendor's monthly spend report and check milestone thresholds."""
@@ -4076,6 +4089,7 @@ def guild_referral_page(slug):
     return jsonify(dict(row))
 
 
+@require_admin_key
 @app.route('/api/admin/guild/nominations', methods=['GET'])
 def admin_guild_nominations():
     require_admin()
@@ -4086,6 +4100,7 @@ def admin_guild_nominations():
     return jsonify([dict(r) for r in rows])
 
 
+@require_admin_key
 @app.route('/api/admin/guild/nominations/<int:nom_id>', methods=['PATCH'])
 def admin_guild_nomination_update(nom_id):
     require_admin()
@@ -4377,6 +4392,7 @@ def admin_community_partners_list():
     return jsonify([dict(r) for r in rows])
 
 
+@require_admin_key
 @app.route('/api/admin/guild/partners-review', methods=['GET'])
 def admin_partners_review():
     """
@@ -4419,6 +4435,7 @@ def admin_partners_review():
     })
 
 
+@require_admin_key
 @app.route('/api/admin/guild/community-partners/<int:cp_id>', methods=['PATCH'])
 def admin_community_partner_update(cp_id):
     require_admin()
@@ -4441,6 +4458,7 @@ def admin_community_partner_update(cp_id):
     return jsonify(dict(row))
 
 
+@require_admin_key
 @app.route('/api/admin/guild/approve-partner/<int:cp_id>', methods=['GET'])
 def admin_community_partner_approve(cp_id):
     """
