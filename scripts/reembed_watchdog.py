@@ -164,8 +164,15 @@ def start_embed_server() -> subprocess.Popen:
 
 
 def run_reembed(max_retries: int = 5):
-    """Run embedding job with exponential backoff retry on database locks."""
-    log("Launching build_org_embeddings.py --all-orgs --overwrite ...")
+    """Run embedding job with exponential backoff retry on database locks.
+
+    Incremental by design: NO --overwrite, so build_org_embeddings skips every
+    already-embedded EIN (it is resumable) and only embeds the missing ones.
+    This is the whole point of the watchdog — keep newly discovered orgs
+    embedded — without ever re-doing the full corpus. A true full refresh
+    (--overwrite) belongs in a deliberate manual/weekly run, not this loop.
+    """
+    log("Launching build_org_embeddings.py --all-orgs (incremental, missing only) ...")
 
     for attempt in range(1, max_retries + 1):
         result = subprocess.run(
@@ -177,7 +184,6 @@ def run_reembed(max_retries: int = 5):
                 "--dim", "1024",
                 "--workers", "2",
                 "--vulkan",
-                "--overwrite",
             ],
             capture_output=True,
             text=True,
@@ -211,8 +217,17 @@ def main(threshold: int, interval: int):
         total = missing + stale
         log(f"Status: {missing:,} missing embeddings, ~{stale:,} stale — total {total:,}")
 
-        if total >= threshold:
-            log(f"Threshold {threshold:,} reached — triggering re-embed")
+        # Trigger on the EXACT missing count only, never the sampled `stale`
+        # estimate. `stale` is extrapolated from a 5,000-row hash-mismatch
+        # sample × the full 2M corpus, so a handful of edited missions inflates
+        # to thousands and crosses the threshold — which then launched a full
+        # `--all-orgs --overwrite` re-embed of 2M already-embedded orgs, pinning
+        # the shared GPU (2026-07-16 capacity audit). Missing = real gaps that
+        # genuinely need work; the incremental job (no --overwrite) only touches
+        # those. Stale embeddings (mission text changed) are refreshed by the
+        # weekly overnight_pipeline, not this hot-path watchdog.
+        if missing >= threshold:
+            log(f"Threshold {threshold:,} reached ({missing:,} missing) — triggering incremental embed")
             server_proc = None
             server_was_running = embed_server_running()
 
