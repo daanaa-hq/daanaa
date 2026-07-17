@@ -503,10 +503,18 @@ export default function Directory() {
             className="mt-7 max-w-[640px]"
           />
 
-          {/* Filters collapse/expand toggle */}
+          {/* Filters collapse/expand toggle.
+              Phones get the full-screen FilterSheet (scrollable, thumb-sized
+              controls); desktop expands the inline section. */}
           {searchMode === 'browse' && (
             <button
-              onClick={() => setFiltersExpanded(!filtersExpanded)}
+              onClick={() => {
+                if (window.matchMedia('(max-width: 1023px)').matches) {
+                  setFilterSheetOpen(true)
+                } else {
+                  setFiltersExpanded(!filtersExpanded)
+                }
+              }}
               className="mt-7 inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all duration-150"
               style={{
                 backgroundColor: filtersExpanded || activeFilterCount > 0 ? '#F8F5F0' : 'transparent',
@@ -532,8 +540,10 @@ export default function Directory() {
             </button>
           )}
 
-          {/* Filters section — collapsible */}
-          <div className={`overflow-hidden transition-all duration-300 ${filtersExpanded ? 'max-h-[500px] mt-4' : 'max-h-0 mt-0'}`}>
+          {/* Filters section — desktop inline expansion. No max-height clip:
+              the old max-h-[500px] silently hid every control that wrapped
+              past 500px (27 category pills + selects easily exceed it). */}
+          <div className={filtersExpanded ? 'mt-4' : 'hidden'}>
             {/* Top filter toolbar — all breakpoints. Full filter set lives in the
                 drawer (Filters button); the discovery toggles are surfaced here
                 because they're the point of the directory. */}
@@ -589,7 +599,7 @@ export default function Directory() {
                 {'emoji' in cat && cat.emoji ? `${cat.emoji} ` : ''}{cat.label}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-2">
+            <div className="sm:ml-auto flex flex-wrap items-center gap-2">
               {/* Has a website */}
               <button
                 onClick={() => { setHasWebsite(!hasWebsite); setCurrentPage(1); scrollTop() }}

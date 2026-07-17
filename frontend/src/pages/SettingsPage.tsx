@@ -49,7 +49,17 @@ function ThemePreview({ mode, active, onSelect }: {
 
       {/* Label row */}
       <div className="mt-3 flex items-center justify-between px-0.5">
-        <span className="font-body text-[14px] font-medium text-warm-cream capitalize">{mode}</span>
+        <span className="font-body text-[14px] font-medium text-warm-cream capitalize inline-flex items-center gap-1.5">
+          {mode}
+          {mode === 'light' && (
+            <span
+              className="px-1.5 py-0.5 rounded-full bg-soft-gold/20 text-[10px] font-semibold text-soft-gold leading-none uppercase tracking-[0.05em]"
+              title="The light theme is still being refined — some pages may not read as well as in dark."
+            >
+              Beta
+            </span>
+          )}
+        </span>
         <span
           className={`inline-flex items-center justify-center w-[18px] h-[18px] rounded-full border-2 transition-colors ${
             active ? 'border-soft-gold bg-soft-gold' : 'border-muted-cream/50'
