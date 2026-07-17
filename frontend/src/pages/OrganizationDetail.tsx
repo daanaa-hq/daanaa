@@ -7,7 +7,6 @@ import DonationReturnPrompt from '../components/DonationReturnPrompt'
 import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
 import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
-import ScoreBreakdown from '../components/ScoreBreakdown'
 import MistakeRegistry from '../components/MistakeRegistry'
 
 import { useApi } from '../hooks/useApi'
@@ -246,7 +245,6 @@ export default function OrganizationDetail() {
   const { isInFunding, isInVolunteering, addToFunding, addToVolunteering,
           removeFromFunding, removeFromVolunteering } = useWallet()
   const { trackDonateClick, promptState, dismiss: dismissDonationPrompt } = useDonationReturnPrompt()
-  const [showBreakdown, setShowBreakdown] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalError, setPortalError]     = useState<string | null>(null)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
@@ -1171,30 +1169,9 @@ export default function OrganizationDetail() {
                 <p className="font-body text-[12px] text-cool-grey">Verified by government records</p>
               </div>
             </div>
-            <button
-              onClick={() => setShowBreakdown(s => !s)}
-              className="ml-auto shrink-0 font-body text-[12px] text-link-gold hover:text-deep-gold transition-colors flex items-center gap-1"
-            >
-              {showBreakdown ? 'Hide breakdown' : 'See full breakdown'}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                {showBreakdown
-                  ? <polyline points="18 15 12 9 6 15"/>
-                  : <polyline points="6 9 12 15 18 9"/>
-                }
-              </svg>
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Score Breakdown (inline, toggled by TrustBadge click or accountability strip) */}
-      {showBreakdown && apiOrg && (
-        <div className="border-t border-light-grey py-8">
-          <div>
-            <ScoreBreakdown org={apiOrg} onClose={() => setShowBreakdown(false)} mode="inline" />
-          </div>
-        </div>
-      )}
 
             </div>{/* end left column */}
 
@@ -1383,61 +1360,6 @@ export default function OrganizationDetail() {
           </div>
         </div>
       ) : null}
-
-      {/* Score History */}
-      {scoreHistory.length > 1 && (
-        <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
-          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">Financial history</span>
-            <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
-              How they've tracked over time
-            </h2>
-            <div className="overflow-x-auto max-w-[820px]">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-light-grey">
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Date</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Peer percentile</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Revenue (vs peers)</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-6">Reserves (vs peers)</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2">Peer group</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {scoreHistory.map((snap, i) => {
-                    const prev = scoreHistory[i - 1]
-                    const delta = prev ? Math.round(snap.peer_percentile - prev.peer_percentile) : null
-                    return (
-                      <tr key={snap.snapshot_date} className="border-b border-light-grey/50">
-                        <td className="font-body text-[13px] text-deep-navy py-3 pr-6">{snap.snapshot_date}</td>
-                        <td className="py-3 pr-6">
-                          <span className="font-body text-[15px] font-semibold text-deep-navy">
-                            {Math.round(snap.peer_percentile)}
-                          </span>
-                          {delta !== null && delta !== 0 && (
-                            <span className={`ml-2 font-body text-[11px] font-medium ${delta > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
-                              {delta > 0 ? '+' : ''}{delta}
-                            </span>
-                          )}
-                        </td>
-                        <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{formatOrdinal(snap.rev_pct)} pct</td>
-                        <td className="font-body text-[13px] text-cool-grey py-3 pr-6">{formatOrdinal(snap.rsv_pct)} pct</td>
-                        <td className="font-body text-[12px] text-cool-grey py-3">{peerGroupLabel(snap.peer_group ?? snap.group_key ?? null, null) || (snap.group_key ?? snap.peer_group ?? '--')}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-4 font-body text-[12px] text-cool-grey leading-[1.5]">
-              Updated as new annual reports are filed. Each row reflects where this organization stood among peers at that point in time — not a verdict, just context.{' '}
-              <Link to="/methodology" className="text-link-gold hover:text-deep-gold transition-colors">
-                How scoring works →
-              </Link>
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Multi-year Financial History (ProPublica 990 data) */}
       {financials.length > 0 && (
