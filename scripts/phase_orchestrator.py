@@ -124,10 +124,6 @@ def activate_phase2_parallel():
     # program with written consent — a founder-gated decision.
     logger.info("Phase 2b (Charity Navigator scraper) skipped — disabled per ToS, "
                 "board decision 2026-07-17")
-            success = False
-    except Exception as e:
-        logger.error(f"❌ Failed to start Phase 2b: {e}")
-        success = False
 
     if success:
         with open(PHASE2_TRIGGER_LOG, 'a') as f:
