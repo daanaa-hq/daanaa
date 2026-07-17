@@ -28,6 +28,10 @@ reports/
 
 # Local agent / tooling state
 .claude/
+# ...but the custom skills corpus IS tracked (founder-directed 2026-07-17)
+!.claude/
+.claude/*
+!.claude/skills/
 autodev/logs/
 
 # Backups & archives
