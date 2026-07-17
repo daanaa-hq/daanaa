@@ -795,16 +795,22 @@ _ADMIN_KEY = (
     or os.environ.get("MERIT_ADMIN_KEY", "")  # backward compat
 )
 
+def _check_admin_auth():
+    """Check admin auth header; abort(401) if invalid."""
+    provided = request.headers.get("X-Admin-Key", "")
+    if not provided or not hmac.compare_digest(provided, _ADMIN_KEY):
+        abort(401)
+
 def require_admin_key(f):
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        # TODO: Fix admin key env variable loading on droplet
-        # For now, accept any non-empty key to allow dashboard access
-        provided = request.headers.get("X-Admin-Key", "")
-        if not provided:
-            abort(401)
+        _check_admin_auth()
         return f(*args, **kwargs)
     return wrapper
+
+def require_admin():
+    """Callable guard for inline auth checks in route handlers."""
+    _check_admin_auth()
 
 def get_db():
     db = getattr(g, '_database', None)
@@ -1858,6 +1864,8 @@ def list_organizations():
     where_sql = " AND ".join(where_clauses)
 
     # Alias as r so qualified columns (r.EIN) in where_sql resolve here too
+    # f-string is safe here: where_sql contains only parameterized WHERE structure
+    # (built from safe clauses), while actual user values live in `params` tuple
     total = db.execute(f"SELECT COUNT(*) FROM registry_enriched r WHERE {where_sql}", params).fetchone()[0]
 
     # Check if v4_scores table exists (production might not have it)
@@ -3038,6 +3046,7 @@ _CLAIM_STATUSES = {'pending', 'verified', 'active', 'revoked', 'letter_sent'}
 
 
 @app.route('/api/admin/today', methods=['GET'])
+@require_admin_key
 def admin_today():
     """The daily worklist — the system says what needs attention so nothing
     is scanned for or remembered. Buckets: claims waiting for the
@@ -3063,6 +3072,7 @@ def admin_today():
     })
 
 
+@require_admin_key
 @app.route('/api/admin/activity/<ein>', methods=['GET'])
 def admin_org_activity(ein):
     ein = ''.join(c for c in ein if c.isdigit())[:10]
@@ -3073,6 +3083,7 @@ def admin_org_activity(ein):
     return jsonify({'activity': [dict(r) for r in rows]})
 
 
+@require_admin_key
 @app.route('/api/admin/claims', methods=['GET'])
 def admin_claims_list():
     status = request.args.get('status', '').strip()
@@ -3093,6 +3104,7 @@ def admin_claims_list():
     return jsonify({'claims': [dict(r) for r in rows], 'total': len(rows)})
 
 
+@require_admin_key
 @app.route('/api/admin/claims/<ein>', methods=['PATCH'])
 def admin_claims_update(ein):
     data   = request.get_json(silent=True) or {}
@@ -3163,6 +3175,7 @@ def _normalize_public_url(raw) -> str:
     return u
 
 
+@require_admin_key
 @app.route('/api/admin/concierge/confirm', methods=['POST'])
 def admin_concierge_confirm():
     """Operator confirms a concierge-call Quick-Start draft (pilot T2).
@@ -3272,6 +3285,7 @@ def admin_concierge_confirm():
     return jsonify({'success': True, 'saved': written})
 
 
+@require_admin_key
 @app.route('/api/admin/analytics', methods=['GET'])
 def admin_analytics():
     # Hidden (admin-only) aggregate dashboard data. Never exposed publicly.
@@ -3296,6 +3310,7 @@ def admin_analytics():
     })
 
 
+@require_admin_key
 @app.route('/api/admin/feedback', methods=['GET'])
 def admin_feedback():
     db = get_db()
@@ -3305,6 +3320,7 @@ def admin_feedback():
     return jsonify({'feedback': rows, 'total': len(rows)})
 
 
+@require_admin_key
 @app.route('/api/admin/waitlist', methods=['GET'])
 def admin_waitlist_list():
     source = request.args.get('source', '').strip()
@@ -3326,6 +3342,7 @@ def admin_waitlist_list():
     return jsonify({'entries': [dict(r) for r in rows], 'total': total})
 
 
+@require_admin_key
 @app.route('/api/admin/waitlist/<int:wid>', methods=['PATCH'])
 def admin_waitlist_update(wid):
     data   = request.get_json(silent=True) or {}
@@ -3348,6 +3365,7 @@ def admin_waitlist_update(wid):
     return jsonify(dict(row))
 
 
+@require_admin_key
 @app.route('/api/admin/waitlist/<int:wid>', methods=['DELETE'])
 def admin_waitlist_delete(wid):
     db = get_db()
@@ -4319,6 +4337,7 @@ def guild_member_count():
         return jsonify({"member_count": 0})
 
 
+@require_admin_key
 @app.route('/api/admin/guild/codes', methods=['GET'])
 def admin_guild_codes_list():
     require_admin()
@@ -4331,6 +4350,7 @@ def admin_guild_codes_list():
     return jsonify([dict(r) for r in rows])
 
 
+@require_admin_key
 @app.route('/api/admin/guild/codes', methods=['POST'])
 def admin_guild_codes_create():
     require_admin()
@@ -4361,6 +4381,7 @@ def admin_guild_codes_create():
     return jsonify(dict(row)), 201
 
 
+@require_admin_key
 @app.route('/api/admin/guild/codes/<int:code_id>', methods=['PATCH'])
 def admin_guild_codes_update(code_id):
     require_admin()
@@ -4398,6 +4419,7 @@ def admin_guild_codes_update(code_id):
     return jsonify(dict(row))
 
 
+@require_admin_key
 @app.route('/api/admin/guild/audit')
 def admin_guild_audit():
     """P7 audit trail: last 100 vendor code changes."""
@@ -4411,6 +4433,7 @@ def admin_guild_audit():
     return jsonify([dict(r) for r in rows])
 
 
+@require_admin_key
 @app.route('/api/admin/guild/codes/<int:code_id>/spend', methods=['POST'])
 def admin_guild_spend_report(code_id):
     """Log a vendor's monthly spend report and check milestone thresholds."""
@@ -4516,6 +4539,7 @@ def guild_referral_page(slug):
     return jsonify(dict(row))
 
 
+@require_admin_key
 @app.route('/api/admin/guild/nominations', methods=['GET'])
 def admin_guild_nominations():
     require_admin()
@@ -4526,6 +4550,7 @@ def admin_guild_nominations():
     return jsonify([dict(r) for r in rows])
 
 
+@require_admin_key
 @app.route('/api/admin/guild/nominations/<int:nom_id>', methods=['PATCH'])
 def admin_guild_nomination_update(nom_id):
     require_admin()
@@ -4817,6 +4842,7 @@ def admin_community_partners_list():
     return jsonify([dict(r) for r in rows])
 
 
+@require_admin_key
 @app.route('/api/admin/guild/partners-review', methods=['GET'])
 def admin_partners_review():
     """
@@ -4859,6 +4885,7 @@ def admin_partners_review():
     })
 
 
+@require_admin_key
 @app.route('/api/admin/guild/community-partners/<int:cp_id>', methods=['PATCH'])
 def admin_community_partner_update(cp_id):
     require_admin()
@@ -4881,6 +4908,7 @@ def admin_community_partner_update(cp_id):
     return jsonify(dict(row))
 
 
+@require_admin_key
 @app.route('/api/admin/guild/approve-partner/<int:cp_id>', methods=['GET'])
 def admin_community_partner_approve(cp_id):
     """

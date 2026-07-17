@@ -73,6 +73,7 @@ web/
 # (and only if they contain NO real values). See privacy_check.sh GATE 6.
 .env
 .env.*
+.env.pre-*
 !.env.example
 !.env.*.example
 audit_report.csv
