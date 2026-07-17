@@ -311,7 +311,6 @@ export default function Directory() {
     setSortOrder('asc')
     setMinRevenue(0)
     setMaxRevenue(500_000_000)
-    setVisTier('')
     setHasWebsite(false)
     setNeedsSupport(false)
     setNear(''); setNearInput('')
@@ -340,7 +339,6 @@ export default function Directory() {
   const handleSeeAll = () => {
     setHiddenGem(false)
     setNeedsSupport(false)
-    setVisTier('')
     setCurrentPage(1)
     scrollTop()
     searchParams.set('hidden_gem', '0')
