@@ -23,7 +23,7 @@
    - Extracts donation links, volunteer links, GitHub repos
    - Queues verified links for deployment
 
-4. **overnight_pipeline.py** (runs 02:30 UTC nightly)
+4. **overnight_pipeline.py** (runs 02:30 Central nightly)
    - Caches HTML from all discovered websites
    - Generates missions via LLM from cached content
    - Extracts cause tags (AI categorization)

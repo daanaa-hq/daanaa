@@ -1,4 +1,4 @@
-# Autonomous Discovery Pipeline — 2026-07-17 13:29 UTC
+# Autonomous Discovery Pipeline — 2026-07-17 13:29 Central
 
 **Configuration:** FULLY AUTONOMOUS ✅
 
@@ -13,7 +13,7 @@
 - **phase_orchestrator** — Phase management (auto-switch on saturation)
 
 ### Scheduled Tasks
-| Time (UTC) | Task | Frequency | Purpose |
+| Time (Central) | Task | Frequency | Purpose |
 |---|---|---|---|
 | 02:00 | delta_scorer_v5_nightly.py | Sun–Fri | Score new orgs same-day |
 | 02:30 | overnight_pipeline.py | Daily | Mission generation + cause tags |
@@ -134,8 +134,8 @@ python3 scripts/web_finder_agent.py --limit 5000 --workers 16
 
 ✅ **Daemon extracts links** — Automatic on new websites
 ✅ **Deploy queued links** — Every 4 hours, autonomous
-✅ **Morning precompute** — Scheduled 14:00 UTC
-✅ **Overnight enrichment** — Scheduled 02:30 UTC
+✅ **Morning precompute** — Scheduled 14:00 Central
+✅ **Overnight enrichment** — Scheduled 02:30 Central
 ✅ **Monitor efficiency** — Every 30 minutes, autonomous
 ✅ **Phase transitions** — Auto-switch if saturation detected
 
@@ -193,6 +193,6 @@ nohup python3 scripts/phase_orchestrator.py >> logs/phase_orchestrator.log 2>&1 
 
 ---
 
-**Autonomous Discovery Pipeline Started: 2026-07-17 13:29 UTC**
+**Autonomous Discovery Pipeline Started: 2026-07-17 13:29 Central**
 
 Check logs when you have time. Reconnect when you see the efficiency alert.

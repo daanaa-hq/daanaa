@@ -1,4 +1,4 @@
-# Discovery Pipeline Startup — 2026-07-17 13:29 UTC
+# Discovery Pipeline Startup — 2026-07-17 13:29 Central
 
 **Status:** LIVE ✅
 
@@ -12,7 +12,7 @@
 | `discovery_daemon.py` | 163139, 2268159 | 2026-07-16 | 24/7 link extraction (listening mode) |
 | `web_finder_agent.py` | 2257840 | 13:20 | Finding 10K websites (domain guessing + embedding verify) |
 | `phase_orchestrator.py` | 2257841 | 13:20 | Auto-phase detection (saturation monitoring) |
-| `nonprofit_discovery_orchestrator.py` | cron | 11:00 UTC daily | Orchestrated multi-source batch |
+| `nonprofit_discovery_orchestrator.py` | cron | 11:00 Central daily | Orchestrated multi-source batch |
 
 ---
 
@@ -45,19 +45,19 @@
 
 ## Phase Timeline
 
-### T+0 (Now: 13:29 UTC)
+### T+0 (Now: 13:29 Central)
 - [x] Embed server started
 - [x] web_finder_agent running (10K orgs, high-revenue first)
 - [x] phase_orchestrator watching for saturation
 - [x] discovery_daemon listening (standby)
-- [x] discovery_orchestrator scheduled (11:00 UTC daily)
+- [x] discovery_orchestrator scheduled (11:00 Central daily)
 
-### T+4h (17:30 UTC)
+### T+4h (17:30 Central)
 - **Expected:** web_finder finds 1–5K new websites
 - **Action:** discovery_daemon auto-wakes on each new website
 - **Outcome:** Donation/volunteer links queued for deployment
 
-### T+13h (02:30 UTC next day)
+### T+13h (02:30 Central next day)
 - **Trigger:** Overnight pipeline runs
 - **Actions:**
   - fetch_org_websites() — caches HTML from all 111K+ discovered sites
@@ -66,15 +66,15 @@
   - run_cohort_context() — groups by financial metrics
 - **Outcome:** Missions + cause tags updated for all new websites
 
-### T+24h (13:30 UTC 2026-07-18)
-- **Discovery orchestrator runs** (scheduled 11:00 UTC)
+### T+24h (13:30 Central 2026-07-18)
+- **Discovery orchestrator runs** (scheduled 11:00 Central)
 - **Sources checked in order:**
   1. IRS 990 XMLs (extract_990_fields)
   2. web_finder next batch (if first hasn't saturated)
   3. Charity Navigator fallback
 - **Expected total:** 150–170K websites (from 111K baseline)
 
-### T+48h (13:30 UTC 2026-07-19)
+### T+48h (13:30 Central 2026-07-19)
 - Full synergy: every new website → missions → cause tags → donor-visible
 - Metrics: website discovery growth rate, link extraction success rate
 
@@ -212,6 +212,6 @@ python3 scripts/nonprofit_discovery_orchestrator.py --batch-size 500
 
 ---
 
-**PIPELINE STARTED: 2026-07-17 13:29 UTC**
+**PIPELINE STARTED: 2026-07-17 13:29 Central**
 
 Next checkpoint: Deploy completion + first web_finder results.
