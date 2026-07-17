@@ -477,6 +477,54 @@ def _row_to_org(row) -> dict:
     return d
 
 
+# Cause-cohort context table (by_nteecc / by_ntee1 → typical reserves, healthy
+# rate, n). Lives next to the API file so it survives data-dir payload swaps;
+# DATA_DIR is also checked so a future payload can carry it instead.
+_COHORT_CTX = None
+
+def _load_cohort_ctx() -> dict:
+    global _COHORT_CTX
+    if _COHORT_CTX is None:
+        for p in (DATA_DIR / 'cohort_context.json', Path(__file__).resolve().parent / 'cohort_context.json'):
+            try:
+                if p.exists():
+                    _COHORT_CTX = json.loads(p.read_text())
+                    break
+            except Exception:
+                pass
+        if _COHORT_CTX is None:
+            _COHORT_CTX = {'by_nteecc': {}, 'by_ntee1': {}}
+    return _COHORT_CTX
+
+
+def _attach_cohort_context(data: dict) -> None:
+    """Cause-cohort financial context for orgs with no financials of their own.
+
+    Serve-time equivalent of the live API's cohort enrichment (daanaa_api.py →
+    enrich_api_responses.get_cohort_context): when the org has no financial
+    assessment at all, show the *typical* shape of its NTEE cause-cohort —
+    explicitly framed as about the cause area, not this org (Stewardship P3/P4).
+    Precomputed JSONs built before 2026-07-16 carry cohort_context=null for
+    archetype-but-unscored orgs; we correct at serve time rather than waiting
+    for a full precompute rebuild (same pattern as _patch_v5_benchmarks).
+    """
+    if data.get('cohort_context') is not None:
+        return
+    # Only fill a genuinely blank financial section — never compete with a
+    # real assessment.
+    if data.get('financial_health') is not None or data.get('months_of_reserve') is not None:
+        return
+    ctx = _load_cohort_ctx()
+    nteecc, ntee1 = data.get('NTEECC'), data.get('NTEE1')
+    b = ctx.get('by_nteecc', {}).get(nteecc) if nteecc else None
+    if b:
+        data['cohort_context'] = {**b, 'level': 'subcategory', 'ntee_code': nteecc}
+        return
+    b = ctx.get('by_ntee1', {}).get(ntee1) if ntee1 else None
+    if b:
+        data['cohort_context'] = {**b, 'level': 'broad', 'ntee_code': ntee1}
+
+
 def _patch_v5_benchmarks(data: dict) -> None:
     """Back-fill zero benchmark values in precomputed files from the hardcoded table.
 
@@ -580,6 +628,7 @@ def load_org_detail(ein: str) -> dict | None:
         elif isinstance(data.get('data_badges'), dict) and 'mission' not in data['data_badges']:
             data['data_badges']['mission'] = data.get('mission_source')
         _patch_v5_benchmarks(data)
+        _attach_cohort_context(data)
         return data
 
     # Fallback: serve from search.db registry_enriched table (IRS_BMF / bmf_stub orgs)

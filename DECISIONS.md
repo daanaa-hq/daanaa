@@ -744,3 +744,14 @@ open-data were pre-existing 404s on the droplet).
 
 Rejected: separate light stylesheet (drift risk), per-component dark: variants
 (832 call sites), flipping only some pages (inconsistent UX).
+
+## 2026-07-16 — Founder-verified links stored as 'beta' (AKF USA, EIN 521231983)
+**Chose:** Store founder-provided donate/volunteer/website links for Aga Khan Foundation USA with `donate_url_status='beta'`, `donate_human_review=1`, `donate_confidence=95`; `website_status='ok'` (all three URLs curl-verified 200 at entry time).
+**Why:** The action-row gate (`actionRow.ts`) only renders donate for status `beta`/`claimed`. `claimed` would drop the "not yet confirmed by the organization" disclosure and falsely imply the org confirmed it via the claim flow. `beta` keeps the honest disclosure.
+**Rejected:** Adding a `human_verified` status — needs a frontend change (review-gated) and copy for a third disclosure state; worth doing when we have a batch of founder/staff-verified links, not for one org.
+**Note:** The 'beta' disclosure copy says "found by AI" which is inaccurate for hand-entered links — acceptable short-term because the trust-critical half ("not yet confirmed by the organization") remains true. Flagged for the next copy pass.
+
+## 2026-07-16 — Cohort financial context for unscored orgs on the droplet
+**Chose:** (1) Fixed the `precompute_orgs.py` cohort gate to mirror the live API exactly (`not merit_score_v5`, was `v5 is None and financial_health is None`); (2) added serve-time `_attach_cohort_context()` to `droplet_api.py` (same pattern as `_patch_v5_benchmarks`) with `cohort_context.json` shipped to `/opt/daanaa/` so it survives payload swaps.
+**Why:** Archetype-but-unscored orgs (v5 archetype from NTEE, no financials) got the "typical for this cause area" block on localhost but null on daanaa.org — the two gates had drifted. Serve-time attach fixes all 1.7M org pages immediately; the precompute fix makes future payloads carry it natively (serve-time path then no-ops).
+**Rejected:** Waiting for the next full deploy (multi-hour similar-orgs stage; user demoing today). Guard kept: cohort never attaches when `financial_health` or `months_of_reserve` exists (P3/P4 — never competes with a real assessment; verified live: AKF with financials gets no overlay).

@@ -112,12 +112,18 @@ def org_to_dict(row):
             v5 = None
     d['v5_context'] = v5
 
-    # Cause-cohort context: only when this org has NO financial assessment of
-    # its own (no v5_context above, no v4 financial_health at row[23]), so it
-    # fills a genuinely blank financial section and never competes with a real
-    # score (Stewardship P3/P4). NTEE1=row[2], NTEECC=row[3].
+    # Cause-cohort context: attached whenever the org has no v5 score of its
+    # own (row[44] = merit_score_v5) — mirrors the live API gate in
+    # daanaa_api.py (`not org.get('merit_score_v5')`) exactly, so droplet and
+    # localhost render identically. An org can carry v5_context (archetype
+    # known from NTEE) yet have no score because it has no financials; those
+    # orgs still get the cause-area typical (Stewardship P3/P4: fills a blank
+    # financial section, never competes with a real score). Fixed 2026-07-16 —
+    # the old gate (v5 is None and row[23] is None) skipped every
+    # archetype-but-unscored org, which is why daanaa.org showed no financial
+    # context for them while localhost did. NTEE1=row[2], NTEECC=row[3].
     cohort = None
-    if get_cohort_context and v5 is None and row[23] is None:
+    if get_cohort_context and not row[44]:
         try:
             cohort = get_cohort_context(row[3], row[2])
         except Exception:
