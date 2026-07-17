@@ -1,3 +1,17 @@
+## 2026-07-17 — Decision-making workflow adopted (founder-directed)
+
+**Chose:** Four-gate protocol for all open decisions: (1) principles check vs
+STEWARDSHIP.md + Charter, (2) data validation, (3) board simulation every 12h over
+the open queue (six seats: Legal, Finance, Marketing, ED, Donor, Stewardship chair),
+(4) resolve-and-log or escalate to founder. Queue at governance/DECISION_QUEUE.md;
+12h cron check writes .DECISIONS_PENDING marker; protocol at docs/DECISION_WORKFLOW.md.
+
+**Why:** Decisions become data-backed, principle-aligned, and multi-perspective by
+default; founder only sees the ones that genuinely need them (split board, principle
+tension, missing data). P9 traceability built in.
+
+**Rejected:** Ad-hoc per-decision escalation (noisy, inconsistent documentation).
+
 # DECISIONS.md
 
 Append-only decision log. Each entry: **what we chose and why, plus the option

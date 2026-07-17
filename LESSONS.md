@@ -1,3 +1,18 @@
+## 2026-07-17 — Crontab near-wipe #2: manual `crontab` edits are landmines
+
+**Symptom:** Two cron jobs added manually via `crontab -l > tmp; echo >> tmp; crontab tmp`
+earlier in the day were silently wiped hours later when `setup_cron_schedules.sh`
+(the canonical full-replace installer) was re-run for an unrelated addition.
+
+**Root cause:** Two write paths to one resource. The installer is documented as the
+single source of truth and REPLACES the whole crontab; any job added outside it has
+a lifespan of "until the next installer run."
+
+**Preventing rule:** NEVER edit the crontab directly. Every new job goes into
+`scripts/setup_cron_schedules.sh` first, then the script is run. The installer's
+pre-replace backup (logs/crontab_backup_*.txt) is the safety net, and the same-day
+detection here worked only because the jobs were minutes old.
+
 # LESSONS.md
 
 Append-only engineering memory. Each entry: **symptom → root cause → rule that

@@ -62,6 +62,11 @@ cat > "$CRONTAB_TMP" << 'CRON'
 # Morning deploy: 14:00
 0 14 * * * /home/akbar/meritgiving/scripts/deploy_morning.sh
 
+# Nonprofit discovery orchestrator: 11:00 daily (multi-source website batch)
+0 11 * * * source venv/bin/activate && python3 scripts/nonprofit_discovery_orchestrator.py >> logs/discovery_orchestrator.log 2>&1
+# Discovery efficiency monitor: every 30 min (80%-of-peak reconnect signal)
+*/30 * * * * cd /home/akbar/meritgiving && venv/bin/python3 scripts/monitor_discovery_efficiency.py >> logs/efficiency_monitor.log 2>&1
+
 # ---------- GPU night mode ----------
 0 21 * * * /home/akbar/meritgiving/scripts/gpu_night.sh start >> /home/akbar/meritgiving/logs/gpu_night.log 2>&1
 0 2 * * * /home/akbar/meritgiving/scripts/enrichment_loop_8pm_8am.sh
@@ -74,6 +79,10 @@ cat > "$CRONTAB_TMP" << 'CRON'
 
 # ---------- Email agent ----------
 0 */2 * * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 -m scripts.email_agent.run --limit 50 --query 'newer_than:2d -label:daanaa/triaged' >> /home/akbar/meritgiving/logs/email_agent.log 2>&1
+
+# ---------- Governance ----------
+# Decision queue check: every 12h (08:00 + 20:00) — surfaces open decisions for board simulation (docs/DECISION_WORKFLOW.md)
+0 8,20 * * * bash /home/akbar/meritgiving/scripts/check_decision_queue.sh
 
 # ---------- Weekly ----------
 # Token review: Mondays 08:00
