@@ -1,0 +1,6 @@
+concept,pages_or_components_using_it,variations_found,whether_meanings_conflict,preferred_standard_wording,files_requiring_review,priority
+score,homepage,directory,api types,stewardship docs,context score/peer financial context/merit score,Yes,calculated context score,frontend pages; api types; stewardship docs,High
+verification,claim flow,nonprofit pages,admin docs,verified/pending/reviewed/claimed,Potentially,verified for [scope],claim pages; docs; emails,High
+ranking,directory sort and search copy,sort order / peer comparison / rank,Potentially,search relevance or context ordering,directory page; API; methodology copy,High
+trust,trust badges and stewardship docs,trust badge/verified/trusted,Yes,reviewed public data or context indicator,frontend components; docs,Medium
+

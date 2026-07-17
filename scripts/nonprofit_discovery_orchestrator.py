@@ -98,6 +98,11 @@ def run_irs_extraction(batch_size=1000, dry_run=False):
         errors=0,
     )
 
+    # Dedupe guard: skip if another extraction is mid-run
+    if _already_running("extract_990_fields.py"):
+        logger.info("extract_990_fields already running — skipping (no duplicate)")
+        return stats
+
     logger.info("Starting IRS 990 e-file extraction...")
 
     try:
@@ -135,6 +140,17 @@ def run_irs_extraction(batch_size=1000, dry_run=False):
     return stats
 
 
+def _already_running(pattern: str) -> bool:
+    """True if a process matching pattern is already running (dedupe guard)."""
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", pattern], capture_output=True, text=True, timeout=5
+        )
+        return bool(result.stdout.strip())
+    except Exception:
+        return False
+
+
 def run_web_finder(batch_size=1000, dry_run=False):
     """Run web_finder_agent (domain guessing + embedding verification)."""
     stats = DiscoveryStats(
@@ -146,6 +162,13 @@ def run_web_finder(batch_size=1000, dry_run=False):
         missions_added=0,
         errors=0,
     )
+
+    # Dedupe guard: a long manual/previous run may still be going. Two
+    # web_finders would double-fetch the same candidate pool.
+    if _already_running("web_finder_agent.py"):
+        logger.info("web_finder_agent already running — skipping this cycle (no duplicate)")
+        stats.attempted = 0
+        return stats
 
     logger.info(f"Starting web_finder_agent ({batch_size} orgs, high-revenue first)...")
 

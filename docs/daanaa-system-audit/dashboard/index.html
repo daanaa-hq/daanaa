@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daanaa System Audit</title>
+  <style>
+    :root{--bg:#0e1116;--panel:#171c24;--text:#f2f4f8;--muted:#a9b3c1;--accent:#c9a96e;--line:#2a3240}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:linear-gradient(180deg,#10151d,#090b0f);color:var(--text)}
+    header,main{max-width:1200px;margin:0 auto;padding:24px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+    h1,h2,h3{margin:0 0 12px}
+    h1{font-size:34px}
+    a{color:var(--accent)}
+    .pill{display:inline-block;padding:3px 10px;border:1px solid var(--line);border-radius:999px;margin:4px 6px 0 0;color:var(--muted)}
+    .muted{color:var(--muted)}
+    pre{white-space:pre-wrap;overflow:auto;background:#0b0f14;padding:12px;border-radius:12px;border:1px solid var(--line)}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Daanaa System Audit</h1>
+    <p class="muted">Static evidence-based report from repository inspection. No invented metrics are shown.</p>
+    <div>
+      <span class="pill">Confirmed vs probable vs unverified</span>
+      <span class="pill">Read-only audit</span>
+      <span class="pill">Production-safe</span>
+    </div>
+  </header>
+  <main>
+    <div class="grid">
+      <section class="card">
+        <h2>Executive Overview</h2>
+        <p>Daanaa is a nonprofit discovery platform with a split backend: full API plus production-edge droplet API.</p>
+        <p class="muted">Core strengths: public-data discovery, claim flow controls, search contract tests, privacy-oriented stewardship.</p>
+      </section>
+      <section class="card">
+        <h2>Findings Summary</h2>
+        <p>High: terminology drift, backend split drift, no confirmed payment flow.</p>
+        <p>Medium: script coverage gaps, AI-language clarity, recovery/retry completeness.</p>
+      </section>
+      <section class="card">
+        <h2>AI Governance</h2>
+        <p>Governance requires evidence-based trust signals, human accountability, and clear distinction between deterministic calculations and AI-assisted outputs.</p>
+      </section>
+      <section class="card">
+        <h2>Source Links</h2>
+        <p><a href="../00-executive-summary.md">Executive summary</a></p>
+        <p><a href="../10-ai-governance-review.md">AI governance review</a></p>
+        <p><a href="../diagrams/01-platform-architecture.md">Platform diagram source</a></p>
+      </section>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Confirmed Strengths</h2>
+      <ul>
+        <li>Evidence-based trust and privacy rules are explicit in stewardship docs.</li>
+        <li>Claim flow has automated tests.</li>
+        <li>Search reliability has regression coverage.</li>
+        <li>Admin auth uses timing-safe compare.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Areas Requiring Human Verification</h2>
+      <ul>
+        <li>Which backend is canonical for future work.</li>
+        <li>Which AI-assisted outputs require human approval before publication.</li>
+        <li>Whether Plausible is active in production or only referenced.</li>
+        <li>Whether volunteer and payment features are intentionally partial.</li>
+      </ul>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h2>Mermaid Sources</h2>
+      <p>Open the diagram source files directly. If Mermaid CLI is available in your environment, render the files under <code>docs/daanaa-system-audit/rendered/</code> outside this audit package before sharing.</p>
+    </div>
+  </main>
+</body>
+</html>
+

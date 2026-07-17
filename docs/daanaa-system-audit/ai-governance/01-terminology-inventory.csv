@@ -1,0 +1,7 @@
+term_or_phrase,exact_location,audience,current_meaning,meaning_supported_by_code,potential_interpretation_by_user,governance_risk,recommended_replacement,requires_legal_review,requires_founder_review,confidence
+Peer Financial Context,frontend and API types,donor,contextual peer comparison of financial data,deterministic comparison from public filings,may be read as quality judgment,medium,Peer Financial Context or peer comparison only,No,Yes,Confirmed
+Financial Health,frontend/API/comments,donor and nonprofit,health-like framing of reserve/financial context,derived calculation not clinical/medical status,may imply nonprofit quality or fitness,high,Financial context or reserve context,Yes,Yes,Strong evidence
+Hidden gem,frontend filters and copy,donor,small organization surfaced for visibility,visibility flag based on code/path,may imply endorsement or superiority,medium,featured small organization,No,Yes,Confirmed
+Verified,claim/email/status language,nonprofit and donor,proof or review state,used for some claim and data states only,may be overread as universal certification,high,verified for X only; reviewed/confirmed where precise,Yes,Yes,Confirmed
+Recommended,search and partner copy,donor,decision support,contextual display not advice,may imply endorsement,high,considered for you / context shown,Yes,Yes,Strong evidence
+
