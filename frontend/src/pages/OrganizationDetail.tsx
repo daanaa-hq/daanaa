@@ -5,11 +5,9 @@ import OrgCard from '../components/OrgCard'
 import AnswerCard from '../components/AnswerCard'
 import DonationReturnPrompt from '../components/DonationReturnPrompt'
 import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
-import { getTierSummary, getTierFromOrg, TIER_COLORS } from '../components/TrustBadge'
+import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import ScoreBreakdown from '../components/ScoreBreakdown'
-import LampMark from '../components/LampMark'
-import TierBreakdown from '../components/TierBreakdown'
 import MistakeRegistry from '../components/MistakeRegistry'
 
 import { useApi } from '../hooks/useApi'
@@ -251,7 +249,6 @@ export default function OrganizationDetail() {
   const [showBreakdown, setShowBreakdown] = useState(false)
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalError, setPortalError]     = useState<string | null>(null)
-  const [showTierBreakdown, setShowTierBreakdown] = useState(false)
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null)
   // 990 Part VII — public compensation disclosure
   const [ppLeadership, setPpLeadership] = useState<{name:string;title:string;initials:string;compensation?:number}[]>([])
@@ -428,8 +425,6 @@ export default function OrganizationDetail() {
     )
   }
 
-  const lampTier     = getTierFromOrg(apiOrg!)
-  const trustSummary = getTierSummary(lampTier, apiOrg!)
   const badges = getOrgBadges(apiOrg!)
 
   return (
@@ -785,25 +780,10 @@ export default function OrganizationDetail() {
             {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) &&
              apiOrg!.org_status !== 'revoked' && apiOrg!.irs_revoked !== 1 && (
             <div className="flex flex-col items-center gap-3 lg:pt-4">
-              {/* LampMark lg -- tappable, opens TierBreakdown inline */}
-              <LampMark
-                tier={lampTier}
-                size="lg"
-                onClick={() => setShowTierBreakdown(s => !s)}
-              />
-              {/* Tier name + plain subtitle */}
-              <div className="flex flex-col items-center gap-0.5">
-                <Link
-                  to="/tiers"
-                  className="font-body text-[12px] tracking-[0.04em] uppercase hover:text-bright-gold transition-colors"
-                  style={{ color: TIER_COLORS[lampTier] }}
-                >
-                  {lampTier}
-                </Link>
-                <span className="font-body text-[10px] text-muted-cream">
-                  {({'Beacon':'Fully documented','Torch':'Well documented','Candle':'Financials on record','Ember':'IRS registered','Spark':'IRS registered','Glow':'IRS registered'} as Record<string,string>)[lampTier] ?? 'IRS registered'}
-                </span>
-              </div>
+              {/* Lamp tier retired from donor-facing profiles 2026-07-17
+                  (founder-approved): its facts are covered by the plain
+                  elements below, and the tier vocabulary read as a grade
+                  (P4). Tiers live on in the nonprofit-facing claim flow. */}
               {/* IRS verification -- a real, defensible fact for every org */}
               <div className="flex flex-col items-center gap-2 text-center">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-body text-[12px] font-medium">
@@ -835,26 +815,13 @@ export default function OrganizationDetail() {
                 to="/methodology"
                 className="font-body text-[11px] text-muted-cream hover:text-soft-gold transition-colors"
               >
-                About this score →
+                How we assess nonprofits →
               </Link>
             </div>
             )}{/* end stub score conditional */}
           </div>
         </div>
       </div>
-
-      {/* Tier Breakdown -- inline, no navigation */}
-      {showTierBreakdown && (
-        <div className="bg-deep-navy border-t border-white/8 py-8">
-          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <TierBreakdown
-              org={apiOrg!}
-              tier={lampTier}
-              onClose={() => setShowTierBreakdown(false)}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Body: 70/30 grid -- main content left, org wall right */}
       <div className="bg-warm-cream">
