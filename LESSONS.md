@@ -712,3 +712,17 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
 - **Preventing rule:** when adding any redirect, curl the TARGET and confirm
   it renders real content; funnel entry URLs belong in the smoke-test list
   (added /org/login to the deploy smoke set).
+
+## 2026-07-18 — Cloudflare edge-cached a GET before verifying the sort fix
+- **Symptom:** re-tested the sort fix after the mega-deploy and got the OLD
+  (broken) name-order result again — looked like a regression.
+- **Root cause:** Cloudflare cached the exact GET URL from an earlier test
+  (same query string). A cache-busting param (`&_cb=<ts>`) proved the fix
+  was correct all along. Also found separately: the local API (daanaa_api.py,
+  gunicorn --preload) had been running 1+ day and never picked up the
+  page_health commit — --preload loads code once at start; restart_api.sh
+  is required after any daanaa_api.py change, autonomous or not.
+- **Preventing rule:** when live-verifying a fix, always append a cache-buster
+  to GET requests against daanaa.org, and confirm the local API's process
+  start time is AFTER the relevant commit before trusting a "still broken"
+  result from it.
