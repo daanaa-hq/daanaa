@@ -743,3 +743,27 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   gets worse every week as the table grows. Added
   `CREATE INDEX idx_score_snapshots_ein_date` before shipping the nightly
   snapshot-capture change.
+
+## 2026-07-18 — main directory search (q=) was 15-21s for common words
+- **Symptom:** founder asked "is search always fast" — a single, isolated,
+  cache-busted request for q=health took 21s (reproduced identically direct
+  on the droplet, ruling out network/CDN flakiness or my own concurrent
+  testing). Droplet load average was only 0.51 — not CPU contention.
+- **Root cause:** `_fts_directory()` (serves the main `/api/organizations?q=`
+  path the Directory page actually calls) ran an UNCAPPED
+  `COUNT(*) FROM org_fts s, registry_enriched o WHERE ... MATCH ?` — for a
+  common word ("health" = 174,555 matches) this counts and joins every
+  matching row against the full 1.87M-row table. The exact same bug, in the
+  sibling `fused_search()` function, was already diagnosed and fixed
+  2026-07-16 (see that function's comment: "16-20s per search on the
+  droplet") — but the fix was never applied to this second query path,
+  which is the one the main site search actually uses.
+- **Preventing rule:** any COUNT(*) or join against org_fts + registry_enriched
+  must use the bounded-candidate CTE pattern (bm25-rank inside FTS5, LIMIT
+  cand_cap, then join/filter/count only the candidates) — never an
+  unbounded join. Fixed in `_fts_directory()` to match `fused_search()`.
+  Verified locally against a real copy of search.db: correctness confirmed
+  (public-filter + category conditions honored), though the 2GB droplet's
+  RAM-vs-1.7GB-file page-cache pressure (not raw CPU) is what makes this
+  slow in production — a bigger/faster dev box won't reproduce the timing,
+  only the droplet will.

@@ -900,21 +900,40 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
 
         order = _order_clause(sort, order, alias='o.')
 
-        count_sql = f"""
-            SELECT COUNT(*) FROM org_fts s, registry_enriched o
-            WHERE {' AND '.join(conditions)}
-        """
-        total = conn.execute(count_sql, params).fetchone()[0]
+        # Bounded-candidate plan (2026-07-18, same fix as fused_search()
+        # 2026-07-16): the old query was an uncapped COUNT(*) over a join of
+        # org_fts to registry_enriched (1.87M rows). A common word like
+        # "health" matches 170K+ rows, and counting+joining all of them took
+        # 15-21s on the droplet — reproduced live, single isolated request,
+        # not a concurrency artifact. Same technique: bm25-rank inside FTS5,
+        # take a bounded candidate set, only join/filter/sort/count those.
+        # conditions[0] is the join clause, conditions[1] the MATCH
+        # (param 0); everything after is o.*-only filters, safe to reuse
+        # verbatim inside the CTE's WHERE.
+        fts_q = params[0]
+        o_conditions = conditions[2:]
+        o_params = params[1:]
+        cand_cap = 20000
+        o_where = (' AND ' + ' AND '.join(o_conditions)) if o_conditions else ''
+
+        total = conn.execute(
+            f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+            f"ORDER BY rank LIMIT {cand_cap}) "
+            f"SELECT COUNT(*) FROM c JOIN registry_enriched o ON o.EIN = c.ein "
+            f"WHERE 1=1{o_where}",
+            [fts_q] + o_params
+        ).fetchone()[0]
 
         offset = (page - 1) * per_page
-        params_page = params + [per_page, offset]
-        rows_sql = f"""
-            SELECT o.* FROM org_fts s, registry_enriched o
-            WHERE {' AND '.join(conditions)}
-            ORDER BY {order}
-            LIMIT ? OFFSET ?
-        """
-        rows = conn.execute(rows_sql, params_page).fetchall()
+        rows_sql = (
+            f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+            f"ORDER BY rank LIMIT {cand_cap}) "
+            f"SELECT o.* FROM c JOIN registry_enriched o ON o.EIN = c.ein "
+            f"WHERE 1=1{o_where} "
+            f"ORDER BY {order} "
+            f"LIMIT ? OFFSET ?"
+        )
+        rows = conn.execute(rows_sql, [fts_q] + o_params + [per_page, offset]).fetchall()
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
         resp = {'organizations': orgs, 'total': total,
