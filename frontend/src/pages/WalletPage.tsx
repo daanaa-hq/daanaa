@@ -9,6 +9,7 @@ import WalletAccountLink from '../components/WalletAccountLink'
 import DonationLogger from '../components/DonationLogger'
 import VolunteerLogger from '../components/VolunteerLogger'
 import CloseTheLoopPrompt from '../components/CloseTheLoopPrompt'
+import { RhythmNudges, RhythmControl } from '../components/GivingRhythm'
 import type { ApiOrganization } from '../data/api'
 import { API_BASE } from '../lib/platform'
 import {
@@ -440,6 +441,9 @@ export default function WalletPage() {
         )}
 
 
+        {/* Giving rhythm nudges — due gifts, computed on-device only */}
+        {activeTab === 'funding' && <RhythmNudges entries={fundingEntries} orgDataMap={orgDataMap} />}
+
         {/* Cards — OrgCardRow style (wider rectangles, matches directory) */}
         <div className={`flex flex-col gap-2 ${hydrating ? 'opacity-60' : ''}`}>
           {filteredEntries.map(entry => {
@@ -650,6 +654,14 @@ export default function WalletPage() {
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Giving rhythm — saved cadence for this org */}
+                    {showDonationLogger && (
+                      <div>
+                        <p className="font-body text-[11px] font-semibold text-deep-navy uppercase tracking-wide mb-2">Giving rhythm</p>
+                        <RhythmControl entry={entry} orgName={org.organization_name} />
                       </div>
                     )}
 

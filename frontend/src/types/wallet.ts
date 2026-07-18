@@ -24,6 +24,20 @@ export interface LoggedVolunteerHours {
 }
 
 /** The normalized wallet entry. Tracks bookmarks + actual activity. */
+// RecurringTemplate — a saved giving rhythm ("I give $50 here every December").
+// Device-only like the rest of the wallet; due-ness is computed client-side so
+// no reminder data ever reaches a server.
+export interface RecurringTemplate {
+  amount: number
+  cadence: 'monthly' | 'quarterly' | 'yearly'
+  createdAt: number
+  // Cadence anchor: for yearly, the 1-12 month the gift belongs to;
+  // ignored for monthly/quarterly (anchored to last gift instead).
+  anchorMonth?: number
+  // A due nudge the user dismissed stays quiet until the next cycle.
+  snoozedUntil?: string  // ISO date (YYYY-MM-DD)
+}
+
 export interface WalletEntry {
   ein: string                      // 9-digit EIN
   bookmarkedAt: number
@@ -31,7 +45,33 @@ export interface WalletEntry {
   inVolunteering?: boolean         // in volunteering list (red heart)
   donations?: LoggedDonation[]     // actual donations
   volunteerHours?: LoggedVolunteerHours[]  // actual volunteer hours
+  recurringTemplate?: RecurringTemplate    // saved giving rhythm (see above)
   givingIntent?: GivingIntent      // legacy: intent tracking (deprecated, kept for migration)
+}
+
+/** Days per cadence cycle, used to decide when a template is due again. */
+const CADENCE_DAYS: Record<RecurringTemplate['cadence'], number> = {
+  monthly: 30, quarterly: 91, yearly: 365,
+}
+
+/**
+ * A template is due when a full cadence cycle has passed since the most
+ * recent logged donation (or since template creation when nothing is logged
+ * yet), and any snooze has lapsed. Yearly templates with an anchorMonth are
+ * due only during that month.
+ */
+export function isTemplateDue(entry: WalletEntry, today: Date = new Date()): boolean {
+  const t = entry.recurringTemplate
+  if (!t) return false
+  const todayIso = today.toISOString().slice(0, 10)
+  if (t.snoozedUntil && todayIso < t.snoozedUntil) return false
+  if (t.cadence === 'yearly' && t.anchorMonth && (today.getMonth() + 1) !== t.anchorMonth) return false
+  const giftDates = (entry.donations ?? []).map(d => d.date).sort()
+  const lastGift = giftDates.length ? giftDates[giftDates.length - 1] : undefined
+  const sinceMs = lastGift
+    ? today.getTime() - new Date(`${lastGift}T00:00:00`).getTime()
+    : today.getTime() - t.createdAt
+  return sinceMs >= CADENCE_DAYS[t.cadence] * 86_400_000
 }
 
 // Legacy: GivingIntent (kept for backward compat, but no longer used)
@@ -66,6 +106,10 @@ export interface WalletContextType {
   getDonations: (ein: string) => LoggedDonation[] | undefined
   getVolunteerHours: (ein: string) => LoggedVolunteerHours[] | undefined
   updateDonationLetterStatus: (ein: string, donationId: string, status: LoggedDonation['letterStatus']) => void
+  // Recurring giving rhythm (device-only; powers "give again" nudges)
+  setRecurringTemplate: (ein: string, template: RecurringTemplate) => void
+  clearRecurringTemplate: (ein: string) => void
+  snoozeRecurringTemplate: (ein: string, untilIsoDate: string) => void
   archiveDonationHistory: (ein: string, beforeDate: string) => void
   syncImpactLog: (entry: LoggedDonation | LoggedVolunteerHours, type: 'giving' | 'volunteer', ein: string) => Promise<void>
   // Legacy intent methods (deprecated, kept for backward compat)

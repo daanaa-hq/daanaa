@@ -2,7 +2,7 @@ import React, {
   createContext, useContext, useReducer, useCallback,
   useEffect, useRef, useState,
 } from 'react'
-import type { WalletEntry, GivingIntent, WalletContextType, LoggedDonation, LoggedVolunteerHours } from '../types/wallet'
+import type { WalletEntry, GivingIntent, WalletContextType, LoggedDonation, LoggedVolunteerHours, RecurringTemplate } from '../types/wallet'
 import { isValidWalletEntry, isLegacyWalletV1 } from '../types/wallet'
 import { validateGivingIntent, logValidationError } from '../utils/walletValidation'
 import {
@@ -47,6 +47,9 @@ type Action =
   | { type: 'LOG_DONATION'; ein: string; donation: LoggedDonation }
   | { type: 'LOG_VOLUNTEER_HOURS'; ein: string; hours: LoggedVolunteerHours }
   | { type: 'UPDATE_DONATION_LETTER_STATUS'; ein: string; donationId: string; status: LoggedDonation['letterStatus'] }
+  | { type: 'SET_RECURRING'; ein: string; template: RecurringTemplate }
+  | { type: 'CLEAR_RECURRING'; ein: string }
+  | { type: 'SNOOZE_RECURRING'; ein: string; until: string }
   | { type: 'SET_SYNC_STATUS'; status: State['syncStatus'] }
   | { type: 'LOCK' }
 
@@ -133,6 +136,31 @@ function reducer(state: State, action: Action): State {
       const entry = { ...next[idx] }
       entry.volunteerHours = [...(entry.volunteerHours || []), action.hours]
       next[idx] = entry
+      return { ...state, entries: next }
+    }
+    case 'SET_RECURRING': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const next = [...state.entries]
+      next[idx] = { ...next[idx], recurringTemplate: action.template }
+      return { ...state, entries: next }
+    }
+    case 'CLEAR_RECURRING': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const next = [...state.entries]
+      const { recurringTemplate: _cleared, ...rest } = next[idx]
+      next[idx] = rest
+      return { ...state, entries: next }
+    }
+    case 'SNOOZE_RECURRING': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1 || !state.entries[idx].recurringTemplate) return state
+      const next = [...state.entries]
+      next[idx] = {
+        ...next[idx],
+        recurringTemplate: { ...next[idx].recurringTemplate!, snoozedUntil: action.until },
+      }
       return { ...state, entries: next }
     }
     case 'UPDATE_DONATION_LETTER_STATUS': {
@@ -512,6 +540,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'UPDATE_DONATION_LETTER_STATUS', ein, donationId, status })
   }, [])
 
+  const setRecurringTemplate = useCallback((ein: string, template: RecurringTemplate) => {
+    dispatch({ type: 'SET_RECURRING', ein, template })
+  }, [])
+
+  const clearRecurringTemplate = useCallback((ein: string) => {
+    dispatch({ type: 'CLEAR_RECURRING', ein })
+  }, [])
+
+  const snoozeRecurringTemplate = useCallback((ein: string, untilIsoDate: string) => {
+    dispatch({ type: 'SNOOZE_RECURRING', ein, until: untilIsoDate })
+  }, [])
+
   const archiveDonationHistory = useCallback((ein: string, beforeDate: string) => {
     // Delete donations/volunteer hours before a given date (ISO string).
     // Use case: comply with data retention policies (e.g., keep 7 years only).
@@ -553,6 +593,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       isInFunding, isInVolunteering,
       updateIntent,
       logDonation, logVolunteerHours, getDonations, getVolunteerHours, updateDonationLetterStatus,
+      setRecurringTemplate, clearRecurringTemplate, snoozeRecurringTemplate,
       mergeRemoteEntries,
       isInWallet, getIntent, isUnlocked: state.encKey !== null,
       unlockWithPassphrase, setupNewWallet, lockWallet, deleteWallet,

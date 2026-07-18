@@ -14,11 +14,17 @@ describe('getActionRowLinks', () => {
       expect(r.isWebsiteBeta).toBe(true)
     })
 
-    it('hides the website link for any other status (dead, redirected, null)', () => {
-      for (const status of ['dead', 'redirected', null, 'unknown']) {
+    it('hides the website link for known-bad statuses (dead, redirected, unknown)', () => {
+      for (const status of ['dead', 'redirected', 'unknown']) {
         const r = getActionRowLinks({ website_status: status, website: 'example.org', donate_url_status: null, donate_url: null, volunteer_url: null })
         expect(r.websiteUrl).toBeNull()
       }
+    })
+
+    it('shows an unchecked website (NULL status) and flags it as beta — 253bf0b51ba', () => {
+      const r = getActionRowLinks({ website_status: null, website: 'example.org', donate_url_status: null, donate_url: null, volunteer_url: null })
+      expect(r.websiteUrl).toBe('https://example.org/')
+      expect(r.isWebsiteBeta).toBe(true)
     })
   })
 
