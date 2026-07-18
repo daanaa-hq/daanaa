@@ -959,3 +959,19 @@ missing (would create two silent scoring regimes; deriving the missing input is 
   way we'd want bots to behave on daanaa.org.
 - **Rejected:** keeping the fake Chrome UA for higher fetch success
   (impersonation is the bad-bot pattern; several targets 403'd it anyway).
+
+## 2026-07-18 — archive-based website verification (Common Crawl + Wayback)
+- **Chose:** verify org websites from web archives instead of crawling orgs'
+  own servers (founder-directed: "archives are just as good... fill our
+  website gaps"). Pilot on 30 orgs across the 'dead' and unchecked pools:
+  ~50% have archive snapshots, 33% identity-match the org name; several
+  "dead" sites have 2026 snapshots + Common Crawl confirmation — i.e. they
+  are live sites our checker mislabeled (bot-blocking, transient errors).
+  Extrapolated: ~18K of the ~55K dead+unchecked pool may be recoverable.
+- **Key design rule (P3):** an archive hit proves the site EXISTED and
+  matched the org, not that it's live today — so evidence is written to
+  JSON with snapshot dates, and any promotion back to donor-visible status
+  must gate on snapshot recency (e.g. within 6 months). A 2008-only
+  snapshot stays dead.
+- **Rejected:** direct re-crawling of blocked sites (etiquette decision
+  stands); paid crawl APIs (cost gate).
