@@ -157,3 +157,44 @@ def test_legacy_get_route_still_says_gone(client):
     # The old base64-token GET route must not silently come back to life
     r = client.get("/api/nonprofit/dashboard/sometoken")
     assert r.status_code in (404, 410, 501)
+
+
+def test_beta_donate_status_counts_as_live(client, tmp_path):
+    """Regression (2026-07-17): production statuses are beta/claimed —
+    'verified' never occurs. The old check told every org its working
+    donate link was unconfirmed. The completeness gate must mirror the
+    donor-side rendering gate (actionRow.ts: beta|claimed)."""
+    import sqlite3 as _sq
+    db = _sq.connect(daanaa_api.DB_PATH)
+    db.execute("UPDATE registry_enriched SET donate_url_status='beta' WHERE EIN=?", (EIN,))
+    db.commit(); db.close()
+    body = _dash(client).get_json()
+    assert body["profile"]["checks"]["donate_link_verified"] is True
+    assert body["page_health"]["donate_link"]["shown_to_donors"] is True
+
+
+def test_page_health_mirrors_donor_view(client):
+    """The org must see the truth of its own public page — the same gates
+    donors get, not internal pipeline states."""
+    body = _dash(client).get_json()
+    ph = body["page_health"]
+    assert ph["public_page_url"].endswith(f"/org/{EIN}")
+    assert ph["mission"]["shown"] is True
+    assert ph["website"]["shown_to_donors"] is True   # seeded status 'ok'
+    assert ph["donate_link"]["shown_to_donors"] is True
+    assert "note" in ph["donate_link"]
+
+
+def test_page_health_dead_link_is_honest(client):
+    """A dead donate link must show as NOT donor-visible, with the EIN/check
+    fallback explained — honesty over comfort (P3), warmth over shame (P5)."""
+    import sqlite3 as _sq
+    db = _sq.connect(daanaa_api.DB_PATH)
+    db.execute("UPDATE registry_enriched SET donate_url_status='dead' WHERE EIN=?", (EIN,))
+    db.commit(); db.close()
+    body = _dash(client).get_json()
+    dl = body["page_health"]["donate_link"]
+    assert dl["shown_to_donors"] is False
+    assert "check" in dl["note"].lower()  # EIN/mail fallback explained
+    for w in SHAME_WORDS:
+        assert w not in dl["note"].lower()

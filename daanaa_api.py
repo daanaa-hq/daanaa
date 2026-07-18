@@ -8830,11 +8830,16 @@ def nonprofit_self_dashboard():  # 'nonprofit_dashboard' endpoint name is taken
     }
 
     # ── Profile completeness: actionable, encouraging ─────────────────────
+    # Donor-visible statuses are beta/claimed (the same gate the org page
+    # uses — see frontend actionRow.ts). The old check required 'verified',
+    # a value that never occurs in production, so every org was told its
+    # working donate link was unconfirmed (bug found 2026-07-17).
+    donate_live = (org['donate_url_status'] in ('beta', 'claimed', 'verified')
+                   and bool(org['donate_url']))
     checks = {
         'mission': bool(org['mission'] or claim['custom_mission']),
         'website_verified': org['website_status'] == 'ok',
-        'donate_link_verified': org['donate_url_status'] == 'verified'
-                                and bool(org['donate_url']),
+        'donate_link_verified': donate_live,
     }
     missing = [k for k, v in checks.items() if not v]
     if not missing:
@@ -8851,9 +8856,41 @@ def nonprofit_self_dashboard():  # 'nonprofit_dashboard' endpoint name is taken
                              'step with confidence.')
     profile = {'checks': checks, 'narrative': profile_narrative}
 
+    # ── Page health: exactly what a donor sees and whether it works ───────
+    # Mirrors the donor-side rendering gates so the org sees the truth of
+    # its own public page, not internal pipeline states.
+    website_shown = (org['website_status'] == 'ok'
+                     or (bool(org['website']) and org['website_status'] is None))
+    page_health = {
+        'public_page_url': f"https://daanaa.org/org/{ein}",
+        'mission': {
+            'shown': bool(org['mission'] or claim['custom_mission']),
+            'text': (claim['custom_mission'] or org['mission'] or None),
+            'source': ('yours' if claim['custom_mission'] else
+                       'derived from public records' if org['mission'] else None),
+        },
+        'website': {
+            'url': org['website'],
+            'shown_to_donors': website_shown,
+            'status': org['website_status'],
+        },
+        'donate_link': {
+            'url': org['donate_url'],
+            'shown_to_donors': donate_live,
+            'status': org['donate_url_status'],
+            'note': ('Donors see a Donate button that goes straight to this '
+                     'link — money never passes through Daanaa.'
+                     if donate_live else
+                     'No donation link is live on your page yet. Donors see '
+                     'your EIN and mailing address instead, so they can still '
+                     'give by check or through their own bank or fund.'),
+        },
+    }
+
     return jsonify({
         'ein': ein,
         'organization_name': org['organization_name'],
+        'page_health': page_health,
         'financial_context': financial_context,
         'peer_context': peer_context,
         'donor_interest': donor_interest,

@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../../hooks/usePageMeta'
 
+interface PageHealth {
+  public_page_url: string
+  mission: { shown: boolean; text: string | null; source: string | null }
+  website: { url: string | null; shown_to_donors: boolean; status: string | null }
+  donate_link: { url: string | null; shown_to_donors: boolean; status: string | null; note: string }
+}
+
 interface DashboardData {
   ein: string
   organization_name: string
+  page_health?: PageHealth
   financial_context: {
     health_signal: string
     archetype: string
@@ -128,6 +136,74 @@ export default function SelfDiscoveryDashboard() {
       {/* Main content */}
       <div className="bg-warm-cream py-16 md:py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 space-y-16">
+
+          {/* Page Health — what donors actually see, and whether it works */}
+          {data.page_health && (
+            <section>
+              <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+                <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+                  What Donors See
+                </h2>
+                <a
+                  href={data.page_health.public_page_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-deep-navy/90 transition-colors"
+                >
+                  View your public page
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+                </a>
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Mission */}
+                <div className="bg-white rounded-2xl p-6 border border-light-grey shadow-md">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase">Mission</p>
+                    <span className={`font-body text-[11px] font-semibold px-2 py-0.5 rounded-full ${data.page_health.mission.shown ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
+                      {data.page_health.mission.shown ? 'Live' : 'Not shown'}
+                    </span>
+                  </div>
+                  {data.page_health.mission.text ? (
+                    <>
+                      <p className="font-body text-[14px] text-deep-navy leading-[1.6] line-clamp-4">{data.page_health.mission.text}</p>
+                      <p className="font-body text-[12px] text-cool-grey mt-3">Source: {data.page_health.mission.source}</p>
+                    </>
+                  ) : (
+                    <p className="font-body text-[14px] text-cool-grey leading-[1.6]">
+                      Donors see no mission yet. Adding one in your own words is the single biggest upgrade to your page.
+                    </p>
+                  )}
+                </div>
+                {/* Website */}
+                <div className="bg-white rounded-2xl p-6 border border-light-grey shadow-md">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase">Website</p>
+                    <span className={`font-body text-[11px] font-semibold px-2 py-0.5 rounded-full ${data.page_health.website.shown_to_donors ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
+                      {data.page_health.website.shown_to_donors ? 'Live' : 'Not shown'}
+                    </span>
+                  </div>
+                  {data.page_health.website.url ? (
+                    <p className="font-body text-[14px] text-deep-navy break-all">{data.page_health.website.url}</p>
+                  ) : (
+                    <p className="font-body text-[14px] text-cool-grey leading-[1.6]">No website on file yet.</p>
+                  )}
+                </div>
+                {/* Donate link */}
+                <div className="bg-white rounded-2xl p-6 border border-light-grey shadow-md">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase">Donate Button</p>
+                    <span className={`font-body text-[11px] font-semibold px-2 py-0.5 rounded-full ${data.page_health.donate_link.shown_to_donors ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
+                      {data.page_health.donate_link.shown_to_donors ? 'Live' : 'Not shown'}
+                    </span>
+                  </div>
+                  {data.page_health.donate_link.url && data.page_health.donate_link.shown_to_donors && (
+                    <p className="font-body text-[14px] text-deep-navy break-all mb-3">{data.page_health.donate_link.url}</p>
+                  )}
+                  <p className="font-body text-[13px] text-cool-grey leading-[1.6]">{data.page_health.donate_link.note}</p>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Financial Context */}
           <section>
