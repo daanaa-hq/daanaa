@@ -51,7 +51,26 @@ while true; do
   export AWS_PROFILE=daanaa-enrichment
 
   BATCH_START=$(date +%s)
-  python3 scripts/enrich_batch.py --workers 8 2>&1 | tee -a "$LOG_FILE"
+  # Hard deadline: a batch started before cutoff must not RUN past it either.
+  # 2026-07-18 incident: a pre-8am batch ran until 9:26am while day-mode cron
+  # shut down the embedding server (9:05am) underneath it — 90 minutes of
+  # connection-refused errors on every org, 45 useful rows from 1,740.
+  # timeout sends TERM at the deadline; enrich_batch checkpoints as it goes,
+  # so a mid-batch stop loses nothing already flushed.
+  NOW_EPOCH=$(date +%s)
+  CUTOFF_EPOCH=$(date -d "today ${CUTOFF_HOUR}:00" +%s)
+  # If we're in the evening (before midnight), the cutoff is tomorrow morning.
+  if [ "$NOW_EPOCH" -ge "$CUTOFF_EPOCH" ]; then
+    CUTOFF_EPOCH=$(date -d "tomorrow ${CUTOFF_HOUR}:00" +%s)
+  fi
+  SECONDS_LEFT=$(( CUTOFF_EPOCH - NOW_EPOCH ))
+  log "Batch deadline: ${SECONDS_LEFT}s until ${CUTOFF_HOUR}:00 cutoff"
+  timeout --signal=TERM "${SECONDS_LEFT}s" \
+    python3 scripts/enrich_batch.py --workers 8 2>&1 | tee -a "$LOG_FILE"
+  BATCH_STATUS=${PIPESTATUS[0]}
+  if [ "$BATCH_STATUS" = "124" ]; then
+    log "=== BATCH KILLED AT CUTOFF (deadline reached — this is by design) ==="
+  fi
   BATCH_END=$(date +%s)
   BATCH_DURATION=$(( BATCH_END - BATCH_START ))
 
