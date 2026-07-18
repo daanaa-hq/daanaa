@@ -943,3 +943,19 @@ missing (would create two silent scoring regimes; deriving the missing input is 
 - **Rejected:** building the live-push path tonight. Deferred as a scoped
   follow-up that must match safe_deploy_droplet.sh's safety bar (sandboxed
   build, integrity check, atomic swap, rollback) — not a bespoke shortcut.
+
+## 2026-07-18 — crawler brought to industry best practices (founder-directed)
+- **Chose:** discovery daemon now sends an honest identified User-Agent
+  (DaanaaBot/1.0 with contact URL), respects robots.txt per host, and
+  spaces requests >=2s per domain — matching the standard the donation
+  pipeline already had. Daemon restarted; verified active (robots skips
+  logging). Also normalized the one remaining browser-impersonation UA
+  (idle lucido_scraper).
+- **Trade-off accepted:** some large hospital/university systems' robots.txt
+  disallow unknown agents, so those sites are no longer crawled (Froedtert,
+  Integris, Valley Health observed). Their donate links can still arrive
+  via IRS/990 filings and org claims. Compliance and honest identification
+  beat coverage-by-impersonation — the trust model demands we behave the
+  way we'd want bots to behave on daanaa.org.
+- **Rejected:** keeping the fake Chrome UA for higher fetch success
+  (impersonation is the bad-bot pattern; several targets 403'd it anyway).
