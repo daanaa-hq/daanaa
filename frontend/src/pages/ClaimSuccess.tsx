@@ -20,10 +20,11 @@ export default function ClaimSuccess() {
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-full bg-soft-gold text-deep-navy mx-auto mb-5 flex items-center justify-center text-2xl font-bold">✓</div>
           <h1 className="font-display italic text-deep-navy mb-3" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
-            Your page is live
+            Your changes are saved
           </h1>
           <p className="font-body text-[16px] text-cool-grey">
-            Thank you for claiming your Daanaa page. Your mission and giving links are now visible to donors.
+            Thank you for claiming your Daanaa page. Your mission and giving links update on daanaa.org
+            within 24 hours — usually sooner.
           </p>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-light-cream p-8 space-y-4">
@@ -31,8 +32,11 @@ export default function ClaimSuccess() {
             to={`/org/${ein}`}
             className="block w-full px-4 py-3 bg-soft-gold text-deep-navy font-body text-[15px] font-semibold rounded-xl hover:bg-bright-gold transition-colors text-center"
           >
-            View your page →
+            View your public page →
           </Link>
+          <p className="text-center font-body text-[11px] text-muted-cream -mt-1">
+            (may still show your prior info until the next update)
+          </p>
           <Link
             to="/member/benefits"
             className="block w-full px-4 py-3 border border-soft-gold/40 text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-soft-gold/8 transition-colors text-center"
