@@ -788,3 +788,19 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   be trusted to pick the small side just because the CTE is small; it goes
   by index availability, not row-count intuition. Guarded at source level
   in tests/test_contract_and_terminology.py.
+
+## 2026-07-18 — deploy script's own smoke test/rollback can false-alarm on transient SSH blips
+- **Symptom:** sync_droplet_api.sh reported "SMOKE TEST FAILED... Rolling
+  back... ssh: connect... Connection refused... Rollback FAILED — MANUAL
+  ACTION NEEDED" — sounds like a failed deploy plus a failed safety net.
+  Site was actually up the whole time (0.1-1.3s responses) and the new code
+  was correctly deployed (md5sum match, behavior match) — the deploy
+  script's OWN health-check and rollback steps hit a transient SSH refusal
+  (likely rate-limiting from the many rapid SSH connections used for
+  EXPLAIN QUERY PLAN testing minutes earlier), not the application.
+- **Preventing rule:** on a "SMOKE TEST FAILED" / "Rollback FAILED" message,
+  do not assume the site is down — independently curl the public URL AND
+  compare md5sum of local vs deployed droplet_api.py before taking any
+  recovery action. SSH connection refusal is a distinct failure mode from
+  an application failure and self-resolves; don't panic-rollback or
+  re-deploy on top of a possibly-fine state.
