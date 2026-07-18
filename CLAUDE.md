@@ -292,6 +292,10 @@ Key routing rules:
 - Save progress → invoke /context-save
 - Resume context → invoke /context-restore
 
+### App & deploy skills
+- Shipping ANY change to daanaa.org (code/data/frontend) → invoke /daanaa-deploy first to pick the right path
+- Building/changing donor-facing app features (wallet, giving flows, PWA, notifications) → invoke /app-feature
+
 ### Marketing skills
 - LinkedIn carousel (generate + post) → invoke /marketing-carousel
 - Outreach email or DM drafting → invoke /marketing-outreach
