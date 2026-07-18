@@ -726,3 +726,20 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   to GET requests against daanaa.org, and confirm the local API's process
   start time is AFTER the relevant commit before trusting a "still broken"
   result from it.
+
+## 2026-07-18 — my own test script degraded live search for ~15 minutes
+- **Symptom:** founder asked me to verify site health; a keyword search hit
+  a 15s near-timeout. Root cause: my own background verification test (a
+  full-DB-copy INSERT...SELECT with an unindexed NOT EXISTS correlated
+  subquery) was still running at 98.8% CPU on one core, contending with the
+  live gunicorn workers for CPU/IO on the same box.
+- **Preventing rule:** before testing any query against a full DB copy,
+  add `nice -n 19` (or run on a scratch box) so verification work can never
+  compete with the live API for CPU. Always `ps -eo pid,pcpu,cmd
+  --sort=-pcpu | head` after ANY background test to confirm nothing was
+  left running, not just check its own completion status.
+- **Also confirmed:** the query itself needs an index — NOT EXISTS against
+  an un-indexed score_snapshots(EIN, snapshot_date) is an O(n·m) scan that
+  gets worse every week as the table grows. Added
+  `CREATE INDEX idx_score_snapshots_ein_date` before shipping the nightly
+  snapshot-capture change.

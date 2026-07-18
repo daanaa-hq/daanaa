@@ -85,6 +85,28 @@ c.execute("""
     f'Full v5.0 recomputation: {total_scored} scored, 3 archetypes (Donation/Fee/Endowment), 3 bands'
 ))
 
+# Capture score history (2026-07-18): score_snapshots existed with zero rows
+# — no peer-trend-over-time was possible for the nonprofit dashboard. One
+# snapshot per EIN per week (not every night) keeps growth bounded to ~20M
+# rows/year across ~400K scored orgs while still giving weekly-resolution
+# trend data within a couple months.
+c.execute("""
+    INSERT INTO score_snapshots (
+        EIN, snapshot_date, peer_percentile, total_revenue, total_assets,
+        peer_group, group_key, group_size, scorer_version
+    )
+    SELECT r.EIN, date('now'), r.merit_score_v5, r.total_revenue, r.total_assets,
+           r.merit_peer_group_v5, r.merit_peer_group_v5, r.merit_peer_count_v5, 'v5.0'
+    FROM registry_enriched r
+    WHERE r.merit_score_v5 IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1 FROM score_snapshots s
+          WHERE s.EIN = r.EIN AND julianday('now') - julianday(s.snapshot_date) < 7
+      )
+""")
+snapshot_count = c.rowcount
+print(f"[✓] Score history: {snapshot_count} new weekly snapshots written")
+
 conn.commit()
 conn.close()
 
