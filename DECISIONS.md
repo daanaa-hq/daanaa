@@ -28,21 +28,18 @@ tension, missing data). P9 traceability built in.
 
 **Rejected:** Ad-hoc per-decision escalation (noisy, inconsistent documentation).
 
-## 2026-07-18 — State charity registries scoping for 1.9M no-website orgs
+## 2026-07-18 — State charity registries: defer pending legal capacity
 
-**Chose:** Scope only (no ingestion yet). Research completed: CA, NY, TX, MA registries
-are bulk-download accessible with clear public-domain terms (FL requires legal review
-for "non-commercial" clause). Projected coverage: 50–80K additional websites for small orgs
-if we ingest Tier 1 states. Data quality is strong (CA/NY 80–90% accuracy, TX 70–75%).
-Legal risk is low if we respect bulk-download-only path and attribute clearly.
+**Chose:** Defer state registry ingestion (#5 from reliability program). Scoping research
+completed (brief: docs/STATE_REGISTRY_SCOPING_2026_07_18.md). Even Tier 1 states (CA, NY,
+TX, MA) with "clear" public-domain terms carry legal review and compliance overhead.
 
-**Why:** P4 (small org fairness), P1 (mission), and P9 (explainability) all support
-this. Board gate (scoping-only approval) requires founder + legal sign-off on per-state
-terms before ingestion. Detailed brief at docs/STATE_REGISTRY_SCOPING_2026_07_18.md.
+**Why:** Founder directive: avoid work items requiring legal review. Daanaa is not positioned
+to absorb legal risk or review cycles. Small-org visibility (P4) is important but not
+critical to reliability program; deferring this to post-launch when legal capacity is available.
 
-**Rejected:** Ingesting Tier 2 (IL, OH, PA) without bulk access; effort:ROI unfavorable
-for now. Deferring FL until legal review completes. Skipping scraping-based approach
-(violates P5 and state TOS).
+**Rejected:** Proceeding with any state registry ingestion. Option A (CA/NY/TX/MA pilot) deferred.
+Archive scan (#13) and donor-flow QA (#17) remain active per program.
 
 # DECISIONS.md
 
