@@ -927,3 +927,19 @@ missing (would create two silent scoring regimes; deriving the missing input is 
   bar (defeats the "more compact" ask); NLP-based free-text location parsing
   (regex on zip/City,ST covers the realistic input shapes without a new
   dependency).
+
+## 2026-07-18 — org profile edits: honest timing disclosure now, defer live-push
+- **Chose:** ship a plain-language disclosure in the claim/edit flow ("your
+  public page updates within 24 hours") rather than build a same-session
+  live-push mechanism from the local DB to the droplet's precompute files.
+  Also retiring the dead merge_claims/CLAIMS_DIR code path (confirmed no
+  writer exists anywhere in the repo — silent no-op since inception).
+- **Why:** board simulation (docs/BOARD_SIMULATION_2026_07_18_NONPROFIT_INTERCONNECTION.md)
+  found Marketing/ED seats want the real-time fix, but Stewardship chair and
+  incident history (2026-06-06 corruption, 2026-06-09 disk lockup — both from
+  unsandboxed writes to the serving layer) argue against rushing new
+  production-write infrastructure in one unreviewed session. Founder
+  affirmed scope: "for now just claimed."
+- **Rejected:** building the live-push path tonight. Deferred as a scoped
+  follow-up that must match safe_deploy_droplet.sh's safety bar (sandboxed
+  build, integrity check, atomic swap, rollback) — not a bespoke shortcut.

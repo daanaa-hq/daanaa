@@ -95,3 +95,19 @@ Format:
 - Data gathered: yes — misses are narrow candidate generation (acronym domains like vlt.org never guessed), not strict verification
 - Simulation: docs/BOARD_SIMULATION_2026_07_17_EVENING.md
 - Resolution: keep verification thresholds; add LLM candidate tier (Qwen 11437); re-measure.
+
+## [resolved] Org profile edits don't appear on public page for hours (interconnection gap)
+- Raised: 2026-07-18 by AI agent, during nonprofit-dashboard "interconnected spine" build
+- Principles touched: P3 (evidence-based & honestly stated — org sees no timing info),
+  P9 (decisions explainable), P4 (small orgs deserve equal, working tools)
+- Data gathered: yes — confirmed via code read. PATCH /api/claim/profile writes
+  mission/donate_confirmed directly to registry_enriched on the LIVE local DB
+  (daanaa_api.py). The PUBLIC daanaa.org site is served by droplet_api.py from
+  precompute static JSON files snapshotted at the last full deploy (nightly
+  02:30 cron, or manual — can be hours to ~24h stale). Also confirmed
+  merge_claims() in droplet_api.py reads from CLAIMS_DIR, which NO code in the
+  repo ever writes to — it is dead code, silently a no-op today.
+- Simulation: docs/BOARD_SIMULATION_2026_07_18_NONPROFIT_INTERCONNECTION.md
+- Resolution: ship honest 24h-disclosure now (P3); defer live-push mechanism
+  to a properly sandboxed follow-up (founder-affirmed: "for now just claimed"
+  scope); retire dead CLAIMS_DIR/merge_claims code. See DECISIONS.md 2026-07-18.
