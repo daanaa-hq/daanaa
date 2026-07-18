@@ -915,3 +915,15 @@ missing (would create two silent scoring regimes; deriving the missing input is 
 - **Rejected:** routing ALL browse traffic to SQLite on the droplet (kills the
   precompute perf design, 2GB box); changing precompute file order per sort
   (would multiply 1.76M files by sort permutations).
+
+## 2026-07-18 — main search bar auto-detects location, no separate field required
+- **Chose:** the single Directory search bar now detects a zip code or
+  "City, ST" pattern and routes it through the existing near/radius proximity
+  engine instead of generic FTS keyword matching. Founder wanted "one compact
+  search bar" rather than a separate hunt for a zip/city field; investigation
+  found the underlying bug was real too — q=78701 was FTS-matching digits as
+  text with zero distance ranking, mixing in orgs 20-30mi outside the zip.
+- **Rejected:** adding a second always-visible location input next to the main
+  bar (defeats the "more compact" ask); NLP-based free-text location parsing
+  (regex on zip/City,ST covers the realistic input shapes without a new
+  dependency).
