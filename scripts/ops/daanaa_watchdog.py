@@ -19,6 +19,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -32,6 +33,8 @@ SSH_KEY = str(Path.home() / ".ssh/daanaa_do_cron")  # passphrase-free automation
 DROPLET = "root@162.243.97.179"
 DISK_ALERT_PCT = 85
 REALERT_HOURS = 6
+LATENCY_SLO_S = 3.0
+LATENCY_PROBE_WORDS = ["health", "food", "children"]
 
 
 def check(name, url, ok_statuses, timeout=15):
@@ -70,6 +73,34 @@ def check_search():
         return False, type(e).__name__
 
 
+def check_search_latency(prev_breach: bool):
+    """SLO: a common-word search must answer in under LATENCY_SLO_S seconds.
+    Cache-busted (_cb) so we measure the droplet, not Cloudflare's cache —
+    the 2026-07-18 regression (15-21s for common words) ran unalerted because
+    nothing measured latency, only reachability. Alerts only on TWO
+    consecutive breaches so a one-off blip (concurrent deploy, network hiccup)
+    doesn't page; a real regression persists across the 5-minute cron gap.
+    Returns (ok, detail, breach_now) — breach_now is carried in the state file
+    as "_lat_breach" bookkeeping."""
+    word = LATENCY_PROBE_WORDS[(datetime.now().minute // 5) % len(LATENCY_PROBE_WORDS)]
+    try:
+        t0 = time.monotonic()
+        r = requests.get("https://daanaa.org/api/organizations",
+                         params={"q": word, "per_page": 24, "_cb": time.time_ns()},
+                         timeout=30)
+        elapsed = time.monotonic() - t0
+        if r.status_code != 200:
+            breach, detail = True, f"q={word} HTTP {r.status_code}"
+        else:
+            breach = elapsed > LATENCY_SLO_S
+            detail = f"q={word} {elapsed:.1f}s"
+    except Exception as e:
+        breach, detail = True, f"q={word} {type(e).__name__}"
+    if breach and prev_breach:
+        return False, f"{detail} — over {LATENCY_SLO_S}s SLO twice in a row", True
+    return True, detail + (" (breach 1/2, watching)" if breach else ""), breach
+
+
 def check_droplet_disk():
     """SSH to droplet, check root partition usage."""
     try:
@@ -88,15 +119,6 @@ def check_droplet_disk():
 
 
 def main():
-    checks = {
-        "local_api":    check("local_api",    "http://localhost:5000/health",           {200}),
-        "public_site":  check("public_site",  "https://daanaa.org/health",              {200}),
-        "homepage":     check_homepage(),
-        "claim_path":   check("claim_path",   "https://daanaa.org/api/claim/health",    {200, 404}),
-        "wallet_proxy": check("wallet_proxy", "https://daanaa.org/api/wallet/restore",  {401}),
-        "search":       check_search(),
-        "droplet_disk": check_droplet_disk(),
-    }
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     prev = {}
     if STATE_FILE.exists():
@@ -104,8 +126,22 @@ def main():
             prev = json.loads(STATE_FILE.read_text())
         except Exception:
             prev = {}
-    # "_last_alert" is bookkeeping, not a check; keep it out of the diff logic
+    # "_last_alert"/"_lat_breach" are bookkeeping, not checks; keep them out
+    # of the diff logic
     last_alert = prev.pop("_last_alert", 0)
+    lat_prev_breach = bool(prev.pop("_lat_breach", False))
+
+    lat_ok, lat_detail, lat_breach = check_search_latency(lat_prev_breach)
+    checks = {
+        "local_api":    check("local_api",    "http://localhost:5000/health",           {200}),
+        "public_site":  check("public_site",  "https://daanaa.org/health",              {200}),
+        "homepage":     check_homepage(),
+        "claim_path":   check("claim_path",   "https://daanaa.org/api/claim/health",    {200, 404}),
+        "wallet_proxy": check("wallet_proxy", "https://daanaa.org/api/wallet/restore",  {401}),
+        "search":       check_search(),
+        "search_latency": (lat_ok, lat_detail),
+        "droplet_disk": check_droplet_disk(),
+    }
 
     changes = []
     state = {}
@@ -125,7 +161,8 @@ def main():
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     if changes:
         last_alert = now_ts
-    STATE_FILE.write_text(json.dumps({**state, "_last_alert": last_alert}))
+    STATE_FILE.write_text(json.dumps(
+        {**state, "_last_alert": last_alert, "_lat_breach": lat_breach}))
 
     if changes:
         downs = [n for n, s in state.items() if s == "down"]
@@ -138,6 +175,7 @@ def main():
                 "public_site":  "ssh root@162.243.97.179 'systemctl restart daanaa'",
                 "homepage":     "Pages 500 while /health OK → check journalctl -u daanaa on droplet; likely bad droplet_api.py deploy → restore /opt/daanaa/droplet_api.py.prev + restart",
                 "search":       "FTS index empty → cd ~/meritgiving && venv/bin/python3 scripts/build_fts_index.py --rebuild && bash scripts/deploy_browse.sh",
+                "search_latency": "Search slow but up → reproduce ONCE isolated on the droplet, then EXPLAIN QUERY PLAN (join-order flip class, LESSONS.md 2026-07-18); check for concurrent deploys/backups pinning droplet CPU before touching code",
                 "droplet_disk": "Droplet disk full → ssh root@162.243.97.179 'du -sh /data/precompute/v1/*/* | sort -rh | head -20'",
             }
             hint = "\n".join(f"• {n}: {hints[n]}" for n in downs if n in hints)

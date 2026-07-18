@@ -132,3 +132,20 @@ Format:
   unchanged. Verified against live DB: tonight audits 3,064 instead of 21,722
   (86% reduction). Freed hours flow to Phase 1/2 discovery automatically
   (cpu_night loop is sequential).
+
+## [resolved] Five-item reliability & quality program (post-hoc gate review)
+- Raised: 2026-07-18 by AI agent; founder caught that the list was presented
+  WITHOUT a gate review ("did you go through this process before coming to me?")
+- Principles touched: P6 (unalerted regressions = uncorrected mistakes), P9
+  (untested backups = unexplainable resilience claims), P4 (golden set must not
+  encode size bias; registries serve small orgs), P3/P5 (registry provenance +
+  terms of use), P1 (public civic data)
+- Data gathered: yes — item 1 validated by the 2026-07-18 unalerted 21s search
+  regression; item 2 by zero restore rehearsals on record; item 4 by the
+  2026-07-17 presence-only-test escape; item 5 is unscoped (that is the task)
+- Simulation: docs/BOARD_SIMULATION_2026_07_18_IMPROVEMENT_PROGRAM.md
+- Resolution: unanimous — execute 1 (SLO latency alert), 2 (restore drill),
+  4 (golden set) autonomously now; 3 (founder phone QA) prep checklist, wait
+  for founder; 5 (state registries) scoping ONLY, returns to board with
+  per-state terms table before any ingestion. Process lesson recorded:
+  proposals go through gates BEFORE reaching the founder.

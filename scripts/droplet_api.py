@@ -14,6 +14,7 @@ import re
 import sqlite3
 import urllib.error
 import urllib.request
+from collections import OrderedDict
 from math import radians, cos, sin, asin, sqrt
 from pathlib import Path
 
@@ -82,7 +83,12 @@ DATA_DIR     = Path(os.environ.get('PRECOMPUTE_DIR', '/data/precompute/v1'))
 CLAIMS_DIR   = Path(os.environ.get('CLAIMS_DIR', '/data/claims'))
 FRONTEND_DIR = Path(os.environ.get('FRONTEND_DIR', '/opt/daanaa/frontend/dist'))
 
-_json_cache: dict = {}
+# Bounded LRU: org-detail traffic covers 1.76M distinct files, so an
+# unbounded cache grows until the 2GB box swaps and the search.db loses its
+# page cache (2026-07-18: 13s searches with a correct query plan). The cap
+# keeps hot content/browse files resident while org pages churn through.
+_JSON_CACHE_MAX = 512
+_json_cache: "OrderedDict[str, object]" = OrderedDict()
 _multi_cache: dict = {}
 
 _TOP_STATES = ['CA', 'TX', 'NY', 'FL', 'PA', 'OH', 'IL', 'GA', 'NC', 'MI',
@@ -98,6 +104,7 @@ def load_json_gz(path):
     path = Path(path)
     key = str(path)
     if key in _json_cache:
+        _json_cache.move_to_end(key)
         return _json_cache[key]
     if not path.exists():
         return None
@@ -105,6 +112,8 @@ def load_json_gz(path):
         with gzip.open(path, 'rt', encoding='utf-8') as f:
             data = json.load(f)
         _json_cache[key] = data
+        while len(_json_cache) > _JSON_CACHE_MAX:
+            _json_cache.popitem(last=False)
         return data
     except Exception as e:
         print(f"Error reading {path}: {e}")
