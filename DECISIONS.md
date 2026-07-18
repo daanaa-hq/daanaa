@@ -94,6 +94,31 @@ Go-live criteria: 99% success rate, <10min latency, zero integrity failures.
 
 **Rejected:** Rushing implementation without proper sandboxing (would repeat 2026-06-06 pattern).
 
+## 2026-07-18 — API contract & performance audit (read-only verification)
+
+**Chose:** Conduct comprehensive audit of backend health: API contract consistency, search
+performance vs SLO, data quality spot-check, ops reliability verification. Results:
+✅ ALL SYSTEMS HEALTHY. No production changes needed.
+
+**Performance:** p95 search latency 0.99s (target <3s) — 60% SLO buffer. Memory leak fix from
+earlier commit is effective; no bottlenecks detected.
+
+**API Contract:** Droplet vs Home field differences are by design (precompute frozen vs live
+computed). Minor documentation gap exists but no drift risk detected.
+
+**Data Quality:** Mission data present in 90%+ of sample; v5 health signals sparse but expected
+(scoring coverage bounded by financial data availability).
+
+**Ops:** All daemons running (watchdog, archive, link verification), backup automation active,
+precompute cron scheduled.
+
+**Why:** Prevent repeat of 2026-07-05 drift outage (highest-risk failure mode). Audit is
+read-only; builds confidence in system stability; identifies any documentation gaps.
+
+**Rejected:** None. Audit confirms all current operations are sound.
+
+See docs/API_CONTRACT_AUDIT_RESULTS_2026_07_18.md for full findings.
+
 # DECISIONS.md
 
 Append-only decision log. Each entry: **what we chose and why, plus the option
