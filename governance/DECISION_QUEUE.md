@@ -111,3 +111,20 @@ Format:
 - Resolution: ship honest 24h-disclosure now (P3); defer live-push mechanism
   to a properly sandboxed follow-up (founder-affirmed: "for now just claimed"
   scope); retire dead CLAIMS_DIR/merge_claims code. See DECISIONS.md 2026-07-18.
+
+## [open] Nightly full re-verification of all beta links vs tiered cadence
+- Raised: 2026-07-18 by founder ("why are we reverifying links so quickly —
+  use that capacity to find new ones")
+- Principles touched: P3 (link freshness = trust), P5 (politeness — nightly
+  HTTP checks against 18.6K nonprofit websites exceeds need)
+- Data gathered: yes — all ~18.6K beta links get re-verified nightly at the
+  9pm GPU-night start (~18 links/sec, ~17-50 min of the 12h window; 2,216
+  distinct timestamps across the burst, so real checks, not a bulk stamp).
+  Documented policy (reverify_stale_links.py) is a 90-DAY SLA — current
+  behavior is ~90x stricter than policy. Capacity cost is modest but the
+  nightly load on nonprofits' websites is unnecessary.
+- Proposed: tiered cadence — first 7 days nightly (new links fail fast),
+  then weekly to day 30, then the documented 90-day SLA. Freed window goes
+  to Phase-2 discovery (2.03M orgs with no known website).
+- Simulation: pending next 12h cycle
+- Resolution: pending
