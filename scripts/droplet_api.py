@@ -80,6 +80,8 @@ def set_security_headers(response):
 
 
 DATA_DIR     = Path(os.environ.get('PRECOMPUTE_DIR', '/data/precompute/v1'))
+# CLAIMS_DIR is DEAD CODE (no code writes to it; see merge_claims docstring).
+# Retained for historical clarity; no production deployments should use it.
 CLAIMS_DIR   = Path(os.environ.get('CLAIMS_DIR', '/data/claims'))
 FRONTEND_DIR = Path(os.environ.get('FRONTEND_DIR', '/opt/daanaa/frontend/dist'))
 
@@ -660,17 +662,27 @@ def load_org_detail(ein: str) -> dict | None:
 
 
 def merge_claims(org_data: dict, ein: str) -> dict:
-    claims_file = CLAIMS_DIR / f"{ein}.json"
-    if not claims_file.exists():
-        return org_data
-    try:
-        with open(claims_file) as f:
-            claims = json.load(f)
-        org_data['claim_status'] = claims.get('status')
-        org_data['verified_at']  = claims.get('verified_at')
-        org_data['verified_fields'] = claims.get('verified_fields', {})
-    except Exception:
-        pass
+    """DEAD CODE (retained for historical clarity, P9).
+
+    This function read org-claimed data (mission, website, donate URL) from
+    CLAIMS_DIR (local JSON files), which was an early design pattern for live
+    profile edits. However, no code in the repository ever WRITES to CLAIMS_DIR.
+
+    Claimed data is now stored in the `org_claims` table in the local registry DB
+    (daanaa_api.py), which is read at merge time and used to override public fields.
+    The droplet API serves precompute static JSON files (no live registry reads).
+
+    Org profile edits → org_claims row in home DB → included in next nightly
+    precompute build → static JSON deployed to droplet. This is a multi-hour
+    latency path by design (sandboxed write to precompute, not live writes to the
+    serving layer). See DECISIONS.md 2026-07-18 for the board decision to defer
+    live-push infrastructure pending proper sandboxing.
+
+    This function is a no-op; it always returns org_data unchanged. It is not
+    removed to preserve git history and prevent confusion if someone searches
+    for this pattern later.
+    """
+    # Dead code: CLAIMS_DIR is never written to. This function always no-ops.
     return org_data
 
 
@@ -1107,6 +1119,9 @@ def get_organization(ein):
     org_data = load_org_detail(ein)
     if not org_data:
         return jsonify({'error': 'org not found'}), 404
+    # Note: merge_claims is a no-op (DEAD CODE); see function docstring.
+    # Claimed org data (mission, website, donate URL) comes from org_claims in
+    # the home DB and is baked into precompute at deploy time.
     org_data = merge_claims(org_data, ein)
 
     # Optional: load enrichment data from S3 (Phase 2a)

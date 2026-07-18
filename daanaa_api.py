@@ -3945,7 +3945,10 @@ def claim_update():
         stale = [k for k in _CACHE if ein in k]
         for k in stale:
             _CACHE.pop(k, None)
-        return jsonify({'success': True, 'message': 'Profile updated'}), 200
+        return jsonify({
+            'success': True,
+            'message': 'Saved. Your public page updates within 24 hours (usually sooner).'
+        }), 200
 
     except Exception as e:
         app.logger.exception('claim profile update failed')
@@ -3992,7 +3995,10 @@ def claim_profile_update():
         )
 
     db.commit()
-    return jsonify({"status": "updated"})
+    return jsonify({
+        "status": "updated",
+        "message": "Saved. Your public page updates within 24 hours (usually sooner)."
+    })
 
 
 @app.route('/api/claim/contacts', methods=['PATCH'])
