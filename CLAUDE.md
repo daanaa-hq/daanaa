@@ -301,7 +301,7 @@ Key routing rules:
 - SEO issues, rankings, meta tags, core web vitals → invoke /seo-audit
 - Scaling org/category/location pages for search → invoke /programmatic-seo
 - WCAG / screen readers / keyboard navigation → invoke /accessibility
-- Building or improving scrapers/crawlers → invoke /scrapy-web-scraping (framework) or /web-scraping (techniques)
+- Building or improving scrapers/crawlers → invoke /scrapy-web-scraping (respects our crawler-etiquette decision, DECISIONS.md 2026-07-18)
 
 ### Marketing skills
 - LinkedIn carousel (generate + post) → invoke /marketing-carousel
