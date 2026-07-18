@@ -686,3 +686,17 @@ quiesce continuous writers first. SIGSTOP/SIGCONT is the right tool — pauses
 in place, loses no work, and a shell EXIT trap guarantees resume even if the
 deploy dies mid-snapshot. safe_deploy_droplet.sh now does this automatically
 for discovery_daemon, reverify_donate_pages, and enrich_batch.
+
+## 2026-07-17 — directory sort was a silent no-op on plain browse
+- **Symptom:** founder reported "sorting is not working"; live test showed
+  sort=asc and sort=desc returning byte-identical name-ordered pages.
+- **Root cause:** the edge serves precompute .json.gz for bare browse; those
+  files are baked in name order and the route never consulted sort/order.
+  Sorting only worked with a search query or filter (DB paths). Second bug in
+  the same report: the sort direction arrow lived in a hidden sm:flex container
+  so mobile never rendered it, and FilterSheet had no direction control.
+- **Preventing rule:** contract tests must guard behavior, not just route
+  presence — test_edge_routes_explicit_sort_to_db now pins the routing
+  condition at source level. When a param is accepted by both backends, verify
+  the EDGE actually honors it (curl asc vs desc must differ) before calling a
+  surface "shared".

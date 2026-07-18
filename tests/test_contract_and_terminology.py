@@ -69,6 +69,23 @@ def test_org_detail_route_is_organizations_not_org():
 
 
 @pytest.mark.principle
+def test_edge_routes_explicit_sort_to_db():
+    """2026-07-17 bug: the edge's precompute browse files are baked in name
+    order and ignore sort/order params, so the directory sort dropdown was a
+    silent no-op on plain browse. The fix routes any explicit non-name sort
+    to the DB filter-browse path. Guard the routing condition at source level
+    so a refactor can't quietly drop it."""
+    src = EDGE_API.read_text()
+    assert "explicit_sort" in src, (
+        "droplet_api.py lost the explicit_sort routing guard — explicit "
+        "sort/order params would again be silently ignored on plain browse")
+    m = re.search(r"explicit_sort\s*=\s*(.+)", src)
+    assert m and "organization_name" in m.group(1), (
+        "explicit_sort must treat only the neutral name sort as "
+        "precompute-eligible; every other sort goes to the DB path")
+
+
+@pytest.mark.principle
 def test_edge_serves_no_sqlite_registry_writes():
     """The edge serves precompute; it must never write registry_enriched
     (2026-06-06 corruption class)."""

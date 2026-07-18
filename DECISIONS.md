@@ -904,3 +904,14 @@ that now have expense ratios but lack reserve inputs.
 
 **Rejected:** relaxing the scorer to score on reserves alone when program_expense_pct is
 missing (would create two silent scoring regimes; deriving the missing input is strictly better).
+
+## 2026-07-17 — code-only deploy fast path + sort-fix ship route
+- **Chose:** added `--code-only` to safe_deploy_droplet.sh (API sync via
+  sync_droplet_api.sh + SPA build/ship, no snapshot/precompute/data). A 3-line
+  API fix was taking 2+ hours to ship because the only full path regenerates
+  1.76M precompute pages. Also shipped today's sort fix via sync_droplet_api.sh
+  directly rather than my new flag, because the full deploy was mid-flight and
+  a concurrent frontend_ship would collide at the dist swap.
+- **Rejected:** routing ALL browse traffic to SQLite on the droplet (kills the
+  precompute perf design, 2GB box); changing precompute file order per sort
+  (would multiply 1.76M files by sort permutations).

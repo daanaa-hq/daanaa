@@ -45,13 +45,16 @@ FRONTEND_DROPLET="/opt/daanaa/frontend/dist"   # FRONTEND_DIR that droplet_api s
 DROPLET_API_LIVE="/opt/daanaa/droplet_api.py"
 DROPLET_API_LOCAL="$BASE/scripts/droplet_api.py"
 
-FORCE=0; BUILD_ONLY=0; SHIP_ONLY=0; FRONTEND_ONLY=0
+FORCE=0; BUILD_ONLY=0; SHIP_ONLY=0; FRONTEND_ONLY=0; CODE_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --force) FORCE=1 ;;
     --build-only) BUILD_ONLY=1 ;;
     --ship-only) SHIP_ONLY=1 ;;
     --frontend-only) FRONTEND_ONLY=1 ;;   # SPA-only change: skip DB snapshot/precompute/data ship
+    --code-only) CODE_ONLY=1 ;;   # API + SPA code change: ship droplet_api.py (via sync_droplet_api.sh,
+                                  # which smoke-tests and auto-rolls-back) + rebuild/ship the SPA.
+                                  # Skips snapshot/precompute/data — minutes instead of hours.
     *) echo "Unknown arg: $arg"; exit 2 ;;
   esac
 done
@@ -305,8 +308,26 @@ frontend_ship() {
   fi
 }
 
+# Code-only fast path: ship API + SPA code without touching data. The SPA build
+# reuses the checked-in research-snapshot.json instead of regenerating from a
+# DB snapshot (a code fix must not silently refresh published research figures).
+code_only_deploy() {
+  log "===== CODE-ONLY DEPLOY: API sync ====="
+  bash "$BASE/scripts/ops/sync_droplet_api.sh" 2>&1 | tee -a "$LOG" \
+    || die "API sync failed (sync_droplet_api.sh smoke-tests and auto-rolls-back on its own)"
+  log "===== CODE-ONLY DEPLOY: SPA build (no research-snapshot regen) ====="
+  ( cd "$FRONTEND_LOCAL" && npm run build ) >>"$LOG" 2>&1 || die "frontend build failed"
+  [ -f "$FRONTEND_LOCAL/dist/index.html" ] || die "frontend dist/index.html missing after build"
+  frontend_ship
+}
+
 # ---- Orchestrate ----
 preflight
+if [ "$CODE_ONLY" = "1" ]; then
+  code_only_deploy
+  log "===== CODE-ONLY DEPLOY DONE ====="
+  exit 0
+fi
 if [ "$FRONTEND_ONLY" = "1" ]; then
   frontend_build
   frontend_ship
