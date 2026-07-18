@@ -767,3 +767,24 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   RAM-vs-1.7GB-file page-cache pressure (not raw CPU) is what makes this
   slow in production — a bigger/faster dev box won't reproduce the timing,
   only the droplet will.
+
+## 2026-07-18 (follow-up) — bounded-candidate fix wasn't enough on its own
+- **Symptom:** after capping the FTS candidate set to 20000 rows, q=health
+  still took 6-8s (down from 15-21s, but not "fast").
+- **Root cause:** EXPLAIN QUERY PLAN on the live droplet showed SQLite
+  flipping the join order whenever an indexed o.* filter was present
+  (idx_orgs_public for the public-content filter, idx_orgs_ntee1_rev for
+  category filters) — it drove from the ~1.85M-row table and bloom-filtered
+  each row against the small CTE, instead of scanning the small CTE and
+  doing a primary-key lookup into the big table. Same latent bug existed in
+  fused_search() too (triggered by ntee_list, confirmed via the same
+  EXPLAIN), even though its own 2026-07-16 fix comment claimed this was
+  already solved.
+- **Fix:** CROSS JOIN instead of a plain JOIN. SQLite will not reorder an
+  explicit CROSS JOIN, forcing the small-side-first plan. Confirmed via
+  EXPLAIN QUERY PLAN + timed test on the droplet: 0.6s.
+- **Preventing rule:** any bounded-candidate-CTE + big-table join in this
+  file must use CROSS JOIN, never a plain JOIN — the query planner cannot
+  be trusted to pick the small side just because the CTE is small; it goes
+  by index availability, not row-count intuition. Guarded at source level
+  in tests/test_contract_and_terminology.py.

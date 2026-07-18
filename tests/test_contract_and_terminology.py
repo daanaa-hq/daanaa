@@ -86,6 +86,30 @@ def test_edge_routes_explicit_sort_to_db():
 
 
 @pytest.mark.principle
+def test_edge_uses_cross_join_for_fts_candidate_queries():
+    """2026-07-18 bug: a plain JOIN between the bounded FTS candidate CTE and
+    registry_enriched let SQLite's optimizer flip join order whenever an
+    indexed o.* filter was present (public-filter or ntee1) — it drove from
+    the ~1.85M-row table and bloom-filtered against the small CTE instead of
+    the reverse, costing 6-8s per search on the droplet even after capping
+    candidates. CROSS JOIN pins the join order; verified via EXPLAIN QUERY
+    PLAN on the live droplet (0.6s after the fix). Guard both call sites at
+    source level so a future edit can't silently drop back to a plain JOIN."""
+    src = EDGE_API.read_text()
+    plain_join = re.findall(
+        r"FROM c JOIN registry_enriched o ON o\.EIN = c\.ein", src)
+    assert not plain_join, (
+        "droplet_api.py has a plain 'JOIN' between the FTS candidate CTE "
+        "and registry_enriched — must be CROSS JOIN or SQLite may flip the "
+        "join order and re-introduce the 2026-07-18 slow-search regression")
+    cross_joins = re.findall(
+        r"FROM c CROSS JOIN registry_enriched o ON o\.EIN = c\.ein", src)
+    assert len(cross_joins) >= 4, (
+        f"expected at least 4 CROSS JOIN candidate queries (count+rows in "
+        f"both _fts_directory and fused_search), found {len(cross_joins)}")
+
+
+@pytest.mark.principle
 def test_edge_serves_no_sqlite_registry_writes():
     """The edge serves precompute; it must never write registry_enriched
     (2026-06-06 corruption class)."""

@@ -910,6 +910,16 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         # conditions[0] is the join clause, conditions[1] the MATCH
         # (param 0); everything after is o.*-only filters, safe to reuse
         # verbatim inside the CTE's WHERE.
+        #
+        # CROSS JOIN, not a plain/inner JOIN: verified via EXPLAIN QUERY PLAN
+        # on the live droplet that a plain JOIN still let SQLite's optimizer
+        # flip the join order — it drove from registry_enriched's public-
+        # filter index (a near-full-table ~1.85M-row scan, bloom-filtering
+        # each row against the small CTE) instead of the reverse, leaving
+        # this at 6-8s even with the cap. SQLite does not reorder an explicit
+        # CROSS JOIN, which forces it to scan the small CTE first and do a
+        # cheap primary-key SEARCH into registry_enriched per candidate —
+        # confirmed 0.6s on the droplet with this change.
         fts_q = params[0]
         o_conditions = conditions[2:]
         o_params = params[1:]
@@ -919,7 +929,7 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         total = conn.execute(
             f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
             f"ORDER BY rank LIMIT {cand_cap}) "
-            f"SELECT COUNT(*) FROM c JOIN registry_enriched o ON o.EIN = c.ein "
+            f"SELECT COUNT(*) FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
             f"WHERE 1=1{o_where}",
             [fts_q] + o_params
         ).fetchone()[0]
@@ -928,7 +938,7 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         rows_sql = (
             f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
             f"ORDER BY rank LIMIT {cand_cap}) "
-            f"SELECT o.* FROM c JOIN registry_enriched o ON o.EIN = c.ein "
+            f"SELECT o.* FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
             f"WHERE 1=1{o_where} "
             f"ORDER BY {order} "
             f"LIMIT ? OFFSET ?"
@@ -1247,10 +1257,17 @@ def fused_search():
         # total = matches reachable through pagination (counted INSIDE the
         # bounded candidate set — never an unbounded join). A pure-FTS probe
         # (no join, capped) sets total_capped so the UI can render "N+".
+        #
+        # CROSS JOIN, not a plain JOIN (2026-07-18): confirmed via EXPLAIN
+        # QUERY PLAN on the live droplet that an ntee_list filter (o.NTEE1 = ?,
+        # indexed by idx_orgs_ntee1_rev) triggers the same join-order flip
+        # found in _fts_directory() — SQLite drives from the indexed o.
+        # column and bloom-filters against the small CTE, instead of the
+        # reverse. CROSS JOIN pins the join order SQLite must not reorder.
         total = conn.execute(
             f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
             f"ORDER BY rank LIMIT {cand_cap}) "
-            f"SELECT COUNT(*) FROM c JOIN registry_enriched o ON o.EIN = c.ein "
+            f"SELECT COUNT(*) FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
             f"WHERE 1=1{o_where}",
             [fts_match] + o_params
         ).fetchone()[0]
@@ -1263,7 +1280,7 @@ def fused_search():
         offset = (page - 1) * per_page
         sql = (f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
                f"ORDER BY rank LIMIT {cand_cap}) "
-               f"SELECT o.* FROM c JOIN registry_enriched o ON o.EIN = c.ein "
+               f"SELECT o.* FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
                f"WHERE 1=1{o_where} "
                f"ORDER BY COALESCE(o.merit_score, -1) DESC "
                f"LIMIT ? OFFSET ?")
