@@ -6,6 +6,7 @@ import BottomNav from './BottomNav'
 import CompareBar from './CompareBar'
 import BetaBanner from './BetaBanner'
 import WalletAutoSave from './WalletAutoSave'
+import InstallPrompt from './InstallPrompt'
 import { trackPageview, trackDwell } from '../lib/analytics'
 import { useStandalone } from '../hooks/useStandalone'
 
@@ -36,6 +37,7 @@ export default function Layout() {
       </main>
       {!hideFooter && !standalone && <Footer />}
       <CompareBar />
+      <InstallPrompt />
       <BottomNav />
     </div>
   )
