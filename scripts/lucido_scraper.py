@@ -34,7 +34,7 @@ CHECKPOINT  = DATA_DIR / "lucido_checkpoint.txt"
 LOG_FILE    = Path("/tmp/lucido_scraper.log")
 
 SITEMAP_INDEX = "https://lucidodata.com/sitemap.xml"
-UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+UA = "Mozilla/5.0 (compatible; DaanaaBot/1.0; +https://daanaa.org/about) mission-enrichment"
 
 # ── Logging ────────────────────────────────────────────────────────────────────
 

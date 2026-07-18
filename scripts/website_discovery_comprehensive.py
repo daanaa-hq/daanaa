@@ -16,13 +16,67 @@ cached ProPublica data.
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+from urllib.robotparser import RobotFileParser
 import re
 import json
+import threading
+import time
 from typing import Dict, List, Optional
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Crawler etiquette (2026-07-18 best-practices pass, matching
+# donation_link_pipeline.py's existing standard):
+#   - Honest, identified User-Agent with a contact URL — never impersonate a
+#     browser. Site owners can see who we are and reach us.
+#   - robots.txt respected per-host (cached; fails open on fetch errors so a
+#     broken robots.txt doesn't silo an org out of discovery).
+#   - Per-domain minimum request spacing so no single nonprofit's site gets
+#     hammered even when many of its pages are crawled in one batch.
+UA = ("Mozilla/5.0 (compatible; DaanaaBot/1.0; "
+      "+https://daanaa.org/about) nonprofit-directory-discovery")
+
+_robots_cache: dict = {}
+_robots_lock = threading.Lock()
+_domain_last: dict = {}
+_domain_lock = threading.Lock()
+_DOMAIN_MIN_SPACING_S = 2.0
+
+
+def _can_fetch(url: str) -> bool:
+    """False if robots.txt disallows this URL for our UA. Fails open."""
+    try:
+        parsed = urlparse(url)
+        base = f"{parsed.scheme}://{parsed.netloc}"
+        with _robots_lock:
+            if base not in _robots_cache:
+                rp = RobotFileParser()
+                rp.set_url(base + "/robots.txt")
+                try:
+                    rp.read()
+                except Exception:
+                    pass
+                _robots_cache[base] = rp
+        return _robots_cache[base].can_fetch(UA, url)
+    except Exception:
+        return True
+
+
+def _domain_pause(url: str) -> None:
+    """Sleep just enough to keep >=2s between requests to the same host."""
+    try:
+        host = urlparse(url).netloc
+    except Exception:
+        return
+    with _domain_lock:
+        last = _domain_last.get(host, 0.0)
+        now = time.time()
+        wait = _DOMAIN_MIN_SPACING_S - (now - last)
+        _domain_last[host] = max(now, last + _DOMAIN_MIN_SPACING_S)
+    if wait > 0:
+        time.sleep(wait)
 
 
 class WebsiteDiscovery:
@@ -30,16 +84,18 @@ class WebsiteDiscovery:
 
     def __init__(self, timeout=10):
         self.timeout = timeout
-        self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
+        self.headers = {'User-Agent': UA}
 
     def fetch_website(self, url: str) -> Optional[BeautifulSoup]:
-        """Fetch and parse website."""
+        """Fetch and parse website (robots-respecting, domain-rate-limited)."""
         try:
             if not url.startswith(('http://', 'https://')):
                 url = 'https://' + url
 
+            if not _can_fetch(url):
+                logger.info(f"robots.txt disallows {url} — skipping")
+                return None
+            _domain_pause(url)
             response = requests.get(url, headers=self.headers, timeout=self.timeout)
             response.raise_for_status()
             return BeautifulSoup(response.content, 'html.parser')
