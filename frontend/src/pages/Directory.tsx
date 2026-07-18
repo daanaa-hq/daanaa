@@ -12,6 +12,7 @@ import LampMark from '../components/LampMark'
 import type { TierName } from '../components/TrustBadge'
 import { RAIL_CATEGORIES, ALL_CATEGORIES, NTEE_SUBCATEGORIES } from '../data/categories'
 import { trackSearchMetrics } from '../lib/analytics'
+import { parseLocationQuery } from '../utils/locationQuery'
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -145,6 +146,11 @@ export default function Directory() {
   const [near, setNear] = useState(searchParams.get('near') || '')
   const [nearInput, setNearInput] = useState(searchParams.get('near') || '')
   const [radiusMi, setRadiusMi] = useState(Number(searchParams.get('radius_mi') || '25'))
+  // True when `near` was auto-detected from the main search bar (vs the
+  // explicit advanced zip/city field or "use my location" button) — so
+  // clearing the main box also clears the location, without stomping on an
+  // intentional advanced-field value.
+  const nearFromSearchBarRef = useRef(false)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
@@ -170,11 +176,27 @@ export default function Directory() {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
-      // Normalize EIN format: "46-3120432" → "463120432" so the API matches
-      const normalized = /^\d{2}-\d{7}$/.test(searchQuery.trim())
-        ? searchQuery.replace(/-/g, '')
-        : searchQuery
-      setDebouncedQuery(normalized)
+      const trimmed = searchQuery.trim()
+      const asLocation = parseLocationQuery(trimmed)
+      if (asLocation) {
+        // Route to the real proximity engine instead of keyword FTS — a zip
+        // or "City, ST" gets distance-ranked results, not a generic text match.
+        nearFromSearchBarRef.current = true
+        setNear(asLocation)
+        setNearInput(asLocation)
+        setDebouncedQuery('')
+      } else {
+        if (nearFromSearchBarRef.current) {
+          nearFromSearchBarRef.current = false
+          setNear('')
+          setNearInput('')
+        }
+        // Normalize EIN format: "46-3120432" → "463120432" so the API matches
+        const normalized = /^\d{2}-\d{7}$/.test(trimmed)
+          ? searchQuery.replace(/-/g, '')
+          : searchQuery
+        setDebouncedQuery(normalized)
+      }
       setCurrentPage(1)
     }, 320)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
@@ -877,6 +899,22 @@ export default function Directory() {
                     <p className="font-body text-[12px] text-alert-amber mt-1" role="status">
                       We couldn't find "{near}" — showing results without the location filter.
                       Try "City, ST" (like Houston, TX) or a zip code.
+                    </p>
+                  )}
+                  {near && !orgsLoading && orgsData?.nearby && (
+                    <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center gap-2" role="status">
+                      <span>
+                        Near {orgsData.nearby.city}, {orgsData.nearby.state} · within {orgsData.nearby.radius_mi} mi
+                      </span>
+                      <button
+                        onClick={() => {
+                          nearFromSearchBarRef.current = false
+                          setNear(''); setNearInput(''); setSearchQuery(''); setCurrentPage(1)
+                        }}
+                        className="font-semibold text-soft-gold hover:text-bright-gold transition-colors"
+                      >
+                        Clear
+                      </button>
                     </p>
                   )}
                   {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
