@@ -90,6 +90,11 @@ export default function App() {
             <Route path="/directory" element={<Directory />} />
             <Route path="/category/:id" element={<CategoryPage />} />
             <Route path="/causes/:id" element={<CauseSpotlight />} />
+            {/* /org/login must exist: a Cloudflare rule 301s /nonprofit/login
+                here; without this static route it falls into /org/:id and
+                renders a broken org page — the nonprofit sign-in dead-ends
+                (found in the 2026-07-17 nonprofit-funnel audit). */}
+            <Route path="/org/login" element={<NonprofitLogin />} />
             <Route path="/org/:id" element={<OrganizationDetail />} />
             <Route path="/compare" element={<ComparePage />} />
             <Route path="/legal" element={<Legal />} />

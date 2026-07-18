@@ -700,3 +700,15 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   condition at source level. When a param is accepted by both backends, verify
   the EDGE actually honors it (curl asc vs desc must differ) before calling a
   surface "shared".
+
+## 2026-07-17 — nonprofit sign-in dead-ended via a Cloudflare redirect
+- **Symptom:** /nonprofit/login 301'd to /org/login, which matched the SPA's
+  /org/:id route and rendered a broken org page. Every nonprofit trying to
+  sign in hit a dead end; org_claims shows 3 rows total.
+- **Root cause:** a Cloudflare redirect rule pointed at a URL that was never
+  created in the SPA. Redirects live in THREE layers here: Cloudflare rules,
+  droplet nginx, and droplet_api _LEGACY_REDIRECTS — the audit only finds
+  them by curling the live URL and reading the `server:` header.
+- **Preventing rule:** when adding any redirect, curl the TARGET and confirm
+  it renders real content; funnel entry URLs belong in the smoke-test list
+  (added /org/login to the deploy smoke set).
