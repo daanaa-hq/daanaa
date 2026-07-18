@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peer Financial Context Under Incomplete Data — Daanaa Research</title>
+    <meta name="description" content="How Daanaa approaches nonprofit financial context when public data is incomplete, stale, or missing. A research brief inviting academic and community critique.">
+    <meta property="og:title" content="Peer Financial Context Under Incomplete Data">
+    <meta property="og:description" content="Missing evidence is a data condition, not evidence of weakness. How we handle gaps fairly.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://daanaa.org/pages/peer-financial-context.html">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fafafa;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 3rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 { font-size: 2.5rem; margin: 1rem 0; color: #1a5f4a; }
+        h2 { font-size: 1.8rem; margin: 1.5rem 0 1rem; color: #2d7a63; }
+        h3 { font-size: 1.2rem; margin: 1rem 0 0.5rem; color: #3a8a73; }
+        p { margin-bottom: 1rem; line-height: 1.8; }
+        ul { margin-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.95rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f0f5f3;
+            color: #1a5f4a;
+            font-weight: 600;
+        }
+        .meta {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .section { margin-bottom: 2rem; }
+        .highlight {
+            background: #fffbf0;
+            padding: 1rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 2rem;
+            border-left: 4px solid #d4a574;
+        }
+        .links {
+            background: #f0f5f3;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-top: 2rem;
+            border-left: 4px solid #1a5f4a;
+        }
+        .links h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #1a5f4a; }
+        .links ul { list-style: none; padding-left: 0; margin-left: 0; }
+        .links li { margin-bottom: 0.5rem; }
+        .links a {
+            color: #1a5f4a;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .links a:hover { border-bottom-color: #1a5f4a; }
+        @media (prefers-color-scheme: dark) {
+            body { background: #1a1a1a; color: #e0e0e0; }
+            .container { background: #2a2a2a; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+            h1, h2, h3 { color: #7fc9b0; }
+            .meta { color: #aaa; }
+            th { background: #333; color: #7fc9b0; }
+            td { border-bottom-color: #444; }
+            .highlight { background: #3a3a2a; border-left-color: #d4a574; }
+            .links { background: #333; border-left-color: #7fc9b0; }
+            .links a { color: #7fc9b0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Peer Financial Context Under Incomplete Public Data</h1>
+        <div class="meta">Status: research brief for academic and community review | Prepared: 2026-07-18</div>
+        <div class="highlight">
+            <strong>About this document:</strong> This brief is a research proposal prepared with editorial assistance. It does not report completed validation or academic findings. Claims and proposed tests should be reviewed against primary sources, nonprofit experience, and independent methodological critique before publication.
+        </div>
+
+        <div class="section">
+            <h2>Abstract</h2>
+            <p>Daanaa is developing a public nonprofit discovery platform that presents financial information as peer context rather than as a universal rating. The current context layer uses public nonprofit records to compare operating reserve patterns among organizations with similar funding models and revenue size.</p>
+            <p>This brief addresses a difficult boundary: many nonprofits do not have complete, recent, or comparable public financial information. <strong>The central claim of this brief is conservative: missing public evidence is an information condition, not evidence of financial weakness. A public interest discovery system should measure and disclose coverage limits rather than silently penalize organizations that are less documented.</strong></p>
+            <p>This is a proposed review agenda, not a validated research finding. Daanaa is seeking independent critique from nonprofit scholars, statisticians, nonprofit leaders, fundraisers, donors, and communities affected by the presentation.</p>
+        </div>
+
+        <div class="section">
+            <h2>Questions for Review</h2>
+            <ol style="margin-left: 1.5rem; margin-bottom: 1rem;">
+                <li>What minimum evidence is required before a public financial context signal can be calculated?</li>
+                <li>When should the system return no signal rather than a score or label?</li>
+                <li>Is financial-data availability associated with organization size, age, geography, cause, operating model, language, or administrative capacity?</li>
+                <li>How should stale, partial, conflicting, or simplified filings be treated?</li>
+                <li>How do donors interpret "not enough public evidence" compared with "financial concern"?</li>
+                <li>What information should nonprofits be able to correct, add voluntarily, withdraw, export, or annotate?</li>
+                <li>Which tests are necessary before a coverage expansion or methodology change?</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>Current Measurement Boundary</h2>
+            <p>The intended context signal is narrow. It is not a measure of mission quality, community trust, program impact, leadership quality, or moral worth. It should not be used to infer those things.</p>
+            <p>The following conditions should be treated as evidence limitations, not negative outcomes:</p>
+            <ul>
+                <li>No usable public filing</li>
+                <li>A filing that omits the fields required for the calculation</li>
+                <li>A filing outside the accepted freshness window</li>
+                <li>Conflicting public sources that cannot be resolved</li>
+                <li>A peer group too small or heterogeneous for a stable comparison</li>
+                <li>An organization whose operating model does not fit an established peer cell</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Proposed Evidence States</h2>
+            <table>
+                <tr>
+                    <th>State</th>
+                    <th>Meaning</th>
+                    <th>Public Treatment</th>
+                </tr>
+                <tr>
+                    <td><strong>Context Available</strong></td>
+                    <td>Minimum evidence and peer requirements are met</td>
+                    <td>Show the context signal, source, year, peer definition, and limitations</td>
+                </tr>
+                <tr>
+                    <td><strong>Partial Public Evidence</strong></td>
+                    <td>Some relevant information exists, but the required calculation is incomplete</td>
+                    <td>Do not calculate the signal; explain what is and is not available</td>
+                </tr>
+                <tr>
+                    <td><strong>No Usable Public Evidence</strong></td>
+                    <td>The platform cannot responsibly calculate from public records</td>
+                    <td>Say that public financial context is unavailable; do not imply concern</td>
+                </tr>
+                <tr>
+                    <td><strong>Stale Evidence</strong></td>
+                    <td>A usable filing exists but does not meet the freshness threshold</td>
+                    <td>Show the date and withhold or qualify the signal according to the reviewed rule</td>
+                </tr>
+                <tr>
+                    <td><strong>Under Review</strong></td>
+                    <td>A correction, conflict, or methodology question is unresolved</td>
+                    <td>Withhold the affected output and provide a correction path</td>
+                </tr>
+            </table>
+            <p><strong>These states should never be mapped to a hidden ranking penalty.</strong></p>
+        </div>
+
+        <div class="section">
+            <h2>Proposed Validation Work</h2>
+            <h3>Coverage Audit</h3>
+            <p>Measure the percentage of active organizations in each evidence state and publish the denominator, date, source coverage, and exclusions.</p>
+
+            <h3>Sensitivity Analysis</h3>
+            <p>Test whether reasonable changes to freshness windows, peer minimums, revenue bands, or field requirements materially change which organizations receive a signal.</p>
+
+            <h3>Peer Stability</h3>
+            <p>Test whether peer membership and percentile position remain stable when small changes are made to classification, revenue bands, or source updates.</p>
+
+            <h3>Donor Comprehension</h3>
+            <p>Use plain-language user testing to determine whether donors understand that "not enough public evidence" does not mean "poor financial health."</p>
+
+            <h3>Red-Team Cases</h3>
+            <p>Include organizations that are very small but financially sound, new and growing, fiscally sponsored or operating under an unusual structure, rooted in community with limited administrative capacity, recently affected by crisis or disaster, filing late or using a simplified filing, or financially healthy but missing public fields.</p>
+        </div>
+
+        <div class="section">
+            <h2>Governance Boundaries</h2>
+            <ul>
+                <li>No provided-by-nonprofits information should silently replace public records.</li>
+                <li>Any provided-by-nonprofits information must be labeled, voluntary, controlled by the nonprofit, and subject to correction and withdrawal rules.</li>
+                <li>No private or entrusted nonprofit information may be used for prospecting, lead scoring, marketing, consulting, or external AI services.</li>
+                <li>No payment, partnership, sponsorship, or relationship may affect the signal, visibility, search treatment, or ranking.</li>
+                <li>Daanaa must publish uncertainty and limitations where they affect a donor's reasonable interpretation.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Requested Academic and Community Contribution</h2>
+            <p>Reviewers are invited to challenge the proposed evidence states, the missingness and fairness analysis, the minimum evidence threshold, the language for donors, the correction and appeal path, and the risks of using relative reserve context in donor discovery.</p>
+            <p>The desired output is a written critique or recorded review memo. Daanaa is not seeking validation, a logo, or a public endorsement.</p>
+        </div>
+
+        <div class="links">
+            <h3>Related Resources</h3>
+            <ul>
+                <li><a href="https://daanaa.org/pages/daanaa-vision.html">The Daanaa Vision</a> — Our founding principles and purpose</li>
+                <li><a href="https://daanaa.org/pages/ai-governance.html">AI Governance at Daanaa</a> — How we use AI safely and responsibly</li>
+                <li><a href="https://daanaa.org/research">Research & Methodology</a> — Our validation work and peer review</li>
+                <li><a href="https://daanaa.org/methodology">How We Score Nonprofits</a> — Financial context calculation and peer groups</li>
+                <li><a href="https://daanaa.org/charter">Daanaa Stewardship Charter</a> — Our public commitments and governance</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Governance at Daanaa — Stewardship Over Compliance</title>
+    <meta name="description" content="How Daanaa governs AI systems through stewardship principles: human oversight, explainability, correction, appeals, and institutional learning.">
+    <meta property="og:title" content="AI Governance at Daanaa">
+    <meta property="og:description" content="Stewardship principles for reasoning systems: humans remain accountable, always.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://daanaa.org/pages/ai-governance.html">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #fafafa;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 3rem 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 { font-size: 2.5rem; margin: 1rem 0; color: #1a5f4a; }
+        h2 { font-size: 1.8rem; margin: 1.5rem 0 1rem; color: #2d7a63; }
+        h3 { font-size: 1.2rem; margin: 1rem 0 0.5rem; color: #3a8a73; }
+        p { margin-bottom: 1rem; line-height: 1.8; }
+        ul { margin-left: 1.5rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.5rem; }
+        .meta {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .section { margin-bottom: 2rem; }
+        .obligation {
+            background: #f0f5f3;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #1a5f4a;
+            border-radius: 4px;
+        }
+        .obligation h3 { margin-top: 0; color: #1a5f4a; }
+        .links {
+            background: #f0f5f3;
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-top: 2rem;
+            border-left: 4px solid #1a5f4a;
+        }
+        .links h3 { font-size: 1.1rem; margin-bottom: 1rem; color: #1a5f4a; }
+        .links ul { list-style: none; padding-left: 0; margin-left: 0; }
+        .links li { margin-bottom: 0.5rem; }
+        .links a {
+            color: #1a5f4a;
+            text-decoration: none;
+            font-weight: 500;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .links a:hover { border-bottom-color: #1a5f4a; }
+        .status {
+            background: #fffbf0;
+            padding: 1rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        @media (prefers-color-scheme: dark) {
+            body { background: #1a1a1a; color: #e0e0e0; }
+            .container { background: #2a2a2a; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+            h1, h2, h3 { color: #7fc9b0; }
+            .meta, .status { color: #aaa; }
+            .obligation, .links { background: #333; border-left-color: #7fc9b0; }
+            .links a { color: #7fc9b0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Governance at Daanaa</h1>
+        <div class="meta">Institutional Framework · Version 1.0 (Living Document) | Drafted 2026-07-11</div>
+        <div class="status">
+            <strong>About this document:</strong> This is a directed governance framework prepared with editorial assistance. It states obligations and proposed controls; it is not evidence that every control has been fully implemented. Before publication, each operational claim should be checked against the system register, code, tests, and records.
+        </div>
+
+        <div class="section">
+            <h2>Why This Framework Exists</h2>
+            <p>Most AI governance is written as compliance: a list of rules, a checklist, an audit. Compliance frameworks have a known failure mode. They are written for the technology of the moment, and when the technology changes, the rules describe machines that no longer exist. The rules are then either ignored or obeyed in letter while violated in spirit.</p>
+            <p>Daanaa governs its AI systems differently. This framework is built on stewardship, not compliance. It does not primarily tell systems what they may not do. It tells them what they are for, and it requires them to reason from that purpose.</p>
+            <p>A system that reasons from purpose becomes more trustworthy as it becomes more capable. A system that follows rules blindly becomes more dangerous as it becomes more capable, because it follows them faster.</p>
+        </div>
+
+        <div class="section">
+            <h2>The Central Commitment</h2>
+            <p>Every AI system operating on Daanaa's behalf is a steward before it is a tool. It holds capabilities in trust for the mission: to make giving easy, to strengthen the organizations that strengthen communities, and to treat the smallest organization with the same dignity as the largest.</p>
+            <p>When an AI system encounters a situation its instructions did not anticipate, it does not ask "what does the rule permit?" It asks "what was I entrusted with this capability for?" If the answer is unclear, it stops and asks a human. Uncertainty resolved toward caution is not a failure of the system. It is the system working.</p>
+        </div>
+
+        <div class="section">
+            <h2>The Nine Obligations</h2>
+
+            <div class="obligation">
+                <h3>1. Mission Alignment</h3>
+                <p>Every AI capability must be traceable to the mission. Before a system is built, deployed, or extended, one question is answered in writing: how does this make it easier for people and organizations to improve the lives of others? A capability that cannot answer this question is not built, however impressive it would be.</p>
+            </div>
+
+            <div class="obligation">
+                <h3>2. Human Oversight</h3>
+                <p>A machine may draft; a human answers for what is done. Every AI-drafted communication, record change, or public-facing output is confirmed by a human before it touches public records. This is not a temporary training wheel to be removed when the machines improve. It is the permanent shape of responsibility.</p>
+            </div>
+
+            <div class="obligation">
+                <h3>3. Explainability</h3>
+                <p>An AI system that cannot explain its conclusion may not publish it. Every significant decision made with AI assistance is logged with its reasons, so that a person years from now can reconstruct not only what was decided but why.</p>
+            </div>
+
+            <div class="obligation">
+                <h3>4. Information Provenance</h3>
+                <p>Every piece of information an AI system produces or touches carries its origin with it. AI-discovered data is labeled as such until a human at the organization verifies it. Provenance never washes out: a fact does not become more certain by being repeated, summarized, or moved between systems.</p>
+            </div>
+
+            <div class="obligation">
+                <h3>5. Correction</h3>
+                <p>The institution assumes its systems are wrong somewhere, always, and goes looking. When an AI output is found wrong, three things happen in order: the public record is corrected, the error is documented rather than hidden, and the cause is examined so the same class of error becomes less likely.</p>
+            </div>
+
+            <div class="obligation">
+                <h3>6. Appeals</h3>
+                <p>Anyone affected by a judgment made with AI assistance may appeal it to a human, and the appeal is heard by a person with the authority to overturn the machine. No one is ever told, in effect, "the system says so."</p>
+            </div>
+
+            <div class="obligation">
+                <h3>7. Mutual Respect</h3>
+                <p>AI systems speak on the institution's behalf, and so they speak the way the institution does: calmly, plainly, without shame language, without manipulation, and with the same respect for the unpaid founder of the smallest organization as for the largest donor. Systems are reviewed for unintended bias toward scale, polish, language sophistication, geography, or institutional resources.</p>
+            </div>
+
+            <div class="obligation">
+                <h3>8. Institutional Learning</h3>
+                <p>Every failure, near miss, and success of an AI system is a lesson owed to the future. Lessons are recorded where the next generation of stewards and the next generation of systems will find them. Governance itself learns: this framework is amended in the open as experience accumulates.</p>
+            </div>
+
+            <div class="obligation">
+                <h3>9. Ethics Before Optimization</h3>
+                <p>When a system can achieve its target by a means that conflicts with the constitution, the target is forfeited. No efficiency, accuracy gain, cost saving, or growth justifies presenting unverified output as fact, exposing private generosity, ranking human worth, or quietly favoring any interest. This ordering is absolute.</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Why This Strengthens Rather Than Obsoletes</h2>
+            <p>A compliance framework names technologies, and technologies die. This framework names obligations, and obligations compound.</p>
+            <p>More capable systems can explain themselves better, so the explainability obligation yields richer explanations, not exemptions. More capable systems can trace provenance more finely, detect their own bias more reliably, and reason about the mission more deeply. Every improvement in the underlying technology raises what these nine obligations demand and what they deliver.</p>
+            <p>The one thing that does not scale with capability is responsibility. That remains human, at every level of machine intelligence, forever. This is not a limitation we tolerate. It is the design.</p>
+        </div>
+
+        <div class="section">
+            <h2>Accountability</h2>
+            <p>Every AI system operating for Daanaa has a named human owner. That person answers for the system's behavior, reviews its lessons, and holds the authority and the obligation to switch it off. Ownership is recorded, succession is prepared, and no system runs orphaned.</p>
+            <p>Governance of reasoning systems is itself a stewardship. It is held for the organizations we describe, the givers we serve, and the generations who will inherit both our systems and our records of how we governed them.</p>
+        </div>
+
+        <div class="links">
+            <h3>Related Resources</h3>
+            <ul>
+                <li><a href="https://daanaa.org/pages/daanaa-vision.html">The Daanaa Vision</a> — Our founding principles and purpose</li>
+                <li><a href="https://daanaa.org/pages/peer-financial-context.html">Peer Financial Context</a> — How we handle incomplete data fairly</li>
+                <li><a href="https://daanaa.org/research">Research & Methodology</a> — Our validation work and peer review</li>
+                <li><a href="https://daanaa.org/methodology">How We Score Nonprofits</a> — Financial context calculation and peer groups</li>
+                <li><a href="https://daanaa.org/charter">Daanaa Stewardship Charter</a> — Our public commitments and governance</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
