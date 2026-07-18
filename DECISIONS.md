@@ -68,6 +68,32 @@ precompute corruption incident.
 **Rejected:** Skipping honest-timing disclosure (would leave P3 gap); removing merge_claims
 without clear documentation (would obscure intent and lose git history).
 
+## 2026-07-18 — Live-push architecture scoped for nonprofit profile edits (#15.3)
+
+**Chose:** Design the sandboxed live-visibility mechanism deferred by board 2026-07-18.
+Full architecture brief at docs/LIVE_PUSH_ARCHITECTURE_2026_07_18.md. The design mirrors
+`safe_deploy_droplet.sh`'s safety bar (integrity checks → atomic swap → rollback) to prevent
+a repeat of the 2026-06-06 precompute corruption incident that motivated this deferral in
+the first place.
+
+**Key elements:**
+- Tier 1 (home): org_claims write + live_profile_edits queue + validation
+- Tier 2 (home): hourly live_patch_builder validates + stages patches with checksums
+- Tier 3 (droplet): sync-live-patch pulls + atomically swaps content (dist/content.prev backup)
+- Tier 4 (SPA): org dashboard shows "✓ Live!" within 5-10 minutes of edit
+- Safety: manifest integrity (sha256), validation before write (mission/URL/tags), circuit breaker
+- Audit: every push logged; all decisions traceable for post-incident review
+
+**Why:** Board consensus was "don't rush new production-write path" — this design satisfies
+that by starting from proven patterns (safe_deploy_droplet.sh) and adding explicit safeguards
+(validation, checksums, atomic swap, rollback). Not implementing yet (follow-up phase after
+pilot results) but ready to move fast when board approves.
+
+**Open for board:** validation strictness, latency SLA, pilot scope, abuse policy.
+Go-live criteria: 99% success rate, <10min latency, zero integrity failures.
+
+**Rejected:** Rushing implementation without proper sandboxing (would repeat 2026-06-06 pattern).
+
 # DECISIONS.md
 
 Append-only decision log. Each entry: **what we chose and why, plus the option
