@@ -41,6 +41,33 @@ critical to reliability program; deferring this to post-launch when legal capaci
 **Rejected:** Proceeding with any state registry ingestion. Option A (CA/NY/TX/MA pilot) deferred.
 Archive scan (#13) and donor-flow QA (#17) remain active per program.
 
+## 2026-07-18 — Nonprofit dashboard: honest-timing disclosure + dead code cleanup
+
+**Chose:** Ship two board-approved items from nonprofit interconnection fix (confidence: 95%):
+
+(1) Honest-timing disclosure on profile edits. The claim_profile_update and claim_update
+endpoints now respond with: "Saved. Your public page updates within 24 hours (usually sooner)."
+Closes P3 gap (org sees no timing info before → user confusion when edit doesn't appear
+instantly). Prevents false user impression that Daanaa ignored their edit.
+
+(2) Retire dead merge_claims/CLAIMS_DIR code (P9 cleanliness). The merge_claims function
+read from a directory that no code in the repo ever writes to — it's a no-op by design.
+Documented as dead-and-intentionally-inert via detailed docstring + code comments; not
+removed (preserves git history) but now clearly marked so future readers don't mistake
+it for a working feature.
+
+**Why:** Board gate 3 consensus: P3 (honestly stated) + P4 (small orgs deserve equal tools)
++ P9 (explainable). The disclosure is small, safe, and honest. The dead code cleanup is
+zero-risk documentation.
+
+**Deferred:** Live-push mechanism (real-time edit visibility) per board decision to
+proper sandboxed follow-up with integrity checks + atomic swap (DECISIONS.md 2026-07-18,
+board simulation). Rushing production-write path violates pattern that caused 2026-06-06
+precompute corruption incident.
+
+**Rejected:** Skipping honest-timing disclosure (would leave P3 gap); removing merge_claims
+without clear documentation (would obscure intent and lose git history).
+
 # DECISIONS.md
 
 Append-only decision log. Each entry: **what we chose and why, plus the option
