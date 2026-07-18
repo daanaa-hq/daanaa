@@ -752,7 +752,11 @@ def get_organizations():
     # ── Filter browse: DB query when flags, revenue, or multi-select used ───
     any_filter = hidden_gem or needs_funding or has_website or open_to_volunteers or bool(tier) or bool(nearby_zips)
     multi_select = len(ntee_list) > 1 or len(sub_list) > 1 or (ntee_list and sub_list)
-    if any_filter or multi_select or min_rev is not None or max_rev is not None:
+    # Explicit non-name sort must hit the DB — the precompute files below are
+    # baked in name order and ignore sort/order (bug found 2026-07-17: the
+    # directory sort dropdown was a no-op on plain browse).
+    explicit_sort = (sort and sort != 'organization_name') or order.lower() == 'desc'
+    if any_filter or multi_select or explicit_sort or min_rev is not None or max_rev is not None:
         return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                                  state, sort, page, per_page,
                                  hidden_gem, needs_funding, has_website, order, tier,

@@ -119,7 +119,10 @@ export default function Directory() {
   })
   const [subFilters, setSubFilters] = useState<string[]>(subParamList)
   const [stateFilter, setStateFilter] = useState(stateParam)
-  const [sortBy, setSortBy] = useState('merit_score')
+  // Default is neutral name order — browse must never imply a ranking
+  // (2026-07-04 note); it also keeps default browse on the fast precompute
+  // path. Score/revenue sorts are explicit opt-in and route to the DB.
+  const [sortBy, setSortBy] = useState('organization_name')
   const sessionShuffleRef = useRef(Math.random().toString(36).slice(2, 11))
 
   // Sync filter state with URL params whenever they change
@@ -819,13 +822,21 @@ export default function Directory() {
             activeCategory={activeFilters[0] ?? 'all'}
             stateFilter={stateFilter}
             sortBy={sortBy}
+            sortOrder={sortOrder}
             minRevenue={minRevenue}
             maxRevenue={maxRevenue}
             verifiedRevenueOnly={verifiedRevenueOnly}
             cause={cause}
             onCategoryChange={(id) => { handleFilterChange(id) }}
             onStateChange={handleStateChange}
-            onSortChange={(s) => { setSortBy(s); setCurrentPage(1); scrollTop() }}
+            onSortChange={(s) => {
+              setSortBy(s)
+              // Same rule as the desktop select: name reads A-Z,
+              // score/revenue read high-first
+              setSortOrder(s === 'organization_name' ? 'asc' : 'desc')
+              setCurrentPage(1); scrollTop()
+            }}
+            onSortOrderChange={() => { setSortOrder(o => o === 'asc' ? 'desc' : 'asc'); setCurrentPage(1) }}
             onMinRevenueChange={handleMinRevenueChange}
             onMaxRevenueChange={handleMaxRevenueChange}
             onVerifiedRevenueChange={(checked) => { setVerifiedRevenueOnly(checked); setCurrentPage(1) }}

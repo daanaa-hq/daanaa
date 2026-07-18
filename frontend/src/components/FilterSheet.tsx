@@ -35,6 +35,7 @@ interface FilterSheetProps {
   activeCategory: string
   stateFilter: string
   sortBy: string
+  sortOrder: 'asc' | 'desc'
   minRevenue: number
   maxRevenue: number
   verifiedRevenueOnly: boolean
@@ -42,6 +43,7 @@ interface FilterSheetProps {
   onCategoryChange: (id: string) => void
   onStateChange: (state: string) => void
   onSortChange: (sort: string) => void
+  onSortOrderChange: () => void
   onMinRevenueChange: (value: number) => void
   onMaxRevenueChange: (value: number) => void
   onVerifiedRevenueChange: (checked: boolean) => void
@@ -52,8 +54,8 @@ interface FilterSheetProps {
 
 export default function FilterSheet({
   open, onClose,
-  activeCategory, stateFilter, sortBy, minRevenue, maxRevenue, verifiedRevenueOnly, cause = '',
-  onCategoryChange, onStateChange, onSortChange, onMinRevenueChange, onMaxRevenueChange, onVerifiedRevenueChange,
+  activeCategory, stateFilter, sortBy, sortOrder, minRevenue, maxRevenue, verifiedRevenueOnly, cause = '',
+  onCategoryChange, onStateChange, onSortChange, onSortOrderChange, onMinRevenueChange, onMaxRevenueChange, onVerifiedRevenueChange,
   onCauseChange, onClearAll, resultCount,
 }: FilterSheetProps) {
   useEffect(() => {
@@ -193,7 +195,7 @@ export default function FilterSheet({
           {/* Sort */}
           <div>
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Sort By</span>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-stretch">
               {[
                 { value: 'merit_score', label: 'Peer Context' },
                 { value: 'organization_name', label: 'Name A to Z' },
@@ -212,6 +214,17 @@ export default function FilterSheet({
                   {opt.label}
                 </button>
               ))}
+              <button
+                onClick={onSortOrderChange}
+                title={sortOrder === 'asc' ? 'Ascending: tap to reverse' : 'Descending: tap to reverse'}
+                aria-label={`Sort direction: ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+                className="w-11 shrink-0 flex items-center justify-center rounded-xl border border-light-grey text-cool-grey active:text-deep-navy transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                  style={{ transform: sortOrder === 'asc' ? 'rotate(180deg)' : 'none', transition: 'transform 150ms' }}>
+                  <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
