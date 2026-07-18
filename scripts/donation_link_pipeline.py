@@ -385,15 +385,39 @@ def _audit_one(row) -> dict:
 
 
 def phase0_audit_existing(db: sqlite3.Connection, dry_run=False, workers=16):
-    print("\n=== Phase 0: Auditing existing donation links ===")
+    print("\n=== Phase 0: Auditing existing donation links (tiered) ===")
+    # Tiered cadence (founder-approved 2026-07-18, DECISION_QUEUE entry):
+    # the old query re-audited EVERY link with a donate_url nightly (~18.6K
+    # HTTP checks against nonprofits' websites, ~90x stricter than the
+    # documented 90-day SLA). Tiers:
+    #   - never-checked or non-live statuses (NULL/candidate/problem): nightly
+    #     — this is the promotion path for new links and the fail-fast path
+    #     for problem links, both of which we WANT checked aggressively
+    #   - live links (beta/claimed) checked within 7 days: skipped — stable
+    #     and recently confirmed; reverify_stale_links' 90-day SLA remains
+    #     the backstop behind this weekly pass
+    # Freed night hours flow directly to Phase 1/2 discovery (the cpu_night
+    # loop is sequential), pointed at the 2.03M orgs with no link yet.
     rows = db.execute("""
         SELECT EIN, organization_name, website, donate_url, donate_platform
         FROM registry_enriched
         WHERE donate_url IS NOT NULL AND TRIM(donate_url) != ''
+          AND (
+                donate_checked_at IS NULL
+                OR COALESCE(donate_url_status, '') NOT IN ('beta', 'claimed')
+                OR donate_checked_at < datetime('now', '-7 days')
+              )
     """).fetchall()
+    skipped = db.execute("""
+        SELECT COUNT(*) FROM registry_enriched
+        WHERE donate_url IS NOT NULL AND TRIM(donate_url) != ''
+          AND donate_url_status IN ('beta', 'claimed')
+          AND donate_checked_at >= datetime('now', '-7 days')
+    """).fetchone()[0]
 
     total = len(rows)
-    print(f"  Links to audit: {total:,}  (workers={workers})")
+    print(f"  Links to audit: {total:,}  (workers={workers}; "
+          f"{skipped:,} stable links skipped — checked within 7 days)")
 
     if dry_run:
         import random as rmod

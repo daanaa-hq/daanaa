@@ -112,7 +112,7 @@ Format:
   to a properly sandboxed follow-up (founder-affirmed: "for now just claimed"
   scope); retire dead CLAIMS_DIR/merge_claims code. See DECISIONS.md 2026-07-18.
 
-## [open] Nightly full re-verification of all beta links vs tiered cadence
+## [resolved] Nightly full re-verification of all beta links vs tiered cadence
 - Raised: 2026-07-18 by founder ("why are we reverifying links so quickly —
   use that capacity to find new ones")
 - Principles touched: P3 (link freshness = trust), P5 (politeness — nightly
@@ -126,5 +126,9 @@ Format:
 - Proposed: tiered cadence — first 7 days nightly (new links fail fast),
   then weekly to day 30, then the documented 90-day SLA. Freed window goes
   to Phase-2 discovery (2.03M orgs with no known website).
-- Simulation: pending next 12h cycle
-- Resolution: pending
+- Simulation: not needed — founder approved directly ("Update nightly ques")
+- Resolution: tiered Phase 0 shipped 2026-07-18 — new/problem/never-checked
+  links audited nightly; stable beta/claimed links weekly; 90-day SLA backstop
+  unchanged. Verified against live DB: tonight audits 3,064 instead of 21,722
+  (86% reduction). Freed hours flow to Phase 1/2 discovery automatically
+  (cpu_night loop is sequential).
