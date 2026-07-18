@@ -804,3 +804,18 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   recovery action. SSH connection refusal is a distinct failure mode from
   an application failure and self-resolves; don't panic-rollback or
   re-deploy on top of a possibly-fine state.
+
+## 2026-07-18 — the "30K pending links" backlog was a bookkeeping mirage
+- **Symptom:** daemon progress report showed 30,429 links "queued at 90%+"
+  pending deployment, while the 4-hourly deploy cron drained only ~38 per
+  cycle — looked like a huge stuck backlog (and briefly like a huge win).
+- **Root cause:** deploy_queued_links.py drains by `deployed_at IS NULL`
+  and stamps deployed_at on deploy, but never updated the `status` column —
+  30,392 rows were already deployed while still labeled status='pending'.
+  The report counted status='pending'. Real undrained queue: 37 rows.
+  Links were flowing discovered→queued→deployed within 4h the whole time.
+- **Preventing rule:** when a queue has BOTH a status column and a
+  timestamp column, every writer must keep them consistent, and reports
+  must count from the column the DRAIN path actually uses. Before treating
+  any "backlog" number as real, cross-check it against the drain query's
+  own predicate.

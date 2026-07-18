@@ -10,7 +10,7 @@ echo "=========================================="
 
 echo ""
 echo "PHASE 1 (Website-based discovery)"
-sqlite3 "$DB" "SELECT 'Discovered & queued', COUNT(*) FROM link_deployment_queue WHERE status='pending' UNION ALL SELECT 'Already deployed', COUNT(*) FROM registry_enriched WHERE donate_url IS NOT NULL;" 2>/dev/null
+sqlite3 "$DB" "SELECT 'Discovered & queued', COUNT(*) FROM link_deployment_queue WHERE deployed_at IS NULL UNION ALL SELECT 'Already deployed', COUNT(*) FROM registry_enriched WHERE donate_url IS NOT NULL;" 2>/dev/null
 
 echo ""
 echo "ORGS STATUS"

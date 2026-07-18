@@ -91,7 +91,7 @@ def deploy_queued_links():
 
                 # Mark as deployed
                 cursor.execute(
-                    "UPDATE link_deployment_queue SET deployed_at = ? WHERE id = ?",
+                    "UPDATE link_deployment_queue SET deployed_at = ?, status = 'deployed' WHERE id = ?",
                     (datetime.now().isoformat(), queue_id)
                 )
 
