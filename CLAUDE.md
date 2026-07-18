@@ -295,6 +295,13 @@ Key routing rules:
 ### App & deploy skills
 - Shipping ANY change to daanaa.org (code/data/frontend) → invoke /daanaa-deploy first to pick the right path
 - Building/changing donor-facing app features (wallet, giving flows, PWA, notifications) → invoke /app-feature
+- "Checking in" / site health / daemon status / "is search fast" → invoke /daanaa-health
+
+### Growth & quality skills (skills.sh registry, reviewed 2026-07-18)
+- SEO issues, rankings, meta tags, core web vitals → invoke /seo-audit
+- Scaling org/category/location pages for search → invoke /programmatic-seo
+- WCAG / screen readers / keyboard navigation → invoke /accessibility
+- Building or improving scrapers/crawlers → invoke /scrapy-web-scraping (framework) or /web-scraping (techniques)
 
 ### Marketing skills
 - LinkedIn carousel (generate + post) → invoke /marketing-carousel
