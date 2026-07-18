@@ -7,9 +7,15 @@ import CompareBar from './CompareBar'
 import BetaBanner from './BetaBanner'
 import WalletAutoSave from './WalletAutoSave'
 import { trackPageview, trackDwell } from '../lib/analytics'
+import { useStandalone } from '../hooks/useStandalone'
 
 export default function Layout() {
   const location = useLocation()
+  // Installed-app posture: the bottom tab bar is the navigation; the website
+  // sitemap footer is browser-tab chrome and stays out of the way. Every page
+  // remains reachable (top nav + in-page links) — nothing is removed, only
+  // the shell slims down.
+  const standalone = useStandalone()
 
   // Aggregate, privacy-first pageview tracking on every route change.
   useEffect(() => {
@@ -28,7 +34,7 @@ export default function Layout() {
       <main className="flex-1 pb-[60px] md:pb-0 pt-[36px]">
         <Outlet />
       </main>
-      {!hideFooter && <Footer />}
+      {!hideFooter && !standalone && <Footer />}
       <CompareBar />
       <BottomNav />
     </div>
