@@ -119,6 +119,34 @@ read-only; builds confidence in system stability; identifies any documentation g
 
 See docs/API_CONTRACT_AUDIT_RESULTS_2026_07_18.md for full findings.
 
+## 2026-07-18 — Deploy Daanaa research papers to public URLs
+
+**Chose:** Publish three foundational research papers at:
+- https://daanaa.org/pages/daanaa-vision.html (17 sections, 181 lines)
+- https://daanaa.org/pages/ai-governance.html (9 obligations, 159 lines)
+- https://daanaa.org/pages/peer-financial-context.html (research brief, 224 lines)
+
+**Why:** These papers articulate the institutional thinking behind Daanaa's founding.
+THE_DAANAA_VISION captures 17 principles of stewardship and long-term thinking. AI_GOVERNANCE
+codifies 9 obligations (mission alignment, human oversight, explainability, provenance, correction,
+appeals, mutual respect, institutional learning, ethics-first). PEER_FINANCIAL_CONTEXT
+presents a research agenda for handling incomplete public data fairly, inviting academic critique.
+
+**Alignment:** All three papers embody the 11 Stewardship Principles (P1-P11) and answer the
+key accountability questions: why we exist (P1), how we use AI safely (P10), how we handle
+data gaps (P3/P4), how we correct mistakes (P6), how we remain independent (P7), how we explain
+decisions (P9). The verbiage is mission-first, honest about limits, clear on what Daanaa does
+NOT do (handle funds, rank morally, take cuts, hide bias).
+
+**Implementation:** HTML pages built with responsive design, dark-mode support, proper metadata
+(Open Graph for social sharing), and cross-links to /research, /methodology, /charter. All
+pages deployed to droplet (rsync --delete to /opt/daanaa/frontend/dist/pages/) and verified
+live (3x curl: 200 OK). Frontend build passed (3.73s, no errors).
+
+**Rejected:** Keeping papers as internal drafts (limits transparency + accountability).
+
+See commit 22b0b684ddb for full deployment details and metadata.
+
 # DECISIONS.md
 
 Append-only decision log. Each entry: **what we chose and why, plus the option
