@@ -492,7 +492,10 @@ def _sanitize_fts_query(text: str) -> str:
         return '""'
     # Double-quote every token: AND/OR/NOT/NEAR typed by a donor stay literal
     # words, never operators. '"tok"*' is FTS5 phrase-prefix syntax.
-    return ' '.join(f'"{w}"*' for w in words)
+    # Single-char tokens match EXACTLY (no star): the "N" of "N A B S" is the
+    # token "n" in the org's own name, and '"n"*' would range-scan every
+    # n-word in the term dictionary — 15s+ timeouts on the 2GB droplet.
+    return ' '.join(f'"{w}"*' if len(w) >= 2 else f'"{w}"' for w in words)
 
 def _check_fts(db: sqlite3.Connection) -> bool:
     global _fts_available
@@ -1783,13 +1786,27 @@ def list_organizations():
             # be relevance-ordered. The old `EIN IN (subquery)` shape threw
             # the rank away and page 1 of "american legion" was whichever 20
             # of 2000 matches sorted first alphabetically (2026-07-18 audit).
+            #
+            # The bm25 branch is UNIONed with an exact name-phrase branch:
+            # our corpus is finite and fully known, so if the typed text IS
+            # an org's name we look it up directly instead of hoping it
+            # survives the candidate cap. Closes the spaced-initialism and
+            # generic-name misses ("N A B S", "BEST SCHOOL") where the org
+            # ranked below 2000 among common-token matches. Phrase keeps
+            # noise words ("best" is part of the name "BEST SCHOOL").
             fts_q = _sanitize_fts_query(search)
+            name_toks = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', search)).split()[:12]
+            name_phrase = f'org_name : "{" ".join(name_toks)}"' if name_toks else '""'
             fts_join_sql = (
-                "JOIN (SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel "
+                "JOIN (SELECT ein, MIN(rel) AS rel FROM ("
+                "SELECT ein, -1e9 AS rel FROM org_fts WHERE org_fts MATCH ? "
+                "UNION ALL "
+                "SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel "
                 "FROM org_fts WHERE org_fts MATCH ? "
-                "ORDER BY rel LIMIT 2000) fts ON r.EIN = fts.ein "
+                "ORDER BY rel LIMIT 2000"
+                ") GROUP BY ein) fts ON r.EIN = fts.ein "
             )
-            params.append(fts_q)
+            params.extend([name_phrase, fts_q])
             fts_used = True
         else:
             # Fallback: name-only LIKE (city field excluded to avoid false matches)
@@ -1908,7 +1925,7 @@ def list_organizations():
             pass
         fts_join_sql = ""
         fts_used = False
-        params = params[1:]   # drop the MATCH param (bound ahead of WHERE)
+        params = params[2:]   # drop the two MATCH params (bound ahead of WHERE)
         for word in re.findall(r'\w{2,}', search)[:6]:
             where_clauses.append("r.organization_name LIKE ?")
             params.append(f'%{word}%')

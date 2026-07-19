@@ -298,7 +298,9 @@ def _sanitize_fts_query(text: str) -> str:
     if not words:
         return '""'
     # Double-quoted tokens keep donor-typed AND/OR/NOT literal, not operators.
-    return ' '.join(f'"{w}"*' for w in words)
+    # Single-char tokens match EXACTLY (no star): '"n"*' range-scans every
+    # n-word in the term dictionary — 15s+ timeouts on this 2GB box.
+    return ' '.join(f'"{w}"*' if len(w) >= 2 else f'"{w}"' for w in words)
 
 
 def _fts_where(q: str, state: str = '', conn=None) -> tuple:
@@ -1237,15 +1239,29 @@ def search():
             [x.strip()[:1] for x in ntee.split(',') if x.strip()], [], None, None, alias='o.')
         conditions.extend(cat_conds)
         params.extend(cat_params)
-        params.append(limit)
-        # ORDER BY s.rank (bm25): best matches first instead of storage order
-        # (2026-07-16 searchability pass). Costs ~ms — the quick search LIMIT
-        # keeps the ranked set small.
+        # ORDER BY exact typed name first, then s.rank (bm25) — 2026-07-16
+        # searchability pass + 2026-07-19 exact pin. Costs ~ms at this LIMIT.
         sql = (f"SELECT o.EIN, o.organization_name, o.NTEE1, o.NTEECC, o.CITY, o.STATE, o.mission, o.merit_score "
                f"FROM org_fts s, registry_enriched o WHERE {' AND '.join(conditions)} "
-               f"ORDER BY s.rank LIMIT ?")
-        rows = conn.execute(sql, params).fetchall()
+               f"ORDER BY (UPPER(o.organization_name) = ?) DESC, s.rank LIMIT ?")
+        rows = conn.execute(sql, params + [query.upper(), limit]).fetchall()
         results = [dict(r) for r in rows]
+        # Finite-corpus pin: if the typed text IS an org's name (as a phrase in
+        # the name column), that org must appear even when bm25 buries it among
+        # common-token matches ("N A B S", "BEST SCHOOL" class, 2026-07-19).
+        name_toks = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', query)).split()[:12]
+        if name_toks:
+            phrase_params = list(params)
+            phrase_params[0] = f'org_name : "{" ".join(name_toks)}"'
+            try:
+                pin_rows = conn.execute(sql, phrase_params + [query.upper(), 10]).fetchall()
+                if pin_rows:
+                    pinned = [dict(r) for r in pin_rows]
+                    pin_eins = {p['EIN'] for p in pinned}
+                    results = pinned + [r for r in results if r['EIN'] not in pin_eins]
+                    results = results[:limit]
+            except Exception:
+                pass  # pin is best-effort; base results already stand
         return jsonify({'results': results, 'query': query,
                         'total': len(results), 'mode': 'fts'})
     except Exception as e:
@@ -1311,11 +1327,28 @@ def fused_search():
         # state code is double-quoted: "OR" (Oregon) must stay a literal token,
         # not the boolean operator (same class of bug as the hyphen crash).
         fts_match = f'({fts_q}) AND state:"{resolved_state.upper()}"' if resolved_state else fts_q
+        # Finite-corpus name-phrase branch: if the typed text IS an org's name,
+        # look it up directly in the name column — orgs with generic or spaced-
+        # initialism names ("BEST SCHOOL", "N A B S") otherwise rank below the
+        # candidate cap among common-token matches (2026-07-19). Noise words
+        # stay: "best" is part of the name "BEST SCHOOL".
+        _pin_toks = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', q)).split()[:12]
+        phrase_q = f'org_name : "{" ".join(_pin_toks)}"' if _pin_toks else '""'
+        phrase_match = f'({phrase_q}) AND state:"{resolved_state.upper()}"' if resolved_state else phrase_q
         # NTEE category is not an exact-token FTS column — widen the candidate
         # pool when a category filter must be applied after ranking.
         cand_cap = 20000 if ntee_list else 3000
 
         o_where = (' AND ' + ' AND '.join(o_conditions)) if o_conditions else ''
+        # Candidate CTE = name-phrase pins (rel -1e9, always kept) UNION the
+        # bm25-ranked pool; ORDER BY rel LIMIT inside keeps pins ahead of the
+        # cap, GROUP BY dedupes orgs present in both branches.
+        cte = (f"WITH c AS (SELECT ein, MIN(rel) AS rel FROM ("
+               f"SELECT ein, -1e9 AS rel FROM org_fts WHERE org_fts MATCH ? "
+               f"UNION ALL "
+               f"SELECT ein, rank AS rel FROM org_fts WHERE org_fts MATCH ? "
+               f"ORDER BY rel LIMIT {cand_cap}"
+               f") GROUP BY ein) ")
         # total = matches reachable through pagination (counted INSIDE the
         # bounded candidate set — never an unbounded join). A pure-FTS probe
         # (no join, capped) sets total_capped so the UI can render "N+".
@@ -1327,11 +1360,10 @@ def fused_search():
         # column and bloom-filters against the small CTE, instead of the
         # reverse. CROSS JOIN pins the join order SQLite must not reorder.
         total = conn.execute(
-            f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
-            f"ORDER BY rank LIMIT {cand_cap}) "
+            cte +
             f"SELECT COUNT(*) FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
             f"WHERE 1=1{o_where}",
-            [fts_match] + o_params
+            [phrase_match, fts_match] + o_params
         ).fetchone()[0]
         fts_probe = conn.execute(
             f"SELECT COUNT(*) FROM (SELECT 1 FROM org_fts WHERE org_fts MATCH ? LIMIT {cand_cap + 1})",
@@ -1340,16 +1372,17 @@ def fused_search():
         total_capped = fts_probe > cand_cap
 
         offset = (page - 1) * per_page
-        # Exact typed-name match pins first (a donor typing a full org name
-        # must see that org above any candidate), then the existing order.
-        sql = (f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
-               f"ORDER BY rank LIMIT {cand_cap}) "
+        # Exact typed-name match pins first, then phrase pins (c.rel), then
+        # the existing order — a donor typing a full org name sees that org
+        # above any candidate.
+        sql = (cte +
                f"SELECT o.* FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
                f"WHERE 1=1{o_where} "
                f"ORDER BY (UPPER(o.organization_name) = ?) DESC, "
+               f"(c.rel <= -1e9) DESC, "
                f"COALESCE(o.merit_score, -1) DESC "
                f"LIMIT ? OFFSET ?")
-        rows = conn.execute(sql, [fts_match] + o_params + [q.upper(), per_page, offset]).fetchall()
+        rows = conn.execute(sql, [phrase_match, fts_match] + o_params + [q.upper(), per_page, offset]).fetchall()
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
         return jsonify({'organizations': orgs, 'query': q,

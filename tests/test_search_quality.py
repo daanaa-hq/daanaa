@@ -184,3 +184,33 @@ class TestLiveIndexFindability:
         # ≥95% findability is the world-class bar; generic names shared by
         # thousands of chapters (American Legion posts) are the honest remainder.
         assert len(misses) <= len(orgs) * 0.05, f"self-search misses: {misses}"
+
+    def test_union_plan_finds_hard_names(self, sanitize_full):
+        """Spaced initialisms and generic names must rank #1 via the exact
+        name-phrase UNION branch (the finite-corpus advantage: if the typed
+        text IS an org name, look it up — don't hope it survives the bm25
+        candidate cap). These exact names missed under the bm25-only plan."""
+        _apos = re.compile(r"['’`]")
+        _clean = re.compile(r'[^\w\s]', re.UNICODE)
+        db = sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+        hard = ["N A B S", "BEST SCHOOL", "WORLD INC", "G O A L S ORGANIZATION INC"]
+        for name in hard:
+            # Skip silently if this org left the registry in a future refresh
+            if not db.execute(
+                "SELECT 1 FROM registry_enriched WHERE organization_name = ? LIMIT 1",
+                (name,)).fetchone():
+                continue
+            q = sanitize_full(name)
+            toks = _clean.sub(' ', _apos.sub('', name)).split()[:12]
+            phrase = f'org_name : "{" ".join(toks)}"'
+            rows = db.execute("""
+                SELECT r.organization_name FROM registry_enriched r
+                JOIN (SELECT ein, MIN(rel) AS rel FROM (
+                    SELECT ein, -1e9 AS rel FROM org_fts WHERE org_fts MATCH ?
+                    UNION ALL
+                    SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel
+                    FROM org_fts WHERE org_fts MATCH ? ORDER BY rel LIMIT 2000
+                ) GROUP BY ein) fts ON r.EIN = fts.ein
+                ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel LIMIT 5
+            """, (phrase, q, name.upper())).fetchall()
+            assert name in {r[0] for r in rows}, f"{name!r} not in top 5"
