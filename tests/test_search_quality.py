@@ -154,6 +154,64 @@ class TestBooleanWordsAreLiteral:
         assert sanitize_full("a") == '""'
 
 
+class TestDeltaIndexer:
+    """New orgs entering the registry must become searchable AND be proven
+    findable at ingestion time (process rule, founder-approved 2026-07-19).
+    Exercises scripts/search_index_delta.py detect → index → verify on a
+    scratch registry."""
+
+    def _scratch_registry(self, tmp_path):
+        db_path = tmp_path / "scratch.db"
+        db = sqlite3.connect(db_path)
+        db.execute("""CREATE TABLE registry_enriched (
+            EIN TEXT, organization_name TEXT, merit_tier TEXT, mission TEXT,
+            CITY TEXT, STATE TEXT, metro TEXT, NTEECC TEXT, cause_tags TEXT,
+            deductibility TEXT DEFAULT '1', org_status TEXT DEFAULT 'active')""")
+        db.execute(
+            'CREATE VIRTUAL TABLE org_fts USING fts5('
+            'ein UNINDEXED, merit_tier UNINDEXED, org_name, mission, city, '
+            'state, metro, category, cause_tags, '
+            'tokenize = "unicode61 remove_diacritics 2")')
+        # One org already indexed, one brand-new (the Monday-refresh case),
+        # one ineligible (must be left out).
+        orgs = [
+            ("100000001", "OLDTOWN FOOD PANTRY", "Spark", "food", "OLDTOWN", "ME", "", "K31", "{}", "1", "active"),
+            ("200000002", "BRAND NEW ARTS COLLECTIVE", "Spark", "arts", "BOISE", "ID", "", "A20", "{}", "1", "active"),
+            ("300000003", "REVOKED WIDGET FUND", "Spark", "", "RENO", "NV", "", "T20", "{}", "1", "revoked"),
+        ]
+        db.executemany("INSERT INTO registry_enriched VALUES (?,?,?,?,?,?,?,?,?,?,?)", orgs)
+        db.execute(
+            "INSERT INTO org_fts VALUES (?,?,?,?,?,?,?,?,?)",
+            ("100000001", "Spark", "OLDTOWN FOOD PANTRY", "food", "OLDTOWN", "ME", "", "K31", "{}"))
+        db.commit()
+        db.close()
+        return db_path
+
+    def test_detect_index_verify_cycle(self, tmp_path):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import search_index_delta as sid
+        db_path = self._scratch_registry(tmp_path)
+
+        result = sid.run(db_path=db_path, dry_run=True)
+        assert result["unindexed"] == 1, "should detect exactly the new eligible org"
+
+        result = sid.run(db_path=db_path)
+        assert result["indexed"] == 1
+        assert result["verified_ok"] == 1
+        assert result["misses"] == []
+
+        # New org is now actually findable through the production plan
+        db = sqlite3.connect(db_path)
+        rows = db.execute(
+            "SELECT ein FROM org_fts WHERE org_fts MATCH ?",
+            ('"BRAND"* "NEW"* "ARTS"* "COLLECTIVE"*',)).fetchall()
+        assert ("200000002",) in rows
+
+        # Idempotent: second run finds nothing to do
+        result = sid.run(db_path=db_path)
+        assert result["unindexed"] == 0
+
+
 @pytest.mark.skipif(not DB.exists(), reason="no local registry DB")
 class TestLiveIndexFindability:
     """Sampled eligible small orgs must be findable in the real index.

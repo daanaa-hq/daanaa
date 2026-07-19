@@ -1,3 +1,23 @@
+## 2026-07-19 — New orgs are indexed + proven findable at ingestion (founder-approved)
+
+**Chose:** `scripts/search_index_delta.py` — detect eligible orgs missing from
+org_fts (in-memory EIN set difference; FTS5's UNINDEXED ein can't drive a SQL
+join), incrementally INSERT just those, then self-search each through the
+production query plan and log misses. Wired into `refresh_irs_data.sh` Step 5
+(the weekly delta-load previously left new orgs UNSEARCHABLE until an
+unrelated full rebuild) and `overnight_pipeline.py` Step 7.5 (nightly no-op
+safety net). Scratch-DB test proves the detect→index→verify cycle; the verify
+phase caught a real column-order bug (org_name receiving merit_tier) during
+development — the proof step pays for itself.
+
+**Why:** Founder rule: "add it to the process whenever we add new orgs."
+Finite-corpus principle — searchability is verified per org at ingestion, not
+sampled later.
+
+**Rejected:** Full FTS rebuild after each IRS load (14+ min for a few
+thousand new rows); relying on gpu_night.sh's rebuild timing (unowned
+coupling — the gap this closes).
+
 ## 2026-07-18 — World-class search overhaul (audit → fix → deploy, task #18)
 
 **Chose:** (1) Rewrote `_sanitize_fts_query` in BOTH backends: strip all

@@ -33,6 +33,16 @@ Daanaa's search bar of record (established 2026-07-18, task #18):
 5. **Embedding rows via `_emb_index`** — never `int(ein)` as a matrix index
    (EINs are tax IDs; leading-zero EINs would read another org's vector).
 
+## New-org process rule (founder-approved 2026-07-19)
+
+Every org entering the registry is made searchable AND proven findable at
+ingestion time via `scripts/search_index_delta.py` (detect unindexed →
+incremental FTS INSERT → self-search each through the production plan).
+Wired into `refresh_irs_data.sh` (weekly IRS load, Step 5) and
+`overnight_pipeline.py` (Step 7.5 nightly safety net). Misses are logged to
+`logs/search_index_delta.log` — a nonzero miss count there is an incident,
+not noise. Full-corpus proof: `scripts/search_exhaustive_validator.py`.
+
 ## Audit procedure
 
 ```bash

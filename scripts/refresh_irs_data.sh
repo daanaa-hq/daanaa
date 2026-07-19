@@ -39,5 +39,13 @@ if [ "$ADDED" -gt 0 ]; then
   log "Discovery daemon will automatically start processing new orgs"
 fi
 
+# Step 5: Make new orgs searchable + prove each findable (founder rule
+# 2026-07-19: every org entering the registry is indexed and verified at
+# ingestion time, never left waiting for the next full FTS rebuild).
+log "Delta search-index sync + findability verification..."
+python3 scripts/search_index_delta.py 2>&1 | tee -a "$LOG_FILE" || {
+  log "WARNING: search index delta failed — new orgs may be unsearchable until nightly rebuild"
+}
+
 ELAPSED=$(($(date +%s) - START_TIME))
 log "========== IRS DATA REFRESH COMPLETE ($ELAPSED seconds) =========="

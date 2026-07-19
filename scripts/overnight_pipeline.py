@@ -786,6 +786,19 @@ def main():
     except Exception as exc:
         log(f'[expire_volunteer_events] non-fatal error: {exc}')
 
+    # Step 7.5: Delta search-index sync — any org that entered the registry
+    # today becomes searchable and is PROVEN findable (self-search through the
+    # production plan). No-op when the index is already complete. Founder rule
+    # 2026-07-19; the weekly IRS refresh runs the same script at ingestion.
+    try:
+        from search_index_delta import run as search_delta_run
+        _delta = search_delta_run()
+        if _delta['misses']:
+            log(f"[search_index_delta] WARNING: {len(_delta['misses'])} newly "
+                f"indexed orgs failed self-search — see logs/search_index_delta.log")
+    except Exception as exc:
+        log(f'[search_index_delta] non-fatal error: {exc}')
+
     # Step 8: Data quality gate — log any invariant violations before publish
     run_data_quality_gate()
 
