@@ -880,3 +880,20 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   must count from the column the DRAIN path actually uses. Before treating
   any "backlog" number as real, cross-check it against the drain query's
   own predicate.
+
+## 2026-07-19 — task #15 frontend shipped calling endpoints prod never routed / never ran
+- **Symptom:** After deploying #15 to the droplet, the wallet's
+  report-bookmark call returned 405 (no route on droplet_api.py — fell
+  through to SPA fallback), and once proxied it 500'd on every call:
+  the handler's ON CONFLICT upserts targeted a table with no UNIQUE
+  constraints, so SQLite rejected them. The endpoint had never worked,
+  local or prod.
+- **Root cause:** two-backend split (daanaa_api.py home / droplet_api.py
+  prod) means a new home-server endpoint is invisible in prod until a
+  proxy route is added; and the endpoint itself shipped without one
+  behavior test (a single POST would have caught the 500 on day one).
+- **Preventing rule:** any frontend change that introduces a fetch() to a
+  new /api path must (1) grep droplet_api.py for the route/proxy before
+  deploy, and (2) prove the endpoint with a real request — insert AND
+  update/second-call paths — locally and through the public URL after
+  ship. Route presence is not behavior.
