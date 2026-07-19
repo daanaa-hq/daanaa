@@ -80,9 +80,25 @@ class ContinuousDiscoveryDaemon:
         }
 
     def get_orgs_needing_discovery(self, batch_size=50):
-        """Get ALL active 501c3 organizations missing links, ordered by revenue (high to low)."""
-        db = sqlite3.connect(str(DB))
+        """Get ALL active 501c3 organizations missing links, ordered by revenue (high to low).
+
+        Excludes orgs already sitting in the undeployed queue and orgs
+        attempted in the last 30 days. Without these, the top-revenue orgs
+        were re-selected and re-crawled every batch until the 4-hourly
+        deploy drained them — net throughput collapsed to ~200 links/day
+        and the same sites were hit every ~10 minutes (politeness bug).
+        """
+        db = sqlite3.connect(str(DB), timeout=30)
         cursor = db.cursor()
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS link_discovery_attempts (
+                ein INTEGER PRIMARY KEY,
+                attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                outcome TEXT
+            )
+        """)
+        db.commit()
 
         cursor.execute("""
             SELECT EIN, organization_name, website, STATE
@@ -93,6 +109,11 @@ class ContinuousDiscoveryDaemon:
             )
             AND EIN > 0
             AND org_status = 'active'
+            AND EIN NOT IN (SELECT ein FROM link_deployment_queue WHERE deployed_at IS NULL)
+            AND EIN NOT IN (
+                SELECT ein FROM link_discovery_attempts
+                WHERE attempted_at >= datetime('now', '-30 days')
+            )
             ORDER BY
                 CASE WHEN website IS NOT NULL AND website != '' THEN 0 ELSE 1 END,
                 total_revenue DESC NULLS LAST
@@ -102,6 +123,21 @@ class ContinuousDiscoveryDaemon:
         results = cursor.fetchall()
         db.close()
         return results
+
+    def record_attempts(self, attempts):
+        """Batch-record discovery attempts: [(ein, outcome), ...]."""
+        if not attempts:
+            return
+        db = sqlite3.connect(str(DB), timeout=30)
+        db.executemany("""
+            INSERT INTO link_discovery_attempts (ein, outcome, attempted_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(ein) DO UPDATE SET
+                outcome = excluded.outcome,
+                attempted_at = CURRENT_TIMESTAMP
+        """, attempts)
+        db.commit()
+        db.close()
 
     def apply_gpu_enhancement(self, links_dict):
         """Apply GPU semantic verification to boost confidence (non-blocking, fail-fast)."""
@@ -408,20 +444,26 @@ class ContinuousDiscoveryDaemon:
                         # Submission stagger (auto-regulated rate limit)
                         time.sleep(adj_sleep_org)
 
+                    attempts = []
                     for fut in as_completed(futures):
                         ein, name = futures[fut]
                         try:
                             result = fut.result()
                         except Exception as e:
                             self.stats['errors'] += 1
+                            attempts.append((ein, 'error'))
                             logger.warning(f"❌ {name} ({ein}): worker crashed: {str(e)[:100]}")
                             continue
+                        attempts.append((ein, result['status']))
                         if result['status'] == 'success':
                             logger.info(f"✅ {name} ({ein}): {result['verified']} links verified")
                         elif result['status'] == 'no_links':
                             logger.debug(f"⚪ {name} ({ein}): No links found")
                         else:
                             logger.warning(f"❌ {name} ({ein}): {result.get('reason')}")
+
+                    # One write per batch: keeps re-selection out of the next batch
+                    self.record_attempts(attempts)
 
                 # Log progress with confidence breakdown
                 db = sqlite3.connect(str(DB))
