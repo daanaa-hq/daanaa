@@ -1740,10 +1740,15 @@ def list_organizations():
     search_intent = None
     if search:
         try:
+            import sys
+            from pathlib import Path
+            scripts_dir = str(Path(__file__).parent / 'scripts')
+            if scripts_dir not in sys.path:
+                sys.path.insert(0, scripts_dir)
             from search_intent_classifier import SearchIntentClassifier
             classifier = SearchIntentClassifier(db_path=str(DB))
             search_intent = classifier.classify(search)
-        except Exception:
+        except Exception as e:
             pass  # Classifier optional — fallback to default if import fails
 
     ntee_raw = request.args.get('ntee', '').strip().upper()
