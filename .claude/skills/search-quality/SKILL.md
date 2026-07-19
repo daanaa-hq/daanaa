@@ -7,12 +7,18 @@ description: Audit and enforce the world-class search bar — sanitizer safety, 
 
 Daanaa's search bar of record (established 2026-07-18, task #18):
 
-| Metric | Bar | Measured 2026-07-18 |
+| Metric | Bar | Measured |
 |---|---|---|
-| Self-search: typed org name in top 5 | ≥ 95% | 100% |
+| Self-search: typed org name in top 5 | ≥ 95% | **99.993% — EXHAUSTIVE, all 1,758,892 eligible orgs** (2026-07-19) |
 | Hostile-query SQL errors (hyphens, slashes, quotes) | 0 | 0 |
-| Search latency (FTS join plan, local) | p95 < 500ms | p95 245ms |
+| Search latency (union plan, local) | p95 < 500ms | p50 49ms / p95 212ms |
 | Small-org share in broad queries | ≥ 20% | passing |
+
+The 131 exhaustive misses (0.007%) are all orgs whose full registered name is
+a single generic word shared by thousands ("LIFE", "FIRST", "WOMEN", "OHIO",
+truncated chapter names) — more than 5 orgs share the exact name, so no
+ranking can put all of them in the top 5 simultaneously. Location narrows
+these; not a defect. CSV: logs/search_exhaustive_misses_20260719_004729.csv.
 
 ## The invariants (never regress these)
 
