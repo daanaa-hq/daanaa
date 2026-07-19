@@ -38,7 +38,11 @@ class QAGate:
         bad_patterns = [
             r'^[\s\-_]+$',  # Only whitespace/punctuation
             r'[0-9]{10,}',  # Excessive digits (likely OCR errors)
-            r'[^\w\s\-\'\(\)]',  # Weird unicode/symbols
+            # '&', ',', '.', '/' are all legal in IRS legal names
+            # ("BOYS & GIRLS CLUB", "ST. JUDE'S") — flagging them failed 14
+            # legitimate orgs in the 2026-07-19 archive batch (P4 issue:
+            # excluding orgs for their own legal name).
+            r'[^\w\s\-\'\(\)&,\./]',  # Weird unicode/symbols only
         ]
 
         for pattern in bad_patterns:
