@@ -39,8 +39,12 @@ from ntee_synonyms import expand_query_with_synonyms
 try:
     from search_intent_classifier import SearchIntentClassifier
     _classifier_available = True
-except ImportError:
+    print(f"[Startup] ✓ SearchIntentClassifier imported successfully", file=sys.stderr)
+except Exception as e:
     _classifier_available = False
+    print(f"[Startup] ✗ Failed to import SearchIntentClassifier: {type(e).__name__}: {e}", file=sys.stderr)
+    import traceback
+    traceback.print_exc(file=sys.stderr)
 
 
 def _run_migrations(db_path: str):
@@ -1733,17 +1737,17 @@ def log_search():
 @app.route('/api/organizations')
 @limiter.limit("100 per minute")
 def list_organizations():
-    # Build cache key from all query params before parsing
-    ck = _ck('orgs', request.query_string.decode())
-    cached = _cget(ck, 'search')
-    if cached: return jsonify(cached)
-
     db = get_db()
     page = max(1, request.args.get('page', 1, type=int))
     per_page = min(request.args.get('per_page', 20, type=int), 100)
     search = request.args.get('q', '').strip()[:200]
 
-    # Search intent classification (Phase 2): suggest routing for cause queries
+    # Build cache key from all query params before parsing
+    ck = _ck('orgs', request.query_string.decode())
+    cached = _cget(ck, 'search')
+    if cached: return jsonify(cached)
+
+    # Search intent classification (Phase 2): only on cache miss (expensive operation)
     search_intent = None
     if search and _classifier_available:
         try:
