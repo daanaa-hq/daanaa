@@ -1747,9 +1747,11 @@ def list_organizations():
                 sys.path.insert(0, scripts_dir)
             from search_intent_classifier import SearchIntentClassifier
             classifier = SearchIntentClassifier(db_path=str(DB))
-            search_intent = classifier.classify(search)
+            result = classifier.classify(search)
+            if result and isinstance(result, dict):
+                search_intent = result
         except Exception as e:
-            pass  # Classifier optional — fallback to default if import fails
+            app.logger.debug(f"search_intent classifier error: {str(e)}")  # Log for debugging
 
     ntee_raw = request.args.get('ntee', '').strip().upper()
     ntee_list = [x.strip()[:1] for x in ntee_raw.split(',') if x.strip()]
