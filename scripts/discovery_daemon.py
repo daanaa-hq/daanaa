@@ -14,11 +14,13 @@ Process:
 """
 
 import sqlite3
+import threading
 import time
 import json
 import sys
 import os
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from website_discovery_comprehensive import WebsiteDiscovery
@@ -63,6 +65,11 @@ class ContinuousDiscoveryDaemon:
         self.verifier = LinkVerifier(timeout=10)
         self.gpu_verifier = GPULinkVerifier()  # GPU-accelerated semantic verification
         self.cn_verifier = CharityNavigatorVerifier(timeout=10) if CN_AVAILABLE and use_cn_fallback else None
+        # Parallel discovery: per-thread verifier instances (requests.Session
+        # is not thread-safe); GPU verifier is shared behind a lock.
+        self._use_cn = CN_AVAILABLE and use_cn_fallback
+        self._local = threading.local()
+        self._gpu_lock = threading.Lock()
         self.stats = {
             'discovered': 0,
             'verified': 0,
@@ -124,9 +131,11 @@ class ContinuousDiscoveryDaemon:
         if not candidates:
             return links_dict
 
-        # Run GPU verification (non-blocking with short timeout)
+        # Run GPU verification (non-blocking with short timeout; serialized
+        # across discovery threads — the verifier client is shared)
         try:
-            verified = self.gpu_verifier.verify_batch(candidates)
+            with self._gpu_lock:
+                verified = self.gpu_verifier.verify_batch(candidates)
             self.stats['gpu_verified'] += len(verified)
 
             # Enrich links with GPU semantic match scores
@@ -141,15 +150,24 @@ class ContinuousDiscoveryDaemon:
 
         return links_dict
 
+    def _thread_workers(self):
+        """Per-thread WebsiteDiscovery/LinkVerifier/CN instances for parallel runs."""
+        if not hasattr(self._local, 'discovery'):
+            self._local.discovery = WebsiteDiscovery(timeout=15)
+            self._local.verifier = LinkVerifier(timeout=10)
+            self._local.cn = CharityNavigatorVerifier(timeout=10) if self._use_cn else None
+        return self._local.discovery, self._local.verifier, self._local.cn
+
     def discover_and_verify_org(self, ein, name, website, state=None):
         """Discover and verify links for one org (website or CN fallback)."""
+        discovery, verifier, cn_verifier = self._thread_workers()
         try:
             verified_links = {}
 
             # If no website, skip to CN fallback immediately
             if not website or website.strip() == '':
-                if self.cn_verifier:
-                    cn_result = self.cn_verifier.verify_link(ein, name, state)
+                if cn_verifier:
+                    cn_result = cn_verifier.verify_link(ein, name, state)
                     if cn_result and cn_result.get('donation_url'):
                         verified_links['donate_url'] = cn_result['donation_url']
                         verified_links['donate_source'] = 'charity_navigator'
@@ -165,11 +183,11 @@ class ContinuousDiscoveryDaemon:
                     return {'status': 'no_links'}
 
             # Discover from website
-            result = self.discovery.discover_all(website)
+            result = discovery.discover_all(website)
             if 'error' in result:
                 # Fall back to CN if website fetch fails
-                if self.cn_verifier:
-                    cn_result = self.cn_verifier.verify_link(ein, name, state)
+                if cn_verifier:
+                    cn_result = cn_verifier.verify_link(ein, name, state)
                     if cn_result and cn_result.get('donation_url'):
                         verified_links['donate_url'] = cn_result['donation_url']
                         verified_links['donate_source'] = 'charity_navigator'
@@ -184,7 +202,7 @@ class ContinuousDiscoveryDaemon:
             # Verify donation link from website
             if result.get('donation_links'):
                 donate_url = result['donation_links'][0]['url']
-                verification = self.verifier.verify_donation_link(donate_url)
+                verification = verifier.verify_donation_link(donate_url)
                 if verification.get('verified'):
                     verified_links['donate_url'] = donate_url
                     verified_links['donate_button_text'] = result['donation_links'][0].get('text', '')
@@ -194,7 +212,7 @@ class ContinuousDiscoveryDaemon:
             # Verify volunteer link from website
             if result.get('volunteer_links'):
                 volunteer_url = result['volunteer_links'][0]['url']
-                verification = self.verifier.verify_volunteer_link(volunteer_url)
+                verification = verifier.verify_volunteer_link(volunteer_url)
                 if verification.get('verified'):
                     verified_links['volunteer_url'] = volunteer_url
                     self.stats['verified'] += 1
@@ -209,8 +227,8 @@ class ContinuousDiscoveryDaemon:
                 verified_links['skills_sh_profile'] = result['skills_profiles'][0]['url']
 
             # Fallback to Charity Navigator if no donation link found (90% confidence gate)
-            if not verified_links.get('donate_url') and self.cn_verifier:
-                cn_result = self.cn_verifier.verify_link(ein, name, state)
+            if not verified_links.get('donate_url') and cn_verifier:
+                cn_result = cn_verifier.verify_link(ein, name, state)
                 if cn_result and cn_result.get('donation_url'):
                     verified_links['donate_url'] = cn_result['donation_url']
                     verified_links['donate_source'] = 'charity_navigator'
@@ -237,7 +255,9 @@ class ContinuousDiscoveryDaemon:
         These are already verified by the verification pipeline.
         Handles duplicate EINs by merging links (no UNIQUE constraint issues).
         """
-        db = sqlite3.connect(str(DB))
+        # timeout=30: parallel discovery threads write concurrently; busy-wait
+        # instead of raising "database is locked"
+        db = sqlite3.connect(str(DB), timeout=30)
         cursor = db.cursor()
 
         # Create queue table if it doesn't exist (no UNIQUE constraint — duplicates handled by merge)
@@ -352,11 +372,17 @@ class ContinuousDiscoveryDaemon:
             logger.debug(f"Auto-regulate failed (using base): {e}")
             return base_sleep_org, base_sleep_batch
 
-    def run_continuous_loop(self, batch_size=50, sleep_between_batches=5, sleep_between_orgs=0.5):
-        """Run discovery continuously with auto-regulation."""
+    def run_continuous_loop(self, batch_size=50, sleep_between_batches=5, sleep_between_orgs=0.5, workers=8):
+        """Run discovery continuously with auto-regulation.
+
+        Orgs in a batch are processed by a thread pool (each org is a
+        different domain, so per-domain politeness is unchanged — still one
+        crawl per site). sleep_between_orgs now paces SUBMISSION into the
+        pool, so auto-regulate keeps working as the health governor.
+        """
         logger.info("=" * 60)
         logger.info("🚀 CONTINUOUS DISCOVERY DAEMON STARTED (auto-regulating)")
-        logger.info(f"   Batch size: {batch_size} | Base sleep: {sleep_between_orgs}s/org, {sleep_between_batches}s/batch")
+        logger.info(f"   Batch size: {batch_size} | Workers: {workers} | Base sleep: {sleep_between_orgs}s/org, {sleep_between_batches}s/batch")
         logger.info("   Pacing self-tunes on load, memory, and API health")
         logger.info("=" * 60)
 
@@ -375,17 +401,27 @@ class ContinuousDiscoveryDaemon:
                     time.sleep(60)
                     continue
 
-                for ein, name, website, state in orgs:
-                    result = self.discover_and_verify_org(ein, name, website, state)
-                    if result['status'] == 'success':
-                        logger.info(f"✅ {name} ({ein}): {result['verified']} links verified")
-                    elif result['status'] == 'no_links':
-                        logger.debug(f"⚪ {name} ({ein}): No links found")
-                    else:
-                        logger.warning(f"❌ {name} ({ein}): {result.get('reason')}")
+                with ThreadPoolExecutor(max_workers=workers) as pool:
+                    futures = {}
+                    for ein, name, website, state in orgs:
+                        futures[pool.submit(self.discover_and_verify_org, ein, name, website, state)] = (ein, name)
+                        # Submission stagger (auto-regulated rate limit)
+                        time.sleep(adj_sleep_org)
 
-                    # Rate limit (auto-regulated)
-                    time.sleep(adj_sleep_org)
+                    for fut in as_completed(futures):
+                        ein, name = futures[fut]
+                        try:
+                            result = fut.result()
+                        except Exception as e:
+                            self.stats['errors'] += 1
+                            logger.warning(f"❌ {name} ({ein}): worker crashed: {str(e)[:100]}")
+                            continue
+                        if result['status'] == 'success':
+                            logger.info(f"✅ {name} ({ein}): {result['verified']} links verified")
+                        elif result['status'] == 'no_links':
+                            logger.debug(f"⚪ {name} ({ein}): No links found")
+                        else:
+                            logger.warning(f"❌ {name} ({ein}): {result.get('reason')}")
 
                 # Log progress with confidence breakdown
                 db = sqlite3.connect(str(DB))
@@ -428,9 +464,12 @@ if __name__ == '__main__':
     # written CN consent + founder approval (see governance/DECISION_QUEUE.md).
     use_cn = False
 
+    workers = int(sys.argv[4]) if len(sys.argv) > 4 else 8
+
     daemon = ContinuousDiscoveryDaemon(use_cn_fallback=use_cn)
     daemon.run_continuous_loop(
         batch_size=batch_size,
         sleep_between_orgs=sleep_between_orgs,
-        sleep_between_batches=sleep_between_batches
+        sleep_between_batches=sleep_between_batches,
+        workers=workers
     )
