@@ -8,6 +8,9 @@ Daanaa is a public nonprofit discovery directory built from public IRS, NCCS, Pr
 - Directory: https://daanaa.org/directory
 - Methodology: https://daanaa.org/methodology
 - Research: https://daanaa.org/research
+- The Daanaa Vision: https://daanaa.org/pages/daanaa-vision.html
+- AI Governance at Daanaa: https://daanaa.org/pages/ai-governance.html
+- Peer Financial Context: https://daanaa.org/pages/peer-financial-context.html
 - Sitemap: https://daanaa.org/sitemap.xml
 - Sitemap index: https://daanaa.org/sitemap-index.xml
 

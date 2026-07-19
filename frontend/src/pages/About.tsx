@@ -98,6 +98,10 @@ export default function About() {
               <p key={line} className="font-body text-[15px] text-muted-cream leading-[1.6]">{line}</p>
             ))}
           </div>
+
+          <div className="mt-8 max-w-[760px] rounded-xl border border-soft-gold/20 bg-soft-gold/10 px-5 py-4">
+            <p className="font-body text-[14px] text-muted-cream leading-[1.7]">Daanaa is currently a self-funded public-interest initiative and a DBA of EcoMargins Consulting LLC, a for-profit entity. We are keeping overhead deliberately low while the concept is tested. Daanaa does not process donations or take a percentage of gifts. This structure does not represent Daanaa as a nonprofit or tax-exempt organization.</p>
+          </div>
         </div>
       </div>
 
