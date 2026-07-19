@@ -17,6 +17,14 @@ interface LetterRequest {
   status: 'pending' | 'approved' | 'generated'
 }
 
+interface ActivityFeedItem {
+  timestamp: string
+  title: string
+  description: string
+  type: 'link_verified' | 'donor_interest' | 'data_refresh' | 'volunteer_activity'
+  icon: string
+}
+
 interface DashboardData {
   nonprofit_ein: string
   name: string
@@ -30,6 +38,7 @@ export default function NonprofitDashboardPage() {
   usePageMeta('Nonprofit Dashboard | Daanaa', 'Manage donation letter requests, approvals, and credits')
 
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
+  const [activityFeed, setActivityFeed] = useState<ActivityFeedItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [approving, setApproving] = useState<string | null>(null)
@@ -54,6 +63,20 @@ export default function NonprofitDashboardPage() {
         if (!res.ok) throw new Error('Failed to load dashboard')
         const data = await res.json()
         setDashboard(data)
+
+        // Fetch activity feed
+        const feedRes = await fetch('/api/nonprofit/activity-feed', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({ ein, verification_token: authToken }),
+        })
+        if (feedRes.ok) {
+          const feedData = await feedRes.json()
+          setActivityFeed(feedData.feed || [])
+        }
       } catch (err) {
         setError((err as Error).message)
       } finally {
@@ -276,6 +299,29 @@ export default function NonprofitDashboardPage() {
                   {letter.status === 'generated' && (
                     <p className="text-sm text-green-700 font-semibold">✓ Generated</p>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Activity Feed */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm mb-8 border-l-4 border-blue-300">
+          <h2 className="font-display text-2xl italic text-deep-navy mb-4">What Changed</h2>
+          {activityFeed.length === 0 ? (
+            <p className="text-sm text-cool-grey text-center py-8">No recent activity</p>
+          ) : (
+            <div className="space-y-3">
+              {activityFeed.map((item, idx) => (
+                <div key={idx} className="flex gap-4 pb-3 border-b border-light-grey last:border-0">
+                  <div className="text-2xl flex-shrink-0">{item.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-deep-navy text-sm">{item.title}</p>
+                    <p className="text-xs text-cool-grey">{item.description}</p>
+                    <p className="text-xs text-cool-grey mt-1">
+                      {new Date(item.timestamp).toLocaleDateString()} at {new Date(item.timestamp).toLocaleTimeString()}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

@@ -362,6 +362,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const addEntry = useCallback((ein: string) => {
     if (!/^\d{9}$/.test(ein)) return
     dispatch({ type: 'ADD', ein })
+    // Report bookmark anonymously to nonprofit dashboard (P2: anonymized, no tracking)
+    fetch(`${getApiBase()}/api/wallet/report-bookmark`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ein }),
+    }).catch(() => {}) // Silent fail — reporting is not critical
   }, [])
 
   const removeEntry = useCallback((ein: string) => {
@@ -382,6 +388,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const addToFunding = useCallback((ein: string) => {
     if (!/^\d{9}$/.test(ein)) return
     dispatch({ type: 'ADD_FUNDING', ein })
+    // Report bookmark anonymously to nonprofit dashboard (P2: anonymized, no tracking)
+    fetch(`${getApiBase()}/api/wallet/report-bookmark`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ein }),
+    }).catch(() => {}) // Silent fail — reporting is not critical
   }, [])
 
   const addToVolunteering = useCallback((ein: string) => {
