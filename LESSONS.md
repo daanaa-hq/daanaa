@@ -910,3 +910,19 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   log the exception from day one (app.logger.warning minimum). When a
   feature "silently does nothing," grep its code path for `except.*pass`
   FIRST, before theorizing about imports, caching, or process models.
+
+## 2026-07-19 — 803 "stale beta links" were phantom rows (status without URL)
+- **Symptom:** freshness audit showed 645 beta links never re-checked + 158
+  stale >30d; a one-shot reverifier then failed ALL 803 with "Invalid URL
+  'None'" — every row had donate_url_status='beta' but donate_url NULL.
+- **Root cause (probable):** the 2026-07-16 bulk status migration
+  (verified→beta) rewrote status wholesale, including rows that never had a
+  URL. Current writers (deploy_queued_links, extract_donate_links) pair
+  URL+status correctly; the phantoms were legacy.
+- **Fix:** phantom rows cleared to status NULL (nothing to show, nothing to
+  review); human_review queue restored to its 5 real entries; daily_data_audit
+  now alarms on any status-without-URL row so recurrence surfaces within 24h.
+- **Preventing rule:** before treating a freshness/staleness count as a
+  re-verification backlog, SELECT the actual URLs — a status column can lie
+  about what exists. Bulk status migrations must always carry the
+  corresponding value column in their WHERE clause.

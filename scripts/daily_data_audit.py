@@ -69,6 +69,19 @@ def audit():
     irs_coverage = c.fetchall()
     log(f"📋 IRS SOI: " + ", ".join([f"{y}({cnt:,})" for y,cnt in irs_coverage]))
     
+    # 3b. Phantom link statuses (2026-07-19: 803 rows had status='beta' with
+    # donate_url NULL — likely from the 2026-07-16 bulk status migration.
+    # A donor-facing status must never exist without its URL.)
+    c.execute("""
+        SELECT COUNT(*) FROM registry_enriched
+        WHERE donate_url IS NULL AND donate_url_status IN ('beta', 'claimed', 'verified')
+    """)
+    phantoms = c.fetchone()[0]
+    if phantoms:
+        log(f"🚨 PHANTOM LINK STATUSES: {phantoms} rows have a live donate status but NULL URL — investigate the writer")
+    else:
+        log("✅ Link status integrity: no status-without-URL rows")
+
     # 4. Link queue status
     c.execute("SELECT COUNT(*) FROM link_deployment_queue WHERE deployed_at IS NULL")
     pending = c.fetchone()[0]
