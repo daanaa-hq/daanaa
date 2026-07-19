@@ -33,6 +33,78 @@ class EmailTemplate:
     plain_text: str
 
 
+# ── Compliance layer (patterns learned from listmonk, task #22) ───────────────
+# Deliverability is a burn-once asset: @daanaa.org never recovers from a spam
+# blocklist. Every campaign send checks the suppression list and carries
+# RFC 8058 one-click unsubscribe headers. Transactional mail (user-requested
+# PINs/verification) skips marketing headers and ignores suppression.
+
+import hashlib
+import hmac as _hmac
+import sqlite3 as _sqlite3
+from pathlib import Path as _Path
+
+
+def _db_path() -> str:
+    return os.getenv("DAANAA_DB_PATH",
+                     str(_Path.home() / "meritgiving/data/merit_registry.db"))
+
+
+def _compliance_db():
+    db = _sqlite3.connect(_db_path(), timeout=30)
+    db.execute("""CREATE TABLE IF NOT EXISTS email_suppression (
+        email TEXT PRIMARY KEY,
+        reason TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)""")
+    return db
+
+
+def unsubscribe_token(email: str) -> str:
+    """HMAC token so one-click unsubscribe needs no login. Secret from env
+    only (EMAIL_UNSUB_SECRET); empty secret disables token generation."""
+    secret = os.getenv("EMAIL_UNSUB_SECRET", "")
+    if not secret:
+        return ""
+    return _hmac.new(secret.encode(), email.lower().strip().encode(),
+                     hashlib.sha256).hexdigest()[:32]
+
+
+def verify_unsubscribe_token(email: str, token: str) -> bool:
+    expected = unsubscribe_token(email)
+    return bool(expected) and _hmac.compare_digest(expected, token or "")
+
+
+def is_suppressed(email: str) -> bool:
+    db = _compliance_db()
+    try:
+        return db.execute("SELECT 1 FROM email_suppression WHERE email = ?",
+                          (email.lower().strip(),)).fetchone() is not None
+    finally:
+        db.close()
+
+
+def suppress_email(email: str, reason: str = "unsubscribed") -> None:
+    db = _compliance_db()
+    try:
+        db.execute("INSERT OR REPLACE INTO email_suppression (email, reason) "
+                   "VALUES (?, ?)", (email.lower().strip(), reason))
+        db.commit()
+    finally:
+        db.close()
+
+
+def _unsubscribe_headers(to_email: str) -> dict:
+    token = unsubscribe_token(to_email)
+    if not token:
+        return {}
+    url = (f"https://daanaa.org/api/email/unsubscribe"
+           f"?e={to_email.lower().strip()}&t={token}")
+    return {
+        "List-Unsubscribe": f"<{url}>",
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    }
+
+
 # ── Provider: Resend ──────────────────────────────────────────────────────────
 
 def _send_via_resend(
@@ -42,18 +114,22 @@ def _send_via_resend(
     subject: str,
     html: str,
     plain_text: str,
+    extra_headers: dict | None = None,
 ) -> bool:
     try:
+        payload = {
+            "from": from_email,
+            "to": [to_email],
+            "subject": subject,
+            "html": html,
+            "text": plain_text,
+        }
+        if extra_headers:
+            payload["headers"] = extra_headers
         resp = requests.post(
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={
-                "from": from_email,
-                "to": [to_email],
-                "subject": subject,
-                "html": html,
-                "text": plain_text,
-            },
+            json=payload,
             timeout=10,
         )
         if resp.status_code in (200, 201):
@@ -78,12 +154,15 @@ def _send_via_smtp(
     subject: str,
     html: str,
     plain_text: str,
+    extra_headers: dict | None = None,
 ) -> bool:
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
         msg["From"] = from_email
         msg["To"] = to_email
+        for k, v in (extra_headers or {}).items():
+            msg[k] = v
         msg.attach(MIMEText(plain_text, "plain"))
         msg.attach(MIMEText(html, "html"))
         with smtplib.SMTP(host, port) as server:
@@ -129,10 +208,22 @@ class EmailService:
             logger.warning(f"Error fetching email for user {user_id}: {e}")
             return None
 
-    def send(self, to_email: str, subject: str, html: str, plain_text: str) -> bool:
+    def send(self, to_email: str, subject: str, html: str, plain_text: str,
+             kind: str = "transactional") -> bool:
+        """kind='campaign' → suppression list honored + RFC 8058 unsubscribe
+        headers attached. kind='transactional' (default) → user-requested
+        mail (PINs, verification): no marketing headers, suppression ignored
+        because the recipient asked for this specific message."""
         if not to_email:
             logger.warning(f"No recipient email for: {subject}")
             return False
+
+        extra_headers: dict = {}
+        if kind == "campaign":
+            if is_suppressed(to_email):
+                logger.info(f"[SUPPRESSED] not sending campaign to {to_email}")
+                return False
+            extra_headers = _unsubscribe_headers(to_email)
 
         if not self.enabled:
             logger.info(f"[EMAIL DISABLED] Would send to {to_email}: {subject}")
@@ -142,12 +233,14 @@ class EmailService:
             return _send_via_resend(
                 self.resend_api_key, self.from_email,
                 to_email, subject, html, plain_text,
+                extra_headers=extra_headers,
             )
 
         return _send_via_smtp(
             self.smtp_host, self.smtp_port,
             self.smtp_user, self.smtp_password,
             self.from_email, to_email, subject, html, plain_text,
+            extra_headers=extra_headers,
         )
 
     def send_template(self, to_email: str, template: EmailTemplate) -> bool:

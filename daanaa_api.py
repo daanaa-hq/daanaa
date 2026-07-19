@@ -9024,6 +9024,40 @@ def nonprofit_self_dashboard():  # 'nonprofit_dashboard' endpoint name is taken
     })
 
 
+@app.route('/api/email/unsubscribe', methods=['GET', 'POST'])
+@limiter.limit("30 per minute")
+def email_unsubscribe():
+    """One-click unsubscribe (RFC 8058) — listmonk-learned compliance layer.
+
+    GET renders a tiny confirm page and NEVER unsubscribes (mail scanners
+    prefetch GET links; auto-unsubscribing on GET silently removes real
+    subscribers). POST — from the confirm button or a mail client's
+    one-click header — verifies the HMAC token and suppresses the address.
+    """
+    from email_service import verify_unsubscribe_token, suppress_email
+    email = (request.args.get('e') or '').strip().lower()[:254]
+    token = (request.args.get('t') or '').strip()[:64]
+    if not email or not token:
+        return jsonify({'error': 'missing e or t'}), 400
+    if not verify_unsubscribe_token(email, token):
+        return jsonify({'error': 'invalid token'}), 403
+
+    if request.method == 'GET':
+        return (
+            f"<!doctype html><meta name='robots' content='noindex'>"
+            f"<title>Unsubscribe — Daanaa</title>"
+            f"<div style='font-family:sans-serif;max-width:28rem;margin:4rem auto'>"
+            f"<h2>Unsubscribe from Daanaa emails?</h2>"
+            f"<p>{email} will stop receiving campaign emails. "
+            f"Account emails you request (like claim verification) still arrive.</p>"
+            f"<form method='post' action='/api/email/unsubscribe?e={email}&t={token}'>"
+            f"<button type='submit' style='padding:.6rem 1.2rem'>Unsubscribe</button>"
+            f"</form></div>", 200, {'Content-Type': 'text/html'})
+
+    suppress_email(email, reason='unsubscribed')
+    return jsonify({'status': 'unsubscribed', 'email': email})
+
+
 @app.route('/api/nonprofit/activity-feed', methods=['POST'])
 @limiter.limit("30 per minute")
 def nonprofit_activity_feed():
