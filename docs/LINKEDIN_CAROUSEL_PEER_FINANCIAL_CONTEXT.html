@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peer Financial Context — LinkedIn Carousel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: #f0f0f0; }
+        .carousel-container { max-width: 1080px; margin: 20px auto; }
+        .slide {
+            width: 1080px;
+            height: 1080px;
+            background: linear-gradient(135deg, #0f1f2e 0%, #1a2a3a 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .accent-circle {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            width: 30px;
+            height: 30px;
+            background: #d4a574;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .accent-diamond {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            border: 2px solid #d4a574;
+            transform: rotate(45deg);
+            z-index: 1;
+        }
+        .slide-number {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            color: #d4a574;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .slide-header {
+            color: #d4a574;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+        }
+        .slide-header::after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 3px;
+            background: #d4a574;
+            margin-top: 8px;
+        }
+        .slide-title {
+            font-size: 56px;
+            line-height: 1.2;
+            font-weight: 300;
+            letter-spacing: -0.5px;
+            margin-bottom: 30px;
+            font-family: 'Georgia', serif;
+            position: relative;
+            z-index: 2;
+        }
+        .slide-subtitle {
+            font-size: 18px;
+            color: #b0b0b0;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 2;
+        }
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+        .stat-value {
+            font-size: 72px;
+            font-weight: 300;
+            color: #d4a574;
+            line-height: 1;
+            margin-bottom: 15px;
+            font-family: 'Georgia', serif;
+        }
+        .stat-label {
+            font-size: 18px;
+            color: #e0e0e0;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+        .key-point {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-bottom: 20px;
+            line-height: 1.7;
+            padding-left: 20px;
+            border-left: 3px solid #d4a574;
+        }
+        .slide-footer {
+            margin-top: auto;
+            position: relative;
+            z-index: 2;
+        }
+        .cta-link {
+            color: #d4a574;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .website { color: #888; font-size: 13px; }
+        .slide-closing {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .closing-title {
+            font-size: 52px;
+            font-family: 'Georgia', serif;
+            font-weight: 300;
+            margin-bottom: 40px;
+            line-height: 1.3;
+        }
+        .closing-subtitle {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .cta-button {
+            background: #d4a574;
+            color: #0f1f2e;
+            padding: 15px 40px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="carousel-container">
+    <!-- Slide 1: Title -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">DAANAA RESEARCH</div>
+            <div class="slide-title">Peer Financial Context</div>
+            <div class="slide-subtitle">How to measure nonprofit health fairly when public data is incomplete</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ Read the research brief</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">1 / 8</div>
+    </div>
+
+    <!-- Slide 2: The Central Challenge -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">THE CENTRAL CLAIM</div>
+            <div class="slide-title">Missing evidence is a data condition</div>
+        </div>
+        <div class="slide-content">
+            <div class="key-point">Not evidence of weakness. Not evidence of danger. An information condition.</div>
+            <div class="key-point">When we can't calculate financial context because the public filing is incomplete or stale, we should say so—not silently penalize the org.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/peer-financial-context.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">2 / 8</div>
+    </div>
+
+    <!-- Slide 3: Five Evidence States -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">FRAMEWORK</div>
+            <div class="slide-title">Five evidence states</div>
+        </div>
+        <div class="slide-content">
+            <div class="stat-value">5</div>
+            <div class="stat-label">ways to honestly label what we know</div>
+            <div style="margin-top: 30px;">
+                <div class="key-point">Context Available — enough data to calculate</div>
+                <div class="key-point">Partial Evidence — some data, not enough</div>
+                <div class="key-point">No Usable Evidence — can't calculate responsibly</div>
+                <div class="key-point">Stale Evidence — data exists but is too old</div>
+                <div class="key-point">Under Review — conflicts or corrections pending</div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/peer-financial-context.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">3 / 8</div>
+    </div>
+
+    <!-- Slide 4: What NOT to Do -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">CRITICAL RULE</div>
+            <div class="slide-title">Never map missing data to ranking</div>
+        </div>
+        <div class="slide-content">
+            <div class="key-point">An org without a recent filing shouldn't drop in visibility or in peer percentile rank.</div>
+            <div class="key-point">Missing data shouldn't be a hidden penalty. It should be an honest label.</div>
+            <div class="key-point">If we can't verify it, we say so. We don't infer weakness from silence.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/peer-financial-context.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">4 / 8</div>
+    </div>
+
+    <!-- Slide 5: Coverage Audit -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">VALIDATION NEEDED</div>
+            <div class="slide-title">Coverage audits</div>
+        </div>
+        <div class="slide-content">
+            <div class="key-point">What % of orgs have context available vs partial vs none?</div>
+            <div class="key-point">Does availability correlate with size, geography, sector, or language?</div>
+            <div class="key-point">Are we inadvertently penalizing resource-constrained communities?</div>
+            <div class="key-point">These questions need answers before we publish at scale.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/peer-financial-context.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">5 / 8</div>
+    </div>
+
+    <!-- Slide 6: Sensitivity Testing -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">ROBUSTNESS</div>
+            <div class="slide-title">Sensitivity matters</div>
+        </div>
+        <div class="slide-content">
+            <div class="key-point">Small changes in freshness windows should not dramatically reshuffle peer groups.</div>
+            <div class="key-point">Small changes in revenue bands should not move orgs in/out of comparison cells.</div>
+            <div class="key-point">If the methodology is sensitive to minor tweaks, donors can't trust the result.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/peer-financial-context.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">6 / 8</div>
+    </div>
+
+    <!-- Slide 7: Red-Team Cases -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">EDGE CASES</div>
+            <div class="slide-title">Test the hard cases</div>
+        </div>
+        <div class="slide-content">
+            <div class="key-point">Small, healthy, financially sound orgs (hidden gems)</div>
+            <div class="key-point">New and growing orgs (incomplete filing history)</div>
+            <div class="key-point">Community-rooted orgs with limited English materials</div>
+            <div class="key-point">Crisis-affected orgs (reserves just deployed)</div>
+            <div class="key-point">If our model fails them, we have a fairness problem.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/peer-financial-context.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">7 / 8</div>
+    </div>
+
+    <!-- Slide 8: Closing CTA -->
+    <div class="slide slide-closing">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div class="closing-title">Fairness Requires Honesty</div>
+        <div class="closing-subtitle">A research brief on handling incomplete public data<br>without silently penalizing the organizations it describes.</div>
+        <a href="https://daanaa.org/pages/peer-financial-context.html" class="cta-button">Read the Full Brief</a>
+        <div style="margin-top: 60px; color: #888; font-size: 13px;">www.daanaa.org</div>
+        <div class="slide-number">8 / 8</div>
+    </div>
+
+</div>
+
+</body>
+</html>

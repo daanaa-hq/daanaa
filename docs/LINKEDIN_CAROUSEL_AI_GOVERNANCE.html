@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Governance at Daanaa — LinkedIn Carousel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: #f0f0f0; }
+        .carousel-container { max-width: 1080px; margin: 20px auto; }
+        .slide {
+            width: 1080px;
+            height: 1080px;
+            background: linear-gradient(135deg, #0f1f2e 0%, #1a2a3a 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .accent-circle {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            width: 30px;
+            height: 30px;
+            background: #d4a574;
+            border-radius: 50%;
+            z-index: 1;
+        }
+        .accent-diamond {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            border: 2px solid #d4a574;
+            transform: rotate(45deg);
+            z-index: 1;
+        }
+        .slide-number {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            color: #d4a574;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .slide-header {
+            color: #d4a574;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+        }
+        .slide-header::after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 3px;
+            background: #d4a574;
+            margin-top: 8px;
+        }
+        .slide-title {
+            font-size: 56px;
+            line-height: 1.2;
+            font-weight: 300;
+            letter-spacing: -0.5px;
+            margin-bottom: 30px;
+            font-family: 'Georgia', serif;
+            position: relative;
+            z-index: 2;
+        }
+        .slide-subtitle {
+            font-size: 18px;
+            color: #b0b0b0;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 2;
+        }
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+        .key-point {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-bottom: 20px;
+            line-height: 1.7;
+            padding-left: 20px;
+            border-left: 3px solid #d4a574;
+        }
+        .slide-footer {
+            margin-top: auto;
+            position: relative;
+            z-index: 2;
+        }
+        .cta-link {
+            color: #d4a574;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .website { color: #888; font-size: 13px; }
+        .slide-closing {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .closing-title {
+            font-size: 52px;
+            font-family: 'Georgia', serif;
+            font-weight: 300;
+            margin-bottom: 40px;
+            line-height: 1.3;
+        }
+        .closing-subtitle {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .cta-button {
+            background: #d4a574;
+            color: #0f1f2e;
+            padding: 15px 40px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 30px;
+        }
+        .obligation-title {
+            font-size: 18px;
+            color: #d4a574;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .obligation-desc {
+            font-size: 14px;
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="carousel-container">
+    <!-- Slide 1: Title -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">DAANAA</div>
+            <div class="slide-title">AI Governance</div>
+            <div class="slide-subtitle">Stewardship over compliance. Nine obligations that keep reasoning systems accountable.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ Read the framework</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">1 / 8</div>
+    </div>
+
+    <!-- Slide 2: The Problem -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">THE CHALLENGE</div>
+            <div class="slide-title">Compliance breaks when technology changes</div>
+        </div>
+        <div class="slide-content">
+            <div class="key-point">Most AI governance is written as rules: "Don't do X." Rules describe machines of the moment.</div>
+            <div class="key-point">When the technology changes, the rules either become ignored or get violated in spirit while obeyed in letter.</div>
+            <div class="key-point">What we need: governance built on purpose, not just prohibition.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/ai-governance.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">2 / 8</div>
+    </div>
+
+    <!-- Slide 3: Stewardship vs Compliance -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">THE SHIFT</div>
+            <div class="slide-title">Stewardship beats rules</div>
+        </div>
+        <div class="slide-content">
+            <div class="key-point">Stewardship asks: "What was I built for? Does this serve that purpose?"</div>
+            <div class="key-point">Rules ask: "What does the rulebook forbid?"</div>
+            <div class="key-point">Stewardship scales with capability. Rules don't—more capable systems following rules blindly become more dangerous, not safer.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/ai-governance.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">3 / 8</div>
+    </div>
+
+    <!-- Slide 4: Obligation 1 & 2 -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">OBLIGATIONS 1-2</div>
+            <div class="slide-title">Mission & Oversight</div>
+        </div>
+        <div class="slide-content">
+            <div class="obligation-title">1. Mission Alignment</div>
+            <div class="obligation-desc">Every capability must be traceable to the mission. If you can't answer "how does this serve our purpose?" you don't build it.</div>
+            <div style="margin-top: 30px;">
+                <div class="obligation-title">2. Human Oversight</div>
+                <div class="obligation-desc">A machine may draft; a human answers for what is done. Every AI output touching public records needs human verification first.</div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/ai-governance.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">4 / 8</div>
+    </div>
+
+    <!-- Slide 5: Obligation 3-5 -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">OBLIGATIONS 3-5</div>
+            <div class="slide-title">Transparency & Correction</div>
+        </div>
+        <div class="slide-content">
+            <div class="obligation-title">3. Explainability</div>
+            <div class="obligation-desc">If you can't explain it, you can't publish it. Every decision gets logged with its reasoning.</div>
+            <div style="margin-top: 20px;">
+                <div class="obligation-title">4. Information Provenance</div>
+                <div class="obligation-desc">Every fact carries its origin. AI-discovered data stays labeled until a human verifies it.</div>
+            </div>
+            <div style="margin-top: 20px;">
+                <div class="obligation-title">5. Correction</div>
+                <div class="obligation-desc">When wrong, we fix it, document it, and prevent the class of error.</div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/ai-governance.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">5 / 8</div>
+    </div>
+
+    <!-- Slide 6: Obligations 6-9 -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">OBLIGATIONS 6-9</div>
+            <div class="slide-title">Appeals, Respect & Ethics</div>
+        </div>
+        <div class="slide-content">
+            <div class="obligation-title">6. Appeals</div>
+            <div class="obligation-desc">Anyone affected by an AI judgment can appeal to a human with authority to overturn it.</div>
+            <div style="margin-top: 20px;">
+                <div class="obligation-title">9. Ethics Before Optimization</div>
+                <div class="obligation-desc">When efficiency conflicts with principles, forfeit the efficiency. No accuracy gain justifies exposing privacy or ranking worth.</div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/ai-governance.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">6 / 8</div>
+    </div>
+
+    <!-- Slide 7: The Bottom Line -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div>
+            <div class="slide-header">KEY TRUTH</div>
+            <div class="slide-title">Responsibility doesn't scale</div>
+        </div>
+        <div class="slide-content">
+            <div class="key-point">More capable systems do not equal more autonomous systems.</div>
+            <div class="key-point">Responsibility stays human, at every level of machine intelligence, forever. That's not a limitation we tolerate—that's the design.</div>
+        </div>
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/ai-governance.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+        <div class="slide-number">7 / 8</div>
+    </div>
+
+    <!-- Slide 8: Closing CTA -->
+    <div class="slide slide-closing">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+        <div class="closing-title">Govern AI by Purpose</div>
+        <div class="closing-subtitle">Nine obligations that keep reasoning systems accountable<br>to mission, evidence, and human judgment.</div>
+        <a href="https://daanaa.org/pages/ai-governance.html" class="cta-button">Read the Full Framework</a>
+        <div style="margin-top: 60px; color: #888; font-size: 13px;">www.daanaa.org</div>
+        <div class="slide-number">8 / 8</div>
+    </div>
+
+</div>
+
+</body>
+</html>

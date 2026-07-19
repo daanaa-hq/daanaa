@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Daanaa Vision — LinkedIn Carousel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: #f0f0f0;
+        }
+
+        .carousel-container {
+            max-width: 1080px;
+            margin: 20px auto;
+        }
+
+        .slide {
+            width: 1080px;
+            height: 1080px;
+            background: linear-gradient(135deg, #0f1f2e 0%, #1a2a3a 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 60px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .accent-circle {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            width: 30px;
+            height: 30px;
+            background: #d4a574;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .accent-diamond {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            width: 24px;
+            height: 24px;
+            background: transparent;
+            border: 2px solid #d4a574;
+            transform: rotate(45deg);
+            z-index: 1;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            color: #d4a574;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .slide-header {
+            color: #d4a574;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .slide-header::after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 3px;
+            background: #d4a574;
+            margin-top: 8px;
+        }
+
+        .slide-title {
+            font-size: 56px;
+            line-height: 1.2;
+            font-weight: 300;
+            letter-spacing: -0.5px;
+            margin-bottom: 30px;
+            font-family: 'Georgia', serif;
+            position: relative;
+            z-index: 2;
+        }
+
+        .slide-subtitle {
+            font-size: 18px;
+            color: #b0b0b0;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 2;
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stat-value {
+            font-size: 72px;
+            font-weight: 300;
+            color: #d4a574;
+            line-height: 1;
+            margin-bottom: 15px;
+            font-family: 'Georgia', serif;
+        }
+
+        .stat-label {
+            font-size: 18px;
+            color: #e0e0e0;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .key-point {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-bottom: 20px;
+            line-height: 1.7;
+            padding-left: 20px;
+            border-left: 3px solid #d4a574;
+        }
+
+        .slide-footer {
+            margin-top: auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .cta-link {
+            color: #d4a574;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .website {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .slide-closing {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .closing-title {
+            font-size: 52px;
+            font-family: 'Georgia', serif;
+            font-weight: 300;
+            margin-bottom: 40px;
+            line-height: 1.3;
+        }
+
+        .closing-subtitle {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .cta-button {
+            background: #d4a574;
+            color: #0f1f2e;
+            padding: 15px 40px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="carousel-container">
+    <!-- Slide 1: Title -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+
+        <div>
+            <div class="slide-header">DAANAA</div>
+            <div class="slide-title">The Daanaa Vision</div>
+            <div class="slide-subtitle">17 principles that make giving easy, discovery honest, and small nonprofits visible</div>
+        </div>
+
+        <div class="slide-footer">
+            <div class="cta-link">→ Read the full vision</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+
+        <div class="slide-number">1 / 8</div>
+    </div>
+
+    <!-- Slide 2: Principle 1 -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+
+        <div>
+            <div class="slide-header">PRINCIPLE 1</div>
+            <div class="slide-title">Make Giving Easy</div>
+        </div>
+
+        <div class="slide-content">
+            <div class="key-point">Giving should be frictionless. No gates, no accounts, no tracking. Just discovery, decision, and action.</div>
+            <div class="key-point">When people find an organization worth supporting, they should be able to give in seconds—not minutes.</div>
+        </div>
+
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/daanaa-vision.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+
+        <div class="slide-number">2 / 8</div>
+    </div>
+
+    <!-- Slide 3: Principle 4 -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+
+        <div>
+            <div class="slide-header">PRINCIPLE 4</div>
+            <div class="slide-title">Small orgs deserve fairness</div>
+        </div>
+
+        <div class="slide-content">
+            <div class="key-point">A $200K community org should be treated with the same dignity as Kaiser.</div>
+            <div class="key-point">No hidden penalties for being small. No algorithm that favors polish over impact. No two-tier visibility.</div>
+            <div class="stat-value">514K</div>
+            <div class="stat-label">micro & small nonprofits in the U.S. deserve to be discoverable</div>
+        </div>
+
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/daanaa-vision.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+
+        <div class="slide-number">3 / 8</div>
+    </div>
+
+    <!-- Slide 4: Principle 5 -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+
+        <div>
+            <div class="slide-header">PRINCIPLE 5</div>
+            <div class="slide-title">Context, not verdict</div>
+        </div>
+
+        <div class="slide-content">
+            <div class="key-point">Show donors what an organization's finances look like compared to peers in their sector and size.</div>
+            <div class="key-point">Don't rank them. Don't shame them. Don't pretend one number tells the whole story.</div>
+            <div class="stat-value">Context</div>
+            <div class="stat-label">enables better decisions. Verdicts enable gaming.</div>
+        </div>
+
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/daanaa-vision.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+
+        <div class="slide-number">4 / 8</div>
+    </div>
+
+    <!-- Slide 5: Principle 7 -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+
+        <div>
+            <div class="slide-header">PRINCIPLE 7</div>
+            <div class="slide-title">Independence is protected</div>
+        </div>
+
+        <div class="slide-content">
+            <div class="key-point">No paid placement. No sponsored results. No partner influence over rankings.</div>
+            <div class="key-point">Daanaa stays operationally independent from the money. Donors give directly to nonprofits, not through us.</div>
+            <div class="stat-value">Never</div>
+            <div class="stat-label">will an organization's score change because they paid a fee</div>
+        </div>
+
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/pages/daanaa-vision.html</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+
+        <div class="slide-number">5 / 8</div>
+    </div>
+
+    <!-- Slide 6: Key Insight -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+
+        <div>
+            <div class="slide-header">KEY INSIGHT</div>
+            <div class="slide-title">Transparency is a tool</div>
+        </div>
+
+        <div class="slide-content">
+            <div class="key-point">When you show how something works, people can trust it. When you hide how, they can't.</div>
+            <div class="key-point">Our methodology is published. Our scoring is versioned. Our mistakes are corrected publicly.</div>
+            <div class="key-point">That's not a liability. That's the whole point.</div>
+        </div>
+
+        <div class="slide-footer">
+            <div class="cta-link">→ daanaa.org/charter</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+
+        <div class="slide-number">6 / 8</div>
+    </div>
+
+    <!-- Slide 7: Call to Explore -->
+    <div class="slide">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+
+        <div>
+            <div class="slide-header">INSIDE</div>
+            <div class="slide-title">17 principles that changed how giving works</div>
+        </div>
+
+        <div class="slide-content">
+            <div class="key-point">From "Make Giving Easy" to "Independence is Protected"—each principle shapes every decision we make.</div>
+            <div class="key-point">Read the full vision. See how trust-based discovery actually works.</div>
+        </div>
+
+        <div class="slide-footer">
+            <div class="cta-link">→ Read The Daanaa Vision</div>
+            <div class="website">www.daanaa.org</div>
+        </div>
+
+        <div class="slide-number">7 / 8</div>
+    </div>
+
+    <!-- Slide 8: Closing CTA -->
+    <div class="slide slide-closing">
+        <div class="accent-circle"></div>
+        <div class="accent-diamond"></div>
+
+        <div class="closing-title">Explore the Vision</div>
+        <div class="closing-subtitle">Financial context for 1.7M nonprofits, from public data.<br>Free. Transparent. No rankings, no agenda.</div>
+
+        <a href="https://daanaa.org/pages/daanaa-vision.html" class="cta-button">Read the Full Vision</a>
+
+        <div style="margin-top: 60px; color: #888; font-size: 13px;">www.daanaa.org</div>
+
+        <div class="slide-number">8 / 8</div>
+    </div>
+
+</div>
+
+</body>
+</html>
