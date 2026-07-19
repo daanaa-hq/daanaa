@@ -1735,6 +1735,17 @@ def list_organizations():
     page = max(1, request.args.get('page', 1, type=int))
     per_page = min(request.args.get('per_page', 20, type=int), 100)
     search = request.args.get('q', '').strip()[:200]
+
+    # Search intent classification (Phase 2): suggest routing for cause queries
+    search_intent = None
+    if search:
+        try:
+            from search_intent_classifier import SearchIntentClassifier
+            classifier = SearchIntentClassifier(db_path=str(DB))
+            search_intent = classifier.classify(search)
+        except Exception:
+            pass  # Classifier optional — fallback to default if import fails
+
     ntee_raw = request.args.get('ntee', '').strip().upper()
     ntee_list = [x.strip()[:1] for x in ntee_raw.split(',') if x.strip()]
     # NTEECC subcategories, comma-separated e.g. "E21,A82". Combined with the
@@ -2042,6 +2053,9 @@ def list_organizations():
     if corrected_query:
         # Honest labeling (P3): the UI can render "Showing results for …"
         payload["corrected_query"] = corrected_query
+    if search_intent:
+        # Search Phase 2: include intent classification for routing/instrumentation
+        payload["search_intent"] = search_intent
     if nearby_meta:
         payload["nearby"] = nearby_meta
     _cset(ck, payload)

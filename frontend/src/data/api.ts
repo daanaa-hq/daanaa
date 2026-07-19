@@ -266,6 +266,14 @@ export async function getOrganizations(params?: {
   pages: number;
   // Present only when zero-result rescue via typo correction happened (P3)
   corrected_query?: string;
+  // Search Phase 2: query intent classification for routing/instrumentation
+  search_intent?: {
+    query: string;
+    intent: 'cause' | 'organization' | 'ambiguous';
+    confidence: number;
+    reason: string;
+    suggested_path: 'semantic_embedding' | 'fts_exact' | 'fts_with_semantic_rerank';
+  };
   // Present only when the API resolved a `near` location; its absence while
   // `near` was sent means the location could not be resolved (show feedback,
   // never silently drop the filter).
