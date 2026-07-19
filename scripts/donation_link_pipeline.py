@@ -129,7 +129,10 @@ _GENERIC_DONATE_RE = re.compile(
     r"^https?://(www\.)?("
     r"paypal\.com/donate/?(\?cmd=_s-xclick)?"
     r"|donorbox\.org/widgets?/?"
-    r"|givebutter\.com/(embed|latest)/?"
+    r"|donorbox\.org/(embed|install-[\w-]+|events|api)/?"      # widget/installer docs
+    r"|givebutter\.com/(embed|latest|elements)/?"
+    r"|checkout\.square\.site/pay/merchant.*"                  # platform checkout shell
+    r"|networkforgood\.org/donate/donation/?"                  # platform root, no org
     r"|crm\.bloomerang\.co/HostedDonation/?"
     r"|venmo\.com/?"
     r")$",

@@ -1,3 +1,25 @@
+## 2026-07-19 — URL "sanity" without domain knowledge scores junk at 95% confidence
+
+**Symptom:** 742 donation links sat in pending_review at confidence 90-95, all
+scheme-less, top entries being donation platforms' own widget-installer pages
+(donorbox.org/install-popup-button, checkout.square.site/pay/merchant,
+givebutter.com/elements). Promoting them would have pointed donate buttons at
+setup documentation.
+
+**Root cause:** The GPU discovery path's QualityGate.url_sanity scored URLs on
+FORM only (length, scheme, injection chars) — a perfectly-formed URL to a
+platform's installer docs passes every formal check. The main pipeline's
+_GENERIC_DONATE_RE knowledge existed but wasn't shared with the GPU path
+(same duplicated-function drift class as the FTS sanitizer, same week).
+
+**Preventing rules:** (a) URL validation for donate links MUST include the
+platform-infrastructure blocklist — form checks alone cannot distinguish "a
+donation page" from "a page about donation pages." (b) When the same concept
+(generic-URL detection, query sanitizing) lives in two pipelines, add the
+KEEP-IN-SYNC comment pair and a cross-file test. (c) A review queue that only
+grows is a signal, not a backlog — audit its top URL patterns before bulk
+promotion, ever.
+
 ## 2026-07-18 — FTS5 gives punctuation syntax meaning; a swallowed error is a silent 0-result page
 
 **Symptom:** Donors searching real org names with punctuation ("4-H", "St. Jude's",

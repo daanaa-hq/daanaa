@@ -148,7 +148,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Batch-promote verified links to beta (live)')
     parser.add_argument('--batch-size', type=int, default=500)
     parser.add_argument('--source', default='verified',
-                        choices=['verified', 'gpu_verified', 'charity_navigator'])
+                        choices=['verified', 'gpu_verified', 'charity_navigator',
+                                 'pending_review'])
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
 

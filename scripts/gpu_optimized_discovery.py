@@ -46,6 +46,22 @@ VOLUNTEER_PATTERNS = [
 ]
 
 
+# Platform infrastructure pages — donation PLATFORMS' own widget/installer/
+# checkout paths, not any org's donation page. These leaked into
+# pending_review at confidence 90-95 (740 rows, found 2026-07-19): a donate
+# button pointing at "install-popup-button" is worse than no button (P3).
+# KEEP IN SYNC with donation_link_pipeline.py:_GENERIC_DONATE_RE.
+import re as _re
+_PLATFORM_INFRA_RE = _re.compile(
+    r"(^|//)(www\.)?("
+    r"donorbox\.org/(embed|widgets?|install-[\w-]+|events|api)([/?#]|$)"
+    r"|givebutter\.com/(elements|embed|latest)([/?#]|$)"
+    r"|checkout\.square\.site/pay/merchant"
+    r"|networkforgood\.org/donate/donation([/?#]|$)"
+    r"|paypal\.com/donate[\\/]?$"
+    r")", _re.IGNORECASE)
+
+
 class QualityGate:
     """Quality assurance gates for link discovery."""
 
@@ -53,6 +69,11 @@ class QualityGate:
     def url_sanity(url: str) -> Tuple[bool, float]:
         """Check if URL looks legitimate (confidence 0-1.0)."""
         if not url or not isinstance(url, str):
+            return False, 0.0
+
+        # Hard fail: platform infrastructure paths are never an org's
+        # donation page, no matter how clean the URL looks otherwise.
+        if _PLATFORM_INFRA_RE.search(url):
             return False, 0.0
 
         # Basic checks
