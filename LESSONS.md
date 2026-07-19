@@ -1,3 +1,42 @@
+## 2026-07-18 — FTS5 gives punctuation syntax meaning; a swallowed error is a silent 0-result page
+
+**Symptom:** Donors searching real org names with punctuation ("4-H", "St. Jude's",
+"TRIPLE-CORD") got empty results on daanaa.org. 4.3% of small-org self-searches
+errored. Nobody noticed because the droplet wrapped search in `except Exception:
+return 0 results`.
+
+**Root cause:** Two stacked failures. (1) The sanitizer's strip list enumerated
+some FTS5 metacharacters but not `-` (column-NOT: "no such column: CORD"), `:`
+(column filter), or `/` (syntax error) — an allowlist of known-bad characters
+always loses to a parser with more syntax than you remembered. (2) The generic
+exception handler converted the crash into a silent empty page — indistinguishable
+from "no such org exists," which donors believe.
+
+**Preventing rules:** (a) Sanitize user text into FTS MATCH by stripping
+everything that isn't `\w` or whitespace (deny-by-default), never by enumerating
+bad characters. (b) A caught search exception must be visible somewhere
+(zero-result analytics, logs) — "silent wrong results violate the trust
+principles harder than errors do" (test_droplet_search.py header, proven again).
+(c) Any duplicated function across the two backends needs a cross-file test
+(`tests/test_search_quality.py` pattern).
+
+## 2026-07-18 — Deploy smoke probes can fail while the deploy succeeded
+
+**Symptom:** `sync_droplet_api.sh` reported "SMOKE TEST FAILED … Rollback FAILED
+— MANUAL ACTION NEEDED" — alarming. The site was healthy the whole time and the
+new code was live and verified.
+
+**Root cause:** Three rapid consecutive SSH connections (deploy, restart, probe)
+hit connection-refused — SSH-level throttling, not service failure. The script
+interpreted an unreachable probe channel as a failed deploy, then the rollback
+attempt failed on the same refused SSH.
+
+**Preventing rule:** When a deploy script reports failure, verify BEHAVIORALLY
+via the public URL before acting on the report (curl the pages + the specific
+changed behavior). Distinguish "probe channel down" from "service down" —
+the script should back off and retry SSH probes, and prefer HTTPS probes of
+the public URL which don't share the SSH failure domain.
+
 ## 2026-07-17 — Crontab near-wipe #2: manual `crontab` edits are landmines
 
 **Symptom:** Two cron jobs added manually via `crontab -l > tmp; echo >> tmp; crontab tmp`

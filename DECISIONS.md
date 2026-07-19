@@ -1,3 +1,31 @@
+## 2026-07-18 — World-class search overhaul (audit → fix → deploy, task #18)
+
+**Chose:** (1) Rewrote `_sanitize_fts_query` in BOTH backends: strip all
+punctuation to spaces except apostrophes which fuse ("L'Anse"→"LAnse", matching
+IRS's "LANSE"); double-quote every token so donor-typed AND/OR/NOT stay literal.
+(2) `/api/organizations` text queries now carry bm25 rank out of FTS via JOIN
+and order exact-typed-name first, then relevance — browse (no q) stays neutral
+A-Z per the 2026-07-04 decision. (3) Zero-FTS-result queries fall back to
+name-word LIKE and log to `analytics_zero_result_queries` (search_mode
+'fts_server'). (4) Fixed fused-search embedding rerank using `int(ein)` as a
+matrix row index — silent no-op, and wrong-org vectors for leading-zero EINs;
+now via `_emb_index`. (5) Droplet gets the same sanitizer + exact-name pin +
+quoted state filter (`state:"OR"` — Oregon vs boolean OR). (6) Golden set
+`tests/test_search_quality.py` (43 tests) exercises both sanitizer copies;
+`/search-quality` skill codifies the audit.
+
+**Why:** Audit found 4.3% of small-org self-searches CRASHED on hyphens
+("4-H", "TRIPLE-CORD" → FTS5 "no such column"), swallowed into silent 0
+results on production; page 1 of text searches was alphabetical among 2000
+matches, not relevance. After: self-search 100% top-5 (n=300, from 84.7%),
+0 SQL errors, p95 245ms. Verified live: daanaa.org "4-H foundation" returns
+4-H foundations.
+
+**Rejected:** Regex-escaping FTS operators (fragile allowlist — strip is
+total); relevance-ordering browse results (P7 neutral-order stands); a shared
+sanitizer module (droplet ships as a single file — duplicated with a
+KEEP-IN-SYNC contract tested cross-file instead).
+
 ## 2026-07-17 — Autonomy build-out: four board-approved automations shipped
 
 **Chose:** (1) Weekly 990 e-file website expansion (index Sun 01:00, extraction

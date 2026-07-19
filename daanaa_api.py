@@ -433,9 +433,15 @@ OLLAMA_EMBED_MODEL = "mxbai-embed-large"
 # Set True once we confirm org_fts exists. Checked at first search request.
 _fts_available: bool | None = None  # None = not yet checked
 
-_FTS5_STRIP = re.compile(r"""[*"^(){}|<>&~\[\],\.']""")
-
-_FTS5_BOOL = frozenset({'AND', 'OR', 'NOT'})
+# Strip EVERYTHING that isn't a word character or whitespace. FTS5 assigns
+# syntax meaning to far more than quotes and parens: '-' is column-NOT
+# ("TRIPLE-CORD" → error "no such column: CORD"), ':' is a column filter,
+# '/' is a syntax error. The old narrower strip list let hyphenated org names
+# crash 4.3% of small-org self-searches (2026-07-18 audit).
+# Apostrophes FUSE instead of split: IRS stores "L'ANSE" as "LANSE" and
+# "O'BRIEN" as "OBRIEN", so "L'Anse" must become the token "LAnse", not "L Anse".
+_FTS5_APOS  = re.compile(r"['’`]")
+_FTS5_STRIP = re.compile(r'[^\w\s]', re.UNICODE)
 
 # Words people commonly type before/around a location or cause that don't
 # appear in org records — stripping them prevents 0-result dead ends.
@@ -474,11 +480,19 @@ def _sanitize_fts_query(text: str) -> str:
       - 'food bank 97701'      zip stripped by caller (_extract_zip) before here
       - 'find charities near'  noise words stripped → fallback empty query
     """
-    clean = _FTS5_STRIP.sub(' ', text)
-    words = [w for w in clean.split() if len(w) >= 2 and w.lower() not in _FTS5_NOISE]
+    clean = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', text))
+    words = [w for w in clean.split() if w.lower() not in _FTS5_NOISE]
+    # Single-char tokens (the "4" and "H" of "4-H") survive only alongside
+    # other tokens — a lone "a"* would prefix-scan the whole index.
+    if len(words) >= 2:
+        words = words[:12]
+    else:
+        words = [w for w in words if len(w) >= 2]
     if not words:
         return '""'
-    return ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words)
+    # Double-quote every token: AND/OR/NOT/NEAR typed by a donor stay literal
+    # words, never operators. '"tok"*' is FTS5 phrase-prefix syntax.
+    return ' '.join(f'"{w}"*' for w in words)
 
 def _check_fts(db: sqlite3.Connection) -> bool:
     global _fts_available
@@ -1754,6 +1768,8 @@ def list_organizations():
     where_clauses = [_DEDUCTIBILITY_FILTER]
     params = []
 
+    fts_join_sql = ""
+    fts_used = False
     if search:
         search_normalized = search.replace('-', '').strip()
         # EIN lookup: pure digits → direct EIN prefix match, skip FTS
@@ -1763,13 +1779,18 @@ def list_organizations():
             where_clauses.append("r.EIN LIKE ?")
             params.append(f'{search_normalized}%')
         elif _check_fts(db):
-            # FTS5 path: match on org content, join back via EIN (rowid misaligns)
+            # FTS5 path as a JOIN carrying bm25 rank out, so text queries can
+            # be relevance-ordered. The old `EIN IN (subquery)` shape threw
+            # the rank away and page 1 of "american legion" was whichever 20
+            # of 2000 matches sorted first alphabetically (2026-07-18 audit).
             fts_q = _sanitize_fts_query(search)
-            where_clauses.append(
-                "r.EIN IN (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
-                "ORDER BY bm25(org_fts, 10, 5, 1, 1) LIMIT 2000)"
+            fts_join_sql = (
+                "JOIN (SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel "
+                "FROM org_fts WHERE org_fts MATCH ? "
+                "ORDER BY rel LIMIT 2000) fts ON r.EIN = fts.ein "
             )
             params.append(fts_q)
+            fts_used = True
         else:
             # Fallback: name-only LIKE (city field excluded to avoid false matches)
             words = [w for w in search_normalized.split() if w]
@@ -1866,7 +1887,35 @@ def list_organizations():
     # Alias as r so qualified columns (r.EIN) in where_sql resolve here too
     # f-string is safe here: where_sql contains only parameterized WHERE structure
     # (built from safe clauses), while actual user values live in `params` tuple
-    total = db.execute(f"SELECT COUNT(*) FROM registry_enriched r WHERE {where_sql}", params).fetchone()[0]
+    total = db.execute(
+        f"SELECT COUNT(*) FROM registry_enriched r {fts_join_sql}WHERE {where_sql}",
+        params).fetchone()[0]
+
+    if fts_used and total == 0:
+        # FTS found nothing (typo-heavy or oddly tokenized name): retry with
+        # plain name-word LIKE so donors aren't dead-ended, and log the miss
+        # so systematic gaps surface in the zero-result analytics.
+        try:
+            db.execute(
+                "INSERT INTO analytics_zero_result_queries (day, query, query_length, filters_applied, search_mode) "
+                "VALUES (date('now'), ?, ?, 0, 'fts_server') "
+                "ON CONFLICT(day, query) DO UPDATE SET "
+                "occurrence_count = occurrence_count + 1, last_seen_at = CURRENT_TIMESTAMP",
+                (search.lower()[:80], len(search)),
+            )
+            db.commit()
+        except sqlite3.OperationalError:
+            pass
+        fts_join_sql = ""
+        fts_used = False
+        params = params[1:]   # drop the MATCH param (bound ahead of WHERE)
+        for word in re.findall(r'\w{2,}', search)[:6]:
+            where_clauses.append("r.organization_name LIKE ?")
+            params.append(f'%{word}%')
+        where_sql = " AND ".join(where_clauses)
+        total = db.execute(
+            f"SELECT COUNT(*) FROM registry_enriched r WHERE {where_sql}",
+            params).fetchone()[0]
 
     # Check if v4_scores table exists (production might not have it)
     has_v4_scores = bool(db.execute(
@@ -1879,6 +1928,17 @@ def list_organizations():
     else:
         v4_cols = ", "
         join_clause = ""
+
+    # Text queries are relevance-ordered unless the donor explicitly picked a
+    # sort: exact typed-name match first, then bm25. This is content relevance
+    # (which org the text names), never a merit/size ranking — the neutral
+    # A-Z default still governs browse (no q) per the 2026-07-04 decision.
+    order_params = []
+    if fts_used and 'sort' not in request.args:
+        order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel"
+        order_params.append(search.upper())
+    else:
+        order_sql = f"ORDER BY {sort_col} {_sort_dir_suffix}"
 
     sql = f"""
         SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
@@ -1895,10 +1955,11 @@ def list_organizations():
                r.merit_score_v5, r.merit_health_signal_v5, r.merit_archetype_v5,
                r.merit_archetype_v5_label, r.merit_peer_count_v5
         FROM registry_enriched r
-        WHERE {where_sql}
-        ORDER BY {sort_col} {_sort_dir_suffix}
+        {fts_join_sql}WHERE {where_sql}
+        {order_sql}
         LIMIT ? OFFSET ?
     """
+    params.extend(order_params)
     params.extend([per_page, offset])
     rows = db.execute(sql, params).fetchall()
 
@@ -5192,16 +5253,18 @@ def fused_search():
                 from numpy import dot
                 from numpy.linalg import norm
                 kw_sim_scores = {}
+                # Row lookup MUST go through _emb_index (EIN → matrix row).
+                # The old code did int(ein) as a row index: EINs are 9-digit
+                # tax IDs, so nearly all fell outside the matrix (rerank was
+                # a silent no-op) and leading-zero EINs read a DIFFERENT
+                # org's vector (fixed 2026-07-18).
                 for ein in kw_eins:
-                    try:
-                        ein_idx = int(ein)
-                        if 0 <= ein_idx < len(_emb_matrix):
-                            org_vec = _emb_matrix[ein_idx]
-                            # Cosine similarity: dot / (norm1 * norm2)
-                            sim = dot(vec, org_vec) / (norm(vec) * norm(org_vec) + 1e-9)
-                            kw_sim_scores[ein] = sim
-                    except (ValueError, IndexError):
-                        pass
+                    row_i = _emb_index.get(ein) if _emb_index else None
+                    if row_i is not None:
+                        org_vec = _emb_matrix[row_i]
+                        # Cosine similarity: dot / (norm1 * norm2)
+                        sim = dot(vec, org_vec) / (norm(vec) * norm(org_vec) + 1e-9)
+                        kw_sim_scores[ein] = sim
                 # Re-sort kw_eins by semantic similarity (descending)
                 if kw_sim_scores:
                     kw_eins_reranked = sorted(kw_eins, key=lambda e: kw_sim_scores.get(e, -1), reverse=True)
@@ -5230,6 +5293,21 @@ def fused_search():
         rrf[ein] = rrf.get(ein, 0.0) + 1.0 / (RRF_K + rank)
     for rank, ein in enumerate(sem_eins, 1):
         rrf[ein] = rrf.get(ein, 0.0) + 1.0 / (RRF_K + rank)
+
+    # Exact-name pin: a donor who types an org's name (or a distinctive part
+    # of it) must see that org first, not a bm25/semantic neighbor. Phrase
+    # match on the name column; +1.0 dominates any RRF sum (max ≈ 0.033).
+    name_words = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', q)).split()
+    if name_words and _check_fts(db):
+        phrase = ' '.join(name_words[:12])
+        try:
+            for r in db.execute(
+                'SELECT ein FROM org_fts WHERE org_fts MATCH ? LIMIT 25',
+                (f'org_name : "{phrase}"',)
+            ).fetchall():
+                rrf[r[0]] = rrf.get(r[0], 0.0) + 1.0
+        except sqlite3.OperationalError:
+            pass
 
     fused_eins = sorted(rrf, key=lambda e: rrf[e], reverse=True)
 

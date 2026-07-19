@@ -36,11 +36,16 @@ class SearchRankingValidator:
         cursor = conn.cursor()
 
         try:
+            # Sample only orgs ELIGIBLE for the search index (deductible +
+            # active — build_fts_index.py's own filter). Sampling ineligible
+            # orgs made this validator report false failures: those orgs are
+            # excluded from search by design, not by a ranking bug.
             cursor.execute("""
                 SELECT organization_name, EIN, total_revenue
                 FROM registry_enriched
                 WHERE total_revenue < 700000
                 AND organization_name IS NOT NULL
+                AND deductibility = 1 AND org_status = 'active'
                 ORDER BY RANDOM()
                 LIMIT ?
             """, (count,))

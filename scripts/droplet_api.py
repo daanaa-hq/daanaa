@@ -265,6 +265,42 @@ def _resolve_location(conn, near_raw):
     return None
 
 
+# ── FTS5 query sanitization ────────────────────────────────────────────────
+# KEEP IN SYNC with daanaa_api.py:_sanitize_fts_query — this file ships alone
+# to the droplet, so the function is duplicated rather than imported.
+# tests/test_search_quality.py exercises both copies against hostile queries.
+# Apostrophes FUSE ("L'Anse" → "LAnse"): IRS stores "L'ANSE" as "LANSE".
+_FTS5_APOS  = re.compile(r"['’`]")
+_FTS5_STRIP = re.compile(r'[^\w\s]', re.UNICODE)
+_FTS5_NOISE = frozenset({
+    'nonprofit', 'nonprofits', 'charity', 'charities',
+    'organization', 'organizations', '501c3', 'ngo',
+    'find', 'search', 'best', 'top', 'local', 'near',
+    'metro', 'greater', 'region', 'area',
+})
+
+def _sanitize_fts_query(text: str) -> str:
+    """Donor text → valid FTS5 MATCH expression.
+
+    FTS5 assigns syntax meaning to -, :, /, parens and quotes: "4-H" parsed
+    as column-NOT ("no such column: H"), "St. Jude's" as a syntax error. On
+    this edge the exception was swallowed into silent 0 results — a donor
+    typing a real org's real name saw an empty page (2026-07-18 audit).
+    """
+    clean = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', text))
+    words = [w for w in clean.split() if w.lower() not in _FTS5_NOISE]
+    # Single-char tokens (the "4"/"H" of "4-H") survive only alongside other
+    # tokens — a lone "a"* would prefix-scan the whole index.
+    if len(words) >= 2:
+        words = words[:12]
+    else:
+        words = [w for w in words if len(w) >= 2]
+    if not words:
+        return '""'
+    # Double-quoted tokens keep donor-typed AND/OR/NOT literal, not operators.
+    return ' '.join(f'"{w}"*' for w in words)
+
+
 def _fts_where(q: str, state: str = '', conn=None) -> tuple:
     """Build base FTS WHERE conditions and params for q + state.
     Returns (conditions, params, detected_zip_or_None).
@@ -301,7 +337,7 @@ def _fts_where(q: str, state: str = '', conn=None) -> tuple:
         # Unknown zip or no conn: fall back to raw query so we return something
         fts_terms = words
 
-    fts_q = ' '.join(f'{w}*' for w in fts_terms if w) or '""'
+    fts_q = _sanitize_fts_query(' '.join(w for w in fts_terms if w))
     conditions: list = ["s.ein = o.EIN", "org_fts MATCH ?"]
     params: list = [fts_q]
     # State filter: prefer explicit param, fall back to zip-resolved state
@@ -1272,7 +1308,9 @@ def fused_search():
         # only a bare 2-letter state token may enter FTS syntax.
         if resolved_state and not re.match(r'^[A-Za-z]{2}$', str(resolved_state)):
             resolved_state = ''
-        fts_match = f"({fts_q}) AND state:{resolved_state.upper()}" if resolved_state else fts_q
+        # state code is double-quoted: "OR" (Oregon) must stay a literal token,
+        # not the boolean operator (same class of bug as the hyphen crash).
+        fts_match = f'({fts_q}) AND state:"{resolved_state.upper()}"' if resolved_state else fts_q
         # NTEE category is not an exact-token FTS column — widen the candidate
         # pool when a category filter must be applied after ranking.
         cand_cap = 20000 if ntee_list else 3000
@@ -1302,13 +1340,16 @@ def fused_search():
         total_capped = fts_probe > cand_cap
 
         offset = (page - 1) * per_page
+        # Exact typed-name match pins first (a donor typing a full org name
+        # must see that org above any candidate), then the existing order.
         sql = (f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
                f"ORDER BY rank LIMIT {cand_cap}) "
                f"SELECT o.* FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
                f"WHERE 1=1{o_where} "
-               f"ORDER BY COALESCE(o.merit_score, -1) DESC "
+               f"ORDER BY (UPPER(o.organization_name) = ?) DESC, "
+               f"COALESCE(o.merit_score, -1) DESC "
                f"LIMIT ? OFFSET ?")
-        rows = conn.execute(sql, [fts_match] + o_params + [per_page, offset]).fetchall()
+        rows = conn.execute(sql, [fts_match] + o_params + [q.upper(), per_page, offset]).fetchall()
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
         return jsonify({'organizations': orgs, 'query': q,
