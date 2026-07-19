@@ -45,6 +45,7 @@ except Exception as e:
     print(f"[Startup] ✗ Failed to import SearchIntentClassifier: {type(e).__name__}: {e}", file=sys.stderr)
     import traceback
     traceback.print_exc(file=sys.stderr)
+_classifier_instance = None  # lazy per-worker instance (created on first search)
 
 
 def _run_migrations(db_path: str):
@@ -1747,16 +1748,19 @@ def list_organizations():
     cached = _cget(ck, 'search')
     if cached: return jsonify(cached)
 
-    # Search intent classification (Phase 2): only on cache miss (expensive operation)
+    # Search intent classification (Phase 2): only on cache miss.
+    # Lazy per-worker singleton — classify() is pure heuristics, no DB reads.
     search_intent = None
     if search and _classifier_available:
         try:
-            classifier = SearchIntentClassifier(db_path=str(DB))
-            result = classifier.classify(search)
+            global _classifier_instance
+            if _classifier_instance is None:
+                _classifier_instance = SearchIntentClassifier(db_path=DB_PATH)
+            result = _classifier_instance.classify(search)
             if result and isinstance(result, dict):
                 search_intent = result
         except Exception as e:
-            pass  # Classifier optional — fallback to default if error
+            app.logger.warning(f"search_intent classification failed: {e}")
 
     ntee_raw = request.args.get('ntee', '').strip().upper()
     ntee_list = [x.strip()[:1] for x in ntee_raw.split(',') if x.strip()]
