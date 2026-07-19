@@ -437,16 +437,23 @@ class ContinuousDiscoveryDaemon:
                     time.sleep(60)
                     continue
 
-                with ThreadPoolExecutor(max_workers=workers) as pool:
-                    futures = {}
-                    for ein, name, website, state in orgs:
-                        futures[pool.submit(self.discover_and_verify_org, ein, name, website, state)] = (ein, name)
-                        # Submission stagger (auto-regulated rate limit)
-                        time.sleep(adj_sleep_org)
+                # No context manager: on batch timeout we must abandon the
+                # pool (shutdown(wait=False)) instead of joining hung threads
+                # forever — one tarpit site stalled the whole daemon for 40+
+                # minutes on 2026-07-19.
+                pool = ThreadPoolExecutor(max_workers=workers)
+                futures = {}
+                for ein, name, website, state in orgs:
+                    futures[pool.submit(self.discover_and_verify_org, ein, name, website, state)] = (ein, name)
+                    # Submission stagger (auto-regulated rate limit)
+                    time.sleep(adj_sleep_org)
 
-                    attempts = []
-                    for fut in as_completed(futures):
+                attempts = []
+                done_eins = set()
+                try:
+                    for fut in as_completed(futures, timeout=900):
                         ein, name = futures[fut]
+                        done_eins.add(ein)
                         try:
                             result = fut.result()
                         except Exception as e:
@@ -461,9 +468,17 @@ class ContinuousDiscoveryDaemon:
                             logger.debug(f"⚪ {name} ({ein}): No links found")
                         else:
                             logger.warning(f"❌ {name} ({ein}): {result.get('reason')}")
+                except TimeoutError:
+                    stuck = [(e, n) for f, (e, n) in futures.items() if e not in done_eins]
+                    logger.warning(f"⏱️  Batch timeout (900s): abandoning {len(stuck)} stuck workers: "
+                                   + ", ".join(n[:30] for _, n in stuck[:5]))
+                    for ein, _name in stuck:
+                        attempts.append((ein, 'timeout'))
+                finally:
+                    pool.shutdown(wait=False, cancel_futures=True)
 
-                    # One write per batch: keeps re-selection out of the next batch
-                    self.record_attempts(attempts)
+                # One write per batch: keeps re-selection out of the next batch
+                self.record_attempts(attempts)
 
                 # Log progress with confidence breakdown
                 db = sqlite3.connect(str(DB))
@@ -498,6 +513,16 @@ class ContinuousDiscoveryDaemon:
 
 
 if __name__ == '__main__':
+    # Singleton guard: watchdog respawns raced manual restarts all day on
+    # 2026-07-19, leaving duplicate daemons double-crawling the same sites.
+    import fcntl
+    _lock_fh = open('/home/akbar/meritgiving/logs/discovery_daemon.lock', 'w')
+    try:
+        fcntl.flock(_lock_fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("Another discovery daemon holds the lock — exiting.", file=sys.stderr)
+        sys.exit(0)
+
     batch_size = int(sys.argv[1]) if len(sys.argv) > 1 else 50
     sleep_between_orgs = float(sys.argv[2]) if len(sys.argv) > 2 else 0.5
     sleep_between_batches = float(sys.argv[3]) if len(sys.argv) > 3 else 5
