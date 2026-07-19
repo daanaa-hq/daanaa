@@ -1652,6 +1652,25 @@ def wallet_backup_proxy():
         return jsonify({"error": "Wallet backup is briefly unavailable."}), 503
 
 
+@app.route('/api/wallet/report-bookmark', methods=['POST'])
+def wallet_report_bookmark_proxy():
+    """Proxy anonymous bookmark signal to home-server (task #15 donor
+    interest metrics; anonymized aggregates only, P2)."""
+    if request.content_length and request.content_length > WALLET_MAX_BODY:
+        return jsonify({"error": "Request too large"}), 413
+    url = f"{WALLET_UPSTREAM}/api/wallet/report-bookmark"
+    headers = {'Content-Type': 'application/json'}
+    body = request.get_data()
+    req = urllib.request.Request(url, data=body, headers=headers, method='POST')
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return resp.read(), resp.status, {'Content-Type': 'application/json'}
+    except urllib.error.HTTPError as e:
+        return e.read(), e.code, {'Content-Type': 'application/json'}
+    except Exception:
+        return jsonify({"error": "Bookmark reporting is briefly unavailable."}), 503
+
+
 @app.route('/api/wallet/restore', methods=['GET'])
 def wallet_restore_proxy():
     """Proxy wallet restore from home-server (DynamoDB read via :5001 tunnel)."""
