@@ -897,3 +897,16 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   deploy, and (2) prove the endpoint with a real request — insert AND
   update/second-call paths — locally and through the public URL after
   ship. Route presence is not behavior.
+
+## 2026-07-19 — a bare `except: pass` turned a one-word typo into a five-commit hunt
+- **Symptom:** search_intent never appeared in /api/organizations responses
+  across five debugging commits (import-order changes, preload theories,
+  logging attempts) even though the classifier imported cleanly at startup.
+- **Root cause:** handler called SearchIntentClassifier(db_path=str(DB)) but
+  the module constant is DB_PATH → NameError on every request, swallowed by
+  `except Exception: pass`. All the startup-time debugging was aimed at the
+  wrong phase; the failure was per-request and invisible.
+- **Preventing rule:** never pair a new integration with a silent except —
+  log the exception from day one (app.logger.warning minimum). When a
+  feature "silently does nothing," grep its code path for `except.*pass`
+  FIRST, before theorizing about imports, caching, or process models.
