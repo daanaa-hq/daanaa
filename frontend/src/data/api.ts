@@ -264,6 +264,8 @@ export async function getOrganizations(params?: {
   page: number;
   per_page: number;
   pages: number;
+  // Present only when zero-result rescue via typo correction happened (P3)
+  corrected_query?: string;
   // Present only when the API resolved a `near` location; its absence while
   // `near` was sent means the location could not be resolved (show feedback,
   // never silently drop the filter).

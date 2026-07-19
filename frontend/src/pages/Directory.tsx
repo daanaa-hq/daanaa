@@ -917,6 +917,11 @@ export default function Directory() {
                       </button>
                     </p>
                   )}
+                  {orgsData?.corrected_query && (
+                    <p className="font-body text-[12px] text-cool-grey mt-1" role="status">
+                      Showing results for "{orgsData.corrected_query}" — we didn't find any matches for "{searchQuery}"
+                    </p>
+                  )}
                   {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
                     <p className="font-body text-[12px] text-cool-grey mt-1" role="status">
                       Includes organizations that haven't reported revenue — smaller nonprofits often file
