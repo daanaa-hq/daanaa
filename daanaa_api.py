@@ -1908,10 +1908,10 @@ def list_organizations():
         f"SELECT COUNT(*) FROM registry_enriched r {fts_join_sql}WHERE {where_sql}",
         params).fetchone()[0]
 
+    corrected_query = None
     if fts_used and total == 0:
-        # FTS found nothing (typo-heavy or oddly tokenized name): retry with
-        # plain name-word LIKE so donors aren't dead-ended, and log the miss
-        # so systematic gaps surface in the zero-result analytics.
+        # The typed query found nothing — log the miss so systematic gaps
+        # surface in zero-result analytics, then rescue in two stages.
         try:
             db.execute(
                 "INSERT INTO analytics_zero_result_queries (day, query, query_length, filters_applied, search_mode) "
@@ -1923,6 +1923,26 @@ def list_organizations():
             db.commit()
         except sqlite3.OperationalError:
             pass
+        # Stage 1: corpus-vocabulary typo correction (scripts/search_typo.py).
+        # Zero-result path only — the happy path never pays for this. Result
+        # is labeled via corrected_query so the UI can say what we did (P3).
+        try:
+            from search_typo import correct_query as _typo_correct
+            _cq = _typo_correct(db, search)
+        except Exception:
+            _cq = None
+        if _cq:
+            _fts_q2 = _sanitize_fts_query(_cq)
+            _toks2 = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', _cq)).split()[:12]
+            _phrase2 = f'org_name : "{" ".join(_toks2)}"' if _toks2 else '""'
+            _params2 = [_phrase2, _fts_q2] + params[2:]
+            _total2 = db.execute(
+                f"SELECT COUNT(*) FROM registry_enriched r {fts_join_sql}WHERE {where_sql}",
+                _params2).fetchone()[0]
+            if _total2 > 0:
+                total, params, corrected_query = _total2, _params2, _cq
+    if fts_used and total == 0:
+        # Stage 2: plain name-word LIKE so donors aren't dead-ended.
         fts_join_sql = ""
         fts_used = False
         params = params[2:]   # drop the two MATCH params (bound ahead of WHERE)
@@ -1953,7 +1973,7 @@ def list_organizations():
     order_params = []
     if fts_used and 'sort' not in request.args:
         order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel"
-        order_params.append(search.upper())
+        order_params.append((corrected_query or search).upper())
     else:
         order_sql = f"ORDER BY {sort_col} {_sort_dir_suffix}"
 
@@ -2019,6 +2039,9 @@ def list_organizations():
         "per_page": per_page,
         "pages": (total + per_page - 1) // per_page,
     }
+    if corrected_query:
+        # Honest labeling (P3): the UI can render "Showing results for …"
+        payload["corrected_query"] = corrected_query
     if nearby_meta:
         payload["nearby"] = nearby_meta
     _cset(ck, payload)

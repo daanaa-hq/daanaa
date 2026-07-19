@@ -213,6 +213,46 @@ class TestDeltaIndexer:
 
 
 @pytest.mark.skipif(not DB.exists(), reason="no local registry DB")
+class TestTypoCorrection:
+    """Corpus-vocabulary typo rescue (scripts/search_typo.py). Fallback-only:
+    correction never fires unless the primary query found nothing, corrected
+    results are labeled, and the whole pass has a hard time budget."""
+
+    @pytest.fixture(scope="class")
+    def conn(self):
+        return sqlite3.connect(f"file:{DB}?mode=ro", uri=True)
+
+    @pytest.fixture(scope="class")
+    def correct(self):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        from search_typo import correct_query
+        return correct_query
+
+    @pytest.mark.parametrize("typed,expected", [
+        ("HABITTAT FOR HUMANITY", "HABITAT FOR HUMANITY"),
+        ("AMERCAN RED CROSS", "AMERICAN RED CROSS"),
+        ("SALVATON ARMY", "SALVATION ARMY"),
+        ("FUNDATION FOR THE BLIND", "FOUNDATION FOR THE BLIND"),
+    ])
+    def test_common_typos_corrected(self, conn, correct, typed, expected):
+        assert correct(conn, typed) == expected
+
+    def test_correct_spelling_untouched(self, conn, correct):
+        # A well-formed name must return None — correction is a fallback,
+        # not a rewrite of what the donor typed.
+        assert correct(conn, "HABITAT FOR HUMANITY") is None
+
+    def test_garbage_returns_none(self, conn, correct):
+        assert correct(conn, "XYZZQW QQQQQ") is None
+
+    def test_time_budget_respected(self, conn, correct):
+        import time as _t
+        t0 = _t.time()
+        correct(conn, "AAAAAAAAAA BBBBBBBBBB CCCCCCCCCC DDDDDDDDDD EEEEEEEEEE FFFFFFFFFF")
+        assert _t.time() - t0 < 0.5, "typo pass blew its time budget"
+
+
+@pytest.mark.skipif(not DB.exists(), reason="no local registry DB")
 class TestLiveIndexFindability:
     """Sampled eligible small orgs must be findable in the real index.
 

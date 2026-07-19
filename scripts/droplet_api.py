@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sqlite3
+import time
 import urllib.error
 import urllib.request
 from collections import OrderedDict
@@ -301,6 +302,100 @@ def _sanitize_fts_query(text: str) -> str:
     # Single-char tokens match EXACTLY (no star): '"n"*' range-scans every
     # n-word in the term dictionary — 15s+ timeouts on this 2GB box.
     return ' '.join(f'"{w}"*' if len(w) >= 2 else f'"{w}"' for w in words)
+
+
+# ── Corpus-vocabulary typo correction (zero-result rescue) ─────────────────
+# KEEP IN SYNC with scripts/search_typo.py (single-file deploy). Runs ONLY
+# when a search returned nothing — the happy path never pays for it. The
+# dictionary is our own org_name vocabulary via fts5vocab: corrections can
+# only point at words that exist in real org names. Hard 150ms budget.
+_TYPO_ALPHA = 'abcdefghijklmnopqrstuvwxyz'
+_TYPO_BUDGET_S = 0.15
+_TYPO_PREFER = 10
+_typo_conn = None
+_typo_ino = None
+
+
+def _get_typo_conn():
+    """Read-only conn WITHOUT query_only (temp fts5vocab creation counts as a
+    write, which PRAGMA query_only blocks). Tracks the search.db inode — the
+    nightly deploy swaps the file via atomic mv."""
+    global _typo_conn, _typo_ino
+    fts_path = DATA_DIR / 'search.db'
+    try:
+        ino = fts_path.stat().st_ino
+    except OSError:
+        return None
+    if _typo_conn is not None and ino == _typo_ino:
+        return _typo_conn
+    if _typo_conn is not None:
+        try:
+            _typo_conn.close()
+        except Exception:
+            pass
+    try:
+        conn = sqlite3.connect(f"file:{fts_path}?mode=ro", uri=True,
+                               timeout=5, check_same_thread=False)
+        conn.execute("CREATE VIRTUAL TABLE IF NOT EXISTS temp.org_vocab "
+                     "USING fts5vocab('main', 'org_fts', 'col')")
+    except sqlite3.OperationalError:
+        return None
+    _typo_conn, _typo_ino = conn, ino
+    return conn
+
+
+def _typo_doc(conn, term):
+    row = conn.execute(
+        "SELECT doc FROM temp.org_vocab WHERE term = ? AND col = 'org_name'",
+        (term,)).fetchone()
+    return row[0] if row else 0
+
+
+def _typo_edit1(tok):
+    for i in range(len(tok)):
+        yield tok[:i] + tok[i + 1:]
+        if i < len(tok) - 1:
+            yield tok[:i] + tok[i + 1] + tok[i] + tok[i + 2:]
+        for c in _TYPO_ALPHA:
+            if c != tok[i]:
+                yield tok[:i] + c + tok[i + 1:]
+    for i in range(len(tok) + 1):
+        for c in _TYPO_ALPHA:
+            yield tok[:i] + c + tok[i:]
+
+
+def _typo_correct_query(text):
+    conn = _get_typo_conn()
+    if conn is None:
+        return None
+    deadline = time.time() + _TYPO_BUDGET_S
+    toks = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', text)).split()[:6]
+    if not toks:
+        return None
+    out, changed = [], False
+    for tok in toks:
+        low = tok.lower()
+        if len(low) < 3 or time.time() > deadline:
+            out.append(tok)
+            continue
+        own = _typo_doc(conn, low)
+        best, best_doc = None, 0
+        seen = {low}
+        for v in _typo_edit1(low):
+            if time.time() > deadline:
+                break
+            if len(v) < 2 or v in seen:
+                continue
+            seen.add(v)
+            d = _typo_doc(conn, v)
+            if d > best_doc:
+                best, best_doc = v, d
+        if best and best_doc >= max(_TYPO_PREFER * own, _TYPO_PREFER):
+            out.append(best.upper() if tok.isupper() else best)
+            changed = True
+        else:
+            out.append(tok)
+    return ' '.join(out) if changed else None
 
 
 def _fts_where(q: str, state: str = '', conn=None) -> tuple:
@@ -1262,8 +1357,25 @@ def search():
                     results = results[:limit]
             except Exception:
                 pass  # pin is best-effort; base results already stand
-        return jsonify({'results': results, 'query': query,
-                        'total': len(results), 'mode': 'fts'})
+        # Zero-result rescue: corpus-vocabulary typo correction (labeled).
+        corrected_query = None
+        if not results:
+            _cq = _typo_correct_query(query)
+            if _cq:
+                _params2 = list(params)
+                _params2[0] = _sanitize_fts_query(_cq)
+                try:
+                    rows2 = conn.execute(sql, _params2 + [_cq.upper(), limit]).fetchall()
+                    if rows2:
+                        results = [dict(r) for r in rows2]
+                        corrected_query = _cq
+                except Exception:
+                    pass
+        payload = {'results': results, 'query': query,
+                   'total': len(results), 'mode': 'fts'}
+        if corrected_query:
+            payload['corrected_query'] = corrected_query
+        return jsonify(payload)
     except Exception as e:
         print(f"Search error: {e}")
         return jsonify({'results': [], 'query': query, 'total': 0, 'mode': 'error'})
@@ -1365,6 +1477,28 @@ def fused_search():
             f"WHERE 1=1{o_where}",
             [phrase_match, fts_match] + o_params
         ).fetchone()[0]
+        # Zero-result rescue: corpus-vocabulary typo correction, labeled via
+        # corrected_query in the response. Happy path never reaches this.
+        corrected_query = None
+        if total == 0:
+            _cq = _typo_correct_query(q)
+            if _cq:
+                _fts_q2 = _sanitize_fts_query(_cq)
+                _toks2 = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', _cq)).split()[:12]
+                _phr2 = f'org_name : "{" ".join(_toks2)}"' if _toks2 else '""'
+                if resolved_state:
+                    _fts_q2 = f'({_fts_q2}) AND state:"{resolved_state.upper()}"'
+                    _phr2 = f'({_phr2}) AND state:"{resolved_state.upper()}"'
+                _total2 = conn.execute(
+                    cte +
+                    f"SELECT COUNT(*) FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
+                    f"WHERE 1=1{o_where}",
+                    [_phr2, _fts_q2] + o_params
+                ).fetchone()[0]
+                if _total2 > 0:
+                    total, fts_match, phrase_match = _total2, _fts_q2, _phr2
+                    corrected_query = _cq
+                    q = _cq   # exact-name pin should reference the corrected text
         fts_probe = conn.execute(
             f"SELECT COUNT(*) FROM (SELECT 1 FROM org_fts WHERE org_fts MATCH ? LIMIT {cand_cap + 1})",
             [fts_match]
@@ -1385,9 +1519,12 @@ def fused_search():
         rows = conn.execute(sql, [phrase_match, fts_match] + o_params + [q.upper(), per_page, offset]).fetchall()
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
-        return jsonify({'organizations': orgs, 'query': q,
-                        'total': total, 'total_capped': total_capped, 'pages': pages,
-                        'page': page, 'per_page': per_page, 'search_type': 'fts'})
+        payload = {'organizations': orgs, 'query': q,
+                   'total': total, 'total_capped': total_capped, 'pages': pages,
+                   'page': page, 'per_page': per_page, 'search_type': 'fts'}
+        if corrected_query:
+            payload['corrected_query'] = corrected_query
+        return jsonify(payload)
     except Exception as e:
         print(f"Fused search error: {e}")
         return jsonify({'organizations': [], 'query': q, 'total': 0, 'pages': 0,
