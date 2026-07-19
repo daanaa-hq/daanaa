@@ -13,6 +13,7 @@ Daanaa's search bar of record (established 2026-07-18, task #18):
 | Hostile-query SQL errors (hyphens, slashes, quotes) | 0 | 0 |
 | Search latency (union plan, local) | p95 < 500ms | p50 49ms / p95 212ms |
 | Small-org share in broad queries | ≥ 20% | passing |
+| Typo rescue (zero-result path only) | corrected + labeled | live 2026-07-19 ("HABITTAT"→Habitat #1) |
 
 The 131 exhaustive misses (0.007%) are all orgs whose full registered name is
 a single generic word shared by thousands ("LIFE", "FIRST", "WOMEN", "OHIO",
