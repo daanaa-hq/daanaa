@@ -9024,6 +9024,115 @@ def nonprofit_self_dashboard():  # 'nonprofit_dashboard' endpoint name is taken
     })
 
 
+@app.route('/api/nonprofit/activity-feed', methods=['POST'])
+@limiter.limit("30 per minute")
+def nonprofit_activity_feed():
+    """Consolidated "what changed" feed (Benevity pattern, task #15).
+
+    One place a nonprofit leader sees what happened to their presence:
+    link verifications, donor interest, data refreshes, volunteer activity,
+    plus the org_activity log. Synthesized from existing timestamped data so
+    the feed is rich from day one. Encouraging plain language only (P5).
+    Auth matches /api/nonprofit/dashboard: EIN + verification token.
+    """
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    claim, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    org = db.execute(
+        """SELECT organization_name, donate_url, donate_url_status,
+                  donate_checked_at, website, website_status,
+                  website_checked_at, updated_at
+           FROM registry_enriched WHERE EIN = ?""", (ein,)).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    events = []
+
+    def _add(ts, etype, message):
+        if ts:
+            events.append({'ts': ts, 'type': etype, 'message': message})
+
+    # Donate link check — the single highest-value fact for an org.
+    if org['donate_checked_at']:
+        if org['donate_url_status'] in ('beta', 'claimed', 'verified') and org['donate_url']:
+            _add(org['donate_checked_at'], 'donate_link',
+                 'Your donation link was checked and is live on your public '
+                 'page — donors can give directly.')
+        else:
+            _add(org['donate_checked_at'], 'donate_link',
+                 'We looked for a donation link for your page. None is live '
+                 'yet — donors currently see your EIN and mailing address. '
+                 'You can add a link from your dashboard.')
+
+    if org['website_checked_at']:
+        _add(org['website_checked_at'], 'website',
+             'Your website was checked and loads for donors.'
+             if org['website_status'] == 'ok' else
+             'We checked your website link and could not confirm it loads — '
+             'worth a quick look from your dashboard.')
+
+    if org['updated_at']:
+        _add(org['updated_at'], 'data_refresh',
+             'Your public profile data was refreshed from IRS and public '
+             'records.')
+
+    # Donor interest: anonymous aggregate only (P2) — never who, only how many.
+    try:
+        row = db.execute(
+            "SELECT COALESCE(SUM(bookmark_count),0), MAX(last_updated) "
+            "FROM wallet_analytics WHERE ein=? AND "
+            "last_updated >= date('now','start of month')", (ein,)).fetchone()
+        if row and row[0]:
+            _add(row[1], 'donor_interest',
+                 f'{row[0]} '
+                 f'{"person" if row[0] == 1 else "people"} saved your '
+                 'organization to their giving wallet this month. Anonymous, '
+                 'aggregate interest — a good sign people are finding you.')
+    except sqlite3.OperationalError:
+        pass
+
+    # Volunteer submissions awaiting review — an action the org can take now.
+    try:
+        row = db.execute(
+            "SELECT COUNT(*), MAX(created_at) FROM volunteer_hours "
+            "WHERE nonprofit_ein=? AND status='pending'", (ein,)).fetchone()
+        if row and row[0]:
+            _add(row[1], 'volunteer',
+                 f'{row[0]} volunteer hour '
+                 f'{"submission is" if row[0] == 1 else "submissions are"} '
+                 'waiting for your confirmation.')
+    except sqlite3.OperationalError:
+        pass
+
+    # Real activity log (claims, profile edits, corrections).
+    try:
+        for r in db.execute(
+                "SELECT event_type, detail, created_at FROM org_activity "
+                "WHERE ein=? ORDER BY created_at DESC LIMIT 15", (ein,)):
+            _add(r['created_at'], r['event_type'],
+                 r['detail'] or r['event_type'].replace('_', ' ').capitalize())
+    except sqlite3.OperationalError:
+        pass
+
+    events.sort(key=lambda e: e['ts'], reverse=True)
+    return jsonify({
+        'ein': ein,
+        'organization_name': org['organization_name'],
+        'events': events[:30],
+        'note': ('Everything here comes from your own public presence and '
+                 'anonymous aggregate donor interest — no individual donor '
+                 'is ever identified.'),
+    })
+
+
 # ── Volunteer interest counter ────────────────────────────────────────────────
 # Anonymous aggregate: counts how many people expressed interest in volunteering
 # at each org. No user IDs stored — just a tally. Only surfaces to claimed orgs
