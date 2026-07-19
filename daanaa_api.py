@@ -35,6 +35,13 @@ from twilio.request_validator import RequestValidator
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
 from ntee_synonyms import expand_query_with_synonyms
 
+# Search Phase 2: intent classifier (loaded at startup for preload safety)
+try:
+    from search_intent_classifier import SearchIntentClassifier
+    _classifier_available = True
+except ImportError:
+    _classifier_available = False
+
 
 def _run_migrations(db_path: str):
     """Run pending database migrations from migrations/ directory.
@@ -1738,20 +1745,14 @@ def list_organizations():
 
     # Search intent classification (Phase 2): suggest routing for cause queries
     search_intent = None
-    if search:
+    if search and _classifier_available:
         try:
-            import sys
-            from pathlib import Path
-            scripts_dir = str(Path(__file__).parent / 'scripts')
-            if scripts_dir not in sys.path:
-                sys.path.insert(0, scripts_dir)
-            from search_intent_classifier import SearchIntentClassifier
             classifier = SearchIntentClassifier(db_path=str(DB))
             result = classifier.classify(search)
             if result and isinstance(result, dict):
                 search_intent = result
         except Exception as e:
-            app.logger.debug(f"search_intent classifier error: {str(e)}")  # Log for debugging
+            pass  # Classifier optional — fallback to default if error
 
     ntee_raw = request.args.get('ntee', '').strip().upper()
     ntee_list = [x.strip()[:1] for x in ntee_raw.split(',') if x.strip()]
