@@ -8626,36 +8626,48 @@ def report_bookmark():
         db = get_db()
         cursor = db.cursor()
 
+        # wallet_analytics has no UNIQUE constraints, so ON CONFLICT upserts
+        # are rejected by SQLite — use update-then-insert instead.
+
         # Record root bookmark (for org total count)
-        cursor.execute('''
-            INSERT INTO wallet_analytics (ein, bookmark_count)
-            VALUES (?, 1)
-            ON CONFLICT(ein) DO UPDATE SET
-                bookmark_count = bookmark_count + 1,
-                last_updated = CURRENT_TIMESTAMP
-        ''', (ein,))
+        updated = cursor.execute('''
+            UPDATE wallet_analytics
+               SET bookmark_count = bookmark_count + 1,
+                   last_updated = CURRENT_TIMESTAMP
+             WHERE ein = ? AND cause_tag IS NULL AND location_state IS NULL
+        ''', (ein,)).rowcount
+        if updated == 0:
+            cursor.execute(
+                'INSERT INTO wallet_analytics (ein, bookmark_count) VALUES (?, 1)',
+                (ein,))
 
         # Record by cause (if causes provided)
         for cause in causes[:5]:  # Max 5 causes per bookmark to prevent spam
-            cause = cause.strip()[:100]
+            cause = str(cause).strip()[:100]
             if cause:
-                cursor.execute('''
-                    INSERT INTO wallet_analytics (ein, cause_tag, bookmark_count)
-                    VALUES (?, ?, 1)
-                    ON CONFLICT(ein, cause_tag) DO UPDATE SET
-                        bookmark_count = bookmark_count + 1,
-                        last_updated = CURRENT_TIMESTAMP
-                ''', (ein, cause))
+                updated = cursor.execute('''
+                    UPDATE wallet_analytics
+                       SET bookmark_count = bookmark_count + 1,
+                           last_updated = CURRENT_TIMESTAMP
+                     WHERE ein = ? AND cause_tag = ?
+                ''', (ein, cause)).rowcount
+                if updated == 0:
+                    cursor.execute(
+                        'INSERT INTO wallet_analytics (ein, cause_tag, bookmark_count) VALUES (?, ?, 1)',
+                        (ein, cause))
 
         # Record by location (if provided)
         if state != 'XX' and city != 'Unknown':
-            cursor.execute('''
-                INSERT INTO wallet_analytics (ein, location_state, location_city, bookmark_count)
-                VALUES (?, ?, ?, 1)
-                ON CONFLICT(ein, location_state, location_city) DO UPDATE SET
-                    bookmark_count = bookmark_count + 1,
-                    last_updated = CURRENT_TIMESTAMP
-            ''', (ein, state, city))
+            updated = cursor.execute('''
+                UPDATE wallet_analytics
+                   SET bookmark_count = bookmark_count + 1,
+                       last_updated = CURRENT_TIMESTAMP
+                 WHERE ein = ? AND location_state = ? AND location_city = ?
+            ''', (ein, state, city)).rowcount
+            if updated == 0:
+                cursor.execute(
+                    'INSERT INTO wallet_analytics (ein, location_state, location_city, bookmark_count) VALUES (?, ?, ?, 1)',
+                    (ein, state, city))
 
         db.commit()
         return jsonify({'status': 'ok'}), 200
