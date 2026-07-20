@@ -47,6 +47,16 @@ except Exception as e:
     traceback.print_exc(file=sys.stderr)
 _classifier_instance = None  # lazy per-worker instance (created on first search)
 
+# Search Phase 2: semantic reranker (lazy per-worker, only for cause queries)
+try:
+    from search_semantic_reranker import SearchSemanticReranker
+    _reranker_available = True
+    print(f"[Startup] ✓ SearchSemanticReranker imported successfully", file=sys.stderr)
+except Exception as e:
+    _reranker_available = False
+    print(f"[Startup] ✗ Failed to import SearchSemanticReranker: {type(e).__name__}: {e}", file=sys.stderr)
+_reranker_instance = None  # lazy per-worker instance (created on first cause query)
+
 
 def _run_migrations(db_path: str):
     """Run pending database migrations from migrations/ directory.
@@ -2058,6 +2068,33 @@ def list_organizations():
                      'merit_archetype_v5_label', 'merit_peer_count_v5'):
             d.pop(_col, None)
         orgs.append(_strip_scores(d))
+
+    # Search Phase 2: semantic reranking for cause queries
+    if search_intent and search_intent.get('intent') == 'cause' and _reranker_available and len(orgs) > 1 and search:
+        try:
+            global _reranker_instance
+            if _reranker_instance is None:
+                _reranker_instance = SearchSemanticReranker(db_path=DB_PATH)
+            # Convert orgs to reranker format (need ein and optional fts_score)
+            reranker_input = [
+                {
+                    'ein': o['EIN'],
+                    'org_name': o.get('organization_name', ''),
+                    'fts_score': 0.5  # Neutral score; semantic reranker will compute composite
+                }
+                for o in orgs
+            ]
+            # Rerank by semantic similarity
+            reranked = _reranker_instance.rerank_fts_results(search, reranker_input)
+            if reranked:
+                # Map reranked results back to org objects, preserving order
+                ein_to_org = {o['EIN']: o for o in orgs}
+                orgs_reranked = [ein_to_org[r['ein']] for r in reranked if r['ein'] in ein_to_org]
+                if orgs_reranked:
+                    orgs = orgs_reranked
+                    search_intent['reranked'] = True
+        except Exception as e:
+            app.logger.warning(f"semantic reranking failed for cause query '{search}': {e}")
 
     payload = {
         "organizations": orgs,
