@@ -1877,6 +1877,10 @@ def _inject_meta(doc: str, title: str, desc: str, url: str, jsonld: dict | None 
 # preview bots don't fall back to the generic homepage shell. Path is stripped
 # of slashes; value is (title, description).
 _STATIC_META = {
+    '': (
+        'Daanaa — Find causes near you making a difference.',
+        'Discover 1.8+ million active U.S. nonprofits including the ones you\'ve never heard of. Giving Wallet to keep track of your giving for tax season. Private by design, no fees or charges ever !',
+    ),
     'methodology': (
         'Methodology — How Daanaa Works',
         'How Daanaa organizes public nonprofit information: data sources, Peer '
