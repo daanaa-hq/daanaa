@@ -30,6 +30,7 @@ import sys
 import json
 import sqlite3
 import requests
+import time
 from pathlib import Path
 from typing import Optional
 import numpy as np
@@ -112,21 +113,31 @@ class SearchSemanticReranker:
         if not fts_results:
             return fts_results
 
+        t_start = time.time()
+
         # Get query embedding
+        t_embed_start = time.time()
         query_embedding = self.embed_query(query)
+        t_embed_ms = (time.time() - t_embed_start) * 1000
+
         if query_embedding is None:
             # Fallback: return FTS order unchanged
             return fts_results
 
         # Compute composite scores
         scored = []
-        for result in fts_results:
+        cache_hits = 0
+        cache_misses = 0
+        t_scoring_start = time.time()
+
+        for i, result in enumerate(fts_results):
             ein = result.get('ein')
             fts_score = result.get('fts_score', 0.0)  # Normalized 0-1
 
             # Get org embedding (from cache or DB)
             org_embedding = self._embeddings_cache.get(ein)
             if org_embedding is None:
+                cache_misses += 1
                 try:
                     row = self.conn.execute(
                         "SELECT embedding FROM org_embeddings WHERE ein = ?",
@@ -136,6 +147,8 @@ class SearchSemanticReranker:
                         org_embedding = np.array(json.loads(row[0]))
                 except (sqlite3.OperationalError, json.JSONDecodeError, TypeError):
                     pass
+            else:
+                cache_hits += 1
 
             # Compute similarity
             similarity = 0.0
@@ -151,8 +164,30 @@ class SearchSemanticReranker:
                 'composite_score': composite
             })
 
+            # Early exit if scoring is taking too long (>10s for 1000+ results is inefficient)
+            if i > 0 and i % 100 == 0:
+                elapsed = time.time() - t_scoring_start
+                rate = (i + 1) / elapsed
+                if rate < 50:  # < 50 orgs/sec = too slow
+                    import sys
+                    print(f"[WARN] reranker slow: {i} orgs in {elapsed:.1f}s ({rate:.0f}/sec)", file=sys.stderr)
+
+        t_scoring_ms = (time.time() - t_scoring_start) * 1000
+
         # Rerank by composite score (descending)
+        t_sort_start = time.time()
         reranked = sorted(scored, key=lambda x: x['composite_score'], reverse=True)
+        t_sort_ms = (time.time() - t_sort_start) * 1000
+
+        t_total_ms = (time.time() - t_start) * 1000
+
+        # Log diagnostics (if results > 100, it's worth logging)
+        if len(fts_results) > 100:
+            import sys
+            print(f"[RERANK] q='{query[:30]}...' n={len(fts_results)} embed={t_embed_ms:.0f}ms "
+                  f"score={t_scoring_ms:.0f}ms sort={t_sort_ms:.0f}ms total={t_total_ms:.0f}ms "
+                  f"cache={cache_hits} db_queries={cache_misses}", file=sys.stderr)
+
         return reranked
 
     def test_reranking(self):
