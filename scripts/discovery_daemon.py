@@ -451,7 +451,7 @@ class ContinuousDiscoveryDaemon:
                 attempts = []
                 done_eins = set()
                 try:
-                    for fut in as_completed(futures, timeout=900):
+                    for fut in as_completed(futures, timeout=600):
                         ein, name = futures[fut]
                         done_eins.add(ein)
                         try:
@@ -470,7 +470,7 @@ class ContinuousDiscoveryDaemon:
                             logger.warning(f"❌ {name} ({ein}): {result.get('reason')}")
                 except TimeoutError:
                     stuck = [(e, n) for f, (e, n) in futures.items() if e not in done_eins]
-                    logger.warning(f"⏱️  Batch timeout (900s): abandoning {len(stuck)} stuck workers: "
+                    logger.warning(f"⏱️  Batch timeout (600s): abandoning {len(stuck)} stuck workers: "
                                    + ", ".join(n[:30] for _, n in stuck[:5]))
                     for ein, _name in stuck:
                         attempts.append((ein, 'timeout'))
