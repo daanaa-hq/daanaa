@@ -29,15 +29,16 @@ DB = REPO_ROOT / "data" / "merit_registry.db"
 
 # Cause keywords commonly searched (mined from zero-result analytics + domain)
 CAUSE_KEYWORDS = {
-    "food", "hunger", "mental health", "health", "education", "homeless",
-    "housing", "poverty", "justice", "environment", "climate", "water",
-    "animal", "pet", "arts", "culture", "music", "youth", "elder", "disability",
-    "women", "lgbtq", "racial justice", "voting", "immigrant", "refugee",
-    "disaster", "relief", "community", "development", "economic", "job",
-    "training", "literacy", "medical", "research", "disease", "cure",
-    "foster", "adoption", "domestic violence", "sexual assault", "substance",
-    "addiction", "recovery", "counseling", "therapy", "faith", "religion",
-    "conservation", "wildlife", "parks", "trails", "local", "community",
+    "food", "hunger", "mental health", "health", "healthcare", "education",
+    "homeless", "homelessness", "housing", "poverty", "justice", "environment",
+    "climate", "water", "animal", "animals", "pet", "pets", "arts", "culture",
+    "music", "youth", "elder", "elderly", "disability", "disabled", "women",
+    "lgbtq", "racial justice", "voting", "immigrant", "refugee", "disaster",
+    "relief", "community", "development", "economic", "job", "jobs", "training",
+    "literacy", "medical", "medicine", "research", "disease", "cure", "foster",
+    "adoption", "domestic violence", "sexual assault", "substance", "addiction",
+    "recovery", "counseling", "therapy", "faith", "religion", "conservation",
+    "wildlife", "parks", "trails", "local", "outreach", "nonprofit", "charity",
 }
 
 class SearchIntentClassifier:
