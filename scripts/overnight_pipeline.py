@@ -226,6 +226,19 @@ def purge_stale_wallets():
         log(f'⚠️  Wallet purge error (non-fatal): {str(e)[:100]}')
 
 
+def run_propublica_revenue_upsert():
+    """Upsert latest ProPublica revenue data into registry_enriched.
+    Coverage: ~35.2% (ProPublica only has e-filed 990s; paper filers not digitized yet).
+    """
+    try:
+        from propublica_revenue_upsert import main as revenue_main
+        log('Upserting ProPublica revenue data...')
+        revenue_main()
+        log('✅ ProPublica revenue upsert complete')
+    except Exception as e:
+        log(f'⚠️  ProPublica revenue upsert error (non-fatal): {str(e)[:200]}')
+
+
 def cleanup_stale_scores():
     """Delete old score JSON files, keeping only the most recent 2.
     Prevents disk bloat from nightly scoring runs."""
@@ -730,6 +743,9 @@ def main():
         if batches % 5 == 0:
             log('Progress: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
     log('Complete: ' + str(total) + ' enriched, ' + str(errs) + ' errors')
+
+    # Step 4.5: Upsert latest ProPublica revenue (availability-gated)
+    run_propublica_revenue_upsert()
 
     # Step 5a: Apply nonprofit-submitted data updates before scoring
     apply_nonprofit_updates()
