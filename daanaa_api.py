@@ -37,7 +37,7 @@ from ntee_synonyms import expand_query_with_synonyms
 
 # Search Phase 2: intent classifier (loaded at startup for preload safety)
 try:
-    from search_intent_classifier import SearchIntentClassifier
+    from scripts.search_intent_classifier import SearchIntentClassifier
     _classifier_available = True
     print(f"[Startup] ✓ SearchIntentClassifier imported successfully", file=sys.stderr)
 except Exception as e:
@@ -49,7 +49,7 @@ _classifier_instance = None  # lazy per-worker instance (created on first search
 
 # Search Phase 2: semantic reranker (lazy per-worker, only for cause queries)
 try:
-    from search_semantic_reranker import SearchSemanticReranker
+    from scripts.search_semantic_reranker import SearchSemanticReranker
     _reranker_available = True
     print(f"[Startup] ✓ SearchSemanticReranker imported successfully", file=sys.stderr)
 except Exception as e:
