@@ -18,6 +18,7 @@ import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges } from '../utils/badges'
 import { getActionRowLinks } from '../utils/actionRow'
+import { trackEvent } from '../utils/analytics'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import { useAuth } from '../contexts/AuthContext'
@@ -689,7 +690,7 @@ export default function OrganizationDetail() {
                           href={donateUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => trackDonateClick(apiOrg!.EIN, apiOrg!.organization_name)}
+                          onClick={() => { trackEvent('Donate Click'); trackDonateClick(apiOrg!.EIN, apiOrg!.organization_name) }}
                           aria-label={`Donate to ${apiOrg!.organization_name}`}
                           className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-emerald-500 text-deep-navy px-6 py-3 rounded-lg hover:bg-emerald-400 transition-colors"
                         >

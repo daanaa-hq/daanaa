@@ -10,6 +10,7 @@ import {
   deriveRawKeyBytes, importKeyFromBytes,
 } from '../utils/wallet.crypto'
 import { getApiBase } from '../utils/env'
+import { trackEvent } from '../utils/analytics'
 
 const LS_KEY_HASH = 'dw_kh'
 const LS_SALT    = 'dw_s'
@@ -388,6 +389,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const addToFunding = useCallback((ein: string) => {
     if (!/^\d{9}$/.test(ein)) return
     dispatch({ type: 'ADD_FUNDING', ein })
+    trackEvent('Funding Intent') // aggregate behavior signal (PDCA Check); no PII
     // Report bookmark anonymously to nonprofit dashboard (P2: anonymized, no tracking)
     fetch(`${getApiBase()}/api/wallet/report-bookmark`, {
       method: 'POST',
@@ -399,6 +401,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const addToVolunteering = useCallback((ein: string) => {
     if (!/^\d{9}$/.test(ein)) return
     dispatch({ type: 'ADD_VOLUNTEERING', ein })
+    trackEvent('Volunteer Intent') // aggregate behavior signal (PDCA Check); no PII
     fetch(`${getApiBase()}/api/volunteer-interest/${ein}`, { method: 'POST' }).catch(() => {})
   }, [])
 
