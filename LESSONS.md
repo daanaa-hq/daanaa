@@ -1,3 +1,25 @@
+## 2026-07-21 — Built a CN scraper that already existed (and better) — grep before building
+
+**Symptom:** Spent effort building a standalone Charity Navigator website scraper
+(`playwright-website-scraper.ts` + `enrich_cn_websites.py`) to discover org websites/donate
+URLs. It duplicated `charity_navigator_verify.py` (`CharityNavigatorVerifier`), which already
+does this via the **official CN API** and is already wired into the running
+`discovery_daemon.py` as the no-website fallback. My version was strictly worse (fragile
+HTML-scraping vs official API).
+
+**Root cause:** Started building before auditing `scripts/`. There are ~13
+website/donate-discovery scripts and a clear canonical path
+(`discovery_daemon → website_discovery_comprehensive + charity_navigator_verify`). Didn't
+grep for the capability first.
+
+**Preventing rules:** (a) Before writing ANY discovery/enrichment/scraper script, grep
+`scripts/` for the capability and identify the canonical path — new needs extend it, they do
+not spawn a 14th parallel script. (b) Prefer an official API over scraping when one exists
+(here CN has `api.charitynavigator.org/v2`). (c) This is the design-philosophy working test's
+first question ("Muda? reuse the canonical path") — run it before building, not after. Files
+were untracked, so deletion cost nothing; the wasted effort is the lesson. See
+`docs/DESIGN_PHILOSOPHY.md`.
+
 ## 2026-07-19 — URL "sanity" without domain knowledge scores junk at 95% confidence
 
 **Symptom:** 742 donation links sat in pending_review at confidence 90-95, all

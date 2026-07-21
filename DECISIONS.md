@@ -38,6 +38,29 @@ core for 2.5 days (a read-only FTS-gap SELECT from a dead prior session). Visual
 done at the deploy gate against fast production infra. NOT deployed — awaiting frontend-gate
 approval per CLAUDE.md.
 
+## 2026-07-21 — CORRECTION: Charity Navigator scraper was redundant, deleted (muda caught before commit)
+
+**What happened:** The Playwright CN scraper described in the entry below was found to
+**duplicate existing, better infrastructure** and was deleted (both files were untracked —
+zero cost). `scripts/charity_navigator_verify.py` (`CharityNavigatorVerifier`) already does
+the job via the **official Charity Navigator API** (`api.charitynavigator.org/v2`),
+returning `website` + `donation_url` by EIN, and is already wired into the running
+`discovery_daemon.py` as the no-website fallback (`verify_link`, source
+`charity_navigator`). The scraper reinvented this with fragile HTML-scraping (JS-rendering,
+legally questionable) — an inferior solution to a solved problem.
+
+**Lesson (also LESSONS.md):** Before building any discovery/enrichment script, grep
+`scripts/` for the capability first — there are ~13 website/donate-discovery scripts and a
+canonical path (`discovery_daemon → website_discovery_comprehensive + charity_navigator_verify`).
+New needs extend the canonical path; they do not spawn parallel scripts. This is the
+design-philosophy working test (Muda? reuse the canonical path) doing its job. Founder's
+"check for duplication" directive caught it.
+
+**Superseded:** the plan below (standalone scraper + enrich_cn_websites.py) is void. If CN
+coverage needs improvement, enhance `charity_navigator_verify.py` in place.
+
+<details><summary>Original (now-void) entry — kept for traceability</summary>
+
 ## 2026-07-21 — Charity Navigator website scraper: discovery enrichment via Playwright (ROI-first on US data)
 
 **Chose:** `scripts/playwright-website-scraper.ts` (TypeScript, Playwright headless) + 
@@ -68,6 +91,8 @@ cloud-based ML/API calls for website detection — local Playwright keeps cost p
 and auditable per STEWARDSHIP.md P10 (AI is a tool, not a black box).
 
 **Pending:** Board/legal review of CN scraping compliance before production deployment.
+
+</details>
 
 ## 2026-07-20/21 — mission/cause-tag quality pass: reuse production LLM logic, don't build a new pipeline
 
