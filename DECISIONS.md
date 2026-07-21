@@ -1,3 +1,19 @@
+## 2026-07-21 — Plausible analytics: self-hosted stats.daanaa.org is canonical (trial ends, no migration)
+
+**Chose:** Let the Plausible.io trial end without renewal (2026-07-21 EOD). Self-hosted
+`stats.daanaa.org` is primary analytics; confirmed working (POST /api/event returns 202).
+Behavior events wired this session (Donate Click, Funding Intent, Volunteer Interest) are
+already firing to stats.daanaa.org. No cutover gap, no data loss, no surprise charges.
+
+**Why:** Self-hosted keeps analytics on your infrastructure (privacy, cost, control). Trial
+was superseded. The observation instrument for PDCA Check (the loop we just wired) is
+already on the canonical system.
+
+**Action items before EOD 2026-07-21:** (1) Confirm trial doesn't auto-renew (check Plausible.io
+account/email). (2) Verify stats.daanaa.org dashboard ingesting events in the 24h window
+(Donate Click, Funding Intent, Volunteer Interest should appear). (3) Monitor for no gap
+in donor/volunteer intent signals. Decision logged; no engineering work needed.
+
 ## 2026-07-21 — Org detail page: giving-first CTA hierarchy (Stage 1 Visibility, surgical not rewrite)
 
 **Chose:** Surgical edits to `frontend/src/pages/OrganizationDetail.tsx`, NOT the
