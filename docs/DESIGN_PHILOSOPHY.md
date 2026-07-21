@@ -11,22 +11,56 @@ Four traditions, held together:
 
 ---
 
-## 1. Toyota — lean, kaizen, eliminate waste (muda)
+## 1. The Toyota Way — how a company compounds for decades
 
-- **Muda is the enemy.** Duplicate code, duplicate scripts, redundant UI, repeated work,
-  dead files — all waste. Remove it on sight (boy-scout rule). Example: ~13 overlapping
-  website-discovery scripts is muda; the target is one canonical path.
-- **One canonical path per job.** Standardize. If two things do the same job, merge to one
-  and delete the other. A new need becomes a *source/module* inside the canonical path, not
-  a new parallel script.
-- **Kaizen — continuous small improvement.** Ship small, reviewable increments, each
-  verified. Not big-bang rewrites of live surfaces.
-- **Just-in-time — build only what is needed now (YAGNI).** No Stage 3 code in Stage 1. No
-  abstraction until two callers. Reserve seams (cheap) instead of building ahead (waste).
-- **Poka-yoke — error-proof structurally.** Guardrails are code, not convention
-  (privacy_check.sh, PRIVACY-INVARIANTS.md, failing-first tests on money/privacy/scoring).
-- **Jidoka — stop the line on a defect.** A failed smoke test auto-rolls-back. A broken
-  test is not "done." Surface problems, never hide them.
+Toyota's durability comes from two pillars — **continuous improvement** and **respect for
+people** — held over a very long horizon. We adopt the whole system, not just "lean," because
+we are building a 100-year public trust, not a quarter's feature set. The manufacturing
+concepts translate directly to platform + product development.
+
+**Observe reality before deciding (the core):**
+- **Genchi genbutsu (go and see).** Decide from real observation at the source, never from
+  assumption or opinion. In product terms: *watch what users actually do.* Our self-hosted
+  analytics (`stats.daanaa.org`, privacy-safe) and the wallet's private intent signals are our
+  "go and see" instrument. Before we claim a redesign works, we observe the behavior change
+  (do donate clicks rise?). The CN scraper we deleted is the anti-pattern — built on an
+  assumed need, not an observed one.
+- **PDCA (Plan-Do-Check-Act).** Every meaningful change is an experiment, not a verdict. Ship
+  the smallest version (Do), *observe* real behavior (Check), then adjust (Act). "Verified on
+  prod" means it renders; "validated" means the observed behavior improved. Keep the two
+  honest and separate.
+- **Ask "why" five times.** Fix root causes, not symptoms. (The 27s local API → stuck query →
+  a diagnostic that never had a canonical home.)
+
+**Eliminate waste, unevenness, and overburden (muda, mura, muri):**
+- **Muda (waste) is the enemy.** Duplicate code/scripts, redundant UI, repeated work, dead
+  files. Remove on sight. One canonical path per job — a new need becomes a *source/module*
+  inside it, never a 14th parallel script.
+- **Mura (unevenness).** Smooth the flow — steady small increments over lurching big-bangs;
+  consistent patterns over one-off special cases.
+- **Muri (overburden).** Don't overload a live surface (or the team, or the box) with a risky
+  all-at-once change. Right-size every increment.
+
+**Build to real demand, improve forever, protect quality:**
+- **Pull, not push (just-in-time / YAGNI).** Build what observed demand calls for, when it
+  calls for it. No Stage 3 code in Stage 1. No abstraction until two callers. Reserve cheap
+  seams instead of building ahead.
+- **Kaizen (continuous improvement).** Many small, reviewable, verified improvements compound
+  into long-term success. This is how decades are won — not heroic rewrites.
+- **Jidoka (automation with a human touch) + andon (stop the line).** Error-proof structurally
+  (poka-yoke: privacy_check.sh, PRIVACY-INVARIANTS.md, failing-first tests). When a defect
+  shows, stop and fix it — a failed smoke test auto-rolls-back; a broken test is not "done."
+- **Nemawashi (decide by consensus, then act).** Surface a change, get sign-off, then move
+  decisively — matches "human in command" and the board-sim habit.
+
+**Respect for people (the other pillar):**
+- The user's time and dignity are the point — especially the smallest org and the newest
+  donor. Observe them, don't manipulate them. The mission/charter guardrails (section 4) are
+  how respect-for-people stays structural, not sentimental.
+
+**Long-term over short-term:** every decision is explainable years later (P9) and serves the
+100-year horizon over this week's convenience (P11). Toyota's compounding came from refusing
+to trade the long game for a short one — so do we.
 
 ## 2. Marie Kondo — keep only what serves; everything has a home
 
@@ -72,6 +106,11 @@ Before adding anything — code, a script, a UI element, a sentence — ask in o
    (Guardrails)
 
 If all four pass, build it — small, verified, in its one right home.
+
+5. **Observe (after shipping).** A shipped change is a PDCA experiment, not a verdict. Go and
+   see: watch real behavior via `stats.daanaa.org` and wallet intent signals. "Verified" =
+   it renders; "validated" = the behavior improved. If it didn't, adjust (Act). Never declare
+   a redesign a success on assumption — the user's actual behavior is the source of truth.
 
 ---
 
