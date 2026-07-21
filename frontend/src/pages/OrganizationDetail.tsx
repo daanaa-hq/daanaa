@@ -282,7 +282,7 @@ function WalletHeartButton({
         onClick={onToggle}
         title={isActive ? titleActive : titleInactive}
         aria-label={isActive ? ariaActive : ariaInactive}
-        className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150"
+        className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-700"
         style={{ background: bg, border: `1px solid ${borderColor}` }}
       >
         {heart(16)}
@@ -294,7 +294,7 @@ function WalletHeartButton({
     <button
       onClick={onToggle}
       title={isActive ? titleActive : titleInactive}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-150"
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-700"
       style={{ background: bg, border: `1px solid ${borderColor}`, color: isActive ? color : 'var(--warm-cream)' }}
     >
       {heart(14)}
@@ -557,7 +557,7 @@ export default function OrganizationDetail() {
                   {org.name}
                 </h1>
               </div>
-              <div className="flex items-center gap-3 mt-4 flex-wrap">
+              <div className="flex items-center gap-3 mt-6 flex-wrap">
                 <div className="flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
@@ -567,16 +567,20 @@ export default function OrganizationDetail() {
               </div>
 
               {org.mission && (
-                <HeroMission mission={org.mission} missionSrc={apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? ''} />
+                <div className="mt-8">
+                  <HeroMission mission={org.mission} missionSrc={apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? ''} />
+                </div>
               )}
 
               {/* Answer card: legit / deductible / healthy in <10s, for every
                   org including the ~82% with no financial score and revoked
                   orgs reached by direct/stale link. See AnswerCard.tsx. */}
-              {apiOrg! && <AnswerCard org={apiOrg!} />}
+              <div className="mt-8">
+                {apiOrg! && <AnswerCard org={apiOrg!} />}
+              </div>
 
               {/* Badge row -- click any badge to see what earned it */}
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-6 flex flex-wrap gap-2">
                 {badges.map(badge => (
                   <BadgeChip
                     key={badge.id}
@@ -745,7 +749,7 @@ export default function OrganizationDetail() {
 
               {/* Contact phone */}
               {apiOrg?.phone && (
-                <div className="mt-4">
+                <div className="mt-8">
                   <a
                     href={`tel:${apiOrg.phone}`}
                     className="inline-flex items-center gap-2 font-body text-[15px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
@@ -765,7 +769,7 @@ export default function OrganizationDetail() {
 
                 return (
                   <>
-                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <div className="mt-8 flex flex-wrap items-center gap-3">
                       <WalletHeartButton
                         kind="funding"
                         variant="pill"
@@ -906,8 +910,8 @@ export default function OrganizationDetail() {
       {/* Donation Attribution Banner removed — adds noise, not value */}
 
       {/* Financial Overview */}
-      <div className="py-0">
-        <div>
+      <div className="py-20">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
           {/* Giving-first order (Stage 1): lead with the skimmable interpretation
               (health signal + peer standing + reserves-vs-peers), THEN the raw
@@ -918,7 +922,7 @@ export default function OrganizationDetail() {
           {/* v5.0 Peer-based Financial Context — shown whenever the org has a
               peer-based assessment of its own. */}
           {apiOrg! && apiOrg!.v5_context && (
-            <div className="mb-8">
+            <div className="mb-12">
               <V5Context org={apiOrg!} />
             </div>
           )}
@@ -928,7 +932,7 @@ export default function OrganizationDetail() {
               this fills the blank financial section with honest cause-area
               context (P3/P4) without ever competing with real scores. */}
           {apiOrg! && apiOrg!.cohort_context && (
-            <div className="mb-8">
+            <div className="mb-12">
               <CohortContext org={apiOrg!} />
             </div>
           )}
@@ -1000,14 +1004,14 @@ export default function OrganizationDetail() {
               clear format for nonprofits to understand their position.
               Feature flag: peer_context_breakdown at 1% for testing. */}
           {apiOrg! && showPeerContextBreakdown && (
-            <div className="mb-8">
+            <div className="mb-12">
               <PeerContextBreakdown org={apiOrg!} />
             </div>
           )}
 
           {/* Community Impact */}
           {apiOrg && (
-            <div className="mb-8">
+            <div className="mb-12">
               <ImpactWidget orgEin={apiOrg.EIN} size="small" />
             </div>
           )}
