@@ -2,9 +2,13 @@
 
 **Established:** 2026-07-21 (founder-defined arc; structure by AI engineering agent)
 **Mission anchor:** Make giving easy.
-**Spine:** The Impact Wallet runs through every stage — each stage deposits into it or
-draws from it. See `.gstack designs/org-detail-revamp-20260721/impact-wallet-architecture.md`
-for the connective architecture.
+**Spine + moat:** The Impact Wallet runs through every stage — each stage deposits into it
+or draws from it. It is not just the connective architecture (spine); it is the **moat**
+(founder, 2026-07-21): a private, accumulating ledger of a person's giving + time + intent,
+plus the two-sided anonymized signal loop, compounds per user and per org and cannot be
+copied by a competitor who lacks that history. The wallet is the source of all activities
+and the defensible core. See
+`.gstack designs/org-detail-revamp-20260721/impact-wallet-architecture.md`.
 
 The stages are a **sequence of capability**, not walls. Each builds on the last, and the
 wallet is the thread that carries a user (and a nonprofit) from one to the next. Earlier
