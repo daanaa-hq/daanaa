@@ -906,7 +906,31 @@ export default function OrganizationDetail() {
       <div className="py-0">
         <div>
 
-          {/* Key financial metrics row -- shown when ProPublica data is available */}
+          {/* Giving-first order (Stage 1): lead with the skimmable interpretation
+              (health signal + peer standing + reserves-vs-peers), THEN the raw
+              numbers. A donor should get "is this org financially sound?" in one
+              glance before reading a metrics grid. PDCA: observe whether this
+              lifts engagement via stats.daanaa.org before assuming it helps. */}
+
+          {/* v5.0 Peer-based Financial Context — shown whenever the org has a
+              peer-based assessment of its own. */}
+          {apiOrg! && apiOrg!.v5_context && (
+            <div className="mb-8">
+              <V5Context org={apiOrg!} />
+            </div>
+          )}
+
+          {/* Cause-cohort context — UNSCORED orgs only. Backend sets
+              cohort_context only when the org has no v5_context of its own, so
+              this fills the blank financial section with honest cause-area
+              context (P3/P4) without ever competing with real scores. */}
+          {apiOrg! && apiOrg!.cohort_context && (
+            <div className="mb-8">
+              <CohortContext org={apiOrg!} />
+            </div>
+          )}
+
+          {/* Key financial metrics row -- the raw numbers, after the interpretation above */}
           {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {apiOrg!.months_of_reserve !== null && (
@@ -965,24 +989,6 @@ export default function OrganizationDetail() {
                   <span className="font-body text-[11px] text-cool-grey">W-3 form headcount (NCCS)</span>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* v5.0 Peer-based Financial Context — shown whenever the org has a
-              peer-based assessment of its own. */}
-          {apiOrg! && apiOrg!.v5_context && (
-            <div className="mb-8">
-              <V5Context org={apiOrg!} />
-            </div>
-          )}
-
-          {/* Cause-cohort context — UNSCORED orgs only. Backend sets
-              cohort_context only when the org has no v5_context of its own, so
-              this fills the blank financial section with honest cause-area
-              context (P3/P4) without ever competing with real scores. */}
-          {apiOrg! && apiOrg!.cohort_context && (
-            <div className="mb-8">
-              <CohortContext org={apiOrg!} />
             </div>
           )}
 
