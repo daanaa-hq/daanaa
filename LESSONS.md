@@ -911,6 +911,42 @@ for discovery_daemon, reverify_donate_pages, and enrich_batch.
   feature "silently does nothing," grep its code path for `except.*pass`
   FIRST, before theorizing about imports, caching, or process models.
 
+## 2026-07-20 — discovery daemon thread leak masqueraded as memory pressure twice
+
+**Symptom:** Discovery throughput crashed from 650 to 100-150 orgs/30min twice
+in the same 24h window. First time: genuine memory exhaustion (Firefox +
+inference servers + gunicorn all resident, swap 85% full) — closing Firefox
+and restarting the daemon fixed it. Second time, hours later: same symptom
+(100% of workers timing out every batch) but memory was healthy (9-15GB
+available) and direct inference calls were fast (10-250ms) — yet the daemon
+stayed stuck for 200+ iterations. `pgrep`-based watchdog checks (running every
+5 min via cron) saw the process alive and reported healthy the entire time.
+
+**Root cause:** `discovery_daemon.py`'s batch-timeout handler calls
+`pool.shutdown(wait=False, cancel_futures=True)` — this cancels futures that
+haven't started, but cannot kill threads already stuck mid-request. Every
+fully-timed-out batch (which every batch was, cascading) leaked its running
+worker threads. Found 456 live threads on a daemon whose pool size is 8.
+Hundreds of zombie threads contending for GIL/CPU starved every new batch of
+the CPU time needed to finish inside its own 600s window — a self-reinforcing
+stall the process could never recover from on its own. Compounding factor:
+I (Claude) launched two inference-heavy batch jobs (mission regen +
+cause-tag retag) concurrently with the daemon, which triggered the initial
+wave of timeouts that started the thread accumulation.
+
+**Fix:** `watchdog_discovery.sh` now checks productivity, not just liveness —
+if the last 100 log lines show 4+ full-batch timeouts and zero successful
+verifications, it kills and restarts the daemon regardless of thread count.
+Also logs thread count on every tick so this is visible going forward.
+
+**Preventing rule:** liveness checks (`pgrep`, "is the process there") are not
+health checks for anything with internal concurrency — a process can be alive
+and 100% non-functional. Any daemon with a thread/worker pool needs a
+watchdog that checks throughput, not just PID existence. Separately: never run
+multiple inference-heavy batch jobs concurrently with a daemon that also
+depends on the same local inference server — sequence them, or cap total
+worker counts across all concurrent consumers.
+
 ## 2026-07-19 — 803 "stale beta links" were phantom rows (status without URL)
 - **Symptom:** freshness audit showed 645 beta links never re-checked + 158
   stale >30d; a one-shot reverifier then failed ALL 803 with "Invalid URL
