@@ -1,3 +1,43 @@
+## 2026-07-21 — Graphify audit: 5 dead files archived (30-day recall), 3 US_STATES copies deduped
+
+**Chose:** Installed `/graphify` (third-party knowledge-graph tool, YC-backed, pipx-installed,
+zero token cost for code-only corpora) and ran it against `frontend/` + `scripts/` merged into
+one graph (5,959 nodes, 9,398 edges, 0 input/output tokens — pure AST, no LLM). Used it to find
+dead code and duplication, not just for browsing.
+
+Findings, verified individually (git log + grep for live references) before acting:
+- `scripts/merit_api.py`, `scripts/merit_api_v2.py`, `frontend/flask_integration/merit_api.py`,
+  `restart_merit_api.sh`, `scripts/rebuild_from_scratch.py` (v1, superseded by v2) — all confirmed
+  dead (untouched since initial commit, or boilerplate never wired in, or an orphaned stale
+  reference matching the exact pattern CLAUDE.md already warns about).
+- Moved (not deleted) to `archive/dead_code_20260721/` with a README explaining the 30-day
+  recall window (through 2026-08-20) — founder's call, safer than outright deletion for a
+  first pass. `git mv` preserves history; recall is a `git mv` back, not a reconstruction.
+- Also found: today's earlier `US_STATES` extraction to `src/data/locations.ts` (commit
+  8fd76ad3121) only fixed `Directory.tsx` — three more files (`FilterSheet.tsx`,
+  `VolunteerSearch.tsx`, `OrgClaimEditor.tsx`) had their own hand-maintained copy. Deduped
+  all three onto the shared source in this pass. Two small behavior notes: `VolunteerSearch.tsx`
+  previously excluded Puerto Rico and now includes it (locations.ts always did); `OrgClaimEditor.tsx`
+  derives its codes-only list from the shared source, filtering PR back out to match its prior
+  scope exactly.
+- Also identified but deliberately NOT touched: 6 monitoring scripts (`api_health_dashboard.py`,
+  `backup_status.py`, `cron_job_monitor.py`, `daanaa_status.py`, `phase4_monitor.py`,
+  `phase5_monitor.py`) share ~250 lines of copy-pasted boilerplate (colors/log_message/monitor_loop).
+  All 6 are live and actively used — this is a refactor candidate (shared lib), not a deletion
+  candidate, and riskier (touches 6 active ops scripts). Left for a separate, deliberate pass.
+
+**Why:** The user explicitly asked graphify to find "satellites with no use" — duplicate or dead
+code the platform doesn't need. A pure grep/manual review would have missed the `US_STATES` gap
+(it's not obviously connected to the merit_api findings) and would have been slower to confirm
+the merit_api files were truly dead vs. just old. The graph's degree/isolation analysis and
+duplicate-label scan (same function/class name across multiple files) surfaced both classes of
+finding in minutes at zero token cost.
+
+**Rejected:** Deleting outright (founder asked for a recall window instead — 30 days, then safe
+to hard-delete if nothing breaks). Also rejected: touching the 6 monitoring scripts in the same
+pass — real duplication, but a live-code refactor is a different risk profile than moving
+already-dead files, and deserves its own review.
+
 ## 2026-07-21 — Plausible analytics: self-hosted stats.daanaa.org is canonical (trial ends, no migration)
 
 **Chose:** Let the Plausible.io trial end without renewal (2026-07-21 EOD). Self-hosted

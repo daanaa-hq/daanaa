@@ -10,6 +10,7 @@ import {
   type VolunteerEvent, type ServiceAreaType, type ApiOrganization,
 } from '../data/api'
 import { METRO_NAMES } from '../data/msas'
+import { US_STATES as US_STATES_WITH_NAMES } from '../data/locations'
 
 const CAUSE_TAGS = [
   'Arts & Culture','Education','Environment','Health','Community Development',
@@ -17,12 +18,12 @@ const CAUSE_TAGS = [
   'Youth Development','Food Security','Housing','Mental Health','Employment',
 ]
 
-const US_STATES = [
-  'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA',
-  'KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
-  'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT',
-  'VA','WA','WV','WI','WY','DC',
-]
+// This page only needs the codes (no display names) — derived from the shared
+// source so state lists don't drift out of sync across pages (frontend/src/data/locations.ts).
+// Matches this file's prior scope: continental US + DC, no PR/territories/military.
+const US_STATES = US_STATES_WITH_NAMES
+  .map(([code]) => code)
+  .filter(code => code !== 'PR')
 
 const COUNTRIES: { code: string; name: string }[] = [
   { code: 'AF', name: 'Afghanistan' }, { code: 'AL', name: 'Albania' },

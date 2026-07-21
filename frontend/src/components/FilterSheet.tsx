@@ -1,33 +1,12 @@
 import { useEffect } from 'react'
 import { ALL_CATEGORIES } from '../data/categories'
+import { US_STATES, US_TERRITORIES as OTHER_TERRITORIES, US_MILITARY as MILITARY_STATES } from '../data/locations'
 import RevenueRangeInput from './RangeSlider'
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All', emoji: '' },
   ...ALL_CATEGORIES,
 ]
-
-const US_STATES = [
-  ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
-  ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],
-  ['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],
-  ['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],
-  ['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],
-  ['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],
-  ['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],
-  ['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],
-  ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],
-  ['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],
-  ['DC','Washington DC'],['PR','Puerto Rico'],
-] as const
-
-const OTHER_TERRITORIES = [
-  ['AS','American Samoa'],['GU','Guam'],['MP','Northern Mariana Islands'],['VI','U.S. Virgin Islands'],
-] as const
-
-const MILITARY_STATES = [
-  ['AA','Armed Forces Americas'],['AE','Armed Forces Europe'],['AP','Armed Forces Pacific'],
-] as const
 
 interface FilterSheetProps {
   open: boolean
