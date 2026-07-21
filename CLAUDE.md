@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Navigate first, read less.** This repo is large (~250 docs, ~379 scripts, 11k-line API).
+> Read `REPO_MAP.md` before exploring — it names the ~8 live files, the one canonical path per
+> job, and the historical sprawl to ignore. Grepping the canonical path there before building
+> is how we avoid rework and save tokens.
+
 @STEWARDSHIP.md
 
 # CLAUDE.md — Daanaa
