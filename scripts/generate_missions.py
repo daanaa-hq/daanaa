@@ -373,15 +373,30 @@ def _write_batch(results: dict[str, str], conn: sqlite3.Connection, web_ctx: dic
         _errors  += batch_size - len(results)
 
 
-def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False, small_first=False):
+def run(limit=None, workers=1, all_orgs=False, upgrade_templates=False, small_first=False,
+        regen_generic_with_site=False):
     conn = sqlite3.connect(DB_PATH, timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     _ensure_column(conn)
 
     scope = "" if all_orgs else "AND re.merit_score IS NOT NULL"
     # Skip orgs that already have website-extracted or claimed missions (real sources, don't replace)
-    mission_filter = "(re.mission IS NULL OR re.mission = '' OR (re.mission_source = 'template_ntee' AND re.mission_source NOT IN ('website', 'claimed')))" \
-                     if upgrade_templates else "(re.mission IS NULL OR re.mission = '' OR re.mission_source IS NULL) AND re.mission_source NOT IN ('website', 'claimed')"
+    if regen_generic_with_site:
+        # 2026-07-20: orgs that have a website AND a cached page but only a
+        # generic mission (ai_generated/ai_ntee/never generated) — the
+        # highest-value upgrade target since real web content is already
+        # available (no fetch needed). Explicitly requires page_cache — without
+        # it the LLM has no more signal than the original generic pass had, so
+        # regenerating would just reproduce similar generic text for no gain.
+        # Orgs with a website but no cached page yet are a separate, later
+        # phase (needs a fetch pass first).
+        mission_filter = ("(re.mission_source IS NULL OR re.mission_source IN ('ai_generated', 'ai_ntee'))"
+                           " AND re.website IS NOT NULL AND re.website != ''"
+                           " AND re.EIN IN (SELECT DISTINCT ein FROM page_cache WHERE html_gz IS NOT NULL)")
+    elif upgrade_templates:
+        mission_filter = "(re.mission IS NULL OR re.mission = '' OR (re.mission_source = 'template_ntee' AND re.mission_source NOT IN ('website', 'claimed')))"
+    else:
+        mission_filter = "(re.mission IS NULL OR re.mission = '' OR re.mission_source IS NULL) AND re.mission_source NOT IN ('website', 'claimed')"
     # Ordering: default prioritises orgs with a cached web page (ai_web missions
     # beat ai_ntee) then highest merit. --small-first flips this to target the
     # invisible long tail — smallest/no-revenue orgs first — to lift search
@@ -484,6 +499,9 @@ if __name__ == "__main__":
     ap.add_argument("--all-orgs",          action="store_true", help="Include unscored orgs too")
     ap.add_argument("--upgrade-templates", action="store_true", help="Replace template_ntee missions with AI-generated ones")
     ap.add_argument("--small-first",       action="store_true", help="Process smallest/no-revenue orgs first (discoverability of tiny nonprofits)")
+    ap.add_argument("--regen-generic-with-site", action="store_true",
+                     help="Regenerate missions for orgs that have a website but only a generic "
+                          "(ai_generated/ai_ntee/none) mission — highest-value upgrade target")
     ap.add_argument("--url",               type=str, help="Override inference endpoint URL")
     ap.add_argument("--model",             type=str, help="Override model name")
     args = ap.parse_args()
@@ -492,4 +510,5 @@ if __name__ == "__main__":
     if args.model:
         MODEL = args.model
     run(limit=args.limit, workers=args.workers, all_orgs=args.all_orgs,
-        upgrade_templates=args.upgrade_templates, small_first=args.small_first)
+        upgrade_templates=args.upgrade_templates, small_first=args.small_first,
+        regen_generic_with_site=args.regen_generic_with_site)
