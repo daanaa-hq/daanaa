@@ -4,6 +4,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useWallet } from '../contexts/WalletContext'
 import { useAuth } from '../contexts/AuthContext'
 import { OrgCardRow } from '../components/OrgCard'
+import Breadcrumb from '../components/Breadcrumb'
 import ImpactSummary from '../components/ImpactSummary'
 import WalletAccountLink from '../components/WalletAccountLink'
 import DonationLogger from '../components/DonationLogger'
@@ -283,6 +284,7 @@ export default function WalletPage() {
   // ─── Main wallet view ────────────────────────────────────────────────────────
   return (
     <div className="bg-warm-cream min-h-[100dvh] pt-[72px]">
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Wallet' }]} />
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-10">
 
         {/* Header */}
@@ -359,6 +361,7 @@ export default function WalletPage() {
         {/* Filters — only shown when wallet is large enough to benefit from filtering */}
         {entries.length >= 5 && (
           <div className="bg-white rounded-2xl border border-light-grey p-5 mb-8">
+            <p className="font-body text-xs text-cool-grey uppercase tracking-wide font-semibold mb-3">Filters & Search</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               <div>
                 <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">Sort</label>
@@ -375,15 +378,15 @@ export default function WalletPage() {
               </div>
 
               <div>
-                <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">Intent</label>
+                <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">List Type</label>
                 <select
                   value={filterState.intent}
                   onChange={handleIntentFilter}
-                  aria-label="Filter by intent"
+                  aria-label="Filter by list type"
                   className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
                 >
-                  <option value="all">All intents</option>
-                  <option value="giving">Giving</option>
+                  <option value="all">All</option>
+                  <option value="giving">Funding</option>
                   <option value="volunteer">Volunteering</option>
                 </select>
               </div>

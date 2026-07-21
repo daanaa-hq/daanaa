@@ -4,6 +4,7 @@ import { useSearchParams, Link } from 'react-router-dom'
 import OrgCard, { OrgCardRow } from '../components/OrgCard'
 import FilterSheet from '../components/FilterSheet'
 import SearchBar from '../components/SearchBar'
+import Breadcrumb from '../components/Breadcrumb'
 import { useApi } from '../hooks/useApi'
 import { getOrganizations, getFusedSearch, getStats } from '../data/api'
 import type { ApiOrganization } from '../data/api'
@@ -11,6 +12,7 @@ import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
 import LampMark from '../components/LampMark'
 import type { TierName } from '../components/TrustBadge'
 import { RAIL_CATEGORIES, ALL_CATEGORIES, NTEE_SUBCATEGORIES } from '../data/categories'
+import { US_STATES, US_TERRITORIES, US_MILITARY } from '../data/locations'
 import { trackSearchMetrics } from '../lib/analytics'
 import { parseLocationQuery } from '../utils/locationQuery'
 
@@ -69,30 +71,6 @@ function OrgCardApi({ org, listView = false }: { org: ApiOrganization; listView?
   const props = { org: cardOrg, apiOrg: org, trustSummary: summary }
   return listView ? <OrgCardRow {...props} /> : <OrgCard {...props} />
 }
-
-// 50 states + DC + PR as flat options; remaining territories + military as optgroups
-const US_STATES = [
-  ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
-  ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['FL','Florida'],['GA','Georgia'],
-  ['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],
-  ['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],
-  ['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],
-  ['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],
-  ['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],
-  ['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],
-  ['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],
-  ['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],
-  ['DC','Washington DC'],
-  ['PR','Puerto Rico'],
-] as const
-
-const US_TERRITORIES = [
-  ['AS','American Samoa'],['GU','Guam'],['MP','Northern Mariana Islands'],['VI','U.S. Virgin Islands'],
-] as const
-
-const US_MILITARY = [
-  ['AA','Armed Forces Americas'],['AE','Armed Forces Europe'],['AP','Armed Forces Pacific'],
-] as const
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 
@@ -454,16 +432,10 @@ export default function Directory() {
 
   return (
     <div className="min-h-[100dvh]">
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Directory' }]} />
       {/* Page Header */}
       <div className="bg-white border-b border-light-grey pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-10 pb-10">
-          <div className="flex items-center gap-2 mb-5">
-            <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-cool-grey hover:text-deep-navy transition-colors">
-              Home
-            </Link>
-            <span className="text-cool-grey">/</span>
-            <span className="font-body text-[12px] tracking-[0.02em] text-deep-navy">Directory</span>
-          </div>
 
           <h1 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}>
             Explore Causes &amp; Organizations

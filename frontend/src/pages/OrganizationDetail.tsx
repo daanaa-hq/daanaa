@@ -3,6 +3,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import AnswerCard from '../components/AnswerCard'
+import Breadcrumb from '../components/Breadcrumb'
 import DonationReturnPrompt from '../components/DonationReturnPrompt'
 import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
 import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
@@ -505,6 +506,7 @@ export default function OrganizationDetail() {
           .text-cool-grey { color: #374151 !important; }
         }
       `}</style>
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Directory', href: '/directory' }, { label: org?.organization_name || 'Organization' }]} />
       {/* Profile Header */}
       <div className="bg-deep-navy pt-[72px] relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgb(var(--deep-navy-rgb)) 70%, transparent)' }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 md:py-12 lg:py-16">

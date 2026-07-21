@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
+import Breadcrumb from '../components/Breadcrumb'
 
 interface PendingVerification {
   id: string
@@ -121,6 +122,7 @@ export default function NonprofitDashboard() {
   if (!state.authenticated) {
     return (
       <div className="bg-warm-cream min-h-screen py-12">
+        <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Nonprofit Dashboard' }]} />
         <div className="max-w-[600px] mx-auto px-6">
           <div className="bg-white border border-light-grey rounded-xl p-8">
             <h1 className="text-3xl font-display text-deep-navy mb-2">Verify Volunteer Hours</h1>
