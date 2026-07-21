@@ -83,6 +83,9 @@ web/
 audit_report.csv
 archive/
 frontend/src/data/*.db
+graphify-out/
+frontend/graphify-out/
+scripts/graphify-out/
 
 # runtime/deploy artifacts (never commit)
 .deploy_scratch/

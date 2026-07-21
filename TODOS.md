@@ -156,3 +156,12 @@ knowledge_graph_entities (60K rows of NTEE-letter junk), knowledge_graph_relatio
 context_recall_orchestrator*.py, expand_macro_context.py. Not on cron, costs nothing.
 Next cleanup pass: either drop the tables + endpoint + scripts, or rebuild with real
 data (FRED inflation %, real entity extraction) if the product ever wants macro context.
+
+## Quarterly graphify dead-code audit due (2026-07-21)
+Graph refreshed automatically. Run the actual audit manually (or ask Claude Code):
+grep the graph for duplicate function/class names across files + isolated
+(<=1 edge) nodes, verify each with git log + grep for live references,
+archive confirmed-dead files to archive/dead_code_$(date +%Y%m%d)/ with a
+30-day recall README. See DECISIONS.md 2026-07-21 for the reference pattern.
+(Next auto-reminder: ~2026-10-19)
+
