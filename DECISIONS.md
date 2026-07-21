@@ -1,3 +1,42 @@
+## 2026-07-20/21 — mission/cause-tag quality pass: reuse production LLM logic, don't build a new pipeline
+
+**Chose:** After finding KWA Foundation's cause_tags were stale (mission
+upgraded to a real scraped description, tags never re-derived from it —
+still showing the pre-upgrade `["religion","faith based"]`), scoped the fix
+to two narrow, additive changes rather than a new tagging system: (1)
+`scripts/retag_ai_web_missions.py` — same `_call_llm`/vocabulary from the
+existing `retag_from_mission.py`, scoped to `mission_source='ai_web' AND
+cause_tags_source != 'ai_mission'` (19,647 orgs). (2)
+`generate_missions.py --regen-generic-with-site` — new flag on the existing
+mission-generation script, scoped to orgs with a website AND a cached page
+but still a generic mission (~48-52K orgs, population grows as the
+discovery daemon adds page_cache entries). Explicitly required `page_cache`
+presence after a first-draft filter without it grabbed a large
+merit_score=100 cohort with no real web content, verified via before/after
+sampling to produce no improvement — caught before the big batch ran.
+
+**Why:** Reusing tested production logic (same LLM calls, same controlled
+vocabulary) keeps output consistent with the rest of the registry and avoids
+re-deriving prompt/vocabulary decisions that were already made. Scoping
+narrowly (exact WHERE clause per bug class) instead of a general "re-tag
+everything" pass keeps each run's blast radius and runtime predictable.
+
+**Rejected:** A single combined "fix all mission/tag staleness" mega-script —
+the two populations (stale-tags-only vs. generic-mission-with-real-content)
+have different preconditions and risk profiles, so splitting them let each
+be tested and reasoned about independently. Also rejected running the two
+scoped scripts concurrently with the always-on discovery daemon without
+active monitoring — see LESSONS.md 2026-07-20/21 entries on the thread-leak
+incident and the two watchdog bugs found fixing it.
+
+**Follow-up chosen mid-run (off-peak GPU utilization):** founder explicitly
+asked to push worker counts higher overnight ("utilize GPU when possible")
+after confirming real headroom via `radeontop` (shader clock ~28% used,
+not saturated) rather than defaulting to the same conservative counts every
+time. Bumped retag workers 4→4 (unchanged, already fine) and mission-regen
+workers 2→3. This is a standing off-peak preference, not a one-time
+instruction — see feedback memory `gpu_utilization_offpeak`.
+
 ## 2026-07-19 — New orgs are indexed + proven findable at ingestion (founder-approved)
 
 **Chose:** `scripts/search_index_delta.py` — detect eligible orgs missing from

@@ -947,6 +947,51 @@ multiple inference-heavy batch jobs concurrently with a daemon that also
 depends on the same local inference server — sequence them, or cap total
 worker counts across all concurrent consumers.
 
+## 2026-07-21 — the productivity-watchdog fix above had two more bugs, both found live in the same night
+
+Direct follow-on to the entry above. The user approved resuming both paused
+batch jobs (retag + mission regen) alongside the daemon, at slightly higher
+worker counts than the prior over-cautious pass, since it was genuinely
+off-peak and there was real GPU headroom (see feedback memory:
+gpu_utilization_offpeak). Running all three together re-triggered the same
+class of failure the previous fix targeted — and exposed two flaws in that
+fix that only showed up under live, repeated cycling.
+
+**Bug A — fixed 100-log-line window is not a "recent" window.** The watchdog
+counted ✅-success lines in the last 100 log lines and required zero for a
+restart. But each daemon iteration only emits a handful of lines (worker
+results + one progress summary), so a batch of 50 timeouts can span very few
+lines while old ✅ lines from well before the stall persist inside the same
+100-line window — keeping the success count falsely nonzero. Observed live:
+9 consecutive 100%-timeout iterations, 112 threads, log showed
+`GPU embedding service unavailable: ... Read timed out (read timeout=10)` —
+genuinely stuck — yet the watchdog's own success count never hit zero.
+**Fix:** replaced line-counting with a check on the `verified=` progress
+counter, which is cumulative/monotonic. If the counter is byte-identical
+across the last 6 progress lines, nothing succeeded in that whole span,
+full stop — no window-size sensitivity possible.
+
+**Bug B — the daemon log is append-only across restarts, and the fix from
+Bug A didn't account for that.** Immediately after ANY restart (manual or
+watchdog-triggered), the file's tail is still dominated by the PREVIOUS
+process's frozen progress lines, because the fresh process hasn't logged 6
+new ones yet. Running the watchdog moments after a clean manual restart
+(24 threads, genuinely healthy) still read those stale frozen counters and
+killed the healthy daemon. **Fix:** scope all analysis to log lines after
+the current process's own `🚀 CONTINUOUS DISCOVERY DAEMON STARTED` banner
+(the last one in the file) — a fresh process always reads as "insufficient
+data yet," never "stuck."
+
+**Preventing rule:** a monitoring fix is not proven by code review or a
+single clean test — it has to survive its own trigger condition happening
+for real, more than once, including immediately after a restart. Any
+"is X stuck" check built on log-line windows over an append-only,
+restart-spanning log needs either (a) a boundary marker for "current process
+only," or (b) a signal that's inherently restart-safe (a monotonic counter
+reset to a known state on startup) — window size alone can never be tuned
+into correctness. When a fix for a live incident works once, budget time to
+watch it survive a second live occurrence before considering it done.
+
 ## 2026-07-19 — 803 "stale beta links" were phantom rows (status without URL)
 - **Symptom:** freshness audit showed 645 beta links never re-checked + 158
   stale >30d; a one-shot reverifier then failed ALL 803 with "Invalid URL
