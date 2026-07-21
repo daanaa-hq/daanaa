@@ -1721,6 +1721,13 @@ try:
 except ImportError:
     pass  # Claims API optional
 
+# Register pilot invitations API (25-org pilot signup)
+try:
+    from pilot_invitations_api import pilot_invitations_bp
+    app.register_blueprint(pilot_invitations_bp)
+except ImportError:
+    pass  # Pilot invitations optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])

@@ -62,6 +62,7 @@ const VolunteerSubmission = lazy(() => import('./pages/VolunteerSubmission'))
 const DonationReceipt = lazy(() => import('./pages/DonationReceipt'))
 const GuildPage = lazy(() => import('./pages/GuildPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const PilotSignup = lazy(() => import('./pages/PilotSignup'))
 
 function PageLoader() {
   return (
@@ -156,6 +157,7 @@ export default function App() {
           <Route path="/claim/verify" element={<ClaimVerify />} />
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/claim/success" element={<ClaimSuccess />} />
+          <Route path="/nonprofit/pilot-signup" element={<PilotSignup />} />
           <Route path="/admin" element={<DashboardHub />} />
           <Route path="/admin/operations" element={<AdminOperations />} />
           <Route path="*" element={<NotFound />} />
