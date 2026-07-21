@@ -1,3 +1,74 @@
+## 2026-07-21 — Org detail page: giving-first CTA hierarchy (Stage 1 Visibility, surgical not rewrite)
+
+**Chose:** Surgical edits to `frontend/src/pages/OrganizationDetail.tsx`, NOT the
+big-bang component rewrite originally scoped. (1) Reordered the "Ways to Support" card so
+Donate is the FIRST, primary emerald CTA (was third, behind Website); added an
+`aria-label="Donate to <org>"`. (2) Reframed the volunteer wallet pill from "Add to
+volunteer list" to interest-only copy ("Interested in volunteering?") — Stage 3 (Time)
+hour-logging deferred, so no commitment/credential promise. Maps to the EXISTING wallet
+`addToVolunteering` (no forked data model). Wireframe/plan/language docs are in
+`~/.gstack/projects/meritgiving/designs/org-detail-revamp-20260721/`.
+
+**Why:** Mission is "make giving easy" — the donate decision must be unambiguous, so donate
+leads. Reading the full 1429-line file changed the approach from a clean-component rewrite
+to surgical edits: the page has ~12 interdependent modules (AnswerCard, V5/cohort context,
+guild, enrichment, mistake registry, org wall, similar orgs, financial history, etc.), and a
+big-bang rewrite risks silently dropping one on a live revenue page. Smaller diff = lower
+regression risk + easier review at the frontend gate. Deeper component extraction can be a
+clean follow-up. Verified: `tsc --noEmit` clean, `npm run build` clean.
+
+**Rejected:** Full clean-component rewrite (`<Hero>`, `<TrustSignals>`, etc.) now — deferred
+as a safe follow-up rather than shipping a high-risk rewrite of a live page in one pass.
+
+**DRY pass (same increment, founder directive "less/no duplication" + design philosophy):**
+Removed org-page muda without changing UX — (a) `propublicaOrgUrl()` helper replaces the
+ProPublica URL hand-built in 3 places; (b) `getActionRowLinks(apiOrg)` computed once and
+reused (was called twice); (c) extracted `<WalletHeartButton kind variant>` — the green
+(funding) and red (volunteering) intent hearts were coded 4 times (icon pair + pill pair),
+now render from one local component. Founder kept BOTH hearts (green=funding intent,
+red=volunteering intent) — they capture private wallet intent and feed the org anonymized
+aggregate signals (P2/P5). Verified: tsc + build clean. See `docs/DESIGN_PHILOSOPHY.md`
+(Toyota muda-elimination + Kondo keep-what-serves).
+
+**Local QA note:** Could not complete local runtime visual QA — the local API returns org
+endpoints in a flat ~27s (worker at 0% CPU, so a fixed server-side timeout, root-caused to
+the S3 enrichment lookup being unreachable from local; production is 0.1s with S3 access).
+Also cleared an orphaned stuck `sqlite3` diagnostic query (PID 372154) that had pegged a
+core for 2.5 days (a read-only FTS-gap SELECT from a dead prior session). Visual QA to be
+done at the deploy gate against fast production infra. NOT deployed — awaiting frontend-gate
+approval per CLAUDE.md.
+
+## 2026-07-21 — Charity Navigator website scraper: discovery enrichment via Playwright (ROI-first on US data)
+
+**Chose:** `scripts/playwright-website-scraper.ts` (TypeScript, Playwright headless) + 
+`scripts/enrich_cn_websites.py` (nightly enrichment phase). Targets Charity Navigator 
+(CN) pages for org website extraction — CN has high ROI (many orgs link their sites 
+there, not yet in IRS 990 filings) and is the most-requested source by user.
+
+Strategy: Three-tier extraction on CN org-info card → contact section → header/footer 
+fallback. Confidence scoring: 0.9 (CN org card, highest), 0.85 (contact section), 0.75 
+(header/footer). Rate-limited to 1 page/sec, respects robots.txt, User-Agent identifies 
+as Daanaa bot (transparency + crawler etiquette — see 2026-07-18 crawler decision).
+
+Wired into `overnight_pipeline.py` Step 6 (new enrichment phase after mission generation, 
+before FTS rebuild). Stores results in registry_enriched as donate_url + donate_confidence 
++ source='charity_navigator'.
+
+**Why:** CN is US-focused (aligns with Daanaa's US-nonprofit scope), has high coverage 
+of discoverable websites, and is already a public trust signal per STEWARDSHIP.md P3 
+(evidence-based). ROI priority from user feedback: CN highest because many small/under-resourced 
+orgs maintain CN profiles as their primary visibility layer, making website extraction 
+here valuable for discovery and link verification. Playwright chosen over curl/BeautifulSoup 
+because CN pages are JS-rendered (org data loaded client-side) — headless browser necessary 
+for reliability.
+
+**Rejected:** Scaling immediately to other US sources (GuideStarm BBB Wise Giving) — prove 
+CN first, measure success (coverage + confidence distribution), then expand. Also rejected 
+cloud-based ML/API calls for website detection — local Playwright keeps cost predictable 
+and auditable per STEWARDSHIP.md P10 (AI is a tool, not a black box).
+
+**Pending:** Board/legal review of CN scraping compliance before production deployment.
+
 ## 2026-07-20/21 — mission/cause-tag quality pass: reuse production LLM logic, don't build a new pipeline
 
 **Chose:** After finding KWA Foundation's cause_tags were stale (mission
@@ -1181,3 +1252,10 @@ missing (would create two silent scoring regimes; deriving the missing input is 
   snapshot stays dead.
 - **Rejected:** direct re-crawling of blocked sites (etiquette decision
   stands); paid crawl APIs (cost gate).
+
+## [completed] Archive recovery automation 2026-07-18
+- Dead-pool scan: 25K sampled, 1273 false-negatives retried
+- Promotion: 1067 orgs updated to 'archived' + snapshot metadata
+- Recency gate: 180-day cutoff applied (P3: honest labeling)
+- Unchecked pool: 32,528 orgs queued for archive scan
+- Governance: board-approved 2026-07-18, execution automated per this script

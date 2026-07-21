@@ -101,6 +101,12 @@ function nonprofitSizeLabel(revenue: number | null | undefined): string | null {
   return 'Major'
 }
 
+// Single source of truth for the ProPublica Nonprofit Explorer org URL.
+// Was hand-built inline in 3 places; centralized so the path never drifts.
+function propublicaOrgUrl(ein: string): string {
+  return `https://projects.propublica.org/nonprofits/organizations/${ein.replace(/-/g, '')}`
+}
+
 function peerGroupLabel(peerGroup: string | null, revenueBand: string | null): string {
   if (!peerGroup) return ''
   if (peerGroup.includes(':')) {
@@ -233,6 +239,64 @@ function EinCopyButton({ ein }: { ein: string }) {
       }`}
     >
       {copied ? 'Copied!' : 'Copy'}
+    </button>
+  )
+}
+
+// One shared control for the funding (green) and volunteering (red) intent
+// hearts. Both live on the page in two placements each (compact icon in the
+// header, labeled pill lower down) — this renders all four from one place so
+// the toggle logic is never duplicated. The hearts capture private wallet
+// intent; the org sees only anonymized aggregate signals (Stewardship P2/P5).
+function WalletHeartButton({
+  kind, variant, isActive, onToggle,
+  titleActive, titleInactive, ariaActive, ariaInactive, labelActive, labelInactive,
+}: {
+  kind: 'funding' | 'volunteering'
+  variant: 'icon' | 'pill'
+  isActive: boolean
+  onToggle: () => void
+  titleActive: string
+  titleInactive: string
+  ariaActive?: string
+  ariaInactive?: string
+  labelActive?: string
+  labelInactive?: string
+}) {
+  const color = kind === 'funding' ? '#22c55e' : '#ef4444'
+  const bg = isActive ? `${color}20` : 'rgb(var(--warm-cream-rgb) / 0.08)'
+  const borderColor = isActive ? color : 'rgb(var(--warm-cream-rgb) / 0.2)'
+  const heart = (size: number) => (
+    <svg width={size} height={size} viewBox="0 0 24 24"
+      fill={isActive ? color : 'none'}
+      stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+  )
+
+  if (variant === 'icon') {
+    return (
+      <button
+        onClick={onToggle}
+        title={isActive ? titleActive : titleInactive}
+        aria-label={isActive ? ariaActive : ariaInactive}
+        className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150"
+        style={{ background: bg, border: `1px solid ${borderColor}` }}
+      >
+        {heart(16)}
+      </button>
+    )
+  }
+
+  return (
+    <button
+      onClick={onToggle}
+      title={isActive ? titleActive : titleInactive}
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-150"
+      style={{ background: bg, border: `1px solid ${borderColor}`, color: isActive ? color : 'var(--warm-cream)' }}
+    >
+      {heart(14)}
+      {isActive ? labelActive : labelInactive}
     </button>
   )
 }
@@ -424,6 +488,9 @@ export default function OrganizationDetail() {
   }
 
   const badges = getOrgBadges(apiOrg!)
+  // Computed once and reused — the Ways-to-Support card and the public-record
+  // fallback both need these links (was called twice). Lean: no repeated work.
+  const actionLinks = getActionRowLinks(apiOrg!)
 
   return (
     <div className="min-h-[100dvh]">
@@ -449,34 +516,28 @@ export default function OrganizationDetail() {
               <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream truncate max-w-[200px]">{org.name}</span>
             </div>
             <div className="flex items-center gap-2">
-              {/* Green heart — funding list */}
-              <button
-                onClick={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
-                title={isInFunding(org.ein) ? 'Remove from funding list' : 'Add to funding list'}
-                aria-label={isInFunding(org.ein) ? 'Remove from funding list' : 'Fund this org'}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150"
-                style={{ background: isInFunding(org.ein) ? '#22c55e20' : 'rgb(var(--warm-cream-rgb) / 0.08)', border: `1px solid ${isInFunding(org.ein) ? '#22c55e' : 'rgb(var(--warm-cream-rgb) / 0.2)'}` }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24"
-                  fill={isInFunding(org.ein) ? '#22c55e' : 'none'}
-                  stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-              </button>
-              {/* Red heart — volunteer list */}
-              <button
-                onClick={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
-                title={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'I want to volunteer here'}
-                aria-label={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'Volunteer here'}
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150"
-                style={{ background: isInVolunteering(org.ein) ? '#ef444420' : 'rgb(var(--warm-cream-rgb) / 0.08)', border: `1px solid ${isInVolunteering(org.ein) ? '#ef4444' : 'rgb(var(--warm-cream-rgb) / 0.2)'}` }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24"
-                  fill={isInVolunteering(org.ein) ? '#ef4444' : 'none'}
-                  stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
-              </button>
+              {/* Green heart — funding intent */}
+              <WalletHeartButton
+                kind="funding"
+                variant="icon"
+                isActive={isInFunding(org.ein)}
+                onToggle={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
+                titleActive="Remove from funding list"
+                titleInactive="Add to funding list"
+                ariaActive="Remove from funding list"
+                ariaInactive="Fund this org"
+              />
+              {/* Red heart — volunteering intent */}
+              <WalletHeartButton
+                kind="volunteering"
+                variant="icon"
+                isActive={isInVolunteering(org.ein)}
+                onToggle={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
+                titleActive="Remove from volunteer list"
+                titleInactive="I want to volunteer here"
+                ariaActive="Remove from volunteer list"
+                ariaInactive="Volunteer here"
+              />
             </div>
           </div>
 
@@ -610,7 +671,7 @@ export default function OrganizationDetail() {
               {/* Ways to Support card: dedicated buttons for Website / Donate / Volunteer
                   with verification status and role clarity disclaimer. */}
               {(() => {
-                const { websiteUrl, websiteLabel, isWebsiteBeta, donateUrl, isDonateBeta, volunteerUrl, hasAnyLink } = getActionRowLinks(apiOrg)
+                const { websiteUrl, websiteLabel, isWebsiteBeta, donateUrl, isDonateBeta, volunteerUrl, hasAnyLink } = actionLinks
 
                 if (!hasAnyLink) return null;
 
@@ -618,7 +679,24 @@ export default function OrganizationDetail() {
                   <div className="mt-8 p-6 rounded-lg border border-white/10 bg-white/[0.03] backdrop-blur-sm">
                     <h3 className="font-body text-[14px] font-semibold text-soft-gold uppercase tracking-[0.05em] mb-4">Ways to Support</h3>
 
+                    {/* Giving-first CTA hierarchy (Stage 1 redesign): Donate is the
+                        primary action — first in the row, emerald, larger. Website is
+                        secondary. Volunteer is a tertiary link. Mission: make giving easy,
+                        so the donate decision is never ambiguous. */}
                     <div className="flex flex-wrap items-center gap-3 mb-4">
+                      {donateUrl && (
+                        <a
+                          href={donateUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => trackDonateClick(apiOrg!.EIN, apiOrg!.organization_name)}
+                          aria-label={`Donate to ${apiOrg!.organization_name}`}
+                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-emerald-500 text-deep-navy px-6 py-3 rounded-lg hover:bg-emerald-400 transition-colors"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                          Donate
+                        </a>
+                      )}
                       {websiteUrl && (
                         <a
                           href={websiteUrl}
@@ -628,18 +706,6 @@ export default function OrganizationDetail() {
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
                           {websiteLabel}
-                        </a>
-                      )}
-                      {donateUrl && (
-                        <a
-                          href={donateUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => trackDonateClick(apiOrg!.EIN, apiOrg!.organization_name)}
-                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-emerald-500 text-deep-navy px-6 py-3 rounded-lg hover:bg-emerald-400 transition-colors"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                          Donate
                         </a>
                       )}
                       {volunteerUrl && (
@@ -692,32 +758,37 @@ export default function OrganizationDetail() {
 
               {/* Volunteer + public record fallback */}
               {(() => {
-                const { websiteUrl } = getActionRowLinks(apiOrg)
+                const { websiteUrl } = actionLinks
 
                 return (
                   <>
                     <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <button
-                        onClick={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
-                        title={isInFunding(org.ein) ? 'Remove from donation list' : 'Add to donation list'}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-150"
-                        style={{ background: isInFunding(org.ein) ? '#22c55e20' : 'rgb(var(--warm-cream-rgb) / 0.08)', border: `1px solid ${isInFunding(org.ein) ? '#22c55e' : 'rgb(var(--warm-cream-rgb) / 0.2)'}`, color: isInFunding(org.ein) ? '#22c55e' : 'var(--warm-cream)' }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill={isInFunding(org.ein) ? '#22c55e' : 'none'} stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                        {isInFunding(org.ein) ? 'In donation list' : 'Add to donation list'}
-                      </button>
-                      <button
-                        onClick={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
-                        title={isInVolunteering(org.ein) ? 'Remove from volunteer list' : 'Add to volunteer list'}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-150"
-                        style={{ background: isInVolunteering(org.ein) ? '#ef444420' : 'rgb(var(--warm-cream-rgb) / 0.08)', border: `1px solid ${isInVolunteering(org.ein) ? '#ef4444' : 'rgb(var(--warm-cream-rgb) / 0.2)'}`, color: isInVolunteering(org.ein) ? '#ef4444' : 'var(--warm-cream)' }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill={isInVolunteering(org.ein) ? '#ef4444' : 'none'} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                        {isInVolunteering(org.ein) ? 'In volunteer list' : 'Add to volunteer list'}
-                      </button>
+                      <WalletHeartButton
+                        kind="funding"
+                        variant="pill"
+                        isActive={isInFunding(org.ein)}
+                        onToggle={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
+                        titleActive="Remove from donation list"
+                        titleInactive="Add to donation list"
+                        labelActive="In donation list"
+                        labelInactive="Add to donation list"
+                      />
+                      {/* Stage 1 (Time features deferred): interest signal only. No hour
+                          logging or commitment promise yet. Maps to the existing wallet
+                          volunteering list — no forked data model. */}
+                      <WalletHeartButton
+                        kind="volunteering"
+                        variant="pill"
+                        isActive={isInVolunteering(org.ein)}
+                        onToggle={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
+                        titleActive="Remove from your volunteer list"
+                        titleInactive="Let them know you are interested in volunteering"
+                        labelActive="Interested in volunteering"
+                        labelInactive="Interested in volunteering?"
+                      />
                       {!websiteUrl && (
                         <a
-                          href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                          href={propublicaOrgUrl(org.ein)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
@@ -1128,7 +1199,7 @@ export default function OrganizationDetail() {
                     />
                   </div>
                   <p className="mt-3">
-                    <a href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                    <a href={propublicaOrgUrl(org.ein)}
                        target="_blank" rel="noopener noreferrer"
                        className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors">
                       View on ProPublica Nonprofit Explorer →
@@ -1190,7 +1261,7 @@ export default function OrganizationDetail() {
                     className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
                   >IRS Tax Exempt Search →</a>
                   <a
-                    href={`https://projects.propublica.org/nonprofits/organizations/${org.ein.replace(/-/g, '')}`}
+                    href={propublicaOrgUrl(org.ein)}
                     target="_blank" rel="noopener noreferrer"
                     className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
                   >ProPublica Nonprofit Explorer →</a>
