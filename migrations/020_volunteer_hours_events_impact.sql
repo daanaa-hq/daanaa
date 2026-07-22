@@ -8,6 +8,13 @@
 -- that silently broke the Wallet -> community-stats pipeline (the API/aggregator
 -- code writes ein/type/hours/log_date, but the live table only had
 -- org_ein/impact_type/amount/source/verified/notes).
+--
+-- IDEMPOTENCY NOTE (SQLite limitation):
+-- SQLite does not support ALTER TABLE ... IF NOT EXISTS. If this migration is
+-- re-run against an existing database, it will fail on column-already-exists
+-- errors. This is acceptable for a one-time migration; in production, verify
+-- schema via PRAGMA table_info(impact_logs) and PRAGMA table_info(volunteer_hours)
+-- before running again, or use the Python verification script in scripts/verify_migrations.py
 
 -- ── Fix impact_logs schema drift (additive, non-destructive) ────────────────
 ALTER TABLE impact_logs ADD COLUMN ein TEXT;
@@ -23,7 +30,6 @@ ALTER TABLE volunteer_hours ADD COLUMN event_id INTEGER;
 ALTER TABLE volunteer_hours ADD COLUMN submitted_via TEXT DEFAULT 'nonprofit_entry';
 ALTER TABLE volunteer_hours ADD COLUMN edit_count INTEGER DEFAULT 0;
 ALTER TABLE volunteer_hours ADD COLUMN locked_at TEXT;
-ALTER TABLE volunteer_hours ADD COLUMN submitted_ip TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_volunteer_hours_event ON volunteer_hours(event_id);
 CREATE INDEX IF NOT EXISTS idx_volunteer_hours_ein_status ON volunteer_hours(nonprofit_ein, status);
@@ -37,7 +43,6 @@ CREATE TABLE IF NOT EXISTS volunteer_hours_audit_log (
     changed_by      TEXT,            -- firebase uid, 'volunteer', or 'system' (maintenance job)
     changed_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     change_details  TEXT,            -- JSON: {"field": "hours", "old": 4, "new": 6}
-    ip_address      TEXT,
     FOREIGN KEY (hour_id) REFERENCES volunteer_hours(id)
 );
 CREATE INDEX IF NOT EXISTS idx_vh_audit_hour ON volunteer_hours_audit_log(hour_id, changed_at);

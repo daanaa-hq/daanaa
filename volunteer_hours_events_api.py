@@ -31,6 +31,37 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, Response, g, jsonify, request
 
+# Rate limiter for public submission endpoint (DoS mitigation)
+_submission_rate_limit = {}  # {ip: [(timestamp, count)]}
+
+def _check_rate_limit(key: str, max_requests: int, window_seconds: int) -> bool:
+    """Simple in-memory rate limiter. Returns True if request is allowed."""
+    now = datetime.now()
+    window_start = now - timedelta(seconds=window_seconds)
+
+    if key not in _submission_rate_limit:
+        _submission_rate_limit[key] = []
+
+    # Clean expired entries
+    _submission_rate_limit[key] = [
+        (ts, cnt) for ts, cnt in _submission_rate_limit[key]
+        if ts > window_start
+    ]
+
+    # Count requests in window
+    total = sum(cnt for _, cnt in _submission_rate_limit[key])
+    if total >= max_requests:
+        return False
+
+    # Record this request
+    if _submission_rate_limit[key] and _submission_rate_limit[key][-1][0] == now:
+        ts, cnt = _submission_rate_limit[key][-1]
+        _submission_rate_limit[key][-1] = (ts, cnt + 1)
+    else:
+        _submission_rate_limit[key].append((now, 1))
+
+    return True
+
 volunteer_hours_events_bp = Blueprint('volunteer_hours_events', __name__)
 
 DB_PATH = os.environ.get('DB_PATH', 'data/merit_registry.db')
@@ -48,19 +79,14 @@ def _get_db():
     return conn
 
 
-def _client_ip() -> str:
-    fwd = request.headers.get('X-Forwarded-For', '')
-    if fwd:
-        return fwd.split(',')[0].strip()[:64]
-    return (request.remote_addr or '')[:64]
-
-
 def _audit(db, hour_id: str, action: str, changed_by: str, details: dict | None = None):
+    """Log a state change to volunteer_hours audit trail. Do NOT include IP addresses
+    (PRIVACY-INVARIANT #3: IPs never persisted to disk, only used transiently)."""
     db.execute(
         '''INSERT INTO volunteer_hours_audit_log
-           (hour_id, action, changed_by, change_details, ip_address)
-           VALUES (?, ?, ?, ?, ?)''',
-        (hour_id, action, changed_by, json.dumps(details) if details else None, _client_ip()),
+           (hour_id, action, changed_by, change_details)
+           VALUES (?, ?, ?, ?)''',
+        (hour_id, action, changed_by, json.dumps(details) if details else None),
     )
 
 
@@ -130,6 +156,8 @@ def event_log_hours_info(short_id: str):
 def event_log_hours_submit(short_id: str):
     """Public: volunteer logs their own hours for this event, no account needed.
 
+    DoS-protected with rate limiting (10 submissions per minute per IP).
+
     Body: {
       volunteer_name, volunteer_email,
       orgs: [{ein, hours, task_type?}],   -- one entry for a single-org event,
@@ -137,6 +165,12 @@ def event_log_hours_submit(short_id: str):
       notes?
     }
     """
+    # Rate limit: 10 requests per minute per IP (DoS mitigation)
+    client_ip = (request.headers.get('X-Forwarded-For', '').split(',')[0].strip()
+                 or request.remote_addr or 'unknown')
+    if not _check_rate_limit(client_ip, max_requests=10, window_seconds=60):
+        return jsonify({'error': 'Too many submissions from this IP. Please try again in a moment.'}), 429
+
     if not re.match(r'^[A-Za-z0-9_-]{6,16}$', short_id):
         return jsonify({'error': 'Invalid event code'}), 400
 
