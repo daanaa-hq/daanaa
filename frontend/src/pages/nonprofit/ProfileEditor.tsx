@@ -6,6 +6,7 @@ import { API_BASE } from '../../data/api'
 import ProfileEditModal from '../../components/nonprofit/ProfileEditModal'
 import ProfileChangeHistory from '../../components/nonprofit/ProfileChangeHistory'
 import HelpTooltip from '../../components/nonprofit/HelpTooltip'
+import LearnMoreLink from '../../components/nonprofit/LearnMoreLink'
 
 interface EditableFields {
   mission: { value: string; source: string; editable: boolean; char_limit: number; char_count?: number }
@@ -174,6 +175,13 @@ export default function ProfileEditor() {
           >
             Change History ({profile.recent_edits.length})
           </button>
+          <div className="ml-auto flex items-center">
+            <LearnMoreLink
+              topic="profile-sources"
+              text="Learn about data sources"
+              inline={true}
+            />
+          </div>
         </div>
 
         {/* Overview Tab */}

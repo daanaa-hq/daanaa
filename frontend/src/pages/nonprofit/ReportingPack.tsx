@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageMeta } from '../../hooks/usePageMeta'
 import { API_BASE } from '../../data/api'
+import LearnMoreLink from '../../components/nonprofit/LearnMoreLink'
 
 interface ReportData {
   organization: { ein: string; name: string }
@@ -281,10 +282,20 @@ export default function ReportingPack() {
         </div>
 
         {/* Info */}
-        <div className="mt-8 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-          <p className="font-body text-[13px] text-amber-900">
-            <strong>💾 Reports:</strong> Generate and download reports to share with board members, donors, or for your records. Each report includes a disclaimer that volunteer hours were approved by your organization.
-          </p>
+        <div className="mt-8 space-y-4">
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="font-body text-[13px] text-amber-900">
+              <strong>💾 Reports:</strong> Generate and download reports to share with board members, donors, or for your records. Each report includes a disclaimer that volunteer hours were approved by your organization.
+            </p>
+          </div>
+
+          <div>
+            <LearnMoreLink
+              topic="data-freshness"
+              text="Learn about report data and freshness"
+              onClick={() => window.open('https://daanaa.org/methodology', '_blank')}
+            />
+          </div>
         </div>
       </div>
     </div>

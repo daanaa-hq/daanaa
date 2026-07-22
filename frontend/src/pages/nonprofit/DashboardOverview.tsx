@@ -6,6 +6,9 @@ import { API_BASE } from '../../data/api'
 import HelpTooltip from '../../components/nonprofit/HelpTooltip'
 import StatusBadge from '../../components/nonprofit/StatusBadge'
 import WelcomeCard from '../../components/nonprofit/WelcomeCard'
+import HelpModal from '../../components/nonprofit/HelpModal'
+import LearnMoreLink from '../../components/nonprofit/LearnMoreLink'
+import EmptyState from '../../components/nonprofit/EmptyState'
 
 interface DashboardData {
   organization: {
@@ -60,6 +63,7 @@ export default function DashboardOverview() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showWelcome, setShowWelcome] = useState(false)
+  const [showHelpModal, setShowHelpModal] = useState(false)
 
   useEffect(() => {
     // Check if this is first visit to dashboard for this nonprofit
@@ -196,12 +200,28 @@ export default function DashboardOverview() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Volunteer Summary */}
           <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Volunteer hours summary">
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide">
-                This Month's Volunteer Hours
-              </h2>
-              <HelpTooltip text="Hours submitted by volunteers at your events. Pending hours need your approval before they count toward public impact." side="right" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide">
+                  This Month's Volunteer Hours
+                </h2>
+                <HelpTooltip text="Hours submitted by volunteers at your events. Pending hours need your approval before they count toward public impact." side="right" />
+              </div>
+              <button
+                onClick={() => setShowHelpModal(true)}
+                className="text-soft-gold hover:text-bright-gold font-body text-[12px] font-semibold hover:underline transition"
+                aria-label="Open help about volunteer approval"
+              >
+                Learn More
+              </button>
             </div>
+            {dashboard.volunteer_summary.this_month_hours === 0 && dashboard.volunteer_summary.pending_count === 0 ? (
+              <EmptyState
+                type="no-approvals"
+                onAction={() => navigate(`/nonprofit/volunteer-events/${ein}`)}
+                actionLabel="Create a new event"
+              />
+            ) : (
             <div className="space-y-4">
               <div>
                 <div className="flex items-baseline justify-between mb-1">
@@ -271,16 +291,29 @@ export default function DashboardOverview() {
                 Manage Approvals
               </button>
             </div>
+            )}
           </div>
 
           {/* Profile Health */}
           <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Profile completeness">
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide">
-                Profile Completeness
-              </h2>
-              <HelpTooltip text="Complete all fields so donors understand your mission, programs, and how to help. Missing fields are highlighted below." side="right" />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide">
+                  Profile Completeness
+                </h2>
+                <HelpTooltip text="Complete all fields so donors understand your mission, programs, and how to help. Missing fields are highlighted below." side="right" />
+              </div>
+              <button
+                onClick={() => setShowHelpModal(true)}
+                className="text-soft-gold hover:text-bright-gold font-body text-[12px] font-semibold hover:underline transition"
+                aria-label="Learn more about profile information"
+              >
+                Learn More
+              </button>
             </div>
+            {dashboard.profile_health.completeness_percent === 100 ? (
+              <EmptyState type="profile-complete" />
+            ) : (
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -318,19 +351,35 @@ export default function DashboardOverview() {
                 Edit Profile
               </button>
             </div>
+            )}
           </div>
         </div>
 
         {/* Upcoming Events */}
-        {dashboard.upcoming_events.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Upcoming volunteer events">
-            <div className="flex items-center gap-2 mb-4">
+        <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Upcoming volunteer events">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
               <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide">
                 Upcoming Events (Next 30 Days)
               </h2>
               <HelpTooltip text="Events where volunteers can contribute hours. Click any event to view details, generate QR codes, or manage registrations." side="right" />
             </div>
-            <div className="space-y-3">
+            <button
+              onClick={() => setShowHelpModal(true)}
+              className="text-soft-gold hover:text-bright-gold font-body text-[12px] font-semibold hover:underline transition"
+              aria-label="Learn more about creating volunteer events"
+            >
+              Learn More
+            </button>
+          </div>
+          {dashboard.upcoming_events.length === 0 ? (
+            <EmptyState
+              type="no-events"
+              onAction={() => navigate(`/nonprofit/volunteer-events/${ein}`)}
+              actionLabel="Create your first event"
+            />
+          ) : (
+          <div className="space-y-3">
               {dashboard.upcoming_events.map(evt => (
                 <div key={evt.event_id} className="flex items-center justify-between p-3 bg-light-grey/30 rounded-xl">
                   <div>
@@ -348,8 +397,8 @@ export default function DashboardOverview() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4" role="region" aria-label="Quick action buttons">
@@ -375,7 +424,27 @@ export default function DashboardOverview() {
             <span aria-hidden="true">📅</span> Create Event
           </button>
         </div>
+
+        {/* Help & Support Button */}
+        <div className="mt-8 p-4 bg-soft-gold/5 border border-soft-gold/30 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-display text-[15px] text-deep-navy font-semibold">Need help?</h3>
+              <p className="font-body text-[12px] text-cool-grey mt-1">Find answers to common questions about managing your nonprofit</p>
+            </div>
+            <button
+              onClick={() => setShowHelpModal(true)}
+              className="flex-shrink-0 px-4 py-2 rounded-lg bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition"
+              aria-label="Open help and FAQ modal"
+            >
+              Open Help
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Help Modal */}
+      <HelpModal isOpen={showHelpModal} onClose={() => setShowHelpModal(false)} />
     </div>
   )
 }
