@@ -6431,92 +6431,15 @@ def nonprofit_pending_verifications(ein: str):
 
 @app.route('/api/nonprofit/<ein>/verify-hours/<log_id>', methods=['POST'])
 def nonprofit_verify_hours(ein: str, log_id: str):
-    """Confirm volunteer hours. Creates a volunteer_hour_confirmation record.
+    """RETIRED legacy path (Firestore volunteer_hour_logs/confirmations).
 
-    Requires: X-Verification-Token header (nonprofit claim token)
-    Body: {
-      hours_confirmed: number,  # can differ from hours_logged
-      notes: string (optional),
-      volunteer_user_id: string  # which volunteer's log to confirm
-    }
-    """
-    try:
-        token = _require_nonprofit_token()
-        db = get_db()
-
-        # Verify the nonprofit owns this EIN
-        claim = db.execute(
-            "SELECT * FROM org_claims WHERE EIN = ? AND status = 'verified'",
-            (ein,)
-        ).fetchone()
-        if not claim:
-            return jsonify({'error': 'Nonprofit not verified or EIN mismatch'}), 403
-
-        data = request.get_json() or {}
-        hours_confirmed = float(data.get('hours_confirmed', 0))
-        notes = (data.get('notes') or '').strip()
-        volunteer_user_id = (data.get('volunteer_user_id') or '').strip()
-
-        if not volunteer_user_id:
-            return jsonify({'error': 'volunteer_user_id required'}), 400
-        if hours_confirmed <= 0 or hours_confirmed > 24:
-            return jsonify({'error': 'hours_confirmed must be between 0.1 and 24'}), 400
-
-        # Fetch the original log entry to validate it exists and matches
-        orig_log = _firestore_get('volunteer_hour_logs', log_id, user_id=volunteer_user_id)
-        if not orig_log:
-            return jsonify({'error': 'Volunteer hour log not found'}), 404
-
-        if orig_log.get('nonprofit_ein') != ein:
-            return jsonify({'error': 'EIN mismatch: log does not belong to this nonprofit'}), 400
-
-        # Create confirmation record in Firestore
-        # Volunteer sees this under their volunteer_hour_confirmations collection
-        confirm_id = secrets.token_urlsafe(16)
-        confirm_data = {
-            'nonprofit_ein': ein,
-            'nonprofit_name': orig_log.get('nonprofit_name', ''),
-            'service_date': orig_log.get('service_date', ''),
-            'hours_confirmed': hours_confirmed,
-            'hours_logged': orig_log.get('hours_logged', 0),
-            'notes': notes,
-            'confirmed_at': datetime.utcnow().isoformat(),
-            'log_id': log_id,  # reference to the original log
-            'verified_by_ein': ein,  # audit trail
-        }
-
-        # Estimate value: US volunteer hour rate is ~$29.95/hr (national average)
-        volunteer_hour_rate = 29.95
-        confirm_data['estimated_value'] = hours_confirmed * volunteer_hour_rate
-
-        if _firestore_set('volunteer_hour_confirmations', confirm_id, confirm_data, user_id=volunteer_user_id):
-            # Update the original log to mark it as verified
-            orig_log['status'] = 'verified'
-            _firestore_set('volunteer_hour_logs', log_id, orig_log, user_id=volunteer_user_id)
-
-            # Update nonprofit's pending record to mark as verified
-            try:
-                pending_record = _firestore_get('nonprofit_pending_verifications', log_id, user_id=ein)
-                if pending_record:
-                    pending_record['status'] = 'verified'
-                    _firestore_set('nonprofit_pending_verifications', log_id, pending_record, user_id=ein)
-            except Exception as e:
-                _logger.warning(f"Could not update nonprofit pending record: {e}")
-
-            return jsonify({
-                'success': True,
-                'confirmation_id': confirm_id,
-                'hours_confirmed': hours_confirmed,
-                'estimated_value': confirm_data['estimated_value']
-            }), 201
-
-        return jsonify({'error': 'Failed to create confirmation'}), 500
-
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        _logger.error(f"Error verifying hours: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+    Replaced 2026-07-22 by the canonical volunteer_hours flow so no second
+    store of volunteer hour records can drift from the single source of truth.
+    Existing Firestore data is untouched — read-only history, no new writes."""
+    return jsonify({
+        'error': 'This endpoint has been retired',
+        'use': 'POST /api/nonprofit/<ein>/volunteer/<hour_id>/approve',
+    }), 410
 
 
 # ── Vendor Partnership Reviews ──────────────────────────────────────────
@@ -6780,175 +6703,25 @@ def get_vendor_stats(vendor_id: str):
 @app.route('/api/nonprofit/hours-pending', methods=['GET'])
 @limiter.limit("60 per minute")
 def nonprofit_hours_pending():
-    """Volunteer hour logs awaiting rep confirmation for all orgs claimed by this user."""
-    uid = _require_firebase_user()
-    db = get_db()
+    """RETIRED legacy path (volunteer_hour_logs table).
 
-    # Lazy-add status/rejection_reason columns (first-run migration)
-    for col_def in [
-        "ALTER TABLE volunteer_hour_logs ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'",
-        "ALTER TABLE volunteer_hour_logs ADD COLUMN rejection_reason TEXT",
-    ]:
-        try:
-            db.execute(col_def)
-            db.commit()
-        except Exception:
-            pass
-
-    claims = db.execute(
-        "SELECT ein FROM org_claims WHERE firebase_uid=? "
-        "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
-        (uid,),
-    ).fetchall()
-    if not claims:
-        return jsonify({'hours': [], 'total': 0}), 200
-
-    eins = [c['ein'] for c in claims]
-    placeholders = ','.join('?' * len(eins))
-    _ensure_donor_tables(db)
-
-    rows = db.execute(f"""
-        SELECT l.id, l.user_id, l.nonprofit_ein, l.nonprofit_name,
-               l.service_date, l.hours_logged, l.notes,
-               l.status, l.rejection_reason, l.created_at,
-               u.email AS volunteer_email
-        FROM volunteer_hour_logs l
-        LEFT JOIN donor_users u ON u.firebase_uid = l.user_id
-        WHERE l.nonprofit_ein IN ({placeholders})
-          AND l.status = 'pending'
-        ORDER BY l.created_at DESC
-        LIMIT 100
-    """, eins).fetchall()
-
-    hours_list = [dict(r) for r in rows]
-    return jsonify({'hours': hours_list, 'total': len(hours_list)}), 200
+    Replaced 2026-07-22 by the canonical volunteer_hours flow (single table,
+    audit trail, 30-day lock, idempotent public-aggregate bridge). The old
+    volunteer_hour_logs / volunteer_hour_confirmations tables are retained
+    read-only for history; no new records are created there."""
+    return jsonify({
+        'error': 'This endpoint has been retired',
+        'use': 'GET /api/nonprofit/<ein>/volunteer/list?status=pending',
+    }), 410
 
 
 @app.route('/api/nonprofit/verify-hours', methods=['POST'])
 def nonprofit_verify_hours_action():
-    """Verify or reject volunteer hours.
-
-    Requires: Firebase auth token
-    Body: {
-      record_id: string,
-      action: 'verify' | 'reject',
-      message: string (for verify),
-      reason: string (for reject)
-    }
-    """
-    uid = _require_firebase_user()
-    data = request.get_json() or {}
-
-    try:
-        record_id = (data.get('record_id') or '').strip()
-        action = (data.get('action') or '').strip()
-
-        if not record_id or action not in ('verify', 'reject'):
-            return jsonify({'error': 'Invalid record_id or action'}), 400
-
-        db = get_db()
-
-        # Get the hour log
-        log = db.execute(
-            "SELECT * FROM volunteer_hour_logs WHERE id = ?",
-            (record_id,)
-        ).fetchone()
-
-        if not log:
-            return jsonify({'error': 'Hour log not found'}), 404
-
-        # Verify user can modify this (owns the nonprofit claim)
-        claim = db.execute(
-            "SELECT 1 FROM org_claims WHERE ein=? AND firebase_uid=? "
-            "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
-            (log['nonprofit_ein'], uid),
-        ).fetchone()
-
-        if not claim:
-            return jsonify({'error': 'Not authorized to verify hours for this nonprofit'}), 403
-
-        volunteer_uid = log['user_id'] if log else None
-
-        # Update status
-        if action == 'verify':
-            message = (data.get('message') or '').strip()
-            # Record confirmation in the confirmations table
-            db.execute("""
-                INSERT OR IGNORE INTO volunteer_hour_confirmations
-                    (user_id, log_id, nonprofit_ein, hours_confirmed, confirmed_by_admin_id, notes)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (volunteer_uid, record_id, log['nonprofit_ein'], log['hours_logged'], uid, message))
-            db.execute(
-                "UPDATE volunteer_hour_logs SET status='confirmed' WHERE id=?",
-                (record_id,),
-            )
-            db.commit()
-
-            # Send verification email if email service is available and volunteer exists
-            if get_email_service and volunteer_uid:
-                try:
-                    email_service = get_email_service()
-                    volunteer_email = email_service._fetch_user_email(volunteer_uid)
-                    if volunteer_email:
-                        template = hours_verified_email(
-                            volunteer_email=volunteer_email,
-                            nonprofit_name=log['nonprofit_name'],
-                            hours=log['hours_logged'],
-                            service_date=log['service_date'],
-                            notes=log['notes'] if log['notes'] else None
-                        )
-                        email_service.send(
-                            to_email=volunteer_email,
-                            subject=template.subject,
-                            html=template.html,
-                            plain_text=template.plain_text
-                        )
-                        _logger.info(f"Verification email sent for hours {record_id} to {volunteer_email}")
-                    else:
-                        _logger.warning(f"Could not fetch email for volunteer {volunteer_uid}")
-                except Exception as e:
-                    _logger.error(f"Error sending verification email: {e}")
-
-        else:  # reject
-            reason = (data.get('reason') or '').strip()
-            if not reason:
-                return jsonify({'error': 'Rejection reason required'}), 400
-            db.execute(
-                "UPDATE volunteer_hour_logs SET status='rejected', rejection_reason=? WHERE id=?",
-                (reason, record_id),
-            )
-            db.commit()
-
-            # Send rejection email if email service is available and volunteer exists
-            if get_email_service and volunteer_uid:
-                try:
-                    email_service = get_email_service()
-                    volunteer_email = email_service._fetch_user_email(volunteer_uid)
-                    if volunteer_email:
-                        template = hours_rejected_email(
-                            volunteer_email=volunteer_email,
-                            nonprofit_name=log['nonprofit_name'],
-                            hours=log['hours_logged'],
-                            service_date=log['service_date'],
-                            rejection_reason=reason
-                        )
-                        email_service.send(
-                            to_email=volunteer_email,
-                            subject=template.subject,
-                            html=template.html,
-                            plain_text=template.plain_text
-                        )
-                        _logger.info(f"Rejection email sent for hours {record_id} to {volunteer_email}")
-                    else:
-                        _logger.warning(f"Could not fetch email for volunteer {volunteer_uid}")
-                except Exception as e:
-                    _logger.error(f"Error sending rejection email: {e}")
-
-        return jsonify({'success': True, 'action': action}), 200
-
-    except Exception as e:
-        _logger.error(f"Error verifying hours: {e}")
-        return jsonify({'error': 'Failed to verify hours'}), 500
+    """RETIRED legacy path (volunteer_hour_logs + volunteer_hour_confirmations)."""
+    return jsonify({
+        'error': 'This endpoint has been retired',
+        'use': 'POST /api/nonprofit/<ein>/volunteer/<hour_id>/approve or /reject',
+    }), 410
 
 
 # ── Vendor self-service portal ───────────────────────────────────────────────
@@ -7808,7 +7581,7 @@ def get_community_stats():
             conn.close()
             if stats_row:
                 total_dollars, total_hours, donation_count, volunteer_count, org_count = stats_row
-                volunteer_hourly_value = 31.80  # Placeholder BAL for 2026
+                volunteer_hourly_value = 33.49  # Independent Sector, Value of a Volunteer Hour (2023 value, published 2024). Illustrative estimate only — never cash value or a tax figure. Keep in sync with volunteer_hours_events_api.VOLUNTEER_HOURLY_VALUE.
                 lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
                 return jsonify({
                     'total_dollars': total_dollars or 0,
@@ -7828,7 +7601,7 @@ def get_community_stats():
                 }), 200
 
         total_dollars, total_hours, donation_count, volunteer_count, org_count, active_volunteers, aggregate_date = row
-        volunteer_hourly_value = 31.80
+        volunteer_hourly_value = 33.49  # Independent Sector, Value of a Volunteer Hour (2023 value, published 2024). Illustrative estimate only — never cash value or a tax figure. Keep in sync with volunteer_hours_events_api.VOLUNTEER_HOURLY_VALUE.
         lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
 
         return jsonify({

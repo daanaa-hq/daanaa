@@ -5,6 +5,24 @@ Audience: nonprofit leaders, donors, volunteers, partners, researchers, future s
 Authority: draft only; does not replace the approved Charter, Constitution, or founder decisions  
 Prepared: 2026-07-14
 
+## Publication integrity
+
+### Organizational status
+
+Daanaa is currently a public interest initiative and a DBA of EcoMargins Consulting LLC, a for-profit entity. It is funded by the founder and operating with deliberately low overhead while the concept is tested. Daanaa does not process donations, hold donor funds, or take a percentage of gifts. This structure does not represent Daanaa as a nonprofit, tax-exempt organization, or charity-rating agency. Future structural options may be considered as the mission, resources, and community review develop.
+
+
+This draft expresses the founder's direction for Daanaa and includes editorial
+assistance during preparation. It is not presented as independent research or
+as proof that every principle is already operating in the product. Before
+publication, the founder and an independent reviewer should verify factual
+claims, distinguish adopted commitments from proposals, and add sources where
+the text moves from principle to evidence.
+
+## Publication status
+
+This is a vision and hypothesis document, not a claim that every proposed capability is implemented or validated. Current product behavior, adopted governance, open questions, and future possibilities must remain distinct.
+
 ## 1. Make Giving Easy
 
 Daanaa exists to make giving easy.
@@ -25,17 +43,24 @@ Generosity is abundant, but it often meets friction.
 
 Donors may not know which organizations exist near them, which organizations serve a cause they care about, how to interpret public filings, or how to distinguish a warning sign from a normal operating reality. Volunteers may want to help but lack a clear way to translate intent into useful participation. Nonprofits may be doing important work while lacking time, staff, design capacity, compliance support, technical tools, or the ability to explain their work in the language donors expect.
 
-The result is not merely inconvenience. It is misallocated attention.
+The result is not merely inconvenience. Attention follows the organizations
+that can most easily make themselves visible.
 
 Well-resourced organizations can afford better websites, better grant writing, better communications, and better operational systems. Smaller and less visible nonprofits often cannot. Many are public charities in good standing, carrying real community trust, but they remain hard to discover because discovery systems reward visibility, polish, and marketing capacity.
 
-Daanaa calls part of this problem the Invisible 97: the broad world of organizations outside the small share of highly visible institutions that dominate public attention. The phrase is not a statistical verdict in every context. It is a working reminder that nonprofit life is wider than the organizations most easily seen.
+Daanaa uses the phrase Invisible 97 as a working image for the many smaller and less visible organizations outside the institutions that dominate public attention. It is not a universal statistic or a claim that has been fully validated in every context. Before using it as a public quantitative claim, Daanaa must define its denominator, source, date, and limits.
 
 If giving is to become easier and fairer, discovery must become broader, context must become more careful, and support must build capacity rather than dependence.
 
 ## 3. Truthful Nonprofit Discovery
 
 Daanaa starts from public records because public records are a common foundation. They are imperfect, incomplete, and often difficult to interpret, but they provide a shared starting point.
+
+The [IRS Form 990 instructions](https://www.irs.gov/instructions/i990) describe
+the return as a public information return covering finances, governance,
+activities, and compliance. That public role makes the form useful for
+discovery, but it does not make it a complete account of community work or
+organizational quality.
 
 Public government records may remain publicly visible. At the same time, public records are not the whole truth of an organization. They rarely capture community trust, volunteer energy, leadership quality, local constraints, recent change, fiscal sponsorship, program nuance, or the reasons a small organization may look unusual on paper.
 
@@ -53,7 +78,7 @@ Financial data can help donors and nonprofit leaders understand a nonprofit's op
 
 Daanaa's Peer Financial Context is intended to compare organizations with peers, show patterns, and surface questions. It is not intended to shame organizations, rank moral worth, or imply that a single number can judge mission value.
 
-The same ratio may mean different things in different fields, sizes, regions, and moments. A young organization may have unstable financials because it is growing. A small organization may look administratively unusual because unpaid labor hides real operating costs. A community-rooted organization may have few assets because it spends quickly in response to urgent need. A nonprofit with a clean financial profile may still have weak accountability or limited impact.
+The same ratio may mean different things in different fields, sizes, regions, and moments. A young organization may have unstable financials because it is growing. A small organization may look administratively unusual because unpaid labor hides real operating costs. A rooted in community organization may have few assets because it spends quickly in response to urgent need. A nonprofit with a clean financial profile may still have weak accountability or limited impact.
 
 For this reason, Daanaa must be careful about sorting, labels, visual hierarchy, and language. If users experience context as a verdict, the product has failed a stewardship test even if the documentation says otherwise.
 
@@ -95,7 +120,7 @@ In this network:
 - Donors can discover organizations and act through the nonprofit's own channels.
 - Nonprofits can improve their public presence and operational capacity.
 - Volunteers can find useful ways to participate.
-- Researchers and public-interest partners can learn from responsibly governed, privacy-preserving patterns.
+- Researchers and public interest partners can learn from responsibly governed, privacy-preserving patterns.
 - Future stewards can improve the institution without losing its mission.
 
 The Impact Network should not become a closed marketplace where attention is purchased. Its value depends on trust that truth is not for sale.
@@ -122,9 +147,9 @@ Daanaa may provide optional nonprofit operating tools where they strengthen capa
 
 Shared learning is part of this work. When Daanaa learns something useful about nonprofit operations, information stewardship, AI governance, or capacity building, it should preserve and share that learning responsibly. Public-interest knowledge should not be trapped inside a private workflow when it can help others adapt better systems.
 
-## 10. Guild Services and Group Purchasing
+## 10. Guild Services and Group Purchasing: Future Hypothesis
 
-As Daanaa learns from nonprofit needs, group purchasing and Guild services may become a natural progression. Many organizations face similar costs but negotiate alone. Responsible aggregation may help them access better tools, services, or terms.
+As a future hypothesis, Daanaa may study whether group purchasing or Guild services could help organizations access better tools, services, or terms. This is not a current product commitment, and no such service should be presented as available until it has passed legal, privacy, independence, and community review.
 
 This must be governed carefully. Vendor relationships, referral economics, sponsorships, and consulting opportunities cannot influence public truth, discovery treatment, Peer Financial Context, or recommendations presented as independent.
 
@@ -132,15 +157,21 @@ If Guild services develop, they should be framed as mission-support infrastructu
 
 ## 11. Financial Sustainability in Service of Mission
 
-Daanaa must be financially sustainable. An institution that cannot pay for maintenance, research, support, security, governance, and improvement cannot responsibly serve for long.
+Daanaa must be financially sustainable. An institution that cannot pay for maintenance, research, support, security, governance, and improvement cannot responsibly serve for long. Sustainability is a means of protecting the mission, not a reason to extract value from nonprofit need.
+
+This concern is practical, not abstract. The [Nonprofit Finance Fund's 2025
+sector survey](https://nff.org/state-of-the-nonprofit-sector-survey/2025-state-of-the-survey-nonprofit-sector-survey/)
+collects financial and operating experience from more than 2,200 nonprofits.
+Daanaa should learn from that experience without turning sector pressure into
+another reason for nonprofits to purchase visibility.
 
 But sustainability is a duty in service of mission. The mission does not serve financial extraction.
 
-This requires clarity. Public discovery and core public IRS information must remain free. Payment must not affect public visibility, ranking, search treatment, or Peer Financial Context. Optional paid capacity-enhancing services may be appropriate if they are clearly separated from public truth and if they do not make essential access dependent on ability to pay.
+This requires clarity. Public discovery and core public IRS information must remain free. Daanaa is not designed to make money from nonprofit funding, donor funds, paid placement, sponsorship influence, or financial visibility. Payment must not affect public visibility, ranking, search treatment, or Peer Financial Context. Any future sustainability model must be reviewed as a separate institutional decision and must not make essential access dependent on ability to pay.
 
 Future stewards should be able to improve the sustainability model without quietly changing the moral contract.
 
-## 12. Future Nonprofit Financial Infrastructure
+## 12. Future Nonprofit Financial Infrastructure: Future Hypothesis
 
 Daanaa may one day support nonprofit financial infrastructure, such as tools that help organizations understand cash flow, prepare for responsible borrowing, compare service options, coordinate purchasing, or access mission-aligned support.
 
@@ -162,7 +193,7 @@ The institution should be willing to say, "We do not know yet."
 
 Daanaa is designed for the United States nonprofit community. Its data sources, legal assumptions, public records, tax categories, and operating practices are rooted in U.S. institutions.
 
-At the same time, some lessons may be useful elsewhere: public information should be handled with care; AI should not invisibly judge; financial sustainability should serve mission; local organizations deserve dignity; public-interest infrastructure should be able to correct itself.
+At the same time, some lessons may be useful elsewhere: public information should be handled with care; AI should not invisibly judge; financial sustainability should serve mission; local organizations deserve dignity; public interest infrastructure should be able to correct itself.
 
 Adaptation is encouraged. Blind replication is not. Other countries have different laws, languages, charitable traditions, public records, histories, and community institutions. Universal principles require local implementation.
 
@@ -190,5 +221,6 @@ It can become more truthful in discovery, more careful in context, more helpful 
 
 The continuing measure is quality of life: whether communities are better served because nonprofits are easier to find, easier to understand, better supported, and more able to continue their work.
 
-The work continues.
+The work continues, with the expectation that the institution will earn trust
+through what it can show, correct, and learn.
 

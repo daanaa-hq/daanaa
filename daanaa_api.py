@@ -7227,92 +7227,17 @@ def nonprofit_pending_verifications(ein: str):
 
 @app.route('/api/nonprofit/<ein>/verify-hours/<log_id>', methods=['POST'])
 def nonprofit_verify_hours(ein: str, log_id: str):
-    """Confirm volunteer hours. Creates a volunteer_hour_confirmation record.
+    """RETIRED legacy path (Firestore volunteer_hour_logs/confirmations).
 
-    Requires: X-Verification-Token header (nonprofit claim token)
-    Body: {
-      hours_confirmed: number,  # can differ from hours_logged
-      notes: string (optional),
-      volunteer_user_id: string  # which volunteer's log to confirm
-    }
-    """
-    try:
-        token = _require_nonprofit_token()
-        db = get_db()
-
-        # Verify the nonprofit owns this EIN
-        claim = db.execute(
-            "SELECT * FROM org_claims WHERE EIN = ? AND status = 'verified'",
-            (ein,)
-        ).fetchone()
-        if not claim:
-            return jsonify({'error': 'Nonprofit not verified or EIN mismatch'}), 403
-
-        data = request.get_json() or {}
-        hours_confirmed = float(data.get('hours_confirmed', 0))
-        notes = (data.get('notes') or '').strip()
-        volunteer_user_id = (data.get('volunteer_user_id') or '').strip()
-
-        if not volunteer_user_id:
-            return jsonify({'error': 'volunteer_user_id required'}), 400
-        if hours_confirmed <= 0 or hours_confirmed > 24:
-            return jsonify({'error': 'hours_confirmed must be between 0.1 and 24'}), 400
-
-        # Fetch the original log entry to validate it exists and matches
-        orig_log = _firestore_get('volunteer_hour_logs', log_id, user_id=volunteer_user_id)
-        if not orig_log:
-            return jsonify({'error': 'Volunteer hour log not found'}), 404
-
-        if orig_log.get('nonprofit_ein') != ein:
-            return jsonify({'error': 'EIN mismatch: log does not belong to this nonprofit'}), 400
-
-        # Create confirmation record in Firestore
-        # Volunteer sees this under their volunteer_hour_confirmations collection
-        confirm_id = secrets.token_urlsafe(16)
-        confirm_data = {
-            'nonprofit_ein': ein,
-            'nonprofit_name': orig_log.get('nonprofit_name', ''),
-            'service_date': orig_log.get('service_date', ''),
-            'hours_confirmed': hours_confirmed,
-            'hours_logged': orig_log.get('hours_logged', 0),
-            'notes': notes,
-            'confirmed_at': datetime.utcnow().isoformat(),
-            'log_id': log_id,  # reference to the original log
-            'verified_by_ein': ein,  # audit trail
-        }
-
-        # Estimate value: US volunteer hour rate is ~$29.95/hr (national average)
-        volunteer_hour_rate = 29.95
-        confirm_data['estimated_value'] = hours_confirmed * volunteer_hour_rate
-
-        if _firestore_set('volunteer_hour_confirmations', confirm_id, confirm_data, user_id=volunteer_user_id):
-            # Update the original log to mark it as verified
-            orig_log['status'] = 'verified'
-            _firestore_set('volunteer_hour_logs', log_id, orig_log, user_id=volunteer_user_id)
-
-            # Update nonprofit's pending record to mark as verified
-            try:
-                pending_record = _firestore_get('nonprofit_pending_verifications', log_id, user_id=ein)
-                if pending_record:
-                    pending_record['status'] = 'verified'
-                    _firestore_set('nonprofit_pending_verifications', log_id, pending_record, user_id=ein)
-            except Exception as e:
-                _logger.warning(f"Could not update nonprofit pending record: {e}")
-
-            return jsonify({
-                'success': True,
-                'confirmation_id': confirm_id,
-                'hours_confirmed': hours_confirmed,
-                'estimated_value': confirm_data['estimated_value']
-            }), 201
-
-        return jsonify({'error': 'Failed to create confirmation'}), 500
-
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
-    except Exception as e:
-        _logger.error(f"Error verifying hours: {e}")
-        return jsonify({'error': 'Internal server error'}), 500
+    Replaced 2026-07-22 by the canonical volunteer_hours flow so no second
+    store of volunteer hour records can drift from the single source of truth.
+    Use POST /api/nonprofit/<ein>/volunteer/<hour_id>/approve (Firebase auth
+    + verified org claim). Existing Firestore data is untouched — read-only
+    history, no new writes."""
+    return jsonify({
+        'error': 'This endpoint has been retired',
+        'use': 'POST /api/nonprofit/<ein>/volunteer/<hour_id>/approve',
+    }), 410
 
 
 # ── Vendor Partnership Reviews ──────────────────────────────────────────
@@ -7576,175 +7501,30 @@ def get_vendor_stats(vendor_id: str):
 @app.route('/api/nonprofit/hours-pending', methods=['GET'])
 @limiter.limit("60 per minute")
 def nonprofit_hours_pending():
-    """Volunteer hour logs awaiting rep confirmation for all orgs claimed by this user."""
-    uid = _require_firebase_user()
-    db = get_db()
+    """RETIRED legacy path (volunteer_hour_logs table).
 
-    # Lazy-add status/rejection_reason columns (first-run migration)
-    for col_def in [
-        "ALTER TABLE volunteer_hour_logs ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'",
-        "ALTER TABLE volunteer_hour_logs ADD COLUMN rejection_reason TEXT",
-    ]:
-        try:
-            db.execute(col_def)
-            db.commit()
-        except Exception:
-            pass
-
-    claims = db.execute(
-        "SELECT ein FROM org_claims WHERE firebase_uid=? "
-        "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
-        (uid,),
-    ).fetchall()
-    if not claims:
-        return jsonify({'hours': [], 'total': 0}), 200
-
-    eins = [c['ein'] for c in claims]
-    placeholders = ','.join('?' * len(eins))
-    _ensure_donor_tables(db)
-
-    rows = db.execute(f"""
-        SELECT l.id, l.user_id, l.nonprofit_ein, l.nonprofit_name,
-               l.service_date, l.hours_logged, l.notes,
-               l.status, l.rejection_reason, l.created_at,
-               u.email AS volunteer_email
-        FROM volunteer_hour_logs l
-        LEFT JOIN donor_users u ON u.firebase_uid = l.user_id
-        WHERE l.nonprofit_ein IN ({placeholders})
-          AND l.status = 'pending'
-        ORDER BY l.created_at DESC
-        LIMIT 100
-    """, eins).fetchall()
-
-    hours_list = [dict(r) for r in rows]
-    return jsonify({'hours': hours_list, 'total': len(hours_list)}), 200
+    Replaced 2026-07-22 by the canonical volunteer_hours flow. Use
+    GET /api/nonprofit/<ein>/volunteer/list?status=pending. The old
+    volunteer_hour_logs table is retained read-only for history; no new
+    records are created there."""
+    return jsonify({
+        'error': 'This endpoint has been retired',
+        'use': 'GET /api/nonprofit/<ein>/volunteer/list?status=pending',
+    }), 410
 
 
 @app.route('/api/nonprofit/verify-hours', methods=['POST'])
 def nonprofit_verify_hours_action():
-    """Verify or reject volunteer hours.
+    """RETIRED legacy path (volunteer_hour_logs + volunteer_hour_confirmations).
 
-    Requires: Firebase auth token
-    Body: {
-      record_id: string,
-      action: 'verify' | 'reject',
-      message: string (for verify),
-      reason: string (for reject)
-    }
-    """
-    uid = _require_firebase_user()
-    data = request.get_json() or {}
-
-    try:
-        record_id = (data.get('record_id') or '').strip()
-        action = (data.get('action') or '').strip()
-
-        if not record_id or action not in ('verify', 'reject'):
-            return jsonify({'error': 'Invalid record_id or action'}), 400
-
-        db = get_db()
-
-        # Get the hour log
-        log = db.execute(
-            "SELECT * FROM volunteer_hour_logs WHERE id = ?",
-            (record_id,)
-        ).fetchone()
-
-        if not log:
-            return jsonify({'error': 'Hour log not found'}), 404
-
-        # Verify user can modify this (owns the nonprofit claim)
-        claim = db.execute(
-            "SELECT 1 FROM org_claims WHERE ein=? AND firebase_uid=? "
-            "AND claim_status IN ('verified','active') AND revoked_at IS NULL",
-            (log['nonprofit_ein'], uid),
-        ).fetchone()
-
-        if not claim:
-            return jsonify({'error': 'Not authorized to verify hours for this nonprofit'}), 403
-
-        volunteer_uid = log['user_id'] if log else None
-
-        # Update status
-        if action == 'verify':
-            message = (data.get('message') or '').strip()
-            # Record confirmation in the confirmations table
-            db.execute("""
-                INSERT OR IGNORE INTO volunteer_hour_confirmations
-                    (user_id, log_id, nonprofit_ein, hours_confirmed, confirmed_by_admin_id, notes)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (volunteer_uid, record_id, log['nonprofit_ein'], log['hours_logged'], uid, message))
-            db.execute(
-                "UPDATE volunteer_hour_logs SET status='confirmed' WHERE id=?",
-                (record_id,),
-            )
-            db.commit()
-
-            # Send verification email if email service is available and volunteer exists
-            if get_email_service and volunteer_uid:
-                try:
-                    email_service = get_email_service()
-                    volunteer_email = email_service._fetch_user_email(volunteer_uid)
-                    if volunteer_email:
-                        template = hours_verified_email(
-                            volunteer_email=volunteer_email,
-                            nonprofit_name=log['nonprofit_name'],
-                            hours=log['hours_logged'],
-                            service_date=log['service_date'],
-                            notes=log['notes'] if log['notes'] else None
-                        )
-                        email_service.send(
-                            to_email=volunteer_email,
-                            subject=template.subject,
-                            html=template.html,
-                            plain_text=template.plain_text
-                        )
-                        _logger.info(f"Verification email sent for hours {record_id} to {volunteer_email}")
-                    else:
-                        _logger.warning(f"Could not fetch email for volunteer {volunteer_uid}")
-                except Exception as e:
-                    _logger.error(f"Error sending verification email: {e}")
-
-        else:  # reject
-            reason = (data.get('reason') or '').strip()
-            if not reason:
-                return jsonify({'error': 'Rejection reason required'}), 400
-            db.execute(
-                "UPDATE volunteer_hour_logs SET status='rejected', rejection_reason=? WHERE id=?",
-                (reason, record_id),
-            )
-            db.commit()
-
-            # Send rejection email if email service is available and volunteer exists
-            if get_email_service and volunteer_uid:
-                try:
-                    email_service = get_email_service()
-                    volunteer_email = email_service._fetch_user_email(volunteer_uid)
-                    if volunteer_email:
-                        template = hours_rejected_email(
-                            volunteer_email=volunteer_email,
-                            nonprofit_name=log['nonprofit_name'],
-                            hours=log['hours_logged'],
-                            service_date=log['service_date'],
-                            rejection_reason=reason
-                        )
-                        email_service.send(
-                            to_email=volunteer_email,
-                            subject=template.subject,
-                            html=template.html,
-                            plain_text=template.plain_text
-                        )
-                        _logger.info(f"Rejection email sent for hours {record_id} to {volunteer_email}")
-                    else:
-                        _logger.warning(f"Could not fetch email for volunteer {volunteer_uid}")
-                except Exception as e:
-                    _logger.error(f"Error sending rejection email: {e}")
-
-        return jsonify({'success': True, 'action': action}), 200
-
-    except Exception as e:
-        _logger.error(f"Error verifying hours: {e}")
-        return jsonify({'error': 'Failed to verify hours'}), 500
+    Replaced 2026-07-22 by the canonical volunteer_hours approve/reject flow
+    (which carries the audit trail, the 30-day lock, and the single idempotent
+    bridge into public aggregates). Old tables are retained read-only for
+    history; no new records are created there."""
+    return jsonify({
+        'error': 'This endpoint has been retired',
+        'use': 'POST /api/nonprofit/<ein>/volunteer/<hour_id>/approve or /reject',
+    }), 410
 
 
 @app.route('/', defaults={'path': ''})
@@ -8563,16 +8343,22 @@ def log_impact():
         if log_type == 'volunteer' and (not isinstance(hours, (int, float)) or hours < 0.25):
             return jsonify({'error': 'Invalid hours'}), 400
 
-        # Insert into impact_logs
+        # Insert into impact_logs. Schema note: org_ein/impact_type/amount are
+        # NOT NULL legacy columns and id is INTEGER AUTOINCREMENT — the old
+        # INSERT here supplied a TEXT id and skipped the NOT NULLs, so every
+        # wallet impact sync failed with a datatype/constraint error.
+        # source='wallet_optin' distinguishes these from the nonprofit-approved
+        # bridge records (source='volunteer_hours_event').
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        log_id = f"{log_type}_{ein}_{log_date}_{secrets.token_hex(4)}"
+        numeric_value = amount if log_type == 'giving' else hours
 
         cursor.execute('''
-            INSERT INTO impact_logs (id, ein, type, amount, hours, log_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (log_id, ein, log_type, amount if log_type == 'giving' else None,
+            INSERT INTO impact_logs (org_ein, impact_type, amount, ein, type, hours, log_date, source, verified)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'wallet_optin', 0)
+        ''', (ein, log_type, numeric_value, ein, log_type,
               hours if log_type == 'volunteer' else None, log_date))
+        log_id = cursor.lastrowid
 
         conn.commit()
         conn.close()
@@ -8619,7 +8405,8 @@ def get_community_stats():
             conn.close()
             if stats_row:
                 total_dollars, total_hours, donation_count, volunteer_count, org_count = stats_row
-                volunteer_hourly_value = 31.80  # Placeholder BAL for 2026
+                from volunteer_hours_events_api import VOLUNTEER_HOURLY_VALUE
+                volunteer_hourly_value = VOLUNTEER_HOURLY_VALUE  # single documented source
                 lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
                 return jsonify({
                     'total_dollars': total_dollars or 0,
@@ -8639,7 +8426,8 @@ def get_community_stats():
                 }), 200
 
         total_dollars, total_hours, donation_count, volunteer_count, org_count, active_volunteers, aggregate_date = row
-        volunteer_hourly_value = 31.80
+        from volunteer_hours_events_api import VOLUNTEER_HOURLY_VALUE
+        volunteer_hourly_value = VOLUNTEER_HOURLY_VALUE  # single documented source
         lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
 
         return jsonify({
@@ -8874,11 +8662,20 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
 
     try:
         row = db.execute(
-            'SELECT hours, service_date FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            'SELECT hours, service_date, status, locked_at FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
             (hour_id, ein)
         ).fetchone()
         if not row:
             return jsonify({'error': 'Submission not found'}), 404
+        if row['status'] == 'approved':
+            # Idempotent: double-click / retry never re-bridges a second
+            # aggregate impact record (and _bridge_to_impact_logs is itself
+            # keyed on hour_id as a second line of defense).
+            return jsonify({'status': 'approved', 'already_approved': True}), 200
+        # locked_at stores the FUTURE date the record becomes immutable
+        # (set to approval time + 30 days); locked only once that date passes.
+        if row['locked_at'] and row['locked_at'] <= datetime.now().isoformat():
+            return jsonify({'error': 'This submission is locked (30-day edit window has passed)'}), 409
 
         approved_at = datetime.now().isoformat()
         db.execute(
@@ -8890,7 +8687,7 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
         try:
             from volunteer_hours_events_api import _audit, _bridge_to_impact_logs
             _audit(db, hour_id, 'approved', uid)
-            _bridge_to_impact_logs(db, ein, row['hours'], row['service_date'])
+            _bridge_to_impact_logs(db, ein, row['hours'], row['service_date'], hour_id)
         except ImportError:
             pass  # volunteer_hours_events_api optional
         db.commit()
@@ -8922,13 +8719,27 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
         return jsonify({'error': 'You do not own this nonprofit'}), 403
 
     try:
+        row = db.execute(
+            'SELECT status, locked_at FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            (hour_id, ein)
+        ).fetchone()
+        if not row:
+            return jsonify({'error': 'Submission not found'}), 404
+        # locked_at is the future immutability date (approval + 30 days);
+        # rejection is blocked only after that window has actually passed.
+        if row['locked_at'] and row['locked_at'] <= datetime.now().isoformat():
+            return jsonify({'error': 'This submission is locked (30-day edit window has passed)'}), 409
+
         db.execute(
             'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND nonprofit_ein=?',
             ('rejected', uid, datetime.now().isoformat(), reason, hour_id, ein)
         )
         try:
-            from volunteer_hours_events_api import _audit
+            from volunteer_hours_events_api import _audit, _unbridge_from_impact_logs
             _audit(db, hour_id, 'rejected', uid, {'reason': reason} if reason else None)
+            # If this submission was previously approved, its aggregate impact
+            # record must be withdrawn — rejected hours contribute nothing.
+            _unbridge_from_impact_logs(db, hour_id)
         except ImportError:
             pass  # volunteer_hours_events_api optional
         db.commit()
@@ -11000,6 +10811,174 @@ def nonprofit_impact_report(ein: str):
     return jsonify({'ein': ein, 'outcome_count': len(outcomes), 'outcomes': outcomes}), 200
 
 
+@app.route('/api/nonprofit/<ein>/dashboard/overview', methods=['GET'])
+def nonprofit_dashboard_overview(ein: str):
+    """Nonprofit overview dashboard: what needs attention, volunteer summary, profile health,
+    upcoming events, and recent activity. Requires Firebase auth. Returns only org-specific data."""
+    from volunteer_hours_events_api import VOLUNTEER_HOURLY_VALUE
+
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = get_db()
+
+    # Verify user has claimed this org
+    claim = db.execute(
+        "SELECT claim_status FROM org_claims WHERE ein=? AND (firebase_uid=? OR claim_status IN ('active', 'verified'))",
+        (ein, uid)
+    ).fetchone()
+    if not claim:
+        return jsonify({'error': 'Not authorized for this organization'}), 403
+
+    # Org basics
+    org = db.execute(
+        "SELECT EIN, organization_name, mission, website, donate_url, street_address, CITY, STATE FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    org_name = org['organization_name'] or 'Unnamed Organization'
+
+    # Last profile update (from org_claims or registry_enriched update timestamp)
+    last_update = db.execute(
+        "SELECT MAX(verified_at) as updated FROM org_claims WHERE ein=?",
+        (ein,)
+    ).fetchone()
+    last_profile_update = last_update['updated'] if last_update['updated'] else None
+    days_since_update = 999
+    if last_profile_update:
+        days_since_update = (datetime.now() - datetime.fromisoformat(last_profile_update)).days
+
+    # Attention items
+    pending_approvals = db.execute(
+        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='submitted'",
+        (ein,)
+    ).fetchone()['cnt']
+
+    profile_gaps = 0
+    gaps = []
+    if not org['mission'] or len(str(org['mission']).strip()) < 10:
+        profile_gaps += 1
+        gaps.append('mission')
+    if not org['donate_url']:
+        profile_gaps += 1
+        gaps.append('donation_link')
+
+    # Volunteer summary
+    now = datetime.now()
+    this_month = now.strftime('%Y-%m')
+    last_month = (now.replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+
+    vol_this = db.execute(
+        "SELECT COALESCE(SUM(hours), 0) as h FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?",
+        (ein, this_month)
+    ).fetchone()['h']
+
+    vol_last = db.execute(
+        "SELECT COALESCE(SUM(hours), 0) as h FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?",
+        (ein, last_month)
+    ).fetchone()['h']
+
+    trend_percent = 0
+    if vol_last > 0:
+        trend_percent = round((vol_this - vol_last) / vol_last * 100, 1)
+
+    pending_count = db.execute(
+        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='submitted'",
+        (ein,)
+    ).fetchone()['cnt']
+
+    approved_count = db.execute(
+        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved'",
+        (ein,)
+    ).fetchone()['cnt']
+
+    rejected_count = db.execute(
+        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='rejected'",
+        (ein,)
+    ).fetchone()['cnt']
+
+    # Top volunteers this month
+    top_vols = db.execute(
+        f"""SELECT volunteer_name, SUM(hours) as total_hours FROM volunteer_hours
+            WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?
+            GROUP BY volunteer_name ORDER BY total_hours DESC LIMIT 3""",
+        (ein, this_month)
+    ).fetchall()
+    top_volunteers = [{'name': v['volunteer_name'], 'hours': v['total_hours']} for v in top_vols]
+
+    # Upcoming events (next 30 days)
+    upcoming = db.execute(
+        """SELECT event_id, title, event_date FROM volunteer_events
+           WHERE nonprofit_ein=? AND event_date BETWEEN date('now') AND date('now', '+30 days')
+           ORDER BY event_date ASC LIMIT 5""",
+        (ein,)
+    ).fetchall()
+
+    upcoming_events = []
+    for evt in upcoming:
+        evt_date = datetime.fromisoformat(evt['event_date']).date()
+        days_until = (evt_date - datetime.now().date()).days
+        upcoming_events.append({
+            'event_id': evt['event_id'],
+            'title': evt['title'],
+            'date': evt['event_date'],
+            'days_until': days_until
+        })
+
+    # Profile health (completeness)
+    completeness_score = 0
+    fields_max = 8
+    if org['organization_name']: completeness_score += 1
+    if org['EIN']: completeness_score += 1
+    if org['mission'] and len(str(org['mission']).strip()) >= 10: completeness_score += 1
+    if org['website']: completeness_score += 1
+    if org['donate_url']: completeness_score += 1
+    if org['street_address']: completeness_score += 1
+    if org['CITY']: completeness_score += 1
+    if org['STATE']: completeness_score += 1
+
+    completeness_percent = round((completeness_score / fields_max) * 100)
+
+    return jsonify({
+        'organization': {
+            'ein': org['EIN'],
+            'name': org_name,
+            'mission': org['mission'],
+            'website': org['website'],
+            'last_profile_update': last_profile_update,
+            'days_since_update': days_since_update
+        },
+        'attention': {
+            'pending_approvals': pending_approvals,
+            'profile_gaps': profile_gaps,
+            'missing_fields': gaps,
+            'needs_review': days_since_update > 90
+        },
+        'volunteer_summary': {
+            'this_month_hours': round(vol_this, 1),
+            'last_month_hours': round(vol_last, 1),
+            'trend_percent': trend_percent,
+            'pending_count': pending_count,
+            'approved_count': approved_count,
+            'rejected_count': rejected_count,
+            'top_volunteers': top_volunteers,
+            'labor_value_this_month': round(vol_this * VOLUNTEER_HOURLY_VALUE, 2)
+        },
+        'profile_health': {
+            'completeness_percent': completeness_percent,
+            'missing_fields': gaps
+        },
+        'upcoming_events': upcoming_events,
+        'recent_activity': {
+            'has_events': len(upcoming_events) > 0
+        }
+    }), 200
+
+
 @app.route('/api/cause/<cause_area>/impact-benchmarks', methods=['GET'])
 def cause_impact_benchmarks(cause_area: str):
     """Get peer benchmarks for impact outcomes in a cause area."""
@@ -11029,6 +11008,348 @@ def cause_impact_benchmarks(cause_area: str):
         })
 
     return jsonify({'benchmark_count': len(benchmarks), 'benchmarks': benchmarks}), 200
+
+
+# ── Profile Correction & Provenance ──
+
+@app.route('/api/nonprofit/<ein>/profile/editable', methods=['GET'])
+def nonprofit_profile_editable(ein: str):
+    """Get editable profile fields for nonprofit with current values, sources, and edit history."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = get_db()
+
+    # Verify authorization
+    claim = db.execute(
+        "SELECT claim_status FROM org_claims WHERE ein=? AND firebase_uid=?",
+        (ein, uid)
+    ).fetchone()
+    if not claim or claim['claim_status'] not in ('active', 'verified'):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    org = db.execute(
+        "SELECT EIN, organization_name, mission, mission_source, website, website_source, donate_url, donate_url_source FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    supplied = db.execute(
+        "SELECT programs_description, service_areas, nonprofit_contact_email FROM nonprofit_supplied_data WHERE ein=?",
+        (ein,)
+    ).fetchone()
+
+    # Recent edits (last 10)
+    edits = db.execute(
+        "SELECT field_name, old_value, new_value, created_at, editor_email, reason, approval_status FROM profile_edits WHERE ein=? ORDER BY created_at DESC LIMIT 10",
+        (ein,)
+    ).fetchall()
+
+    return jsonify({
+        'organization': {
+            'ein': org['EIN'],
+            'name': org['organization_name']
+        },
+        'editable_fields': {
+            'mission': {
+                'value': org['mission'] or '',
+                'source': org['mission_source'] or 'irs',
+                'editable': True,
+                'char_limit': 500,
+                'char_count': len(str(org['mission'] or ''))
+            },
+            'website': {
+                'value': org['website'] or '',
+                'source': org['website_source'] or 'irs',
+                'editable': True
+            },
+            'donate_url': {
+                'value': org['donate_url'] or '',
+                'source': org['donate_url_source'] or 'irs',
+                'editable': True
+            },
+            'programs': {
+                'value': supplied['programs_description'] if supplied else '',
+                'source': 'nonprofit_supplied',
+                'editable': True,
+                'char_limit': 2000
+            },
+            'service_areas': {
+                'value': supplied['service_areas'] if supplied else '',
+                'source': 'nonprofit_supplied',
+                'editable': True
+            }
+        },
+        'recent_edits': [
+            {
+                'field': e['field_name'],
+                'old_value': e['old_value'],
+                'new_value': e['new_value'],
+                'date': e['created_at'],
+                'editor': e['editor_email'],
+                'reason': e['reason'],
+                'status': e['approval_status']
+            } for e in edits
+        ]
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/profile/edit', methods=['POST'])
+def nonprofit_profile_edit(ein: str):
+    """Submit a profile field edit. Requires Firebase auth."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    data = request.get_json(silent=True) or {}
+    field_name = (data.get('field_name') or '').strip()
+    new_value = (data.get('new_value') or '').strip()
+    reason = (data.get('reason') or '').strip()[:500]
+    editor_email = (data.get('nonprofit_email') or '').strip()[:254]
+
+    if not field_name or not new_value:
+        return jsonify({'error': 'field_name and new_value are required'}), 400
+
+    if field_name not in ('mission', 'website', 'donate_url', 'programs', 'service_areas'):
+        return jsonify({'error': 'Invalid field_name'}), 400
+
+    # Validate field lengths
+    if field_name == 'mission' and (len(new_value) < 50 or len(new_value) > 500):
+        return jsonify({'error': 'Mission must be 50–500 characters'}), 400
+    if field_name == 'programs' and (len(new_value) < 50 or len(new_value) > 2000):
+        return jsonify({'error': 'Programs must be 50–2000 characters'}), 400
+
+    db = get_db()
+
+    # Verify authorization
+    claim = db.execute(
+        "SELECT claim_status FROM org_claims WHERE ein=? AND firebase_uid=?",
+        (ein, uid)
+    ).fetchone()
+    if not claim or claim['claim_status'] not in ('active', 'verified'):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    # Get current value
+    org = db.execute(
+        "SELECT mission, website, donate_url FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+
+    supplied = db.execute(
+        "SELECT programs_description, service_areas FROM nonprofit_supplied_data WHERE ein=?",
+        (ein,)
+    ).fetchone()
+
+    current_value = {
+        'mission': org['mission'],
+        'website': org['website'],
+        'donate_url': org['donate_url'],
+        'programs': supplied['programs_description'] if supplied else '',
+        'service_areas': supplied['service_areas'] if supplied else ''
+    }.get(field_name, '')
+
+    # No-op check: if value unchanged, return success
+    if str(current_value or '').strip() == new_value:
+        return jsonify({
+            'edit_id': 'no-op',
+            'status': 'approved',
+            'message': 'Field value unchanged'
+        }), 200
+
+    # Record edit
+    db.execute(
+        "INSERT INTO profile_edits (ein, field_name, old_value, new_value, edit_source, editor_email, reason, approval_status, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+        (ein, field_name, current_value or '', new_value, 'nonprofit', editor_email, reason, 'approved')
+    )
+
+    # Update registry_enriched or nonprofit_supplied_data
+    now = datetime.now().isoformat()
+    if field_name in ('mission', 'website', 'donate_url'):
+        db.execute(
+            f"UPDATE registry_enriched SET {field_name}=?, {field_name}_source='nonprofit_supplied', {field_name}_last_verified=? WHERE EIN=?",
+            (new_value, now, ein)
+        )
+    else:
+        # Ensure nonprofit_supplied_data row exists
+        db.execute(
+            "INSERT OR IGNORE INTO nonprofit_supplied_data (ein) VALUES (?)",
+            (ein,)
+        )
+        db.execute(
+            f"UPDATE nonprofit_supplied_data SET {field_name}=?, last_updated_at=? WHERE ein=?",
+            (new_value, now, ein)
+        )
+
+    db.commit()
+
+    return jsonify({
+        'edit_id': 'e-' + secrets.token_hex(4),
+        'status': 'approved',
+        'message': f'{field_name.title()} updated. Visible to donors within 5 minutes.'
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/profile/history', methods=['GET'])
+def nonprofit_profile_history(ein: str):
+    """Get full profile edit history for nonprofit."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = get_db()
+
+    # Verify authorization
+    claim = db.execute(
+        "SELECT claim_status FROM org_claims WHERE ein=? AND firebase_uid=?",
+        (ein, uid)
+    ).fetchone()
+    if not claim or claim['claim_status'] not in ('active', 'verified'):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    edits = db.execute(
+        "SELECT field_name, old_value, new_value, created_at, editor_email, reason, approval_status FROM profile_edits WHERE ein=? ORDER BY created_at DESC",
+        (ein,)
+    ).fetchall()
+
+    return jsonify({
+        'ein': ein,
+        'changes': [
+            {
+                'field': e['field_name'],
+                'old_value': e['old_value'],
+                'new_value': e['new_value'],
+                'date': e['created_at'],
+                'editor': e['editor_email'],
+                'reason': e['reason'],
+                'status': e['approval_status']
+            } for e in edits
+        ]
+    }), 200
+
+
+@app.route('/api/public/nonprofit/<ein>/profile/sources', methods=['GET'])
+def public_profile_sources(ein: str):
+    """Public: Show data sources and provenance for nonprofit profile."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 404
+
+    db = get_db()
+    org = db.execute(
+        "SELECT organization_name, mission, mission_source, website, website_source, donate_url, donate_url_source FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    supplied = db.execute(
+        "SELECT programs_description, service_areas FROM nonprofit_supplied_data WHERE ein=?",
+        (ein,)
+    ).fetchone()
+
+    source_map = {
+        'irs': 'Form 990 (IRS)',
+        'nonprofit_supplied': 'Nonprofit-supplied',
+        'ai_generated': 'AI-generated (Daanaa)',
+        'daanaa_corrected': 'Corrected (Daanaa)'
+    }
+
+    return jsonify({
+        'ein': ein,
+        'sources': {
+            'organization_name': {
+                'value': org['organization_name'],
+                'source': 'irs',
+                'source_label': 'Form 990 (IRS)',
+                'editable': False
+            },
+            'mission': {
+                'value': org['mission'],
+                'source': org['mission_source'] or 'irs',
+                'source_label': source_map.get(org['mission_source'] or 'irs', 'Unknown'),
+                'editable': True
+            },
+            'website': {
+                'value': org['website'],
+                'source': org['website_source'] or 'irs',
+                'source_label': source_map.get(org['website_source'] or 'irs', 'Unknown'),
+                'editable': True
+            },
+            'donate_url': {
+                'value': org['donate_url'],
+                'source': org['donate_url_source'] or 'irs',
+                'source_label': source_map.get(org['donate_url_source'] or 'irs', 'Unknown'),
+                'editable': True
+            },
+            'programs': {
+                'value': supplied['programs_description'] if supplied else None,
+                'source': 'nonprofit_supplied',
+                'source_label': 'Nonprofit-supplied',
+                'editable': True
+            }
+        }
+    }), 200
+
+
+@app.route('/api/public/nonprofit/<ein>/feedback', methods=['POST'])
+def submit_nonprofit_feedback(ein: str):
+    """Public: Submit anonymous feedback about an organization (was it helpful?)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    data = request.get_json(silent=True) or {}
+    was_helpful = data.get('was_helpful')
+    category = (data.get('feedback_category') or '').strip()[:100]
+    message = (data.get('message') or '').strip()[:500]
+
+    if was_helpful is None:
+        return jsonify({'error': 'was_helpful is required'}), 400
+
+    db = get_db()
+
+    # Check org exists
+    org = db.execute(
+        "SELECT EIN FROM registry_enriched WHERE EIN=?", (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # Store feedback (anonymous, no IP, no identifiers)
+    db.execute(
+        "INSERT OR IGNORE INTO nonprofit_feedback (ein, was_helpful, feedback_category, message, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
+        (ein, 1 if was_helpful else 0, category or None, message or None)
+    )
+
+    try:
+        db.commit()
+    except Exception:
+        # Table might not exist yet, create it
+        db.execute("""
+          CREATE TABLE IF NOT EXISTS nonprofit_feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ein TEXT NOT NULL,
+            was_helpful INTEGER NOT NULL,
+            feedback_category TEXT,
+            message TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          )
+        """)
+        db.execute(
+            "INSERT INTO nonprofit_feedback (ein, was_helpful, feedback_category, message, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
+            (ein, 1 if was_helpful else 0, category or None, message or None)
+        )
+        db.commit()
+
+    return jsonify({
+        'status': 'ok',
+        'message': 'Thank you for your feedback'
+    }), 200
 
 
 @app.route('/api/research/datasets', methods=['GET'])

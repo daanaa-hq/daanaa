@@ -24,7 +24,6 @@ import io
 import json
 import os
 import re
-import secrets
 import sqlite3
 import uuid
 from datetime import datetime, timedelta
@@ -65,7 +64,17 @@ def _check_rate_limit(key: str, max_requests: int, window_seconds: int) -> bool:
 volunteer_hours_events_bp = Blueprint('volunteer_hours_events', __name__)
 
 DB_PATH = os.environ.get('DB_PATH', 'data/merit_registry.db')
-VOLUNTEER_HOURLY_VALUE = 31.80  # Same BAL rate used in /api/impact/community-stats
+
+# Illustrative estimate of volunteer labor value. ONE source, ONE year, used
+# everywhere hours are valued (here, daanaa_api community stats, droplet_api).
+# Source: Independent Sector, "Value of a Volunteer Hour" — 2023 national
+# value, published April 2024: $33.49/hour.
+# Never presented as cash value, a tax deduction, a donation, or revenue —
+# every API response carrying it must also carry VOLUNTEER_VALUE_NOTE.
+VOLUNTEER_HOURLY_VALUE = 33.49
+VOLUNTEER_VALUE_SOURCE = 'Independent Sector, Value of a Volunteer Hour (2023 value, published 2024)'
+VOLUNTEER_VALUE_NOTE = ('Illustrative estimate of volunteer labor value only. '
+                        'Not a cash value, tax deduction, donation, or revenue figure.')
 
 _VALID_TASK_TYPES = {
     'volunteer', 'marshal', 'registration', 'setup', 'cleanup', 'hospitality',
@@ -90,16 +99,29 @@ def _audit(db, hour_id: str, action: str, changed_by: str, details: dict | None 
     )
 
 
-def _bridge_to_impact_logs(db, ein: str, hours: float, service_date: str):
+def _bridge_to_impact_logs(db, ein: str, hours: float, service_date: str, hour_id: str):
     """Feed an approved, anonymized hour entry into impact_logs so it counts
     toward the public community-impact totals (/api/impact/community-stats).
-    No name/email here — that stays in volunteer_hours (Tier 2)."""
-    log_id_note = f"volhours:{ein}:{service_date}:{secrets.token_hex(3)}"
+    No name/email here — that stays in volunteer_hours (Tier 2).
+
+    Idempotent: keyed on the volunteer_hours id via the notes marker, so a
+    double-approve (or retry) can never create a second aggregate record.
+    This is the ONLY path from volunteer_hours into impact_logs — the wallet
+    must never sync a server-linked submission itself (would double-count)."""
+    marker = f"volhours:{hour_id}"
+    if db.execute('SELECT 1 FROM impact_logs WHERE notes=?', (marker,)).fetchone():
+        return
     db.execute(
-        '''INSERT INTO impact_logs (org_ein, impact_type, amount, ein, type, hours, log_date, source, verified)
-           VALUES (?, 'volunteer', ?, ?, 'volunteer', ?, ?, 'volunteer_hours_event', 1)''',
-        (ein, hours, ein, hours, service_date),
+        '''INSERT INTO impact_logs (org_ein, impact_type, amount, ein, type, hours, log_date, source, verified, notes)
+           VALUES (?, 'volunteer', ?, ?, 'volunteer', ?, ?, 'volunteer_hours_event', 1, ?)''',
+        (ein, hours, ein, hours, service_date, marker),
     )
+
+
+def _unbridge_from_impact_logs(db, hour_id: str):
+    """Remove the aggregate record for a submission that was approved and then
+    rejected — a rejected submission must contribute nothing to public totals."""
+    db.execute('DELETE FROM impact_logs WHERE notes=?', (f"volhours:{hour_id}",))
 
 
 # ── Public: event info for the submission page ──────────────────────────────
@@ -224,29 +246,98 @@ def event_log_hours_submit(short_id: str):
             return jsonify({'error': 'Hours must be between 0.25 and 24 per organization'}), 400
         validated.append((ein, hours, task_type))
 
-    created_ids = []
+    # Double-submit guard: if this volunteer already has a live (non-rejected)
+    # submission for this event+org, return it instead of creating a duplicate.
+    # One event submission -> exactly one pending volunteer_hours record per org.
+    submissions = []
+    created_any = False
     now_iso = datetime.now().isoformat()
-    ip = _client_ip()
+    # PRIVACY-INVARIANT #3: the client IP was used above for rate limiting only
+    # (in-memory). It is never written to volunteer_hours or the audit log.
     for ein, hours, task_type in validated:
+        existing = db.execute(
+            '''SELECT id, status FROM volunteer_hours
+               WHERE event_id=? AND nonprofit_ein=? AND lower(volunteer_email)=lower(?)
+                 AND status != 'rejected' ''',
+            (event['id'], ein, email),
+        ).fetchone()
+        if existing:
+            submissions.append({'submission_id': existing['id'], 'ein': ein,
+                                'hours': hours, 'task_type': task_type,
+                                'status': existing['status'], 'already_submitted': True})
+            continue
+
         hour_id = f"EVT-{uuid.uuid4().hex[:16].upper()}"
         db.execute(
             '''INSERT INTO volunteer_hours (
                  id, nonprofit_ein, volunteer_name, volunteer_email, hours,
                  service_date, activity_description, status, submitted_at, created_at,
-                 event_id, submitted_via, task_type, submitted_ip
-               ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, 'self_qr', ?, ?)''',
+                 event_id, submitted_via, task_type
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, 'self_qr', ?)''',
             (hour_id, ein, name, email, hours, event['event_date'], notes or 'Event volunteer hours',
-             now_iso, now_iso, event['id'], task_type, ip),
+             now_iso, now_iso, event['id'], task_type),
         )
         _audit(db, hour_id, 'submitted', 'volunteer', {'ein': ein, 'hours': hours, 'task_type': task_type})
-        created_ids.append(hour_id)
+        submissions.append({'submission_id': hour_id, 'ein': ein, 'hours': hours,
+                            'task_type': task_type, 'status': 'pending',
+                            'already_submitted': False})
+        created_any = True
 
     db.commit()
     return jsonify({
         'status': 'submitted',
-        'submission_ids': created_ids,
+        'event_id': event['id'],
+        'event_date': event['event_date'],
+        'submissions': submissions,
+        'submission_ids': [s['submission_id'] for s in submissions],  # backward compat
         'message': 'Thanks! The organization(s) will review your hours.',
-    }), 201
+    }), (201 if created_any else 200)
+
+
+# ── Public: wallet status refresh (capability-token lookup, no PII) ─────────
+
+@volunteer_hours_events_bp.route('/api/volunteer/submissions/status', methods=['GET'])
+def volunteer_submissions_status():
+    """Public: current status of volunteer hour submissions, by submission id.
+
+    The wallet stores its submission ids locally and polls this to move an
+    entry from "Submitted for review" to "Nonprofit approved" / "Rejected".
+
+    Safe by design (PRIVACY-INVARIANTS #2/#5/#7):
+      - Submission ids are unguessable (EVT- + 16 hex / VOL- + 12 hex UUIDs),
+        acting as capability tokens — only the device that submitted holds them.
+      - Response carries NO volunteer name or email, ever. Status, service
+        date, org EIN, and event id only.
+      - Rate limited per IP (in-memory only, never persisted).
+    """
+    client_ip = (request.headers.get('X-Forwarded-For', '').split(',')[0].strip()
+                 or request.remote_addr or 'unknown')
+    if not _check_rate_limit(f"status:{client_ip}", max_requests=60, window_seconds=60):
+        return jsonify({'error': 'Too many requests. Please try again in a moment.'}), 429
+
+    raw_ids = (request.args.get('ids') or '').split(',')
+    ids = [i.strip() for i in raw_ids if re.match(r'^(EVT|VOL)-[A-F0-9]{8,20}$', i.strip())]
+    if not ids:
+        return jsonify({'error': 'ids required (comma-separated submission ids)'}), 400
+    if len(ids) > 20:
+        return jsonify({'error': 'Max 20 ids per request'}), 400
+
+    db = _get_db()
+    placeholders = ','.join('?' * len(ids))
+    rows = db.execute(
+        f'''SELECT id, status, service_date, nonprofit_ein, event_id, rejection_reason
+            FROM volunteer_hours WHERE id IN ({placeholders})''',
+        ids,
+    ).fetchall()
+
+    return jsonify({'submissions': [{
+        'id': r['id'],
+        'status': r['status'],
+        'service_date': r['service_date'],
+        'nonprofit_ein': r['nonprofit_ein'],
+        'event_id': r['event_id'],
+        'rejection_reason': r['rejection_reason'] if r['status'] == 'rejected' else None,
+    } for r in rows]})
 
 
 # ── Nonprofit: full list with status filter (all/pending/approved/rejected) ──
@@ -297,6 +388,94 @@ def nonprofit_volunteer_list(ein: str):
     return jsonify({'records': [dict(r) for r in rows]})
 
 
+# ── Nonprofit: dashboard insights card (canonical volunteer_hours source) ────
+
+@volunteer_hours_events_bp.route('/api/nonprofit/volunteer-hours/summary', methods=['GET'])
+def nonprofit_volunteer_hours_summary():
+    """Firebase-auth: volunteer insights for the dashboard card, aggregated
+    across every org this user has claimed. Reads ONLY the canonical
+    volunteer_hours table (the legacy volunteer_hour_logs store is retired).
+    Response shape matches frontend VolunteerInsightsSchema (Zod).
+    Volunteer names shown here are Tier 2 data visible only to the claiming
+    nonprofit — never in any public endpoint."""
+    from daanaa_api import _require_firebase_user
+
+    uid = _require_firebase_user()
+    period = (request.args.get('period') or 'month').lower()
+    if period not in ('month', 'all'):
+        period = 'month'
+
+    db = _get_db()
+    claims = db.execute(
+        'SELECT ein FROM org_claims WHERE firebase_uid=? AND claim_status IN ("active", "verified")',
+        (uid,),
+    ).fetchall()
+    eins = [c['ein'] for c in claims]
+    if not eins:
+        return jsonify({
+            'total_hours_period': 0, 'total_hours_previous_period': 0,
+            'trend_direction': 'flat', 'trend_percent': 0,
+            'top_volunteers': [], 'approved_count': 0,
+            'pending_count': 0, 'rejected_count': 0,
+        })
+
+    placeholders = ','.join('?' * len(eins))
+    now = datetime.now()
+    this_month = now.strftime('%Y-%m')
+    prev_month = (now.replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+
+    if period == 'month':
+        period_filter = f"AND substr(service_date, 1, 7) = ?"
+        period_args = [this_month]
+    else:
+        period_filter = ''
+        period_args = []
+
+    total_period = db.execute(
+        f'''SELECT COALESCE(SUM(hours), 0) AS h FROM volunteer_hours
+            WHERE nonprofit_ein IN ({placeholders}) AND status='approved' {period_filter}''',
+        eins + period_args,
+    ).fetchone()['h']
+
+    total_prev = db.execute(
+        f'''SELECT COALESCE(SUM(hours), 0) AS h FROM volunteer_hours
+            WHERE nonprofit_ein IN ({placeholders}) AND status='approved'
+              AND substr(service_date, 1, 7) = ?''',
+        eins + [prev_month],
+    ).fetchone()['h'] if period == 'month' else 0
+
+    if period == 'month' and total_prev > 0:
+        trend_percent = round((total_period - total_prev) / total_prev * 100, 1)
+        trend_direction = 'up' if trend_percent > 0 else ('down' if trend_percent < 0 else 'flat')
+    else:
+        trend_percent, trend_direction = 0, 'flat'
+
+    top_rows = db.execute(
+        f'''SELECT volunteer_name AS name, ROUND(SUM(hours), 2) AS hours
+            FROM volunteer_hours
+            WHERE nonprofit_ein IN ({placeholders}) AND status='approved' {period_filter}
+            GROUP BY lower(volunteer_email) ORDER BY SUM(hours) DESC LIMIT 3''',
+        eins + period_args,
+    ).fetchall()
+
+    counts = {r['status']: r['c'] for r in db.execute(
+        f'''SELECT status, COUNT(*) AS c FROM volunteer_hours
+            WHERE nonprofit_ein IN ({placeholders}) GROUP BY status''',
+        eins,
+    ).fetchall()}
+
+    return jsonify({
+        'total_hours_period': round(total_period, 2),
+        'total_hours_previous_period': round(total_prev, 2),
+        'trend_direction': trend_direction,
+        'trend_percent': trend_percent,
+        'top_volunteers': [{'name': r['name'], 'hours': r['hours']} for r in top_rows if r['hours'] > 0],
+        'approved_count': counts.get('approved', 0),
+        'pending_count': counts.get('pending', 0) + counts.get('confirmed', 0),
+        'rejected_count': counts.get('rejected', 0),
+    })
+
+
 # ── Nonprofit: edit within 30-day window ─────────────────────────────────────
 
 @volunteer_hours_events_bp.route('/api/nonprofit/<ein>/volunteer/<hour_id>/edit', methods=['PATCH'])
@@ -322,7 +501,8 @@ def nonprofit_edit_hours(ein: str, hour_id: str):
     ).fetchone()
     if not row:
         return jsonify({'error': 'Submission not found'}), 404
-    if row['locked_at']:
+    # locked_at is the future immutability date (approval + 30 days), not a flag
+    if row['locked_at'] and row['locked_at'] <= datetime.now().isoformat():
         return jsonify({'error': 'This submission is locked (30-day edit window has passed)'}), 409
 
     data = request.get_json(silent=True) or {}
@@ -434,6 +614,8 @@ def nonprofit_volunteer_impact(ein: str, year: int):
         'volunteer_count': len(volunteers),
         'event_count': event_count,
         'labor_value_estimate': round(total_hours * VOLUNTEER_HOURLY_VALUE, 2),
+        'labor_value_source': VOLUNTEER_VALUE_SOURCE,
+        'labor_value_note': VOLUNTEER_VALUE_NOTE,
         'hours_by_task_type': by_task,
         'hours_by_month': by_month,
         'is_public': is_public,
@@ -492,6 +674,8 @@ def public_volunteer_impact(ein: str):
         'volunteer_count': row['volunteer_count'],
         'event_count': row['event_count'],
         'labor_value_estimate': round((row['total_hours_approved'] or 0) * VOLUNTEER_HOURLY_VALUE, 2),
+        'labor_value_source': VOLUNTEER_VALUE_SOURCE,
+        'labor_value_note': VOLUNTEER_VALUE_NOTE,
     })
 
 

@@ -2,6 +2,24 @@
 Institutional Framework · Version 1.0 (Living Document)
 Drafted 2026-07-11 under founder brief · Constitutional basis: Stewardship Constitution, Article IV
 
+## Publication integrity
+
+### Organizational status
+
+Daanaa is currently a public interest initiative and a DBA of EcoMargins Consulting LLC, a for-profit entity. It is funded by the founder and operating with deliberately low overhead while the concept is tested. Daanaa does not process donations, hold donor funds, or take a percentage of gifts. This structure does not represent Daanaa as a nonprofit, tax-exempt organization, or charity-rating agency. Future structural options may be considered as the mission, resources, and community review develop.
+
+
+This is a directed by the founder governance draft, prepared with editorial
+assistance. It states obligations and proposed controls; it is not evidence
+that every control has been implemented. Before publication, each operational
+claim should be checked against the system register, code, tests, and records.
+Any later use of this framework should preserve the distinction between a
+governance commitment and a demonstrated practice.
+
+## Publication status
+
+This is an institutional framework draft. The obligations are adopted direction; the implementation statements below must be verified against code, tests, and operating records before they are presented as complete.
+
 ## Why This Framework Exists
 
 Most AI governance is written as compliance: a list of rules, a checklist,
@@ -26,6 +44,14 @@ beyond correction, or beyond being switched off; and none may be tuned,
 openly or quietly, to serve any interest other than the mission.
 
 Everything below is an elaboration of that article.
+
+This approach is consistent with the [NIST AI Risk Management Framework
+1.0](https://doi.org/10.6028/NIST.AI.100-1), which treats trustworthy AI as a
+continuous process of governing, mapping, measuring, and managing risk. NIST
+also identifies accountability, transparency, explainability, privacy, and
+fairness as relevant trustworthiness characteristics. Daanaa's framework is
+more specific to nonprofit discovery and stewardship, but it should remain
+compatible with that broader discipline.
 
 ## The Central Commitment
 
@@ -96,7 +122,7 @@ half a correction.
 
 ### 6. Appeals
 
-Anyone affected by an AI-assisted judgment may appeal it to a human, and the
+Anyone affected by an prepared with AI assistance judgment may appeal it to a human, and the
 appeal is heard by a person with the authority to overturn the machine. No
 one is ever told, in effect, "the system says so." The existence of an
 appeal path is not an admission that the systems are weak; it is the
@@ -132,15 +158,31 @@ This ordering is absolute and is the one part of this framework that may
 never be reasoned around: reasoning systems are trusted to reason within
 the constitution, not about whether to keep it.
 
+## Operational Controls
+
+The framework becomes real through a small set of auditable controls:
+
+- Maintain an AI system register with purpose, owner, model or source, input and output data classes, affected people, disclosure, correction path, and review date.
+- Assign risk levels to drafting, classification, public description, financial context, recommendations, and external communication.
+- Require named human approval before consequential public output, record changes, or external communication.
+- Preserve source, assumptions, confidence, uncertainty, and decision history wherever they materially affect an output.
+- Test coverage for AI disclosure, correction paths, prompt injection, protected-data externalization, and prohibited influence.
+- Record incidents, near misses, appeals, and shutdown decisions in institutional memory.
+- Review each system after material model, data, policy, or product changes.
+- Retire or disable any system that cannot meet its owner, provenance, privacy, or correction obligations.
+
+These controls are the target operating standard. Their implementation status must be tracked separately in the AI system register and validation reports.
+
 ## Fail-Closed by Design
 
 Daanaa's systems are built so that the safe state is the default state.
-Output that cannot be verified is discarded, never displayed. A donation
-link that cannot be confirmed healthy is withheld rather than published. A
-score that cannot be computed from evidence is absent rather than
-approximated. When a system is uncertain whether an action is within its
-mandate, the action does not happen. It costs the institution some speed.
-It has already saved the institution its integrity more than once.
+The intended safe state is clear: output that cannot be verified should not be
+presented as fact, a donation link that cannot be confirmed healthy should be
+withheld, and a score that cannot be computed from evidence should be absent
+rather than approximated. When a system is uncertain whether an action is
+within its mandate, it should stop for human review. These are operating
+requirements to be tested and evidenced, not claims that every safeguard is
+already complete.
 
 ## Why This Strengthens Rather Than Obsoletes
 
@@ -170,4 +212,5 @@ Governance of reasoning systems is itself a stewardship. It is held for the
 organizations we describe, the givers we serve, and the generations who will
 inherit both our systems and our records of how we governed them.
 
-The work continues.
+The work continues, and the framework must remain answerable to the people
+and organizations affected by it.

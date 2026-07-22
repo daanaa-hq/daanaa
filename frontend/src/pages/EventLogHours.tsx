@@ -43,6 +43,9 @@ export default function EventLogHours() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [addedToWallet, setAddedToWallet] = useState<Set<string>>(new Set())
+  // Server submission ids per org EIN — links each wallet record to its
+  // volunteer_hours row so approval status can be reflected later.
+  const [submissionByEin, setSubmissionByEin] = useState<Record<string, string>>({})
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -112,6 +115,11 @@ export default function EventLogHours() {
       })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(body.error || 'Failed to submit hours')
+      const byEin: Record<string, string> = {}
+      for (const s of body.submissions ?? []) {
+        if (s.ein && s.submission_id) byEin[s.ein] = s.submission_id
+      }
+      setSubmissionByEin(byEin)
       setSubmitted(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit hours')
@@ -121,7 +129,16 @@ export default function EventLogHours() {
   }
 
   function addToWallet(ein: string, hours: number) {
-    logVolunteerHours(ein, hours, new Date().toISOString().slice(0, 10), notes.trim() || undefined, true)
+    // Date is the event's SERVICE date, not today. The link marks this entry
+    // "Submitted for review" and stops the wallet from creating its own
+    // impact record — the server creates the one aggregate record if and when
+    // the nonprofit approves.
+    const submissionId = submissionByEin[ein]
+    logVolunteerHours(
+      ein, hours, info?.event_date ?? new Date().toISOString().slice(0, 10),
+      notes.trim() || undefined, false,
+      submissionId ? { submissionId, eventId: info?.event_id } : undefined,
+    )
     setAddedToWallet(prev => new Set(prev).add(ein))
   }
 
@@ -163,7 +180,12 @@ export default function EventLogHours() {
                 <div key={a.ein} className="flex items-center justify-between gap-3 p-3 bg-light-grey/30 rounded-xl">
                   <div className="text-left">
                     <p className="font-body text-[13px] font-semibold text-deep-navy">{org?.name}</p>
-                    <p className="font-body text-[12px] text-cool-grey">{a.hours} hours</p>
+                    <p className="font-body text-[12px] text-cool-grey">
+                      {a.hours} hours · {info?.event_date}
+                      <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-semibold align-middle">
+                        Pending review
+                      </span>
+                    </p>
                   </div>
                   <button
                     onClick={() => addToWallet(a.ein, parseFloat(a.hours))}
@@ -178,7 +200,9 @@ export default function EventLogHours() {
           </div>
 
           <p className="font-body text-[11px] text-cool-grey">
-            Your Giving Wallet keeps a private record of every hour you volunteer, across every organization.
+            Your Giving Wallet keeps a private record of every hour you volunteer.
+            Tracked hours show as "Submitted" until the organization reviews them —
+            your wallet updates automatically once they decide.
           </p>
         </div>
       </div>

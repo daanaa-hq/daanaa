@@ -1928,6 +1928,12 @@ _STATIC_META = {
         'Public data on U.S. nonprofit financial health across sectors. '
         'Drawn from IRS Form 990 filings. Context, not rankings.',
     ),
+    'open-data': (
+        'Open Data and AI Access — Daanaa',
+        'Machine-readable entry points for Daanaa: directory, methodology, '
+        'research, sitemap, llms.txt, and open data export links for search '
+        'engines and AI systems.',
+    ),
     'wallet': (
         'Giving Wallet — Daanaa',
         'Your private bookmarks and giving notes. Stored on your device by default. '

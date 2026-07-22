@@ -2,7 +2,7 @@ import React, {
   createContext, useContext, useReducer, useCallback,
   useEffect, useRef, useState,
 } from 'react'
-import type { WalletEntry, GivingIntent, WalletContextType, LoggedDonation, LoggedVolunteerHours, RecurringTemplate } from '../types/wallet'
+import type { WalletEntry, GivingIntent, WalletContextType, LoggedDonation, LoggedVolunteerHours, RecurringTemplate, VolunteerHoursStatus, VolunteerSubmissionLink } from '../types/wallet'
 import { isValidWalletEntry, isLegacyWalletV1 } from '../types/wallet'
 import { validateGivingIntent, logValidationError } from '../utils/walletValidation'
 import {
@@ -47,6 +47,7 @@ type Action =
   | { type: 'UPDATE_INTENT'; ein: string; intent: GivingIntent }
   | { type: 'LOG_DONATION'; ein: string; donation: LoggedDonation }
   | { type: 'LOG_VOLUNTEER_HOURS'; ein: string; hours: LoggedVolunteerHours }
+  | { type: 'UPDATE_VOLUNTEER_STATUS'; submissionId: string; status: VolunteerHoursStatus; rejectionReason?: string; serviceDate?: string }
   | { type: 'UPDATE_DONATION_LETTER_STATUS'; ein: string; donationId: string; status: LoggedDonation['letterStatus'] }
   | { type: 'SET_RECURRING'; ein: string; template: RecurringTemplate }
   | { type: 'CLEAR_RECURRING'; ein: string }
@@ -132,12 +133,57 @@ function reducer(state: State, action: Action): State {
     }
     case 'LOG_VOLUNTEER_HOURS': {
       const idx = state.entries.findIndex(e => e.ein === action.ein)
-      if (idx === -1) return state
+      // First contact with this org (e.g. "Track in Wallet" from an event page):
+      // create the entry instead of silently dropping the hours.
+      if (idx === -1) {
+        return {
+          ...state,
+          entries: [...state.entries, {
+            ein: action.ein, bookmarkedAt: Date.now(), inVolunteering: true,
+            volunteerHours: [action.hours],
+          }],
+        }
+      }
       const next = [...state.entries]
       const entry = { ...next[idx] }
-      entry.volunteerHours = [...(entry.volunteerHours || []), action.hours]
+      // Dedupe on server submission id — tracking the same event submission
+      // twice must update the existing record, never append a second one.
+      const existing = action.hours.submissionId
+        ? (entry.volunteerHours || []).findIndex(v => v.submissionId === action.hours.submissionId)
+        : -1
+      if (existing !== -1) {
+        const updated = [...entry.volunteerHours!]
+        updated[existing] = { ...updated[existing], ...action.hours, id: updated[existing].id }
+        entry.volunteerHours = updated
+      } else {
+        entry.volunteerHours = [...(entry.volunteerHours || []), action.hours]
+      }
       next[idx] = entry
       return { ...state, entries: next }
+    }
+    case 'UPDATE_VOLUNTEER_STATUS': {
+      // Move an event-linked entry between submitted/approved/rejected as the
+      // nonprofit reviews it. Matched by submissionId across all orgs.
+      let changed = false
+      const entries = state.entries.map(e => {
+        if (!e.volunteerHours?.some(v => v.submissionId === action.submissionId)) return e
+        changed = true
+        return {
+          ...e,
+          volunteerHours: e.volunteerHours.map(v =>
+            v.submissionId === action.submissionId
+              ? {
+                  ...v,
+                  status: action.status,
+                  rejectionReason: action.rejectionReason,
+                  ...(action.serviceDate ? { date: action.serviceDate } : {}),
+                  statusCheckedAt: new Date().toISOString(),
+                }
+              : v
+          ),
+        }
+      })
+      return changed ? { ...state, entries } : state
     }
     case 'SET_RECURRING': {
       const idx = state.entries.findIndex(e => e.ein === action.ein)
@@ -528,20 +574,56 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const logVolunteerHours = useCallback((ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean) => {
+  const logVolunteerHours = useCallback((ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean, link?: VolunteerSubmissionLink) => {
     const entry: LoggedVolunteerHours = {
       id: `vol_${uuid()}`,
       hours,
       date,
       notes,
       helpedDaanaa: helpedDaanaa ?? false,
+      ...(link ? { status: 'submitted' as const, submissionId: link.submissionId, eventId: link.eventId } : {}),
     }
     dispatch({ type: 'LOG_VOLUNTEER_HOURS', ein, hours: entry })
-    // Auto-sync if opted in
-    if (helpedDaanaa) {
+    // Auto-sync private logs if opted in. Event-linked submissions are NEVER
+    // synced from the wallet: the server creates the single aggregate impact
+    // record when the nonprofit approves — syncing here would double-count.
+    if (helpedDaanaa && !link) {
       syncImpactLog(entry, 'volunteer', ein).catch(e => console.error('Failed to sync impact log:', e))
     }
   }, [])
+
+  // Refresh approval status of event-linked hours. Sends only submission ids
+  // (unguessable capability tokens) — no name, email, or account identity —
+  // and receives status + service date only.
+  const refreshVolunteerStatuses = useCallback(async () => {
+    const pending: string[] = []
+    for (const e of state.entries) {
+      for (const v of e.volunteerHours ?? []) {
+        if (v.submissionId && v.status === 'submitted') pending.push(v.submissionId)
+      }
+    }
+    if (pending.length === 0) return
+    try {
+      // Server caps at 20 ids per request
+      for (let i = 0; i < pending.length; i += 20) {
+        const batch = pending.slice(i, i + 20)
+        const res = await fetch(`${getApiBase()}/api/volunteer/submissions/status?ids=${batch.join(',')}`)
+        if (!res.ok) return
+        const data = await res.json()
+        for (const s of data.submissions ?? []) {
+          if (s.status === 'approved' || s.status === 'rejected') {
+            dispatch({
+              type: 'UPDATE_VOLUNTEER_STATUS',
+              submissionId: s.id,
+              status: s.status as VolunteerHoursStatus,
+              rejectionReason: s.rejection_reason ?? undefined,
+              serviceDate: s.service_date ?? undefined,
+            })
+          }
+        }
+      }
+    } catch { /* offline is fine — statuses refresh next time */ }
+  }, [state.entries])
 
   const mergeRemoteEntries = useCallback((entries: WalletEntry[]) => {
     dispatch({ type: 'MERGE_REMOTE', entries })
@@ -607,7 +689,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       addToFunding, addToVolunteering, removeFromFunding, removeFromVolunteering,
       isInFunding, isInVolunteering,
       updateIntent,
-      logDonation, logVolunteerHours, getDonations, getVolunteerHours, updateDonationLetterStatus,
+      logDonation, logVolunteerHours, getDonations, getVolunteerHours, refreshVolunteerStatuses, updateDonationLetterStatus,
       setRecurringTemplate, clearRecurringTemplate, snoozeRecurringTemplate,
       mergeRemoteEntries,
       isInWallet, getIntent, isUnlocked: state.encKey !== null,

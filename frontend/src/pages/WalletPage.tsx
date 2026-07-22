@@ -30,6 +30,31 @@ interface FilterState {
   health: FilterHealth
 }
 
+// Approval status chip for event-submitted volunteer hours. Absent status =
+// private log (no chip — private is the quiet default, not a state to label).
+// "Approved" is always framed as nonprofit-approved, never Daanaa-verified.
+function VolunteerStatusChip({ status, rejectionReason }: { status?: string; rejectionReason?: string }) {
+  if (!status || status === 'private') return null
+  const styles: Record<string, string> = {
+    submitted: 'bg-amber-100 text-amber-800',
+    approved: 'bg-emerald-100 text-emerald-700',
+    rejected: 'bg-red-100 text-red-700',
+  }
+  const labels: Record<string, string> = {
+    submitted: 'Submitted for review',
+    approved: 'Nonprofit approved',
+    rejected: 'Not approved',
+  }
+  return (
+    <span
+      className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles[status] ?? 'bg-light-grey text-cool-grey'}`}
+      title={status === 'rejected' && rejectionReason ? rejectionReason : undefined}
+    >
+      {labels[status] ?? status}
+    </span>
+  )
+}
+
 export default function WalletPage() {
   usePageMeta(
     'Your Giving Wallet | Daanaa',
@@ -46,7 +71,15 @@ export default function WalletPage() {
     migrationData,
     applyMigration,
     dismissMigration,
+    refreshVolunteerStatuses,
   } = useWallet()
+
+  // On open, refresh approval status of any event-submitted volunteer hours
+  // (submission-id lookup only — no identity leaves the device).
+  useEffect(() => {
+    refreshVolunteerStatuses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Org data hydration — batch-fetch live org data for each entry
   const [orgDataMap, setOrgDataMap] = useState<Map<string, ApiOrganization>>(new Map())
@@ -540,6 +573,7 @@ export default function WalletPage() {
                               <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
                                 <span className="text-cool-grey font-medium w-[90px] shrink-0">{v.date}</span>
                                 <span className="font-semibold text-red-600">{v.hours}h</span>
+                                <VolunteerStatusChip status={v.status} rejectionReason={v.rejectionReason} />
                                 {v.notes && <span className="text-cool-grey truncate">{v.notes}</span>}
                               </div>
                             ))}
@@ -653,6 +687,7 @@ export default function WalletPage() {
                             <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
                               <span className="text-cool-grey font-medium w-[90px] shrink-0">{v.date}</span>
                               <span className="font-semibold text-red-600">{v.hours}h</span>
+                              <VolunteerStatusChip status={v.status} rejectionReason={v.rejectionReason} />
                               {v.notes && <span className="text-cool-grey truncate">{v.notes}</span>}
                             </div>
                           ))}

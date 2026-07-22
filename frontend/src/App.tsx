@@ -60,9 +60,14 @@ const AdminOperations = lazy(() => import('./pages/AdminOperations'))
 const VolunteerApproval = lazy(() => import('./pages/nonprofit/VolunteerApproval'))
 const VolunteerEventsPage = lazy(() => import('./pages/nonprofit/VolunteerEventsPage'))
 const VolunteerImpactPage = lazy(() => import('./pages/nonprofit/VolunteerImpactPage'))
+const DashboardOverview = lazy(() => import('./pages/nonprofit/DashboardOverview'))
+const ProfileEditor = lazy(() => import('./pages/nonprofit/ProfileEditor'))
+const DonorPerspectivePreview = lazy(() => import('./pages/nonprofit/DonorPerspectivePreview'))
+const ReportingPack = lazy(() => import('./pages/nonprofit/ReportingPack'))
 const EventLogHours = lazy(() => import('./pages/EventLogHours'))
 const VolunteerSubmission = lazy(() => import('./pages/VolunteerSubmission'))
 const DonationReceipt = lazy(() => import('./pages/DonationReceipt'))
+const DonorFeedback = lazy(() => import('./pages/DonorFeedback'))
 const GuildPage = lazy(() => import('./pages/GuildPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const PilotSignup = lazy(() => import('./pages/PilotSignup'))
@@ -139,6 +144,7 @@ export default function App() {
             <Route path="/volunteer/submit" element={<VolunteerSubmission />} />
             <Route path="/events/:eventId" element={<EventDetailPage />} />
             <Route path="/donation/receipt" element={<DonationReceipt />} />
+            <Route path="/feedback" element={<DonorFeedback />} />
             <Route path="/research" element={<ResearchDashboard />} />
             <Route path="/open-data" element={<OpenData />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -151,6 +157,10 @@ export default function App() {
           <Route path="/nonprofit/letters/signup" element={<NonprofitSignup />} />
           <Route element={<NonprofitRoute />}>
             <Route path="/nonprofit/my-orgs" element={<MyOrgsPage />} />
+            <Route path="/nonprofit/overview/:ein" element={<DashboardOverview />} />
+            <Route path="/nonprofit/profile/:ein" element={<ProfileEditor />} />
+            <Route path="/nonprofit/preview/:ein" element={<DonorPerspectivePreview />} />
+            <Route path="/nonprofit/report/:ein" element={<ReportingPack />} />
             <Route path="/nonprofit/dashboard/:ein" element={<NonprofitDashboardPage />} />
           <Route path="/nonprofit/my-dashboard" element={<SelfDiscoveryDashboard />} />
             <Route path="/nonprofit/volunteer-approval/:ein" element={<VolunteerApproval />} />

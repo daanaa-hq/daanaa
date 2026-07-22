@@ -169,7 +169,7 @@ export default function MyOrgsPage() {
       }
       const token = await getPortalToken(ein, idToken)
       const path = destination === 'dashboard'
-        ? `/nonprofit/dashboard/${encodeURIComponent(ein)}`
+        ? `/nonprofit/overview/${encodeURIComponent(ein)}`
         : `/claim/edit?ein=${encodeURIComponent(ein)}&token=${encodeURIComponent(token)}`
       navigate(path)
     } catch {

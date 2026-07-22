@@ -92,6 +92,8 @@ cat > "$CRONTAB_TMP" << 'CRON'
 0 6 1 * * cd /home/akbar/meritgiving && venv/bin/python3 scripts/ai_output_sample_audit.py >> logs/ai_audit/cron.log 2>&1
 
 # ---------- Weekly ----------
+# Public visibility monitor every 48 hours; report-only, no deploy or external communication
+20 6 */2 * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 visibility/scripts/build_weekly_visibility_monitor.py >> logs/visibility/monitor_cron.log 2>&1
 # Token review: Mondays 08:00
 0 8 * * 1 bash /home/akbar/meritgiving/scripts/ops/token_review.sh >> /home/akbar/meritgiving/logs/token_review/cron.log 2>&1
 CRON

@@ -14,13 +14,35 @@ export interface LoggedDonation {
   helpedDaanaa?: boolean  // one-way: once true, permanent. indicates opt-in to impact tracking
 }
 
+// Approval status of a volunteer hours entry.
+//  'private'   — logged only in this wallet, never sent anywhere (the default)
+//  'submitted' — sent to the nonprofit via an event QR/link, awaiting review
+//  'approved'  — the nonprofit approved it (nonprofit-approved, NOT Daanaa-verified)
+//  'rejected'  — the nonprofit declined it
+export type VolunteerHoursStatus = 'private' | 'submitted' | 'approved' | 'rejected'
+
 // LoggedVolunteerHours — actual hours logged by volunteer
 export interface LoggedVolunteerHours {
   id: string
   hours: number
-  date: string  // ISO date
+  date: string  // ISO date — always the SERVICE date (the day volunteered), never the day it was logged
   notes?: string
   helpedDaanaa?: boolean  // one-way: once true, permanent. indicates opt-in to impact tracking
+  // Server linkage — present only when this entry mirrors an event submission.
+  // Absent status means 'private'. For linked entries the server owns the
+  // public impact record (created once, on nonprofit approval) — the wallet
+  // never syncs these to /api/impact/log, or the hours would count twice.
+  status?: VolunteerHoursStatus
+  submissionId?: string   // volunteer_hours.id on the server (capability token)
+  eventId?: number        // volunteer_events.id
+  rejectionReason?: string
+  statusCheckedAt?: string  // ISO timestamp of last status refresh
+}
+
+/** Link data connecting a wallet entry to its server-side event submission. */
+export interface VolunteerSubmissionLink {
+  submissionId: string
+  eventId?: number
 }
 
 /** The normalized wallet entry. Tracks bookmarks + actual activity. */
@@ -102,9 +124,12 @@ export interface WalletContextType {
   isInVolunteering: (ein: string) => boolean
   // Logging actual giving/volunteering
   logDonation: (ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean) => void
-  logVolunteerHours: (ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean) => void
+  logVolunteerHours: (ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean, link?: VolunteerSubmissionLink) => void
   getDonations: (ein: string) => LoggedDonation[] | undefined
   getVolunteerHours: (ein: string) => LoggedVolunteerHours[] | undefined
+  // Refresh approval status of event-linked volunteer hours from the server
+  // (submission-id capability lookup; no identity is sent or returned)
+  refreshVolunteerStatuses: () => Promise<void>
   updateDonationLetterStatus: (ein: string, donationId: string, status: LoggedDonation['letterStatus']) => void
   // Recurring giving rhythm (device-only; powers "give again" nudges)
   setRecurringTemplate: (ein: string, template: RecurringTemplate) => void
