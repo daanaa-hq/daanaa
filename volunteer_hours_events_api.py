@@ -215,6 +215,54 @@ def event_log_hours_submit(short_id: str):
     }), 201
 
 
+# ── Nonprofit: full list with status filter (all/pending/approved/rejected) ──
+
+@volunteer_hours_events_bp.route('/api/nonprofit/<ein>/volunteer/list', methods=['GET'])
+def nonprofit_volunteer_list(ein: str):
+    """Firebase-auth: list volunteer hour submissions for the org's dashboard,
+    filterable by status. Complements the older /volunteer/pending endpoint
+    (which only returns confirmed+pending) with full history for the
+    approval dashboard's All/Approved/Rejected tabs."""
+    from daanaa_api import _require_firebase_user
+
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = _get_db()
+    claim = db.execute(
+        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
+        (ein, uid),
+    ).fetchone()
+    if not claim:
+        return jsonify({'error': 'You do not own this nonprofit'}), 403
+
+    status = (request.args.get('status') or 'all').lower()
+    valid_statuses = {'all', 'pending', 'confirmed', 'approved', 'rejected'}
+    if status not in valid_statuses:
+        status = 'all'
+
+    if status == 'all':
+        rows = db.execute(
+            '''SELECT id, volunteer_name, volunteer_email, hours, service_date,
+                      activity_description, task_type, status, submitted_at,
+                      submitted_via, locked_at, edit_count
+               FROM volunteer_hours WHERE nonprofit_ein=? ORDER BY submitted_at DESC LIMIT 500''',
+            (ein,),
+        ).fetchall()
+    else:
+        rows = db.execute(
+            '''SELECT id, volunteer_name, volunteer_email, hours, service_date,
+                      activity_description, task_type, status, submitted_at,
+                      submitted_via, locked_at, edit_count
+               FROM volunteer_hours WHERE nonprofit_ein=? AND status=? ORDER BY submitted_at DESC LIMIT 500''',
+            (ein, status),
+        ).fetchall()
+
+    return jsonify({'records': [dict(r) for r in rows]})
+
+
 # ── Nonprofit: edit within 30-day window ─────────────────────────────────────
 
 @volunteer_hours_events_bp.route('/api/nonprofit/<ein>/volunteer/<hour_id>/edit', methods=['PATCH'])
