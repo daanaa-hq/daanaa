@@ -139,6 +139,15 @@ fi
 
 echo "$TIMESTAMP INFO offsite push verified ($OFFSITE_FILES files on Google Drive)"
 
+# ── Secondary offsite: mirror to S3 (defense in depth, second cloud provider) ─
+# Best-effort: Google Drive above is the required, verified offsite copy.
+# A transient S3/AWS issue here is logged loudly but does not fail the whole
+# nightly backup — the primary backup already succeeded.
+echo "$TIMESTAMP INFO mirroring backups to S3 (secondary offsite)..."
+if ! "$HOME/meritgiving/venv/bin/python3" "$HOME/meritgiving/scripts/s3_mirror_backups.py" 2>&1 | tee -a "$ERRORLOG"; then
+  echo "$TIMESTAMP WARNING S3 mirror failed — Google Drive offsite copy is still intact" | tee -a "$ERRORLOG"
+fi
+
 # ── Success ────────────────────────────────────────────────────────────────
 CRIT_HUMAN=$(ls -lh "$OUT/critical/critical_$STAMP.sql.gz" | awk '{print $5}')
 echo "$TIMESTAMP SUCCESS backup complete: critical=${CRIT_HUMAN}, offsite=pushed, all verifications passed"
