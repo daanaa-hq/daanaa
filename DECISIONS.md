@@ -1,3 +1,67 @@
+## 2026-07-22 — Volunteer hours: nonprofit self-service events, not a nonprofit-entry model
+
+**Chose:** Built self-service volunteer hour submission tied to events (QR/short-link,
+`volunteer_hours_events_api.py`) rather than extending the existing nonprofit-pre-enters-then-
+volunteer-confirms flow (`/api/nonprofit/<ein>/volunteer/submit` + `/api/volunteer/claim`).
+The existing flow requires nonprofit staff to type in every volunteer's info by hand before the
+volunteer can even confirm it — fine for a handful of letter-request-style entries, unworkable
+for a 50-person golf tournament. New flow: volunteer scans a QR code at the event, submits their
+own name/hours/task directly (no account), nonprofit approves afterward in the existing
+`volunteer_hours` table (added `event_id`, `task_type`, `submitted_via`, `locked_at`,
+`edit_count` columns rather than a new parallel table). Supports coalition events (one
+submission split across co-hosting orgs via `co_org_eins`).
+
+Approved hours bridge into `impact_logs` (anonymized: ein/hours/date only, no name/email) so
+they roll into the existing `/api/impact/community-stats` platform totals — this also surfaced
+and fixed a real schema drift where the impact_logs table didn't have the columns the API/
+aggregator code expected, so that pipeline had been silently writing nothing.
+
+**Why:** Founder directive: "make it a common practice for nonprofits to collaborate," "Wallet
+remains the backbone." Self-service submission plus a direct Wallet CTA (`logVolunteerHours`)
+after each submission ties every hour logged back to the user's personal, cross-device wallet
+record — the nonprofit-entry flow had no path back to the Wallet at all.
+
+**Rejected:** A fully separate volunteer-hours table/system — the existing `volunteer_hours`
+table (already live with 106 rows, already wired to a — mostly broken — approval dashboard)
+was the right foundation; extending it kept one source of truth instead of two.
+
+## 2026-07-22 — S3 as a second offsite backup target, not a parallel pipeline
+
+**Chose:** Added `scripts/s3_mirror_backups.py`, called as the last step of the existing
+`scripts/ops/daanaa_backup.sh`, to mirror whatever that script already produced (weekly full
+backup, nightly critical-table dump) to S3. Started by building a wholly separate backup-
+taking-and-uploading script before checking whether offsite backup already existed — it did:
+`daanaa_backup.sh` has pushed full weekly backups to Google Drive via rclone every night for
+weeks, verified. Deleted the standalone script and wired the lightweight mirror step in instead.
+
+**Why:** Two independent cloud providers (Google Drive + S3) is real defense in depth for near-
+zero incremental cost, without doubling the backup-taking work or maintaining two systems that
+could drift out of sync. Runs best-effort (logs loudly on failure, doesn't fail the whole
+nightly job) since Google Drive is the already-verified required copy.
+
+**Rejected:** A standalone S3-only backup script (redundant with proven code); making S3 a hard
+requirement (would turn a transient AWS blip into a false nightly-backup failure alert).
+
+## 2026-07-21 — Mission generation batch: Qwen3 30B A3B, 23,359 orgs, accuracy validated
+
+**Chose:** Launched mission-generation batch (21:38 UTC) using Qwen3 30B A3B A3B model via model_router
+on port 11440, targeting 23,359 orgs with generic/missing missions and cached website content. Accuracy
+pre-validated (10-org batch including thin-content case): Qwen3 produces higher-quality, more grounded
+missions than the prior Qwen2.5-14B-Instruct (better rule adherence, fewer hallucinations, stronger verbs).
+
+Scope decision: Founder chose to skip thin-content orgs (~2,300 with <400 chars visible text after stripping
+HTML) in principle, but the `--regen-generic-with-site` script doesn't have built-in content-length filtering,
+so all 23,359 are being processed. Impact: low (thin-content is 10% of batch, and Qwen3 accuracy validation
+confirmed it handles thin-content reasonably). Post-run QA will flag any egregious hallucinations.
+
+**Why:** Qwen3 30B A3B is 6× faster than Qwen2.5-32B (178 vs 29 tok/s), produces better output (validated),
+and this is production work (not speculative) — worth the 13-hour investment. Model router enables flexible
+model choice per task without rewriting scripts. Accuracy gate (thin-content hallucination test) passed
+before batch launch.
+
+**Rejected:** Using Qwen2.5-32B (too slow), or delaying for perfect thin-content filtering (script limitation
+is minor given 10% scope and quality validation already done).
+
 ## 2026-07-21 — Graphify audit: 5 dead files archived (30-day recall), 3 US_STATES copies deduped
 
 **Chose:** Installed `/graphify` (third-party knowledge-graph tool, YC-backed, pipx-installed,

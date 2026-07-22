@@ -1,3 +1,25 @@
+## 2026-07-22 — 16.5GB WAL file + 88GB of dead backup copies on the home server
+
+**Symptom:** Founder flagged "droplet isn't sustainable long term" (disk was at 75%). Investigation
+found the home server's `merit_registry.db-wal` had grown to 16.5GB — larger than the 15GB main
+database file — plus ~88GB of `.corrupted-*`/`.bak-*`/`.test` copies in `data/` and ~33GB of stale
+`.deploy_scratch/`+`tmp/restore_drill_*` artifacts from completed one-off operations.
+
+**Root cause:** WAL checkpoints weren't completing (likely blocked by a long-held read transaction
+from a background batch job), so the WAL never truncated back down despite the default
+autocheckpoint setting. The corrupted-copy files dated to the 2026-07-07 scare that LESSONS.md
+already documented as a false alarm (see the 2026-06-02 entry on this page) — they were never
+cleaned up after the incident closed. The `.bak-*` files came from an old, separate backup
+mechanism (not `scripts/ops/daanaa_backup.sh`, which already prunes correctly) that had no
+retention logic at all.
+
+**Preventing rule:** `PRAGMA wal_checkpoint(TRUNCATE)` is safe to run against a live database with
+active gunicorn connections — SQLite's checkpoint API is designed for exactly this. If a WAL file
+is ever larger than the main DB file, that's the signal to checkpoint, not to panic. And: verify a
+backup/offsite system actually exists (check cron + the target, e.g. `rclone ls`) before building a
+new one — a five-minute check here would have skipped an entirely redundant S3 backup pipeline
+that got built and then had to be deleted (see DECISIONS.md 2026-07-22).
+
 ## 2026-07-21 — Built a CN scraper that already existed (and better) — grep before building
 
 **Symptom:** Spent effort building a standalone Charity Navigator website scraper
