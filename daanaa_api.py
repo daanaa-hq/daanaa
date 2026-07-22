@@ -6,22 +6,25 @@ Serves registry_enriched + v4 scores to frontend
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets, logging, sys
 import urllib.parse
 from math import radians, cos, sin, asin, sqrt
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from difflib import get_close_matches
 
 # Sentry error tracking — activate by setting SENTRY_DSN env var.
-import sentry_sdk
-_sentry_dsn = os.environ.get("SENTRY_DSN", "")
-if _sentry_dsn:
-    sentry_sdk.init(
-        dsn=_sentry_dsn,
-        traces_sample_rate=0.1,   # 10% of requests traced
-        profiles_sample_rate=0.05,
-        environment=os.environ.get("DAANAA_ENV", "production"),
-        release=os.environ.get("GIT_COMMIT", "unknown"),
-        # Never capture PII — no user emails, IPs, or request bodies in Sentry
-        send_default_pii=False,
-    )
+try:
+    import sentry_sdk
+    _sentry_dsn = os.environ.get("SENTRY_DSN", "")
+    if _sentry_dsn:
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            traces_sample_rate=0.1,   # 10% of requests traced
+            profiles_sample_rate=0.05,
+            environment=os.environ.get("DAANAA_ENV", "production"),
+            release=os.environ.get("GIT_COMMIT", "unknown"),
+            # Never capture PII — no user emails, IPs, or request bodies in Sentry
+            send_default_pii=False,
+        )
+except ImportError:
+    pass  # Sentry optional
 import numpy as np
 import requests as _http
 from flask import Flask, jsonify, request, g, abort, send_from_directory, Blueprint
@@ -1727,6 +1730,13 @@ try:
     app.register_blueprint(pilot_invitations_bp)
 except ImportError:
     pass  # Pilot invitations optional
+
+# Register volunteer hours events API (event-linked self-submission, impact, export)
+try:
+    from volunteer_hours_events_api import volunteer_hours_events_bp
+    app.register_blueprint(volunteer_hours_events_bp)
+except ImportError:
+    pass  # Volunteer hours events API optional
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -8863,10 +8873,26 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
         return jsonify({'error': 'You do not own this nonprofit'}), 403
 
     try:
+        row = db.execute(
+            'SELECT hours, service_date FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            (hour_id, ein)
+        ).fetchone()
+        if not row:
+            return jsonify({'error': 'Submission not found'}), 404
+
+        approved_at = datetime.now().isoformat()
         db.execute(
-            'UPDATE volunteer_hours SET status=?, approved_by=?, approved_at=? WHERE id=? AND nonprofit_ein=?',
-            ('approved', uid, datetime.now().isoformat(), hour_id, ein)
+            'UPDATE volunteer_hours SET status=?, approved_by=?, approved_at=?, '
+            'locked_at=? WHERE id=? AND nonprofit_ein=?',
+            ('approved', uid, approved_at,
+             (datetime.now() + timedelta(days=30)).isoformat(), hour_id, ein)
         )
+        try:
+            from volunteer_hours_events_api import _audit, _bridge_to_impact_logs
+            _audit(db, hour_id, 'approved', uid)
+            _bridge_to_impact_logs(db, ein, row['hours'], row['service_date'])
+        except ImportError:
+            pass  # volunteer_hours_events_api optional
         db.commit()
     except Exception as e:
         return jsonify({'error': f'Approval failed: {str(e)}'}), 500
@@ -8900,6 +8926,11 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
             'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND nonprofit_ein=?',
             ('rejected', uid, datetime.now().isoformat(), reason, hour_id, ein)
         )
+        try:
+            from volunteer_hours_events_api import _audit
+            _audit(db, hour_id, 'rejected', uid, {'reason': reason} if reason else None)
+        except ImportError:
+            pass  # volunteer_hours_events_api optional
         db.commit()
     except Exception as e:
         return jsonify({'error': f'Rejection failed: {str(e)}'}), 500
