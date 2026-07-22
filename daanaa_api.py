@@ -7527,6 +7527,30 @@ def nonprofit_verify_hours_action():
     }), 410
 
 
+# ── QA Testing Hub ──────────────────────────────────────────────────────────
+# Serves QA test documents, report templates, and submission form
+# Accessible at: https://daanaa.org/qa/
+
+@app.route('/qa', defaults={'path': ''})
+@app.route('/qa/<path:path>')
+def serve_qa(path):
+    """Serve QA testing hub: documents, credentials, and report submission."""
+    QA_DIR = '/opt/daanaa/qa'
+    if not os.path.exists(QA_DIR):
+        return jsonify({'error': 'QA hub not available'}), 404
+
+    # Default to index.html if no path
+    if not path:
+        return send_from_directory(QA_DIR, 'index.html')
+
+    # Serve requested file
+    if os.path.exists(os.path.join(QA_DIR, path)):
+        return send_from_directory(QA_DIR, path)
+
+    # File not found
+    abort(404)
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):

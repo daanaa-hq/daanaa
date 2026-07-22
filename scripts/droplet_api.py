@@ -2109,6 +2109,72 @@ def voice_support_inbound():
     return twiml, 200, {'Content-Type': 'application/xml'}
 
 
+# ── Public Profile Sources ───────────────────────────────────────────────────
+# Show data sources and provenance for nonprofit profiles (public endpoint)
+
+@app.route('/api/public/nonprofit/<ein>/profile/sources', methods=['GET'])
+def public_profile_sources(ein: str):
+    """Public: Show data sources and provenance for nonprofit profile."""
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean:
+        return jsonify({'error': 'Invalid EIN format'}), 400
+
+    try:
+        db = get_search_db()
+        if not db:
+            return jsonify({'error': 'Database unavailable'}), 503
+
+        org = db.execute(
+            "SELECT organization_name, mission FROM registry_enriched WHERE ein = ?",
+            (ein_clean,)
+        ).fetchone()
+
+        if not org:
+            return jsonify({'error': 'Organization not found'}), 404
+
+        org_name = org['organization_name']
+        mission = org['mission']
+
+        return jsonify({
+            'ein': ein_clean,
+            'organization_name': org_name,
+            'sources': {
+                'mission': {
+                    'value': mission,
+                    'source': 'IRS Form 990 via ProPublica'
+                },
+                'financial_data': {
+                    'source': 'IRS Form 990'
+                }
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': 'Internal server error', 'detail': str(e)}), 500
+
+
+# QA Testing Hub — serves test documents, credentials, and report submission form
+@app.route('/qa', defaults={'path': ''})
+@app.route('/qa/<path:path>')
+def serve_qa(path):
+    """Serve QA testing hub from /opt/daanaa/qa."""
+    QA_DIR = Path('/opt/daanaa/qa')
+    if not QA_DIR.exists():
+        return jsonify({'error': 'QA hub not available'}), 404
+
+    if not path:
+        qa_index = QA_DIR / 'index.html'
+        if qa_index.exists():
+            return send_file(str(qa_index))
+        return jsonify({'error': 'QA index not found'}), 404
+
+    # Serve requested file
+    qa_file = QA_DIR / path
+    if qa_file.exists() and qa_file.is_file():
+        return send_from_directory(str(QA_DIR), path)
+
+    return jsonify({'error': 'Not found'}), 404
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_spa(path):
