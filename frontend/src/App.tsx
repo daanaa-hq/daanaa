@@ -58,6 +58,9 @@ const VendorDashboardPage = lazy(() => import('./pages/vendor/VendorDashboardPag
 const NonprofitSignup = lazy(() => import('./components/NonprofitSignup'))
 const AdminOperations = lazy(() => import('./pages/AdminOperations'))
 const VolunteerApproval = lazy(() => import('./pages/nonprofit/VolunteerApproval'))
+const VolunteerEventsPage = lazy(() => import('./pages/nonprofit/VolunteerEventsPage'))
+const VolunteerImpactPage = lazy(() => import('./pages/nonprofit/VolunteerImpactPage'))
+const EventLogHours = lazy(() => import('./pages/EventLogHours'))
 const VolunteerSubmission = lazy(() => import('./pages/VolunteerSubmission'))
 const DonationReceipt = lazy(() => import('./pages/DonationReceipt'))
 const GuildPage = lazy(() => import('./pages/GuildPage'))
@@ -150,7 +153,9 @@ export default function App() {
             <Route path="/nonprofit/my-orgs" element={<MyOrgsPage />} />
             <Route path="/nonprofit/dashboard/:ein" element={<NonprofitDashboardPage />} />
           <Route path="/nonprofit/my-dashboard" element={<SelfDiscoveryDashboard />} />
-            <Route path="/nonprofit/volunteer-approval" element={<VolunteerApproval />} />
+            <Route path="/nonprofit/volunteer-approval/:ein" element={<VolunteerApproval />} />
+            <Route path="/nonprofit/events/:ein" element={<VolunteerEventsPage />} />
+            <Route path="/nonprofit/impact/:ein" element={<VolunteerImpactPage />} />
           </Route>
           <Route path="/vendor/login" element={<VendorLoginPage />} />
           <Route path="/vendor/dashboard" element={<VendorDashboardPage />} />
@@ -158,6 +163,7 @@ export default function App() {
           <Route path="/claim/edit" element={<OrgClaimEditor />} />
           <Route path="/claim/success" element={<ClaimSuccess />} />
           <Route path="/nonprofit/pilot-signup" element={<PilotSignup />} />
+          <Route path="/e/:shortId/log-hours" element={<EventLogHours />} />
           <Route path="/admin" element={<DashboardHub />} />
           <Route path="/admin/operations" element={<AdminOperations />} />
           <Route path="*" element={<NotFound />} />

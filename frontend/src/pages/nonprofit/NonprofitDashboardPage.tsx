@@ -6,7 +6,6 @@ import VolunteerInsightsCard from '../../components/VolunteerInsightsCard'
 import DonorCommunicationCard from '../../components/DonorCommunicationCard'
 import ImpactForecast from '../../components/ImpactForecast'
 import DonorMessagesCard from '../../components/DonorMessagesCard'
-import VolunteerExportButton from '../../components/VolunteerExportButton'
 import CreditPurchaseModal from '../../components/CreditPurchaseModal'
 
 interface LetterRequest {
@@ -194,10 +193,10 @@ export default function NonprofitDashboardPage() {
             </p>
             <p className="text-xs text-cool-grey font-semibold mb-4">Set up tracking for your team</p>
             <Link
-              to="/nonprofit/volunteer-approval"
+              to={`/nonprofit/volunteer-approval/${dashboard.nonprofit_ein}`}
               className="inline-block px-4 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors"
             >
-              Configure Now
+              Manage Hours
             </Link>
           </div>
 
@@ -341,17 +340,6 @@ export default function NonprofitDashboardPage() {
             {/* Donor Communication */}
             <div>
               <DonorMessagesCard nonprofitEin={dashboard.nonprofit_ein} authToken={getAuthToken()} />
-            </div>
-          </div>
-        </div>
-
-        {/* Volunteer Export */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-8">
-          <h2 className="font-display text-2xl italic text-deep-navy mb-4">Export Data</h2>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <p className="text-sm text-cool-grey mb-3">Download volunteer hours in multiple formats:</p>
-              <VolunteerExportButton nonprofitEin={dashboard.nonprofit_ein} authToken={getAuthToken()} format="csv" />
             </div>
           </div>
         </div>

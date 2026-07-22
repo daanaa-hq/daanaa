@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../../hooks/usePageMeta'
+import { useAuth } from '../../contexts/AuthContext'
+import { API_BASE } from '../../data/api'
 import VolunteerExportButton from '../../components/VolunteerExportButton'
 
 interface VolunteerRecord {
@@ -9,47 +12,44 @@ interface VolunteerRecord {
   hours: number
   service_date: string
   activity_description: string
-  status: 'pending' | 'verified' | 'rejected'
+  task_type: string | null
+  status: 'pending' | 'confirmed' | 'approved' | 'rejected'
   submitted_at: string
+  submitted_via: string
+  locked_at: string | null
 }
 
 export default function VolunteerApproval() {
-  usePageMeta('Volunteer Hours Approval | Daanaa', 'Review and verify volunteer hours for your organization')
+  const { ein } = useParams<{ ein: string }>()
+  const navigate = useNavigate()
+  const { getIdToken } = useAuth()
+  usePageMeta('Volunteer Hours Approval | Daanaa', 'Review and approve volunteer hours for your organization')
 
   const [records, setRecords] = useState<VolunteerRecord[]>([])
+  const [idToken, setIdToken] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState<'all' | 'pending' | 'verified' | 'rejected'>('pending')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending')
   const [approving, setApproving] = useState<string | null>(null)
   const [rejecting, setRejecting] = useState<string | null>(null)
   const [rejectionReason, setRejectionReason] = useState<Record<string, string>>({})
 
-  useEffect(() => {
-    fetchRecords()
-  }, [filter])
-
-  const fetchRecords = async () => {
+  const fetchRecords = useCallback(async () => {
+    if (!ein) return
     try {
       setLoading(true)
-      const accountId = localStorage.getItem('nonprofit_account_id')
-      const authToken = accountId || localStorage.getItem('nonprofit_auth_token')
-
-      if (!authToken) {
-        setError('Not authenticated. Please sign in.')
+      const token = await getIdToken()
+      if (!token) {
+        navigate('/nonprofit/login', { replace: true })
         return
       }
+      setIdToken(token)
 
-      const response = await fetch(`/api/nonprofit/volunteer-hours?status=${filter}`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
+      const statusParam = filter === 'pending' ? 'pending' : filter
+      const response = await fetch(`${API_BASE}/api/nonprofit/${ein}/volunteer/list?status=${statusParam}`, {
+        headers: { Authorization: `Bearer ${token}` },
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to load volunteer hours')
-      }
-
+      if (!response.ok) throw new Error('Failed to load volunteer hours')
       const data = await response.json()
       setRecords(data.records || [])
       setError(null)
@@ -58,27 +58,19 @@ export default function VolunteerApproval() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [ein, filter, getIdToken, navigate])
+
+  useEffect(() => { fetchRecords() }, [fetchRecords])
 
   const handleApprove = async (recordId: string) => {
     setApproving(recordId)
     try {
-      const authToken = localStorage.getItem('nonprofit_account_id') || localStorage.getItem('nonprofit_auth_token')
-      const response = await fetch(`/api/nonprofit/volunteer-hours/${recordId}/approve`, {
+      const response = await fetch(`${API_BASE}/api/nonprofit/${ein}/volunteer/${recordId}/approve`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { Authorization: `Bearer ${idToken}` },
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to approve volunteer hours')
-      }
-
-      setRecords(prev =>
-        prev.map(r => (r.id === recordId ? { ...r, status: 'verified' } : r))
-      )
+      if (!response.ok) throw new Error('Failed to approve volunteer hours')
+      setRecords(prev => prev.map(r => (r.id === recordId ? { ...r, status: 'approved' } : r)))
       setError(null)
     } catch (err) {
       setError((err as Error).message)
@@ -88,32 +80,15 @@ export default function VolunteerApproval() {
   }
 
   const handleReject = async (recordId: string) => {
-    if (!rejectionReason[recordId]) {
-      alert('Please provide a reason for rejection')
-      return
-    }
-
     setRejecting(recordId)
     try {
-      const authToken = localStorage.getItem('nonprofit_account_id') || localStorage.getItem('nonprofit_auth_token')
-      const response = await fetch(`/api/nonprofit/volunteer-hours/${recordId}/reject`, {
+      const response = await fetch(`${API_BASE}/api/nonprofit/${ein}/volunteer/${recordId}/reject`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          reason: rejectionReason[recordId],
-        }),
+        headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: rejectionReason[recordId] || '' }),
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to reject volunteer hours')
-      }
-
-      setRecords(prev =>
-        prev.map(r => (r.id === recordId ? { ...r, status: 'rejected' } : r))
-      )
+      if (!response.ok) throw new Error('Failed to reject volunteer hours')
+      setRecords(prev => prev.map(r => (r.id === recordId ? { ...r, status: 'rejected' } : r)))
       setRejectionReason(prev => {
         const next = { ...prev }
         delete next[recordId]
@@ -127,6 +102,8 @@ export default function VolunteerApproval() {
     }
   }
 
+  if (!ein) return null
+
   if (loading) {
     return (
       <div className="min-h-screen bg-soft-cream p-6 flex items-center justify-center">
@@ -135,50 +112,39 @@ export default function VolunteerApproval() {
     )
   }
 
-  const pendingCount = records.filter(r => r.status === 'pending').length
+  const pendingCount = records.filter(r => r.status === 'pending' || r.status === 'confirmed').length
 
   return (
     <div className="min-h-screen bg-soft-cream p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="font-display text-3xl text-deep-navy mb-2">Volunteer Hours Approval</h1>
-          <p className="text-cool-grey">Review and verify volunteer contributions</p>
+          <p className="text-cool-grey">Review and approve volunteer contributions. These are nonprofit-approved records, not Daanaa-verified.</p>
         </div>
 
-        {/* Error Alert */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">
-            {error}
-          </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">{error}</div>
         )}
 
-        {/* Filter Tabs */}
         <div className="bg-white rounded-lg p-4 mb-6 border border-light-grey flex gap-4 flex-wrap justify-between items-center">
           <div className="flex gap-4 flex-wrap">
-            {(['all', 'pending', 'verified', 'rejected'] as const).map(status => (
+            {(['all', 'pending', 'approved', 'rejected'] as const).map(status => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
                 className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                  filter === status
-                    ? 'bg-soft-gold text-deep-navy'
-                    : 'bg-light-grey text-cool-grey hover:bg-light-grey/70'
+                  filter === status ? 'bg-soft-gold text-deep-navy' : 'bg-light-grey text-cool-grey hover:bg-light-grey/70'
                 }`}
               >
-                {status === 'all' ? 'All Submissions' : status === 'pending' ? `Pending (${pendingCount})` : status === 'verified' ? 'Verified' : 'Rejected'}
+                {status === 'all' ? 'All Submissions' : status === 'pending' ? `Pending (${pendingCount})` : status === 'approved' ? 'Approved' : 'Rejected'}
               </button>
             ))}
           </div>
           <div className="w-full md:w-auto">
-            <VolunteerExportButton
-              nonprofitEin={localStorage.getItem('nonprofit_account_id') || ''}
-              authToken={localStorage.getItem('nonprofit_account_id') || localStorage.getItem('nonprofit_auth_token') || ''}
-            />
+            <VolunteerExportButton nonprofitEin={ein} idToken={idToken} />
           </div>
         </div>
 
-        {/* Records List */}
         <div className="space-y-4">
           {records.length === 0 ? (
             <div className="bg-white rounded-lg p-8 text-center border border-light-grey">
@@ -195,9 +161,9 @@ export default function VolunteerApproval() {
                     </div>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        record.status === 'pending'
+                        record.status === 'pending' || record.status === 'confirmed'
                           ? 'bg-yellow-100 text-yellow-800'
-                          : record.status === 'verified'
+                          : record.status === 'approved'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }`}
@@ -213,25 +179,23 @@ export default function VolunteerApproval() {
                     </div>
                     <div>
                       <span className="text-cool-grey">Service Date</span>
-                      <p className="font-semibold text-deep-navy">
-                        {new Date(record.service_date).toLocaleDateString()}
-                      </p>
+                      <p className="font-semibold text-deep-navy">{new Date(record.service_date).toLocaleDateString()}</p>
                     </div>
                     <div>
-                      <span className="text-cool-grey">Submitted</span>
-                      <p className="font-semibold text-deep-navy">
-                        {new Date(record.submitted_at).toLocaleDateString()}
-                      </p>
+                      <span className="text-cool-grey">Role</span>
+                      <p className="font-semibold text-deep-navy capitalize">{record.task_type || 'Volunteer'}</p>
                     </div>
                   </div>
 
-                  <div className="mt-4">
-                    <span className="text-cool-grey text-sm block mb-1">Activity</span>
-                    <p className="text-deep-navy bg-soft-cream rounded p-3">{record.activity_description}</p>
-                  </div>
+                  {record.activity_description && (
+                    <div className="mt-4">
+                      <span className="text-cool-grey text-sm block mb-1">Notes</span>
+                      <p className="text-deep-navy bg-soft-cream rounded p-3">{record.activity_description}</p>
+                    </div>
+                  )}
                 </div>
 
-                {record.status === 'pending' && (
+                {(record.status === 'pending' || record.status === 'confirmed') && (
                   <div className="border-t border-light-grey pt-4">
                     <div className="mb-3">
                       <label className="block text-sm font-semibold text-deep-navy mb-2">

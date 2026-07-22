@@ -101,6 +101,12 @@ function OrgCard({ org, onDashboard, onEditProfile, loadingEin }: {
             >
               Edit profile
             </button>
+            <Link
+              to={`/nonprofit/events/${org.ein}`}
+              className="px-4 py-2 rounded-xl border border-light-grey text-deep-navy font-body text-[13px] font-medium hover:border-soft-gold/40 transition-colors"
+            >
+              Volunteer events
+            </Link>
           </>
         )}
 
