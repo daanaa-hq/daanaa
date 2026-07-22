@@ -5,6 +5,7 @@ import { usePageMeta } from '../../hooks/usePageMeta'
 import { API_BASE } from '../../data/api'
 import ProfileEditModal from '../../components/nonprofit/ProfileEditModal'
 import ProfileChangeHistory from '../../components/nonprofit/ProfileChangeHistory'
+import HelpTooltip from '../../components/nonprofit/HelpTooltip'
 
 interface EditableFields {
   mission: { value: string; source: string; editable: boolean; char_limit: number; char_count?: number }
@@ -158,6 +159,7 @@ export default function ProfileEditor() {
                 ? 'border-deep-navy text-deep-navy'
                 : 'border-transparent text-cool-grey hover:text-deep-navy'
             }`}
+            aria-label="Edit profile fields"
           >
             Profile Fields
           </button>
@@ -168,6 +170,7 @@ export default function ProfileEditor() {
                 ? 'border-deep-navy text-deep-navy'
                 : 'border-transparent text-cool-grey hover:text-deep-navy'
             }`}
+            aria-label={`View change history (${profile.recent_edits.length} edits)`}
           >
             Change History ({profile.recent_edits.length})
           </button>
@@ -177,16 +180,20 @@ export default function ProfileEditor() {
         {tab === 'overview' && (
           <div className="space-y-6">
             {/* Mission */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Mission statement">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="font-display text-lg text-deep-navy mb-1">Mission</h2>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="font-display text-lg text-deep-navy">Mission</h2>
+                    <HelpTooltip text="A clear, concise statement of what your organization does and why it matters. This is often the first thing donors read." side="right" />
+                  </div>
                   <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.mission.source]}</p>
                 </div>
                 {profile.editable_fields.mission.editable && (
                   <button
                     onClick={() => setEditingField('mission')}
                     className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    aria-label="Edit mission statement"
                   >
                     Edit
                   </button>
@@ -203,16 +210,20 @@ export default function ProfileEditor() {
             </div>
 
             {/* Website */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Website URL">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="font-display text-lg text-deep-navy mb-1">Website</h2>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="font-display text-lg text-deep-navy">Website</h2>
+                    <HelpTooltip text="Your main website where donors can learn more about your organization. Must start with https://" side="right" />
+                  </div>
                   <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.website.source]}</p>
                 </div>
                 {profile.editable_fields.website.editable && (
                   <button
                     onClick={() => setEditingField('website')}
                     className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    aria-label="Edit website URL"
                   >
                     Edit
                   </button>
@@ -233,16 +244,20 @@ export default function ProfileEditor() {
             </div>
 
             {/* Donation URL */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Donation link">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="font-display text-lg text-deep-navy mb-1">Donation Link</h2>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="font-display text-lg text-deep-navy">Donation Link</h2>
+                    <HelpTooltip text="Where donors can give. This can be your website, a payment processor, or a fundraising platform. A working link is critical." side="right" />
+                  </div>
                   <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.donate_url.source]}</p>
                 </div>
                 {profile.editable_fields.donate_url.editable && (
                   <button
                     onClick={() => setEditingField('donate_url')}
                     className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    aria-label="Edit donation link"
                   >
                     Edit
                   </button>
@@ -263,16 +278,20 @@ export default function ProfileEditor() {
             </div>
 
             {/* Programs */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Programs and services">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="font-display text-lg text-deep-navy mb-1">Programs & Services</h2>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="font-display text-lg text-deep-navy">Programs & Services</h2>
+                    <HelpTooltip text="What programs do you offer? Who do you serve? Be specific—donors want to understand the impact." side="right" />
+                  </div>
                   <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.programs.source]}</p>
                 </div>
                 {profile.editable_fields.programs.editable && (
                   <button
                     onClick={() => setEditingField('programs')}
                     className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    aria-label="Edit programs and services"
                   >
                     Edit
                   </button>
@@ -289,16 +308,20 @@ export default function ProfileEditor() {
             </div>
 
             {/* Service Areas */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Service areas">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h2 className="font-display text-lg text-deep-navy mb-1">Service Areas</h2>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h2 className="font-display text-lg text-deep-navy">Service Areas</h2>
+                    <HelpTooltip text="Geographic areas or communities you serve. This helps donors find organizations working in their area." side="right" />
+                  </div>
                   <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.service_areas.source]}</p>
                 </div>
                 {profile.editable_fields.service_areas.editable && (
                   <button
                     onClick={() => setEditingField('service_areas')}
                     className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    aria-label="Edit service areas"
                   >
                     Edit
                   </button>

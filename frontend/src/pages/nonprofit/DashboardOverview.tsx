@@ -3,6 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageMeta } from '../../hooks/usePageMeta'
 import { API_BASE } from '../../data/api'
+import HelpTooltip from '../../components/nonprofit/HelpTooltip'
+import StatusBadge from '../../components/nonprofit/StatusBadge'
+import WelcomeCard from '../../components/nonprofit/WelcomeCard'
 
 interface DashboardData {
   organization: {
@@ -56,6 +59,18 @@ export default function DashboardOverview() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showWelcome, setShowWelcome] = useState(false)
+
+  useEffect(() => {
+    // Check if this is first visit to dashboard for this nonprofit
+    if (ein) {
+      const visitedKey = `nonprofit-dashboard-visited-${ein}`
+      if (!localStorage.getItem(visitedKey)) {
+        setShowWelcome(true)
+        localStorage.setItem(visitedKey, 'true')
+      }
+    }
+  }, [ein])
 
   useEffect(() => {
     if (authLoading || !user) return
@@ -113,13 +128,24 @@ export default function DashboardOverview() {
           <p className="font-body text-[14px] text-cool-grey">EIN: {dashboard.organization.ein}</p>
         </div>
 
+        {/* Welcome Card (First Visit) */}
+        {showWelcome && (
+          <WelcomeCard
+            organizationName={dashboard.organization.name}
+            onDismiss={() => setShowWelcome(false)}
+          />
+        )}
+
         {/* Attention Alert */}
         {(dashboard.attention.pending_approvals > 0 || dashboard.attention.profile_gaps > 0) && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6" role="region" aria-label="Attention items">
             <div className="flex items-start gap-3">
-              <span className="text-2xl">⚠️</span>
+              <span className="text-2xl" aria-hidden="true">⚠️</span>
               <div className="flex-1">
-                <h2 className="font-display text-lg text-amber-900 mb-3">Items needing attention</h2>
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="font-display text-lg text-amber-900">Items needing attention</h2>
+                  <HelpTooltip text="Review these items to improve your organization's visibility and approve volunteer contributions." side="right" />
+                </div>
                 <div className="space-y-2">
                   {dashboard.attention.pending_approvals > 0 && (
                     <div className="flex items-center justify-between bg-white/50 p-3 rounded-lg">
@@ -169,10 +195,13 @@ export default function DashboardOverview() {
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Volunteer Summary */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide mb-4">
-              This Month's Volunteer Hours
-            </h2>
+          <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Volunteer hours summary">
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide">
+                This Month's Volunteer Hours
+              </h2>
+              <HelpTooltip text="Hours submitted by volunteers at your events. Pending hours need your approval before they count toward public impact." side="right" />
+            </div>
             <div className="space-y-4">
               <div>
                 <div className="flex items-baseline justify-between mb-1">
@@ -245,10 +274,13 @@ export default function DashboardOverview() {
           </div>
 
           {/* Profile Health */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide mb-4">
-              Profile Completeness
-            </h2>
+          <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Profile completeness">
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide">
+                Profile Completeness
+              </h2>
+              <HelpTooltip text="Complete all fields so donors understand your mission, programs, and how to help. Missing fields are highlighted below." side="right" />
+            </div>
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -291,10 +323,13 @@ export default function DashboardOverview() {
 
         {/* Upcoming Events */}
         {dashboard.upcoming_events.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide mb-4">
-              Upcoming Events (Next 30 Days)
-            </h2>
+          <div className="bg-white rounded-2xl shadow-sm p-6" role="region" aria-label="Upcoming volunteer events">
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="font-body text-[12px] font-semibold text-deep-navy uppercase tracking-wide">
+                Upcoming Events (Next 30 Days)
+              </h2>
+              <HelpTooltip text="Events where volunteers can contribute hours. Click any event to view details, generate QR codes, or manage registrations." side="right" />
+            </div>
             <div className="space-y-3">
               {dashboard.upcoming_events.map(evt => (
                 <div key={evt.event_id} className="flex items-center justify-between p-3 bg-light-grey/30 rounded-xl">
@@ -317,24 +352,27 @@ export default function DashboardOverview() {
         )}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4" role="region" aria-label="Quick action buttons">
           <button
             onClick={() => navigate(`/nonprofit/profile/${ein}`)}
-            className="p-4 rounded-xl bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-opacity-90 transition text-left"
+            className="p-4 rounded-xl bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-opacity-90 transition text-left hover:shadow-md"
+            aria-label="Edit your organization profile"
           >
-            📝 Edit Profile
+            <span aria-hidden="true">📝</span> Edit Profile
           </button>
           <button
             onClick={() => navigate(`/nonprofit/volunteer-approval/${ein}`)}
-            className="p-4 rounded-xl bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-opacity-90 transition text-left"
+            className="p-4 rounded-xl bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-opacity-90 transition text-left hover:shadow-md"
+            aria-label="Review and approve volunteer hour submissions"
           >
-            ✓ Approve Hours
+            <span aria-hidden="true">✓</span> Approve Hours
           </button>
           <button
             onClick={() => navigate(`/nonprofit/volunteer-events/${ein}`)}
-            className="p-4 rounded-xl bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-opacity-90 transition text-left"
+            className="p-4 rounded-xl bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-opacity-90 transition text-left hover:shadow-md"
+            aria-label="Create a new volunteer event"
           >
-            📅 Create Event
+            <span aria-hidden="true">📅</span> Create Event
           </button>
         </div>
       </div>
