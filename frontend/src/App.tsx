@@ -61,6 +61,9 @@ const VolunteerApproval = lazy(() => import('./pages/nonprofit/VolunteerApproval
 const VolunteerEventsPage = lazy(() => import('./pages/nonprofit/VolunteerEventsPage'))
 const VolunteerImpactPage = lazy(() => import('./pages/nonprofit/VolunteerImpactPage'))
 const DashboardOverview = lazy(() => import('./pages/nonprofit/DashboardOverview'))
+const NonprofitDashboardV2 = lazy(() => import('./pages/nonprofit/NonprofitDashboardV2'))
+const NonprofitAnalyticsV2 = lazy(() => import('./pages/nonprofit/NonprofitAnalyticsV2'))
+const NonprofitVolunteerDirectoryV2 = lazy(() => import('./pages/nonprofit/NonprofitVolunteerDirectoryV2'))
 const ProfileEditor = lazy(() => import('./pages/nonprofit/ProfileEditor'))
 const DonorPerspectivePreview = lazy(() => import('./pages/nonprofit/DonorPerspectivePreview'))
 const ReportingPack = lazy(() => import('./pages/nonprofit/ReportingPack'))
@@ -162,6 +165,9 @@ export default function App() {
             <Route path="/nonprofit/preview/:ein" element={<DonorPerspectivePreview />} />
             <Route path="/nonprofit/report/:ein" element={<ReportingPack />} />
             <Route path="/nonprofit/dashboard/:ein" element={<NonprofitDashboardPage />} />
+            <Route path="/nonprofit/hub/:ein" element={<NonprofitDashboardV2 />} />
+            <Route path="/nonprofit/analytics/:ein" element={<NonprofitAnalyticsV2 />} />
+            <Route path="/nonprofit/volunteers/:ein" element={<NonprofitVolunteerDirectoryV2 />} />
           <Route path="/nonprofit/my-dashboard" element={<SelfDiscoveryDashboard />} />
             <Route path="/nonprofit/volunteer-approval/:ein" element={<VolunteerApproval />} />
             <Route path="/nonprofit/events/:ein" element={<VolunteerEventsPage />} />

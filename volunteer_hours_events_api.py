@@ -284,6 +284,27 @@ def event_log_hours_submit(short_id: str):
         created_any = True
 
     db.commit()
+
+    # Queue notifications to nonprofits (after commit, so hour_id exists)
+    if created_any:
+        try:
+            from volunteer_notifications import create_submission_notification
+            for ein, hours, task_type in validated:
+                hour_id = next((s['submission_id'] for s in submissions if s['ein'] == ein
+                               and not s.get('already_submitted')), None)
+                if hour_id:
+                    org = db.execute(
+                        'SELECT organization_name FROM registry_enriched WHERE ein=?', (ein,)
+                    ).fetchone()
+                    org_name = org['organization_name'] if org else 'Organization'
+                    # Notifications are queued but not immediately sent
+                    # They'll be processed asynchronously to avoid blocking the response
+                    create_submission_notification(db, hour_id, email, ein, org_name,
+                                                 hours, event['event_date'],
+                                                 is_test=False)
+        except ImportError:
+            pass  # volunteer_notifications optional for backward compatibility
+
     return jsonify({
         'status': 'submitted',
         'event_id': event['id'],

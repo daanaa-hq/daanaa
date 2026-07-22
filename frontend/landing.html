@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daanaa — Discover Nonprofits Worth Supporting</title>
+    <meta name="description" content="Find nonprofits doing real good. See their financials, mission, and impact. No tracking. No pressure. Just discovery.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --warm-cream: #FBF6F0;
+            --soft-gold: #C9A961;
+            --bright-gold: #E6C200;
+            --deep-navy: #1a1a2e;
+            --cool-grey: #757575;
+            --light-grey: #E8E8E8;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --warm-cream: #2a2620;
+                --deep-navy: #E8E8E8;
+                --soft-gold: #E6C200;
+                --cool-grey: #A8A8A8;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--warm-cream);
+            color: var(--deep-navy);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 0;
+            border-bottom: 1px solid var(--light-grey);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--deep-navy);
+        }
+
+        nav ul {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        nav a {
+            color: var(--deep-navy);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--soft-gold);
+        }
+
+        @media (max-width: 640px) {
+            nav ul {
+                display: none;
+            }
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 80px 0;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: var(--cool-grey);
+            margin-bottom: 8px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-subtext {
+            font-size: 14px;
+            color: var(--cool-grey);
+            margin-top: 24px;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background-color: var(--soft-gold);
+            color: var(--deep-navy);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .cta-button:hover {
+            background-color: var(--bright-gold);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+        }
+
+        /* Three columns */
+        .value-props {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+            padding: 80px 0;
+            margin-bottom: 40px;
+        }
+
+        .prop {
+            text-align: center;
+        }
+
+        .prop-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .prop h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: var(--deep-navy);
+        }
+
+        .prop p {
+            font-size: 14px;
+            color: var(--cool-grey);
+            line-height: 1.6;
+        }
+
+        /* How it works */
+        .how-it-works {
+            background-color: rgba(201, 169, 97, 0.1);
+            border-radius: 12px;
+            padding: 60px 40px;
+            margin-bottom: 60px;
+        }
+
+        .how-it-works h2 {
+            font-size: 32px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+
+        .step {
+            text-align: center;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background-color: var(--soft-gold);
+            color: var(--deep-navy);
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 20px;
+            margin-bottom: 16px;
+        }
+
+        .step h4 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            font-size: 14px;
+            color: var(--cool-grey);
+        }
+
+        /* Trust section */
+        .trust-section {
+            padding: 60px 0;
+            border-top: 1px solid var(--light-grey);
+            border-bottom: 1px solid var(--light-grey);
+            margin-bottom: 60px;
+        }
+
+        .trust-section h2 {
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .trust-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 30px;
+        }
+
+        .trust-item {
+            padding: 20px;
+            background-color: rgba(201, 169, 97, 0.05);
+            border-radius: 8px;
+        }
+
+        .trust-item h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--soft-gold);
+        }
+
+        .trust-item p {
+            font-size: 14px;
+            color: var(--cool-grey);
+            line-height: 1.6;
+        }
+
+        /* Privacy note */
+        .privacy-note {
+            background-color: rgba(201, 169, 97, 0.08);
+            border-left: 4px solid var(--soft-gold);
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 40px;
+        }
+
+        .privacy-note p {
+            font-size: 14px;
+            color: var(--cool-grey);
+            line-height: 1.6;
+        }
+
+        /* FAQ */
+        .faq {
+            padding: 60px 0;
+        }
+
+        .faq h2 {
+            font-size: 28px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .faq-item {
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--light-grey);
+        }
+
+        .faq-item:last-child {
+            border-bottom: none;
+        }
+
+        .faq-question {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 12px;
+            color: var(--deep-navy);
+        }
+
+        .faq-answer {
+            font-size: 14px;
+            color: var(--cool-grey);
+            line-height: 1.7;
+        }
+
+        /* Footer CTA */
+        .footer-cta {
+            background-color: rgba(201, 169, 97, 0.1);
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .footer-cta h2 {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .footer-cta p {
+            font-size: 16px;
+            color: var(--cool-grey);
+            margin-bottom: 32px;
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--light-grey);
+            padding: 40px 0;
+            text-align: center;
+            color: var(--cool-grey);
+            font-size: 14px;
+        }
+
+        footer a {
+            color: var(--soft-gold);
+            text-decoration: none;
+            margin: 0 8px;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .how-it-works {
+                padding: 40px 20px;
+            }
+
+            .how-it-works h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Navigation -->
+        <nav>
+            <div class="logo">Daanaa</div>
+            <ul>
+                <li><a href="#how">How It Works</a></li>
+                <li><a href="#trust">Our Principles</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+        </nav>
+
+        <!-- Hero -->
+        <section class="hero">
+            <h1>Discover Nonprofits Worth Supporting</h1>
+            <p>Find organizations doing real good. See their mission, financials, and how to help.</p>
+            <p class="hero-subtext">No tracking. No pressure. Just discovery.</p>
+            <a href="https://daanaa.org" class="cta-button">Try It Free →</a>
+        </section>
+
+        <!-- Value Props -->
+        <section class="value-props">
+            <div class="prop">
+                <div class="prop-icon">🔍</div>
+                <h3>Discover by Mission</h3>
+                <p>Search by cause, location, or impact. Find organizations aligned with what matters to you.</p>
+            </div>
+            <div class="prop">
+                <div class="prop-icon">💪</div>
+                <h3>Understand the Numbers</h3>
+                <p>See financial health, peer benchmarks, and real data from public records. Make informed decisions.</p>
+            </div>
+            <div class="prop">
+                <div class="prop-icon">✋</div>
+                <h3>Support Your Way</h3>
+                <p>Donate, volunteer, or both. Give when you're ready, at your own pace, to the org's own site.</p>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="how-it-works" id="how">
+            <h2>How It Works</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h4>Search</h4>
+                    <p>Find nonprofits by cause, location, or name.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h4>Learn</h4>
+                    <p>See their mission, programs, financial health, and more.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h4>Support</h4>
+                    <p>Donate via their site or volunteer at their events.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h4>Track</h4>
+                    <p>See impact updates and track your giving over time.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trust Section -->
+        <section class="trust-section" id="trust">
+            <h2>Built on Trust</h2>
+            <div class="trust-items">
+                <div class="trust-item">
+                    <h4>📋 Real Data</h4>
+                    <p>All financials come from public IRS records. No guesses, no manipulation.</p>
+                </div>
+                <div class="trust-item">
+                    <h4>🔒 Your Privacy</h4>
+                    <p>We don't track your browsing. No accounts required to explore. Your giving stays private.</p>
+                </div>
+                <div class="trust-item">
+                    <h4>⚖️ Fair to All</h4>
+                    <p>Small nonprofits get equal visibility. No paid placement. No size-based ranking.</p>
+                </div>
+                <div class="trust-item">
+                    <h4>✋ Direct Support</h4>
+                    <p>Money goes directly to the nonprofit. We never hold or process donations.</p>
+                </div>
+                <div class="trust-item">
+                    <h4>🤝 Independent</h4>
+                    <p>No sponsors, no ads, no partners influence what you see. Pure discovery.</p>
+                </div>
+                <div class="trust-item">
+                    <h4>📣 Transparent</h4>
+                    <p>Mistakes get corrected publicly. Our methodology is open. Decisions are explainable.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Privacy Note -->
+        <div class="privacy-note">
+            <p><strong>🔐 Privacy First:</strong> You can browse Daanaa without an account. No tracking. No email required until you choose to donate or volunteer. Your giving activity stays between you, the nonprofit, and their payment processor—we never see it.</p>
+        </div>
+
+        <!-- FAQ -->
+        <section class="faq" id="faq">
+            <h2>Common Questions</h2>
+
+            <div class="faq-item">
+                <div class="faq-question">Who can use Daanaa?</div>
+                <div class="faq-answer">Anyone. Whether you're a donor exploring causes, a volunteer looking for opportunities, or a nonprofit wanting to claim and improve your profile—Daanaa is free to use.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How is this different from other nonprofit sites?</div>
+                <div class="faq-answer">Daanaa starts with public financial data from the IRS. We show you real peer context (how your nonprofit compares to similar ones), not just gut feeling. And we don't rank by size—a $100K nonprofit gets the same fair treatment as a $100M one.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Do you take a cut of my donation?</div>
+                <div class="faq-answer">No. When you donate, you go directly to the nonprofit's own donation page. Money never goes through Daanaa. We're a discovery layer, not a payment processor.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Is my giving activity tracked?</div>
+                <div class="faq-answer">Not by us. We don't see donations. We don't track browsing. You can browse Daanaa completely anonymously if you choose. Only when you volunteer through us can we see that activity (so we can match you with opportunities).</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How do nonprofits get on Daanaa?</div>
+                <div class="faq-answer">They're here automatically from public IRS data. Nonprofits can then claim their profile to add more details, update programs, or correct information. It's free.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Will Daanaa always be free?</div>
+                <div class="faq-answer">Browsing and donating will always be free. We're still figuring out how to keep the lights on—that might eventually mean optional paid features for nonprofits (like better analytics), but the core discovery will stay free forever.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How is the financial health score calculated?</div>
+                <div class="faq-answer">It's based on IRS Form 990 data, compared within your nonprofit's peer group (similar size, similar mission). It's not a judgment—it's context. A small food bank and a large hospital aren't comparable, so we don't compare them.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">What if the data about my nonprofit is wrong?</div>
+                <div class="faq-answer">Every nonprofit page has a "Report an Issue" button. Flag the error, we investigate, and we correct it. Accuracy matters more to us than being right.</div>
+            </div>
+        </section>
+
+        <!-- Footer CTA -->
+        <section class="footer-cta">
+            <h2>Ready to Explore?</h2>
+            <p>Start discovering nonprofits that align with your values.</p>
+            <a href="https://daanaa.org" class="cta-button">Try Daanaa Free →</a>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>Daanaa · <a href="https://daanaa.org/charter">Our Charter</a> · <a href="https://daanaa.org/privacy">Privacy</a> · <a href="https://daanaa.org/methodology">Methodology</a></p>
+            <p style="margin-top: 16px; font-size: 12px;">Built with integrity. No tracking. No nonsense.</p>
+        </footer>
+    </div>
+</body>
+</html>

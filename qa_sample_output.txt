@@ -1,0 +1,94 @@
+
+============================================
+PHASE 1 & 2 UX COMPONENT TESTS
+============================================
+[13:50:39] Testing homepage...
+[0;32m✓ PASS[0m: Homepage returns valid HTML
+[13:50:39] Testing HelpTooltip component...
+[1;33m⚠ WARN[0m: HelpTooltip accessibility attributes not found in initial load (may be client-rendered)
+[13:50:39] Testing WelcomeCard integration...
+[1;33m⚠ WARN[0m: Welcome card not in homepage HTML (may be app-specific, client-rendered)
+
+============================================
+API ENDPOINT TESTS
+============================================
+[13:50:39] Testing /api/search endpoint...
+[0;31m✗ FAIL[0m: Search API not returning expected data
+[13:50:39] Testing /api/organizations endpoint...
+[0;32m✓ PASS[0m: Organizations directory API working
+[13:50:40] Testing API status codes...
+[0;32m✓ PASS[0m: API returns HTTP 200
+[13:50:41] Testing /health endpoint...
+[0;32m✓ PASS[0m: Health endpoint responding
+
+============================================
+VOLUNTEER HOURS SYSTEM TESTS
+============================================
+[13:50:41] Testing volunteer hours database schema...
+[0;32m✓ PASS[0m: Volunteer hours tables exist in database (6 tables)
+[13:50:41] Testing volunteer hours schema columns...
+[0;31m✗ FAIL[0m: Volunteer hours events table schema missing
+[13:50:41] Testing volunteer hours idempotency (submission_id protection)...
+[1;33m⚠ WARN[0m: submission_id not found in API (may be in different location)
+
+============================================
+NONPROFIT DASHBOARD TESTS
+============================================
+[13:50:41] Testing nonprofit authentication endpoints...
+[0;32m✓ PASS[0m: Nonprofit auth endpoints defined in API
+[13:50:41] Testing profile editor components...
+[0;32m✓ PASS[0m: ProfileEditor has Phase 1 & 2 UX components
+[13:50:41] Testing dashboard overview components...
+[0;32m✓ PASS[0m: DashboardOverview has Phase 1 & 2 UX components
+
+============================================
+ACCESSIBILITY & UX TESTS
+============================================
+[13:50:41] Testing accessibility (ARIA labels)...
+[1;33m⚠ WARN[0m: ARIA labels not found (may be in JSX attributes)
+[13:50:41] Testing component styling...
+[0;32m✓ PASS[0m: Components have styling applied
+
+============================================
+BUILD & DEPLOYMENT TESTS
+============================================
+[13:50:41] Testing frontend build artifacts...
+[0;32m✓ PASS[0m: Frontend dist ready (3751 bytes)
+[13:50:41] Testing deployment status...
+[0;32m✓ PASS[0m: Frontend deployment completed successfully
+[13:50:41] Testing git commits for Phase 1 & 2...
+[0;32m✓ PASS[0m: Phase 1 & 2 commits found (3 recent commits)
+
+============================================
+STEWARDSHIP COMPLIANCE TESTS
+============================================
+[13:50:41] Testing privacy-check infrastructure...
+[0;32m✓ PASS[0m: Privacy check script exists
+[13:50:41] Testing for PII leakage in new components...
+[0;32m✓ PASS[0m: No obvious PII patterns in new components
+[13:50:41] Testing stewardship documentation...
+[0;32m✓ PASS[0m: Stewardship.md principles present
+[13:50:41] Testing TypeScript type safety...
+[0;32m✓ PASS[0m: Components have TypeScript prop validation
+
+============================================
+SMOKE TESTS (Production URL)
+============================================
+[13:50:41] Running production smoke tests...
+[0;32m✓ PASS[0m: Production homepage loads (doctype found)
+[0;32m✓ PASS[0m: Production API responding (HTTP 200)
+[0;32m✓ PASS[0m: Production directory API working
+
+============================================
+TEST SUMMARY
+============================================
+
+Total Tests: 21
+[0;32mPassed: 19[0m
+[0;31mFailed: 2[0m
+Pass Rate: 90%
+
+[0;31m✗ SOME TESTS FAILED[0m
+
+Review failures above and re-run after fixes.
+Results saved to: qa_results_1784746239.log

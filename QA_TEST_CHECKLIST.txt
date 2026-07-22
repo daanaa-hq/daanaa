@@ -1,0 +1,180 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                    DAANAA QA TEST CHECKLIST                                ║
+║                          July 22, 2026                                     ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+Website: https://daanaa.org
+Nonprofit Login: test@testnonprofit.org / TestNonprofit2024!
+
+────────────────────────────────────────────────────────────────────────────
+
+SECTION 1: DONOR DISCOVERY (15 min)
+────────────────────────────────────────────────────────────────────────────
+
+Test 1: Search for nonprofits
+  ☐ Go to https://daanaa.org
+  ☐ Search for "food bank"
+  ☐ See results with nonprofit names
+  ☐ See financial scores (e.g., 85/100)
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 2: View nonprofit details
+  ☐ Click on a nonprofit result
+  ☐ See organization name
+  ☐ See location (city, state)
+  ☐ See mission statement
+  ☐ See financial health score
+  ☐ See "Donate" link
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 3: Add to Wallet button
+  ☐ Click "Add to Wallet" button
+  ☐ See confirmation (check mark or message)
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 4: Browse by category
+  ☐ Go to homepage
+  ☐ Find and click a category (e.g., "Health")
+  ☐ Results filter to that category only
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 5: Search by location
+  ☐ Find location/state filter
+  ☐ Select a state (e.g., "California")
+  ☐ Results show only that state
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+
+SECTION 2: NONPROFIT STAFF (20 min)
+────────────────────────────────────────────────────────────────────────────
+
+Test 6: Nonprofit login
+  ☐ Find "For Nonprofits" or login link
+  ☐ Enter: test@testnonprofit.org
+  ☐ Enter: TestNonprofit2024!
+  ☐ Click "Log In"
+  ☐ See welcome message or dashboard
+  ☐ See nonprofit name (Test Food Bank)
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 7: View dashboard
+  ☐ See organization name
+  ☐ See welcome message
+  ☐ See volunteer hours section
+  ☐ See events or activities
+  ☐ See profile info
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 8: View volunteer submissions
+  ☐ Find "Volunteer Hours" section
+  ☐ See list of submissions
+  ☐ See volunteer name
+  ☐ See hours submitted
+  ☐ See submission date
+  ☐ See "Approve" button
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 9: Approve volunteer hours
+  ☐ Click "Approve" button
+  ☐ See confirmation message
+  ☐ Status changes to "Approved"
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 10: Edit nonprofit profile
+  ☐ Find "Profile" or "Edit Profile"
+  ☐ See editable fields (name, website, mission)
+  ☐ Edit one field
+  ☐ Click "Save"
+  ☐ Changes are saved
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 11: Help tooltips
+  ☐ Find "?" icons or "Learn More" links
+  ☐ Click on one
+  ☐ See helpful information
+  ☐ Text is clear and helpful
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+
+SECTION 3: USER EXPERIENCE (10 min)
+────────────────────────────────────────────────────────────────────────────
+
+Test 12: Page speed
+  ☐ Nonprofit detail page loads in <3 seconds
+  ☐ Dashboard loads quickly
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 13: Mobile friendly (test on phone)
+  ☐ Layout is readable
+  ☐ Buttons are easy to click
+  ☐ Text doesn't get cut off
+  ☐ No need to pinch/zoom
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 14: Button clarity
+  ☐ Buttons look clickable
+  ☐ Button labels are clear
+  ☐ Easy to understand what each does
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 15: Error handling
+  ☐ Search for: xyzabc123
+  ☐ See "No results" message
+  ☐ Message is helpful (not blank page)
+  ☐ Suggests trying different search
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 16: Help & support
+  ☐ Find "Help" or "Support" link
+  ☐ Easy to locate
+  ☐ Contains helpful info or FAQs
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+
+SECTION 4: TRUST & SECURITY (5 min)
+────────────────────────────────────────────────────────────────────────────
+
+Test 17: Data source transparency
+  ☐ See where financial data comes from
+  ☐ See "IRS Form 990" or "Public Records"
+  ☐ See update date
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 18: Donation privacy
+  ☐ Click "Donate" link
+  ☐ Goes to nonprofit's own website
+  ☐ Doesn't ask for credit card on Daanaa
+  ☐ Says "Donate directly to [nonprofit]"
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+Test 19: Login security
+  ☐ Try wrong password
+  ☐ Get error message
+  ☐ NOT logged in
+  Status: ☐ PASS  ☐ FAIL  Note: ___________________
+
+
+════════════════════════════════════════════════════════════════════════════
+
+SUMMARY
+════════════════════════════════════════════════════════════════════════════
+
+Total Tests: 19
+Passed:   ☐ ___
+Failed:   ☐ ___
+Pass Rate: _____%
+
+Overall Status:  ☐ READY FOR RELEASE  ☐ NEEDS FIXES
+
+Key Issues Found:
+  1. _____________________________________________________________
+  2. _____________________________________________________________
+  3. _____________________________________________________________
+
+Comments:
+  _________________________________________________________________
+  _________________________________________________________________
+
+Tester Name: ______________________   Date: ______________________
+
+════════════════════════════════════════════════════════════════════════════

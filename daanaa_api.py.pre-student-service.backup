@@ -61,58 +61,6 @@ except Exception as e:
 _reranker_instance = None  # lazy per-worker instance (created on first cause query)
 
 
-def _ensure_student_service_columns(db_path: str):
-    """Add student service columns to existing tables if they don't exist.
-
-    SQLite doesn't support IF NOT EXISTS in ALTER TABLE, so we check first
-    and add columns only if missing.
-    """
-    conn = sqlite3.connect(db_path)
-    try:
-        cursor = conn.cursor()
-
-        # Helper to check if column exists
-        def column_exists(table_name, col_name):
-            try:
-                cursor.execute(f"PRAGMA table_info({table_name})")
-                cols = {row[1] for row in cursor.fetchall()}
-                return col_name in cols
-            except:
-                return False
-
-        # Add columns to volunteer_hours if missing
-        if column_exists('volunteer_hours', 'student_id') == False:
-            try:
-                cursor.execute("ALTER TABLE volunteer_hours ADD COLUMN student_id TEXT")
-                conn.commit()
-            except sqlite3.OperationalError:
-                pass
-
-        if column_exists('volunteer_hours', 'student_school_ein') == False:
-            try:
-                cursor.execute("ALTER TABLE volunteer_hours ADD COLUMN student_school_ein TEXT")
-                conn.commit()
-            except sqlite3.OperationalError:
-                pass
-
-        if column_exists('volunteer_hours', 'parental_consent_given') == False:
-            try:
-                cursor.execute("ALTER TABLE volunteer_hours ADD COLUMN parental_consent_given BOOLEAN DEFAULT 0")
-                conn.commit()
-            except sqlite3.OperationalError:
-                pass
-
-        # Add column to nonprofit_accounts if missing
-        if column_exists('nonprofit_accounts', 'parent_school_ein') == False:
-            try:
-                cursor.execute("ALTER TABLE nonprofit_accounts ADD COLUMN parent_school_ein TEXT")
-                conn.commit()
-            except sqlite3.OperationalError:
-                pass
-    finally:
-        conn.close()
-
-
 def _run_migrations(db_path: str):
     """Run pending database migrations from migrations/ directory.
 
@@ -686,9 +634,7 @@ def _vec_similar(query_vec: np.ndarray, exclude_ein: str, limit: int) -> list[st
 app = Flask(__name__)
 
 # Run database migrations on startup
-_db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
-_run_migrations(_db_path)
-_ensure_student_service_columns(_db_path)
+_run_migrations(os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db")))
 
 # Restrict CORS to known origins; add production domain when deploying
 _ALLOWED_ORIGINS = [
@@ -8768,22 +8714,7 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
             _bridge_to_impact_logs(db, ein, row['hours'], row['service_date'], hour_id)
         except ImportError:
             pass  # volunteer_hours_events_api optional
-
-        # Queue approval notification (after commit)
         db.commit()
-        try:
-            from volunteer_notifications import create_approval_notification
-            full_hour = db.execute(
-                'SELECT volunteer_email, hours, service_date, organization_name FROM volunteer_hours WHERE id=?',
-                (hour_id,)
-            ).fetchone()
-            if full_hour:
-                create_approval_notification(db, hour_id, full_hour['volunteer_email'],
-                                           ein, full_hour['organization_name'] or 'Organization',
-                                           full_hour['hours'], full_hour['service_date'],
-                                           is_test=False)
-        except ImportError:
-            pass  # volunteer_notifications optional
     except Exception as e:
         return jsonify({'error': f'Approval failed: {str(e)}'}), 500
 
@@ -8835,163 +8766,11 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
             _unbridge_from_impact_logs(db, hour_id)
         except ImportError:
             pass  # volunteer_hours_events_api optional
-
-        # Queue rejection notification (after commit)
         db.commit()
-        try:
-            from volunteer_notifications import create_rejection_notification
-            full_hour = db.execute(
-                'SELECT volunteer_email, organization_name FROM volunteer_hours WHERE id=?',
-                (hour_id,)
-            ).fetchone()
-            if full_hour:
-                create_rejection_notification(db, hour_id, full_hour['volunteer_email'],
-                                            ein, full_hour['organization_name'] or 'Organization',
-                                            reason, is_test=False)
-        except ImportError:
-            pass  # volunteer_notifications optional
     except Exception as e:
         return jsonify({'error': f'Rejection failed: {str(e)}'}), 500
 
     return jsonify({'status': 'rejected'}), 200
-
-
-# ── DASHBOARD V2 ENDPOINTS ──────────────────────────────────────────────────
-
-@app.route('/api/nonprofit/<ein>/volunteer/analytics', methods=['GET'])
-@limiter.limit("60 per hour")
-def nonprofit_volunteer_analytics(ein: str):
-    """Analytics data for dashboard V2: trends, retention, impact."""
-    uid = _require_firebase_user()
-    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
-
-    if not ein:
-        return jsonify({'error': 'Invalid EIN'}), 400
-
-    db = get_db()
-    claim = db.execute(
-        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
-        (ein, uid)
-    ).fetchone()
-
-    if not claim:
-        return jsonify({'error': 'You do not own this nonprofit'}), 403
-
-    timeframe = request.args.get('timeframe', '6m')
-    months_back = {'3m': 3, '6m': 6, '1y': 12}.get(timeframe, 6)
-
-    # Hours by month (last N months)
-    hours_by_month = db.execute(f'''
-        SELECT
-            strftime('%Y-%m', service_date) as month,
-            SUM(hours) as total
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status='approved'
-          AND service_date >= date('now', '-{months_back} months')
-        GROUP BY month
-        ORDER BY month
-    ''', (ein,)).fetchall()
-
-    # Hours by task type (all time)
-    hours_by_task = db.execute('''
-        SELECT
-            COALESCE(task_type, 'other') as task_type,
-            SUM(hours) as total
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status='approved'
-        GROUP BY task_type
-        ORDER BY total DESC
-    ''', (ein,)).fetchall()
-
-    # New volunteers by month
-    volunteer_growth = db.execute(f'''
-        SELECT
-            strftime('%Y-%m', MIN(submitted_at)) as month,
-            COUNT(DISTINCT volunteer_email) as count
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status='approved'
-          AND submitted_at >= date('now', '-{months_back} months')
-        GROUP BY month
-        ORDER BY month
-    ''', (ein,)).fetchall()
-
-    # Retention rate (volunteers with 2+ submissions)
-    all_volunteers = db.execute(
-        'SELECT COUNT(DISTINCT volunteer_email) FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved"',
-        (ein,)
-    ).fetchone()[0]
-
-    returning = db.execute(
-        'SELECT COUNT(DISTINCT volunteer_email) FROM (SELECT volunteer_email, COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved" GROUP BY volunteer_email HAVING cnt > 1)',
-        (ein,)
-    ).fetchone()[0]
-
-    retention_rate = (returning / all_volunteers * 100) if all_volunteers > 0 else 0
-
-    # Avg hours per volunteer
-    avg_hours = db.execute(
-        'SELECT AVG(hours) FROM (SELECT SUM(hours) as hours FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved" GROUP BY volunteer_email)',
-        (ein,)
-    ).fetchone()[0] or 0
-
-    return jsonify({
-        'data': {
-            'hours_by_month': [{'label': r['month'], 'value': r['total'] or 0} for r in hours_by_month],
-            'hours_by_task_type': [{'label': r['task_type'], 'value': r['total'] or 0} for r in hours_by_task],
-            'volunteer_growth': [{'label': r['month'], 'value': r['count'] or 0} for r in volunteer_growth],
-            'retention_rate': retention_rate,
-            'avg_hours_per_volunteer': avg_hours,
-        }
-    }), 200
-
-
-@app.route('/api/nonprofit/<ein>/volunteer/directory', methods=['GET'])
-@limiter.limit("60 per hour")
-def nonprofit_volunteer_directory(ein: str):
-    """Volunteer directory: all volunteers with stats."""
-    uid = _require_firebase_user()
-    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
-
-    if not ein:
-        return jsonify({'error': 'Invalid EIN'}), 400
-
-    db = get_db()
-    claim = db.execute(
-        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
-        (ein, uid)
-    ).fetchone()
-
-    if not claim:
-        return jsonify({'error': 'You do not own this nonprofit'}), 403
-
-    # Get all volunteers with their stats
-    volunteers = db.execute('''
-        SELECT
-            volunteer_email as email,
-            volunteer_name as name,
-            SUM(hours) as total_hours,
-            COUNT(*) as submissions_count,
-            MAX(service_date) as last_service_date,
-            CASE WHEN MAX(service_date) >= date('now', '-30 days') THEN 'active' ELSE 'inactive' END as status,
-            GROUP_CONCAT(DISTINCT COALESCE(task_type, 'other')) as task_types
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status='approved'
-        GROUP BY volunteer_email
-        ORDER BY total_hours DESC
-    ''', (ein,)).fetchall()
-
-    return jsonify({
-        'data': [{
-            'email': v['email'],
-            'name': v['name'],
-            'total_hours': v['total_hours'] or 0,
-            'submissions_count': v['submissions_count'] or 0,
-            'last_service_date': v['last_service_date'],
-            'status': v['status'],
-            'avg_task_type': v['task_types'].split(',')[0] if v['task_types'] else 'other'
-        } for v in volunteers]
-    }), 200
-
 
 @app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
 def nonprofit_dashboard_legacy(claim_token: str):
@@ -11598,21 +11377,6 @@ def submit_nonprofit_feedback(ein: str):
     }), 200
 
 
-@app.route('/api/debug/firebase-uid', methods=['GET'])
-def debug_firebase_uid():
-    """DEBUG ONLY: Return your authenticated Firebase UID (temporary troubleshooting endpoint)"""
-    try:
-        uid = _require_firebase_user()
-        return jsonify({
-            'your_firebase_uid': uid,
-            'uid_bytes': list(uid.encode('utf-8')),
-            'uid_length': len(uid),
-            'message': 'Copy this UID and update org_claims.firebase_uid where ein=123456789'
-        }), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 401
-
-
 @app.route('/api/research/datasets', methods=['GET'])
 def research_datasets():
     """Browse research-grade datasets (aggregated, anonymized)."""
@@ -11647,11 +11411,6 @@ def research_datasets():
 
     return jsonify({'dataset_count': len(datasets), 'datasets': datasets}), 200
 
-
-# ── Register student service blueprint ──────────────────────────────────────────
-
-from student_service_api_routes import student_bp
-app.register_blueprint(student_bp)
 
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 

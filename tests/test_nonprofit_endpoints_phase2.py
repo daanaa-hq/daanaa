@@ -89,6 +89,12 @@ def test_org(db):
             rejected_at TEXT,
             submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            event_id INTEGER,
+            submitted_via TEXT DEFAULT 'nonprofit_entry',
+            edit_count INTEGER DEFAULT 0,
+            locked_at TEXT,
+            submitted_ip TEXT,
+            task_type TEXT,
             FOREIGN KEY (nonprofit_ein) REFERENCES nonprofit_accounts(ein)
         )
     ''')
