@@ -160,5 +160,77 @@ But this is a strategic board decision (growth vs. focus, first-mover risk, scop
 
 ---
 
+## DECISION 3: Fraud Detection Policy — Auto-Flag vs. Auto-Approve
+
+**Question:** When fraud detection flags a submission, should it auto-reject and require manual review, or auto-approve but flag for async review?
+
+### Option A: Auto-Reject (Conservative)
+- Flagged submissions don't count toward hours until admin reviews
+- Student sees: "Pending manual review — we flagged this as unusual"
+- Admin reviews in dashboard, approves or rejects
+- Safety: High (no false positives count)
+- UX: Slower (student waits for admin)
+
+**Pros:**
+- ✅ Zero false positives (only genuine approvals count)
+- ✅ Catches fraud before it's in impact stats
+- ✅ Protects nonprofit reputation
+- ✅ Meets P10 (human in command)
+
+**Cons:**
+- ❌ Frustrating for legitimate high-hour volunteers
+- ❌ Adds admin review burden
+- ❌ Could discourage students ("why is my submission pending?")
+
+### Option B: Auto-Approve + Async Flag (Fast)
+- Flagged submissions auto-approve and count toward hours
+- Admin reviews in dashboard async (no hard deadline)
+- Can reject retroactively if fraud detected
+- Safety: Medium (false positives temporarily count)
+- UX: Fast (student gets approval immediately)
+
+**Pros:**
+- ✅ Frictionless student experience
+- ✅ Legitimate high-hour volunteers don't wait
+- ✅ Lower admin burden (review is "nice to have")
+- ✅ Meets P5 (no shame language — student doesn't see "flagged")
+
+**Cons:**
+- ❌ False positives temporarily inflate impact stats
+- ❌ If admin misses review, fraud stays approved
+- ❌ Harder to explain to nonprofits later ("why did we count hours we didn't verify?")
+
+### Option C: Tiered (Hybrid)
+- Risk 40-60 (medium): Auto-approve + flag for review
+- Risk 60-80 (high): Require admin pre-approval
+- Risk 80+ (critical): Auto-reject, escalate immediately
+
+**Pros:**
+- ✅ Balances fraud prevention + user experience
+- ✅ Meets P10 (high-risk items require human review)
+
+**Cons:**
+- ❌ More complex admin workflow
+- ❌ Requires clear thresholds (board needs to set them)
+
+### Stewardship Alignment
+
+**P5 - Don't weaponize transparency:** Auto-reject could shame students unfairly
+
+**P10 - Human in command:** Either option OK if admin can override, but who reviews and when?
+
+**P6 - Mistakes must be corrected:** If we auto-approve then retract, can we do that gracefully?
+
+### Default (Embedded in Code)
+
+Currently hardcoded: 80+ = critical, 60-80 = high, 40-60 = medium (no auto-action yet, just flagging).
+
+### Decision Needed
+- A: Auto-reject (conservative, safe, slower UX)
+- B: Auto-approve + async flag (fast, risky)
+- C: Tiered by risk score (hybrid)
+
+---
+
 **Board Simulation Trigger:** When 3+ decisions pending OR end of autonomous build phase
 
