@@ -78,6 +78,9 @@ function EventCard({ event }: { event: VolunteerEvent }) {
             {event.org_name}
           </span>
         )}
+        {event.discovery_status === 'unconfirmed' && (
+          <p className="font-body text-[12px] text-soft-gold">Unconfirmed source discovery</p>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1">

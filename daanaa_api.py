@@ -36,7 +36,11 @@ from twilio.twiml.messaging_response import MessagingResponse
 from twilio.request_validator import RequestValidator
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
-from ntee_synonyms import expand_query_with_synonyms
+try:
+    from ntee_synonyms import expand_query_with_synonyms
+except ImportError:
+    def expand_query_with_synonyms(q):
+        return q  # Fallback: return query as-is if synonyms not available
 
 # Search Phase 2: intent classifier (loaded at startup for preload safety)
 try:
@@ -1134,6 +1138,10 @@ def _init_volunteer_events_table():
             ("waiver_url",        "TEXT"),
             ("parking_info",      "TEXT"),
             ("coordinator_name",  "TEXT"),
+            ("source_url",       "TEXT"),
+            ("source_checked_at", "TEXT"),
+            ("discovery_status", "TEXT NOT NULL DEFAULT 'confirmed'"),
+            ("ai_generated",      "INTEGER NOT NULL DEFAULT 0"),
         ]:
             try:
                 db.execute(f"ALTER TABLE volunteer_events ADD COLUMN {col} {defn}")
@@ -1798,6 +1806,19 @@ try:
     init_event_platform(app)
 except ImportError:
     pass  # Event platform API optional
+
+try:
+    from event_discovery_api import init_event_discovery
+    init_event_discovery(app)
+except ImportError:
+    pass  # Event discovery API optional
+
+# Register bulk volunteer import API
+try:
+    from bulk_volunteer_import import bulk_import_bp
+    app.register_blueprint(bulk_import_bp)
+except ImportError:
+    pass  # Bulk import API optional
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -5793,6 +5814,10 @@ def _format_event(row, signup_count: int = 0) -> dict:
         "parking_info":     row["parking_info"]     if "parking_info"     in keys else None,
         "coordinator_name": row["coordinator_name"] if "coordinator_name" in keys else None,
         "signup_count":     signup_count,
+        "source_url":       row["source_url"] if "source_url" in keys else None,
+        "source_checked_at": row["source_checked_at"] if "source_checked_at" in keys else None,
+        "discovery_status": row["discovery_status"] if "discovery_status" in keys else "confirmed",
+        "ai_generated":     bool(row["ai_generated"]) if "ai_generated" in keys else False,
     }
 
 
@@ -6179,6 +6204,8 @@ def event_signup_create(event_id: int):
         return jsonify({"error": "Event not found"}), 404
     if row["status"] in ('cancelled', 'expired'):
         return jsonify({"error": "This event is no longer accepting signups"}), 400
+    if "discovery_status" in row.keys() and row["discovery_status"] != "confirmed":
+        return jsonify({"error": "This event has not been confirmed by the organization", "status": "unconfirmed", "source_url": row["source_url"] if "source_url" in row.keys() else None}), 409
     from datetime import datetime as _dt
     if row["event_date"] < _dt.utcnow().strftime("%Y-%m-%d"):
         return jsonify({"error": "This event has already passed"}), 400
@@ -6454,10 +6481,11 @@ def portal_events_update(event_id: int):
         "title", "description", "event_date", "start_time", "end_time",
         "location_city", "location_state", "location_zip", "is_virtual",
         "virtual_url", "contact_email", "capacity", "status",
-        "event_type", "min_age", "expected_hours",
+        "event_type", "min_age", "expected_hours", "discovery_status",
     }
     valid_statuses   = {"active", "filled", "cancelled"}
     valid_event_types = {"volunteer", "community", "fundraiser", "networking"}
+    valid_discovery_statuses = {"confirmed", "unconfirmed"}
     updates, vals = [], []
     for field in allowed:
         if field not in data:
@@ -6467,6 +6495,8 @@ def portal_events_update(event_id: int):
             return jsonify({"error": f"status must be one of {sorted(valid_statuses)}"}), 400
         if field == "event_type" and val not in valid_event_types:
             return jsonify({"error": f"event_type must be one of {sorted(valid_event_types)}"}), 400
+        if field == "discovery_status" and val not in valid_discovery_statuses:
+            return jsonify({"error": f"discovery_status must be one of {sorted(valid_discovery_statuses)}"}), 400
         if field == "is_virtual":
             val = int(bool(val))
         if field == "virtual_url" and val and not str(val).startswith(('http://', 'https://')):
@@ -8781,14 +8811,15 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
         try:
             from volunteer_notifications import create_approval_notification
             full_hour = db.execute(
-                'SELECT volunteer_email, hours, service_date, organization_name FROM volunteer_hours WHERE id=?',
+                'SELECT volunteer_email, hours, service_date FROM volunteer_hours WHERE id=?',
                 (hour_id,)
             ).fetchone()
             if full_hour:
-                create_approval_notification(db, hour_id, full_hour['volunteer_email'],
-                                           ein, full_hour['organization_name'] or 'Organization',
-                                           full_hour['hours'], full_hour['service_date'],
-                                           is_test=False)
+                full_org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
+                org_name = (full_org["organization_name"] if full_org else None) or "Organization"
+                create_approval_notification(db, hour_id, full_hour["volunteer_email"],
+                                             ein, org_name, full_hour["hours"],
+                                             full_hour["service_date"], is_test=False)
         except ImportError:
             pass  # volunteer_notifications optional
     except Exception as e:
@@ -8848,13 +8879,14 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
         try:
             from volunteer_notifications import create_rejection_notification
             full_hour = db.execute(
-                'SELECT volunteer_email, organization_name FROM volunteer_hours WHERE id=?',
+                'SELECT volunteer_email FROM volunteer_hours WHERE id=?',
                 (hour_id,)
             ).fetchone()
             if full_hour:
-                create_rejection_notification(db, hour_id, full_hour['volunteer_email'],
-                                            ein, full_hour['organization_name'] or 'Organization',
-                                            reason, is_test=False)
+                full_org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
+                org_name = (full_org["organization_name"] if full_org else None) or "Organization"
+                create_rejection_notification(db, hour_id, full_hour["volunteer_email"],
+                                              ein, org_name, reason, is_test=False)
         except ImportError:
             pass  # volunteer_notifications optional
     except Exception as e:

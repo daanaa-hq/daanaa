@@ -172,7 +172,7 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
   const [bookingToken, setToken]  = useState('')
   const [cancelToken, setCancelTok] = useState<string | null>(null)
 
-  const canSignup = event.status === 'active' && event.event_date >= new Date().toISOString().slice(0,10)
+  const canSignup = event.discovery_status !== 'unconfirmed' && event.status === 'active' && event.event_date >= new Date().toISOString().slice(0,10)
 
   const spotsLeft = event.capacity != null
     ? event.capacity - event.signup_count
@@ -653,6 +653,13 @@ export default function EventDetailPage() {
           <div className="sticky top-20 flex flex-col gap-4">
             {cancelToken ? (
               <CancelPanel eventId={event.id} token={cancelToken} />
+            ) : event.discovery_status === 'unconfirmed' ? (
+              <div className="bg-white rounded-2xl border border-soft-gold/30 p-5">
+                <h3 className="font-display italic text-deep-navy text-[18px] mb-2">Source discovered event</h3>
+                <p className="font-body text-[13px] text-cool-grey leading-[1.65]">This event has not been confirmed by the organization. Volunteer signups and hour verification will open if the organization claims or confirms this listing.</p>
+                {event.source_url && <a href={event.source_url} target="_blank" rel="noreferrer" className="mt-3 inline-block font-body text-[13px] text-soft-gold hover:underline">View the original event page →</a>}
+                <Link to={`/for-nonprofits?ein=${encodeURIComponent(event.ein)}`} className="mt-3 block font-body text-[13px] text-soft-gold hover:underline">Are you the organization? Claim your page →</Link>
+              </div>
             ) : (
               <SignupForm event={{ ...event, signup_count: signupCount }} onDone={handleSignupDone} />
             )}

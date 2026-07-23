@@ -173,6 +173,21 @@ def register_volunteer(event_id: str):
         ))
         db.commit()
 
+        # Send registration confirmation email
+        try:
+            from email_service_volunteer import send_volunteer_registration_confirmation
+            event = db.execute('SELECT title, event_date FROM volunteer_events WHERE id = ?', (event_id,)).fetchone()
+            if event:
+                send_volunteer_registration_confirmation(
+                    data['volunteer_name'],
+                    data['volunteer_email'],
+                    event['title'],
+                    event['event_date'],
+                    f"https://daanaa.org/event/{event_id}"
+                )
+        except Exception as e:
+            pass  # Email failure doesn't block registration
+
         return jsonify({
             'id': volunteer_id,
             'name': data['volunteer_name'],
@@ -236,6 +251,23 @@ def log_hours(event_id: str):
         ))
         db.commit()
 
+        # Send notification to organizer
+        try:
+            from email_service_volunteer import send_hours_logged_notification
+            volunteer = db.execute('SELECT volunteer_name, volunteer_email FROM event_volunteers WHERE volunteer_id = ?', (data['volunteer_id'],)).fetchone()
+            event = db.execute('SELECT title, ein FROM volunteer_events WHERE id = ?', (event_id,)).fetchone()
+            if volunteer and event:
+                send_hours_logged_notification(
+                    f"organizer@{event['ein']}.org",  # Placeholder organizer email
+                    "Organization Admin",
+                    volunteer['volunteer_name'],
+                    data['hours'],
+                    event['title'],
+                    f"https://daanaa.org/event/{event_id}/approve"
+                )
+        except Exception as e:
+            pass  # Email failure doesn't block hour logging
+
         return jsonify({
             'id': hour_id,
             'hours': data['hours'],
@@ -271,8 +303,24 @@ def approve_hours(event_id: str, hour_id: str, user_id: str):
             WHERE id = ? AND event_id = ?
         ''', (user_id, hour_id, event_id))
         db.commit()
-        db.close()
 
+        # Send approval notification to volunteer
+        try:
+            from email_service_volunteer import send_hours_approved_notification
+            hours = db.execute('SELECT volunteer_id, hours FROM volunteer_hours WHERE id = ?', (hour_id,)).fetchone()
+            volunteer = db.execute('SELECT volunteer_email, volunteer_name FROM event_volunteers WHERE volunteer_id = ?', (hours['volunteer_id'],)).fetchone()
+            event = db.execute('SELECT title FROM volunteer_events WHERE id = ?', (event_id,)).fetchone()
+            if volunteer and event:
+                send_hours_approved_notification(
+                    volunteer['volunteer_email'],
+                    volunteer['volunteer_name'],
+                    hours['hours'],
+                    event['title']
+                )
+        except Exception as e:
+            pass  # Email failure doesn't block approval
+
+        db.close()
         return jsonify({'status': 'approved'}), 200
     except Exception as e:
         db.rollback()

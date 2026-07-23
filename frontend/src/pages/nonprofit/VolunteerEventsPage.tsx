@@ -15,6 +15,9 @@ interface VolunteerEvent {
   short_id: string | null
   signup_count: number
   co_org_eins?: string | null
+  source_url?: string | null
+  discovery_status?: "confirmed" | "unconfirmed"
+  ai_generated?: boolean
 }
 
 const TASK_TYPES = ['volunteer', 'marshal', 'registration', 'setup', 'cleanup', 'hospitality', 'tech_support', 'mentor', 'coordinator', 'other']
@@ -127,6 +130,24 @@ function CreateEventForm({ ein, idToken, onCreated }: { ein: string; idToken: st
   )
 }
 
+function ImportEventForm({ ein, idToken, onCreated }: { ein: string; idToken: string; onCreated: () => void }) {
+  const [url, setUrl] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true); setError(null)
+    try {
+      const res = await fetch(API_BASE + "/api/portal/events/from-url", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + idToken }, body: JSON.stringify({ ein, source_url: url.trim() }) })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || "Could not build an event draft")
+      setUrl(""); setOpen(false); onCreated()
+    } catch (err) { setError(err instanceof Error ? err.message : "Could not build an event draft") } finally { setBusy(false) }
+  }
+  if (!open) return <button onClick={() => setOpen(true)} className="px-5 py-3 rounded-xl border border-soft-gold text-deep-navy font-body text-[14px] font-semibold">Add from event link</button>
+  return <form onSubmit={submit} className="bg-white rounded-2xl border border-soft-gold/30 p-6 space-y-3"><h3 className="font-body text-[15px] font-semibold text-deep-navy">Build from a public event link</h3><p className="font-body text-[12px] text-cool-grey">Daanaa will create an AI assisted, unconfirmed draft for your review.</p>{error && <div className="p-3 bg-red-50 rounded-lg text-red-700 font-body text-[13px]">{error}</div>}<input type="url" required value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.org/event" className="w-full px-3 py-2.5 border border-light-grey rounded-lg font-body text-[14px]" /><div className="flex gap-3"><button type="submit" disabled={busy} className="px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold">{busy ? "Building draft..." : "Build draft"}</button><button type="button" onClick={() => setOpen(false)} className="px-5 py-2.5 rounded-xl border border-light-grey text-deep-navy font-body text-[14px]">Cancel</button></div></form>
+}
+
 function EventCard({ event }: { event: VolunteerEvent }) {
   const [copied, setCopied] = useState(false)
   const shortUrl = event.short_id ? `https://daanaa.org/e/${event.short_id}/log-hours` : null
@@ -153,7 +174,7 @@ function EventCard({ event }: { event: VolunteerEvent }) {
         <span className={`px-2.5 py-0.5 rounded-full font-body text-[11px] font-semibold border ${
           event.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-light-grey text-cool-grey border-light-grey'
         }`}>
-          {event.status}
+          {event.discovery_status === "unconfirmed" ? "Review needed" : event.status}
         </span>
       </div>
 
@@ -239,6 +260,7 @@ export default function VolunteerEventsPage() {
         </div>
 
         <CreateEventForm ein={ein} idToken={idToken} onCreated={fetchEvents} />
+          <ImportEventForm ein={ein} idToken={idToken} onCreated={fetchEvents} />
 
         {error && <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 font-body text-[14px]">{error}</div>}
 

@@ -70,8 +70,10 @@ def seed_schema():
             source TEXT, verified BOOLEAN DEFAULT 0, notes TEXT,
             ein TEXT, type TEXT, hours REAL, log_date TEXT
         );
+        CREATE TABLE IF NOT EXISTS volunteer_notification_jobs (job_id TEXT PRIMARY KEY, hour_id TEXT NOT NULL, notification_type TEXT NOT NULL, recipient_email TEXT NOT NULL, recipient_type TEXT NOT NULL, subject TEXT NOT NULL, status TEXT DEFAULT 'pending', attempts INTEGER DEFAULT 0, max_attempts INTEGER DEFAULT 3, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, sent_at TIMESTAMP, next_retry_at TIMESTAMP, error_message TEXT, is_test_run BOOLEAN DEFAULT 0, UNIQUE(hour_id, notification_type));
         DELETE FROM volunteer_hours;
         DELETE FROM impact_logs;
+        DELETE FROM volunteer_notification_jobs;
         DELETE FROM volunteer_hours_audit_log;
         DELETE FROM nonprofit_yearly_impact_cache;
         DELETE FROM volunteer_events;
