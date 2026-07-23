@@ -11,12 +11,16 @@ Core endpoints for AKF event platform:
 import sqlite3
 import json
 import secrets
+import os
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
 from functools import wraps
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify
 
 event_bp = Blueprint('events', __name__, url_prefix='/api/events')
+
+# Database path — mirrors daanaa_api.py config
+DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
 
 # ============================================================================
 # Helper Functions
@@ -24,7 +28,7 @@ event_bp = Blueprint('events', __name__, url_prefix='/api/events')
 
 def get_db():
     """Get database connection."""
-    db = sqlite3.connect(current_app.config['DATABASE'])
+    db = sqlite3.connect(DB_PATH)
     db.row_factory = sqlite3.Row
     return db
 

@@ -91,8 +91,7 @@ CREATE TABLE IF NOT EXISTS volunteer_hours (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (event_id) REFERENCES events(id),
-    FOREIGN KEY (volunteer_id) REFERENCES event_volunteers(volunteer_id)
+    FOREIGN KEY (event_id) REFERENCES events(id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_volunteer_hours_event ON volunteer_hours(event_id);
