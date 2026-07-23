@@ -17,6 +17,13 @@ from typing import Dict, List, Tuple, Optional
 from functools import wraps
 from flask import Blueprint, request, jsonify
 
+# Audit logging
+try:
+    from audit_logging import log_hour_approval, log_hour_submission
+except ImportError:
+    log_hour_approval = None
+    log_hour_submission = None
+
 event_bp = Blueprint('events', __name__, url_prefix='/api/events')
 
 # Database path — volunteer_events lives in LIVE_DB_PATH
@@ -262,6 +269,25 @@ def log_hours(event_id: str):
         ))
         db.commit()
 
+        # Audit log (hour submission with IP)
+        if log_hour_submission:
+            try:
+                volunteer = db.execute('SELECT volunteer_email FROM event_volunteers WHERE volunteer_id = ?', (data['volunteer_id'],)).fetchone()
+                if volunteer:
+                    log_hour_submission(
+                        hour_id=hour_id,
+                        event_id=int(event_id),
+                        volunteer_id=data['volunteer_id'],
+                        volunteer_email=volunteer['volunteer_email'],
+                        hours_claimed=float(data['hours']),
+                        job_description=data.get('job_description', ''),
+                        ip_address=request.remote_addr,
+                        user_agent=request.headers.get('User-Agent', 'Unknown'),
+                        is_edit=False
+                    )
+            except Exception:
+                pass  # Audit failure doesn't block
+
         # Send notification to organizer
         try:
             from email_service_volunteer import send_hours_logged_notification
@@ -308,6 +334,10 @@ def approve_hours(event_id: str, hour_id: str, user_id: str):
         return jsonify({'error': 'Event not found'}), 403
 
     try:
+        # Get hours and volunteer info before updating (for logging)
+        hours_record = db.execute('SELECT volunteer_id, hours FROM volunteer_hours WHERE id = ?', (hour_id,)).fetchone()
+        volunteer_record = db.execute('SELECT volunteer_name FROM event_volunteers WHERE volunteer_id = ?', (hours_record['volunteer_id'],)).fetchone()
+
         db.execute('''
             UPDATE volunteer_hours
             SET status = 'approved', approved_by = ?, approved_at = datetime('now')
@@ -315,17 +345,33 @@ def approve_hours(event_id: str, hour_id: str, user_id: str):
         ''', (user_id, hour_id, event_id))
         db.commit()
 
+        # Audit log (hour approval with IP and approver)
+        if log_hour_approval:
+            try:
+                log_hour_approval(
+                    hour_id=hour_id,
+                    event_id=int(event_id),
+                    volunteer_id=hours_record['volunteer_id'],
+                    volunteer_name=volunteer_record['volunteer_name'] if volunteer_record else 'Unknown',
+                    hours_approved=float(hours_record['hours']),
+                    approved_by_email=user_id,
+                    ip_address=request.remote_addr,
+                    user_agent=request.headers.get('User-Agent', 'Unknown'),
+                    status='approved'
+                )
+            except Exception:
+                pass  # Audit failure doesn't block
+
         # Send approval notification to volunteer
         try:
             from email_service_volunteer import send_hours_approved_notification
-            hours = db.execute('SELECT volunteer_id, hours FROM volunteer_hours WHERE id = ?', (hour_id,)).fetchone()
-            volunteer = db.execute('SELECT volunteer_email, volunteer_name FROM event_volunteers WHERE volunteer_id = ?', (hours['volunteer_id'],)).fetchone()
+            volunteer = db.execute('SELECT volunteer_email, volunteer_name FROM event_volunteers WHERE volunteer_id = ?', (hours_record['volunteer_id'],)).fetchone()
             event = db.execute('SELECT title FROM volunteer_events WHERE id = ?', (event_id,)).fetchone()
             if volunteer and event:
                 send_hours_approved_notification(
                     volunteer['volunteer_email'],
                     volunteer['volunteer_name'],
-                    hours['hours'],
+                    hours_record['hours'],
                     event['title']
                 )
         except Exception as e:

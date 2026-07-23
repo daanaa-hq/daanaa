@@ -16,6 +16,22 @@ from typing import Dict, Optional, Tuple
 from flask import Blueprint, request, jsonify
 from functools import wraps
 
+# Audit logging
+try:
+    from audit_logging import (
+        log_event_claim,
+        log_donation_link_change,
+        log_hour_approval,
+        log_hour_submission,
+        log_fraud_report
+    )
+except ImportError:
+    log_event_claim = None
+    log_donation_link_change = None
+    log_hour_approval = None
+    log_hour_submission = None
+    log_fraud_report = None
+
 claiming_bp = Blueprint('claiming', __name__, url_prefix='/api')
 
 DB_PATH = os.environ.get("LIVE_DB_PATH", os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/daanaa_live.db")))
@@ -147,13 +163,19 @@ def initiate_claim(event_id: str):
 # Claim Verification (Email Link)
 # ============================================================================
 
-@claiming_bp.route('/events/claim-verify/<token>', methods=['GET'])
+@claiming_bp.route('/events/claim-verify/<token>', methods=['POST'])
 def verify_claim(token: str):
-    """Nonprofit director clicks email link to verify and claim event.
+    """Nonprofit director verifies event claim with explicit consent.
 
-    This endpoint is called by the email link, typically from a browser.
-    Sets claim_status = 'claimed', enables volunteer signup.
+    Requires explicit checkbox confirmation of authority + TOS agreement.
+    Logs everything (IP, timestamp, user agent, checkboxes).
     """
+    data = request.get_json()
+
+    # Verify checkboxes (explicit consent)
+    if not data or not data.get('authority_confirmed') or not data.get('tos_agreed'):
+        return jsonify({'error': 'You must confirm authority and agree to terms'}), 400
+
     db = get_db()
 
     try:
@@ -167,12 +189,17 @@ def verify_claim(token: str):
             db.close()
             return jsonify({'error': 'Invalid or expired verification link'}), 404
 
-        # Update claim status
+        # Capture IP and user agent
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent', 'Unknown')
+
+        # Update claim status with audit trail
         db.execute('''
             UPDATE event_claims
-            SET status = 'verified', verified_at = datetime('now'), verification_ip = ?
+            SET status = 'verified', verified_at = datetime('now'), verification_ip = ?,
+                authority_confirmed = 1, tos_agreed = 1
             WHERE id = ?
-        ''', (request.remote_addr, claim['id']))
+        ''', (ip_address, claim['id']))
 
         # Update event status
         db.execute('''
@@ -195,9 +222,42 @@ def verify_claim(token: str):
         ''', (claim['ein'],))
 
         db.commit()
+
+        # Audit log (non-repudiation trail)
+        if log_event_claim:
+            try:
+                log_event_claim(
+                    ein=claim['ein'],
+                    email=claim['email'],
+                    event_id=claim['event_id'],
+                    ip_address=ip_address,
+                    user_agent=user_agent,
+                    status='verified'
+                )
+            except Exception:
+                pass  # Audit failure doesn't block verification
+
         db.close()
 
-        # Return JSON response (can also do redirect to frontend dashboard)
+        # Send confirmation email
+        try:
+            from email_service_volunteer import send_email
+            event = db.execute('SELECT title FROM volunteer_events WHERE id = ?', (claim['event_id'],)).fetchone()
+            if event:
+                send_email(
+                    claim['email'],
+                    f"Your event is now live on Daanaa: {event['title']}",
+                    f"""
+                    <h2>Event Activated!</h2>
+                    <p>{event['title']} is now live on Daanaa.</p>
+                    <p>Volunteers can register immediately. After the event, they'll log their hours and you'll approve them in your dashboard.</p>
+                    <p><a href="https://daanaa.org/nonprofit/dashboard">Go to Your Dashboard</a></p>
+                    """
+                )
+        except Exception:
+            pass  # Email failure doesn't block
+
+        # Return JSON response
         return jsonify({
             'status': 'verified',
             'event_id': claim['event_id'],

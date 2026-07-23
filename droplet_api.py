@@ -1160,6 +1160,130 @@ def _init_volunteer_events_table():
 
         db.commit()
 
+        # Audit logging tables (non-repudiation trails for compliance)
+
+        # Event claim audit log
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS event_claim_audit_log (
+                id TEXT PRIMARY KEY,
+                ein TEXT NOT NULL,
+                email TEXT NOT NULL,
+                event_id INTEGER NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'verified',
+                FOREIGN KEY (event_id) REFERENCES volunteer_events(id),
+                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_event_claim_audit_ein ON event_claim_audit_log(ein, timestamp)")
+
+        # Donation link change log
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS donation_link_change_log (
+                id TEXT PRIMARY KEY,
+                ein TEXT NOT NULL,
+                requested_by_email TEXT NOT NULL,
+                old_url TEXT,
+                new_url TEXT NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                reviewed_by TEXT,
+                reviewed_at TIMESTAMP,
+                decision TEXT,
+                reason TEXT,
+                status TEXT DEFAULT 'pending_review',
+                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_donation_link_change_ein ON donation_link_change_log(ein, requested_at)")
+
+        # Hour approval/rejection log
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS hour_approval_log (
+                id TEXT PRIMARY KEY,
+                hour_id TEXT NOT NULL,
+                event_id INTEGER NOT NULL,
+                volunteer_id TEXT NOT NULL,
+                volunteer_name TEXT,
+                hours_approved REAL NOT NULL,
+                approved_by_email TEXT NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                approved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'approved',
+                reason TEXT,
+                FOREIGN KEY (event_id) REFERENCES volunteer_events(id)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_hour_approval_event ON hour_approval_log(event_id, approved_at)")
+
+        # Hour submission log
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS hour_submission_log (
+                id TEXT PRIMARY KEY,
+                hour_id TEXT NOT NULL,
+                event_id INTEGER NOT NULL,
+                volunteer_id TEXT NOT NULL,
+                volunteer_email TEXT NOT NULL,
+                hours_claimed REAL NOT NULL,
+                job_description TEXT,
+                ip_address TEXT,
+                user_agent TEXT,
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                is_edit INTEGER DEFAULT 0,
+                original_hours REAL,
+                FOREIGN KEY (event_id) REFERENCES volunteer_events(id)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_hour_submission_volunteer ON hour_submission_log(volunteer_id, submitted_at)")
+
+        # Account change log
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS account_change_log (
+                id TEXT PRIMARY KEY,
+                ein TEXT NOT NULL,
+                user_email TEXT NOT NULL,
+                change_type TEXT NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                changed_by TEXT NOT NULL,
+                reason TEXT,
+                details TEXT,
+                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_account_change_ein ON account_change_log(ein, changed_at)")
+
+        # Fraud report log
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS fraud_report_log (
+                id TEXT PRIMARY KEY,
+                report_type TEXT NOT NULL,
+                reported_by_email TEXT NOT NULL,
+                event_id INTEGER,
+                ein TEXT,
+                description TEXT NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                evidence_url TEXT,
+                status TEXT DEFAULT 'under_review',
+                reviewed_by TEXT,
+                reviewed_at TIMESTAMP,
+                action_taken TEXT,
+                law_enforcement_contacted INTEGER DEFAULT 0,
+                FOREIGN KEY (event_id) REFERENCES volunteer_events(id),
+                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_fraud_report_ein ON fraud_report_log(ein, reported_at)")
+
+        db.commit()
+
 _init_volunteer_events_table()
 
 
