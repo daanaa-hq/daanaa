@@ -1,0 +1,113 @@
+NCCS DATA INGESTION — READY TO EXECUTE
+================================================================================
+
+Status: WAITING FOR AGENT TO DOWNLOAD FILES
+
+What's Ready (Created & Committed 2026-07-23)
+================================================================================
+
+✅ Scripts (all filters: 5 years + active-only orgs)
+   - scripts/add_nccs_columns.py       (11 new columns, idempotent)
+   - scripts/ingest_nccs_part_x.py     (Balance sheet; ~106K orgs expected)
+   - scripts/ingest_nccs_part_vii.py   (Compensation; smaller subset)
+   - scripts/orchestrate_nccs_ingest.sh (One-shot pipeline + validation)
+
+✅ Documentation
+   - docs/NCCS_DATA_INGESTION_STRATEGY.md (Full design, rollback procedure)
+   - docs/NCCS_READY_TO_INGEST.txt        (This file)
+
+What Happens Next
+================================================================================
+
+1. NCCS Agent Completes Download
+   Downloads files to ~/meritgiving/data/nccs/
+   Expected files:
+   - F10*BALANCE*.CSV        (Part X — balance sheet)
+   - F7*COMPENSATION*.CSV    (Part VII — executive compensation)
+   - F11*OVERHEAD*.CSV       (Part XI — overhead ratios, for future use)
+
+2. Run Ingestion Pipeline (One-Shot)
+   $ cd ~/meritgiving
+   $ source venv/bin/activate
+   $ bash scripts/orchestrate_nccs_ingest.sh
+
+   This runs:
+   a) add_nccs_columns.py                  (schema: IF NOT EXISTS)
+   b) ingest_nccs_part_vii.py              (compensation data)
+   c) ingest_nccs_part_x.py                (balance sheet data)
+   d) Validates & reports coverage stats
+
+3. Expected Output
+   [validation report]
+   Ingestion Results:
+     Total orgs: 1,700,000+
+     Part X coverage: 106,000+ (6.2%)
+     Part VII coverage: 45,000+ (2.6%)
+
+   Logs saved to ~/meritgiving/logs/
+
+4. Optional: Re-score Pipeline (if you want new balance-sheet data in scores)
+   $ python3 scripts/overnight_pipeline.py
+
+Data Scope (Design Decisions)
+================================================================================
+
+Years:           2019–2024 only (5-year window, current + 4 years back)
+Organizations:  ACTIVE deductibility_status only (excludes dissolved/revoked)
+Filtering:       Happens at ingestion (skipped records not stored in DB)
+
+Why These Choices:
+- 5-year window provides meaningful trends without stale/obsolete data
+- Active-only prevents scoring on closed organizations
+- Cleaner database (lower noise for scoring pipeline)
+
+Expected Impact
+================================================================================
+
+Balance Sheet Data (Part X):
+  - Unlocks ~106K additional orgs for peer financial context scoring
+  - Fills critical gap from 2026-06-15 database crash
+  - Adds net_assets, liabilities, revenue, expenses per org
+
+Compensation Data (Part VII):
+  - Smaller subset of orgs (mainly large organizations)
+  - Adds transparency on executive compensation visibility
+  - Enables nonprofit-leader pivot use cases
+
+Rollback (If Needed)
+================================================================================
+
+All NCCS columns can be cleared by setting to NULL:
+
+  $ sqlite3 ~/meritgiving/data/merit_registry.db << 'SQL'
+  UPDATE registry_enriched
+  SET nccs_executive_compensation = NULL,
+      nccs_form_990_filed = NULL,
+      nccs_net_assets = NULL,
+      nccs_liabilities = NULL,
+      nccs_revenue_part_x = NULL,
+      nccs_expenses_part_x = NULL,
+      nccs_part_x_loaded = NULL,
+      nccs_overhead_ratio = NULL,
+      nccs_program_ratio = NULL,
+      nccs_efficiency_score = NULL,
+      nccs_data_year = NULL,
+      nccs_full_load_date = NULL;
+  SQL
+
+(Backup database first with: .backup merit_registry.db merit_registry.backup.db)
+
+Stewardship Alignment
+================================================================================
+
+✅ STEWARDSHIP.md Principle 3: Trust signals are evidence-based
+   All data sourced from public IRS Form 990 filings via NCCS BMF catalog
+
+✅ STEWARDSHIP.md Principle 6: Mistakes corrected quickly
+   Data source clearly documented; recovery of lost data from crash
+
+Next Checkpoint
+================================================================================
+
+When agent completes download → Run orchestrate_nccs_ingest.sh
+Then → User reviews validation report + decides on re-scoring

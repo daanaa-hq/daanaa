@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daanaa NCCS Data Partnership</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px 50px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 3px solid #d4a574;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        .header p {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin: 3px 0;
+        }
+        h2 {
+            font-size: 18px;
+            color: #2c3e50;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            border-left: 4px solid #d4a574;
+            padding-left: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        th {
+            background: #ecf0f1;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #bdc3c7;
+            color: #2c3e50;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .metric-box {
+            background: #f0f7ff;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        .metric-box strong {
+            display: block;
+            font-size: 24px;
+            color: #2980b9;
+            margin-bottom: 5px;
+        }
+        .metric-box span {
+            font-size: 14px;
+            color: #555;
+        }
+        .gap-high {
+            background: #fef5e7;
+            border-left-color: #e67e22;
+        }
+        .gap-high strong {
+            color: #d35400;
+        }
+        ul {
+            margin: 15px 0 15px 25px;
+        }
+        li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .checkmark {
+            color: #27ae60;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .question {
+            background: #eaf6ff;
+            border-left: 4px solid #3498db;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+            font-size: 12px;
+            color: #95a5a6;
+        }
+        .emphasis {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        @media print {
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; padding: 40px; }
+            .question { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Daanaa NCCS Data Partnership</h1>
+            <p><strong>To:</strong> Dr. Lecy, NCCS</p>
+            <p><strong>Date:</strong> July 23, 2026</p>
+            <p><strong>Re:</strong> Coverage Status & Data Gap Solutions</p>
+        </div>
+
+        <h2>Current NCCS Coverage</h2>
+        <p>Tax-deductible nonprofits (501(c)(3)s with active donation status):</p>
+
+        <div class="metric-box">
+            <strong>476,757 organizations</strong>
+            <span>with NCCS financial data | 24.5% of deductible nonprofits</span>
+        </div>
+
+        <table>
+            <tr>
+                <th>Metric</th>
+                <th style="text-align: right;">Number</th>
+            </tr>
+            <tr>
+                <td>Total deductible 501(c)(3)s</td>
+                <td style="text-align: right;">1,946,935</td>
+            </tr>
+            <tr>
+                <td>With NCCS financial data</td>
+                <td style="text-align: right;">476,757</td>
+            </tr>
+            <tr>
+                <td><strong>Coverage</strong></td>
+                <td style="text-align: right;"><strong>24.5%</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Gap</strong></td>
+                <td style="text-align: right;"><strong>1,470,178 orgs (75.5%)</strong></td>
+            </tr>
+        </table>
+
+        <h2>What We Use NCCS Data For</h2>
+        <ul>
+            <li><span class="checkmark">✓</span> Peer financial context scores (0–100 percentile rank)</li>
+            <li><span class="checkmark">✓</span> Financial health signals: HEALTHY / STABLE / NEED_SUPPORT</li>
+            <li><span class="checkmark">✓</span> Solvency metrics: net assets ratio, months of runway, debt burden</li>
+        </ul>
+
+        <h2>Our Resources</h2>
+        <ul>
+            <li><span class="checkmark">✓</span> SQLite database (2.06M orgs, 15GB financial data)</li>
+            <li><span class="checkmark">✓</span> Proven data ingestion pipeline (NCCS Part X, IX, VII)</li>
+            <li><span class="checkmark">✓</span> Automated scoring engine (peer-group computation at scale)</li>
+            <li><span class="checkmark">✓</span> Public API (serving nonprofit discovery platform)</li>
+            <li><span class="checkmark">✓</span> Full attribution (all scores linked to NCCS + IRS Form 990)</li>
+        </ul>
+
+        <h2>The Gaps (Priority Order)</h2>
+
+        <table>
+            <tr>
+                <th>Gap</th>
+                <th>Scale</th>
+                <th>Coverage</th>
+            </tr>
+            <tr class="gap-high">
+                <td><strong>1. Microdonor orgs</strong><br/><span style="font-size: 12px;">(<$50K revenue)</span></td>
+                <td>618K orgs</td>
+                <td><span class="emphasis">8.2%</span></td>
+            </tr>
+            <tr class="gap-high">
+                <td><strong>2. Faith/Fraternal</strong><br/><span style="font-size: 12px;">(NTEE X, Y, Z)</span></td>
+                <td>145K orgs</td>
+                <td><span class="emphasis">15.1%</span></td>
+            </tr>
+            <tr>
+                <td><strong>3. Liabilities/Debt</strong><br/><span style="font-size: 12px;">All categories</span></td>
+                <td>1.47M orgs</td>
+                <td>24% have data</td>
+            </tr>
+            <tr>
+                <td><strong>4. Intermediate/Other</strong><br/><span style="font-size: 12px;">(NTEE U, Z)</span></td>
+                <td>21K orgs</td>
+                <td><span class="emphasis">8%</span></td>
+            </tr>
+        </table>
+
+        <h2>Our Questions for NCCS</h2>
+
+        <div class="question">
+            <strong>1. Why is small-org coverage only 8.2%?</strong><br/>
+            Are organizations under $50K using Form 990-N (simplified filing)? Does 990-N include Part X (balance sheet)? What % of sub-$50K filers use the simplified form?
+        </div>
+
+        <div class="question">
+            <strong>2. Why do faith communities lag at 15.1%?</strong><br/>
+            Is this a lower Form 990 filing rate, different accounting practices, or something else in NCCS extraction?
+        </div>
+
+        <div class="question">
+            <strong>3. Where is the liabilities data?</strong><br/>
+            Only 24% of orgs have liabilities despite 24.5% having net assets. Is this a parsing issue or a filing rate issue?
+        </div>
+
+        <h2>What We're Asking</h2>
+        <p>We need your perspective on whether these gaps are:</p>
+        <ul>
+            <li><strong>Fixable:</strong> Through outreach, data extraction improvements, or technical corrections</li>
+            <li><strong>Structural:</strong> Certain org types or categories simply don't report these fields</li>
+            <li><strong>Partnerships:</strong> Joint research on Form 990 filing patterns or targeted outreach to underserved categories</li>
+        </ul>
+
+        <p style="margin-top: 25px; font-style: italic; color: #555;">
+            Alternatively: if you know of better data sources for these missing metrics, we can integrate them into our pipeline.
+        </p>
+
+        <h2>What We Commit To</h2>
+        <ul>
+            <li><span class="checkmark">✓</span> Transparent attribution (all scores linked to NCCS data + IRS Form 990)</li>
+            <li><span class="checkmark">✓</span> No resale of data (scores are internal, raw data stays private)</li>
+            <li><span class="checkmark">✓</span> Annual refresh as new 990s are filed</li>
+            <li><span class="checkmark">✓</span> Share aggregate findings with NCCS for research</li>
+        </ul>
+
+        <h2>Next Steps</h2>
+        <p>We'd welcome your thoughts on:</p>
+        <ul>
+            <li>Which gaps are highest priority to investigate</li>
+            <li>Whether NCCS has existing initiatives addressing small-org data collection</li>
+            <li>Opportunities for joint research or partnership</li>
+            <li>Alternative data sources if NCCS data has structural limitations</li>
+        </ul>
+
+        <div class="footer">
+            <p><strong>Daanaa</strong> · Nonprofit discovery platform · daanaa.org</p>
+            <p style="margin-top: 10px;">Using publicly available Form 990 data to help donors make informed giving decisions.</p>
+        </div>
+    </div>
+</body>
+</html>
