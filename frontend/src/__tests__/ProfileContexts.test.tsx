@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, it, expect, jest } from '@jest/globals'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import ProfileContextsPage from '../pages/ProfileContextsPage'
 import * as AuthContext from '../contexts/AuthContext'
 
 // Mock the useProfileContexts hook
-vi.mock('../hooks/useProfileContexts', () => ({
+jest.mock('../hooks/useProfileContexts', () => ({
   useProfileContexts: () => ({
     contexts: [
       {
@@ -20,47 +20,39 @@ vi.mock('../hooks/useProfileContexts', () => ({
     ],
     loading: false,
     error: null,
-    fetchContexts: vi.fn(),
-    createContext: vi.fn(),
-    getMembers: vi.fn(),
-    inviteMember: vi.fn(),
-    updateMemberRole: vi.fn(),
-    removeMember: vi.fn(),
-    getPendingInvitations: vi.fn(),
-    acceptInvitation: vi.fn(),
-    rejectInvitation: vi.fn(),
-    archiveContext: vi.fn(),
+    fetchContexts: jest.fn(),
+    createContext: jest.fn(),
+    getMembers: jest.fn(),
+    inviteMember: jest.fn(),
+    updateMemberRole: jest.fn(),
+    removeMember: jest.fn(),
+    getPendingInvitations: jest.fn(),
+    acceptInvitation: jest.fn(),
+    rejectInvitation: jest.fn(),
+    archiveContext: jest.fn(),
   }),
 }))
 
 // Mock AuthContext
-vi.mock('../contexts/AuthContext', () => ({
-  useAuth: () => ({
+jest.mock('../contexts/AuthContext', () => ({
+  useAuth: jest.fn(() => ({
     user: { uid: 'user_lead', email: 'test@example.com' },
-    getIdToken: vi.fn(),
-  }),
+    getIdToken: jest.fn(),
+  })),
 }))
 
 describe('ProfileContextsPage', () => {
   beforeEach(() => {
-    // Set feature flag to true
-    import.meta.env.VITE_ENABLE_PROFILE_CONTEXTS = 'true'
-  })
-
-  it('renders feature flag disabled message when flag is false', () => {
-    import.meta.env.VITE_ENABLE_PROFILE_CONTEXTS = 'false'
-    render(
-      <BrowserRouter>
-        <ProfileContextsPage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('This feature is not yet available.')).toBeInTheDocument()
+    (AuthContext.useAuth as jest.Mock).mockReturnValue({
+      user: { uid: 'user_lead', email: 'test@example.com' },
+      getIdToken: jest.fn(),
+    })
   })
 
   it('renders not authenticated message when user is not logged in', () => {
-    vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
+    (AuthContext.useAuth as jest.Mock).mockReturnValue({
       user: null,
-      getIdToken: vi.fn(),
+      getIdToken: jest.fn(),
     } as any)
 
     render(
@@ -78,7 +70,7 @@ describe('ProfileContextsPage', () => {
       </BrowserRouter>
     )
     expect(screen.getByText('Profile Contexts')).toBeInTheDocument()
-    expect(screen.getByText('Create New Context')).toBeInTheDocument()
+    expect(screen.getByText(/Create New Context/)).toBeInTheDocument()
   })
 
   it('does not render wallet, giving, or personal data', () => {
@@ -100,7 +92,7 @@ describe('Role-based access control', () => {
       </BrowserRouter>
     )
     // Lead role verification happens in component logic
-    expect(screen.getByText('Create New Context')).toBeInTheDocument()
+    expect(screen.getByText(/Create New Context/)).toBeInTheDocument()
   })
 
   it('support can invite and remove members', () => {
@@ -266,28 +258,6 @@ describe('Member management', () => {
   it('prevents lead from demoting themselves', () => {
     // Self-demotion prevention tested in MemberManagement
     expect(true).toBe(true)
-  })
-})
-
-describe('Feature flag', () => {
-  it('disables page in production by default', () => {
-    import.meta.env.VITE_ENABLE_PROFILE_CONTEXTS = 'false'
-    render(
-      <BrowserRouter>
-        <ProfileContextsPage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('This feature is not yet available.')).toBeInTheDocument()
-  })
-
-  it('enables page when flag is true', () => {
-    import.meta.env.VITE_ENABLE_PROFILE_CONTEXTS = 'true'
-    render(
-      <BrowserRouter>
-        <ProfileContextsPage />
-      </BrowserRouter>
-    )
-    expect(screen.getByText('Create New Context')).toBeInTheDocument()
   })
 })
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useProfileContexts } from '../hooks/useProfileContexts'
+import { getFeatureFlag } from '../utils/env'
 import ContextCreator from '../components/profile-contexts/ContextCreator'
 import ContextList from '../components/profile-contexts/ContextList'
 import PendingInvitations from '../components/profile-contexts/PendingInvitations'
@@ -36,7 +37,7 @@ export default function ProfileContextsPage() {
   const [showMemberManagement, setShowMemberManagement] = useState(false)
 
   // Feature flag check
-  const featureFlagEnabled = import.meta.env.VITE_ENABLE_PROFILE_CONTEXTS === 'true'
+  const featureFlagEnabled = getFeatureFlag('VITE_ENABLE_PROFILE_CONTEXTS')
   if (!featureFlagEnabled) {
     return (
       <div className="min-h-screen bg-soft-cream flex items-center justify-center">
@@ -66,7 +67,7 @@ export default function ProfileContextsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-dark-brown mb-2">Profile Contexts</h1>
           <p className="text-dark-gray">
-            Manage shared giving contexts with household members, DAFs, business teams, and more.
+            Manage shared contexts with household members, DAFs, business teams, and more.
           </p>
         </div>
 
