@@ -104,6 +104,11 @@ except ImportError:
     register_nonprofit_endpoints = None
     register_phase3_endpoints = None
 
+try:
+    from event_claiming_api import init_claiming
+except ImportError:
+    init_claiming = None
+
 _logger = logging.getLogger(__name__)
 
 # Firebase token verification using public keys — no service account file required.
@@ -1010,6 +1015,14 @@ def _init_volunteer_events_table():
             ("waiver_url",        "TEXT"),
             ("parking_info",      "TEXT"),
             ("coordinator_name",  "TEXT"),
+            ("claim_status",      "TEXT DEFAULT 'unconfirmed'"),
+            ("claimed_by_ein",    "TEXT"),
+            ("claimed_by_email",  "TEXT"),
+            ("claimed_at",        "TIMESTAMP"),
+            ("claim_verification_token", "TEXT UNIQUE"),
+            ("discovery_status",  "TEXT DEFAULT 'unconfirmed'"),
+            ("ai_generated",      "INTEGER DEFAULT 0"),
+            ("source_url",        "TEXT"),
         ]:
             try:
                 db.execute(f"ALTER TABLE volunteer_events ADD COLUMN {col} {defn}")
@@ -1084,6 +1097,67 @@ def _init_volunteer_events_table():
                 updated_by         TEXT
             )
         """)
+        db.commit()
+
+        # event_claims — audit trail for event claiming/verification
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS event_claims (
+                id TEXT PRIMARY KEY,
+                event_id TEXT NOT NULL,
+                ein TEXT NOT NULL,
+                email TEXT NOT NULL,
+                claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                verified_at TIMESTAMP,
+                verification_token TEXT UNIQUE,
+                verification_ip TEXT,
+                status TEXT DEFAULT 'pending',
+                rejection_reason TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (event_id) REFERENCES volunteer_events(id),
+                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_event_claims_ein ON event_claims(ein)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_event_claims_status ON event_claims(status)")
+
+        # event_nonprofit_dashboard — dashboard settings for nonprofit organizers
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS event_nonprofit_dashboard (
+                ein TEXT PRIMARY KEY,
+                event_count INTEGER DEFAULT 0,
+                active_events INTEGER DEFAULT 0,
+                total_volunteer_hours REAL DEFAULT 0,
+                pending_hours_approvals INTEGER DEFAULT 0,
+                last_login TIMESTAMP,
+                dashboard_access_enabled INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
+            )
+        """)
+
+        # outreach_log — track nonprofit email campaigns and engagement
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS outreach_log (
+                id TEXT PRIMARY KEY,
+                ein TEXT NOT NULL,
+                event_id TEXT,
+                email TEXT NOT NULL,
+                outreach_type TEXT DEFAULT 'discovery',
+                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                opened_at TIMESTAMP,
+                clicked_at TIMESTAMP,
+                bounced INTEGER DEFAULT 0,
+                bounce_reason TEXT,
+                converted_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (ein) REFERENCES registry_enriched(ein),
+                FOREIGN KEY (event_id) REFERENCES volunteer_events(id)
+            )
+        """)
+        db.execute("CREATE INDEX IF NOT EXISTS idx_outreach_log_ein ON outreach_log(ein)")
+        db.execute("CREATE INDEX IF NOT EXISTS idx_outreach_log_sent_at ON outreach_log(sent_at)")
+
         db.commit()
 
 _init_volunteer_events_table()
@@ -1589,6 +1663,11 @@ def v1_health():
     })
 
 app.register_blueprint(api_v1)
+
+# Register event claiming API
+if init_claiming:
+    init_claiming(app)
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])

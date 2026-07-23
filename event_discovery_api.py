@@ -72,11 +72,12 @@ def _extract(url):
                 pass
     if not date:
         raise ValueError("No clear event date was found. Add the date manually.")
-    location = re.search(r"\b(Sugar Land|Houston|Austin|Dallas|San Antonio),\s*(Texas|TX)\b", text, re.I)
+    location = re.search(r"\b(Sugar Land|Houston|Austin|Dallas|San Antonio),\s*(Texas|TX)(?:\s+(\d{5})(?:-\d{4})?)?\b", text, re.I)
     return {
         "title": (parser.title.strip() or "Volunteer opportunity from source page")[:200],
         "event_date": date,
         "location": location.group(0) if location else "",
+        "location_zip": location.group(3) if location and location.group(3) else None,
         "description": "AI assisted draft created from the public source page. Volunteer roles and hour verification remain unconfirmed until the nonprofit reviews this listing.",
     }
 
@@ -102,15 +103,16 @@ def portal_event_from_url():
     location = extracted["location"].split(",") if extracted["location"] else []
     city = (data.get("location_city") or (location[0].strip() if location else ""))[:100] or None
     state = (data.get("location_state") or ("TX" if len(location) > 1 and location[1].strip().lower() in ("texas", "tx") else ""))[:2].upper() or None
+    location_zip = (data.get("location_zip") or extracted.get("location_zip") or "")[:10] or None
     short_id = _make_event_short_id()
     cur = db.execute("""
         INSERT INTO volunteer_events
-          (ein, title, description, event_date, location_city, location_state,
+          (ein, title, description, event_date, location_city, location_state, location_zip,
            is_virtual, signup_url, status, event_type, short_id, source_url,
            source_checked_at, discovery_status, ai_generated)
-        VALUES (?, ?, ?, ?, ?, ?, 0, ?, 'active', 'volunteer', ?, ?, date('now'), 'unconfirmed', 1)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, 'active', 'volunteer', ?, ?, date('now'), 'unconfirmed', 1)
     """, (ein, (data.get("title") or extracted["title"]).strip()[:200], extracted["description"],
-           (data.get("event_date") or extracted["event_date"]).strip()[:10], city, state, source_url, short_id, source_url))
+           (data.get("event_date") or extracted["event_date"]).strip()[:10], city, state, location_zip, source_url, short_id, source_url))
     db.commit()
     row = db.execute("SELECT * FROM volunteer_events WHERE id=?", (cur.lastrowid,)).fetchone()
     return jsonify(_format_event(row)), 201
