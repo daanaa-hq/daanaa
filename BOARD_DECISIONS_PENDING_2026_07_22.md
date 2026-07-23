@@ -232,5 +232,252 @@ Currently hardcoded: 80+ = critical, 60-80 = high, 40-60 = medium (no auto-actio
 
 ---
 
-**Board Simulation Trigger:** When 3+ decisions pending OR end of autonomous build phase
+## DECISION 4: Geographic Expansion Scope
+
+**Question:** Is Houston pilot exclusive or open to other cities?
+
+### Option A: Houston-Only (Focused)
+- Pilot is just Houston (3-5 schools, 20 nonprofits)
+- No marketing to other regions
+- Full focus on making Houston work perfectly
+- Expansion after pilot success (2027+)
+
+**Pros:**
+- ✅ Deep market fit (one city, one ecosystem)
+- ✅ Easier operations (local relationships)
+- ✅ Can refine based on real feedback
+- ✅ Manage growth carefully
+
+**Cons:**
+- ❌ Slow growth curve
+- ❌ Competitors can expand nationally
+
+### Option B: Houston + Select Cities (Selective)
+- Houston primary (3-5 schools)
+- Open to 2-3 other strong nonprofit markets (e.g., Austin, San Antonio, Dallas)
+- Managed expansion
+
+**Pros:**
+- ✅ Test multiple markets simultaneously
+- ✅ Learning faster
+- ✅ Competitive advantage vs. single-city
+
+**Cons:**
+- ❌ Operations more complex
+- ❌ Risk of spreading thin
+
+### Option C: National (Open)
+- Houston is first, but open applications anywhere
+- Let schools/nonprofits self-select
+- Organic growth model
+
+**Pros:**
+- ✅ Max market opportunity
+- ✅ Fast growth
+
+**Cons:**
+- ❌ Can't control quality of pilot (messy data)
+- ❌ Support burden explodes
+- ❌ Hard to validate assumptions
+
+### Recommendation: **Option A (Houston-only)** — Ship clean, learn deep, expand informed.
+
+### Decision Needed
+- A: Houston only (focused, deep learning)
+- B: Houston + 2-3 other cities (selective)
+- C: National/open (organic growth)
+
+---
+
+## DECISION 5: Pricing Model — Who Pays?
+
+**Question:** Is student service free, or do we charge schools/nonprofits?
+
+### Option A: Free (Freemium MVP)
+- Students: Free
+- Schools: Free
+- Nonprofits: Free
+- Model: Later figure out revenue (B2B features, premium)
+
+**Pros:**
+- ✅ Maximum adoption
+- ✅ Can focus on product
+- ✅ Network effects (more students = more nonprofits)
+- ✅ Aligns with P1 (mission before growth)
+
+**Cons:**
+- ❌ No revenue for pilot
+- ❌ Harder to justify expansion
+- ❌ Scope creep (free = expectations)
+
+### Option B: Free for Students, Paid for Schools/Nonprofits
+- Students: Free
+- Schools: Pay per student or flat fee
+- Nonprofits: Free (they're the cause)
+- Revenue: School subscriptions
+
+**Pros:**
+- ✅ Students get access (mission)
+- ✅ Schools have skin in game
+- ✅ Revenue to sustain platform
+
+**Cons:**
+- ❌ Schools may not adopt
+- ❌ Complicates sales
+- ❌ Risk: P1 mission compromise (becomes paid tool)
+
+### Option C: Free for Students, Schools Only (Nonprofits Invited)
+- Students: Free
+- Schools: Manage platform, track student hours
+- Nonprofits: Free but invited (controlled onboarding)
+- Revenue: School subscriptions
+
+**Pros:**
+- ✅ Schools drive adoption
+- ✅ Quality control (invited nonprofits only)
+- ✅ Revenue model clear
+
+**Cons:**
+- ❌ Nonprofits feel gated
+- ❌ Slower nonprofit growth
+
+### Stewardship Check (P1, P8)
+- P1: Mission is helping students volunteer — revenue shouldn't corrupt that
+- P8: Never handle funds — payment only to *us*, not through us
+
+### Recommendation: **Option A (Free MVP)** — Launch free, build traction, monetize later if at all.
+
+### Decision Needed
+- A: Free for everyone (MVP, mission-first)
+- B: Free students, paid schools/nonprofits
+- C: Free students, school subscriptions
+
+---
+
+## DECISION 6: Minimum Student Age
+
+**Question:** What's the minimum age for student accounts?
+
+### Option A: 13+ (COPPA Boundary)
+- 13-17: Parental consent required (Decision 1)
+- 18+: Student-owned
+- 13-year-olds can volunteer with parent approval
+
+**Pros:**
+- ✅ Aligns with COPPA (legal floor)
+- ✅ Catches middle schoolers (emerging volunteers)
+- ✅ Larger addressable market
+
+**Cons:**
+- ❌ Parental consent overhead (13-17 bucket)
+- ❌ Houston schools start at 9th grade (age 14) mostly
+
+### Option B: 16+ (Safer Legal)
+- 16-17: Possibly with parental notice (lighter touch)
+- 18+: Student-owned
+- Older teens only
+
+**Pros:**
+- ✅ Simpler legal (less COPPA complexity)
+- ✅ Aligned with Houston high schools
+- ✅ Clearer developmental stage
+
+**Cons:**
+- ❌ Exclude middle schoolers + early HS
+- ❌ Smaller market
+
+### Option C: 18+ (No Minors)
+- Adults only
+- Zero legal complexity
+
+**Pros:**
+- ✅ Simplest legal
+- ✅ No parental consent needed
+- ✅ No COPPA worries
+
+**Cons:**
+- ❌ Miss high school market entirely
+- ❌ Miss college gap year market
+- ❌ Contradicts student service mission
+
+### Recommendation: **Option A (13+)** — COPPA-compliant, larger market, supports full student lifecycle.
+
+### Decision Needed
+- A: 13+ (COPPA boundary, full market)
+- B: 16+ (safer legal, HS focus)
+- C: 18+ (simplest legal, adults only)
+
+---
+
+## DECISION 7: Volunteer Hour Constraints
+
+**Question:** What are the min/max hours per submission and per student?
+
+### Option A: Flexible (No Constraints)
+- Min: 0.25 hours (15 min, if logged)
+- Max: 24 hours/day
+- No caps on student total
+- Fraud detection catches outliers
+
+**Pros:**
+- ✅ Flexible for real-world volunteering
+- ✅ Trust the data (fraud detection handles)
+- ✅ No artificial constraints
+
+**Cons:**
+- ❌ Fraud detection has to catch everything
+- ❌ Outliers (200h/month) look real but fraud-y
+
+### Option B: Moderate Constraints
+- Min: 1 hour (no micro-submissions)
+- Max: 8 hours/day (reasonable day)
+- Student max: 40 hours/week (full-time equiv)
+- Anything over flagged for review
+
+**Pros:**
+- ✅ Reasonable guardrails
+- ✅ Catches obvious fraud early
+- ✅ Matches real volunteering patterns
+
+**Cons:**
+- ❌ Outliers (summer full-time volunteers) rejected
+- ❌ Multiple-org students hit 40h limit
+
+### Option C: Strict Constraints
+- Min: 2 hours (meaningful commitment)
+- Max: 4 hours/session (single shift)
+- Student max: 20 hours/week
+- Beyond = always flagged
+
+**Pros:**
+- ✅ Strictest fraud protection
+- ✅ Prevents abuse
+
+**Cons:**
+- ❌ Excludes real but unconventional volunteering
+- ❌ Too restrictive for passionate volunteers
+
+### Stewardship Check (P4)
+- P4: Small orgs deserve fairness — constraints shouldn't exclude smaller ops
+
+### Recommendation: **Option B (Moderate)** — Real constraints that catch obvious fraud but don't exclude legitimate volunteers.
+
+### Decision Needed
+- A: Flexible, fraud-detection driven
+- B: Moderate guardrails (1h min, 8h max, 40h/week)
+- C: Strict guardrails (2h min, 4h max, 20h/week)
+
+---
+
+## 7 BOARD DECISIONS READY FOR SIMULATION
+
+1. Student Account Model (parent-dependent vs. student-owned)
+2. AI Platform Assistant Timing (now vs. post-pilot)
+3. Fraud Detection Policy (auto-flag vs. auto-approve)
+4. Geographic Expansion (Houston only vs. selective vs. national)
+5. Pricing Model (free vs. paid schools vs. subscriptions)
+6. Minimum Student Age (13+ vs. 16+ vs. 18+)
+7. Volunteer Hour Constraints (flexible vs. moderate vs. strict)
+
+**Board Simulation Trigger:** When ready to discuss all 7 with board (one comprehensive session)
 
