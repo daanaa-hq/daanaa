@@ -8156,8 +8156,6 @@ def create_profile_context():
             db,
             created_by_uid=uid,
             context_type=context_type,
-            display_name=display_name if display_name else None,
-            description=description if description else None,
         )
 
         context = profile_contexts.get_context_detail(db, context_id)
@@ -8187,8 +8185,8 @@ def get_context_members(context_id: str):
         if not profile_contexts.can_access_context(db, context_id, uid):
             return jsonify({'error': 'Unauthorized'}), 403
 
-        members = profile_contexts.get_context_members(db, context_id)
-        return jsonify({'members': members})
+        members = profile_contexts.get_context_members(db, context_id, uid)
+        return jsonify({'members': [dict(m) for m in members]})
 
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
@@ -8222,15 +8220,15 @@ def add_context_member(context_id: str):
         if not profile_contexts.can_access_context(db, context_id, uid, min_role='support'):
             return jsonify({'error': 'Unauthorized (requires lead or support role)'}), 403
 
-        profile_contexts.add_member(
+        invitation_id = profile_contexts.invite_member(
             db,
             context_id=context_id,
-            firebase_uid=target_uid,
+            invited_uid=target_uid,
             role=role,
             invited_by_uid=uid,
         )
 
-        return jsonify({'success': True, 'firebase_uid': target_uid, 'role': role}), 201
+        return jsonify({'success': True, 'invitation_id': invitation_id, 'invited_uid': target_uid, 'role': role}), 201
 
     except ValueError as e:
         return jsonify({'error': str(e)}), 404
@@ -8238,6 +8236,68 @@ def add_context_member(context_id: str):
         return jsonify({'error': str(e)}), 403
     except Exception as e:
         _logger.error(f"add_context_member error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/invitations/pending', methods=['GET'])
+@limiter.limit("60 per minute")
+def get_pending_invitations():
+    """Get pending invitations for the current user."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        invitations = profile_contexts.get_user_invitations(db, uid)
+        return jsonify({'invitations': [dict(inv) for inv in invitations]})
+    except Exception as e:
+        _logger.error(f"get_pending_invitations error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/invitations/<invitation_id>/accept', methods=['POST'])
+@limiter.limit("10 per minute")
+def accept_context_invitation(invitation_id: str):
+    """Accept a pending invitation to join a context."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        profile_contexts.accept_invitation(db, invitation_id=invitation_id, accepting_uid=uid)
+        return jsonify({'success': True, 'invitation_id': invitation_id}), 200
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"accept_context_invitation error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/invitations/<invitation_id>/reject', methods=['POST'])
+@limiter.limit("10 per minute")
+def reject_context_invitation(invitation_id: str):
+    """Reject a pending invitation to join a context."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        profile_contexts.reject_invitation(db, invitation_id=invitation_id, rejecting_uid=uid)
+        return jsonify({'success': True, 'invitation_id': invitation_id}), 200
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"reject_context_invitation error: {e}")
         return jsonify({'error': str(e)}), 500
 
 
@@ -9143,6 +9203,13 @@ def nonprofit_volunteer_submit(ein: str):
         ''', (claim_code, ein, name, email, hours, service_date, activity,
               datetime.now().isoformat(), datetime.now().isoformat()))
         db.commit()
+
+        # Record intent signal: volunteer expressed interest
+        if _intent_available:
+            try:
+                intent_layer.record_intent(db, kind='volunteer', source='volunteer_submission', ein=ein)
+            except Exception as intent_err:
+                _logger.warning(f"Intent recording failed (non-fatal): {intent_err}")
     except Exception as e:
         return jsonify({'error': f'Submit failed: {str(e)}'}), 500
 
@@ -9181,6 +9248,13 @@ def volunteer_claim_hours():
             ('confirmed', code)
         )
         db.commit()
+
+        # Record intent: volunteer action started (hours claimed)
+        if _intent_available:
+            try:
+                intent_layer.record_intent(db, kind='volunteer', source='volunteer_claim', ein=hours['nonprofit_ein'], evidence={'claim_code': code})
+            except Exception as intent_err:
+                _logger.warning(f"Intent recording failed (non-fatal): {intent_err}")
     except Exception as e:
         return jsonify({'error': f'Claim failed: {str(e)}'}), 500
 
@@ -9268,6 +9342,14 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
 
         # Queue approval notification (after commit)
         db.commit()
+
+        # Record intent: volunteer action verified (nonprofit approved hours)
+        if _intent_available:
+            try:
+                intent_layer.record_intent(db, kind='volunteer', source='volunteer_approval', ein=ein, evidence={'hours': row['hours'], 'hour_id': hour_id})
+            except Exception as intent_err:
+                _logger.warning(f"Intent recording failed (non-fatal): {intent_err}")
+
         try:
             from volunteer_notifications import create_approval_notification
             full_hour = db.execute(

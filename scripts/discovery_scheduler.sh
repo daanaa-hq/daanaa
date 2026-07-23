@@ -25,7 +25,7 @@ fi
 
 # Set environment
 export DB_PATH="${REPO_ROOT}/data/merit_registry.db"
-export LIVE_DB_PATH="${REPO_ROOT}/data/daanaa_live.db"
+export LIVE_DB_PATH="${REPO_ROOT}/data/merit_registry.db"
 export ENABLE_EVENT_DISCOVERY="true"
 
 echo "[$(date)] Starting event discovery scheduler" | tee -a "$LOG_FILE"
