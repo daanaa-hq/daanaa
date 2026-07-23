@@ -1792,6 +1792,13 @@ try:
 except ImportError:
     pass  # Volunteer hours events API optional
 
+# Register event platform API (AKF event management)
+try:
+    from event_platform_api import init_event_platform
+    init_event_platform(app)
+except ImportError:
+    pass  # Event platform API optional
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/log/search', methods=['POST'])

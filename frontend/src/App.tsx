@@ -74,6 +74,11 @@ const DonorFeedback = lazy(() => import('./pages/DonorFeedback'))
 const GuildPage = lazy(() => import('./pages/GuildPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const PilotSignup = lazy(() => import('./pages/PilotSignup'))
+const EventDetails = lazy(() => import('./pages/event/EventDetails'))
+const EventDashboard = lazy(() => import('./pages/event/EventDashboard'))
+const VolunteerRegistration = lazy(() => import('./pages/event/VolunteerRegistration'))
+const LogVolunteerHours = lazy(() => import('./pages/event/LogVolunteerHours'))
+const VolunteerApprovalDashboard = lazy(() => import('./pages/event/VolunteerApprovalDashboard'))
 
 function PageLoader() {
   return (
@@ -145,6 +150,13 @@ export default function App() {
             <Route path="/member/benefits" element={<MemberBenefits />} />
             <Route path="/volunteer" element={<VolunteerSearch />} />
             <Route path="/volunteer/submit" element={<VolunteerSubmission />} />
+            {/* Event Platform Routes */}
+            <Route path="/event/:eventId" element={<EventDetails />} />
+            <Route path="/event/:eventId/dashboard" element={<EventDashboard />} />
+            <Route path="/event/:eventId/register" element={<VolunteerRegistration />} />
+            <Route path="/event/:eventId/log-hours" element={<LogVolunteerHours />} />
+            <Route path="/event/:eventId/manage" element={<VolunteerApprovalDashboard />} />
+            {/* Legacy event route */}
             <Route path="/events/:eventId" element={<EventDetailPage />} />
             <Route path="/donation/receipt" element={<DonationReceipt />} />
             <Route path="/feedback" element={<DonorFeedback />} />
