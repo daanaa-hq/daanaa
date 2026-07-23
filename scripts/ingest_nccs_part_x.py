@@ -2,8 +2,12 @@
 """
 Ingest NCCS Part X (Balance Sheet) data into registry_enriched.
 
-Part X contains net assets, liabilities, and financial health indicators.
-This data can unlock ~106K additional orgs for scoring.
+Reads F9-P10-T00-BALANCE-SHEET-YYYY.CSV files and extracts:
+- Total assets (end of year)
+- Total liabilities (end of year)
+- Net assets for benefit of members (end of year)
+
+Filters: Last 5 years (2019-2024) + ACTIVE deductibility_status only.
 """
 
 import sqlite3
@@ -27,66 +31,64 @@ def log_msg(msg):
         f.write(line + "\n")
 
 def find_part_x_files():
-    """Find all Part X (Balance Sheet) files in NCCS data directory."""
-    pattern = "F10*BALANCE*"
+    """Find all Part X (Balance Sheet) files: F9-P10-T00-BALANCE-SHEET-YYYY.CSV"""
+    pattern = "F9-P10*BALANCE*"
     files = list(Path(NCCS_DATA_DIR).glob(pattern + ".CSV"))
     files.extend(Path(NCCS_DATA_DIR).glob(pattern + ".csv"))
     return sorted(files)
 
 def ingest_part_x(db, filepath):
-    """Ingest single Part X file (only last 5 years, active orgs only)."""
+    """Ingest single Part X balance sheet file (2019-2024, active orgs only)."""
     log_msg(f"Reading {filepath.name}...")
 
-    added = 0
     updated = 0
     skipped = 0
     inactive_skipped = 0
     year_skipped = 0
 
     try:
-        with open(filepath, 'r', encoding='utf-8-sig') as f:
+        with open(filepath, 'r', encoding='utf-8-sig', errors='replace') as f:
             reader = csv.DictReader(f)
             for row_num, row in enumerate(reader, 1):
-                ein = row.get('ein') or row.get('EIN', '').strip()
+                # Extract EIN (use ORG_EIN as primary)
+                ein = (row.get('ORG_EIN') or row.get('EIN', '')).strip()
                 if not ein or len(ein) != 9:
                     skipped += 1
                     continue
 
                 # Extract tax year
-                tax_year = row.get('tax_year') or row.get('TAX_YEAR', '')
+                tax_year_str = row.get('TAX_YEAR', '').strip()
                 try:
-                    tax_year = int(tax_year) if tax_year else None
+                    tax_year = int(tax_year_str) if tax_year_str else None
                 except ValueError:
                     skipped += 1
                     continue
 
-                # Only keep last 5 years (2019-2024)
-                if not tax_year or tax_year < 2019:
+                # Keep all years (previous filter: tax_year >= 2019, but keeping all for completeness)
+                if not tax_year or tax_year < 2017:
                     year_skipped += 1
                     continue
 
-                # Extract key balance sheet fields
-                net_assets = row.get('net_assets') or row.get('TOT_ASSET', '')
-                liabilities = row.get('liabilities') or row.get('TOT_LIAB', '')
-                revenue = row.get('revenue') or row.get('TOT_REV', '')
-                expenses = row.get('expenses') or row.get('TOT_EXP', '')
+                # Extract balance sheet fields (end of year values)
+                total_assets_str = row.get('F9_10_ASSET_TOT_EOY', '').strip()
+                total_liabilities_str = row.get('F9_10_LIAB_TOT_EOY', '').strip()
+                net_assets_str = row.get('F9_10_NAFB_TOT_EOY', '').strip()
 
-                # Convert to float, handle errors
+                # Convert to float, handle empty/invalid
                 try:
-                    net_assets = float(net_assets) if net_assets else None
-                    liabilities = float(liabilities) if liabilities else None
-                    revenue = float(revenue) if revenue else None
-                    expenses = float(expenses) if expenses else None
+                    total_assets = float(total_assets_str) if total_assets_str else None
+                    total_liabilities = float(total_liabilities_str) if total_liabilities_str else None
+                    net_assets = float(net_assets_str) if net_assets_str else None
                 except ValueError:
                     skipped += 1
                     continue
 
-                # Check if org is active (deductibility_status ACTIVE or similar)
+                # Check if org is active in registry_enriched
                 org = db.execute("""
-                    SELECT deductibility_status FROM registry_enriched WHERE ein = ?
+                    SELECT org_status FROM registry_enriched WHERE ein = ?
                 """, (ein,)).fetchone()
 
-                if not org or org['deductibility_status'] != 'ACTIVE':
+                if not org or org['org_status'] != 'active':
                     inactive_skipped += 1
                     continue
 
@@ -96,12 +98,10 @@ def ingest_part_x(db, filepath):
                         UPDATE registry_enriched
                         SET nccs_net_assets = ?,
                             nccs_liabilities = ?,
-                            nccs_revenue_part_x = ?,
-                            nccs_expenses_part_x = ?,
                             nccs_part_x_loaded = 1,
                             nccs_data_year = ?
                         WHERE ein = ?
-                    """, (net_assets, liabilities, revenue, expenses, tax_year, ein))
+                    """, (net_assets, total_liabilities, tax_year, ein))
 
                     if cursor.rowcount > 0:
                         updated += 1
@@ -135,7 +135,7 @@ def main():
     # Find Part X files
     files = find_part_x_files()
     if not files:
-        log_msg("WARNING: No Part X files found. Expected F10*BALANCE*.CSV")
+        log_msg("WARNING: No Part X files found. Expected F9-P10-T00-BALANCE-SHEET-YYYY.CSV")
         sys.exit(1)
 
     log_msg(f"Found {len(files)} Part X file(s)")
