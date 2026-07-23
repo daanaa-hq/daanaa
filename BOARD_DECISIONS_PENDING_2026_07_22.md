@@ -543,81 +543,93 @@ Regardless of option, need:
 
 ---
 
-## DECISION 9: Donor Profile Types — Work/Personal Separation
+## DECISION 9: Donor Profile Types — Aligned with Tax Filing Status
 
-**Question:** Should donors have separate work and personal giving profiles?
+**Question:** Should donor profiles mirror their tax filing structure?
 
 ### Context
-Donors are individuals who may give in two contexts:
-- **Personal:** Individual donations from personal conviction
-- **Work:** Corporate/employee-giving programs, matched donations, workplace commitments
+Donors have different tax filing statuses that affect how they give and file taxes:
+- **Individual (1040):** Personal donations, personal tax deduction
+- **Sole Proprietor (Schedule C):** Mixed personal/business giving, business deduction or personal
+- **S-Corp/LLC:** Business entity giving, business deduction, potential employee matching
+- **Corporation:** Corporate giving, corporate deduction
+- **Nonprofit (501c3):** Can't give to another nonprofit (legal restriction)
 
-### Option A: Single Universal Profile
-- One account per donor
-- All giving in one wallet/history
-- Donor chooses whether giving is personal or work
-- Simpler UX, less fragmentation
+**The Insight:** Donor profiles should match their tax filing status, not arbitrary "work/personal" categories. This clarifies:
+- Tax deduction eligibility
+- Donor reporting requirements
+- Matching program eligibility
+- Compliance with IRS rules
 
-**Pros:**
-- ✅ Simple (one account)
-- ✅ Unified impact tracking
-- ✅ Lower platform overhead
-- ✅ Easier to understand (one identity)
-
-**Cons:**
-- ❌ Can't separate work vs. personal giving
-- ❌ Corporate programs can't track their giving
-- ❌ Employee matching not tracked separately
-
-### Option B: Dual Profiles (Work + Personal)
-- Donors can create both a personal AND a work profile
-- Separate wallets, separate histories
-- Can switch contexts easily
-- Work profile linked to employer (for matching)
+### Option A: Single Profile (Tax Filing Status Agnostic)
+- One account per person/entity
+- All giving in one history
+- Donor self-identifies tax status on signup (for reporting only)
+- Simplest UX
 
 **Pros:**
-- ✅ Separate giving contexts
-- ✅ Corporate programs can track giving
-- ✅ Employee matching traceable
-- ✅ Privacy separation (work vs. personal)
-- ✅ Tax clarity (work giving might differ)
+- ✅ Simplest implementation
+- ✅ Single wallet/history
+- ✅ Lower overhead
 
 **Cons:**
-- ❌ More complex UX (which profile?)
-- ❌ Duplicate data (same person, two records)
-- ❌ Confusion possible (which profile did I use?)
-- ❌ Platform overhead (managing two profiles)
+- ❌ Can't separate individual vs. business giving
+- ❌ Tax reporting hard (mixed sources)
+- ❌ Employee matching impossible to track
+- ❌ No entity-based giving (corporations, LLCs)
 
-### Option C: Work Profile As Optional Addon
-- Start with single personal profile (default)
-- Add optional "work profile" if donor has employer program
-- Bridges A and B (simple default, powerful when needed)
+### Option B: Tax-Filing-Aligned Profiles
+- Profiles mirror donor's tax status: Individual | Sole Prop | S-Corp/LLC | Corporation
+- Each profile has separate wallet, tax reporting, deduction eligibility
+- Donor can have 1-3 profiles depending on entity structure
+- System enforces tax rules (e.g., 501c3 can't give)
 
 **Pros:**
-- ✅ Simple default (no clutter)
-- ✅ Powerful for corporates who need it
-- ✅ Scalable (add later if demand grows)
+- ✅ Matches IRS categories (clear tax treatment)
+- ✅ Separate giving contexts by entity
+- ✅ Tax reporting accurate (matched to 1040/Schedule C/1120)
+- ✅ Employee matching traceable (S-Corp can match employees)
+- ✅ Compliance with tax law (501c3 gate)
+- ✅ Clear donor UX ("I'm giving as my business")
 
 **Cons:**
-- ❌ Requires setup/onboarding complexity
-- ❌ May confuse donors
+- ❌ More complex onboarding (tax status capture)
+- ❌ More platform logic (enforce tax rules)
+- ❌ Possible confusion (which entity am I?)
 
-### Stewardship Check (P2, P5)
-- P2: Privacy — work profile could expose employer information
-- P5: Don't weaponize — don't use profile separation for marketing/targeting
+### Option C: Simplified Tax-Aligned (Individual + Business Only)
+- Two profiles: Personal (Individual filers) + Business (Solo/LLC/S-Corp/Corp)
+- Captures 95% of use cases
+- Bridge between A and B
+
+**Pros:**
+- ✅ Clearer tax separation
+- ✅ Simpler than full tax-filing alignment
+- ✅ Covers most donors
+
+**Cons:**
+- ❌ Still some complexity
+- ❌ Sole props might be confused (personal or business?)
+
+### Stewardship Check (P2, P3, P5)
+- P2: Privacy — profiles shouldn't expose personal info across entities
+- P3: Trust signals — tax filing status is objective, verifiable evidence
+- P5: Don't weaponize — use profile separation for clarity, not targeting
 
 ### Impact on Features
-- **Wallet:** Show giving history by profile
-- **Notifications:** Control which profile gets email updates
-- **Corporate:** Employer can view aggregate (not individual) giving
-- **Impact:** Combined impact across profiles, or separate?
+- **Wallet:** Separate wallets by profile (Individual | Business | etc.)
+- **Tax Reporting:** Daanaa issues tax summary by profile (matched to 1040/Sched C/1120)
+- **Employee Matching:** S-Corp/LLC can track matched employee giving
+- **Compliance:** 501c3 gate (some entities restricted)
+- **Donor UX:** Clear "I'm giving as my [entity]" intent
+- **Impact:** Combined across all profiles, or separated?
 
-### Recommendation: **Option C (Optional Work Addon)** — Simple default, optional complexity for corporate users. Launch with personal-only, add work profiles in 2027 if corporate demand justifies it.
+### Recommendation: **Option B (Tax-Filing-Aligned)** — Aligns with how donors actually file taxes, enables accurate tax reporting, supports employee matching. More complex but architecturally sound. Matches IRS categories = compliance clarity.
 
 ### Decision Needed
-- A: Single universal profile (simpler)
-- B: Dual profiles by default (more powerful)
-- C: Personal default + optional work addon (hybrid)
+- A: Single profile (simplest, least tax-clear)
+- B: Tax-filing-aligned profiles (most compliant, most useful)
+- C: Simplified (Individual + Business, middle ground)
 
 ---
 
