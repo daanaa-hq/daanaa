@@ -469,15 +469,169 @@ Currently hardcoded: 80+ = critical, 60-80 = high, 40-60 = medium (no auto-actio
 
 ---
 
-## 7 BOARD DECISIONS READY FOR SIMULATION
+## DECISION 8: Nonprofit Recruitment & Communications Strategy
+
+**Question:** What's our value proposition to nonprofits, and how do we position Daanaa?
+
+### Context
+Nonprofits need to understand *why* Daanaa is worth their time:
+- They have existing volunteer systems (or none)
+- They're skeptical of new platforms
+- They care about: volunteer retention, impact tracking, ease of use
+
+### Option A: Student Volunteer Pipeline (Student-Centric)
+- **Pitch:** "Access verified student volunteers for structured service"
+- **Benefits to nonprofits:** Reliable, documented hours; younger demographic; student networks
+- **Not:** A general volunteer platform for all
+- **Messaging:** "Partner with schools to build the next generation of civic leaders"
+
+**Pros:**
+- ✅ Clear differentiation (student focus, not broad)
+- ✅ Aligns with schools (natural partners)
+- ✅ High-quality, verified volunteers
+
+**Cons:**
+- ❌ Limits nonprofit pool (only want student volunteers)
+- ❌ Seasonal (school year focus)
+
+### Option B: Peer Financial Transparency (Nonprofit-Centric)
+- **Pitch:** "Peer financial benchmarking + volunteer impact = donor trust"
+- **Benefits to nonprofits:** Easier donor conversations, benchmark against peers, show impact
+- **Not:** Just a volunteer tracker
+- **Messaging:** "Show donors your financial health in peer context"
+
+**Pros:**
+- ✅ Unique to Daanaa (financial context + volunteering)
+- ✅ Attracts quality nonprofits (transparent, data-driven)
+- ✅ Broader nonprofit pool
+
+**Cons:**
+- ❌ Requires nonprofits to share data (privacy concern)
+- ❌ More complex value prop
+
+### Option C: Hybrid (Dual Value Prop)
+- **To schools:** "Student service-learning + social-emotional learning"
+- **To nonprofits:** "Student volunteers + peer financial transparency"
+- **Messaging:** Depends on audience
+- **But:** Risk of muddled brand (trying to be everything)
+
+**Pros:**
+- ✅ Broader appeal
+
+**Cons:**
+- ❌ Unfocused messaging
+- ❌ Harder to sell
+
+### Stewardship Check (P1, P4)
+- P1: Mission before growth — value prop must serve nonprofits, not just Daanaa
+- P4: Small orgs deserve fairness — messaging shouldn't advantage large orgs
+
+### Communication Plan
+Regardless of option, need:
+- Email outreach templates
+- Website copy (nonprofits page)
+- Presentation for school partnerships
+- FAQs on data privacy
+- ROI calculator (impact per volunteer)
+
+### Recommendation: **Option A (Student-Centric)** — Clear, differentiated, aligned with schools as natural partners. Financial context is backend benefit, not primary pitch.
+
+### Decision Needed
+- A: Student volunteer pipeline (student-centric)
+- B: Peer financial transparency (nonprofit-centric)
+- C: Hybrid (dual pitch, risk of confusion)
+
+---
+
+## DECISION 9: Donor Profile Types — Work/Personal Separation
+
+**Question:** Should donors have separate work and personal giving profiles?
+
+### Context
+Donors are individuals who may give in two contexts:
+- **Personal:** Individual donations from personal conviction
+- **Work:** Corporate/employee-giving programs, matched donations, workplace commitments
+
+### Option A: Single Universal Profile
+- One account per donor
+- All giving in one wallet/history
+- Donor chooses whether giving is personal or work
+- Simpler UX, less fragmentation
+
+**Pros:**
+- ✅ Simple (one account)
+- ✅ Unified impact tracking
+- ✅ Lower platform overhead
+- ✅ Easier to understand (one identity)
+
+**Cons:**
+- ❌ Can't separate work vs. personal giving
+- ❌ Corporate programs can't track their giving
+- ❌ Employee matching not tracked separately
+
+### Option B: Dual Profiles (Work + Personal)
+- Donors can create both a personal AND a work profile
+- Separate wallets, separate histories
+- Can switch contexts easily
+- Work profile linked to employer (for matching)
+
+**Pros:**
+- ✅ Separate giving contexts
+- ✅ Corporate programs can track giving
+- ✅ Employee matching traceable
+- ✅ Privacy separation (work vs. personal)
+- ✅ Tax clarity (work giving might differ)
+
+**Cons:**
+- ❌ More complex UX (which profile?)
+- ❌ Duplicate data (same person, two records)
+- ❌ Confusion possible (which profile did I use?)
+- ❌ Platform overhead (managing two profiles)
+
+### Option C: Work Profile As Optional Addon
+- Start with single personal profile (default)
+- Add optional "work profile" if donor has employer program
+- Bridges A and B (simple default, powerful when needed)
+
+**Pros:**
+- ✅ Simple default (no clutter)
+- ✅ Powerful for corporates who need it
+- ✅ Scalable (add later if demand grows)
+
+**Cons:**
+- ❌ Requires setup/onboarding complexity
+- ❌ May confuse donors
+
+### Stewardship Check (P2, P5)
+- P2: Privacy — work profile could expose employer information
+- P5: Don't weaponize — don't use profile separation for marketing/targeting
+
+### Impact on Features
+- **Wallet:** Show giving history by profile
+- **Notifications:** Control which profile gets email updates
+- **Corporate:** Employer can view aggregate (not individual) giving
+- **Impact:** Combined impact across profiles, or separate?
+
+### Recommendation: **Option C (Optional Work Addon)** — Simple default, optional complexity for corporate users. Launch with personal-only, add work profiles in 2027 if corporate demand justifies it.
+
+### Decision Needed
+- A: Single universal profile (simpler)
+- B: Dual profiles by default (more powerful)
+- C: Personal default + optional work addon (hybrid)
+
+---
+
+## 9 BOARD DECISIONS READY FOR SIMULATION
 
 1. Student Account Model (parent-dependent vs. student-owned)
 2. AI Platform Assistant Timing (now vs. post-pilot)
 3. Fraud Detection Policy (auto-flag vs. auto-approve)
 4. Geographic Expansion (Houston only vs. selective vs. national)
-5. Pricing Model (free vs. paid schools vs. subscriptions)
+5. Pricing Model (free vs. paid)
 6. Minimum Student Age (13+ vs. 16+ vs. 18+)
 7. Volunteer Hour Constraints (flexible vs. moderate vs. strict)
+8. Nonprofit Communications (student-centric vs. financial-centric vs. hybrid)
+9. Donor Profiles (single vs. dual work/personal vs. optional addon)
 
-**Board Simulation Trigger:** When ready to discuss all 7 with board (one comprehensive session)
+**Board Simulation Trigger:** Comprehensive strategic review (all 9 decisions, one session)
 
