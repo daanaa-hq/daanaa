@@ -1,33 +1,20 @@
 #!/usr/bin/env python3
-"""Profile Contexts API — shared contexts for households, DAFs, businesses, etc.
+"""Profile Contexts — Shared household & entity contexts with invitation flow.
 
 Core requirements:
-- One person = one private profile (Firebase UID as identity)
+- One person = one private profile (Firebase UID)
 - Optional shared contexts (household, DAF, business, other)
-- Permission roles: Lead, Support, Member, Viewer
-- Wallets remain private unless explicitly shared
-- No profile merging when joining a context
-- No PII collection (tax docs, IDs, donation amounts, household income)
-
-Schema:
-  profile_contexts:
-    context_id, context_type, created_by_uid, status, created_at
-
-  profile_context_members:
-    context_id, firebase_uid, role, status, joined_at
-
-Endpoints:
-  GET    /api/profile-contexts
-  POST   /api/profile-contexts
-  POST   /api/profile-contexts/<context_id>/members
-  PATCH  /api/profile-contexts/<context_id>/members/<firebase_uid>
-  DELETE /api/profile-contexts/<context_id>/members/<firebase_uid>
+- Roles: Lead, Support, Member, Viewer
+- Invitation flow (no silent member creation)
+- UID masking in responses
+- No PII collection (no display_name, description, tax docs, IDs, amounts, receipts)
+- No profile merging on context join
 """
 
 import sqlite3
 import secrets
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, Dict, Any, List
 
 # Valid context types
@@ -46,7 +33,11 @@ ROLE_HIERARCHY = {
 
 # Valid statuses
 CONTEXT_STATUS = {"active", "archived", "deleted"}
-MEMBER_STATUS = {"active", "invited", "removed", "declined"}
+MEMBER_STATUS = {"active", "removed"}
+INVITATION_STATUS = {"pending", "accepted", "rejected", "expired"}
+
+# Invitation expiry: 14 days
+INVITATION_EXPIRY_DAYS = 14
 
 
 def ensure_schema(db: sqlite3.Connection) -> None:
@@ -57,8 +48,6 @@ def ensure_schema(db: sqlite3.Connection) -> None:
             context_type    TEXT NOT NULL CHECK(context_type IN ('household', 'daf', 'business', 'other')),
             created_by_uid  TEXT NOT NULL,
             status          TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'archived', 'deleted')),
-            display_name    TEXT,
-            description     TEXT,
             created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         )
@@ -69,12 +58,27 @@ def ensure_schema(db: sqlite3.Connection) -> None:
             context_id      TEXT NOT NULL,
             firebase_uid    TEXT NOT NULL,
             role            TEXT NOT NULL CHECK(role IN ('lead', 'support', 'member', 'viewer')),
-            status          TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'invited', 'removed', 'declined')),
-            invited_by_uid  TEXT,
-            joined_at       TEXT,
+            status          TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active', 'removed')),
+            joined_at       TEXT NOT NULL,
             created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (context_id, firebase_uid),
             FOREIGN KEY (context_id) REFERENCES profile_contexts(context_id)
+        )
+    """)
+
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS profile_context_invitations (
+            invitation_id   TEXT PRIMARY KEY,
+            context_id      TEXT NOT NULL,
+            invited_uid     TEXT NOT NULL,
+            invited_by_uid  TEXT NOT NULL,
+            role            TEXT NOT NULL CHECK(role IN ('lead', 'support', 'member', 'viewer')),
+            status          TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected', 'expired')),
+            created_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            responded_at    TEXT,
+            expires_at      TEXT NOT NULL,
+            FOREIGN KEY (context_id) REFERENCES profile_contexts(context_id),
+            UNIQUE(context_id, invited_uid)
         )
     """)
 
@@ -94,7 +98,24 @@ def ensure_schema(db: sqlite3.Connection) -> None:
         ON profile_context_members(context_id, status)
     """)
 
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_invitations_uid
+        ON profile_context_invitations(invited_uid)
+    """)
+
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_invitations_status
+        ON profile_context_invitations(context_id, status)
+    """)
+
     db.commit()
+
+
+def _mask_uid(uid: str) -> str:
+    """Return masked UID for non-lead users (e.g., user_abc123...)."""
+    if len(uid) < 8:
+        return "user_***"
+    return f"user_{uid[-6:]}"
 
 
 def create_context(
@@ -102,8 +123,6 @@ def create_context(
     *,
     created_by_uid: str,
     context_type: str,
-    display_name: Optional[str] = None,
-    description: Optional[str] = None,
 ) -> str:
     """
     Create a new shared context (household, DAF, business, etc).
@@ -123,13 +142,13 @@ def create_context(
     db.execute(
         """
         INSERT INTO profile_contexts
-        (context_id, context_type, created_by_uid, display_name, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (context_id, context_type, created_by_uid, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?)
         """,
-        (context_id, context_type, created_by_uid, display_name, description, now, now),
+        (context_id, context_type, created_by_uid, now, now),
     )
 
-    # Add creator as lead
+    # Add creator as lead (direct, no invitation needed)
     db.execute(
         """
         INSERT INTO profile_context_members
@@ -152,8 +171,6 @@ def get_user_contexts(db: sqlite3.Connection, firebase_uid: str) -> List[Dict[st
         SELECT
             pc.context_id,
             pc.context_type,
-            pc.display_name,
-            pc.description,
             pc.status,
             pc.created_by_uid,
             pc.created_at,
@@ -172,9 +189,20 @@ def get_user_contexts(db: sqlite3.Connection, firebase_uid: str) -> List[Dict[st
     return [dict(r) for r in rows]
 
 
-def get_context_members(db: sqlite3.Connection, context_id: str) -> List[Dict[str, Any]]:
-    """Get all active members of a context (with their roles)."""
+def get_context_members(db: sqlite3.Connection, context_id: str, requesting_uid: str) -> List[Dict[str, Any]]:
+    """Get active members of a context. Mask UIDs for non-lead users."""
     ensure_schema(db)
+
+    # Check if requester is lead
+    requester = db.execute(
+        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=? AND status='active'",
+        (context_id, requesting_uid),
+    ).fetchone()
+
+    if not requester:
+        raise PermissionError("not a member of this context")
+
+    is_lead = requester["role"] == "lead"
 
     rows = db.execute(
         """
@@ -185,81 +213,202 @@ def get_context_members(db: sqlite3.Connection, context_id: str) -> List[Dict[st
             joined_at,
             created_at
         FROM profile_context_members
-        WHERE context_id = ? AND status IN ('active', 'invited')
+        WHERE context_id = ? AND status = 'active'
         ORDER BY joined_at ASC
         """,
         (context_id,),
     ).fetchall()
 
-    return [dict(r) for r in rows]
+    members = []
+    for r in rows:
+        m = dict(r)
+        # Mask UID if requester is not lead
+        if not is_lead:
+            m["firebase_uid"] = _mask_uid(m["firebase_uid"])
+        members.append(m)
+
+    return members
 
 
-def add_member(
+def invite_member(
     db: sqlite3.Connection,
     *,
     context_id: str,
-    firebase_uid: str,
+    invited_uid: str,
     role: str = "member",
     invited_by_uid: str,
-) -> None:
+) -> str:
     """
-    Add a member to a context (or update existing).
-    Can invite (status=invited) or direct add (status=active).
+    Create an invitation for someone to join a context.
+    Inviter must be lead or support.
+    Returns invitation_id.
     """
     if role not in ROLES:
         raise ValueError("invalid role")
-    if not firebase_uid or not invited_by_uid:
-        raise ValueError("firebase_uid and invited_by_uid are required")
+    if not invited_uid or not invited_by_uid:
+        raise ValueError("invited_uid and invited_by_uid are required")
 
     ensure_schema(db)
-
-    now = datetime.now(timezone.utc).isoformat()
 
     # Check if context exists
     ctx = db.execute(
         "SELECT status FROM profile_contexts WHERE context_id = ?", (context_id,)
     ).fetchone()
-    if not ctx:
-        raise ValueError("context not found")
+    if not ctx or ctx["status"] != "active":
+        raise ValueError("context not found or archived")
 
-    # Check if inviter is a lead or support
+    # Check if inviter is lead or support
     inviter = db.execute(
-        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=?",
+        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=? AND status='active'",
         (context_id, invited_by_uid),
     ).fetchone()
     if not inviter or ROLE_HIERARCHY.get(inviter["role"], 0) < ROLE_HIERARCHY.get("support", 0):
-        raise PermissionError("only lead or support can add members")
+        raise PermissionError("only lead or support can invite members")
 
-    # Insert or update
-    existing = db.execute(
+    # Check if already a member
+    existing_member = db.execute(
         "SELECT status FROM profile_context_members WHERE context_id=? AND firebase_uid=?",
-        (context_id, firebase_uid),
+        (context_id, invited_uid),
     ).fetchone()
+    if existing_member and existing_member["status"] == "active":
+        raise ValueError("already a member of this context")
 
-    if existing:
-        # Reactivate if previously removed
-        if existing["status"] == "removed":
-            db.execute(
-                "UPDATE profile_context_members SET status=?, role=?, joined_at=? WHERE context_id=? AND firebase_uid=?",
-                ("active", role, now, context_id, firebase_uid),
-            )
-        else:
-            # Update role if already active/invited
-            db.execute(
-                "UPDATE profile_context_members SET role=? WHERE context_id=? AND firebase_uid=?",
-                (role, context_id, firebase_uid),
-            )
-    else:
-        db.execute(
-            """
-            INSERT INTO profile_context_members
-            (context_id, firebase_uid, role, status, invited_by_uid, joined_at, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (context_id, firebase_uid, role, "active", invited_by_uid, now, now),
-        )
+    # Check if invitation already pending
+    existing_invite = db.execute(
+        "SELECT status FROM profile_context_invitations WHERE context_id=? AND invited_uid=? AND status='pending'",
+        (context_id, invited_uid),
+    ).fetchone()
+    if existing_invite:
+        raise ValueError("invitation already pending")
+
+    invitation_id = f"inv_{secrets.token_hex(12)}"
+    now = datetime.now(timezone.utc).isoformat()
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=INVITATION_EXPIRY_DAYS)).isoformat()
+
+    db.execute(
+        """
+        INSERT INTO profile_context_invitations
+        (invitation_id, context_id, invited_uid, invited_by_uid, role, status, created_at, expires_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (invitation_id, context_id, invited_uid, invited_by_uid, role, "pending", now, expires_at),
+    )
 
     db.commit()
+    return invitation_id
+
+
+def accept_invitation(
+    db: sqlite3.Connection,
+    *,
+    invitation_id: str,
+    accepting_uid: str,
+) -> None:
+    """Accept an invitation and become a member of the context."""
+    ensure_schema(db)
+
+    # Get invitation
+    invite = db.execute(
+        "SELECT context_id, invited_uid, role, expires_at, status FROM profile_context_invitations WHERE invitation_id=?",
+        (invitation_id,),
+    ).fetchone()
+
+    if not invite:
+        raise ValueError("invitation not found")
+
+    if invite["invited_uid"] != accepting_uid:
+        raise PermissionError("this invitation is not for you")
+
+    if invite["status"] != "pending":
+        raise ValueError(f"invitation already {invite['status']}")
+
+    # Check expiry
+    expires_at = datetime.fromisoformat(invite["expires_at"])
+    if datetime.now(timezone.utc) > expires_at:
+        db.execute(
+            "UPDATE profile_context_invitations SET status=? WHERE invitation_id=?",
+            ("expired", invitation_id),
+        )
+        db.commit()
+        raise ValueError("invitation has expired")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Add as member
+    db.execute(
+        """
+        INSERT INTO profile_context_members
+        (context_id, firebase_uid, role, status, joined_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (invite["context_id"], accepting_uid, invite["role"], "active", now, now),
+    )
+
+    # Mark invitation accepted
+    db.execute(
+        "UPDATE profile_context_invitations SET status=?, responded_at=? WHERE invitation_id=?",
+        ("accepted", now, invitation_id),
+    )
+
+    db.commit()
+
+
+def reject_invitation(
+    db: sqlite3.Connection,
+    *,
+    invitation_id: str,
+    rejecting_uid: str,
+) -> None:
+    """Reject an invitation."""
+    ensure_schema(db)
+
+    invite = db.execute(
+        "SELECT invited_uid, status FROM profile_context_invitations WHERE invitation_id=?",
+        (invitation_id,),
+    ).fetchone()
+
+    if not invite:
+        raise ValueError("invitation not found")
+
+    if invite["invited_uid"] != rejecting_uid:
+        raise PermissionError("this invitation is not for you")
+
+    if invite["status"] != "pending":
+        raise ValueError(f"invitation already {invite['status']}")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    db.execute(
+        "UPDATE profile_context_invitations SET status=?, responded_at=? WHERE invitation_id=?",
+        ("rejected", now, invitation_id),
+    )
+
+    db.commit()
+
+
+def get_user_invitations(db: sqlite3.Connection, firebase_uid: str) -> List[Dict[str, Any]]:
+    """Get pending invitations for a user."""
+    ensure_schema(db)
+
+    rows = db.execute(
+        """
+        SELECT
+            pci.invitation_id,
+            pci.context_id,
+            pci.role,
+            pci.created_at,
+            pci.expires_at,
+            pc.context_type,
+            pci.invited_by_uid
+        FROM profile_context_invitations pci
+        JOIN profile_contexts pc ON pci.context_id = pc.context_id
+        WHERE pci.invited_uid = ? AND pci.status = 'pending' AND pci.expires_at > datetime('now')
+        ORDER BY pci.created_at DESC
+        """,
+        (firebase_uid,),
+    ).fetchall()
+
+    return [dict(r) for r in rows]
 
 
 def update_member_role(
@@ -270,31 +419,31 @@ def update_member_role(
     new_role: str,
     changed_by_uid: str,
 ) -> None:
-    """Update a member's role in a context."""
+    """Update a member's role (lead only)."""
     if new_role not in ROLES:
         raise ValueError("invalid role")
 
     ensure_schema(db)
 
-    # Check if changer is a lead
+    # Check if changer is lead
     changer = db.execute(
-        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=?",
+        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=? AND status='active'",
         (context_id, changed_by_uid),
     ).fetchone()
     if not changer or changer["role"] != "lead":
         raise PermissionError("only lead can change roles")
 
-    # Prevent self-demotion (lead must remain)
+    # Prevent self-demotion
     if firebase_uid == changed_by_uid and new_role != "lead":
-        raise ValueError("lead cannot demote themselves (transfer lead role first)")
+        raise ValueError("lead cannot demote themselves")
 
     # Verify member exists
     member = db.execute(
-        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=?",
+        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=? AND status='active'",
         (context_id, firebase_uid),
     ).fetchone()
-    if not member or member["role"] == "removed":
-        raise ValueError("member not found or removed")
+    if not member:
+        raise ValueError("member not found")
 
     db.execute(
         "UPDATE profile_context_members SET role=? WHERE context_id=? AND firebase_uid=?",
@@ -310,20 +459,20 @@ def remove_member(
     firebase_uid: str,
     removed_by_uid: str,
 ) -> None:
-    """Remove a member from a context (mark as removed, don't delete)."""
+    """Remove a member from a context (lead or support)."""
     ensure_schema(db)
 
-    # Check if remover is a lead or support
+    # Check if remover is lead or support
     remover = db.execute(
-        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=?",
+        "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=? AND status='active'",
         (context_id, removed_by_uid),
     ).fetchone()
     if not remover or ROLE_HIERARCHY.get(remover["role"], 0) < ROLE_HIERARCHY.get("support", 0):
         raise PermissionError("only lead or support can remove members")
 
-    # Prevent self-removal (lead must transfer lead role first)
+    # Prevent self-removal
     if firebase_uid == removed_by_uid:
-        raise ValueError("cannot remove yourself (transfer lead role to another member first)")
+        raise ValueError("cannot remove yourself")
 
     # Mark as removed
     db.execute(
@@ -339,10 +488,10 @@ def archive_context(
     context_id: str,
     archived_by_uid: str,
 ) -> None:
-    """Archive a context (only lead can do this)."""
+    """Archive a context (lead only)."""
     ensure_schema(db)
 
-    # Check if archiver is the lead
+    # Check if archiver is lead
     archiver = db.execute(
         "SELECT role FROM profile_context_members WHERE context_id=? AND firebase_uid=?",
         (context_id, archived_by_uid),
@@ -358,11 +507,12 @@ def archive_context(
 
 
 def get_context_detail(db: sqlite3.Connection, context_id: str) -> Dict[str, Any]:
-    """Get full context details (if user is a member)."""
+    """Get context details (basic public info, no sensitive data)."""
     ensure_schema(db)
 
     row = db.execute(
-        "SELECT * FROM profile_contexts WHERE context_id=?", (context_id,)
+        "SELECT context_id, context_type, status, created_by_uid, created_at FROM profile_contexts WHERE context_id=?",
+        (context_id,),
     ).fetchone()
 
     if not row:

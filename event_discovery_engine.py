@@ -1,21 +1,28 @@
 """Local rolling-window event queue builder.
 
 Discovery creates review records only. It does not publish, contact, or open signup.
+Enforces robots.txt compliance and rate limiting.
 """
 from __future__ import annotations
 
 import hashlib
 import re
 import sqlite3
+import time
 from datetime import date, timedelta
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlparse
-from urllib.request import Request, urlopen
+from urllib.request import Request, urlopen, URLError
+from urllib.robotparser import RobotFileParser
 
 WINDOW_START_DAYS = 14
 WINDOW_END_DAYS = 60
 USER_AGENT = "DaanaaEventDiscovery/1.0 (+https://daanaa.org)"
 MAX_BYTES = 2_000_000
+
+# Rate limiting: 2 second delay between requests to same host
+REQUEST_DELAY_SECONDS = 2
+_last_request_time = {}
 
 
 class _PageText(HTMLParser):
@@ -36,12 +43,41 @@ def rolling_window(today: date | None = None) -> tuple[str, str]:
 
 
 def fetch_source(url: str) -> str:
+    """Fetch source with robots.txt compliance and rate limiting."""
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
         raise ValueError("source URL must be public HTTP(S)")
+
+    hostname = parsed.hostname
+
+    # Check robots.txt compliance
+    try:
+        robot_parser = RobotFileParser()
+        robots_url = f"{parsed.scheme}://{hostname}/robots.txt"
+        robot_parser.set_url(robots_url)
+        robot_parser.read()
+
+        if not robot_parser.can_fetch(USER_AGENT, url):
+            raise ValueError(f"robots.txt disallows fetching {url}")
+    except (URLError, Exception) as e:
+        # If robots.txt is unavailable, fail closed (don't fetch)
+        raise ValueError(f"Cannot verify robots.txt compliance: {e}")
+
+    # Rate limiting: enforce delay between requests to same host
+    now = time.time()
+    last_time = _last_request_time.get(hostname, 0)
+    delay_needed = REQUEST_DELAY_SECONDS - (now - last_time)
+    if delay_needed > 0:
+        time.sleep(delay_needed)
+
+    # Fetch source
     request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html"})
-    with urlopen(request, timeout=10) as response:
-        payload = response.read(MAX_BYTES + 1)
+    try:
+        with urlopen(request, timeout=10) as response:
+            payload = response.read(MAX_BYTES + 1)
+    finally:
+        _last_request_time[hostname] = time.time()
+
     if len(payload) > MAX_BYTES:
         raise ValueError("source exceeds size limit")
     return payload.decode("utf-8", errors="replace")

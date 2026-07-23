@@ -58,8 +58,7 @@ def test_create_all_context_types(test_db):
         ctx_id = profile_contexts.create_context(
             test_db,
             created_by_uid=uid,
-            context_type=ctx_type,
-            display_name=f'{ctx_type} context'
+            context_type=ctx_type
         )
         assert ctx_id.startswith('ctx_')
 
@@ -90,15 +89,17 @@ def test_all_roles_supported(test_db):
     ctx_id = profile_contexts.create_context(test_db, created_by_uid=lead_uid, context_type='household')
 
     for role in ['member', 'support', 'viewer']:
-        profile_contexts.add_member(
+        member_uid = f"user_{role}"
+        inv_id = profile_contexts.invite_member(
             test_db,
             context_id=ctx_id,
-            firebase_uid=f"user_{role}",
+            invited_uid=member_uid,
             role=role,
             invited_by_uid=lead_uid
         )
+        profile_contexts.accept_invitation(test_db, invitation_id=inv_id, accepting_uid=member_uid)
 
-    members = profile_contexts.get_context_members(test_db, ctx_id)
+    members = profile_contexts.get_context_members(test_db, ctx_id, lead_uid)
     roles = {m['firebase_uid']: m['role'] for m in members}
     assert roles[f"user_member"] == 'member'
     assert roles[f"user_support"] == 'support'
@@ -118,13 +119,14 @@ def test_profiles_not_merged_on_join(test_db):
         context_type='household'
     )
 
-    profile_contexts.add_member(
+    inv_id = profile_contexts.invite_member(
         test_db,
         context_id=ctx_id,
-        firebase_uid=user2,
+        invited_uid=user2,
         role='member',
         invited_by_uid=user1
     )
+    profile_contexts.accept_invitation(test_db, invitation_id=inv_id, accepting_uid=user2)
 
     # Each user maintains independent identity
     user1_contexts = profile_contexts.get_user_contexts(test_db, user1)
@@ -176,13 +178,14 @@ def test_member_cannot_add_members(test_db):
     new_uid = "user_3"
 
     ctx_id = profile_contexts.create_context(test_db, created_by_uid=lead_uid, context_type='household')
-    profile_contexts.add_member(test_db, context_id=ctx_id, firebase_uid=member_uid, role='member', invited_by_uid=lead_uid)
+    inv_id = profile_contexts.invite_member(test_db, context_id=ctx_id, invited_uid=member_uid, role='member', invited_by_uid=lead_uid)
+    profile_contexts.accept_invitation(test_db, invitation_id=inv_id, accepting_uid=member_uid)
 
     with pytest.raises(PermissionError):
-        profile_contexts.add_member(
+        profile_contexts.invite_member(
             test_db,
             context_id=ctx_id,
-            firebase_uid=new_uid,
+            invited_uid=new_uid,
             role='member',
             invited_by_uid=member_uid
         )
@@ -194,7 +197,8 @@ def test_only_lead_can_change_roles(test_db):
     member_uid = "user_2"
 
     ctx_id = profile_contexts.create_context(test_db, created_by_uid=lead_uid, context_type='household')
-    profile_contexts.add_member(test_db, context_id=ctx_id, firebase_uid=member_uid, role='member', invited_by_uid=lead_uid)
+    inv_id = profile_contexts.invite_member(test_db, context_id=ctx_id, invited_uid=member_uid, role='member', invited_by_uid=lead_uid)
+    profile_contexts.accept_invitation(test_db, invitation_id=inv_id, accepting_uid=member_uid)
 
     profile_contexts.update_member_role(
         test_db,
@@ -204,7 +208,7 @@ def test_only_lead_can_change_roles(test_db):
         changed_by_uid=lead_uid
     )
 
-    members = profile_contexts.get_context_members(test_db, ctx_id)
+    members = profile_contexts.get_context_members(test_db, ctx_id, lead_uid)
     roles = {m['firebase_uid']: m['role'] for m in members}
     assert roles[member_uid] == 'support'
 
@@ -217,11 +221,12 @@ def test_lead_can_remove_member(test_db):
     member_uid = "user_2"
 
     ctx_id = profile_contexts.create_context(test_db, created_by_uid=lead_uid, context_type='household')
-    profile_contexts.add_member(test_db, context_id=ctx_id, firebase_uid=member_uid, role='member', invited_by_uid=lead_uid)
+    inv_id = profile_contexts.invite_member(test_db, context_id=ctx_id, invited_uid=member_uid, role='member', invited_by_uid=lead_uid)
+    profile_contexts.accept_invitation(test_db, invitation_id=inv_id, accepting_uid=member_uid)
 
     profile_contexts.remove_member(test_db, context_id=ctx_id, firebase_uid=member_uid, removed_by_uid=lead_uid)
 
-    members = profile_contexts.get_context_members(test_db, ctx_id)
+    members = profile_contexts.get_context_members(test_db, ctx_id, lead_uid)
     member_uids = [m['firebase_uid'] for m in members if m['status'] == 'active']
     assert member_uid not in member_uids
 

@@ -32,8 +32,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Use canonical database path (same one the API reads)
+# LIVE_DB_PATH is only used if explicitly set; otherwise use the canonical registry DB
 DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
-LIVE_DB_PATH = os.environ.get("LIVE_DB_PATH", DB_PATH)
+LIVE_DB_PATH = os.environ.get("LIVE_DB_PATH", DB_PATH)  # Must be same as API
 
 def get_db(path: str) -> sqlite3.Connection:
     db = sqlite3.connect(path)
