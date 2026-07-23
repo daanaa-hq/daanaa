@@ -745,6 +745,15 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
+# Pre-load embeddings on startup to avoid cold-start delay
+# This blocks startup by ~5s but makes first query instant instead of 7s
+print("[startup] Pre-loading 546K embeddings for semantic search...", flush=True)
+try:
+    _load_embeddings()
+    print("[startup] ✓ Embeddings loaded, search ready", flush=True)
+except Exception as e:
+    print(f"[startup] ⚠ Embedding pre-load failed: {e}", flush=True)
+
 # Register nonprofit portal endpoints
 if register_nonprofit_endpoints:
     register_nonprofit_endpoints(app)
