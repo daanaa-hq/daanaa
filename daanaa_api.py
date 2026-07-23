@@ -64,6 +64,23 @@ except Exception as e:
     print(f"[Startup] ✗ Failed to import SearchSemanticReranker: {type(e).__name__}: {e}", file=sys.stderr)
 _reranker_instance = None  # lazy per-worker instance (created on first cause query)
 
+# Intent signals and event discovery (additive, feature-flagged)
+try:
+    import intent_layer
+    _intent_available = True
+    print(f"[Startup] ✓ intent_layer imported successfully", file=sys.stderr)
+except Exception as e:
+    _intent_available = False
+    print(f"[Startup] ✗ Failed to import intent_layer: {type(e).__name__}: {e}", file=sys.stderr)
+
+try:
+    import event_discovery_engine
+    _discovery_available = True
+    print(f"[Startup] ✓ event_discovery_engine imported successfully", file=sys.stderr)
+except Exception as e:
+    _discovery_available = False
+    print(f"[Startup] ✗ Failed to import event_discovery_engine: {type(e).__name__}: {e}", file=sys.stderr)
+
 
 def _ensure_student_service_columns(db_path: str):
     """Add student service columns to existing tables if they don't exist.
@@ -768,6 +785,15 @@ ENABLE_V4_SCORES: bool = os.environ.get("ENABLE_V4_SCORES", "true").lower() == "
 # ENABLE_V4_METRICS=true → include detailed metrics_json and percentiles_json
 # in v4 responses (transparency/audit trail). Default: false.
 ENABLE_V4_METRICS: bool = os.environ.get("ENABLE_V4_METRICS", "false").lower() == "true"
+
+# ── Intent & Event Discovery (Phase 2, additive, feature-flagged) ────────────────
+# ENABLE_INTENT_SIGNALS=true → record anonymous workflow signals (volunteer, give, etc.)
+# Keep this OFF until event_claiming system is stable. Default: false.
+ENABLE_INTENT_SIGNALS: bool = os.environ.get("ENABLE_INTENT_SIGNALS", "false").lower() == "true"
+
+# ENABLE_EVENT_DISCOVERY=true → run event discovery engine and populate review queue.
+# Keep this OFF until claiming system is stable. Default: false.
+ENABLE_EVENT_DISCOVERY: bool = os.environ.get("ENABLE_EVENT_DISCOVERY", "false").lower() == "true"
 
 _SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
 _V4_FIELDS = ("financial_health", "operating_model", "revenue_band", "peer_cell_size")
@@ -1614,6 +1640,42 @@ def _init_revoked_eins_table():
         db.commit()
 
 _init_revoked_eins_table()
+
+
+# ── Intent Signals (Phase 2: additive, feature-flagged) ──────────────────────
+
+def _init_intent_signals_table():
+    """
+    Shared anonymous intent signals: volunteer, give, learn, partner, claim.
+    Lives in live DB (survives catalog sync).
+    No PII, no wallet contents, no email/phone/IP.
+    """
+    if not ENABLE_INTENT_SIGNALS:
+        return  # Intent signals not enabled yet
+    if not _intent_available:
+        return  # intent_layer not loaded
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        intent_layer.ensure_schema(db)
+
+_init_intent_signals_table()
+
+
+# ── Event Discovery Queue (Phase 2: additive, feature-flagged) ────────────────
+
+def _init_event_discovery_queue_table():
+    """
+    Event candidates from source discovery: pending_review until promoted to volunteer_events.
+    Lives in live DB (survives catalog sync).
+    """
+    if not ENABLE_EVENT_DISCOVERY:
+        return  # Discovery not enabled yet
+    if not _discovery_available:
+        return  # event_discovery_engine not loaded
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        event_discovery_engine.ensure_queue(db)
+
+_init_event_discovery_queue_table()
+
 
 # Prevent absurdly large payloads on any endpoint
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # 64 KB
@@ -7881,6 +7943,142 @@ def admin_vendor_approve(vendor_id: str):
             _logger.warning(f"vendor approve email failed: {_e}")
 
     return jsonify({"ok": True, "vendor_id": vendor_id, "status": "active"})
+
+
+# ── Intent & Event Discovery Admin (Phase 2) ──────────────────────────────────
+
+@app.route('/api/admin/discovery/queue', methods=['GET'])
+@require_admin_key
+def admin_discovery_queue():
+    """Admin: view event discovery candidates pending review."""
+    if not ENABLE_EVENT_DISCOVERY or not _discovery_available:
+        return jsonify({'error': 'Event discovery not enabled'}), 403
+
+    db = get_db()
+    status = request.args.get('status', 'pending_review').strip()
+    limit = min(int(request.args.get('limit', '50')), 500)
+    offset = int(request.args.get('offset', '0'))
+
+    # Validate status to prevent SQL injection
+    valid_statuses = ('pending_review', 'approved', 'rejected', 'expired')
+    if status not in valid_statuses:
+        status = 'pending_review'
+
+    rows = db.execute(f"""
+        SELECT id, ein, source_url, title, event_date, evidence, status,
+               last_checked_at, reviewed_at
+        FROM event_discovery_queue
+        WHERE status=?
+        ORDER BY last_checked_at DESC
+        LIMIT ? OFFSET ?
+    """, (status, limit, offset)).fetchall()
+
+    total = db.execute(
+        f"SELECT COUNT(*) as count FROM event_discovery_queue WHERE status=?",
+        (status,)
+    ).fetchone()['count']
+
+    return jsonify({
+        'status': status,
+        'candidates': [dict(r) for r in rows],
+        'total': total,
+        'limit': limit,
+        'offset': offset
+    })
+
+
+@app.route('/api/admin/discovery/queue/<int:candidate_id>/review', methods=['POST'])
+@require_admin_key
+def admin_discovery_review(candidate_id: int):
+    """Admin: approve, reject, or defer an event discovery candidate."""
+    if not ENABLE_EVENT_DISCOVERY or not _discovery_available:
+        return jsonify({'error': 'Event discovery not enabled'}), 403
+
+    data = request.get_json(silent=True) or {}
+    decision = data.get('decision', '').strip()
+    notes = data.get('notes', '').strip()[:500]
+
+    if decision not in ('approved', 'rejected', 'deferred'):
+        return jsonify({'error': 'decision must be: approved, rejected, or deferred'}), 400
+
+    db = get_db()
+    candidate = db.execute(
+        "SELECT * FROM event_discovery_queue WHERE id=?", (candidate_id,)
+    ).fetchone()
+
+    if not candidate:
+        return jsonify({'error': 'Candidate not found'}), 404
+
+    if decision == 'approved':
+        # Promote to volunteer_events (unconfirmed, awaiting nonprofit claim)
+        event_id = secrets.randbelow(1000000)
+        db.execute("""
+            INSERT INTO volunteer_events (
+                event_id, ein, title, event_date, location_city, location_state,
+                discovery_status, source_url, ai_generated, claim_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            event_id,
+            candidate['ein'],
+            candidate['title'],
+            candidate['event_date'],
+            'Unknown',
+            'Unknown',
+            'ai_generated',
+            candidate['source_url'],
+            1,
+            'unconfirmed'
+        ))
+
+    db.execute("""
+        UPDATE event_discovery_queue
+        SET status=?, reviewed_at=datetime('now')
+        WHERE id=?
+    """, (decision, candidate_id))
+    db.commit()
+
+    return jsonify({
+        'success': True,
+        'candidate_id': candidate_id,
+        'decision': decision,
+        'notes': notes
+    })
+
+
+@app.route('/api/admin/intent/summary', methods=['GET'])
+@require_admin_key
+def admin_intent_summary():
+    """Admin: aggregate intent signals (counts only, no PII)."""
+    if not ENABLE_INTENT_SIGNALS or not _intent_available:
+        return jsonify({'error': 'Intent signals not enabled'}), 403
+
+    db = get_db()
+    ein = request.args.get('ein', '').strip()[:10]
+    event_id = request.args.get('event_id', '')
+
+    try:
+        if event_id:
+            event_id = int(event_id)
+        else:
+            event_id = None
+    except (ValueError, TypeError):
+        event_id = None
+
+    # Use intent_layer to get aggregate summary
+    if not (ein or event_id):
+        return jsonify({'error': 'ein or event_id required'}), 400
+
+    summary = intent_layer.summarize_intent(
+        db,
+        ein=ein if ein else None,
+        event_id=event_id if event_id else None
+    )
+
+    return jsonify({
+        'ein': ein if ein else None,
+        'event_id': event_id if event_id else None,
+        'signals': summary
+    })
 
 
 # ── Org view tracking ─────────────────────────────────────────────────────────
