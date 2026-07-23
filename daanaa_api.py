@@ -81,6 +81,15 @@ except Exception as e:
     _discovery_available = False
     print(f"[Startup] ✗ Failed to import event_discovery_engine: {type(e).__name__}: {e}", file=sys.stderr)
 
+# Profile contexts and shared context management
+try:
+    from scripts import profile_contexts
+    _profile_contexts_available = True
+    print(f"[Startup] ✓ profile_contexts imported successfully", file=sys.stderr)
+except Exception as e:
+    _profile_contexts_available = False
+    print(f"[Startup] ✗ Failed to import profile_contexts: {type(e).__name__}: {e}", file=sys.stderr)
+
 
 def _ensure_student_service_columns(db_path: str):
     """Add student service columns to existing tables if they don't exist.
@@ -794,6 +803,11 @@ ENABLE_INTENT_SIGNALS: bool = os.environ.get("ENABLE_INTENT_SIGNALS", "false").l
 # ENABLE_EVENT_DISCOVERY=true → run event discovery engine and populate review queue.
 # Keep this OFF until claiming system is stable. Default: false.
 ENABLE_EVENT_DISCOVERY: bool = os.environ.get("ENABLE_EVENT_DISCOVERY", "false").lower() == "true"
+
+# ── Profile Contexts (Phase 3, additive, feature-flagged) ────────────────
+# ENABLE_PROFILE_CONTEXTS=true → support shared contexts (household, DAF, business).
+# Default: false. Enable after claiming system + intent/discovery stabilize.
+ENABLE_PROFILE_CONTEXTS: bool = os.environ.get("ENABLE_PROFILE_CONTEXTS", "false").lower() == "true"
 
 _SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
 _V4_FIELDS = ("financial_health", "operating_model", "revenue_band", "peer_cell_size")
@@ -1675,6 +1689,23 @@ def _init_event_discovery_queue_table():
         event_discovery_engine.ensure_queue(db)
 
 _init_event_discovery_queue_table()
+
+
+# ── Profile Contexts (Phase 3: additive, feature-flagged) ──────────────────
+
+def _init_profile_contexts_schema():
+    """
+    Create profile contexts tables for shared household, DAF, business contexts.
+    Lives in live DB (survives catalog sync).
+    """
+    if not ENABLE_PROFILE_CONTEXTS:
+        return  # Profile contexts not enabled yet
+    if not _profile_contexts_available:
+        return  # profile_contexts not loaded
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        profile_contexts.ensure_schema(db)
+
+_init_profile_contexts_schema()
 
 
 # Prevent absurdly large payloads on any endpoint
@@ -8079,6 +8110,237 @@ def admin_intent_summary():
         'event_id': event_id if event_id else None,
         'signals': summary
     })
+
+
+# ── Profile Contexts (Phase 3) ────────────────────────────────────────────────
+
+@app.route('/api/profile-contexts', methods=['GET'])
+@limiter.limit("60 per minute")
+def get_profile_contexts():
+    """Get all shared contexts for the authenticated user."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        contexts = profile_contexts.get_user_contexts(db, uid)
+        return jsonify({'contexts': contexts})
+    except Exception as e:
+        _logger.error(f"get_profile_contexts error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts', methods=['POST'])
+@limiter.limit("10 per minute")
+def create_profile_context():
+    """Create a new shared context (household, DAF, business, other)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+
+    context_type = data.get('context_type', '').strip().lower()
+    display_name = (data.get('display_name') or '').strip()[:100]
+    description = (data.get('description') or '').strip()[:500]
+
+    if context_type not in profile_contexts.CONTEXT_TYPES:
+        return jsonify({'error': f'Invalid context_type. Must be one of: {", ".join(profile_contexts.CONTEXT_TYPES)}'}), 400
+
+    db = get_db()
+
+    try:
+        context_id = profile_contexts.create_context(
+            db,
+            created_by_uid=uid,
+            context_type=context_type,
+            display_name=display_name if display_name else None,
+            description=description if description else None,
+        )
+
+        context = profile_contexts.get_context_detail(db, context_id)
+        return jsonify({
+            'success': True,
+            'context_id': context_id,
+            'context': dict(context)
+        }), 201
+
+    except Exception as e:
+        _logger.error(f"create_profile_context error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/members', methods=['GET'])
+@limiter.limit("60 per minute")
+def get_context_members(context_id: str):
+    """Get all members of a context (requires membership)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        # Check access
+        if not profile_contexts.can_access_context(db, context_id, uid):
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        members = profile_contexts.get_context_members(db, context_id)
+        return jsonify({'members': members})
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        _logger.error(f"get_context_members error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/members', methods=['POST'])
+@limiter.limit("10 per minute")
+def add_context_member(context_id: str):
+    """Add a member to a context (requires lead or support role)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+
+    target_uid = data.get('firebase_uid', '').strip()
+    role = data.get('role', 'member').strip().lower()
+
+    if not target_uid:
+        return jsonify({'error': 'firebase_uid is required'}), 400
+    if role not in profile_contexts.ROLES:
+        return jsonify({'error': f'Invalid role. Must be one of: {", ".join(profile_contexts.ROLES)}'}), 400
+
+    db = get_db()
+
+    try:
+        # Check access (must be lead or support)
+        if not profile_contexts.can_access_context(db, context_id, uid, min_role='support'):
+            return jsonify({'error': 'Unauthorized (requires lead or support role)'}), 403
+
+        profile_contexts.add_member(
+            db,
+            context_id=context_id,
+            firebase_uid=target_uid,
+            role=role,
+            invited_by_uid=uid,
+        )
+
+        return jsonify({'success': True, 'firebase_uid': target_uid, 'role': role}), 201
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"add_context_member error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/members/<target_uid>', methods=['PATCH'])
+@limiter.limit("10 per minute")
+def update_context_member(context_id: str, target_uid: str):
+    """Update a member's role in a context (requires lead role)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+
+    new_role = data.get('role', '').strip().lower()
+
+    if not new_role:
+        return jsonify({'error': 'role is required'}), 400
+    if new_role not in profile_contexts.ROLES:
+        return jsonify({'error': f'Invalid role. Must be one of: {", ".join(profile_contexts.ROLES)}'}), 400
+
+    db = get_db()
+
+    try:
+        # Check access (must be lead)
+        if not profile_contexts.can_access_context(db, context_id, uid, min_role='lead'):
+            return jsonify({'error': 'Unauthorized (requires lead role)'}), 403
+
+        profile_contexts.update_member_role(
+            db,
+            context_id=context_id,
+            firebase_uid=target_uid,
+            new_role=new_role,
+            changed_by_uid=uid,
+        )
+
+        return jsonify({'success': True, 'firebase_uid': target_uid, 'role': new_role})
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"update_context_member error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/members/<target_uid>', methods=['DELETE'])
+@limiter.limit("10 per minute")
+def remove_context_member(context_id: str, target_uid: str):
+    """Remove a member from a context (requires lead or support role)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        # Check access (must be lead or support)
+        if not profile_contexts.can_access_context(db, context_id, uid, min_role='support'):
+            return jsonify({'error': 'Unauthorized (requires lead or support role)'}), 403
+
+        profile_contexts.remove_member(
+            db,
+            context_id=context_id,
+            firebase_uid=target_uid,
+            removed_by_uid=uid,
+        )
+
+        return jsonify({'success': True, 'firebase_uid': target_uid, 'status': 'removed'})
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"remove_context_member error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/archive', methods=['POST'])
+@limiter.limit("10 per minute")
+def archive_context(context_id: str):
+    """Archive a context (requires lead role)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        # Check access (must be lead)
+        if not profile_contexts.can_access_context(db, context_id, uid, min_role='lead'):
+            return jsonify({'error': 'Unauthorized (requires lead role)'}), 403
+
+        profile_contexts.archive_context(db, context_id=context_id, archived_by_uid=uid)
+
+        return jsonify({'success': True, 'context_id': context_id, 'status': 'archived'})
+
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"archive_context error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 # ── Org view tracking ─────────────────────────────────────────────────────────
