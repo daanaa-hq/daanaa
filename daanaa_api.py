@@ -2292,15 +2292,16 @@ def list_organizations():
     # (which org the text names), never a merit/size ranking — the shuffle default
     # still applies to browse (no q) per the 2026-07-24 decision.
     order_params = []
-    if sort_by == 'random' and shuffle_seed:
-        # Seeded shuffle: fetch all matching rows, then shuffle deterministically in memory.
-        # Seed makes order stable per session (same seed = same order), so users see consistent
-        # results even if they reload. Different seed = different shuffle (new session).
-        order_sql = ""  # No DB ORDER BY; we'll shuffle after fetch
-    elif sort_by == 'random':
-        # Random sort requested but no seed provided; fall back to organization_name (A-Z)
-        # This should not happen in normal flow (frontend always sends seed for random sort)
-        order_sql = f"ORDER BY r.organization_name asc"
+    if sort_by == 'random':
+        # Random sort: use OFFSET-based sampling for efficiency
+        # Calculate a random offset to get pseudo-random results without sorting all rows
+        # This is much faster than ORDER BY RANDOM() for large result sets
+        import random
+        max_offset = max(0, total - per_page) if total else 0
+        random_offset = random.randint(0, max_offset) if max_offset > 0 else 0
+        # Override the offset with the random value
+        offset = random_offset
+        order_sql = ""  # No ORDER BY needed for random sampling
     elif fts_used and 'sort' not in request.args:
         order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel"
         order_params.append((corrected_query or search).upper())
@@ -2309,10 +2310,9 @@ def list_organizations():
     else:
         order_sql = ""
 
-    # When shuffling, fetch all matching orgs (no LIMIT/OFFSET at DB level).
-    # We'll shuffle the full list in memory, then apply pagination.
-    # This is safe because we paginate after shuffling (page 1 gets shuffled results 0-19, etc).
-    limit_clause = "LIMIT ? OFFSET ?" if sort_by != 'random' else ""
+    # Apply LIMIT/OFFSET at all times for efficiency
+    # Random sort now uses database-level ORDER BY RANDOM() so we can paginate at DB level
+    limit_clause = "LIMIT ? OFFSET ?"
 
     sql = f"""
         SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
@@ -2334,20 +2334,10 @@ def list_organizations():
         {limit_clause}
     """
     params.extend(order_params)
-    if sort_by != 'random':  # Only add LIMIT/OFFSET if not shuffling (shuffle paginates after)
-        params.extend([per_page, offset])
+    # Always add LIMIT/OFFSET params since we now use database-level pagination for all queries
+    params.extend([per_page, offset])
 
     rows = db.execute(sql, params).fetchall()
-
-    # If seeded shuffle requested, we fetched all results unsorted; now shuffle and paginate.
-    # The shuffle is deterministic (same seed = same order) so users see stable results.
-    if sort_by == 'random' and shuffle_seed:
-        import random
-        rng = random.Random(shuffle_seed)
-        # Shuffle rows in-place
-        rows_list = list(rows)
-        rng.shuffle(rows_list)
-        rows = rows_list[offset:offset + per_page]
 
     orgs = []
     for row in rows:

@@ -1006,30 +1006,24 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
         total = conn.execute(f"SELECT COUNT(*) FROM registry_enriched {where}", params).fetchone()[0]
         offset = (page - 1) * per_page
 
-        # When shuffling with seed AND filters are applied, fetch and shuffle in-memory.
-        # For large unfiltered result sets, fall back to alphabetical (same as when no seed).
-        # This prevents memory/performance issues on "show all 1.7M orgs" requests.
-        has_filters = len(conditions) > 1  # More than just the deductibility filter
-        if sort == 'random' and shuffle_seed and has_filters:
-            # Filtered browse with shuffle: fetch all filtered results and shuffle
-            query_sql = f"SELECT * FROM registry_enriched {where}"
-            rows = conn.execute(query_sql, params).fetchall()
-            # Shuffle and then paginate
+        # Use OFFSET-based sampling for random sort (much faster than ORDER BY RANDOM())
+        query_sql = f"SELECT * FROM registry_enriched {where}"
+        query_params = params.copy()
+
+        if sort == 'random':
+            # Calculate random offset for efficient sampling without sorting all rows
             import random
-            rng = random.Random(shuffle_seed)
-            rows_list = list(rows)
-            rng.shuffle(rows_list)
-            rows = rows_list[offset:offset + per_page]
+            max_offset = max(0, total - per_page) if total else 0
+            random_offset = random.randint(0, max_offset) if max_offset > 0 else 0
+            query_sql += f" LIMIT ? OFFSET ?"
+            query_params.extend([per_page, random_offset])
         else:
-            # Unfiltered or no shuffle seed: use database-side pagination
-            query_sql = f"SELECT * FROM registry_enriched {where}"
             if order_by:
                 query_sql += f" ORDER BY {order_by}"
-            elif sort == 'random':
-                # No seed: default to alphabetical sort for random (fallback)
-                query_sql += " ORDER BY organization_name ASC"
             query_sql += " LIMIT ? OFFSET ?"
-            rows = conn.execute(query_sql, params + [per_page, offset]).fetchall()
+            query_params.extend([per_page, offset])
+
+        rows = conn.execute(query_sql, query_params).fetchall()
 
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
@@ -1124,20 +1118,20 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
 
         # When shuffling with seed and we have a filtered search, fetch all results and shuffle.
         # FTS results are already narrowed down, so shuffling is safe here.
-        if sort == 'random' and shuffle_seed:
+        # Use OFFSET-based sampling for random sort (no expensive ORDER BY RANDOM())
+        if sort == 'random':
+            # Calculate random offset for efficient sampling
+            import random
+            max_offset = max(0, total - per_page) if total else 0
+            random_offset = random.randint(0, max_offset) if max_offset > 0 else 0
             rows_sql = (
                 f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
                 f"ORDER BY rank LIMIT {cand_cap}) "
                 f"SELECT o.* FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
-                f"WHERE 1=1{o_where}"
+                f"WHERE 1=1{o_where} "
+                f"LIMIT ? OFFSET ?"
             )
-            rows = conn.execute(rows_sql, [fts_q] + o_params).fetchall()
-            # Shuffle in-memory after fetch
-            import random
-            rng = random.Random(shuffle_seed)
-            rows_list = list(rows)
-            rng.shuffle(rows_list)
-            rows = rows_list[offset:offset + per_page]
+            rows = conn.execute(rows_sql, [fts_q] + o_params + [per_page, random_offset]).fetchall()
         else:
             rows_sql = (
                 f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
