@@ -93,6 +93,13 @@ function HeroSection() {
           >
             Answer a few simple questions to find a short list of organizations to explore.
           </p>
+          <Link
+            to="/directory"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-soft-gold/60 text-soft-gold hover:bg-soft-gold hover:text-deep-navy transition-colors font-body text-[13px] font-semibold"
+          >
+            Browse causes and organizations
+            <span aria-hidden="true">→</span>
+          </Link>
         </div>
 
         <p
