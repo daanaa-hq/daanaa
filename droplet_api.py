@@ -4,22 +4,27 @@ Daanaa API — Peer-context nonprofit directory backend
 Serves registry_enriched + v4 scores to frontend
 """
 import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets, logging, sys
+import urllib.parse
 from math import radians, cos, sin, asin, sqrt
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+from difflib import get_close_matches
 
 # Sentry error tracking — activate by setting SENTRY_DSN env var.
-import sentry_sdk
-_sentry_dsn = os.environ.get("SENTRY_DSN", "")
-if _sentry_dsn:
-    sentry_sdk.init(
-        dsn=_sentry_dsn,
-        traces_sample_rate=0.1,   # 10% of requests traced
-        profiles_sample_rate=0.05,
-        environment=os.environ.get("DAANAA_ENV", "production"),
-        release=os.environ.get("GIT_COMMIT", "unknown"),
-        # Never capture PII — no user emails, IPs, or request bodies in Sentry
-        send_default_pii=False,
-    )
+try:
+    import sentry_sdk
+    _sentry_dsn = os.environ.get("SENTRY_DSN", "")
+    if _sentry_dsn:
+        sentry_sdk.init(
+            dsn=_sentry_dsn,
+            traces_sample_rate=0.1,   # 10% of requests traced
+            profiles_sample_rate=0.05,
+            environment=os.environ.get("DAANAA_ENV", "production"),
+            release=os.environ.get("GIT_COMMIT", "unknown"),
+            # Never capture PII — no user emails, IPs, or request bodies in Sentry
+            send_default_pii=False,
+        )
+except ImportError:
+    pass  # Sentry optional
 import numpy as np
 import requests as _http
 from flask import Flask, jsonify, request, g, abort, send_from_directory, Blueprint
@@ -30,15 +35,137 @@ from twilio.twiml.voice_response import VoiceResponse
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.request_validator import RequestValidator
 
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
+try:
+    from ntee_synonyms import expand_query_with_synonyms
+except ImportError:
+    def expand_query_with_synonyms(q):
+        return q  # Fallback: return query as-is if synonyms not available
+
+# Search Phase 2: intent classifier (loaded at startup for preload safety)
+try:
+    from scripts.search_intent_classifier import SearchIntentClassifier
+    _classifier_available = True
+    print(f"[Startup] ✓ SearchIntentClassifier imported successfully", file=sys.stderr)
+except Exception as e:
+    _classifier_available = False
+    print(f"[Startup] ✗ Failed to import SearchIntentClassifier: {type(e).__name__}: {e}", file=sys.stderr)
+    import traceback
+    traceback.print_exc(file=sys.stderr)
+_classifier_instance = None  # lazy per-worker instance (created on first search)
+
+# Search Phase 2: semantic reranker (lazy per-worker, only for cause queries)
+try:
+    from scripts.search_semantic_reranker import SearchSemanticReranker
+    _reranker_available = True
+    print(f"[Startup] ✓ SearchSemanticReranker imported successfully", file=sys.stderr)
+except Exception as e:
+    _reranker_available = False
+    print(f"[Startup] ✗ Failed to import SearchSemanticReranker: {type(e).__name__}: {e}", file=sys.stderr)
+_reranker_instance = None  # lazy per-worker instance (created on first cause query)
+
+# Intent signals and event discovery (additive, feature-flagged)
+try:
+    import intent_layer
+    _intent_available = True
+    print(f"[Startup] ✓ intent_layer imported successfully", file=sys.stderr)
+except Exception as e:
+    _intent_available = False
+    print(f"[Startup] ✗ Failed to import intent_layer: {type(e).__name__}: {e}", file=sys.stderr)
+
+try:
+    import event_discovery_engine
+    _discovery_available = True
+    print(f"[Startup] ✓ event_discovery_engine imported successfully", file=sys.stderr)
+except Exception as e:
+    _discovery_available = False
+    print(f"[Startup] ✗ Failed to import event_discovery_engine: {type(e).__name__}: {e}", file=sys.stderr)
+
+# Profile contexts and shared context management
+try:
+    from scripts import profile_contexts
+    _profile_contexts_available = True
+    print(f"[Startup] ✓ profile_contexts imported successfully", file=sys.stderr)
+except Exception as e:
+    _profile_contexts_available = False
+    print(f"[Startup] ✗ Failed to import profile_contexts: {type(e).__name__}: {e}", file=sys.stderr)
+
+
+def _ensure_student_service_columns(db_path: str):
+    """Add student service columns to existing tables if they don't exist.
+
+    SQLite doesn't support IF NOT EXISTS in ALTER TABLE, so we check first
+    and add columns only if missing.
+    """
+    conn = sqlite3.connect(db_path)
+    try:
+        cursor = conn.cursor()
+
+        # Helper to check if column exists
+        def column_exists(table_name, col_name):
+            try:
+                cursor.execute(f"PRAGMA table_info({table_name})")
+                cols = {row[1] for row in cursor.fetchall()}
+                return col_name in cols
+            except:
+                return False
+
+        # Add columns to volunteer_hours if missing
+        if column_exists('volunteer_hours', 'student_id') == False:
+            try:
+                cursor.execute("ALTER TABLE volunteer_hours ADD COLUMN student_id TEXT")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
+
+        if column_exists('volunteer_hours', 'student_school_ein') == False:
+            try:
+                cursor.execute("ALTER TABLE volunteer_hours ADD COLUMN student_school_ein TEXT")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
+
+        if column_exists('volunteer_hours', 'parental_consent_given') == False:
+            try:
+                cursor.execute("ALTER TABLE volunteer_hours ADD COLUMN parental_consent_given BOOLEAN DEFAULT 0")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
+
+        # Add column to nonprofit_accounts if missing
+        if column_exists('nonprofit_accounts', 'parent_school_ein') == False:
+            try:
+                cursor.execute("ALTER TABLE nonprofit_accounts ADD COLUMN parent_school_ein TEXT")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
+    finally:
+        conn.close()
+
 
 def _run_migrations(db_path: str):
-    """Run pending database migrations from migrations/ directory."""
-    try:
-        migration_dir = os.path.join(os.path.dirname(__file__), 'migrations')
-        if not os.path.isdir(migration_dir):
-            return
+    """Run pending database migrations from migrations/ directory.
 
-        conn = sqlite3.connect(db_path)
+    Statement-level tolerance (2026-07-12, see LESSONS.md): migrations
+    002 and 003 both CREATE TABLE org_nonprofit_updates with different
+    schemas. On a fresh DB, 002 runs first and "wins" (CREATE TABLE IF
+    NOT EXISTS no-ops for 003), so 003's own CREATE INDEX on a
+    003-only column then fails with "no such column". The old code had
+    no per-statement handling, so that exception propagated out, left
+    `conn` open (never committed/closed — a leaked lock on db_path), and
+    silently abandoned every later migration file including 004/phase3.
+    A concurrent connection to the same file (e.g. the next call in this
+    same startup) could then transiently hit "database is locked" until
+    the leaked connection was garbage-collected. Catching per-statement
+    and always closing the connection fixes both the schema-collision
+    symptom and the connection leak that caused it.
+    """
+    migration_dir = os.path.join(os.path.dirname(__file__), 'migrations')
+    if not os.path.isdir(migration_dir):
+        return
+
+    conn = sqlite3.connect(db_path)
+    try:
         cursor = conn.cursor()
 
         # Get list of already-run migrations from metadata table (if it exists)
@@ -67,21 +194,28 @@ def _run_migrations(db_path: str):
             with open(migration_path, 'r') as f:
                 sql = f.read()
 
-            # Execute migration (can be multiple statements)
+            # Execute migration (can be multiple statements). Continue past a
+            # failing statement instead of aborting the whole file — a
+            # collision on one CREATE/ALTER must not block every later
+            # migration file from running.
             for statement in sql.split(';'):
                 stmt = statement.strip()
                 if stmt:
-                    cursor.execute(stmt)
+                    try:
+                        cursor.execute(stmt)
+                    except sqlite3.OperationalError as e:
+                        _logger.warning(f'Migration statement skipped in {filename}: {e}')
 
             # Log that we ran it
             cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
             _logger.info(f'Ran migration: {filename}')
 
         conn.commit()
-        conn.close()
     except Exception as e:
         _logger.error(f'Migration error: {e}', exc_info=True)
         # Don't fail startup — migrations are best-effort
+    finally:
+        conn.close()
 
 # Add scripts directory to path for email service
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
@@ -103,11 +237,6 @@ try:
 except ImportError:
     register_nonprofit_endpoints = None
     register_phase3_endpoints = None
-
-try:
-    from event_claiming_api import init_claiming
-except ImportError:
-    init_claiming = None
 
 _logger = logging.getLogger(__name__)
 
@@ -411,9 +540,15 @@ OLLAMA_EMBED_MODEL = "mxbai-embed-large"
 # Set True once we confirm org_fts exists. Checked at first search request.
 _fts_available: bool | None = None  # None = not yet checked
 
-_FTS5_STRIP = re.compile(r"""[*"^(){}|<>&~\[\],\.']""")
-
-_FTS5_BOOL = frozenset({'AND', 'OR', 'NOT'})
+# Strip EVERYTHING that isn't a word character or whitespace. FTS5 assigns
+# syntax meaning to far more than quotes and parens: '-' is column-NOT
+# ("TRIPLE-CORD" → error "no such column: CORD"), ':' is a column filter,
+# '/' is a syntax error. The old narrower strip list let hyphenated org names
+# crash 4.3% of small-org self-searches (2026-07-18 audit).
+# Apostrophes FUSE instead of split: IRS stores "L'ANSE" as "LANSE" and
+# "O'BRIEN" as "OBRIEN", so "L'Anse" must become the token "LAnse", not "L Anse".
+_FTS5_APOS  = re.compile(r"['’`]")
+_FTS5_STRIP = re.compile(r'[^\w\s]', re.UNICODE)
 
 # Words people commonly type before/around a location or cause that don't
 # appear in org records — stripping them prevents 0-result dead ends.
@@ -452,11 +587,22 @@ def _sanitize_fts_query(text: str) -> str:
       - 'food bank 97701'      zip stripped by caller (_extract_zip) before here
       - 'find charities near'  noise words stripped → fallback empty query
     """
-    clean = _FTS5_STRIP.sub(' ', text)
-    words = [w for w in clean.split() if len(w) >= 2 and w.lower() not in _FTS5_NOISE]
+    clean = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', text))
+    words = [w for w in clean.split() if w.lower() not in _FTS5_NOISE]
+    # Single-char tokens (the "4" and "H" of "4-H") survive only alongside
+    # other tokens — a lone "a"* would prefix-scan the whole index.
+    if len(words) >= 2:
+        words = words[:12]
+    else:
+        words = [w for w in words if len(w) >= 2]
     if not words:
         return '""'
-    return ' '.join(f'{w.lower()}*' if w.upper() in _FTS5_BOOL else f'{w}*' for w in words)
+    # Double-quote every token: AND/OR/NOT/NEAR typed by a donor stay literal
+    # words, never operators. '"tok"*' is FTS5 phrase-prefix syntax.
+    # Single-char tokens match EXACTLY (no star): the "N" of "N A B S" is the
+    # token "n" in the org's own name, and '"n"*' would range-scan every
+    # n-word in the term dictionary — 15s+ timeouts on the 2GB droplet.
+    return ' '.join(f'"{w}"*' if len(w) >= 2 else f'"{w}"' for w in words)
 
 def _check_fts(db: sqlite3.Connection) -> bool:
     global _fts_available
@@ -570,7 +716,9 @@ def _vec_similar(query_vec: np.ndarray, exclude_ein: str, limit: int) -> list[st
 app = Flask(__name__)
 
 # Run database migrations on startup
-_run_migrations(os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db")))
+_db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
+_run_migrations(_db_path)
+_ensure_student_service_columns(_db_path)
 
 # Restrict CORS to known origins; add production domain when deploying
 _ALLOWED_ORIGINS = [
@@ -596,6 +744,15 @@ limiter = Limiter(
     default_limits=["200 per minute", "2000 per hour"],
     storage_uri="memory://",
 )
+
+# Pre-load embeddings on startup to avoid cold-start delay
+# This blocks startup by ~5s but makes first query instant instead of 7s
+print("[startup] Pre-loading 546K embeddings for semantic search...", flush=True)
+try:
+    _load_embeddings()
+    print("[startup] ✓ Embeddings loaded, search ready", flush=True)
+except Exception as e:
+    print(f"[startup] ⚠ Embedding pre-load failed: {e}", flush=True)
 
 # Register nonprofit portal endpoints
 if register_nonprofit_endpoints:
@@ -647,6 +804,20 @@ ENABLE_V4_SCORES: bool = os.environ.get("ENABLE_V4_SCORES", "true").lower() == "
 # in v4 responses (transparency/audit trail). Default: false.
 ENABLE_V4_METRICS: bool = os.environ.get("ENABLE_V4_METRICS", "false").lower() == "true"
 
+# ── Intent & Event Discovery (Phase 2, additive, feature-flagged) ────────────────
+# ENABLE_INTENT_SIGNALS=true → record anonymous workflow signals (volunteer, give, etc.)
+# Keep this OFF until event_claiming system is stable. Default: false.
+ENABLE_INTENT_SIGNALS: bool = os.environ.get("ENABLE_INTENT_SIGNALS", "false").lower() == "true"
+
+# ENABLE_EVENT_DISCOVERY=true → run event discovery engine and populate review queue.
+# Keep this OFF until claiming system is stable. Default: false.
+ENABLE_EVENT_DISCOVERY: bool = os.environ.get("ENABLE_EVENT_DISCOVERY", "false").lower() == "true"
+
+# ── Profile Contexts (Phase 3, additive, feature-flagged) ────────────────
+# ENABLE_PROFILE_CONTEXTS=true → support shared contexts (household, DAF, business).
+# Default: false. Enable after claiming system + intent/discovery stabilize.
+ENABLE_PROFILE_CONTEXTS: bool = os.environ.get("ENABLE_PROFILE_CONTEXTS", "false").lower() == "true"
+
 _SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
 _V4_FIELDS = ("financial_health", "operating_model", "revenue_band", "peer_cell_size")
 
@@ -661,18 +832,20 @@ _DONATE_FIELDS = (
 )
 
 def _strip_scores(org: dict) -> dict:
-    """Public-response scrub: drop internal donate fields always; null score
-    fields when ENABLE_SCORES is false. Applied to every public org payload."""
-    for k in _DONATE_FIELDS:
-        org.pop(k, None)
+    """Public-response scrub: null score fields when ENABLE_SCORES is false.
+    Applied to every public org payload. Donate fields are now returned for
+    frontend display (AI-assisted status, org can claim to verify)."""
+    # Note: _DONATE_FIELDS are now returned publicly (2026-07-05 decision).
+    # Backend extracts donate links nightly; frontend displays with 'ai_suggested'
+    # status. Orgs can claim/verify in the claim flow. Legal posture: discovery
+    # platform, hand-off to org's own processor (never handle funds).
     if ENABLE_SCORES:
         return org
     return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
 
 def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
-    """Attach v4.0 financial health scores to org response if available and enabled."""
-    if not ENABLE_V4_SCORES or v4_row is None:
-        return org
+    """V4 scores disabled (v5 only). Returns org unchanged."""
+    return org
     v4 = dict(v4_row)
     org['visibility_tier'] = v4.get('visibility_tier')
     org['financial_health'] = v4.get('financial_health')
@@ -766,7 +939,6 @@ def _triage_partner_application(data: dict) -> str:
 
 # Admin key — set DAANAA_ADMIN_KEY env var before starting the API.
 # Backward compatible with old MERIT_ADMIN_KEY env var name.
-# Any endpoint decorated with @require_admin_key will return 401 if it's missing or wrong.
 _ADMIN_KEY = (
     os.environ.get("DAANAA_ADMIN_KEY", "")
     or os.environ.get("MERIT_ADMIN_KEY", "")  # backward compat
@@ -1015,14 +1187,10 @@ def _init_volunteer_events_table():
             ("waiver_url",        "TEXT"),
             ("parking_info",      "TEXT"),
             ("coordinator_name",  "TEXT"),
-            ("claim_status",      "TEXT DEFAULT 'unconfirmed'"),
-            ("claimed_by_ein",    "TEXT"),
-            ("claimed_by_email",  "TEXT"),
-            ("claimed_at",        "TIMESTAMP"),
-            ("claim_verification_token", "TEXT UNIQUE"),
-            ("discovery_status",  "TEXT DEFAULT 'unconfirmed'"),
-            ("ai_generated",      "INTEGER DEFAULT 0"),
-            ("source_url",        "TEXT"),
+            ("source_url",       "TEXT"),
+            ("source_checked_at", "TEXT"),
+            ("discovery_status", "TEXT NOT NULL DEFAULT 'confirmed'"),
+            ("ai_generated",      "INTEGER NOT NULL DEFAULT 0"),
         ]:
             try:
                 db.execute(f"ALTER TABLE volunteer_events ADD COLUMN {col} {defn}")
@@ -1097,191 +1265,6 @@ def _init_volunteer_events_table():
                 updated_by         TEXT
             )
         """)
-        db.commit()
-
-        # event_claims — audit trail for event claiming/verification
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS event_claims (
-                id TEXT PRIMARY KEY,
-                event_id TEXT NOT NULL,
-                ein TEXT NOT NULL,
-                email TEXT NOT NULL,
-                claimed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                verified_at TIMESTAMP,
-                verification_token TEXT UNIQUE,
-                verification_ip TEXT,
-                status TEXT DEFAULT 'pending',
-                rejection_reason TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (event_id) REFERENCES volunteer_events(id),
-                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
-            )
-        """)
-        db.execute("CREATE INDEX IF NOT EXISTS idx_event_claims_ein ON event_claims(ein)")
-        db.execute("CREATE INDEX IF NOT EXISTS idx_event_claims_status ON event_claims(status)")
-
-        # event_nonprofit_dashboard — dashboard settings for nonprofit organizers
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS event_nonprofit_dashboard (
-                ein TEXT PRIMARY KEY,
-                event_count INTEGER DEFAULT 0,
-                active_events INTEGER DEFAULT 0,
-                total_volunteer_hours REAL DEFAULT 0,
-                pending_hours_approvals INTEGER DEFAULT 0,
-                last_login TIMESTAMP,
-                dashboard_access_enabled INTEGER DEFAULT 1,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
-            )
-        """)
-
-        # outreach_log — track nonprofit email campaigns and engagement
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS outreach_log (
-                id TEXT PRIMARY KEY,
-                ein TEXT NOT NULL,
-                event_id TEXT,
-                email TEXT NOT NULL,
-                outreach_type TEXT DEFAULT 'discovery',
-                sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                opened_at TIMESTAMP,
-                clicked_at TIMESTAMP,
-                bounced INTEGER DEFAULT 0,
-                bounce_reason TEXT,
-                converted_at TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (ein) REFERENCES registry_enriched(ein),
-                FOREIGN KEY (event_id) REFERENCES volunteer_events(id)
-            )
-        """)
-        db.execute("CREATE INDEX IF NOT EXISTS idx_outreach_log_ein ON outreach_log(ein)")
-        db.execute("CREATE INDEX IF NOT EXISTS idx_outreach_log_sent_at ON outreach_log(sent_at)")
-
-        db.commit()
-
-        # Audit logging tables (non-repudiation trails for compliance)
-
-        # Event claim audit log
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS event_claim_audit_log (
-                id TEXT PRIMARY KEY,
-                ein TEXT NOT NULL,
-                email TEXT NOT NULL,
-                event_id INTEGER NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status TEXT DEFAULT 'verified',
-                FOREIGN KEY (event_id) REFERENCES volunteer_events(id),
-                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
-            )
-        """)
-        db.execute("CREATE INDEX IF NOT EXISTS idx_event_claim_audit_ein ON event_claim_audit_log(ein, timestamp)")
-
-        # Donation link change log
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS donation_link_change_log (
-                id TEXT PRIMARY KEY,
-                ein TEXT NOT NULL,
-                requested_by_email TEXT NOT NULL,
-                old_url TEXT,
-                new_url TEXT NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT,
-                requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                reviewed_by TEXT,
-                reviewed_at TIMESTAMP,
-                decision TEXT,
-                reason TEXT,
-                status TEXT DEFAULT 'pending_review',
-                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
-            )
-        """)
-        db.execute("CREATE INDEX IF NOT EXISTS idx_donation_link_change_ein ON donation_link_change_log(ein, requested_at)")
-
-        # Hour approval/rejection log
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS hour_approval_log (
-                id TEXT PRIMARY KEY,
-                hour_id TEXT NOT NULL,
-                event_id INTEGER NOT NULL,
-                volunteer_id TEXT NOT NULL,
-                volunteer_name TEXT,
-                hours_approved REAL NOT NULL,
-                approved_by_email TEXT NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT,
-                approved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status TEXT DEFAULT 'approved',
-                reason TEXT,
-                FOREIGN KEY (event_id) REFERENCES volunteer_events(id)
-            )
-        """)
-        db.execute("CREATE INDEX IF NOT EXISTS idx_hour_approval_event ON hour_approval_log(event_id, approved_at)")
-
-        # Hour submission log
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS hour_submission_log (
-                id TEXT PRIMARY KEY,
-                hour_id TEXT NOT NULL,
-                event_id INTEGER NOT NULL,
-                volunteer_id TEXT NOT NULL,
-                volunteer_email TEXT NOT NULL,
-                hours_claimed REAL NOT NULL,
-                job_description TEXT,
-                ip_address TEXT,
-                user_agent TEXT,
-                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                is_edit INTEGER DEFAULT 0,
-                original_hours REAL,
-                FOREIGN KEY (event_id) REFERENCES volunteer_events(id)
-            )
-        """)
-        db.execute("CREATE INDEX IF NOT EXISTS idx_hour_submission_volunteer ON hour_submission_log(volunteer_id, submitted_at)")
-
-        # Account change log
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS account_change_log (
-                id TEXT PRIMARY KEY,
-                ein TEXT NOT NULL,
-                user_email TEXT NOT NULL,
-                change_type TEXT NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT,
-                changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                changed_by TEXT NOT NULL,
-                reason TEXT,
-                details TEXT,
-                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
-            )
-        """)
-        db.execute("CREATE INDEX IF NOT EXISTS idx_account_change_ein ON account_change_log(ein, changed_at)")
-
-        # Fraud report log
-        db.execute("""
-            CREATE TABLE IF NOT EXISTS fraud_report_log (
-                id TEXT PRIMARY KEY,
-                report_type TEXT NOT NULL,
-                reported_by_email TEXT NOT NULL,
-                event_id INTEGER,
-                ein TEXT,
-                description TEXT NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT,
-                reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                evidence_url TEXT,
-                status TEXT DEFAULT 'under_review',
-                reviewed_by TEXT,
-                reviewed_at TIMESTAMP,
-                action_taken TEXT,
-                law_enforcement_contacted INTEGER DEFAULT 0,
-                FOREIGN KEY (event_id) REFERENCES volunteer_events(id),
-                FOREIGN KEY (ein) REFERENCES registry_enriched(ein)
-            )
-        """)
-        db.execute("CREATE INDEX IF NOT EXISTS idx_fraud_report_ein ON fraud_report_log(ein, reported_at)")
-
         db.commit()
 
 _init_volunteer_events_table()
@@ -1409,9 +1392,17 @@ def _init_org_claims_table():
         # Migration for org_claims tables created before phone verification.
         # called_at/call_notes are the audit trail that the verification call
         # actually happened — written from the admin claims queue.
+        # Contact + nudge columns exist on the live DB but were added ad hoc;
+        # listed here so code-created DBs (tests, fresh installs) match it.
         for col in ("phone TEXT", "rep_title TEXT", "attested_at TEXT", "attestation_version TEXT",
                     "called_at TEXT", "call_notes TEXT", "rep_name TEXT",
-                    "firebase_uid TEXT", "website_url TEXT"):
+                    "firebase_uid TEXT", "website_url TEXT",
+                    "contact_preference TEXT",
+                    "volunteer_contact_name TEXT", "volunteer_contact_email TEXT",
+                    "volunteer_contact_phone TEXT",
+                    "donor_contact_name TEXT", "donor_contact_email TEXT",
+                    "donor_contact_phone TEXT",
+                    "nudge_sent_at TEXT", "checkin_sent_at TEXT", "profile_nudge_sent_at TEXT"):
             try:
                 db.execute(f"ALTER TABLE org_claims ADD COLUMN {col}")
             except sqlite3.OperationalError:
@@ -1673,6 +1664,59 @@ def _init_revoked_eins_table():
 
 _init_revoked_eins_table()
 
+
+# ── Intent Signals (Phase 2: additive, feature-flagged) ──────────────────────
+
+def _init_intent_signals_table():
+    """
+    Shared anonymous intent signals: volunteer, give, learn, partner, claim.
+    Lives in live DB (survives catalog sync).
+    No PII, no wallet contents, no email/phone/IP.
+    """
+    if not ENABLE_INTENT_SIGNALS:
+        return  # Intent signals not enabled yet
+    if not _intent_available:
+        return  # intent_layer not loaded
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        intent_layer.ensure_schema(db)
+
+_init_intent_signals_table()
+
+
+# ── Event Discovery Queue (Phase 2: additive, feature-flagged) ────────────────
+
+def _init_event_discovery_queue_table():
+    """
+    Event candidates from source discovery: pending_review until promoted to volunteer_events.
+    Lives in live DB (survives catalog sync).
+    """
+    if not ENABLE_EVENT_DISCOVERY:
+        return  # Discovery not enabled yet
+    if not _discovery_available:
+        return  # event_discovery_engine not loaded
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        event_discovery_engine.ensure_queue(db)
+
+_init_event_discovery_queue_table()
+
+
+# ── Profile Contexts (Phase 3: additive, feature-flagged) ──────────────────
+
+def _init_profile_contexts_schema():
+    """
+    Create profile contexts tables for shared household, DAF, business contexts.
+    Lives in live DB (survives catalog sync).
+    """
+    if not ENABLE_PROFILE_CONTEXTS:
+        return  # Profile contexts not enabled yet
+    if not _profile_contexts_available:
+        return  # profile_contexts not loaded
+    with sqlite3.connect(LIVE_DB_PATH) as db:
+        profile_contexts.ensure_schema(db)
+
+_init_profile_contexts_schema()
+
+
 # Prevent absurdly large payloads on any endpoint
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024  # 64 KB
 
@@ -1788,9 +1832,95 @@ def v1_health():
 
 app.register_blueprint(api_v1)
 
-# Register event claiming API
-if init_claiming:
-    init_claiming(app)
+# Register discovery status API
+try:
+    from discovery_status_api import discovery_status_bp
+    app.register_blueprint(discovery_status_bp)
+except ImportError:
+    pass  # Discovery status API optional
+
+# Register verification dashboard API
+try:
+    from verification_api import verification_bp
+    app.register_blueprint(verification_bp)
+except ImportError:
+    pass  # Verification API optional
+
+# Register social media metrics API (learning engine backend)
+try:
+    from social_metrics_api import social_metrics_bp
+    app.register_blueprint(social_metrics_bp)
+except ImportError:
+    pass  # Social metrics API optional
+
+# Register learning engine API (continuous improvement status)
+try:
+    from learning_api import learning_bp
+    app.register_blueprint(learning_bp)
+except ImportError:
+    pass  # Learning API optional
+
+# Register email automation API (governance + approvals)
+try:
+    from email_automation_api import email_automation_bp
+    app.register_blueprint(email_automation_bp)
+except ImportError:
+    pass  # Email automation API optional
+
+# Register telemetry API (usage patterns + adaptive UI)
+try:
+    from telemetry_api import telemetry_bp
+    app.register_blueprint(telemetry_bp)
+except ImportError:
+    pass  # Telemetry API optional
+
+# Register social media manager API (autonomous theme curation + commenting)
+try:
+    from social_manager_api import social_manager_bp
+    app.register_blueprint(social_manager_bp)
+except ImportError:
+    pass  # Social manager API optional
+
+# Register nonprofit claims API (data governance + org corrections)
+try:
+    from nonprofit_claims_api import claims_bp
+    app.register_blueprint(claims_bp)
+except ImportError:
+    pass  # Claims API optional
+
+# Register pilot invitations API (25-org pilot signup)
+try:
+    from pilot_invitations_api import pilot_invitations_bp
+    app.register_blueprint(pilot_invitations_bp)
+except ImportError:
+    pass  # Pilot invitations optional
+
+# Register volunteer hours events API (event-linked self-submission, impact, export)
+try:
+    from volunteer_hours_events_api import volunteer_hours_events_bp
+    app.register_blueprint(volunteer_hours_events_bp)
+except ImportError:
+    pass  # Volunteer hours events API optional
+
+# Register event platform API (AKF event management)
+try:
+    from event_platform_api import init_event_platform
+    init_event_platform(app)
+except ImportError:
+    pass  # Event platform API optional
+
+try:
+    from event_discovery_api import init_event_discovery
+    init_event_discovery(app)
+except ImportError:
+    pass  # Event discovery API optional
+
+# Register bulk volunteer import API
+try:
+    from bulk_volunteer_import import bulk_import_bp
+    app.register_blueprint(bulk_import_bp)
+except ImportError:
+    pass  # Bulk import API optional
 
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1819,15 +1949,30 @@ def log_search():
 @app.route('/api/organizations')
 @limiter.limit("100 per minute")
 def list_organizations():
+    db = get_db()
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
+    search = request.args.get('q', '').strip()[:200]
+
     # Build cache key from all query params before parsing
     ck = _ck('orgs', request.query_string.decode())
     cached = _cget(ck, 'search')
     if cached: return jsonify(cached)
 
-    db = get_db()
-    page = max(1, request.args.get('page', 1, type=int))
-    per_page = min(request.args.get('per_page', 20, type=int), 100)
-    search = request.args.get('q', '').strip()[:200]
+    # Search intent classification (Phase 2): only on cache miss.
+    # Lazy per-worker singleton — classify() is pure heuristics, no DB reads.
+    search_intent = None
+    if search and _classifier_available:
+        try:
+            global _classifier_instance
+            if _classifier_instance is None:
+                _classifier_instance = SearchIntentClassifier(db_path=DB_PATH)
+            result = _classifier_instance.classify(search)
+            if result and isinstance(result, dict):
+                search_intent = result
+        except Exception as e:
+            app.logger.warning(f"search_intent classification failed: {e}")
+
     ntee_raw = request.args.get('ntee', '').strip().upper()
     ntee_list = [x.strip()[:1] for x in ntee_raw.split(',') if x.strip()]
     # NTEECC subcategories, comma-separated e.g. "E21,A82". Combined with the
@@ -1864,6 +2009,8 @@ def list_organizations():
     where_clauses = [_DEDUCTIBILITY_FILTER]
     params = []
 
+    fts_join_sql = ""
+    fts_used = False
     if search:
         search_normalized = search.replace('-', '').strip()
         # EIN lookup: pure digits → direct EIN prefix match, skip FTS
@@ -1873,13 +2020,32 @@ def list_organizations():
             where_clauses.append("r.EIN LIKE ?")
             params.append(f'{search_normalized}%')
         elif _check_fts(db):
-            # FTS5 path: match on org content, join back via EIN (rowid misaligns)
+            # FTS5 path as a JOIN carrying bm25 rank out, so text queries can
+            # be relevance-ordered. The old `EIN IN (subquery)` shape threw
+            # the rank away and page 1 of "american legion" was whichever 20
+            # of 2000 matches sorted first alphabetically (2026-07-18 audit).
+            #
+            # The bm25 branch is UNIONed with an exact name-phrase branch:
+            # our corpus is finite and fully known, so if the typed text IS
+            # an org's name we look it up directly instead of hoping it
+            # survives the candidate cap. Closes the spaced-initialism and
+            # generic-name misses ("N A B S", "BEST SCHOOL") where the org
+            # ranked below 2000 among common-token matches. Phrase keeps
+            # noise words ("best" is part of the name "BEST SCHOOL").
             fts_q = _sanitize_fts_query(search)
-            where_clauses.append(
-                "r.EIN IN (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
-                "ORDER BY bm25(org_fts, 10, 5, 1, 1) LIMIT 2000)"
+            name_toks = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', search)).split()[:12]
+            name_phrase = f'org_name : "{" ".join(name_toks)}"' if name_toks else '""'
+            fts_join_sql = (
+                "JOIN (SELECT ein, MIN(rel) AS rel FROM ("
+                "SELECT ein, -1e9 AS rel FROM org_fts WHERE org_fts MATCH ? "
+                "UNION ALL "
+                "SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel "
+                "FROM org_fts WHERE org_fts MATCH ? "
+                "ORDER BY rel LIMIT 2000"
+                ") GROUP BY ein) fts ON r.EIN = fts.ein "
             )
-            params.append(fts_q)
+            params.extend([name_phrase, fts_q])
+            fts_used = True
         else:
             # Fallback: name-only LIKE (city field excluded to avoid false matches)
             words = [w for w in search_normalized.split() if w]
@@ -1944,12 +2110,6 @@ def list_organizations():
         params.append(f'%{cause}%')
 
     _TIER_HIERARCHY = ['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark']
-    if min_tier and min_tier in _TIER_HIERARCHY:
-        idx = _TIER_HIERARCHY.index(min_tier)
-        included = _TIER_HIERARCHY[:idx + 1]
-        placeholders = ','.join('?' * len(included))
-        where_clauses.append(f'merit_tier IN ({placeholders})')
-        params.extend(included)
     # Exact visibility tier filter (e.g., show only Beacon orgs)
     _VISIBILITY_TIERS = ['Beacon', 'Torch', 'Lantern', 'Candle', 'Ember', 'Spark']
     if tier and tier in _VISIBILITY_TIERS:
@@ -1958,7 +2118,7 @@ def list_organizations():
 
     # total_revenue and merit_score are opt-in sorts; the default is neutral
     # name order so browse never implies a ranking.
-    allowed_sorts = ['organization_name', 'ntee1_percentile', 'merit_score', 'EIN', 'STATE', 'CITY',
+    allowed_sorts = ['organization_name', 'ntee1_percentile', 'EIN', 'STATE', 'CITY',
                      'total_revenue']
     if sort_by not in allowed_sorts:
         sort_by = 'organization_name'
@@ -1980,7 +2140,57 @@ def list_organizations():
     where_sql = " AND ".join(where_clauses)
 
     # Alias as r so qualified columns (r.EIN) in where_sql resolve here too
-    total = db.execute(f"SELECT COUNT(*) FROM registry_enriched r WHERE {where_sql}", params).fetchone()[0]
+    # f-string is safe here: where_sql contains only parameterized WHERE structure
+    # (built from safe clauses), while actual user values live in `params` tuple
+    total = db.execute(
+        f"SELECT COUNT(*) FROM registry_enriched r {fts_join_sql}WHERE {where_sql}",
+        params).fetchone()[0]
+
+    corrected_query = None
+    if fts_used and total == 0:
+        # The typed query found nothing — log the miss so systematic gaps
+        # surface in zero-result analytics, then rescue in two stages.
+        try:
+            db.execute(
+                "INSERT INTO analytics_zero_result_queries (day, query, query_length, filters_applied, search_mode) "
+                "VALUES (date('now'), ?, ?, 0, 'fts_server') "
+                "ON CONFLICT(day, query) DO UPDATE SET "
+                "occurrence_count = occurrence_count + 1, last_seen_at = CURRENT_TIMESTAMP",
+                (search.lower()[:80], len(search)),
+            )
+            db.commit()
+        except sqlite3.OperationalError:
+            pass
+        # Stage 1: corpus-vocabulary typo correction (scripts/search_typo.py).
+        # Zero-result path only — the happy path never pays for this. Result
+        # is labeled via corrected_query so the UI can say what we did (P3).
+        try:
+            from search_typo import correct_query as _typo_correct
+            _cq = _typo_correct(db, search)
+        except Exception:
+            _cq = None
+        if _cq:
+            _fts_q2 = _sanitize_fts_query(_cq)
+            _toks2 = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', _cq)).split()[:12]
+            _phrase2 = f'org_name : "{" ".join(_toks2)}"' if _toks2 else '""'
+            _params2 = [_phrase2, _fts_q2] + params[2:]
+            _total2 = db.execute(
+                f"SELECT COUNT(*) FROM registry_enriched r {fts_join_sql}WHERE {where_sql}",
+                _params2).fetchone()[0]
+            if _total2 > 0:
+                total, params, corrected_query = _total2, _params2, _cq
+    if fts_used and total == 0:
+        # Stage 2: plain name-word LIKE so donors aren't dead-ended.
+        fts_join_sql = ""
+        fts_used = False
+        params = params[2:]   # drop the two MATCH params (bound ahead of WHERE)
+        for word in re.findall(r'\w{2,}', search)[:6]:
+            where_clauses.append("r.organization_name LIKE ?")
+            params.append(f'%{word}%')
+        where_sql = " AND ".join(where_clauses)
+        total = db.execute(
+            f"SELECT COUNT(*) FROM registry_enriched r WHERE {where_sql}",
+            params).fetchone()[0]
 
     # Check if v4_scores table exists (production might not have it)
     has_v4_scores = bool(db.execute(
@@ -1988,18 +2198,28 @@ def list_organizations():
     ).fetchone())
 
     if has_v4_scores:
-        v4_cols = ", v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band, v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"
+        v4_cols = ""
         join_clause = "LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN"
     else:
-        v4_cols = ", NULL as visibility_tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band, NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json"
+        v4_cols = ", "
         join_clause = ""
+
+    # Text queries are relevance-ordered unless the donor explicitly picked a
+    # sort: exact typed-name match first, then bm25. This is content relevance
+    # (which org the text names), never a merit/size ranking — the neutral
+    # A-Z default still governs browse (no q) per the 2026-07-04 decision.
+    order_params = []
+    if fts_used and 'sort' not in request.args:
+        order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel"
+        order_params.append((corrected_query or search).upper())
+    else:
+        order_sql = f"ORDER BY {sort_col} {_sort_dir_suffix}"
 
     sql = f"""
         SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
                r.total_revenue, r.ntee1_percentile, r.ntee1_total_orgs, r.source,
                r.latest_tax_year, r.data_source, r.updated_at,
                r.revenue_band, r.peer_percentile, r.peer_rank, r.peer_total, r.peer_group,
-               r.merit_tier, r.merit_score, r.merit_band,
                CASE WHEN r.months_of_reserve BETWEEN -120 AND 120 THEN r.months_of_reserve ELSE NULL END as months_of_reserve,
                r.net_assets, r.total_expenses,
                r.employee_count, r.ruling_date, r.zipcode, r.is_hidden_gem, r.cause_tags,
@@ -2009,13 +2229,12 @@ def list_organizations():
                (r.website IS NOT NULL AND r.website != '') as has_website,
                r.merit_score_v5, r.merit_health_signal_v5, r.merit_archetype_v5,
                r.merit_archetype_v5_label, r.merit_peer_count_v5
-               {v4_cols}
         FROM registry_enriched r
-        {join_clause}
-        WHERE {where_sql}
-        ORDER BY {sort_col} {_sort_dir_suffix}
+        {fts_join_sql}WHERE {where_sql}
+        {order_sql}
         LIMIT ? OFFSET ?
     """
+    params.extend(order_params)
     params.extend([per_page, offset])
     rows = db.execute(sql, params).fetchall()
 
@@ -2051,6 +2270,33 @@ def list_organizations():
             d.pop(_col, None)
         orgs.append(_strip_scores(d))
 
+    # Search Phase 2: semantic reranking for cause queries
+    if search_intent and search_intent.get('intent') == 'cause' and _reranker_available and len(orgs) > 1 and search:
+        try:
+            global _reranker_instance
+            if _reranker_instance is None:
+                _reranker_instance = SearchSemanticReranker(db_path=DB_PATH)
+            # Convert orgs to reranker format (need ein and optional fts_score)
+            reranker_input = [
+                {
+                    'ein': o['EIN'],
+                    'org_name': o.get('organization_name', ''),
+                    'fts_score': 0.5  # Neutral score; semantic reranker will compute composite
+                }
+                for o in orgs
+            ]
+            # Rerank by semantic similarity
+            reranked = _reranker_instance.rerank_fts_results(search, reranker_input)
+            if reranked:
+                # Map reranked results back to org objects, preserving order
+                ein_to_org = {o['EIN']: o for o in orgs}
+                orgs_reranked = [ein_to_org[r['ein']] for r in reranked if r['ein'] in ein_to_org]
+                if orgs_reranked:
+                    orgs = orgs_reranked
+                    search_intent['reranked'] = True
+        except Exception as e:
+            app.logger.warning(f"semantic reranking failed for cause query '{search}': {e}")
+
     payload = {
         "organizations": orgs,
         "total": total,
@@ -2058,6 +2304,12 @@ def list_organizations():
         "per_page": per_page,
         "pages": (total + per_page - 1) // per_page,
     }
+    if corrected_query:
+        # Honest labeling (P3): the UI can render "Showing results for …"
+        payload["corrected_query"] = corrected_query
+    if search_intent:
+        # Search Phase 2: include intent classification for routing/instrumentation
+        payload["search_intent"] = search_intent
     if nearby_meta:
         payload["nearby"] = nearby_meta
     _cset(ck, payload)
@@ -2073,34 +2325,16 @@ def get_organization(ein):
 
     db = get_db()
 
-    # Check if v4_scores table exists
-    has_v4_scores = bool(db.execute(
-        "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name='v4_scores' LIMIT 1"
-    ).fetchone())
-
-    if has_v4_scores:
-        # Use subquery to avoid column name conflicts between registry_enriched and v4_scores
-        sql = """SELECT r.*,
-                        v4_data.visibility_tier,
-                        v4_data.financial_health,
-                        v4_data.operating_model,
-                        v4_data.revenue_band as v4_revenue_band,
-                        v4_data.peer_cell_size,
-                        v4_data.metrics_json,
-                        v4_data.percentiles_json
-                 FROM registry_enriched r
-                 LEFT JOIN (
-                    SELECT EIN, visibility_tier, financial_health, operating_model,
-                           revenue_band, peer_cell_size, metrics_json, percentiles_json
-                    FROM v4_scores
-                 ) v4_data ON r.EIN = v4_data.EIN
-                 WHERE r.EIN = ?"""
-    else:
-        sql = """SELECT r.*,
-                        NULL as visibility_tier, NULL as financial_health, NULL as operating_model, NULL as v4_revenue_band,
-                        NULL as peer_cell_size, NULL as metrics_json, NULL as percentiles_json
-                 FROM registry_enriched r
-                 WHERE r.EIN = ?"""
+    # v4_data JOIN removed 2026-07-10: v4_scores was migrated to a 5-column
+    # schema (EIN, score, tier, band, operating_model) at some point after
+    # this query was written, and nobody updated it -- every call to this
+    # endpoint 500'd with "no such column: revenue_band" (v4_scores never
+    # had peer_cell_size/metrics_json/percentiles_json either). The joined
+    # columns fed _attach_v4_scores(), which is itself a documented no-op
+    # ("V4 scores disabled (v5 only). Returns org unchanged.") -- dropping
+    # the join changes no served data, just removes a broken query that was
+    # crashing every org-detail request on this backend.
+    sql = "SELECT r.* FROM registry_enriched r WHERE r.EIN = ?"
 
     row = db.execute(sql, (ein_clean,)).fetchone()
     if row is None:
@@ -2127,12 +2361,31 @@ def get_organization(ein):
         'tags':    org.get('cause_tags_source'),    # 'ai_generated' (beta) | 'claimed' | None
     }
 
-    # Claim status — check org_claims table (graceful fallback if table not yet created)
+    # Claim status + claimed overrides — LOCK-FREE architecture
+    # All nonprofit-claimed data lives in org_claims, keyed by EIN.
+    # Prefer claimed values over registry data if they exist.
     try:
         claim_row = db.execute(
-            "SELECT claim_status FROM org_claims WHERE ein = ?", (ein_clean,)
+            "SELECT claim_status, custom_mission, website_url, donate_url, cause_tags_json FROM org_claims WHERE ein = ?",
+            (ein_clean,)
         ).fetchone()
-        org['claim_status'] = claim_row['claim_status'] if claim_row else None
+        if claim_row:
+            org['claim_status'] = claim_row['claim_status']
+            # Override registry fields with claimed values if present
+            if claim_row['custom_mission']:
+                org['mission'] = claim_row['custom_mission']
+                org['mission_source'] = 'claimed'
+            if claim_row['website_url']:
+                org['website'] = claim_row['website_url']
+                org['website_status'] = 'claimed'
+            if claim_row['donate_url']:
+                org['donate_url'] = claim_row['donate_url']
+                org['donate_url_status'] = 'claimed'
+            if claim_row['cause_tags_json'] and claim_row['cause_tags_json'] != '[]':
+                org['cause_tags'] = claim_row['cause_tags_json']
+                org['cause_tags_source'] = 'claimed'
+        else:
+            org['claim_status'] = None
     except Exception:
         org['claim_status'] = None
 
@@ -2703,13 +2956,15 @@ def sector_health():
         d['at_risk_pct'] = round((d['insolvent'] + d['at_risk']) / d['total_orgs'] * 100, 1)
         result.append(d)
 
-    payload = {"sectors": result}
+    payload = {
+        "generated_at": datetime.utcnow().isoformat() + 'Z',
+        "sectors": result
+    }
     _cset('sector_health', payload)
     return jsonify(payload)
 
 @app.route('/api/scoring-runs')
 @limiter.limit("20 per minute")
-@require_admin_key
 def scoring_runs():
     db = get_db()
     try:
@@ -2949,6 +3204,29 @@ def track_event():
                 "ON CONFLICT(day, term) DO UPDATE SET count = count + 1",
                 (day, term),
             )
+        # T12 Phase 1: Extended search metrics for zero-result analysis
+        query_length = int(data.get('query_length', 0)) if isinstance(data.get('query_length'), int) else 0
+        result_count = int(data.get('result_count', 0)) if isinstance(data.get('result_count'), int) else 0
+        zero_results = 1 if data.get('zero_results') == 'yes' else 0
+        filters_applied = int(data.get('filters_applied', 0)) if isinstance(data.get('filters_applied'), int) else 0
+        search_mode = str(data.get('mode', 'keyword')).strip().lower()[:20]
+        if query_length > 0 or filters_applied > 0:
+            db.execute(
+                "INSERT INTO analytics_search_metrics (day, query_length, result_count, zero_results, filters_applied, search_mode) "
+                "VALUES (?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(day, query_length, result_count, zero_results, filters_applied) DO UPDATE SET "
+                "search_mode = excluded.search_mode",
+                (day, query_length, result_count, zero_results, filters_applied, search_mode),
+            )
+            # Log zero-result queries for pattern discovery
+            if zero_results and term:
+                db.execute(
+                    "INSERT INTO analytics_zero_result_queries (day, query, query_length, filters_applied, search_mode) "
+                    "VALUES (?, ?, ?, ?, ?) "
+                    "ON CONFLICT(day, query) DO UPDATE SET "
+                    "occurrence_count = occurrence_count + 1, last_seen_at = CURRENT_TIMESTAMP",
+                    (day, term, query_length, filters_applied, search_mode),
+                )
     db.commit()
     return ('', 204)
 
@@ -3028,15 +3306,21 @@ def org_submission_status(ein):
 
     db = get_db()
 
-    # Check if already scored
+    # Check if already scored. financial_health lives on registry_enriched,
+    # not v4_scores (fixed 2026-07-10 -- v4_scores is a 5-column table:
+    # EIN, score, tier, band, operating_model; financial_health and the
+    # 'visibility_tier' key name here were stale references to a schema
+    # that no longer exists, so this endpoint 500'd for any scored EIN).
     scored = db.execute(
-        "SELECT visibility_tier, financial_health FROM v4_scores WHERE EIN = ?",
+        """SELECT v4.tier, r.financial_health
+           FROM v4_scores v4 JOIN registry_enriched r ON r.EIN = v4.EIN
+           WHERE v4.EIN = ?""",
         (ein_clean,)
     ).fetchone()
     if scored:
         return jsonify({
             "status": "scored",
-            "visibility_tier": scored['visibility_tier'],
+            "visibility_tier": scored['tier'],
             "financial_health": scored['financial_health']
         }), 200
 
@@ -3221,6 +3505,153 @@ def admin_claims_update(ein):
         return jsonify({"status": "revoked"})
 
     return jsonify({"error": "Unknown action. Use mark_called or revoke."}), 400
+
+
+def _normalize_spoken_url(raw: str) -> str:
+    """Phone callers say 'ourorg.org', not 'https://ourorg.org' — prefix the
+    scheme on a bare domain so the shared http(s)-only guard can accept it.
+    Anything that doesn't look like a domain passes through unchanged (and
+    the guard then drops it)."""
+    u = (raw or '').strip()
+    if u and not u.lower().startswith(('http://', 'https://')) \
+            and re.match(r'^[a-z0-9]', u, re.IGNORECASE) \
+            and '.' in u.split('/')[0] and ' ' not in u:
+        return 'https://' + u
+    return u
+
+
+def _normalize_public_url(raw) -> str:
+    """Server-side mirror of frontend/src/utils/externalLink.ts normalizeExternalUrl
+    (T11 gap 2, EXECUTION_HANDOFF_2026_07_12.md). Every endpoint that persists a
+    caller-supplied URL (org claims, guild vendor codes, community partner
+    applications) must call this — not just startswith(http) — so a URL a UI
+    bug or a direct API call slips past is never stored: rejects javascript:/
+    data:/mailto: schemes, bare "https://" with no host, and any hostname with
+    no dot (e.g. "https://localhost"). Bare domains get "https://" prefixed.
+    """
+    u = (raw or '').strip()[:500]
+    if not u:
+        return ''
+    u = _normalize_spoken_url(u)
+    try:
+        parsed = urllib.parse.urlsplit(u)
+    except ValueError:
+        return ''
+    if parsed.scheme not in ('http', 'https'):
+        return ''
+    if not parsed.hostname or '.' not in parsed.hostname:
+        return ''
+    return u
+
+
+@app.route('/api/admin/concierge/confirm', methods=['POST'])
+@require_admin_key
+def admin_concierge_confirm():
+    """Operator confirms a concierge-call Quick-Start draft (pilot T2).
+
+    DISCLOSURE STANDARD (Stewardship Board 2026-07-11):
+    Before confirming any profile via this endpoint, the human operator on
+    the call MUST disclose to the organization that Daanaa prepared a draft
+    using publicly available information. Recommended language:
+
+      "Hello, this is ____ from Daanaa. We've prepared a draft of your
+       public nonprofit profile using publicly available information to save
+       your team time. We'd like to review it with you, make any corrections
+       you feel are appropriate, and only publish enhancements you approve."
+
+    This endpoint itself does NOT make the disclosure (the human does via
+    phone). The endpoint exists only to record that the human has confirmed
+    the organization's consent AFTER the disclosure. AI is infrastructure,
+    never deception. Remain unobtrusive, never undisclosed.
+
+    TECHNICAL BOUNDARY:
+    Writes through the SAME field-update semantics as /api/claim/update
+    (shared _sanitize/_write helpers — never forked), authenticated by the
+    admin key. The org's verification token is NEVER accepted or replayed
+    on this path. Verification boundary (stewardship P3): only claims
+    already 'verified' or 'active' can be written — everything else is 403
+    and no field changes. The human operator confirms every write (P10).
+    """
+    data = request.get_json(silent=True) or {}
+
+    # This path never handles org credentials — reject them outright rather
+    # than silently ignoring, so a miswired client fails loudly.
+    if any(k in data for k in ('verification_token', 'token', 'pin')):
+        return jsonify({'error': 'This endpoint never accepts org verification credentials'}), 400
+
+    ein = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    call_sid = re.sub(r'[^A-Za-z0-9_-]', '', data.get('call_sid') or '')[:64]
+    operator_note = (data.get('operator_note') or '').strip()[:500]
+    if not ein:
+        return jsonify({'error': 'EIN required'}), 400
+    if not call_sid:
+        return jsonify({'error': 'call_sid required — every concierge write must trace to a call'}), 400
+
+    db = get_db()
+    row = db.execute('SELECT claim_status FROM org_claims WHERE ein = ?', (ein,)).fetchone()
+    if not row or row['claim_status'] not in ('verified', 'active'):
+        # Hard verification boundary: the concierge path completes profiles
+        # for verified orgs; it must never become a verification bypass.
+        return jsonify({'error': 'Organization claim is not verified. '
+                                 'Concierge writes require a verified claim.'}), 403
+
+    # Map Quick-Start field names onto the claim editor's schema, then run
+    # the exact same sanitization the editor uses.
+    f = _sanitize_claim_profile_fields({
+        'custom_mission':   data.get('mission'),
+        'donate_confirmed': data.get('donate_confirmed', False),
+        'donate_url':       _normalize_spoken_url(data.get('donate_url') or ''),
+        'website_url':      _normalize_spoken_url(data.get('website') or ''),
+    })
+    written = _write_claimed_fields_to_registry(db, ein, f)
+
+    # Public contact — same unified-contact semantics as /api/claim/contacts.
+    contact_email = (data.get('contact_email') or '').strip()[:254] or None
+    contact_phone = (data.get('contact_phone') or '').strip()[:30] or None
+    if contact_email or contact_phone:
+        db.execute("""
+            UPDATE org_claims
+            SET contact_preference='unified',
+                volunteer_contact_email=?, volunteer_contact_phone=?,
+                donor_contact_email=?, donor_contact_phone=?
+            WHERE ein=?
+        """, (contact_email, contact_phone, contact_email, contact_phone, ein))
+        written.append('contact')
+
+    volunteer_note = (data.get('volunteer_note') or '').strip()[:300] or None
+    if volunteer_note:
+        written.append('volunteer_note')
+
+    # Provenance on org_claims — source, call linkage, attestation version,
+    # operator summary. No schema change: structured into call_notes, with
+    # the full record in org_activity (explainable later, P9).
+    if f['custom_mission']:
+        db.execute("UPDATE org_claims SET custom_mission=? WHERE ein=?",
+                   (f['custom_mission'], ein))
+    if f['website_url']:
+        db.execute("UPDATE org_claims SET website_url=? WHERE ein=?",
+                   (f['website_url'], ein))
+    if f['donate_confirmed'] and f['donate_url']:
+        db.execute("UPDATE org_claims SET donate_confirmed=1 WHERE ein=?", (ein,))
+    note = f"source=concierge_call; call_sid={call_sid}; attestation={CLAIM_ATTESTATION_VERSION}"
+    if volunteer_note:
+        note += f"; volunteer_note={volunteer_note}"
+    if operator_note:
+        note += f"; operator_note={operator_note}"
+    db.execute(
+        "UPDATE org_claims SET called_at=datetime('now'), call_notes=? WHERE ein=?",
+        (note[:1000], ein))
+    db.commit()
+
+    # Evict org cache entries for this EIN (same as claim_update)
+    stale = [k for k in _CACHE if ein in k]
+    for k in stale:
+        _CACHE.pop(k, None)
+
+    _log_org_activity(ein, 'concierge_draft_confirmed',
+                      f"call_sid={call_sid}; fields={','.join(written) or 'none'}; "
+                      f"note={operator_note}", actor='admin')
+    return jsonify({'success': True, 'saved': written})
 
 
 @app.route('/api/admin/analytics', methods=['GET'])
@@ -3774,6 +4205,69 @@ def claim_portal_token():
     })
 
 
+def _sanitize_claim_profile_fields(data: dict) -> dict:
+    """Sanitize the claim editor's profile fields (one source of truth).
+
+    Shared by /api/claim/update (org rep, verification token) and
+    /api/admin/concierge/confirm (operator, admin key) so the two paths can
+    never drift on what a claim may write or how values are cleaned (P3/P7).
+    """
+    donate_url  = _normalize_public_url(data.get('donate_url'))
+    website_url = _normalize_public_url(data.get('website_url'))
+    return {
+        'custom_mission':     (data.get('custom_mission') or '').strip()[:300],
+        'custom_description': (data.get('custom_description') or '').strip()[:500],
+        'cause_tags_json':    (data.get('cause_tags_json') or '[]').strip(),
+        'donate_confirmed':   bool(data.get('donate_confirmed', False)),
+        'donate_url':         donate_url,
+        'website_url':        website_url,
+    }
+
+
+def _write_claimed_fields_to_registry(db, ein: str, f: dict) -> list:
+    """Store sanitized claim fields in org_claims (LOCK-FREE, no registry writes).
+
+    All nonprofit-claimed data stays in org_claims, keyed by EIN. API responses
+    JOIN org_claims + registry_enriched and prefer claimed values. This avoids
+    write locks on the immutable IRS data.
+
+    Donate URL flips to 'claimed' only with an explicit confirm — same guard
+    for every caller. Returns the list of fields written (for instrumentation).
+    Caller commits.
+    """
+    written = []
+    # Build update dict with only non-null fields
+    updates = {}
+    if f['custom_mission']:
+        updates['custom_mission'] = f['custom_mission']
+        written.append('mission')
+    if f['website_url']:
+        updates['website_url'] = f['website_url']
+        written.append('website')
+    if f['donate_url'] and f['donate_confirmed']:
+        updates['donate_url'] = f['donate_url']
+        written.append('donate_url')
+    if f['cause_tags_json'] and f['cause_tags_json'] != '[]':
+        updates['cause_tags_json'] = f['cause_tags_json']
+        written.append('cause_tags')
+
+    # Write all claimed fields to org_claims in one operation
+    if updates:
+        set_clause = ', '.join(f"{k} = ?" for k in updates.keys())
+        values = list(updates.values()) + [ein]
+        db.execute(f"UPDATE org_claims SET {set_clause} WHERE ein = ?", values)
+
+    # Mark status fields in registry_enriched when claimed
+    if f['donate_url'] and f['donate_confirmed']:
+        db.execute("UPDATE registry_enriched SET donate_url_status='claimed', donate_confidence=95 WHERE EIN=?", (ein,))
+    if f['website_url']:
+        db.execute("UPDATE registry_enriched SET website_status='claimed' WHERE EIN=?", (ein,))
+    if f['custom_mission']:
+        db.execute("UPDATE registry_enriched SET mission_source='claimed' WHERE EIN=?", (ein,))
+
+    return written
+
+
 @app.route('/api/claim/update', methods=['POST'])
 def claim_update():
     """Update claimed org profile — mission, description, cause tags, donate URL."""
@@ -3797,18 +4291,7 @@ def claim_update():
     if not valid_token:
         return jsonify({'error': 'Verification token is invalid or expired'}), 403
 
-    custom_mission     = (data.get('custom_mission') or '').strip()[:300]
-    custom_description = (data.get('custom_description') or '').strip()[:500]
-    cause_tags_json    = (data.get('cause_tags_json') or '[]').strip()
-    donate_confirmed   = bool(data.get('donate_confirmed', False))
-    donate_url         = (data.get('donate_url') or '').strip()[:500]
-    website_url        = (data.get('website_url') or '').strip()[:500]
-
-    # Validate URLs
-    if donate_url and not donate_url.startswith(('http://', 'https://')):
-        donate_url = ''
-    if website_url and not website_url.startswith(('http://', 'https://')):
-        website_url = ''
+    f = _sanitize_claim_profile_fields(data)
 
     try:
         # Update org_claims record
@@ -3821,43 +4304,20 @@ def claim_update():
                 donate_confirmed = ?,
                 website_url      = ?
             WHERE ein = ?
-        """, (custom_mission or None, custom_description or None, int(donate_confirmed), website_url or None, ein))
+        """, (f['custom_mission'] or None, f['custom_description'] or None,
+              int(f['donate_confirmed']), f['website_url'] or None, ein))
 
-        # Write custom fields to registry_enriched
-        if custom_mission:
-            db.execute("""
-                UPDATE registry_enriched
-                SET mission = ?, mission_source = 'claimed'
-                WHERE EIN = ?
-            """, (custom_mission, ein))
-
-        if website_url:
-            db.execute("""
-                UPDATE registry_enriched
-                SET website = ?, website_status = 'claimed'
-                WHERE EIN = ?
-            """, (website_url, ein))
-
-        if donate_url and donate_confirmed:
-            db.execute("""
-                UPDATE registry_enriched
-                SET donate_url = ?, donate_confidence = 95, donate_url_status = 'claimed'
-                WHERE EIN = ?
-            """, (donate_url, ein))
-
-        if cause_tags_json and cause_tags_json != '[]':
-            db.execute("""
-                UPDATE registry_enriched
-                SET cause_tags = ?, cause_tags_source = 'claimed'
-                WHERE EIN = ?
-            """, (cause_tags_json, ein))
+        _write_claimed_fields_to_registry(db, ein, f)
 
         db.commit()
         # Evict org cache entries for this EIN
         stale = [k for k in _CACHE if ein in k]
         for k in stale:
             _CACHE.pop(k, None)
-        return jsonify({'success': True, 'message': 'Profile updated'}), 200
+        return jsonify({
+            'success': True,
+            'message': 'Saved. Your public page updates within 24 hours (usually sooner).'
+        }), 200
 
     except Exception as e:
         app.logger.exception('claim profile update failed')
@@ -3904,7 +4364,10 @@ def claim_profile_update():
         )
 
     db.commit()
-    return jsonify({"status": "updated"})
+    return jsonify({
+        "status": "updated",
+        "message": "Saved. Your public page updates within 24 hours (usually sooner)."
+    })
 
 
 @app.route('/api/claim/contacts', methods=['PATCH'])
@@ -3972,22 +4435,184 @@ def claim_contacts_update():
     return jsonify({"status": "updated", "contact_preference": contact_preference}), 200
 
 
+# ── Tier 2 privacy controls (Charter promise 9, Library Document 011) ─────────
+# Everything a claimant entrusted to Daanaa is exportable and deletable by them.
+# The public IRS record is not theirs to delete and remains untouched.
+
+# Secret material never leaves the server, not even to its owner: the PIN is a
+# live credential, and exporting it would turn every export into a phishing prize.
+_CLAIM_SECRET_FIELDS = {'pin', 'pin_expires_at'}
+
+
+def _authorize_claimant(db, ein: str, token: str):
+    """Shared auth for claimant data endpoints — same contract as /api/claim/update.
+
+    Returns (row, None) on success or (None, (response, status)) on failure.
+    """
+    row = db.execute('SELECT * FROM org_claims WHERE ein = ?', (ein,)).fetchone()
+    if not row:
+        return None, (jsonify({'error': 'No claim found for this EIN'}), 404)
+    if row['claim_status'] == 'revoked':
+        return None, (jsonify({'error': 'This claim has been revoked'}), 403)
+    stored_pin = row['pin']
+    if token != stored_pin and token != _make_verify_token(ein, stored_pin):
+        return None, (jsonify({'error': 'Verification token is invalid or expired'}), 403)
+    return row, None
+
+
+@app.route('/api/claim/my-data', methods=['POST'])
+@limiter.limit("10 per minute")
+def claim_my_data_export():
+    """Export every entrusted (Tier 2) field the claimant has given Daanaa."""
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    entrusted = {k: row[k] for k in row.keys() if k not in _CLAIM_SECRET_FIELDS}
+    return jsonify({
+        'ein': ein,
+        'exported_at': datetime.now(timezone.utc).isoformat(),
+        'entrusted_data': entrusted,
+        'note': ('This is everything your organization has entrusted to Daanaa. '
+                 'Public IRS data is not included; it remains public record. '
+                 'You can delete all of this at any time via /api/claim/my-data/delete.'),
+    })
+
+
+@app.route('/api/claim/my-data/delete', methods=['POST'])
+@limiter.limit("5 per minute")
+def claim_my_data_delete():
+    """Delete the claimant's entrusted data entirely. Public record remains."""
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    db.execute("DELETE FROM org_claims WHERE ein = ?", (ein,))
+    db.commit()
+
+    # Claimed overrides must vanish from public pages immediately
+    stale = [k for k in _CACHE if ein in k]
+    for k in stale:
+        _CACHE.pop(k, None)
+
+    # Audit that a deletion happened — never what was deleted (no PII in the log)
+    _log_org_activity(ein, 'claim_data_deleted',
+                      'entrusted data deleted at claimant request', actor='org')
+
+    return jsonify({
+        'success': True,
+        'message': ('All data your organization entrusted to Daanaa has been deleted. '
+                    'Your public IRS record remains, as it is public record. '
+                    'You are welcome to claim your profile again at any time.'),
+    })
+
+
+@app.route('/api/claim/ai-derived', methods=['POST'])
+@limiter.limit("20 per minute")
+def claim_ai_derived():
+    """Show a claimant exactly what was derived about their org, with provenance.
+
+    Stewardship P9/P10 + Library Doc 005: AI-generated facts are labeled at the
+    level of the individual fact, and the organization can always override them.
+    The AI value stays visible next to any override — comparison, not erasure.
+    """
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    claim, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    org = db.execute(
+        """SELECT mission, mission_source, cause_tags, website, website_status,
+                  donate_url, donate_confidence, donate_url_status
+           FROM registry_enriched WHERE EIN = ?""", (ein,)).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    _AI_MISSION_SOURCES = ('ai_ntee', 'ai_generated')
+    mission_source = org['mission_source'] or 'unknown'
+    derived = [
+        {
+            'field': 'mission',
+            'value': org['mission'],
+            'source': mission_source,
+            'is_ai': mission_source in _AI_MISSION_SOURCES,
+            'explanation': (
+                'This summary was written by our AI from your IRS filings and category.'
+                if mission_source in _AI_MISSION_SOURCES else
+                'This summary came from your own public materials.'),
+            'your_override': claim['custom_mission'],
+            'how_to_override': 'Edit your mission in your profile editor; your words replace ours everywhere.',
+        },
+        {
+            'field': 'cause_tags',
+            'value': org['cause_tags'],
+            'source': 'ai_extracted',
+            'is_ai': True,
+            'explanation': 'These tags were extracted by AI from your IRS category and public description.',
+            'your_override': claim['cause_tags_json'] if 'cause_tags_json' in claim.keys() else None,
+            'how_to_override': 'Set your own cause tags in your profile editor.',
+        },
+        {
+            'field': 'website',
+            'value': org['website'],
+            'source': f"discovered ({org['website_status'] or 'unchecked'})",
+            'is_ai': True,
+            'explanation': 'Found by our automated discovery pipeline and verified by status checks.',
+            'your_override': claim['website_url'] if 'website_url' in claim.keys() else None,
+            'how_to_override': 'Confirm or correct your website in your profile editor.',
+        },
+        {
+            'field': 'donate_url',
+            'value': org['donate_url'],
+            'source': f"discovered ({org['donate_url_status'] or 'unchecked'}, "
+                      f"confidence {org['donate_confidence'] or 0:.0f})",
+            'is_ai': True,
+            'explanation': 'Found by automated search of your website; marked beta until you confirm it.',
+            'your_override': claim['donate_url'] if 'donate_url' in claim.keys() else None,
+            'how_to_override': 'Confirm your donation link in your profile editor to remove the beta label.',
+        },
+    ]
+    return jsonify({
+        'ein': ein,
+        'derived': derived,
+        'note': ('Everything here was derived from public sources or by AI, and is '
+                 'labeled with where it came from. Your overrides always win, and '
+                 'the derived value stays visible to you for comparison.'),
+    })
+
+
 def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[dict]:
     if not eins:
         return []
     cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
-              r.latest_tax_year, r.data_source, r.updated_at,
-              r.merit_tier, r.merit_score, r.merit_band,
-              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
+              r.latest_tax_year, r.data_source, r.updated_at"""
     placeholders = ",".join("?" * len(eins))
     # active_only=True enforces the same deductibility + revocation filter used by
     # /api/organizations so revoked orgs can't surface via vector/semantic paths.
     dedup_clause = f" AND {_DEDUCTIBILITY_FILTER}" if active_only else ""
     rows = db.execute(
         f"""SELECT {cols} FROM registry_enriched r
-            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
             WHERE r.EIN IN ({placeholders}){dedup_clause}""", eins
     ).fetchall()
     order = {e: i for i, e in enumerate(eins)}
@@ -4003,10 +4628,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
     """Similar orgs: vector cosine similarity when available, SQL bucket fallback."""
     cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
-              r.latest_tax_year, r.data_source, r.updated_at,
-              r.merit_tier, r.merit_score, r.merit_band,
-              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
+              r.latest_tax_year, r.data_source, r.updated_at"""
 
     # ── Vector path ────────────────────────────────────────────────────────────
     vec = _get_org_vec(ein_clean)
@@ -4123,7 +4745,7 @@ def admin_guild_codes_create():
             data['code'].strip()[:100],
             data['description'].strip()[:500],
             data['discount_label'].strip()[:100],
-            (data.get('website_url') or '').strip()[:500],
+            _normalize_public_url(data.get('website_url')),
             (data.get('how_to_use') or '').strip()[:500],
             int(data.get('milestone_tier', 1)),
             1 if data.get('is_active', True) else 0,
@@ -4379,7 +5001,7 @@ def guild_community_partner_apply():
             area_values,
             (data.get('contact_email') or '').strip()[:200],
             (data.get('contact_phone') or '').strip()[:50],
-            (data.get('website_url') or '').strip()[:500],
+            _normalize_public_url(data.get('website_url')),
             data['submitter_name'].strip()[:200],
             submitter_email[:200],
             (data.get('notes') or '').strip()[:1000],
@@ -4792,6 +5414,34 @@ def get_similar_organizations(ein):
     return jsonify({'results': [_strip_scores(r) for r in results], 'mode': mode, 'diamonds_only': diamonds_only})
 
 
+# ── Typo tolerance helper (T12 Phase 2) ────────────────────────────────────────
+def _typo_tolerance_search(query: str, db) -> list[str]:
+    """Fuzzy-match query against org names when FTS returns zero results.
+
+    Used as a fallback when keyword search fails (likely due to typos).
+    Returns EINs of the best fuzzy matches (up to 5).
+
+    Example: "aniaml rescue" → "Animal Rescue" orgs via difflib similarity.
+    """
+    try:
+        # Fetch all org names (cached in memory on first call)
+        if not hasattr(_typo_tolerance_search, '_org_names_cache'):
+            rows = db.execute("SELECT EIN, organization_name FROM registry_enriched WHERE organization_name IS NOT NULL").fetchall()
+            _typo_tolerance_search._org_names_cache = {dict(r)['organization_name']: dict(r)['EIN'] for r in rows}
+
+        org_names = list(_typo_tolerance_search._org_names_cache.keys())
+
+        # Get close matches (cutoff=0.50 = 50% similarity, aggressive for typo tolerance)
+        # Returns up to 10 candidates to maximize recall
+        matches = get_close_matches(query, org_names, n=10, cutoff=0.50)
+        if matches:
+            return [_typo_tolerance_search._org_names_cache[name] for name in matches[:5]]
+    except Exception as e:
+        app.logger.debug(f"typo_tolerance_search error: {e}")
+
+    return []
+
+
 # ── Semantic search ────────────────────────────────────────────────────────────
 @app.route('/api/search/semantic')
 @limiter.limit("30 per minute")
@@ -4898,6 +5548,37 @@ def fused_search():
         except Exception:
             kw_eins = []
 
+    # ── Path 1b: Semantic reranking of FTS results (T12 Phase 4) ──────────────
+    # If FTS returned results, optionally rerank by semantic similarity for better
+    # relevance (e.g., "food assistance" ranks above generic "nonprofit" matches)
+    if kw_eins and len(kw_eins) >= 5:  # Only rerank if we have meaningful FTS results
+        if not _emb_loaded:
+            _load_embeddings()
+        if _emb_matrix is not None and len(_emb_matrix) > 0:
+            vec = _embed_query(q)
+            if vec is not None:
+                # Rerank FTS results by semantic similarity to query
+                from numpy import dot
+                from numpy.linalg import norm
+                kw_sim_scores = {}
+                # Row lookup MUST go through _emb_index (EIN → matrix row).
+                # The old code did int(ein) as a row index: EINs are 9-digit
+                # tax IDs, so nearly all fell outside the matrix (rerank was
+                # a silent no-op) and leading-zero EINs read a DIFFERENT
+                # org's vector (fixed 2026-07-18).
+                for ein in kw_eins:
+                    row_i = _emb_index.get(ein) if _emb_index else None
+                    if row_i is not None:
+                        org_vec = _emb_matrix[row_i]
+                        # Cosine similarity: dot / (norm1 * norm2)
+                        sim = dot(vec, org_vec) / (norm(vec) * norm(org_vec) + 1e-9)
+                        kw_sim_scores[ein] = sim
+                # Re-sort kw_eins by semantic similarity (descending)
+                if kw_sim_scores:
+                    kw_eins_reranked = sorted(kw_eins, key=lambda e: kw_sim_scores.get(e, -1), reverse=True)
+                    app.logger.info(f"semantic_reranking: q='{q}' reranked {len(kw_sim_scores)}/{len(kw_eins)} FTS results")
+                    kw_eins = kw_eins_reranked
+
     # ── FAST PATH: If FTS has enough results, skip semantic (avoid GPU) ─────────
     sem_eins: list[str] = []
     use_fast_path = len(kw_eins) >= RESULT_N  # If FTS has 20+, skip semantic
@@ -4920,6 +5601,21 @@ def fused_search():
         rrf[ein] = rrf.get(ein, 0.0) + 1.0 / (RRF_K + rank)
     for rank, ein in enumerate(sem_eins, 1):
         rrf[ein] = rrf.get(ein, 0.0) + 1.0 / (RRF_K + rank)
+
+    # Exact-name pin: a donor who types an org's name (or a distinctive part
+    # of it) must see that org first, not a bm25/semantic neighbor. Phrase
+    # match on the name column; +1.0 dominates any RRF sum (max ≈ 0.033).
+    name_words = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', q)).split()
+    if name_words and _check_fts(db):
+        phrase = ' '.join(name_words[:12])
+        try:
+            for r in db.execute(
+                'SELECT ein FROM org_fts WHERE org_fts MATCH ? LIMIT 25',
+                (f'org_name : "{phrase}"',)
+            ).fetchall():
+                rrf[r[0]] = rrf.get(r[0], 0.0) + 1.0
+        except sqlite3.OperationalError:
+            pass
 
     fused_eins = sorted(rrf, key=lambda e: rrf[e], reverse=True)
 
@@ -4965,12 +5661,63 @@ def fused_search():
         # Log that boosts were applied
         app.logger.info(f"search_surge_boost: q='{q}' existing={len(existing_boosted)} new={len(new_boosted)} event_types={set(b['event_type'] for b in boost_eins.values())}")
 
+    # ── Typo tolerance fallback (T12 Phase 2) ──────────────────────────────────
+    # If FTS + semantic returned too few results, try fuzzy matching on org names
+    # to catch typos and abbreviations that FTS might miss
+    if len(fused_eins) < 5:
+        typo_eins = _typo_tolerance_search(q, db)
+        if typo_eins:
+            # Blend: preserve high-scoring FTS results, add fuzzy matches for coverage
+            existing_set = set(fused_eins)
+            for ein in typo_eins:
+                if ein not in existing_set:
+                    fused_eins.append(ein)
+                    if len(fused_eins) >= RESULT_N:
+                        break
+            if typo_eins:
+                app.logger.info(f"typo_tolerance: q='{q}' kw={len(kw_eins)} + fuzzy={len(typo_eins)} -> {len(fused_eins)} total")
+
+    # ── NTEE synonym expansion (T12 Phase 3) ───────────────────────────────────
+    # If still too few results, expand query with nonprofit category synonyms
+    # (e.g., "animal rescue" → also search "animal shelter", "pet adoption", etc.)
+    if len(fused_eins) < 5:
+        synonyms = expand_query_with_synonyms(q)
+        if len(synonyms) > 1:  # More than just the original query
+            existing_set = set(fused_eins)
+            syn_eins = []
+            for syn_q in synonyms[1:]:  # Skip the first (original query)
+                if len(fused_eins) >= RESULT_N:
+                    break
+                try:
+                    fts_q = _sanitize_fts_query(syn_q)
+                    rows = db.execute(
+                        "SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+                        "ORDER BY bm25(org_fts, 10, 5, 1, 1) LIMIT ?",
+                        (fts_q, CAND_N)
+                    ).fetchall()
+                    for r in rows:
+                        ein = r[0]
+                        if ein not in existing_set:
+                            fused_eins.append(ein)
+                            syn_eins.append(ein)
+                            if len(fused_eins) >= RESULT_N:
+                                break
+                except Exception:
+                    pass
+            if syn_eins:
+                app.logger.info(f"synonym_expansion: q='{q}' synonyms={synonyms[1:]} added={len(syn_eins)} -> {len(fused_eins)} total")
+
     # ── Fetch org details (deductible 501c3s only) ────────────────────────────
     fetch_n = min(RESULT_N * 3, len(fused_eins))
     if not fused_eins:
         return jsonify({"results": [], "query": q, "mode": "fused", "total": 0})
 
     placeholders = ",".join("?" * fetch_n)
+    # v4 JOIN removed 2026-07-10: same schema-drift bug as get_organization()
+    # (v4_scores is now 5 columns: EIN, score, tier, band, operating_model --
+    # peer_cell_size never existed). This 500'd /api/search on every query.
+    # The joined columns fed _attach_v4_scores(), a documented no-op, and
+    # weren't referenced anywhere downstream in this function.
     cols = """r.EIN, r.organization_name, r.NTEE1, r.CITY, r.STATE, r.total_revenue,
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
               r.latest_tax_year, r.data_source, r.merit_tier, r.merit_score, r.merit_band,
@@ -4979,12 +5726,9 @@ def fused_search():
               r.net_assets, r.is_hidden_gem, r.cause_tags,
               SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
               (r.mission IS NOT NULL AND r.mission != '') as has_mission,
-              (r.website  IS NOT NULL AND r.website  != '') as has_website,
-              v4.visibility_tier, v4.financial_health, v4.operating_model, v4.revenue_band as v4_revenue_band,
-              v4.peer_cell_size, v4.metrics_json, v4.percentiles_json"""
+              (r.website  IS NOT NULL AND r.website  != '') as has_website"""
     rows = db.execute(
         f"""SELECT {cols} FROM registry_enriched r
-            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
             WHERE r.EIN IN ({placeholders}) AND {_DEDUCTIBILITY_FILTER}""",
         fused_eins[:fetch_n]
     ).fetchall()
@@ -5172,6 +5916,10 @@ def _format_event(row, signup_count: int = 0) -> dict:
         "parking_info":     row["parking_info"]     if "parking_info"     in keys else None,
         "coordinator_name": row["coordinator_name"] if "coordinator_name" in keys else None,
         "signup_count":     signup_count,
+        "source_url":       row["source_url"] if "source_url" in keys else None,
+        "source_checked_at": row["source_checked_at"] if "source_checked_at" in keys else None,
+        "discovery_status": row["discovery_status"] if "discovery_status" in keys else "confirmed",
+        "ai_generated":     bool(row["ai_generated"]) if "ai_generated" in keys else False,
     }
 
 
@@ -5558,6 +6306,8 @@ def event_signup_create(event_id: int):
         return jsonify({"error": "Event not found"}), 404
     if row["status"] in ('cancelled', 'expired'):
         return jsonify({"error": "This event is no longer accepting signups"}), 400
+    if "discovery_status" in row.keys() and row["discovery_status"] != "confirmed":
+        return jsonify({"error": "This event has not been confirmed by the organization", "status": "unconfirmed", "source_url": row["source_url"] if "source_url" in row.keys() else None}), 409
     from datetime import datetime as _dt
     if row["event_date"] < _dt.utcnow().strftime("%Y-%m-%d"):
         return jsonify({"error": "This event has already passed"}), 400
@@ -5833,10 +6583,11 @@ def portal_events_update(event_id: int):
         "title", "description", "event_date", "start_time", "end_time",
         "location_city", "location_state", "location_zip", "is_virtual",
         "virtual_url", "contact_email", "capacity", "status",
-        "event_type", "min_age", "expected_hours",
+        "event_type", "min_age", "expected_hours", "discovery_status",
     }
     valid_statuses   = {"active", "filled", "cancelled"}
     valid_event_types = {"volunteer", "community", "fundraiser", "networking"}
+    valid_discovery_statuses = {"confirmed", "unconfirmed"}
     updates, vals = [], []
     for field in allowed:
         if field not in data:
@@ -5846,6 +6597,8 @@ def portal_events_update(event_id: int):
             return jsonify({"error": f"status must be one of {sorted(valid_statuses)}"}), 400
         if field == "event_type" and val not in valid_event_types:
             return jsonify({"error": f"event_type must be one of {sorted(valid_event_types)}"}), 400
+        if field == "discovery_status" and val not in valid_discovery_statuses:
+            return jsonify({"error": f"discovery_status must be one of {sorted(valid_discovery_statuses)}"}), 400
         if field == "is_virtual":
             val = int(bool(val))
         if field == "virtual_url" and val and not str(val).startswith(('http://', 'https://')):
@@ -6535,6 +7288,39 @@ def claim_phone_record():
     return str(resp), 200, {'Content-Type': 'text/xml'}
 
 
+@app.route('/api/voice/support', methods=['POST'])
+def voice_support_inbound():
+    """
+    Inbound voice call handler for general nonprofit support.
+    All calls transfer to founder's personal number (+1-347-937-3555).
+    Phase A: Founder takes all calls directly.
+    """
+    from_phone = (request.form.get('From') or '').strip()
+    call_sid = (request.form.get('CallSid') or '').strip()
+
+    app.logger.info(f"[Support Call] Incoming from {from_phone}, CallSid={call_sid}")
+
+    # Log the call attempt
+    db = get_db()
+    try:
+        db.execute(
+            """INSERT INTO support_calls (from_phone, call_sid, received_at)
+               VALUES (?, ?, CURRENT_TIMESTAMP)""",
+            (from_phone, call_sid)
+        )
+        db.commit()
+    except sqlite3.OperationalError:
+        # Table doesn't exist yet; skip logging for now
+        pass
+
+    # Return TwiML response: transfer to founder's phone
+    resp = VoiceResponse()
+    resp.say("Thank you for calling Daanaa. Connecting you now.", voice='woman')
+    resp.dial('+1-347-937-3555')  # Founder's personal number
+
+    return str(resp), 200, {'Content-Type': 'text/xml'}
+
+
 @app.route('/api/claim/sms-callback', methods=['POST'])
 def claim_sms_callback():
     """
@@ -6638,7 +7424,9 @@ def nonprofit_verify_hours(ein: str, log_id: str):
 
     Replaced 2026-07-22 by the canonical volunteer_hours flow so no second
     store of volunteer hour records can drift from the single source of truth.
-    Existing Firestore data is untouched — read-only history, no new writes."""
+    Use POST /api/nonprofit/<ein>/volunteer/<hour_id>/approve (Firebase auth
+    + verified org claim). Existing Firestore data is untouched — read-only
+    history, no new writes."""
     return jsonify({
         'error': 'This endpoint has been retired',
         'use': 'POST /api/nonprofit/<ein>/volunteer/<hour_id>/approve',
@@ -6908,10 +7696,10 @@ def get_vendor_stats(vendor_id: str):
 def nonprofit_hours_pending():
     """RETIRED legacy path (volunteer_hour_logs table).
 
-    Replaced 2026-07-22 by the canonical volunteer_hours flow (single table,
-    audit trail, 30-day lock, idempotent public-aggregate bridge). The old
-    volunteer_hour_logs / volunteer_hour_confirmations tables are retained
-    read-only for history; no new records are created there."""
+    Replaced 2026-07-22 by the canonical volunteer_hours flow. Use
+    GET /api/nonprofit/<ein>/volunteer/list?status=pending. The old
+    volunteer_hour_logs table is retained read-only for history; no new
+    records are created there."""
     return jsonify({
         'error': 'This endpoint has been retired',
         'use': 'GET /api/nonprofit/<ein>/volunteer/list?status=pending',
@@ -6920,11 +7708,48 @@ def nonprofit_hours_pending():
 
 @app.route('/api/nonprofit/verify-hours', methods=['POST'])
 def nonprofit_verify_hours_action():
-    """RETIRED legacy path (volunteer_hour_logs + volunteer_hour_confirmations)."""
+    """RETIRED legacy path (volunteer_hour_logs + volunteer_hour_confirmations).
+
+    Replaced 2026-07-22 by the canonical volunteer_hours approve/reject flow
+    (which carries the audit trail, the 30-day lock, and the single idempotent
+    bridge into public aggregates). Old tables are retained read-only for
+    history; no new records are created there."""
     return jsonify({
         'error': 'This endpoint has been retired',
         'use': 'POST /api/nonprofit/<ein>/volunteer/<hour_id>/approve or /reject',
     }), 410
+
+
+# ── QA Testing Hub ──────────────────────────────────────────────────────────
+# Serves QA test documents, report templates, and submission form
+# Accessible at: https://daanaa.org/qa/
+
+@app.route('/qa', defaults={'path': ''})
+@app.route('/qa/<path:path>')
+def serve_qa(path):
+    """Serve QA testing hub: documents, credentials, and report submission."""
+    QA_DIR = '/opt/daanaa/qa'
+    if not os.path.exists(QA_DIR):
+        return jsonify({'error': 'QA hub not available'}), 404
+
+    # Default to index.html if no path
+    if not path:
+        return send_from_directory(QA_DIR, 'index.html')
+
+    # Serve requested file
+    if os.path.exists(os.path.join(QA_DIR, path)):
+        return send_from_directory(QA_DIR, path)
+
+    # File not found
+    abort(404)
+
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    if path and os.path.exists(os.path.join(FRONTEND_DIST, path)):
+        return send_from_directory(FRONTEND_DIST, path)
+    return send_from_directory(FRONTEND_DIST, 'index.html')
 
 
 # ── Vendor self-service portal ───────────────────────────────────────────────
@@ -7160,6 +7985,433 @@ def admin_vendor_approve(vendor_id: str):
     return jsonify({"ok": True, "vendor_id": vendor_id, "status": "active"})
 
 
+# ── Intent & Event Discovery Admin (Phase 2) ──────────────────────────────────
+
+@app.route('/api/admin/discovery/queue', methods=['GET'])
+@require_admin_key
+def admin_discovery_queue():
+    """Admin: view event discovery candidates pending review."""
+    if not ENABLE_EVENT_DISCOVERY or not _discovery_available:
+        return jsonify({'error': 'Event discovery not enabled'}), 403
+
+    db = get_db()
+    status = request.args.get('status', 'pending_review').strip()
+    limit = min(int(request.args.get('limit', '50')), 500)
+    offset = int(request.args.get('offset', '0'))
+
+    # Validate status to prevent SQL injection
+    valid_statuses = ('pending_review', 'approved', 'rejected', 'expired')
+    if status not in valid_statuses:
+        status = 'pending_review'
+
+    rows = db.execute(f"""
+        SELECT id, ein, source_url, title, event_date, evidence, status,
+               last_checked_at, reviewed_at
+        FROM event_discovery_queue
+        WHERE status=?
+        ORDER BY last_checked_at DESC
+        LIMIT ? OFFSET ?
+    """, (status, limit, offset)).fetchall()
+
+    total = db.execute(
+        f"SELECT COUNT(*) as count FROM event_discovery_queue WHERE status=?",
+        (status,)
+    ).fetchone()['count']
+
+    return jsonify({
+        'status': status,
+        'candidates': [dict(r) for r in rows],
+        'total': total,
+        'limit': limit,
+        'offset': offset
+    })
+
+
+@app.route('/api/admin/discovery/queue/<int:candidate_id>/review', methods=['POST'])
+@require_admin_key
+def admin_discovery_review(candidate_id: int):
+    """Admin: approve, reject, or defer an event discovery candidate."""
+    if not ENABLE_EVENT_DISCOVERY or not _discovery_available:
+        return jsonify({'error': 'Event discovery not enabled'}), 403
+
+    data = request.get_json(silent=True) or {}
+    decision = data.get('decision', '').strip()
+    notes = data.get('notes', '').strip()[:500]
+
+    if decision not in ('approved', 'rejected', 'deferred'):
+        return jsonify({'error': 'decision must be: approved, rejected, or deferred'}), 400
+
+    db = get_db()
+    candidate = db.execute(
+        "SELECT * FROM event_discovery_queue WHERE id=?", (candidate_id,)
+    ).fetchone()
+
+    if not candidate:
+        return jsonify({'error': 'Candidate not found'}), 404
+
+    if decision == 'approved':
+        # Promote to volunteer_events (unconfirmed, awaiting nonprofit claim)
+        event_id = secrets.randbelow(1000000)
+        db.execute("""
+            INSERT INTO volunteer_events (
+                event_id, ein, title, event_date, location_city, location_state,
+                discovery_status, source_url, ai_generated, claim_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            event_id,
+            candidate['ein'],
+            candidate['title'],
+            candidate['event_date'],
+            'Unknown',
+            'Unknown',
+            'ai_generated',
+            candidate['source_url'],
+            1,
+            'unconfirmed'
+        ))
+
+    db.execute("""
+        UPDATE event_discovery_queue
+        SET status=?, reviewed_at=datetime('now')
+        WHERE id=?
+    """, (decision, candidate_id))
+    db.commit()
+
+    return jsonify({
+        'success': True,
+        'candidate_id': candidate_id,
+        'decision': decision,
+        'notes': notes
+    })
+
+
+@app.route('/api/admin/intent/summary', methods=['GET'])
+@require_admin_key
+def admin_intent_summary():
+    """Admin: aggregate intent signals (counts only, no PII)."""
+    if not ENABLE_INTENT_SIGNALS or not _intent_available:
+        return jsonify({'error': 'Intent signals not enabled'}), 403
+
+    db = get_db()
+    ein = request.args.get('ein', '').strip()[:10]
+    event_id = request.args.get('event_id', '')
+
+    try:
+        if event_id:
+            event_id = int(event_id)
+        else:
+            event_id = None
+    except (ValueError, TypeError):
+        event_id = None
+
+    # Use intent_layer to get aggregate summary
+    if not (ein or event_id):
+        return jsonify({'error': 'ein or event_id required'}), 400
+
+    summary = intent_layer.summarize_intent(
+        db,
+        ein=ein if ein else None,
+        event_id=event_id if event_id else None
+    )
+
+    return jsonify({
+        'ein': ein if ein else None,
+        'event_id': event_id if event_id else None,
+        'signals': summary
+    })
+
+
+# ── Profile Contexts (Phase 3) ────────────────────────────────────────────────
+
+@app.route('/api/profile-contexts', methods=['GET'])
+@limiter.limit("60 per minute")
+def get_profile_contexts():
+    """Get all shared contexts for the authenticated user."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        contexts = profile_contexts.get_user_contexts(db, uid)
+        return jsonify({'contexts': contexts})
+    except Exception as e:
+        _logger.error(f"get_profile_contexts error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts', methods=['POST'])
+@limiter.limit("10 per minute")
+def create_profile_context():
+    """Create a new shared context (household, DAF, business, other)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+
+    context_type = data.get('context_type', '').strip().lower()
+    display_name = (data.get('display_name') or '').strip()[:100]
+    description = (data.get('description') or '').strip()[:500]
+
+    if context_type not in profile_contexts.CONTEXT_TYPES:
+        return jsonify({'error': f'Invalid context_type. Must be one of: {", ".join(profile_contexts.CONTEXT_TYPES)}'}), 400
+
+    db = get_db()
+
+    try:
+        context_id = profile_contexts.create_context(
+            db,
+            created_by_uid=uid,
+            context_type=context_type,
+        )
+
+        context = profile_contexts.get_context_detail(db, context_id)
+        return jsonify({
+            'success': True,
+            'context_id': context_id,
+            'context': dict(context)
+        }), 201
+
+    except Exception as e:
+        _logger.error(f"create_profile_context error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/members', methods=['GET'])
+@limiter.limit("60 per minute")
+def get_context_members(context_id: str):
+    """Get all members of a context (requires membership)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        # Check access
+        if not profile_contexts.can_access_context(db, context_id, uid):
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        members = profile_contexts.get_context_members(db, context_id, uid)
+        return jsonify({'members': [dict(m) for m in members]})
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except Exception as e:
+        _logger.error(f"get_context_members error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/members', methods=['POST'])
+@limiter.limit("10 per minute")
+def add_context_member(context_id: str):
+    """Add a member to a context (requires lead or support role)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+
+    target_uid = data.get('firebase_uid', '').strip()
+    role = data.get('role', 'member').strip().lower()
+
+    if not target_uid:
+        return jsonify({'error': 'firebase_uid is required'}), 400
+    if role not in profile_contexts.ROLES:
+        return jsonify({'error': f'Invalid role. Must be one of: {", ".join(profile_contexts.ROLES)}'}), 400
+
+    db = get_db()
+
+    try:
+        # Check access (must be lead or support)
+        if not profile_contexts.can_access_context(db, context_id, uid, min_role='support'):
+            return jsonify({'error': 'Unauthorized (requires lead or support role)'}), 403
+
+        invitation_id = profile_contexts.invite_member(
+            db,
+            context_id=context_id,
+            invited_uid=target_uid,
+            role=role,
+            invited_by_uid=uid,
+        )
+
+        return jsonify({'success': True, 'invitation_id': invitation_id, 'invited_uid': target_uid, 'role': role}), 201
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 404
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"add_context_member error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/invitations/pending', methods=['GET'])
+@limiter.limit("60 per minute")
+def get_pending_invitations():
+    """Get pending invitations for the current user."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        invitations = profile_contexts.get_user_invitations(db, uid)
+        return jsonify({'invitations': [dict(inv) for inv in invitations]})
+    except Exception as e:
+        _logger.error(f"get_pending_invitations error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/invitations/<invitation_id>/accept', methods=['POST'])
+@limiter.limit("10 per minute")
+def accept_context_invitation(invitation_id: str):
+    """Accept a pending invitation to join a context."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        profile_contexts.accept_invitation(db, invitation_id=invitation_id, accepting_uid=uid)
+        return jsonify({'success': True, 'invitation_id': invitation_id}), 200
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"accept_context_invitation error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/invitations/<invitation_id>/reject', methods=['POST'])
+@limiter.limit("10 per minute")
+def reject_context_invitation(invitation_id: str):
+    """Reject a pending invitation to join a context."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        profile_contexts.reject_invitation(db, invitation_id=invitation_id, rejecting_uid=uid)
+        return jsonify({'success': True, 'invitation_id': invitation_id}), 200
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"reject_context_invitation error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/members/<target_uid>', methods=['PATCH'])
+@limiter.limit("10 per minute")
+def update_context_member(context_id: str, target_uid: str):
+    """Update a member's role in a context (requires lead role)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    data = request.get_json(silent=True) or {}
+
+    new_role = data.get('role', '').strip().lower()
+
+    if not new_role:
+        return jsonify({'error': 'role is required'}), 400
+    if new_role not in profile_contexts.ROLES:
+        return jsonify({'error': f'Invalid role. Must be one of: {", ".join(profile_contexts.ROLES)}'}), 400
+
+    db = get_db()
+
+    try:
+        # Check access (must be lead)
+        if not profile_contexts.can_access_context(db, context_id, uid, min_role='lead'):
+            return jsonify({'error': 'Unauthorized (requires lead role)'}), 403
+
+        profile_contexts.update_member_role(
+            db,
+            context_id=context_id,
+            firebase_uid=target_uid,
+            new_role=new_role,
+            changed_by_uid=uid,
+        )
+
+        return jsonify({'success': True, 'firebase_uid': target_uid, 'role': new_role})
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"update_context_member error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/members/<target_uid>', methods=['DELETE'])
+@limiter.limit("10 per minute")
+def remove_context_member(context_id: str, target_uid: str):
+    """Remove a member from a context (requires lead or support role)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        # Check access (must be lead or support)
+        if not profile_contexts.can_access_context(db, context_id, uid, min_role='support'):
+            return jsonify({'error': 'Unauthorized (requires lead or support role)'}), 403
+
+        profile_contexts.remove_member(
+            db,
+            context_id=context_id,
+            firebase_uid=target_uid,
+            removed_by_uid=uid,
+        )
+
+        return jsonify({'success': True, 'firebase_uid': target_uid, 'status': 'removed'})
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"remove_context_member error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/profile-contexts/<context_id>/archive', methods=['POST'])
+@limiter.limit("10 per minute")
+def archive_context(context_id: str):
+    """Archive a context (requires lead role)."""
+    if not ENABLE_PROFILE_CONTEXTS or not _profile_contexts_available:
+        return jsonify({'error': 'Profile contexts not enabled'}), 403
+
+    uid = _require_firebase_user()
+    db = get_db()
+
+    try:
+        # Check access (must be lead)
+        if not profile_contexts.can_access_context(db, context_id, uid, min_role='lead'):
+            return jsonify({'error': 'Unauthorized (requires lead role)'}), 403
+
+        profile_contexts.archive_context(db, context_id=context_id, archived_by_uid=uid)
+
+        return jsonify({'success': True, 'context_id': context_id, 'status': 'archived'})
+
+    except PermissionError as e:
+        return jsonify({'error': str(e)}), 403
+    except Exception as e:
+        _logger.error(f"archive_context error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 # ── Org view tracking ─────────────────────────────────────────────────────────
 
 @app.route('/api/org/<ein>/view', methods=['POST'])
@@ -7383,8 +8635,15 @@ def guild_detail(slug: str):
     except Exception as e:
         return jsonify({'error': f'Error loading guild: {str(e)}'}), 500
 
+@app.route('/api/wallet/init', methods=['POST'])
 def e2e_wallet_init():
-    """Issue a random salt for a new wallet. Salt is not secret."""
+    """Issue a random salt for a new wallet. Salt is not secret.
+
+    Route decorator was accidentally dropped in ffcb46f7731 (2026-06-21) —
+    that commit's message explicitly lists /api/wallet/init as preserved,
+    and the shipped frontend (WalletContext.tsx) still POSTs here for new
+    wallet creation. Restored 2026-07-10; guarded by test_wallet_e2e.py.
+    """
     import base64 as _b64
     salt = _b64.b64encode(secrets.token_bytes(16)).decode()
     return jsonify({'salt': salt})
@@ -7728,16 +8987,22 @@ def log_impact():
         if log_type == 'volunteer' and (not isinstance(hours, (int, float)) or hours < 0.25):
             return jsonify({'error': 'Invalid hours'}), 400
 
-        # Insert into impact_logs
+        # Insert into impact_logs. Schema note: org_ein/impact_type/amount are
+        # NOT NULL legacy columns and id is INTEGER AUTOINCREMENT — the old
+        # INSERT here supplied a TEXT id and skipped the NOT NULLs, so every
+        # wallet impact sync failed with a datatype/constraint error.
+        # source='wallet_optin' distinguishes these from the nonprofit-approved
+        # bridge records (source='volunteer_hours_event').
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        log_id = f"{log_type}_{ein}_{log_date}_{secrets.token_hex(4)}"
+        numeric_value = amount if log_type == 'giving' else hours
 
         cursor.execute('''
-            INSERT INTO impact_logs (id, ein, type, amount, hours, log_date)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (log_id, ein, log_type, amount if log_type == 'giving' else None,
+            INSERT INTO impact_logs (org_ein, impact_type, amount, ein, type, hours, log_date, source, verified)
+            VALUES (?, ?, ?, ?, ?, ?, ?, 'wallet_optin', 0)
+        ''', (ein, log_type, numeric_value, ein, log_type,
               hours if log_type == 'volunteer' else None, log_date))
+        log_id = cursor.lastrowid
 
         conn.commit()
         conn.close()
@@ -7784,7 +9049,8 @@ def get_community_stats():
             conn.close()
             if stats_row:
                 total_dollars, total_hours, donation_count, volunteer_count, org_count = stats_row
-                volunteer_hourly_value = 33.49  # Independent Sector, Value of a Volunteer Hour (2023 value, published 2024). Illustrative estimate only — never cash value or a tax figure. Keep in sync with volunteer_hours_events_api.VOLUNTEER_HOURLY_VALUE.
+                from volunteer_hours_events_api import VOLUNTEER_HOURLY_VALUE
+                volunteer_hourly_value = VOLUNTEER_HOURLY_VALUE  # single documented source
                 lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
                 return jsonify({
                     'total_dollars': total_dollars or 0,
@@ -7804,7 +9070,8 @@ def get_community_stats():
                 }), 200
 
         total_dollars, total_hours, donation_count, volunteer_count, org_count, active_volunteers, aggregate_date = row
-        volunteer_hourly_value = 33.49  # Independent Sector, Value of a Volunteer Hour (2023 value, published 2024). Illustrative estimate only — never cash value or a tax figure. Keep in sync with volunteer_hours_events_api.VOLUNTEER_HOURLY_VALUE.
+        from volunteer_hours_events_api import VOLUNTEER_HOURLY_VALUE
+        volunteer_hourly_value = VOLUNTEER_HOURLY_VALUE  # single documented source
         lifetime_value = total_dollars + int(total_hours * volunteer_hourly_value)
 
         return jsonify({
@@ -7849,36 +9116,48 @@ def report_bookmark():
         db = get_db()
         cursor = db.cursor()
 
+        # wallet_analytics has no UNIQUE constraints, so ON CONFLICT upserts
+        # are rejected by SQLite — use update-then-insert instead.
+
         # Record root bookmark (for org total count)
-        cursor.execute('''
-            INSERT INTO wallet_analytics (ein, bookmark_count)
-            VALUES (?, 1)
-            ON CONFLICT(ein) DO UPDATE SET
-                bookmark_count = bookmark_count + 1,
-                last_updated = CURRENT_TIMESTAMP
-        ''', (ein,))
+        updated = cursor.execute('''
+            UPDATE wallet_analytics
+               SET bookmark_count = bookmark_count + 1,
+                   last_updated = CURRENT_TIMESTAMP
+             WHERE ein = ? AND cause_tag IS NULL AND location_state IS NULL
+        ''', (ein,)).rowcount
+        if updated == 0:
+            cursor.execute(
+                'INSERT INTO wallet_analytics (ein, bookmark_count) VALUES (?, 1)',
+                (ein,))
 
         # Record by cause (if causes provided)
         for cause in causes[:5]:  # Max 5 causes per bookmark to prevent spam
-            cause = cause.strip()[:100]
+            cause = str(cause).strip()[:100]
             if cause:
-                cursor.execute('''
-                    INSERT INTO wallet_analytics (ein, cause_tag, bookmark_count)
-                    VALUES (?, ?, 1)
-                    ON CONFLICT(ein, cause_tag) DO UPDATE SET
-                        bookmark_count = bookmark_count + 1,
-                        last_updated = CURRENT_TIMESTAMP
-                ''', (ein, cause))
+                updated = cursor.execute('''
+                    UPDATE wallet_analytics
+                       SET bookmark_count = bookmark_count + 1,
+                           last_updated = CURRENT_TIMESTAMP
+                     WHERE ein = ? AND cause_tag = ?
+                ''', (ein, cause)).rowcount
+                if updated == 0:
+                    cursor.execute(
+                        'INSERT INTO wallet_analytics (ein, cause_tag, bookmark_count) VALUES (?, ?, 1)',
+                        (ein, cause))
 
         # Record by location (if provided)
         if state != 'XX' and city != 'Unknown':
-            cursor.execute('''
-                INSERT INTO wallet_analytics (ein, location_state, location_city, bookmark_count)
-                VALUES (?, ?, ?, 1)
-                ON CONFLICT(ein, location_state, location_city) DO UPDATE SET
-                    bookmark_count = bookmark_count + 1,
-                    last_updated = CURRENT_TIMESTAMP
-            ''', (ein, state, city))
+            updated = cursor.execute('''
+                UPDATE wallet_analytics
+                   SET bookmark_count = bookmark_count + 1,
+                       last_updated = CURRENT_TIMESTAMP
+                 WHERE ein = ? AND location_state = ? AND location_city = ?
+            ''', (ein, state, city)).rowcount
+            if updated == 0:
+                cursor.execute(
+                    'INSERT INTO wallet_analytics (ein, location_state, location_city, bookmark_count) VALUES (?, ?, ?, 1)',
+                    (ein, state, city))
 
         db.commit()
         return jsonify({'status': 'ok'}), 200
@@ -7933,6 +9212,13 @@ def nonprofit_volunteer_submit(ein: str):
         ''', (claim_code, ein, name, email, hours, service_date, activity,
               datetime.now().isoformat(), datetime.now().isoformat()))
         db.commit()
+
+        # Record intent signal: volunteer expressed interest
+        if _intent_available:
+            try:
+                intent_layer.record_intent(db, kind='volunteer', source='volunteer_submission', ein=ein)
+            except Exception as intent_err:
+                _logger.warning(f"Intent recording failed (non-fatal): {intent_err}")
     except Exception as e:
         return jsonify({'error': f'Submit failed: {str(e)}'}), 500
 
@@ -7971,6 +9257,13 @@ def volunteer_claim_hours():
             ('confirmed', code)
         )
         db.commit()
+
+        # Record intent: volunteer action started (hours claimed)
+        if _intent_available:
+            try:
+                intent_layer.record_intent(db, kind='volunteer', source='volunteer_claim', ein=hours['nonprofit_ein'], evidence={'claim_code': code})
+            except Exception as intent_err:
+                _logger.warning(f"Intent recording failed (non-fatal): {intent_err}")
     except Exception as e:
         return jsonify({'error': f'Claim failed: {str(e)}'}), 500
 
@@ -8026,11 +9319,60 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
         return jsonify({'error': 'You do not own this nonprofit'}), 403
 
     try:
+        row = db.execute(
+            'SELECT hours, service_date, status, locked_at FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            (hour_id, ein)
+        ).fetchone()
+        if not row:
+            return jsonify({'error': 'Submission not found'}), 404
+        if row['status'] == 'approved':
+            # Idempotent: double-click / retry never re-bridges a second
+            # aggregate impact record (and _bridge_to_impact_logs is itself
+            # keyed on hour_id as a second line of defense).
+            return jsonify({'status': 'approved', 'already_approved': True}), 200
+        # locked_at stores the FUTURE date the record becomes immutable
+        # (set to approval time + 30 days); locked only once that date passes.
+        if row['locked_at'] and row['locked_at'] <= datetime.now().isoformat():
+            return jsonify({'error': 'This submission is locked (30-day edit window has passed)'}), 409
+
+        approved_at = datetime.now().isoformat()
         db.execute(
-            'UPDATE volunteer_hours SET status=?, approved_by=?, approved_at=? WHERE id=? AND nonprofit_ein=?',
-            ('approved', uid, datetime.now().isoformat(), hour_id, ein)
+            'UPDATE volunteer_hours SET status=?, approved_by=?, approved_at=?, '
+            'locked_at=? WHERE id=? AND nonprofit_ein=?',
+            ('approved', uid, approved_at,
+             (datetime.now() + timedelta(days=30)).isoformat(), hour_id, ein)
         )
+        try:
+            from volunteer_hours_events_api import _audit, _bridge_to_impact_logs
+            _audit(db, hour_id, 'approved', uid)
+            _bridge_to_impact_logs(db, ein, row['hours'], row['service_date'], hour_id)
+        except ImportError:
+            pass  # volunteer_hours_events_api optional
+
+        # Queue approval notification (after commit)
         db.commit()
+
+        # Record intent: volunteer action verified (nonprofit approved hours)
+        if _intent_available:
+            try:
+                intent_layer.record_intent(db, kind='volunteer', source='volunteer_approval', ein=ein, evidence={'hours': row['hours'], 'hour_id': hour_id})
+            except Exception as intent_err:
+                _logger.warning(f"Intent recording failed (non-fatal): {intent_err}")
+
+        try:
+            from volunteer_notifications import create_approval_notification
+            full_hour = db.execute(
+                'SELECT volunteer_email, hours, service_date FROM volunteer_hours WHERE id=?',
+                (hour_id,)
+            ).fetchone()
+            if full_hour:
+                full_org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
+                org_name = (full_org["organization_name"] if full_org else None) or "Organization"
+                create_approval_notification(db, hour_id, full_hour["volunteer_email"],
+                                             ein, org_name, full_hour["hours"],
+                                             full_hour["service_date"], is_test=False)
+        except ImportError:
+            pass  # volunteer_notifications optional
     except Exception as e:
         return jsonify({'error': f'Approval failed: {str(e)}'}), 500
 
@@ -8059,148 +9401,533 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
         return jsonify({'error': 'You do not own this nonprofit'}), 403
 
     try:
+        row = db.execute(
+            'SELECT status, locked_at FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            (hour_id, ein)
+        ).fetchone()
+        if not row:
+            return jsonify({'error': 'Submission not found'}), 404
+        # locked_at is the future immutability date (approval + 30 days);
+        # rejection is blocked only after that window has actually passed.
+        if row['locked_at'] and row['locked_at'] <= datetime.now().isoformat():
+            return jsonify({'error': 'This submission is locked (30-day edit window has passed)'}), 409
+
         db.execute(
             'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND nonprofit_ein=?',
             ('rejected', uid, datetime.now().isoformat(), reason, hour_id, ein)
         )
+        try:
+            from volunteer_hours_events_api import _audit, _unbridge_from_impact_logs
+            _audit(db, hour_id, 'rejected', uid, {'reason': reason} if reason else None)
+            # If this submission was previously approved, its aggregate impact
+            # record must be withdrawn — rejected hours contribute nothing.
+            _unbridge_from_impact_logs(db, hour_id)
+        except ImportError:
+            pass  # volunteer_hours_events_api optional
+
+        # Queue rejection notification (after commit)
         db.commit()
+        try:
+            from volunteer_notifications import create_rejection_notification
+            full_hour = db.execute(
+                'SELECT volunteer_email FROM volunteer_hours WHERE id=?',
+                (hour_id,)
+            ).fetchone()
+            if full_hour:
+                full_org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
+                org_name = (full_org["organization_name"] if full_org else None) or "Organization"
+                create_rejection_notification(db, hour_id, full_hour["volunteer_email"],
+                                              ein, org_name, reason, is_test=False)
+        except ImportError:
+            pass  # volunteer_notifications optional
     except Exception as e:
         return jsonify({'error': f'Rejection failed: {str(e)}'}), 500
 
     return jsonify({'status': 'rejected'}), 200
 
-@app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
-def nonprofit_dashboard_analytics(claim_token: str):
-    """
-    Nonprofit Donor Interest Dashboard (disabled for launch).
 
-    This feature is planned for Phase 2. Returns 501 until ready.
-    """
-    return jsonify({'error': 'Dashboard coming soon'}), 501
-    try:
-        # Verify claim token (should be a JWT-like token from claim process)
-        # For now, simple approach: token is base64(ein:email:timestamp)
-        # In production, use proper JWT validation with claim_status = 'approved'
+# ── DASHBOARD V2 ENDPOINTS ──────────────────────────────────────────────────
 
-        try:
-            import base64
-            decoded = base64.b64decode(claim_token).decode('utf-8')
-            parts = decoded.split(':')
-            if len(parts) < 2:
-                return jsonify({'error': 'Invalid token'}), 401
-            ein, claimed_email = parts[0], parts[1]
-        except Exception:
-            return jsonify({'error': 'Invalid token format'}), 401
+@app.route('/api/nonprofit/<ein>/volunteer/analytics', methods=['GET'])
+@limiter.limit("60 per hour")
+def nonprofit_volunteer_analytics(ein: str):
+    """Analytics data for dashboard V2: trends, retention, impact."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
 
-        # Verify org is actually claimed by this email
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute('''
-            SELECT ein, email, claim_status FROM org_claims
-            WHERE ein = ? AND email = ? AND claim_status IN ('approved', 'verified')
-            LIMIT 1
-        ''', (ein, claimed_email))
-        claim = cursor.fetchone()
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
 
-        if not claim:
-            return jsonify({'error': 'Org not claimed or claim not verified'}), 403
+    db = get_db()
+    claim = db.execute(
+        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
+        (ein, uid)
+    ).fetchone()
 
-        # Get this month's analytics
-        from datetime import datetime, timedelta
-        now = datetime.now()
-        current_month = now.strftime('%Y-%m')
-        prev_month = (now - timedelta(days=30)).strftime('%Y-%m')
+    if not claim:
+        return jsonify({'error': 'You do not own this nonprofit'}), 403
 
-        # Total bookmarks this month
-        cursor.execute('''
-            SELECT COALESCE(SUM(bookmark_count), 0) FROM wallet_analytics
-            WHERE ein = ? AND last_updated >= date('now', 'start of month')
-        ''', (ein,))
-        bookmarks_this_month = cursor.fetchone()[0]
+    timeframe = request.args.get('timeframe', '6m')
+    months_back = {'3m': 3, '6m': 6, '1y': 12}.get(timeframe, 6)
 
-        # Total bookmarks last month
-        cursor.execute('''
-            SELECT COALESCE(SUM(bookmark_count), 0) FROM wallet_analytics
-            WHERE ein = ? AND last_updated >= date('now', '-1 month', 'start of month')
-            AND last_updated < date('now', 'start of month')
-        ''', (ein,))
-        bookmarks_prev_month = cursor.fetchone()[0]
+    # Hours by month (last N months)
+    hours_by_month = db.execute(f'''
+        SELECT
+            strftime('%Y-%m', service_date) as month,
+            SUM(hours) as total
+        FROM volunteer_hours
+        WHERE nonprofit_ein=? AND status='approved'
+          AND service_date >= date('now', '-{months_back} months')
+        GROUP BY month
+        ORDER BY month
+    ''', (ein,)).fetchall()
 
-        # Bookmarks by cause
-        cursor.execute('''
-            SELECT cause_tag, SUM(bookmark_count) as count
-            FROM wallet_analytics
-            WHERE ein = ? AND cause_tag IS NOT NULL
-            GROUP BY cause_tag
-            ORDER BY count DESC
-            LIMIT 10
-        ''', (ein,))
-        causes = [{'cause': row[0], 'count': row[1]} for row in cursor.fetchall()]
+    # Hours by task type (all time)
+    hours_by_task = db.execute('''
+        SELECT
+            COALESCE(task_type, 'other') as task_type,
+            SUM(hours) as total
+        FROM volunteer_hours
+        WHERE nonprofit_ein=? AND status='approved'
+        GROUP BY task_type
+        ORDER BY total DESC
+    ''', (ein,)).fetchall()
 
-        # Bookmarks by location
-        cursor.execute('''
-            SELECT location_state, location_city, SUM(bookmark_count) as count
-            FROM wallet_analytics
-            WHERE ein = ? AND location_state IS NOT NULL
-            GROUP BY location_state, location_city
-            ORDER BY count DESC
-            LIMIT 10
-        ''', (ein,))
-        locations = [{'state': row[0], 'city': row[1], 'count': row[2]} for row in cursor.fetchall()]
+    # New volunteers by month
+    volunteer_growth = db.execute(f'''
+        SELECT
+            strftime('%Y-%m', MIN(submitted_at)) as month,
+            COUNT(DISTINCT volunteer_email) as count
+        FROM volunteer_hours
+        WHERE nonprofit_ein=? AND status='approved'
+          AND submitted_at >= date('now', '-{months_back} months')
+        GROUP BY month
+        ORDER BY month
+    ''', (ein,)).fetchall()
 
-        # Get org data for profile completeness check
-        cursor.execute('''
-            SELECT mission, website, website_status, donate_url, custom_mission
-            FROM registry_enriched
-            WHERE EIN = ?
-        ''', (ein,))
-        org_row = cursor.fetchone()
+    # Retention rate (volunteers with 2+ submissions)
+    all_volunteers = db.execute(
+        'SELECT COUNT(DISTINCT volunteer_email) FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved"',
+        (ein,)
+    ).fetchone()[0]
 
-        profile_checks = {
-            'mission_status': 'fresh' if org_row and org_row[0] else 'missing',
-            'website_status': 'verified' if org_row and org_row[2] == 'verified' else 'unverified',
-            'donate_url_status': 'working' if org_row and org_row[3] else 'missing',
-            'cause_tags_count': len(causes),
+    returning = db.execute(
+        'SELECT COUNT(DISTINCT volunteer_email) FROM (SELECT volunteer_email, COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved" GROUP BY volunteer_email HAVING cnt > 1)',
+        (ein,)
+    ).fetchone()[0]
+
+    retention_rate = (returning / all_volunteers * 100) if all_volunteers > 0 else 0
+
+    # Avg hours per volunteer
+    avg_hours = db.execute(
+        'SELECT AVG(hours) FROM (SELECT SUM(hours) as hours FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved" GROUP BY volunteer_email)',
+        (ein,)
+    ).fetchone()[0] or 0
+
+    return jsonify({
+        'data': {
+            'hours_by_month': [{'label': r['month'], 'value': r['total'] or 0} for r in hours_by_month],
+            'hours_by_task_type': [{'label': r['task_type'], 'value': r['total'] or 0} for r in hours_by_task],
+            'volunteer_growth': [{'label': r['month'], 'value': r['count'] or 0} for r in volunteer_growth],
+            'retention_rate': retention_rate,
+            'avg_hours_per_volunteer': avg_hours,
         }
+    }), 200
 
-        # Get all distinct cause tags in taxonomy for recommendations
-        cursor.execute('''
-            SELECT DISTINCT cause_tag FROM wallet_analytics
-            WHERE cause_tag IS NOT NULL
-            ORDER BY cause_tag ASC
-        ''')
-        all_tags = [row[0] for row in cursor.fetchall()]
 
-        # Recommended tags (high-interest, org doesn't have yet)
-        org_tags = {c['cause'] for c in causes}
-        recommended = [
-            tag for tag in all_tags
-            if tag not in org_tags
-        ][:5]
+@app.route('/api/nonprofit/<ein>/volunteer/directory', methods=['GET'])
+@limiter.limit("60 per hour")
+def nonprofit_volunteer_directory(ein: str):
+    """Volunteer directory: all volunteers with stats."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in (ein or '') if c.isdigit())[:10]
 
-        return jsonify({
-            'ein': ein,
-            'this_month': {
-                'bookmarks_total': bookmarks_this_month,
-                'bookmarks_prev_month': bookmarks_prev_month,
-                'bookmarks_growth_pct': round(
-                    ((bookmarks_this_month - bookmarks_prev_month) / max(bookmarks_prev_month, 1)) * 100
-                ),
-                'bookmarks_by_cause': causes,
-                'bookmarks_by_location': locations,
-            },
-            'profile_completeness': profile_checks,
-            'recommended_cause_tags': recommended[:3],
-            'tips': [
-                'Orgs with 5+ cause tags get 2.3x more bookmarks',
-                'Update your mission every 6 months to stay in "Recently Updated" feed',
-                f'Adding "{recommended[0]}" tag would reach ~500+ interested donors' if recommended else None,
-            ]
-        }), 200
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
 
-    except Exception as e:
-        _logger.error(f'Dashboard error: {e}')
-        return jsonify({'error': 'Failed to load dashboard'}), 500
+    db = get_db()
+    claim = db.execute(
+        'SELECT ein FROM org_claims WHERE ein=? AND firebase_uid=? AND claim_status IN ("active", "verified")',
+        (ein, uid)
+    ).fetchone()
+
+    if not claim:
+        return jsonify({'error': 'You do not own this nonprofit'}), 403
+
+    # Get all volunteers with their stats
+    volunteers = db.execute('''
+        SELECT
+            volunteer_email as email,
+            volunteer_name as name,
+            SUM(hours) as total_hours,
+            COUNT(*) as submissions_count,
+            MAX(service_date) as last_service_date,
+            CASE WHEN MAX(service_date) >= date('now', '-30 days') THEN 'active' ELSE 'inactive' END as status,
+            GROUP_CONCAT(DISTINCT COALESCE(task_type, 'other')) as task_types
+        FROM volunteer_hours
+        WHERE nonprofit_ein=? AND status='approved'
+        GROUP BY volunteer_email
+        ORDER BY total_hours DESC
+    ''', (ein,)).fetchall()
+
+    return jsonify({
+        'data': [{
+            'email': v['email'],
+            'name': v['name'],
+            'total_hours': v['total_hours'] or 0,
+            'submissions_count': v['submissions_count'] or 0,
+            'last_service_date': v['last_service_date'],
+            'status': v['status'],
+            'avg_task_type': v['task_types'].split(',')[0] if v['task_types'] else 'other'
+        } for v in volunteers]
+    }), 200
+
+
+@app.route('/api/nonprofit/dashboard/<claim_token>', methods=['GET'])
+def nonprofit_dashboard_legacy(claim_token: str):
+    """Legacy base64-token route, permanently retired (weak auth). Use POST
+    /api/nonprofit/dashboard with EIN + verification_token instead."""
+    return jsonify({'error': 'This endpoint has been replaced',
+                    'use': 'POST /api/nonprofit/dashboard'}), 410
+
+
+def _dashboard_financial_narrative(row) -> str:
+    """Encouraging, honest framing of the org's financial context.
+
+    Board condition (2026-07-13): the narrative encourages and never wounds.
+    Facts are never hidden — the signal and numbers ship alongside — but the
+    language is mission-aligned: nonprofits run lean by design. "Need support"
+    invites action; "caution" shames for healthy behavior.
+    """
+    signal = row['merit_health_signal_v5'] or 'UNKNOWN'
+    band = row['merit_band_v5_label'] or 'your size group'
+    archetype = row['merit_archetype_v5_label'] or 'your funding model'
+    peers = row['merit_peer_count_v5'] or 0
+    peer_phrase = f"compared with {peers} organizations that share your funding model and size" if peers else "within your peer group"
+
+    if signal == 'HEALTHY':
+        return (f"Your finances show a healthy pattern {peer_phrase}. "
+                f"As a {archetype} organization in the {band} range, your "
+                "fundamentals are working — steady resources supporting steady "
+                "mission work. That consistency is worth naming: it is rarer "
+                "than it looks.")
+    if signal == 'STABLE':
+        return (f"Your finances show a steady pattern {peer_phrase}. "
+                f"{archetype} organizations in the {band} range often run "
+                "close to their means, and holding stable there takes real "
+                "discipline. You are keeping the mission funded — that is the "
+                "job, and you are doing it.")
+    if signal in ('CAUTION', 'NEED_SUPPORT'):
+        return (f"Your organization is ready for more supporters {peer_phrase}. "
+                f"Many {archetype} organizations in the {band} range are "
+                "growing their mission work and actively seeking supporters like "
+                "you. Your peer view shows how similar organizations reach supporters, "
+                "and your profile tools help more people discover your work.")
+    return (f"We don't have enough recent public financial data to describe "
+            f"your position {peer_phrase}. That is a data gap, not a judgment — "
+            "many organizations your size file simplified returns.")
+
+
+@app.route('/api/nonprofit/dashboard', methods=['POST'])
+@limiter.limit("30 per minute")
+def nonprofit_self_dashboard():  # 'nonprofit_dashboard' endpoint name is taken
+                                 # by the dormant portal stub (GET 401)
+    """Self-discovery dashboard for verified claimants (pilot core surface).
+
+    Financial context in plain language, peer context (public Tier 1 data
+    only), donor interest aggregates, profile completeness. Auth matches
+    /api/claim/update: EIN + verification token.
+    """
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    claim, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    org = db.execute(
+        """SELECT organization_name, CITY, STATE, NTEE1, total_revenue,
+                  mission, website, website_status, donate_url,
+                  donate_url_status, is_hidden_gem,
+                  merit_score_v5, merit_archetype_v5_label, merit_band_v5_label,
+                  merit_health_signal_v5, merit_peer_group_v5, merit_peer_count_v5
+           FROM registry_enriched WHERE EIN = ?""", (ein,)).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # ── Financial context (Tier 1, plain language) ────────────────────────
+    financial_context = {
+        'health_signal': org['merit_health_signal_v5'],
+        'archetype': org['merit_archetype_v5_label'],
+        'band': org['merit_band_v5_label'],
+        'peer_count': org['merit_peer_count_v5'],
+        'is_hidden_gem': bool(org['is_hidden_gem']),
+        'narrative': _dashboard_financial_narrative(org),
+    }
+
+    # ── Peer context: up to 5 orgs in the same peer cell, public data only ─
+    peers = []
+    if org['merit_peer_group_v5']:
+        rows = db.execute(
+            """SELECT organization_name, CITY, STATE, total_revenue,
+                      merit_health_signal_v5, website
+               FROM registry_enriched
+               WHERE merit_peer_group_v5 = ? AND EIN != ?
+               ORDER BY ABS(COALESCE(total_revenue,0) - ?) LIMIT 5""",
+            (org['merit_peer_group_v5'], ein, org['total_revenue'] or 0)
+        ).fetchall()
+        peers = [{
+            'name': r['organization_name'],
+            'city': r['CITY'], 'state': r['STATE'],
+            'revenue': r['total_revenue'],
+            'health_signal': r['merit_health_signal_v5'],
+            'website': r['website'],
+        } for r in rows]
+    peer_context = {
+        'peers': peers,
+        'note': ('These are organizations with your funding model and size, '
+                 'closest to you in revenue — from public IRS data, shown for '
+                 'context, not competition.'),
+    }
+
+    # ── Donor interest: aggregate bookmarks (graceful when table absent) ───
+    bookmarks_now = bookmarks_prev = 0
+    try:
+        bookmarks_now = db.execute(
+            "SELECT COALESCE(SUM(bookmark_count),0) FROM wallet_analytics "
+            "WHERE ein=? AND last_updated >= date('now','start of month')",
+            (ein,)).fetchone()[0]
+        bookmarks_prev = db.execute(
+            "SELECT COALESCE(SUM(bookmark_count),0) FROM wallet_analytics "
+            "WHERE ein=? AND last_updated >= date('now','-1 month','start of month') "
+            "AND last_updated < date('now','start of month')",
+            (ein,)).fetchone()[0]
+    except sqlite3.OperationalError:
+        pass
+    donor_interest = {
+        'bookmarks_this_month': bookmarks_now,
+        'bookmarks_last_month': bookmarks_prev,
+        'note': ('Bookmarks are anonymous, aggregate counts of people saving '
+                 'your organization on Daanaa. They signal interest, not '
+                 'commitments — a starting point, not a promise.'),
+    }
+
+    # ── Profile completeness: actionable, encouraging ─────────────────────
+    # Donor-visible statuses are beta/claimed (the same gate the org page
+    # uses — see frontend actionRow.ts). The old check required 'verified',
+    # a value that never occurs in production, so every org was told its
+    # working donate link was unconfirmed (bug found 2026-07-17).
+    donate_live = (org['donate_url_status'] in ('beta', 'claimed', 'verified')
+                   and bool(org['donate_url']))
+    checks = {
+        'mission': bool(org['mission'] or claim['custom_mission']),
+        'website_verified': org['website_status'] == 'ok',
+        'donate_link_verified': donate_live,
+    }
+    missing = [k for k, v in checks.items() if not v]
+    if not missing:
+        profile_narrative = ('Your public profile is complete — mission, '
+                             'website, and donation link are all verified. '
+                             'Donors who find you can act on what they find.')
+    else:
+        friendly = {'mission': 'a mission statement in your own words',
+                    'website_verified': 'a confirmed website',
+                    'donate_link_verified': 'a confirmed donation link'}
+        profile_narrative = ('One small step with real payoff: adding ' +
+                             ' and '.join(friendly[m] for m in missing) +
+                             ' helps donors who discover you take the next '
+                             'step with confidence.')
+    profile = {'checks': checks, 'narrative': profile_narrative}
+
+    # ── Page health: exactly what a donor sees and whether it works ───────
+    # Mirrors the donor-side rendering gates so the org sees the truth of
+    # its own public page, not internal pipeline states.
+    website_shown = (org['website_status'] == 'ok'
+                     or (bool(org['website']) and org['website_status'] is None))
+    page_health = {
+        'public_page_url': f"https://daanaa.org/org/{ein}",
+        'mission': {
+            'shown': bool(org['mission'] or claim['custom_mission']),
+            'text': (claim['custom_mission'] or org['mission'] or None),
+            'source': ('yours' if claim['custom_mission'] else
+                       'derived from public records' if org['mission'] else None),
+        },
+        'website': {
+            'url': org['website'],
+            'shown_to_donors': website_shown,
+            'status': org['website_status'],
+        },
+        'donate_link': {
+            'url': org['donate_url'],
+            'shown_to_donors': donate_live,
+            'status': org['donate_url_status'],
+            'note': ('Donors see a Donate button that goes straight to this '
+                     'link — money never passes through Daanaa.'
+                     if donate_live else
+                     'No donation link is live on your page yet. Donors see '
+                     'your EIN and mailing address instead, so they can still '
+                     'give by check or through their own bank or fund.'),
+        },
+    }
+
+    return jsonify({
+        'ein': ein,
+        'organization_name': org['organization_name'],
+        'page_health': page_health,
+        'financial_context': financial_context,
+        'peer_context': peer_context,
+        'donor_interest': donor_interest,
+        'profile': profile,
+        'derived_data': ('See what our AI derived about you, and correct it, '
+                         'via POST /api/claim/ai-derived'),
+    })
+
+
+@app.route('/api/email/unsubscribe', methods=['GET', 'POST'])
+@limiter.limit("30 per minute")
+def email_unsubscribe():
+    """One-click unsubscribe (RFC 8058) — listmonk-learned compliance layer.
+
+    GET renders a tiny confirm page and NEVER unsubscribes (mail scanners
+    prefetch GET links; auto-unsubscribing on GET silently removes real
+    subscribers). POST — from the confirm button or a mail client's
+    one-click header — verifies the HMAC token and suppresses the address.
+    """
+    from email_service import verify_unsubscribe_token, suppress_email
+    email = (request.args.get('e') or '').strip().lower()[:254]
+    token = (request.args.get('t') or '').strip()[:64]
+    if not email or not token:
+        return jsonify({'error': 'missing e or t'}), 400
+    if not verify_unsubscribe_token(email, token):
+        return jsonify({'error': 'invalid token'}), 403
+
+    if request.method == 'GET':
+        return (
+            f"<!doctype html><meta name='robots' content='noindex'>"
+            f"<title>Unsubscribe — Daanaa</title>"
+            f"<div style='font-family:sans-serif;max-width:28rem;margin:4rem auto'>"
+            f"<h2>Unsubscribe from Daanaa emails?</h2>"
+            f"<p>{email} will stop receiving campaign emails. "
+            f"Account emails you request (like claim verification) still arrive.</p>"
+            f"<form method='post' action='/api/email/unsubscribe?e={email}&t={token}'>"
+            f"<button type='submit' style='padding:.6rem 1.2rem'>Unsubscribe</button>"
+            f"</form></div>", 200, {'Content-Type': 'text/html'})
+
+    suppress_email(email, reason='unsubscribed')
+    return jsonify({'status': 'unsubscribed', 'email': email})
+
+
+@app.route('/api/nonprofit/activity-feed', methods=['POST'])
+@limiter.limit("30 per minute")
+def nonprofit_activity_feed():
+    """Consolidated "what changed" feed (Benevity pattern, task #15).
+
+    One place a nonprofit leader sees what happened to their presence:
+    link verifications, donor interest, data refreshes, volunteer activity,
+    plus the org_activity log. Synthesized from existing timestamped data so
+    the feed is rich from day one. Encouraging plain language only (P5).
+    Auth matches /api/nonprofit/dashboard: EIN + verification token.
+    """
+    data  = request.get_json(silent=True) or {}
+    ein   = ''.join(c for c in (data.get('ein') or '') if c.isdigit())[:10]
+    token = (data.get('verification_token') or '').strip()[:64]
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    claim, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    org = db.execute(
+        """SELECT organization_name, donate_url, donate_url_status,
+                  donate_checked_at, website, website_status,
+                  website_checked_at, updated_at
+           FROM registry_enriched WHERE EIN = ?""", (ein,)).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    events = []
+
+    def _add(ts, etype, message):
+        if ts:
+            events.append({'ts': ts, 'type': etype, 'message': message})
+
+    # Donate link check — the single highest-value fact for an org.
+    if org['donate_checked_at']:
+        if org['donate_url_status'] in ('beta', 'claimed', 'verified') and org['donate_url']:
+            _add(org['donate_checked_at'], 'donate_link',
+                 'Your donation link was checked and is live on your public '
+                 'page — donors can give directly.')
+        else:
+            _add(org['donate_checked_at'], 'donate_link',
+                 'We looked for a donation link for your page. None is live '
+                 'yet — donors currently see your EIN and mailing address. '
+                 'You can add a link from your dashboard.')
+
+    if org['website_checked_at']:
+        _add(org['website_checked_at'], 'website',
+             'Your website was checked and loads for donors.'
+             if org['website_status'] == 'ok' else
+             'We checked your website link and could not confirm it loads — '
+             'worth a quick look from your dashboard.')
+
+    if org['updated_at']:
+        _add(org['updated_at'], 'data_refresh',
+             'Your public profile data was refreshed from IRS and public '
+             'records.')
+
+    # Donor interest: anonymous aggregate only (P2) — never who, only how many.
+    try:
+        row = db.execute(
+            "SELECT COALESCE(SUM(bookmark_count),0), MAX(last_updated) "
+            "FROM wallet_analytics WHERE ein=? AND "
+            "last_updated >= date('now','start of month')", (ein,)).fetchone()
+        if row and row[0]:
+            _add(row[1], 'donor_interest',
+                 f'{row[0]} '
+                 f'{"person" if row[0] == 1 else "people"} saved your '
+                 'organization to their giving wallet this month. Anonymous, '
+                 'aggregate interest — a good sign people are finding you.')
+    except sqlite3.OperationalError:
+        pass
+
+    # Volunteer submissions awaiting review — an action the org can take now.
+    try:
+        row = db.execute(
+            "SELECT COUNT(*), MAX(created_at) FROM volunteer_hours "
+            "WHERE nonprofit_ein=? AND status='pending'", (ein,)).fetchone()
+        if row and row[0]:
+            _add(row[1], 'volunteer',
+                 f'{row[0]} volunteer hour '
+                 f'{"submission is" if row[0] == 1 else "submissions are"} '
+                 'waiting for your confirmation.')
+    except sqlite3.OperationalError:
+        pass
+
+    # Real activity log (claims, profile edits, corrections).
+    try:
+        for r in db.execute(
+                "SELECT event_type, detail, created_at FROM org_activity "
+                "WHERE ein=? ORDER BY created_at DESC LIMIT 15", (ein,)):
+            _add(r['created_at'], r['event_type'],
+                 r['detail'] or r['event_type'].replace('_', ' ').capitalize())
+    except sqlite3.OperationalError:
+        pass
+
+    events.sort(key=lambda e: e['ts'], reverse=True)
+    return jsonify({
+        'ein': ein,
+        'organization_name': org['organization_name'],
+        'events': events[:30],
+        'note': ('Everything here comes from your own public presence and '
+                 'anonymous aggregate donor interest — no individual donor '
+                 'is ever identified.'),
+    })
 
 
 # ── Volunteer interest counter ────────────────────────────────────────────────
@@ -8257,6 +9984,2265 @@ def volunteer_interest_get(ein: str):
     return jsonify({'ein': ein, 'count': count if count >= 5 else None, 'threshold': 5}), 200
 
 
+# ── Phase 9: Nonprofit Peer Network (Keystone) ───────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/peers', methods=['GET'])
+def nonprofit_find_peers(ein: str):
+    """Find similar orgs (peers by cause, size, geography, focus)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    cause = request.args.get('cause', '')
+    state = request.args.get('state', '')
+    size = request.args.get('size', '')  # micro, professional, established
+
+    db = get_db()
+    org = db.execute(
+        "SELECT NTEE1, STATE, total_revenue, merit_band_v5_label FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # Build peer query: similar cause, geography, size
+    query = """
+        SELECT DISTINCT re.EIN, re.organization_name, re.NTEE1, re.STATE, re.total_revenue,
+               re.merit_band_v5_label, re.merit_score_v5, re.mission
+        FROM registry_enriched re
+        WHERE re.EIN != ?
+          AND re.NTEE1 = ?
+          AND (? = '' OR re.STATE = ?)
+          AND (? = '' OR re.merit_band_v5_label = ?)
+        ORDER BY re.merit_score_v5 DESC
+        LIMIT 20
+    """
+
+    rows = db.execute(query, (ein, org[0], state, state, size, size)).fetchall()
+
+    peers = []
+    for row in rows:
+        peers.append({
+            'ein': row[0],
+            'name': row[1],
+            'cause': row[2],
+            'state': row[3],
+            'revenue': row[4],
+            'size_bracket': row[5],
+            'financial_context_score': row[6],
+            'mission': row[7]
+        })
+
+    return jsonify({'ein': ein, 'peer_count': len(peers), 'peers': peers}), 200
+
+
+@app.route('/api/nonprofit/<ein>/connect', methods=['POST'])
+def nonprofit_request_connection(ein: str):
+    """Request peer connection with another org."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    peer_ein = ''.join(c for c in data.get('peer_ein', '') if c.isdigit())[:10]
+    connection_type = (data.get('connection_type') or 'learning_peer').strip()
+    context = (data.get('context_note') or '').strip()[:500]
+
+    if not peer_ein or connection_type not in ('peer_mentor', 'collab_partner', 'learning_peer', 'sector_neighbor'):
+        return jsonify({'error': 'peer_ein and valid connection_type required'}), 400
+
+    # Check if peer exists
+    peer = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (peer_ein,)).fetchone()
+    if not peer:
+        return jsonify({'error': 'Peer organization not found'}), 404
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+
+    try:
+        db.execute(
+            """INSERT INTO nonprofit_peer_connections
+               (ein_from, ein_to, connection_type, status, initiated_by, initiated_at, context_note)
+               VALUES (?, ?, ?, 'pending', ?, ?, ?)""",
+            (ein, peer_ein, connection_type, ein, now, context)
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Connection already requested or exists'}), 409
+
+    return jsonify({
+        'ein_from': ein,
+        'ein_to': peer_ein,
+        'peer_name': peer[0],
+        'connection_type': connection_type,
+        'status': 'pending',
+        'message': 'Connection request sent. Peer org will be notified.'
+    }), 201
+
+
+@app.route('/api/nonprofit/<ein>/connections', methods=['GET'])
+def nonprofit_list_connections(ein: str):
+    """List all peer connections (incoming + outgoing)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    status = request.args.get('status', 'active')  # active, pending, all
+
+    db = get_db()
+
+    status_filter = f"AND status='{status}'" if status != 'all' else ""
+
+    query = f"""
+        SELECT ein_from, ein_to, connection_type, status, initiated_at
+        FROM nonprofit_peer_connections
+        WHERE (ein_from = ? OR ein_to = ?) {status_filter}
+        ORDER BY initiated_at DESC
+    """
+
+    rows = db.execute(query, (ein, ein)).fetchall()
+
+    connections = []
+    for row in rows:
+        is_initiator = row[0] == ein
+        other_ein = row[1] if is_initiator else row[0]
+        org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (other_ein,)).fetchone()
+
+        connections.append({
+            'org_ein': other_ein,
+            'org_name': org[0] if org else 'Unknown',
+            'type': row[2],
+            'status': row[3],
+            'you_initiated': is_initiator,
+            'created_at': row[4]
+        })
+
+    return jsonify({'ein': ein, 'connections': connections}), 200
+
+
+@app.route('/api/nonprofit/<ein>/case-study', methods=['POST'])
+def nonprofit_publish_case_study(ein: str):
+    """Publish a case study (what worked, what we learned)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    title = (data.get('title') or '').strip()[:200]
+    problem = (data.get('problem_statement') or '').strip()
+    solution = (data.get('solution_description') or '').strip()
+    results = (data.get('results_achieved') or '').strip()
+    lessons = (data.get('lessons_learned') or '').strip()
+    author_name = (data.get('author_name') or 'Organization').strip()[:100]
+    author_title = (data.get('author_title') or '').strip()[:100]
+
+    if not all([title, problem, solution, results, lessons]):
+        return jsonify({'error': 'All fields required (title, problem, solution, results, lessons)'}), 400
+
+    if any(len(x) < 20 for x in [problem, solution, results, lessons]):
+        return jsonify({'error': 'Descriptions must be at least 20 characters'}), 400
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+
+    db.execute(
+        """INSERT INTO nonprofit_case_studies
+           (ein, title, problem_statement, solution_description, results_achieved, lessons_learned,
+            author_name, author_title, published_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (ein, title, problem, solution, results, lessons, author_name, author_title, now)
+    )
+    db.commit()
+
+    study = db.execute(
+        "SELECT id FROM nonprofit_case_studies WHERE ein=? ORDER BY id DESC LIMIT 1",
+        (ein,)
+    ).fetchone()
+
+    return jsonify({
+        'id': study[0],
+        'ein': ein,
+        'title': title,
+        'published_at': now,
+        'message': 'Case study published. Other orgs will learn from your experience.'
+    }), 201
+
+
+@app.route('/api/nonprofit/case-studies', methods=['GET'])
+def nonprofit_list_case_studies():
+    """List published case studies (searchable by cause, challenge)."""
+    cause = request.args.get('cause', '')
+    keyword = request.args.get('keyword', '')
+    limit = request.args.get('limit', 20, type=int)
+
+    db = get_db()
+
+    query = """
+        SELECT cs.id, cs.ein, re.organization_name, cs.title,
+               cs.problem_statement, cs.results_achieved, cs.published_at, cs.helpful_count
+        FROM nonprofit_case_studies cs
+        JOIN registry_enriched re ON cs.ein = re.EIN
+        WHERE 1=1
+    """
+    params = []
+
+    if cause:
+        query += " AND re.NTEE1 = ?"
+        params.append(cause)
+
+    if keyword:
+        keyword_pattern = f"%{keyword}%"
+        query += " AND (cs.title LIKE ? OR cs.problem_statement LIKE ? OR cs.solution_description LIKE ?)"
+        params.extend([keyword_pattern, keyword_pattern, keyword_pattern])
+
+    query += " ORDER BY cs.published_at DESC LIMIT ?"
+    params.append(limit)
+
+    rows = db.execute(query, params).fetchall()
+
+    studies = []
+    for row in rows:
+        studies.append({
+            'id': row[0],
+            'ein': row[1],
+            'org_name': row[2],
+            'title': row[3],
+            'problem': row[4],
+            'results': row[5],
+            'published_at': row[6],
+            'helpful_count': row[7]
+        })
+
+    return jsonify({'count': len(studies), 'case_studies': studies}), 200
+
+
+# ── Phase 4: Nonprofit Content (Voice Amplification) ─────────────────────────
+
+@app.route('/api/nonprofit/<ein>/content', methods=['POST'])
+def nonprofit_create_content(ein: str):
+    """Create/publish content for nonprofit (impact story, program, volunteer need, leadership).
+
+    Requires organization verification token (same as claim flow).
+    """
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not ein or not token:
+        return jsonify({'error': 'EIN and verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    content_type = (data.get('content_type') or '').strip()
+    title = (data.get('title') or '').strip()[:200]
+    body = (data.get('body') or '').strip()
+
+    if content_type not in ('impact_story', 'program', 'volunteer_need', 'leadership'):
+        return jsonify({'error': 'invalid content_type'}), 400
+    if not title or not body:
+        return jsonify({'error': 'title and body required'}), 400
+    if len(body) < 50 or len(body) > 5000:
+        return jsonify({'error': 'body must be 50-5000 characters'}), 400
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+    author_email = row['email']
+    author_name = (data.get('author_name') or 'Organization').strip()[:100]
+    status = 'published' if data.get('publish', False) else 'draft'
+
+    db.execute(
+        """INSERT INTO nonprofit_content
+           (ein, content_type, title, body, author_email, author_name, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (ein, content_type, title, body, author_email, author_name, status, now, now)
+    )
+    db.commit()
+
+    result = db.execute(
+        "SELECT id, version, status FROM nonprofit_content WHERE ein=? AND content_type=? ORDER BY id DESC LIMIT 1",
+        (ein, content_type)
+    ).fetchone()
+
+    return jsonify({
+        'id': result[0],
+        'ein': ein,
+        'content_type': content_type,
+        'title': title,
+        'status': result[2],
+        'version': result[1],
+        'message': 'Content created. Visit your dashboard to publish.' if status == 'draft' else 'Content published.'
+    }), 201
+
+
+@app.route('/api/nonprofit/<ein>/content', methods=['GET'])
+def nonprofit_list_content(ein: str):
+    """List all published content for org (public endpoint)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+    rows = db.execute(
+        """SELECT id, content_type, title, body, published_at, author_name, version
+           FROM nonprofit_content
+           WHERE ein=? AND status='published'
+           ORDER BY published_at DESC""",
+        (ein,)
+    ).fetchall()
+
+    content = []
+    for row in rows:
+        content.append({
+            'id': row[0],
+            'type': row[1],
+            'title': row[2],
+            'body': row[3],
+            'published_at': row[4],
+            'author': row[5],
+            'version': row[6]
+        })
+
+    return jsonify({'ein': ein, 'content': content}), 200
+
+
+@app.route('/api/nonprofit/<ein>/content/<int:content_id>', methods=['PUT'])
+def nonprofit_edit_content(ein: str, content_id: int):
+    """Edit nonprofit content (creates new version, archives old)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    # Fetch current content
+    content = db.execute(
+        "SELECT id, ein, body, version FROM nonprofit_content WHERE id=?",
+        (content_id,)
+    ).fetchone()
+
+    if not content or content[1] != ein:
+        return jsonify({'error': 'Content not found or unauthorized'}), 404
+
+    new_body = (data.get('body') or '').strip()
+    if not new_body or len(new_body) < 50 or len(new_body) > 5000:
+        return jsonify({'error': 'body must be 50-5000 characters'}), 400
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+    new_version = content[3] + 1
+
+    # Archive old version
+    db.execute(
+        "INSERT INTO nonprofit_content_versions (content_id, version, body, archived_at) VALUES (?, ?, ?, ?)",
+        (content_id, content[3], content[2], now)
+    )
+
+    # Update with new version
+    db.execute(
+        "UPDATE nonprofit_content SET body=?, version=?, updated_at=? WHERE id=?",
+        (new_body, new_version, now, content_id)
+    )
+    db.commit()
+
+    return jsonify({
+        'id': content_id,
+        'version': new_version,
+        'message': 'Content updated. Old version archived.'
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/content/<int:content_id>/publish', methods=['POST'])
+def nonprofit_publish_content(ein: str, content_id: int):
+    """Publish draft content."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    content = db.execute(
+        "SELECT id, ein, status FROM nonprofit_content WHERE id=?",
+        (content_id,)
+    ).fetchone()
+
+    if not content or content[1] != ein:
+        return jsonify({'error': 'Content not found or unauthorized'}), 404
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+    db.execute(
+        "UPDATE nonprofit_content SET status='published', published_at=? WHERE id=?",
+        (now, content_id)
+    )
+    db.commit()
+
+    return jsonify({'id': content_id, 'status': 'published', 'published_at': now}), 200
+
+
+# ── PHASE 10: Sector Health Diagnostics ────────────────────────────────────────
+
+@app.route('/api/sector/<cause_area>/health', methods=['GET'])
+def sector_health_snapshot(cause_area: str):
+    """Get cause area health metrics (org count, revenue, financial health distribution)."""
+    cause_area = cause_area.upper().strip()[:2]  # NTEE1 code
+
+    db = get_db()
+
+    # Get most recent snapshot
+    snapshot = db.execute(
+        """SELECT id, snapshot_date, org_count, total_revenue_millions, median_revenue,
+                  avg_financial_health_score, healthy_pct, stable_pct, caution_pct,
+                  growth_rate, median_reserve_months, leadership_turnover_pct,
+                  created_org_count, closed_org_count
+           FROM sector_health_snapshots
+           WHERE cause_area = ?
+           ORDER BY snapshot_date DESC
+           LIMIT 1""",
+        (cause_area,)
+    ).fetchone()
+
+    if not snapshot:
+        # Return null snapshot if none exists (not an error, just new cause area)
+        return jsonify({
+            'cause_area': cause_area,
+            'status': 'no_data',
+            'message': 'No health data yet for this cause area'
+        }), 200
+
+    return jsonify({
+        'cause_area': cause_area,
+        'snapshot_date': snapshot[1],
+        'metrics': {
+            'org_count': snapshot[2],
+            'total_revenue_millions': snapshot[3],
+            'median_revenue': snapshot[4],
+            'avg_financial_health_score': snapshot[5],
+            'distribution': {
+                'healthy_pct': snapshot[6],
+                'stable_pct': snapshot[7],
+                'caution_pct': snapshot[8]
+            },
+            'growth_rate_yoy': snapshot[9],
+            'median_reserve_months': snapshot[10],
+            'leadership_turnover_pct': snapshot[11],
+            'new_orgs_this_period': snapshot[12],
+            'closed_orgs_this_period': snapshot[13]
+        }
+    }), 200
+
+
+@app.route('/api/sector/<cause_area>/coverage-gaps', methods=['GET'])
+def sector_coverage_gaps(cause_area: str):
+    """Identify service gaps in a cause area (by region, service type, population)."""
+    cause_area = cause_area.upper().strip()[:2]
+    service_type = request.args.get('service_type', '')  # direct_service, policy, research, capacity_building
+
+    db = get_db()
+
+    query = "SELECT id, cause_area, geographic_region, service_type, target_population, coverage_assessment, org_count_in_gap, population_served_estimate, notes, last_assessed FROM sector_coverage_gaps WHERE cause_area = ?"
+    params = [cause_area]
+
+    if service_type:
+        query += " AND service_type = ?"
+        params.append(service_type)
+
+    query += " ORDER BY coverage_assessment ASC, last_assessed DESC"
+
+    rows = db.execute(query, params).fetchall()
+
+    gaps = []
+    for row in rows:
+        gaps.append({
+            'id': row[0],
+            'region': row[2],
+            'service_type': row[3],
+            'target_population': row[4],
+            'coverage_level': row[5],  # strong, moderate, weak, none
+            'orgs_in_gap': row[6],
+            'population_estimate': row[7],
+            'notes': row[8],
+            'last_assessed': row[9]
+        })
+
+    return jsonify({
+        'cause_area': cause_area,
+        'gap_count': len(gaps),
+        'gaps': gaps
+    }), 200
+
+
+@app.route('/api/sector/<cause_area>/collaboration-signals', methods=['GET'])
+def sector_collaboration_signals(cause_area: str):
+    """Find orgs with overlapping missions for co-funding or coordination."""
+    cause_area = cause_area.upper().strip()[:2]
+    min_strength = float(request.args.get('min_strength', 0.4))  # 0-1
+
+    db = get_db()
+
+    # Find all pairs of orgs in this cause area with high collaboration potential
+    rows = db.execute(
+        """SELECT cs.ein_1, cs.ein_2, cs.collaboration_strength,
+                  cs.target_population_overlap, cs.geographic_overlap,
+                  cs.suggested_action,
+                  r1.organization_name, r2.organization_name
+           FROM sector_collaboration_signals cs
+           JOIN registry_enriched r1 ON r1.EIN = cs.ein_1
+           JOIN registry_enriched r2 ON r2.EIN = cs.ein_2
+           WHERE r1.NTEE1 = ? AND r2.NTEE1 = ?
+             AND cs.collaboration_strength >= ?
+             AND cs.funding_opportunity = 1
+           ORDER BY cs.collaboration_strength DESC
+           LIMIT 50""",
+        (cause_area, cause_area, min_strength)
+    ).fetchall()
+
+    opportunities = []
+    for row in rows:
+        opportunities.append({
+            'org_1': {
+                'ein': row[0],
+                'name': row[6]
+            },
+            'org_2': {
+                'ein': row[1],
+                'name': row[7]
+            },
+            'collaboration_strength': row[2],
+            'target_population_overlap': row[3],
+            'geographic_overlap': row[4],
+            'suggested_action': row[5]
+        })
+
+    return jsonify({
+        'cause_area': cause_area,
+        'opportunity_count': len(opportunities),
+        'opportunities': opportunities
+    }), 200
+
+
+@app.route('/api/sector/research', methods=['GET'])
+def sector_research_browse():
+    """Browse published sector research datasets."""
+    cause_area = request.args.get('cause_area', '')
+    data_type = request.args.get('data_type', '')  # financial_trends, movement_health, impact_analysis, funder_flows, leadership_pipeline
+    limit = min(int(request.args.get('limit', 20)), 100)
+
+    db = get_db()
+
+    query = "SELECT id, research_name, cause_area, data_type, description, methodology, findings_summary, published_at, org_count_analyzed, years_covered, download_url FROM sector_research_datasets WHERE published_at IS NOT NULL"
+    params = []
+
+    if cause_area:
+        query += " AND cause_area = ?"
+        params.append(cause_area)
+
+    if data_type:
+        query += " AND data_type = ?"
+        params.append(data_type)
+
+    query += " ORDER BY published_at DESC LIMIT ?"
+    params.append(limit)
+
+    rows = db.execute(query, params).fetchall()
+
+    datasets = []
+    for row in rows:
+        datasets.append({
+            'id': row[0],
+            'name': row[1],
+            'cause_area': row[2],
+            'data_type': row[3],
+            'description': row[4],
+            'methodology': row[5],
+            'findings_summary': row[6],
+            'published_at': row[7],
+            'org_count_analyzed': row[8],
+            'years_covered': row[9],
+            'download_url': row[10]
+        })
+
+    return jsonify({
+        'research_count': len(datasets),
+        'datasets': datasets
+    }), 200
+
+
+@app.route('/api/sector/<cause_area>/funding-flows', methods=['GET'])
+def sector_funding_flows(cause_area: str):
+    """Analyze funding source distribution and concentration in a cause area."""
+    cause_area = cause_area.upper().strip()[:2]
+    period = request.args.get('period', '2026-Q2')  # e.g., '2026-Q2', '2025-FY'
+
+    db = get_db()
+
+    rows = db.execute(
+        """SELECT period, funding_source, total_funding_millions, top_funder_ein,
+                  top_funder_pct, concentration_score
+           FROM sector_funding_flows
+           WHERE cause_area = ? AND (? = '' OR period = ?)
+           ORDER BY funding_source ASC""",
+        (cause_area, period if period else '', period)
+    ).fetchall()
+
+    flows = []
+    total_millions = 0
+
+    for row in rows:
+        flows.append({
+            'funding_source': row[1],  # individual, foundation, government, corporate
+            'total_funding_millions': row[2],
+            'top_funder_ein': row[3],
+            'top_funder_pct': row[4],
+            'concentration_score': row[5]  # Gini coefficient, 0-1
+        })
+        if row[2]:
+            total_millions += row[2]
+
+    return jsonify({
+        'cause_area': cause_area,
+        'period': row[0] if rows else period,
+        'total_funding_millions': total_millions,
+        'funding_flows': flows,
+        'analysis': {
+            'summary': f'{len(flows)} funding sources tracked',
+            'concentration_note': 'Higher concentration_score indicates funding is concentrated in fewer funders'
+        }
+    }), 200
+
+
+# ── PHASE 5: Trust Verification ────────────────────────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/verifications', methods=['GET'])
+def nonprofit_get_verifications(ein: str):
+    """Get all verifications for an org (public, shows badge credibility)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    # Get all active verifications
+    rows = db.execute(
+        """SELECT verification_type, status, confidence_score, verified_at, expires_at, notes
+           FROM nonprofit_verifications
+           WHERE ein = ? AND status IN ('verified', 'expired')
+           ORDER BY verified_at DESC""",
+        (ein,)
+    ).fetchall()
+
+    verifications = []
+    for row in rows:
+        verifications.append({
+            'type': row[0],
+            'status': row[1],
+            'confidence': row[2],
+            'verified_at': row[3],
+            'expires_at': row[4],
+            'notes': row[5]
+        })
+
+    # Get badges
+    badges = db.execute(
+        """SELECT badge_type, badge_name, badge_description, earned_at
+           FROM nonprofit_badges
+           WHERE ein = ? AND is_active = 1
+           ORDER BY display_order ASC""",
+        (ein,)
+    ).fetchall()
+
+    badge_list = []
+    for row in badges:
+        badge_list.append({
+            'type': row[0],
+            'name': row[1],
+            'description': row[2],
+            'earned_at': row[3]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'verification_count': len(verifications),
+        'badge_count': len(badge_list),
+        'verifications': verifications,
+        'badges': badge_list
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/verify/<verification_type>', methods=['POST'])
+def nonprofit_start_verification(ein: str, verification_type: str):
+    """Request verification of a specific claim (website, donation link, mission, etc)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    data = request.get_json(silent=True) or {}
+    token = (data.get('verification_token') or '').strip()[:64]
+
+    if not token:
+        return jsonify({'error': 'verification_token required'}), 400
+
+    if verification_type not in ('website_active', 'donate_link_verified', 'mission_claimed', 'leadership_verified', 'financial_filed'):
+        return jsonify({'error': 'invalid verification_type'}), 400
+
+    db = get_db()
+    row, err = _authorize_claimant(db, ein, token)
+    if err:
+        return err
+
+    now = datetime.now(timezone.utc).isoformat(timespec='seconds')
+
+    try:
+        db.execute(
+            """INSERT INTO nonprofit_verifications
+               (ein, verification_type, status, verification_method, created_at, updated_at)
+               VALUES (?, ?, 'pending', 'self_attested', ?, ?)""",
+            (ein, verification_type, now, now)
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        return jsonify({'error': 'Verification already in progress for this type'}), 409
+
+    # Log in audit trail
+    db.execute(
+        """INSERT INTO verification_audit_log
+           (ein, action, actor, reason, created_at)
+           VALUES (?, 'verification_started', 'nonprofit', ?, ?)""",
+        (ein, f'Requested {verification_type} verification', now)
+    )
+    db.commit()
+
+    return jsonify({
+        'ein': ein,
+        'verification_type': verification_type,
+        'status': 'pending',
+        'message': 'Verification request submitted. We will review within 48 hours.'
+    }), 201
+
+
+@app.route('/api/nonprofit/<ein>/verification-timeline', methods=['GET'])
+def nonprofit_verification_timeline(ein: str):
+    """Get chronological verification timeline for transparency."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    rows = db.execute(
+        """SELECT event, event_type, status, result, details, created_at
+           FROM verification_timeline
+           WHERE ein = ?
+           ORDER BY created_at DESC""",
+        (ein,)
+    ).fetchall()
+
+    timeline = []
+    for row in rows:
+        timeline.append({
+            'event': row[0],
+            'type': row[1],
+            'status': row[2],
+            'result': row[3],
+            'details': row[4],
+            'timestamp': row[5]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'event_count': len(timeline),
+        'timeline': timeline
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/badge-progress', methods=['GET'])
+def nonprofit_badge_progress(ein: str):
+    """Show which badges org is eligible for and progress toward each."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    # Get org details
+    org = db.execute(
+        "SELECT organization_name, website, donate_url FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # Check eligibility for each badge type
+    progress = {}
+
+    # Verified Org: website active + donate link + mission
+    website_v = db.execute(
+        "SELECT status FROM nonprofit_verifications WHERE ein=? AND verification_type='website_active'",
+        (ein,)
+    ).fetchone()
+    donate_v = db.execute(
+        "SELECT status FROM nonprofit_verifications WHERE ein=? AND verification_type='donate_link_verified'",
+        (ein,)
+    ).fetchone()
+    mission_v = db.execute(
+        "SELECT status FROM nonprofit_verifications WHERE ein=? AND verification_type='mission_claimed'",
+        (ein,)
+    ).fetchone()
+
+    verified_steps = sum([website_v and website_v[0]=='verified', donate_v and donate_v[0]=='verified', mission_v and mission_v[0]=='verified'])
+    progress['verified_org'] = {
+        'name': 'Verified Organization',
+        'description': 'Claims verified: website active, donation link working, mission current',
+        'progress': f'{verified_steps}/3',
+        'earned': verified_steps == 3
+    }
+
+    # Active Mission: mission claimed and on website
+    mission_claimed = mission_v and mission_v[0] == 'verified'
+    progress['active_mission'] = {
+        'name': 'Active Mission',
+        'description': 'Mission statement verified on organization website',
+        'progress': '1/1' if mission_claimed else '0/1',
+        'earned': mission_claimed
+    }
+
+    # Financial Health: 990 filed in last 2 years
+    financial_v = db.execute(
+        "SELECT status FROM nonprofit_verifications WHERE ein=? AND verification_type='financial_filed'",
+        (ein,)
+    ).fetchone()
+    progress['financial_health'] = {
+        'name': 'Financial Health',
+        'description': 'Recent 990 Form filed on public record',
+        'progress': '1/1' if financial_v and financial_v[0]=='verified' else '0/1',
+        'earned': financial_v and financial_v[0]=='verified'
+    }
+
+    # Responsive: replies to queries within 30 days
+    progress['responsive'] = {
+        'name': 'Responsive',
+        'description': 'Responds to donor inquiries and verifications promptly',
+        'progress': 'In Progress',
+        'earned': False
+    }
+
+    return jsonify({
+        'ein': ein,
+        'org_name': org[0],
+        'badge_progress': progress,
+        'total_badges_earned': sum([1 for v in progress.values() if v['earned']])
+    }), 200
+
+
+# ── PHASE 6: Donor Learning System ────────────────────────────────────────────
+
+@app.route('/api/donor/learning-resources', methods=['GET'])
+def get_learning_resources():
+    """Browse learning resources (research, case studies, guides)."""
+    cause_area = request.args.get('cause_area', '')
+    resource_type = request.args.get('type', '')
+    limit = min(int(request.args.get('limit', 20)), 100)
+
+    db = get_db()
+
+    query = "SELECT id, resource_type, title, description, cause_area, url, published_at, view_count FROM learning_resources WHERE source IN ('daanaa', 'external_partner')"
+    params = []
+
+    if cause_area:
+        query += " AND cause_area = ?"
+        params.append(cause_area)
+
+    if resource_type:
+        query += " AND resource_type = ?"
+        params.append(resource_type)
+
+    query += " ORDER BY published_at DESC LIMIT ?"
+    params.append(limit)
+
+    rows = db.execute(query, params).fetchall()
+
+    resources = []
+    for row in rows:
+        resources.append({
+            'id': row[0],
+            'type': row[1],
+            'title': row[2],
+            'description': row[3],
+            'cause': row[4],
+            'url': row[5],
+            'published_at': row[6],
+            'views': row[7]
+        })
+
+    return jsonify({
+        'resource_count': len(resources),
+        'resources': resources
+    }), 200
+
+
+@app.route('/api/donor/cohorts', methods=['GET'])
+def get_donor_cohorts():
+    """Find learning cohorts by topic or focus."""
+    topic = request.args.get('topic', '')
+    cohort_type = request.args.get('type', '')
+
+    db = get_db()
+
+    query = "SELECT id, cohort_name, cohort_topic, cohort_type, member_count, duration_weeks, start_date, description FROM donor_learning_cohorts WHERE status='active'"
+    params = []
+
+    if topic:
+        query += " AND cohort_topic = ?"
+        params.append(topic)
+
+    if cohort_type:
+        query += " AND cohort_type = ?"
+        params.append(cohort_type)
+
+    query += " ORDER BY start_date DESC LIMIT 20"
+
+    rows = db.execute(query, params).fetchall()
+
+    cohorts = []
+    for row in rows:
+        cohorts.append({
+            'id': row[0],
+            'name': row[1],
+            'topic': row[2],
+            'type': row[3],
+            'members': row[4],
+            'duration_weeks': row[5],
+            'start_date': row[6],
+            'description': row[7]
+        })
+
+    return jsonify({
+        'cohort_count': len(cohorts),
+        'cohorts': cohorts
+    }), 200
+
+
+@app.route('/api/donor/<donor_id>/impact-summary', methods=['GET'])
+def donor_impact_summary(donor_id: str):
+    """Get personal impact summary (giving, learning, outcomes achieved)."""
+    donor_id = donor_id[:64]
+
+    db = get_db()
+
+    # Giving summary
+    giving = db.execute(
+        "SELECT SUM(intent_amount_estimate), COUNT(DISTINCT ein) FROM donor_giving_intent WHERE donor_id=? AND status='completed'",
+        (donor_id,)
+    ).fetchone()
+
+    total_giving = giving[0] or 0
+    org_count = giving[1] or 0
+
+    # Impact summary
+    outcomes = db.execute(
+        """SELECT outcome_type, SUM(outcome_value) FROM impact_tracking
+           WHERE donor_id=? AND report_source IN ('org_reported', 'third_party')
+           GROUP BY outcome_type""",
+        (donor_id,)
+    ).fetchall()
+
+    impact = {}
+    for row in outcomes:
+        impact[row[0]] = row[1]
+
+    # Learning summary
+    resources_engaged = db.execute(
+        "SELECT COUNT(DISTINCT resource_id) FROM learning_engagement WHERE donor_id=? AND engagement_type='completed'",
+        (donor_id,)
+    ).fetchone()
+
+    cohort_count = db.execute(
+        "SELECT COUNT(DISTINCT cohort_id) FROM cohort_participants WHERE donor_id=? AND status='completed'",
+        (donor_id,)
+    ).fetchone()
+
+    return jsonify({
+        'donor_id': donor_id,
+        'giving_summary': {
+            'total_amount': total_giving,
+            'orgs_supported': org_count,
+            'engagement_level': 'active' if org_count > 0 else 'exploring'
+        },
+        'impact_summary': {
+            'outcomes': impact,
+            'message': f'Your giving has supported impact across {len(impact)} outcome areas'
+        },
+        'learning_summary': {
+            'resources_completed': resources_engaged[0] or 0,
+            'cohorts_completed': cohort_count[0] or 0,
+            'message': f'You\'ve engaged with {(resources_engaged[0] or 0) + (cohort_count[0] or 0)} learning opportunities'
+        }
+    }), 200
+
+
+@app.route('/api/donor/<donor_id>/org-impact/<ein>', methods=['GET'])
+def donor_org_impact(donor_id: str, ein: str):
+    """Get impact from a specific organization you support."""
+    donor_id = donor_id[:64]
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    # Get org info
+    org = db.execute(
+        "SELECT organization_name, mission FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # Get impact outcomes
+    outcomes = db.execute(
+        """SELECT outcome_type, outcome_value, outcome_unit, outcome_timeframe, last_reported
+           FROM impact_tracking WHERE donor_id=? AND ein=?
+           ORDER BY last_reported DESC""",
+        (donor_id, ein)
+    ).fetchall()
+
+    impact_list = []
+    for row in outcomes:
+        impact_list.append({
+            'outcome': row[0],
+            'value': row[1],
+            'unit': row[2],
+            'timeframe': row[3],
+            'last_reported': row[4]
+        })
+
+    return jsonify({
+        'donor_id': donor_id,
+        'ein': ein,
+        'org_name': org[0],
+        'mission': org[1],
+        'impact_outcomes': impact_list,
+        'summary': f'{len(impact_list)} impact outcomes tracked from your support'
+    }), 200
+
+
+@app.route('/api/donor/<donor_id>/giving-profile', methods=['GET'])
+def donor_giving_profile(donor_id: str):
+    """Get donor's learning profile and giving preferences."""
+    donor_id = donor_id[:64]
+
+    db = get_db()
+
+    profile = db.execute(
+        """SELECT cause_interests, size_preference, giving_style, learning_preference, outcome_focus
+           FROM donor_learning_profiles WHERE donor_id=?""",
+        (donor_id,)
+    ).fetchone()
+
+    if not profile:
+        return jsonify({'status': 'no_profile', 'message': 'Create a profile to get personalized recommendations'}), 200
+
+    return jsonify({
+        'donor_id': donor_id,
+        'interests': profile[0],  # JSON
+        'size_preference': profile[1],
+        'giving_style': profile[2],
+        'learning_preference': profile[3],
+        'outcome_focus': profile[4]
+    }), 200
+
+
+# ── PHASE 11: Financial Health Coaching ────────────────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/financial-health', methods=['GET'])
+def nonprofit_financial_health(ein: str):
+    """Get financial health assessment (reserves, volatility, concentration, signal)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    health = db.execute(
+        """SELECT assessment_date, reserve_ratio, reserve_months_ideal, reserve_trend,
+                  revenue_volatility, expense_trend, revenue_concentration, funder_diversity_score,
+                  health_signal, signal_confidence
+           FROM nonprofit_financial_health WHERE ein=?
+           ORDER BY assessment_date DESC LIMIT 1""",
+        (ein,)
+    ).fetchone()
+
+    if not health:
+        return jsonify({'status': 'no_data', 'message': 'Health assessment not yet available for this org'}), 200
+
+    return jsonify({
+        'ein': ein,
+        'assessment_date': health[0],
+        'reserves': {
+            'current_months': health[1],
+            'ideal_months': health[2],
+            'status': health[3],
+            'message': f'{health[1]:.1f} months reserves (target: {health[2]} months)'
+        },
+        'revenue_quality': {
+            'volatility_score': health[4],
+            'expense_growth_rate': health[5],
+            'funder_concentration': health[6],
+            'diversity_score': health[7],
+            'interpretation': 'Higher diversity = lower risk'
+        },
+        'overall_signal': health[8],
+        'confidence': health[9],
+        'signal_color': {
+            'HEALTHY': 'green',
+            'STABLE': 'blue',
+            'CAUTION': 'yellow',
+            'NEED_SUPPORT': 'yellow',
+            'CRISIS': 'red'
+        }.get(health[8], 'gray')
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/financial-guidance', methods=['GET'])
+def nonprofit_financial_guidance(ein: str):
+    """Get personalized financial health guidance and recommendations."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    guidance = db.execute(
+        """SELECT guidance_type, current_status, recommendation, urgency_level, peer_comparison, action_link
+           FROM financial_health_guidance WHERE ein=?
+           ORDER BY urgency_level DESC, created_at DESC""",
+        (ein,)
+    ).fetchall()
+
+    if not guidance:
+        return jsonify({'guidance_count': 0, 'guidance': []}), 200
+
+    guid_list = []
+    for row in guidance:
+        guid_list.append({
+            'type': row[0],
+            'current_status': row[1],
+            'recommendation': row[2],
+            'urgency': row[3],
+            'peer_context': row[4],
+            'action_link': row[5]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'guidance_count': len(guid_list),
+        'guidance': guid_list
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/stress-tests', methods=['GET'])
+def nonprofit_stress_tests(ein: str):
+    """Run financial stress tests (what if scenarios)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    tests = db.execute(
+        """SELECT test_type, test_scenario, current_reserves_months, post_shock_reserves_months,
+                  survival_months, risk_level, mitigation_strategies
+           FROM financial_stress_tests WHERE ein=?
+           ORDER BY risk_level DESC""",
+        (ein,)
+    ).fetchall()
+
+    if not tests:
+        return jsonify({'test_count': 0, 'tests': []}), 200
+
+    test_list = []
+    for row in tests:
+        test_list.append({
+            'scenario': row[0],
+            'description': row[1],
+            'current_reserves': row[2],
+            'reserves_after_shock': row[3],
+            'months_you_could_operate': row[4],
+            'risk_level': row[5],
+            'recommendations': row[6]  # JSON
+        })
+
+    return jsonify({
+        'ein': ein,
+        'test_count': len(test_list),
+        'stress_tests': test_list,
+        'summary': f'Your org is resilient in {len([t for t in test_list if t["risk_level"] in ("low", "moderate")])} of {len(test_list)} scenarios'
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/peer-benchmark', methods=['GET'])
+def nonprofit_peer_benchmark(ein: str):
+    """Compare financial metrics against peer organizations."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    metric = request.args.get('metric', '')  # reserve_ratio, revenue_volatility, etc.
+
+    db = get_db()
+
+    benchmarks = db.execute(
+        """SELECT metric_type, your_value, peer_median, peer_25th_percentile,
+                  peer_75th_percentile, your_rank, peer_total, interpretation
+           FROM peer_benchmarking WHERE ein=?""",
+        (ein,)
+    ).fetchall()
+
+    if metric:
+        benchmarks = [b for b in benchmarks if b[0] == metric]
+
+    if not benchmarks:
+        return jsonify({'benchmark_count': 0, 'benchmarks': []}), 200
+
+    bench_list = []
+    for row in benchmarks:
+        bench_list.append({
+            'metric': row[0],
+            'your_value': row[1],
+            'peer_statistics': {
+                'median': row[2],
+                'bottom_quartile': row[3],
+                'top_quartile': row[4]
+            },
+            'your_rank': f'{row[5]} of {row[6]}',
+            'percentile': int((row[5] / row[6]) * 100) if row[6] else 0,
+            'interpretation': row[7]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'benchmark_count': len(bench_list),
+        'benchmarks': bench_list,
+        'peer_context': 'You\'re being compared against orgs in your cause area, size bracket, and region'
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/financial-goals', methods=['GET'])
+def nonprofit_financial_goals(ein: str):
+    """Get financial goals and progress toward them."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    goals = db.execute(
+        """SELECT goal_type, goal_description, goal_target, goal_deadline,
+                  current_progress, progress_percent, status
+           FROM financial_goal_tracking WHERE ein=? AND status IN ('new', 'active')
+           ORDER BY goal_deadline ASC""",
+        (ein,)
+    ).fetchall()
+
+    goal_list = []
+    for row in goals:
+        goal_list.append({
+            'type': row[0],
+            'description': row[1],
+            'target': row[2],
+            'deadline': row[3],
+            'current_progress': row[4],
+            'progress_percent': row[5],
+            'status': row[6]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'goal_count': len(goal_list),
+        'goals': goal_list
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/financial-coaching', methods=['GET'])
+def nonprofit_coaching_history(ein: str):
+    """Get financial coaching history and recommendations."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    sessions = db.execute(
+        """SELECT session_type, topic, coach_type, session_notes, recommendations, status, completed_at
+           FROM financial_health_coaching_sessions WHERE ein=?
+           ORDER BY completed_at DESC LIMIT 5""",
+        (ein,)
+    ).fetchall()
+
+    session_list = []
+    for row in sessions:
+        session_list.append({
+            'type': row[0],
+            'topic': row[1],
+            'coach': row[2],
+            'notes': row[3],
+            'recommendations': row[4],  # JSON
+            'status': row[5],
+            'completed_at': row[6]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'session_count': len(session_list),
+        'recent_sessions': session_list
+    }), 200
+
+
+# ── PHASE 7: Institutional Memory ──────────────────────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/timeline', methods=['GET'])
+def nonprofit_timeline(ein: str):
+    """Get organizational timeline (founding, leadership, milestones, crises)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    events = db.execute(
+        """SELECT event_date, event_type, event_title, event_description, impact, sources
+           FROM org_timeline WHERE ein=?
+           ORDER BY event_date DESC""",
+        (ein,)
+    ).fetchall()
+
+    timeline = []
+    for row in events:
+        timeline.append({
+            'date': row[0],
+            'type': row[1],
+            'title': row[2],
+            'description': row[3],
+            'impact': row[4],
+            'sources': row[5]  # JSON
+        })
+
+    return jsonify({
+        'ein': ein,
+        'event_count': len(timeline),
+        'timeline': timeline
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/leadership-history', methods=['GET'])
+def nonprofit_leadership_history(ein: str):
+    """Get leadership history and transitions."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    leaders = db.execute(
+        """SELECT leader_name, position, start_date, end_date, tenure_years,
+                  background, accomplishments, successor_name
+           FROM org_leadership_history WHERE ein=?
+           ORDER BY start_date DESC""",
+        (ein,)
+    ).fetchall()
+
+    history = []
+    for row in leaders:
+        history.append({
+            'name': row[0],
+            'position': row[1],
+            'tenure': {
+                'start': row[2],
+                'end': row[3],
+                'years': row[4]
+            },
+            'background': row[5],
+            'accomplishments': row[6],
+            'successor': row[7]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'leader_count': len(history),
+        'leadership_history': history
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/knowledge-base', methods=['GET'])
+def nonprofit_knowledge_base(ein: str):
+    """Access organizational knowledge base (processes, contacts, history)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    knowledge_type = request.args.get('type', '')
+
+    db = get_db()
+
+    query = "SELECT knowledge_type, topic, content, owner_name, owner_contact, criticality, last_updated FROM org_knowledge_base WHERE ein=?"
+    params = [ein]
+
+    if knowledge_type:
+        query += " AND knowledge_type = ?"
+        params.append(knowledge_type)
+
+    query += " ORDER BY criticality DESC, last_updated DESC"
+
+    rows = db.execute(query, params).fetchall()
+
+    knowledge = []
+    for row in rows:
+        knowledge.append({
+            'type': row[0],
+            'topic': row[1],
+            'content': row[2],
+            'owner': row[3],
+            'owner_contact': row[4],
+            'criticality': row[5],
+            'last_updated': row[6]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'knowledge_count': len(knowledge),
+        'knowledge_base': knowledge
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/decision-log', methods=['GET'])
+def nonprofit_decision_log(ein: str):
+    """Get decision log and organizational learning."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    decisions = db.execute(
+        """SELECT decision_date, decision_title, decision_context, decision_details,
+                  decision_maker, rationale, outcomes, lessons
+           FROM org_decision_log WHERE ein=?
+           ORDER BY decision_date DESC LIMIT 20""",
+        (ein,)
+    ).fetchall()
+
+    log = []
+    for row in decisions:
+        log.append({
+            'date': row[0],
+            'title': row[1],
+            'context': row[2],
+            'decision': row[3],
+            'maker': row[4],
+            'rationale': row[5],
+            'outcomes': row[6],
+            'lessons': row[7]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'decision_count': len(log),
+        'decisions': log
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/board-evolution', methods=['GET'])
+def nonprofit_board_evolution(ein: str):
+    """Track board composition and governance evolution."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    snapshots = db.execute(
+        """SELECT snapshot_date, board_size, board_composition, board_diversity_score,
+                  key_committees, governance_improvements
+           FROM board_evolution WHERE ein=?
+           ORDER BY snapshot_date DESC""",
+        (ein,)
+    ).fetchall()
+
+    evolution = []
+    for row in snapshots:
+        evolution.append({
+            'date': row[0],
+            'board_size': row[1],
+            'composition': row[2],  # JSON
+            'diversity_score': row[3],
+            'committees': row[4],  # JSON
+            'improvements': row[5]
+        })
+
+    return jsonify({
+        'ein': ein,
+        'snapshot_count': len(evolution),
+        'board_evolution': evolution
+    }), 200
+
+
+# ── PHASE 8: Services Marketplace ──────────────────────────────────────────────
+
+@app.route('/api/marketplace/providers', methods=['GET'])
+def marketplace_providers():
+    """Browse service providers (consultants, trainers, vendors)."""
+    category = request.args.get('category', '')
+    availability = request.args.get('availability', 'available')
+    limit = min(int(request.args.get('limit', 20)), 100)
+
+    db = get_db()
+
+    query = "SELECT id, provider_name, service_category, specialization, experience_level, hourly_rate_low, hourly_rate_high, rating, testimonials_count FROM nonprofit_service_providers WHERE marketplace_status='active'"
+    params = []
+
+    if category:
+        query += " AND service_category = ?"
+        params.append(category)
+
+    if availability:
+        query += " AND availability = ?"
+        params.append(availability)
+
+    query += " ORDER BY rating DESC LIMIT ?"
+    params.append(limit)
+
+    rows = db.execute(query, params).fetchall()
+
+    providers = []
+    for row in rows:
+        providers.append({
+            'id': row[0],
+            'name': row[1],
+            'category': row[2],
+            'specialization': row[3],
+            'experience': row[4],
+            'rate_range': f'${row[5]}-{row[6]}/hr',
+            'rating': row[7],
+            'testimonials': row[8]
+        })
+
+    return jsonify({'provider_count': len(providers), 'providers': providers}), 200
+
+
+# ── PHASE 12: Succession Planning ──────────────────────────────────────────────
+
+@app.route('/api/nonprofit/<ein>/succession-readiness', methods=['GET'])
+def nonprofit_succession_readiness(ein: str):
+    """Get succession planning readiness assessment."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    readiness = db.execute(
+        """SELECT assessment_date, leadership_pipeline_strength, board_strength,
+                  knowledge_transfer_status, organizational_readiness_score, risk_level,
+                  risk_factors, action_items
+           FROM succession_readiness WHERE ein=?""",
+        (ein,)
+    ).fetchone()
+
+    if not readiness:
+        return jsonify({'status': 'no_assessment'}), 200
+
+    return jsonify({
+        'ein': ein,
+        'assessment_date': readiness[0],
+        'readiness_scores': {
+            'leadership_pipeline': readiness[1],
+            'board_strength': readiness[2],
+            'knowledge_transfer': readiness[3],
+            'overall_readiness': readiness[4]
+        },
+        'risk_level': readiness[5],
+        'risk_factors': readiness[6],  # JSON
+        'action_items': readiness[7]  # JSON
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/transition-timeline', methods=['GET'])
+def nonprofit_transition_timeline(ein: str):
+    """Get leadership transition plan and timeline."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+
+    db = get_db()
+
+    timeline = db.execute(
+        """SELECT outgoing_leader_name, incoming_leader_name, transition_start_date,
+                  transition_end_date, phase, milestones, knowledge_transfer_plan
+           FROM transition_timeline WHERE ein=?
+           ORDER BY transition_start_date DESC LIMIT 1""",
+        (ein,)
+    ).fetchone()
+
+    if not timeline:
+        return jsonify({'status': 'no_transition'}), 200
+
+    return jsonify({
+        'ein': ein,
+        'outgoing_leader': timeline[0],
+        'incoming_leader': timeline[1],
+        'transition_period': {
+            'start': timeline[2],
+            'end': timeline[3]
+        },
+        'current_phase': timeline[4],
+        'milestones': timeline[5],  # JSON
+        'knowledge_transfer_plan': timeline[6]
+    }), 200
+
+
+# ── PHASE 13: Impact Measurement ───────────────────────────────────────────────
+
+@app.route('/api/cause/<cause_area>/outcome-templates', methods=['GET'])
+def cause_outcome_templates(cause_area: str):
+    """Get outcome measurement templates for a cause area."""
+    cause_area = cause_area.upper().strip()[:2]
+    program_type = request.args.get('program_type', '')
+
+    db = get_db()
+
+    query = "SELECT id, outcome_framework, description, key_metrics, measurement_methods, difficulty_to_measure FROM cause_outcome_templates WHERE cause_area=?"
+    params = [cause_area]
+
+    if program_type:
+        query += " AND program_type = ?"
+        params.append(program_type)
+
+    rows = db.execute(query, params).fetchall()
+
+    templates = []
+    for row in rows:
+        templates.append({
+            'id': row[0],
+            'framework': row[1],
+            'description': row[2],
+            'key_metrics': row[3],  # JSON
+            'measurement_methods': row[4],  # JSON
+            'difficulty': row[5]
+        })
+
+    return jsonify({'template_count': len(templates), 'templates': templates}), 200
+
+
+@app.route('/api/nonprofit/<ein>/impact-report', methods=['GET'])
+def nonprofit_impact_report(ein: str):
+    """Get nonprofit's impact outcomes (anonymized for research)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    period = request.args.get('period', '')
+
+    db = get_db()
+
+    query = "SELECT reporting_period, program_name, outcome_type, outcome_value, outcome_unit, confidence_level, measurement_method FROM nonprofit_impact_reports WHERE ein=?"
+    params = [ein]
+
+    if period:
+        query += " AND reporting_period = ?"
+        params.append(period)
+
+    query += " ORDER BY reported_at DESC"
+
+    rows = db.execute(query, params).fetchall()
+
+    outcomes = []
+    for row in rows:
+        outcomes.append({
+            'period': row[0],
+            'program': row[1],
+            'outcome': row[2],
+            'value': row[3],
+            'unit': row[4],
+            'confidence': row[5],
+            'method': row[6]
+        })
+
+    return jsonify({'ein': ein, 'outcome_count': len(outcomes), 'outcomes': outcomes}), 200
+
+
+@app.route('/api/nonprofit/<ein>/dashboard/overview', methods=['GET'])
+def nonprofit_dashboard_overview(ein: str):
+    """Nonprofit overview dashboard: what needs attention, volunteer summary, profile health,
+    upcoming events, and recent activity. Requires Firebase auth. Returns only org-specific data."""
+    from volunteer_hours_events_api import VOLUNTEER_HOURLY_VALUE
+
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = get_db()
+
+    # Verify user has claimed this org
+    claim = db.execute(
+        "SELECT claim_status FROM org_claims WHERE ein=? AND firebase_uid=? "
+        "AND claim_status IN ('active', 'verified') AND revoked_at IS NULL",
+        (ein, uid)
+    ).fetchone()
+    if not claim:
+        return jsonify({'error': 'Not authorized for this organization'}), 403
+
+    # Org basics
+    org = db.execute(
+        "SELECT EIN, organization_name, mission, website, donate_url, street_address, CITY, STATE FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    org_name = org['organization_name'] or 'Unnamed Organization'
+
+    # Last profile update (from org_claims or registry_enriched update timestamp)
+    last_update = db.execute(
+        "SELECT MAX(verified_at) as updated FROM org_claims WHERE ein=?",
+        (ein,)
+    ).fetchone()
+    last_profile_update = last_update['updated'] if last_update['updated'] else None
+    days_since_update = 999
+    if last_profile_update:
+        days_since_update = (datetime.now() - datetime.fromisoformat(last_profile_update)).days
+
+    # Attention items
+    pending_approvals = db.execute(
+        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='pending'",
+        (ein,)
+    ).fetchone()['cnt']
+
+    profile_gaps = 0
+    gaps = []
+    if not org['mission'] or len(str(org['mission']).strip()) < 10:
+        profile_gaps += 1
+        gaps.append('mission')
+    if not org['donate_url']:
+        profile_gaps += 1
+        gaps.append('donation_link')
+
+    # Volunteer summary
+    now = datetime.now()
+    this_month = now.strftime('%Y-%m')
+    last_month = (now.replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
+
+    vol_this = db.execute(
+        "SELECT COALESCE(SUM(hours), 0) as h FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?",
+        (ein, this_month)
+    ).fetchone()['h']
+
+    vol_last = db.execute(
+        "SELECT COALESCE(SUM(hours), 0) as h FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?",
+        (ein, last_month)
+    ).fetchone()['h']
+
+    trend_percent = 0
+    if vol_last > 0:
+        trend_percent = round((vol_this - vol_last) / vol_last * 100, 1)
+
+    pending_count = db.execute(
+        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='pending'",
+        (ein,)
+    ).fetchone()['cnt']
+
+    approved_count = db.execute(
+        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved'",
+        (ein,)
+    ).fetchone()['cnt']
+
+    rejected_count = db.execute(
+        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='rejected'",
+        (ein,)
+    ).fetchone()['cnt']
+
+    # Top volunteers this month
+    top_vols = db.execute(
+        f"""SELECT volunteer_name, SUM(hours) as total_hours FROM volunteer_hours
+            WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?
+            GROUP BY volunteer_name ORDER BY total_hours DESC LIMIT 3""",
+        (ein, this_month)
+    ).fetchall()
+    top_volunteers = [{'name': v['volunteer_name'], 'hours': v['total_hours']} for v in top_vols]
+
+    # Upcoming events (next 30 days)
+    upcoming = db.execute(
+        """SELECT id AS event_id, title, event_date FROM volunteer_events
+           WHERE ein=? AND event_date BETWEEN date('now') AND date('now', '+30 days')
+           ORDER BY event_date ASC LIMIT 5""",
+        (ein,)
+    ).fetchall()
+
+    upcoming_events = []
+    for evt in upcoming:
+        evt_date = datetime.fromisoformat(evt['event_date']).date()
+        days_until = (evt_date - datetime.now().date()).days
+        upcoming_events.append({
+            'event_id': evt['event_id'],
+            'title': evt['title'],
+            'date': evt['event_date'],
+            'days_until': days_until
+        })
+
+    # Profile health (completeness)
+    completeness_score = 0
+    fields_max = 8
+    if org['organization_name']: completeness_score += 1
+    if org['EIN']: completeness_score += 1
+    if org['mission'] and len(str(org['mission']).strip()) >= 10: completeness_score += 1
+    if org['website']: completeness_score += 1
+    if org['donate_url']: completeness_score += 1
+    if org['street_address']: completeness_score += 1
+    if org['CITY']: completeness_score += 1
+    if org['STATE']: completeness_score += 1
+
+    completeness_percent = round((completeness_score / fields_max) * 100)
+
+    return jsonify({
+        'organization': {
+            'ein': org['EIN'],
+            'name': org_name,
+            'mission': org['mission'],
+            'website': org['website'],
+            'last_profile_update': last_profile_update,
+            'days_since_update': days_since_update
+        },
+        'attention': {
+            'pending_approvals': pending_approvals,
+            'profile_gaps': profile_gaps,
+            'missing_fields': gaps,
+            'needs_review': days_since_update > 90
+        },
+        'volunteer_summary': {
+            'this_month_hours': round(vol_this, 1),
+            'last_month_hours': round(vol_last, 1),
+            'trend_percent': trend_percent,
+            'pending_count': pending_count,
+            'approved_count': approved_count,
+            'rejected_count': rejected_count,
+            'top_volunteers': top_volunteers,
+            'labor_value_this_month': round(vol_this * VOLUNTEER_HOURLY_VALUE, 2)
+        },
+        'profile_health': {
+            'completeness_percent': completeness_percent,
+            'missing_fields': gaps
+        },
+        'upcoming_events': upcoming_events,
+        'recent_activity': {
+            'has_events': len(upcoming_events) > 0
+        }
+    }), 200
+
+
+@app.route('/api/cause/<cause_area>/impact-benchmarks', methods=['GET'])
+def cause_impact_benchmarks(cause_area: str):
+    """Get peer benchmarks for impact outcomes in a cause area."""
+    cause_area = cause_area.upper().strip()[:2]
+    outcome_type = request.args.get('outcome_type', '')
+
+    db = get_db()
+
+    query = "SELECT outcome_type, program_type, median_outcome_value, percentile_25, percentile_75, org_count_reporting, year_reported FROM peer_outcome_benchmarks WHERE cause_area=?"
+    params = [cause_area]
+
+    if outcome_type:
+        query += " AND outcome_type = ?"
+        params.append(outcome_type)
+
+    rows = db.execute(query, params).fetchall()
+
+    benchmarks = []
+    for row in rows:
+        benchmarks.append({
+            'outcome': row[0],
+            'program_type': row[1],
+            'median': row[2],
+            'peer_range': [row[3], row[4]],
+            'orgs_reporting': row[5],
+            'year': row[6]
+        })
+
+    return jsonify({'benchmark_count': len(benchmarks), 'benchmarks': benchmarks}), 200
+
+
+# ── Profile Correction & Provenance ──
+
+@app.route('/api/nonprofit/<ein>/profile/editable', methods=['GET'])
+def nonprofit_profile_editable(ein: str):
+    """Get editable profile fields for nonprofit with current values, sources, and edit history."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = get_db()
+
+    # Verify authorization
+    claim = db.execute(
+        "SELECT claim_status FROM org_claims WHERE ein=? AND firebase_uid=?",
+        (ein, uid)
+    ).fetchone()
+    if not claim or claim['claim_status'] not in ('active', 'verified'):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    org = db.execute(
+        "SELECT EIN, organization_name, mission, mission_source, website, website_source, donate_url, donate_url_source FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    supplied = db.execute(
+        "SELECT programs_description, service_areas, nonprofit_contact_email FROM nonprofit_supplied_data WHERE ein=?",
+        (ein,)
+    ).fetchone()
+
+    # Recent edits (last 10)
+    edits = db.execute(
+        "SELECT field_name, old_value, new_value, created_at, editor_email, reason, approval_status FROM profile_edits WHERE ein=? ORDER BY created_at DESC LIMIT 10",
+        (ein,)
+    ).fetchall()
+
+    return jsonify({
+        'organization': {
+            'ein': org['EIN'],
+            'name': org['organization_name']
+        },
+        'editable_fields': {
+            'mission': {
+                'value': org['mission'] or '',
+                'source': org['mission_source'] or 'irs',
+                'editable': True,
+                'char_limit': 500,
+                'char_count': len(str(org['mission'] or ''))
+            },
+            'website': {
+                'value': org['website'] or '',
+                'source': org['website_source'] or 'irs',
+                'editable': True
+            },
+            'donate_url': {
+                'value': org['donate_url'] or '',
+                'source': org['donate_url_source'] or 'irs',
+                'editable': True
+            },
+            'programs': {
+                'value': supplied['programs_description'] if supplied else '',
+                'source': 'nonprofit_supplied',
+                'editable': True,
+                'char_limit': 2000
+            },
+            'service_areas': {
+                'value': supplied['service_areas'] if supplied else '',
+                'source': 'nonprofit_supplied',
+                'editable': True
+            }
+        },
+        'recent_edits': [
+            {
+                'field': e['field_name'],
+                'old_value': e['old_value'],
+                'new_value': e['new_value'],
+                'date': e['created_at'],
+                'editor': e['editor_email'],
+                'reason': e['reason'],
+                'status': e['approval_status']
+            } for e in edits
+        ]
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/profile/edit', methods=['POST'])
+def nonprofit_profile_edit(ein: str):
+    """Submit a profile field edit. Requires Firebase auth."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    data = request.get_json(silent=True) or {}
+    field_name = (data.get('field_name') or '').strip()
+    new_value = (data.get('new_value') or '').strip()
+    reason = (data.get('reason') or '').strip()[:500]
+    editor_email = (data.get('nonprofit_email') or '').strip()[:254]
+
+    if not field_name or not new_value:
+        return jsonify({'error': 'field_name and new_value are required'}), 400
+
+    if field_name not in ('mission', 'website', 'donate_url', 'programs', 'service_areas'):
+        return jsonify({'error': 'Invalid field_name'}), 400
+
+    # Validate field lengths
+    if field_name == 'mission' and (len(new_value) < 50 or len(new_value) > 500):
+        return jsonify({'error': 'Mission must be 50–500 characters'}), 400
+    if field_name == 'programs' and (len(new_value) < 50 or len(new_value) > 2000):
+        return jsonify({'error': 'Programs must be 50–2000 characters'}), 400
+
+    db = get_db()
+
+    # Verify authorization
+    claim = db.execute(
+        "SELECT claim_status FROM org_claims WHERE ein=? AND firebase_uid=?",
+        (ein, uid)
+    ).fetchone()
+    if not claim or claim['claim_status'] not in ('active', 'verified'):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    # Get current value
+    org = db.execute(
+        "SELECT mission, website, donate_url FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+
+    supplied = db.execute(
+        "SELECT programs_description, service_areas FROM nonprofit_supplied_data WHERE ein=?",
+        (ein,)
+    ).fetchone()
+
+    current_value = {
+        'mission': org['mission'],
+        'website': org['website'],
+        'donate_url': org['donate_url'],
+        'programs': supplied['programs_description'] if supplied else '',
+        'service_areas': supplied['service_areas'] if supplied else ''
+    }.get(field_name, '')
+
+    # No-op check: if value unchanged, return success
+    if str(current_value or '').strip() == new_value:
+        return jsonify({
+            'edit_id': 'no-op',
+            'status': 'approved',
+            'message': 'Field value unchanged'
+        }), 200
+
+    # Record edit
+    db.execute(
+        "INSERT INTO profile_edits (ein, field_name, old_value, new_value, edit_source, editor_email, reason, approval_status, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+        (ein, field_name, current_value or '', new_value, 'nonprofit', editor_email, reason, 'approved')
+    )
+
+    # Update registry_enriched or nonprofit_supplied_data
+    now = datetime.now().isoformat()
+    if field_name in ('mission', 'website', 'donate_url'):
+        db.execute(
+            f"UPDATE registry_enriched SET {field_name}=?, {field_name}_source='nonprofit_supplied', {field_name}_last_verified=? WHERE EIN=?",
+            (new_value, now, ein)
+        )
+    else:
+        # Ensure nonprofit_supplied_data row exists
+        db.execute(
+            "INSERT OR IGNORE INTO nonprofit_supplied_data (ein) VALUES (?)",
+            (ein,)
+        )
+        db.execute(
+            f"UPDATE nonprofit_supplied_data SET {field_name}=?, last_updated_at=? WHERE ein=?",
+            (new_value, now, ein)
+        )
+
+    db.commit()
+
+    return jsonify({
+        'edit_id': 'e-' + secrets.token_hex(4),
+        'status': 'approved',
+        'message': f'{field_name.title()} updated. Visible to donors within 5 minutes.'
+    }), 200
+
+
+@app.route('/api/nonprofit/<ein>/profile/history', methods=['GET'])
+def nonprofit_profile_history(ein: str):
+    """Get full profile edit history for nonprofit."""
+    uid = _require_firebase_user()
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    db = get_db()
+
+    # Verify authorization
+    claim = db.execute(
+        "SELECT claim_status FROM org_claims WHERE ein=? AND firebase_uid=?",
+        (ein, uid)
+    ).fetchone()
+    if not claim or claim['claim_status'] not in ('active', 'verified'):
+        return jsonify({'error': 'Not authorized'}), 403
+
+    edits = db.execute(
+        "SELECT field_name, old_value, new_value, created_at, editor_email, reason, approval_status FROM profile_edits WHERE ein=? ORDER BY created_at DESC",
+        (ein,)
+    ).fetchall()
+
+    return jsonify({
+        'ein': ein,
+        'changes': [
+            {
+                'field': e['field_name'],
+                'old_value': e['old_value'],
+                'new_value': e['new_value'],
+                'date': e['created_at'],
+                'editor': e['editor_email'],
+                'reason': e['reason'],
+                'status': e['approval_status']
+            } for e in edits
+        ]
+    }), 200
+
+
+@app.route('/api/public/nonprofit/<ein>/profile/sources', methods=['GET'])
+def public_profile_sources(ein: str):
+    """Public: Show data sources and provenance for nonprofit profile."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 404
+
+    db = get_db()
+    org = db.execute(
+        "SELECT organization_name, mission, mission_source, website, website_source, donate_url, donate_url_source FROM registry_enriched WHERE EIN=?",
+        (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    supplied = db.execute(
+        "SELECT programs_description, service_areas FROM nonprofit_supplied_data WHERE ein=?",
+        (ein,)
+    ).fetchone()
+
+    source_map = {
+        'irs': 'Form 990 (IRS)',
+        'nonprofit_supplied': 'Nonprofit-supplied',
+        'ai_generated': 'AI-generated (Daanaa)',
+        'daanaa_corrected': 'Corrected (Daanaa)'
+    }
+
+    return jsonify({
+        'ein': ein,
+        'sources': {
+            'organization_name': {
+                'value': org['organization_name'],
+                'source': 'irs',
+                'source_label': 'Form 990 (IRS)',
+                'editable': False
+            },
+            'mission': {
+                'value': org['mission'],
+                'source': org['mission_source'] or 'irs',
+                'source_label': source_map.get(org['mission_source'] or 'irs', 'Unknown'),
+                'editable': True
+            },
+            'website': {
+                'value': org['website'],
+                'source': org['website_source'] or 'irs',
+                'source_label': source_map.get(org['website_source'] or 'irs', 'Unknown'),
+                'editable': True
+            },
+            'donate_url': {
+                'value': org['donate_url'],
+                'source': org['donate_url_source'] or 'irs',
+                'source_label': source_map.get(org['donate_url_source'] or 'irs', 'Unknown'),
+                'editable': True
+            },
+            'programs': {
+                'value': supplied['programs_description'] if supplied else None,
+                'source': 'nonprofit_supplied',
+                'source_label': 'Nonprofit-supplied',
+                'editable': True
+            }
+        }
+    }), 200
+
+
+@app.route('/api/public/nonprofit/<ein>/feedback', methods=['POST'])
+def submit_nonprofit_feedback(ein: str):
+    """Public: Submit anonymous feedback about an organization (was it helpful?)."""
+    ein = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein:
+        return jsonify({'error': 'Invalid EIN'}), 400
+
+    data = request.get_json(silent=True) or {}
+    was_helpful = data.get('was_helpful')
+    category = (data.get('feedback_category') or '').strip()[:100]
+    message = (data.get('message') or '').strip()[:500]
+
+    if was_helpful is None:
+        return jsonify({'error': 'was_helpful is required'}), 400
+
+    db = get_db()
+
+    # Check org exists
+    org = db.execute(
+        "SELECT EIN FROM registry_enriched WHERE EIN=?", (ein,)
+    ).fetchone()
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+
+    # Store feedback (anonymous, no IP, no identifiers)
+    db.execute(
+        "INSERT OR IGNORE INTO nonprofit_feedback (ein, was_helpful, feedback_category, message, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
+        (ein, 1 if was_helpful else 0, category or None, message or None)
+    )
+
+    try:
+        db.commit()
+    except Exception:
+        # Table might not exist yet, create it
+        db.execute("""
+          CREATE TABLE IF NOT EXISTS nonprofit_feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ein TEXT NOT NULL,
+            was_helpful INTEGER NOT NULL,
+            feedback_category TEXT,
+            message TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+          )
+        """)
+        db.execute(
+            "INSERT INTO nonprofit_feedback (ein, was_helpful, feedback_category, message, created_at) VALUES (?, ?, ?, ?, datetime('now'))",
+            (ein, 1 if was_helpful else 0, category or None, message or None)
+        )
+        db.commit()
+
+    return jsonify({
+        'status': 'ok',
+        'message': 'Thank you for your feedback'
+    }), 200
+
+
+@app.route('/api/debug/firebase-uid', methods=['GET'])
+def debug_firebase_uid():
+    """DEBUG ONLY: Return your authenticated Firebase UID (temporary troubleshooting endpoint)"""
+    try:
+        uid = _require_firebase_user()
+        return jsonify({
+            'your_firebase_uid': uid,
+            'uid_bytes': list(uid.encode('utf-8')),
+            'uid_length': len(uid),
+            'message': 'Copy this UID and update org_claims.firebase_uid where ein=123456789'
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 401
+
+
+@app.route('/api/research/datasets', methods=['GET'])
+def research_datasets():
+    """Browse research-grade datasets (aggregated, anonymized)."""
+    cause_area = request.args.get('cause_area', '')
+    access_level = request.args.get('access', 'public')
+
+    db = get_db()
+
+    query = "SELECT dataset_name, cause_area, description, org_count, years_covered, access_level, download_url, published_at FROM research_grade_datasets WHERE published_at IS NOT NULL AND access_level IN (?, 'public')"
+    params = [access_level]
+
+    if cause_area:
+        query += " AND cause_area = ?"
+        params.append(cause_area)
+
+    query += " ORDER BY published_at DESC LIMIT 20"
+
+    rows = db.execute(query, params).fetchall()
+
+    datasets = []
+    for row in rows:
+        datasets.append({
+            'name': row[0],
+            'cause': row[1],
+            'description': row[2],
+            'orgs': row[3],
+            'years': row[4],
+            'access': row[5],
+            'url': row[6],
+            'published': row[7]
+        })
+
+    return jsonify({'dataset_count': len(datasets), 'datasets': datasets}), 200
+
+
+# ── Register student service blueprint ──────────────────────────────────────────
+
+from student_service_api_routes import student_bp
+app.register_blueprint(student_bp)
+
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
 # Eager load so gunicorn --preload populates the matrix in the master process
@@ -8267,15 +12253,3 @@ if not os.environ.get("DAANAA_SKIP_EMBEDDINGS"):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
-
-# ─── SPA Fallback (MOVED TO END) ───
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    # Unknown /api/* paths must return JSON, never the SPA shell — API
-    # clients parsing HTML as JSON fail confusingly (test_routing.py pins this).
-    if path == 'api' or path.startswith('api/'):
-        return jsonify({'error': 'Not found'}), 404
-    if path and os.path.exists(os.path.join(FRONTEND_DIST, path)):
-        return send_from_directory(FRONTEND_DIST, path)
-    return send_from_directory(FRONTEND_DIST, 'index.html')
