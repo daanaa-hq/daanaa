@@ -3869,6 +3869,27 @@ def _format_phone(phone: str) -> str:
     return phone
 
 
+def _send_volunteer_interest_email(contact_email: str, contact_name: str, event_title: str, volunteer_email: str):
+    """Notify nonprofit volunteer coordinator when someone expresses interest."""
+    body = f"""Hi {contact_name},
+
+Someone has expressed interest in volunteering for "{event_title}" through Daanaa.
+
+Volunteer email: {volunteer_email}
+
+Log in to your Daanaa nonprofit dashboard to see more details and connect with them.
+
+Best,
+Daanaa Team
+"""
+    _send_daanaa_email(
+        contact_email,
+        f"New volunteer interest in {event_title}",
+        body,
+        from_addr="hello@daanaa.org"
+    )
+
+
 def _notify_admin_new_claim(ein: str, org_name: str, email: str, phone: str, title: str, pin: str,
                             rep_name: str = ''):
     """Email the admin when a claim comes in. Phase 1 verification is a phone
@@ -10100,6 +10121,28 @@ def volunteer_interest(ein: str):
     if request.method == 'POST':
         db.execute('''INSERT INTO volunteer_interest (EIN, count) VALUES (?, 1)
                       ON CONFLICT(EIN) DO UPDATE SET count = count + 1''', (ein,))
+        # Email volunteer contact if available
+        data = request.get_json() or {}
+        volunteer_email = data.get('email', '').strip()
+        event_title = data.get('event_title', 'an event').strip()
+
+        org_claim = db.execute(
+            'SELECT volunteer_contact_email, volunteer_contact_name FROM org_claims WHERE EIN = ?',
+            (ein,)
+        ).fetchone()
+
+        if org_claim and org_claim[0]:  # volunteer_contact_email exists
+            contact_email = org_claim[0]
+            contact_name = org_claim[1] or 'Volunteer Coordinator'
+            try:
+                _send_volunteer_interest_email(
+                    contact_email=contact_email,
+                    contact_name=contact_name,
+                    event_title=event_title,
+                    volunteer_email=volunteer_email
+                )
+            except Exception as e:
+                logger.warning(f'Failed to send volunteer interest email to {contact_email}: {e}')
     else:
         db.execute('''UPDATE volunteer_interest SET count = MAX(0, count - 1)
                       WHERE EIN = ?''', (ein,))
