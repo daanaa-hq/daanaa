@@ -2202,10 +2202,16 @@ def list_organizations():
     # Prefix sort_by with table alias to avoid ambiguity in JOINs.
     # total_revenue uses NULLS LAST so orgs without financial data sort after
     # those with data rather than always floating to the top/bottom.
+    # Random sort is handled specially below (seeded shuffle in memory).
     if sort_by == 'total_revenue':
         sort_col = f"r.total_revenue {order} NULLS LAST"
         # The ORDER BY clause is fully formed; pass a sentinel so the outer
         # f-string doesn't append a duplicate direction keyword.
+        _sort_dir_suffix = ''
+    elif sort_by == 'random':
+        # Shuffle is handled in-memory after fetch, not via SQL ORDER BY.
+        # Set to empty so the else clause below doesn't try to create ORDER BY r.random.
+        sort_col = ''
         _sort_dir_suffix = ''
     else:
         sort_col = f"r.{sort_by}"
@@ -2288,11 +2294,17 @@ def list_organizations():
         # Seed makes order stable per session (same seed = same order), so users see consistent
         # results even if they reload. Different seed = different shuffle (new session).
         order_sql = ""  # No DB ORDER BY; we'll shuffle after fetch
+    elif sort_by == 'random':
+        # Random sort requested but no seed provided; fall back to organization_name (A-Z)
+        # This should not happen in normal flow (frontend always sends seed for random sort)
+        order_sql = f"ORDER BY r.organization_name asc"
     elif fts_used and 'sort' not in request.args:
         order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel"
         order_params.append((corrected_query or search).upper())
-    else:
+    elif sort_col:  # Prevent "ORDER BY  " when sort_col is empty
         order_sql = f"ORDER BY {sort_col} {_sort_dir_suffix}"
+    else:
+        order_sql = ""
 
     # When shuffling, fetch all matching orgs (no LIMIT/OFFSET at DB level).
     # We'll shuffle the full list in memory, then apply pagination.

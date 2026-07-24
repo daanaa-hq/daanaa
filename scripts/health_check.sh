@@ -75,9 +75,27 @@ perf_check() {
     path="${endpoint%% *}"
     name="${endpoint#* }"
 
-    time_ms=$(curl -s -m $TIMEOUT -w '%{time_total}' -o /dev/null "$SITE$path" 2>/dev/null | awk '{print int($1 * 1000)}' || echo "TIMEOUT")
+    # Capture both HTTP status and timing separately
+    # Use -w with format to get clean output (no body, no stderr)
+    output=$(curl -s -m $TIMEOUT -w '\n%{http_code}\n%{time_total}' -o /dev/null "$SITE$path" 2>&1)
+    http_code=$(echo "$output" | tail -2 | head -1)
+    time_total=$(echo "$output" | tail -1)
 
-    if [ "$time_ms" = "TIMEOUT" ] || [ "$time_ms" -gt "$PERF_THRESHOLD_MS" ]; then
+    # Handle timeout or empty response
+    if [ -z "$http_code" ] || [ -z "$time_total" ]; then
+      alert "$name: TIMEOUT or error (no response)"
+      slow_count=$((slow_count + 1))
+      continue
+    fi
+
+    # Convert time to milliseconds
+    time_ms=$(awk "BEGIN {printf \"%.0f\", $time_total * 1000}")
+
+    # Check if response was successful and within threshold
+    if [ "$http_code" != "200" ]; then
+      alert "$name: HTTP $http_code (timing: ${time_ms}ms)"
+      slow_count=$((slow_count + 1))
+    elif [ "$time_ms" -gt "$PERF_THRESHOLD_MS" ]; then
       alert "$name: ${time_ms}ms (threshold: ${PERF_THRESHOLD_MS}ms)"
       slow_count=$((slow_count + 1))
     else

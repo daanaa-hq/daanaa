@@ -286,6 +286,7 @@ export async function getOrganizations(params?: {
   if (params?.state)    sp.set('state', params.state);
   if (params?.q)        sp.set('q', params.q);
   if (params?.sort)     sp.set('sort', params.sort);
+  if (params?.seed)     sp.set('seed', params.seed);
   if (params?.order)    sp.set('order', params.order);
   if (params?.page)            sp.set('page', String(params.page));
   if (params?.per_page)        sp.set('per_page', String(params.per_page));
