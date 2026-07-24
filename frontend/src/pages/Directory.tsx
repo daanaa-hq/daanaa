@@ -25,11 +25,11 @@ const SCORES_ENABLED = import.meta.env.VITE_ENABLE_SCORES !== 'false'
 
 // Neutral default (2026-07-04 stewardship fix): name A to Z, never a score
 // ranking. Peer Financial Context stays available as an explicit opt-in sort.
+// P7 Stewardship: No ranking sorts. Only neutral options.
+// (2026-07-24: Removed 'Top Performers' and 'Largest Orgs' rankings per P7 independence principle)
 const SORT_OPTIONS = [
   { id: 'random', label: '🎲 Shuffle' },  // Discovery-first (2026-07-24)
-  { id: 'organization_name', label: 'Name A to Z' },  // Neutral control
-  ...(SCORES_ENABLED ? [{ id: 'merit_score', label: '📊 Top Performers' }] : []),
-  { id: 'total_revenue', label: '📈 Largest Orgs' },
+  { id: 'organization_name', label: 'Name A to Z' },  // Neutral control, no ranking
 ]
 
 function hasKnownDataSource(src: string | null) {
