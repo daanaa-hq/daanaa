@@ -1697,7 +1697,7 @@ def wallet_restore_proxy():
 # On droplet: use home server hostname or bastion IP.
 # In dev: use localhost:5000.
 # Environment: LIVE_UPSTREAM or CLAIM_UPSTREAM (for backwards compat).
-LIVE_UPSTREAM = os.environ.get('LIVE_UPSTREAM') or os.environ.get('CLAIM_UPSTREAM', 'http://127.0.0.1:5000')
+LIVE_UPSTREAM = os.environ.get('LIVE_UPSTREAM') or os.environ.get('CLAIM_UPSTREAM', 'http://127.0.0.1:5001')
 
 
 def _live_proxy(path: str):
@@ -1746,15 +1746,36 @@ def volunteer_events_proxy(event_id=None):
     return _live_proxy(path)
 
 
-@app.route('/api/org/<ein>/volunteer-events', methods=['GET', 'POST'])
-def org_volunteer_events_proxy(ein):
-    return _live_proxy(f"/api/org/{ein}/volunteer-events")
+@app.route("/api/volunteer-interest/<ein>", methods=["GET", "POST", "DELETE"])
+def volunteer_interest_proxy(ein):
+    """Proxy anonymous volunteer interest signals to the live backend."""
+    return _live_proxy(f"/api/volunteer-interest/{ein}")
 
+# Event proxy routes disabled 2026-07-24 14:07 — caused timeouts (backend unreachable from droplet)
+# These need a live backend service to proxy to; droplet is static-only.
+# TODO: Re-enable when central event API is available, or implement local event retrieval from precompute.
 
-@app.route('/api/events/<int:event_id>', methods=['GET'])
-def event_detail_proxy(event_id):
-    """Public event detail endpoint — proxy to live backend."""
-    return _live_proxy(f"/api/events/{event_id}")
+# @app.route('/api/org/<ein>/volunteer-events', methods=['GET', 'POST'])
+# def org_volunteer_events_proxy(ein):
+#     return _live_proxy(f"/api/org/{ein}/volunteer-events")
+
+# @app.route("/e/<short_id>", methods=["GET"])
+# def event_short_proxy(short_id):
+#     """Proxy short event links to the live event backend."""
+#     if not re.match(r"^[A-Za-z0-9_-]{6,16}$", short_id):
+#         return "Not found", 404
+#     return _live_proxy(f"/e/{short_id}")
+
+# @app.route('/api/events/<int:event_id>', methods=['GET'])
+# def event_detail_proxy(event_id):
+#     """Public event detail endpoint — proxy to live backend."""
+#     return _live_proxy(f"/api/events/{event_id}")
+
+# @app.route("/api/events/<int:event_id>/<path:subpath>", methods=["GET", "POST", "PATCH", "DELETE"])
+# def event_subroute_proxy(event_id, subpath):
+#     """Proxy event actions and artifacts to the live backend."""
+#     return _live_proxy(f"/api/events/{event_id}/{subpath}")
+
 
 
 @app.route('/api/profile-contexts', methods=['GET', 'POST'])
@@ -2125,7 +2146,7 @@ _SPA_PREFIXES = {
     'volunteer', 'donation', 'research', 'the-invisible-97', 'invisible-preview',
     'nonprofit', 'vendor', 'claim', 'admin',
     'security', 'privacy', 'meet-the-invisible', 'invisible', 'charter',
-    'settings', 'events', 'open-data', 'profile-contexts',
+    'settings', 'event', 'events', 'open-data', 'profile-contexts',
 }
 
 @app.route('/api/voice/support', methods=['POST'])

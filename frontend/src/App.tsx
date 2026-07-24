@@ -158,6 +158,8 @@ export default function App() {
             <Route path="/event/:eventId/register" element={<VolunteerRegistration />} />
             <Route path="/event/:eventId/log-hours" element={<LogVolunteerHours />} />
             <Route path="/event/:eventId/manage" element={<VolunteerApprovalDashboard />} />
+            <Route path="/event/:eventId/volunteers" element={<VolunteerApprovalDashboard />} />
+            <Route path="/event/:eventId/report" element={<EventDashboard />} />
             {/* Legacy event route */}
             <Route path="/events/:eventId" element={<EventDetailPage />} />
             <Route path="/donation/receipt" element={<DonationReceipt />} />

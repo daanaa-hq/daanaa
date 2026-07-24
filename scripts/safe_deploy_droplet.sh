@@ -290,7 +290,7 @@ frontend_ship() {
     || die "frontend swap failed on droplet"
   # Smoke-test SPA routes + one hashed JS chunk (catches asset-404 regressions).
   local ok=1
-  for path in "/" "/directory" "/org/264837170" "/about" "/org/login" "/events/2" "/profile-contexts"; do
+  for path in "/" "/directory" "/org/264837170" "/about" "/org/login" "/events/2" "/event/2" "/profile-contexts"; do
     local code
     code=$(curl -s -o /dev/null -w '%{http_code}' "https://daanaa.org${path}" || echo 000)
     log "Smoke: ${path} → ${code}"
