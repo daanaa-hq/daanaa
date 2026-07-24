@@ -93,18 +93,6 @@ function HeroSection() {
           >
             Answer a few simple questions to find a short list of organizations to explore.
           </p>
-          <Link
-            to="/discover"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-soft-gold hover:bg-bright-gold text-deep-navy font-semibold rounded-lg transition-colors"
-          >
-            Start guided discovery
-          </Link>
-          <p
-            className="mt-3 font-body text-[12px] transition-all duration-700 ease-out"
-            style={{ color: 'rgb(var(--warm-cream-rgb) / 0.65)' }}
-          >
-            Your answers help narrow the directory. Daanaa does not rank organizations or tell you where to give. Each result is a starting point for your own review.
-          </p>
         </div>
 
         <p
