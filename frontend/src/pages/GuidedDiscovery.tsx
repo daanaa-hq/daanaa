@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { DiscoveryProgress } from '../components/discovery/DiscoveryProgress'
 import { DiscoveryQuestion } from '../components/discovery/DiscoveryQuestion'
@@ -99,6 +99,9 @@ export default function GuidedDiscovery() {
   const [geoError, setGeoError] = useState('')
   const [showAnotherCount, setShowAnotherCount] = useState(0)  // Trigger refetch when "Show another" clicked
 
+  // Seed for seeded random shuffle in discovery results
+  const discoveryShuffleRef = useRef(Math.random().toString(36).slice(2, 11))
+
   const [results, setResults] = useState<any[]>([])
   const [resultGroups, setResultGroups] = useState<{
     closeMatches: any[]
@@ -136,9 +139,16 @@ export default function GuidedDiscovery() {
       setLoading(true)
       try {
         const filters = mapToDirectoryFilters(state)
+        // Generate a new seed when "Show another list" is clicked (showAnotherCount changes)
+        if (showAnotherCount > 0) {
+          discoveryShuffleRef.current = Math.random().toString(36).slice(2, 11)
+        }
+
         const orgs = await getOrganizations({
           ntee: filters.ntee,
           state: filters.state,
+          sort: 'random',
+          seed: discoveryShuffleRef.current,
           per_page: 100,
         })
 
