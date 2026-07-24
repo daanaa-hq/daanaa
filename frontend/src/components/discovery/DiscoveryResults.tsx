@@ -44,10 +44,10 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
   if (isEmpty) {
     return (
       <div className="max-w-2xl mx-auto px-4">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{title}</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">{subtitle}</p>
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 mb-8">
-          <p className="text-amber-900 dark:text-amber-100">
+        <h2 className="text-3xl font-bold text-deep-navy mb-2">{title}</h2>
+        <p className="text-cool-grey mb-8">{subtitle}</p>
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-8">
+          <p className="text-deep-navy">
             We did not find organizations matching all of those choices. Nothing is wrong.
             Try a broader place, another cause, or remove one preference.
           </p>
@@ -55,14 +55,14 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
         <div className="flex gap-3">
           <button
             onClick={onChangeAnswers}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-light-grey text-deep-navy hover:bg-muted-cream transition-colors"
           >
             <Edit2 className="w-4 h-4" />
             Change my answers
           </button>
           <button
             onClick={onBrowseDirectory}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted-cream0 hover:bg-soft-gold text-white transition-colors"
           >
             <Grid className="w-4 h-4" />
             Browse the full directory
@@ -77,11 +77,11 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto px-4">
-      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{title}</h2>
-      <p className="text-gray-600 dark:text-gray-400 mb-8">{subtitle}</p>
+      <h2 className="text-3xl font-bold text-deep-navy mb-2">{title}</h2>
+      <p className="text-cool-grey mb-8">{subtitle}</p>
 
       {showTooFew && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-8 text-sm text-blue-900 dark:text-blue-100">
+        <div className="bg-muted-cream border border-blue-200 rounded-lg p-4 mb-8 text-sm text-deep-navy">
           We found {totalResults} organizations that fit these choices. You can review these or{' '}
           <button
             onClick={onChangeAnswers}
@@ -96,7 +96,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       {/* Close Matches */}
       {closeMatches.length > 0 && (
         <div className="mb-12">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg font-semibold text-deep-navy mb-4">
             Close to what you selected
           </h3>
           <div className="grid gap-4">
@@ -114,7 +114,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       {/* Nearby Matches */}
       {nearbyMatches.length > 0 && (
         <div className="mb-12">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg font-semibold text-deep-navy mb-4">
             A few nearby possibilities
           </h3>
           <div className="grid gap-4">
@@ -132,7 +132,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       {/* Discovery Mix */}
       {discoveryMix.length > 0 && (
         <div className="mb-12">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <h3 className="text-lg font-semibold text-deep-navy mb-4">
             Something you may not have considered
           </h3>
           <div className="grid gap-4">
@@ -148,12 +148,12 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       )}
 
       {/* Actions */}
-      <div className="border-t border-gray-200 dark:border-gray-700 pt-8 mt-12">
+      <div className="border-t border-light-grey pt-8 mt-12">
         <div className="flex flex-wrap gap-3">
           {onShowAnother && (
             <button
               onClick={onShowAnother}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-light-grey text-deep-navy hover:bg-muted-cream transition-colors"
             >
               <Redo2 className="w-4 h-4" />
               Show another list
@@ -162,7 +162,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
           {onChangeAnswers && (
             <button
               onClick={onChangeAnswers}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-light-grey text-deep-navy hover:bg-muted-cream transition-colors"
             >
               <Edit2 className="w-4 h-4" />
               Change my answers
@@ -171,7 +171,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
           {onStartOver && (
             <button
               onClick={onStartOver}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-light-grey text-deep-navy hover:bg-muted-cream transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               Start over
@@ -180,7 +180,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
           {onBrowseDirectory && (
             <button
               onClick={onBrowseDirectory}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-muted-cream0 hover:bg-soft-gold text-white transition-colors"
             >
               <Grid className="w-4 h-4" />
               Browse the full directory
@@ -204,14 +204,14 @@ const OrganizationCard: React.FC<{
   return (
     <Link
       to={`/org/${org.ein}`}
-      className="block p-5 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md dark:hover:shadow-lg transition-shadow bg-white dark:bg-gray-800"
+      className="block p-5 rounded-lg border border-light-grey hover:shadow-md transition-shadow bg-warm-cream"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-1 truncate">
+          <h4 className="font-semibold text-deep-navy mb-1 truncate">
             {org.organization_name}
           </h4>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          <p className="text-sm text-cool-grey mb-3">
             {org.city}, {org.state}
           </p>
 
@@ -221,7 +221,7 @@ const OrganizationCard: React.FC<{
               {org.cause_tags.slice(0, 2).map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  className="text-xs px-2 py-1 rounded-full bg-muted-cream text-deep-navy"
                 >
                   {tag}
                 </span>
@@ -235,7 +235,7 @@ const OrganizationCard: React.FC<{
               {badges.map((badge) => (
                 <span
                   key={badge}
-                  className="text-xs px-2 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                  className="text-xs px-2 py-1 rounded-full bg-muted-cream text-deep-navy"
                 >
                   ✓ {badge}
                 </span>
@@ -244,10 +244,10 @@ const OrganizationCard: React.FC<{
           )}
 
           {/* Explanation */}
-          <p className="text-sm text-gray-600 dark:text-gray-400">{explanation}</p>
+          <p className="text-sm text-cool-grey">{explanation}</p>
         </div>
 
-        <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-600 flex-shrink-0 mt-1" />
+        <ChevronRight className="w-5 h-5 text-cool-grey flex-shrink-0 mt-1" />
       </div>
     </Link>
   )

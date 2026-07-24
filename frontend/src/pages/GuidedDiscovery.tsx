@@ -152,8 +152,21 @@ export default function GuidedDiscovery() {
           per_page: 100,
         })
 
+        // Transform API response (uppercase EIN) to component format (lowercase ein)
+        const transformedOrgs = (orgs.organizations || []).map((org: any) => ({
+          ein: org.EIN,
+          organization_name: org.organization_name,
+          city: org.CITY,
+          state: org.STATE,
+          website_status: org.website_status,
+          open_to_volunteers: org.open_to_volunteers,
+          cause_tags: org.cause_tags,
+          tax_prd_yr: org.latest_tax_year,
+          mission: org.mission,
+        }))
+
         const { closeMatches, nearbyMatches, discoveryMix } = buildShortlist(
-          orgs.organizations || [],
+          transformedOrgs,
           state
         )
 
