@@ -1,4 +1,46 @@
-## 2026-07-22 — Volunteer hours: nonprofit self-service events, not a nonprofit-entry model
+## 2026-07-24: Guided Discovery Phase 1 Implementation (Core Flow + Infrastructure)
+
+**Problem:** Directory alone is overwhelming for donors who care about a cause but don't know which organizations to search for. Need a complementary guided path (not replacement for search).
+
+**Chose:** Implement /discover as 5-step questionnaire (purpose → cause → place → connection → results) using existing directory APIs, no opaque AI, no profiling, no payment influence.
+
+**Phase 1 Delivered (2026-07-24):**
+- ✅ 5-step questionnaire UI (DiscoveryProgress, DiscoveryQuestion, DiscoveryChoice components)
+- ✅ State management via URL params (shareable results without PII)
+- ✅ Navigation controls (back, skip optional questions, start over)
+- ✅ Home page placement with UX parity to search bar (equal visual dignity)
+- ✅ Privacy-first analytics (track completion, abandonment, criteria changes — no emails/IDs/wallet)
+- ✅ Accessibility (keyboard nav, screen readers, 375px mobile, reduced motion)
+- ✅ All 14 QA acceptance criteria ready for testing
+
+**Phase 2 (next, ~1.5 days):**
+- Result algorithm using existing `/api/organizations` filters (NTEE, state, proximity, website, volunteer)
+- Deterministic shortlist builder with transparency ("Why it is here" explanations)
+- Display grouping (Close / Nearby / Discovery)
+- Edge case handling (zero results, <20 results, no silent broadening)
+
+**Stewardship Compliance:**
+- P1 (Mission before growth): Complement to search, not a upsell funnel
+- P3 (Trust signals): No hidden ranking, all results explained by user's selections
+- P4 (Small orgs fairness): Discovery filters by criteria, not by score (equal visibility)
+- P5 (Dignity): No shame framing, no pressure language, "starting point" not "best match"
+- P7 (Independence): Deterministic algorithm, no paid placement, no vendor influence
+
+**Why This Approach:**
+- Transparent + reversible + respectful of user agency (matches Daanaa principles)
+- Uses existing infrastructure (directory filters, search APIs)
+- First version requires no AI (defer to v2)
+- Measurable by completion rate, return visits, org opens
+- Can A/B test with 50% users seeing link initially
+
+**Rejected alternatives:**
+- Opaque recommendation model (violates P3, P7)
+- ML-based personalization (violates P2 privacy, deferred to v2)
+- Heavy screening questionnaire (too much friction, abandonment risk)
+- Embed discovery in /directory (separate path allows independent iteration)
+
+---
+
 ## 2026-07-24: Search Performance Root-Cause Fix (FTS Index Out of Sync)
 
 **Problem:** Search and events pages hanging with 60+ second timeouts

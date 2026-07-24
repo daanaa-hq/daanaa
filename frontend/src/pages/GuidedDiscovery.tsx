@@ -95,6 +95,11 @@ export default function GuidedDiscovery() {
   })
 
   const [results, setResults] = useState<any[]>([])
+  const [resultGroups, setResultGroups] = useState<{
+    closeMatches: any[]
+    nearbyMatches: any[]
+    discoveryMix: any[]
+  }>({ closeMatches: [], nearbyMatches: [], discoveryMix: [] })
   const [loading, setLoading] = useState(false)
   const [explanations, setExplanations] = useState<Record<string, string>>({})
 
@@ -138,6 +143,7 @@ export default function GuidedDiscovery() {
 
         const allResults = [...closeMatches, ...nearbyMatches, ...discoveryMix]
         setResults(allResults)
+        setResultGroups({ closeMatches, nearbyMatches, discoveryMix })
 
         // Generate explanations
         const expl: Record<string, string> = {}
@@ -193,10 +199,11 @@ export default function GuidedDiscovery() {
   }
 
   const handleShowAnother = () => {
-    // Shuffle results without changing criteria
+    // Shuffle results without changing criteria (re-order discovery mix)
     const { closeMatches, nearbyMatches, discoveryMix } = buildShortlist(results, state)
     const allResults = [...closeMatches, ...nearbyMatches, ...discoveryMix]
     setResults(allResults)
+    setResultGroups({ closeMatches, nearbyMatches, discoveryMix })
 
     window.plausible?.('another_list_requested')
   }
@@ -414,19 +421,12 @@ export default function GuidedDiscovery() {
       )
     }
 
-    const closeMatches = results.slice(0, Math.ceil(results.length * 0.5))
-    const nearbyMatches = results.slice(
-      Math.ceil(results.length * 0.5),
-      Math.ceil(results.length * 0.85)
-    )
-    const discoveryMix = results.slice(Math.ceil(results.length * 0.85))
-
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 py-12">
         <DiscoveryResults
-          closeMatches={closeMatches}
-          nearbyMatches={nearbyMatches}
-          discoveryMix={discoveryMix}
+          closeMatches={resultGroups.closeMatches}
+          nearbyMatches={resultGroups.nearbyMatches}
+          discoveryMix={resultGroups.discoveryMix}
           onShowAnother={handleShowAnother}
           onChangeAnswers={handleChangeAnswers}
           onStartOver={handleStartOver}
