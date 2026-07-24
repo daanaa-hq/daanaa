@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { EventInterestModal } from '../components/EventInterestModal'
 import {
   getEventDetail,
   signupForEvent,
@@ -45,7 +46,7 @@ function formatTime(t: string | null) {
   return `${h % 12 || 12}:${String(min).padStart(2, '0')} ${ampm}`
 }
 
-function ShareBar({ event }: { event: VolunteerEvent }) {
+function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInterestClick: () => void }) {
   const [copied, setCopied] = useState(false)
   const shortUrl = event.short_id
     ? `https://daanaa.org/e/${event.short_id}`
@@ -139,6 +140,17 @@ function ShareBar({ event }: { event: VolunteerEvent }) {
         </svg>
         Add to calendar
       </a>
+
+      {/* Interest button */}
+      <button
+        onClick={onInterestClick}
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-soft-gold/10 border border-soft-gold/30 font-body text-[13px] text-soft-gold hover:bg-soft-gold/20 transition-colors font-semibold"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        Interested
+      </button>
 
       {/* QR code (download) */}
       <a
@@ -429,6 +441,8 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [signupCount, setSignupCount] = useState(0)
+  const [interestModalOpen, setInterestModalOpen] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const cancelToken = searchParams.get('cancel')
 
   usePageMeta(
@@ -624,7 +638,7 @@ export default function EventDetailPage() {
             <p className="font-body text-[13px] text-cool-grey mb-3">
               Share this event — no account needed to sign up.
             </p>
-            <ShareBar event={event} />
+            <ShareBar event={event} onInterestClick={() => setInterestModalOpen(true)} />
           </section>
 
           {/* Org snippet */}
@@ -693,6 +707,29 @@ export default function EventDetailPage() {
         >
           ← Browse all events
         </Link>
+
+        {/* Success message */}
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+            <p className="font-body text-[13px] text-green-700">{successMessage}</p>
+          </div>
+        )}
+
+        {/* Interest modal */}
+        {interestModalOpen && event.ein && (
+          <EventInterestModal
+            eventId={String(event.id)}
+            eventTitle={event.title}
+            orgEin={event.ein || ''}
+            orgName={event.org_name || 'Organization'}
+            onClose={() => setInterestModalOpen(false)}
+            onSuccess={() => {
+              setSuccessMessage('Thank you! The organization will review your interest.')
+              setInterestModalOpen(false)
+              setTimeout(() => setSuccessMessage(''), 4000)
+            }}
+          />
+        )}
       </div>
     </div>
   )
