@@ -2191,9 +2191,9 @@ def list_organizations():
         params.append(tier)
 
     # total_revenue and merit_score are opt-in sorts; the default is neutral
-    # name order so browse never implies a ranking.
+    # name order so browse never implies a ranking. random is seeded shuffle for discovery.
     allowed_sorts = ['organization_name', 'ntee1_percentile', 'EIN', 'STATE', 'CITY',
-                     'total_revenue']
+                     'total_revenue', 'random']
     if sort_by not in allowed_sorts:
         sort_by = 'organization_name'
     if order not in ['asc', 'desc']:
