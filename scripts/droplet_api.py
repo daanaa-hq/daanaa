@@ -854,6 +854,7 @@ def get_organizations():
     hidden_gem         = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding      = request.args.get('needs_funding', '').strip() == '1'
     has_website        = request.args.get('has_website', '').strip() == '1'
+    has_revenue        = request.args.get('has_revenue', '').strip() == '1'
     open_to_volunteers = request.args.get('open_to_volunteers', '').strip() == '1'
     order = request.args.get('order', '').strip()
     tier  = request.args.get('tier', '').strip()
@@ -976,6 +977,8 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
             conditions.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
         if has_website:
             conditions.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
+        if has_revenue:
+            conditions.append("total_revenue IS NOT NULL AND total_revenue > 0")
         if open_to_volunteers and _search_db_has_org_claims(conn):
             conditions.append(
                 "EIN IN (SELECT ein FROM org_claims WHERE volunteer_contact_email IS NOT NULL AND volunteer_contact_email != '')"
@@ -1039,6 +1042,8 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
             conditions.append("o.months_of_reserve IS NOT NULL AND o.months_of_reserve < 6")
         if has_website:
             conditions.append("o.website IS NOT NULL AND o.website != '' AND o.website_status = 'ok'")
+        if has_revenue:
+            conditions.append("o.total_revenue IS NOT NULL AND o.total_revenue > 0")
         if open_to_volunteers and _search_db_has_org_claims(conn):
             conditions.append(
                 "o.EIN IN (SELECT ein FROM org_claims WHERE volunteer_contact_email IS NOT NULL AND volunteer_contact_email != '')"

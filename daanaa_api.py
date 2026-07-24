@@ -2061,6 +2061,7 @@ def list_organizations():
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
+    has_revenue = request.args.get('has_revenue', '').strip() == '1'
     open_to_volunteers = request.args.get('open_to_volunteers', '').strip() == '1'
     recent = request.args.get('recent', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
@@ -2159,6 +2160,8 @@ def list_organizations():
         where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
     if has_website:
         where_clauses.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
+    if has_revenue:
+        where_clauses.append("total_revenue IS NOT NULL AND total_revenue > 0")
     if open_to_volunteers:
         where_clauses.append("r.EIN IN (SELECT ein FROM org_claims WHERE volunteer_contact_email IS NOT NULL AND volunteer_contact_email != '')")
     nearby_meta = None

@@ -25,11 +25,12 @@ const SCORES_ENABLED = import.meta.env.VITE_ENABLE_SCORES !== 'false'
 
 // Neutral default (2026-07-04 stewardship fix): name A to Z, never a score
 // ranking. Peer Financial Context stays available as an explicit opt-in sort.
-// P7 Stewardship: No ranking sorts. Only neutral options.
-// (2026-07-24: Removed 'Top Performers' and 'Largest Orgs' rankings per P7 independence principle)
+// P7 Stewardship: Only neutral sorts. Revenue is data (not ranking).
+// (2026-07-24: Removed score-based 'Top Performers' ranking; kept revenue sort for transparency)
 const SORT_OPTIONS = [
   { id: 'random', label: '🎲 Shuffle' },  // Discovery-first (2026-07-24)
   { id: 'organization_name', label: 'Name A to Z' },  // Neutral control, no ranking
+  { id: 'total_revenue', label: 'By Total Revenue' },  // Data transparency, not ranking
 ]
 
 function hasKnownDataSource(src: string | null) {
@@ -99,6 +100,7 @@ export default function Directory() {
   })
   const [subFilters, setSubFilters] = useState<string[]>(subParamList)
   const [stateFilter, setStateFilter] = useState(stateParam)
+  const [showOnlyWithRevenue, setShowOnlyWithRevenue] = useState(false)  // Toggle: filter to orgs with revenue data
   // Discovery default (2026-07-24): seeded random shuffle for engagement + fairness.
   // Users can opt to 'organization_name' (A-Z) or other sorts. Shuffle is P7-compliant:
   // random order is neutral (equal probability for all orgs, no ranking by size/name/score).
@@ -232,6 +234,7 @@ export default function Directory() {
       min_revenue: minRevenue > 0 ? minRevenue : undefined,
       max_revenue: maxRevenue < 500_000_000 ? maxRevenue : undefined,
       verified_revenue: verifiedRevenueOnly || undefined,
+      has_revenue: showOnlyWithRevenue || undefined,  // Filter to orgs with revenue data
       has_website: hasWebsite || undefined,
       hidden_gem: effectiveHiddenGem || undefined,
       needs_funding: needsSupport || undefined,
@@ -519,6 +522,9 @@ export default function Directory() {
               { key: 'ns', label: 'Needs support', tip: 'Fewer than six months of operating reserves. An invitation to support, not a judgment of the work.', on: needsSupport, color: '#7C3AED', textOn: '#FFFFFF',
                 icon: <><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></>,
                 toggle: () => { setNeedsSupport(!needsSupport); setCurrentPage(1); scrollTop() } },
+              { key: 'rev', label: 'Has revenue data', tip: 'Show only orgs with reported financial data.', on: showOnlyWithRevenue, color: '#059669', textOn: '#FFFFFF',
+                icon: <><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></>,
+                toggle: () => { setShowOnlyWithRevenue(!showOnlyWithRevenue); setCurrentPage(1); scrollTop() } },
             ].map(t => (
               <button
                 key={t.key}
