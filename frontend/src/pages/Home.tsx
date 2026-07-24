@@ -75,17 +75,40 @@ function HeroSection() {
         </p>
 
         <div className={`mt-8 max-w-[560px] mx-auto transition-all duration-700 ease-out delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+          <p className="text-soft-gold text-sm mb-3 font-semibold">Search by name, cause, city, or ZIP code</p>
           <SearchBar
             value={query}
             onChange={setQuery}
             onSearch={handleSearch}
             dark
-            placeholder="Search by name, cause, or city…"
+            placeholder="Search the directory…"
           />
         </div>
 
+        <div className={`mt-10 max-w-[560px] mx-auto transition-all duration-700 ease-out delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+          <p className="text-soft-gold text-sm mb-3 font-semibold">Not sure where to begin?</p>
+          <p
+            className="font-body text-[14px] leading-relaxed mb-4 transition-all duration-700 ease-out"
+            style={{ color: 'rgb(var(--warm-cream-rgb) / 0.80)' }}
+          >
+            Answer a few simple questions to find a short list of organizations to explore.
+          </p>
+          <Link
+            to="/discover"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-soft-gold hover:bg-bright-gold text-deep-navy font-semibold rounded-lg transition-colors"
+          >
+            Start guided discovery
+          </Link>
+          <p
+            className="mt-3 font-body text-[12px] transition-all duration-700 ease-out"
+            style={{ color: 'rgb(var(--warm-cream-rgb) / 0.65)' }}
+          >
+            Your answers help narrow the directory. Daanaa does not rank organizations or tell you where to give. Each result is a starting point for your own review.
+          </p>
+        </div>
+
         <p
-          className={`mt-5 font-body text-[14px] transition-all duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
+          className={`mt-8 font-body text-[14px] transition-all duration-700 ease-out ${mounted ? 'opacity-100' : 'opacity-0'}`}
           style={{ color: 'rgb(var(--warm-cream-rgb) / 0.55)', transitionDelay: '450ms' }}
         >
           or{' '}

@@ -9,6 +9,7 @@ import NonprofitRoute from './components/NonprofitRoute'
 
 const Home = lazy(() => import('./pages/Home'))
 const Directory = lazy(() => import('./pages/Directory'))
+const GuidedDiscovery = lazy(() => import('./pages/GuidedDiscovery'))
 const CategoryPage = lazy(() => import('./pages/CategoryPage'))
 const OrganizationDetail = lazy(() => import('./pages/OrganizationDetail'))
 const ComparePage = lazy(() => import('./pages/ComparePage'))
@@ -106,6 +107,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
             <Route path="/directory" element={<Directory />} />
+            <Route path="/discover" element={<GuidedDiscovery />} />
             <Route path="/category/:id" element={<CategoryPage />} />
             <Route path="/causes/:id" element={<CauseSpotlight />} />
             {/* /org/login must exist: a Cloudflare rule 301s /nonprofit/login
