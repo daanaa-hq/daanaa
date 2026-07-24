@@ -510,8 +510,12 @@ def _order_clause(sort: str, order: str, alias: str = '') -> str:
     Unspecified sort falls back to neutral name order (2026-07-04: browse must
     never imply a ranking; merit_score sort is explicit opt-in only).
     COALESCE keeps NULLs last (and, per the 2026-06-09 note, avoids the score
-    index forcing a row-by-row probe on filtered browses)."""
+    index forcing a row-by-row probe on filtered browses).
+    Random sort returns empty string; shuffle happens in-memory after fetch."""
     o = (order or '').strip().lower()
+    if sort == 'random':
+        # Shuffle handled in-memory after fetch, not in SQL
+        return ""
     if sort in ('revenue', 'total_revenue'):
         d = 'ASC' if o == 'asc' else 'DESC'
         return f"COALESCE({alias}total_revenue, -1) {d}"
@@ -846,6 +850,7 @@ def get_organizations():
     state    = request.args.get('state', '').strip().upper()
     q        = request.args.get('q', '').strip()
     sort     = request.args.get('sort', '').strip()
+    shuffle_seed = request.args.get('seed', '').strip()[:50]  # Session seed for seeded random shuffle
     try:
         page     = max(1, int(request.args.get('page', 1)))
         per_page = min(100, max(1, int(request.args.get('per_page', PER_PAGE_DEFAULT))))
@@ -890,7 +895,7 @@ def get_organizations():
     if q and len(q) >= 2:
         return _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                               state, sort, page, per_page,
-                              hidden_gem, needs_funding, has_website, has_revenue, order, tier,
+                              hidden_gem, needs_funding, has_website, has_revenue, shuffle_seed, order, tier,
                               open_to_volunteers=open_to_volunteers,
                               nearby_zips=nearby_zips, nearby_meta=nearby_meta)
 
@@ -914,7 +919,7 @@ def get_organizations():
     if any_filter or multi_select or explicit_sort or min_rev is not None or max_rev is not None:
         return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                                  state, sort, page, per_page,
-                                 hidden_gem, needs_funding, has_website, has_revenue, order, tier,
+                                 hidden_gem, needs_funding, has_website, has_revenue, shuffle_seed, order, tier,
                                  open_to_volunteers=open_to_volunteers,
                                  nearby_zips=nearby_zips, nearby_meta=nearby_meta,
                                  verified_revenue_only=verified_revenue_only)
@@ -958,7 +963,7 @@ def get_organizations():
 
 def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                       state, sort, page, per_page,
-                      hidden_gem, needs_funding, has_website, has_revenue=False, order='', tier='',
+                      hidden_gem, needs_funding, has_website, has_revenue=False, shuffle_seed='', order='', tier='',
                       open_to_volunteers=False, nearby_zips=None, nearby_meta=None, verified_revenue_only=False):
     """Query orgs table directly with filter conditions but no FTS match."""
     conn = get_search_db()
@@ -1000,10 +1005,29 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
 
         total = conn.execute(f"SELECT COUNT(*) FROM registry_enriched {where}", params).fetchone()[0]
         offset = (page - 1) * per_page
-        rows = conn.execute(
-            f"SELECT * FROM registry_enriched {where} ORDER BY {order_by} LIMIT ? OFFSET ?",
-            params + [per_page, offset]
-        ).fetchall()
+
+        # When shuffling with seed, fetch all results and shuffle in-memory
+        # Otherwise use LIMIT/OFFSET for pagination
+        if sort == 'random' and shuffle_seed:
+            query_sql = f"SELECT * FROM registry_enriched {where}"
+            if order_by:  # This should be empty for random sort, but just in case
+                query_sql += f" ORDER BY {order_by}"
+            rows = conn.execute(query_sql, params).fetchall()
+        else:
+            query_sql = f"SELECT * FROM registry_enriched {where}"
+            if order_by:
+                query_sql += f" ORDER BY {order_by}"
+            query_sql += " LIMIT ? OFFSET ?"
+            rows = conn.execute(query_sql, params + [per_page, offset]).fetchall()
+
+        # If seeded shuffle, shuffle rows and then paginate
+        if sort == 'random' and shuffle_seed:
+            import random
+            rng = random.Random(shuffle_seed)
+            rows_list = list(rows)
+            rng.shuffle(rows_list)
+            rows = rows_list[offset:offset + per_page]
+
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
         resp = {'organizations': orgs, 'total': total,
@@ -1021,7 +1045,7 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
 
 def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                    state, sort, page, per_page,
-                   hidden_gem, needs_funding, has_website, has_revenue=False, order='', tier='',
+                   hidden_gem, needs_funding, has_website, has_revenue=False, shuffle_seed='', order='', tier='',
                    open_to_volunteers=False, nearby_zips=None, nearby_meta=None):
     """FTS search against search.db orgs table, returns full org objects."""
     conn = get_search_db()
@@ -1094,15 +1118,34 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         ).fetchone()[0]
 
         offset = (page - 1) * per_page
-        rows_sql = (
-            f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
-            f"ORDER BY rank LIMIT {cand_cap}) "
-            f"SELECT o.* FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
-            f"WHERE 1=1{o_where} "
-            f"ORDER BY {order} "
-            f"LIMIT ? OFFSET ?"
-        )
-        rows = conn.execute(rows_sql, [fts_q] + o_params + [per_page, offset]).fetchall()
+
+        # When shuffling with seed, fetch all results and shuffle in-memory
+        # Otherwise use LIMIT/OFFSET for pagination
+        if sort == 'random' and shuffle_seed:
+            rows_sql = (
+                f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+                f"ORDER BY rank LIMIT {cand_cap}) "
+                f"SELECT o.* FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
+                f"WHERE 1=1{o_where}"
+            )
+            rows = conn.execute(rows_sql, [fts_q] + o_params).fetchall()
+            # Shuffle in-memory after fetch
+            import random
+            rng = random.Random(shuffle_seed)
+            rows_list = list(rows)
+            rng.shuffle(rows_list)
+            rows = rows_list[offset:offset + per_page]
+        else:
+            rows_sql = (
+                f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
+                f"ORDER BY rank LIMIT {cand_cap}) "
+                f"SELECT o.* FROM c CROSS JOIN registry_enriched o ON o.EIN = c.ein "
+                f"WHERE 1=1{o_where} "
+                f"ORDER BY {order} "
+                f"LIMIT ? OFFSET ?"
+            )
+            rows = conn.execute(rows_sql, [fts_q] + o_params + [per_page, offset]).fetchall()
+
         orgs = [_row_to_org(r) for r in rows]
         pages = max(1, (total + per_page - 1) // per_page)
         resp = {'organizations': orgs, 'total': total,
