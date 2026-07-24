@@ -250,9 +250,17 @@ swap() {
 # ============================================================
 frontend_build() {
   log "===== STAGE 6: Frontend build (research snapshot + SPA) ====="
-  log "  regenerating research-snapshot.json from snapshot DB..."
-  MERIT_DB_PATH="$SNAPSHOT" python3 scripts/export_research_snapshot.py >>"$LOG" 2>&1 \
-    || die "research snapshot export failed"
+  # For full deploys: regenerate from snapshot DB (precompute refreshed data).
+  # For frontend-only: reuse committed snapshot (preserve published research figures).
+  if [ -s "$SNAPSHOT" ]; then
+    log "  regenerating research-snapshot.json from snapshot DB..."
+    MERIT_DB_PATH="$SNAPSHOT" python3 scripts/export_research_snapshot.py >>"$LOG" 2>&1 \
+      || die "research snapshot export failed"
+  else
+    log "  reusing committed research-snapshot.json (frontend-only path)"
+    [ -f "$FRONTEND_LOCAL/public/research-snapshot.json" ] \
+      || die "research-snapshot.json not found in $FRONTEND_LOCAL/public — unable to build"
+  fi
   log "  npm run build (bundles research snapshot + methodology + all pages)..."
   ( cd "$FRONTEND_LOCAL" && npm run build ) >>"$LOG" 2>&1 || die "frontend build failed"
   [ -f "$FRONTEND_LOCAL/dist/index.html" ] || die "frontend dist/index.html missing after build"
