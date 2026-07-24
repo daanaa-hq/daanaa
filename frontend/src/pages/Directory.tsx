@@ -141,6 +141,7 @@ export default function Directory() {
   // intentional advanced-field value.
   const nearFromSearchBarRef = useRef(false)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [randomizeCount, setRandomizeCount] = useState(0)  // Trigger refetch when randomize button clicked
   const [cause, setCause] = useState(searchParams.get('cause') || '')
   const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
@@ -238,7 +239,7 @@ export default function Directory() {
       near: near || undefined,
       radius_mi: near ? radiusMi : undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, verifiedRevenueOnly, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, verifiedRevenueOnly, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi, randomizeCount]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(
@@ -1034,6 +1035,23 @@ export default function Directory() {
                           <line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>
                         </svg>
                       </button>
+                      {sortBy === 'random' && (
+                        <button
+                          onClick={() => {
+                            // Generate a new shuffle seed while keeping filters
+                            const newSeed = Math.random().toString(36).slice(2, 11)
+                            sessionShuffleRef.current = newSeed
+                            localStorage.setItem('daanaa_session_seed', newSeed)
+                            // Increment counter to trigger refetch with new seed
+                            setRandomizeCount(c => c + 1)
+                          }}
+                          title="Randomize the list with a new shuffle"
+                          aria-label="Randomize list"
+                          className="inline-flex items-center justify-center px-3 py-1 rounded-md border border-light-grey text-cool-grey hover:text-deep-navy hover:border-cool-grey transition-colors font-body text-[13px] whitespace-nowrap"
+                        >
+                          🎲 Randomize it
+                        </button>
+                      )}
                     </div>
                   )}
                   {/* Grid/List toggle */}
