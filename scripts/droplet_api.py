@@ -1796,30 +1796,15 @@ def volunteer_interest_proxy(ein):
     """Proxy anonymous volunteer interest signals to the live backend."""
     return _live_proxy(f"/api/volunteer-interest/{ein}")
 
-# Event proxy routes disabled 2026-07-24 14:07 — caused timeouts (backend unreachable from droplet)
-# These need a live backend service to proxy to; droplet is static-only.
-# TODO: Re-enable when central event API is available, or implement local event retrieval from precompute.
+@app.route('/api/events/<int:event_id>', methods=['GET'])
+def event_detail_proxy(event_id):
+    """Public event detail endpoint — proxy to live backend."""
+    return _live_proxy(f"/api/events/{event_id}")
 
-# @app.route('/api/org/<ein>/volunteer-events', methods=['GET', 'POST'])
-# def org_volunteer_events_proxy(ein):
-#     return _live_proxy(f"/api/org/{ein}/volunteer-events")
-
-# @app.route("/e/<short_id>", methods=["GET"])
-# def event_short_proxy(short_id):
-#     """Proxy short event links to the live event backend."""
-#     if not re.match(r"^[A-Za-z0-9_-]{6,16}$", short_id):
-#         return "Not found", 404
-#     return _live_proxy(f"/e/{short_id}")
-
-# @app.route('/api/events/<int:event_id>', methods=['GET'])
-# def event_detail_proxy(event_id):
-#     """Public event detail endpoint — proxy to live backend."""
-#     return _live_proxy(f"/api/events/{event_id}")
-
-# @app.route("/api/events/<int:event_id>/<path:subpath>", methods=["GET", "POST", "PATCH", "DELETE"])
-# def event_subroute_proxy(event_id, subpath):
-#     """Proxy event actions and artifacts to the live backend."""
-#     return _live_proxy(f"/api/events/{event_id}/{subpath}")
+@app.route("/api/events/<int:event_id>/<path:subpath>", methods=["GET", "POST", "PATCH", "DELETE"])
+def event_subroute_proxy(event_id, subpath):
+    """Proxy event actions and artifacts to the live backend."""
+    return _live_proxy(f"/api/events/{event_id}/{subpath}")
 
 
 
