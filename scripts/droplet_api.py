@@ -1693,31 +1693,49 @@ def wallet_restore_proxy():
 # Routes that require the full SQLite backend are forwarded through the same
 # reverse SSH tunnel on :5001 used by claims and wallet.
 
-LIVE_UPSTREAM = os.environ.get('CLAIM_UPSTREAM', 'http://127.0.0.1:5001')
+# LIVE_UPSTREAM routes expensive operations to home server (daanaa_api.py).
+# On droplet: use home server hostname or bastion IP.
+# In dev: use localhost:5000.
+# Environment: LIVE_UPSTREAM or CLAIM_UPSTREAM (for backwards compat).
+LIVE_UPSTREAM = os.environ.get('LIVE_UPSTREAM') or os.environ.get('CLAIM_UPSTREAM', 'http://127.0.0.1:5000')
 
 
 def _live_proxy(path: str):
-    """Generic transparent proxy to the home-server backend on :5001."""
+    """Proxy expensive operations to home-server backend (daanaa_api.py).
+
+    Routes: volunteer workflow, profile contexts, admin analytics, email.
+    Timeout: 20s. Preserves auth headers (Authorization, X-Admin-Key).
+    """
     url = f"{LIVE_UPSTREAM}{path}"
     if request.query_string:
         url += '?' + request.query_string.decode('utf-8', errors='replace')
+
     headers = {}
     for hdr in ('Authorization', 'Content-Type', 'X-Admin-Key'):
         val = request.headers.get(hdr)
         if val:
             headers[hdr] = val
+
     body = request.get_data() or None
     req = urllib.request.Request(url, data=body, headers=headers, method=request.method)
+
     try:
         with urllib.request.urlopen(req, timeout=20) as resp:
             return resp.read(), resp.status, {
                 'Content-Type': resp.headers.get('Content-Type', 'application/json')
             }
     except urllib.error.HTTPError as e:
+        # Home server returned an error — pass it through
         return e.read(), e.code, {
             'Content-Type': e.headers.get('Content-Type', 'application/json')
         }
-    except Exception:
+    except urllib.error.URLError as e:
+        # Network error (home server unreachable)
+        print(f"[PROXY ERROR] {path} → {url} | {e}", flush=True)
+        return jsonify({'error': 'Home server unavailable', 'detail': str(e)}), 503
+    except Exception as e:
+        # Unexpected error
+        print(f"[PROXY ERROR] {path} | {type(e).__name__}: {e}", flush=True)
         return jsonify({'error': 'Service temporarily unavailable.'}), 503
 
 

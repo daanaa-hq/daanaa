@@ -982,6 +982,77 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+
+def log_audit_event(event_type: str, org_ein: str = None, user_auth: str = None,
+                   user_role: str = None, success: bool = True, error_code: str = None,
+                   **extra_fields):
+    """
+    Log compliance-friendly audit event (NO PII).
+
+    Fields logged: event_type, timestamp, user_auth (Firebase UID), user_role, org_ein (EIN only),
+    success, error_code, IP (anonymized), user agent (category only).
+
+    Privacy invariants enforced:
+    - NO email addresses, names, or full IPs
+    - NO donor data or giving history
+    - NO wallet data or balances
+    - EIN-only org identification
+    - Firebase UID or 'anonymous'
+    """
+    try:
+        # Anonymize IP: zero last octet
+        client_ip = request.remote_addr or 'unknown'
+        try:
+            parts = client_ip.split('.')
+            if len(parts) == 4:
+                parts[-1] = '0'
+                ip_anon = '.'.join(parts)
+            else:
+                ip_anon = 'unknown'
+        except:
+            ip_anon = 'unknown'
+
+        # Categorize user agent (NO full string)
+        ua_string = (request.user_agent.string or '').lower()
+        if 'mobile' in ua_string or 'android' in ua_string or 'iphone' in ua_string:
+            ua_category = 'mobile'
+        elif 'mozilla' in ua_string or 'chrome' in ua_string or 'safari' in ua_string:
+            ua_category = 'browser'
+        else:
+            ua_category = 'unknown'
+
+        # Prepare audit record (only these fields; no others)
+        db = get_db()
+        db.execute("""
+            INSERT INTO audit_log (
+                event_type, timestamp, user_auth, user_role, org_ein,
+                ip_address_anonymized, user_agent_category,
+                success, error_code,
+                hours_submitted, hours_approved, status, volunteer_event_id, volunteer_context_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            event_type,
+            datetime.utcnow().isoformat(),
+            user_auth,
+            user_role,
+            org_ein,
+            ip_anon,
+            ua_category,
+            success,
+            error_code,
+            extra_fields.get('hours_submitted'),
+            extra_fields.get('hours_approved'),
+            extra_fields.get('status'),
+            extra_fields.get('volunteer_event_id'),
+            extra_fields.get('volunteer_context_id'),
+        ))
+        db.commit()
+    except Exception as e:
+        # Don't crash API if audit logging fails, but log the error
+        print(f"[audit_log ERROR] {event_type}: {e}", file=sys.stderr)
+
+
 def _init_waitlist_table():
     with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
