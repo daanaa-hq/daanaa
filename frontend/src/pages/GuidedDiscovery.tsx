@@ -238,7 +238,7 @@ export default function GuidedDiscovery() {
   if (state.step === 1) {
     const canContinue = state.intent.length > 0
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 py-12">
+      <div className="min-h-screen bg-warm-cream py-12">
         <div className="max-w-2xl mx-auto px-4">
           <DiscoveryProgress currentStep={1} />
           <DiscoveryQuestion
@@ -289,7 +289,7 @@ export default function GuidedDiscovery() {
     }))
 
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 py-12">
+      <div className="min-h-screen bg-warm-cream py-12">
         <div className="max-w-2xl mx-auto px-4">
           <DiscoveryProgress currentStep={2} />
           <DiscoveryQuestion
@@ -341,7 +341,7 @@ export default function GuidedDiscovery() {
     const selectedPlaceId = state.place.split(':')[0]
 
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 py-12">
+      <div className="min-h-screen bg-warm-cream py-12">
         <div className="max-w-2xl mx-auto px-4">
           <DiscoveryProgress currentStep={3} />
           <DiscoveryQuestion
@@ -370,8 +370,8 @@ export default function GuidedDiscovery() {
                   relative w-full text-left p-4 rounded-lg border-2 transition-all
                   ${
                     state.place === 'near-me'
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                      ? 'border-deep-navy bg-muted-cream'
+                      : 'border-light-grey bg-warm-cream hover:border-light-grey'
                   }
                   focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2
                   disabled:opacity-50 disabled:cursor-not-allowed
@@ -382,18 +382,18 @@ export default function GuidedDiscovery() {
                     flex-shrink-0 mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center
                     ${
                       state.place === 'near-me'
-                        ? 'border-blue-500 bg-blue-500'
-                        : 'border-gray-300 dark:border-gray-600'
+                        ? 'border-deep-navy bg-muted-cream0'
+                        : 'border-light-grey'
                     }
                   `}>
                     {state.place === 'near-me' && <span className="text-white text-xs">✓</span>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 dark:text-white">
+                    <h3 className="font-medium text-deep-navy">
                       {geolocating ? 'Getting your location...' : PLACE_OPTIONS[1].label}
                     </h3>
                     {geoError && (
-                      <p className="text-sm text-red-600 dark:text-red-400 mt-1">{geoError}</p>
+                      <p className="text-sm text-alert-amber mt-1">{geoError}</p>
                     )}
                   </div>
                 </div>
@@ -404,11 +404,11 @@ export default function GuidedDiscovery() {
                 relative p-4 rounded-lg border-2 transition-all
                 ${
                   selectedPlaceId === 'custom-zip'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                    ? 'border-deep-navy bg-muted-cream'
+                    : 'border-light-grey bg-warm-cream'
                 }
               `}>
-                <label className="block font-medium text-gray-900 dark:text-white mb-2">
+                <label className="block font-medium text-deep-navy mb-2">
                   A city or ZIP code
                 </label>
                 <input
@@ -421,7 +421,7 @@ export default function GuidedDiscovery() {
                       setState((s) => ({ ...s, place: `custom-zip:${e.target.value.trim()}` }))
                     }
                   }}
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg"
                 />
               </div>
 
@@ -430,11 +430,11 @@ export default function GuidedDiscovery() {
                 relative p-4 rounded-lg border-2 transition-all
                 ${
                   selectedPlaceId === 'custom-state'
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                    ? 'border-deep-navy bg-muted-cream'
+                    : 'border-light-grey bg-warm-cream'
                 }
               `}>
-                <label className="block font-medium text-gray-900 dark:text-white mb-2">
+                <label className="block font-medium text-deep-navy mb-2">
                   A specific state
                 </label>
                 <select
@@ -445,7 +445,7 @@ export default function GuidedDiscovery() {
                       setState((s) => ({ ...s, place: `custom-state:${e.target.value}` }))
                     }
                   }}
-                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">Choose a state...</option>
                   <option value="CA">California</option>
@@ -509,7 +509,7 @@ export default function GuidedDiscovery() {
   // Step 4: Connection
   if (state.step === 4) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 py-12">
+      <div className="min-h-screen bg-warm-cream py-12">
         <div className="max-w-2xl mx-auto px-4">
           <DiscoveryProgress currentStep={4} />
           <DiscoveryQuestion
@@ -561,17 +561,17 @@ export default function GuidedDiscovery() {
   if (state.step === 5) {
     if (loading) {
       return (
-        <div className="min-h-screen bg-white dark:bg-gray-900 py-12 flex items-center justify-center">
+        <div className="min-h-screen bg-warm-cream py-12 flex items-center justify-center">
           <div className="text-center">
             <div className="mb-4 text-4xl">🔍</div>
-            <p className="text-gray-600 dark:text-gray-400">Building your list...</p>
+            <p className="text-cool-grey">Building your list...</p>
           </div>
         </div>
       )
     }
 
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 py-12">
+      <div className="min-h-screen bg-warm-cream py-12">
         <DiscoveryResults
           closeMatches={resultGroups.closeMatches}
           nearbyMatches={resultGroups.nearbyMatches}
