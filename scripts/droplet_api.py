@@ -890,7 +890,7 @@ def get_organizations():
     if q and len(q) >= 2:
         return _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                               state, sort, page, per_page,
-                              hidden_gem, needs_funding, has_website, order, tier,
+                              hidden_gem, needs_funding, has_website, has_revenue, order, tier,
                               open_to_volunteers=open_to_volunteers,
                               nearby_zips=nearby_zips, nearby_meta=nearby_meta)
 
@@ -914,7 +914,7 @@ def get_organizations():
     if any_filter or multi_select or explicit_sort or min_rev is not None or max_rev is not None:
         return _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                                  state, sort, page, per_page,
-                                 hidden_gem, needs_funding, has_website, order, tier,
+                                 hidden_gem, needs_funding, has_website, has_revenue, order, tier,
                                  open_to_volunteers=open_to_volunteers,
                                  nearby_zips=nearby_zips, nearby_meta=nearby_meta,
                                  verified_revenue_only=verified_revenue_only)
@@ -958,7 +958,7 @@ def get_organizations():
 
 def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
                       state, sort, page, per_page,
-                      hidden_gem, needs_funding, has_website, order='', tier='',
+                      hidden_gem, needs_funding, has_website, has_revenue=False, order='', tier='',
                       open_to_volunteers=False, nearby_zips=None, nearby_meta=None, verified_revenue_only=False):
     """Query orgs table directly with filter conditions but no FTS match."""
     conn = get_search_db()
@@ -1021,7 +1021,7 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
 
 def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
                    state, sort, page, per_page,
-                   hidden_gem, needs_funding, has_website, order='', tier='',
+                   hidden_gem, needs_funding, has_website, has_revenue=False, order='', tier='',
                    open_to_volunteers=False, nearby_zips=None, nearby_meta=None):
     """FTS search against search.db orgs table, returns full org objects."""
     conn = get_search_db()
