@@ -3147,6 +3147,15 @@ def org_interest_signal():
         (ein, kind),
     )
     db.commit()
+
+    # Audit log: volunteer interest submitted (no PII, anonymous signal)
+    log_audit_event(
+        event_type='volunteer_interest_submitted',
+        org_ein=ein,
+        user_auth='anonymous',
+        success=True
+    )
+
     return ('', 204)
 
 
@@ -8239,6 +8248,16 @@ def create_profile_context():
         )
 
         context = profile_contexts.get_context_detail(db, context_id)
+
+        # Audit log: profile context created
+        log_audit_event(
+            event_type='profile_context_created',
+            user_auth=uid,
+            user_role='lead',
+            volunteer_context_id=context_id,
+            success=True
+        )
+
         return jsonify({
             'success': True,
             'context_id': context_id,
@@ -8247,6 +8266,16 @@ def create_profile_context():
 
     except Exception as e:
         _logger.error(f"create_profile_context error: {e}")
+
+        # Audit log: profile context creation failed
+        log_audit_event(
+            event_type='profile_context_created',
+            user_auth=uid,
+            user_role='lead',
+            success=False,
+            error_code='CREATION_FAILED'
+        )
+
         return jsonify({'error': str(e)}), 500
 
 
@@ -8308,14 +8337,50 @@ def add_context_member(context_id: str):
             invited_by_uid=uid,
         )
 
+        # Audit log: member invited
+        log_audit_event(
+            event_type='member_invited',
+            user_auth=uid,
+            user_role='support',
+            volunteer_context_id=context_id,
+            success=True
+        )
+
         return jsonify({'success': True, 'invitation_id': invitation_id, 'invited_uid': target_uid, 'role': role}), 201
 
     except ValueError as e:
+        # Audit log: invitation failed (value error)
+        log_audit_event(
+            event_type='member_invited',
+            user_auth=uid,
+            user_role='support',
+            volunteer_context_id=context_id,
+            success=False,
+            error_code='NOT_FOUND'
+        )
         return jsonify({'error': str(e)}), 404
     except PermissionError as e:
+        # Audit log: invitation failed (permission denied)
+        log_audit_event(
+            event_type='member_invited',
+            user_auth=uid,
+            user_role='support',
+            volunteer_context_id=context_id,
+            success=False,
+            error_code='UNAUTHORIZED'
+        )
         return jsonify({'error': str(e)}), 403
     except Exception as e:
         _logger.error(f"add_context_member error: {e}")
+        # Audit log: invitation failed (unexpected error)
+        log_audit_event(
+            event_type='member_invited',
+            user_auth=uid,
+            user_role='support',
+            volunteer_context_id=context_id,
+            success=False,
+            error_code='INTERNAL_ERROR'
+        )
         return jsonify({'error': str(e)}), 500
 
 

@@ -55,8 +55,8 @@ def create_audit_log_table():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
 
             -- User context (NO PII)
-            user_auth TEXT,  -- Firebase UID (hash or token) or 'anonymous'
-            user_role TEXT,  -- 'lead', 'support', 'member', 'viewer', 'admin', NULL
+            user_auth TEXT,
+            user_role TEXT,
 
             -- Organization context (EIN only, NO name/details)
             org_ein TEXT,
@@ -66,46 +66,18 @@ def create_audit_log_table():
             volunteer_context_id INTEGER,
 
             -- Data fields (SANITIZED, no sensitive info)
-            hours_submitted DECIMAL(5,2),
-            hours_approved DECIMAL(5,2),
-            status TEXT,  -- 'pending', 'approved', 'rejected'
+            hours_submitted REAL,
+            hours_approved REAL,
+            status TEXT,
 
             -- Compliance fields
-            ip_address_anonymized TEXT,  -- Last octet zeroed (e.g., "192.168.1.0")
-            user_agent_category TEXT,  -- 'browser', 'mobile', 'unknown'
+            ip_address_anonymized TEXT,
+            user_agent_category TEXT,
 
             -- Result
             success BOOLEAN,
             error_code TEXT,
-            error_message TEXT,
-
-            -- Indexes for efficient queries
-            UNIQUE(id),
-            INDEX event_type_timestamp (event_type, timestamp),
-            INDEX org_ein_timestamp (org_ein, timestamp),
-            INDEX user_auth_timestamp (user_auth, timestamp),
-            INDEX volunteer_event_id (volunteer_event_id),
-            CONSTRAINT valid_event_type CHECK (event_type IN (
-                'volunteer_interest_submitted',
-                'volunteer_interest_batch',
-                'event_claimed',
-                'event_claim_rejected',
-                'hours_logged',
-                'hours_approved',
-                'hours_rejected',
-                'profile_context_created',
-                'profile_context_updated',
-                'member_invited',
-                'member_joined',
-                'member_removed',
-                'member_role_changed',
-                'email_sent',
-                'email_failed',
-                'admin_query_executed',
-                'discovery_queue_processed',
-                'org_claimed',
-                'claim_verified'
-            ))
+            error_message TEXT
         )
     """)
 
