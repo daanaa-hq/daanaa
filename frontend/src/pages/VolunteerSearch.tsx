@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { searchVolunteerEvents, type VolunteerEvent, type EventType } from '../data/api'
@@ -128,6 +128,7 @@ export default function VolunteerSearch() {
   const [loading, setLoading]   = useState(false)
   const [events, setEvents]     = useState<VolunteerEvent[]>([])
   const [error, setError]       = useState(false)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   const search = useCallback(async () => {
     setLoading(true)
@@ -145,6 +146,25 @@ export default function VolunteerSearch() {
       setLoading(false)
     }
   }, [zip, city, state, virtual, eventType])
+
+  // Auto-load nationwide events on page mount
+  useEffect(() => {
+    if (isInitialLoad) {
+      setLoading(true)
+      setError(false)
+      setSearched(true)
+      searchVolunteerEvents({})
+        .then(result => {
+          setEvents(result.events.slice(0, 10)) // Show top 10 events
+          setIsInitialLoad(false)
+        })
+        .catch(() => {
+          setError(true)
+          setIsInitialLoad(false)
+        })
+        .finally(() => setLoading(false))
+    }
+  }, [])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -274,18 +294,18 @@ export default function VolunteerSearch() {
           </div>
         )}
 
-        {!loading && !error && !searched && (
-          <div className="text-center py-12">
-            <p className="font-body text-[15px] text-cool-grey">
-              Enter a zip code or city above to find volunteer opportunities.
+        {!loading && !error && searched && events.length === 0 && (
+          <div className="text-center py-16">
+            <p className="font-body text-[18px] text-deep-navy font-display italic mb-2">No events found</p>
+            <p className="font-body text-[14px] text-cool-grey max-w-sm mx-auto leading-[1.7]">
+              Try different search filters. Events are added by verified nonprofits — if your local orgs aren't listed yet, they may not have claimed their page.
             </p>
-            <p className="font-body text-[13px] text-cool-grey mt-2">
-              Are you a nonprofit?{' '}
-              <Link to="/for-nonprofits" className="text-soft-gold hover:text-bright-gold font-semibold">
-                Claim your page
-              </Link>{' '}
-              to post events.
-            </p>
+            <Link
+              to="/directory"
+              className="mt-6 inline-block font-body text-[13px] text-soft-gold hover:text-bright-gold font-semibold"
+            >
+              Browse nonprofits in the directory →
+            </Link>
           </div>
         )}
 
