@@ -30,11 +30,11 @@ export const DiscoveryQuestion: React.FC<DiscoveryQuestionProps> = ({
     <div className="max-w-2xl mx-auto px-4">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+        <h1 className="text-3xl font-bold font-display text-deep-navy mb-2">
           {heading}
         </h1>
         {subheading && (
-          <p className="text-lg text-gray-600 dark:text-gray-400">{subheading}</p>
+          <p className="text-lg text-cool-grey">{subheading}</p>
         )}
       </div>
 
@@ -47,7 +47,7 @@ export const DiscoveryQuestion: React.FC<DiscoveryQuestionProps> = ({
           {showBack && onBack && (
             <button
               onClick={onBack}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-light-grey text-deep-navy hover:bg-muted-cream transition-colors"
               aria-label="Go back to previous question"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -57,7 +57,7 @@ export const DiscoveryQuestion: React.FC<DiscoveryQuestionProps> = ({
           {showStartOver && onStartOver && (
             <button
               onClick={onStartOver}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-light-grey text-deep-navy hover:bg-muted-cream transition-colors"
               aria-label="Start over from the beginning"
             >
               <RotateCcw className="w-4 h-4" />
@@ -74,8 +74,8 @@ export const DiscoveryQuestion: React.FC<DiscoveryQuestionProps> = ({
               inline-flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-colors
               ${
                 canContinue
-                  ? 'bg-blue-500 hover:bg-blue-600 text-white'
-                  : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                  ? 'bg-soft-gold hover:bg-bright-gold text-deep-navy'
+                  : 'bg-light-grey text-cool-grey cursor-not-allowed'
               }
             `}
           >

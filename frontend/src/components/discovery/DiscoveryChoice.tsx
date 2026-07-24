@@ -27,10 +27,10 @@ export const DiscoveryChoice: React.FC<DiscoveryChoiceProps> = ({
         relative w-full text-left p-4 rounded-lg border-2 transition-all
         ${
           selected
-            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+            ? 'border-soft-gold bg-muted-cream'
+            : 'border-light-grey bg-warm-cream hover:border-cool-grey'
         }
-        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold focus-visible:ring-offset-2
       `}
       aria-pressed={selected}
       role="checkbox"
@@ -43,22 +43,22 @@ export const DiscoveryChoice: React.FC<DiscoveryChoiceProps> = ({
             flex-shrink-0 mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center
             ${
               selected
-                ? 'border-blue-500 bg-blue-500'
-                : 'border-gray-300 dark:border-gray-600'
+                ? 'border-soft-gold bg-soft-gold'
+                : 'border-light-grey'
             }
           `}
         >
-          {selected && <Check className="w-3 h-3 text-white" />}
+          {selected && <Check className="w-3 h-3 text-deep-navy" />}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {icon && <span className="flex-shrink-0 text-lg">{icon}</span>}
-            <h3 className="font-medium text-gray-900 dark:text-white">{label}</h3>
+            <h3 className="font-medium text-deep-navy">{label}</h3>
           </div>
           {description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{description}</p>
+            <p className="text-sm text-cool-grey mt-1">{description}</p>
           )}
         </div>
       </div>

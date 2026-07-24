@@ -77,8 +77,8 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto px-4">
-      <h2 className="text-3xl font-bold text-deep-navy mb-2">{title}</h2>
-      <p className="text-cool-grey mb-8">{subtitle}</p>
+      <h2 className="text-3xl font-bold font-display text-deep-navy mb-2">{title}</h2>
+      <p className="text-cool-grey font-body mb-8">{subtitle}</p>
 
       {showTooFew && (
         <div className="bg-muted-cream border border-blue-200 rounded-lg p-4 mb-8 text-sm text-deep-navy">
@@ -96,7 +96,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       {/* Close Matches */}
       {closeMatches.length > 0 && (
         <div className="mb-12">
-          <h3 className="text-lg font-semibold text-deep-navy mb-4">
+          <h3 className="text-lg font-semibold font-display text-deep-navy mb-4">
             Close to what you selected
           </h3>
           <div className="grid gap-4">
@@ -114,7 +114,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       {/* Nearby Matches */}
       {nearbyMatches.length > 0 && (
         <div className="mb-12">
-          <h3 className="text-lg font-semibold text-deep-navy mb-4">
+          <h3 className="text-lg font-semibold font-display text-deep-navy mb-4">
             A few nearby possibilities
           </h3>
           <div className="grid gap-4">
@@ -132,7 +132,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       {/* Discovery Mix */}
       {discoveryMix.length > 0 && (
         <div className="mb-12">
-          <h3 className="text-lg font-semibold text-deep-navy mb-4">
+          <h3 className="text-lg font-semibold font-display text-deep-navy mb-4">
             Something you may not have considered
           </h3>
           <div className="grid gap-4">
