@@ -22,16 +22,16 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
     rows.push({
       dimension: '🏛️ Your Sector',
       label: nteeLabel,
-      value: inTopQuarter ? 'Strong financial position'
-        : inBottomQuarter ? 'Building reserves'
-        : 'Stable finances',
+      value: inTopQuarter ? 'More reserves than most peers'
+        : inBottomQuarter ? 'Fewer reserves than most peers'
+        : 'Within the usual peer range',
       explanation: inTopQuarter
-        ? `You're managing resources well compared to other ${nteeLabel}. This matters to donors who want assurance.`
+        ? `The public filings show more reserves than most ${nteeLabel} organizations in this comparison. That is one financial measure, not a judgment about the work.`
         : inBottomQuarter
-        ? `Like many in your sector, you put most of your resources into the work. Donors understand that ${nteeLabel} often run on mission over margin, and your transparency speaks for itself.`
-        : `You're in the typical range for ${nteeLabel}. Consistent and steady.`,
+        ? `The public filings show fewer reserves than most ${nteeLabel} organizations in this comparison. A reserve figure can reflect many choices and circumstances, so it should be read with the organization's own information.`
+        : `The public filings place this organization within the usual range for ${nteeLabel} organizations in this comparison. The figure is context, not a conclusion.`,
       action: {
-        text: 'Claim profile → Show donors your story',
+        text: 'Claim profile → Add your own context',
       }
     })
   }
@@ -41,8 +41,8 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
     rows.push({
       dimension: '📍 In Your State',
       label: `${org.state_category_total} orgs in ${org.STATE}`,
-      value: `#${org.state_category_rank} in your sector`,
-      explanation: `You're one of ${org.state_category_total} ${getNteeLabel(org.NTEE1)} nonprofits in ${org.STATE}. Your state's donors know this sector. They understand the market.`,
+      value: `${org.state_category_total} organizations in this comparison`,
+      explanation: `This organization is one of ${org.state_category_total} ${getNteeLabel(org.NTEE1)} nonprofits in ${org.STATE} included in this comparison. Daanaa does not use this figure to rank or endorse organizations.`,
       action: {
         text: 'Check your peer group →',
       }
@@ -59,12 +59,12 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
     rows.push({
       dimension: '💰 Your Scale',
       label: band,
-      value: isMicro ? 'Nimble & focused' : isLarge ? 'Established & scaled' : 'Growing',
+      value: isMicro ? 'Smaller operating scale' : isLarge ? 'Established operating scale' : 'Growing operating scale',
       explanation: isMicro
-        ? `At your scale, you're managing resources with discipline. Donors know small doesn't mean lesser. It means focused and close to the work.`
+        ? `This is a description of operating scale from public records. Scale does not tell us the quality, reach, or importance of an organization's work.`
         : isLarge
-        ? `You've scaled to serve more people. That takes operational skill donors respect.`
-        : `You're in the growth phase. Building systems for larger impact.`,
+        ? `This is a description of operating scale from public records. Scale does not tell us the quality, reach, or importance of an organization's work.`
+        : `This is a description of operating scale from public records. Scale does not tell us the quality, reach, or importance of an organization's work.`,
     })
   }
 
@@ -76,17 +76,17 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
     const signals = {
       HEALTHY: {
         icon: '✓',
-        title: 'Financially healthy',
-        explanation: 'You have reserves, stable revenue, and room to take risks on new programs. Donors see a strong partner.',
+        title: 'More reserves in this comparison',
+        explanation: 'The available public filings show more reserves than most organizations in this comparison. This does not measure mission results or financial need.',
       },
       STABLE: {
         icon: '◐',
-        title: 'Financially stable',
+        title: 'Within the usual reserve range',
         explanation: 'You manage year-to-year predictably. Most nonprofits run this way. It\'s normal and sustainable, and donors trust steady.',
       },
       CAUTION: {
         icon: '○',
-        title: 'Building reserves',
+        title: 'Fewer reserves than most peers',
         explanation: 'You put most of your resources into the work, like many nonprofits do. What matters to donors is your transparency and your plan, and that\'s where claiming your profile helps.',
       },
     }
@@ -99,7 +99,7 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
         value: '',
         explanation: s.explanation,
         action: signal === 'CAUTION' ? {
-          text: 'Claim profile → Tell your story to reserves-minded donors',
+          text: 'Claim profile → Add your own context',
         } : undefined,
       })
     }
@@ -111,10 +111,10 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
     <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6">
       <div className="mb-6">
         <h3 className="font-display text-[18px] font-semibold text-deep-navy mb-2">
-          How Donors See You
+          What the public record shows
         </h3>
         <p className="font-body text-[13px] text-cool-grey">
-          Context from public IRS data. This helps donors understand your financial position without judgment.
+          A few comparisons from public IRS data. They are context, not a rating, endorsement, or complete picture of the organization.
         </p>
       </div>
 

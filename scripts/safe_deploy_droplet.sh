@@ -355,3 +355,11 @@ if [ "$BUILD_ONLY" = "0" ]; then
 fi
 log "===== ALL DONE ====="
 log "Local :5000 was never disturbed. Snapshot+payload retained in $SCRATCH (resumable)."
+
+# ============================================================
+# POST-DEPLOYMENT HEALTH CHECK (catches regressions immediately)
+# ============================================================
+log ""
+log "===== POST-DEPLOYMENT HEALTH CHECK ====="
+bash "$BASE/scripts/health_check.sh" 2>&1 | tee -a "$LOG" || log "WARN: Post-deploy health check had warnings — review above"
+log "===== DEPLOYMENT COMPLETE ====="

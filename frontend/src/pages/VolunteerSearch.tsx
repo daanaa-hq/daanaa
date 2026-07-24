@@ -79,7 +79,7 @@ function EventCard({ event }: { event: VolunteerEvent }) {
           </span>
         )}
         {event.discovery_status === 'unconfirmed' && (
-          <p className="font-body text-[12px] text-soft-gold">Unconfirmed source discovery</p>
+          <p className="font-body text-[12px] text-soft-gold">Source found, not yet confirmed by the organization</p>
         )}
       </div>
 
@@ -103,7 +103,7 @@ function EventCard({ event }: { event: VolunteerEvent }) {
 
       <div className="mt-auto pt-1">
         <span className="inline-flex items-center gap-1 font-body text-[13px] text-soft-gold font-semibold">
-          View event
+          View details
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12h14M12 5l7 7-7 7"/>
           </svg>
@@ -116,7 +116,7 @@ function EventCard({ event }: { event: VolunteerEvent }) {
 export default function VolunteerSearch() {
   usePageMeta(
     'Volunteer Opportunities — Daanaa',
-    'Find volunteer events near you. Browse opportunities from verified nonprofits by location and cause.',
+    'Find volunteer opportunities shared by nonprofits and public event pages. Confirm details with the organizer before making plans.',
   )
 
   const [zip, setZip]           = useState('')
@@ -180,7 +180,7 @@ export default function VolunteerSearch() {
             Volunteer near you
           </h1>
           <p className="font-body text-[16px] text-muted-cream mt-2 max-w-lg leading-[1.7]">
-            Opportunities from nonprofits that have claimed their Daanaa page. Search by zip code or city and sign up directly with the organization.
+            Browse opportunities shared by nonprofits and public event pages. Search by place or event type, then follow the source link and confirm the details with the organizer.
           </p>
         </div>
       </div>
@@ -283,7 +283,7 @@ export default function VolunteerSearch() {
           <div className="text-center py-16">
             <p className="font-body text-[18px] text-deep-navy font-display italic mb-2">No events found</p>
             <p className="font-body text-[14px] text-cool-grey max-w-sm mx-auto leading-[1.7]">
-              Try a different zip code or state. Events are added by verified nonprofits — if your local orgs aren't listed yet, they may not have claimed their page.
+              Try a different zip code or state. Some events come from public event pages and may not yet be confirmed by the organization. Try another place or check the source link.
             </p>
             <Link
               to="/directory"
@@ -298,7 +298,7 @@ export default function VolunteerSearch() {
           <div className="text-center py-16">
             <p className="font-body text-[18px] text-deep-navy font-display italic mb-2">No events found</p>
             <p className="font-body text-[14px] text-cool-grey max-w-sm mx-auto leading-[1.7]">
-              Try different search filters. Events are added by verified nonprofits — if your local orgs aren't listed yet, they may not have claimed their page.
+              Try different search filters. Some events come from public event pages and may not yet be confirmed by the organization. Try another place or check the source link.
             </p>
             <Link
               to="/directory"

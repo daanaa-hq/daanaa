@@ -31,10 +31,10 @@ const SECTIONS = [
   },
   {
     tag: 'The giving experience',
-    title: 'Easy, recordable, seamless, and repeatable',
+    title: 'Easy to give, easy to remember',
     body: [
       'Finding an organization should be the beginning, not the end. Daanaa\'s Giving Wallet lets you save organizations you care about, log the time and money you\'ve given, and return to your list whenever you\'re ready to give again — all without creating an account.',
-      'We never process donations, hold donor funds, or issue tax receipts. Every gift goes directly to the nonprofit through their own page. Our role is to make that hand-off frictionless and to give you a personal record of the giving that matters to you.',
+      'We never process donations, hold donor funds, or issue tax receipts. Every gift goes directly to the nonprofit through their own page. Our role is to make that hand-off clear and to give you a personal record of the giving that matters to you.',
     ],
     link: { to: '/wallet', label: 'Learn about the Giving Wallet' },
   },
@@ -64,7 +64,7 @@ const SECTIONS = [
 export default function Approach() {
   usePageMeta(
     'Our Approach — Daanaa',
-    'How Daanaa covers every active 501(c)(3) in America — including the 97% that go unseen — with independent, evidence-based financial context so giving is easy, recordable, seamless, and repeatable.'
+    'How Daanaa covers every active 501(c)(3) in America — including the 97% that go unseen — with independent, evidence-based financial context so giving is easy to understand, easy to record, and easy to return to.'
   )
 
   return (
@@ -83,7 +83,7 @@ export default function Approach() {
           {/* Canonical identity statement */}
           <p className="font-display italic text-warm-cream leading-[1.1] tracking-[-0.01em] max-w-[820px]"
              style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
-            Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy, recordable, seamless, and repeatable.
+            Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy to understand, easy to record, and easy to return to.
           </p>
 
           {/* Positioning line */}

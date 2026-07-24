@@ -32,7 +32,7 @@ const SECTIONS = [
   },
   {
     tag: 'The giving experience',
-    title: 'Easy, recordable, seamless, and repeatable',
+    title: 'Easy to give, easy to remember',
     body: [
       'Finding an organization should be the beginning, not the end. The Giving Wallet lets you save organizations you care about, log the time and money you\'ve given, and return to your list whenever you\'re ready — all without creating an account.',
       'We never process donations, hold donor funds, or issue tax receipts. Every gift goes directly to the nonprofit through their own page. Our role is to make that hand off frictionless and to give you a personal record of the giving that matters to you.',
@@ -65,7 +65,7 @@ const SECTIONS = [
 export default function About() {
   usePageMeta(
     'About Daanaa',
-    'Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with independent, evidence based financial context so giving is easy, recordable, seamless, and repeatable.'
+    'Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with independent, evidence based financial context so giving is easy to understand, easy to record, and easy to return to.'
   )
 
   return (
@@ -84,7 +84,7 @@ export default function About() {
           {/* Canonical identity statement */}
           <p className="font-display italic text-warm-cream leading-[1.1] tracking-[-0.01em] max-w-[820px]"
              style={{ fontSize: 'clamp(26px, 3.8vw, 46px)' }}>
-            Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy, recordable, seamless, and repeatable.
+            Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy to understand, easy to record, and easy to return to.
           </p>
 
           {/* Positioning line */}

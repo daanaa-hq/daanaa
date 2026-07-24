@@ -241,7 +241,8 @@ export async function getOrganizations(params?: {
   sub?: string;            // NTEECC subcategory prefix, e.g. 'E21'
   state?: string;          // 2-letter state abbreviation
   q?: string;              // name / EIN / city search — tokenized, word-order-independent
-  sort?: string;           // 'total_revenue' | 'organization_name' | 'ntee1_percentile'
+  sort?: string;           // 'random' (seeded shuffle) | 'organization_name' | 'total_revenue' | 'ntee1_percentile'
+  seed?: string;           // Session seed for seeded random shuffle (deterministic shuffle per session)
   order?: string;          // 'asc' | 'desc'
   page?: number;
   per_page?: number;

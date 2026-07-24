@@ -285,7 +285,7 @@ export default function Methodology() {
 
             <Section id="lamp-tiers" label="Visibility levels" title="Visibility levels: how much information is available">
               <p>
-                Every page displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a page <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can raise its flame by adding its mission, website, and financial detail, and that path stays free and open, always.
+                Every page displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a page <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can add more context by sharing its mission, website, and available financial detail, and that path stays free and open, always.
               </p>
               <div className="mt-4 space-y-3">
                 {([

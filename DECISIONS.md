@@ -1,4 +1,46 @@
 ## 2026-07-22 — Volunteer hours: nonprofit self-service events, not a nonprofit-entry model
+## 2026-07-24: Search Performance Root-Cause Fix (FTS Index Out of Sync)
+
+**Problem:** Search and events pages hanging with 60+ second timeouts
+
+**Root Cause (verified via diagnostics):**
+- FTS index severely out of sync: 1,758,892 indexed orgs vs 2,056,834 in registry (~14% missing)
+- Database PRAGMA integrity_check taking 2.5 minutes (heavy fragmentation)
+- API endpoint itself was fast (402ms response time when FTS working)
+- Slowness was index-related, not query logic
+
+**Chose:** Rebuild FTS index via `scripts/rebuild_fts_index_quick.sh`
+- DROP + CREATE org_fts virtual table (clean rebuild)
+- Reinsert all 2,056,834 orgs from registry_enriched
+- Recreate FTS triggers for future sync
+- Total time: 11 seconds
+- Search returns immediately: 20 results for "health" in ~400ms
+
+**Monitoring Infrastructure Added:**
+1. `scripts/health_check.sh` — Post-deployment verification (critical pages + performance benchmarks)
+2. `scripts/monitor_site_health.sh` — Continuous monitoring daemon (5-minute intervals, auto-recovery attempts)
+3. `scripts/diagnose_search_perf.py` — Future troubleshooting (database health, FTS coverage, API endpoint)
+4. Integrated health check into `safe_deploy_droplet.sh` so every deploy auto-runs verification
+
+**Why This Approach:**
+- FTS rebuild is fast (11 seconds) and safe (not destructive to data)
+- Doesn't require full data pipeline or precompute rebuild
+- Immediate verification confirms fix worked (no guessing)
+- Prevents 8-hour wasted pipeline runs on next occurrence
+- Search is now world-class fast (~400ms for 20 results)
+
+**Rejected alternatives:**
+- Full data pipeline rebuild (would take 2-4 hours, unnecessary for index rebuild)
+- Trying to optimize API timeout (root cause was index, not performance)
+- Ignoring the problem (would have cascaded into more timeouts)
+
+**Follow-up (deferred):**
+- Implement automated FTS sync check in the nightly pipeline (flag coverage gaps early)
+- Consider database defragmentation/VACUUM as part of weekly maintenance
+- Monitor database integrity checks as a performance metric
+
+---
+
 
 **Chose:** Built self-service volunteer hour submission tied to events (QR/short-link,
 `volunteer_hours_events_api.py`) rather than extending the existing nonprofit-pre-enters-then-

@@ -105,7 +105,7 @@ export default function TierBreakdown({ org, tier, onClose }: TierBreakdownProps
             to="/for-nonprofits"
             className="inline-flex items-center gap-1.5 mt-2.5 font-body text-[12px] font-semibold text-soft-gold hover:text-bright-gold transition-colors"
           >
-            Is this your nonprofit? Claim it free &amp; raise your flame →
+            Is this your nonprofit? Claim it free and add your own context →
           </Link>
         </div>
       )}

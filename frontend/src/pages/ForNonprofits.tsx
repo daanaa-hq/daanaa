@@ -21,7 +21,7 @@ function StepDot({ n, label }: { n: number; label: string }) {
 }
 
 export default function ForNonprofits() {
-  usePageMeta('For Nonprofits', 'Claim your free Daanaa page. Nonprofits that add mission, website, and current financials rise through the visibility tiers.')
+  usePageMeta('For Nonprofits', 'Claim your free Daanaa page. Add the information only your organization can provide, and help people understand your work in its own words.')
   const navigate = useNavigate()
   const { user, getIdToken } = useAuth()
   const [searchParams] = useSearchParams()
@@ -214,7 +214,7 @@ export default function ForNonprofits() {
             <div className="p-5 bg-warm-cream rounded-xl border border-light-grey">
               <p className="font-body text-[11px] tracking-[0.06em] text-link-gold uppercase font-medium mb-3">IRS public data</p>
               <ul className="space-y-2 font-body text-[13px] text-cool-grey">
-                {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Daanaa financial ranking', 'Year & data source'].map(i => (
+                {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Peer financial context', 'Year & data source'].map(i => (
                   <li key={i} className="flex items-center gap-2">
                     <span className="w-1 h-1 rounded-full bg-cool-grey/40 shrink-0" />{i}
                   </li>
@@ -242,10 +242,10 @@ export default function ForNonprofits() {
                 <span className="inline-block border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1.5 py-0.5 font-body">AI assisted</span>
               </div>
               <div>
-                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the AI assisted label means on your page</p>
+                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the AI assisted label means</p>
                 <p className="font-body text-[13px] text-cool-grey leading-[1.65]">
-                  Before you claim your page, Daanaa shows a best guess mission statement inferred from your sector and location.
-                  It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">AI assisted</span> so donors know it is a starting point, not your own words.
+                  Before you claim your page, Daanaa may show a short summary prepared from public records and sector information.
+                  It is marked <span className="border border-cool-grey/30 text-cool-grey rounded text-[10px] px-1 py-0.5">AI assisted</span> so people know it is a starting point, not your organization’s words.
                   When you claim your page, you replace it with the mission statement you actually want donors to see, and the label is removed.
                 </p>
               </div>
@@ -275,7 +275,7 @@ export default function ForNonprofits() {
         </div>
       </div>
 
-      {/* Raise Your Flame — visibility journey */}
+      {/* Build a fuller public page — visibility journey */}
       {(() => {
         const STEPS: { tier: TierName; pct: string; description: string; nextStep: string | null }[] = [
           {
@@ -287,26 +287,26 @@ export default function ForNonprofits() {
           {
             tier: 'Candle',
             pct: '~27% of tax-deductible 501(c)(3)s',
-            description: 'Financial data is on record, but we need a recent one to rank you among peers.',
+            description: 'Financial data is on record, but a recent filing helps people understand your current context.',
             nextStep: 'To reach Torch: file an annual report dated 2022 or later. This happens automatically once the IRS publishes it. Nothing for you to do.',
           },
           {
             tier: 'Torch',
             pct: '~17.5% of tax-deductible 501(c)(3)s',
-            description: 'You have a current annual report and a financial ranking among similar nonprofits. Add a mission statement and website to your public record for greater visibility.',
-            nextStep: 'To reach Beacon: achieve a top quartile financial score within your peer group and ensure mission, website, and current annual report are all on the public record.',
+            description: 'You have a current annual report and peer financial context. Add a mission statement and website so people can understand more of your work.',
+            nextStep: 'To reach Beacon: ensure your mission, website, and current annual report are all on the public record.',
           },
           {
             tier: 'Beacon',
             pct: '~0.6% of tax-deductible 501(c)(3)s',
-            description: 'Complete page. Top quartile financial score, current annual report, mission, and website all on public record. The most complete picture donors can see.',
+            description: 'Complete page. Current public records, mission, and website are available, giving people a fuller picture to review.',
             nextStep: null,
           },
         ]
         return (
           <div className="bg-white py-10 md:py-16 border-t border-light-grey">
             <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">Your visibility journey</span>
+              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">Building a fuller public page</span>
               <h2 className="font-display italic text-deep-navy mt-3 text-[32px] leading-[1.1] mb-3">
                 Improve your visibility
               </h2>

@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 const PAGES = [
   { to: '/about',       label: 'About Daanaa',  sub: 'Identity & approach' },
-  { to: '/methodology', label: 'Methodology',   sub: 'How we score' },
+  { to: '/methodology', label: 'How it works', sub: 'Data, context and limits' },
   { to: '/research',    label: 'Research',      sub: 'Sector data & findings' },
 ]
 
@@ -11,7 +11,7 @@ export default function TrustNav() {
 
   return (
     <div className="border-t border-light-grey pt-10 mt-16">
-      <p className="font-body text-[11px] tracking-[0.1em] text-link-gold uppercase mb-5">Also in this series</p>
+      <p className="font-body text-[11px] tracking-[0.1em] text-link-gold uppercase mb-5">Continue exploring Daanaa</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {PAGES.map(({ to, label, sub }) => {
           const active = pathname === to || pathname.startsWith(to + '#')

@@ -26,9 +26,10 @@ const SCORES_ENABLED = import.meta.env.VITE_ENABLE_SCORES !== 'false'
 // Neutral default (2026-07-04 stewardship fix): name A to Z, never a score
 // ranking. Peer Financial Context stays available as an explicit opt-in sort.
 const SORT_OPTIONS = [
-  { id: 'organization_name', label: 'Name A to Z' },
-  ...(SCORES_ENABLED ? [{ id: 'merit_score', label: 'Peer Financial Context' }] : []),
-  { id: 'total_revenue', label: 'Revenue' },
+  { id: 'random', label: '🎲 Shuffle' },  // Discovery-first (2026-07-24)
+  { id: 'organization_name', label: 'Name A to Z' },  // Neutral control
+  ...(SCORES_ENABLED ? [{ id: 'merit_score', label: '📊 Top Performers' }] : []),
+  { id: 'total_revenue', label: '📈 Largest Orgs' },
 ]
 
 function hasKnownDataSource(src: string | null) {
@@ -98,11 +99,21 @@ export default function Directory() {
   })
   const [subFilters, setSubFilters] = useState<string[]>(subParamList)
   const [stateFilter, setStateFilter] = useState(stateParam)
-  // Default is neutral name order — browse must never imply a ranking
-  // (2026-07-04 note); it also keeps default browse on the fast precompute
-  // path. Score/revenue sorts are explicit opt-in and route to the DB.
-  const [sortBy, setSortBy] = useState('organization_name')
-  const sessionShuffleRef = useRef(Math.random().toString(36).slice(2, 11))
+  // Discovery default (2026-07-24): seeded random shuffle for engagement + fairness.
+  // Users can opt to 'organization_name' (A-Z) or other sorts. Shuffle is P7-compliant:
+  // random order is neutral (equal probability for all orgs, no ranking by size/name/score).
+  // Seed makes shuffle deterministic per session (same seed = same results).
+  const [sortBy, setSortBy] = useState('random')
+  // Session seed for seeded shuffle (deterministic random per session)
+  const sessionShuffleRef = useRef(
+    typeof window !== 'undefined'
+      ? localStorage.getItem('daanaa_session_seed') || Math.random().toString(36).slice(2, 11)
+      : Math.random().toString(36).slice(2, 11)
+  )
+  // Persist session seed for consistency across reloads
+  useEffect(() => {
+    localStorage.setItem('daanaa_session_seed', sessionShuffleRef.current)
+  }, [])
 
   // Sync filter state with URL params whenever they change
   useEffect(() => {
@@ -213,6 +224,7 @@ export default function Directory() {
       state: stateFilter || undefined,
       q: debouncedQuery || undefined,
       sort: sortBy,
+      seed: sortBy === 'random' ? sessionShuffleRef.current : undefined,  // Pass seed for seeded shuffle
       order: sortOrder,
       page: currentPage,
       per_page: itemsPerPage,
@@ -1000,8 +1012,8 @@ export default function Directory() {
                         value={sortBy}
                         onChange={(e) => {
                           setSortBy(e.target.value)
-                          // Name reads A-Z; score/revenue read high-first
-                          setSortOrder(e.target.value === 'organization_name' ? 'asc' : 'desc')
+                          // Shuffle is random (no sort order); Name reads A-Z; score/revenue read high-first
+                          setSortOrder(e.target.value === 'organization_name' || e.target.value === 'random' ? 'asc' : 'desc')
                           setCurrentPage(1)
                         }}
                         aria-label="Sort organizations by"

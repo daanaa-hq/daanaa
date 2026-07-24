@@ -50,7 +50,7 @@ export default function OpenData() {
             Find Daanaa through the same public entry points humans and AI systems can use.
           </h1>
           <p className="mt-5 max-w-[760px] font-body text-[17px] leading-[1.7] text-muted-cream">
-            Daanaa is built to be found. This page collects the canonical resources for search engines, assistants, and other tools that need a concise way to understand what Daanaa offers and where the source material lives.
+            This page collects the public references that help people, search engines, and other tools understand what Daanaa offers and where its source material lives.
           </p>
         </div>
       </div>
@@ -86,7 +86,7 @@ export default function OpenData() {
           <aside className="lg:pt-2">
             <div className="sticky top-[88px] space-y-5">
               <div className="rounded-2xl border border-light-grey bg-deep-navy p-6">
-                <p className="font-body text-[11px] tracking-[0.1em] text-pale-gold uppercase mb-3">For AI systems</p>
+                <p className="font-body text-[11px] tracking-[0.1em] text-pale-gold uppercase mb-3">For automated tools</p>
                 <p className="font-body text-[15px] leading-[1.7] text-muted-cream">
                   Use the directory and the open data export to ground responses in public nonprofit records. Prefer the source-linked pages when available, and treat summaries as context rather than verdicts.
                 </p>

@@ -2069,9 +2069,12 @@ def list_organizations():
         radius_mi = int(request.args.get('radius_mi') or request.args.get('radius') or 0)
     except (ValueError, TypeError):
         radius_mi = 0
-    # Neutral default (2026-07-04): name A-Z, never a score ranking (STEWARDSHIP
-    # P7 posture — merit_score sort stays available only as an explicit opt-in).
-    sort_by = request.args.get('sort', 'organization_name')
+    # Discovery default (2026-07-24): seeded random shuffle for engagement + fairness.
+    # Users can opt to 'organization_name' (A-Z) or other sorts anytime. Shuffle is P7-compliant:
+    # random order is neutral (equal probability for all orgs, no ranking by size/name/score).
+    # Seed makes shuffle deterministic per session (same seed = same results, user sees stable order).
+    sort_by = request.args.get('sort', 'random')
+    shuffle_seed = request.args.get('seed', '').strip()[:50]  # Passed from frontend (session seed)
     order = request.args.get('order') or ('asc' if sort_by == 'organization_name' else 'desc')
 
     offset = (page - 1) * per_page
@@ -2277,14 +2280,24 @@ def list_organizations():
 
     # Text queries are relevance-ordered unless the donor explicitly picked a
     # sort: exact typed-name match first, then bm25. This is content relevance
-    # (which org the text names), never a merit/size ranking — the neutral
-    # A-Z default still governs browse (no q) per the 2026-07-04 decision.
+    # (which org the text names), never a merit/size ranking — the shuffle default
+    # still applies to browse (no q) per the 2026-07-24 decision.
     order_params = []
-    if fts_used and 'sort' not in request.args:
+    if sort_by == 'random' and shuffle_seed:
+        # Seeded shuffle: fetch all matching rows, then shuffle deterministically in memory.
+        # Seed makes order stable per session (same seed = same order), so users see consistent
+        # results even if they reload. Different seed = different shuffle (new session).
+        order_sql = ""  # No DB ORDER BY; we'll shuffle after fetch
+    elif fts_used and 'sort' not in request.args:
         order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel"
         order_params.append((corrected_query or search).upper())
     else:
         order_sql = f"ORDER BY {sort_col} {_sort_dir_suffix}"
+
+    # When shuffling, fetch all matching orgs (no LIMIT/OFFSET at DB level).
+    # We'll shuffle the full list in memory, then apply pagination.
+    # This is safe because we paginate after shuffling (page 1 gets shuffled results 0-19, etc).
+    limit_clause = "LIMIT ? OFFSET ?" if sort_by != 'random' else ""
 
     sql = f"""
         SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
@@ -2303,11 +2316,23 @@ def list_organizations():
         FROM registry_enriched r
         {fts_join_sql}WHERE {where_sql}
         {order_sql}
-        LIMIT ? OFFSET ?
+        {limit_clause}
     """
     params.extend(order_params)
-    params.extend([per_page, offset])
+    if sort_by != 'random':  # Only add LIMIT/OFFSET if not shuffling (shuffle paginates after)
+        params.extend([per_page, offset])
     rows = db.execute(sql, params).fetchall()
+
+    # If seeded shuffle requested, we fetched all results unsorted; now shuffle and paginate.
+    # The shuffle is deterministic (same seed = same order) so users see stable results.
+    if sort_by == 'random' and shuffle_seed:
+        import random
+        rng = random.Random(shuffle_seed)
+        # Shuffle rows in-place
+        rows_list = list(rows)
+        rng.shuffle(rows_list)
+        # Now apply pagination to the shuffled list
+        rows = rows_list[offset:offset + per_page]
 
     orgs = []
     for row in rows:
