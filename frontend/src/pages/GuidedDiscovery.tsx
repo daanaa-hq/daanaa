@@ -94,6 +94,10 @@ export default function GuidedDiscovery() {
     mix: 'focused',
   })
 
+  const [customPlace, setCustomPlace] = useState('')
+  const [geolocating, setGeolocating] = useState(false)
+  const [geoError, setGeoError] = useState('')
+
   const [results, setResults] = useState<any[]>([])
   const [resultGroups, setResultGroups] = useState<{
     closeMatches: any[]
@@ -102,6 +106,7 @@ export default function GuidedDiscovery() {
   }>({ closeMatches: [], nearbyMatches: [], discoveryMix: [] })
   const [loading, setLoading] = useState(false)
   const [explanations, setExplanations] = useState<Record<string, string>>({})
+  const [shownOrgs, setShownOrgs] = useState<Set<string>>(new Set())  // Track shown orgs to avoid dupes
 
   // Decode URL params on mount
   useEffect(() => {
@@ -144,6 +149,11 @@ export default function GuidedDiscovery() {
         const allResults = [...closeMatches, ...nearbyMatches, ...discoveryMix]
         setResults(allResults)
         setResultGroups({ closeMatches, nearbyMatches, discoveryMix })
+
+        // Mark these orgs as shown
+        const shown = new Set<string>()
+        allResults.forEach((org) => shown.add(org.ein))
+        setShownOrgs(shown)
 
         // Generate explanations
         const expl: Record<string, string> = {}
@@ -199,11 +209,26 @@ export default function GuidedDiscovery() {
   }
 
   const handleShowAnother = () => {
-    // Shuffle results without changing criteria (re-order discovery mix)
-    const { closeMatches, nearbyMatches, discoveryMix } = buildShortlist(results, state)
+    // Generate a fresh list by re-shuffling and filtering out already-shown orgs
+    // Filter candidates to exclude orgs we've already shown
+    const newCandidates = results.filter((org) => !shownOrgs.has(org.ein))
+
+    if (newCandidates.length === 0) {
+      // No new candidates; show a message
+      window.plausible?.('another_list_requested_exhausted')
+      return
+    }
+
+    // Re-build shortlist from remaining candidates
+    const { closeMatches, nearbyMatches, discoveryMix } = buildShortlist(newCandidates, state, 25)
     const allResults = [...closeMatches, ...nearbyMatches, ...discoveryMix]
     setResults(allResults)
     setResultGroups({ closeMatches, nearbyMatches, discoveryMix })
+
+    // Mark new orgs as shown
+    const newShown = new Set(shownOrgs)
+    allResults.forEach((org) => newShown.add(org.ein))
+    setShownOrgs(newShown)
 
     window.plausible?.('another_list_requested')
   }
@@ -318,6 +343,33 @@ export default function GuidedDiscovery() {
 
   // Step 3: Place
   if (state.step === 3) {
+    const handleNearMe = async () => {
+      setGeoError('')
+      setGeolocating(true)
+
+      if (!navigator.geolocation) {
+        setGeoError('Geolocation is not supported in your browser')
+        setGeolocating(false)
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords
+          // For now, just store "near-me" and pass coords to API later
+          setState((s) => ({ ...s, place: 'near-me' }))
+          setGeolocating(false)
+          // TODO: Reverse geocode to show city/state confirmation
+        },
+        (error) => {
+          setGeoError(`Location access denied: ${error.message}. Use "A city or ZIP code" instead.`)
+          setGeolocating(false)
+        }
+      )
+    }
+
+    const selectedPlaceId = state.place.split(':')[0]
+
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 py-12">
         <div className="max-w-2xl mx-auto px-4">
@@ -331,25 +383,152 @@ export default function GuidedDiscovery() {
             showBack={true}
             showStartOver={true}
           >
-            <div className="space-y-3">
-              {PLACE_OPTIONS.map((option) => (
-                <DiscoveryChoice
-                  key={option.id}
-                  id={option.id}
-                  label={option.label}
-                  selected={state.place === option.id || state.place.startsWith(option.id + ':')}
-                  onChange={() => {
-                    if (option.id === 'nationwide') {
-                      setState((s) => ({ ...s, place: 'nationwide' }))
-                    } else if (option.id === 'near-me') {
-                      setState((s) => ({ ...s, place: 'near-me' }))
-                    } else {
-                      // For custom zip/state, show input (simplified for now)
-                      setState((s) => ({ ...s, place: 'nationwide' }))
+            <div className="space-y-4">
+              {/* Nationwide */}
+              <DiscoveryChoice
+                id="nationwide"
+                label={PLACE_OPTIONS[0].label}
+                selected={state.place === 'nationwide'}
+                onChange={() => setState((s) => ({ ...s, place: 'nationwide' }))}
+              />
+
+              {/* Near me */}
+              <button
+                onClick={handleNearMe}
+                disabled={geolocating}
+                className={`
+                  relative w-full text-left p-4 rounded-lg border-2 transition-all
+                  ${
+                    state.place === 'near-me'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                  }
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2
+                  disabled:opacity-50 disabled:cursor-not-allowed
+                `}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`
+                    flex-shrink-0 mt-0.5 w-5 h-5 rounded border-2 flex items-center justify-center
+                    ${
+                      state.place === 'near-me'
+                        ? 'border-blue-500 bg-blue-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                    }
+                  `}>
+                    {state.place === 'near-me' && <span className="text-white text-xs">✓</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 dark:text-white">
+                      {geolocating ? 'Getting your location...' : PLACE_OPTIONS[1].label}
+                    </h3>
+                    {geoError && (
+                      <p className="text-sm text-red-600 dark:text-red-400 mt-1">{geoError}</p>
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              {/* City/ZIP input */}
+              <div className={`
+                relative p-4 rounded-lg border-2 transition-all
+                ${
+                  selectedPlaceId === 'custom-zip'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                }
+              `}>
+                <label className="block font-medium text-gray-900 dark:text-white mb-2">
+                  A city or ZIP code
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Houston, TX or 77001"
+                  value={selectedPlaceId === 'custom-zip' ? customPlace : ''}
+                  onChange={(e) => {
+                    setCustomPlace(e.target.value)
+                    if (e.target.value.trim()) {
+                      setState((s) => ({ ...s, place: `custom-zip:${e.target.value.trim()}` }))
                     }
                   }}
+                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:text-white"
                 />
-              ))}
+              </div>
+
+              {/* State selector */}
+              <div className={`
+                relative p-4 rounded-lg border-2 transition-all
+                ${
+                  selectedPlaceId === 'custom-state'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'
+                }
+              `}>
+                <label className="block font-medium text-gray-900 dark:text-white mb-2">
+                  A specific state
+                </label>
+                <select
+                  value={selectedPlaceId === 'custom-state' ? customPlace : ''}
+                  onChange={(e) => {
+                    setCustomPlace(e.target.value)
+                    if (e.target.value) {
+                      setState((s) => ({ ...s, place: `custom-state:${e.target.value}` }))
+                    }
+                  }}
+                  className="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Choose a state...</option>
+                  <option value="CA">California</option>
+                  <option value="TX">Texas</option>
+                  <option value="NY">New York</option>
+                  <option value="FL">Florida</option>
+                  <option value="PA">Pennsylvania</option>
+                  <option value="IL">Illinois</option>
+                  <option value="OH">Ohio</option>
+                  <option value="GA">Georgia</option>
+                  <option value="NC">North Carolina</option>
+                  <option value="MI">Michigan</option>
+                  <option value="NJ">New Jersey</option>
+                  <option value="VA">Virginia</option>
+                  <option value="WA">Washington</option>
+                  <option value="AZ">Arizona</option>
+                  <option value="MA">Massachusetts</option>
+                  <option value="TN">Tennessee</option>
+                  <option value="IN">Indiana</option>
+                  <option value="MD">Maryland</option>
+                  <option value="MO">Missouri</option>
+                  <option value="WI">Wisconsin</option>
+                  <option value="CO">Colorado</option>
+                  <option value="MN">Minnesota</option>
+                  <option value="SC">South Carolina</option>
+                  <option value="AL">Alabama</option>
+                  <option value="LA">Louisiana</option>
+                  <option value="KY">Kentucky</option>
+                  <option value="OR">Oregon</option>
+                  <option value="OK">Oklahoma</option>
+                  <option value="CT">Connecticut</option>
+                  <option value="UT">Utah</option>
+                  <option value="AR">Arkansas</option>
+                  <option value="NV">Nevada</option>
+                  <option value="MS">Mississippi</option>
+                  <option value="KS">Kansas</option>
+                  <option value="NM">New Mexico</option>
+                  <option value="NE">Nebraska</option>
+                  <option value="ID">Idaho</option>
+                  <option value="HI">Hawaii</option>
+                  <option value="NH">New Hampshire</option>
+                  <option value="ME">Maine</option>
+                  <option value="RI">Rhode Island</option>
+                  <option value="MT">Montana</option>
+                  <option value="DE">Delaware</option>
+                  <option value="SD">South Dakota</option>
+                  <option value="ND">North Dakota</option>
+                  <option value="AK">Alaska</option>
+                  <option value="VT">Vermont</option>
+                  <option value="WY">Wyoming</option>
+                  <option value="WV">West Virginia</option>
+                </select>
+              </div>
             </div>
           </DiscoveryQuestion>
         </div>

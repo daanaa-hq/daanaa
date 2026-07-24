@@ -68,18 +68,27 @@ export function mapToDirectoryFilters(state: DiscoveryState): DiscoveryFilters {
   }
 
   // Place mapping
-  if (state.place.startsWith('zip:')) {
+  if (state.place === 'nationwide') {
+    // no location filter
+  } else if (state.place === 'near-me') {
+    // TODO: Get user's geolocation coordinates and pass as near param
+    // For now, this would require client-side geolocation API call
+  } else if (state.place.startsWith('custom-zip:')) {
+    const zipOrCity = state.place.replace('custom-zip:', '')
+    filters.near = zipOrCity
+    filters.radius_mi = 25
+  } else if (state.place.startsWith('custom-state:')) {
+    const stateCode = state.place.replace('custom-state:', '')
+    filters.state = stateCode
+  } else if (state.place.startsWith('zip:')) {
+    // Legacy format
     const zip = state.place.replace('zip:', '')
     filters.near = zip
     filters.radius_mi = 25
   } else if (state.place.startsWith('state:')) {
+    // Legacy format
     const stateCode = state.place.replace('state:', '')
     filters.state = stateCode
-  } else if (state.place === 'nationwide') {
-    // no location filter
-  } else if (state.place === 'near-me') {
-    // handled client-side; geolocation needed
-    filters.near = 'user-location'
   }
 
   // Connection filters
