@@ -29,6 +29,19 @@ log "=== ENRICHMENT LOOP STARTED (8pm-8am CST window) ==="
 log "Cutoff: Stop new batches at $CUTOFF_HOUR:00am CST"
 log "Logs: $LOG_FILE"
 
+# Pre-flight checks — exit early if infrastructure not ready (prevents wasting 8 hours on connection errors)
+log ""
+log "Running pre-flight checks..."
+cd "$REPO"
+source "$VENV"
+if ! python3 scripts/enrichment_preflight.py --strict >> "$LOG_FILE" 2>&1; then
+  log "❌ PRE-FLIGHT CHECKS FAILED — Aborting enrichment loop"
+  log "Inference servers or database not ready. Check and restart manually."
+  exit 1
+fi
+log "✅ Pre-flight checks passed"
+log ""
+
 BATCH_COUNT=0
 while true; do
   CURRENT_HOUR=$(date +%H)
