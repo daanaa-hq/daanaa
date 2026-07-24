@@ -2333,6 +2333,7 @@ def list_organizations():
     params.extend(order_params)
     if sort_by != 'random':  # Only add LIMIT/OFFSET if not shuffling (shuffle paginates after)
         params.extend([per_page, offset])
+
     rows = db.execute(sql, params).fetchall()
 
     # If seeded shuffle requested, we fetched all results unsorted; now shuffle and paginate.
@@ -2343,7 +2344,6 @@ def list_organizations():
         # Shuffle rows in-place
         rows_list = list(rows)
         rng.shuffle(rows_list)
-        # Now apply pagination to the shuffled list
         rows = rows_list[offset:offset + per_page]
 
     orgs = []

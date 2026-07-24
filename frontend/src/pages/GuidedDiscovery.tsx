@@ -97,6 +97,7 @@ export default function GuidedDiscovery() {
   const [customPlace, setCustomPlace] = useState('')
   const [geolocating, setGeolocating] = useState(false)
   const [geoError, setGeoError] = useState('')
+  const [showAnotherCount, setShowAnotherCount] = useState(0)  // Trigger refetch when "Show another" clicked
 
   const [results, setResults] = useState<any[]>([])
   const [resultGroups, setResultGroups] = useState<{
@@ -150,10 +151,9 @@ export default function GuidedDiscovery() {
         setResults(allResults)
         setResultGroups({ closeMatches, nearbyMatches, discoveryMix })
 
-        // Mark these orgs as shown
-        const shown = new Set<string>()
-        allResults.forEach((org) => shown.add(org.ein))
-        setShownOrgs(shown)
+        // Don't mark as shown yet - only mark when "Show another list" is used
+        // This allows generating fresh lists without exhausting the pool
+        setShownOrgs(new Set())
 
         // Generate explanations
         const expl: Record<string, string> = {}
@@ -174,7 +174,7 @@ export default function GuidedDiscovery() {
     }
 
     fetchResults()
-  }, [state])
+  }, [state, showAnotherCount])
 
   const handleContinue = () => {
     const stepNames = ['purpose', 'cause', 'place', 'connection', 'review']
@@ -209,27 +209,8 @@ export default function GuidedDiscovery() {
   }
 
   const handleShowAnother = () => {
-    // Generate a fresh list by re-shuffling and filtering out already-shown orgs
-    // Filter candidates to exclude orgs we've already shown
-    const newCandidates = results.filter((org) => !shownOrgs.has(org.ein))
-
-    if (newCandidates.length === 0) {
-      // No new candidates; show a message
-      window.plausible?.('another_list_requested_exhausted')
-      return
-    }
-
-    // Re-build shortlist from remaining candidates
-    const { closeMatches, nearbyMatches, discoveryMix } = buildShortlist(newCandidates, state, 25)
-    const allResults = [...closeMatches, ...nearbyMatches, ...discoveryMix]
-    setResults(allResults)
-    setResultGroups({ closeMatches, nearbyMatches, discoveryMix })
-
-    // Mark new orgs as shown
-    const newShown = new Set(shownOrgs)
-    allResults.forEach((org) => newShown.add(org.ein))
-    setShownOrgs(newShown)
-
+    // Increment counter to trigger refetch with same criteria but different random ordering
+    setShowAnotherCount((c) => c + 1)
     window.plausible?.('another_list_requested')
   }
 
@@ -343,29 +324,8 @@ export default function GuidedDiscovery() {
 
   // Step 3: Place
   if (state.step === 3) {
-    const handleNearMe = async () => {
-      setGeoError('')
-      setGeolocating(true)
-
-      if (!navigator.geolocation) {
-        setGeoError('Geolocation is not supported in your browser')
-        setGeolocating(false)
-        return
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords
-          // For now, just store "near-me" and pass coords to API later
-          setState((s) => ({ ...s, place: 'near-me' }))
-          setGeolocating(false)
-          // TODO: Reverse geocode to show city/state confirmation
-        },
-        (error) => {
-          setGeoError(`Location access denied: ${error.message}. Use "A city or ZIP code" instead.`)
-          setGeolocating(false)
-        }
-      )
+    const handleNearMe = () => {
+      setGeoError('Coming soon! For now, use a city name or ZIP code above.')
     }
 
     const selectedPlaceId = state.place.split(':')[0]
