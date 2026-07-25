@@ -32,6 +32,7 @@ import ImpactWidget from '../components/ImpactWidget'
 import OrgEnrichmentCard from '../components/OrgEnrichmentCard'
 import GuildSection from '../components/GuildSection'
 import { sentenceCase } from '../utils/sentenceCase'
+import GiveYourWayRouter from '../components/GiveYourWayRouter'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -575,6 +576,22 @@ export default function OrganizationDetail() {
                 <div className="mt-8">
                   <HeroMission mission={org.mission} missionSrc={apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? ''} />
                 </div>
+              )}
+
+              {/* Give-your-way router: donor picks the method (DAF, check, etc.)
+                  Selection stays client-side. 96% of orgs have address. */}
+              {apiOrg! && (
+                <GiveYourWayRouter
+                  ein={apiOrg.EIN}
+                  organizationName={apiOrg.organization_name}
+                  streetAddress={apiOrg.street_address}
+                  city={apiOrg.CITY}
+                  state={apiOrg.STATE}
+                  donateUrl={apiOrg.donate_url}
+                  donateUrlStatus={apiOrg.donate_url_status}
+                  website={apiOrg.website}
+                  websiteStatus={apiOrg.website_status}
+                />
               )}
 
               {/* Answer card: legit / deductible / healthy in <10s, for every
