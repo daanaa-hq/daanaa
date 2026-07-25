@@ -42,15 +42,57 @@ export default function WalletPageV2() {
   }, [entries])
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState<'name' | 'recent'>('name')
+  const [selectedCause, setSelectedCause] = useState<string | null>(null)
+
   const givingEntries = entries.filter((e) => !('volunteerEventId' in e))
   const volunteerEntries = entries.filter((e) => 'volunteerEventId' in e)
 
-  // Filter by search
-  const filteredGiving = givingEntries.filter((e) => {
-    const org = orgDataMap.get(e.ein)
-    const name = org?.organization_name || ''
-    return name.toLowerCase().includes(searchTerm.toLowerCase())
-  })
+  // Collect all causes from giving entries for filtering
+  const allCauses = useMemo(() => {
+    const causes = new Set<string>()
+    givingEntries.forEach((e) => {
+      const org = orgDataMap.get(e.ein)
+      if (org?.cause_tags) {
+        org.cause_tags.forEach((tag) => causes.add(tag))
+      }
+    })
+    return Array.from(causes).sort()
+  }, [givingEntries, orgDataMap])
+
+  // Filter by search and cause
+  const filteredGiving = useMemo(() => {
+    let result = givingEntries.filter((e) => {
+      const org = orgDataMap.get(e.ein)
+      const name = org?.organization_name || ''
+
+      // Search filter
+      if (searchTerm && !name.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false
+      }
+
+      // Cause filter
+      if (selectedCause && org?.cause_tags && !org.cause_tags.includes(selectedCause)) {
+        return false
+      }
+
+      return true
+    })
+
+    // Sort
+    if (sortBy === 'name') {
+      result.sort((a, b) => {
+        const nameA = orgDataMap.get(a.ein)?.organization_name || ''
+        const nameB = orgDataMap.get(b.ein)?.organization_name || ''
+        return nameA.localeCompare(nameB)
+      })
+    } else if (sortBy === 'recent') {
+      // Sort by entry creation order (newest first)
+      result.reverse()
+    }
+
+    return result
+  }, [givingEntries, orgDataMap, searchTerm, selectedCause, sortBy])
 
   return (
     <div className="min-h-screen bg-soft-cream">
@@ -124,6 +166,43 @@ export default function WalletPageV2() {
           <div className="space-y-4">
             {/* Quick log donation */}
             <QuickDonationLogger onLog={logDonation} />
+
+            {/* Sort and filter controls */}
+            {givingEntries.length > 0 && (
+              <div className="flex gap-2 items-end flex-wrap">
+                {/* Sort */}
+                <div className="flex-1 min-w-[150px]">
+                  <label className="block text-xs font-medium text-deep-navy mb-1">Sort</label>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'name' | 'recent')}
+                    className="w-full px-3 py-2 border border-light-grey rounded text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
+                  >
+                    <option value="name">Name (A–Z)</option>
+                    <option value="recent">Recently added</option>
+                  </select>
+                </div>
+
+                {/* Cause filter */}
+                {allCauses.length > 0 && (
+                  <div className="flex-1 min-w-[150px]">
+                    <label className="block text-xs font-medium text-deep-navy mb-1">Cause</label>
+                    <select
+                      value={selectedCause || ''}
+                      onChange={(e) => setSelectedCause(e.target.value || null)}
+                      className="w-full px-3 py-2 border border-light-grey rounded text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
+                    >
+                      <option value="">All causes</option>
+                      {allCauses.map((cause) => (
+                        <option key={cause} value={cause}>
+                          {cause}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Search */}
             {givingEntries.length > 0 && (
