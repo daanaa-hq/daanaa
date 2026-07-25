@@ -41,15 +41,14 @@ const methods: MethodConfig[] = [
     description: 'Give directly on their site',
     available: (p) => !!(p.donateUrl && p.donateUrlStatus && ['beta', 'claimed'].includes(String(p.donateUrlStatus))),
     render: (p) => (
-      <div className="text-sm space-y-2">
-        <p>Give directly on their website:</p>
+      <div className="text-xs">
         <a
           href={p.donateUrl || ''}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block px-3 py-2 bg-deep-navy text-warm-cream rounded hover:bg-soft-gold"
+          className="inline-block px-3 py-2 bg-deep-navy text-warm-cream rounded text-xs hover:bg-soft-gold transition-colors"
         >
-          Open donation page →
+          Go to donation page →
         </a>
       </div>
     ),
@@ -61,15 +60,15 @@ const methods: MethodConfig[] = [
     description: 'Fidelity, Schwab, Vanguard, or your fund manager',
     available: (p) => !!(p.ein && p.streetAddress),
     render: (p) => (
-      <div className="text-sm space-y-3">
-        <p className="text-deep-navy">In your DAF provider (Fidelity, Schwab, Vanguard, etc.), enter:</p>
-        <div className="bg-slate-100 border border-slate-300 p-4 rounded font-mono text-sm text-deep-navy">
-          <div className="font-semibold">EIN: {p.ein}</div>
-          {p.streetAddress && <div className="text-slate-700 mt-2">Address: {p.streetAddress}</div>}
+      <div className="text-xs space-y-2">
+        <p className="text-deep-navy font-medium">Enter in your DAF provider:</p>
+        <div className="bg-slate-100 border border-slate-300 p-2 rounded font-mono text-xs text-deep-navy space-y-1">
+          <div>EIN: {p.ein}</div>
+          {p.streetAddress && <div className="text-slate-600">{p.streetAddress}</div>}
         </div>
         <button
           onClick={() => navigator.clipboard.writeText(`${p.ein}`)}
-          className="text-sm text-soft-gold hover:text-gold font-medium transition-colors"
+          className="text-xs text-soft-gold hover:text-gold font-medium"
         >
           Copy EIN
         </button>
@@ -83,14 +82,14 @@ const methods: MethodConfig[] = [
     description: 'Make a check payable to the organization',
     available: (p) => !!(p.ein && p.streetAddress),
     render: (p) => (
-      <div className="text-sm space-y-3">
-        <p className="text-deep-navy">Make a check payable to:</p>
-        <div className="bg-slate-100 border border-slate-300 p-4 rounded text-deep-navy">
-          <div className="font-semibold text-base">{p.organizationName}</div>
+      <div className="text-xs space-y-2">
+        <p className="text-deep-navy font-medium">Make check payable to:</p>
+        <div className="bg-slate-100 border border-slate-300 p-2 rounded text-deep-navy text-xs space-y-0.5">
+          <div className="font-semibold">{p.organizationName}</div>
           {p.streetAddress && (
             <>
-              <div className="text-slate-700 mt-2">{p.streetAddress}</div>
-              {p.city && p.state && <div className="text-slate-700">{p.city}, {p.state}</div>}
+              <div className="text-slate-600">{p.streetAddress}</div>
+              {p.city && p.state && <div className="text-slate-600">{p.city}, {p.state}</div>}
             </>
           )}
         </div>
@@ -104,14 +103,14 @@ const methods: MethodConfig[] = [
     description: 'Send a payment through your bank',
     available: (p) => !!(p.ein && p.streetAddress),
     render: (p) => (
-      <div className="text-sm space-y-3">
-        <p className="text-deep-navy">In your bank's bill pay, add this payee:</p>
-        <div className="bg-slate-100 border border-slate-300 p-4 rounded text-deep-navy">
-          <div className="font-semibold text-base">{p.organizationName}</div>
+      <div className="text-xs space-y-2">
+        <p className="text-deep-navy font-medium">Add as payee in bill pay:</p>
+        <div className="bg-slate-100 border border-slate-300 p-2 rounded text-deep-navy text-xs space-y-0.5">
+          <div className="font-semibold">{p.organizationName}</div>
           {p.streetAddress && (
             <>
-              <div className="text-slate-700 mt-2">{p.streetAddress}</div>
-              {p.city && p.state && <div className="text-slate-700">{p.city}, {p.state}</div>}
+              <div className="text-slate-600">{p.streetAddress}</div>
+              {p.city && p.state && <div className="text-slate-600">{p.city}, {p.state}</div>}
             </>
           )}
         </div>
@@ -125,15 +124,15 @@ const methods: MethodConfig[] = [
     description: 'File a grant recommendation with your company',
     available: (p) => !!p.ein,
     render: (p) => (
-      <div className="text-sm space-y-3">
-        <p className="text-deep-navy">In your company's giving platform (Benevity, YourCause, etc.):</p>
-        <div className="bg-slate-100 border border-slate-300 p-4 rounded font-mono text-sm text-deep-navy">
-          <div className="font-semibold">EIN: {p.ein}</div>
-          <div className="text-slate-700 mt-2">Name: {p.organizationName}</div>
+      <div className="text-xs space-y-2">
+        <p className="text-deep-navy font-medium">Enter in company platform:</p>
+        <div className="bg-slate-100 border border-slate-300 p-2 rounded font-mono text-xs text-deep-navy space-y-1">
+          <div>EIN: {p.ein}</div>
+          <div className="text-slate-600">Org: {p.organizationName}</div>
         </div>
         <button
           onClick={() => navigator.clipboard.writeText(`${p.ein}`)}
-          className="text-sm text-soft-gold hover:text-gold font-medium transition-colors"
+          className="text-xs text-soft-gold hover:text-gold font-medium"
         >
           Copy EIN
         </button>
@@ -152,41 +151,37 @@ export default function GiveYourWayRouter(props: GiveMethodProps) {
   }
 
   return (
-    <div className="mt-8 space-y-4">
-      <h3 className="font-semibold text-deep-navy text-lg">How would you like to give?</h3>
-
-      {/* All methods as expandable cards */}
-      <div className="space-y-3">
-        {available.map((method) => (
-          <button
-            key={method.id}
-            onClick={() => setExpanded(expanded === method.id ? null : method.id)}
-            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-              expanded === method.id
-                ? 'border-soft-gold bg-warm-cream'
-                : 'border-light-grey bg-white hover:border-soft-gold/50'
-            }`}
-          >
-            {/* Method header (always visible) */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="font-semibold text-deep-navy">{method.label}</div>
-                <div className="text-sm text-cool-grey mt-1">{method.description}</div>
-              </div>
-              <span className="text-soft-gold text-xl flex-shrink-0">
-                {expanded === method.id ? '−' : '+'}
-              </span>
+    <div className="mt-4 space-y-2">
+      {/* All methods as compact expandable cards */}
+      {available.map((method) => (
+        <button
+          key={method.id}
+          onClick={() => setExpanded(expanded === method.id ? null : method.id)}
+          className={`w-full text-left p-3 rounded border transition-all ${
+            expanded === method.id
+              ? 'border-soft-gold bg-warm-cream/60'
+              : 'border-light-grey bg-white hover:bg-warm-cream/20'
+          }`}
+        >
+          {/* Method header */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1">
+              <div className="font-medium text-deep-navy text-sm">{method.label}</div>
+              <div className="text-xs text-cool-grey">{method.description}</div>
             </div>
+            <span className="text-soft-gold text-lg flex-shrink-0 font-light">
+              {expanded === method.id ? '▼' : '▶'}
+            </span>
+          </div>
 
-            {/* Method details (expandable) */}
-            {expanded === method.id && (
-              <div className="mt-4 pt-4 border-t border-light-grey">
-                {method.render(props)}
-              </div>
-            )}
-          </button>
-        ))}
-      </div>
+          {/* Method details (expandable) */}
+          {expanded === method.id && (
+            <div className="mt-3 pt-3 border-t border-light-grey/50">
+              {method.render(props)}
+            </div>
+          )}
+        </button>
+      ))}
     </div>
   )
 }
