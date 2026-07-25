@@ -381,7 +381,7 @@ def score_org(org: dict, archetype: str, band: str) -> dict:
 
     # Health signal: compare to peer median reserves
     if reserves_mo < p25:
-        health_signal = 'CAUTION'
+        health_signal = 'MAY_NEED_SUPPORT'
     elif reserves_mo < p50:
         health_signal = 'STABLE'
     else:
@@ -432,8 +432,8 @@ def generate_donor_copy(org: dict, score: dict) -> str:
         lines.append(f"That's above the typical level for similar organizations, suggesting solid financial stability.")
     elif health == 'STABLE':
         lines.append(f"That's close to the typical level for similar organizations, showing steady planning.")
-    else:  # CAUTION
-        lines.append(f"That's below the typical level for similar organizations. Worth understanding before you give.")
+    else:  # MAY_NEED_SUPPORT
+        lines.append(f"That's below the typical level for similar organizations. Your support could strengthen their financial resilience.")
 
     lines.append(f"")
     lines.append(f"This comparison is based on public IRS 990 data from {peer_count:,} similar organizations.")
