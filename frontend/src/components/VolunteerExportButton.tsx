@@ -50,11 +50,11 @@ export default function VolunteerExportButton({
       <button
         onClick={handleExport}
         disabled={loading}
-        className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700 transition-colors disabled:opacity-50"
+        className="px-4 py-2 bg-success-green text-white rounded-lg font-semibold text-sm hover:opacity-90 transition-colors disabled:opacity-50"
       >
         {loading ? 'Exporting...' : `Export ${year} as ${format.toUpperCase()}`}
       </button>
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }

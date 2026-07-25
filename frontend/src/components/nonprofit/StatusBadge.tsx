@@ -7,9 +7,9 @@ interface StatusBadgeProps {
 export default function StatusBadge({ status, withContext = true, size = 'md' }: StatusBadgeProps) {
   const statusConfig = {
     submitted: {
-      bgColor: 'bg-amber-50',
+      bgColor: 'bg-alert-amber/5',
       borderColor: 'border-amber-200',
-      textColor: 'text-amber-900',
+      textColor: 'text-alert-amber',
       icon: '⏳',
       label: 'Submitted',
       context: 'awaiting nonprofit review'
@@ -23,7 +23,7 @@ export default function StatusBadge({ status, withContext = true, size = 'md' }:
       context: 'counted toward public impact'
     },
     rejected: {
-      bgColor: 'bg-red-50',
+      bgColor: 'bg-destructive/5',
       borderColor: 'border-red-200',
       textColor: 'text-red-900',
       icon: '✗',

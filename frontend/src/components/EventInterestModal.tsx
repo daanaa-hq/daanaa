@@ -67,7 +67,7 @@ export function EventInterestModal({
             />
           </div>
 
-          {error && <p className="font-body text-xs text-red-600">{error}</p>}
+          {error && <p className="font-body text-xs text-destructive">{error}</p>}
 
           <div className="flex gap-2 pt-2">
             <button

@@ -24,18 +24,18 @@ export default function FinancialContext({ org }: FinancialContextProps) {
     }
     if (isHealthy) {
       return {
-        bg: 'bg-green-50',
-        border: 'border-green-200',
-        label: 'text-green-700',
-        badge: 'bg-green-100 text-green-700',
+        bg: 'bg-success-green/5',
+        border: 'border-success-green/20',
+        label: 'text-success-green',
+        badge: 'bg-success-green/10 text-success-green',
       }
     }
     // FINANCIAL_NOTE
     return {
-      bg: 'bg-amber-50',
-      border: 'border-amber-200',
-      label: 'text-amber-700',
-      badge: 'bg-amber-100 text-amber-700',
+      bg: 'bg-alert-amber/5',
+      border: 'border-alert-amber/20',
+      label: 'text-alert-amber',
+      badge: 'bg-alert-amber/10 text-alert-amber',
     }
   }
 

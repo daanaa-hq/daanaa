@@ -13,7 +13,7 @@ interface WalletCardProps {
 const healthMap: Record<string, { label: string; classes: string; title: string }> = {
   HEALTHY: { label: 'Financially healthy', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200', title: 'More reserves than most similar organizations. From public IRS data.' },
   STABLE:  { label: 'Financially stable',  classes: 'bg-blue-50 text-blue-700 border-blue-200',         title: 'Typical reserve level for this type of organization. From public IRS data.' },
-  CAUTION: { label: 'Needs support',       classes: 'bg-amber-50 text-amber-700 border-amber-200',      title: 'Fewer reserves than most similar organizations. An invitation to give, not a judgment of the work.' },
+  CAUTION: { label: 'Needs support',       classes: 'bg-alert-amber/5 text-alert-amber border-alert-amber/20',      title: 'Fewer reserves than most similar organizations. An invitation to give, not a judgment of the work.' },
 }
 
 function getIntentDisplay(intent: GivingIntent | undefined): string | null {
@@ -83,7 +83,7 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
               <>
                 <button
                   onClick={handleRemoveClick}
-                  className="px-2 py-1 rounded-lg text-[12px] font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+                  className="px-2 py-1 rounded-lg text-[12px] font-semibold bg-destructive/5 text-destructive border border-red-200 hover:bg-red-100 transition-colors"
                 >
                   Remove
                 </button>

@@ -94,7 +94,7 @@ export default function WalletAccountLink() {
             {linking ? 'Saving…' : 'Save now'}
           </button>
         </div>
-        {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
+        {error && <p className="text-xs text-destructive mt-2">{error}</p>}
         {success && <p className="text-xs text-green-600 mt-2">✓ Wallet backed up</p>}
       </div>
     )
@@ -107,7 +107,7 @@ export default function WalletAccountLink() {
         Sign in to back up your wallet across devices. Your data syncs automatically.
       </p>
 
-      {error && <p className="text-xs text-red-600 mb-3">{error}</p>}
+      {error && <p className="text-xs text-destructive mb-3">{error}</p>}
       {success && <p className="text-xs text-green-600 mb-3">✓ Check your email for the sign-in link</p>}
 
       <div className="space-y-2">

@@ -91,7 +91,7 @@ export function RhythmNudges({ entries, orgDataMap }: {
                     logDonation(entry.ein, t.amount, todayIso(), 'Recurring gift')
                     setConfirming(prev => { const n = new Set(prev); n.delete(entry.ein); return n })
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-green-700 text-white font-body text-[13px] font-semibold hover:bg-green-800 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-success-green text-white font-body text-[13px] font-semibold hover:opacity-90 transition-colors"
                 >
                   Log my ${t.amount.toLocaleString()} gift
                 </button>
@@ -132,7 +132,7 @@ export function RhythmControl({ entry, orgName }: { entry: WalletEntry; orgName:
           {t.cadence === 'yearly' && t.anchorMonth ? ` in ${MONTH_NAMES[t.anchorMonth - 1]}` : ''}
         </p>
         <button onClick={() => setEditing(true)} className="font-body text-[12px] text-cool-grey hover:text-deep-navy underline transition-colors">Edit</button>
-        <button onClick={() => clearRecurringTemplate(entry.ein)} className="font-body text-[12px] text-cool-grey hover:text-red-500 underline transition-colors">Remove</button>
+        <button onClick={() => clearRecurringTemplate(entry.ein)} className="font-body text-[12px] text-cool-grey hover:text-destructive underline transition-colors">Remove</button>
       </div>
     )
   }

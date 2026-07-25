@@ -55,7 +55,7 @@ export default function DonorMessagesCard({
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 mb-4">{error}</p>
+        <p className="text-sm text-destructive mb-4">{error}</p>
       )}
 
       <div className="space-y-3 mb-4">

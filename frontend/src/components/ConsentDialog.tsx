@@ -69,8 +69,8 @@ export default function ConsentDialog({
           </ul>
         </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-green-800">
+        <div className="bg-success-green/5 border border-success-green/20 rounded-lg p-4 mb-6">
+          <p className="text-sm text-success-green">
             <span className="font-medium">You can:</span>
             <br />
             • Change your mind anytime (revoke access)
@@ -82,8 +82,8 @@ export default function ConsentDialog({
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-            <p className="text-sm text-red-800">{error}</p>
+          <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-4">
+            <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 

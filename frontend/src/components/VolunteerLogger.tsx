@@ -68,13 +68,13 @@ export default function VolunteerLogger({ ein, orgName }: VolunteerLoggerProps) 
       <h3 className="font-display text-lg italic text-deep-navy mb-4">Log your volunteer hours</h3>
 
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 text-green-700 text-sm">
+        <div className="bg-success-green/5 border border-success-green/20 rounded-lg p-3 mb-4 text-success-green text-sm">
           ✓ Hours logged for {orgName}. Your time is valuable!
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-red-700 text-sm">
+        <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-4 text-destructive text-sm">
           {error}
         </div>
       )}

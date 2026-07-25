@@ -102,7 +102,7 @@ export default function PassphraseModal({ mode, onSetup, onRestore, onClose }: P
                 </span>
               </label>
             </div>
-            {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+            {error && <p className="text-destructive text-sm mb-3">{error}</p>}
             <div className="flex gap-3">
               <button
                 onClick={onClose}
@@ -137,7 +137,7 @@ export default function PassphraseModal({ mode, onSetup, onRestore, onClose }: P
               autoComplete="off"
               spellCheck={false}
             />
-            {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+            {error && <p className="text-destructive text-sm mb-3">{error}</p>}
             <div className="flex gap-3">
               <button
                 onClick={onClose}

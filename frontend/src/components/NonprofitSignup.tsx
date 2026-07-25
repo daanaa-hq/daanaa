@@ -114,8 +114,8 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-800"><strong>Error:</strong> {error}</p>
+            <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
+              <p className="text-sm text-destructive"><strong>Error:</strong> {error}</p>
             </div>
           )}
 
