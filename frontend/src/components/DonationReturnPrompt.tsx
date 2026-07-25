@@ -1,16 +1,16 @@
 import DonationLogger from './DonationLogger'
 import type { DonationReturnPromptState } from '../hooks/useDonationReturnPrompt'
 
-interface DonationReturnPromptProps {
-  state: DonationReturnPromptState
-  onDismiss: () => void
-  onLogged: () => void
-}
-
 // The popup shown when a donor returns to the org page tab after clicking
 // Donate. Self-reported intent only -- Daanaa has no way to confirm money
 // actually moved and must never imply that it does. See
 // hooks/useDonationReturnPrompt.ts for the trigger design.
+export interface DonationReturnPromptProps {
+  state: DonationReturnPromptState
+  onDismiss: () => void
+  onLogged: (amount?: number) => void
+}
+
 export default function DonationReturnPrompt({ state, onDismiss, onLogged }: DonationReturnPromptProps) {
   return (
     <div
@@ -49,10 +49,10 @@ export default function DonationReturnPrompt({ state, onDismiss, onLogged }: Don
 // DonationLogger has its own internal success state but no onSuccess callback
 // -- wrap it so the return-prompt can close itself once logging succeeds,
 // and offer a "not now" skip that doesn't touch the wallet at all.
-function DonationLoggerWithDismiss({ ein, orgName, onLogged, onSkip }: { ein: string; orgName: string; onLogged: () => void; onSkip: () => void }) {
+function DonationLoggerWithDismiss({ ein, orgName, onLogged, onSkip }: { ein: string; orgName: string; onLogged: (amount?: number) => void; onSkip: () => void }) {
   return (
     <div>
-      <DonationLogger ein={ein} orgName={orgName} />
+      <DonationLogger ein={ein} orgName={orgName} onLogged={onLogged} />
       <div className="flex gap-3 mt-2">
         <button
           onClick={onSkip}
@@ -61,7 +61,7 @@ function DonationLoggerWithDismiss({ ein, orgName, onLogged, onSkip }: { ein: st
           Not now
         </button>
         <button
-          onClick={onLogged}
+          onClick={() => onLogged()}
           className="font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors underline underline-offset-2 ml-auto"
         >
           Done

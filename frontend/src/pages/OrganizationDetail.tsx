@@ -34,6 +34,7 @@ import GuildSection from '../components/GuildSection'
 import { sentenceCase } from '../utils/sentenceCase'
 import GiveYourWayRouter from '../components/GiveYourWayRouter'
 import VolunteerInterest from '../components/VolunteerInterest'
+import RecurringSetup from '../components/RecurringSetup'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -316,7 +317,7 @@ export default function OrganizationDetail() {
   const navigate = useNavigate()
   const { user, getIdToken } = useAuth()
   const { isInFunding, isInVolunteering, addToFunding, addToVolunteering,
-          removeFromFunding, removeFromVolunteering } = useWallet()
+          removeFromFunding, removeFromVolunteering, setRecurringTemplate } = useWallet()
   const { trackDonateClick, promptState, dismiss: dismissDonationPrompt } = useDonationReturnPrompt()
   const [portalLoading, setPortalLoading] = useState(false)
   const [portalError, setPortalError]     = useState<string | null>(null)
@@ -327,6 +328,8 @@ export default function OrganizationDetail() {
   const [enrichmentData, setEnrichmentData] = useState<any>(null)
   const [enrichmentLoading, setEnrichmentLoading] = useState(false)
   const [volunteeringInterestEventId, setVolunteeringInterestEventId] = useState<number | null>(null)
+  const [showRecurringSetup, setShowRecurringSetup] = useState(false)
+  const [lastDonationAmount, setLastDonationAmount] = useState<number | undefined>()
 
 
   // Hook must run unconditionally — keep it above any early return (Rules of Hooks)
@@ -1478,7 +1481,31 @@ export default function OrganizationDetail() {
         <DonationReturnPrompt
           state={promptState}
           onDismiss={dismissDonationPrompt}
-          onLogged={dismissDonationPrompt}
+          onLogged={(amount?: number) => {
+            if (amount) {
+              setLastDonationAmount(amount)
+              setShowRecurringSetup(true)
+            } else {
+              dismissDonationPrompt()
+            }
+          }}
+        />
+      )}
+
+      {/* Recurring Setup Modal */}
+      {showRecurringSetup && apiOrg && (
+        <RecurringSetup
+          orgName={apiOrg.organization_name}
+          lastDonationAmount={lastDonationAmount}
+          onSetup={(template) => {
+            setRecurringTemplate(apiOrg.EIN, template)
+            setShowRecurringSetup(false)
+            dismissDonationPrompt()
+          }}
+          onClose={() => {
+            setShowRecurringSetup(false)
+            dismissDonationPrompt()
+          }}
         />
       )}
     </div>

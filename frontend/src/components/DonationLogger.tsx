@@ -5,9 +5,10 @@ interface DonationLoggerProps {
   ein: string
   orgName: string
   orgOptedInLetters?: boolean
+  onLogged?: (amount: number) => void
 }
 
-export default function DonationLogger({ ein, orgName, orgOptedInLetters = false }: DonationLoggerProps) {
+export default function DonationLogger({ ein, orgName, orgOptedInLetters = false, onLogged }: DonationLoggerProps) {
   const { logDonation } = useWallet()
   const [donorName, setDonorName] = useState('')
   const [amount, setAmount] = useState('')
@@ -77,6 +78,7 @@ export default function DonationLogger({ ein, orgName, orgOptedInLetters = false
       }
 
       setSuccess(true)
+      onLogged?.(parsedAmount)
       setDonorName('')
       setAmount('')
       setNotes('')
