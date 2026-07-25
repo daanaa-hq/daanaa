@@ -62,7 +62,7 @@ export default function Partners() {
                   sortBy === opt ? 'bg-soft-gold text-white' : 'bg-white border border-light-grey'
                 }`}
               >
-                {opt === 'rating' ? '⭐ Rating' : '💰 Savings'}
+                {opt === 'rating' ? 'Rating' : 'Savings'}
               </button>
             ))}
           </div>
@@ -85,7 +85,7 @@ export default function Partners() {
                   <div className="flex justify-between items-center border-t border-light-grey pt-3">
                     <div>
                       {v.avg_rating ? (
-                        <div className="text-sm font-medium">{v.avg_rating.toFixed(1)} ⭐ ({v.rating_count})</div>
+                        <div className="text-sm font-medium">{v.avg_rating.toFixed(1)} rating ({v.rating_count})</div>
                       ) : (
                         <div className="text-xs text-cool-grey">No ratings yet</div>
                       )}

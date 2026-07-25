@@ -49,7 +49,6 @@ export default function VolunteerSubmission() {
     return (
       <div className="min-h-screen bg-warm-cream flex items-center justify-center px-4 py-16">
         <div className="max-w-md w-full text-center">
-          <div className="text-5xl mb-6">❌</div>
           <h1 className="font-display italic text-deep-navy text-[28px] mb-3">No claim code</h1>
           <p className="font-body text-cool-grey mb-6">
             Ask your nonprofit for a claim code. It should look like: VOL-ABC123DEF456
@@ -64,7 +63,6 @@ export default function VolunteerSubmission() {
     return (
       <div className="min-h-screen bg-warm-cream flex items-center justify-center px-4 py-16">
         <div className="max-w-md w-full text-center">
-          <div className="text-5xl mb-6">✅</div>
           <h1 className="font-display italic text-deep-navy text-[28px] mb-3">Hours claimed!</h1>
           <p className="font-body text-cool-grey mb-6">
             Your nonprofit will review and approve your volunteer hours. You'll receive an email when they take action.

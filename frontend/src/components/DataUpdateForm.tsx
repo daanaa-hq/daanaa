@@ -144,8 +144,7 @@ export default function DataUpdateForm({
   if (form.success) {
     return (
       <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-        <p className="font-body text-[14px] text-green-800 flex items-center gap-2">
-          <span className="text-lg">✅</span>
+        <p className="font-body text-[14px] text-green-800">
           Your update was received! It will be included in our next scoring run (within 2-3 business days).
         </p>
       </div>

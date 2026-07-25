@@ -4,17 +4,17 @@ interface ResearchSidebarProps {
 }
 
 const SECTIONS = [
-  { id: 'overview', label: 'Overview', icon: '📊' },
-  { id: 'about', label: 'About Daanaa', icon: '🎯' },
-  { id: 'problem', label: 'The Discovery Problem', icon: '🔍' },
-  { id: 'methodology', label: 'Our Methodology', icon: '📐' },
-  { id: 'financial-archetypes', label: 'Financial Archetypes', icon: '📈' },
+  { id: 'overview', label: 'Overview' },
+  { id: 'about', label: 'About Daanaa' },
+  { id: 'problem', label: 'The Discovery Problem' },
+  { id: 'methodology', label: 'Our Methodology' },
+  { id: 'financial-archetypes', label: 'Financial Archetypes' },
 
-  { id: 'entity-types', label: 'Organization Types', icon: '🏛️' },
-  { id: 'findings', label: 'Research Findings', icon: '📚' },
-  { id: 'spending', label: 'Program Spending', icon: '💸' },
+  { id: 'entity-types', label: 'Organization Types' },
+  { id: 'findings', label: 'Research Findings' },
+  { id: 'spending', label: 'Program Spending' },
 
-  { id: 'data-movement', label: "What's Changed", icon: '📋' },
+  { id: 'data-movement', label: "What's Changed" },
 ]
 
 export default function ResearchSidebar({

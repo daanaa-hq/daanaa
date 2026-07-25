@@ -57,7 +57,7 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
     const isLarge = band.includes('Established')
 
     rows.push({
-      dimension: '💰 Your Scale',
+      dimension: 'Your Scale',
       label: band,
       value: isMicro ? 'Smaller operating scale' : isLarge ? 'Established operating scale' : 'Growing operating scale',
       explanation: isMicro
@@ -94,7 +94,7 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
     const s = signals[signal as keyof typeof signals]
     if (s) {
       rows.push({
-        dimension: '🎯 Financial Health',
+        dimension: 'Financial Health',
         label: s.title,
         value: '',
         explanation: s.explanation,

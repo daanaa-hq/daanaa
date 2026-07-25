@@ -243,7 +243,7 @@ export default function DashboardHub() {
               {verificationItems.length === 0 ? (
                 <Card>
                   <CardContent className="pt-6 text-center">
-                    <p className="text-green-600 font-medium">✅ All links verified!</p>
+                    <p className="text-success-green font-medium">All links verified</p>
                   </CardContent>
                 </Card>
               ) : (
