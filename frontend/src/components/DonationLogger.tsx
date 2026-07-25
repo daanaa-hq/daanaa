@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useWallet } from '../contexts/WalletContext'
+import { CardPattern } from './ui/CardPattern'
 
 interface DonationLoggerProps {
   ein: string
@@ -93,13 +94,13 @@ export default function DonationLogger({ ein, orgName, orgOptedInLetters = false
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-md border border-light-grey">
+    <CardPattern variant="elevated">
       <h3 className="font-display text-lg italic text-deep-navy mb-4">Log your donation</h3>
 
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 text-green-700 text-sm">
-          ✓ Donation logged. {requestLetter ? 'Letter request sent!' : 'You can generate a tax receipt anytime.'}
-        </div>
+        <CardPattern variant="nested" className="mb-4 text-success-green bg-success-green/5 border-success-green/20">
+          Donation logged. {requestLetter ? 'Letter request sent!' : 'You can generate a tax receipt anytime.'}
+        </CardPattern>
       )}
 
       {error && (
@@ -229,6 +230,6 @@ export default function DonationLogger({ ein, orgName, orgOptedInLetters = false
           {loading ? 'Logging...' : 'Log donation'}
         </button>
       </form>
-    </div>
+    </CardPattern>
   )
 }

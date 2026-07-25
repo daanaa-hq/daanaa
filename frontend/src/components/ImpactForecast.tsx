@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { CardPattern } from './ui/CardPattern'
 
 interface MetricCard {
   title: string
@@ -73,21 +74,22 @@ export default function ImpactForecast({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {metrics.map((card, idx) => (
-        <div
+        <CardPattern
           key={idx}
-          className="bg-white rounded-lg p-4 border border-light-grey hover:shadow-md transition-shadow"
+          variant="default"
+          className="hover:shadow-md transition-shadow"
         >
           <p className="text-xs text-cool-grey font-semibold mb-1">{card.title}</p>
           <p className="font-display text-2xl text-deep-navy mb-1">{card.value}</p>
           <p className="text-xs text-cool-grey">{card.subtitle}</p>
           {card.trend && (
-            <p className="text-xs mt-2">
-              {card.trend === 'up' && '📈'}
-              {card.trend === 'down' && '📉'}
-              {card.trend === 'stable' && '➡️'}
+            <p className="text-xs mt-2 text-success-green font-semibold">
+              {card.trend === 'up' && 'Trending up'}
+              {card.trend === 'down' && 'Trending down'}
+              {card.trend === 'stable' && 'Stable'}
             </p>
           )}
-        </div>
+        </CardPattern>
       ))}
     </div>
   )

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { CardPattern } from './ui/CardPattern'
 
 interface ImpactData {
   period: string
@@ -65,7 +66,7 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
 
   if (size === 'small') {
     return (
-      <div className="bg-soft-gold/5 border border-soft-gold/20 rounded-xl p-4">
+      <CardPattern variant="subtle">
         <div className="font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-semibold mb-3">
           Community impact
         </div>
@@ -89,12 +90,12 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
             </div>
           )}
         </div>
-      </div>
+      </CardPattern>
     )
   }
 
   return (
-    <div className="bg-white border border-light-grey rounded-xl p-6">
+    <CardPattern variant="default">
       <div className="mb-6">
         <div className="font-body text-[11px] tracking-[0.06em] text-link-gold uppercase font-semibold mb-2">
           Daanaa Impact
@@ -151,6 +152,6 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
       <div className="mt-6 font-body text-[11px] text-cool-grey leading-relaxed border-t border-light-grey pt-4">
         Donations are self-reported by donors. Volunteer hours are reported by nonprofits and valued at $28.50/hour (BLS average service rate).
       </div>
-    </div>
+    </CardPattern>
   )
 }

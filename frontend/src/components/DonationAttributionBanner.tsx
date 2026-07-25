@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { ApiOrganization } from '../data/api'
+import { CardPattern } from './ui/CardPattern'
 
 interface DonationAttributionBannerProps {
   org: ApiOrganization
@@ -41,7 +42,7 @@ export default function DonationAttributionBanner({ org }: DonationAttributionBa
   if (dismissed) return null
 
   return (
-    <div className="bg-soft-gold/5 border border-soft-gold/20 rounded-xl p-4 mb-6">
+    <CardPattern variant="subtle" className="mb-6">
       <div className="flex items-center justify-between gap-4">
         <p className="font-body text-[13px] text-deep-navy flex-1">
           Did Daanaa help you find {org.organization_name}? Let us know. It helps us measure our reach.
@@ -54,6 +55,6 @@ export default function DonationAttributionBanner({ org }: DonationAttributionBa
           {loading ? 'Saving...' : 'Yes, it did'}
         </button>
       </div>
-    </div>
+    </CardPattern>
   )
 }
