@@ -1,5 +1,6 @@
 import type { ApiOrganization } from '../data/api'
 import { getNteeLabel } from '../data/ntee'
+import { CardPattern } from './ui/CardPattern'
 
 interface ContextRow {
   dimension: string
@@ -108,7 +109,7 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
   if (rows.length === 0) return null
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6">
+    <CardPattern variant="gradient">
       <div className="mb-6">
         <h3 className="font-display text-[18px] font-semibold text-deep-navy mb-2">
           What the public record shows
@@ -156,6 +157,6 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
           <strong>For nonprofits:</strong> Claim your profile to update your story. Donors want to understand your context—not judge it.
         </p>
       </div>
-    </div>
+    </CardPattern>
   )
 }

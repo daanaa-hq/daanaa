@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import type { ApiOrganization } from '../data/api'
 import { getNteeLabel } from '../data/ntee'
+import { CardPattern } from './ui/CardPattern'
 
 interface CohortContextProps {
   org: ApiOrganization
@@ -19,7 +20,7 @@ export default function CohortContext({ org }: CohortContextProps) {
   const median = Math.round(cohort.median_reserve)
 
   return (
-    <div className="rounded-lg border border-light-grey bg-warm-cream/40 p-6">
+    <CardPattern variant="subtle">
       <div className="space-y-4">
         <div>
           <h3 className="font-body text-xs tracking-widest uppercase font-semibold text-cool-grey">
@@ -31,7 +32,7 @@ export default function CohortContext({ org }: CohortContextProps) {
           </p>
         </div>
 
-        <div className="rounded-md bg-white border border-light-grey p-4 space-y-2">
+        <CardPattern variant="nested" className="space-y-2">
           <p className="font-body text-[13px] tracking-wide uppercase text-cool-grey">
             About {causeLabel.toLowerCase().startsWith('this') ? causeLabel : `its work in ${causeLabel}`}
           </p>
@@ -44,7 +45,7 @@ export default function CohortContext({ org }: CohortContextProps) {
           <p className="font-body text-[13px] text-cool-grey">
             This is background on the cause area, not a measure of this organization.
           </p>
-        </div>
+        </CardPattern>
 
         <div className="pt-1">
           <p className="font-body text-[14px] text-deep-navy">
@@ -59,6 +60,6 @@ export default function CohortContext({ org }: CohortContextProps) {
           </p>
         </div>
       </div>
-    </div>
+    </CardPattern>
   )
 }

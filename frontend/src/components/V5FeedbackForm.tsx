@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ApiOrganization } from '../data/api'
+import { CardPattern } from './ui/CardPattern'
 
 interface V5FeedbackProps {
   org: ApiOrganization
@@ -58,9 +59,9 @@ export default function V5FeedbackForm({ org, archetype }: V5FeedbackProps) {
 
   if (submitted) {
     return (
-      <div className="rounded-lg border border-soft-gold/40 bg-soft-gold/10 p-4 font-body text-sm text-deep-navy">
+      <CardPattern variant="subtle" className="font-body text-sm text-deep-navy">
         Thanks for your feedback. It helps us improve this comparison.
-      </div>
+      </CardPattern>
     )
   }
 
@@ -69,7 +70,8 @@ export default function V5FeedbackForm({ org, archetype }: V5FeedbackProps) {
   const labelClass = "block font-body text-[13px] font-medium text-deep-navy mb-1.5"
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-light-grey bg-light-cream/40 p-4 space-y-4">
+    <CardPattern variant="subtle" className="space-y-4">
+      <form onSubmit={handleSubmit} className="contents">
       <p className="font-body text-[13px] font-semibold text-deep-navy">Help us improve this financial comparison</p>
 
       {/* Clarity */}
@@ -142,6 +144,7 @@ export default function V5FeedbackForm({ org, archetype }: V5FeedbackProps) {
       <p className="font-body text-[11px] text-cool-grey text-center">
         Anonymous — helps us improve the comparison system.
       </p>
-    </form>
+      </form>
+    </CardPattern>
   )
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useWallet } from '../contexts/WalletContext'
+import { CardPattern } from './ui/CardPattern'
 
 /**
  * DonorVoice — Qualitative trust signal from donors who've supported an org.
@@ -58,7 +59,7 @@ export default function DonorVoice({
   }
 
   return (
-    <div className="rounded-xl border border-soft-gold/20 bg-warm-cream/40 p-6">
+    <CardPattern variant="subtle">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           <h3 className="font-semibold text-deep-navy text-[14px] mb-1">What supporters say</h3>
@@ -80,7 +81,7 @@ export default function DonorVoice({
 
       {/* Note form */}
       {showForm && canLeaveNote && (
-        <div className="mb-4 p-4 bg-white rounded-lg border border-light-grey space-y-3">
+        <CardPattern variant="nested" className="mb-4 space-y-3">
           <textarea
             value={note}
             onChange={e => setNote(e.target.value)}
@@ -128,19 +129,19 @@ export default function DonorVoice({
               Cancel
             </button>
           </div>
-        </div>
+        </CardPattern>
       )}
 
       {/* Notes list */}
       {recentNotes.length > 0 && (
         <div className="space-y-2">
           {recentNotes.map(n => (
-            <div key={n.id} className="bg-white rounded-lg p-3 border border-light-cream">
+            <CardPattern key={n.id} variant="default">
               <p className="font-body text-[13px] text-deep-navy leading-relaxed">{n.text}</p>
               <p className="mt-1.5 font-body text-[11px] text-muted-cream">
                 {n.authorName ? `— ${n.authorName}` : '— Anonymous'} · {new Date(n.addedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
-            </div>
+            </CardPattern>
           ))}
 
           {hasMore && (
@@ -156,6 +157,6 @@ export default function DonorVoice({
           You've supported this org. What was your experience?
         </p>
       )}
-    </div>
+    </CardPattern>
   )
 }

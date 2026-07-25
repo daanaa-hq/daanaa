@@ -1,5 +1,6 @@
 import type { ApiOrganization } from '../data/api'
 import { formatCurrency } from '../data/organizations'
+import { CardPattern } from './ui/CardPattern'
 
 interface ResearchDataProps {
   org: ApiOrganization
@@ -24,7 +25,7 @@ export default function ResearchDataTransparency({ org, onUpdateClick }: Researc
   const isStale = freshness.status === 'stale'
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6">
+    <CardPattern variant="default">
       <div className="mb-6">
         <h3 className="font-display text-[18px] font-semibold text-deep-navy mb-2">
           Research Data Behind Your Profile
@@ -36,7 +37,7 @@ export default function ResearchDataTransparency({ org, onUpdateClick }: Researc
       </div>
 
       {/* Data Source & Freshness */}
-      <div className="mb-6 p-4 rounded-lg bg-slate-50 border border-slate-100">
+      <CardPattern variant="nested" className="mb-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="font-body text-[11px] text-cool-grey uppercase tracking-wide mb-1">
@@ -64,7 +65,7 @@ export default function ResearchDataTransparency({ org, onUpdateClick }: Researc
             </p>
           </div>
         </div>
-      </div>
+      </CardPattern>
 
       {/* Key Metrics Used in Peer Context */}
       <div className="space-y-3 mb-6">
@@ -121,14 +122,14 @@ export default function ResearchDataTransparency({ org, onUpdateClick }: Researc
 
       {/* Stale Data Warning */}
       {isStale && (
-        <div className="mb-6 p-4 rounded-lg bg-alert-amber/5 border border-amber-200">
+        <CardPattern variant="nested" className="mb-6 border-alert-amber/30 bg-alert-amber/5">
           <p className="font-body text-[13px] text-amber-900 mb-2">
             <strong>Your data is from {org.latest_tax_year}.</strong> The 2025 990 may not be filed yet, but if your financials have changed, you can update them below.
           </p>
           <p className="font-body text-[12px] text-amber-800">
             Updating your information helps donors understand your current position.
           </p>
-        </div>
+        </CardPattern>
       )}
 
       {/* Validation & Action */}
@@ -161,6 +162,6 @@ export default function ResearchDataTransparency({ org, onUpdateClick }: Researc
           Accurate data helps donors understand your context. It also helps us serve you better.
         </p>
       </div>
-    </div>
+    </CardPattern>
   )
 }
