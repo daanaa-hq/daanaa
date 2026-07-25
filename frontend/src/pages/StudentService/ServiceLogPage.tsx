@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ServiceLog {
   service_log_id: string;
@@ -28,6 +29,7 @@ interface ServiceLogSummary {
 }
 
 export default function ServiceLogPage() {
+  const { user, getIdToken } = useAuth();
   const [logs, setLogs] = useState<ServiceLog[]>([]);
   const [summary, setSummary] = useState<ServiceLogSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,10 +50,15 @@ export default function ServiceLogPage() {
   // Fetch service logs
   const fetchLogs = async () => {
     try {
+      if (!user) {
+        alert('Please sign in to view service logs');
+        return;
+      }
       setLoading(true);
+      const token = await getIdToken();
       const response = await fetch(`${API_URL}/api/student/service-log`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('firebase_token') || ''}`,
+          'Authorization': `Bearer ${token || ''}`,
         },
       });
 
@@ -68,13 +75,20 @@ export default function ServiceLogPage() {
   };
 
   useEffect(() => {
-    fetchLogs();
-  }, []);
+    if (user) {
+      fetchLogs();
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+      if (!user) {
+        alert('Please sign in to log hours');
+        return;
+      }
+
       // Validation
       if (!formData.nonprofit_ein || !formData.service_date || !formData.hours_claimed || !formData.activity_description) {
         alert('Please fill in all required fields');
@@ -87,10 +101,11 @@ export default function ServiceLogPage() {
         return;
       }
 
+      const token = await getIdToken();
       const response = await fetch(`${API_URL}/api/student/service-log/submit`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('firebase_token') || ''}`,
+          'Authorization': `Bearer ${token || ''}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
@@ -121,10 +136,16 @@ export default function ServiceLogPage() {
     if (!confirm('Delete this service log? This action cannot be undone.')) return;
 
     try {
+      if (!user) {
+        alert('Please sign in to delete logs');
+        return;
+      }
+
+      const token = await getIdToken();
       const response = await fetch(`${API_URL}/api/student/service-log/${serviceLogId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('firebase_token') || ''}`,
+          'Authorization': `Bearer ${token || ''}`,
         },
       });
 
