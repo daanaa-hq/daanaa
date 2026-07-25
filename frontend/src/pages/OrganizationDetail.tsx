@@ -31,6 +31,7 @@ import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
 import OrgEnrichmentCard from '../components/OrgEnrichmentCard'
 import GuildSection from '../components/GuildSection'
+import { sentenceCase } from '../utils/sentenceCase'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -176,7 +177,11 @@ function adaptOrg(apiOrg: ApiOrganization) {
     assets: 0,
     employees: 0,
     founded: 0,
-    mission: apiOrg.mission || '',
+    // Missions harvested from Form 990 arrive in the filing's all-caps. Case is
+    // fixed here, at the single point the page's org object is built, so every
+    // consumer below gets readable text. The filing itself stays verbatim in the
+    // database; this is presentation only, and mixed-case text passes through.
+    mission: sentenceCase(apiOrg.mission),
     website: apiOrg.website || '',
     programs: [] as string[],
     leadership: [] as { name: string; title: string; initials: string }[],
@@ -435,7 +440,7 @@ export default function OrganizationDetail() {
 
   const metaTitle = apiOrg?.organization_name ?? ''
   const metaDesc = apiOrg
-    ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. ${apiOrg.mission ? apiOrg.mission.slice(0, 120).replace(/\s+\S+$/, '') + '.' : 'Public financial context and peer comparison available.'}`
+    ? `${apiOrg.organization_name} is a registered US nonprofit${apiOrg.CITY ? ` in ${apiOrg.CITY}, ${apiOrg.STATE}` : ''}. ${apiOrg.mission ? sentenceCase(apiOrg.mission).slice(0, 120).replace(/\s+\S+$/, '') + '.' : 'Public financial context and peer comparison available.'}`
     : ''
 
   const ogImage = apiOrg && apiOrg.NTEE1
