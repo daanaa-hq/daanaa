@@ -133,63 +133,98 @@ Tiny: 12px, 1.4 line-height (meta text only)
 
 ### Components
 
-#### Button
-**Required abstraction.** No inline button styling.
+#### Button (ui/Button.tsx)
+**Required abstraction.** No inline button styling — use the Button component.
 
 ```tsx
+import { Button } from '@/components/ui/Button'
+
 <Button variant="primary" size="md">Give Now</Button>
 <Button variant="secondary" size="md">Learn More</Button>
 <Button variant="outline" size="sm">Cancel</Button>
 <Button variant="destructive" size="md">Delete</Button>
+<Button variant="ghost" size="sm">Skip</Button>
 ```
 
-**Rules:**
-- Variant controls color (uses semantic tokens: primary, secondary, destructive)
-- Size controls padding + font size (sm: 12px, md: 14px, lg: 16px)
-- Touch target always ≥44px
-- Hover state: opacity shift or color shift, never both
-- Disabled state: reduced opacity + `cursor: not-allowed`
+**Variants:**
+- `primary`: soft-gold background, deep-navy text (main actions)
+- `secondary`: white border, deep-navy text (supporting actions)
+- `outline`: soft-gold border, soft-gold text (tertiary actions)
+- `destructive`: destructive background, white text (delete/remove)
+- `ghost`: text-only, cool-grey text (low-emphasis actions)
 
-#### Card
-**Required abstraction.** No ad-hoc card styling.
+**Sizes:** `sm` (12px, 8px height), `md` (14px, 10px height), `lg` (16px, 12px height)
+
+**Rules:**
+- All buttons use semantic tokens (no raw colors)
+- All touch targets ≥44px (enforced by size classes)
+- Hover state: opacity change (no color shift)
+- Disabled state: opacity 50% + `cursor: not-allowed`
+- Refactor inline button patterns to use this component
+
+#### Card (ui/Card.tsx)
+**Required abstraction.** No card styling outside the Card component family.
 
 ```tsx
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card'
+
 <Card>
-  <Card.Header>Title</Card.Header>
-  <Card.Body>Content</Card.Body>
-  <Card.Footer>Actions</Card.Footer>
+  <CardHeader>
+    <CardTitle>Your Wallet</CardTitle>
+  </CardHeader>
+  <CardContent>
+    ...
+  </CardContent>
+  <CardFooter>
+    <Button>Continue</Button>
+  </CardFooter>
 </Card>
 ```
 
+**Sub-components:**
+- `CardHeader`: top section with title/description
+- `CardTitle`: serif display heading (h3-sized)
+- `CardContent`: main body content
+- `CardFooter`: optional actions section
+
 **Rules:**
 - Use semantic colors (not raw Tailwind utilities)
-- Shadow: use --card-shadow for default, --card-hover-shadow on hover
-- Border-radius: use CSS variable `var(--radius)`
-- Padding: 16px minimum (inside), 8px gap between sub-elements
+- All cards use `shadow-card` (elevation via shadow, not borders)
+- Padding: 6 (24px) on Card, adjust within sub-components
+- Border-radius: uses CSS variable `var(--radius)`
+- Merge duplicate card variants (AnswerCard, OrgCard, etc.) into this component
 
-#### Heading
-**Required abstraction.** Standardizes typography + color.
+#### Heading (ui/Heading.tsx)
+**Required abstraction.** All h1-h6 use the Heading component for consistent styling.
 
 ```tsx
-<Heading level={1} color="deep-navy">
-  Browse organizations by impact
-</Heading>
+import { Heading } from '@/components/ui/Heading'
+
+<Heading level={1}>Browse nonprofits by impact</Heading>
+<Heading level={2}>Your giving wallet</Heading>
+<Heading level={3}>Peer comparison</Heading>
+<Heading level={4 | 5 | 6}>Subheadings</Heading>
 ```
 
 **Rules:**
-- Level: 1-6, maps to H1-H6 with defined sizing
-- Color: uses semantic tokens, inherits from semantic context (primary, muted, etc.)
+- Level: 1-6, maps to H1-H6
+- Responsive sizing: clamp() scales headings across viewports
+- h1-h3: serif display font + italic styling (Daanaa signature)
+- h4-h5: serif display font, bold, not italic
+- h6: body font, uppercase, wide tracking (labels/captions)
 - No manual font-size on headings
+- All use deep-navy text by default (semantic, overridable via className)
 
 #### Form Fields
-**Required abstraction.** All inputs, selects, textareas use defined styling.
+**Planned abstraction.** Input, Select, Textarea need unified styling.
 
 **Rules:**
 - Label always visible (never use placeholder as label)
 - Focus state: `focus:ring-2 focus:ring-soft-gold/40`
-- Validation: error message near field + red border
-- Placeholder text: muted color, 65% opacity
-- Input text color: charcoal (not body's warm-cream)
+- Validation: error message near field + border-destructive
+- Placeholder text: cool-grey, 65% opacity
+- Input text color: charcoal (not warm-cream)
+- All use semantic border colors (border-light-grey, border-soft-gold on focus)
 
 ---
 
@@ -337,13 +372,70 @@ This section records *why* design choices were made, so future updates can chang
 
 ---
 
+## Enforcement (ESLint + Code Review)
+
+### Automated Rules
+These will be enforced by ESLint linting as soon as the rules are configured:
+
+```bash
+# Future setup:
+npm install --save-dev @typescript-eslint/eslint-plugin eslint-plugin-tailwindcss
+
+# Rules to enable:
+- no-restricted-classname: Disallow raw utility patterns like bg-green-600, text-red-700, border-l-indigo-400
+  → Use semantic tokens instead (bg-success-green, text-destructive, border-l-soft-gold)
+
+- button-must-use-component: Disallow <button className="...px-4 py-2...">
+  → Use <Button variant="primary" size="md">
+
+- card-must-use-component: Disallow div+card styling patterns
+  → Use <Card><CardHeader>...<CardTitle>...</CardTitle>...</CardHeader></Card>
+
+- heading-must-use-component: Disallow <h1 className="...text-4xl...">
+  → Use <Heading level={1}>
+```
+
+### Code Review Checklist
+When reviewing PRs, flag:
+- ❌ Raw Tailwind color utilities (bg-green-600, text-red-700, etc.)
+- ❌ Inline button styling (className="px-4 py-2 rounded...") — use Button
+- ❌ Inline card styling — use Card components
+- ❌ Inline heading styling — use Heading
+- ❌ Emoji in functional UI (except chat/social contexts)
+- ❌ Generic SaaS copy ("Welcome to", "Unlock the power", etc.)
+
+Request: Use component abstractions; if component doesn't exist yet, extract it first.
+
+---
+
 ## Staying Intentional
 
 **The risk:** As the product grows, design decisions scatter. Someone uses a raw utility. Someone adds emoji. Someone copies generic SaaS copy. By the time anyone notices, it's everywhere.
 
-**The antidote:** This document. A shared commitment to specificity, evidence, and respect. Every designer and developer has the right — and responsibility — to call out misalignment. "This doesn't sound like Daanaa" or "This uses raw utilities instead of semantic tokens" is a *compliment*, not a critique.
+**The antidote:** This document + component libraries + linting rules. A shared commitment to specificity, evidence, and respect. Every designer and developer has the right — and responsibility — to call out misalignment. "This doesn't sound like Daanaa" or "This uses raw utilities instead of semantic tokens" is a *compliment*, not a critique.
 
 **The test:** In 6 months, would someone new to Daanaa know this was designed intentionally? Or would it feel like it was built fast by an AI? If the latter, we've drifted. Time to re-read this document and refocus.
+
+---
+
+## Implementation Timeline
+
+**Done (2026-07-25):**
+- ✅ DESIGN.md published — voice principles + visual system codified
+- ✅ Emoji removed from functional UI (17 instances)
+- ✅ Semantic color tokens deployed (259 → 100 distinct colors)
+- ✅ Button, Card, Heading components created (primitives in place)
+
+**Next (by 2026-08-01):**
+- [ ] Refactor 40+ inline button patterns → `<Button>` component
+- [ ] Consolidate 7 card variants → unified `<Card>` component
+- [ ] ESLint rules configured (no raw utilities, require components)
+- [ ] Form field component abstraction
+
+**Ongoing:**
+- Code review: enforce component usage + semantic tokens
+- Monitor for emoji creep, generic copy, color sprawl
+- Quarterly DESIGN.md review (principles adjust as product evolves)
 
 ---
 
