@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { API_BASE } from '../../data/api'
+import { CardPattern } from '../ui/CardPattern'
 
 interface Edit {
   field: string
@@ -48,9 +49,9 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
 
   if (error) {
     return (
-      <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[13px]">
+      <CardPattern variant="nested" className="text-destructive font-body text-[13px]">
         {error}
-      </div>
+      </CardPattern>
     )
   }
 
@@ -108,7 +109,7 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
             </div>
 
             {/* Content */}
-            <div className="ml-16 bg-white rounded-xl p-4 border border-light-grey">
+            <CardPattern variant="elevated" className="ml-16">
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <span className="inline-block px-2.5 py-1 rounded-lg bg-soft-gold/20 text-deep-navy font-body text-[11px] font-semibold capitalize mb-2">
@@ -124,11 +125,11 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
               <div className="space-y-3 my-3">
                 <div>
                   <p className="font-body text-[11px] font-semibold text-cool-grey uppercase mb-1">Before</p>
-                  <div className="p-2.5 bg-destructive/5 rounded border border-destructive/20">
+                  <CardPattern variant="nested" className="p-2.5 bg-destructive/5 border-destructive/20">
                     <p className="font-body text-[13px] text-deep-navy whitespace-pre-wrap break-words">
                       {edit.old_value || '(empty)'}
                     </p>
-                  </div>
+                  </CardPattern>
                 </div>
 
                 <div className="flex justify-center">
@@ -137,11 +138,11 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
 
                 <div>
                   <p className="font-body text-[11px] font-semibold text-cool-grey uppercase mb-1">After</p>
-                  <div className="p-2.5 bg-emerald-50 rounded border border-emerald-200">
+                  <CardPattern variant="nested" className="p-2.5 bg-success-green/5 border-success-green/20">
                     <p className="font-body text-[13px] text-deep-navy whitespace-pre-wrap break-words">
                       {edit.new_value || '(empty)'}
                     </p>
-                  </div>
+                  </CardPattern>
                 </div>
               </div>
 
@@ -158,13 +159,13 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
                   Updated by {edit.editor}
                 </p>
               </div>
-            </div>
+            </CardPattern>
           </div>
         ))}
       </div>
 
       {/* Summary */}
-      <div className="mt-8 p-4 bg-slate-50 rounded-lg border border-slate-200">
+      <CardPattern variant="gradient" className="mt-8">
         <p className="font-body text-[13px] text-slate-900">
           <strong>Total changes:</strong> {filteredEdits.length}
           {filterField && ` to ${filterField}`}
@@ -172,7 +173,7 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
         <p className="font-body text-[12px] text-slate-700 mt-1">
           All changes are logged and visible to donors. Donors can see when and why your organization updates its profile.
         </p>
-      </div>
+      </CardPattern>
     </div>
   )
 }
