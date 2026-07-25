@@ -654,21 +654,24 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* Cause tags -- AI-generated (beta) until the organization sets its own */}
+              {/* Cause tags -- collapsible secondary detail */}
               {Array.isArray(apiOrg!.cause_tags) && apiOrg!.cause_tags.length > 0 && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {(apiOrg!.cause_tags as string[]).map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center px-2.5 py-1 rounded-full font-body text-[11px] tracking-[0.02em] text-muted-cream/80 border border-white/10 bg-white/6"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                  {(apiOrg?.data_badges?.tags === 'ai_generated' || apiOrg?.mission_source === 'ai_ntee' || apiOrg?.mission_source === 'ai_generated') && (
-                    <AiBadge title="These search tags were suggested by AI from public records. The organization can set its own once it claims this page." />
-                  )}
-                </div>
+                <details className="mt-4">
+                  <summary className="text-soft-gold hover:text-bright-gold cursor-pointer text-sm font-medium">Categories ({(apiOrg!.cause_tags as string[]).length})</summary>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {(apiOrg!.cause_tags as string[]).map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center px-2.5 py-1 rounded-full font-body text-[11px] tracking-[0.02em] text-muted-cream/80 border border-white/10 bg-white/6"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {(apiOrg?.data_badges?.tags === 'ai_generated' || apiOrg?.mission_source === 'ai_ntee' || apiOrg?.mission_source === 'ai_generated') && (
+                      <AiBadge title="These search tags were suggested by AI from public records. The organization can set its own once it claims this page." />
+                    )}
+                  </div>
+                </details>
               )}
 
               <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -696,78 +699,6 @@ export default function OrganizationDetail() {
                   </div>
                 ))}
               </div>
-
-              {/* Ways to Support card: dedicated buttons for Website / Donate / Volunteer
-                  with verification status and role clarity disclaimer. */}
-              {(() => {
-                const { websiteUrl, websiteLabel, isWebsiteBeta, donateUrl, isDonateBeta, volunteerUrl, hasAnyLink } = actionLinks
-
-                if (!hasAnyLink) return null;
-
-                return (
-                  <div className="mt-8 p-6 rounded-lg border border-white/10 bg-white/[0.03] backdrop-blur-sm">
-                    <h3 className="font-body text-[14px] font-semibold text-soft-gold uppercase tracking-[0.05em] mb-4">Ways to Support</h3>
-
-                    {/* Giving-first CTA hierarchy (Stage 1 redesign): Donate is the
-                        primary action — first in the row, emerald, larger. Website is
-                        secondary. Volunteer is a tertiary link. Mission: make giving easy,
-                        so the donate decision is never ambiguous. */}
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      {donateUrl && (
-                        <a
-                          href={donateUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => { trackEvent('Donate Click'); trackDonateClick(apiOrg!.EIN, apiOrg!.organization_name) }}
-                          aria-label={`Donate to ${apiOrg!.organization_name}`}
-                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-emerald-500 text-deep-navy px-6 py-3 rounded-lg hover:bg-emerald-400 transition-colors"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                          Donate
-                        </a>
-                      )}
-                      {websiteUrl && (
-                        <a
-                          href={websiteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 font-body text-[15px] font-semibold bg-soft-gold text-deep-navy px-6 py-3 rounded-lg hover:bg-bright-gold transition-colors"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                          {websiteLabel}
-                        </a>
-                      )}
-                      {volunteerUrl && (
-                        <a
-                          href={volunteerUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 font-body text-[14px] font-semibold border border-warm-cream/40 text-warm-cream px-5 py-2.5 rounded-lg hover:border-warm-cream/60 hover:bg-warm-cream/5 transition-colors"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                          Volunteer
-                        </a>
-                      )}
-                    </div>
-
-                    {(isWebsiteBeta || isDonateBeta) && (
-                      <div className="flex items-start gap-2 mb-3 p-2 rounded bg-white/5">
-                        <AiBadge title="Found by AI from public records. Not yet confirmed by the organization." />
-                        <div className="flex-1">
-                          <p className="font-body text-[12px] text-muted-cream">
-                            {isDonateBeta ? 'Donation link found by AI, not yet confirmed by the organization.' : 'Website found by AI, not yet confirmed by the organization.'}
-                            <Link to={`/for-nonprofits?ein=${apiOrg!.EIN}`} className="ml-1.5 underline underline-offset-2 hover:text-warm-cream transition-colors">Verify here.</Link>
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <p className="font-body text-[12px] text-muted-cream leading-[1.6]">
-                      All links are direct to the organization. <strong>Daanaa doesn't process donations</strong> — you give directly to them, on their site. External links from public records.
-                    </p>
-                  </div>
-                );
-              })()}
 
               {/* Contact phone */}
               {apiOrg?.phone && (
@@ -935,11 +866,12 @@ export default function OrganizationDetail() {
       <div className="py-20">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* Giving-first order (Stage 1): lead with the skimmable interpretation
-              (health signal + peer standing + reserves-vs-peers), THEN the raw
-              numbers. A donor should get "is this org financially sound?" in one
-              glance before reading a metrics grid. PDCA: observe whether this
-              lifts engagement via stats.daanaa.org before assuming it helps. */}
+          {/* Financial context — collapsible secondary detail. Wrapped behind disclosure
+              since the giving action is now complete at the top (GiveYourWayRouter). */}
+          {(apiOrg!.v5_context || apiOrg!.cohort_context || apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
+            <details className="mb-12">
+              <summary className="text-deep-navy font-semibold cursor-pointer text-base mb-4">Financial health details</summary>
+              <div>
 
           {/* v5.0 Peer-based Financial Context — shown whenever the org has a
               peer-based assessment of its own. */}
@@ -1019,6 +951,9 @@ export default function OrganizationDetail() {
                 </div>
               )}
             </div>
+          )}
+              </div>
+            </details>
           )}
 
           {/* Multi-dimensional peer context breakdown — shows where the org
