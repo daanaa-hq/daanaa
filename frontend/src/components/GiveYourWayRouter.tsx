@@ -61,15 +61,15 @@ const methods: MethodConfig[] = [
     description: 'Fidelity, Schwab, Vanguard, or your fund manager',
     available: (p) => !!(p.ein && p.streetAddress),
     render: (p) => (
-      <div className="text-sm space-y-2">
-        <p>In your DAF provider (Fidelity, Schwab, Vanguard, etc.), enter:</p>
-        <div className="bg-light-grey p-3 rounded font-mono text-xs">
-          <div>EIN: {p.ein}</div>
-          {p.streetAddress && <div>Address: {p.streetAddress}</div>}
+      <div className="text-sm space-y-3">
+        <p className="text-deep-navy">In your DAF provider (Fidelity, Schwab, Vanguard, etc.), enter:</p>
+        <div className="bg-slate-100 border border-slate-300 p-4 rounded font-mono text-sm text-deep-navy">
+          <div className="font-semibold">EIN: {p.ein}</div>
+          {p.streetAddress && <div className="text-slate-700 mt-2">Address: {p.streetAddress}</div>}
         </div>
         <button
           onClick={() => navigator.clipboard.writeText(`${p.ein}`)}
-          className="text-xs text-soft-gold hover:underline"
+          className="text-sm text-soft-gold hover:text-gold font-medium transition-colors"
         >
           Copy EIN
         </button>
@@ -83,14 +83,14 @@ const methods: MethodConfig[] = [
     description: 'Make a check payable to the organization',
     available: (p) => !!(p.ein && p.streetAddress),
     render: (p) => (
-      <div className="text-sm space-y-2">
-        <p>Make a check payable to:</p>
-        <div className="bg-light-grey p-3 rounded">
-          <div className="font-semibold">{p.organizationName}</div>
+      <div className="text-sm space-y-3">
+        <p className="text-deep-navy">Make a check payable to:</p>
+        <div className="bg-slate-100 border border-slate-300 p-4 rounded text-deep-navy">
+          <div className="font-semibold text-base">{p.organizationName}</div>
           {p.streetAddress && (
             <>
-              <div>{p.streetAddress}</div>
-              {p.city && p.state && <div>{p.city}, {p.state}</div>}
+              <div className="text-slate-700 mt-2">{p.streetAddress}</div>
+              {p.city && p.state && <div className="text-slate-700">{p.city}, {p.state}</div>}
             </>
           )}
         </div>
@@ -104,14 +104,14 @@ const methods: MethodConfig[] = [
     description: 'Send a payment through your bank',
     available: (p) => !!(p.ein && p.streetAddress),
     render: (p) => (
-      <div className="text-sm space-y-2">
-        <p>In your bank's bill pay, add this payee:</p>
-        <div className="bg-light-grey p-3 rounded">
-          <div className="font-semibold">{p.organizationName}</div>
+      <div className="text-sm space-y-3">
+        <p className="text-deep-navy">In your bank's bill pay, add this payee:</p>
+        <div className="bg-slate-100 border border-slate-300 p-4 rounded text-deep-navy">
+          <div className="font-semibold text-base">{p.organizationName}</div>
           {p.streetAddress && (
             <>
-              <div>{p.streetAddress}</div>
-              {p.city && p.state && <div>{p.city}, {p.state}</div>}
+              <div className="text-slate-700 mt-2">{p.streetAddress}</div>
+              {p.city && p.state && <div className="text-slate-700">{p.city}, {p.state}</div>}
             </>
           )}
         </div>
@@ -125,15 +125,15 @@ const methods: MethodConfig[] = [
     description: 'File a grant recommendation with your company',
     available: (p) => !!p.ein,
     render: (p) => (
-      <div className="text-sm space-y-2">
-        <p>In your company's giving platform (Benevity, YourCause, etc.):</p>
-        <div className="bg-light-grey p-3 rounded font-mono text-xs">
-          <div>Organization EIN: {p.ein}</div>
-          <div>Name: {p.organizationName}</div>
+      <div className="text-sm space-y-3">
+        <p className="text-deep-navy">In your company's giving platform (Benevity, YourCause, etc.):</p>
+        <div className="bg-slate-100 border border-slate-300 p-4 rounded font-mono text-sm text-deep-navy">
+          <div className="font-semibold">EIN: {p.ein}</div>
+          <div className="text-slate-700 mt-2">Name: {p.organizationName}</div>
         </div>
         <button
           onClick={() => navigator.clipboard.writeText(`${p.ein}`)}
-          className="text-xs text-soft-gold hover:underline"
+          className="text-sm text-soft-gold hover:text-gold font-medium transition-colors"
         >
           Copy EIN
         </button>
@@ -144,72 +144,49 @@ const methods: MethodConfig[] = [
 ]
 
 export default function GiveYourWayRouter(props: GiveMethodProps) {
+  const [expanded, setExpanded] = React.useState<GiveMethod | null>(null)
   const available = methods.filter((m) => m.available(props)).sort((a, b) => a.priority - b.priority)
 
   if (available.length === 0) {
     return null
   }
 
-  const [selected, setSelected] = useState<GiveMethod>(available[0].id)
-  const selectedMethod = methods.find((m) => m.id === selected)!
-  const primary = available.slice(0, 2)
-  const secondary = available.slice(2)
-
   return (
-    <div className="mt-8 p-6 border border-soft-gold rounded bg-warm-cream space-y-4">
-      <div>
-        <h3 className="font-semibold text-deep-navy mb-4">How would you like to give?</h3>
+    <div className="mt-8 space-y-4">
+      <h3 className="font-semibold text-deep-navy text-lg">How would you like to give?</h3>
 
-        {/* Primary methods — visible by default */}
-        <div className="space-y-2 mb-4">
-          {primary.map((method) => (
-            <label key={method.id} className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="radio"
-                name="give-method"
-                value={method.id}
-                checked={selected === method.id}
-                onChange={() => setSelected(method.id)}
-                className="mt-1"
-              />
+      {/* All methods as expandable cards */}
+      <div className="space-y-3">
+        {available.map((method) => (
+          <button
+            key={method.id}
+            onClick={() => setExpanded(expanded === method.id ? null : method.id)}
+            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+              expanded === method.id
+                ? 'border-soft-gold bg-warm-cream'
+                : 'border-light-grey bg-white hover:border-soft-gold/50'
+            }`}
+          >
+            {/* Method header (always visible) */}
+            <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <div className="font-medium text-deep-navy">{method.label}</div>
-                <div className="text-sm text-cool-grey">{method.description}</div>
+                <div className="font-semibold text-deep-navy">{method.label}</div>
+                <div className="text-sm text-cool-grey mt-1">{method.description}</div>
               </div>
-            </label>
-          ))}
-        </div>
-
-        {/* Secondary methods — behind disclosure */}
-        {secondary.length > 0 && (
-          <details className="text-sm">
-            <summary className="text-soft-gold hover:underline cursor-pointer">
-              Other ways to give ({secondary.length})
-            </summary>
-            <div className="space-y-2 mt-3 pl-4">
-              {secondary.map((method) => (
-                <label key={method.id} className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="give-method"
-                    value={method.id}
-                    checked={selected === method.id}
-                    onChange={() => setSelected(method.id)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium text-deep-navy">{method.label}</div>
-                    <div className="text-xs text-cool-grey">{method.description}</div>
-                  </div>
-                </label>
-              ))}
+              <span className="text-soft-gold text-xl flex-shrink-0">
+                {expanded === method.id ? '−' : '+'}
+              </span>
             </div>
-          </details>
-        )}
-      </div>
 
-      {/* Render the selected method's instructions */}
-      <div className="pt-4 border-t border-soft-gold">{selectedMethod?.render(props)}</div>
+            {/* Method details (expandable) */}
+            {expanded === method.id && (
+              <div className="mt-4 pt-4 border-t border-light-grey">
+                {method.render(props)}
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
