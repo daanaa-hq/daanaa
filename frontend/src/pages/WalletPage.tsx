@@ -11,6 +11,8 @@ import DonationLogger from '../components/DonationLogger'
 import VolunteerLogger from '../components/VolunteerLogger'
 import CloseTheLoopPrompt from '../components/CloseTheLoopPrompt'
 import { RhythmNudges, RhythmControl } from '../components/GivingRhythm'
+import RecurringNudge from '../components/RecurringNudge'
+import { isTemplateDue } from '../types/wallet'
 import type { ApiOrganization } from '../data/api'
 import { API_BASE } from '../lib/platform'
 import {
@@ -72,6 +74,8 @@ export default function WalletPage() {
     applyMigration,
     dismissMigration,
     refreshVolunteerStatuses,
+    logDonation,
+    snoozeRecurringTemplate,
   } = useWallet()
 
   // On open, refresh approval status of any event-submitted volunteer hours
@@ -476,6 +480,37 @@ export default function WalletPage() {
           </div>
         )}
 
+
+        {/* Recurring gift nudges — due reminders for established recurring templates */}
+        {activeTab === 'funding' && (
+          <div className="space-y-3 mb-6">
+            {fundingEntries.map(entry => {
+              if (!entry.recurringTemplate || !isTemplateDue(entry)) return null
+              const apiOrg = orgDataMap.get(entry.ein)
+              const today = new Date().toISOString().split('T')[0]
+              return (
+                <RecurringNudge
+                  key={entry.ein}
+                  orgName={apiOrg?.organization_name || 'Unknown organization'}
+                  amount={entry.recurringTemplate.amount}
+                  cadence={entry.recurringTemplate.cadence}
+                  onConfirm={() => {
+                    // Log donation with template amount, today's date
+                    logDonation(entry.ein, entry.recurringTemplate!.amount, today)
+                  }}
+                  onSnooze={() => {
+                    // Snooze until next cycle: 30 days for monthly, 91 for quarterly, 365 for yearly
+                    const daysToAdd = entry.recurringTemplate!.cadence === 'monthly' ? 30
+                      : entry.recurringTemplate!.cadence === 'quarterly' ? 91 : 365
+                    const snoozeDate = new Date()
+                    snoozeDate.setDate(snoozeDate.getDate() + daysToAdd)
+                    snoozeRecurringTemplate(entry.ein, snoozeDate.toISOString().split('T')[0])
+                  }}
+                />
+              )
+            })}
+          </div>
+        )}
 
         {/* Giving rhythm nudges — due gifts, computed on-device only */}
         {activeTab === 'funding' && <RhythmNudges entries={fundingEntries} orgDataMap={orgDataMap} />}
