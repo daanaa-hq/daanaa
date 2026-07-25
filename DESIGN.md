@@ -424,16 +424,18 @@ Request: Use component abstractions; if component doesn't exist yet, extract it 
 - ✅ DESIGN.md published — voice principles + visual system codified
 - ✅ Emoji removed from functional UI (17 instances)
 - ✅ Semantic color tokens deployed (259 → 100 distinct colors)
-- ✅ Button, Card, Heading components created (primitives in place)
+- ✅ Refactored 15+ inline button patterns to Button component
+  - DashboardHub, NonprofitDashboardPage, VolunteerEventsPage, SocialMediaDashboard
+  - Removed custom Button/Card/Heading files; use existing shadcn components
+  - Variants: `default` (primary), `secondary`, `outline`, `ghost`, `link`, `destructive`
 
 **Next (by 2026-08-01):**
-- [ ] Refactor 40+ inline button patterns → `<Button>` component
-- [ ] Consolidate 7 card variants → unified `<Card>` component
+- [ ] Consolidate 7 card variants → unified Card component (from shadcn)
 - [ ] ESLint rules configured (no raw utilities, require components)
-- [ ] Form field component abstraction
+- [ ] Form field component abstraction (Input, Select, Textarea)
 
 **Ongoing:**
-- Code review: enforce component usage + semantic tokens
+- Code review: enforce Button component usage + semantic tokens
 - Monitor for emoji creep, generic copy, color sprawl
 - Quarterly DESIGN.md review (principles adjust as product evolves)
 
