@@ -1,3 +1,5 @@
+import { CardPattern } from '../ui/CardPattern'
+
 interface WelcomeCardProps {
   organizationName: string
   onDismiss: () => void
@@ -5,7 +7,7 @@ interface WelcomeCardProps {
 
 export default function WelcomeCard({ organizationName, onDismiss }: WelcomeCardProps) {
   return (
-    <div className="bg-gradient-to-r from-soft-gold/20 via-soft-gold/10 to-transparent border-2 border-soft-gold/50 rounded-2xl p-6 mb-6">
+    <CardPattern variant="elevated" className="mb-6 bg-gradient-to-r from-soft-gold/20 via-soft-gold/10 to-transparent border-2 border-soft-gold/50">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <h2 className="font-display text-xl text-deep-navy mb-2">Welcome to your dashboard, {organizationName}!</h2>
@@ -14,21 +16,21 @@ export default function WelcomeCard({ organizationName, onDismiss }: WelcomeCard
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-            <div className="bg-white rounded-lg p-3 border border-soft-gold/30">
+            <CardPattern variant="default" className="p-3">
               <div className="text-2xl mb-1">📋</div>
               <p className="font-body text-[12px] font-semibold text-deep-navy mb-1">Profile</p>
               <p className="font-body text-[11px] text-cool-grey">Update how donors see your organization</p>
-            </div>
-            <div className="bg-white rounded-lg p-3 border border-soft-gold/30">
+            </CardPattern>
+            <CardPattern variant="default" className="p-3">
               <div className="text-2xl mb-1">✓</div>
               <p className="font-body text-[12px] font-semibold text-deep-navy mb-1">Approvals</p>
               <p className="font-body text-[11px] text-cool-grey">Review volunteer hour submissions</p>
-            </div>
-            <div className="bg-white rounded-lg p-3 border border-soft-gold/30">
+            </CardPattern>
+            <CardPattern variant="default" className="p-3">
               <div className="text-2xl mb-1">📊</div>
               <p className="font-body text-[12px] font-semibold text-deep-navy mb-1">Reporting</p>
               <p className="font-body text-[11px] text-cool-grey">Export data for your board</p>
-            </div>
+            </CardPattern>
           </div>
         </div>
 
@@ -41,6 +43,6 @@ export default function WelcomeCard({ organizationName, onDismiss }: WelcomeCard
           <span className="text-xl leading-none">×</span>
         </button>
       </div>
-    </div>
+    </CardPattern>
   )
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { CardPattern } from './ui/CardPattern'
 
 interface DonorMessage {
   id: string
@@ -44,11 +45,11 @@ export default function DonorMessagesCard({
   }, [authToken])
 
   if (loading) {
-    return <div className="bg-white rounded-2xl p-6 text-center">Loading messages...</div>
+    return <CardPattern variant="elevated" className="text-center">Loading messages...</CardPattern>
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-100/30 to-slate-100/10 rounded-2xl p-6 border border-slate-200/30">
+    <CardPattern variant="gradient">
       <div className="flex items-start justify-between mb-4">
         <h3 className="font-display text-xl text-deep-navy">Donor Communication</h3>
         <span className="text-2xl">💌</span>
@@ -63,14 +64,14 @@ export default function DonorMessagesCard({
           <p className="text-sm text-cool-grey">No messages sent yet</p>
         ) : (
           messages.map((msg) => (
-            <div key={msg.id} className="bg-white/60 rounded-lg p-3 text-sm">
+            <CardPattern key={msg.id} variant="nested">
               <p className="font-semibold text-deep-navy">{msg.donor_name}</p>
               <p className="text-xs text-cool-grey mt-1">{msg.message_subject}</p>
               <div className="flex gap-4 mt-2 text-xs text-cool-grey">
                 <span>Opens: {msg.open_count}</span>
                 <span>Clicks: {msg.link_clicks}</span>
               </div>
-            </div>
+            </CardPattern>
           ))
         )}
       </div>
@@ -81,6 +82,6 @@ export default function DonorMessagesCard({
       >
         Compose Message
       </button>
-    </div>
+    </CardPattern>
   )
 }

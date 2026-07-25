@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import TemplateEditorModal from './TemplateEditorModal'
 import { type DonorTemplate } from '../lib/schemas'
+import { CardPattern } from './ui/CardPattern'
 
 interface DonorCommunicationCardProps {
   nonprofitEin: string
@@ -81,15 +82,15 @@ export default function DonorCommunicationCard({
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-purple-100/30 to-indigo-100/10 rounded-2xl p-6 border border-purple-200/30 flex items-center justify-center min-h-40">
+      <CardPattern variant="gradient" className="flex items-center justify-center min-h-40">
         <div className="w-8 h-8 border-4 border-soft-gold border-t-transparent rounded-full animate-spin" />
-      </div>
+      </CardPattern>
     )
   }
 
   return (
     <>
-      <div className="bg-gradient-to-br from-purple-100/30 to-indigo-100/10 rounded-2xl p-6 border border-purple-200/30">
+      <CardPattern variant="gradient">
         <div className="flex items-start justify-between mb-4">
           <h3 className="font-display text-xl text-deep-navy">Donor Communication</h3>
           <span className="text-2xl">💬</span>
@@ -118,9 +119,9 @@ export default function DonorCommunicationCard({
         {/* Preview */}
         <div className="mb-4">
           <label className="block text-xs font-semibold text-cool-grey mb-2">Preview</label>
-          <div className="bg-soft-cream rounded-lg p-4 border border-light-grey text-sm leading-relaxed max-h-32 overflow-y-auto">
+          <CardPattern variant="subtle" className="text-sm leading-relaxed max-h-32 overflow-y-auto">
             <p className="text-deep-navy whitespace-pre-wrap">{preview}</p>
-          </div>
+          </CardPattern>
         </div>
 
         {/* Variables Hint */}
@@ -143,7 +144,7 @@ export default function DonorCommunicationCard({
             Create Custom
           </button>
         </div>
-      </div>
+      </CardPattern>
 
       {/* Template Editor Modal */}
       <TemplateEditorModal
