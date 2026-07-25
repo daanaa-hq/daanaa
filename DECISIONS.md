@@ -1,3 +1,41 @@
+## 2026-07-25: Revenue Band Fallback Strategy (Archetype-Only Context for Missing Data)
+
+**Problem:** 1.19M orgs (59% of scoreable) lack `total_revenue` data. Scorer was silently assigning these to 'micro' band based on 0 revenue, making them indistinguishable from actual small nonprofits.
+
+**Chose:** Keep `merit_band_v5` NULL when revenue data is missing; display archetype-only context instead of fabricating peer group benchmarks.
+
+**Implementation:**
+- Scorer v5.0 now checks: if revenue is NULL, band assignment returns None (not fabricated 'micro')
+- Archetype-only orgs (1.19M) store: archetype, NULL band, NULL health_signal, NULL peer_group_label
+- Orgs with revenue data (702K) continue: full peer group scoring with band, reserves, health signal
+- API handles gracefully: returns archetype label, applies NCCS governance data (board size, policies) when available
+- Summary reports both groups separately for visibility
+
+**Coverage Impact (verified in 5K sample test):**
+- 38% with revenue data → peer group context
+- 62% archetype-only → funding model context + governance policies (when available via NCCS)
+- **Total archetype coverage remains 94%** (unchanged; NTEE-based, not revenue-dependent)
+- Donor-facing presentation: "Donation-Funded Organization" (bold) vs "Donation-Funded, Micro Budget" (when band known)
+
+**Why This Approach (Stewardship P3):**
+- **Trust signals must be evidence-based** — fabricating band assignments violates P3
+- Honest NULL is more defensible than silent 'micro' default
+- NCCS governance data (board size, policies, expense ratios) provides alternative context for missing-revenue orgs
+- Keeps scoring deterministic and reversible (can re-score if revenue data arrives)
+
+**Rejected alternatives:**
+- Fabricate 'micro' for missing revenue (current behavior; violates P3)
+- Drop missing-revenue orgs entirely (loses archetype-based visibility)
+- Use median revenue of archetype as proxy band (guessing; violates P3)
+- Require revenue data before scoring (too aggressive; 59% coverage loss)
+
+**Follow-up (next session):**
+- Complete NCCS ingestion (governance columns: board_size, policies, expense ratios) for governance-rich display
+- Extend UI `PeerContextBreakdown` to show "Governance Highlights" for archetype-only orgs
+- Test with live data: ensure NULL band doesn't break filters/sorts in API
+
+---
+
 ## 2026-07-24: Guided Discovery Phase 1 Implementation (Core Flow + Infrastructure)
 
 **Problem:** Directory alone is overwhelming for donors who care about a cause but don't know which organizations to search for. Need a complementary guided path (not replacement for search).

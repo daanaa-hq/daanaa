@@ -308,7 +308,10 @@ def get_archetype_by_ntee(ntee1: str) -> str:
     return NTEE_TO_ARCHETYPE.get(ntee1, 'donation_funded')
 
 def get_revenue_band(revenue: float) -> str:
-    """Assign org to revenue band based on total revenue."""
+    """Assign org to revenue band based on total revenue.
+    Returns None if revenue data is missing (archetype-only context)."""
+    if revenue is None or revenue == 0:
+        return None
     if revenue < 150000:
         return 'micro'
     elif revenue < 700000:
@@ -487,7 +490,7 @@ def main():
         ein = org[0]  # Column 0 is EIN
         ntee1 = org[1] or 'Z'  # Column 1 is NTEE1
         revenue_val = org[2]  # Column 2 is total_revenue
-        revenue = float(revenue_val) if revenue_val else 0
+        revenue = float(revenue_val) if revenue_val else None  # Keep None for missing data
 
         # Build org dict for metrics extraction
         org_dict = {
@@ -502,8 +505,20 @@ def main():
         archetype = get_archetype_by_ntee(ntee1)
         band = get_revenue_band(revenue)
 
-        # Score
-        score = score_org(org_dict, archetype, band)
+        # Score: if band is None (missing revenue), store archetype-only context
+        score = score_org(org_dict, archetype, band) if band else {
+            'archetype': ARCHETYPES[archetype]['name'],
+            'archetype_key': archetype,
+            'band': None,
+            'band_key': None,
+            'peer_group_label': None,
+            'peer_org_count': None,
+            'reserves_mo': None,
+            'reserves_percentile': None,
+            'labor_pct': None,
+            'health_signal': None,
+        }
+
         if not score:
             failures.append((org_dict.get('ein'), 'Failed to extract metrics'))
             continue
@@ -514,8 +529,12 @@ def main():
         score['ntee1'] = ntee1
         score['revenue'] = revenue
 
-        # Add donor copy
-        score['donor_copy'] = generate_donor_copy(org_dict, score)
+        # Add donor copy (only if band exists)
+        if band:
+            score['donor_copy'] = generate_donor_copy(org_dict, score)
+        else:
+            # Archetype-only context (no peer group benchmarks)
+            score['donor_copy'] = None
 
         scores.append(score)
 
@@ -543,11 +562,17 @@ def main():
 
     # Summary stats
     by_group = defaultdict(list)
+    archetype_only = []
     for score in scores:
-        key = (score['archetype_key'], score['band_key'])
-        by_group[key].append(score)
+        if score['band_key'] is None:
+            archetype_only.append(score)
+        else:
+            key = (score['archetype_key'], score['band_key'])
+            by_group[key].append(score)
 
     log(f"\n=== Scoring Summary ===")
+
+    # Peer groups (with band)
     for key in sorted(by_group.keys()):
         group = by_group[key]
         healthies = sum(1 for s in group if s['health_signal'] == 'HEALTHY')
@@ -555,6 +580,15 @@ def main():
         cautions = sum(1 for s in group if s['health_signal'] == 'CAUTION')
         label = BENCHMARKS[key]['label']
         log(f"{label}: {len(group):6d} orgs | HEALTHY {healthies:5d} | STABLE {stables:5d} | CAUTION {cautions:5d}")
+
+    # Archetype-only (missing revenue data)
+    if archetype_only:
+        log(f"\nArchetype-Only (no revenue data): {len(archetype_only):6d} orgs")
+        by_archetype = defaultdict(int)
+        for score in archetype_only:
+            by_archetype[score['archetype']] += 1
+        for arch in sorted(by_archetype.keys()):
+            log(f"  {arch}: {by_archetype[arch]:6d} orgs")
 
 if __name__ == '__main__':
     main()
