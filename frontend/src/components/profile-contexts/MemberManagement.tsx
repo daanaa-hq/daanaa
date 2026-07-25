@@ -4,10 +4,10 @@ import { useAuth } from '../../contexts/AuthContext'
 import type { ProfileContext, ContextMember } from '../../hooks/useProfileContexts'
 
 const ROLE_LABELS: Record<string, string> = {
-  lead: '👑 Lead',
-  support: '🤝 Support',
-  member: '👤 Member',
-  viewer: '👁️ Viewer',
+  lead: 'Lead',
+  support: 'Support',
+  member: 'Member',
+  viewer: 'Viewer',
 }
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {

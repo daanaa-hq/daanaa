@@ -83,9 +83,9 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
         {/* Content */}
         <div className="px-6 py-6 space-y-6">
           {/* Help Text */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="font-body text-[13px] text-blue-900 font-semibold mb-1">💡 About this field</p>
-            <p className="font-body text-[13px] text-blue-900">{config.help}</p>
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <p className="font-body text-[13px] text-slate-900 font-semibold mb-1">About this field</p>
+            <p className="font-body text-[13px] text-slate-900">{config.help}</p>
           </div>
 
           {/* Current Value */}
@@ -131,7 +131,7 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
                 {charCount} / {config.maxChars} characters
               </span>
               {charCount < config.minChars && (
-                <span className="font-body text-[11px] text-red-600">
+                <span className="font-body text-[11px] text-destructive">
                   Minimum {config.minChars} characters required
                 </span>
               )}
@@ -154,21 +154,21 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
               className="w-full px-4 py-3 border border-light-grey rounded-lg font-body text-[14px] resize-none focus:outline-none focus:ring-2 focus:ring-soft-gold"
             />
             <p id="reason-help" className="font-body text-[11px] text-cool-grey mt-2">
-              💡 This message helps donors understand what changed and why. Be concise and honest.
+              This message helps donors understand what changed and why. Be concise and honest.
             </p>
           </div>
 
           {/* Error */}
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="font-body text-[13px] text-red-700">{error}</p>
+            <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
+              <p className="font-body text-[13px] text-destructive">{error}</p>
             </div>
           )}
 
           {/* Preview */}
-          <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-            <p className="font-body text-[12px] font-semibold text-emerald-900 mb-2">Preview</p>
-            <p className="font-body text-[13px] text-emerald-900 whitespace-pre-wrap">{newValue || '(empty)'}</p>
+          <div className="p-4 bg-success-green/5 rounded-lg border border-success-green/20">
+            <p className="font-body text-[12px] font-semibold text-success-green mb-2">Preview</p>
+            <p className="font-body text-[13px] text-success-green whitespace-pre-wrap">{newValue || '(empty)'}</p>
           </div>
         </div>
 

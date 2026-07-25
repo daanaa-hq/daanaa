@@ -47,10 +47,10 @@ const PLACE_OPTIONS = [
 
 const INTENT_OPTIONS = [
   { id: 'give-money', label: 'Give money', icon: '💰' },
-  { id: 'volunteer', label: 'Give time', icon: '⏰' },
-  { id: 'share-skills', label: 'Share knowledge or skills', icon: '🎓' },
-  { id: 'learn', label: 'Learn about organizations in a community', icon: '📍' },
-  { id: 'related', label: 'Find organizations working on related problems', icon: '🔗' },
+  { id: 'volunteer', label: 'Give time' },
+  { id: 'share-skills', label: 'Share knowledge or skills' },
+  { id: 'learn', label: 'Learn about organizations in a community' },
+  { id: 'related', label: 'Find organizations working on related problems' },
 ]
 
 const CONNECTION_OPTIONS = [

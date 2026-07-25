@@ -48,7 +48,7 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
 
   if (error) {
     return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 font-body text-[13px]">
+      <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[13px]">
         {error}
       </div>
     )
@@ -124,7 +124,7 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
               <div className="space-y-3 my-3">
                 <div>
                   <p className="font-body text-[11px] font-semibold text-cool-grey uppercase mb-1">Before</p>
-                  <div className="p-2.5 bg-red-50 rounded border border-red-200">
+                  <div className="p-2.5 bg-destructive/5 rounded border border-destructive/20">
                     <p className="font-body text-[13px] text-deep-navy whitespace-pre-wrap break-words">
                       {edit.old_value || '(empty)'}
                     </p>
@@ -164,12 +164,12 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
       </div>
 
       {/* Summary */}
-      <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <p className="font-body text-[13px] text-blue-900">
+      <div className="mt-8 p-4 bg-slate-50 rounded-lg border border-slate-200">
+        <p className="font-body text-[13px] text-slate-900">
           <strong>Total changes:</strong> {filteredEdits.length}
           {filterField && ` to ${filterField}`}
         </p>
-        <p className="font-body text-[12px] text-blue-700 mt-1">
+        <p className="font-body text-[12px] text-slate-700 mt-1">
           All changes are logged and visible to donors. Donors can see when and why your organization updates its profile.
         </p>
       </div>

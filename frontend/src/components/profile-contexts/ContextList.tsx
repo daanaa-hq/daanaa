@@ -2,17 +2,17 @@ import { Users, Archive, Settings } from 'lucide-react'
 import type { ProfileContext } from '../../hooks/useProfileContexts'
 
 const CONTEXT_LABELS: Record<string, string> = {
-  household: '👨‍👩‍👧‍👦 Household',
-  daf: '💰 DAF or Foundation',
-  business: '🏢 Business',
-  other: '📋 Other',
+  household: 'Household',
+  daf: 'DAF or Foundation',
+  business: 'Business',
+  other: 'Other',
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  lead: '👑 Lead',
-  support: '🤝 Support',
-  member: '👤 Member',
-  viewer: '👁️ Viewer',
+  lead: 'Lead',
+  support: 'Support',
+  member: 'Member',
+  viewer: 'Viewer',
 }
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {

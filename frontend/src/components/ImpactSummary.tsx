@@ -77,11 +77,11 @@ export default function ImpactSummary() {
         </p>
       </div>
 
-      <div className="bg-gradient-to-br from-green-100/40 to-emerald-100/20 rounded-lg p-4 border border-green-200/40">
+      <div className="bg-gradient-to-br from-success-green/10 to-success-green/5 rounded-lg p-4 border border-success-green/20">
         <p className="text-xs text-cool-grey uppercase tracking-wide font-semibold mb-1">
           Hours Volunteered
         </p>
-        <p className="font-display text-2xl text-green-600">{impact.totalHours.toFixed(1)}</p>
+        <p className="font-display text-2xl text-success-green">{impact.totalHours.toFixed(1)}</p>
         <p className="text-xs text-cool-grey mt-1">
           {impact.totalHours === 0 ? 'Start volunteering' : 'hours'}
         </p>

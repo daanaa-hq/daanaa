@@ -42,10 +42,10 @@ export default function DonorMessageTimeline({
     fetchEvents()
   }, [messageId, authToken])
 
-  const eventIcon: Record<string, string> = {
-    open: '👁️',
-    click: '🔗',
-    bounce: '📬',
+  const eventLabel: Record<string, string> = {
+    open: 'Opened',
+    click: 'Clicked',
+    bounce: 'Bounced',
   }
 
   return (
@@ -68,18 +68,13 @@ export default function DonorMessageTimeline({
         {!loading && events.length > 0 && (
           <div className="space-y-4">
             {events.map((event, idx) => (
-              <div key={event.id} className="flex gap-3 pb-3 border-b border-light-grey">
-                <div className="text-2xl flex-shrink-0">
-                  {eventIcon[event.event_type] || '📊'}
-                </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-sm text-deep-navy capitalize">
-                    {event.event_type}
-                  </p>
-                  <p className="text-xs text-cool-grey mt-1">
-                    {new Date(event.event_timestamp).toLocaleString()}
-                  </p>
-                </div>
+              <div key={event.id} className="pb-3 border-b border-light-grey">
+                <p className="font-semibold text-sm text-deep-navy capitalize">
+                  {eventLabel[event.event_type] || event.event_type}
+                </p>
+                <p className="text-xs text-cool-grey mt-1">
+                  {new Date(event.event_timestamp).toLocaleString()}
+                </p>
               </div>
             ))}
           </div>

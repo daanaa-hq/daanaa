@@ -270,13 +270,12 @@ export default function ReportingPack() {
             disabled={exporting}
             className="p-6 rounded-xl bg-white border-2 border-soft-gold text-deep-navy hover:bg-soft-gold/10 disabled:opacity-50 transition"
           >
-            <div className="text-3xl mb-2">📄</div>
             <h3 className="font-display text-lg mb-1">Export as PDF</h3>
-            <p className="font-body text-[12px] text-cool-grey">
+            <p className="font-body text-[12px] text-cool-grey mb-2">
               Print-ready formatted report
             </p>
             {exportType === 'pdf' && (
-              <p className="font-body text-[12px] text-emerald-600 mt-2">✓ Opened</p>
+              <p className="font-body text-[12px] text-emerald-600 mt-2">Opened</p>
             )}
           </button>
         </div>

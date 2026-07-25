@@ -66,7 +66,7 @@ export default function WalletBadge({
       <span
         role="status"
         aria-label={label}
-        className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full"
+        className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-destructive rounded-full"
       >
         {count}
       </span>
@@ -79,9 +79,9 @@ export default function WalletBadge({
       <Link
         to="/giving-wallet"
         aria-label={label}
-        className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-gray-800 bg-orange-100 hover:bg-orange-200 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
+        className="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-alert-amber bg-alert-amber/10 hover:bg-alert-amber/20 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-alert-amber/40 focus:ring-offset-2"
       >
-        <span>💾 Wallet</span>
+        <span>Wallet</span>
         <span className="font-bold">{count}</span>
       </Link>
     )

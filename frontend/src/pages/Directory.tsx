@@ -28,7 +28,7 @@ const SCORES_ENABLED = import.meta.env.VITE_ENABLE_SCORES !== 'false'
 // P7 Stewardship: Only neutral sorts. Revenue is data (not ranking).
 // (2026-07-24: Removed score-based 'Top Performers' ranking; kept revenue sort for transparency)
 const SORT_OPTIONS = [
-  { id: 'random', label: '🎲 Shuffle' },  // Discovery-first (2026-07-24)
+  { id: 'random', label: 'Shuffle' },  // Discovery-first (2026-07-24)
   { id: 'organization_name', label: 'Name A to Z' },  // Neutral control, no ranking
   { id: 'total_revenue', label: 'By Total Revenue' },  // Data transparency, not ranking
 ]
@@ -1055,7 +1055,7 @@ export default function Directory() {
                           aria-label="Randomize list"
                           className="inline-flex items-center justify-center px-3 py-1 rounded-md border border-light-grey text-cool-grey hover:text-deep-navy hover:border-cool-grey transition-colors font-body text-[13px] whitespace-nowrap"
                         >
-                          🎲 Randomize it
+                          Randomize
                         </button>
                       )}
                     </div>

@@ -164,9 +164,8 @@ export default function NonprofitDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
           {/* Donation Letters */}
           <div className="bg-gradient-to-br from-soft-gold/20 to-bright-gold/10 rounded-2xl p-6 border border-soft-gold/30">
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4">
               <h3 className="font-display text-xl text-deep-navy">Donation Letters</h3>
-              <span className="text-2xl">📄</span>
             </div>
             <p className="text-sm text-cool-grey mb-4">
               Approve and generate tax-compliant donation letters for your donors.
@@ -185,9 +184,8 @@ export default function NonprofitDashboardPage() {
 
           {/* Volunteer Hours */}
           <div className="bg-gradient-to-br from-green-100/30 to-emerald-100/10 rounded-2xl p-6 border border-green-200/30">
-            <div className="flex items-start justify-between mb-4">
+            <div className="mb-4">
               <h3 className="font-display text-xl text-deep-navy">Volunteer Hours</h3>
-              <span className="text-2xl">🤝</span>
             </div>
             <p className="text-sm text-cool-grey mb-4">
               Track and verify volunteer service hours contributed by your supporters.
