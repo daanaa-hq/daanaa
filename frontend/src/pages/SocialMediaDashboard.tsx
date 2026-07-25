@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { TrendingUp, MessageCircle, Heart, Share2, Eye, Zap, Target, Flame } from 'lucide-react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { Button } from '@/components/ui/button'
 
 interface CarouselMetrics {
   carousel_id: string
@@ -362,9 +363,9 @@ export function SocialMediaDashboard() {
                         <p className="text-xs text-slate-500">Estimated reach:</p>
                         <p className="text-lg font-semibold text-slate-900 dark:text-white">{rec.estimated_engagement.toLocaleString()} engagements</p>
                       </div>
-                      <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                      <Button variant="default" size="default">
                         Approve & Schedule
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}

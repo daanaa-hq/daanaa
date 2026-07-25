@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageMeta } from '../../hooks/usePageMeta'
 import { API_BASE } from '../../data/api'
+import { Button } from '../../components/ui/button'
 
 interface VolunteerEvent {
   id: number
@@ -71,12 +72,13 @@ function CreateEventForm({ ein, idToken, onCreated }: { ein: string; idToken: st
 
   if (!open) {
     return (
-      <button
+      <Button
         onClick={() => setOpen(true)}
-        className="px-5 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+        variant="default"
+        size="lg"
       >
         + Create event
-      </button>
+      </Button>
     )
   }
 
@@ -117,14 +119,12 @@ function CreateEventForm({ ein, idToken, onCreated }: { ein: string; idToken: st
         </div>
       </div>
       <div className="flex gap-3">
-        <button type="submit" disabled={submitting}
-          className="px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold disabled:opacity-50 transition-colors">
+        <Button type="submit" disabled={submitting} variant="default" size="default">
           {submitting ? 'Creating...' : 'Create event'}
-        </button>
-        <button type="button" onClick={() => setOpen(false)}
-          className="px-5 py-2.5 rounded-xl border border-light-grey text-deep-navy font-body text-[14px] font-medium hover:border-soft-gold/40 transition-colors">
+        </Button>
+        <Button type="button" onClick={() => setOpen(false)} variant="secondary" size="default">
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -144,8 +144,37 @@ function ImportEventForm({ ein, idToken, onCreated }: { ein: string; idToken: st
       setUrl(""); setOpen(false); onCreated()
     } catch (err) { setError(err instanceof Error ? err.message : "Could not build an event draft") } finally { setBusy(false) }
   }
-  if (!open) return <button onClick={() => setOpen(true)} className="px-5 py-3 rounded-xl border border-soft-gold text-deep-navy font-body text-[14px] font-semibold">Add from event link</button>
-  return <form onSubmit={submit} className="bg-white rounded-2xl border border-soft-gold/30 p-6 space-y-3"><h3 className="font-body text-[15px] font-semibold text-deep-navy">Build from a public event link</h3><p className="font-body text-[12px] text-cool-grey">Daanaa will create an AI assisted, unconfirmed draft for your review.</p>{error && <div className="p-3 bg-red-50 rounded-lg text-red-700 font-body text-[13px]">{error}</div>}<input type="url" required value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.org/event" className="w-full px-3 py-2.5 border border-light-grey rounded-lg font-body text-[14px]" /><div className="flex gap-3"><button type="submit" disabled={busy} className="px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold">{busy ? "Building draft..." : "Build draft"}</button><button type="button" onClick={() => setOpen(false)} className="px-5 py-2.5 rounded-xl border border-light-grey text-deep-navy font-body text-[14px]">Cancel</button></div></form>
+  if (!open) {
+    return (
+      <Button onClick={() => setOpen(true)} variant="outline" size="lg">
+        Add from event link
+      </Button>
+    )
+  }
+
+  return (
+    <form onSubmit={submit} className="bg-white rounded-2xl border border-soft-gold/30 p-6 space-y-3">
+      <h3 className="font-body text-[15px] font-semibold text-deep-navy">Build from a public event link</h3>
+      <p className="font-body text-[12px] text-cool-grey">Daanaa will create an AI assisted, unconfirmed draft for your review.</p>
+      {error && <div className="p-3 bg-red-50 rounded-lg text-red-700 font-body text-[13px]">{error}</div>}
+      <input
+        type="url"
+        required
+        value={url}
+        onChange={e => setUrl(e.target.value)}
+        placeholder="https://example.org/event"
+        className="w-full px-3 py-2.5 border border-light-grey rounded-lg font-body text-[14px]"
+      />
+      <div className="flex gap-3">
+        <Button type="submit" disabled={busy} variant="default" size="default">
+          {busy ? "Building draft..." : "Build draft"}
+        </Button>
+        <Button type="button" onClick={() => setOpen(false)} variant="secondary" size="default">
+          Cancel
+        </Button>
+      </div>
+    </form>
+  )
 }
 
 function EventCard({ event }: { event: VolunteerEvent }) {
@@ -189,9 +218,9 @@ function EventCard({ event }: { event: VolunteerEvent }) {
             <p className="font-body text-[12px] text-cool-grey mb-1">Volunteer hour-logging link</p>
             <div className="flex items-center gap-2">
               <code className="font-body text-[12px] bg-light-grey/40 px-2 py-1 rounded truncate">{shortUrl}</code>
-              <button onClick={copy} className="shrink-0 px-3 py-1 rounded-lg border border-light-grey font-body text-[12px] hover:border-soft-gold/40 transition-colors">
+              <Button onClick={copy} variant="secondary" size="sm" className="shrink-0">
                 {copied ? 'Copied!' : 'Copy'}
-              </button>
+              </Button>
             </div>
             <p className="font-body text-[11px] text-cool-grey mt-2">
               Print the QR code at your event. Volunteers scan it, log their hours, and you approve them here afterward.

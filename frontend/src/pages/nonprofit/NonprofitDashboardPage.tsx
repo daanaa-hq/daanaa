@@ -7,6 +7,7 @@ import DonorCommunicationCard from '../../components/DonorCommunicationCard'
 import ImpactForecast from '../../components/ImpactForecast'
 import DonorMessagesCard from '../../components/DonorMessagesCard'
 import CreditPurchaseModal from '../../components/CreditPurchaseModal'
+import { Button } from '../../components/ui/button'
 
 interface LetterRequest {
   id: string
@@ -239,9 +240,9 @@ export default function NonprofitDashboardPage() {
               <p className="font-display text-4xl italic text-deep-navy">{dashboard.letters_remaining}</p>
               <p className="text-xs text-cool-grey mt-2">letters remaining</p>
             </div>
-            <button onClick={() => setShowCreditModal(true)} className="px-4 py-2 bg-soft-gold text-deep-navy rounded-lg font-semibold text-sm hover:bg-bright-gold transition-colors">
+            <Button onClick={() => setShowCreditModal(true)} variant="default" size="default">
               Buy More
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -278,21 +279,21 @@ export default function NonprofitDashboardPage() {
 
                   {letter.status === 'pending' && (
                     <div className="flex gap-2">
-                      <button onClick={() => handleApprove(letter.id)} disabled={approving === letter.id}
-                        className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">
+                      <Button onClick={() => handleApprove(letter.id)} disabled={approving === letter.id}
+                        variant="default" size="default" className="flex-1">
                         {approving === letter.id ? 'Approving...' : 'Approve'}
-                      </button>
-                      <button className="flex-1 px-3 py-2 border border-light-grey text-deep-navy rounded-lg text-sm font-semibold hover:bg-soft-cream">
+                      </Button>
+                      <Button variant="secondary" size="default" className="flex-1">
                         Reject
-                      </button>
+                      </Button>
                     </div>
                   )}
 
                   {letter.status === 'approved' && (
-                    <button onClick={() => handleGenerateLetter(letter.id)}
-                      className="w-full px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700">
+                    <Button onClick={() => handleGenerateLetter(letter.id)}
+                      variant="default" size="default" className="w-full">
                       Generate Letter
-                    </button>
+                    </Button>
                   )}
 
                   {letter.status === 'generated' && (

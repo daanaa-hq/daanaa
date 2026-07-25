@@ -48,7 +48,6 @@ export default function ResearchSidebar({
                 : 'text-warm-cream hover:bg-deep-navy/50'
             }`}
           >
-            <span className="mr-2">{section.icon}</span>
             {section.label}
           </button>
         ))}

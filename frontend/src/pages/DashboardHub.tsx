@@ -503,7 +503,7 @@ export default function DashboardHub() {
                       <span className="text-2xl font-bold text-amber-600">94%</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">High engagement on financial health content (11.4% rate)</p>
-                    <button className="px-3 py-1 bg-amber-600 text-white rounded text-sm">Approve & Auto-Post</button>
+                    <Button variant="outline" size="sm">Approve & Auto-Post</Button>
                   </div>
 
                   <div className="p-4 rounded-lg bg-white dark:bg-slate-800 border-l-4 border-l-green-500">
@@ -512,7 +512,7 @@ export default function DashboardHub() {
                       <span className="text-2xl font-bold text-green-600">87%</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Auto-trigger when nonprofit engages with carousel</p>
-                    <button className="px-3 py-1 bg-green-600 text-white rounded text-sm">Enable Auto-Trigger</button>
+                    <Button variant="default" size="sm">Enable Auto-Trigger</Button>
                   </div>
                 </div>
               </CardContent>

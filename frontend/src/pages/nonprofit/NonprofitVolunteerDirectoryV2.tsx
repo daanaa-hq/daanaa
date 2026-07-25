@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { Search, Mail, Phone, MapPin, Award, Calendar } from 'lucide-react'
+import { Button } from '../../components/ui/button'
 
 interface Volunteer {
   email: string
@@ -167,13 +168,13 @@ export default function NonprofitVolunteerDirectoryV2() {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-4 border-t border-slate-200">
-                  <button className="flex-1 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center justify-center gap-2">
+                  <Button variant="secondary" size="default" className="flex-1 flex items-center justify-center gap-2">
                     <Mail size={16} />
                     Email
-                  </button>
-                  <button className="flex-1 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+                  </Button>
+                  <Button variant="secondary" size="default" className="flex-1">
                     View Profile
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))
