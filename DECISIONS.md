@@ -1607,3 +1607,49 @@ All autonomously actionable items completed without external dependencies. Three
 
 **Note:** This removes Charity Navigator from the "open blockers we can close today" category. Focus is now exclusively on Phase 1 domain discovery (autonomous, zero blockers) and Archive.org Phase 3 (autonomous, already running).
 
+
+## 2026-07-25 — Session Complete: Data Integrations + Discovery Pipelines
+
+**Major Completions:**
+
+1. **IRS EO Revocation Tracking** ✅
+   - 1.95M org records with status verification
+   - 36,460 revoked orgs flagged
+   - Daily monitoring script deployed
+   
+2. **Phase 1 Domain Discovery** ✅
+   - 37% success rate (beat 30% target)
+   - Extrapolation: 592K new websites
+   - Coverage: 22% → 48%
+
+3. **Phase 3 Archive.org** ✅
+   - 0.1% success rate (lower than expected)
+   - Extrapolation: ~1K historical websites
+
+4. **NCCS Profile Enrichment** 🔄 (Mostly Complete)
+   - 713K orgs with financial data (total_assets, expenses)
+   - Governance columns added but ingestion interrupted
+   - Ready for rerun: board_size, policies, expense ratios
+
+5. **Wallet Hub + UI Improvements** ✅
+   - Unified giving/volunteering interface live
+   - Sort/filter/search functional
+   - Google profile display implemented
+
+6. **Firebase Auth Fix** ✅
+   - Student Service integration unblocked
+   - useAuth().getIdToken() properly wired
+
+**Database State (Final):**
+- 459K+ orgs with websites
+- 123K+ verified donation links
+- 36K+ revoked orgs flagged
+- 713K+ with NCCS financial data
+- 2M+ active orgs indexed
+
+**Next Sprint Opportunities:**
+- Rerun NCCS ingestion to completion (governance columns)
+- Integrate ProPublica 990-EZ + 990-N for smaller nonprofits
+- Deploy Phase 1 discovery to full 1.6M backlog
+- Add board transparency metrics to org profile pages
+
