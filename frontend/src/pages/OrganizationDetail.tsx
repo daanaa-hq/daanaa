@@ -9,6 +9,7 @@ import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
 import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import MistakeRegistry from '../components/MistakeRegistry'
+import DonorVoice from '../components/DonorVoice'
 
 import { useApi } from '../hooks/useApi'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
@@ -1190,7 +1191,7 @@ export default function OrganizationDetail() {
 
       {/* Accountability Strip */}
       <div className="border-t border-light-grey py-8">
-        <div>
+        <div className="space-y-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-12">
             <MistakeRegistry compact />
             <div className="flex items-center gap-3">
@@ -1216,6 +1217,8 @@ export default function OrganizationDetail() {
               </div>
             </div>
           </div>
+          {/* Supporter Voice */}
+          {apiOrg && <DonorVoice ein={apiOrg.EIN} orgName={apiOrg.organization_name} />}
         </div>
       </div>
 

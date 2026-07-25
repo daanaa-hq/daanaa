@@ -60,6 +60,13 @@ export interface RecurringTemplate {
   snoozedUntil?: string  // ISO date (YYYY-MM-DD)
 }
 
+export interface DonorNote {
+  id: string
+  text: string
+  addedAt: number
+  authorName?: string
+}
+
 export interface WalletEntry {
   ein: string                      // 9-digit EIN
   bookmarkedAt: number
@@ -68,6 +75,7 @@ export interface WalletEntry {
   donations?: LoggedDonation[]     // actual donations
   volunteerHours?: LoggedVolunteerHours[]  // actual volunteer hours
   recurringTemplate?: RecurringTemplate    // saved giving rhythm (see above)
+  donorNotes?: DonorNote[]         // supporter voice: notes on orgs they've backed
   givingIntent?: GivingIntent      // legacy: intent tracking (deprecated, kept for migration)
 }
 
