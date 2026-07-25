@@ -11,6 +11,13 @@ PORT=11436
 LOG_DIR="$HOME/meritgiving/logs"
 LOG_FILE="$LOG_DIR/embed_server.log"
 
+# Parallel slots. Batch jobs (re-embedding the registry) are throughput bound,
+# and 4 slots leaves the GPU idle between requests. Each slot gets
+# CTX_SIZE/SLOTS tokens, so these two move together: 16384/16 = 1024 tokens per
+# slot, comfortably above the longest name+mission+tags input we embed.
+SLOTS="${EMBED_SLOTS:-16}"
+CTX_SIZE="${EMBED_CTX:-16384}"
+
 ts() { date '+%Y-%m-%d %H:%M:%S'; }
 
 start() {
@@ -26,9 +33,9 @@ start() {
     --host 127.0.0.1 \
     -ngl 99 \
     --device Vulkan1 \
-    --ctx-size 8192 \
+    --ctx-size "$CTX_SIZE" \
     --batch-size 512 \
-    -np 4 \
+    -np "$SLOTS" \
     --embeddings \
     > "$LOG_FILE" 2>&1 &
 
