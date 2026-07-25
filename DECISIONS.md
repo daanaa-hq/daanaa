@@ -1488,3 +1488,37 @@ missing (would create two silent scoring regimes; deriving the missing input is 
 - Recency gate: 180-day cutoff applied (P3: honest labeling)
 - Unchecked pool: 32,528 orgs queued for archive scan
 - Governance: board-approved 2026-07-18, execution automated per this script
+
+## 2026-07-25 — Wallet consolidation & frontend deployment
+
+**Chose:** Unified wallet hub (WalletPageV2.tsx) as the primary wallet entry point, consolidating 15+ scattered components into single tab-based interface.
+
+**Why:** Wallet was fragmented across DonationLogger, VolunteerLogger, GivingRhythm, EditIntentModal, AddToWalletButton, etc. Users had no single place to view/manage giving + volunteering. Single hub improves discoverability and reduces cognitive load.
+
+**Implementation:**
+- Created WalletPageV2.tsx with 3 tabs (Giving/Volunteering/Account)
+- Added Google profile display in header (top right, native-style)
+- Giving tab: QuickDonationLogger (expandable form), search, sort (A-Z or recent), cause filter
+- Org data hydrated from API; filter counts displayed to user ("X of Y nonprofits")
+- Improved GiveYourWayRouter: always-visible expandable cards (no collapse pattern), better contrast, inline step-by-step instructions
+- TypeScript fixes: Firebase User properties corrected (photoURL, displayName, email)
+
+**Deployed:** 2026-07-25 17:52 UTC via `safe_deploy_droplet.sh --frontend-only`
+- All 10 smoke tests passed ✓
+- Wallet live at https://daanaa.org/wallet
+- Frontend: 4.8M, built cleanly
+- Privacy checks: all 8 gates passed
+
+**Link status snapshot (2026-07-25):**
+- gpu_verified: 99,847 (verified working)
+- beta: 23,253 (pending human review but likely working)
+- Total usable: 123,100 links
+- no_link_found: 46,704
+- Other (stale/blocked/dead/human_review): 14,217
+
+**Open items:**
+1. Student Service Integration — BLOCKED on Firebase UID auth mismatch (see 2026-07-22)
+2. NCCS Data Recovery — Pipeline ready, awaiting Part X/VII file download
+3. Charity Navigator scraper — Pending board/legal review before production
+4. Phase 1 domain discovery — 480K website target (24-48h execution)
+
