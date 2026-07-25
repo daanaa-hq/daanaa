@@ -1,6 +1,7 @@
 import React from 'react'
 import { ChevronRight, Redo2, Edit2, RotateCcw, Grid } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { CardPattern } from '../ui/CardPattern'
 
 interface Organization {
   ein: string
@@ -46,12 +47,12 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       <div className="max-w-2xl mx-auto px-4">
         <h2 className="text-3xl font-bold text-deep-navy mb-2">{title}</h2>
         <p className="text-cool-grey mb-8">{subtitle}</p>
-        <div className="bg-alert-amber/5 border border-alert-amber/20 rounded-lg p-6 mb-8">
+        <CardPattern variant="nested" className="mb-8 bg-alert-amber/5 border-alert-amber/20">
           <p className="text-deep-navy">
             We did not find organizations matching all of those choices. Nothing is wrong.
             Try a broader place, another cause, or remove one preference.
           </p>
-        </div>
+        </CardPattern>
         <div className="flex gap-3">
           <button
             onClick={onChangeAnswers}

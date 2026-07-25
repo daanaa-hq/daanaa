@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { CardPattern } from './ui/CardPattern'
 
 interface NonprofitSignupProps {
   onSuccess?: (accountId: string) => void
@@ -77,7 +78,7 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
   if (success && accountId) {
     return (
       <div className="min-h-screen bg-soft-cream flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl p-8 shadow-lg max-w-md w-full text-center">
+        <CardPattern variant="elevated" className="max-w-md w-full text-center">
           <div className="mb-4 text-4xl">✓</div>
           <h2 className="font-display text-2xl italic text-deep-navy mb-2">Check your email</h2>
           <p className="font-body text-sm text-deep-navy mb-4">
@@ -86,7 +87,7 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
           <p className="font-body text-xs text-cool-grey">
             The link will expire in 24 hours. If you don't see it, check your spam folder.
           </p>
-        </div>
+        </CardPattern>
       </div>
     )
   }
@@ -94,7 +95,7 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-soft-cream to-white py-12 px-4">
       <div className="max-w-md mx-auto">
-        <div className="bg-white rounded-2xl p-8 shadow-lg">
+        <CardPattern variant="elevated">
           <div className="mb-6 text-center">
             <h1 className="font-display text-4xl italic text-deep-navy mb-2">
               Letter Portal
@@ -105,11 +106,11 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
           </div>
 
           {/* Info banner */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
-            <p className="text-xs text-slate-900">
+          <CardPattern variant="subtle" className="mb-6">
+            <p className="text-xs text-deep-navy">
               <strong>✓ Free for nonprofits</strong> · Approve and generate tax-compliant donation letters for your supporters.
             </p>
-          </div>
+          </CardPattern>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Error message */}
@@ -173,7 +174,7 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
         <p className="font-body text-xs text-cool-grey text-center mt-6">
           Your organization must be registered with the IRS as a 501(c)(3) nonprofit.
         </p>
-        </div>
+        </CardPattern>
       </div>
     </div>
   )
