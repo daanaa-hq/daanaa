@@ -216,9 +216,19 @@ Do not use cloud APIs for batch ML tasks — route through the local server:
 
 | Port | Service | Model | Use |
 |------|---------|-------|-----|
-| 11437 | llama-server (Vulkan1) | Qwen2.5-32B-Instruct-Q4_K_M | Mission generation |
-| 11436 | llama-server (Vulkan1) | mxbai-embed-large | Query & org embeddings (primary) |
+| 11437 | llama-server (Vulkan1) | Qwen3-30B-A3B-Instruct-2507-Q4_K_M | Mission generation (30B, parallelized 6-worker) |
+| 11436 | llama-server (Vulkan1) | mxbai-embed-large-v1 | Query & org embeddings (primary) |
 | 11434 | Ollama | mxbai-embed-large | Embedding fallback only |
+
+**Hardware context:** Ryzen 9700X + R9700 32GB VRAM (ROCm 6.4). Active models are tuned for this: Qwen3-30B Q4-quantized fits VRAM + parallelization maximizes throughput. GPU is night-only (10pm–6am) for heat management.
+
+**Other models downloaded for evaluation** (~130GB total):
+- `Qwen2.5-72B-Instruct-GGUF` — too large for 32GB VRAM; Qwen3-30B proves superior throughput/quality tradeoff
+- `google/timesfm-2.5-200m-pytorch` — evaluated for time-series; not in current pipeline
+- `BAAI/bge-large-en-v1.5`, `BAAI/bge-small-en-v1.5` — embedding alternatives; mxbai-embed-large-v1 is faster
+- `sentence-transformers/all-MiniLM-L6-v2` — smallest embedding; too low quality for org semantic search
+
+Do not load additional models without checking available VRAM and impact on night-only GPU window.
 
 ---
 
