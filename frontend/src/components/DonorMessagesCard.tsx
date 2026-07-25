@@ -48,7 +48,7 @@ export default function DonorMessagesCard({
   }
 
   return (
-    <div className="bg-gradient-to-br from-blue-100/30 to-cyan-100/10 rounded-2xl p-6 border border-blue-200/30">
+    <div className="bg-gradient-to-br from-blue-100/30 to-slate-100/10 rounded-2xl p-6 border border-slate-200/30">
       <div className="flex items-start justify-between mb-4">
         <h3 className="font-display text-xl text-deep-navy">Donor Communication</h3>
         <span className="text-2xl">💌</span>
@@ -77,7 +77,7 @@ export default function DonorMessagesCard({
 
       <button
         onClick={() => setShowComposer(true)}
-        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-colors"
+        className="w-full px-4 py-2 bg-default text-white rounded-lg font-semibold text-sm hover:opacity-90 transition-colors"
       >
         Compose Message
       </button>

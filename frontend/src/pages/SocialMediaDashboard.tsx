@@ -257,12 +257,12 @@ export function SocialMediaDashboard() {
                         <p className="text-xs font-semibold text-slate-900 dark:text-white">{carousel.impressions.toLocaleString()}</p>
                         <p className="text-xs text-slate-500">impressions</p>
                       </div>
-                      <div className="text-center p-2 bg-red-50 dark:bg-red-950/30 rounded">
-                        <Heart size={16} className="mx-auto text-red-600 dark:text-red-400 mb-1" />
+                      <div className="text-center p-2 bg-destructive/5 dark:bg-red-950/30 rounded">
+                        <Heart size={16} className="mx-auto text-destructive dark:text-red-400 mb-1" />
                         <p className="text-xs font-semibold text-slate-900 dark:text-white">{carousel.likes}</p>
                         <p className="text-xs text-slate-500">likes</p>
                       </div>
-                      <div className="text-center p-2 bg-amber-50 dark:bg-amber-950/30 rounded">
+                      <div className="text-center p-2 bg-alert-amber/5 dark:bg-amber-950/30 rounded">
                         <MessageCircle size={16} className="mx-auto text-amber-600 dark:text-amber-400 mb-1" />
                         <p className="text-xs font-semibold text-slate-900 dark:text-white">{carousel.comments}</p>
                         <p className="text-xs text-slate-500">comments</p>
@@ -299,7 +299,7 @@ export function SocialMediaDashboard() {
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-slate-900 dark:text-white">{(theme.score * 100).toFixed(0)}%</p>
-                        <Badge className={theme.trend === 'up' ? 'bg-green-500/20 text-green-700 dark:text-green-300' : theme.trend === 'down' ? 'bg-red-500/20 text-red-700 dark:text-red-300' : 'bg-slate-500/20 text-slate-700 dark:text-slate-300'} variant="outline">
+                        <Badge className={theme.trend === 'up' ? 'bg-green-500/20 text-green-700 dark:text-green-300' : theme.trend === 'down' ? 'bg-destructive/50/20 text-destructive dark:text-red-300' : 'bg-slate-500/20 text-slate-700 dark:text-slate-300'} variant="outline">
                           {theme.trend === 'up' ? '↑' : theme.trend === 'down' ? '↓' : '→'} {theme.trend}
                         </Badge>
                       </div>

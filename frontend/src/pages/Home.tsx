@@ -510,7 +510,7 @@ const CAUSE_TAGLINES: Record<string, string> = {
 
 // Color accent palette — one per NTEE major group
 export const CAUSE_ACCENT: Record<string, { bg: string; emoji_bg: string; border: string; text: string }> = {
-  A: { bg: 'bg-amber-50',   emoji_bg: 'bg-amber-100',  border: 'border-amber-200',   text: 'text-amber-700'  },
+  A: { bg: 'bg-alert-amber/5',   emoji_bg: 'bg-amber-100',  border: 'border-amber-200',   text: 'text-amber-700'  },
   B: { bg: 'bg-blue-50',    emoji_bg: 'bg-blue-100',   border: 'border-blue-200',    text: 'text-blue-700'   },
   C: { bg: 'bg-green-50',   emoji_bg: 'bg-green-100',  border: 'border-green-200',   text: 'text-green-700'  },
   D: { bg: 'bg-orange-50',  emoji_bg: 'bg-orange-100', border: 'border-orange-200',  text: 'text-orange-700' },
@@ -522,14 +522,14 @@ export const CAUSE_ACCENT: Record<string, { bg: string; emoji_bg: string; border
   J: { bg: 'bg-indigo-50',  emoji_bg: 'bg-indigo-100', border: 'border-indigo-200',  text: 'text-indigo-700' },
   K: { bg: 'bg-lime-50',    emoji_bg: 'bg-lime-100',   border: 'border-lime-200',    text: 'text-lime-700'   },
   L: { bg: 'bg-yellow-50',  emoji_bg: 'bg-yellow-100', border: 'border-yellow-200',  text: 'text-yellow-700' },
-  M: { bg: 'bg-red-50',     emoji_bg: 'bg-red-100',    border: 'border-red-200',     text: 'text-red-700'    },
+  M: { bg: 'bg-destructive/5',     emoji_bg: 'bg-red-100',    border: 'border-destructive/20',     text: 'text-destructive'    },
   N: { bg: 'bg-teal-50',    emoji_bg: 'bg-teal-100',   border: 'border-teal-200',    text: 'text-teal-700'   },
   O: { bg: 'bg-violet-50',  emoji_bg: 'bg-violet-100', border: 'border-violet-200',  text: 'text-violet-700' },
   P: { bg: 'bg-sky-50',     emoji_bg: 'bg-sky-100',    border: 'border-sky-200',     text: 'text-sky-700'    },
   Q: { bg: 'bg-emerald-50', emoji_bg: 'bg-emerald-100',border: 'border-emerald-200', text: 'text-emerald-700'},
   R: { bg: 'bg-fuchsia-50', emoji_bg: 'bg-fuchsia-100',border: 'border-fuchsia-200', text: 'text-fuchsia-700'},
   S: { bg: 'bg-stone-50',   emoji_bg: 'bg-stone-100',  border: 'border-stone-200',   text: 'text-stone-700'  },
-  T: { bg: 'bg-amber-50',   emoji_bg: 'bg-amber-100',  border: 'border-amber-200',   text: 'text-amber-700'  },
+  T: { bg: 'bg-alert-amber/5',   emoji_bg: 'bg-amber-100',  border: 'border-amber-200',   text: 'text-amber-700'  },
   U: { bg: 'bg-blue-50',    emoji_bg: 'bg-blue-100',   border: 'border-blue-200',    text: 'text-blue-700'   },
   V: { bg: 'bg-slate-50',   emoji_bg: 'bg-slate-100',  border: 'border-slate-200',   text: 'text-slate-700'  },
   W: { bg: 'bg-indigo-50',  emoji_bg: 'bg-indigo-100', border: 'border-indigo-200',  text: 'text-indigo-700' },
@@ -889,7 +889,7 @@ const HEALTH_LABEL: Record<string, string> = {
 const HEALTH_CLASSES: Record<string, string> = {
   HEALTHY: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   STABLE:  'bg-blue-50 text-blue-700 border-blue-200',
-  CAUTION: 'bg-amber-50 text-amber-700 border-amber-200',
+  CAUTION: 'bg-alert-amber/5 text-amber-700 border-amber-200',
 }
 
 function HiddenGemsSection() {

@@ -105,8 +105,8 @@ export default function NonprofitSignup({ onSuccess }: NonprofitSignupProps) {
           </div>
 
           {/* Info banner */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <p className="text-xs text-blue-900">
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+            <p className="text-xs text-slate-900">
               <strong>✓ Free for nonprofits</strong> · Approve and generate tax-compliant donation letters for your supporters.
             </p>
           </div>

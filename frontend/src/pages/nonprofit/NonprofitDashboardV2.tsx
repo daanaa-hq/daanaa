@@ -196,7 +196,7 @@ export default function NonprofitDashboardV2() {
           <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-lg transition">
             <div className="flex items-center justify-between mb-3">
               <Clock size={24} className="text-amber-500" />
-              <span className="text-sm font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded">
+              <span className="text-sm font-semibold text-amber-600 bg-alert-amber/5 px-2 py-1 rounded">
                 Action Needed
               </span>
             </div>
@@ -265,7 +265,7 @@ export default function NonprofitDashboardV2() {
               onClick={() => setFilter('pending')}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 filter === 'pending'
-                  ? 'bg-amber-500 text-white'
+                  ? 'bg-alert-amber/50 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -285,7 +285,7 @@ export default function NonprofitDashboardV2() {
               onClick={() => setFilter('rejected')}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 filter === 'rejected'
-                  ? 'bg-red-500 text-white'
+                  ? 'bg-destructive/50 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >
@@ -369,7 +369,7 @@ export default function NonprofitDashboardV2() {
                       </button>
                       <button
                         onClick={() => handleReject(submission)}
-                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-medium text-sm whitespace-nowrap"
+                        className="px-4 py-2 bg-destructive/50 text-white rounded-lg hover:bg-red-600 transition font-medium text-sm whitespace-nowrap"
                       >
                         Reject
                       </button>
@@ -434,7 +434,7 @@ export default function NonprofitDashboardV2() {
                 className={`flex-1 px-4 py-2 text-white rounded-lg transition font-medium ${
                   actionModal.type === 'approve'
                     ? 'bg-emerald-500 hover:bg-emerald-600'
-                    : 'bg-red-500 hover:bg-red-600'
+                    : 'bg-destructive/50 hover:bg-red-600'
                 }`}
               >
                 {actionModal.type === 'approve' ? 'Approve' : 'Reject'}

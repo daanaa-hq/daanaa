@@ -21,7 +21,7 @@ interface GuildSectionProps {
 const TIER_COLORS: Record<string, { bg: string; text: string; badge: string }> = {
   free: { bg: 'bg-blue-50', text: 'text-blue-900', badge: 'bg-blue-100 text-blue-800' },
   pro: { bg: 'bg-purple-50', text: 'text-purple-900', badge: 'bg-purple-100 text-purple-800' },
-  enterprise: { bg: 'bg-amber-50', text: 'text-amber-900', badge: 'bg-amber-100 text-amber-800' },
+  enterprise: { bg: 'bg-alert-amber/5', text: 'text-amber-900', badge: 'bg-amber-100 text-amber-800' },
 }
 
 export default function GuildSection({ ein }: GuildSectionProps) {

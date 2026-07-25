@@ -225,7 +225,7 @@ export default function DashboardHub() {
                   <CardTitle className="text-sm font-medium text-gray-600">Rejected</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-bold text-red-600">{verificationStats.rejected}</p>
+                  <p className="text-3xl font-bold text-destructive">{verificationStats.rejected}</p>
                 </CardContent>
               </Card>
               <Card>
@@ -318,7 +318,7 @@ export default function DashboardHub() {
                             )}
                           </div>
                           <div className="bg-purple-50 border border-purple-200 p-3 rounded">
-                            <p className="text-xs text-purple-700 font-medium">🤝 VOLUNTEER LINK</p>
+                            <p className="text-xs text-purple-700 font-medium">Volunteer Link</p>
                             {item.volunteer_url ? (
                               <a href={item.volunteer_url} target="_blank" rel="noopener noreferrer" className="text-sm text-purple-600 break-all mt-1 hover:underline">
                                 {item.volunteer_url}
@@ -342,7 +342,7 @@ export default function DashboardHub() {
                               onClick={() => handleReject(item.ein)}
                               disabled={loading}
                               variant="outline"
-                              className="text-red-600 hover:text-red-700 flex-1"
+                              className="text-destructive hover:text-destructive flex-1"
                             >
                               <XCircle size={16} /> Reject
                             </Button>
@@ -428,7 +428,7 @@ export default function DashboardHub() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${discoveryStatus.daemon.running ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      <div className={`w-3 h-3 rounded-full ${discoveryStatus.daemon.running ? 'bg-green-500' : 'bg-destructive/50'}`}></div>
                       <span className="text-lg font-medium">
                         {discoveryStatus.daemon.running ? '🟢 Running' : '🔴 Stopped'}
                       </span>

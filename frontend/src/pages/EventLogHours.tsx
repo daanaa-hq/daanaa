@@ -226,7 +226,7 @@ export default function EventLogHours() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 space-y-5">
           <h2 className="font-body text-[14px] font-semibold text-deep-navy uppercase tracking-wide">Log your hours</h2>
 
-          {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 font-body text-[13px]">{error}</div>}
+          {error && <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[13px]">{error}</div>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>

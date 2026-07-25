@@ -87,11 +87,11 @@ export default function ImpactSummary() {
         </p>
       </div>
 
-      <div className="bg-gradient-to-br from-blue-100/30 to-cyan-100/20 rounded-lg p-4 border border-blue-200/30">
+      <div className="bg-gradient-to-br from-slate-100/30 to-slate-100/20 rounded-lg p-4 border border-slate-200/30">
         <p className="text-xs text-cool-grey uppercase tracking-wide font-semibold mb-1">
           $ Impact
         </p>
-        <p className="font-display text-2xl text-blue-600">{usd(impact.totalImpact)}</p>
+        <p className="font-display text-2xl text-slate-700">{usd(impact.totalImpact)}</p>
         <p className="text-xs text-cool-grey mt-1">
           {impact.lifetimeFunds > 0 && impact.totalHours > 0
             ? `Funds + ${impact.totalHours.toFixed(1)}h time`

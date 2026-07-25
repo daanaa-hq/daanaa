@@ -290,7 +290,7 @@ export default function IntentModal({
                     />
                   </div>
                   {errors.amount && (
-                    <p className="font-body text-red-600 text-[12px] mt-1">{errors.amount}</p>
+                    <p className="font-body text-destructive text-[12px] mt-1">{errors.amount}</p>
                   )}
                 </div>
 
@@ -344,7 +344,7 @@ export default function IntentModal({
                   }`}
                 />
                 {errors.hours && (
-                  <p className="font-body text-red-600 text-[12px] mt-1">{errors.hours}</p>
+                  <p className="font-body text-destructive text-[12px] mt-1">{errors.hours}</p>
                 )}
               </div>
             )}
@@ -375,7 +375,7 @@ export default function IntentModal({
               />
               <div className="flex justify-between items-center mt-1">
                 {errors.notes && (
-                  <p className="font-body text-red-600 text-[12px]">{errors.notes}</p>
+                  <p className="font-body text-destructive text-[12px]">{errors.notes}</p>
                 )}
                 <p className="font-body text-[11px] text-cool-grey ml-auto">{notes.length}/200</p>
               </div>

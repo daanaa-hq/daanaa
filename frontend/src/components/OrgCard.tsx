@@ -84,7 +84,7 @@ function HeartButtons({
         onClick={onToggleVolunteering}
         title={isInVolunteering ? 'In volunteer list' : 'Add to volunteer list'}
         aria-pressed={isInVolunteering}
-        className="flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-all duration-150 hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+        className="flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-all duration-150 hover:bg-destructive/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
       >
         <svg width="15" height="15" viewBox="0 0 24 24"
           fill={isInVolunteering ? '#ef4444' : 'none'} stroke="#ef4444"

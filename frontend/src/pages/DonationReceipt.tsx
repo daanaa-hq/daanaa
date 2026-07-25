@@ -32,7 +32,7 @@ export default function DonationReceipt() {
             </div>
           )}
 
-          <div className="border border-amber-200 bg-amber-50 rounded-lg p-5 space-y-3">
+          <div className="border border-amber-200 bg-alert-amber/5 rounded-lg p-5 space-y-3">
             <p className="font-semibold text-amber-900 text-sm">For your official tax receipt</p>
             <p className="text-sm text-amber-800 leading-relaxed">
               Daanaa is a discovery platform — we don't process donations or issue tax documentation.

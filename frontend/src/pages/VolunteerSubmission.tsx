@@ -85,8 +85,8 @@ export default function VolunteerSubmission() {
           </p>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-700 text-[14px]">{error}</p>
+            <div className="mb-6 p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
+              <p className="text-destructive text-[14px]">{error}</p>
             </div>
           )}
 

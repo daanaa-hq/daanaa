@@ -45,7 +45,7 @@ const GROUP_META: Record<GroupFilter, { label: string; color: string; dot: strin
   research_academia:        { label: 'Research & Academia', color: 'text-indigo-700', dot: '#4F46E5', bg: 'bg-indigo-50/40', border: 'border-l-4 border-l-indigo-400', badge: 'bg-indigo-100 text-indigo-700' },
   foundations:              { label: 'Foundations', color: 'text-purple-700', dot: '#7C3AED', bg: 'bg-purple-50/40', border: 'border-l-4 border-l-purple-400', badge: 'bg-purple-100 text-purple-700' },
   membership_advocacy:      { label: 'Membership & Advocacy', color: 'text-rose-700', dot: '#E11D48', bg: 'bg-rose-50/40', border: 'border-l-4 border-l-rose-400', badge: 'bg-rose-100 text-rose-700' },
-  religion_spiritual:       { label: 'Religion & Spiritual', color: 'text-amber-700', dot: '#B45309', bg: 'bg-amber-50/40', border: 'border-l-4 border-l-amber-400', badge: 'bg-amber-100 text-amber-700' },
+  religion_spiritual:       { label: 'Religion & Spiritual', color: 'text-amber-700', dot: '#B45309', bg: 'bg-alert-amber/5/40', border: 'border-l-4 border-l-amber-400', badge: 'bg-amber-100 text-amber-700' },
   international_development: { label: 'International Development', color: 'text-cyan-700', dot: '#0891B2', bg: 'bg-cyan-50/40', border: 'border-l-4 border-l-cyan-400', badge: 'bg-cyan-100 text-cyan-700' },
   asset_stewards:           { label: 'Asset Stewards', color: 'text-orange-700', dot: '#EA580C', bg: 'bg-orange-50/40', border: 'border-l-4 border-l-orange-400', badge: 'bg-orange-100 text-orange-700' },
 }
@@ -194,7 +194,7 @@ export default function SectorHealth() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-16">
 
           {/* Lead finding */}
-          <div className="mb-12 p-6 rounded-2xl bg-amber-50 border border-amber-200/80">
+          <div className="mb-12 p-6 rounded-2xl bg-alert-amber/5 border border-amber-200/80">
             <p className="font-body text-[15px] text-deep-navy leading-[1.7]">
               <strong>Financial patterns differ dramatically by sector.</strong>{' '}
               The table below shows how reserve levels vary across cause areas. Sectors doing urgent, hands-on work often run with thinner cushions, while grantmakers and endowed institutions hold capital to deploy over years. These differences reflect how organizations are structured and funded, not how well they are managed.
@@ -277,7 +277,7 @@ export default function SectorHealth() {
                           <div className="flex items-center gap-3">
                             <div className="flex flex-col">
                               <div className="font-body text-[14px] font-medium text-deep-navy group-hover:text-soft-gold transition-colors inline-flex items-center gap-1.5">
-                                {stressed && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
+                                {stressed && <span className="w-1.5 h-1.5 rounded-full bg-alert-amber/50 flex-shrink-0" />}
                                 {sector.name}
                                 <span className="opacity-0 group-hover:opacity-100 transition-opacity text-soft-gold" aria-hidden="true">→</span>
                               </div>

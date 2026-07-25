@@ -38,7 +38,7 @@ export default function ResearchLimitations() {
           </ul>
         </div>
 
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-6">
           <h4 className="font-semibold text-deep-navy mb-3">⚠️ Critical limitations</h4>
           <ul className="space-y-2 text-sm">
             <li>

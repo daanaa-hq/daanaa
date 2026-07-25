@@ -103,7 +103,7 @@ export default function DonationLogger({ ein, orgName, orgOptedInLetters = false
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-red-700 text-sm">
+        <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-4 text-destructive text-sm">
           {error}
         </div>
       )}

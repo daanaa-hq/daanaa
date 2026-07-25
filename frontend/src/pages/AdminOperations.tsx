@@ -54,7 +54,7 @@ export default function AdminOperations() {
   if (error || !metrics) {
     return (
       <div className="min-h-screen bg-soft-cream p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+        <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 text-destructive">
           {error || 'Failed to load metrics'}
         </div>
       </div>

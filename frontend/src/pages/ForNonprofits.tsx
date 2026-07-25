@@ -394,7 +394,7 @@ export default function ForNonprofits() {
             </div>
           )}
           {portalError && (
-            <p className="mt-3 font-body text-[13px] text-red-600">{portalError}</p>
+            <p className="mt-3 font-body text-[13px] text-destructive">{portalError}</p>
           )}
         </div>
       </div>

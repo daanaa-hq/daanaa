@@ -40,7 +40,7 @@ function VolunteerStatusChip({ status, rejectionReason }: { status?: string; rej
   const styles: Record<string, string> = {
     submitted: 'bg-amber-100 text-amber-800',
     approved: 'bg-emerald-100 text-emerald-700',
-    rejected: 'bg-red-100 text-red-700',
+    rejected: 'bg-red-100 text-destructive',
   }
   const labels: Record<string, string> = {
     submitted: 'Submitted for review',
@@ -378,7 +378,7 @@ export default function WalletPage() {
           </button>
           <button
             onClick={() => setActiveTab('volunteering')}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-body text-[14px] font-semibold transition-colors ${activeTab === 'volunteering' ? 'bg-red-500 text-white shadow-sm' : 'bg-white border border-light-grey text-cool-grey hover:border-red-300 hover:text-red-500'}`}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-body text-[14px] font-semibold transition-colors ${activeTab === 'volunteering' ? 'bg-destructive/50 text-white shadow-sm' : 'bg-white border border-light-grey text-cool-grey hover:border-red-300 hover:text-red-500'}`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24"
               fill={activeTab === 'volunteering' ? 'white' : 'none'}
@@ -463,7 +463,7 @@ export default function WalletPage() {
               aria-invalid={!!searchError}
             />
             {searchError && (
-              <p className="font-body text-[12px] text-red-600 mt-1" role="alert">{searchError}</p>
+              <p className="font-body text-[12px] text-destructive mt-1" role="alert">{searchError}</p>
             )}
           </div>
         )}
@@ -607,7 +607,7 @@ export default function WalletPage() {
                             {entry.volunteerHours!.map(v => (
                               <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
                                 <span className="text-cool-grey font-medium w-[90px] shrink-0">{v.date}</span>
-                                <span className="font-semibold text-red-600">{v.hours}h</span>
+                                <span className="font-semibold text-destructive">{v.hours}h</span>
                                 <VolunteerStatusChip status={v.status} rejectionReason={v.rejectionReason} />
                                 {v.notes && <span className="text-cool-grey truncate">{v.notes}</span>}
                               </div>
@@ -721,7 +721,7 @@ export default function WalletPage() {
                           {entry.volunteerHours!.map(v => (
                             <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
                               <span className="text-cool-grey font-medium w-[90px] shrink-0">{v.date}</span>
-                              <span className="font-semibold text-red-600">{v.hours}h</span>
+                              <span className="font-semibold text-destructive">{v.hours}h</span>
                               <VolunteerStatusChip status={v.status} rejectionReason={v.rejectionReason} />
                               {v.notes && <span className="text-cool-grey truncate">{v.notes}</span>}
                             </div>

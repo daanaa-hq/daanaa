@@ -39,7 +39,7 @@ export default function EventDetails() {
   }, [eventId]);
 
   if (loading) return <div className="p-8">Loading event details...</div>;
-  if (error) return <div className="p-8 text-red-600">Error: {error}</div>;
+  if (error) return <div className="p-8 text-destructive">Error: {error}</div>;
   if (!event) return <div className="p-8">Event not found</div>;
 
   return (
@@ -88,7 +88,7 @@ export default function EventDetails() {
 
         {/* Donation Section */}
         {event.donation_enabled && event.donation_url && (
-          <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-red-200">
+          <Card className="bg-gradient-to-r from-red-50 to-pink-50 border-destructive/20">
             <CardHeader>
               <CardTitle className="text-2xl">Support This Event</CardTitle>
               <p className="text-gray-600 text-sm mt-2">Your donation helps make this event possible</p>

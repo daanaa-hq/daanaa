@@ -83,7 +83,7 @@ export default function WalletAccountLink() {
             <p className="text-sm font-semibold text-deep-navy">Backup active</p>
             <p className="text-xs text-cool-grey mt-0.5">{user.email}</p>
             {lastSaved && (
-              <p className="text-xs text-green-600 mt-0.5">✓ Saved at {lastSaved}</p>
+              <p className="text-xs text-success-green mt-0.5">✓ Saved at {lastSaved}</p>
             )}
           </div>
           <button
@@ -95,20 +95,20 @@ export default function WalletAccountLink() {
           </button>
         </div>
         {error && <p className="text-xs text-destructive mt-2">{error}</p>}
-        {success && <p className="text-xs text-green-600 mt-2">✓ Wallet backed up</p>}
+        {success && <p className="text-xs text-success-green mt-2">✓ Wallet backed up</p>}
       </div>
     )
   }
 
   return (
-    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200/50">
+    <div className="bg-slate-50 rounded-lg p-4 border border-slate-200/50">
       <p className="text-sm font-semibold text-deep-navy mb-1">Link account for recovery</p>
       <p className="text-xs text-cool-grey mb-4">
         Sign in to back up your wallet across devices. Your data syncs automatically.
       </p>
 
       {error && <p className="text-xs text-destructive mb-3">{error}</p>}
-      {success && <p className="text-xs text-green-600 mb-3">✓ Check your email for the sign-in link</p>}
+      {success && <p className="text-xs text-success-green mb-3">✓ Check your email for the sign-in link</p>}
 
       <div className="space-y-2">
         <div className="flex gap-2">

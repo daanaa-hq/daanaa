@@ -19,7 +19,7 @@ interface GuildData {
 const TIER_INFO = {
   free: { color: 'bg-blue-50 text-blue-900', label: 'Free' },
   pro: { color: 'bg-purple-50 text-purple-900', label: 'Pro' },
-  enterprise: { color: 'bg-amber-50 text-amber-900', label: 'Enterprise' },
+  enterprise: { color: 'bg-alert-amber/5 text-amber-900', label: 'Enterprise' },
 }
 
 export default function GuildPage() {

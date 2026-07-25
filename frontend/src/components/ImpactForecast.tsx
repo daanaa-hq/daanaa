@@ -68,7 +68,7 @@ export default function ImpactForecast({
   }, [authToken])
 
   if (loading) return <div className="text-center">Loading impact metrics...</div>
-  if (error) return <div className="text-red-600 text-sm">{error}</div>
+  if (error) return <div className="text-destructive text-sm">{error}</div>
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

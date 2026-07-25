@@ -127,7 +127,7 @@ export default function VolunteerRegistration() {
               </div>
 
               {/* Messages */}
-              {error && <div className="bg-red-50 border border-red-200 p-3 rounded text-red-700 text-sm">{error}</div>}
+              {error && <div className="bg-destructive/5 border border-destructive/20 p-3 rounded text-destructive text-sm">{error}</div>}
               {success && <div className="bg-green-50 border border-green-200 p-3 rounded text-green-700 text-sm">Registration successful! Thank you for volunteering.</div>}
 
               {/* Submit */}

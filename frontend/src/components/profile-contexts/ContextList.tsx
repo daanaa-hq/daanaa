@@ -61,7 +61,7 @@ export default function ContextList({ context, onManageMembers, onArchive }: Con
         {canManage && !isArchived && (
           <button
             onClick={() => onManageMembers(context.context_id)}
-            className="ml-4 p-2 text-soft-gold hover:bg-amber-50 rounded-lg transition"
+            className="ml-4 p-2 text-soft-gold hover:bg-alert-amber/5 rounded-lg transition"
             title="Manage members"
           >
             <Settings size={20} />
@@ -89,7 +89,7 @@ export default function ContextList({ context, onManageMembers, onArchive }: Con
           <>
             <button
               onClick={() => onManageMembers(context.context_id)}
-              className="flex-1 px-4 py-2 bg-soft-gold hover:bg-amber-600 text-white rounded-lg transition font-medium text-sm"
+              className="flex-1 px-4 py-2 bg-soft-gold hover:opacity-90 text-white rounded-lg transition font-medium text-sm"
             >
               Manage Members
             </button>

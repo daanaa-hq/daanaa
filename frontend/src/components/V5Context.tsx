@@ -17,7 +17,7 @@ interface V5ContextData {
 const SIGNAL_STYLE = {
   HEALTHY: { border: 'border-emerald-200', bg: 'bg-emerald-50', badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', bar: 'bg-emerald-400', text: 'text-emerald-700' },
   STABLE:  { border: 'border-blue-200',    bg: 'bg-blue-50',    badge: 'bg-blue-100 text-blue-800 border-blue-200',           bar: 'bg-blue-400',    text: 'text-blue-700'   },
-  CAUTION: { border: 'border-amber-200',   bg: 'bg-amber-50',   badge: 'bg-amber-100 text-amber-800 border-amber-200',         bar: 'bg-amber-400',   text: 'text-amber-700'  },
+  CAUTION: { border: 'border-amber-200',   bg: 'bg-alert-amber/5',   badge: 'bg-amber-100 text-amber-800 border-amber-200',         bar: 'bg-amber-400',   text: 'text-amber-700'  },
 } as const
 
 const SIGNAL_LABEL = {

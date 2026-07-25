@@ -88,7 +88,7 @@ export default function PartnerDetail() {
   }
 
   if (vendorLoading) return <div className="min-h-[100dvh] flex items-center justify-center"><div className="text-cool-grey">Loading...</div></div>
-  if (!vendor) return <div className="min-h-[100dvh] flex items-center justify-center"><div className="text-red-600">Vendor not found</div></div>
+  if (!vendor) return <div className="min-h-[100dvh] flex items-center justify-center"><div className="text-destructive">Vendor not found</div></div>
 
   const ratings = ratingsData?.ratings || []
 
@@ -190,7 +190,7 @@ export default function PartnerDetail() {
                     <div className={`p-3 rounded mb-4 text-sm ${
                       message.type === 'success' 
                         ? 'bg-green-50 border border-green-200 text-green-800'
-                        : 'bg-red-50 border border-red-200 text-red-800'
+                        : 'bg-destructive/5 border border-destructive/20 text-red-800'
                     }`}>
                       {message.text}
                     </div>

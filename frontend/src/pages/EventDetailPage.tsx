@@ -309,7 +309,7 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
       <h3 className="font-display italic text-deep-navy text-[17px]">Sign up</h3>
 
       {error && (
-        <div className="bg-red-50 border border-red-100 rounded-lg px-3 py-2 font-body text-[13px] text-red-700">
+        <div className="bg-destructive/5 border border-red-100 rounded-lg px-3 py-2 font-body text-[13px] text-destructive">
           {error}
         </div>
       )}
@@ -765,7 +765,7 @@ function CancelPanel({ eventId, token }: { eventId: number; token: string }) {
     <div className="bg-white rounded-2xl border border-orange-100 p-5 flex flex-col gap-3">
       <h3 className="font-display italic text-deep-navy text-[16px]">Cancel signup</h3>
       {state === 'error' && (
-        <p className="font-body text-[13px] text-red-600">{error}</p>
+        <p className="font-body text-[13px] text-destructive">{error}</p>
       )}
       <p className="font-body text-[13px] text-cool-grey">
         You're about to cancel your spot at this event. This can't be undone.
@@ -773,7 +773,7 @@ function CancelPanel({ eventId, token }: { eventId: number; token: string }) {
       <button
         onClick={cancel}
         disabled={state === 'loading'}
-        className="py-2.5 rounded-xl bg-red-500 text-white font-body text-[14px] font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
+        className="py-2.5 rounded-xl bg-destructive/50 text-white font-body text-[14px] font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
       >
         {state === 'loading' ? 'Cancelling…' : 'Yes, cancel my signup'}
       </button>

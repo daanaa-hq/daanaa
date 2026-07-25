@@ -147,7 +147,7 @@ export default function NonprofitDashboardPage() {
   }
 
   if (loading) return <div className="p-8 text-center">Loading...</div>
-  if (error) return <div className="p-8 text-center text-red-600">{error}</div>
+  if (error) return <div className="p-8 text-center text-destructive">{error}</div>
   if (!dashboard) return <div className="p-8 text-center">No data</div>
 
   return (

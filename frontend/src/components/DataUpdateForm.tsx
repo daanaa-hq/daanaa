@@ -143,8 +143,8 @@ export default function DataUpdateForm({
 
   if (form.success) {
     return (
-      <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
-        <p className="font-body text-[14px] text-green-800">
+      <div className="p-4 bg-success-green/5 border border-success-green/20 rounded-xl">
+        <p className="font-body text-[14px] text-success-green">
           Your update was received! It will be included in our next scoring run (within 2-3 business days).
         </p>
       </div>
@@ -154,9 +154,9 @@ export default function DataUpdateForm({
   return (
     <div className="space-y-4">
       {form.error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="font-body text-[14px] text-red-700">{form.error}</p>
+        <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+          <p className="font-body text-[14px] text-destructive">{form.error}</p>
         </div>
       )}
 

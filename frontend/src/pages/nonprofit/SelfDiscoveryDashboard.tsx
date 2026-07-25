@@ -106,12 +106,12 @@ export default function SelfDiscoveryDashboard() {
     return (
       <div className="min-h-[60vh] bg-warm-cream pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-16">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-red-700">
+          <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-6 text-destructive">
             <h2 className="font-body text-lg font-semibold mb-2">Unable to Load Dashboard</h2>
             <p className="font-body text-sm mb-4">{error}</p>
             <button
               onClick={() => navigate('/for-nonprofits')}
-              className="font-body text-sm text-red-700 underline underline-offset-2 hover:text-red-800"
+              className="font-body text-sm text-destructive underline underline-offset-2 hover:text-red-800"
             >
               Return to claim your organization
             </button>

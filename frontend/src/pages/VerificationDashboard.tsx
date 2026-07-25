@@ -153,7 +153,7 @@ export function VerificationDashboard() {
             <CardTitle className="text-sm font-medium text-gray-600">Rejected</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-red-600">{stats.rejected}</p>
+            <p className="text-3xl font-bold text-destructive">{stats.rejected}</p>
           </CardContent>
         </Card>
         <Card>
@@ -264,7 +264,7 @@ export function VerificationDashboard() {
                     </div>
 
                     <div className="bg-purple-50 border border-purple-200 p-3 rounded">
-                      <p className="text-xs text-purple-700 font-medium">🤝 VOLUNTEER LINK</p>
+                      <p className="text-xs text-purple-700 font-medium">Volunteer Link</p>
                       {item.volunteer_url ? (
                         <a href={item.volunteer_url} target="_blank" rel="noopener noreferrer" className="text-sm text-purple-600 break-all mt-1 hover:underline">
                           {item.volunteer_url}
@@ -293,7 +293,7 @@ export function VerificationDashboard() {
                         onClick={() => handleReject(item.ein, 'Rejected by user')}
                         disabled={loading}
                         variant="outline"
-                        className="text-red-600 hover:text-red-700 flex-1"
+                        className="text-destructive hover:text-destructive flex-1"
                       >
                         <XCircle size={16} /> Reject
                       </Button>

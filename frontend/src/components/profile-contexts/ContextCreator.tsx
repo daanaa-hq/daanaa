@@ -58,7 +58,7 @@ export default function ContextCreator({ onClose, onCreateContext }: ContextCrea
                 key={type.id}
                 className={`block p-4 rounded-lg border-2 cursor-pointer transition ${
                   selected === type.id
-                    ? 'border-soft-gold bg-amber-50'
+                    ? 'border-soft-gold bg-alert-amber/5'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
@@ -77,7 +77,7 @@ export default function ContextCreator({ onClose, onCreateContext }: ContextCrea
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg mb-6 text-sm">
+            <div className="bg-destructive/5 border border-destructive/20 text-destructive px-3 py-2 rounded-lg mb-6 text-sm">
               {error}
             </div>
           )}

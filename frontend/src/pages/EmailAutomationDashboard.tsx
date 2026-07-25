@@ -207,8 +207,8 @@ export function EmailAutomationDashboard() {
                 email.confidence_score >= 0.75
                   ? 'border-l-green-500 bg-green-50 dark:bg-green-950'
                   : email.confidence_score >= 0.5
-                  ? 'border-l-amber-500 bg-amber-50 dark:bg-amber-950'
-                  : 'border-l-red-500 bg-red-50 dark:bg-red-950'
+                  ? 'border-l-amber-500 bg-alert-amber/5 dark:bg-amber-950'
+                  : 'border-l-red-500 bg-destructive/5 dark:bg-red-950'
               }`}>
                 <div className="space-y-3">
                   <div className="flex justify-between items-start">
@@ -241,7 +241,7 @@ export function EmailAutomationDashboard() {
                     <Button
                       onClick={() => handleReject(email.id)}
                       variant="outline"
-                      className="text-red-600 hover:text-red-700 flex-1"
+                      className="text-destructive hover:text-destructive flex-1"
                     >
                       <XCircle size={16} />
                       Reject

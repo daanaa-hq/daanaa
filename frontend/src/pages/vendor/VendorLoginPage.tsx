@@ -100,7 +100,7 @@ export default function VendorLoginPage() {
                 Sign in with email
               </button>
 
-              {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+              {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
               <p className="mt-6 text-center text-xs text-slate-400">
                 New vendor?{' '}
@@ -142,7 +142,7 @@ export default function VendorLoginPage() {
                   {busy ? 'Sending...' : 'Send sign-in link'}
                 </button>
               </form>
-              {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+              {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
             </>
           )}
 

@@ -108,7 +108,7 @@ export default function DashboardOverview() {
     return (
       <div className="min-h-screen bg-warm-cream px-6 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
+          <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-6 text-destructive">
             <h2 className="font-display text-lg mb-2">Could not load dashboard</h2>
             <p className="font-body text-[14px] mb-4">{error}</p>
             <button
@@ -142,7 +142,7 @@ export default function DashboardOverview() {
 
         {/* Attention Alert */}
         {(dashboard.attention.pending_approvals > 0 || dashboard.attention.profile_gaps > 0) && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6" role="region" aria-label="Attention items">
+          <div className="bg-alert-amber/5 border border-amber-200 rounded-2xl p-6" role="region" aria-label="Attention items">
             <div className="flex items-start gap-3">
               <span className="text-2xl" aria-hidden="true">⚠️</span>
               <div className="flex-1">
@@ -263,7 +263,7 @@ export default function DashboardOverview() {
                   <div className="font-body text-[11px] text-cool-grey">Approved</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-display text-xl text-red-600">
+                  <div className="font-display text-xl text-destructive">
                     {dashboard.volunteer_summary.rejected_count}
                   </div>
                   <div className="font-body text-[11px] text-cool-grey">Rejected</div>

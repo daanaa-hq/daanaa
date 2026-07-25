@@ -100,7 +100,7 @@ export default function VolunteerApprovalDashboard() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-900 mb-8">Volunteer Management</h1>
 
-        {error && <div className="bg-red-50 border border-red-200 p-4 rounded text-red-700 mb-6">{error}</div>}
+        {error && <div className="bg-destructive/5 border border-destructive/20 p-4 rounded text-destructive mb-6">{error}</div>}
 
         {/* Volunteers Grid */}
         <div className="mb-12">

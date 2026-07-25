@@ -207,7 +207,7 @@ export default function PilotSignup() {
           {/* Signup form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded text-red-700 font-body text-[14px]">
+              <div className="p-4 bg-destructive/5 border border-destructive/20 rounded text-destructive font-body text-[14px]">
                 {error}
               </div>
             )}

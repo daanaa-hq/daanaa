@@ -86,14 +86,14 @@ export default function PendingInvitations({
   }
 
   return (
-    <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
+    <div className="bg-slate-50 rounded-lg border border-slate-200 p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Clock className="text-blue-600" size={20} />
+        <Clock className="text-slate-700" size={20} />
         <h2 className="text-lg font-semibold text-dark-brown">Pending Invitations ({invitations.length})</h2>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg mb-4 text-sm">
+        <div className="bg-destructive/5 border border-destructive/20 text-destructive px-3 py-2 rounded-lg mb-4 text-sm">
           {error}
         </div>
       )}
@@ -115,7 +115,7 @@ export default function PendingInvitations({
                     {invitation.role === 'lead' ? '👑 ' : ''}
                     {invitation.role.charAt(0).toUpperCase() + invitation.role.slice(1)} role
                   </div>
-                  <div className={`text-xs mt-1 ${isExpiring ? 'text-red-600' : 'text-gray-500'}`}>
+                  <div className={`text-xs mt-1 ${isExpiring ? 'text-destructive' : 'text-gray-500'}`}>
                     Expires in {daysLeft} {daysLeft === 1 ? 'day' : 'days'}
                   </div>
                 </div>
@@ -133,7 +133,7 @@ export default function PendingInvitations({
                 <button
                   onClick={() => handleReject(invitation.invitation_id)}
                   disabled={actionInProgress === invitation.invitation_id}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-200 text-red-700 rounded-lg transition font-medium text-sm"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 disabled:bg-gray-200 text-destructive rounded-lg transition font-medium text-sm"
                 >
                   <X size={16} />
                   Reject

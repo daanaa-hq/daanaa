@@ -123,7 +123,7 @@ export default function VolunteerApproval() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700">{error}</div>
+          <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 mb-6 text-destructive">{error}</div>
         )}
 
         <div className="bg-white rounded-lg p-4 mb-6 border border-light-grey flex gap-4 flex-wrap justify-between items-center">
@@ -222,7 +222,7 @@ export default function VolunteerApproval() {
                       <button
                         onClick={() => handleReject(record.id)}
                         disabled={rejecting === record.id}
-                        className="flex-1 py-2.5 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
+                        className="flex-1 py-2.5 rounded-lg bg-destructive/50 text-white font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
                       >
                         {rejecting === record.id ? 'Rejecting...' : '✕ Reject'}
                       </button>

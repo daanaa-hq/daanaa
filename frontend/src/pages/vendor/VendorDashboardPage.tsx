@@ -292,7 +292,7 @@ export default function VendorDashboardPage() {
                 />
               </div>
 
-              {saveError && <p className="text-sm text-red-600">{saveError}</p>}
+              {saveError && <p className="text-sm text-destructive">{saveError}</p>}
 
               <div className="flex gap-3">
                 <button

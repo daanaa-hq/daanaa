@@ -652,7 +652,7 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
     const map: Record<string, string> = {
       active: 'bg-green-50 text-green-700',
       filled: 'bg-blue-50 text-blue-700',
-      cancelled: 'bg-red-50 text-red-600',
+      cancelled: 'bg-destructive/5 text-destructive',
       expired: 'bg-light-cream text-muted-cream',
     }
     return (
@@ -683,7 +683,7 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
       </div>
 
       {error && (
-        <p className="font-body text-[13px] text-red-600">{error}</p>
+        <p className="font-body text-[13px] text-destructive">{error}</p>
       )}
 
       {showForm && (
@@ -861,8 +861,8 @@ export default function OrgClaimEditor() {
         </div>
         <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm border border-light-cream p-8 space-y-6">
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="font-body text-[14px] text-red-700">{error}</p>
+            <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
+              <p className="font-body text-[14px] text-destructive">{error}</p>
             </div>
           )}
           <label className="block">

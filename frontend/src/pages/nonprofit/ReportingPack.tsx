@@ -192,7 +192,7 @@ export default function ReportingPack() {
     return (
       <div className="min-h-screen bg-warm-cream px-6 py-8">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
+          <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-6 text-destructive">
             <h2 className="font-display text-lg mb-2">Could not load data</h2>
             <p className="font-body text-[14px] mb-4">{error}</p>
           </div>
@@ -282,7 +282,7 @@ export default function ReportingPack() {
 
         {/* Info */}
         <div className="mt-8 space-y-4">
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="p-4 bg-alert-amber/5 border border-amber-200 rounded-xl">
             <p className="font-body text-[13px] text-amber-900">
               <strong>💾 Reports:</strong> Generate and download reports to share with board members, donors, or for your records. Each report includes a disclaimer that volunteer hours were approved by your organization.
             </p>

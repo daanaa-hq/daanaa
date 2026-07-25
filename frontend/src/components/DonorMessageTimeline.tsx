@@ -59,7 +59,7 @@ export default function DonorMessageTimeline({
         </div>
 
         {loading && <p className="text-center text-cool-grey">Loading events...</p>}
-        {error && <p className="text-center text-red-600 text-sm">{error}</p>}
+        {error && <p className="text-center text-destructive text-sm">{error}</p>}
 
         {!loading && events.length === 0 && (
           <p className="text-center text-cool-grey">No events recorded</p>

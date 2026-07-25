@@ -105,7 +105,7 @@ export default function DonorFeedback() {
             </button>
             <button
               onClick={() => handleHelpful(false)}
-              className="w-full p-4 rounded-lg border-2 border-amber-300 bg-amber-50 hover:bg-amber-100 text-deep-navy font-body text-[14px] font-semibold transition"
+              className="w-full p-4 rounded-lg border-2 border-amber-300 bg-alert-amber/5 hover:bg-amber-100 text-deep-navy font-body text-[14px] font-semibold transition"
             >
               👎 Not really
             </button>
@@ -128,7 +128,7 @@ export default function DonorFeedback() {
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 font-body text-[12px]">
+          <div className="mb-4 p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[12px]">
             {error}
           </div>
         )}

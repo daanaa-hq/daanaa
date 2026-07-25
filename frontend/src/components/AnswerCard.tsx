@@ -27,7 +27,7 @@ interface AnswerCardProps {
 const HEALTH_COPY: Record<string, { label: string; chipClass: string; textClass: string }> = {
   HEALTHY: { label: 'Financially steady', chipClass: 'bg-emerald-500/15 border-emerald-500/25', textClass: 'text-emerald-300' },
   STABLE: { label: 'Managing well', chipClass: 'bg-blue-500/10 border-blue-500/20', textClass: 'text-blue-300' },
-  CAUTION: { label: 'Could use community support', chipClass: 'bg-amber-500/10 border-amber-500/20', textClass: 'text-amber-300' },
+  CAUTION: { label: 'Could use community support', chipClass: 'bg-alert-amber/50/10 border-amber-500/20', textClass: 'text-amber-300' },
 }
 
 function isRevoked(org: ApiOrganization): boolean {

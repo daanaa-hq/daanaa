@@ -95,7 +95,7 @@ export default function VolunteerImpactPage() {
       </div>
 
       <div className="max-w-[900px] mx-auto px-6 py-10 space-y-6">
-        {error && <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 font-body text-[14px]">{error}</div>}
+        {error && <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[14px]">{error}</div>}
 
         {data && (
           <>

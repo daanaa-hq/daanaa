@@ -24,7 +24,7 @@ export default function StatusBadge({ status, withContext = true, size = 'md' }:
     },
     rejected: {
       bgColor: 'bg-destructive/5',
-      borderColor: 'border-red-200',
+      borderColor: 'border-destructive/20',
       textColor: 'text-red-900',
       icon: '✗',
       label: 'Rejected',

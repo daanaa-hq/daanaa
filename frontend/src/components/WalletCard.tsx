@@ -83,7 +83,7 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
               <>
                 <button
                   onClick={handleRemoveClick}
-                  className="px-2 py-1 rounded-lg text-[12px] font-semibold bg-destructive/5 text-destructive border border-red-200 hover:bg-red-100 transition-colors"
+                  className="px-2 py-1 rounded-lg text-[12px] font-semibold bg-destructive/5 text-destructive border border-destructive/20 hover:bg-destructive/10 transition-colors"
                 >
                   Remove
                 </button>
@@ -132,7 +132,7 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
           {health.label}
         </span>
         {isHiddenGem && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-violet-50 text-violet-700 border-violet-200 font-body">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-slate-50 text-slate-700 border-slate-200 font-body">
             Hidden gem
           </span>
         )}

@@ -96,7 +96,7 @@ export default function ResearchDataTransparency({ org, onUpdateClick }: Researc
           </div>
 
           {/* Months of Reserve */}
-          <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
+          <div className="p-3 rounded-lg bg-alert-amber/5 border border-amber-100">
             <p className="font-body text-[11px] text-cool-grey mb-1">Months of Reserve</p>
             <p className="font-display text-[16px] font-bold text-amber-900">
               {org.months_of_reserve ? `${org.months_of_reserve.toFixed(1)} mo` : 'N/A'}
@@ -121,7 +121,7 @@ export default function ResearchDataTransparency({ org, onUpdateClick }: Researc
 
       {/* Stale Data Warning */}
       {isStale && (
-        <div className="mb-6 p-4 rounded-lg bg-amber-50 border border-amber-200">
+        <div className="mb-6 p-4 rounded-lg bg-alert-amber/5 border border-amber-200">
           <p className="font-body text-[13px] text-amber-900 mb-2">
             <strong>Your data is from {org.latest_tax_year}.</strong> The 2025 990 may not be filed yet, but if your financials have changed, you can update them below.
           </p>

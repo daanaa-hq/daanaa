@@ -89,7 +89,7 @@ export default function CreditPurchaseModal({
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+          <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 mb-4">
             <p className="text-sm text-red-800">{error}</p>
           </div>
         )}

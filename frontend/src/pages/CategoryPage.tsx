@@ -15,7 +15,7 @@ const healthLabel: Record<string, string> = {
 const healthClasses: Record<string, string> = {
   HEALTHY: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   STABLE:  'bg-blue-50 text-blue-700 border-blue-200',
-  CAUTION: 'bg-amber-50 text-amber-700 border-amber-200',
+  CAUTION: 'bg-alert-amber/5 text-amber-700 border-amber-200',
 }
 
 export default function CategoryPage() {
@@ -175,7 +175,7 @@ export default function CategoryPage() {
                             onClick={() => inVolunteering ? removeFromVolunteering(ein) : addToVolunteering(ein)}
                             title={inVolunteering ? 'In volunteer list' : 'Add to volunteer list'}
                             aria-pressed={inVolunteering}
-                            className="p-1.5 rounded-lg transition-colors hover:bg-red-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
+                            className="p-1.5 rounded-lg transition-colors hover:bg-destructive/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-200"
                           >
                             <svg width="15" height="15" viewBox="0 0 24 24"
                               fill={inVolunteering ? '#ef4444' : 'none'} stroke="#ef4444"

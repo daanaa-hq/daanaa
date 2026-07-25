@@ -46,7 +46,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       <div className="max-w-2xl mx-auto px-4">
         <h2 className="text-3xl font-bold text-deep-navy mb-2">{title}</h2>
         <p className="text-cool-grey mb-8">{subtitle}</p>
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 mb-8">
+        <div className="bg-alert-amber/5 border border-alert-amber/20 rounded-lg p-6 mb-8">
           <p className="text-deep-navy">
             We did not find organizations matching all of those choices. Nothing is wrong.
             Try a broader place, another cause, or remove one preference.
@@ -81,7 +81,7 @@ export const DiscoveryResults: React.FC<DiscoveryResultsProps> = ({
       <p className="text-cool-grey font-body mb-8">{subtitle}</p>
 
       {showTooFew && (
-        <div className="bg-muted-cream border border-blue-200 rounded-lg p-4 mb-8 text-sm text-deep-navy">
+        <div className="bg-muted-cream border border-slate-200 rounded-lg p-4 mb-8 text-sm text-deep-navy">
           We found {totalResults} organizations that fit these choices. You can review these or{' '}
           <button
             onClick={onChangeAnswers}

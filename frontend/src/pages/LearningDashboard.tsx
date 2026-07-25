@@ -180,7 +180,7 @@ export function LearningDashboard() {
                     <span>{summary.recommendation_quality.approved}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-red-600">✗ Rejected</span>
+                    <span className="text-destructive">✗ Rejected</span>
                     <span>{summary.recommendation_quality.rejected}</span>
                   </div>
                 </div>

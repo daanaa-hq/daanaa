@@ -128,7 +128,7 @@ export default function TemplateEditorModal({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-4 text-sm">
+            <div className="bg-destructive/5 border border-destructive/20 text-destructive rounded-lg p-4 mb-4 text-sm">
               {error}
             </div>
           )}
@@ -199,7 +199,7 @@ export default function TemplateEditorModal({
 
                 {!body && <p className="text-cool-grey">✓ Message required</p>}
                 {body && !hasVars && (
-                  <p className="text-red-600">✗ Message must include at least one variable</p>
+                  <p className="text-destructive">✗ Message must include at least one variable</p>
                 )}
                 {body && hasVars && (
                   <p className="text-green-600">✓ Message includes variables</p>

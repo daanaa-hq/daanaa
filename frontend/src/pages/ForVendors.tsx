@@ -129,8 +129,8 @@ function CommunityPartnerForm({ onGateToNetwork }: { onGateToNetwork: () => void
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="font-body text-[14px] text-red-700">{error}</p>
+        <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
+          <p className="font-body text-[14px] text-destructive">{error}</p>
         </div>
       )}
 
@@ -323,8 +323,8 @@ function NetworkPartnerForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-          <p className="font-body text-[14px] text-red-700">{error}</p>
+        <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
+          <p className="font-body text-[14px] text-destructive">{error}</p>
         </div>
       )}
       <div className="grid sm:grid-cols-2 gap-4">

@@ -85,7 +85,7 @@ function CreateEventForm({ ein, idToken, onCreated }: { ein: string; idToken: st
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-light-grey p-6 space-y-4">
       <h3 className="font-body text-[15px] font-semibold text-deep-navy">New volunteer event</h3>
-      {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 font-body text-[13px]">{error}</div>}
+      {error && <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[13px]">{error}</div>}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block font-body text-[12px] font-semibold text-deep-navy mb-1">Event name</label>
@@ -156,7 +156,7 @@ function ImportEventForm({ ein, idToken, onCreated }: { ein: string; idToken: st
     <form onSubmit={submit} className="bg-white rounded-2xl border border-soft-gold/30 p-6 space-y-3">
       <h3 className="font-body text-[15px] font-semibold text-deep-navy">Build from a public event link</h3>
       <p className="font-body text-[12px] text-cool-grey">Daanaa will create an AI assisted, unconfirmed draft for your review.</p>
-      {error && <div className="p-3 bg-red-50 rounded-lg text-red-700 font-body text-[13px]">{error}</div>}
+      {error && <div className="p-3 bg-destructive/5 rounded-lg text-destructive font-body text-[13px]">{error}</div>}
       <input
         type="url"
         required
@@ -291,7 +291,7 @@ export default function VolunteerEventsPage() {
         <CreateEventForm ein={ein} idToken={idToken} onCreated={fetchEvents} />
           <ImportEventForm ein={ein} idToken={idToken} onCreated={fetchEvents} />
 
-        {error && <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 font-body text-[14px]">{error}</div>}
+        {error && <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[14px]">{error}</div>}
 
         {loading ? (
           <p className="font-body text-cool-grey text-[14px]">Loading events...</p>

@@ -204,7 +204,7 @@ export function SocialManagerDashboard() {
                     <Button
                       onClick={() => handleRejectTheme(theme.id)}
                       variant="outline"
-                      className="text-red-600 hover:text-red-700 flex-1"
+                      className="text-destructive hover:text-destructive flex-1"
                     >
                       <XCircle size={16} />
                       Reject

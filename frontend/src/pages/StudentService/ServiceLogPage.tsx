@@ -208,7 +208,7 @@ export default function ServiceLogPage() {
             </div>
             <div className="bg-white rounded-lg p-4 shadow-sm">
               <p className="text-gray-600 text-sm">Rejected</p>
-              <p className="text-2xl font-bold text-red-600">{summary.rejected}</p>
+              <p className="text-2xl font-bold text-destructive">{summary.rejected}</p>
               <p className="text-xs text-gray-500">submissions</p>
             </div>
           </div>
@@ -345,7 +345,7 @@ export default function ServiceLogPage() {
                     {log.hours_claimed.toFixed(1)} <span className="text-lg text-gray-600">hours</span>
                   </div>
                   {log.rejected_reason && (
-                    <div className="text-sm text-red-600">
+                    <div className="text-sm text-destructive">
                       <strong>Rejection reason:</strong> {log.rejected_reason}
                     </div>
                   )}
@@ -356,7 +356,7 @@ export default function ServiceLogPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleDelete(log.service_log_id)}
-                      className="inline-flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-200"
+                      className="inline-flex items-center gap-2 px-3 py-2 text-destructive hover:bg-destructive/5 rounded-lg border border-destructive/20"
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete

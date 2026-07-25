@@ -52,7 +52,7 @@ export default function VolunteerInsightsCard({ nonprofitEin, authToken }: Volun
 
   const getTrendColor = (direction: string): string => {
     if (direction === 'up') return 'text-green-600'
-    if (direction === 'down') return 'text-red-600'
+    if (direction === 'down') return 'text-destructive'
     return 'text-gray-500'
   }
 
@@ -77,7 +77,7 @@ export default function VolunteerInsightsCard({ nonprofitEin, authToken }: Volun
           <h3 className="font-display text-xl text-deep-navy">Volunteer Insights</h3>
           <span className="text-2xl">📊</span>
         </div>
-        <p className="text-sm text-red-600">{error || 'Failed to load insights'}</p>
+        <p className="text-sm text-destructive">{error || 'Failed to load insights'}</p>
       </div>
     )
   }
@@ -159,7 +159,7 @@ export default function VolunteerInsightsCard({ nonprofitEin, authToken }: Volun
         </div>
         <div>
           <p className="text-cool-grey">Rejected</p>
-          <p className="font-semibold text-red-600">{insights.rejected_count}</p>
+          <p className="font-semibold text-destructive">{insights.rejected_count}</p>
         </div>
       </div>
     </div>

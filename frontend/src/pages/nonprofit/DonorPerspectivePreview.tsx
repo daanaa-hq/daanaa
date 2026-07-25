@@ -59,7 +59,7 @@ export default function DonorPerspectivePreview() {
     return (
       <div className="min-h-screen bg-warm-cream px-6 py-8">
         <div className="max-w-2xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-700">
+          <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-6 text-destructive">
             <h2 className="font-display text-lg mb-2">Could not load profile</h2>
             <p className="font-body text-[14px] mb-4">{error}</p>
             <button

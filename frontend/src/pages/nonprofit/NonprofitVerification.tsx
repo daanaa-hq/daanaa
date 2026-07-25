@@ -66,12 +66,12 @@ export default function NonprofitVerification() {
         {status === 'error' && (
           <>
             <div className="inline-flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mb-6">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
             <h2 className="font-display text-2xl text-deep-navy mb-2">Verification failed</h2>
-            <p className="text-red-600 mb-4">{error}</p>
+            <p className="text-destructive mb-4">{error}</p>
             <button
               onClick={() => window.location.href = '/nonprofit/signup'}
               className="w-full py-2.5 rounded-lg bg-soft-gold text-deep-navy font-semibold hover:bg-bright-gold transition-colors"

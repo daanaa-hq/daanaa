@@ -85,8 +85,8 @@ export default function NonprofitLogin() {
         {/* Main card */}
         <div className="bg-white rounded-2xl shadow-sm border border-light-grey p-7">
           {error && (
-            <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="font-body text-[14px] text-red-700">{error}</p>
+            <div className="mb-5 p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
+              <p className="font-body text-[14px] text-destructive">{error}</p>
             </div>
           )}
 

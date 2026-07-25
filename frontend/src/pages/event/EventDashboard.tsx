@@ -39,7 +39,7 @@ export default function EventDashboard() {
   }, [eventId]);
 
   if (loading) return <div className="p-8">Loading dashboard...</div>;
-  if (error) return <div className="p-8 text-red-600">Error: {error}</div>;
+  if (error) return <div className="p-8 text-destructive">Error: {error}</div>;
   if (!dashboard) return <div className="p-8">No data available</div>;
 
   return (

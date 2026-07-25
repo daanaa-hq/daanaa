@@ -116,7 +116,7 @@ export default function Feedback() {
               />
             </div>
 
-            {error && <p className="font-body text-[13px] text-red-600">{error}</p>}
+            {error && <p className="font-body text-[13px] text-destructive">{error}</p>}
 
             <button
               type="submit"

@@ -12,9 +12,9 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; classes: string }> = {
     active:      { label: 'Active',           classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
     verified:    { label: 'Active',            classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    pending:     { label: 'Waiting for PIN',   classes: 'bg-amber-50 text-amber-700 border-amber-200' },
-    letter_sent: { label: 'Waiting for PIN',   classes: 'bg-amber-50 text-amber-700 border-amber-200' },
-    revoked:     { label: 'Revoked',           classes: 'bg-red-50 text-red-700 border-red-200' },
+    pending:     { label: 'Waiting for PIN',   classes: 'bg-alert-amber/5 text-amber-700 border-amber-200' },
+    letter_sent: { label: 'Waiting for PIN',   classes: 'bg-alert-amber/5 text-amber-700 border-amber-200' },
+    revoked:     { label: 'Revoked',           classes: 'bg-destructive/5 text-destructive border-destructive/20' },
   }
   const cfg = map[status] ?? { label: status, classes: 'bg-light-grey text-cool-grey border-light-grey' }
   return (
@@ -79,7 +79,7 @@ function OrgCard({ org, onDashboard, onEditProfile, loadingEin }: {
         {(status === 'pending' || status === 'letter_sent') && (
           <button
             onClick={() => navigate(`/claim/verify?ein=${org.ein}`)}
-            className="px-4 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-body text-[13px] font-semibold hover:bg-amber-100 transition-colors"
+            className="px-4 py-2 rounded-xl bg-alert-amber/5 border border-amber-200 text-amber-800 font-body text-[13px] font-semibold hover:bg-amber-100 transition-colors"
           >
             Enter PIN
           </button>
@@ -224,8 +224,8 @@ export default function MyOrgsPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p className="font-body text-[14px] text-red-700">{error}</p>
+          <div className="mb-6 p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
+            <p className="font-body text-[14px] text-destructive">{error}</p>
           </div>
         )}
 

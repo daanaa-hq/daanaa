@@ -150,7 +150,7 @@ export default function MemberManagement({
         {/* Body */}
         <div className="p-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-destructive/5 border border-destructive/20 text-destructive px-4 py-3 rounded-lg mb-6">
               {error}
             </div>
           )}
@@ -161,13 +161,13 @@ export default function MemberManagement({
               {!showInviteForm ? (
                 <button
                   onClick={() => setShowInviteForm(true)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-soft-gold text-soft-gold hover:bg-amber-50 rounded-lg transition font-medium"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-soft-gold text-soft-gold hover:bg-alert-amber/5 rounded-lg transition font-medium"
                 >
                   <UserPlus size={18} />
                   Invite New Member
                 </button>
               ) : (
-                <form onSubmit={handleInvite} className="bg-amber-50 rounded-lg p-4">
+                <form onSubmit={handleInvite} className="bg-alert-amber/5 rounded-lg p-4">
                   <h3 className="font-semibold text-dark-brown mb-4">Invite Member</h3>
                   <div className="space-y-4">
                     <div>
@@ -217,7 +217,7 @@ export default function MemberManagement({
                       <button
                         type="submit"
                         disabled={inviting}
-                        className="flex-1 px-4 py-2 bg-soft-gold hover:bg-amber-600 disabled:bg-gray-300 text-white rounded-lg transition font-medium"
+                        className="flex-1 px-4 py-2 bg-soft-gold hover:opacity-90 disabled:bg-slate-300 text-white rounded-lg transition font-medium"
                       >
                         {inviting ? 'Inviting...' : 'Send Invitation'}
                       </button>
@@ -278,7 +278,7 @@ export default function MemberManagement({
                       {canInvite && member.firebase_uid !== user?.uid && (
                         <button
                           onClick={() => handleRemove(member.firebase_uid)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                          className="p-2 text-destructive hover:bg-destructive/5 rounded-lg transition"
                           title="Remove member"
                         >
                           <Trash2 size={16} />
@@ -293,7 +293,7 @@ export default function MemberManagement({
 
           {/* Privacy Notice */}
           <div className="mt-8 pt-6 border-t border-gray-200">
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className="bg-slate-50 rounded-lg p-4">
               <p className="text-xs text-dark-gray">
                 <Shield className="inline mr-1" size={14} />
                 <strong>Privacy:</strong> Each person keeps an independent Daanaa profile.
