@@ -9804,7 +9804,7 @@ def _dashboard_financial_narrative(row) -> str:
                 "close to their means, and holding stable there takes real "
                 "discipline. You are keeping the mission funded — that is the "
                 "job, and you are doing it.")
-    if signal in ('CAUTION', 'NEED_SUPPORT'):
+    if signal in ('CAUTION', 'NEED_SUPPORT', 'MAY_NEED_SUPPORT'):
         return (f"Your organization is ready for more supporters {peer_phrase}. "
                 f"Many {archetype} organizations in the {band} range are "
                 "growing their mission work and actively seeking supporters like "
@@ -11312,6 +11312,7 @@ def nonprofit_financial_health(ein: str):
             'STABLE': 'blue',
             'CAUTION': 'yellow',
             'NEED_SUPPORT': 'yellow',
+            'MAY_NEED_SUPPORT': 'yellow',
             'CRISIS': 'red'
         }.get(health[8], 'gray')
     }), 200

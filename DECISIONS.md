@@ -29,10 +29,17 @@
 - Use median revenue of archetype as proxy band (guessing; violates P3)
 - Require revenue data before scoring (too aggressive; 59% coverage loss)
 
+**Tone Update (same session):**
+- Changed health signal "CAUTION" → "MAY_NEED_SUPPORT" (removes shame language per P5)
+- Donor copy reframed: "worth understanding before you give" → "your support could strengthen their financial resilience"
+- Affects 167.5K orgs in bottom 25% of peer reserves
+- Intent: open doors for donors to help, not judge orgs in building stages
+
 **Follow-up (next session):**
 - Complete NCCS ingestion (governance columns: board_size, policies, expense ratios) for governance-rich display
 - Extend UI `PeerContextBreakdown` to show "Governance Highlights" for archetype-only orgs
 - Test with live data: ensure NULL band doesn't break filters/sorts in API
+- API response mapping: ensure "MAY_NEED_SUPPORT" label renders correctly in frontend
 
 ---
 
