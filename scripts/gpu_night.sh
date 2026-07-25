@@ -158,7 +158,29 @@ stop() {
   echo "[$(ts)] stop: done (GPU freed, embed_server still running for web_finder)"
 }
 
+# Poka-yoke: the founder can lift the night-only GPU rule for a stated window
+# (e.g. away from home, heat is not a concern). Before this guard existed the
+# 09:05 cron stopped the embed server anyway and nothing restarted it, so live
+# search lost query embedding silently — that happened on 2026-07-25.
+#
+# Hold the window open with an expiry timestamp, so a forgotten override cannot
+# disable the heat protection permanently:
+#   date -d '+36 hours' +%s > ~/meritgiving/.gpu_override_until
+GPU_OVERRIDE_FILE="$BASE/.gpu_override_until"
+
+gpu_override_active() {
+  [ -f "$GPU_OVERRIDE_FILE" ] || return 1
+  local until_ts
+  until_ts=$(tr -cd '0-9' < "$GPU_OVERRIDE_FILE")
+  [ -n "$until_ts" ] || return 1
+  [ "$(date +%s)" -lt "$until_ts" ]
+}
+
 stop_embed_server() {
+  if gpu_override_active; then
+    echo "[$(ts)] stop_embed_server: SKIPPED — GPU override active until $(date -d "@$(tr -cd '0-9' < "$GPU_OVERRIDE_FILE")" '+%Y-%m-%d %H:%M')"
+    return 0
+  fi
   echo "[$(ts)] stop_embed_server: halting embed_server (used by Phase 4)"
   bash "$BASE/scripts/embed_server.sh" stop
 }

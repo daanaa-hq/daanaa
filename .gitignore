@@ -128,3 +128,4 @@ precompute_output/v5_patch_changed.txt
 .superpowers/
 scripts/linkedin/output/
 precompute_output/offline_pack/
+.gpu_override_until
