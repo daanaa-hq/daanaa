@@ -1592,3 +1592,18 @@ missing (would create two silent scoring regimes; deriving the missing input is 
 **Summary:**
 All autonomously actionable items completed without external dependencies. Three parallel discovery processes (Phase 1, Phase 3 Archive, daily revocation monitoring) are now operational. Firebase auth unblocked Student Service integration.
 
+
+## 2026-07-25 — Deferring Charity Navigator (legal gate + API status blocker)
+
+**Chose:** Skip Charity Navigator API development/debugging.
+
+**Why:**
+1. **Board/legal review gate** applies anyway — can't ship without approval
+2. **API is broken** — endpoint returns 404 on all queries (likely API deprecation)
+3. **Expected gain is modest** — 200-300K websites (12-15% relative to 480K from Phase 1)
+4. **Opportunity cost** — Phase 1 + Archive.org Phase 3 deliver higher ROI with zero external dependencies
+
+**Status:** Deferred to post-legal-review phase. Will reassess API status when legal gate lifts.
+
+**Note:** This removes Charity Navigator from the "open blockers we can close today" category. Focus is now exclusively on Phase 1 domain discovery (autonomous, zero blockers) and Archive.org Phase 3 (autonomous, already running).
+
