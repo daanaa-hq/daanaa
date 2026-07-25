@@ -169,38 +169,61 @@ export default function WalletPageV2() {
 
             {/* Sort and filter controls */}
             {givingEntries.length > 0 && (
-              <div className="flex gap-2 items-end flex-wrap">
-                {/* Sort */}
-                <div className="flex-1 min-w-[150px]">
-                  <label className="block text-xs font-medium text-deep-navy mb-1">Sort</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'name' | 'recent')}
-                    className="w-full px-3 py-2 border border-light-grey rounded text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
-                  >
-                    <option value="name">Name (A–Z)</option>
-                    <option value="recent">Recently added</option>
-                  </select>
-                </div>
-
-                {/* Cause filter */}
-                {allCauses.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex gap-2 items-end flex-wrap">
+                  {/* Sort */}
                   <div className="flex-1 min-w-[150px]">
-                    <label className="block text-xs font-medium text-deep-navy mb-1">Cause</label>
+                    <label className="block text-xs font-medium text-deep-navy mb-1">Sort</label>
                     <select
-                      value={selectedCause || ''}
-                      onChange={(e) => setSelectedCause(e.target.value || null)}
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'name' | 'recent')}
                       className="w-full px-3 py-2 border border-light-grey rounded text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
                     >
-                      <option value="">All causes</option>
-                      {allCauses.map((cause) => (
-                        <option key={cause} value={cause}>
-                          {cause}
-                        </option>
-                      ))}
+                      <option value="name">Name (A–Z)</option>
+                      <option value="recent">Recently added</option>
                     </select>
                   </div>
-                )}
+
+                  {/* Cause filter */}
+                  {allCauses.length > 0 && (
+                    <div className="flex-1 min-w-[150px]">
+                      <label className="block text-xs font-medium text-deep-navy mb-1">Cause</label>
+                      <select
+                        value={selectedCause || ''}
+                        onChange={(e) => setSelectedCause(e.target.value || null)}
+                        className="w-full px-3 py-2 border border-light-grey rounded text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
+                      >
+                        <option value="">All causes</option>
+                        {allCauses.map((cause) => (
+                          <option key={cause} value={cause}>
+                            {cause}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Clear filters button (visible when active) */}
+                  {(selectedCause || sortBy !== 'name') && (
+                    <button
+                      onClick={() => {
+                        setSelectedCause(null)
+                        setSortBy('name')
+                        setSearchTerm('')
+                      }}
+                      className="px-3 py-2 text-xs text-cool-grey hover:text-deep-navy transition-colors"
+                    >
+                      Reset filters
+                    </button>
+                  )}
+                </div>
+
+                {/* Result count */}
+                <div className="text-xs text-cool-grey">
+                  {filteredGiving.length} of {givingEntries.length} nonprofits
+                  {selectedCause && ` in ${selectedCause}`}
+                  {searchTerm && ` matching "${searchTerm}"`}
+                </div>
               </div>
             )}
 
@@ -225,7 +248,21 @@ export default function WalletPageV2() {
               </CardPattern>
             ) : filteredGiving.length === 0 ? (
               <CardPattern variant="subtle" className="text-center py-4">
-                <p className="text-sm text-cool-grey">No results for "{searchTerm}"</p>
+                <p className="text-sm text-cool-grey">
+                  {searchTerm ? `No results for "${searchTerm}"` : selectedCause ? `No nonprofits in ${selectedCause}` : 'No results'}
+                </p>
+                {(searchTerm || selectedCause) && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('')
+                      setSelectedCause(null)
+                      setSortBy('name')
+                    }}
+                    className="mt-2 text-xs text-soft-gold hover:text-gold transition-colors"
+                  >
+                    Clear filters to see all
+                  </button>
+                )}
               </CardPattern>
             ) : (
               <div className="space-y-3">
