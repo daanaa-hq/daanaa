@@ -33,6 +33,7 @@ import OrgEnrichmentCard from '../components/OrgEnrichmentCard'
 import GuildSection from '../components/GuildSection'
 import { sentenceCase } from '../utils/sentenceCase'
 import GiveYourWayRouter from '../components/GiveYourWayRouter'
+import VolunteerInterest from '../components/VolunteerInterest'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -325,6 +326,7 @@ export default function OrganizationDetail() {
   const [ppFilingYear, setPpFilingYear] = useState<number|null>(null)
   const [enrichmentData, setEnrichmentData] = useState<any>(null)
   const [enrichmentLoading, setEnrichmentLoading] = useState(false)
+  const [volunteeringInterestEventId, setVolunteeringInterestEventId] = useState<number | null>(null)
 
 
   // Hook must run unconditionally — keep it above any early return (Rules of Hooks)
@@ -1306,25 +1308,27 @@ export default function OrganizationDetail() {
                     {ev.description && (
                       <p className="font-body text-[13px] text-cool-grey leading-[1.6] line-clamp-2">{ev.description}</p>
                     )}
-                    <div className="mt-auto">
-                      {ev.signup_url ? (
+                    <div className="mt-auto flex flex-col gap-2">
+                      {ev.signup_url && (
                         <a
                           href={ev.signup_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-link-gold font-semibold hover:text-deep-gold transition-colors"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-soft-gold text-deep-navy rounded-lg font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
                         >
                           Sign up
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M7 17 17 7M17 7H8M17 7v9"/>
                           </svg>
                         </a>
-                      ) : ev.contact_email ? (
-                        <a
-                          href={`mailto:${ev.contact_email}`}
-                          className="font-body text-[13px] text-link-gold font-semibold hover:text-deep-gold transition-colors"
-                        >
-                          Contact to volunteer
-                        </a>
-                      ) : null}
+                      )}
+                      <button
+                        onClick={() => setVolunteeringInterestEventId(ev.id)}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-soft-gold text-soft-gold rounded-lg font-body text-[13px] font-semibold hover:bg-soft-gold/10 transition-colors"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        Express interest
+                      </button>
                     </div>
                   </div>
                 )
@@ -1336,6 +1340,19 @@ export default function OrganizationDetail() {
           </div>
         </div>
       )}
+
+      {/* Volunteer Interest Modal */}
+      {volunteeringInterestEventId && volunteerEvents.length > 0 && (() => {
+        const selectedEvent = volunteerEvents.find(e => e.id === volunteeringInterestEventId)
+        return selectedEvent ? (
+          <VolunteerInterest
+            orgName={apiOrg?.organization_name || org.name}
+            website={apiOrg?.website}
+            contactEmail={selectedEvent.contact_email}
+            onClose={() => setVolunteeringInterestEventId(null)}
+          />
+        ) : null
+      })()}
 
       {/* Similar Organizations */}
       {similarOrgs.length > 0 ? (
