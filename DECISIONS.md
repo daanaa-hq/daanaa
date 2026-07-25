@@ -1522,3 +1522,23 @@ missing (would create two silent scoring regimes; deriving the missing input is 
 3. Charity Navigator scraper — Pending board/legal review before production
 4. Phase 1 domain discovery — 480K website target (24-48h execution)
 
+
+## 2026-07-25 — Phase 1 domain discovery + Firebase auth fix (continued)
+
+**Phase 1 Domain Discovery — Active**
+- Launched 17:56 UTC, 20 parallel workers, 5K org batch
+- Progress snapshot (1K orgs): 62 found (6.2% initial; expecting to converge toward 30% by completion)
+- Running in background; execution time est. 24-48h; PIDs 3612747, 3612769
+
+**Resolved: Student Service Integration Firebase UID Mismatch**
+- Problem: ServiceLogPage reading `firebase_token` from localStorage (key never set)
+- Solution: Use useAuth().getIdToken() to fetch fresh Firebase token for each API call
+- Fixed all 3 endpoints: fetchLogs, handleSubmit (POST), handleDelete
+- Added user presence checks before operations
+- Status: ✅ UNBLOCKED, build passes, ready for integration testing
+
+**Remaining Open Items:**
+1. NCCS Data Recovery — awaiting Part X/VII file download (ready to ingest when file available)
+2. Charity Navigator scraper — code complete, pending board/legal review gate
+3. Phase 2 link reverification — 9,411 stale links pending re-verification (can run after Phase 1 completes)
+
