@@ -40,6 +40,7 @@ const Security = lazy(() => import('./pages/Security'))
 const GuildReferral = lazy(() => import('./pages/GuildReferral'))
 const MemberBenefits = lazy(() => import('./pages/MemberBenefits'))
 const VolunteerSearch = lazy(() => import('./pages/VolunteerSearch'))
+const VolunteerDiscoveryPage = lazy(() => import('./pages/VolunteerDiscoveryPage'))
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
@@ -119,6 +120,7 @@ export default function App() {
             <Route path="/how-it-works" element={<Navigate to="/methodology" replace />} />
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/giving-wallet" element={<Navigate to="/wallet" replace />} />
+            <Route path="/volunteer" element={<VolunteerDiscoveryPage />} />
             <Route path="/profile-contexts" element={<ProfileContextsPage />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
             <Route path="/about" element={<About />} />
