@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import DonationLogger from './DonationLogger'
 import type { WalletEntry } from '../types/wallet'
 import type { ApiOrganization } from '../data/api'
+import { CardPattern } from './ui/CardPattern'
 
 interface CloseTheLoopPromptProps {
   walletEntries: WalletEntry[]
@@ -23,7 +24,7 @@ export default function CloseTheLoopPrompt({
   const selectedOrg = selectedEin ? orgDataMap.get(selectedEin) : null
 
   return (
-    <div className="bg-white border border-light-grey rounded-2xl p-6 mb-8">
+    <CardPattern variant="elevated" className="mb-8">
       {!selectedEin ? (
         // Prompt state: ask user if they gave recently
         <div>
@@ -73,6 +74,6 @@ export default function CloseTheLoopPrompt({
           </div>
         </div>
       )}
-    </div>
+    </CardPattern>
   )
 }

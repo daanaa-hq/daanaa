@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { CardPattern } from './ui/CardPattern'
 
 interface ChecklistItem {
   id: string
@@ -62,7 +63,7 @@ export default function OnboardingChecklist({ ein, onDismiss }: OnboardingCheckl
   if (dismissed) return null
 
   return (
-    <div className="bg-gradient-to-r from-soft-gold/10 to-bright-gold/10 border border-soft-gold/30 rounded-2xl p-6 mb-8">
+    <CardPattern variant="elevated" className="mb-8 bg-gradient-to-r from-soft-gold/10 to-bright-gold/10 border border-soft-gold/30">
       <div className="flex items-start justify-between mb-4">
         <div>
           <h2 className="font-display text-2xl text-deep-navy mb-1">Get started</h2>
@@ -89,9 +90,10 @@ export default function OnboardingChecklist({ ein, onDismiss }: OnboardingCheckl
       {/* Checklist items */}
       <div className="space-y-3">
         {items.map(item => (
-          <div
+          <CardPattern
             key={item.id}
-            className="flex items-start gap-3 p-3 bg-white/60 rounded-lg hover:bg-white/80 transition-colors"
+            variant="nested"
+            className="flex items-start gap-3 bg-white/60 hover:bg-white/80 transition-colors"
           >
             <div className="flex-shrink-0 mt-1">
               {item.completed ? (
@@ -118,15 +120,15 @@ export default function OnboardingChecklist({ ein, onDismiss }: OnboardingCheckl
                 {item.action.label}
               </a>
             )}
-          </div>
+          </CardPattern>
         ))}
       </div>
 
-      <div className="mt-6 p-4 bg-soft-gold/10 rounded-lg border border-soft-gold/30">
+      <CardPattern variant="subtle" className="mt-6 bg-soft-gold/10 border-soft-gold/30">
         <p className="font-body text-sm text-deep-navy">
           <strong>Tip:</strong> Setting up volunteer hours tracking helps donors understand the community impact behind your work.
         </p>
-      </div>
-    </div>
+      </CardPattern>
+    </CardPattern>
   )
 }
