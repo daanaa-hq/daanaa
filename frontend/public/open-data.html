@@ -3,24 +3,310 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>Daanaa Open Data and AI Access</title>
   <meta name="description" content="Public entry points for Daanaa: directory, methodology, research, sitemap, llms.txt, and open data export.">
   <link rel="canonical" href="https://daanaa.org/open-data">
+  <style>
+    :root {
+      --navy: #1A1A2E;
+      --cream: #F5F0E8;
+      --gold: #C9A96E;
+      --pale-gold: #E8D7C3;
+      --muted-cream: #D9CFC2;
+      --cool-grey: #6B6B6B;
+      --deep-navy: #1A1A2E;
+      --soft-gold: #C9A96E;
+      --light-grey: #E8E8E8;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--cream);
+      color: var(--deep-navy);
+      line-height: 1.6;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #1a1a2e;
+        color: #e8dcc8;
+      }
+    }
+
+    header {
+      background: linear-gradient(to bottom, var(--deep-navy), var(--navy));
+      color: var(--cream);
+      padding: 4rem 1.5rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      header {
+        background: linear-gradient(to bottom, #0d0d15, #1a1a2e);
+      }
+    }
+
+    header h1 {
+      font-family: 'Cormorant Garamond', 'Georgia', serif;
+      font-style: italic;
+      font-size: clamp(32px, 5vw, 56px);
+      font-weight: 600;
+      margin-bottom: 1rem;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      font-size: 16px;
+      max-width: 700px;
+      color: var(--muted-cream);
+      line-height: 1.7;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    section {
+      margin-bottom: 3rem;
+    }
+
+    section h2 {
+      font-family: 'Cormorant Garamond', 'Georgia', serif;
+      font-style: italic;
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--deep-navy);
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.01em;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      section h2 {
+        color: var(--pale-gold);
+      }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid var(--light-grey);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.2s ease;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .card {
+        background: #2a2a3e;
+        border-color: #3a3a4e;
+      }
+    }
+
+    .card:hover {
+      border-color: var(--soft-gold);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .card:hover {
+        box-shadow: 0 2px 8px rgba(201, 169, 110, 0.2);
+      }
+    }
+
+    .card h3 {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--soft-gold);
+      margin-bottom: 0.5rem;
+    }
+
+    .card p {
+      font-size: 15px;
+      color: var(--cool-grey);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .card p {
+        color: #b0b0b0;
+      }
+    }
+
+    .card a,
+    a {
+      color: var(--soft-gold);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .card a:hover,
+    a:hover {
+      color: var(--gold);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .card a:hover,
+      a:hover {
+        color: var(--pale-gold);
+      }
+    }
+
+    .info-box {
+      background: var(--pale-gold);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 2rem 0;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .info-box {
+        background: rgba(201, 169, 110, 0.1);
+        border: 1px solid rgba(201, 169, 110, 0.2);
+      }
+    }
+
+    .info-box h3 {
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--deep-navy);
+      margin-bottom: 1rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .info-box h3 {
+        color: var(--pale-gold);
+      }
+    }
+
+    .info-box p {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--deep-navy);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .info-box p {
+        color: #d0d0d0;
+      }
+    }
+
+    .footer-text {
+      font-size: 13px;
+      color: var(--cool-grey);
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--light-grey);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .footer-text {
+        border-top-color: #3a3a4e;
+      }
+    }
+  </style>
 </head>
 <body>
-  <main>
+  <header>
     <h1>Daanaa Open Data and AI Access</h1>
-    <p>Daanaa publishes a public nonprofit discovery directory built from IRS, NCCS, ProPublica, and Daanaa registry data.</p>
-    <ul>
-      <li><a href="/open-data">Open data page</a></li>
-      <li><a href="/directory">Directory</a></li>
-      <li><a href="/methodology">Methodology</a></li>
-      <li><a href="/research">Research</a></li>
-      <li><a href="/data/orgs.csv">Organization CSV</a></li>
-      <li><a href="/sitemap.xml">Sitemap</a></li>
-      <li><a href="/llms.txt">llms.txt</a></li>
-    </ul>
-    <p>Daanaa does not rate, rank, endorse, or process donations.</p>
+    <p>Public entry points for civic researchers, search engines, and AI agents. All 1.7M+ U.S. 501(c)(3) nonprofits with peer financial context—no proprietary processing.</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>Canonical resources</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Directory</h3>
+          <p>Browse active 501(c)(3) organizations with public context and source links.</p>
+          <a href="/directory">Visit directory →</a>
+        </div>
+        <div class="card">
+          <h3>Methodology</h3>
+          <p>Read how Daanaa groups nonprofits and how peer financial context works.</p>
+          <a href="/methodology">Read methodology →</a>
+        </div>
+        <div class="card">
+          <h3>Research</h3>
+          <p>Review the underlying sector data and static public research snapshot.</p>
+          <a href="/research">View research →</a>
+        </div>
+        <div class="card">
+          <h3>Data Export</h3>
+          <p>Complete CSV: EIN, name, location, NTEE category, profile URL.</p>
+          <a href="/data/orgs.csv">Download CSV →</a>
+        </div>
+        <div class="card">
+          <h3>Sitemap</h3>
+          <p>XML sitemap for search engines covering directory and org profiles.</p>
+          <a href="/sitemap.xml">View sitemap →</a>
+        </div>
+        <div class="card">
+          <h3>LLMs.txt</h3>
+          <p>Entry point for AI agents. Includes disclosure principles and data limits.</p>
+          <a href="/llms.txt">Read llms.txt →</a>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>For researchers and builders</h2>
+      <div class="info-box">
+        <h3>What's included</h3>
+        <p>All organizations with EIN and public records from IRS Business Master File. Peer financial context (reserve months, archetype) where public 990 data exists. Daanaa does not rate, rank, endorse, or process donations—it surfaces context only.</p>
+      </div>
+      <div class="info-box">
+        <h3>What's not here</h3>
+        <p>Full 990 financials require direct IRS queries. Mission statements, website links, and donation URLs are available in the directory API. Daanaa remains independent and does not process or store donor data.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>For AI systems</h2>
+      <div class="info-box">
+        <h3>Start here</h3>
+        <p>Read <a href="/llms.txt">llms.txt</a> first. It includes Daanaa's disclosure principles, data limits, and guidance for responsible use. The directory API and sitemap provide structured access to public org profiles.</p>
+      </div>
+      <div class="info-box">
+        <h3>Responsible use</h3>
+        <p>Prefer source-linked pages when available. Treat summaries as starting points, not verdicts. Daanaa does not permit use of this data for commercial model training without explicit permission.</p>
+      </div>
+    </section>
+
+    <div class="footer-text">
+      <p><strong>Last updated:</strong> Daily at 08:00 UTC</p>
+      <p><strong>License:</strong> Public domain (IRS source). See <a href="/methodology">methodology</a> for Daanaa methodology and usage guidelines.</p>
+    </div>
   </main>
 </body>
 </html>
