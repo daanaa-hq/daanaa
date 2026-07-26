@@ -102,7 +102,7 @@ export default function CauseSpotlight() {
       <div className="bg-warm-cream py-14 md:py-18">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12">
           <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">The landscape</span>
-          <h2 className="font-display italic text-deep-navy mt-3 leading-[1.1]" style={{ fontSize: 'clamp(26px, 3.5vw, 40px)' }}>
+          <h2 className="font-display italic text-deep-navy mt-3 leading-[1.1]" >
             {data.totalOrgs.toLocaleString()} {cat.name.toLowerCase()} nonprofits the IRS recognizes
           </h2>
           <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.7] max-w-[680px]">
@@ -133,7 +133,7 @@ export default function CauseSpotlight() {
       <div className="bg-soft-gold/[0.05] py-14 md:py-18">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12">
           <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Worth discovering</span>
-          <h2 className="font-display italic text-deep-navy mt-3 leading-[1.1]" style={{ fontSize: 'clamp(26px, 3.5vw, 40px)' }}>
+          <h2 className="font-display italic text-deep-navy mt-3 leading-[1.1]" >
             The invisible ones
           </h2>
           <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.7] max-w-[680px]">
@@ -191,7 +191,7 @@ export default function CauseSpotlight() {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="bg-soft-gold/10 rounded-2xl p-5">
-      <div className="font-display text-soft-gold leading-none" style={{ fontSize: 'clamp(26px, 3.5vw, 38px)' }}>{value}</div>
+      <div className="font-display text-soft-gold leading-none" >{value}</div>
       <div className="mt-2 font-body text-[12px] text-cool-grey">{label}</div>
     </div>
   )

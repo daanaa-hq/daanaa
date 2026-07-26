@@ -387,8 +387,7 @@ function FinalCTA() {
     <section className="bg-white border-t border-light-grey py-12 md:py-16">
       <div className="max-w-[1120px] mx-auto px-6 md:px-12 text-center">
         <h2
-          className="font-display italic text-deep-navy leading-[1.15] tracking-[-0.01em]"
-          style={{ fontSize: 'clamp(28px, 4vw, 44px)' }}
+          className="font-display italic text-deep-navy leading-[1.15] tracking-[-0.01em] h2-display"
         >
           Ready to discover?
         </h2>
@@ -438,8 +437,7 @@ function FeaturedCause() {
               Featured cause
             </p>
             <h2
-              className="font-display italic text-warm-cream leading-tight tracking-[-0.015em]"
-              style={{ fontSize: 'clamp(26px, 3.2vw, 40px)' }}
+              className="font-display italic text-warm-cream leading-tight tracking-[-0.015em] h2-display"
             >
               {cat.name}
             </h2>
@@ -917,7 +915,7 @@ function HiddenGemsSection() {
             <span className="font-body text-[11px] font-semibold tracking-[0.1em] text-deep-gold uppercase">
               Worth discovering
             </span>
-            <h2 className="mt-2 font-display italic text-deep-navy leading-[1.05]" style={{ fontSize: 'clamp(26px, 3.5vw, 38px)' }}>
+            <h2 className="mt-2 font-display italic text-deep-navy leading-[1.05] h2-display">
               The ones doing quiet, steady work
             </h2>
             <p className="mt-3 font-body text-[15px] text-cool-grey max-w-xl leading-[1.6]">
@@ -1058,8 +1056,7 @@ function FooterCTA() {
     <section className="bg-white border-t border-light-grey py-10 md:py-16">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 text-center">
         <h2
-          className="font-display italic text-deep-navy leading-tight tracking-[-0.01em]"
-          style={{ fontSize: 'clamp(28px, 4vw, 46px)' }}
+          className="font-display italic text-deep-navy leading-tight tracking-[-0.01em] h2-display"
         >
           Ready to give with intention?
         </h2>

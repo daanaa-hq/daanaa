@@ -239,7 +239,7 @@ export default function MemberBenefits() {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
             For nonprofits
           </Link>
-          <h1 className="font-display italic text-deep-navy leading-tight" style={{ fontSize: 'clamp(28px, 4vw, 42px)' }}>
+          <h1 className="font-display italic text-deep-navy leading-tight">
             Guild benefits
           </h1>
           <p className="font-body text-[16px] text-cool-grey mt-2 leading-[1.7]">

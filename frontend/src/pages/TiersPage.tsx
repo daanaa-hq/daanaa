@@ -94,7 +94,7 @@ export default function TiersPage() {
               </div>
               <div className="max-w-[640px]">
                 <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">How much information is available</span>
-                <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
+                <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]">
                   Visibility Levels
                 </h1>
                 <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">
@@ -233,7 +233,7 @@ export default function TiersPage() {
 
           {/* Disclaimer section */}
           <div className="mt-16 max-w-[720px]">
-            <h2 className="font-display italic text-deep-navy leading-[1.1]" style={{ fontSize: 'clamp(22px, 3vw, 34px)' }}>
+            <h2 className="font-display italic text-deep-navy leading-[1.1]">
               A lower visibility level is not a grade
             </h2>
             <div className="mt-4 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">

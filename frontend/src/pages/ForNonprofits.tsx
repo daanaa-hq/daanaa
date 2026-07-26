@@ -108,7 +108,7 @@ export default function ForNonprofits() {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-16">
             <div className="max-w-[680px]">
               <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase">For organizations</span>
-              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
+              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]">
                 Your public record may already be listed. Add the story only you can tell.
               </h1>
               <p className="mt-5 font-body text-[18px] leading-[1.65] text-muted-cream">

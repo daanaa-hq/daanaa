@@ -20,8 +20,7 @@ export default function Privacy() {
             <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Privacy Policy</span>
           </div>
-          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]"
-              style={{ fontSize: 'clamp(36px, 5vw, 56px)' }}>
+          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]">
             Privacy Policy
           </h1>
           <p className="mt-3 font-body text-[14px] text-muted-cream">

@@ -176,7 +176,7 @@ export default function VolunteerSearch() {
       {/* Header */}
       <div className="bg-deep-navy pt-12 pb-10">
         <div className="max-w-[900px] mx-auto px-6 md:px-12">
-          <h1 className="font-display italic text-warm-cream leading-tight" style={{ fontSize: 'clamp(32px, 5vw, 52px)' }}>
+          <h1 className="font-display italic text-warm-cream leading-tight">
             Volunteer near you
           </h1>
           <p className="font-body text-[16px] text-muted-cream mt-2 max-w-lg leading-[1.7]">

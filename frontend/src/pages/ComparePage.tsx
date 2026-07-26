@@ -208,7 +208,7 @@ export default function ComparePage() {
             </svg>
             Back to Directory
           </Link>
-          <h1 className="font-display italic text-deep-navy mt-3" style={{ fontSize: 'clamp(26px, 4vw, 40px)' }}>
+          <h1 className="font-display italic text-deep-navy mt-3" >
             Compare Nonprofits
           </h1>
           <p className="mt-2 font-body text-[14px] text-cool-grey">

@@ -74,7 +74,7 @@ export default function ClaimVerify() {
       <div className="max-w-[520px] mx-auto px-6 py-12">
         <ClaimProgressBar currentStep="verify" />
         <div className="text-center mb-8">
-          <h1 className="font-display italic text-deep-navy mb-3" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
+          <h1 className="font-display italic text-deep-navy mb-3">
             Enter your PIN
           </h1>
           <p className="font-body text-[16px] text-cool-grey">

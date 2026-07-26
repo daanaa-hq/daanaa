@@ -453,7 +453,7 @@ export default function Directory() {
       <div className="bg-white border-b border-light-grey pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-10 pb-10">
 
-          <h1 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}>
+          <h1 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]">
             Explore Causes &amp; Organizations
           </h1>
           <p className="mt-3 font-body text-[16px] leading-[1.6] text-cool-grey">

@@ -19,7 +19,7 @@ export default function ClaimSuccess() {
         <ClaimProgressBar currentStep="success" />
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-full bg-soft-gold text-deep-navy mx-auto mb-5 flex items-center justify-center text-2xl font-bold">✓</div>
-          <h1 className="font-display italic text-deep-navy mb-3" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
+          <h1 className="font-display italic text-deep-navy mb-3">
             Your changes are saved
           </h1>
           <p className="font-body text-[16px] text-cool-grey">

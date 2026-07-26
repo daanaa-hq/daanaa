@@ -513,7 +513,7 @@ export default function EventDetailPage() {
               </span>
             )}
           </div>
-          <h1 className="font-display italic text-warm-cream leading-tight" style={{ fontSize: 'clamp(26px, 4vw, 44px)' }}>
+          <h1 className="font-display italic text-warm-cream leading-tight" >
             {event.title}
           </h1>
           {event.org_name && (

@@ -10,7 +10,7 @@ export default function NotFound() {
         <div className="flex justify-center mb-6 opacity-30">
           <LampMark size="xl" tier="Spark" />
         </div>
-        <h1 className="font-display italic text-deep-navy leading-[1.05]" style={{ fontSize: 'clamp(28px, 5vw, 44px)' }}>
+        <h1 className="font-display italic text-deep-navy leading-[1.05]">
           Page not found
         </h1>
         <p className="mt-4 font-body text-[15px] text-cool-grey leading-[1.7]">

@@ -39,7 +39,7 @@ export default function Partners() {
     <div className="min-h-[100dvh]">
       <div className="bg-white border-b border-light-grey pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-10 pb-10">
-          <h1 className="font-display italic text-deep-navy" style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}>
+          <h1 className="font-display italic text-deep-navy">
             Community Partners
           </h1>
           <p className="mt-3 font-body text-[16px] text-cool-grey max-w-[640px]">

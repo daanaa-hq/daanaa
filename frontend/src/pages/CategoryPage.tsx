@@ -73,7 +73,7 @@ export default function CategoryPage() {
               <div className="w-6 h-px bg-soft-gold/50" />
               <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Cause</span>
             </div>
-            <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 60px)' }}>
+            <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]">
               {category.name}
             </h1>
             <p className="mt-4 font-body text-[17px] leading-[1.6] text-muted-cream max-w-[560px]">
@@ -101,7 +101,7 @@ export default function CategoryPage() {
                 <div className="w-6 h-px bg-soft-gold/50" />
                 <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Organizations</span>
               </div>
-              <h2 className="font-display italic text-deep-navy" style={{ fontSize: 'clamp(20px, 3vw, 30px)' }}>
+              <h2 className="font-display italic text-deep-navy">
                 {total > 0 ? `${total.toLocaleString()} organizations` : category.name}
               </h2>
             </div>
@@ -246,7 +246,6 @@ export default function CategoryPage() {
           </div>
           <h2
             className="font-display italic text-deep-navy mb-8"
-            style={{ fontSize: 'clamp(20px, 3vw, 30px)' }}
           >
             Narrow your focus
           </h2>

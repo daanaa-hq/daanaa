@@ -78,7 +78,6 @@ export default function GuildReferral() {
           </p>
           <h1
             className="font-display italic text-warm-cream leading-[1.1] mb-6"
-            style={{ fontSize: 'clamp(28px, 4.5vw, 48px)' }}
           >
             {vendor.vendor_name}<br />
             <span className="text-soft-gold">{vendor.discount_label}</span>

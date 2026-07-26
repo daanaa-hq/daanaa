@@ -12,8 +12,7 @@ export default function Legal() {
             <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Legal & Data Attribution</span>
           </div>
-          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]"
-              style={{ fontSize: 'clamp(36px, 5vw, 56px)' }}>
+          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]">
             Legal & Data Attribution
           </h1>
         </div>

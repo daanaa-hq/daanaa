@@ -1351,7 +1351,7 @@ export default function OrganizationDetail() {
             <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">
               MORE LIKE THIS
             </span>
-            <h2 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(28px, 4vw, 48px)' }}>
+            <h2 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]">
               More groups working in this area
             </h2>
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

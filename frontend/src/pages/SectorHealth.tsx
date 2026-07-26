@@ -156,8 +156,7 @@ export default function SectorHealth() {
             <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Data analysis</span>
           </div>
 
-          <h1 className="font-display italic text-warm-cream leading-[1.0] tracking-[-0.02em] mb-6"
-            style={{ fontSize: 'clamp(40px, 6vw, 72px)' }}>
+          <h1 className="font-display italic text-warm-cream leading-[1.0] tracking-[-0.02em] mb-6">
             Where the sector stands
           </h1>
           <p className="font-body text-[18px] text-muted-cream/80 max-w-[580px] leading-[1.65]">

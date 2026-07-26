@@ -401,8 +401,7 @@ export default function ForVendors() {
           <p className="font-body text-[12px] font-medium tracking-[0.12em] text-soft-gold uppercase mb-5">
             Daanaa Impact Network
           </p>
-          <h1 className="font-display italic text-warm-cream leading-[1.1] mb-6"
-            style={{ fontSize: 'clamp(30px, 4.8vw, 52px)' }}>
+          <h1 className="font-display italic text-warm-cream leading-[1.1] mb-6">
             We are building something<br />together. Join us.
           </h1>
           <p className="font-body text-[17px] text-warm-cream/80 leading-[1.7] max-w-[640px] mb-4">

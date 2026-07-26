@@ -60,7 +60,7 @@ function Section({ id, label, title, children }: { id: string; label: string; ti
           <div className="w-6 h-px bg-soft-gold/50" />
           <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">{label}</span>
         </div>
-        <h2 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(26px, 3.5vw, 40px)' }}>
+        <h2 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" >
           {title}
         </h2>
         <div className="mt-6 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">

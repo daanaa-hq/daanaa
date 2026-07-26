@@ -854,7 +854,7 @@ export default function OrgClaimEditor() {
         )}
 
         <div className="text-center mb-8">
-          <h1 className="font-display italic text-deep-navy mb-2" style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}>
+          <h1 className="font-display italic text-deep-navy mb-2">
             Tell your story
           </h1>
           <p className="font-body text-[15px] text-cool-grey">All fields are optional. Add what you can. You can always come back.</p>

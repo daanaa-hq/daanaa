@@ -63,7 +63,7 @@ export default function Charter() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
             <div className="max-w-[720px]">
               <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Our Promises, In Writing</span>
-              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(40px, 5vw, 60px)' }}>
+              <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]">
                 The Daanaa Charter
               </h1>
               <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">

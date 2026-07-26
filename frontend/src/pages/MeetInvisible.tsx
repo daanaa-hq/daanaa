@@ -134,7 +134,7 @@ export default function MeetInvisible() {
 
       {/* CTA */}
       <section className="max-w-[820px] mx-auto px-6 pb-32 text-center">
-        <p className="font-display italic text-warm-cream leading-[1.15]" style={{ fontSize: 'clamp(26px, 4vw, 40px)' }}>
+        <p className="font-display italic text-warm-cream leading-[1.15]" >
           1.7 million+ nonprofits doing the work.<br />You just discovered 18 of them.
         </p>
         <Link

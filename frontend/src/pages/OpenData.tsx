@@ -46,7 +46,7 @@ export default function OpenData() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-14 pb-14">
           <p className="font-body text-[12px] tracking-[0.1em] text-pale-gold uppercase mb-4">Open data and AI access</p>
-          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em] max-w-[820px]" style={{ fontSize: 'clamp(32px, 4.6vw, 60px)' }}>
+          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em] max-w-[820px]">
             Find Daanaa through the same public entry points humans and AI systems can use.
           </h1>
           <p className="mt-5 max-w-[760px] font-body text-[17px] leading-[1.7] text-muted-cream">

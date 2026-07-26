@@ -16,8 +16,7 @@ export default function Security() {
             <span className="text-muted-cream">/</span>
             <span className="font-body text-[12px] text-muted-cream">Security</span>
           </div>
-          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]"
-              style={{ fontSize: 'clamp(36px, 5vw, 56px)' }}>
+          <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]">
             Security Disclosure
           </h1>
           <p className="mt-3 font-body text-[15px] text-muted-cream max-w-[600px]">

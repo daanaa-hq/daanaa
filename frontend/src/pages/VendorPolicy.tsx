@@ -14,8 +14,7 @@ export default function VendorPolicy() {
           ← Back to Partners
         </Link>
 
-        <h1 className="font-display italic text-deep-navy mt-6 leading-[0.95] tracking-[-0.02em]"
-            style={{ fontSize: 'clamp(32px, 5vw, 56px)' }}>
+        <h1 className="font-display italic text-deep-navy mt-6 leading-[0.95] tracking-[-0.02em]">
           Daanaa Impact Network<br />Partner Policy
         </h1>
         <p className="mt-4 font-body text-[13px] text-muted-cream">

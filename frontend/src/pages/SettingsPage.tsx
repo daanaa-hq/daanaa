@@ -297,7 +297,7 @@ export default function SettingsPage() {
           <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">
             Your preferences
           </span>
-          <h1 className="mt-2 font-display italic text-warm-cream leading-[1.05]" style={{ fontSize: 'clamp(32px, 4vw, 44px)' }}>
+          <h1 className="mt-2 font-display italic text-warm-cream leading-[1.05]">
             Settings
           </h1>
           <p className="mt-3 font-body text-[15px] text-muted-cream leading-[1.6]">

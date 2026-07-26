@@ -82,8 +82,7 @@ export default function About() {
           <p className="font-body text-[12px] tracking-[0.1em] text-pale-gold uppercase mb-4">About Daanaa</p>
 
           {/* Canonical identity statement */}
-          <p className="font-display italic text-warm-cream leading-[1.1] tracking-[-0.01em] max-w-[820px]"
-             style={{ fontSize: 'clamp(26px, 3.8vw, 46px)' }}>
+          <p className="font-display italic text-warm-cream max-w-[820px] h2-display">
             Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy to understand, easy to record, and easy to return to.
           </p>
 
