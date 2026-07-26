@@ -85,6 +85,21 @@ else
 fi
 rm -f /tmp/.type-scale-lint
 
+# Check 6: Nav height magic numbers
+# The nav height was declared once in Navigation.tsx and copied into 37 page
+# files as pt-[72px]. Changing the nav would have slid content under the header
+# on every one of them, silently. Tokens live in public/tokens.css.
+echo -n "Checking nav offset tokens... "
+nav_magic=$(grep -rnE "(pt|mt|scroll-mt)-\[(72|88|108)px\]|h-\[72px\]" "$SRC" 2>/dev/null || true)
+if [ -n "$nav_magic" ]; then
+  echo -e "${RED}❌ Found${NC}"
+  echo "$nav_magic" | head -5 | sed 's/^/   /'
+  echo "    Use tokens: pt-nav (72), pt-nav-lg (108), scroll-mt-anchor (88), h-nav"
+  violations=$((violations + 1))
+else
+  echo -e "${GREEN}✅${NC}"
+fi
+
 echo ""
 echo "========================================"
 if [ $violations -eq 0 ]; then

@@ -37,7 +37,7 @@ export default function Partners() {
 
   return (
     <div className="min-h-[100dvh]">
-      <div className="bg-white border-b border-light-grey pt-[72px]">
+      <div className="bg-white border-b border-light-grey pt-nav">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-10 pb-10">
           <h1 className="font-display italic text-deep-navy">
             Community Partners

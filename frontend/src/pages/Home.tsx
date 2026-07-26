@@ -57,7 +57,7 @@ function HeroSection() {
   }
 
   return (
-    <section className="bg-deep-navy pt-[72px]">
+    <section className="bg-deep-navy pt-nav">
       <div className="max-w-[760px] mx-auto px-6 pt-24 pb-20 md:pt-32 md:pb-28 text-center">
 
         <h1
@@ -558,7 +558,7 @@ function BrowseCauses() {
   )
 
   return (
-    <section id="causes" className="scroll-mt-[88px] bg-[#F8F5F0] border-t border-light-grey py-14 md:py-20">
+    <section id="causes" className="scroll-mt-anchor bg-[#F8F5F0] border-t border-light-grey py-14 md:py-20">
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
         {/* Section header */}

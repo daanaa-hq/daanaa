@@ -10,7 +10,7 @@ export default function Terms() {
   return (
     <div className="min-h-[100dvh]">
       {/* Hero */}
-      <div className="bg-deep-navy pt-[72px]">
+      <div className="bg-deep-navy pt-nav">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-12 pb-10">
           <div className="flex items-center gap-2 mb-4">
             <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>

@@ -467,7 +467,7 @@ export default function EventDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[100dvh] bg-warm-cream pt-[72px] flex items-center justify-center">
+      <div className="min-h-[100dvh] bg-warm-cream pt-nav flex items-center justify-center">
         <div className="w-6 h-6 rounded-full border-2 border-soft-gold border-t-transparent animate-spin" />
       </div>
     )
@@ -475,7 +475,7 @@ export default function EventDetailPage() {
 
   if (notFound || !event) {
     return (
-      <div className="min-h-[100dvh] bg-warm-cream pt-[72px] flex flex-col items-center justify-center gap-4 px-6">
+      <div className="min-h-[100dvh] bg-warm-cream pt-nav flex flex-col items-center justify-center gap-4 px-6">
         <p className="font-display italic text-deep-navy text-title-lg">Event not found</p>
         <Link to="/volunteer" className="font-body text-body text-soft-gold hover:text-bright-gold font-semibold">
           Browse all events →
@@ -494,7 +494,7 @@ export default function EventDetailPage() {
     : [event.location_city, event.location_state].filter(Boolean).join(', ') || null
 
   return (
-    <div className="min-h-[100dvh] bg-warm-cream pt-[72px]">
+    <div className="min-h-[100dvh] bg-warm-cream pt-nav">
       {/* Hero */}
       <div className="bg-deep-navy pt-10 pb-8">
         <div className="max-w-[860px] mx-auto px-6 md:px-12">

@@ -50,6 +50,27 @@ For page titles that should scale with viewport, prefer the `h1-display` /
 hand-rolled sizes across 24 distinct values accumulated before the scale existed.
 `design-lint` check 5 fails the build on both.
 
+## Layout spacing
+
+General spacing uses **Tailwind's default scale** (`p-4`, `mb-6`, `gap-5`). It does
+not need custom tokens and already has 99.1% adoption. Do not "systematize" it.
+
+Four layout tokens exist, because the nav height was a magic number copied into 37
+files:
+
+| Token | Value | Use |
+|---|---|---|
+| `h-nav` | 72px | the Navigation bar's own height |
+| `pt-nav` | 72px | top padding so content clears the fixed nav |
+| `pt-nav-lg` | 108px | nav clearance on tall hero sections |
+| `scroll-mt-anchor` | 88px | scroll-margin so `#anchors` clear the nav |
+
+Never write `pt-[72px]`, `h-[72px]`, or `scroll-mt-[88px]`. Check 6 fails on them.
+
+Arbitrary spacing for genuine optical corrections (negative margins to align an
+icon, 3px padding inside a badge) is fine and expected. The 4px scale is too coarse
+for those.
+
 ## Rules
 
 1. **Tokens over values.** No raw px for text size, no raw Tailwind palette colors
@@ -85,9 +106,16 @@ Honest list, so it stays visible rather than rediscovered:
 - **Raw Tailwind colors** in `profile-contexts/PendingInvitations.tsx`,
   `profile-contexts/ContextCreator.tsx`, `DataContextNote.tsx`. Pre-existing,
   flagged by check 1.
-- **Spacing has no scale.** Padding and margins are still ad hoc. Type was the
-  larger problem and went first; spacing is the next candidate for the same
-  treatment.
+- ~~Spacing has no scale.~~ **Corrected 2026-07-26 — this was wrong.** Measurement
+  showed 6,816 of 6,879 spacing utilities (99.1%) already sit on Tailwind's
+  default scale. Spacing never needed the typography treatment. The real defect
+  was narrower: the nav height was a magic number copied into 37 files as
+  `pt-[72px]`, so changing the nav would have slid content under the header
+  everywhere. Fixed with `pt-nav` / `pt-nav-lg` / `scroll-mt-anchor` / `h-nav`
+  tokens, guarded by check 6. The 17 remaining arbitrary values are single-use
+  optical corrections (negative margins for icon alignment, 3–4px micro-padding)
+  where the 4px scale is too coarse; forcing them onto it would make the UI
+  worse. Leave them.
 - **Org detail lists seven giving methods as flat links.** At the edge of
   scannable. Grouping or progressive disclosure would serve the north star
   ("make giving easy") better than seven equal-weight options.

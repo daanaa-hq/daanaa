@@ -143,7 +143,7 @@ export default function SectorHealth() {
     <TooltipProvider delayDuration={150}>
     <div className="min-h-[100dvh]">
       {/* Hero */}
-      <div className="bg-deep-navy pt-[72px]" style={{ background: 'linear-gradient(to bottom, rgb(var(--deep-navy-rgb)) 80%, #F5F0E8)' }}>
+      <div className="bg-deep-navy pt-nav" style={{ background: 'linear-gradient(to bottom, rgb(var(--deep-navy-rgb)) 80%, #F5F0E8)' }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-16 md:py-24">
           <div className="flex items-center gap-2 mb-8">
             <Link to="/" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>

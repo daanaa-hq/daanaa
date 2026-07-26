@@ -59,7 +59,7 @@ export default function CategoryPage() {
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
-      <div className="bg-deep-navy pt-[72px]">
+      <div className="bg-deep-navy pt-nav">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <div className="flex items-center gap-2 mb-8">
             <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>

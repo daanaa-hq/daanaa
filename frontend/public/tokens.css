@@ -62,4 +62,16 @@
   /* ── Font families ───────────────────────────────────────────────────── */
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-body:    "DM Sans", Inter, system-ui, sans-serif;
+
+  /* ── Layout ──────────────────────────────────────────────────────────────
+   * General spacing uses Tailwind's default scale and needs no tokens here:
+   * 6,816 of 6,879 spacing utilities already sit on it. These three exist
+   * because the nav height was a magic number, written once in Navigation.tsx
+   * and copied into 37 page files as `pt-[72px]`. Changing the nav would have
+   * silently slid content under the header on every one of them.
+   */
+  --nav-height:    72px;   /* fixed Navigation bar height */
+  --nav-offset:    72px;   /* top padding to clear the nav */
+  --nav-offset-lg: 108px;  /* nav clearance on tall hero sections */
+  --anchor-offset: 88px;   /* scroll-margin so anchors clear the nav */
 }

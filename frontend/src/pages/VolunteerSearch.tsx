@@ -172,7 +172,7 @@ export default function VolunteerSearch() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-warm-cream pt-[72px]">
+    <div className="min-h-[100dvh] bg-warm-cream pt-nav">
       {/* Header */}
       <div className="bg-deep-navy pt-12 pb-10">
         <div className="max-w-[900px] mx-auto px-6 md:px-12">

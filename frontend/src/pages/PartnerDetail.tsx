@@ -94,7 +94,7 @@ export default function PartnerDetail() {
 
   return (
     <div className="min-h-[100dvh]">
-      <div className="bg-white border-b border-light-grey pt-[72px]">
+      <div className="bg-white border-b border-light-grey pt-nav">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-10 pb-10">
           <Link to="/partners" className="font-body text-caption text-cool-grey hover:text-deep-navy mb-5 inline-block">
             ← Back to Partners

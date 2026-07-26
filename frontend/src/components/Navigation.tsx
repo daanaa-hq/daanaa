@@ -37,7 +37,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
     <>
       <nav
         aria-label="Main navigation"
-        className="fixed top-0 left-0 right-0 z-50 h-[72px] flex items-center transition-all duration-300 ease-out border-b"
+        className="fixed top-0 left-0 right-0 z-50 h-nav flex items-center transition-all duration-300 ease-out border-b"
         style={{
           backgroundColor: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(12px)',

@@ -188,7 +188,7 @@ export default function ComparePage() {
 
   if (eins.length < 2) {
     return (
-      <div className="min-h-[100dvh] pt-[72px] flex flex-col items-center justify-center bg-warm-cream px-6">
+      <div className="min-h-[100dvh] pt-nav flex flex-col items-center justify-center bg-warm-cream px-6">
         <p className="font-body text-lead text-cool-grey">Select at least 2 nonprofits to compare.</p>
         <Link to="/directory" className="mt-4 font-body text-body text-soft-gold hover:text-bright-gold transition-colors">
           ← Back to Directory
@@ -198,7 +198,7 @@ export default function ComparePage() {
   }
 
   return (
-    <div className="min-h-[100dvh] pt-[72px] bg-warm-cream">
+    <div className="min-h-[100dvh] pt-nav bg-warm-cream">
       {/* Header */}
       <div className="bg-white border-b border-light-grey px-6 lg:px-12 py-8">
         <div className="max-w-[1200px] mx-auto">

@@ -104,7 +104,7 @@ export default function SelfDiscoveryDashboard() {
 
   if (error || !data) {
     return (
-      <div className="min-h-[60vh] bg-warm-cream pt-[72px]">
+      <div className="min-h-[60vh] bg-warm-cream pt-nav">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-16">
           <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-6 text-destructive">
             <h2 className="font-body text-lg font-semibold mb-2">Unable to Load Dashboard</h2>
@@ -124,7 +124,7 @@ export default function SelfDiscoveryDashboard() {
   return (
     <div className="min-h-[100dvh]">
       {/* Hero */}
-      <div className="bg-deep-navy pt-[72px]">
+      <div className="bg-deep-navy pt-nav">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}>
             {data.organization_name}

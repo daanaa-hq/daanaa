@@ -43,7 +43,7 @@ export default function OpenData() {
 
   return (
     <div className="min-h-[100dvh] bg-warm-cream">
-      <div className="bg-deep-navy pt-[72px]">
+      <div className="bg-deep-navy pt-nav">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-14 pb-14">
           <p className="font-body text-caption tracking-[0.1em] text-pale-gold uppercase mb-4">Open data and AI access</p>
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em] max-w-[820px]">

@@ -523,7 +523,7 @@ export default function OrganizationDetail() {
       `}</style>
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Directory', href: '/directory' }, { label: org?.name || 'Organization' }]} />
       {/* Profile Header */}
-      <div className="bg-deep-navy pt-[72px] relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgb(var(--deep-navy-rgb)) 70%, transparent)' }}>
+      <div className="bg-deep-navy pt-nav relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgb(var(--deep-navy-rgb)) 70%, transparent)' }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 md:py-12 lg:py-16">
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2">

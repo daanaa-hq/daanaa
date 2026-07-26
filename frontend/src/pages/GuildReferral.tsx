@@ -71,7 +71,7 @@ export default function GuildReferral() {
     <div className="min-h-[100dvh] bg-warm-cream">
 
       {/* Hero */}
-      <div className="bg-deep-navy pt-[108px] pb-20 px-6">
+      <div className="bg-deep-navy pt-nav-lg pb-20 px-6">
         <div className="max-w-[680px] mx-auto text-center">
           <p className="font-body text-caption font-medium tracking-[0.12em] text-soft-gold uppercase mb-5">
             Daanaa Guild: Exclusive Member Benefit

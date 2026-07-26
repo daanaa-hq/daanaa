@@ -265,7 +265,7 @@ export default function WalletPage() {
   // ─── Empty state ────────────────────────────────────────────────────────────
   if (entries.length === 0) {
     return (
-      <div className="bg-warm-cream min-h-[100dvh] pt-[72px]">
+      <div className="bg-warm-cream min-h-[100dvh] pt-nav">
         <div className="max-w-[720px] mx-auto px-6 py-16">
           <h1 className="font-display italic text-deep-navy text-headline-lg mb-2">Your Giving Wallet</h1>
           <p className="font-body text-cool-grey mb-10">Track your giving, volunteer hours, and community impact.</p>
@@ -320,7 +320,7 @@ export default function WalletPage() {
 
   // ─── Main wallet view ────────────────────────────────────────────────────────
   return (
-    <div className="bg-warm-cream min-h-[100dvh] pt-[72px]">
+    <div className="bg-warm-cream min-h-[100dvh] pt-nav">
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Wallet' }]} />
       <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-10">
 

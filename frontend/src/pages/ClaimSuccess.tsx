@@ -14,7 +14,7 @@ export default function ClaimSuccess() {
   }, [ein, navigate])
 
   return (
-    <div className="min-h-[100dvh] bg-warm-cream pt-[72px]">
+    <div className="min-h-[100dvh] bg-warm-cream pt-nav">
       <div className="max-w-[520px] mx-auto px-6 py-12">
         <ClaimProgressBar currentStep="success" />
         <div className="text-center mb-8">

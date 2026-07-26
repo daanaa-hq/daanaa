@@ -116,6 +116,18 @@ module.exports = {
         'headline-lg': 'var(--text-headline-lg, 32px)',  // page headings
         'display':     'var(--text-display, 40px)',      // hero numerals and display figures
       },
+      // Layout spacing only. General spacing stays on Tailwind's default
+      // scale, which the codebase already follows (6,816 of 6,879 utilities).
+      // These name the nav height so it lives in one place instead of being
+      // copied into 37 files as pt-[72px].
+      spacing: {
+        'nav':       'var(--nav-offset, 72px)',
+        'nav-lg':    'var(--nav-offset-lg, 108px)',
+        'anchor':    'var(--anchor-offset, 88px)',
+      },
+      height: {
+        'nav': 'var(--nav-height, 72px)',
+      },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",

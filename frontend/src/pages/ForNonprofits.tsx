@@ -97,7 +97,7 @@ export default function ForNonprofits() {
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
-      <div className="bg-deep-navy pt-[72px]">
+      <div className="bg-deep-navy pt-nav">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-12 md:pt-12 md:pb-20">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>

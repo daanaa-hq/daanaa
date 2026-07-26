@@ -54,7 +54,7 @@ const FAQS = [
 
 function Section({ id, label, title, children }: { id: string; label: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="py-10 md:py-14 border-b border-light-grey last:border-0 scroll-mt-[88px]">
+    <section id={id} className="py-10 md:py-14 border-b border-light-grey last:border-0 scroll-mt-anchor">
       <div className="max-w-[760px]">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-6 h-px bg-soft-gold/50" />
@@ -106,7 +106,7 @@ export default function Methodology() {
   return (
     <div className="min-h-[100dvh]">
       {/* Header */}
-      <div className="bg-deep-navy pt-[72px]">
+      <div className="bg-deep-navy pt-nav">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-10 md:pt-12 md:pb-16">
           <div className="flex items-center gap-2 mb-6">
             <Link to="/" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>

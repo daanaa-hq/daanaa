@@ -231,7 +231,7 @@ export default function MemberBenefits() {
   }, {})
 
   return (
-    <div className="min-h-screen bg-warm-cream pt-[72px]">
+    <div className="min-h-screen bg-warm-cream pt-nav">
       <div className="max-w-[900px] mx-auto px-6 py-10">
         {/* Header */}
         <div className="mb-8">

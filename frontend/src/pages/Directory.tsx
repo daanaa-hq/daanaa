@@ -450,7 +450,7 @@ export default function Directory() {
     <div className="min-h-[100dvh]">
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Directory' }]} />
       {/* Page Header */}
-      <div className="bg-white border-b border-light-grey pt-[72px]">
+      <div className="bg-white border-b border-light-grey pt-nav">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-10 pb-10">
 
           <h1 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]">
