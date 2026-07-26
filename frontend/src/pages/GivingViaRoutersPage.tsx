@@ -166,7 +166,7 @@ export default function GivingViaRoutersPage() {
               {[
                 {
                   title: 'Fees vary by platform',
-                  body: 'Some platforms (like PayPal Giving Fund) are free. Others take a small fee. Check the platform's details before donating.'
+                  body: 'Some platforms (like PayPal Giving Fund) are free. Others take a small fee. Check the platform details before donating.'
                 },
                 {
                   title: 'Privacy depends on the platform',

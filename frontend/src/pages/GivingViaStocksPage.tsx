@@ -116,7 +116,7 @@ export default function GivingViaStocksPage() {
               {[
                 {
                   title: 'Timing matters',
-                  body: 'The stock must have been held for more than 1 year to get the tax benefit. Check with a tax pro if you're unsure.'
+                  body: 'The stock must have been held for more than 1 year to get the tax benefit. Check with a tax pro if you are unsure.'
                 },
                 {
                   title: 'Not all stocks qualify',
