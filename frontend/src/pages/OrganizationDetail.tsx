@@ -36,6 +36,7 @@ import { sentenceCase } from '../utils/sentenceCase'
 import GiveYourWayRouter from '../components/GiveYourWayRouter'
 import VolunteerInterest from '../components/VolunteerInterest'
 import RecurringSetup from '../components/RecurringSetup'
+import DataContextNote from '../components/DataContextNote'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -599,6 +600,10 @@ export default function OrganizationDetail() {
                   websiteStatus={apiOrg.website_status}
                 />
               )}
+
+              {/* Data context note: supportive explanation for archetype-only orgs
+                  (no revenue data). Honors Stewardship Charter #7. */}
+              {apiOrg! && <DataContextNote org={apiOrg!} />}
 
               {/* Answer card: legit / deductible / healthy in <10s, for every
                   org including the ~82% with no financial score and revoked
