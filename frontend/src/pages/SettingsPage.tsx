@@ -49,11 +49,11 @@ function ThemePreview({ mode, active, onSelect }: {
 
       {/* Label row */}
       <div className="mt-3 flex items-center justify-between px-0.5">
-        <span className="font-body text-[14px] font-medium text-warm-cream capitalize inline-flex items-center gap-1.5">
+        <span className="font-body text-body font-medium text-warm-cream capitalize inline-flex items-center gap-1.5">
           {mode}
           {mode === 'light' && (
             <span
-              className="px-1.5 py-0.5 rounded-full bg-soft-gold/20 text-[10px] font-semibold text-soft-gold leading-none uppercase tracking-[0.05em]"
+              className="px-1.5 py-0.5 rounded-full bg-soft-gold/20 text-micro font-semibold text-soft-gold leading-none uppercase tracking-[0.05em]"
               title="The light theme is still being refined — some pages may not read as well as in dark."
             >
               Beta
@@ -294,21 +294,21 @@ export default function SettingsPage() {
       <div className="max-w-2xl mx-auto px-6 pt-20 pb-16 lg:px-8">
         {/* Header */}
         <div className="mb-10">
-          <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">
+          <span className="font-body text-label font-medium tracking-[0.08em] text-soft-gold uppercase">
             Your preferences
           </span>
           <h1 className="mt-2 font-display italic text-warm-cream leading-[1.05]">
             Settings
           </h1>
-          <p className="mt-3 font-body text-[15px] text-muted-cream leading-[1.6]">
+          <p className="mt-3 font-body text-body-lg text-muted-cream leading-[1.6]">
             Everything here stays on this device. Nothing is sent to our servers.
           </p>
         </div>
 
         {/* Appearance */}
         <section className="bg-dark-surface rounded-2xl border border-navy-mid p-6 md:p-8 mb-6">
-          <h2 className="font-body text-[16px] font-semibold text-warm-cream">Appearance</h2>
-          <p className="mt-1 font-body text-[13px] text-muted-cream leading-[1.5]">
+          <h2 className="font-body text-lead font-semibold text-warm-cream">Appearance</h2>
+          <p className="mt-1 font-body text-small text-muted-cream leading-[1.5]">
             Choose the theme that reads best for you. Every trust signal and
             disclosure is checked for readability in both.
           </p>
@@ -321,8 +321,8 @@ export default function SettingsPage() {
 
         {/* Wallet Data */}
         <section className="bg-dark-surface rounded-2xl border border-navy-mid p-6 md:p-8">
-          <h2 className="font-body text-[16px] font-semibold text-warm-cream">Your wallet data</h2>
-          <p className="mt-1 font-body text-[13px] text-muted-cream leading-[1.5]">
+          <h2 className="font-body text-lead font-semibold text-warm-cream">Your wallet data</h2>
+          <p className="mt-1 font-body text-small text-muted-cream leading-[1.5]">
             {entries.length} nonprofit{entries.length !== 1 ? 's' : ''} saved. All stored locally — download or delete anytime.
           </p>
 
@@ -370,7 +370,7 @@ export default function SettingsPage() {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-soft-gold shrink-0 mt-0.5">
             <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
-          <p className="font-body text-[13px] text-muted-cream leading-[1.55]">
+          <p className="font-body text-small text-muted-cream leading-[1.55]">
             Your preference and wallet data are saved in this browser only — the same way your bookmarks work. No account, no tracking, deletable anytime.
           </p>
         </div>

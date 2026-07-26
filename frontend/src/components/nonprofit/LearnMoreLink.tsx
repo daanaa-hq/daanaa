@@ -47,12 +47,12 @@ export default function LearnMoreLink({
     return (
       <button
         onClick={handleClick}
-        className="inline-flex items-center gap-1 text-soft-gold hover:text-bright-gold font-body text-[13px] font-semibold underline hover:no-underline transition"
+        className="inline-flex items-center gap-1 text-soft-gold hover:text-bright-gold font-body text-small font-semibold underline hover:no-underline transition"
         title={topicInfo.description}
         type="button"
       >
         {displayText}
-        <span aria-hidden="true" className="text-[11px]">→</span>
+        <span aria-hidden="true" className="text-label">→</span>
       </button>
     )
   }
@@ -67,8 +67,8 @@ export default function LearnMoreLink({
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="font-body text-[13px] font-semibold text-deep-navy">{displayText}</p>
-          <p className="font-body text-[11px] text-cool-grey mt-0.5">{topicInfo.description}</p>
+          <p className="font-body text-small font-semibold text-deep-navy">{displayText}</p>
+          <p className="font-body text-label text-cool-grey mt-0.5">{topicInfo.description}</p>
         </div>
         <span className="text-soft-gold text-lg flex-shrink-0" aria-hidden="true">→</span>
       </div>

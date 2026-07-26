@@ -63,18 +63,18 @@ function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
   return (
     <div className="mt-4 flex flex-wrap gap-2">
       {yearLabel && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-soft-gold/15 text-deep-gold font-body text-[11px] font-medium">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-soft-gold/15 text-deep-gold font-body text-label font-medium">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
           </svg>
           {yearLabel}
         </span>
       )}
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-navy-mid/10 text-cool-grey font-body text-[11px]">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-navy-mid/10 text-cool-grey font-body text-label">
         Source: {sourceLabel}
       </span>
       {updatedLabel && (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-navy-mid/10 text-cool-grey font-body text-[11px]">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-navy-mid/10 text-cool-grey font-body text-label">
           {updatedLabel}
         </span>
       )}
@@ -220,7 +220,7 @@ function HeroMission({ mission, missionSrc }: { mission: string; missionSrc: str
   const cleaned = mission.replace(/^[""\s]+|[""\s]+$/g, '')
   return (
     <div className="mt-4 flex items-start gap-2">
-      <p className="font-body text-[15px] text-muted-cream/90 leading-[1.7] max-w-[600px] italic">
+      <p className="font-body text-body-lg text-muted-cream/90 leading-[1.7] max-w-[600px] italic">
         &ldquo;{cleaned}&rdquo;
       </p>
       {AI_MISSION_SOURCES.has(missionSrc) && (
@@ -248,7 +248,7 @@ function EinCopyButton({ ein }: { ein: string }) {
   return (
     <button
       onClick={handleCopy}
-      className={`shrink-0 px-2 py-1 rounded-md font-body text-[11px] font-semibold transition-all ${
+      className={`shrink-0 px-2 py-1 rounded-md font-body text-label font-semibold transition-all ${
         copied ? 'bg-emerald-500/20 text-emerald-300' : 'bg-soft-gold/15 text-soft-gold hover:bg-soft-gold/25'
       }`}
     >
@@ -306,7 +306,7 @@ function WalletHeartButton({
     <button
       onClick={onToggle}
       title={isActive ? titleActive : titleInactive}
-      className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium transition-all duration-700"
+      className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-small font-medium transition-all duration-700"
       style={{ background: bg, border: `1px solid ${borderColor}`, color: isActive ? color : 'var(--warm-cream)' }}
     >
       {heart(14)}
@@ -480,7 +480,7 @@ export default function OrganizationDetail() {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-warm-cream">
         <div className="text-center">
-          <h2 className="font-display italic text-deep-navy text-[32px]">Invalid EIN</h2>
+          <h2 className="font-display italic text-deep-navy text-headline-lg">Invalid EIN</h2>
           <p className="mt-2 font-body text-cool-grey">EIN must be 9 digits. Please check the URL and try again.</p>
           <Link to="/directory" className="mt-4 inline-block font-body text-soft-gold hover:text-bright-gold transition-colors">
             Back to Directory
@@ -494,7 +494,7 @@ export default function OrganizationDetail() {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-warm-cream">
         <div className="text-center">
-          <h2 className="font-display italic text-deep-navy text-[32px]">Organization not found</h2>
+          <h2 className="font-display italic text-deep-navy text-headline-lg">Organization not found</h2>
           <p className="mt-2 font-body text-cool-grey">{orgError || 'The requested organization could not be loaded.'}</p>
           <Link to="/directory" className="mt-4 inline-block font-body text-soft-gold hover:text-bright-gold transition-colors">
             Back to Directory
@@ -527,11 +527,11 @@ export default function OrganizationDetail() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 md:py-12 lg:py-16">
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2">
-              <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+              <Link to="/" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
               <span className="text-muted-cream">/</span>
-              <Link to="/directory" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Directory</Link>
+              <Link to="/directory" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Directory</Link>
               <span className="text-muted-cream">/</span>
-              <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream truncate max-w-[200px]">{org.name}</span>
+              <span className="font-body text-caption tracking-[0.02em] text-muted-cream truncate max-w-[200px]">{org.name}</span>
             </div>
             <div className="flex items-center gap-2">
               {/* Green heart — funding intent */}
@@ -564,7 +564,7 @@ export default function OrganizationDetail() {
               {/* ORG NAME & LOCATION */}
               <div className="flex items-start gap-4 sm:gap-5">
                 <div className="shrink-0 mt-1.5 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border border-white/15 bg-white/[0.06]">
-                  <span className="font-display text-[22px] sm:text-[26px] text-soft-gold leading-none tracking-tight">
+                  <span className="font-display text-title-lg sm:text-headline text-soft-gold leading-none tracking-tight">
                     {org.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]).join('').toUpperCase()}
                   </span>
                 </div>
@@ -577,7 +577,7 @@ export default function OrganizationDetail() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                   </svg>
-                  <span className="font-body text-[16px] text-muted-cream">{org.city}, {org.state}</span>
+                  <span className="font-body text-lead text-muted-cream">{org.city}, {org.state}</span>
                 </div>
               </div>
 
@@ -633,8 +633,8 @@ export default function OrganizationDetail() {
                 const b = badges.find(x => x.id === selectedBadge)
                 return b ? (
                   <div className="mt-3 max-w-[520px] bg-white/8 border border-white/12 rounded-xl px-4 py-3">
-                    <p className="font-body text-[13px] text-warm-cream/85 leading-[1.65]">{b.detail}</p>
-                    <p className="mt-2 font-body text-[10px] text-muted-cream tracking-[0.01em]">{b.source}</p>
+                    <p className="font-body text-small text-warm-cream/85 leading-[1.65]">{b.detail}</p>
+                    <p className="mt-2 font-body text-micro text-muted-cream tracking-[0.01em]">{b.source}</p>
                   </div>
                 ) : null
               })()}
@@ -642,7 +642,7 @@ export default function OrganizationDetail() {
               {/* Financial stress indicator */}
               {apiOrg!.months_of_reserve !== null && apiOrg!.months_of_reserve < 3 && (
                 <div
-                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium border"
+                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-caption font-medium border"
                   style={apiOrg!.months_of_reserve < 0
                     ? { backgroundColor: 'rgba(139,26,26,0.22)', color: '#D07070', borderColor: 'rgba(139,26,26,0.45)' }
                     : { backgroundColor: 'rgba(245,158,11,0.18)', color: '#FCD34D', borderColor: 'rgba(245,158,11,0.38)' }}
@@ -656,7 +656,7 @@ export default function OrganizationDetail() {
 
               {/* Seeking board members */}
               {apiOrg!.seeking_board_members && (
-                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-[12px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-caption font-medium bg-blue-50 text-blue-700 border border-blue-200">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
@@ -675,7 +675,7 @@ export default function OrganizationDetail() {
                     {(apiOrg!.cause_tags as string[]).map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center px-2.5 py-1 rounded-full font-body text-[11px] tracking-[0.02em] text-muted-cream/80 border border-white/10 bg-white/6"
+                        className="inline-flex items-center px-2.5 py-1 rounded-full font-body text-label tracking-[0.02em] text-muted-cream/80 border border-white/10 bg-white/6"
                       >
                         {tag}
                       </span>
@@ -704,8 +704,8 @@ export default function OrganizationDetail() {
                     <div className="flex items-center gap-2">
                       {(stat as any).icon}
                       <div>
-                        <span className="block font-body text-[11px] tracking-[0.02em] text-muted-cream">{(stat as any).label}</span>
-                        <span className="block font-body text-[14px] font-medium text-warm-cream">{(stat as any).value}</span>
+                        <span className="block font-body text-label tracking-[0.02em] text-muted-cream">{(stat as any).label}</span>
+                        <span className="block font-body text-body font-medium text-warm-cream">{(stat as any).value}</span>
                       </div>
                     </div>
                     {i < arr.length - 1 && <div className="hidden md:block w-[1px] h-8 bg-navy-mid" />}
@@ -718,12 +718,12 @@ export default function OrganizationDetail() {
                 <div className="mt-8">
                   <a
                     href={`tel:${apiOrg.phone}`}
-                    className="inline-flex items-center gap-2 font-body text-[15px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
+                    className="inline-flex items-center gap-2 font-body text-body-lg font-medium text-soft-gold hover:text-bright-gold transition-colors"
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     {apiOrg.phone}
                   </a>
-                  <p className="mt-1.5 font-body text-[11px] text-cool-grey">
+                  <p className="mt-1.5 font-body text-label text-cool-grey">
                     Contact them to give, volunteer, or learn more.
                   </p>
                 </div>
@@ -764,7 +764,7 @@ export default function OrganizationDetail() {
                           href={propublicaOrgUrl(org.ein)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-body text-[13px] text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
+                          className="inline-flex items-center gap-1.5 font-body text-small text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
                         >
                           View public record
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
@@ -774,7 +774,7 @@ export default function OrganizationDetail() {
                       <button
                         onClick={() => window.print()}
                         title="Print or save this page"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-warm-cream/30 font-body text-[12px] text-warm-cream/70 hover:text-warm-cream hover:border-warm-cream/50 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-warm-cream/30 font-body text-caption text-warm-cream/70 hover:text-warm-cream hover:border-warm-cream/50 transition-colors"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
                         Print
@@ -784,22 +784,22 @@ export default function OrganizationDetail() {
                         "empty action row" requirement) -- previously only
                         shown when there was no website link. */}
                     <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 max-w-[480px]">
-                      <p className="font-body text-[11px] tracking-[0.06em] uppercase font-medium text-muted-cream mb-3">How to give</p>
+                      <p className="font-body text-label tracking-[0.06em] uppercase font-medium text-muted-cream mb-3">How to give</p>
                       <div className="flex flex-col gap-2.5">
                         <div className="flex items-start gap-2">
-                          <span className="font-body text-[12px] text-muted-cream shrink-0 mt-0.5">EIN:</span>
+                          <span className="font-body text-caption text-muted-cream shrink-0 mt-0.5">EIN:</span>
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="font-body text-[13px] font-semibold text-warm-cream">{apiOrg!.EIN}</span>
+                              <span className="font-body text-small font-semibold text-warm-cream">{apiOrg!.EIN}</span>
                               <EinCopyButton ein={apiOrg!.EIN} />
                             </div>
-                            <p className="font-body text-[11px] text-muted-cream/70 mt-0.5">Use this for a donor-advised fund gift or when writing a check.</p>
+                            <p className="font-body text-label text-muted-cream/70 mt-0.5">Use this for a donor-advised fund gift or when writing a check.</p>
                           </div>
                         </div>
                         {apiOrg!.street_address && (
                           <div className="flex items-start gap-2">
-                            <span className="font-body text-[12px] text-muted-cream shrink-0 mt-0.5">Address:</span>
-                            <span className="font-body text-[12px] text-warm-cream/90">
+                            <span className="font-body text-caption text-muted-cream shrink-0 mt-0.5">Address:</span>
+                            <span className="font-body text-caption text-warm-cream/90">
                               {[apiOrg!.street_address, apiOrg!.CITY, apiOrg!.STATE, apiOrg!.zipcode].filter(Boolean).join(', ')}
                             </span>
                           </div>
@@ -825,7 +825,7 @@ export default function OrganizationDetail() {
                         <Link
                           key={item.to}
                           to={item.to}
-                          className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
+                          className="inline-flex items-center gap-2 font-body text-caption text-link-gold hover:text-bright-gold transition-colors"
                         >
                           {item.label} →
                         </Link>
@@ -848,18 +848,18 @@ export default function OrganizationDetail() {
                   (P4). Tiers live on in the nonprofit-facing claim flow. */}
               {/* IRS verification -- a real, defensible fact for every org */}
               <div className="flex flex-col items-center gap-2 text-center">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-body text-[12px] font-medium">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-body text-caption font-medium">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                   Registered US Nonprofit
                 </span>
                 {apiOrg!.latest_tax_year && (
-                  <span className="font-body text-[11px] text-muted-cream">
+                  <span className="font-body text-label text-muted-cream">
                     Annual report filed · {apiOrg!.latest_tax_year}
                   </span>
                 )}
                 {/* Claimed / Unclaimed badge -- Yelp-style */}
                 {apiOrg!.claim_status === 'active' ? (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-soft-gold/50 text-soft-gold font-body text-[11px] font-medium">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-soft-gold/50 text-soft-gold font-body text-label font-medium">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                     Claimed
                   </span>
@@ -867,7 +867,7 @@ export default function OrganizationDetail() {
                   <Link
                     to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
                     title="Is this your nonprofit? Claim your page free."
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-muted-cream/40 text-muted-cream hover:border-soft-gold/60 hover:text-soft-gold font-body text-[11px] transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-muted-cream/40 text-muted-cream hover:border-soft-gold/60 hover:text-soft-gold font-body text-label transition-colors"
                   >
                     Unclaimed
                   </Link>
@@ -875,7 +875,7 @@ export default function OrganizationDetail() {
               </div>
               <Link
                 to="/methodology"
-                className="font-body text-[11px] text-muted-cream hover:text-soft-gold transition-colors"
+                className="font-body text-label text-muted-cream hover:text-soft-gold transition-colors"
               >
                 How we assess nonprofits →
               </Link>
@@ -941,14 +941,14 @@ export default function OrganizationDetail() {
                     ? { backgroundColor: '#FFFBF0', borderColor: '#FDE68A' }
                     : { backgroundColor: '#FFFFFF', borderColor: '#E5E0DB' }}
                 >
-                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Months of reserve</span>
+                  <span className="block font-body text-micro tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Months of reserve</span>
                   <span
-                    className="block font-body text-[26px] font-semibold tracking-[-0.02em]"
+                    className="block font-body text-headline font-semibold tracking-[-0.02em]"
                     style={{ color: apiOrg!.months_of_reserve < 0 ? '#8B1A1A' : apiOrg!.months_of_reserve < 3 ? '#92400E' : '#0A1628' }}
                   >
                     {apiOrg!.months_of_reserve! > 999 ? '999+' : apiOrg!.months_of_reserve! < 0 ? `(${Math.round(Math.abs(apiOrg!.months_of_reserve!))})` : Math.round(apiOrg!.months_of_reserve!)}
                   </span>
-                  <span className="font-body text-[11px] text-cool-grey">
+                  <span className="font-body text-label text-cool-grey">
                     {apiOrg!.months_of_reserve < 0
                       ? 'net assets negative'
                       : 'net assets ÷ monthly costs'}
@@ -957,11 +957,11 @@ export default function OrganizationDetail() {
               )}
               {apiOrg!.net_assets !== null && (
                 <div className="bg-white border border-light-grey rounded-xl p-5">
-                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Net Assets</span>
-                  <span className="block font-body text-[26px] font-semibold tracking-[-0.02em] text-deep-navy">
+                  <span className="block font-body text-micro tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Net Assets</span>
+                  <span className="block font-body text-headline font-semibold tracking-[-0.02em] text-deep-navy">
                     {formatCurrency(apiOrg!.net_assets!)}
                   </span>
-                  <span className="font-body text-[11px] text-cool-grey">
+                  <span className="font-body text-label text-cool-grey">
                     Assets minus liabilities
                     {apiOrg!.latest_tax_year && <span className="ml-1.5 text-cool-grey">· FY {apiOrg!.latest_tax_year}</span>}
                   </span>
@@ -969,11 +969,11 @@ export default function OrganizationDetail() {
               )}
               {apiOrg!.total_expenses !== null && (
                 <div className="bg-white border border-light-grey rounded-xl p-5">
-                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Annual Expenses</span>
-                  <span className="block font-body text-[26px] font-semibold tracking-[-0.02em] text-deep-navy">
+                  <span className="block font-body text-micro tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Annual Expenses</span>
+                  <span className="block font-body text-headline font-semibold tracking-[-0.02em] text-deep-navy">
                     {formatCurrency(apiOrg!.total_expenses!)}
                   </span>
-                  <span className="font-body text-[11px] text-cool-grey">
+                  <span className="font-body text-label text-cool-grey">
                     Total functional expenses
                     {apiOrg!.latest_tax_year && <span className="ml-1.5 text-cool-grey">· FY {apiOrg!.latest_tax_year}</span>}
                   </span>
@@ -981,11 +981,11 @@ export default function OrganizationDetail() {
               )}
               {(apiOrg!.employee_count ?? 0) > 0 && (
                 <div className="bg-white border border-light-grey rounded-xl p-5">
-                  <span className="block font-body text-[10px] tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Employees</span>
-                  <span className="block font-body text-[26px] font-semibold tracking-[-0.02em] text-deep-navy">
+                  <span className="block font-body text-micro tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Employees</span>
+                  <span className="block font-body text-headline font-semibold tracking-[-0.02em] text-deep-navy">
                     {formatNumber(apiOrg!.employee_count!)}
                   </span>
-                  <span className="font-body text-[11px] text-cool-grey">W-3 form headcount (NCCS)</span>
+                  <span className="font-body text-label text-cool-grey">W-3 form headcount (NCCS)</span>
                 </div>
               )}
             </div>
@@ -1030,15 +1030,15 @@ export default function OrganizationDetail() {
                 {apiOrg!.NTEE1 && (
                   <Link
                     to={`/category/${apiOrg!.NTEE1}`}
-                    className="font-body text-[12px] text-link-gold hover:text-deep-gold transition-colors"
+                    className="font-body text-caption text-link-gold hover:text-deep-gold transition-colors"
                   >
                     Browse {getNteeLabel(apiOrg!.NTEE1 || '')} orgs →
                   </Link>
                 )}
-                <Link to="/methodology" className="font-body text-[12px] text-link-gold hover:text-deep-gold transition-colors">
+                <Link to="/methodology" className="font-body text-caption text-link-gold hover:text-deep-gold transition-colors">
                   How we score →
                 </Link>
-                <Link to="/research" className="font-body text-[12px] text-link-gold hover:text-deep-gold transition-colors">
+                <Link to="/research" className="font-body text-caption text-link-gold hover:text-deep-gold transition-colors">
                   Sector research →
                 </Link>
               </div>
@@ -1048,10 +1048,10 @@ export default function OrganizationDetail() {
               {apiOrg!.claim_status === 'active' ? (
                 /* Claimed — show "Edit this page" for the org rep */
                 <div className="rounded-xl border border-soft-gold/30 bg-soft-gold/[0.04] px-5 py-4">
-                  <p className="font-body text-[13px] font-medium text-deep-navy mb-1">Is this your organization?</p>
+                  <p className="font-body text-small font-medium text-deep-navy mb-1">Is this your organization?</p>
                   {!user ? (
                     <>
-                      <p className="font-body text-[12px] text-cool-grey mb-3">Sign in to edit your page.</p>
+                      <p className="font-body text-caption text-cool-grey mb-3">Sign in to edit your page.</p>
                       <GoogleSignInButton compact />
                     </>
                   ) : (
@@ -1072,7 +1072,7 @@ export default function OrganizationDetail() {
                           }
                         }}
                         disabled={portalLoading}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold disabled:opacity-40 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold disabled:opacity-40 transition-colors"
                       >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -1080,7 +1080,7 @@ export default function OrganizationDetail() {
                         </svg>
                         {portalLoading ? 'Opening…' : 'Edit this page'}
                       </button>
-                      {portalError && <p className="font-body text-[12px] text-red-500">{portalError}</p>}
+                      {portalError && <p className="font-body text-caption text-red-500">{portalError}</p>}
                     </div>
                   )}
                 </div>
@@ -1105,10 +1105,10 @@ export default function OrganizationDetail() {
           <div className={`grid grid-cols-1 gap-12 ${(org.programs.length > 0) ? 'lg:grid-cols-2' : ''}`}>
             {org.programs.length > 0 && (
               <div>
-                <span className="block font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">PROGRAMS</span>
+                <span className="block font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">PROGRAMS</span>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {org.programs.map((program) => (
-                    <span key={program} className="px-3 py-1.5 rounded-full bg-navy-mid/10 text-deep-navy font-body text-[13px]">{program}</span>
+                    <span key={program} className="px-3 py-1.5 rounded-full bg-navy-mid/10 text-deep-navy font-body text-small">{program}</span>
                   ))}
                 </div>
               </div>
@@ -1118,36 +1118,36 @@ export default function OrganizationDetail() {
                 const leaders = ppLeadership.length > 0 ? ppLeadership : org.leadership
                 return leaders.length > 0 ? (
                 <>
-                  <span className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">LEADERSHIP</span>
+                  <span className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">LEADERSHIP</span>
                   <div className="mt-4 space-y-4">
                     {leaders.map((person) => (
                       <div key={person.name} className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-soft-gold/20 flex items-center justify-center">
-                          <span className="font-body text-[14px] font-semibold text-deep-gold">{person.initials}</span>
+                          <span className="font-body text-body font-semibold text-deep-gold">{person.initials}</span>
                         </div>
                         <div>
-                          <p className="font-body text-[14px] font-medium text-deep-navy">{person.name}</p>
-                          <p className="font-body text-[12px] text-cool-grey">{person.title}</p>
+                          <p className="font-body text-body font-medium text-deep-navy">{person.name}</p>
+                          <p className="font-body text-caption text-cool-grey">{person.title}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                   {ppLeadership.length > 0 && (
-                    <p className="font-body text-[11px] text-cool-grey mt-3">
+                    <p className="font-body text-label text-cool-grey mt-3">
                       Source: IRS Form 990{ppFilingYear ? `, ${ppFilingYear} filing` : ''} via ProPublica · public record
                     </p>
                   )}
                 </>
                 ) : (
                 <div className="pt-2">
-                  <span className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">DATA SOURCE</span>
-                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 font-body text-[13px] text-cool-grey">
+                  <span className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">DATA SOURCE</span>
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 font-body text-small text-cool-grey">
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">Type</p>
+                      <p className="text-micro uppercase tracking-[0.07em] text-cool-grey mb-0.5">Type</p>
                       <p className="text-deep-navy font-medium">Registered US nonprofit</p>
                     </div>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">EIN</p>
+                      <p className="text-micro uppercase tracking-[0.07em] text-cool-grey mb-0.5">EIN</p>
                       <p className="text-deep-navy font-medium">{formatEIN(org.ein)}</p>
                     </div>
                     {(() => {
@@ -1156,17 +1156,17 @@ export default function OrganizationDetail() {
                       const label = getNteeLabel(nteeCode)
                       return (
                         <div>
-                          <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">NTEE Category</p>
+                          <p className="text-micro uppercase tracking-[0.07em] text-cool-grey mb-0.5">NTEE Category</p>
                           <p className="text-deep-navy font-medium">{label}</p>
                           {label.toLowerCase() !== nteeCode.toLowerCase() && (
-                            <p className="text-[11px] text-cool-grey mt-0.5">Code {nteeCode}</p>
+                            <p className="text-label text-cool-grey mt-0.5">Code {nteeCode}</p>
                           )}
                         </div>
                       )
                     })()}
                     {nonprofitSizeLabel(apiOrg!.total_revenue) && (
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.07em] text-cool-grey mb-0.5">Size</p>
+                        <p className="text-micro uppercase tracking-[0.07em] text-cool-grey mb-0.5">Size</p>
                         <p className="text-deep-navy font-medium">{nonprofitSizeLabel(apiOrg!.total_revenue)} nonprofit</p>
                       </div>
                     )}
@@ -1181,7 +1181,7 @@ export default function OrganizationDetail() {
                   <p className="mt-3">
                     <a href={propublicaOrgUrl(org.ein)}
                        target="_blank" rel="noopener noreferrer"
-                       className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors">
+                       className="font-body text-small text-link-gold hover:text-deep-gold transition-colors">
                       View on ProPublica Nonprofit Explorer →
                     </a>
                   </p>
@@ -1205,8 +1205,8 @@ export default function OrganizationDetail() {
                 </svg>
               </div>
               <div>
-                <p className="font-body text-[13px] font-semibold text-deep-navy">US Nonprofit · Active</p>
-                <p className="font-body text-[12px] text-cool-grey">IRS-listed as eligible to receive tax-deductible contributions</p>
+                <p className="font-body text-small font-semibold text-deep-navy">US Nonprofit · Active</p>
+                <p className="font-body text-caption text-cool-grey">IRS-listed as eligible to receive tax-deductible contributions</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -1216,8 +1216,8 @@ export default function OrganizationDetail() {
                 </svg>
               </div>
               <div>
-                <p className="font-body text-[13px] font-semibold text-deep-navy">EIN {formatEIN(org.ein)}</p>
-                <p className="font-body text-[12px] text-cool-grey">Verified by government records</p>
+                <p className="font-body text-small font-semibold text-deep-navy">EIN {formatEIN(org.ein)}</p>
+                <p className="font-body text-caption text-cool-grey">Verified by government records</p>
               </div>
             </div>
           </div>
@@ -1235,22 +1235,22 @@ export default function OrganizationDetail() {
               {/* Verify this listing -- external public records. Lives here (not a
                   full-width strip) so it fills the sidebar beside long left content. */}
               <div className="rounded-2xl border border-light-grey bg-white px-5 py-4">
-                <span className="block font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase font-medium mb-3">Public records</span>
+                <span className="block font-body text-label tracking-[0.06em] text-cool-grey uppercase font-medium mb-3">Public records</span>
                 <div className="flex flex-col gap-2">
                   <a
                     href="https://apps.irs.gov/app/eos/"
                     target="_blank" rel="noopener noreferrer"
-                    className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
+                    className="font-body text-small text-link-gold hover:text-deep-gold transition-colors"
                   >IRS Tax Exempt Search →</a>
                   <a
                     href={propublicaOrgUrl(org.ein)}
                     target="_blank" rel="noopener noreferrer"
-                    className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
+                    className="font-body text-small text-link-gold hover:text-deep-gold transition-colors"
                   >ProPublica Nonprofit Explorer →</a>
                   <a
                     href="https://www.nasconet.org/resources/state-government/"
                     target="_blank" rel="noopener noreferrer"
-                    className="font-body text-[13px] text-link-gold hover:text-deep-gold transition-colors"
+                    className="font-body text-small text-link-gold hover:text-deep-gold transition-colors"
                   >State Charity Registry →</a>
                 </div>
               </div>
@@ -1264,10 +1264,10 @@ export default function OrganizationDetail() {
       {serviceArea?.area_type && serviceArea.area_type !== 'local' && (
         <div className="bg-warm-cream py-8 border-t border-light-grey">
           <div className="max-w-[900px] mx-auto px-6 lg:px-12">
-            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase mb-2">
+            <p className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase mb-2">
               Where they serve
             </p>
-            <p className="font-body text-[15px] text-deep-navy">
+            <p className="font-body text-body-lg text-deep-navy">
               {serviceArea.area_type === 'nationwide' && 'Serves communities nationwide across the US'}
               {serviceArea.area_type === 'international' && (
                 serviceArea.area_values.length > 0
@@ -1281,7 +1281,7 @@ export default function OrganizationDetail() {
                 serviceArea.area_values.slice(0, 4).join(' · ')
               )}
             </p>
-            <p className="font-body text-[11px] text-cool-grey mt-1">Self-reported by the organization</p>
+            <p className="font-body text-label text-cool-grey mt-1">Self-reported by the organization</p>
           </div>
         </div>
       )}
@@ -1290,7 +1290,7 @@ export default function OrganizationDetail() {
       {volunteerEvents.length > 0 && (
         <div className="bg-warm-cream py-12 border-t border-light-grey">
           <div className="max-w-[900px] mx-auto px-6 lg:px-12">
-            <p className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase mb-4">
+            <p className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase mb-4">
               Volunteer opportunities
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1305,24 +1305,24 @@ export default function OrganizationDetail() {
                 return (
                   <div key={ev.id} className="bg-white rounded-xl border border-light-cream p-5 flex flex-col gap-3">
                     <div>
-                      <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase mb-1 ${
+                      <span className={`inline-block px-2 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.06em] uppercase mb-1 ${
                         ev.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/15 text-deep-gold'
                       }`}>
                         {ev.is_virtual ? 'Virtual' : 'In Person'}
                       </span>
-                      <h3 className="font-display italic text-deep-navy text-[17px] leading-tight">{ev.title}</h3>
-                      <p className="font-body text-[12px] text-cool-grey mt-0.5">
+                      <h3 className="font-display italic text-deep-navy text-title-sm leading-tight">{ev.title}</h3>
+                      <p className="font-body text-caption text-cool-grey mt-0.5">
                         {dateStr}{location ? ` · ${location}` : ''}
                       </p>
                     </div>
                     {ev.description && (
-                      <p className="font-body text-[13px] text-cool-grey leading-[1.6] line-clamp-2">{ev.description}</p>
+                      <p className="font-body text-small text-cool-grey leading-[1.6] line-clamp-2">{ev.description}</p>
                     )}
                     <div className="mt-auto flex flex-col gap-2">
                       {ev.signup_url && (
                         <a
                           href={ev.signup_url} target="_blank" rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-soft-gold text-deep-navy rounded-lg font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-soft-gold text-deep-navy rounded-lg font-body text-small font-semibold hover:bg-bright-gold transition-colors"
                         >
                           Sign up
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1332,7 +1332,7 @@ export default function OrganizationDetail() {
                       )}
                       <button
                         onClick={() => setVolunteeringInterestEventId(ev.id)}
-                        className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-soft-gold text-soft-gold rounded-lg font-body text-[13px] font-semibold hover:bg-soft-gold/10 transition-colors"
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-soft-gold text-soft-gold rounded-lg font-body text-small font-semibold hover:bg-soft-gold/10 transition-colors"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -1344,7 +1344,7 @@ export default function OrganizationDetail() {
                 )
               })}
             </div>
-            <p className="mt-6 font-body text-[12px] text-muted-cream">
+            <p className="mt-6 font-body text-caption text-muted-cream">
               Sign-ups are handled by the organization directly. Daanaa does not collect volunteer information.
             </p>
           </div>
@@ -1368,7 +1368,7 @@ export default function OrganizationDetail() {
       {similarOrgs.length > 0 ? (
         <div className="print-hide bg-deep-navy py-16 md:py-24">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">
+            <span className="font-body text-label font-medium tracking-[0.08em] text-pale-gold uppercase">
               MORE LIKE THIS
             </span>
             <h2 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]">
@@ -1393,7 +1393,7 @@ export default function OrganizationDetail() {
               <div className="mt-10">
                 <Link
                   to={`/category/${apiOrg.NTEE1}`}
-                  className="font-body text-[14px] text-pale-gold hover:text-soft-gold transition-colors"
+                  className="font-body text-body text-pale-gold hover:text-soft-gold transition-colors"
                 >
                   Browse all {getNteeLabel(apiOrg.NTEE1)} organizations →
                 </Link>
@@ -1405,22 +1405,22 @@ export default function OrganizationDetail() {
         /* Fallback when no precomputed similar orgs — keep users moving */
         <div className="bg-deep-navy py-12">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-pale-gold uppercase">
+            <span className="font-body text-label font-medium tracking-[0.08em] text-pale-gold uppercase">
               EXPLORE MORE
             </span>
-            <p className="font-display italic text-warm-cream mt-3 text-[22px] leading-snug">
+            <p className="font-display italic text-warm-cream mt-3 text-title-lg leading-snug">
               Find more {getNteeLabel(apiOrg.NTEE1).toLowerCase()} organizations
             </p>
             <div className="mt-4 flex flex-wrap gap-4">
               <Link
                 to={`/category/${apiOrg.NTEE1}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 font-body text-[14px] text-warm-cream hover:bg-white/15 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 font-body text-body text-warm-cream hover:bg-white/15 transition-colors"
               >
                 Browse {getNteeLabel(apiOrg.NTEE1)} →
               </Link>
               <Link
                 to="/directory"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 font-body text-[14px] text-warm-cream hover:bg-white/15 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 border border-white/20 font-body text-body text-warm-cream hover:bg-white/15 transition-colors"
               >
                 Full directory →
               </Link>
@@ -1433,39 +1433,39 @@ export default function OrganizationDetail() {
       {financials.length > 0 && (
         <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
           <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">Annual filings</span>
-            <h2 className="font-display italic text-deep-navy mt-3 text-[28px] leading-[1.1] mb-6">
+            <span className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">Annual filings</span>
+            <h2 className="font-display italic text-deep-navy mt-3 text-headline leading-[1.1] mb-6">
               Financial history
             </h2>
             <div className="overflow-x-auto max-w-[820px]">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-light-grey">
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Year</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Revenue</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Expenses</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Net Assets</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Contributions</th>
-                    <th className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase pb-2">Report</th>
+                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Year</th>
+                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Revenue</th>
+                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Expenses</th>
+                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Net Assets</th>
+                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Contributions</th>
+                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2">Report</th>
                   </tr>
                 </thead>
                 <tbody>
                   {[...financials].reverse().map((f) => (
                     <tr key={f.tax_prd_yr} className="border-b border-light-grey/50 hover:bg-white/50 transition-colors">
-                      <td className="font-body text-[13px] font-medium text-deep-navy py-3 pr-4">{f.tax_prd_yr}</td>
-                      <td className="font-body text-[13px] text-deep-navy py-3 pr-4">{f.totrevenue != null ? formatCurrency(f.totrevenue) : '--'}</td>
-                      <td className="font-body text-[13px] text-cool-grey py-3 pr-4">{f.totfuncexpns != null ? formatCurrency(f.totfuncexpns) : '--'}</td>
-                      <td className={`font-body text-[13px] py-3 pr-4 ${(f.totnetassetend ?? 0) < 0 ? 'text-amber-600' : 'text-cool-grey'}`}>
+                      <td className="font-body text-small font-medium text-deep-navy py-3 pr-4">{f.tax_prd_yr}</td>
+                      <td className="font-body text-small text-deep-navy py-3 pr-4">{f.totrevenue != null ? formatCurrency(f.totrevenue) : '--'}</td>
+                      <td className="font-body text-small text-cool-grey py-3 pr-4">{f.totfuncexpns != null ? formatCurrency(f.totfuncexpns) : '--'}</td>
+                      <td className={`font-body text-small py-3 pr-4 ${(f.totnetassetend ?? 0) < 0 ? 'text-amber-600' : 'text-cool-grey'}`}>
                         {f.totnetassetend != null ? formatCurrency(f.totnetassetend) : '--'}
                       </td>
-                      <td className="font-body text-[13px] text-cool-grey py-3 pr-4">{f.totcntrbgfts != null ? formatCurrency(f.totcntrbgfts) : '--'}</td>
+                      <td className="font-body text-small text-cool-grey py-3 pr-4">{f.totcntrbgfts != null ? formatCurrency(f.totcntrbgfts) : '--'}</td>
                       <td className="py-3">
                         {f.pdf_url ? (
                           <a
                             href={f.pdf_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-body text-[11px] text-link-gold hover:text-deep-gold transition-colors"
+                            className="inline-flex items-center gap-1 font-body text-label text-link-gold hover:text-deep-gold transition-colors"
                           >
                             PDF
                             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
@@ -1477,7 +1477,7 @@ export default function OrganizationDetail() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-4 font-body text-[12px] text-cool-grey">
+            <p className="mt-4 font-body text-caption text-cool-grey">
               Source: ProPublica Nonprofit Explorer · Government annual financial reports
             </p>
           </div>

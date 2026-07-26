@@ -56,7 +56,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
             />
             {/* charcoal, not deep-navy: the nav bar is white in BOTH themes, and
                 deep-navy inverts to near-white in light mode (invisible on white) */}
-            <span className="font-cinzel text-[18px] text-charcoal tracking-[0.12em]">Daanaa</span>
+            <span className="font-cinzel text-title-sm text-charcoal tracking-[0.12em]">Daanaa</span>
           </Link>
 
           {/* Desktop Nav Links */}
@@ -70,7 +70,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
               <Link
                 key={item.path}
                 to={item.path}
-                className="relative font-body text-[14px] tracking-[0.02em] transition-colors duration-150 py-3 flex items-center"
+                className="relative font-body text-body tracking-[0.02em] transition-colors duration-150 py-3 flex items-center"
                 style={{
                   color: isActive(item.path) ? '#0A1628' : '#374151',
                   fontWeight: isActive(item.path) ? '500' : '400',
@@ -106,7 +106,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
                   onChange={e => setHeaderQuery(e.target.value)}
                   placeholder="Search nonprofits…"
                   aria-label="Search nonprofits"
-                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white border border-light-grey font-body text-[13px] text-charcoal placeholder:text-cool-grey outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-full bg-white border border-light-grey font-body text-small text-charcoal placeholder:text-cool-grey outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold/30 transition-colors"
                 />
               </div>
             </form>
@@ -115,7 +115,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
           <div className="hidden md:flex items-center gap-3">
             <Link
               to="/wallet"
-              className="relative inline-flex items-center gap-1.5 px-4 py-[11px] rounded-full font-body text-[13px] transition-all duration-150"
+              className="relative inline-flex items-center gap-1.5 px-4 py-[11px] rounded-full font-body text-small transition-all duration-150"
               style={{
                 color: isActive('/wallet') ? '#0A1628' : '#4B5563',
                 background: isActive('/wallet') ? 'rgba(201,169,110,0.08)' : 'transparent',
@@ -128,7 +128,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
               </svg>
               Wallet
               {savedCount > 0 && (
-                <span className="inline-flex items-center justify-center min-w-[17px] h-[17px] bg-soft-gold text-deep-navy text-[10px] font-bold rounded-full px-[4px]">
+                <span className="inline-flex items-center justify-center min-w-[17px] h-[17px] bg-soft-gold text-deep-navy text-micro font-bold rounded-full px-[4px]">
                   {savedCount > 99 ? '99+' : savedCount}
                 </span>
               )}
@@ -173,7 +173,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
                 placeholder="Search nonprofits…"
                 aria-label="Search nonprofits"
                 autoFocus
-                className="w-full px-4 py-3 rounded-full bg-white/10 border border-white/15 font-body text-[15px] text-warm-cream placeholder:text-warm-cream/50 outline-none focus:border-soft-gold focus:bg-white/15 transition-colors"
+                className="w-full px-4 py-3 rounded-full bg-white/10 border border-white/15 font-body text-body-lg text-warm-cream placeholder:text-warm-cream/50 outline-none focus:border-soft-gold focus:bg-white/15 transition-colors"
               />
             </form>
             {[
@@ -185,7 +185,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
-                className="font-display italic text-[30px] tracking-[-0.01em] text-warm-cream opacity-0 animate-[fadeIn_0.4s_ease-out_forwards] hover:text-soft-gold transition-colors"
+                className="font-display italic text-headline-lg tracking-[-0.01em] text-warm-cream opacity-0 animate-[fadeIn_0.4s_ease-out_forwards] hover:text-soft-gold transition-colors"
                 style={{ animationDelay: `${i * 0.07}s` }}
               >
                 {item.label}
@@ -207,7 +207,7 @@ export default function Navigation({ solid = true }: NavigationProps) {
                   key={item.path}
                   to={item.path}
                   onClick={() => setMobileOpen(false)}
-                  className="font-body text-[14px] text-warm-cream/60 hover:text-soft-gold transition-colors"
+                  className="font-body text-body text-warm-cream/60 hover:text-soft-gold transition-colors"
                 >
                   {item.label}
                 </Link>

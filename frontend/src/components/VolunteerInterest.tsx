@@ -56,8 +56,8 @@ export default function VolunteerInterest({
         <div className="bg-warm-cream px-6 pt-5 pb-4 border-b border-light-grey">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-body text-[11px] font-semibold text-link-gold uppercase tracking-widest mb-0.5">Volunteer interest</p>
-              <h3 className="font-display text-[20px] text-deep-navy leading-snug">{orgName}</h3>
+              <p className="font-body text-label font-semibold text-link-gold uppercase tracking-widest mb-0.5">Volunteer interest</p>
+              <h3 className="font-display text-title text-deep-navy leading-snug">{orgName}</h3>
             </div>
             <button
               onClick={onClose}
@@ -69,7 +69,7 @@ export default function VolunteerInterest({
               </svg>
             </button>
           </div>
-          <p className="mt-2 font-body text-[12px] text-cool-grey leading-relaxed">
+          <p className="mt-2 font-body text-caption text-cool-grey leading-relaxed">
             You send this from your own device. Daanaa never stores your contact info.
           </p>
         </div>
@@ -78,8 +78,8 @@ export default function VolunteerInterest({
         <div className="px-6 py-5 space-y-4">
           {/* Anonymous vs named toggle */}
           <div>
-            <p className="font-body text-[12px] font-medium text-deep-navy mb-2">How do you want to sign it?</p>
-            <div className="flex rounded-xl border border-light-grey overflow-hidden text-[13px] font-medium">
+            <p className="font-body text-caption font-medium text-deep-navy mb-2">How do you want to sign it?</p>
+            <div className="flex rounded-xl border border-light-grey overflow-hidden text-small font-medium">
               <button
                 onClick={() => setAnonymous(true)}
                 className={`flex-1 py-2 transition-colors ${anonymous ? 'bg-deep-navy text-warm-cream' : 'text-cool-grey hover:bg-warm-cream/60'}`}
@@ -100,16 +100,16 @@ export default function VolunteerInterest({
               value={firstName}
               onChange={e => setFirstName(e.target.value)}
               placeholder="First name"
-              className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy placeholder:text-cool-grey/50 focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
+              className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-body text-deep-navy placeholder:text-cool-grey/50 focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
             />
           )}
 
           <div>
-            <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">Age range <span className="font-normal text-cool-grey">(optional)</span></label>
+            <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">Age range <span className="font-normal text-cool-grey">(optional)</span></label>
             <select
               value={ageRange}
               onChange={e => setAgeRange(e.target.value)}
-              className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy bg-white focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
+              className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-body text-deep-navy bg-white focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
             >
               <option value="">Prefer not to say</option>
               {AGE_RANGES.map(r => <option key={r} value={r}>{r}</option>)}
@@ -120,7 +120,7 @@ export default function VolunteerInterest({
           <div>
             <button
               onClick={() => setShowPreview(v => !v)}
-              className="flex items-center gap-1.5 font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors"
+              className="flex items-center gap-1.5 font-body text-caption text-soft-gold hover:text-bright-gold transition-colors"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d={showPreview ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} />
@@ -128,7 +128,7 @@ export default function VolunteerInterest({
               {showPreview ? 'Hide' : 'Preview'} message
             </button>
             {showPreview && (
-              <div className="mt-2 rounded-xl bg-warm-cream border border-light-grey px-4 py-3 font-body text-[12px] text-cool-grey whitespace-pre-wrap leading-relaxed">
+              <div className="mt-2 rounded-xl bg-warm-cream border border-light-grey px-4 py-3 font-body text-caption text-cool-grey whitespace-pre-wrap leading-relaxed">
                 {message}
               </div>
             )}
@@ -140,7 +140,7 @@ export default function VolunteerInterest({
           {contactEmail && (
             <button
               onClick={sendByEmail}
-              className="w-full py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors flex items-center justify-center gap-2"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
@@ -151,7 +151,7 @@ export default function VolunteerInterest({
           {website && (
             <button
               onClick={copyAndOpenSite}
-              className="w-full py-3 rounded-xl border border-deep-navy/20 text-deep-navy font-body text-[14px] font-medium hover:bg-warm-cream transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl border border-deep-navy/20 text-deep-navy font-body text-body font-medium hover:bg-warm-cream transition-colors flex items-center justify-center gap-2"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -160,13 +160,13 @@ export default function VolunteerInterest({
             </button>
           )}
           {!hasAction && (
-            <p className="text-center font-body text-[13px] text-cool-grey py-2">
+            <p className="text-center font-body text-small text-cool-grey py-2">
               This organization has not shared a contact email or website yet.
             </p>
           )}
           <button
             onClick={onClose}
-            className="w-full py-2.5 font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors"
+            className="w-full py-2.5 font-body text-small text-cool-grey hover:text-deep-navy transition-colors"
           >
             Cancel
           </button>

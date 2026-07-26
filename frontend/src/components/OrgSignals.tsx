@@ -75,7 +75,7 @@ export default function OrgSignals({
 
   if (signals.length === 0) {
     return (
-      <div className="flex items-center gap-1.5 text-[11px] text-cool-grey">
+      <div className="flex items-center gap-1.5 text-label text-cool-grey">
         <span className="opacity-50">Limited data · public record</span>
       </div>
     )
@@ -87,7 +87,7 @@ export default function OrgSignals({
         <div
           key={idx}
           title={signal.title}
-          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-light-grey/40 text-[11px] text-cool-grey font-medium whitespace-nowrap"
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-light-grey/40 text-label text-cool-grey font-medium whitespace-nowrap"
         >
           <span>{signal.icon}</span>
           <span>{signal.label}</span>

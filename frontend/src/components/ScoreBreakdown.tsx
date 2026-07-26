@@ -33,8 +33,8 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
       {/* Header */}
       <div className="flex items-start justify-between p-5 border-b border-light-grey shrink-0">
         <div>
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] uppercase text-cool-grey mb-1">What we know</p>
-          <p className="font-body text-[13px] text-deep-navy font-medium leading-[1.4] max-w-[280px]">
+          <p className="font-body text-label font-semibold tracking-[0.08em] uppercase text-cool-grey mb-1">What we know</p>
+          <p className="font-body text-small text-deep-navy font-medium leading-[1.4] max-w-[280px]">
             {org.organization_name}
           </p>
         </div>
@@ -52,10 +52,10 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
             <div className="flex items-start gap-3">
               <BadgeChip badge={badge} size="sm" variant="light" />
               <div className="flex-1 min-w-0 pt-0.5">
-                <p className="font-body text-[12px] text-cool-grey leading-[1.6]">
+                <p className="font-body text-caption text-cool-grey leading-[1.6]">
                   {badge.detail}
                 </p>
-                <p className="font-body text-[10px] text-cool-grey mt-1.5 tracking-[0.01em]">
+                <p className="font-body text-micro text-cool-grey mt-1.5 tracking-[0.01em]">
                   {badge.source}{taxYear && badge.id.includes('filing') ? ` · FY ${taxYear}` : ''}
                 </p>
               </div>
@@ -65,20 +65,20 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
 
         {/* Honest note about what we don't yet measure */}
         <div className="px-5 py-4 bg-warm-cream/60">
-          <p className="font-body text-[11px] font-semibold text-deep-navy mb-2">Not yet measured</p>
+          <p className="font-body text-label font-semibold text-deep-navy mb-2">Not yet measured</p>
           <ul className="space-y-1.5">
             {[
               'Board independence and governance practices',
               'Independent audit records',
               'Program outcome and impact data',
             ].map(item => (
-              <li key={item} className="flex items-start gap-2 font-body text-[11px] text-cool-grey">
+              <li key={item} className="flex items-start gap-2 font-body text-label text-cool-grey">
                 <span className="mt-0.5 shrink-0 text-cool-grey">›</span>
                 {item}
               </li>
             ))}
           </ul>
-          <p className="mt-3 font-body text-[10px] text-cool-grey leading-[1.5]">
+          <p className="mt-3 font-body text-micro text-cool-grey leading-[1.5]">
             These gaps reflect data we haven't collected yet, not red flags. Governance and impact data will be added as Daanaa expands.
           </p>
         </div>
@@ -86,13 +86,13 @@ export default function ScoreBreakdown({ org, onClose, mode }: ScoreBreakdownPro
 
       {/* Footer */}
       <div className="px-5 py-3 border-t border-light-grey shrink-0 flex items-start justify-between gap-3">
-        <p className="font-body text-[10px] text-cool-grey leading-[1.5]">
+        <p className="font-body text-micro text-cool-grey leading-[1.5]">
           Data sourced from {sourceLabel} and the IRS Business Master File.
           Daanaa does not process donations or independently audit organizations.
         </p>
         <Link
           to="/methodology"
-          className="shrink-0 font-body text-[10px] text-soft-gold hover:text-bright-gold transition-colors whitespace-nowrap"
+          className="shrink-0 font-body text-micro text-soft-gold hover:text-bright-gold transition-colors whitespace-nowrap"
         >
           How scoring works →
         </Link>

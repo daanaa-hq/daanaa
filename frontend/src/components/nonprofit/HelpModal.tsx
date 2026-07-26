@@ -66,7 +66,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         <div className="sticky top-0 bg-warm-cream border-b border-light-grey px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="font-display text-2xl text-deep-navy">Help & FAQ</h2>
-            <p className="font-body text-[12px] text-cool-grey mt-1">Common questions about managing your nonprofit</p>
+            <p className="font-body text-caption text-cool-grey mt-1">Common questions about managing your nonprofit</p>
           </div>
           <button
             onClick={onClose}
@@ -96,11 +96,11 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   {item.icon || '❓'}
                 </span>
                 <div className="flex-1">
-                  <h3 className="font-display text-[15px] text-deep-navy font-semibold">
+                  <h3 className="font-display text-body-lg text-deep-navy font-semibold">
                     {item.question}
                   </h3>
                   <span
-                    className="font-body text-[12px] text-cool-grey inline-block mt-1"
+                    className="font-body text-caption text-cool-grey inline-block mt-1"
                     aria-hidden={expandedIndex !== idx}
                   >
                     {expandedIndex === idx ? '−' : '+'}
@@ -120,7 +120,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   className="px-4 pb-4 border-t border-light-grey/50 bg-white"
                   role="region"
                 >
-                  <p className="font-body text-[14px] text-deep-navy leading-relaxed">
+                  <p className="font-body text-body text-deep-navy leading-relaxed">
                     {item.answer}
                   </p>
                 </div>
@@ -133,7 +133,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
         <div className="sticky bottom-0 bg-warm-cream border-t border-light-grey px-6 py-4 flex gap-3 justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition"
+            className="px-6 py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition"
           >
             Close
           </button>

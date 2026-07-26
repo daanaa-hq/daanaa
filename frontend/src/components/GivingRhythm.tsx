@@ -51,7 +51,7 @@ export function RhythmNudges({ entries, orgDataMap }: {
               <p className="font-body text-sm font-semibold text-deep-navy">
                 Time for your ${t.amount.toLocaleString()} gift to {name}?
               </p>
-              <p className="font-body text-[12px] text-cool-grey mt-0.5">
+              <p className="font-body text-caption text-cool-grey mt-0.5">
                 You give {CADENCE_LABEL[t.cadence]}{t.cadence === 'yearly' && t.anchorMonth ? ` in ${MONTH_NAMES[t.anchorMonth - 1]}` : ''}. Only you can see this.
               </p>
             </div>
@@ -61,14 +61,14 @@ export function RhythmNudges({ entries, orgDataMap }: {
                   <a
                     href={href} target="_blank" rel="noopener noreferrer"
                     onClick={() => setConfirming(prev => new Set(prev).add(entry.ein))}
-                    className="px-4 py-2.5 rounded-xl bg-deep-navy text-warm-cream font-body text-[13px] font-semibold hover:bg-deep-navy/90 transition-colors"
+                    className="px-4 py-2.5 rounded-xl bg-deep-navy text-warm-cream font-body text-small font-semibold hover:bg-deep-navy/90 transition-colors"
                   >
                     Give again
                   </a>
                 ) : (
                   <button
                     onClick={() => setConfirming(prev => new Set(prev).add(entry.ein))}
-                    className="px-4 py-2.5 rounded-xl bg-deep-navy text-warm-cream font-body text-[13px] font-semibold hover:bg-deep-navy/90 transition-colors"
+                    className="px-4 py-2.5 rounded-xl bg-deep-navy text-warm-cream font-body text-small font-semibold hover:bg-deep-navy/90 transition-colors"
                   >
                     I gave by check
                   </button>
@@ -79,7 +79,7 @@ export function RhythmNudges({ entries, orgDataMap }: {
                     const d = new Date(); d.setDate(d.getDate() + 30)
                     snoozeRecurringTemplate(entry.ein, d.toISOString().slice(0, 10))
                   }}
-                  className="px-3 py-2.5 rounded-xl border border-light-grey font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors"
+                  className="px-3 py-2.5 rounded-xl border border-light-grey font-body text-small text-cool-grey hover:text-deep-navy transition-colors"
                 >
                   Not now
                 </button>
@@ -91,13 +91,13 @@ export function RhythmNudges({ entries, orgDataMap }: {
                     logDonation(entry.ein, t.amount, todayIso(), 'Recurring gift')
                     setConfirming(prev => { const n = new Set(prev); n.delete(entry.ein); return n })
                   }}
-                  className="px-4 py-2.5 rounded-xl bg-success-green text-white font-body text-[13px] font-semibold hover:opacity-90 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-success-green text-white font-body text-small font-semibold hover:opacity-90 transition-colors"
                 >
                   Log my ${t.amount.toLocaleString()} gift
                 </button>
                 <button
                   onClick={() => setConfirming(prev => { const n = new Set(prev); n.delete(entry.ein); return n })}
-                  className="px-3 py-2.5 rounded-xl border border-light-grey font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors"
+                  className="px-3 py-2.5 rounded-xl border border-light-grey font-body text-small text-cool-grey hover:text-deep-navy transition-colors"
                 >
                   I didn't give
                 </button>
@@ -127,12 +127,12 @@ export function RhythmControl({ entry, orgName }: { entry: WalletEntry; orgName:
   if (t && !editing) {
     return (
       <div className="flex items-center gap-3 flex-wrap">
-        <p className="font-body text-[13px] text-deep-navy">
+        <p className="font-body text-small text-deep-navy">
           <span className="font-semibold">${t.amount.toLocaleString()}</span> {CADENCE_LABEL[t.cadence]}
           {t.cadence === 'yearly' && t.anchorMonth ? ` in ${MONTH_NAMES[t.anchorMonth - 1]}` : ''}
         </p>
-        <button onClick={() => setEditing(true)} className="font-body text-[12px] text-cool-grey hover:text-deep-navy underline transition-colors">Edit</button>
-        <button onClick={() => clearRecurringTemplate(entry.ein)} className="font-body text-[12px] text-cool-grey hover:text-destructive underline transition-colors">Remove</button>
+        <button onClick={() => setEditing(true)} className="font-body text-caption text-cool-grey hover:text-deep-navy underline transition-colors">Edit</button>
+        <button onClick={() => clearRecurringTemplate(entry.ein)} className="font-body text-caption text-cool-grey hover:text-destructive underline transition-colors">Remove</button>
       </div>
     )
   }
@@ -142,19 +142,19 @@ export function RhythmControl({ entry, orgName }: { entry: WalletEntry; orgName:
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="font-body text-[13px] text-cool-grey">$</span>
+      <span className="font-body text-small text-cool-grey">$</span>
       <input
         type="number" inputMode="decimal" min={WALLET_CONSTRAINTS.AMOUNT_MIN} value={amount}
         onChange={e => setAmount(e.target.value)}
         placeholder="50"
         aria-label={`Gift amount for ${orgName}`}
-        className="w-20 px-2 py-2 rounded-lg border border-light-grey font-body text-[13px] text-deep-navy bg-white outline-none focus:border-soft-gold"
+        className="w-20 px-2 py-2 rounded-lg border border-light-grey font-body text-small text-deep-navy bg-white outline-none focus:border-soft-gold"
       />
       <select
         value={cadence}
         onChange={e => setCadence(e.target.value as RecurringTemplate['cadence'])}
         aria-label="How often"
-        className="px-2 py-2 rounded-lg border border-light-grey font-body text-[13px] text-deep-navy bg-white outline-none cursor-pointer"
+        className="px-2 py-2 rounded-lg border border-light-grey font-body text-small text-deep-navy bg-white outline-none cursor-pointer"
       >
         <option value="monthly">every month</option>
         <option value="quarterly">every quarter</option>
@@ -165,7 +165,7 @@ export function RhythmControl({ entry, orgName }: { entry: WalletEntry; orgName:
           value={anchorMonth}
           onChange={e => setAnchorMonth(Number(e.target.value))}
           aria-label="Which month"
-          className="px-2 py-2 rounded-lg border border-light-grey font-body text-[13px] text-deep-navy bg-white outline-none cursor-pointer"
+          className="px-2 py-2 rounded-lg border border-light-grey font-body text-small text-deep-navy bg-white outline-none cursor-pointer"
         >
           {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
         </select>
@@ -179,12 +179,12 @@ export function RhythmControl({ entry, orgName }: { entry: WalletEntry; orgName:
           })
           setEditing(false)
         }}
-        className="px-3 py-2 rounded-lg bg-deep-navy text-warm-cream font-body text-[12px] font-semibold disabled:opacity-40 hover:bg-deep-navy/90 transition-colors"
+        className="px-3 py-2 rounded-lg bg-deep-navy text-warm-cream font-body text-caption font-semibold disabled:opacity-40 hover:bg-deep-navy/90 transition-colors"
       >
         {t ? 'Save' : 'Set rhythm'}
       </button>
       {t && editing && (
-        <button onClick={() => setEditing(false)} className="font-body text-[12px] text-cool-grey hover:text-deep-navy underline transition-colors">Cancel</button>
+        <button onClick={() => setEditing(false)} className="font-body text-caption text-cool-grey hover:text-deep-navy underline transition-colors">Cancel</button>
       )}
     </div>
   )

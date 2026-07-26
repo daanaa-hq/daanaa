@@ -53,20 +53,20 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
-          <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-1">
+          <p className="font-body text-label font-semibold tracking-[0.08em] text-cool-grey uppercase mb-1">
             Financial Context
           </p>
-          <p className="font-body text-[16px] font-semibold text-deep-navy leading-snug">
+          <p className="font-body text-lead font-semibold text-deep-navy leading-snug">
             <InfoTerm tip="Its primary funding model. We group nonprofits as Donation-Funded, Fee-for-Service, or Endowment-Funded so each is compared only to peers with the same financial shape.">
               {v5.archetype.label}
             </InfoTerm>
           </p>
-          <p className="font-body text-[12px] text-cool-grey mt-0.5">
+          <p className="font-body text-caption text-cool-grey mt-0.5">
             Compared to {v5.peer_group.org_count.toLocaleString()} similar organizations
           </p>
         </div>
         <InfoTip tip="A plain-language summary of reserve strength versus peers. “Needs support” means lower reserves — often because resources go straight into programs, not a judgment of the work's quality.">
-          <span className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full text-[12px] font-semibold border ${style.badge}`}>
+          <span className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full text-caption font-semibold border ${style.badge}`}>
             {label}
           </span>
         </InfoTip>
@@ -76,13 +76,13 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
       <div className="flex items-baseline gap-2 mb-5">
         {showTopPct ? (
           <>
-            <span className={`font-display text-[32px] font-bold leading-none ${style.text}`}>
+            <span className={`font-display text-headline-lg font-bold leading-none ${style.text}`}>
               Top {topPct}%
             </span>
-            <span className="font-body text-[13px] text-cool-grey">of {v5.peer_group.label}</span>
+            <span className="font-body text-small text-cool-grey">of {v5.peer_group.label}</span>
           </>
         ) : (
-          <p className={`font-body text-[14px] font-medium leading-snug ${style.text}`}>
+          <p className={`font-body text-body font-medium leading-snug ${style.text}`}>
             Compared to {v5.peer_group.org_count.toLocaleString()} similar organizations
           </p>
         )}
@@ -92,19 +92,19 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
       {hasOwnReserves && hasPeerBench && (
         <div className="mb-5">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="font-body text-[12px] font-medium text-deep-navy">
+            <span className="font-body text-caption font-medium text-deep-navy">
               <InfoTerm tip="How many months the organization could keep operating on its unrestricted reserves if income stopped. Calculated from its most recent IRS Form 990.">
                 Months of reserve
               </InfoTerm>
             </span>
-            <span className={`font-body text-[13px] font-semibold ${style.text}`}>
+            <span className={`font-body text-small font-semibold ${style.text}`}>
               {Number.isInteger(reserves.your_value!) ? reserves.your_value! : reserves.your_value!.toFixed(1)} months
             </span>
           </div>
           <div className="w-full bg-deep-navy/8 rounded-full h-2 mb-1.5">
             <div className={`h-2 rounded-full ${style.bar}`} style={{ width: `${barPct}%` }} />
           </div>
-          <div className="flex justify-between font-body text-[11px] text-cool-grey">
+          <div className="flex justify-between font-body text-label text-cool-grey">
             <span>Low end: {Math.round(reserves.p25)} mo</span>
             <span>Typical: {Math.round(reserves.p50)} mo</span>
             <span>Strong: {Math.round(reserves.p75)} mo</span>
@@ -114,19 +114,19 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
       {/* Show reserve value only (no bar) when peer benchmark data is unavailable */}
       {hasOwnReserves && !hasPeerBench && (
         <div className="mb-5 flex items-center justify-between">
-          <span className="font-body text-[12px] font-medium text-deep-navy">
+          <span className="font-body text-caption font-medium text-deep-navy">
               <InfoTerm tip="How many months the organization could keep operating on its unrestricted reserves if income stopped. Calculated from its most recent IRS Form 990.">
                 Months of reserve
               </InfoTerm>
             </span>
-          <span className={`font-body text-[13px] font-semibold ${style.text}`}>
+          <span className={`font-body text-small font-semibold ${style.text}`}>
             {Number.isInteger(reserves.your_value!) ? reserves.your_value! : reserves.your_value!.toFixed(1)} months
           </span>
         </div>
       )}
 
       {/* Donor explanation — clean precomputed text, reframe critical phrases */}
-      <p className="font-body text-[14px] leading-relaxed text-deep-navy/80">
+      <p className="font-body text-body leading-relaxed text-deep-navy/80">
         {v5.donor_explanation
           .replace(/\b(\d+)\.0\b/g, '$1')
           .replace(/\s*This organization may be in a growth phase or operating lean by design\./g, '')
@@ -139,17 +139,17 @@ export default function V5Context({ org }: { org: ApiOrganization }) {
         }
       </p>
       {v5.score.health_signal === 'CAUTION' && (
-        <p className="mt-3 font-body text-[13px] leading-relaxed text-deep-navy/60 italic">
+        <p className="mt-3 font-body text-small leading-relaxed text-deep-navy/60 italic">
           Nonprofits with fewer reserves are often putting most of their resources directly into their programs. Lower reserves don't reflect the quality or importance of their work.
         </p>
       )}
 
       {/* Disclosure + methodology link */}
       <div className="mt-4 border-t border-deep-navy/10 pt-3 flex items-center justify-between gap-4">
-        <p className="font-body text-[11px] text-cool-grey italic">
+        <p className="font-body text-label text-cool-grey italic">
           Context from public IRS data, compared to financially similar peers. Not a rating or recommendation.
         </p>
-        <Link to="/methodology" className="shrink-0 font-body text-[11px] text-cool-grey hover:text-deep-navy underline underline-offset-2 transition-colors">
+        <Link to="/methodology" className="shrink-0 font-body text-label text-cool-grey hover:text-deep-navy underline underline-offset-2 transition-colors">
           How we score →
         </Link>
       </div>

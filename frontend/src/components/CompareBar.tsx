@@ -15,7 +15,7 @@ export default function CompareBar() {
   return (
     <div className="fixed bottom-[60px] md:bottom-0 left-0 right-0 z-40 px-4 py-3 bg-deep-navy border-t border-navy-mid shadow-2xl">
       <div className="max-w-[1200px] mx-auto flex items-center gap-3 flex-wrap">
-        <span className="font-body text-[12px] text-warm-cream/60 shrink-0">
+        <span className="font-body text-caption text-warm-cream/60 shrink-0">
           Compare ({items.length}/{MAX_COMPARE}):
         </span>
 
@@ -25,7 +25,7 @@ export default function CompareBar() {
               key={item.ein}
               className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full bg-white/8 border border-white/15"
             >
-              <span className="font-body text-[12px] text-warm-cream truncate max-w-[140px]">{item.name}</span>
+              <span className="font-body text-caption text-warm-cream truncate max-w-[140px]">{item.name}</span>
               <button
                 onClick={() => removeItem(item.ein)}
                 className="flex items-center justify-center w-4 h-4 rounded-full hover:bg-white/20 transition-colors shrink-0"
@@ -44,7 +44,7 @@ export default function CompareBar() {
               key={`empty-${i}`}
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-white/10 border-dashed"
             >
-              <span className="font-body text-[12px] text-white/20">Add org</span>
+              <span className="font-body text-caption text-white/20">Add org</span>
             </div>
           ))}
         </div>
@@ -52,14 +52,14 @@ export default function CompareBar() {
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={clearItems}
-            className="font-body text-[13px] text-warm-cream/60 hover:text-warm-cream transition-colors"
+            className="font-body text-small text-warm-cream/60 hover:text-warm-cream transition-colors"
           >
             Clear
           </button>
           <button
             onClick={handleCompare}
             disabled={items.length < 2}
-            className="px-5 py-2 rounded-full bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-5 py-2 rounded-full bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Compare {items.length > 0 ? `(${items.length})` : ''}
           </button>

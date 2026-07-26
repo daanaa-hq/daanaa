@@ -26,7 +26,7 @@ export default function DonationReturnPrompt({ state, onDismiss, onLogged }: Don
         <div className="px-6 pt-6 pb-2 flex items-start justify-between">
           <div>
             <p className="font-display text-lg italic text-deep-navy">Did you give to {state.name}?</p>
-            <p className="font-body text-[13px] text-cool-grey mt-1">
+            <p className="font-body text-small text-cool-grey mt-1">
               We can't see what happens on their site — this just helps you track your own giving.
             </p>
           </div>
@@ -56,13 +56,13 @@ function DonationLoggerWithDismiss({ ein, orgName, onLogged, onSkip }: { ein: st
       <div className="flex gap-3 mt-2">
         <button
           onClick={onSkip}
-          className="font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors underline underline-offset-2"
+          className="font-body text-small text-cool-grey hover:text-deep-navy transition-colors underline underline-offset-2"
         >
           Not now
         </button>
         <button
           onClick={() => onLogged()}
-          className="font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors underline underline-offset-2 ml-auto"
+          className="font-body text-small text-cool-grey hover:text-deep-navy transition-colors underline underline-offset-2 ml-auto"
         >
           Done
         </button>

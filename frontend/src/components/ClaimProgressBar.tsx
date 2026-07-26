@@ -19,14 +19,14 @@ export function ClaimProgressBar({ currentStep }: ClaimProgressBarProps) {
         {STEPS.map((step, idx) => (
           <React.Fragment key={step.key}>
             <div className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-body text-[13px] font-bold transition-colors ${
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-body text-small font-bold transition-colors ${
                 idx < currentIndex ? 'bg-soft-gold text-deep-navy' :
                 idx === currentIndex ? 'bg-deep-navy text-warm-cream' :
                 'bg-navy-mid text-cool-grey'
               }`}>
                 {idx < currentIndex ? '✓' : idx + 1}
               </div>
-              <span className={`mt-1 font-body text-[11px] whitespace-nowrap ${
+              <span className={`mt-1 font-body text-label whitespace-nowrap ${
                 idx === currentIndex ? 'text-warm-cream font-semibold' : 'text-cool-grey'
               }`}>{step.label}</span>
             </div>

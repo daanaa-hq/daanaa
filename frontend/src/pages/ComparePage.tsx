@@ -69,7 +69,7 @@ function OrgColumn({ ein }: { ein: string }) {
   if (error || !org) {
     return (
       <div className="flex-1 min-w-0 text-center py-8">
-        <p className="font-body text-[14px] text-cool-grey">Failed to load org</p>
+        <p className="font-body text-body text-cool-grey">Failed to load org</p>
       </div>
     )
   }
@@ -119,10 +119,10 @@ function OrgColumn({ ein }: { ein: string }) {
   return (
     <div className="flex-1 min-w-0">
       <Link to={`/org/${ein}`} className="block group mb-3">
-        <h2 className="font-display text-[18px] text-deep-navy group-hover:text-soft-gold transition-colors leading-snug">
+        <h2 className="font-display text-title-sm text-deep-navy group-hover:text-soft-gold transition-colors leading-snug">
           {org.organization_name}
         </h2>
-        <p className="font-body text-[13px] text-cool-grey mt-1">
+        <p className="font-body text-small text-cool-grey mt-1">
           {[org.CITY, org.STATE].filter(Boolean).join(', ')}
         </p>
       </Link>
@@ -134,7 +134,7 @@ function OrgColumn({ ein }: { ein: string }) {
           </p>
           {(org.mission_source || '').startsWith('ai') && (
             <span
-              className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-body text-cool-grey/55"
+              className="mt-1.5 inline-flex items-center gap-1 text-micro font-body text-cool-grey/55"
               title="AI assisted, from public records. Not confirmed by the organization."
             >
               <span className="w-1 h-1 rounded-full bg-cool-grey/40" />
@@ -147,8 +147,8 @@ function OrgColumn({ ein }: { ein: string }) {
       <div className="space-y-2">
         {rows.map(row => (
           <div key={row.label} className="flex items-start justify-between gap-3 py-2.5 border-b border-light-grey last:border-0">
-            <span className="font-body text-[12px] text-cool-grey shrink-0">{row.label}</span>
-            <span className="font-body text-[13px] text-deep-navy font-medium text-right">{row.value}</span>
+            <span className="font-body text-caption text-cool-grey shrink-0">{row.label}</span>
+            <span className="font-body text-small text-deep-navy font-medium text-right">{row.value}</span>
           </div>
         ))}
       </div>
@@ -160,7 +160,7 @@ function OrgColumn({ ein }: { ein: string }) {
             href={externalLink.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 min-w-[100px] py-2.5 rounded-full bg-soft-gold text-deep-navy font-body text-[13px] font-semibold text-center hover:bg-bright-gold transition-colors"
+            className="flex-1 min-w-[100px] py-2.5 rounded-full bg-soft-gold text-deep-navy font-body text-small font-semibold text-center hover:bg-bright-gold transition-colors"
           >
             {externalLink.label} ↗
           </a>
@@ -169,7 +169,7 @@ function OrgColumn({ ein }: { ein: string }) {
 
       <Link
         to={`/org/${ein}`}
-        className="mt-2.5 block w-full py-2.5 rounded-full border border-light-grey text-cool-grey font-body text-[13px] font-semibold text-center hover:border-soft-gold/40 hover:text-soft-gold transition-colors"
+        className="mt-2.5 block w-full py-2.5 rounded-full border border-light-grey text-cool-grey font-body text-small font-semibold text-center hover:border-soft-gold/40 hover:text-soft-gold transition-colors"
       >
         View full profile →
       </Link>
@@ -189,8 +189,8 @@ export default function ComparePage() {
   if (eins.length < 2) {
     return (
       <div className="min-h-[100dvh] pt-[72px] flex flex-col items-center justify-center bg-warm-cream px-6">
-        <p className="font-body text-[16px] text-cool-grey">Select at least 2 nonprofits to compare.</p>
-        <Link to="/directory" className="mt-4 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors">
+        <p className="font-body text-lead text-cool-grey">Select at least 2 nonprofits to compare.</p>
+        <Link to="/directory" className="mt-4 font-body text-body text-soft-gold hover:text-bright-gold transition-colors">
           ← Back to Directory
         </Link>
       </div>
@@ -202,7 +202,7 @@ export default function ComparePage() {
       {/* Header */}
       <div className="bg-white border-b border-light-grey px-6 lg:px-12 py-8">
         <div className="max-w-[1200px] mx-auto">
-          <Link to="/directory" className="font-body text-[12px] text-cool-grey hover:text-deep-navy transition-colors inline-flex items-center gap-1">
+          <Link to="/directory" className="font-body text-caption text-cool-grey hover:text-deep-navy transition-colors inline-flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="15 18 9 12 15 6"/>
             </svg>
@@ -211,7 +211,7 @@ export default function ComparePage() {
           <h1 className="font-display italic text-deep-navy mt-3" >
             Compare Nonprofits
           </h1>
-          <p className="mt-2 font-body text-[14px] text-cool-grey">
+          <p className="mt-2 font-body text-body text-cool-grey">
             Side-by-side comparison of {eins.length} organizations
           </p>
         </div>

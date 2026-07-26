@@ -72,6 +72,19 @@ else
   echo -e "${GREEN}✅${NC}"
 fi
 
+# Check 5: Type scale compliance (app + standalone pages)
+# The scale lives in frontend/public/tokens.css. Raw sizes bypass it, which is
+# how 2,038 hand-rolled `text-[Npx]` accumulated across 24 distinct values.
+echo -n "Checking type scale compliance... "
+if bash "$REPO_ROOT/scripts/lint_type_scale.sh" >/tmp/.type-scale-lint 2>&1; then
+  echo -e "${GREEN}✅${NC}"
+else
+  echo -e "${RED}❌ Found${NC}"
+  sed 's/^/   /' /tmp/.type-scale-lint | head -20
+  violations=$((violations + 1))
+fi
+rm -f /tmp/.type-scale-lint
+
 echo ""
 echo "========================================"
 if [ $violations -eq 0 ]; then

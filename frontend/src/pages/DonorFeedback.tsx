@@ -66,12 +66,12 @@ export default function DonorFeedback() {
         <div className="max-w-md w-full text-center bg-white p-8 rounded-2xl shadow-sm">
           <div className="text-5xl mb-4">💚</div>
           <h1 className="font-display text-2xl text-deep-navy mb-2">Thank You!</h1>
-          <p className="font-body text-[14px] text-cool-grey mb-6">
+          <p className="font-body text-body text-cool-grey mb-6">
             Your feedback helps us improve Daanaa and better serve nonprofits and donors.
           </p>
           <button
             onClick={() => navigate(-1)}
-            className="w-full py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition"
+            className="w-full py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition"
           >
             Back
           </button>
@@ -86,12 +86,12 @@ export default function DonorFeedback() {
         <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm">
           <h1 className="font-display text-2xl text-deep-navy mb-2">Was This Helpful?</h1>
           {orgName && (
-            <p className="font-body text-[14px] text-cool-grey mb-6">
+            <p className="font-body text-body text-cool-grey mb-6">
               Did the information about <strong>{orgName}</strong> help you make a decision?
             </p>
           )}
           {!orgName && (
-            <p className="font-body text-[14px] text-cool-grey mb-6">
+            <p className="font-body text-body text-cool-grey mb-6">
               Was your experience on Daanaa helpful?
             </p>
           )}
@@ -99,19 +99,19 @@ export default function DonorFeedback() {
           <div className="space-y-3">
             <button
               onClick={() => handleHelpful(true)}
-              className="w-full p-4 rounded-lg border-2 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-deep-navy font-body text-[14px] font-semibold transition"
+              className="w-full p-4 rounded-lg border-2 border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-deep-navy font-body text-body font-semibold transition"
             >
               👍 Yes, very helpful
             </button>
             <button
               onClick={() => handleHelpful(false)}
-              className="w-full p-4 rounded-lg border-2 border-amber-300 bg-alert-amber/5 hover:bg-amber-100 text-deep-navy font-body text-[14px] font-semibold transition"
+              className="w-full p-4 rounded-lg border-2 border-amber-300 bg-alert-amber/5 hover:bg-amber-100 text-deep-navy font-body text-body font-semibold transition"
             >
               👎 Not really
             </button>
           </div>
 
-          <p className="font-body text-[11px] text-cool-grey text-center mt-6">
+          <p className="font-body text-label text-cool-grey text-center mt-6">
             Your feedback is anonymous and helps us improve.
           </p>
         </div>
@@ -123,19 +123,19 @@ export default function DonorFeedback() {
     <div className="min-h-screen bg-warm-cream flex items-center justify-center px-6">
       <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm">
         <h1 className="font-display text-2xl text-deep-navy mb-2">Help Us Improve</h1>
-        <p className="font-body text-[14px] text-cool-grey mb-6">
+        <p className="font-body text-body text-cool-grey mb-6">
           What could we do better?
         </p>
 
         {error && (
-          <div className="mb-4 p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[12px]">
+          <div className="mb-4 p-3 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-caption">
             {error}
           </div>
         )}
 
         <div className="space-y-4 mb-6">
           <div>
-            <label className="block font-body text-[12px] font-semibold text-deep-navy mb-2">
+            <label className="block font-body text-caption font-semibold text-deep-navy mb-2">
               What was missing?
             </label>
             <div className="space-y-2">
@@ -155,14 +155,14 @@ export default function DonorFeedback() {
                     onChange={e => setCategory(e.target.value)}
                     className="w-4 h-4"
                   />
-                  <span className="font-body text-[13px] text-deep-navy">{opt.label}</span>
+                  <span className="font-body text-small text-deep-navy">{opt.label}</span>
                 </label>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="block font-body text-[12px] font-semibold text-deep-navy mb-2">
+            <label className="block font-body text-caption font-semibold text-deep-navy mb-2">
               Additional comments (optional)
             </label>
             <textarea
@@ -170,7 +170,7 @@ export default function DonorFeedback() {
               onChange={e => setMessage(e.target.value)}
               placeholder="Let us know what we can improve..."
               rows={3}
-              className="w-full px-3 py-2.5 border border-light-grey rounded-lg font-body text-[13px] resize-none focus:outline-none focus:ring-2 focus:ring-soft-gold"
+              className="w-full px-3 py-2.5 border border-light-grey rounded-lg font-body text-small resize-none focus:outline-none focus:ring-2 focus:ring-soft-gold"
             />
           </div>
         </div>
@@ -178,12 +178,12 @@ export default function DonorFeedback() {
         <button
           onClick={() => submitFeedback('no', category, message)}
           disabled={!category || submitting}
-          className="w-full py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="w-full py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold disabled:opacity-50 disabled:cursor-not-allowed transition"
         >
           {submitting ? 'Sending...' : 'Send Feedback'}
         </button>
 
-        <p className="font-body text-[11px] text-cool-grey text-center mt-4">
+        <p className="font-body text-label text-cool-grey text-center mt-4">
           Your feedback is anonymous and never shared with organizations.
         </p>
       </div>

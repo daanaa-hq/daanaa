@@ -27,7 +27,7 @@ function CopyButton({ code }: { code: string }) {
   return (
     <button
       onClick={handleCopy}
-      className={`shrink-0 px-3 py-2 rounded-lg font-body text-[12px] font-semibold transition-all ${
+      className={`shrink-0 px-3 py-2 rounded-lg font-body text-caption font-semibold transition-all ${
         copied
           ? 'bg-green-100 text-green-700'
           : 'bg-soft-gold/15 text-soft-gold hover:bg-soft-gold/25'
@@ -46,27 +46,27 @@ function VendorCard({ v }: { v: VendorBenefit }) {
   return (
     <div className="bg-white rounded-2xl border border-light-cream p-6 flex flex-col gap-4">
       <div>
-        <span className="inline-block px-2 py-0.5 rounded-full bg-soft-gold/10 font-body text-[10px] font-semibold tracking-[0.08em] uppercase text-soft-gold mb-2">
+        <span className="inline-block px-2 py-0.5 rounded-full bg-soft-gold/10 font-body text-micro font-semibold tracking-[0.08em] uppercase text-soft-gold mb-2">
           {v.category}
         </span>
-        <h3 className="font-display italic text-deep-navy text-[20px] leading-tight">{v.vendor_name}</h3>
-        <p className="font-body text-[13px] text-soft-gold font-semibold mt-0.5">{v.discount_label}</p>
-        <p className="font-body text-[14px] text-cool-grey leading-[1.6] mt-2">{v.description}</p>
+        <h3 className="font-display italic text-deep-navy text-title leading-tight">{v.vendor_name}</h3>
+        <p className="font-body text-small text-soft-gold font-semibold mt-0.5">{v.discount_label}</p>
+        <p className="font-body text-body text-cool-grey leading-[1.6] mt-2">{v.description}</p>
       </div>
 
       <div>
-        <p className="font-body text-[11px] text-cool-grey uppercase tracking-[0.08em] mb-1.5">Your guild code</p>
+        <p className="font-body text-label text-cool-grey uppercase tracking-[0.08em] mb-1.5">Your guild code</p>
         <div className="flex items-center gap-2">
           <input
             readOnly
             value={v.code}
             onClick={handleCodeClick}
-            className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-light-cream font-mono text-[14px] text-deep-navy font-semibold border border-transparent focus:outline-none focus:border-soft-gold/40 cursor-text"
+            className="flex-1 min-w-0 px-3 py-2 rounded-lg bg-light-cream font-mono text-body text-deep-navy font-semibold border border-transparent focus:outline-none focus:border-soft-gold/40 cursor-text"
           />
           <CopyButton code={v.code} />
         </div>
         {v.how_to_use && (
-          <p className="font-body text-[12px] text-muted-cream mt-1.5 leading-[1.5]">{v.how_to_use}</p>
+          <p className="font-body text-caption text-muted-cream mt-1.5 leading-[1.5]">{v.how_to_use}</p>
         )}
       </div>
 
@@ -75,7 +75,7 @@ function VendorCard({ v }: { v: VendorBenefit }) {
           href={v.website_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-auto inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold font-semibold hover:text-bright-gold transition-colors"
+          className="mt-auto inline-flex items-center gap-1.5 font-body text-small text-soft-gold font-semibold hover:text-bright-gold transition-colors"
         >
           Visit {v.vendor_name}
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -95,11 +95,11 @@ function MilestoneTracker({ memberCount }: { memberCount: number }) {
 
   return (
     <div className="bg-warm-cream border border-light-cream rounded-2xl p-5">
-      <p className="font-body text-[11px] font-semibold tracking-[0.1em] uppercase text-cool-grey mb-1">Guild milestone</p>
-      <p className="font-display italic text-deep-navy text-[18px] leading-tight">
+      <p className="font-body text-label font-semibold tracking-[0.1em] uppercase text-cool-grey mb-1">Guild milestone</p>
+      <p className="font-display italic text-deep-navy text-title-sm leading-tight">
         {next.label}: {next.description}
       </p>
-      <p className="font-body text-[13px] text-cool-grey mt-1">
+      <p className="font-body text-small text-cool-grey mt-1">
         {memberCount.toLocaleString()} of {next.target.toLocaleString()} members
       </p>
       <div className="mt-3 h-2 rounded-full bg-light-cream overflow-hidden">
@@ -108,7 +108,7 @@ function MilestoneTracker({ memberCount }: { memberCount: number }) {
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="font-body text-[11px] text-muted-cream mt-2">
+      <p className="font-body text-label text-muted-cream mt-2">
         Milestone pricing baked into every partner contract from day one. No renegotiation needed.
       </p>
     </div>
@@ -134,8 +134,8 @@ function WaitlistForm({ memberCount }: { memberCount: number }) {
   if (state === 'done') {
     return (
       <div className="text-center py-4">
-        <p className="font-body text-[15px] text-deep-navy font-semibold">You're on the list.</p>
-        <p className="font-body text-[13px] text-cool-grey mt-1">We'll email you when the first guild deals go live.</p>
+        <p className="font-body text-body-lg text-deep-navy font-semibold">You're on the list.</p>
+        <p className="font-body text-small text-cool-grey mt-1">We'll email you when the first guild deals go live.</p>
       </div>
     )
   }
@@ -148,17 +148,17 @@ function WaitlistForm({ memberCount }: { memberCount: number }) {
         placeholder="your@email.org"
         value={email}
         onChange={e => setEmail(e.target.value)}
-        className="flex-1 px-4 py-2.5 rounded-xl border border-light-cream font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+        className="flex-1 px-4 py-2.5 rounded-xl border border-light-cream font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
       />
       <button
         type="submit"
         disabled={state === 'submitting'}
-        className="px-5 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-60"
+        className="px-5 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-body font-semibold hover:bg-bright-gold transition-colors disabled:opacity-60"
       >
         {state === 'submitting' ? 'Saving…' : 'Notify me'}
       </button>
       {state === 'error' && (
-        <p className="w-full font-body text-[12px] text-red-500 mt-1">Something went wrong. Try again.</p>
+        <p className="w-full font-body text-caption text-red-500 mt-1">Something went wrong. Try again.</p>
       )}
     </form>
   )
@@ -172,16 +172,16 @@ function EmptyState({ memberCount }: { memberCount: number }) {
   return (
     <div className="max-w-[560px] mx-auto py-8">
       <div className="bg-white rounded-2xl border border-light-cream p-8 mb-6">
-        <p className="font-body text-[12px] font-semibold tracking-[0.1em] uppercase text-soft-gold mb-3">
+        <p className="font-body text-caption font-semibold tracking-[0.1em] uppercase text-soft-gold mb-3">
           Guild benefits coming soon
         </p>
-        <h2 className="font-display italic text-deep-navy text-[24px] leading-tight mb-3">
+        <h2 className="font-display italic text-deep-navy text-title-lg leading-tight mb-3">
           First partner offers are being finalized.
         </h2>
-        <p className="font-body text-[15px] text-cool-grey leading-[1.7] mb-2">
+        <p className="font-body text-body-lg text-cool-grey leading-[1.7] mb-2">
           {display}
         </p>
-        <p className="font-body text-[14px] text-cool-grey leading-[1.7]">
+        <p className="font-body text-body text-cool-grey leading-[1.7]">
           You'll have access to discounted rates on software, insurance, printing, travel, and more. Prices the sector has never had before.
         </p>
       </div>
@@ -189,8 +189,8 @@ function EmptyState({ memberCount }: { memberCount: number }) {
       <MilestoneTracker memberCount={memberCount} />
 
       <div className="mt-6 bg-white rounded-2xl border border-light-cream p-6">
-        <p className="font-display italic text-deep-navy text-[18px] mb-1">Get notified when deals go live</p>
-        <p className="font-body text-[13px] text-cool-grey mb-4">We'll send one email when your first guild benefits are ready.</p>
+        <p className="font-display italic text-deep-navy text-title-sm mb-1">Get notified when deals go live</p>
+        <p className="font-body text-small text-cool-grey mb-4">We'll send one email when your first guild benefits are ready.</p>
         <WaitlistForm memberCount={memberCount} />
       </div>
     </div>
@@ -235,14 +235,14 @@ export default function MemberBenefits() {
       <div className="max-w-[900px] mx-auto px-6 py-10">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/for-nonprofits" className="inline-flex items-center gap-1 font-body text-[12px] text-cool-grey hover:text-deep-navy mb-4">
+          <Link to="/for-nonprofits" className="inline-flex items-center gap-1 font-body text-caption text-cool-grey hover:text-deep-navy mb-4">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
             For nonprofits
           </Link>
           <h1 className="font-display italic text-deep-navy leading-tight">
             Guild benefits
           </h1>
-          <p className="font-body text-[16px] text-cool-grey mt-2 leading-[1.7]">
+          <p className="font-body text-lead text-cool-grey mt-2 leading-[1.7]">
             Every Daanaa guild member gets the same discount code. No tiers, no upsells. Same price whether you're a two-person org or a mid-size foundation.
           </p>
         </div>
@@ -255,8 +255,8 @@ export default function MemberBenefits() {
 
         {!loading && error && (
           <div className="text-center py-16">
-            <p className="font-body text-[15px] text-cool-grey mb-4">Deals temporarily unavailable. Check back soon.</p>
-            <button onClick={load} className="font-body text-[13px] text-soft-gold hover:underline">Try again</button>
+            <p className="font-body text-body-lg text-cool-grey mb-4">Deals temporarily unavailable. Check back soon.</p>
+            <button onClick={load} className="font-body text-small text-soft-gold hover:underline">Try again</button>
           </div>
         )}
 
@@ -274,7 +274,7 @@ export default function MemberBenefits() {
             {/* Category sections */}
             {Object.entries(byCategory).map(([category, items]) => (
               <div key={category} className="mb-10">
-                <h2 className="font-body text-[12px] font-semibold tracking-[0.1em] uppercase text-cool-grey mb-4">
+                <h2 className="font-body text-caption font-semibold tracking-[0.1em] uppercase text-cool-grey mb-4">
                   {category}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -284,7 +284,7 @@ export default function MemberBenefits() {
             ))}
 
             <div className="mt-6 border-t border-light-cream pt-6">
-              <p className="font-body text-[13px] text-muted-cream leading-[1.6]">
+              <p className="font-body text-small text-muted-cream leading-[1.6]">
                 Guild pricing improves automatically as the network grows. Milestone thresholds are baked into every partner contract from day one.
                 Questions? <a href="mailto:orgs@daanaa.org" className="text-soft-gold hover:underline">orgs@daanaa.org</a>
               </p>

@@ -73,12 +73,12 @@ export default function Approach() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-14 pb-14">
           <div className="flex items-center gap-2 mb-6">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Our approach</span>
+            <span className="font-body text-caption text-muted-cream">Our approach</span>
           </div>
 
-          <p className="font-body text-[12px] tracking-[0.1em] text-pale-gold uppercase mb-4">How Daanaa works</p>
+          <p className="font-body text-caption tracking-[0.1em] text-pale-gold uppercase mb-4">How Daanaa works</p>
 
           {/* Canonical identity statement */}
           <p className="font-display italic text-warm-cream leading-[1.1] tracking-[-0.01em] max-w-[820px]">
@@ -93,7 +93,7 @@ export default function Approach() {
               'No ratings. Every organization benchmarked within its true peer group — never against a different type or size.',
               'Equal dignity for the small org doing extraordinary work as for the large one everyone has heard of.',
             ].map(line => (
-              <p key={line} className="font-body text-[15px] text-muted-cream leading-[1.6]">{line}</p>
+              <p key={line} className="font-body text-body-lg text-muted-cream leading-[1.6]">{line}</p>
             ))}
           </div>
         </div>
@@ -108,15 +108,15 @@ export default function Approach() {
               <div key={section.title} className={`grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-8 md:gap-16 pb-16 ${i < SECTIONS.length - 1 ? 'border-b border-light-grey' : ''}`}>
                 {/* Left: tag + title */}
                 <div className="md:pt-1">
-                  <p className="font-body text-[11px] tracking-[0.1em] text-soft-gold uppercase mb-2">{section.tag}</p>
-                  <h2 className="font-display italic text-deep-navy text-[22px] md:text-[26px] leading-[1.15]">{section.title}</h2>
+                  <p className="font-body text-label tracking-[0.1em] text-soft-gold uppercase mb-2">{section.tag}</p>
+                  <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline leading-[1.15]">{section.title}</h2>
                 </div>
 
                 {/* Right: body + links */}
                 <div>
                   <div className="space-y-4">
                     {section.body.map((para, j) => (
-                      <p key={j} className="font-body text-[15px] text-cool-grey leading-[1.7]">{para}</p>
+                      <p key={j} className="font-body text-body-lg text-cool-grey leading-[1.7]">{para}</p>
                     ))}
                   </div>
 
@@ -124,7 +124,7 @@ export default function Approach() {
                     {'link' in section && section.link && (
                       <Link
                         to={section.link.to}
-                        className="font-body text-[13px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
+                        className="font-body text-small font-medium text-soft-gold hover:text-bright-gold transition-colors"
                       >
                         {section.link.label} →
                       </Link>
@@ -133,7 +133,7 @@ export default function Approach() {
                       <Link
                         key={l.to}
                         to={l.to}
-                        className="font-body text-[13px] font-medium text-soft-gold hover:text-bright-gold transition-colors"
+                        className="font-body text-small font-medium text-soft-gold hover:text-bright-gold transition-colors"
                       >
                         {l.label} →
                       </Link>
@@ -151,8 +151,8 @@ export default function Approach() {
               className="flex items-center justify-between px-6 py-5 bg-deep-navy rounded-xl hover:bg-navy-mid transition-colors group"
             >
               <div>
-                <p className="font-body text-[12px] tracking-[0.08em] text-pale-gold uppercase mb-1">Start here</p>
-                <p className="font-display italic text-warm-cream text-[18px]">Browse the directory</p>
+                <p className="font-body text-caption tracking-[0.08em] text-pale-gold uppercase mb-1">Start here</p>
+                <p className="font-display italic text-warm-cream text-title-sm">Browse the directory</p>
               </div>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" className="shrink-0 group-hover:translate-x-1 transition-transform">
                 <polyline points="9 18 15 12 9 6" />
@@ -164,8 +164,8 @@ export default function Approach() {
               className="flex items-center justify-between px-6 py-5 bg-white border border-light-grey rounded-xl hover:border-soft-gold transition-colors group"
             >
               <div>
-                <p className="font-body text-[12px] tracking-[0.08em] text-soft-gold uppercase mb-1">Go deeper</p>
-                <p className="font-display italic text-deep-navy text-[18px]">Our founding principles</p>
+                <p className="font-body text-caption tracking-[0.08em] text-soft-gold uppercase mb-1">Go deeper</p>
+                <p className="font-display italic text-deep-navy text-title-sm">Our founding principles</p>
               </div>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" className="shrink-0 group-hover:translate-x-1 transition-transform">
                 <polyline points="9 18 15 12 9 6" />

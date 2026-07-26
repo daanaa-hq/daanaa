@@ -10,21 +10,21 @@ export default function VendorPolicy() {
   return (
     <div className="min-h-[100dvh] bg-warm-cream">
       <div className="max-w-[800px] mx-auto px-6 lg:px-12 py-24">
-        <Link to="/for-vendors" className="font-body text-[12px] tracking-[0.02em] text-cool-grey hover:text-deep-navy transition-colors">
+        <Link to="/for-vendors" className="font-body text-caption tracking-[0.02em] text-cool-grey hover:text-deep-navy transition-colors">
           ← Back to Partners
         </Link>
 
         <h1 className="font-display italic text-deep-navy mt-6 leading-[0.95] tracking-[-0.02em]">
           Daanaa Impact Network<br />Partner Policy
         </h1>
-        <p className="mt-4 font-body text-[13px] text-muted-cream">
+        <p className="mt-4 font-body text-small text-muted-cream">
           Effective June 14, 2026 · Operated by EcoMargins Consulting LLC
         </p>
 
-        <div className="mt-12 space-y-12 font-body text-[15px] text-cool-grey leading-[1.7]">
+        <div className="mt-12 space-y-12 font-body text-body-lg text-cool-grey leading-[1.7]">
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">What the Daanaa Impact Network is</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-4">What the Daanaa Impact Network is</h2>
             <p>
               Daanaa is an independent nonprofit discovery platform. The Daanaa Impact Network is a
               voluntary program that connects businesses and service providers with the nonprofit
@@ -43,7 +43,7 @@ export default function VendorPolicy() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">What partners agree to</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-4">What partners agree to</h2>
             <ol className="space-y-4 ml-4 list-decimal">
               <li>
                 <strong className="text-deep-navy">Accuracy.</strong> Every offer, discount, code,
@@ -82,7 +82,7 @@ export default function VendorPolicy() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">What Daanaa commits to</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-4">What Daanaa commits to</h2>
             <p>
               <strong className="text-deep-navy">Independence is non-negotiable.</strong> Partner
               participation — including the payment of any fees — never affects how an organization
@@ -105,7 +105,7 @@ export default function VendorPolicy() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Data and privacy</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-4">Data and privacy</h2>
             <p>
               Daanaa does not share donor data, giving history, wallet contents, or any user-level
               behavioral data with partners. Ever.
@@ -124,7 +124,7 @@ export default function VendorPolicy() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Daanaa's role and limits</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-4">Daanaa's role and limits</h2>
             <p>
               Daanaa is the convener of the network. Daanaa is not a party to any transaction between
               a partner and a nonprofit. When a nonprofit uses a code, accesses a benefit, or enters a
@@ -140,7 +140,7 @@ export default function VendorPolicy() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Liability and indemnification</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-4">Liability and indemnification</h2>
             <p>
               You are responsible for the accuracy and legality of every listing you submit.
             </p>
@@ -161,7 +161,7 @@ export default function VendorPolicy() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Removal and disputes</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-4">Removal and disputes</h2>
             <p>
               Daanaa may remove any partner listing at any time, for any reason, including values
               misalignment, inaccurate listings, nonprofit complaints, or changes in platform
@@ -181,7 +181,7 @@ export default function VendorPolicy() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-4">Governing terms</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-4">Governing terms</h2>
             <p>
               This policy is governed by the laws of the State of Texas, without regard to
               conflict-of-law principles, reflecting the jurisdiction of EcoMargins Consulting LLC.
@@ -206,7 +206,7 @@ export default function VendorPolicy() {
           </section>
 
           <section className="pt-4 border-t border-light-grey">
-            <p className="font-body text-[13px] text-muted-cream">
+            <p className="font-body text-small text-muted-cream">
               Partnership inquiries:{' '}
               <a href="mailto:partners@daanaa.org" className="text-soft-gold hover:underline">partners@daanaa.org</a>
               {' · '}

@@ -97,20 +97,24 @@ module.exports = {
       //
       // Use these instead of `text-[Npx]`. The `lint:type-scale` script fails
       // the build on raw pixel sizes so the scale cannot drift again.
+      // Values live in frontend/public/tokens.css so standalone pages
+      // (open-data.html and anything generated) share the same scale. The px
+      // fallback means a failure to load that file degrades to the correct
+      // size instead of collapsing every text element.
       fontSize: {
-        'micro':       '10px',  // legal footnotes, dense metadata
-        'label':       '11px',  // uppercase eyebrow labels, tags
-        'caption':     '12px',  // captions, breadcrumbs, secondary metadata
-        'small':       '13px',  // supporting copy, card body
-        'body':        '14px',  // default body text
-        'body-lg':     '15px',  // primary reading copy on guide pages
-        'lead':        '16px',  // intro paragraphs
-        'title-sm':    '18px',  // card titles, subsection headings
-        'title':       '20px',  // section headings
-        'title-lg':    '24px',  // page section headings
-        'headline':    '28px',  // major headings
-        'headline-lg': '32px',  // page headings
-        'display':     '40px',  // hero numerals and display figures
+        'micro':       'var(--text-micro, 10px)',        // legal footnotes, dense metadata
+        'label':       'var(--text-label, 11px)',        // uppercase eyebrow labels, tags
+        'caption':     'var(--text-caption, 12px)',      // captions, breadcrumbs, secondary metadata
+        'small':       'var(--text-small, 13px)',        // supporting copy, card body
+        'body':        'var(--text-body, 14px)',         // default body text
+        'body-lg':     'var(--text-body-lg, 15px)',      // primary reading copy on guide pages
+        'lead':        'var(--text-lead, 16px)',         // intro paragraphs
+        'title-sm':    'var(--text-title-sm, 18px)',     // card titles, subsection headings
+        'title':       'var(--text-title, 20px)',        // section headings
+        'title-lg':    'var(--text-title-lg, 24px)',     // page section headings
+        'headline':    'var(--text-headline, 28px)',     // major headings
+        'headline-lg': 'var(--text-headline-lg, 32px)',  // page headings
+        'display':     'var(--text-display, 40px)',      // hero numerals and display figures
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",

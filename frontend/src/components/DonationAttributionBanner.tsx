@@ -44,13 +44,13 @@ export default function DonationAttributionBanner({ org }: DonationAttributionBa
   return (
     <CardPattern variant="subtle" className="mb-6">
       <div className="flex items-center justify-between gap-4">
-        <p className="font-body text-[13px] text-deep-navy flex-1">
+        <p className="font-body text-small text-deep-navy flex-1">
           Did Daanaa help you find {org.organization_name}? Let us know. It helps us measure our reach.
         </p>
         <button
           onClick={handleConfirm}
           disabled={loading}
-          className="shrink-0 px-4 py-2 bg-soft-gold text-deep-navy rounded-xl font-body text-[13px] font-semibold hover:bg-bright-gold disabled:opacity-50 transition-colors"
+          className="shrink-0 px-4 py-2 bg-soft-gold text-deep-navy rounded-xl font-body text-small font-semibold hover:bg-bright-gold disabled:opacity-50 transition-colors"
         >
           {loading ? 'Saving...' : 'Yes, it did'}
         </button>

@@ -50,13 +50,13 @@ export default function InvisibleLight() {
 
       {/* Intro copy — does not intercept the drag */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-30 px-6 pt-10 text-center sm:pt-14">
-        <p className="font-body text-[11px] uppercase tracking-[0.22em] text-soft-gold/80">
+        <p className="font-body text-label uppercase tracking-[0.22em] text-soft-gold/80">
           The invisible 97%
         </p>
         <h1 className="mx-auto mt-3 max-w-2xl font-display text-3xl leading-tight text-warm-cream sm:text-4xl">
           Only a few nonprofits ever get seen.
         </h1>
-        <p className="mx-auto mt-3 max-w-md font-body text-[13px] text-muted-cream sm:text-[14px]">
+        <p className="mx-auto mt-3 max-w-md font-body text-small text-muted-cream sm:text-body">
           About 3% get all the attention. Drag the lamp across to reveal the{' '}
           {registryLabel ? `other ${registryLabel} ` : 'other 97% of '}
           nonprofits the IRS recognizes, by cause.
@@ -74,7 +74,7 @@ export default function InvisibleLight() {
         </p>
         <Link
           to="/directory"
-          className="inline-block rounded-full bg-soft-gold px-6 py-2.5 font-body text-[14px] font-semibold text-deep-navy transition-colors hover:bg-bright-gold"
+          className="inline-block rounded-full bg-soft-gold px-6 py-2.5 font-body text-body font-semibold text-deep-navy transition-colors hover:bg-bright-gold"
         >
           Explore the directory →
         </Link>

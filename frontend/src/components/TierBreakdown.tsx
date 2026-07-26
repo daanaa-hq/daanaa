@@ -43,12 +43,12 @@ export default function TierBreakdown({ org, tier, onClose }: TierBreakdownProps
           <LampMark tier={tier} size="lg" />
           <div>
             <h3
-              className="text-[22px] leading-none tracking-[0.04em]"
+              className="text-title-lg leading-none tracking-[0.04em]"
               style={{ fontFamily: 'Cinzel, serif', color }}
             >
               {tier}
             </h3>
-            <p className="font-body text-[13px] text-cool-grey mt-1.5 leading-[1.45] max-w-[260px]">
+            <p className="font-body text-small text-cool-grey mt-1.5 leading-[1.45] max-w-[260px]">
               {microcopy}
             </p>
           </div>
@@ -71,17 +71,17 @@ export default function TierBreakdown({ org, tier, onClose }: TierBreakdownProps
         {criteria.map(c => (
           <div key={c.id} className="flex items-start gap-3 py-2.5">
             <span
-              className="shrink-0 w-4 font-body text-[13px] font-semibold mt-px"
+              className="shrink-0 w-4 font-body text-small font-semibold mt-px"
               style={{ color: STATUS_COLOR[c.status] }}
             >
               {STATUS_ICON[c.status]}
             </span>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="font-body text-[13px] font-medium text-deep-navy">{c.label}</span>
-                <span className="font-body text-[11px] text-cool-grey">{STATUS_LABEL[c.status]}</span>
+                <span className="font-body text-small font-medium text-deep-navy">{c.label}</span>
+                <span className="font-body text-label text-cool-grey">{STATUS_LABEL[c.status]}</span>
               </div>
-              <p className="font-body text-[12px] text-cool-grey mt-0.5 leading-[1.4]">{c.description}</p>
+              <p className="font-body text-caption text-cool-grey mt-0.5 leading-[1.4]">{c.description}</p>
             </div>
           </div>
         ))}
@@ -90,20 +90,20 @@ export default function TierBreakdown({ org, tier, onClose }: TierBreakdownProps
       {/* Next tier path */}
       {nextPath && (
         <div className="rounded-xl px-4 py-3 mb-5" style={{ background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.22)' }}>
-          <p className="font-body text-[10px] font-semibold tracking-[0.07em] text-link-gold uppercase mb-1">Path to next tier</p>
-          <p className="font-body text-[13px] text-deep-navy/80 leading-[1.5]">{nextPath}</p>
+          <p className="font-body text-micro font-semibold tracking-[0.07em] text-link-gold uppercase mb-1">Path to next tier</p>
+          <p className="font-body text-small text-deep-navy/80 leading-[1.5]">{nextPath}</p>
         </div>
       )}
 
       {(!org.has_mission || !org.has_website || tier === 'Candle' || tier === 'Spark') && (
         <div className="rounded-xl px-4 py-3.5 mb-5" style={{ background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.22)' }}>
-          <p className="font-body text-[13px] text-deep-navy/85 leading-[1.55]">
+          <p className="font-body text-small text-deep-navy/85 leading-[1.55]">
             <span className="font-semibold">This profile is still lighting up.</span>{' '}
             {org.organization_name} is a 501(c)(3) the IRS recognizes. A lower tier reflects the public data we have, not the quality of its work. Adding a mission and website brightens its flame.
           </p>
           <Link
             to="/for-nonprofits"
-            className="inline-flex items-center gap-1.5 mt-2.5 font-body text-[12px] font-semibold text-soft-gold hover:text-bright-gold transition-colors"
+            className="inline-flex items-center gap-1.5 mt-2.5 font-body text-caption font-semibold text-soft-gold hover:text-bright-gold transition-colors"
           >
             Is this your nonprofit? Claim it free and add your own context →
           </Link>
@@ -115,7 +115,7 @@ export default function TierBreakdown({ org, tier, onClose }: TierBreakdownProps
       <div className="mt-4 pt-4 border-t border-light-grey/60">
         <Link
           to="/tiers"
-          className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors"
+          className="font-body text-caption text-soft-gold hover:text-bright-gold transition-colors"
         >
           Full tier reference →
         </Link>

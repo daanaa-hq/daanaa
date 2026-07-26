@@ -74,13 +74,13 @@ export default function BottomNav() {
               <div className="relative">
                 {item.icon(isActive)}
                 {item.badge != null && item.badge > 0 && (
-                  <span className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] flex items-center justify-center bg-soft-gold text-deep-navy text-[8px] font-bold rounded-full px-[3px]">
+                  <span className="absolute -top-1 -right-1.5 min-w-[15px] h-[15px] flex items-center justify-center bg-soft-gold text-deep-navy text-micro font-bold rounded-full px-[3px]">
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}
               </div>
               <span
-                className="font-body text-[11px] tracking-[0.02em] leading-none"
+                className="font-body text-label tracking-[0.02em] leading-none"
                 style={{ color: isActive ? '#C9A96E' : '#9CA3AF' }}
               >
                 {item.label}

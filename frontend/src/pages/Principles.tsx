@@ -36,12 +36,12 @@ export default function Principles() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-12 pb-10">
           <div className="flex items-center gap-2 mb-4">
-            <Link to="/" className="font-body text-[12px] text-muted-cream">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Principles</span>
+            <span className="font-body text-caption text-muted-cream">Principles</span>
           </div>
-          <h1 className="font-display italic text-warm-cream text-[42px] md:text-[52px] leading-[1.05]">Principles</h1>
-          <p className="mt-4 font-body text-[16px] text-muted-cream max-w-[720px]">
+          <h1 className="font-display italic text-warm-cream text-display md:text-display leading-[1.05]">Principles</h1>
+          <p className="mt-4 font-body text-lead text-muted-cream max-w-[720px]">
             How we make decisions, protect independence, and care for donors, organizations, and the public record.
           </p>
         </div>
@@ -52,9 +52,9 @@ export default function Principles() {
 
           {/* Purpose */}
           <section className="max-w-[720px] mb-12">
-            <h2 className="font-display text-deep-navy text-[26px] md:text-[30px] leading-[1.15] mb-4">Our Purpose</h2>
-            <div className="space-y-3 font-body text-[15px] text-cool-grey leading-[1.6]">
-              <p className="font-medium text-deep-navy text-[16px]">
+            <h2 className="font-display text-deep-navy text-headline md:text-headline-lg leading-[1.15] mb-4">Our Purpose</h2>
+            <div className="space-y-3 font-body text-body-lg text-cool-grey leading-[1.6]">
+              <p className="font-medium text-deep-navy text-lead">
                 Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy to understand, easy to record, and easy to return to.
               </p>
               <p>
@@ -69,12 +69,12 @@ export default function Principles() {
 
           {/* Commitments Grid */}
           <section>
-            <h2 className="font-display text-deep-navy text-[26px] md:text-[30px] leading-[1.15] mb-8">Our Commitments</h2>
+            <h2 className="font-display text-deep-navy text-headline md:text-headline-lg leading-[1.15] mb-8">Our Commitments</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {commitments.map(commitment => (
                 <div key={commitment.title} className="bg-white border border-light-grey rounded-lg p-6">
-                  <h3 className="font-display text-deep-navy text-[18px] mb-3">{commitment.title}</h3>
-                  <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{commitment.description}</p>
+                  <h3 className="font-display text-deep-navy text-title-sm mb-3">{commitment.title}</h3>
+                  <p className="font-body text-body text-cool-grey leading-[1.6]">{commitment.description}</p>
                 </div>
               ))}
             </div>
@@ -82,21 +82,21 @@ export default function Principles() {
 
           {/* Learn more */}
           <div className="mt-12 pt-8 border-t border-light-grey">
-            <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">Learn more</p>
+            <p className="font-body text-caption font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">Learn more</p>
             <div className="flex flex-wrap gap-6">
-              <Link to="/about" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
+              <Link to="/about" className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold">
                 About Daanaa →
               </Link>
-              <Link to="/methodology" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
+              <Link to="/methodology" className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold">
                 Methodology →
               </Link>
-              <Link to="/research" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
+              <Link to="/research" className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold">
                 Research & data →
               </Link>
-              <Link to="/legal" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
+              <Link to="/legal" className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold">
                 Privacy & Legal →
               </Link>
-              <Link to="/feedback" className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold">
+              <Link to="/feedback" className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold">
                 Contact →
               </Link>
             </div>

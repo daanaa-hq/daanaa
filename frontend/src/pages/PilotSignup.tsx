@@ -137,7 +137,7 @@ export default function PilotSignup() {
           <div className="mb-6">
             <div className="text-5xl mb-4">✓</div>
             <h1 className="font-display text-2xl text-deep-navy mb-2">Check your email</h1>
-            <p className="font-body text-[15px] text-gray-700">
+            <p className="font-body text-body-lg text-gray-700">
               We sent a verification code to <strong>{email}</strong>. Check your inbox and complete the claim process.
             </p>
           </div>
@@ -158,10 +158,10 @@ export default function PilotSignup() {
       <div className="bg-deep-navy py-8 px-6">
         <div className="max-w-[600px] mx-auto">
           <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Nonprofit Pilot' }]} />
-          <h1 className="font-display italic text-warm-cream mt-4 text-[42px] leading-tight">
+          <h1 className="font-display italic text-warm-cream mt-4 text-display leading-tight">
             Join the Daanaa pilot
           </h1>
-          <p className="font-body text-muted-cream mt-3 text-[16px]">
+          <p className="font-body text-muted-cream mt-3 text-lead">
             We're inviting 25 nonprofit leaders to shape Daanaa before launch.
             Welcome.
           </p>
@@ -173,20 +173,20 @@ export default function PilotSignup() {
         <div className="max-w-[600px] mx-auto bg-white rounded-lg shadow-sm p-8">
           {/* Organization info */}
           <div className="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-100">
-            <p className="font-body text-[13px] text-gray-600 uppercase tracking-wide mb-2">
+            <p className="font-body text-small text-gray-600 uppercase tracking-wide mb-2">
               Your Organization
             </p>
             <p className="font-display text-2xl text-deep-navy">
               {invitation.organization_name}
             </p>
-            <p className="font-body text-[14px] text-gray-600 mt-2">
+            <p className="font-body text-body text-gray-600 mt-2">
               EIN: {invitation.ein}
             </p>
           </div>
 
           {/* What you get */}
           <div className="mb-8">
-            <h2 className="font-body text-[14px] font-semibold text-deep-navy uppercase tracking-wide mb-4">
+            <h2 className="font-body text-body font-semibold text-deep-navy uppercase tracking-wide mb-4">
               What you'll get
             </h2>
             <ul className="space-y-3">
@@ -196,7 +196,7 @@ export default function PilotSignup() {
                 'Ability to correct information about your organization',
                 'Early feedback from 24 other nonprofit leaders in the pilot',
               ].map((item, i) => (
-                <li key={i} className="flex gap-3 font-body text-[14px] text-deep-navy">
+                <li key={i} className="flex gap-3 font-body text-body text-deep-navy">
                   <span className="shrink-0 text-link-gold mt-0.5">✓</span>
                   <span>{item}</span>
                 </li>
@@ -207,13 +207,13 @@ export default function PilotSignup() {
           {/* Signup form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-4 bg-destructive/5 border border-destructive/20 rounded text-destructive font-body text-[14px]">
+              <div className="p-4 bg-destructive/5 border border-destructive/20 rounded text-destructive font-body text-body">
                 {error}
               </div>
             )}
 
             <div>
-              <label className="block font-body text-[13px] font-semibold text-deep-navy mb-2">
+              <label className="block font-body text-small font-semibold text-deep-navy mb-2">
                 Your email
               </label>
               <input
@@ -221,10 +221,10 @@ export default function PilotSignup() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@organization.org"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg font-body text-[15px] focus:outline-none focus:ring-2 focus:ring-link-gold focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg font-body text-body-lg focus:outline-none focus:ring-2 focus:ring-link-gold focus:border-transparent"
                 required
               />
-              <p className="font-body text-[12px] text-gray-600 mt-2">
+              <p className="font-body text-caption text-gray-600 mt-2">
                 We'll send a verification code to confirm your identity.
               </p>
             </div>
@@ -237,7 +237,7 @@ export default function PilotSignup() {
               {submitting ? 'Sending...' : 'Get started'}
             </button>
 
-            <p className="font-body text-[12px] text-gray-600 text-center">
+            <p className="font-body text-caption text-gray-600 text-center">
               By continuing, you agree to Daanaa's{' '}
               <a href="/charter" className="text-link-gold hover:underline">
                 charter
@@ -249,7 +249,7 @@ export default function PilotSignup() {
 
         {/* Trust note */}
         <div className="max-w-[600px] mx-auto mt-8 p-6 bg-blue-50 rounded-lg border border-blue-100">
-          <p className="font-body text-[13px] text-gray-700 leading-relaxed">
+          <p className="font-body text-small text-gray-700 leading-relaxed">
             <strong>This is a pilot.</strong> You're helping us understand how nonprofit leaders want to see their data. Your feedback shapes the platform. Everything you share is covered by Daanaa's <a href="/charter" className="text-link-gold hover:underline">public charter</a> — we don't sell data, use it for marketing, or take a cut of donations.
           </p>
         </div>

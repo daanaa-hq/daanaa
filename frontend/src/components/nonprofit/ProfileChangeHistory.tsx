@@ -49,7 +49,7 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
 
   if (error) {
     return (
-      <CardPattern variant="nested" className="text-destructive font-body text-[13px]">
+      <CardPattern variant="nested" className="text-destructive font-body text-small">
         {error}
       </CardPattern>
     )
@@ -58,7 +58,7 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
   if (filteredEdits.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="font-body text-[14px] text-cool-grey">No changes yet. Your profile will show changes as you make them.</p>
+        <p className="font-body text-body text-cool-grey">No changes yet. Your profile will show changes as you make them.</p>
       </div>
     )
   }
@@ -70,7 +70,7 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setFilterField(null)}
-            className={`px-3 py-1.5 rounded-full font-body text-[12px] font-semibold transition ${
+            className={`px-3 py-1.5 rounded-full font-body text-caption font-semibold transition ${
               filterField === null
                 ? 'bg-deep-navy text-warm-cream'
                 : 'bg-light-grey text-deep-navy hover:bg-light-grey/70'
@@ -82,7 +82,7 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
             <button
               key={field}
               onClick={() => setFilterField(field)}
-              className={`px-3 py-1.5 rounded-full font-body text-[12px] font-semibold transition capitalize ${
+              className={`px-3 py-1.5 rounded-full font-body text-caption font-semibold transition capitalize ${
                 filterField === field
                   ? 'bg-deep-navy text-warm-cream'
                   : 'bg-light-grey text-deep-navy hover:bg-light-grey/70'
@@ -112,10 +112,10 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
             <CardPattern variant="elevated" className="ml-16">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <span className="inline-block px-2.5 py-1 rounded-lg bg-soft-gold/20 text-deep-navy font-body text-[11px] font-semibold capitalize mb-2">
+                  <span className="inline-block px-2.5 py-1 rounded-lg bg-soft-gold/20 text-deep-navy font-body text-label font-semibold capitalize mb-2">
                     {edit.field}
                   </span>
-                  <p className="font-body text-[12px] text-cool-grey">
+                  <p className="font-body text-caption text-cool-grey">
                     {new Date(edit.date).toLocaleDateString()} at {new Date(edit.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -124,9 +124,9 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
               {/* Change Details */}
               <div className="space-y-3 my-3">
                 <div>
-                  <p className="font-body text-[11px] font-semibold text-cool-grey uppercase mb-1">Before</p>
+                  <p className="font-body text-label font-semibold text-cool-grey uppercase mb-1">Before</p>
                   <CardPattern variant="nested" className="p-2.5 bg-destructive/5 border-destructive/20">
-                    <p className="font-body text-[13px] text-deep-navy whitespace-pre-wrap break-words">
+                    <p className="font-body text-small text-deep-navy whitespace-pre-wrap break-words">
                       {edit.old_value || '(empty)'}
                     </p>
                   </CardPattern>
@@ -137,9 +137,9 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
                 </div>
 
                 <div>
-                  <p className="font-body text-[11px] font-semibold text-cool-grey uppercase mb-1">After</p>
+                  <p className="font-body text-label font-semibold text-cool-grey uppercase mb-1">After</p>
                   <CardPattern variant="nested" className="p-2.5 bg-success-green/5 border-success-green/20">
-                    <p className="font-body text-[13px] text-deep-navy whitespace-pre-wrap break-words">
+                    <p className="font-body text-small text-deep-navy whitespace-pre-wrap break-words">
                       {edit.new_value || '(empty)'}
                     </p>
                   </CardPattern>
@@ -149,13 +149,13 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
               {/* Reason & Editor */}
               {edit.reason && (
                 <div className="py-2.5 border-t border-light-grey">
-                  <p className="font-body text-[11px] font-semibold text-cool-grey uppercase mb-1">Why</p>
-                  <p className="font-body text-[13px] text-deep-navy italic">{edit.reason}</p>
+                  <p className="font-body text-label font-semibold text-cool-grey uppercase mb-1">Why</p>
+                  <p className="font-body text-small text-deep-navy italic">{edit.reason}</p>
                 </div>
               )}
 
               <div className="mt-2 pt-2 border-t border-light-grey">
-                <p className="font-body text-[11px] text-cool-grey">
+                <p className="font-body text-label text-cool-grey">
                   Updated by {edit.editor}
                 </p>
               </div>
@@ -166,11 +166,11 @@ export default function ProfileChangeHistory({ ein, edits }: ProfileChangeHistor
 
       {/* Summary */}
       <CardPattern variant="gradient" className="mt-8">
-        <p className="font-body text-[13px] text-slate-900">
+        <p className="font-body text-small text-slate-900">
           <strong>Total changes:</strong> {filteredEdits.length}
           {filterField && ` to ${filterField}`}
         </p>
-        <p className="font-body text-[12px] text-slate-700 mt-1">
+        <p className="font-body text-caption text-slate-700 mt-1">
           All changes are logged and visible to donors. Donors can see when and why your organization updates its profile.
         </p>
       </CardPattern>

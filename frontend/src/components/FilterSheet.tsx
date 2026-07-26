@@ -69,9 +69,9 @@ export default function FilterSheet({
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-light-grey shrink-0">
           <div className="flex items-center gap-2">
-            <span className="font-display text-[18px] text-deep-navy">Filters</span>
+            <span className="font-display text-title-sm text-deep-navy">Filters</span>
             {activeCount > 0 && (
-              <span className="min-w-[20px] h-5 flex items-center justify-center bg-soft-gold text-deep-navy text-[10px] font-bold rounded-full px-1.5">
+              <span className="min-w-[20px] h-5 flex items-center justify-center bg-soft-gold text-deep-navy text-micro font-bold rounded-full px-1.5">
                 {activeCount}
               </span>
             )}
@@ -89,26 +89,26 @@ export default function FilterSheet({
           {/* Cause — free text against the LLM cause tags */}
           {onCauseChange && (
             <div>
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Cause</span>
+              <span className="font-body text-label font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Cause</span>
               <input
                 type="text"
                 value={cause}
                 onChange={e => onCauseChange(e.target.value)}
                 placeholder="food bank, mental health…"
-                className="w-full h-[46px] px-4 rounded-xl bg-warm-cream border border-light-grey font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
+                className="w-full h-[46px] px-4 rounded-xl bg-warm-cream border border-light-grey font-body text-body text-deep-navy outline-none focus:border-soft-gold transition-colors placeholder:text-cool-grey"
               />
             </div>
           )}
 
           {/* Category */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Category</span>
+            <span className="font-body text-label font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Category</span>
             <div className="flex flex-wrap gap-2">
               {FILTER_CATEGORIES.map(cat => (
                 <button
                   key={cat.id}
                   onClick={() => onCategoryChange(cat.id)}
-                  className="px-3.5 py-[7px] rounded-full font-body text-[13px] tracking-[0.01em] transition-all duration-150 border"
+                  className="px-3.5 py-[7px] rounded-full font-body text-small tracking-[0.01em] transition-all duration-150 border"
                   style={{
                     backgroundColor: activeCategory === cat.id ? '#C9A96E' : '#F5F0EB',
                     color: activeCategory === cat.id ? '#0A1628' : '#6B7280',
@@ -123,12 +123,12 @@ export default function FilterSheet({
 
           {/* State */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">State</span>
+            <span className="font-body text-label font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">State</span>
             <div className="relative">
               <select
                 value={stateFilter}
                 onChange={e => onStateChange(e.target.value)}
-                className="w-full h-[46px] appearance-none pl-4 pr-10 rounded-xl bg-warm-cream border border-light-grey font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold transition-colors"
+                className="w-full h-[46px] appearance-none pl-4 pr-10 rounded-xl bg-warm-cream border border-light-grey font-body text-body text-deep-navy outline-none focus:border-soft-gold transition-colors"
               >
                 <option value="">All States &amp; Territories</option>
                 <optgroup label="States &amp; DC &amp; Puerto Rico">
@@ -153,7 +153,7 @@ export default function FilterSheet({
 
           {/* Revenue */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Revenue Range</span>
+            <span className="font-body text-label font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Revenue Range</span>
             <RevenueRangeInput
               min={minRevenue}
               max={maxRevenue}
@@ -167,13 +167,13 @@ export default function FilterSheet({
                 onChange={(e) => onVerifiedRevenueChange(e.target.checked)}
                 className="w-5 h-5 rounded border-light-grey checked:bg-soft-gold checked:border-soft-gold cursor-pointer"
               />
-              <span className="font-body text-[13px] text-deep-navy">Verified revenue only</span>
+              <span className="font-body text-small text-deep-navy">Verified revenue only</span>
             </label>
           </div>
 
           {/* Sort */}
           <div>
-            <span className="font-body text-[11px] font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Sort By</span>
+            <span className="font-body text-label font-medium tracking-[0.08em] text-link-gold uppercase block mb-3">Sort By</span>
             <div className="flex gap-2 items-stretch">
               {[
                 { value: 'merit_score', label: 'Peer Context' },
@@ -183,7 +183,7 @@ export default function FilterSheet({
                 <button
                   key={opt.value}
                   onClick={() => onSortChange(opt.value)}
-                  className="flex-1 py-2.5 rounded-xl font-body text-[13px] transition-all border"
+                  className="flex-1 py-2.5 rounded-xl font-body text-small transition-all border"
                   style={{
                     backgroundColor: sortBy === opt.value ? '#0A1628' : '#F5F0EB',
                     color: sortBy === opt.value ? '#F5F0EB' : '#6B7280',
@@ -213,14 +213,14 @@ export default function FilterSheet({
           {activeCount > 0 && (
             <button
               onClick={() => { onClearAll(); onClose() }}
-              className="font-body text-[14px] text-cool-grey hover:text-deep-navy transition-colors"
+              className="font-body text-body text-cool-grey hover:text-deep-navy transition-colors"
             >
               Clear all
             </button>
           )}
           <button
             onClick={onClose}
-            className="flex-1 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+            className="flex-1 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors"
           >
             Show {resultCount.toLocaleString()} results
           </button>

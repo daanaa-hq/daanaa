@@ -52,57 +52,57 @@ function EventCard({ event }: { event: VolunteerEvent }) {
       <div>
         <div className="flex items-start justify-between gap-2 mb-1">
           <div className="flex gap-1.5 flex-wrap">
-            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase ${typeColor}`}>
+            <span className={`inline-block px-2 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.06em] uppercase ${typeColor}`}>
               {typeLabel}
             </span>
             {event.is_virtual && (
-              <span className="inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase bg-blue-50 text-blue-600">
+              <span className="inline-block px-2 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.06em] uppercase bg-blue-50 text-blue-600">
                 Virtual
               </span>
             )}
             {event.min_age && event.min_age > 0 && (
-              <span className="inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase bg-orange-50 text-orange-600">
+              <span className="inline-block px-2 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.06em] uppercase bg-orange-50 text-orange-600">
                 {event.min_age}+
               </span>
             )}
           </div>
           {event.signup_count > 0 && (
-            <span className="font-body text-[11px] text-cool-grey shrink-0">
+            <span className="font-body text-label text-cool-grey shrink-0">
               {event.signup_count} going
             </span>
           )}
         </div>
-        <h3 className="font-display italic text-deep-navy text-[18px] leading-tight">{event.title}</h3>
+        <h3 className="font-display italic text-deep-navy text-title-sm leading-tight">{event.title}</h3>
         {event.org_name && (
-          <span className="font-body text-[13px] text-deep-navy font-medium mt-0.5 block">
+          <span className="font-body text-small text-deep-navy font-medium mt-0.5 block">
             {event.org_name}
           </span>
         )}
         {event.discovery_status === 'unconfirmed' && (
-          <p className="font-body text-[12px] text-soft-gold">Source found, not yet confirmed by the organization</p>
+          <p className="font-body text-caption text-soft-gold">Source found, not yet confirmed by the organization</p>
         )}
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1">
-        <span className="font-body text-[13px] text-deep-navy font-medium">
+        <span className="font-body text-small text-deep-navy font-medium">
           {formatDate(event.event_date)}
         </span>
         {timeStr && (
-          <span className="font-body text-[13px] text-cool-grey">{timeStr}</span>
+          <span className="font-body text-small text-cool-grey">{timeStr}</span>
         )}
         {location && !event.is_virtual && (
-          <span className="font-body text-[13px] text-cool-grey">{location}</span>
+          <span className="font-body text-small text-cool-grey">{location}</span>
         )}
       </div>
 
       {(event.description || event.org_mission) && (
-        <p className="font-body text-[14px] text-cool-grey leading-[1.6] line-clamp-2">
+        <p className="font-body text-body text-cool-grey leading-[1.6] line-clamp-2">
           {event.description || event.org_mission}
         </p>
       )}
 
       <div className="mt-auto pt-1">
-        <span className="inline-flex items-center gap-1 font-body text-[13px] text-soft-gold font-semibold">
+        <span className="inline-flex items-center gap-1 font-body text-small text-soft-gold font-semibold">
           View details
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -179,7 +179,7 @@ export default function VolunteerSearch() {
           <h1 className="font-display italic text-warm-cream leading-tight">
             Volunteer near you
           </h1>
-          <p className="font-body text-[16px] text-muted-cream mt-2 max-w-lg leading-[1.7]">
+          <p className="font-body text-lead text-muted-cream mt-2 max-w-lg leading-[1.7]">
             Browse opportunities shared by nonprofits and public event pages. Search by place or event type, then follow the source link and confirm the details with the organizer.
           </p>
         </div>
@@ -190,7 +190,7 @@ export default function VolunteerSearch() {
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-light-cream p-6 mb-8 flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">
+              <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">
                 Zip code
               </label>
               <input
@@ -200,11 +200,11 @@ export default function VolunteerSearch() {
                 placeholder="e.g. 90210"
                 value={zip}
                 onChange={e => { setZip(e.target.value); setCity(''); setState('') }}
-                className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
               />
             </div>
             <div>
-              <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">
+              <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">
                 City
               </label>
               <input
@@ -212,17 +212,17 @@ export default function VolunteerSearch() {
                 placeholder="e.g. Austin"
                 value={city}
                 onChange={e => { setCity(e.target.value); setZip('') }}
-                className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
               />
             </div>
             <div>
-              <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">
+              <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">
                 State
               </label>
               <select
                 value={state}
                 onChange={e => { setState(e.target.value); setZip('') }}
-                className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60 bg-white"
+                className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-body text-deep-navy focus:outline-none focus:border-soft-gold/60 bg-white"
               >
                 <option value="">Any state</option>
                 {US_STATES.map(([abbr, name]) => (
@@ -241,12 +241,12 @@ export default function VolunteerSearch() {
                   onChange={e => setVirtual(e.target.checked)}
                   className="w-4 h-4 rounded border-light-cream accent-soft-gold"
                 />
-                <span className="font-body text-[14px] text-cool-grey">Virtual</span>
+                <span className="font-body text-body text-cool-grey">Virtual</span>
               </label>
               <select
                 value={eventType}
                 onChange={e => setEventType(e.target.value as EventType | '')}
-                className="px-3 py-2 rounded-xl border border-light-cream font-body text-[13px] text-deep-navy bg-white focus:outline-none focus:border-soft-gold/60"
+                className="px-3 py-2 rounded-xl border border-light-cream font-body text-small text-deep-navy bg-white focus:outline-none focus:border-soft-gold/60"
               >
                 <option value="">All types</option>
                 <option value="volunteer">Volunteer</option>
@@ -258,7 +258,7 @@ export default function VolunteerSearch() {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-60"
+              className="px-6 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-body font-semibold hover:bg-bright-gold transition-colors disabled:opacity-60"
             >
               {loading ? 'Searching...' : 'Search'}
             </button>
@@ -274,20 +274,20 @@ export default function VolunteerSearch() {
 
         {!loading && error && (
           <div className="text-center py-16">
-            <p className="font-body text-[15px] text-cool-grey mb-4">Could not load events. Try again.</p>
-            <button onClick={search} className="font-body text-[13px] text-soft-gold hover:underline">Retry</button>
+            <p className="font-body text-body-lg text-cool-grey mb-4">Could not load events. Try again.</p>
+            <button onClick={search} className="font-body text-small text-soft-gold hover:underline">Retry</button>
           </div>
         )}
 
         {!loading && !error && searched && events.length === 0 && (
           <div className="text-center py-16">
-            <p className="font-body text-[18px] text-deep-navy font-display italic mb-2">No events found</p>
-            <p className="font-body text-[14px] text-cool-grey max-w-sm mx-auto leading-[1.7]">
+            <p className="font-body text-title-sm text-deep-navy font-display italic mb-2">No events found</p>
+            <p className="font-body text-body text-cool-grey max-w-sm mx-auto leading-[1.7]">
               Try a different zip code or state. Some events come from public event pages and may not yet be confirmed by the organization. Try another place or check the source link.
             </p>
             <Link
               to="/directory"
-              className="mt-6 inline-block font-body text-[13px] text-soft-gold hover:text-bright-gold font-semibold"
+              className="mt-6 inline-block font-body text-small text-soft-gold hover:text-bright-gold font-semibold"
             >
               Browse nonprofits in the directory →
             </Link>
@@ -296,13 +296,13 @@ export default function VolunteerSearch() {
 
         {!loading && !error && searched && events.length === 0 && (
           <div className="text-center py-16">
-            <p className="font-body text-[18px] text-deep-navy font-display italic mb-2">No events found</p>
-            <p className="font-body text-[14px] text-cool-grey max-w-sm mx-auto leading-[1.7]">
+            <p className="font-body text-title-sm text-deep-navy font-display italic mb-2">No events found</p>
+            <p className="font-body text-body text-cool-grey max-w-sm mx-auto leading-[1.7]">
               Try different search filters. Some events come from public event pages and may not yet be confirmed by the organization. Try another place or check the source link.
             </p>
             <Link
               to="/directory"
-              className="mt-6 inline-block font-body text-[13px] text-soft-gold hover:text-bright-gold font-semibold"
+              className="mt-6 inline-block font-body text-small text-soft-gold hover:text-bright-gold font-semibold"
             >
               Browse nonprofits in the directory →
             </Link>
@@ -311,13 +311,13 @@ export default function VolunteerSearch() {
 
         {!loading && !error && events.length > 0 && (
           <>
-            <p className="font-body text-[13px] text-cool-grey mb-5">
+            <p className="font-body text-small text-cool-grey mb-5">
               {events.length} {events.length === 1 ? 'opportunity' : 'opportunities'} found
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {events.map(e => <EventCard key={e.id} event={e} />)}
             </div>
-            <p className="mt-8 font-body text-[12px] text-muted-cream text-center leading-[1.6]">
+            <p className="mt-8 font-body text-caption text-muted-cream text-center leading-[1.6]">
               Are you a nonprofit?{' '}
               <Link to="/for-nonprofits" className="text-soft-gold hover:underline">Claim your page</Link>{' '}
               to post events. Your contact info is shared only with the event organizer.

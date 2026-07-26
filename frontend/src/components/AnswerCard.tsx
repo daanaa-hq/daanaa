@@ -47,7 +47,7 @@ function RevokedBanner({ org }: { org: ApiOrganization }) {
         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       <div>
-        <p className="font-body text-[13px] text-muted-cream leading-[1.55]">
+        <p className="font-body text-small text-muted-cream leading-[1.55]">
           IRS records show this organization's tax-exempt status was automatically revoked.
           Donations made now would not be tax-deductible.
         </p>
@@ -55,7 +55,7 @@ function RevokedBanner({ org }: { org: ApiOrganization }) {
           href={`https://projects.propublica.org/nonprofits/organizations/${org.EIN}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1.5 inline-flex items-center gap-1 font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2"
+          className="mt-1.5 inline-flex items-center gap-1 font-body text-caption text-soft-gold hover:text-bright-gold transition-colors underline underline-offset-2"
         >
           View the IRS record
         </a>
@@ -72,23 +72,23 @@ function HealthChips({ org }: { org: ApiOrganization }) {
       <div className="flex flex-wrap gap-3">
         {org.program_expense_pct != null && org.program_expense_pct > 0 && (
           <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
-            <span className="font-display text-[26px] text-warm-cream leading-none">
+            <span className="font-display text-headline text-warm-cream leading-none">
               {org.program_expense_pct.toFixed(0)}¢
             </span>
-            <span className="font-body text-[11px] text-muted-cream text-center mt-1">per dollar to programs</span>
+            <span className="font-body text-label text-muted-cream text-center mt-1">per dollar to programs</span>
           </div>
         )}
         {signal && score?.percentile != null && (
           <div className="flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl bg-white/8 border border-white/12 min-w-[110px]">
-            <span className="font-display text-[26px] text-warm-cream leading-none">
+            <span className="font-display text-headline text-warm-cream leading-none">
               Top {Math.max(1, 100 - score.percentile)}%
             </span>
-            <span className="font-body text-[11px] text-muted-cream text-center mt-1">of peer nonprofits</span>
+            <span className="font-body text-label text-muted-cream text-center mt-1">of peer nonprofits</span>
           </div>
         )}
         {signal && (
           <div className={`flex flex-col items-center gap-0.5 px-5 py-3 rounded-xl border min-w-[130px] ${signal.chipClass}`}>
-            <span className={`font-body text-[13px] font-semibold leading-none ${signal.textClass}`}>
+            <span className={`font-body text-small font-semibold leading-none ${signal.textClass}`}>
               {signal.label}
             </span>
           </div>
@@ -105,7 +105,7 @@ function NoDataBanner({ org }: { org: ApiOrganization }) {
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
-      <p className="font-body text-[13px] text-muted-cream leading-[1.55]">
+      <p className="font-body text-small text-muted-cream leading-[1.55]">
         This organization is a registered 501(c)(3) and donations are tax-deductible.
         We don't have enough public financial detail to add context yet — that's common
         for smaller and local organizations.

@@ -17,8 +17,8 @@ export default function MistakeRegistry({ compact = false }: MistakeRegistryProp
           {monitorIcon}
         </div>
         <div>
-          <p className="font-body text-[13px] font-semibold text-deep-navy">Mistake Registry</p>
-          <p className="font-body text-[12px] text-cool-grey">Monitoring active · No incidents on file</p>
+          <p className="font-body text-small font-semibold text-deep-navy">Mistake Registry</p>
+          <p className="font-body text-caption text-cool-grey">Monitoring active · No incidents on file</p>
         </div>
       </div>
     )
@@ -28,17 +28,17 @@ export default function MistakeRegistry({ compact = false }: MistakeRegistryProp
     <div className="border-t border-light-grey pt-4">
       <div className="flex items-center gap-2 mb-2">
         {monitorIcon}
-        <p className="font-body text-[10px] font-semibold tracking-[0.07em] text-cool-grey uppercase">
+        <p className="font-body text-micro font-semibold tracking-[0.07em] text-cool-grey uppercase">
           Mistake Registry
         </p>
       </div>
       <div className="flex items-start gap-2">
         <span className="inline-block w-2 h-2 rounded-full bg-cool-grey/30 shrink-0 mt-[5px]" />
-        <p className="font-body text-[12px] text-cool-grey leading-[1.45]">
+        <p className="font-body text-caption text-cool-grey leading-[1.45]">
           Monitoring active. No incidents on file for this organization.
         </p>
       </div>
-      <p className="mt-2 font-body text-[11px] text-cool-grey/55 leading-[1.35]">
+      <p className="mt-2 font-body text-label text-cool-grey/55 leading-[1.35]">
         Daanaa flags known incidents of financial misconduct or misleading donor communications. Absence of incidents reflects current data availability, not a clean bill of health.
       </p>
     </div>

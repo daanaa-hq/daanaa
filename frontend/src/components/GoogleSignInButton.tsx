@@ -27,8 +27,8 @@ export function GoogleSignInButton({ onSuccess, compact }: { onSuccess?: () => v
         onClick={handleClick}
         disabled={loading}
         className={compact
-          ? "inline-flex items-center gap-2 rounded-lg border border-light-grey bg-white px-4 py-2 font-body text-[13px] font-medium text-deep-navy hover:border-soft-gold/40 transition-colors disabled:opacity-50"
-          : "inline-flex items-center gap-3 rounded-xl border border-light-grey bg-white px-5 py-3 font-body text-[14px] font-medium text-deep-navy shadow-sm hover:border-soft-gold/40 hover:bg-warm-cream/30 transition-colors disabled:opacity-50"
+          ? "inline-flex items-center gap-2 rounded-lg border border-light-grey bg-white px-4 py-2 font-body text-small font-medium text-deep-navy hover:border-soft-gold/40 transition-colors disabled:opacity-50"
+          : "inline-flex items-center gap-3 rounded-xl border border-light-grey bg-white px-5 py-3 font-body text-body font-medium text-deep-navy shadow-sm hover:border-soft-gold/40 hover:bg-warm-cream/30 transition-colors disabled:opacity-50"
         }
       >
         {/* Google G logo */}
@@ -40,7 +40,7 @@ export function GoogleSignInButton({ onSuccess, compact }: { onSuccess?: () => v
         </svg>
         {loading ? 'Signing in…' : 'Continue with Google'}
       </button>
-      {error && <p className="mt-2 font-body text-[12px] text-alert-amber">{error}</p>}
+      {error && <p className="mt-2 font-body text-caption text-alert-amber">{error}</p>}
     </div>
   )
 }
@@ -74,16 +74,16 @@ export function MagicLinkForm({ onSent }: { onSent: (email: string) => void }) {
         onChange={e => setEmail(e.target.value)}
         placeholder="your@email.com"
         required
-        className="w-full border border-light-grey rounded-lg px-3 py-2 font-body text-[14px] text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors"
+        className="w-full border border-light-grey rounded-lg px-3 py-2 font-body text-body text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors"
       />
       <button
         type="submit"
         disabled={loading}
-        className="px-5 py-2 rounded-lg bg-deep-navy text-warm-cream font-body text-[13px] font-semibold hover:bg-navy-mid transition-colors disabled:opacity-50"
+        className="px-5 py-2 rounded-lg bg-deep-navy text-warm-cream font-body text-small font-semibold hover:bg-navy-mid transition-colors disabled:opacity-50"
       >
         {loading ? 'Sending…' : 'Send sign-in link'}
       </button>
-      {error && <p className="mt-1 font-body text-[12px] text-alert-amber">{error}</p>}
+      {error && <p className="mt-1 font-body text-caption text-alert-amber">{error}</p>}
     </form>
   )
 }

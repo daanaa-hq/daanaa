@@ -62,26 +62,26 @@ export default function CategoryPage() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <div className="flex items-center gap-2 mb-8">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Causes</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Causes</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">{category.name}</span>
+            <span className="font-body text-caption text-muted-cream">{category.name}</span>
           </div>
           <div className="max-w-[640px]">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-6 h-px bg-soft-gold/50" />
-              <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Cause</span>
+              <span className="font-body text-label font-medium tracking-[0.10em] text-soft-gold uppercase">Cause</span>
             </div>
             <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]">
               {category.name}
             </h1>
-            <p className="mt-4 font-body text-[17px] leading-[1.6] text-muted-cream max-w-[560px]">
+            <p className="mt-4 font-body text-title-sm leading-[1.6] text-muted-cream max-w-[560px]">
               Organizations working in this area. Find one that aligns with your values, explore their public record, and visit their official website.
             </p>
             <Link
               to={`/directory?category=${category.id}`}
-              className="mt-8 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+              className="mt-8 inline-flex items-center gap-2 px-7 py-3 rounded-full bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors"
             >
               View organizations in {category.name}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -99,7 +99,7 @@ export default function CategoryPage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-6 h-px bg-soft-gold/50" />
-                <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Organizations</span>
+                <span className="font-body text-label font-medium tracking-[0.10em] text-soft-gold uppercase">Organizations</span>
               </div>
               <h2 className="font-display italic text-deep-navy">
                 {total > 0 ? `${total.toLocaleString()} organizations` : category.name}
@@ -107,7 +107,7 @@ export default function CategoryPage() {
             </div>
             <Link
               to={`/directory?category=${category.id}`}
-              className="shrink-0 inline-flex items-center gap-1.5 font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors"
+              className="shrink-0 inline-flex items-center gap-1.5 font-body text-small text-soft-gold hover:text-bright-gold transition-colors"
             >
               View all
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -141,7 +141,7 @@ export default function CategoryPage() {
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <Link
                           to={`/org/${ein}`}
-                          className="font-body text-[14px] font-semibold text-deep-navy hover:text-soft-gold transition-colors leading-snug flex-1"
+                          className="font-body text-body font-semibold text-deep-navy hover:text-soft-gold transition-colors leading-snug flex-1"
                         >
                           {org.organization_name}
                         </Link>
@@ -186,19 +186,19 @@ export default function CategoryPage() {
                         </div>
                       </div>
                       {(org.CITY || org.STATE) && (
-                        <p className="font-body text-[11px] text-cool-grey mb-2">
+                        <p className="font-body text-label text-cool-grey mb-2">
                           {[org.CITY, org.STATE].filter(Boolean).join(', ')}
                         </p>
                       )}
                       {(org as any).mission && (
                         <div className="mb-3 flex-1">
-                          <p className="font-body text-[12px] text-cool-grey italic line-clamp-2">
+                          <p className="font-body text-caption text-cool-grey italic line-clamp-2">
                             {(org as any).mission.replace(/^[""\s]+|[""\s]+$/g, '')}
                           </p>
                           {['ai_ntee','ai_haiku','ai_web','ai_generated'].includes(org.mission_source ?? '') && (
                             <span
                               title="Generated by AI from public records. Not confirmed by the organization."
-                              className="mt-1 inline-block border border-cool-grey/40 text-cool-grey/60 rounded text-[9px] px-1.5 py-0.5 font-body tracking-[0.04em]"
+                              className="mt-1 inline-block border border-cool-grey/40 text-cool-grey/60 rounded text-micro px-1.5 py-0.5 font-body tracking-[0.04em]"
                             >
                               AI assisted
                             </span>
@@ -207,12 +207,12 @@ export default function CategoryPage() {
                       )}
                       <div className="flex items-center gap-2 flex-wrap mt-auto">
                         {signal && healthLabel[signal] && (
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border font-body ${healthClasses[signal] ?? ''}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-micro font-semibold border font-body ${healthClasses[signal] ?? ''}`}>
                             {healthLabel[signal]}
                           </span>
                         )}
                         {org.is_hidden_gem && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-violet-50 text-violet-700 border-violet-200 font-body">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-micro font-semibold border bg-violet-50 text-violet-700 border-violet-200 font-body">
                             Hidden gem
                           </span>
                         )}
@@ -224,7 +224,7 @@ export default function CategoryPage() {
               <div className="text-center">
                 <Link
                   to={`/directory?category=${category.id}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-soft-gold/40 text-soft-gold font-body text-[13px] font-medium hover:bg-soft-gold/8 transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-soft-gold/40 text-soft-gold font-body text-small font-medium hover:bg-soft-gold/8 transition-colors"
                 >
                   View all {total > 0 ? `${total.toLocaleString()} ` : ''}organizations in {category.name}
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -242,7 +242,7 @@ export default function CategoryPage() {
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-6 h-px bg-soft-gold/50" />
-            <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Focus Areas</span>
+            <span className="font-body text-label font-medium tracking-[0.10em] text-soft-gold uppercase">Focus Areas</span>
           </div>
           <h2
             className="font-display italic text-deep-navy mb-8"
@@ -263,8 +263,8 @@ export default function CategoryPage() {
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="font-body text-[13px] font-medium text-deep-navy leading-snug group-hover:text-soft-gold transition-colors">{sub.name}</p>
-                  <p className="font-body text-[11px] text-cool-grey mt-0.5">{sub.code}</p>
+                  <p className="font-body text-small font-medium text-deep-navy leading-snug group-hover:text-soft-gold transition-colors">{sub.name}</p>
+                  <p className="font-body text-label text-cool-grey mt-0.5">{sub.code}</p>
                 </div>
                 <svg
                   className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -279,10 +279,10 @@ export default function CategoryPage() {
           {/* Other categories */}
           <div className="mt-14 pt-8 border-t border-light-grey">
             <div className="flex items-center justify-between mb-5">
-              <p className="font-body text-[12px] font-semibold tracking-[0.06em] text-cool-grey uppercase">
+              <p className="font-body text-caption font-semibold tracking-[0.06em] text-cool-grey uppercase">
                 Other categories
               </p>
-              <Link to="/directory" className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors">
+              <Link to="/directory" className="font-body text-caption text-soft-gold hover:text-bright-gold transition-colors">
                 View all ↗
               </Link>
             </div>
@@ -298,7 +298,7 @@ export default function CategoryPage() {
                       <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
                     </svg>
                   </div>
-                  <span className="font-body text-[11px] text-deep-navy/70 group-hover:text-deep-navy leading-tight transition-colors">
+                  <span className="font-body text-label text-deep-navy/70 group-hover:text-deep-navy leading-tight transition-colors">
                     {cat.name}
                   </span>
                 </Link>

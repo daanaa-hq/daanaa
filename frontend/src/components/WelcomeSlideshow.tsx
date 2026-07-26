@@ -84,13 +84,13 @@ export default function WelcomeSlideshow() {
         </button>
 
         <div className="px-8 pt-10 pb-7 min-h-[300px] flex flex-col">
-          <span className="inline-flex self-start items-center px-2.5 py-0.5 rounded-full bg-soft-gold/12 border border-soft-gold/25 font-body text-[10px] font-semibold tracking-[0.1em] uppercase text-soft-gold mb-5">
+          <span className="inline-flex self-start items-center px-2.5 py-0.5 rounded-full bg-soft-gold/12 border border-soft-gold/25 font-body text-micro font-semibold tracking-[0.1em] uppercase text-soft-gold mb-5">
             {slide.tag}
           </span>
-          <h2 className="font-display italic text-deep-navy text-[28px] leading-[1.15] tracking-[-0.01em] mb-4">
+          <h2 className="font-display italic text-deep-navy text-headline leading-[1.15] tracking-[-0.01em] mb-4">
             {slide.title}
           </h2>
-          <p className="font-body text-[15px] text-cool-grey leading-[1.65] flex-1">
+          <p className="font-body text-body-lg text-cool-grey leading-[1.65] flex-1">
             {slide.body}
           </p>
 
@@ -113,7 +113,7 @@ export default function WelcomeSlideshow() {
           <div className="flex items-center justify-between">
             <button
               onClick={close}
-              className="font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors"
+              className="font-body text-small text-cool-grey hover:text-deep-navy transition-colors"
             >
               Skip
             </button>
@@ -121,14 +121,14 @@ export default function WelcomeSlideshow() {
               <Link
                 to="/directory"
                 onClick={close}
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors"
               >
                 Explore the directory
               </Link>
             ) : (
               <button
                 onClick={() => setI(i + 1)}
-                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-navy-mid transition-colors"
+                className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-deep-navy text-warm-cream font-body text-body font-semibold hover:bg-navy-mid transition-colors"
               >
                 Next
               </button>

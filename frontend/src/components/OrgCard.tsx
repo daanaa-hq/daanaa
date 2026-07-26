@@ -53,7 +53,7 @@ function CompareButton({ inCompare, canAdd, onClick }: { inCompare: boolean; can
         <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
         <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
       </svg>
-      <span className="font-body text-[10px] leading-none" style={{ color }}>Compare</span>
+      <span className="font-body text-micro leading-none" style={{ color }}>Compare</span>
     </button>
   )
 }
@@ -136,11 +136,11 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
 
       {/* Name + fact + location */}
       <div className="flex-1 min-w-0">
-        <h3 className="font-display text-[16px] text-deep-navy hover:text-soft-gold transition-colors line-clamp-2 mb-0.5">
+        <h3 className="font-display text-lead text-deep-navy hover:text-soft-gold transition-colors line-clamp-2 mb-0.5">
           {org.name}
         </h3>
         {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
-          <p className="font-body text-[10px] text-cool-grey mb-0.5 leading-none">
+          <p className="font-body text-micro text-cool-grey mb-0.5 leading-none">
             {apiOrg.match_sources.includes('keyword') && apiOrg.match_sources.includes('semantic')
               ? 'Matched by name and meaning'
               : apiOrg.match_sources.includes('semantic')
@@ -150,12 +150,12 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
         )}
         <div className="flex items-center gap-2 flex-wrap">
           {inlineFact && (
-            <span className="font-body text-[11px] text-link-gold">{inlineFact}</span>
+            <span className="font-body text-label text-link-gold">{inlineFact}</span>
           )}
           {inlineFact && (org.city || org.subcategory) && (
             <span className="text-cool-grey/30">·</span>
           )}
-          <span className="font-body text-[12px] text-cool-grey">
+          <span className="font-body text-caption text-cool-grey">
             {[org.city, org.state].filter(Boolean).join(', ')}
           </span>
           {org.subcategory && (() => {
@@ -165,7 +165,7 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
             return (
               <>
                 <span className="text-cool-grey/30">·</span>
-                <span className="font-body text-[11px] text-cool-grey truncate max-w-[200px]">
+                <span className="font-body text-label text-cool-grey truncate max-w-[200px]">
                   {major && sub ? `${major} · ${sub}` : label}
                 </span>
               </>
@@ -179,7 +179,7 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
                 key={tag}
                 to={`/directory?cause=${encodeURIComponent(tag)}`}
                 onClick={e => e.stopPropagation()}
-                className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[10px] hover:bg-soft-gold/20 transition-colors"
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-micro hover:bg-soft-gold/20 transition-colors"
               >
                 {tag}
               </Link>
@@ -195,7 +195,7 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
             <BadgeChip key={badge.id} badge={badge} size="sm" variant="light" />
           ))}
           {(apiOrg.upcoming_events_count ?? 0) > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200 font-body text-[10px] font-semibold text-green-700">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200 font-body text-micro font-semibold text-green-700">
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               {apiOrg.upcoming_events_count} {apiOrg.upcoming_events_count === 1 ? 'event' : 'events'}
             </span>
@@ -218,7 +218,7 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
             className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 text-cool-grey hover:text-soft-gold"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-            <span className="font-body text-[10px] leading-none">Visit</span>
+            <span className="font-body text-micro leading-none">Visit</span>
           </a>
         )}
         <HeartButtons
@@ -272,14 +272,14 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
       <div className="flex items-start gap-3 mb-1.5">
         {lampTier && <LampMark tier={lampTier} size="md" className="mt-0.5 shrink-0" />}
         <div className="flex-1 min-w-0">
-          <h3 className="font-display text-[17px] text-deep-navy leading-tight hover:text-soft-gold transition-colors line-clamp-2">
+          <h3 className="font-display text-title-sm text-deep-navy leading-tight hover:text-soft-gold transition-colors line-clamp-2">
             {org.name}
           </h3>
           {inlineFact && (
-            <p className="font-body text-[11px] text-link-gold mt-0.5 leading-none">{inlineFact}</p>
+            <p className="font-body text-label text-link-gold mt-0.5 leading-none">{inlineFact}</p>
           )}
           {apiOrg?.match_sources && apiOrg.match_sources.length > 0 && (
-            <p className="font-body text-[10px] text-cool-grey mt-0.5 leading-none">
+            <p className="font-body text-micro text-cool-grey mt-0.5 leading-none">
               {apiOrg.match_sources.includes('keyword') && apiOrg.match_sources.includes('semantic')
                 ? 'Matched by name and meaning'
                 : apiOrg.match_sources.includes('semantic')
@@ -295,7 +295,7 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7A7166" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
         </svg>
-        <span className="font-body text-[12px] text-cool-grey">
+        <span className="font-body text-caption text-cool-grey">
           {[org.city, org.state].filter(Boolean).join(', ') || 'IRS registered'}
         </span>
       </div>
@@ -312,11 +312,11 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
               className="inline-flex flex-col px-2.5 py-1 rounded-lg bg-soft-gold/8 cursor-default"
             >
               {major && sub && (
-                <span className="font-body text-[9px] text-cool-grey leading-tight tracking-[0.05em] uppercase">
+                <span className="font-body text-micro text-cool-grey leading-tight tracking-[0.05em] uppercase">
                   {major}
                 </span>
               )}
-              <span className="font-body text-[11px] text-deep-navy/70 font-medium leading-tight">
+              <span className="font-body text-label text-deep-navy/70 font-medium leading-tight">
                 {label}
               </span>
             </span>
@@ -332,7 +332,7 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
               key={tag}
               to={`/directory?cause=${encodeURIComponent(tag)}`}
               onClick={e => e.stopPropagation()}
-              className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-[10px] hover:bg-soft-gold/20 transition-colors"
+              className="inline-flex items-center px-2 py-0.5 rounded-full bg-soft-gold/10 text-link-gold font-body text-micro hover:bg-soft-gold/20 transition-colors"
             >
               {tag}
             </Link>
@@ -342,7 +342,7 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
 
       {/* Mission snippet */}
       {!compact && org.mission && (
-        <p className="font-body text-[12px] text-cool-grey/80 leading-[1.55] line-clamp-2 mb-2.5 -mt-1">
+        <p className="font-body text-caption text-cool-grey/80 leading-[1.55] line-clamp-2 mb-2.5 -mt-1">
           {org.mission}
         </p>
       )}
@@ -363,13 +363,13 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
 
       {/* Revenue (secondary) */}
       {!compact && !org.mission && scored && (
-        <p className="font-body text-[12px] text-cool-grey mb-2.5">
+        <p className="font-body text-caption text-cool-grey mb-2.5">
           {org.latestTaxYear && <span className="text-link-gold font-medium mr-1.5">FY {org.latestTaxYear}</span>}
           Revenue: {formatCurrency(org.revenue)}
         </p>
       )}
       {!compact && !org.mission && !scored && org.revenue > 0 && (
-        <p className="font-body text-[12px] text-cool-grey mb-2.5">Revenue: {formatCurrency(org.revenue)}</p>
+        <p className="font-body text-caption text-cool-grey mb-2.5">Revenue: {formatCurrency(org.revenue)}</p>
       )}
 
       {/* Footer: badges stacked above action buttons so Add never gets clipped */}
@@ -380,7 +380,7 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
               <BadgeChip key={badge.id} badge={badge} size="sm" variant="light" />
             ))}
             {(apiOrg.upcoming_events_count ?? 0) > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200 font-body text-[10px] font-semibold text-green-700">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-50 border border-green-200 font-body text-micro font-semibold text-green-700">
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 {apiOrg.upcoming_events_count} {apiOrg.upcoming_events_count === 1 ? 'event' : 'events'}
               </span>
@@ -400,7 +400,7 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
               className="flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150 hover:bg-soft-gold/10 text-cool-grey hover:text-soft-gold"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-              <span className="font-body text-[10px] leading-none">Visit</span>
+              <span className="font-body text-micro leading-none">Visit</span>
             </a>
           )}
           <HeartButtons

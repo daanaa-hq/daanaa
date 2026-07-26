@@ -103,7 +103,7 @@ export default function ImpactSummary() {
         </p>
       </div>
     </div>
-    <p className="font-body text-[11px] text-cool-grey leading-[1.5]">
+    <p className="font-body text-label text-cool-grey leading-[1.5]">
       These figures are for your personal reference only. Dollar values for volunteer time use the Independent Sector national estimate and are not verified by Daanaa. This is not tax advice, not a tax receipt, and should not be used to support any deduction. Consult a tax advisor for guidance on charitable deductions.
     </p>
     </div>

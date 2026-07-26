@@ -80,8 +80,8 @@ export default function SearchBar({
   }
 
   const inputCls = dark
-    ? 'w-full h-[58px] bg-white/10 border border-white/20 backdrop-blur-sm text-warm-cream text-[15px] pl-12 pr-4 rounded-l-full outline-none focus:border-soft-gold focus:bg-white/15 transition-all placeholder:text-warm-cream/40'
-    : 'w-full h-[58px] bg-white border border-light-grey text-deep-navy text-[15px] pl-12 pr-4 rounded-l-full outline-none focus:border-soft-gold focus:shadow-[0_0_0_3px_rgba(201,169,110,0.10)] transition-all placeholder:text-cool-grey'
+    ? 'w-full h-[58px] bg-white/10 border border-white/20 backdrop-blur-sm text-warm-cream text-body-lg pl-12 pr-4 rounded-l-full outline-none focus:border-soft-gold focus:bg-white/15 transition-all placeholder:text-warm-cream/40'
+    : 'w-full h-[58px] bg-white border border-light-grey text-deep-navy text-body-lg pl-12 pr-4 rounded-l-full outline-none focus:border-soft-gold focus:shadow-[0_0_0_3px_rgba(201,169,110,0.10)] transition-all placeholder:text-cool-grey'
 
   const iconColor = dark ? 'rgba(245,240,235,0.5)' : '#9CA3AF'
 
@@ -118,7 +118,7 @@ export default function SearchBar({
         <button
           type="button"
           onClick={() => submit()}
-          className="h-[58px] px-7 bg-soft-gold text-deep-navy font-body text-[14px] font-semibold rounded-r-full hover:bg-bright-gold transition-colors shrink-0"
+          className="h-[58px] px-7 bg-soft-gold text-deep-navy font-body text-body font-semibold rounded-r-full hover:bg-bright-gold transition-colors shrink-0"
         >
           Search
         </button>
@@ -137,10 +137,10 @@ export default function SearchBar({
               >
                 <LampMark tier={tier} size="xs" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-body text-[13px] font-medium text-deep-navy truncate group-hover:text-soft-gold transition-colors">
+                  <p className="font-body text-small font-medium text-deep-navy truncate group-hover:text-soft-gold transition-colors">
                     {org.organization_name}
                   </p>
-                  <p className="font-body text-[11px] text-cool-grey">
+                  <p className="font-body text-label text-cool-grey">
                     {[org.CITY, org.STATE].filter(Boolean).join(', ')}
                     {org.NTEE1 && <span className="ml-1 opacity-60">· {org.NTEE1}</span>}
                   </p>
@@ -156,7 +156,7 @@ export default function SearchBar({
             onMouseDown={e => { e.preventDefault(); submit() }}
             className="w-full flex items-center justify-between px-4 py-3 border-t border-light-grey hover:bg-warm-cream transition-colors"
           >
-            <span className="font-body text-[12px] text-link-gold">
+            <span className="font-body text-caption text-link-gold">
               See all results for "{value}"
             </span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

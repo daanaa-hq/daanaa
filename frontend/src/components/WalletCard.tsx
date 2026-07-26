@@ -73,7 +73,7 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
       <div className="flex items-start justify-between gap-3 mb-3">
         <Link
           to={`/org/${entry.ein}`}
-          className="font-body text-[15px] font-semibold text-deep-navy hover:text-soft-gold transition-colors leading-snug flex-1"
+          className="font-body text-body-lg font-semibold text-deep-navy hover:text-soft-gold transition-colors leading-snug flex-1"
         >
           {orgName}
         </Link>
@@ -83,13 +83,13 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
               <>
                 <button
                   onClick={handleRemoveClick}
-                  className="px-2 py-1 rounded-lg text-[12px] font-semibold bg-destructive/5 text-destructive border border-destructive/20 hover:bg-destructive/10 transition-colors"
+                  className="px-2 py-1 rounded-lg text-caption font-semibold bg-destructive/5 text-destructive border border-destructive/20 hover:bg-destructive/10 transition-colors"
                 >
                   Remove
                 </button>
                 <button
                   onClick={() => setConfirmRemove(false)}
-                  className="px-2 py-1 rounded-lg text-[12px] font-semibold bg-light-grey/40 text-cool-grey hover:bg-light-grey transition-colors"
+                  className="px-2 py-1 rounded-lg text-caption font-semibold bg-light-grey/40 text-cool-grey hover:bg-light-grey transition-colors"
                 >
                   Cancel
                 </button>
@@ -111,7 +111,7 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
 
       {/* Location + causes */}
       {(location || displayedCauses.length > 0) && (
-        <p className="font-body text-[12px] text-cool-grey mb-3 leading-relaxed">
+        <p className="font-body text-caption text-cool-grey mb-3 leading-relaxed">
           {location}
           {location && displayedCauses.length > 0 && ' · '}
           {displayedCauses.join(', ')}
@@ -121,23 +121,23 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
 
       {/* Mission */}
       {mission && (
-        <p className="font-body text-[13px] text-cool-grey mb-3 line-clamp-2 italic">
+        <p className="font-body text-small text-cool-grey mb-3 line-clamp-2 italic">
           &ldquo;{mission.replace(/^[""\s]+|[""\s]+$/g, '')}&rdquo;
         </p>
       )}
 
       {/* Health badge + peer rank */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span title={health.title} className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border font-body ${health.classes}`}>
+        <span title={health.title} className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-label font-semibold border font-body ${health.classes}`}>
           {health.label}
         </span>
         {isHiddenGem && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-slate-50 text-slate-700 border-slate-200 font-body">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-label font-semibold border bg-slate-50 text-slate-700 border-slate-200 font-body">
             Hidden gem
           </span>
         )}
         {meritScore >= 50 && (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border bg-deep-navy/5 text-deep-navy border-deep-navy/10 font-body">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-label font-semibold border bg-deep-navy/5 text-deep-navy border-deep-navy/10 font-body">
             Top {Math.max(1, 100 - meritScore)}% of peers
           </span>
         )}
@@ -146,11 +146,11 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
       {/* Giving intent */}
       {intentText && (
         <div className="border-t border-light-grey pt-3 mb-4">
-          <p className={`font-body text-[12px] font-medium ${intentText === 'No longer interested' ? 'text-cool-grey line-through' : 'text-deep-navy'}`}>
+          <p className={`font-body text-caption font-medium ${intentText === 'No longer interested' ? 'text-cool-grey line-through' : 'text-deep-navy'}`}>
             {intentText}
           </p>
           {entry.givingIntent?.notes && intentText !== 'No longer interested' && (
-            <p className="font-body text-[11px] text-cool-grey mt-1 italic">"{entry.givingIntent.notes}"</p>
+            <p className="font-body text-label text-cool-grey mt-1 italic">"{entry.givingIntent.notes}"</p>
           )}
         </div>
       )}
@@ -164,7 +164,7 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
             rel="noopener noreferrer"
             aria-label={`Visit ${orgName}'s website`}
             title="Link from our public records. Websites can change. Search by name if this does not work."
-            className="flex-1 px-3 py-2 rounded-xl bg-deep-navy text-warm-cream font-body text-[13px] font-semibold hover:bg-deep-navy/80 transition-colors text-center"
+            className="flex-1 px-3 py-2 rounded-xl bg-deep-navy text-warm-cream font-body text-small font-semibold hover:bg-deep-navy/80 transition-colors text-center"
           >
             Visit website
           </a>
@@ -173,7 +173,7 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
           <button
             onClick={() => onEdit(entry.ein)}
             aria-label={`Edit giving intent for ${orgName}`}
-            className="flex-1 px-3 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
+            className="flex-1 px-3 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold transition-colors"
           >
             {intentText && intentText !== 'No longer interested' ? 'Edit intent' : intentText === 'No longer interested' ? 'Update intent' : 'Set intent'}
           </button>
@@ -193,22 +193,22 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
           <Link
             to={`/org/${entry.ein}`}
             aria-label={`View ${orgName} detail page`}
-            className="flex-1 px-3 py-2 rounded-xl border border-light-grey text-cool-grey font-body text-[13px] font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors text-center"
+            className="flex-1 px-3 py-2 rounded-xl border border-light-grey text-cool-grey font-body text-small font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors text-center"
           >
             View profile
           </Link>
         )}
       </div>
       {website && (
-        <p className="font-body text-[10px] text-cool-grey/75 mt-2 leading-relaxed">
+        <p className="font-body text-micro text-cool-grey/75 mt-2 leading-relaxed">
           Link from our records. Websites can change. If it is broken, search for them by name.
         </p>
       )}
       {entry.givingIntent?.type === 'giving' && (entry.givingIntent as GivingIntent & { status?: string }).status !== 'withdrawn' && !website && (
         <div className="mt-3 p-3 rounded-lg bg-soft-gold/[0.06] border border-soft-gold/20">
-          <p className="font-body text-[11px] font-medium text-deep-navy mb-1">Give by EIN</p>
-          <p className="font-body text-[13px] font-semibold text-deep-navy">{entry.ein}</p>
-          <p className="font-body text-[11px] text-cool-grey mt-1">Use this for a donor-advised fund gift or when writing a check. The full mailing address is on their profile page.</p>
+          <p className="font-body text-label font-medium text-deep-navy mb-1">Give by EIN</p>
+          <p className="font-body text-small font-semibold text-deep-navy">{entry.ein}</p>
+          <p className="font-body text-label text-cool-grey mt-1">Use this for a donor-advised fund gift or when writing a check. The full mailing address is on their profile page.</p>
         </div>
       )}
     </div>

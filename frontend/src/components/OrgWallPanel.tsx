@@ -28,7 +28,7 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
     >
       {/* Section label */}
       <div className="px-5 py-4 border-b" style={{ borderColor: '#E5E0DB' }}>
-        <span className="font-body text-[10px] tracking-[0.08em] text-cool-grey uppercase font-medium">
+        <span className="font-body text-micro tracking-[0.08em] text-cool-grey uppercase font-medium">
           Their Page
         </span>
       </div>
@@ -52,15 +52,15 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
         </div>
 
         <div>
-          <p className="font-body text-[14px] text-deep-navy font-medium leading-[1.5]">
+          <p className="font-body text-body text-deep-navy font-medium leading-[1.5]">
             This corner belongs to {orgName}.
           </p>
-          <p className="mt-1 font-body text-[13px] text-cool-grey leading-[1.55]">
+          <p className="mt-1 font-body text-small text-cool-grey leading-[1.55]">
             Their flame hasn&rsquo;t reached here yet.
           </p>
         </div>
 
-        <p className="font-body text-[13px] text-cool-grey leading-[1.55]">
+        <p className="font-body text-small text-cool-grey leading-[1.55]">
           Are you with this organization?{' '}
           <Link
             to={`/claim/verify?ein=${encodeURIComponent(ein)}`}
@@ -77,7 +77,7 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
 
       {/* Phase 2 teaser */}
       <div className="px-5 py-4 border-t" style={{ borderColor: '#E5E0DB' }}>
-        <p className="font-body text-[11px] text-cool-grey leading-[1.55] text-center">
+        <p className="font-body text-label text-cool-grey leading-[1.55] text-center">
           When they join: their updates, upcoming events, and what they need most right now.
         </p>
       </div>

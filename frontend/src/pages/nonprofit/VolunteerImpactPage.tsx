@@ -89,13 +89,13 @@ export default function VolunteerImpactPage() {
     <div className="min-h-screen bg-warm-cream">
       <div className="bg-deep-navy py-8 px-6">
         <div className="max-w-[900px] mx-auto">
-          <Link to={`/nonprofit/events/${ein}`} className="font-body text-[13px] text-muted-cream hover:text-warm-cream">← Volunteer events</Link>
-          <h1 className="font-display italic text-warm-cream mt-3 text-[36px]">Volunteer Impact — {year}</h1>
+          <Link to={`/nonprofit/events/${ein}`} className="font-body text-small text-muted-cream hover:text-warm-cream">← Volunteer events</Link>
+          <h1 className="font-display italic text-warm-cream mt-3 h1-display">Volunteer Impact — {year}</h1>
         </div>
       </div>
 
       <div className="max-w-[900px] mx-auto px-6 py-10 space-y-6">
-        {error && <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-[14px]">{error}</div>}
+        {error && <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive font-body text-body">{error}</div>}
 
         {data && (
           <>
@@ -107,14 +107,14 @@ export default function VolunteerImpactPage() {
                 { label: 'Labor Value', value: `$${data.labor_value_estimate.toLocaleString()}` },
               ].map(stat => (
                 <div key={stat.label} className="bg-white rounded-2xl border border-light-grey p-5 text-center">
-                  <p className="font-display text-[28px] text-deep-navy">{stat.value}</p>
-                  <p className="font-body text-[12px] text-cool-grey mt-1">{stat.label}</p>
+                  <p className="font-display text-headline text-deep-navy">{stat.value}</p>
+                  <p className="font-body text-caption text-cool-grey mt-1">{stat.label}</p>
                 </div>
               ))}
             </div>
 
             <div className="bg-white rounded-2xl border border-light-grey p-6">
-              <h2 className="font-body text-[14px] font-semibold text-deep-navy uppercase tracking-wide mb-4">Hours by month</h2>
+              <h2 className="font-body text-body font-semibold text-deep-navy uppercase tracking-wide mb-4">Hours by month</h2>
               <div className="flex items-end gap-2 h-32">
                 {MONTH_LABELS.map((label, i) => {
                   const monthKey = String(i + 1).padStart(2, '0')
@@ -123,7 +123,7 @@ export default function VolunteerImpactPage() {
                   return (
                     <div key={label} className="flex-1 flex flex-col items-center gap-1">
                       <div className="w-full bg-soft-gold/70 rounded-t" style={{ height: `${heightPct}%` }} title={`${hours}h`} />
-                      <span className="font-body text-[10px] text-cool-grey">{label}</span>
+                      <span className="font-body text-micro text-cool-grey">{label}</span>
                     </div>
                   )
                 })}
@@ -131,31 +131,31 @@ export default function VolunteerImpactPage() {
             </div>
 
             <div className="bg-white rounded-2xl border border-light-grey p-6">
-              <h2 className="font-body text-[14px] font-semibold text-deep-navy uppercase tracking-wide mb-4">By role</h2>
+              <h2 className="font-body text-body font-semibold text-deep-navy uppercase tracking-wide mb-4">By role</h2>
               <div className="space-y-2">
                 {Object.entries(data.hours_by_task_type).sort((a, b) => b[1] - a[1]).map(([task, hours]) => (
                   <div key={task} className="flex items-center justify-between">
-                    <span className="font-body text-[13px] text-deep-navy capitalize">{task.replace('_', ' ')}</span>
-                    <span className="font-body text-[13px] font-semibold text-deep-navy">{hours}h</span>
+                    <span className="font-body text-small text-deep-navy capitalize">{task.replace('_', ' ')}</span>
+                    <span className="font-body text-small font-semibold text-deep-navy">{hours}h</span>
                   </div>
                 ))}
                 {Object.keys(data.hours_by_task_type).length === 0 && (
-                  <p className="font-body text-[13px] text-cool-grey">No approved hours yet this year.</p>
+                  <p className="font-body text-small text-cool-grey">No approved hours yet this year.</p>
                 )}
               </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-light-grey p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="font-body text-[14px] font-semibold text-deep-navy">Show on your public Daanaa page?</h2>
-                <p className="font-body text-[13px] text-cool-grey mt-1 max-w-md">
+                <h2 className="font-body text-body font-semibold text-deep-navy">Show on your public Daanaa page?</h2>
+                <p className="font-body text-small text-cool-grey mt-1 max-w-md">
                   Only your total hours and volunteer count would show — never individual names or emails.
                 </p>
               </div>
               <button
                 onClick={toggleVisibility}
                 disabled={updatingVisibility}
-                className={`px-5 py-2.5 rounded-xl font-body text-[14px] font-semibold transition-colors disabled:opacity-50 ${
+                className={`px-5 py-2.5 rounded-xl font-body text-body font-semibold transition-colors disabled:opacity-50 ${
                   data.is_public ? 'bg-emerald-100 text-emerald-700' : 'bg-light-grey text-deep-navy'
                 }`}
               >
@@ -164,8 +164,8 @@ export default function VolunteerImpactPage() {
             </div>
 
             <div className="bg-white rounded-2xl border border-light-grey p-6">
-              <h2 className="font-body text-[14px] font-semibold text-deep-navy uppercase tracking-wide mb-3">Export for your records</h2>
-              <p className="font-body text-[12px] text-cool-grey mb-4">
+              <h2 className="font-body text-body font-semibold text-deep-navy uppercase tracking-wide mb-3">Export for your records</h2>
+              <p className="font-body text-caption text-cool-grey mb-4">
                 These hours were approved by your staff. Daanaa does not independently verify volunteer hours — exports are labeled accordingly for tax and grant filings.
               </p>
               <div className="flex gap-3">

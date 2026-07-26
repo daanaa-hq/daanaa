@@ -21,7 +21,7 @@ export default function RelatedPages({
   if (!links.length) return null
   return (
     <div className="mt-16 pt-8 border-t border-light-grey">
-      <p className="font-body text-[12px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">
+      <p className="font-body text-caption font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">
         {heading}
       </p>
       <div className="flex flex-wrap gap-x-6 gap-y-3">
@@ -29,7 +29,7 @@ export default function RelatedPages({
           <Link
             key={l.to + l.label}
             to={l.to}
-            className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
+            className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold transition-colors"
           >
             {l.label} →
           </Link>

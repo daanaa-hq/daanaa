@@ -49,7 +49,7 @@ function VolunteerStatusChip({ status, rejectionReason }: { status?: string; rej
   }
   return (
     <span
-      className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold ${styles[status] ?? 'bg-light-grey text-cool-grey'}`}
+      className={`shrink-0 px-1.5 py-0.5 rounded text-micro font-semibold ${styles[status] ?? 'bg-light-grey text-cool-grey'}`}
       title={status === 'rejected' && rejectionReason ? rejectionReason : undefined}
     >
       {labels[status] ?? status}
@@ -267,7 +267,7 @@ export default function WalletPage() {
     return (
       <div className="bg-warm-cream min-h-[100dvh] pt-[72px]">
         <div className="max-w-[720px] mx-auto px-6 py-16">
-          <h1 className="font-display italic text-deep-navy text-[32px] mb-2">Your Giving Wallet</h1>
+          <h1 className="font-display italic text-deep-navy text-headline-lg mb-2">Your Giving Wallet</h1>
           <p className="font-body text-cool-grey mb-10">Track your giving, volunteer hours, and community impact.</p>
 
           {/* Device-first storage notice */}
@@ -289,13 +289,13 @@ export default function WalletPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
             </div>
-            <h2 className="font-display italic text-deep-navy text-[22px] mb-2">Your wallet is empty</h2>
-            <p className="font-body text-[15px] text-cool-grey mb-8 max-w-sm mx-auto">
+            <h2 className="font-display italic text-deep-navy text-title-lg mb-2">Your wallet is empty</h2>
+            <p className="font-body text-body-lg text-cool-grey mb-8 max-w-sm mx-auto">
               Browse the directory and save nonprofits you care about. Then log your giving and volunteer hours.
             </p>
             <button
               onClick={() => navigate('/directory')}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors"
             >
               Browse nonprofits
             </button>
@@ -306,7 +306,7 @@ export default function WalletPage() {
             <div className="mt-6 text-center">
               <button
                 onClick={signInWithGoogle}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-light-grey bg-white font-body text-[13px] text-cool-grey hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-light-grey bg-white font-body text-small text-cool-grey hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                 Sign in with Google to back up across devices
@@ -327,11 +327,11 @@ export default function WalletPage() {
         {/* Header */}
         <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>
-            <h1 className="font-display italic text-deep-navy text-[32px] mb-1">Your Giving Wallet</h1>
-            <p className="font-body text-[14px] text-cool-grey">
+            <h1 className="font-display italic text-deep-navy text-headline-lg mb-1">Your Giving Wallet</h1>
+            <p className="font-body text-body text-cool-grey">
               {entries.length} organization{entries.length !== 1 ? 's' : ''} saved
             </p>
-            <p className="font-body text-[13px] text-cool-grey/70 mt-2 max-w-md">
+            <p className="font-body text-small text-cool-grey/70 mt-2 max-w-md">
               Track nonprofits you care about and your giving plans. Encrypted and synced to your passphrase.
             </p>
           </div>
@@ -350,7 +350,7 @@ export default function WalletPage() {
             </button>
             <button
               onClick={() => navigate('/directory')}
-              className="px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors whitespace-nowrap"
+              className="px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold transition-colors whitespace-nowrap"
             >
               + Add more
             </button>
@@ -367,7 +367,7 @@ export default function WalletPage() {
         <div className="flex gap-2 mb-8">
           <button
             onClick={() => setActiveTab('funding')}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-body text-[14px] font-semibold transition-colors ${activeTab === 'funding' ? 'bg-green-500 text-white shadow-sm' : 'bg-white border border-light-grey text-cool-grey hover:border-green-300 hover:text-green-600'}`}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-body text-body font-semibold transition-colors ${activeTab === 'funding' ? 'bg-green-500 text-white shadow-sm' : 'bg-white border border-light-grey text-cool-grey hover:border-green-300 hover:text-green-600'}`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24"
               fill={activeTab === 'funding' ? 'white' : 'none'}
@@ -378,7 +378,7 @@ export default function WalletPage() {
           </button>
           <button
             onClick={() => setActiveTab('volunteering')}
-            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-body text-[14px] font-semibold transition-colors ${activeTab === 'volunteering' ? 'bg-destructive/50 text-white shadow-sm' : 'bg-white border border-light-grey text-cool-grey hover:border-red-300 hover:text-red-500'}`}
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full font-body text-body font-semibold transition-colors ${activeTab === 'volunteering' ? 'bg-destructive/50 text-white shadow-sm' : 'bg-white border border-light-grey text-cool-grey hover:border-red-300 hover:text-red-500'}`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24"
               fill={activeTab === 'volunteering' ? 'white' : 'none'}
@@ -401,12 +401,12 @@ export default function WalletPage() {
             <p className="font-body text-xs text-cool-grey uppercase tracking-wide font-semibold mb-3">Filters & Search</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
               <div>
-                <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">Sort</label>
+                <label className="font-body text-label font-semibold text-cool-grey uppercase tracking-wide block mb-1">Sort</label>
                 <select
                   value={sortBy}
                   onChange={handleSort}
                   aria-label="Sort by"
-                  className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
+                  className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-small text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
                 >
                   <option value="recent">Recently added</option>
                   <option value="name">Name (A–Z)</option>
@@ -415,12 +415,12 @@ export default function WalletPage() {
               </div>
 
               <div>
-                <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">List Type</label>
+                <label className="font-body text-label font-semibold text-cool-grey uppercase tracking-wide block mb-1">List Type</label>
                 <select
                   value={filterState.intent}
                   onChange={handleIntentFilter}
                   aria-label="Filter by list type"
-                  className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
+                  className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-small text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
                 >
                   <option value="all">All</option>
                   <option value="giving">Funding</option>
@@ -429,12 +429,12 @@ export default function WalletPage() {
               </div>
 
               <div>
-                <label className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wide block mb-1">Health</label>
+                <label className="font-body text-label font-semibold text-cool-grey uppercase tracking-wide block mb-1">Health</label>
                 <select
                   value={filterState.health}
                   onChange={handleHealthFilter}
                   aria-label="Filter by health"
-                  className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
+                  className="w-full px-3 py-2 border border-light-grey rounded-xl font-body text-small text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
                 >
                   <option value="all">All</option>
                   <option value="HEALTHY">Financially healthy</option>
@@ -447,7 +447,7 @@ export default function WalletPage() {
                 <button
                   onClick={handleClearFilters}
                   disabled={!hasActiveFilters}
-                  className="w-full px-3 py-2 rounded-xl border border-light-grey font-body text-[13px] text-cool-grey hover:border-soft-gold/40 hover:text-deep-navy disabled:opacity-40 disabled:cursor-default transition-colors"
+                  className="w-full px-3 py-2 rounded-xl border border-light-grey font-body text-small text-cool-grey hover:border-soft-gold/40 hover:text-deep-navy disabled:opacity-40 disabled:cursor-default transition-colors"
                 >
                   Clear filters
                 </button>
@@ -459,11 +459,11 @@ export default function WalletPage() {
               placeholder="Search by name, location, or cause..."
               value={searchTerm}
               onChange={e => handleSearchChange(e.target.value)}
-              className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy placeholder:text-cool-grey/60 focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
+              className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-small text-deep-navy placeholder:text-cool-grey/60 focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
               aria-invalid={!!searchError}
             />
             {searchError && (
-              <p className="font-body text-[12px] text-destructive mt-1" role="alert">{searchError}</p>
+              <p className="font-body text-caption text-destructive mt-1" role="alert">{searchError}</p>
             )}
           </div>
         )}
@@ -471,7 +471,7 @@ export default function WalletPage() {
         {/* No results message */}
         {filteredEntries.length === 0 && entries.length > 0 && (
           <div className="bg-white border border-light-grey rounded-2xl p-6 mb-6 text-center">
-            <p className="font-body text-[14px] text-cool-grey">
+            <p className="font-body text-body text-cool-grey">
               No organizations match your filters.{' '}
               <button onClick={handleClearFilters} className="text-soft-gold hover:text-bright-gold underline">
                 Clear filters
@@ -561,7 +561,7 @@ export default function WalletPage() {
                   <div className="flex items-center gap-3 px-5 py-2 bg-white border border-t-0 border-light-grey rounded-b-xl">
                     <button
                       onClick={() => toggleLog(entry.ein)}
-                      className="inline-flex items-center gap-1.5 font-body text-[12px] text-deep-navy hover:text-soft-gold transition-colors font-medium"
+                      className="inline-flex items-center gap-1.5 font-body text-caption text-deep-navy hover:text-soft-gold transition-colors font-medium"
                     >
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 5v14M5 12h14"/>
@@ -569,12 +569,12 @@ export default function WalletPage() {
                       {logOpen ? 'Hide log' : 'View log'}
                     </button>
                     {donationCount > 0 && (
-                      <span className="font-body text-[11px] text-green-600">
+                      <span className="font-body text-label text-green-600">
                         {donationCount} donation{donationCount !== 1 ? 's' : ''}
                       </span>
                     )}
                     {volCount > 0 && (
-                      <span className="font-body text-[11px] text-red-500">
+                      <span className="font-body text-label text-red-500">
                         {volCount} volunteer session{volCount !== 1 ? 's' : ''}
                       </span>
                     )}
@@ -588,10 +588,10 @@ export default function WalletPage() {
                     <div className="border border-t-0 border-light-grey rounded-b-xl bg-warm-cream px-5 py-5 space-y-6">
                       {donationCount > 0 && (
                         <div>
-                          <p className="font-body text-[11px] font-semibold text-deep-navy uppercase tracking-wide mb-2">Donations</p>
+                          <p className="font-body text-label font-semibold text-deep-navy uppercase tracking-wide mb-2">Donations</p>
                           <div className="space-y-1.5">
                             {entry.donations!.map(d => (
-                              <div key={d.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
+                              <div key={d.id} className="flex items-center gap-3 font-body text-small text-deep-navy">
                                 <span className="text-cool-grey font-medium w-[90px] shrink-0">{d.date}</span>
                                 <span className="font-semibold text-green-700">${d.amount.toLocaleString()}</span>
                                 {d.notes && <span className="text-cool-grey truncate">{d.notes}</span>}
@@ -602,10 +602,10 @@ export default function WalletPage() {
                       )}
                       {volCount > 0 && (
                         <div>
-                          <p className="font-body text-[11px] font-semibold text-deep-navy uppercase tracking-wide mb-2">Volunteer hours</p>
+                          <p className="font-body text-label font-semibold text-deep-navy uppercase tracking-wide mb-2">Volunteer hours</p>
                           <div className="space-y-1.5">
                             {entry.volunteerHours!.map(v => (
-                              <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
+                              <div key={v.id} className="flex items-center gap-3 font-body text-small text-deep-navy">
                                 <span className="text-cool-grey font-medium w-[90px] shrink-0">{v.date}</span>
                                 <span className="font-semibold text-destructive">{v.hours}h</span>
                                 <VolunteerStatusChip status={v.status} rejectionReason={v.rejectionReason} />
@@ -671,7 +671,7 @@ export default function WalletPage() {
                 <div className="flex items-center gap-3 px-5 py-2 bg-white border border-t-0 border-light-grey rounded-b-xl -mt-1">
                   <button
                     onClick={() => toggleLog(entry.ein)}
-                    className="inline-flex items-center gap-1.5 font-body text-[12px] text-deep-navy hover:text-soft-gold transition-colors font-medium"
+                    className="inline-flex items-center gap-1.5 font-body text-caption text-deep-navy hover:text-soft-gold transition-colors font-medium"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 5v14M5 12h14"/>
@@ -679,12 +679,12 @@ export default function WalletPage() {
                     {logOpen ? 'Hide log' : 'Log activity'}
                   </button>
                   {donationCount > 0 && (
-                    <span className="font-body text-[11px] text-green-600">
+                    <span className="font-body text-label text-green-600">
                       {donationCount} donation{donationCount !== 1 ? 's' : ''}
                     </span>
                   )}
                   {volCount > 0 && (
-                    <span className="font-body text-[11px] text-red-500">
+                    <span className="font-body text-label text-red-500">
                       {volCount} volunteer session{volCount !== 1 ? 's' : ''}
                     </span>
                   )}
@@ -700,10 +700,10 @@ export default function WalletPage() {
                     {/* Existing donations */}
                     {donationCount > 0 && (
                       <div>
-                        <p className="font-body text-[11px] font-semibold text-deep-navy uppercase tracking-wide mb-2">Donations</p>
+                        <p className="font-body text-label font-semibold text-deep-navy uppercase tracking-wide mb-2">Donations</p>
                         <div className="space-y-1.5">
                           {entry.donations!.map(d => (
-                            <div key={d.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
+                            <div key={d.id} className="flex items-center gap-3 font-body text-small text-deep-navy">
                               <span className="text-cool-grey font-medium w-[90px] shrink-0">{d.date}</span>
                               <span className="font-semibold text-green-700">${d.amount.toLocaleString()}</span>
                               {d.notes && <span className="text-cool-grey truncate">{d.notes}</span>}
@@ -716,10 +716,10 @@ export default function WalletPage() {
                     {/* Existing volunteer hours */}
                     {volCount > 0 && (
                       <div>
-                        <p className="font-body text-[11px] font-semibold text-deep-navy uppercase tracking-wide mb-2">Volunteer hours</p>
+                        <p className="font-body text-label font-semibold text-deep-navy uppercase tracking-wide mb-2">Volunteer hours</p>
                         <div className="space-y-1.5">
                           {entry.volunteerHours!.map(v => (
-                            <div key={v.id} className="flex items-center gap-3 font-body text-[13px] text-deep-navy">
+                            <div key={v.id} className="flex items-center gap-3 font-body text-small text-deep-navy">
                               <span className="text-cool-grey font-medium w-[90px] shrink-0">{v.date}</span>
                               <span className="font-semibold text-destructive">{v.hours}h</span>
                               <VolunteerStatusChip status={v.status} rejectionReason={v.rejectionReason} />
@@ -733,7 +733,7 @@ export default function WalletPage() {
                     {/* Giving rhythm — saved cadence for this org */}
                     {showDonationLogger && (
                       <div>
-                        <p className="font-body text-[11px] font-semibold text-deep-navy uppercase tracking-wide mb-2">Giving rhythm</p>
+                        <p className="font-body text-label font-semibold text-deep-navy uppercase tracking-wide mb-2">Giving rhythm</p>
                         <RhythmControl entry={entry} orgName={org.organization_name} />
                       </div>
                     )}

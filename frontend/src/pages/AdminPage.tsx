@@ -42,8 +42,8 @@ function KeyGate({ onKey }: { onKey: (k: string) => void }) {
   return (
     <div className="min-h-[100dvh] bg-deep-navy flex items-center justify-center">
       <div className="bg-white rounded-2xl p-8 w-full max-w-sm shadow-xl">
-        <h1 className="font-display text-[22px] text-deep-navy mb-1">Daanaa Admin</h1>
-        <p className="font-body text-[13px] text-cool-grey mb-6">Enter your admin key to continue</p>
+        <h1 className="font-display text-title-lg text-deep-navy mb-1">Daanaa Admin</h1>
+        <p className="font-body text-small text-cool-grey mb-6">Enter your admin key to continue</p>
         <form onSubmit={e => { e.preventDefault(); if (input.trim()) onKey(input.trim()) }}>
           <input
             type="password"
@@ -51,11 +51,11 @@ function KeyGate({ onKey }: { onKey: (k: string) => void }) {
             onChange={e => setInput(e.target.value)}
             placeholder="X-Admin-Key"
             autoFocus
-            className="w-full border border-light-grey rounded-lg px-4 py-2.5 font-body text-[14px] text-deep-navy outline-none focus:border-soft-gold mb-4"
+            className="w-full border border-light-grey rounded-lg px-4 py-2.5 font-body text-body text-deep-navy outline-none focus:border-soft-gold mb-4"
           />
           <button
             type="submit"
-            className="w-full h-[44px] bg-soft-gold text-deep-navy font-body text-[14px] font-semibold rounded-lg hover:bg-bright-gold transition-colors"
+            className="w-full h-[44px] bg-soft-gold text-deep-navy font-body text-body font-semibold rounded-lg hover:bg-bright-gold transition-colors"
           >
             Enter
           </button>
@@ -151,7 +151,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
     return res.ok
   }
 
-  if (error) return <p className="font-body text-[14px] text-red-500 p-6">{error}</p>
+  if (error) return <p className="font-body text-body text-red-500 p-6">{error}</p>
 
   const todayCount = (today?.to_call.length ?? 0) + (today?.pin_expiring.length ?? 0)
 
@@ -160,15 +160,15 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
       {/* Today — the system says what needs attention */}
       {today && (
         <div className="mb-6 bg-deep-navy rounded-xl p-5">
-          <p className="font-body text-[12px] font-medium tracking-[0.08em] text-soft-gold uppercase mb-2">
+          <p className="font-body text-caption font-medium tracking-[0.08em] text-soft-gold uppercase mb-2">
             Today {todayCount > 0 ? `· ${todayCount} item${todayCount === 1 ? '' : 's'}` : ''}
           </p>
           {todayCount === 0 ? (
-            <p className="font-body text-[14px] text-warm-cream/70">Nothing needs you right now.</p>
+            <p className="font-body text-body text-warm-cream/70">Nothing needs you right now.</p>
           ) : (
             <div className="space-y-1.5">
               {today.to_call.map(t => (
-                <p key={t.ein} className="font-body text-[14px] text-warm-cream">
+                <p key={t.ein} className="font-body text-body text-warm-cream">
                   Call <strong>{t.rep_name || 'the contact'}</strong> at{' '}
                   {t.phone ? (
                     <a href={`tel:${t.phone.replace(/\D/g, '')}`} className="text-soft-gold font-semibold hover:underline">{t.phone}</a>
@@ -178,7 +178,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
                 </p>
               ))}
               {today.pin_expiring.map(t => (
-                <p key={t.ein} className="font-body text-[14px] text-warm-cream">
+                <p key={t.ein} className="font-body text-body text-warm-cream">
                   PIN for <strong>{t.organization_name || t.ein}</strong> expires in {t.days_left}d and hasn't been used
                   <span className="text-warm-cream/50"> · consider a friendly nudge to {t.email}</span>
                 </p>
@@ -192,7 +192,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="border border-light-grey rounded-lg px-3 py-1.5 font-body text-[13px] text-deep-navy outline-none focus:border-soft-gold"
+          className="border border-light-grey rounded-lg px-3 py-1.5 font-body text-small text-deep-navy outline-none focus:border-soft-gold"
         >
           <option value="pending">Pending (call these)</option>
           <option value="verified">Verified</option>
@@ -200,10 +200,10 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
           <option value="revoked">Revoked</option>
           <option value="">All</option>
         </select>
-        <span className="font-body text-[13px] text-cool-grey ml-auto">{claims.length} claims</span>
+        <span className="font-body text-small text-cool-grey ml-auto">{claims.length} claims</span>
         <button
           onClick={load}
-          className="font-body text-[12px] text-cool-grey border border-light-grey rounded-lg px-3 py-1.5 hover:bg-warm-cream transition-colors"
+          className="font-body text-caption text-cool-grey border border-light-grey rounded-lg px-3 py-1.5 hover:bg-warm-cream transition-colors"
         >
           Refresh
         </button>
@@ -211,10 +211,10 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
 
       {/* Verification call checklist — same script every time, on purpose */}
       <details className="mb-5 bg-white rounded-xl border border-light-grey px-5 py-3">
-        <summary className="font-body text-[13px] font-medium text-deep-navy cursor-pointer">
+        <summary className="font-body text-small font-medium text-deep-navy cursor-pointer">
           Verification call checklist
         </summary>
-        <ol className="mt-3 space-y-1.5 font-body text-[13px] text-cool-grey list-decimal pl-5">
+        <ol className="mt-3 space-y-1.5 font-body text-small text-cool-grey list-decimal pl-5">
           <li>Confirm you are speaking with the person named on the claim and that their role matches the title given.</li>
           <li>Ask how they are connected to the organization. If anything feels off, call back through a number from the org's own website or public records.</li>
           <li>Once satisfied, read them the 6 digit PIN and remind them it stays good for 7 days at daanaa.org/claim/verify.</li>
@@ -227,7 +227,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
           <div className="w-6 h-6 rounded-full border-2 border-soft-gold border-t-transparent animate-spin" />
         </div>
       ) : claims.length === 0 ? (
-        <p className="font-body text-[14px] text-cool-grey text-center py-12">No claims here right now</p>
+        <p className="font-body text-body text-cool-grey text-center py-12">No claims here right now</p>
       ) : (
         <div className="space-y-4">
           {claims.map(c => (
@@ -239,25 +239,25 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
                       href={`/org/${c.ein}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-body text-[15px] font-semibold text-deep-navy hover:text-soft-gold transition-colors"
+                      className="font-body text-body-lg font-semibold text-deep-navy hover:text-soft-gold transition-colors"
                     >
                       {c.organization_name || 'Unknown organization'}
                     </a>
-                    <span className={`font-body text-[11px] px-2 py-0.5 rounded-full ${CLAIM_STATUS_COLOR[c.claim_status] ?? 'bg-gray-100 text-gray-500'}`}>
+                    <span className={`font-body text-label px-2 py-0.5 rounded-full ${CLAIM_STATUS_COLOR[c.claim_status] ?? 'bg-gray-100 text-gray-500'}`}>
                       {c.claim_status}
                     </span>
                   </div>
-                  <p className="font-body text-[12px] text-cool-grey mt-0.5">
+                  <p className="font-body text-caption text-cool-grey mt-0.5">
                     EIN {formatEIN(c.ein)} · {[c.CITY, c.STATE].filter(Boolean).join(', ') || 'location unknown'} · claimed {relativeDate(c.created_at)}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-body text-[11px] tracking-[0.06em] text-cool-grey uppercase mb-0.5">PIN: read on call only</p>
-                  <p className="font-mono text-[22px] font-semibold text-deep-navy tracking-[0.25em]">{c.pin}</p>
+                  <p className="font-body text-label tracking-[0.06em] text-cool-grey uppercase mb-0.5">PIN: read on call only</p>
+                  <p className="font-mono text-title-lg font-semibold text-deep-navy tracking-[0.25em]">{c.pin}</p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-x-6 gap-y-1 mb-4 font-body text-[13px] text-deep-navy">
+              <div className="flex flex-wrap gap-x-6 gap-y-1 mb-4 font-body text-small text-deep-navy">
                 <span className="font-semibold">{c.rep_name || 'Name not given'}</span>
                 <span>{c.rep_title || 'Role not given'}</span>
                 {c.phone && (
@@ -269,7 +269,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
               </div>
 
               {c.called_at ? (
-                <p className="font-body text-[12px] text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 mb-3">
+                <p className="font-body text-caption text-emerald-700 bg-emerald-50 rounded-lg px-3 py-2 mb-3">
                   Called {relativeDate(c.called_at)}{c.call_notes ? ` — ${c.call_notes}` : ''}
                 </p>
               ) : c.claim_status === 'pending' && (
@@ -278,11 +278,11 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
                     value={noteDraft[c.ein] ?? ''}
                     onChange={e => setNoteDraft(d => ({ ...d, [c.ein]: e.target.value }))}
                     placeholder="How was identity confirmed? (one line)"
-                    className="flex-1 min-w-[240px] border border-light-grey rounded-lg px-3 py-2 font-body text-[13px] text-deep-navy outline-none focus:border-soft-gold"
+                    className="flex-1 min-w-[240px] border border-light-grey rounded-lg px-3 py-2 font-body text-small text-deep-navy outline-none focus:border-soft-gold"
                   />
                   <button
                     onClick={() => patchClaim(c.ein, { action: 'mark_called', notes: noteDraft[c.ein] ?? '' })}
-                    className="font-body text-[13px] font-semibold bg-soft-gold text-deep-navy rounded-lg px-4 py-2 hover:bg-bright-gold transition-colors"
+                    className="font-body text-small font-semibold bg-soft-gold text-deep-navy rounded-lg px-4 py-2 hover:bg-bright-gold transition-colors"
                   >
                     Mark called
                   </button>
@@ -290,7 +290,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
               )}
 
               {c.claim_status === 'revoked' ? (
-                <p className="font-body text-[12px] text-destructive">
+                <p className="font-body text-caption text-destructive">
                   Revoked {c.revoked_at ? relativeDate(c.revoked_at) : ''} — {c.revoke_reason}
                 </p>
               ) : revoking === c.ein ? (
@@ -300,7 +300,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
                     value={revokeReason}
                     onChange={e => setRevokeReason(e.target.value)}
                     placeholder="Reason for revoking (required, kept on record)"
-                    className="flex-1 min-w-[240px] border border-destructive/20 rounded-lg px-3 py-2 font-body text-[13px] text-deep-navy outline-none focus:border-red-400"
+                    className="flex-1 min-w-[240px] border border-destructive/20 rounded-lg px-3 py-2 font-body text-small text-deep-navy outline-none focus:border-red-400"
                   />
                   <button
                     onClick={async () => {
@@ -309,13 +309,13 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
                         setRevoking(null); setRevokeReason('')
                       }
                     }}
-                    className="font-body text-[13px] font-semibold bg-destructive/50 text-white rounded-lg px-4 py-2 hover:bg-red-600 transition-colors"
+                    className="font-body text-small font-semibold bg-destructive/50 text-white rounded-lg px-4 py-2 hover:bg-red-600 transition-colors"
                   >
                     Confirm revoke
                   </button>
                   <button
                     onClick={() => { setRevoking(null); setRevokeReason('') }}
-                    className="font-body text-[13px] text-cool-grey rounded-lg px-3 py-2 hover:bg-warm-cream transition-colors"
+                    className="font-body text-small text-cool-grey rounded-lg px-3 py-2 hover:bg-warm-cream transition-colors"
                   >
                     Cancel
                   </button>
@@ -323,7 +323,7 @@ function ClaimsTab({ adminKey }: { adminKey: string }) {
               ) : (
                 <button
                   onClick={() => setRevoking(c.ein)}
-                  className="font-body text-[12px] text-cool-grey hover:text-red-500 transition-colors"
+                  className="font-body text-caption text-cool-grey hover:text-red-500 transition-colors"
                 >
                   Revoke this claim
                 </button>
@@ -396,7 +396,7 @@ function WaitlistTab({ adminKey }: { adminKey: string }) {
     a.click()
   }
 
-  if (error) return <p className="font-body text-[14px] text-red-500 p-6">{error}</p>
+  if (error) return <p className="font-body text-body text-red-500 p-6">{error}</p>
 
   return (
     <div>
@@ -405,7 +405,7 @@ function WaitlistTab({ adminKey }: { adminKey: string }) {
         <select
           value={srcFilter}
           onChange={e => setSrcFilter(e.target.value)}
-          className="border border-light-grey rounded-lg px-3 py-1.5 font-body text-[13px] text-deep-navy outline-none focus:border-soft-gold"
+          className="border border-light-grey rounded-lg px-3 py-1.5 font-body text-small text-deep-navy outline-none focus:border-soft-gold"
         >
           <option value="">All sources</option>
           <option value="newsletter">Newsletter</option>
@@ -414,7 +414,7 @@ function WaitlistTab({ adminKey }: { adminKey: string }) {
         <select
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
-          className="border border-light-grey rounded-lg px-3 py-1.5 font-body text-[13px] text-deep-navy outline-none focus:border-soft-gold"
+          className="border border-light-grey rounded-lg px-3 py-1.5 font-body text-small text-deep-navy outline-none focus:border-soft-gold"
         >
           <option value="">All statuses</option>
           <option value="new">New</option>
@@ -422,16 +422,16 @@ function WaitlistTab({ adminKey }: { adminKey: string }) {
           <option value="converted">Converted</option>
           <option value="dismissed">Dismissed</option>
         </select>
-        <span className="font-body text-[13px] text-cool-grey ml-auto">{total} entries</span>
+        <span className="font-body text-small text-cool-grey ml-auto">{total} entries</span>
         <button
           onClick={exportCsv}
-          className="font-body text-[12px] text-soft-gold border border-soft-gold/30 rounded-lg px-3 py-1.5 hover:bg-soft-gold/5 transition-colors"
+          className="font-body text-caption text-soft-gold border border-soft-gold/30 rounded-lg px-3 py-1.5 hover:bg-soft-gold/5 transition-colors"
         >
           Export CSV
         </button>
         <button
           onClick={load}
-          className="font-body text-[12px] text-cool-grey border border-light-grey rounded-lg px-3 py-1.5 hover:bg-warm-cream transition-colors"
+          className="font-body text-caption text-cool-grey border border-light-grey rounded-lg px-3 py-1.5 hover:bg-warm-cream transition-colors"
         >
           Refresh
         </button>
@@ -442,14 +442,14 @@ function WaitlistTab({ adminKey }: { adminKey: string }) {
           <div className="w-6 h-6 rounded-full border-2 border-soft-gold border-t-transparent animate-spin" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="font-body text-[14px] text-cool-grey text-center py-12">No entries found</p>
+        <p className="font-body text-body text-cool-grey text-center py-12">No entries found</p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-light-grey">
           <table className="w-full min-w-[700px]">
             <thead>
               <tr className="border-b border-light-grey bg-warm-cream/50">
                 {['Created', 'Email', 'EIN', 'Source', 'Status', 'Notes', ''].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-body text-[11px] font-medium tracking-[0.06em] text-cool-grey uppercase">
+                  <th key={h} className="px-4 py-3 text-left font-body text-label font-medium tracking-[0.06em] text-cool-grey uppercase">
                     {h}
                   </th>
                 ))}
@@ -458,13 +458,13 @@ function WaitlistTab({ adminKey }: { adminKey: string }) {
             <tbody>
               {entries.map(entry => (
                 <tr key={entry.id} className="border-b border-light-grey/60 hover:bg-warm-cream/30 transition-colors">
-                  <td className="px-4 py-3 font-body text-[12px] text-cool-grey whitespace-nowrap">
+                  <td className="px-4 py-3 font-body text-caption text-cool-grey whitespace-nowrap">
                     {relativeDate(entry.created_at)}
                   </td>
-                  <td className="px-4 py-3 font-body text-[13px] text-deep-navy">{entry.email}</td>
-                  <td className="px-4 py-3 font-body text-[12px] text-cool-grey">{entry.ein ?? '—'}</td>
+                  <td className="px-4 py-3 font-body text-small text-deep-navy">{entry.email}</td>
+                  <td className="px-4 py-3 font-body text-caption text-cool-grey">{entry.ein ?? '—'}</td>
                   <td className="px-4 py-3">
-                    <span className={`font-body text-[11px] px-2 py-0.5 rounded-full ${entry.source === 'claiming' ? 'bg-purple-100 text-purple-700' : 'bg-sky-100 text-sky-700'}`}>
+                    <span className={`font-body text-label px-2 py-0.5 rounded-full ${entry.source === 'claiming' ? 'bg-purple-100 text-purple-700' : 'bg-sky-100 text-sky-700'}`}>
                       {entry.source}
                     </span>
                   </td>
@@ -472,7 +472,7 @@ function WaitlistTab({ adminKey }: { adminKey: string }) {
                     <button
                       onClick={() => cycleStatus(entry)}
                       title="Click to advance status"
-                      className={`font-body text-[11px] px-2 py-0.5 rounded-full cursor-pointer transition-opacity hover:opacity-75 ${STATUS_COLOR[entry.status]}`}
+                      className={`font-body text-label px-2 py-0.5 rounded-full cursor-pointer transition-opacity hover:opacity-75 ${STATUS_COLOR[entry.status]}`}
                     >
                       {entry.status}
                     </button>
@@ -485,12 +485,12 @@ function WaitlistTab({ adminKey }: { adminKey: string }) {
                         onChange={e => setEditingNote({ id: entry.id, val: e.target.value })}
                         onBlur={() => saveNote(entry.id, editingNote.val)}
                         onKeyDown={e => { if (e.key === 'Enter') saveNote(entry.id, editingNote.val) }}
-                        className="w-full border-b border-soft-gold outline-none font-body text-[12px] text-deep-navy bg-transparent"
+                        className="w-full border-b border-soft-gold outline-none font-body text-caption text-deep-navy bg-transparent"
                       />
                     ) : (
                       <button
                         onClick={() => setEditingNote({ id: entry.id, val: entry.notes ?? '' })}
-                        className="text-left font-body text-[12px] text-cool-grey hover:text-deep-navy transition-colors group flex items-center gap-1.5"
+                        className="text-left font-body text-caption text-cool-grey hover:text-deep-navy transition-colors group flex items-center gap-1.5"
                       >
                         <span>{entry.notes || <span className="italic opacity-50">add note</span>}</span>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 opacity-0 group-hover:opacity-60">
@@ -560,7 +560,7 @@ function PipelineTab({ adminKey }: { adminKey: string }) {
 
   return (
     <div>
-      <p className="font-body text-[13px] text-cool-grey mb-5">
+      <p className="font-body text-small text-cool-grey mb-5">
         Top 50 Beacon and Lantern organizations, outreach targets. "In Waitlist" means they submitted a claiming request.
       </p>
       <div className="overflow-x-auto rounded-xl border border-light-grey">
@@ -568,7 +568,7 @@ function PipelineTab({ adminKey }: { adminKey: string }) {
           <thead>
             <tr className="border-b border-light-grey bg-warm-cream/50">
               {['Organization', 'EIN', 'Location', 'Revenue', ''].map(h => (
-                <th key={h} className="px-4 py-3 text-left font-body text-[11px] font-medium tracking-[0.06em] text-cool-grey uppercase">
+                <th key={h} className="px-4 py-3 text-left font-body text-label font-medium tracking-[0.06em] text-cool-grey uppercase">
                   {h}
                 </th>
               ))}
@@ -587,22 +587,22 @@ function PipelineTab({ adminKey }: { adminKey: string }) {
                         href={`/org/${org.EIN}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="font-body text-[13px] font-medium text-deep-navy hover:text-soft-gold transition-colors line-clamp-1"
+                        className="font-body text-small font-medium text-deep-navy hover:text-soft-gold transition-colors line-clamp-1"
                       >
                         {org.organization_name}
                       </a>
                     </div>
                   </td>
-                  <td className="px-4 py-3 font-body text-[12px] text-cool-grey">{formatEIN(org.EIN)}</td>
-                  <td className="px-4 py-3 font-body text-[12px] text-cool-grey">
+                  <td className="px-4 py-3 font-body text-caption text-cool-grey">{formatEIN(org.EIN)}</td>
+                  <td className="px-4 py-3 font-body text-caption text-cool-grey">
                     {[org.CITY, org.STATE].filter(Boolean).join(', ') || '—'}
                   </td>
-                  <td className="px-4 py-3 font-body text-[12px] text-cool-grey">
+                  <td className="px-4 py-3 font-body text-caption text-cool-grey">
                     {formatRevenue(org.total_revenue)}
                   </td>
                   <td className="px-4 py-3">
                     {inWaitlist && (
-                      <span className="font-body text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                      <span className="font-body text-label px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
                         In Waitlist
                       </span>
                     )}
@@ -641,7 +641,7 @@ export default function AdminPage() {
       <>
         <KeyGate onKey={handleKey} />
         {invalidKey && (
-          <p className="fixed bottom-6 left-1/2 -translate-x-1/2 font-body text-[13px] text-red-500 bg-white shadow-lg rounded-full px-4 py-2">
+          <p className="fixed bottom-6 left-1/2 -translate-x-1/2 font-body text-small text-red-500 bg-white shadow-lg rounded-full px-4 py-2">
             Invalid key. Try again
           </p>
         )}
@@ -653,10 +653,10 @@ export default function AdminPage() {
     <div className="min-h-[100dvh] bg-[#F8F6F3]">
       {/* Header */}
       <div className="bg-deep-navy px-6 lg:px-12 py-4 flex items-center justify-between">
-        <span className="font-display italic text-[18px] text-warm-cream tracking-[-0.02em]">Daanaa Admin</span>
+        <span className="font-display italic text-title-sm text-warm-cream tracking-[-0.02em]">Daanaa Admin</span>
         <button
           onClick={() => setAdminKey('')}
-          className="font-body text-[12px] text-muted-cream hover:text-muted-cream transition-colors"
+          className="font-body text-caption text-muted-cream hover:text-muted-cream transition-colors"
         >
           Sign out
         </button>
@@ -668,7 +668,7 @@ export default function AdminPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`font-body text-[14px] py-3.5 border-b-2 transition-colors capitalize ${
+            className={`font-body text-body py-3.5 border-b-2 transition-colors capitalize ${
               tab === t
                 ? 'border-soft-gold text-deep-navy font-medium'
                 : 'border-transparent text-cool-grey hover:text-deep-navy'

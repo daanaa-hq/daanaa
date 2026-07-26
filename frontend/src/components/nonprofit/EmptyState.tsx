@@ -49,13 +49,13 @@ export default function EmptyState({
     <div className="text-center py-12 px-6">
       <div className="text-6xl mb-4">{state.icon}</div>
       <h3 className="font-display text-xl text-deep-navy mb-2">{state.title}</h3>
-      <p className="font-body text-[14px] text-cool-grey mb-6 max-w-md mx-auto leading-relaxed">
+      <p className="font-body text-body text-cool-grey mb-6 max-w-md mx-auto leading-relaxed">
         {state.message}
       </p>
       {label && onAction && (
         <button
           onClick={onAction}
-          className="inline-block px-6 py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition"
+          className="inline-block px-6 py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition"
           aria-label={label}
         >
           {label}

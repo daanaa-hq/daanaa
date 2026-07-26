@@ -51,14 +51,14 @@ export default function GuildReferral() {
     return (
       <div className="min-h-[100dvh] bg-warm-cream flex items-center justify-center px-6">
         <div className="text-center max-w-[400px]">
-          <h1 className="font-display italic text-[28px] text-deep-navy mb-3">Link not found</h1>
-          <p className="font-body text-[15px] text-cool-grey mb-6 leading-[1.7]">
+          <h1 className="font-display italic text-headline text-deep-navy mb-3">Link not found</h1>
+          <p className="font-body text-body-lg text-cool-grey mb-6 leading-[1.7]">
             This partner link may have changed or expired. Visit the Daanaa Guild to see all
             current member benefits.
           </p>
           <Link
             to="/for-nonprofits"
-            className="inline-block px-6 py-3 bg-soft-gold text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-bright-gold transition-colors"
+            className="inline-block px-6 py-3 bg-soft-gold text-deep-navy font-body text-body font-semibold rounded-xl hover:bg-bright-gold transition-colors"
           >
             Claim your free page
           </Link>
@@ -73,7 +73,7 @@ export default function GuildReferral() {
       {/* Hero */}
       <div className="bg-deep-navy pt-[108px] pb-20 px-6">
         <div className="max-w-[680px] mx-auto text-center">
-          <p className="font-body text-[12px] font-medium tracking-[0.12em] text-soft-gold uppercase mb-5">
+          <p className="font-body text-caption font-medium tracking-[0.12em] text-soft-gold uppercase mb-5">
             Daanaa Guild: Exclusive Member Benefit
           </p>
           <h1
@@ -82,7 +82,7 @@ export default function GuildReferral() {
             {vendor.vendor_name}<br />
             <span className="text-soft-gold">{vendor.discount_label}</span>
           </h1>
-          <p className="font-body text-[16px] text-warm-cream/80 leading-[1.7] mb-8">
+          <p className="font-body text-lead text-warm-cream/80 leading-[1.7] mb-8">
             {vendor.description}
           </p>
           {vendor.website_url && (
@@ -90,7 +90,7 @@ export default function GuildReferral() {
               href={vendor.website_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block px-8 py-3.5 bg-soft-gold text-deep-navy font-body text-[15px] font-semibold rounded-xl hover:bg-bright-gold transition-colors"
+              className="inline-block px-8 py-3.5 bg-soft-gold text-deep-navy font-body text-body-lg font-semibold rounded-xl hover:bg-bright-gold transition-colors"
             >
               Visit {vendor.vendor_name}
             </a>
@@ -103,10 +103,10 @@ export default function GuildReferral() {
         {/* How to access */}
         {vendor.how_to_use && (
           <div className="bg-white rounded-2xl border border-light-grey p-7 mb-8">
-            <h2 className="font-body text-[15px] font-semibold text-deep-navy mb-3">
+            <h2 className="font-body text-body-lg font-semibold text-deep-navy mb-3">
               How to access this benefit
             </h2>
-            <p className="font-body text-[15px] text-cool-grey leading-[1.7]">
+            <p className="font-body text-body-lg text-cool-grey leading-[1.7]">
               {vendor.how_to_use}
             </p>
           </div>
@@ -114,20 +114,20 @@ export default function GuildReferral() {
 
         {/* CTA for non-members */}
         <div className="bg-deep-navy rounded-2xl p-8 text-center mb-8">
-          <p className="font-body text-[12px] font-medium tracking-[0.12em] text-soft-gold uppercase mb-4">
+          <p className="font-body text-caption font-medium tracking-[0.12em] text-soft-gold uppercase mb-4">
             Not a Daanaa member yet?
           </p>
-          <h2 className="font-display italic text-[26px] text-warm-cream mb-3">
+          <h2 className="font-display italic text-headline text-warm-cream mb-3">
             Claim your free page to unlock this and more.
           </h2>
-          <p className="font-body text-[14px] text-warm-cream/70 leading-[1.7] mb-6 max-w-[480px] mx-auto">
+          <p className="font-body text-body text-warm-cream/70 leading-[1.7] mb-6 max-w-[480px] mx-auto">
             The Daanaa Guild brings {vendor.vendor_name} and other community partners together
             for nonprofits like yours. Free to join. Better rates for everyone as the
             guild grows.
           </p>
           <Link
             to="/for-nonprofits"
-            className="inline-block px-8 py-3.5 bg-soft-gold text-deep-navy font-body text-[15px] font-semibold rounded-xl hover:bg-bright-gold transition-colors"
+            className="inline-block px-8 py-3.5 bg-soft-gold text-deep-navy font-body text-body-lg font-semibold rounded-xl hover:bg-bright-gold transition-colors"
           >
             Claim your free Daanaa page
           </Link>
@@ -156,14 +156,14 @@ export default function GuildReferral() {
                 </svg>
               </span>
               <div>
-                <p className="font-body text-[14px] font-semibold text-deep-navy mb-0.5">{title}</p>
-                <p className="font-body text-[13px] text-cool-grey leading-[1.6]">{body}</p>
+                <p className="font-body text-body font-semibold text-deep-navy mb-0.5">{title}</p>
+                <p className="font-body text-small text-cool-grey leading-[1.6]">{body}</p>
               </div>
             </div>
           ))}
         </div>
 
-        <p className="text-center font-body text-[13px] text-cool-grey">
+        <p className="text-center font-body text-small text-cool-grey">
           Questions?{' '}
           <a href="mailto:hello@daanaa.org" className="text-soft-gold hover:underline">
             hello@daanaa.org

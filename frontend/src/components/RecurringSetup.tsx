@@ -49,10 +49,10 @@ export default function RecurringSetup({
         <div className="bg-warm-cream px-6 pt-5 pb-4 border-b border-light-grey">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-body text-[11px] font-semibold text-link-gold uppercase tracking-widest mb-0.5">
+              <p className="font-body text-label font-semibold text-link-gold uppercase tracking-widest mb-0.5">
                 Recurring giving
               </p>
-              <h3 className="font-display text-[20px] text-deep-navy leading-snug">{orgName}</h3>
+              <h3 className="font-display text-title text-deep-navy leading-snug">{orgName}</h3>
             </div>
             <button
               onClick={onClose}
@@ -64,7 +64,7 @@ export default function RecurringSetup({
               </svg>
             </button>
           </div>
-          <p className="mt-2 font-body text-[12px] text-cool-grey leading-relaxed">
+          <p className="mt-2 font-body text-caption text-cool-grey leading-relaxed">
             Give at your own pace. Change or cancel anytime. All stored on your device.
           </p>
         </div>
@@ -73,11 +73,11 @@ export default function RecurringSetup({
         <div className="px-6 py-5 space-y-4">
           {/* Amount */}
           <div>
-            <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">
+            <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">
               Amount per {cadence === 'yearly' ? 'year' : cadence === 'quarterly' ? 'quarter' : 'month'}
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-cool-grey font-body text-[14px]">$</span>
+              <span className="text-cool-grey font-body text-body">$</span>
               <input
                 type="number"
                 value={amount}
@@ -85,10 +85,10 @@ export default function RecurringSetup({
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                className="flex-1 px-4 py-2.5 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy placeholder:text-cool-grey/50 focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
+                className="flex-1 px-4 py-2.5 border border-light-grey rounded-xl font-body text-body text-deep-navy placeholder:text-cool-grey/50 focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
               />
             </div>
-            <p className="mt-1.5 font-body text-[11px] text-cool-grey">
+            <p className="mt-1.5 font-body text-label text-cool-grey">
               {amount && !isNaN(parseFloat(amount))
                 ? `${cadence === 'monthly' ? '12 times' : cadence === 'quarterly' ? '4 times' : 'once'} per year = $${(
                     parseFloat(amount) * (cadence === 'monthly' ? 12 : cadence === 'quarterly' ? 4 : 1)
@@ -99,7 +99,7 @@ export default function RecurringSetup({
 
           {/* Cadence */}
           <div>
-            <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">Frequency</label>
+            <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">Frequency</label>
             <div className="space-y-1.5">
               {['monthly', 'quarterly', 'yearly'].map(c => (
                 <label key={c} className="flex items-center gap-3 cursor-pointer">
@@ -115,7 +115,7 @@ export default function RecurringSetup({
                     }}
                     className="w-4 h-4 text-soft-gold"
                   />
-                  <span className="font-body text-[13px] text-deep-navy capitalize">{c}</span>
+                  <span className="font-body text-small text-deep-navy capitalize">{c}</span>
                 </label>
               ))}
             </div>
@@ -124,13 +124,13 @@ export default function RecurringSetup({
           {/* Yearly anchor month */}
           {cadence === 'yearly' && (
             <div>
-              <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">
+              <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">
                 When do you want to give? <span className="font-normal text-cool-grey">(month)</span>
               </label>
               <select
                 value={anchorMonth || new Date().getMonth() + 1}
                 onChange={e => setAnchorMonth(parseInt(e.target.value))}
-                className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[14px] text-deep-navy bg-white focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
+                className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-body text-deep-navy bg-white focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
               >
                 {Array.from({ length: 12 }, (_, i) => {
                   const month = new Date(2024, i, 1).toLocaleString('en-US', { month: 'long' })
@@ -146,7 +146,7 @@ export default function RecurringSetup({
 
           {/* Info */}
           <div className="rounded-lg bg-warm-cream border border-light-grey px-3 py-2.5">
-            <p className="font-body text-[11px] text-cool-grey leading-relaxed">
+            <p className="font-body text-label text-cool-grey leading-relaxed">
               📅 We'll remind you when it's time to give. You can skip any time. All your giving is private and stored on this device.
             </p>
           </div>
@@ -157,13 +157,13 @@ export default function RecurringSetup({
           <button
             onClick={handleSetup}
             disabled={!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0}
-            className="w-full py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Set up recurring
           </button>
           <button
             onClick={onClose}
-            className="w-full py-2.5 font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors"
+            className="w-full py-2.5 font-body text-small text-cool-grey hover:text-deep-navy transition-colors"
           >
             Not now
           </button>

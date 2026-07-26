@@ -85,7 +85,7 @@ function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInteres
       {'share' in navigator ? (
         <button
           onClick={nativeShare}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-[13px] text-deep-navy hover:bg-soft-gold/8 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-small text-deep-navy hover:bg-soft-gold/8 transition-colors"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -96,7 +96,7 @@ function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInteres
       ) : (
         <button
           onClick={copy}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-[13px] text-deep-navy hover:bg-soft-gold/8 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-small text-deep-navy hover:bg-soft-gold/8 transition-colors"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -109,7 +109,7 @@ function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInteres
       {/* Email */}
       <a
         href={emailHref}
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-[13px] text-deep-navy hover:bg-soft-gold/8 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-small text-deep-navy hover:bg-soft-gold/8 transition-colors"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -121,7 +121,7 @@ function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInteres
       {/* Text / SMS */}
       <a
         href={smsHref}
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-[13px] text-deep-navy hover:bg-soft-gold/8 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-small text-deep-navy hover:bg-soft-gold/8 transition-colors"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -132,7 +132,7 @@ function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInteres
       {/* Add to calendar */}
       <a
         href={calUrl}
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-[13px] text-deep-navy hover:bg-soft-gold/8 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-small text-deep-navy hover:bg-soft-gold/8 transition-colors"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
@@ -144,7 +144,7 @@ function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInteres
       {/* Interest button */}
       <button
         onClick={onInterestClick}
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-soft-gold/10 border border-soft-gold/30 font-body text-[13px] text-soft-gold hover:bg-soft-gold/20 transition-colors font-semibold"
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-soft-gold/10 border border-soft-gold/30 font-body text-small text-soft-gold hover:bg-soft-gold/20 transition-colors font-semibold"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -156,7 +156,7 @@ function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInteres
       <a
         href={`${API_BASE}/api/events/${event.id}/qr.png`}
         download={`event-${event.id}-qr.png`}
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-[13px] text-deep-navy hover:bg-soft-gold/8 transition-colors"
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-light-cream font-body text-small text-deep-navy hover:bg-soft-gold/8 transition-colors"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -166,7 +166,7 @@ function ShareBar({ event, onInterestClick }: { event: VolunteerEvent; onInteres
       </a>
 
       {/* Short URL display */}
-      <div className="ml-auto self-center font-body text-[11px] text-muted-cream select-all">
+      <div className="ml-auto self-center font-body text-label text-muted-cream select-all">
         {shortUrl.replace('https://', '')}
       </div>
     </div>
@@ -241,7 +241,7 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
   if (!canSignup) {
     return (
       <div className="bg-light-cream rounded-2xl p-5 text-center">
-        <p className="font-body text-[14px] text-cool-grey">
+        <p className="font-body text-body text-cool-grey">
           {event.status === 'cancelled' ? 'This event has been cancelled.' :
            full ? 'This event is full.' : 'Signups are closed.'}
         </p>
@@ -257,14 +257,14 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         </div>
-        <h3 className="font-display italic text-deep-navy text-[18px] mb-1">You're confirmed</h3>
-        <p className="font-body text-[14px] text-cool-grey mb-4">
+        <h3 className="font-display italic text-deep-navy text-title-sm mb-1">You're confirmed</h3>
+        <p className="font-body text-body text-cool-grey mb-4">
           Check your email for details and a cancellation link.
           {event.expected_hours && (
             <> This event earns up to <strong>{event.expected_hours}h</strong> for your Wallet.</>
           )}
         </p>
-        <Link to="/wallet" className="font-body text-[13px] text-soft-gold hover:text-bright-gold font-semibold">
+        <Link to="/wallet" className="font-body text-small text-soft-gold hover:text-bright-gold font-semibold">
           Open Giving Wallet →
         </Link>
       </div>
@@ -274,9 +274,9 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
   if (step === 'cancelled') {
     return (
       <div className="bg-light-cream rounded-2xl p-5 text-center">
-        <p className="font-body text-[14px] text-cool-grey">Your signup has been cancelled.</p>
+        <p className="font-body text-body text-cool-grey">Your signup has been cancelled.</p>
         <button onClick={() => { setStep('idle'); setName(''); setEmail(''); setAttendees([]) }}
-          className="mt-3 font-body text-[13px] text-soft-gold hover:underline">
+          className="mt-3 font-body text-small text-soft-gold hover:underline">
           Sign up again
         </button>
       </div>
@@ -287,17 +287,17 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
     return (
       <div>
         {spotsLeft !== null && (
-          <p className="font-body text-[12px] text-muted-cream mb-3">
+          <p className="font-body text-caption text-muted-cream mb-3">
             {spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} remaining
           </p>
         )}
         <button
           onClick={() => setStep('step1')}
-          className="w-full py-3 bg-soft-gold text-deep-navy rounded-xl font-body text-[15px] font-semibold hover:bg-bright-gold transition-colors"
+          className="w-full py-3 bg-soft-gold text-deep-navy rounded-xl font-body text-body-lg font-semibold hover:bg-bright-gold transition-colors"
         >
           Sign up — it's free
         </button>
-        <p className="font-body text-[11px] text-muted-cream text-center mt-2">
+        <p className="font-body text-label text-muted-cream text-center mt-2">
           No account needed. Your contact info is shared only with the organizer.
         </p>
       </div>
@@ -306,10 +306,10 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
 
   return (
     <div className="bg-white rounded-2xl border border-light-cream p-5 flex flex-col gap-4">
-      <h3 className="font-display italic text-deep-navy text-[17px]">Sign up</h3>
+      <h3 className="font-display italic text-deep-navy text-title-sm">Sign up</h3>
 
       {error && (
-        <div className="bg-destructive/5 border border-red-100 rounded-lg px-3 py-2 font-body text-[13px] text-destructive">
+        <div className="bg-destructive/5 border border-red-100 rounded-lg px-3 py-2 font-body text-small text-destructive">
           {error}
         </div>
       )}
@@ -317,26 +317,26 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
       {/* Step 1: Contact person */}
       <div className="flex flex-col gap-3">
         <div>
-          <label className="block font-body text-[12px] font-medium text-deep-navy mb-1">Your name</label>
+          <label className="block font-body text-caption font-medium text-deep-navy mb-1">Your name</label>
           <input
             type="text"
             autoFocus
             placeholder="First and last name"
             value={contactName}
             onChange={e => setName(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
           />
         </div>
         <div>
-          <label className="block font-body text-[12px] font-medium text-deep-navy mb-1">Email</label>
+          <label className="block font-body text-caption font-medium text-deep-navy mb-1">Email</label>
           <input
             type="email"
             placeholder="you@example.com"
             value={contactEmail}
             onChange={e => setEmail(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 rounded-xl border border-light-cream font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
           />
-          <p className="font-body text-[11px] text-muted-cream mt-1">
+          <p className="font-body text-label text-muted-cream mt-1">
             Confirmation and cancellation link will be sent here.
           </p>
         </div>
@@ -346,12 +346,12 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
       {(step === 'step2' || attendees.length > 0) && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="font-body text-[13px] font-medium text-deep-navy">
+            <span className="font-body text-small font-medium text-deep-navy">
               Additional attendees
             </span>
             <button
               onClick={addAttendee}
-              className="font-body text-[12px] text-soft-gold hover:text-bright-gold font-semibold"
+              className="font-body text-caption text-soft-gold hover:text-bright-gold font-semibold"
             >
               + Add person
             </button>
@@ -363,12 +363,12 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
                 placeholder="Name"
                 value={a.name}
                 onChange={e => updateAttendee(i, 'name', e.target.value)}
-                className="flex-1 px-3 py-2 rounded-xl border border-light-cream font-body text-[13px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                className="flex-1 px-3 py-2 rounded-xl border border-light-cream font-body text-small text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
               />
               <select
                 value={a.age_group}
                 onChange={e => updateAttendee(i, 'age_group', e.target.value)}
-                className="px-2 py-2 rounded-xl border border-light-cream font-body text-[12px] text-deep-navy bg-white focus:outline-none focus:border-soft-gold/60"
+                className="px-2 py-2 rounded-xl border border-light-cream font-body text-caption text-deep-navy bg-white focus:outline-none focus:border-soft-gold/60"
               >
                 {Object.entries(AGE_GROUP_LABELS).map(([v, label]) => {
                   if (event.min_age && event.min_age >= 13 && v === 'child') return null
@@ -394,13 +394,13 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
             <button
               onClick={() => setStep('step2')}
               disabled={!contactName.trim() || !contactEmail.includes('@')}
-              className="flex-1 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
+              className="flex-1 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-body font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
             >
               {attendees.length ? `Continue (${attendees.length + 1} people)` : 'Continue'}
             </button>
             <button
               onClick={() => setStep('idle')}
-              className="px-4 py-2.5 rounded-xl border border-light-cream font-body text-[13px] text-cool-grey hover:border-soft-gold/40 transition-colors"
+              className="px-4 py-2.5 rounded-xl border border-light-cream font-body text-small text-cool-grey hover:border-soft-gold/40 transition-colors"
             >
               Cancel
             </button>
@@ -411,14 +411,14 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
             <button
               onClick={submit}
               disabled={submitting || !contactName.trim() || !contactEmail.includes('@')}
-              className="flex-1 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
+              className="flex-1 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-body font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
             >
               {submitting ? 'Signing up…' : `Confirm signup${attendees.length ? ` (${attendees.length + 1})` : ''}`}
             </button>
             <button
               onClick={() => setStep('step1')}
               disabled={submitting}
-              className="px-4 py-2.5 rounded-xl border border-light-cream font-body text-[13px] text-cool-grey hover:border-soft-gold/40 transition-colors disabled:opacity-50"
+              className="px-4 py-2.5 rounded-xl border border-light-cream font-body text-small text-cool-grey hover:border-soft-gold/40 transition-colors disabled:opacity-50"
             >
               Back
             </button>
@@ -426,7 +426,7 @@ function SignupForm({ event, onDone }: { event: VolunteerEvent; onDone: () => vo
         )}
       </div>
 
-      <p className="font-body text-[11px] text-muted-cream text-center leading-[1.6]">
+      <p className="font-body text-label text-muted-cream text-center leading-[1.6]">
         Your name and email are shared with the organizer only.
         Daanaa does not display who attends.
       </p>
@@ -476,8 +476,8 @@ export default function EventDetailPage() {
   if (notFound || !event) {
     return (
       <div className="min-h-[100dvh] bg-warm-cream pt-[72px] flex flex-col items-center justify-center gap-4 px-6">
-        <p className="font-display italic text-deep-navy text-[24px]">Event not found</p>
-        <Link to="/volunteer" className="font-body text-[14px] text-soft-gold hover:text-bright-gold font-semibold">
+        <p className="font-display italic text-deep-navy text-title-lg">Event not found</p>
+        <Link to="/volunteer" className="font-body text-body text-soft-gold hover:text-bright-gold font-semibold">
           Browse all events →
         </Link>
       </div>
@@ -499,16 +499,16 @@ export default function EventDetailPage() {
       <div className="bg-deep-navy pt-10 pb-8">
         <div className="max-w-[860px] mx-auto px-6 md:px-12">
           <div className="flex flex-wrap items-center gap-2 mb-3">
-            <span className={`inline-block px-2.5 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase ${typeColor}`}>
+            <span className={`inline-block px-2.5 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.06em] uppercase ${typeColor}`}>
               {typeLabel}
             </span>
             {event.is_virtual && (
-              <span className="inline-block px-2.5 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase bg-blue-50 text-blue-600">
+              <span className="inline-block px-2.5 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.06em] uppercase bg-blue-50 text-blue-600">
                 Virtual
               </span>
             )}
             {event.min_age && event.min_age > 0 && (
-              <span className="inline-block px-2.5 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase bg-orange-50 text-orange-600">
+              <span className="inline-block px-2.5 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.06em] uppercase bg-orange-50 text-orange-600">
                 {event.min_age}+
               </span>
             )}
@@ -519,13 +519,13 @@ export default function EventDetailPage() {
           {event.org_name && (
             <Link
               to={`/org/${event.ein}`}
-              className="font-body text-[15px] text-soft-gold hover:text-bright-gold font-medium mt-2 block"
+              className="font-body text-body-lg text-soft-gold hover:text-bright-gold font-medium mt-2 block"
             >
               {event.org_name}
             </Link>
           )}
 
-          <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-4 font-body text-[14px]">
+          <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-4 font-body text-body">
             <span className="text-warm-cream font-medium">{formatDate(event.event_date)}</span>
             {timeStr && <span className="text-muted-cream">{timeStr}</span>}
             {location && <span className="text-muted-cream">{location}</span>}
@@ -536,7 +536,7 @@ export default function EventDetailPage() {
 
           {/* Signup count — social proof of reality, not competition */}
           {signupCount > 0 && (
-            <p className="font-body text-[13px] text-muted-cream mt-3">
+            <p className="font-body text-small text-muted-cream mt-3">
               {signupCount} {signupCount === 1 ? 'person' : 'people'} signed up
             </p>
           )}
@@ -550,10 +550,10 @@ export default function EventDetailPage() {
           {/* Description */}
           {event.description && (
             <section>
-              <h2 className="font-body text-[11px] font-semibold text-cool-grey tracking-[0.08em] uppercase mb-3">
+              <h2 className="font-body text-label font-semibold text-cool-grey tracking-[0.08em] uppercase mb-3">
                 About this event
               </h2>
-              <p className="font-body text-[15px] text-deep-navy leading-[1.8] whitespace-pre-line">
+              <p className="font-body text-body-lg text-deep-navy leading-[1.8] whitespace-pre-line">
                 {event.description}
               </p>
             </section>
@@ -564,54 +564,54 @@ export default function EventDetailPage() {
             <section className="bg-white rounded-2xl border border-light-cream p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
               {event.coordinator_name && (
                 <div>
-                  <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
+                  <p className="font-body text-micro font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
                     Your coordinator
                   </p>
-                  <p className="font-body text-[14px] text-deep-navy">{event.coordinator_name}</p>
+                  <p className="font-body text-body text-deep-navy">{event.coordinator_name}</p>
                 </div>
               )}
               {event.skill_level && event.skill_level !== 'any' && (
                 <div>
-                  <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
+                  <p className="font-body text-micro font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
                     Skill level
                   </p>
-                  <p className="font-body text-[14px] text-deep-navy capitalize">{event.skill_level}</p>
+                  <p className="font-body text-body text-deep-navy capitalize">{event.skill_level}</p>
                 </div>
               )}
               {event.expected_hours && (
                 <div>
-                  <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
+                  <p className="font-body text-micro font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
                     Time commitment
                   </p>
-                  <p className="font-body text-[14px] text-deep-navy">{event.expected_hours} hours</p>
+                  <p className="font-body text-body text-deep-navy">{event.expected_hours} hours</p>
                 </div>
               )}
               {event.what_to_bring && (
                 <div className="sm:col-span-2">
-                  <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
+                  <p className="font-body text-micro font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
                     What to bring
                   </p>
-                  <p className="font-body text-[14px] text-deep-navy leading-[1.6]">{event.what_to_bring}</p>
+                  <p className="font-body text-body text-deep-navy leading-[1.6]">{event.what_to_bring}</p>
                 </div>
               )}
               {event.parking_info && (
                 <div className="sm:col-span-2">
-                  <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
+                  <p className="font-body text-micro font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
                     Parking and transit
                   </p>
-                  <p className="font-body text-[14px] text-deep-navy leading-[1.6]">{event.parking_info}</p>
+                  <p className="font-body text-body text-deep-navy leading-[1.6]">{event.parking_info}</p>
                 </div>
               )}
               {event.waiver_url && (
                 <div className="sm:col-span-2">
-                  <p className="font-body text-[10px] font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
+                  <p className="font-body text-micro font-semibold tracking-[0.08em] text-soft-gold uppercase mb-1">
                     Waiver required
                   </p>
                   <a
                     href={event.waiver_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-body text-[14px] text-soft-gold hover:text-bright-gold font-semibold"
+                    className="font-body text-body text-soft-gold hover:text-bright-gold font-semibold"
                   >
                     Review and sign waiver →
                   </a>
@@ -622,20 +622,20 @@ export default function EventDetailPage() {
 
           {/* Privacy notice — surfaces the trust signal legal asked for */}
           <section className="bg-[#F8F5F0] rounded-2xl border border-light-grey p-5">
-            <p className="font-body text-[11px] font-semibold text-cool-grey tracking-[0.08em] uppercase mb-2">
+            <p className="font-body text-label font-semibold text-cool-grey tracking-[0.08em] uppercase mb-2">
               Your privacy
             </p>
-            <p className="font-body text-[13px] text-cool-grey leading-[1.65]">
+            <p className="font-body text-small text-cool-grey leading-[1.65]">
               When you sign up, your name and email are shared with the organizing nonprofit and stored to manage your reservation and process cancellations. Daanaa does not use this information for marketing. You can cancel anytime using the link in your confirmation. Daanaa does not verify event accessibility accommodations; contact the organizer directly with any questions.
             </p>
           </section>
 
           {/* Share */}
           <section>
-            <h2 className="font-body text-[11px] font-semibold text-cool-grey tracking-[0.08em] uppercase mb-2">
+            <h2 className="font-body text-label font-semibold text-cool-grey tracking-[0.08em] uppercase mb-2">
               Know someone who cares about this cause?
             </h2>
-            <p className="font-body text-[13px] text-cool-grey mb-3">
+            <p className="font-body text-small text-cool-grey mb-3">
               Share this event — no account needed to sign up.
             </p>
             <ShareBar event={event} onInterestClick={() => setInterestModalOpen(true)} />
@@ -644,17 +644,17 @@ export default function EventDetailPage() {
           {/* Org snippet */}
           {event.org_name && (
             <section className="bg-white rounded-2xl border border-light-cream p-5">
-              <h2 className="font-body text-[11px] font-semibold text-cool-grey tracking-[0.08em] uppercase mb-2">
+              <h2 className="font-body text-label font-semibold text-cool-grey tracking-[0.08em] uppercase mb-2">
                 About {event.org_name}
               </h2>
               {event.org_mission && (
-                <p className="font-body text-[14px] text-deep-navy leading-[1.7] mb-3">
+                <p className="font-body text-body text-deep-navy leading-[1.7] mb-3">
                   {event.org_mission}
                 </p>
               )}
               <Link
                 to={`/org/${event.ein}`}
-                className="font-body text-[13px] text-soft-gold hover:text-bright-gold font-semibold"
+                className="font-body text-small text-soft-gold hover:text-bright-gold font-semibold"
               >
                 View organization profile →
               </Link>
@@ -669,10 +669,10 @@ export default function EventDetailPage() {
               <CancelPanel eventId={event.id} token={cancelToken} />
             ) : event.discovery_status === 'unconfirmed' ? (
               <div className="bg-white rounded-2xl border border-soft-gold/30 p-5">
-                <h3 className="font-display italic text-deep-navy text-[18px] mb-2">Source discovered event</h3>
-                <p className="font-body text-[13px] text-cool-grey leading-[1.65]">This event has not been confirmed by the organization. Volunteer signups and hour verification will open if the organization claims or confirms this listing.</p>
-                {event.source_url && <a href={event.source_url} target="_blank" rel="noreferrer" className="mt-3 inline-block font-body text-[13px] text-soft-gold hover:underline">View the original event page →</a>}
-                <Link to={`/for-nonprofits?ein=${encodeURIComponent(event.ein)}`} className="mt-3 block font-body text-[13px] text-soft-gold hover:underline">Are you the organization? Claim your page →</Link>
+                <h3 className="font-display italic text-deep-navy text-title-sm mb-2">Source discovered event</h3>
+                <p className="font-body text-small text-cool-grey leading-[1.65]">This event has not been confirmed by the organization. Volunteer signups and hour verification will open if the organization claims or confirms this listing.</p>
+                {event.source_url && <a href={event.source_url} target="_blank" rel="noreferrer" className="mt-3 inline-block font-body text-small text-soft-gold hover:underline">View the original event page →</a>}
+                <Link to={`/for-nonprofits?ein=${encodeURIComponent(event.ein)}`} className="mt-3 block font-body text-small text-soft-gold hover:underline">Are you the organization? Claim your page →</Link>
               </div>
             ) : (
               <SignupForm event={{ ...event, signup_count: signupCount }} onDone={handleSignupDone} />
@@ -680,7 +680,7 @@ export default function EventDetailPage() {
 
             {/* QR code preview */}
             <div className="bg-white rounded-2xl border border-light-cream p-4 text-center">
-              <p className="font-body text-[11px] text-muted-cream mb-2">Scan to share</p>
+              <p className="font-body text-label text-muted-cream mb-2">Scan to share</p>
               <img
                 src={`${API_BASE}/api/events/${event.id}/qr.png`}
                 alt="QR code for this event"
@@ -690,7 +690,7 @@ export default function EventDetailPage() {
               <a
                 href={`${API_BASE}/api/events/${event.id}/qr.png`}
                 download={`event-${event.id}-qr.png`}
-                className="mt-2 inline-block font-body text-[11px] text-soft-gold hover:underline"
+                className="mt-2 inline-block font-body text-label text-soft-gold hover:underline"
               >
                 Download for flyer
               </a>
@@ -703,7 +703,7 @@ export default function EventDetailPage() {
       <div className="max-w-[860px] mx-auto px-6 md:px-12 pb-12">
         <Link
           to="/volunteer"
-          className="font-body text-[13px] text-soft-gold hover:text-bright-gold font-semibold"
+          className="font-body text-small text-soft-gold hover:text-bright-gold font-semibold"
         >
           ← Browse all events
         </Link>
@@ -711,7 +711,7 @@ export default function EventDetailPage() {
         {/* Success message */}
         {successMessage && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
-            <p className="font-body text-[13px] text-green-700">{successMessage}</p>
+            <p className="font-body text-small text-green-700">{successMessage}</p>
           </div>
         )}
 
@@ -753,8 +753,8 @@ function CancelPanel({ eventId, token }: { eventId: number; token: string }) {
   if (state === 'done') {
     return (
       <div className="bg-light-cream rounded-2xl p-5 text-center">
-        <p className="font-body text-[14px] text-cool-grey">Your signup has been cancelled.</p>
-        <Link to="/volunteer" className="mt-3 inline-block font-body text-[13px] text-soft-gold hover:underline">
+        <p className="font-body text-body text-cool-grey">Your signup has been cancelled.</p>
+        <Link to="/volunteer" className="mt-3 inline-block font-body text-small text-soft-gold hover:underline">
           Browse other events →
         </Link>
       </div>
@@ -763,24 +763,24 @@ function CancelPanel({ eventId, token }: { eventId: number; token: string }) {
 
   return (
     <div className="bg-white rounded-2xl border border-orange-100 p-5 flex flex-col gap-3">
-      <h3 className="font-display italic text-deep-navy text-[16px]">Cancel signup</h3>
+      <h3 className="font-display italic text-deep-navy text-lead">Cancel signup</h3>
       {state === 'error' && (
-        <p className="font-body text-[13px] text-destructive">{error}</p>
+        <p className="font-body text-small text-destructive">{error}</p>
       )}
-      <p className="font-body text-[13px] text-cool-grey">
+      <p className="font-body text-small text-cool-grey">
         You're about to cancel your spot at this event. This can't be undone.
       </p>
       <button
         onClick={cancel}
         disabled={state === 'loading'}
-        className="py-2.5 rounded-xl bg-destructive/50 text-white font-body text-[14px] font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
+        className="py-2.5 rounded-xl bg-destructive/50 text-white font-body text-body font-semibold hover:bg-red-600 transition-colors disabled:opacity-50"
       >
         {state === 'loading' ? 'Cancelling…' : 'Yes, cancel my signup'}
       </button>
       <Link
         to={`/events/${eventId}`}
         replace
-        className="text-center font-body text-[13px] text-cool-grey hover:text-deep-navy"
+        className="text-center font-body text-small text-cool-grey hover:text-deep-navy"
       >
         Keep my spot
       </Link>

@@ -12,24 +12,24 @@ export default function Security() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-12 pb-10">
           <div className="flex items-center gap-2 mb-4">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Security</span>
+            <span className="font-body text-caption text-muted-cream">Security</span>
           </div>
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]">
             Security Disclosure
           </h1>
-          <p className="mt-3 font-body text-[15px] text-muted-cream max-w-[600px]">
+          <p className="mt-3 font-body text-body-lg text-muted-cream max-w-[600px]">
             We take security seriously. If you find a vulnerability, please tell us privately so we can fix it before it affects anyone.
           </p>
         </div>
       </div>
 
       <div className="bg-warm-cream py-16 md:py-20">
-        <div className="max-w-[800px] mx-auto px-6 md:px-12 space-y-12 font-body text-[16px] text-cool-grey leading-[1.7]">
+        <div className="max-w-[800px] mx-auto px-6 md:px-12 space-y-12 font-body text-lead text-cool-grey leading-[1.7]">
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">How to report a vulnerability</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">How to report a vulnerability</h2>
             <p>
               Email a description of the issue to{' '}
               <a href="mailto:security@daanaa.org" className="text-deep-navy underline hover:text-deep-navy/70 font-medium">security@daanaa.org</a>.
@@ -41,7 +41,7 @@ export default function Security() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Our commitment to you</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Our commitment to you</h2>
             <p>If you report a vulnerability to us in good faith, we commit to:</p>
             <ul className="mt-4 space-y-3">
               {[
@@ -62,7 +62,7 @@ export default function Security() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">What we ask of researchers</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">What we ask of researchers</h2>
             <p>To keep this safe for everyone, please:</p>
             <ul className="mt-4 space-y-3">
               {[
@@ -83,9 +83,9 @@ export default function Security() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">In scope</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">In scope</h2>
             <p>We are interested in reports related to daanaa.org and its API, including:</p>
-            <ul className="mt-3 space-y-2 text-[15px]">
+            <ul className="mt-3 space-y-2 text-body-lg">
               {[
                 'Authentication and session management issues',
                 'Injection vulnerabilities (SQL, command, etc.)',
@@ -103,8 +103,8 @@ export default function Security() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Out of scope</h2>
-            <ul className="mt-3 space-y-2 text-[15px]">
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Out of scope</h2>
+            <ul className="mt-3 space-y-2 text-body-lg">
               {[
                 'Issues that require physical access to a user\'s device',
                 'Reports of missing security headers with no demonstrated impact',
@@ -121,7 +121,7 @@ export default function Security() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Safe harbor</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Safe harbor</h2>
             <p>
               Daanaa considers good faith security research conducted under this policy to be authorized conduct. We will not initiate legal action against researchers who discover and responsibly report security vulnerabilities in accordance with this policy. If legal action is initiated by a third party against a researcher who has followed this policy, we will make clear that the research was conducted with our knowledge and in good faith.
             </p>
@@ -131,7 +131,7 @@ export default function Security() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Contact</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Contact</h2>
             <p>
               <a href="mailto:security@daanaa.org" className="text-deep-navy underline hover:text-deep-navy/70 font-medium">security@daanaa.org</a>
             </p>
@@ -141,7 +141,7 @@ export default function Security() {
             </p>
           </section>
 
-          <p className="text-[12px] text-cool-grey pt-4 border-t border-light-grey">
+          <p className="text-caption text-cool-grey pt-4 border-t border-light-grey">
             Last updated: June 30, 2026. Attorney review in progress.
           </p>
 

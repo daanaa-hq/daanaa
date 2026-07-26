@@ -194,7 +194,7 @@ export default function ReportingPack() {
         <div className="max-w-2xl mx-auto">
           <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-6 text-destructive">
             <h2 className="font-display text-lg mb-2">Could not load data</h2>
-            <p className="font-body text-[14px] mb-4">{error}</p>
+            <p className="font-body text-body mb-4">{error}</p>
           </div>
         </div>
       </div>
@@ -208,19 +208,19 @@ export default function ReportingPack() {
         <div className="mb-8">
           <button
             onClick={() => navigate(`/nonprofit/overview/${ein}`)}
-            className="text-soft-gold hover:text-bright-gold font-body text-[14px] font-semibold mb-4"
+            className="text-soft-gold hover:text-bright-gold font-body text-body font-semibold mb-4"
           >
             ← Back to Dashboard
           </button>
           <h1 className="font-display text-3xl text-deep-navy mb-1">Export Report</h1>
-          <p className="font-body text-[14px] text-cool-grey">{data.organization.name}</p>
+          <p className="font-body text-body text-cool-grey">{data.organization.name}</p>
         </div>
 
         {/* Preview */}
         <div className="bg-white rounded-2xl shadow-sm p-8 mb-6">
           <h2 className="font-display text-xl text-deep-navy mb-4">Report Preview</h2>
 
-          <div className="space-y-4 font-body text-[14px]">
+          <div className="space-y-4 font-body text-body">
             <div className="flex justify-between">
               <span className="text-cool-grey">Organization Name:</span>
               <span className="text-deep-navy font-semibold">{data.organization.name}</span>
@@ -242,7 +242,7 @@ export default function ReportingPack() {
           </div>
 
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="font-body text-[12px] text-blue-900">
+            <p className="font-body text-caption text-blue-900">
               <strong>Note:</strong> This report includes organization overview data, profile information, and volunteer summaries. Volunteer hours are marked as approved by the nonprofit — Daanaa does not independently verify submissions.
             </p>
           </div>
@@ -257,11 +257,11 @@ export default function ReportingPack() {
           >
             <div className="text-3xl mb-2">📊</div>
             <h3 className="font-display text-lg mb-1">Export as CSV</h3>
-            <p className="font-body text-[12px] text-cool-grey">
+            <p className="font-body text-caption text-cool-grey">
               Open in Excel or Google Sheets
             </p>
             {exportType === 'csv' && (
-              <p className="font-body text-[12px] text-emerald-600 mt-2">✓ Downloaded</p>
+              <p className="font-body text-caption text-emerald-600 mt-2">✓ Downloaded</p>
             )}
           </button>
 
@@ -271,11 +271,11 @@ export default function ReportingPack() {
             className="p-6 rounded-xl bg-white border-2 border-soft-gold text-deep-navy hover:bg-soft-gold/10 disabled:opacity-50 transition"
           >
             <h3 className="font-display text-lg mb-1">Export as PDF</h3>
-            <p className="font-body text-[12px] text-cool-grey mb-2">
+            <p className="font-body text-caption text-cool-grey mb-2">
               Print-ready formatted report
             </p>
             {exportType === 'pdf' && (
-              <p className="font-body text-[12px] text-emerald-600 mt-2">Opened</p>
+              <p className="font-body text-caption text-emerald-600 mt-2">Opened</p>
             )}
           </button>
         </div>
@@ -283,7 +283,7 @@ export default function ReportingPack() {
         {/* Info */}
         <div className="mt-8 space-y-4">
           <div className="p-4 bg-alert-amber/5 border border-amber-200 rounded-xl">
-            <p className="font-body text-[13px] text-amber-900">
+            <p className="font-body text-small text-amber-900">
               <strong>💾 Reports:</strong> Generate and download reports to share with board members, donors, or for your records. Each report includes a disclaimer that volunteer hours were approved by your organization.
             </p>
           </div>

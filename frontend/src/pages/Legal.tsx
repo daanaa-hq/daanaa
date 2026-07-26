@@ -8,9 +8,9 @@ export default function Legal() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-12 pb-10">
           <div className="flex items-center gap-2 mb-4">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Legal & Data Attribution</span>
+            <span className="font-body text-caption text-muted-cream">Legal & Data Attribution</span>
           </div>
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]">
             Legal & Data Attribution
@@ -21,11 +21,11 @@ export default function Legal() {
       <div className="bg-warm-cream py-16 md:py-20">
         <div className="max-w-[800px] mx-auto px-6 md:px-12">
 
-        <div className="space-y-12 font-body text-[16px] text-cool-grey leading-[1.7]">
+        <div className="space-y-12 font-body text-lead text-cool-grey leading-[1.7]">
 
           {/* Data Sources */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Data Sources</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Data Sources</h2>
             <p>
               Daanaa aggregates publicly available data from the following sources. We do not collect,
               store, or distribute any information beyond what these sources make available to the public.
@@ -63,7 +63,7 @@ export default function Legal() {
                      className="font-medium text-deep-navy hover:text-soft-gold transition-colors">
                     {name} →
                   </a>
-                  <p className="mt-1 text-[13px]">{detail}</p>
+                  <p className="mt-1 text-small">{detail}</p>
                 </li>
               ))}
             </ul>
@@ -71,7 +71,7 @@ export default function Legal() {
 
           {/* Data Accuracy */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Data Accuracy & Freshness</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Data Accuracy & Freshness</h2>
             <p>
               Financial figures shown on Daanaa are derived from IRS Form 990 filings. The most
               recent filing available for each organization may lag the current fiscal year by
@@ -89,7 +89,7 @@ export default function Legal() {
 
           {/* AI-generated & automatically-collected content */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">AI Assisted & Automatically-Collected Content</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">AI Assisted & Automatically-Collected Content</h2>
             <p>
               To make organizations easier to find, Daanaa fills gaps in the public record using
               automated tools. Two kinds of content are produced this way, and both are labeled in the
@@ -119,8 +119,8 @@ export default function Legal() {
 
           {/* Privacy */}
           <section id="privacy">
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Privacy Policy</h2>
-            <p className="mb-4 p-4 bg-white border border-light-grey rounded-lg text-[14px]">
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Privacy Policy</h2>
+            <p className="mb-4 p-4 bg-white border border-light-grey rounded-lg text-body">
               This is a summary. The full privacy policy — including the data retention schedule and your state privacy rights — is at{' '}
               <Link to="/privacy" className="text-soft-gold hover:text-bright-gold font-medium">daanaa.org/privacy</Link>.
             </p>
@@ -196,7 +196,7 @@ export default function Legal() {
 
           {/* Terms of Use */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Terms of Use</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Terms of Use</h2>
 
             <p className="font-semibold text-deep-navy">Informational use only</p>
             <p className="mt-2">
@@ -255,7 +255,7 @@ export default function Legal() {
               Daanaa responds to valid copyright infringement notices under the Digital Millennium Copyright Act (17 U.S.C. § 512). Our designated copyright agent is registered with the U.S. Copyright Office.
             </p>
             <p className="mt-3 font-medium text-deep-navy">To submit a takedown notice, send the following to <a href="mailto:legal@daanaa.org" className="text-soft-gold hover:underline">legal@daanaa.org</a>:</p>
-            <ul className="mt-2 space-y-1.5 list-none text-[15px]">
+            <ul className="mt-2 space-y-1.5 list-none text-body-lg">
               {[
                 'Your physical or electronic signature',
                 'Identification of the copyrighted work you believe has been infringed',
@@ -306,7 +306,7 @@ export default function Legal() {
 
           {/* Contact */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Contact</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Contact</h2>
             <p>
               Legal questions and takedown requests:{' '}
               <a href="mailto:legal@daanaa.org"
@@ -330,7 +330,7 @@ export default function Legal() {
 
           {/* Entity disclosure — required before public launch */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">Who operates Daanaa</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Who operates Daanaa</h2>
             <p>
               Daanaa is operated by <strong>EcoMargins Consulting LLC</strong>, a for-profit Texas limited liability company doing business as Daanaa. Daanaa is not a 501(c)(3) charity or a nonprofit organization. We are not affiliated with the IRS or any government agency.
             </p>
@@ -339,7 +339,7 @@ export default function Legal() {
             </p>
           </section>
 
-          <p className="text-[12px] text-cool-grey pt-4 border-t border-light-grey">
+          <p className="text-caption text-cool-grey pt-4 border-t border-light-grey">
             Last updated: June 30, 2026. Attorney review in progress.
           </p>
         </div>

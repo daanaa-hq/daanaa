@@ -67,26 +67,26 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
   if (size === 'small') {
     return (
       <CardPattern variant="subtle">
-        <div className="font-body text-[10px] tracking-[0.06em] text-cool-grey uppercase font-semibold mb-3">
+        <div className="font-body text-micro tracking-[0.06em] text-cool-grey uppercase font-semibold mb-3">
           Community impact
         </div>
         <div className="space-y-2">
           {data.donation_count > 0 && (
             <div className="flex justify-between">
-              <span className="font-body text-[13px] text-cool-grey">Donors helped here:</span>
-              <span className="font-body text-[13px] font-semibold text-deep-navy">{data.donation_count}</span>
+              <span className="font-body text-small text-cool-grey">Donors helped here:</span>
+              <span className="font-body text-small font-semibold text-deep-navy">{data.donation_count}</span>
             </div>
           )}
           {data.volunteer_hours > 0 && (
             <div className="flex justify-between">
-              <span className="font-body text-[13px] text-cool-grey">Volunteer hours:</span>
-              <span className="font-body text-[13px] font-semibold text-deep-navy">{Math.round(data.volunteer_hours).toLocaleString()}</span>
+              <span className="font-body text-small text-cool-grey">Volunteer hours:</span>
+              <span className="font-body text-small font-semibold text-deep-navy">{Math.round(data.volunteer_hours).toLocaleString()}</span>
             </div>
           )}
           {data.volunteer_value > 0 && (
             <div className="flex justify-between">
-              <span className="font-body text-[13px] text-cool-grey">Volunteer value:</span>
-              <span className="font-body text-[13px] font-semibold text-deep-navy">${Math.round(data.volunteer_value).toLocaleString()}</span>
+              <span className="font-body text-small text-cool-grey">Volunteer value:</span>
+              <span className="font-body text-small font-semibold text-deep-navy">${Math.round(data.volunteer_value).toLocaleString()}</span>
             </div>
           )}
         </div>
@@ -97,10 +97,10 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
   return (
     <CardPattern variant="default">
       <div className="mb-6">
-        <div className="font-body text-[11px] tracking-[0.06em] text-link-gold uppercase font-semibold mb-2">
+        <div className="font-body text-label tracking-[0.06em] text-link-gold uppercase font-semibold mb-2">
           Daanaa Impact
         </div>
-        <h3 className="font-display text-[28px] text-deep-navy">
+        <h3 className="font-display text-headline text-deep-navy">
           {period === 'month' ? 'Last 30 Days' : period === 'year' ? 'Past Year' : period === 'day' ? 'Today' : 'All Time'}
         </h3>
       </div>
@@ -108,10 +108,10 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
       <div className="space-y-5">
         {data.donation_count > 0 && (
           <div className="pb-5 border-b border-light-grey">
-            <div className="font-display text-[40px] text-deep-navy mb-1 leading-none">
+            <div className="font-display text-display text-deep-navy mb-1 leading-none">
               {data.donation_count.toLocaleString()}
             </div>
-            <p className="font-body text-[13px] text-cool-grey">
+            <p className="font-body text-small text-cool-grey">
               donor{data.donation_count !== 1 ? 's' : ''} confirmed Daanaa helped
             </p>
           </div>
@@ -119,13 +119,13 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
 
         {data.volunteer_hours > 0 && (
           <div className="pb-5 border-b border-light-grey">
-            <div className="font-display text-[40px] text-deep-navy mb-1 leading-none">
+            <div className="font-display text-display text-deep-navy mb-1 leading-none">
               {Math.round(data.volunteer_hours).toLocaleString()} hrs
             </div>
-            <p className="font-body text-[13px] text-cool-grey">
+            <p className="font-body text-small text-cool-grey">
               volunteer hours logged ({data.volunteer_reports} report{data.volunteer_reports !== 1 ? 's' : ''})
             </p>
-            <p className="font-body text-[12px] text-cool-grey mt-1">
+            <p className="font-body text-caption text-cool-grey mt-1">
               About ${Math.round(data.volunteer_value).toLocaleString()} in equivalent value
             </p>
           </div>
@@ -133,23 +133,23 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
 
         {!orgEin && data.unique_orgs > 0 && (
           <div>
-            <div className="font-display text-[40px] text-deep-navy mb-1 leading-none">
+            <div className="font-display text-display text-deep-navy mb-1 leading-none">
               {data.unique_orgs.toLocaleString()}
             </div>
-            <p className="font-body text-[13px] text-cool-grey">
+            <p className="font-body text-small text-cool-grey">
               nonprofit{data.unique_orgs !== 1 ? 's' : ''} served
             </p>
           </div>
         )}
 
         {data.last_updated && (
-          <p className="font-body text-[11px] text-cool-grey pt-2">
+          <p className="font-body text-label text-cool-grey pt-2">
             Updated {new Date(data.last_updated).toLocaleDateString()}
           </p>
         )}
       </div>
 
-      <div className="mt-6 font-body text-[11px] text-cool-grey leading-relaxed border-t border-light-grey pt-4">
+      <div className="mt-6 font-body text-label text-cool-grey leading-relaxed border-t border-light-grey pt-4">
         Donations are self-reported by donors. Volunteer hours are reported by nonprofits and valued at $28.50/hour (BLS average service rate).
       </div>
     </CardPattern>

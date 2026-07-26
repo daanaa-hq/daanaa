@@ -14,14 +14,14 @@ export default function BetaBanner() {
       style={{ backgroundColor: '#0A1628', borderBottom: '1px solid rgba(201,169,110,0.2)' }}
     >
       <span
-        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.08em] uppercase"
+        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.08em] uppercase"
         style={{ background: 'rgba(201,169,110,0.15)', color: '#C9A96E', border: '1px solid rgba(201,169,110,0.3)' }}
       >
         Beta
       </span>
       {/* hardcoded color to match the hardcoded dark bg above — the banner
           stays dark in both themes, so its text must not flip with the theme */}
-      <p className="font-body text-[12px]" style={{ color: '#D4CCBF' }}>
+      <p className="font-body text-caption" style={{ color: '#D4CCBF' }}>
         Daanaa is in early access. The data is real, and some features are still being refined.{' '}
         <Link
           to="/feedback"

@@ -113,10 +113,10 @@ export default function VolunteerDiscoveryPage() {
       {/* Header */}
       <div className="bg-deep-navy text-warm-cream py-12 px-6">
         <div className="max-w-[1200px] mx-auto">
-          <h1 className="font-display italic text-[48px] leading-tight mb-3">
+          <h1 className="font-display italic text-display leading-tight mb-3">
             Volunteer with Purpose
           </h1>
-          <p className="font-body text-[16px] text-muted-cream max-w-[600px]">
+          <p className="font-body text-lead text-muted-cream max-w-[600px]">
             Find organizations working on causes you care about. Browse opportunities, express interest, and start making a difference.
           </p>
         </div>
@@ -132,7 +132,7 @@ export default function VolunteerDiscoveryPage() {
             <div className="space-y-4">
               {/* Location type */}
               <div>
-                <label className="block font-body text-[12px] font-semibold text-deep-navy mb-2">Type</label>
+                <label className="block font-body text-caption font-semibold text-deep-navy mb-2">Type</label>
                 <div className="space-y-1.5">
                   {['all', 'virtual', 'inperson'].map(type => (
                     <label key={type} className="flex items-center gap-2 cursor-pointer">
@@ -141,7 +141,7 @@ export default function VolunteerDiscoveryPage() {
                         checked={filters.location === type}
                         onChange={() => setFilters(f => ({ ...f, location: type as FilterState['location'] }))}
                       />
-                      <span className="font-body text-[13px] text-cool-grey capitalize">
+                      <span className="font-body text-small text-cool-grey capitalize">
                         {type === 'all' ? 'All' : type === 'virtual' ? 'Virtual' : 'In Person'}
                       </span>
                     </label>
@@ -151,11 +151,11 @@ export default function VolunteerDiscoveryPage() {
 
               {/* State */}
               <div>
-                <label className="block font-body text-[12px] font-semibold text-deep-navy mb-2">State</label>
+                <label className="block font-body text-caption font-semibold text-deep-navy mb-2">State</label>
                 <select
                   value={filters.state}
                   onChange={e => setFilters(f => ({ ...f, state: e.target.value, city: '' }))}
-                  className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-[13px]"
+                  className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-small"
                 >
                   <option value="">All states</option>
                   {states.map(s => (
@@ -167,11 +167,11 @@ export default function VolunteerDiscoveryPage() {
               {/* City */}
               {filters.state && uniqueCities.length > 0 && (
                 <div>
-                  <label className="block font-body text-[12px] font-semibold text-deep-navy mb-2">City</label>
+                  <label className="block font-body text-caption font-semibold text-deep-navy mb-2">City</label>
                   <select
                     value={filters.city}
                     onChange={e => setFilters(f => ({ ...f, city: e.target.value }))}
-                    className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-[13px]"
+                    className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-small"
                   >
                     <option value="">All cities</option>
                     {uniqueCities.map(c => (
@@ -183,11 +183,11 @@ export default function VolunteerDiscoveryPage() {
 
               {/* Category */}
               <div>
-                <label className="block font-body text-[12px] font-semibold text-deep-navy mb-2">Cause Area</label>
+                <label className="block font-body text-caption font-semibold text-deep-navy mb-2">Cause Area</label>
                 <select
                   value={filters.category}
                   onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
-                  className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-[13px]"
+                  className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-small"
                 >
                   <option value="">All causes</option>
                   {categories.map(cat => (
@@ -198,22 +198,22 @@ export default function VolunteerDiscoveryPage() {
 
               {/* Date range */}
               <div>
-                <label className="block font-body text-[12px] font-semibold text-deep-navy mb-2">Date From</label>
+                <label className="block font-body text-caption font-semibold text-deep-navy mb-2">Date From</label>
                 <input
                   type="date"
                   value={filters.dateFrom}
                   onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))}
-                  className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-[13px]"
+                  className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-small"
                 />
               </div>
 
               <div>
-                <label className="block font-body text-[12px] font-semibold text-deep-navy mb-2">Date To</label>
+                <label className="block font-body text-caption font-semibold text-deep-navy mb-2">Date To</label>
                 <input
                   type="date"
                   value={filters.dateTo}
                   onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))}
-                  className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-[13px]"
+                  className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-small"
                 />
               </div>
             </div>
@@ -221,13 +221,13 @@ export default function VolunteerDiscoveryPage() {
 
           {/* Events grid */}
           <div>
-            <p className="font-body text-[13px] text-cool-grey mb-6">
+            <p className="font-body text-small text-cool-grey mb-6">
               {events.length} opportunities found
             </p>
 
             {events.length === 0 && !loading && (
               <div className="text-center py-12">
-                <p className="font-body text-[14px] text-cool-grey">No opportunities match your filters.</p>
+                <p className="font-body text-body text-cool-grey">No opportunities match your filters.</p>
               </div>
             )}
 
@@ -242,29 +242,29 @@ export default function VolunteerDiscoveryPage() {
                 return (
                   <div key={event.id} className="bg-white rounded-xl border border-light-cream p-5 flex flex-col gap-3">
                     <div>
-                      <span className={`inline-block px-2 py-0.5 rounded-full font-body text-[10px] font-semibold tracking-[0.06em] uppercase mb-1 ${
+                      <span className={`inline-block px-2 py-0.5 rounded-full font-body text-micro font-semibold tracking-[0.06em] uppercase mb-1 ${
                         event.is_virtual ? 'bg-blue-50 text-blue-600' : 'bg-soft-gold/15 text-deep-gold'
                       }`}>
                         {event.is_virtual ? 'Virtual' : 'In Person'}
                       </span>
-                      <h3 className="font-display italic text-deep-navy text-[17px] leading-tight">{event.title}</h3>
-                      <p className="font-body text-[12px] text-cool-grey mt-0.5">
+                      <h3 className="font-display italic text-deep-navy text-title-sm leading-tight">{event.title}</h3>
+                      <p className="font-body text-caption text-cool-grey mt-0.5">
                         {dateStr}{location ? ` · ${location}` : ''}
                       </p>
                     </div>
 
                     {event.organization_name && (
-                      <p className="font-body text-[12px] text-cool-grey font-medium">
+                      <p className="font-body text-caption text-cool-grey font-medium">
                         {event.organization_name}
                       </p>
                     )}
 
                     {event.description && (
-                      <p className="font-body text-[13px] text-cool-grey leading-[1.6] line-clamp-2">{event.description}</p>
+                      <p className="font-body text-small text-cool-grey leading-[1.6] line-clamp-2">{event.description}</p>
                     )}
 
                     {event.signup_count > 0 && (
-                      <p className="font-body text-[11px] text-muted-cream">
+                      <p className="font-body text-label text-muted-cream">
                         {event.signup_count} {event.signup_count === 1 ? 'person' : 'people'} interested
                       </p>
                     )}
@@ -272,7 +272,7 @@ export default function VolunteerDiscoveryPage() {
                     <div className="mt-auto">
                       <button
                         onClick={() => setSelectedEvent(event)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 border border-soft-gold text-soft-gold rounded-lg font-body text-[13px] font-semibold hover:bg-soft-gold/10 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 border border-soft-gold text-soft-gold rounded-lg font-body text-small font-semibold hover:bg-soft-gold/10 transition-colors"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -287,14 +287,14 @@ export default function VolunteerDiscoveryPage() {
 
             {loading && (
               <div className="text-center py-8">
-                <p className="font-body text-[13px] text-cool-grey">Loading...</p>
+                <p className="font-body text-small text-cool-grey">Loading...</p>
               </div>
             )}
 
             {hasMore && !loading && (
               <button
                 onClick={() => setOffset(prev => prev + limit)}
-                className="w-full mt-8 py-3 rounded-lg border border-soft-gold text-soft-gold font-body text-[14px] font-semibold hover:bg-soft-gold/10 transition-colors"
+                className="w-full mt-8 py-3 rounded-lg border border-soft-gold text-soft-gold font-body text-body font-semibold hover:bg-soft-gold/10 transition-colors"
               >
                 Load more
               </button>

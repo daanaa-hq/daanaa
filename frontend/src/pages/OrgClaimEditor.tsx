@@ -120,7 +120,7 @@ function MSAPicker({ values, onChange }: {
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {values.map(v => (
-            <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 bg-soft-gold/20 text-deep-navy rounded-full font-body text-[12px]">
+            <span key={v} className="inline-flex items-center gap-1 px-2.5 py-1 bg-soft-gold/20 text-deep-navy rounded-full font-body text-caption">
               {v}
               <button type="button" onClick={() => onChange(values.filter(x => x !== v))}
                 aria-label={`Remove ${v}`}
@@ -132,18 +132,18 @@ function MSAPicker({ values, onChange }: {
       <input
         value={search} onChange={e => setSearch(e.target.value)}
         placeholder="Search metro areas… e.g. Chicago, Dallas, Phoenix"
-        className="w-full px-3 py-2 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold"
+        className="w-full px-3 py-2 border border-light-cream rounded-xl font-body text-body text-deep-navy focus:outline-none focus:border-soft-gold"
       />
       <div className="border border-light-cream rounded-xl overflow-y-auto max-h-52 divide-y divide-light-cream/60">
         {filtered.slice(0, 80).map(name => (
           <label key={name} className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-warm-cream transition-colors ${values.includes(name) ? 'bg-soft-gold/10' : ''}`}>
             <input type="checkbox" checked={values.includes(name)} onChange={() => toggle(name)}
               className="accent-soft-gold w-4 h-4 flex-shrink-0" />
-            <span className="font-body text-[14px] text-deep-navy">{name}</span>
+            <span className="font-body text-body text-deep-navy">{name}</span>
           </label>
         ))}
         {filtered.length > 80 && (
-          <p className="px-4 py-2.5 font-body text-[12px] text-cool-grey">
+          <p className="px-4 py-2.5 font-body text-caption text-cool-grey">
             {filtered.length - 80} more — type to narrow the list
           </p>
         )}
@@ -192,7 +192,7 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
 
   return (
     <fieldset className="border border-light-cream rounded-xl p-5 space-y-4">
-      <legend className="px-2 font-body text-[13px] font-semibold text-cool-grey uppercase tracking-wider">
+      <legend className="px-2 font-body text-small font-semibold text-cool-grey uppercase tracking-wider">
         Where you serve
       </legend>
 
@@ -206,7 +206,7 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
           <button
             key={type} type="button"
             onClick={() => { setAreaType(type); setValues([]) }}
-            className={`px-3 py-2 rounded-xl font-body text-[13px] border transition-colors ${
+            className={`px-3 py-2 rounded-xl font-body text-small border transition-colors ${
               areaType === type || (type === 'regional' && areaType === 'local')
                 ? 'bg-soft-gold text-deep-navy border-soft-gold'
                 : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
@@ -225,7 +225,7 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
         <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
           {US_STATES.map(s => (
             <button key={s} type="button" onClick={() => toggleValue(s)}
-              className={`px-2.5 py-1 rounded-full font-body text-[12px] border transition-colors ${
+              className={`px-2.5 py-1 rounded-full font-body text-caption border transition-colors ${
                 values.includes(s)
                   ? 'bg-soft-gold text-deep-navy border-soft-gold'
                   : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
@@ -240,7 +240,7 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
           {COUNTRIES.map(c => (
             <button key={c.code} type="button"
               onClick={() => (values.length < 50 || values.includes(c.code)) && toggleValue(c.code)}
-              className={`px-2.5 py-1 rounded-full font-body text-[12px] border transition-colors ${
+              className={`px-2.5 py-1 rounded-full font-body text-caption border transition-colors ${
                 values.includes(c.code)
                   ? 'bg-soft-gold text-deep-navy border-soft-gold'
                   : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold/50'
@@ -252,11 +252,11 @@ function ServiceAreaSection({ ein, token }: { ein: string; token: string }) {
 
       <div className="flex items-center gap-3">
         <button type="button" onClick={handleSave} disabled={saving}
-          className="px-5 py-2 bg-soft-gold text-deep-navy font-body text-[13px] font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 transition-colors">
+          className="px-5 py-2 bg-soft-gold text-deep-navy font-body text-small font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 transition-colors">
           {saving ? 'Saving…' : 'Save reach'}
         </button>
-        {saved && <span className="font-body text-[13px] text-green-600">Saved!</span>}
-        {error && <span className="font-body text-[13px] text-red-500">{error}</span>}
+        {saved && <span className="font-body text-small text-green-600">Saved!</span>}
+        {error && <span className="font-body text-small text-red-500">{error}</span>}
       </div>
     </fieldset>
   )
@@ -316,41 +316,41 @@ function EventForm({
   return (
     <div className="border border-soft-gold/30 rounded-xl p-5 bg-warm-cream space-y-4">
       <label className="block">
-        <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Event title *</span>
+        <span className="block font-body text-caption font-medium text-deep-navy mb-1">Event title *</span>
         <input
           type="text" required maxLength={200}
           value={form.title} onChange={e => set('title', e.target.value)}
           placeholder="e.g. Community Garden Workday"
-          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
           disabled={saving}
         />
       </label>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Date *</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">Date *</span>
           <input
             type="date" required
             value={form.event_date} onChange={e => set('event_date', e.target.value)}
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
         </label>
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Start time</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">Start time</span>
           <input
             type="time"
             value={form.start_time} onChange={e => set('start_time', e.target.value)}
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
         </label>
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">End time</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">End time</span>
           <input
             type="time"
             value={form.end_time} onChange={e => set('end_time', e.target.value)}
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
         </label>
@@ -364,26 +364,26 @@ function EventForm({
           className="w-4 h-4 rounded border-light-cream accent-soft-gold"
           disabled={saving}
         />
-        <span className="font-body text-[14px] text-cool-grey">This is a virtual event</span>
+        <span className="font-body text-body text-cool-grey">This is a virtual event</span>
       </label>
 
       {!form.is_virtual && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <label className="block">
-            <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">City</span>
+            <span className="block font-body text-caption font-medium text-deep-navy mb-1">City</span>
             <input
               type="text" maxLength={100}
               value={form.location_city} onChange={e => set('location_city', e.target.value)}
               placeholder="Austin"
-              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
               disabled={saving}
             />
           </label>
           <label className="block">
-            <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">State</span>
+            <span className="block font-body text-caption font-medium text-deep-navy mb-1">State</span>
             <select
               value={form.location_state} onChange={e => set('location_state', e.target.value)}
-              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy focus:outline-none focus:border-soft-gold/60 bg-white"
+              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy focus:outline-none focus:border-soft-gold/60 bg-white"
               disabled={saving}
             >
               <option value="">—</option>
@@ -391,12 +391,12 @@ function EventForm({
             </select>
           </label>
           <label className="block">
-            <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Zip code</span>
+            <span className="block font-body text-caption font-medium text-deep-navy mb-1">Zip code</span>
             <input
               type="text" maxLength={10} inputMode="numeric"
               value={form.location_zip} onChange={e => set('location_zip', e.target.value)}
               placeholder="78701"
-              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+              className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
               disabled={saving}
             />
           </label>
@@ -404,61 +404,61 @@ function EventForm({
       )}
 
       <label className="block">
-        <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Description</span>
+        <span className="block font-body text-caption font-medium text-deep-navy mb-1">Description</span>
         <textarea
           rows={3} maxLength={1000}
           value={form.description} onChange={e => set('description', e.target.value)}
           placeholder="What will volunteers do? Who is this for?"
-          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60 resize-none"
+          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60 resize-none"
           disabled={saving}
         />
       </label>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Sign-up link</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">Sign-up link</span>
           <input
             type="url" maxLength={500}
             value={form.signup_url} onChange={e => set('signup_url', e.target.value)}
             placeholder="https://..."
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
-          <p className="mt-1 font-body text-[11px] text-cool-grey">Link to your own sign-up form</p>
+          <p className="mt-1 font-body text-label text-cool-grey">Link to your own sign-up form</p>
         </label>
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Contact email (fallback)</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">Contact email (fallback)</span>
           <input
             type="email" maxLength={200}
             value={form.contact_email} onChange={e => set('contact_email', e.target.value)}
             placeholder="volunteer@org.org"
-            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+            className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
             disabled={saving}
           />
         </label>
       </div>
 
       <label className="block w-40">
-        <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Volunteer capacity</span>
+        <span className="block font-body text-caption font-medium text-deep-navy mb-1">Volunteer capacity</span>
         <input
           type="number" min={1} max={9999}
           value={form.capacity} onChange={e => set('capacity', e.target.value)}
           placeholder="Unlimited"
-          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
           disabled={saving}
         />
       </label>
 
       <label className="block">
-        <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Volunteer coordinator name</span>
+        <span className="block font-body text-caption font-medium text-deep-navy mb-1">Volunteer coordinator name</span>
         <input
           type="text" maxLength={100}
           value={form.coordinator_name} onChange={e => set('coordinator_name', e.target.value)}
           placeholder="e.g. Maria Chen"
-          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+          className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
           disabled={saving}
         />
-        <p className="mt-1 font-body text-[11px] text-cool-grey">Shown to volunteers so they know who to look for. You'll also receive signup emails.</p>
+        <p className="mt-1 font-body text-label text-cool-grey">Shown to volunteers so they know who to look for. You'll also receive signup emails.</p>
       </label>
 
       {/* Volunteer prep — collapsible; helps volunteers show up ready */}
@@ -466,7 +466,7 @@ function EventForm({
         <button
           type="button"
           onClick={() => setShowDetails(v => !v)}
-          className="flex items-center gap-1.5 font-body text-[12px] font-semibold text-cool-grey tracking-[0.06em] uppercase hover:text-deep-navy transition-colors"
+          className="flex items-center gap-1.5 font-body text-caption font-semibold text-cool-grey tracking-[0.06em] uppercase hover:text-deep-navy transition-colors"
         >
           <svg
             width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -480,10 +480,10 @@ function EventForm({
         {showDetails && (
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Skill level needed</span>
+              <span className="block font-body text-caption font-medium text-deep-navy mb-1">Skill level needed</span>
               <select
                 value={form.skill_level} onChange={e => set('skill_level', e.target.value)}
-                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy bg-white focus:outline-none focus:border-soft-gold/60"
+                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy bg-white focus:outline-none focus:border-soft-gold/60"
                 disabled={saving}
               >
                 <option value="any">Anyone welcome</option>
@@ -493,33 +493,33 @@ function EventForm({
               </select>
             </label>
             <label className="block">
-              <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Waiver URL</span>
+              <span className="block font-body text-caption font-medium text-deep-navy mb-1">Waiver URL</span>
               <input
                 type="url" maxLength={500}
                 value={form.waiver_url} onChange={e => set('waiver_url', e.target.value)}
                 placeholder="https://..."
-                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
                 disabled={saving}
               />
-              <p className="mt-1 font-body text-[11px] text-cool-grey">Link to liability waiver if required</p>
+              <p className="mt-1 font-body text-label text-cool-grey">Link to liability waiver if required</p>
             </label>
             <label className="block">
-              <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">What to bring</span>
+              <span className="block font-body text-caption font-medium text-deep-navy mb-1">What to bring</span>
               <input
                 type="text" maxLength={500}
                 value={form.what_to_bring} onChange={e => set('what_to_bring', e.target.value)}
                 placeholder="e.g. Gloves, closed-toe shoes, water bottle"
-                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
                 disabled={saving}
               />
             </label>
             <label className="block">
-              <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Parking and transit</span>
+              <span className="block font-body text-caption font-medium text-deep-navy mb-1">Parking and transit</span>
               <input
                 type="text" maxLength={300}
                 value={form.parking_info} onChange={e => set('parking_info', e.target.value)}
                 placeholder="e.g. Free parking on Oak St, bus route 12"
-                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
+                className="w-full px-3 py-2.5 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder:text-muted-cream focus:outline-none focus:border-soft-gold/60"
                 disabled={saving}
               />
             </label>
@@ -534,7 +534,7 @@ function EventForm({
           onChange={e => set('safetyAck', e.target.checked)}
           className="mt-0.5 accent-soft-gold shrink-0"
         />
-        <span className="font-body text-[12px] text-cool-grey leading-[1.6]">
+        <span className="font-body text-caption text-cool-grey leading-[1.6]">
           Our organization is responsible for the safety of this event, including appropriate insurance and compliance with local requirements. Daanaa does not organize, supervise, or insure volunteer events.
         </span>
       </label>
@@ -543,13 +543,13 @@ function EventForm({
           type="button"
           onClick={() => onSave(form)}
           disabled={saving || !form.title || !form.event_date || !form.safetyAck}
-          className="px-5 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
+          className="px-5 py-2.5 bg-soft-gold text-deep-navy rounded-xl font-body text-body font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save event'}
         </button>
         <button
           type="button" onClick={onCancel} disabled={saving}
-          className="px-5 py-2.5 border border-light-cream text-cool-grey rounded-xl font-body text-[14px] hover:border-soft-gold/40 transition-colors"
+          className="px-5 py-2.5 border border-light-cream text-cool-grey rounded-xl font-body text-body hover:border-soft-gold/40 transition-colors"
         >
           Cancel
         </button>
@@ -656,7 +656,7 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
       expired: 'bg-light-cream text-muted-cream',
     }
     return (
-      <span className={`px-2 py-0.5 rounded-full font-body text-[10px] font-semibold uppercase tracking-[0.06em] ${map[s] ?? ''}`}>
+      <span className={`px-2 py-0.5 rounded-full font-body text-micro font-semibold uppercase tracking-[0.06em] ${map[s] ?? ''}`}>
         {s}
       </span>
     )
@@ -666,8 +666,8 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
     <div className="border-t border-light-cream pt-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-body text-[13px] font-medium text-deep-navy">Volunteer events</h3>
-          <p className="font-body text-[12px] text-cool-grey mt-0.5">
+          <h3 className="font-body text-small font-medium text-deep-navy">Volunteer events</h3>
+          <p className="font-body text-caption text-cool-grey mt-0.5">
             Events appear on the public volunteer search page. They expire automatically after their date.
           </p>
         </div>
@@ -675,7 +675,7 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-soft-gold/15 text-soft-gold rounded-lg font-body text-[13px] font-semibold hover:bg-soft-gold/25 transition-colors"
+            className="px-4 py-2 bg-soft-gold/15 text-soft-gold rounded-lg font-body text-small font-semibold hover:bg-soft-gold/25 transition-colors"
           >
             + Add event
           </button>
@@ -683,7 +683,7 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
       </div>
 
       {error && (
-        <p className="font-body text-[13px] text-destructive">{error}</p>
+        <p className="font-body text-small text-destructive">{error}</p>
       )}
 
       {showForm && (
@@ -694,10 +694,10 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
         />
       )}
 
-      {loading && <p className="font-body text-[13px] text-cool-grey">Loading events...</p>}
+      {loading && <p className="font-body text-small text-cool-grey">Loading events...</p>}
 
       {!loading && events.length === 0 && !showForm && (
-        <p className="font-body text-[13px] text-cool-grey">No events yet. Add your first volunteer opportunity.</p>
+        <p className="font-body text-small text-cool-grey">No events yet. Add your first volunteer opportunity.</p>
       )}
 
       {events.map(ev => (
@@ -725,29 +725,29 @@ function VolunteerEventsSection({ ein, token }: { ein: string; token: string }) 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   {statusBadge(ev.status)}
-                  <span className="font-body text-[12px] text-cool-grey">{formatDate(ev.event_date)}</span>
+                  <span className="font-body text-caption text-cool-grey">{formatDate(ev.event_date)}</span>
                 </div>
-                <p className="font-body text-[15px] font-medium text-deep-navy">{ev.title}</p>
+                <p className="font-body text-body-lg font-medium text-deep-navy">{ev.title}</p>
                 {ev.location_city && !ev.is_virtual && (
-                  <p className="font-body text-[12px] text-cool-grey mt-0.5">
+                  <p className="font-body text-caption text-cool-grey mt-0.5">
                     {[ev.location_city, ev.location_state].filter(Boolean).join(', ')}
                   </p>
                 )}
                 {ev.is_virtual && (
-                  <p className="font-body text-[12px] text-cool-grey mt-0.5">Virtual</p>
+                  <p className="font-body text-caption text-cool-grey mt-0.5">Virtual</p>
                 )}
               </div>
               {ev.status !== 'expired' && ev.status !== 'cancelled' && (
                 <div className="flex gap-2 shrink-0">
                   <button
                     type="button" onClick={() => setEditId(ev.id)} disabled={saving}
-                    className="font-body text-[12px] text-soft-gold hover:text-bright-gold font-semibold"
+                    className="font-body text-caption text-soft-gold hover:text-bright-gold font-semibold"
                   >
                     Edit
                   </button>
                   <button
                     type="button" onClick={() => handleCancel(ev.id)} disabled={saving}
-                    className="font-body text-[12px] text-cool-grey hover:text-red-500"
+                    className="font-body text-caption text-cool-grey hover:text-red-500"
                   >
                     Cancel
                   </button>
@@ -838,7 +838,7 @@ export default function OrgClaimEditor() {
 
             {showUpdateForm && (
               <div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-2xl">
-                <h3 className="font-display text-[16px] font-semibold text-deep-navy mb-4">
+                <h3 className="font-display text-lead font-semibold text-deep-navy mb-4">
                   Update Your Financial Information
                 </h3>
                 <DataUpdateForm
@@ -857,44 +857,44 @@ export default function OrgClaimEditor() {
           <h1 className="font-display italic text-deep-navy mb-2">
             Tell your story
           </h1>
-          <p className="font-body text-[15px] text-cool-grey">All fields are optional. Add what you can. You can always come back.</p>
+          <p className="font-body text-body-lg text-cool-grey">All fields are optional. Add what you can. You can always come back.</p>
         </div>
         <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-sm border border-light-cream p-8 space-y-6">
           {error && (
             <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
-              <p className="font-body text-[14px] text-destructive">{error}</p>
+              <p className="font-body text-body text-destructive">{error}</p>
             </div>
           )}
           <label className="block">
-            <span className="block font-body text-[13px] font-medium text-deep-navy mb-2">Mission statement <span className="text-cool-grey font-normal">(1–2 sentences)</span></span>
+            <span className="block font-body text-small font-medium text-deep-navy mb-2">Mission statement <span className="text-cool-grey font-normal">(1–2 sentences)</span></span>
             <textarea
               value={mission} onChange={e => setMission(e.target.value.slice(0, 300))}
               placeholder="What does your organization do and who do you serve?"
               rows={3}
-              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
+              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
               disabled={saving}
             />
-            <p className="mt-1 font-body text-[11px] text-cool-grey">{mission.length}/300</p>
+            <p className="mt-1 font-body text-label text-cool-grey">{mission.length}/300</p>
           </label>
           <label className="block">
-            <span className="block font-body text-[13px] font-medium text-deep-navy mb-2">Programs and impact <span className="text-cool-grey font-normal">(optional)</span></span>
+            <span className="block font-body text-small font-medium text-deep-navy mb-2">Programs and impact <span className="text-cool-grey font-normal">(optional)</span></span>
             <textarea
               value={description} onChange={e => setDescription(e.target.value.slice(0, 500))}
               placeholder="Describe your programs, service area, or recent impact..."
               rows={4}
-              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
+              className="w-full px-4 py-3 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
               disabled={saving}
             />
-            <p className="mt-1 font-body text-[11px] text-cool-grey">{description.length}/500</p>
+            <p className="mt-1 font-body text-label text-cool-grey">{description.length}/500</p>
           </label>
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-1">
               <div className="h-px flex-1 bg-light-cream" />
-              <span className="font-body text-[11px] font-semibold text-cool-grey uppercase tracking-wider px-2">How donors can reach you</span>
+              <span className="font-body text-label font-semibold text-cool-grey uppercase tracking-wider px-2">How donors can reach you</span>
               <div className="h-px flex-1 bg-light-cream" />
             </div>
             <label className="block">
-              <span className="block font-body text-[13px] font-medium text-deep-navy mb-1">
+              <span className="block font-body text-small font-medium text-deep-navy mb-1">
                 Official website
                 <span className="ml-1.5 font-normal text-cool-grey">(optional)</span>
               </span>
@@ -905,14 +905,14 @@ export default function OrgClaimEditor() {
                 <input
                   type="url" value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)}
                   placeholder="https://yourorg.org"
-                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
                   disabled={saving}
                 />
               </div>
-              <p className="mt-1 font-body text-[11px] text-cool-grey">Your main homepage. Donors see this as the primary link on your page.</p>
+              <p className="mt-1 font-body text-label text-cool-grey">Your main homepage. Donors see this as the primary link on your page.</p>
             </label>
             <label className="block">
-              <span className="block font-body text-[13px] font-medium text-deep-navy mb-1">
+              <span className="block font-body text-small font-medium text-deep-navy mb-1">
                 Direct donation link
                 <span className="ml-1.5 font-normal text-cool-grey">(optional)</span>
               </span>
@@ -923,20 +923,20 @@ export default function OrgClaimEditor() {
                 <input
                   type="url" value={donateUrl} onChange={e => setDonateUrl(e.target.value)}
                   placeholder="https://yourorg.org/donate"
-                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-[14px] text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                  className="w-full pl-9 pr-4 py-3 border border-light-cream rounded-xl font-body text-body text-deep-navy placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold"
                   disabled={saving}
                 />
               </div>
-              <p className="mt-1 font-body text-[11px] text-cool-grey">The page where donors can give directly. Can be a PayPal, Stripe, or your own donation page.</p>
+              <p className="mt-1 font-body text-label text-cool-grey">The page where donors can give directly. Can be a PayPal, Stripe, or your own donation page.</p>
             </label>
           </div>
           <fieldset>
-            <legend className="font-body text-[13px] font-medium text-deep-navy mb-3">Focus areas <span className="text-cool-grey font-normal">(select all that apply)</span></legend>
+            <legend className="font-body text-small font-medium text-deep-navy mb-3">Focus areas <span className="text-cool-grey font-normal">(select all that apply)</span></legend>
             <div className="flex flex-wrap gap-2">
               {CAUSE_TAGS.map(tag => (
                 <button
                   key={tag} type="button" onClick={() => toggleTag(tag)} disabled={saving}
-                  className={`px-3 py-1.5 rounded-full font-body text-[13px] border transition-colors ${
+                  className={`px-3 py-1.5 rounded-full font-body text-small border transition-colors ${
                     selectedTags.includes(tag)
                       ? 'bg-soft-gold text-deep-navy border-soft-gold'
                       : 'bg-white text-cool-grey border-light-cream hover:border-soft-gold'
@@ -958,7 +958,7 @@ export default function OrgClaimEditor() {
 
           <button
             type="submit" disabled={saving}
-            className="w-full px-4 py-3 bg-soft-gold text-deep-navy font-body text-[15px] font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 transition-colors"
+            className="w-full px-4 py-3 bg-soft-gold text-deep-navy font-body text-body-lg font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 transition-colors"
           >
             {saving ? 'Saving...' : 'Save and publish'}
           </button>

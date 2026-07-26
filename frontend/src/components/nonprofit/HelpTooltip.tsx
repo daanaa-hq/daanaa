@@ -33,7 +33,7 @@ export default function HelpTooltip({ text, children, side = 'top' }: HelpToolti
         aria-describedby="help-tooltip"
         type="button"
       >
-        <span className="text-[12px] font-bold">?</span>
+        <span className="text-caption font-bold">?</span>
       </button>
 
       {children}
@@ -41,7 +41,7 @@ export default function HelpTooltip({ text, children, side = 'top' }: HelpToolti
       {isOpen && (
         <div
           id="help-tooltip"
-          className={`absolute ${sideClasses[side]} z-50 w-48 px-3 py-2 bg-soft-gold text-deep-navy rounded-lg shadow-lg text-[12px] font-body leading-relaxed`}
+          className={`absolute ${sideClasses[side]} z-50 w-48 px-3 py-2 bg-soft-gold text-deep-navy rounded-lg shadow-lg text-caption font-body leading-relaxed`}
           role="tooltip"
         >
           {text}

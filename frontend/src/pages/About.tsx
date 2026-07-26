@@ -74,12 +74,12 @@ export default function About() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-14 pb-14">
           <div className="flex items-center gap-2 mb-6">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">About</span>
+            <span className="font-body text-caption text-muted-cream">About</span>
           </div>
 
-          <p className="font-body text-[12px] tracking-[0.1em] text-pale-gold uppercase mb-4">About Daanaa</p>
+          <p className="font-body text-caption tracking-[0.1em] text-pale-gold uppercase mb-4">About Daanaa</p>
 
           {/* Canonical identity statement */}
           <p className="font-display italic text-warm-cream max-w-[820px] h2-display">
@@ -94,12 +94,12 @@ export default function About() {
               'No ratings. Every organization benchmarked within its true peer group — never against a different type or size.',
               'Equal dignity for the small org doing extraordinary work as for the large one everyone has heard of.',
             ].map(line => (
-              <p key={line} className="font-body text-[15px] text-muted-cream leading-[1.6]">{line}</p>
+              <p key={line} className="font-body text-body-lg text-muted-cream leading-[1.6]">{line}</p>
             ))}
           </div>
 
           <div className="mt-8 max-w-[760px] rounded-xl border border-soft-gold/20 bg-soft-gold/10 px-5 py-4">
-            <p className="font-body text-[14px] text-muted-cream leading-[1.7]">Daanaa is currently a self-funded public-interest initiative and a DBA of EcoMargins Consulting LLC, a for-profit entity. We are keeping overhead deliberately low while the concept is tested. Daanaa does not process donations or take a percentage of gifts. This structure does not represent Daanaa as a nonprofit or tax-exempt organization.</p>
+            <p className="font-body text-body text-muted-cream leading-[1.7]">Daanaa is currently a self-funded public-interest initiative and a DBA of EcoMargins Consulting LLC, a for-profit entity. We are keeping overhead deliberately low while the concept is tested. Daanaa does not process donations or take a percentage of gifts. This structure does not represent Daanaa as a nonprofit or tax-exempt organization.</p>
           </div>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function About() {
       <div className="bg-warm-cream py-16 md:py-20">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12">
 
-          <h2 className="font-display italic text-deep-navy text-[28px] md:text-[34px] mb-14">How we do it</h2>
+          <h2 className="font-display italic text-deep-navy text-headline md:text-headline-lg mb-14">How we do it</h2>
 
           <div className="space-y-0">
             {SECTIONS.map((section, i) => (
@@ -118,25 +118,25 @@ export default function About() {
               >
                 {/* Left */}
                 <div className="md:pt-1">
-                  <p className="font-body text-[11px] tracking-[0.1em] text-link-gold uppercase mb-2">{section.tag}</p>
-                  <h3 className="font-display italic text-deep-navy text-[20px] md:text-[24px] leading-[1.2]">{section.title}</h3>
+                  <p className="font-body text-label tracking-[0.1em] text-link-gold uppercase mb-2">{section.tag}</p>
+                  <h3 className="font-display italic text-deep-navy text-title md:text-title-lg leading-[1.2]">{section.title}</h3>
                 </div>
 
                 {/* Right */}
                 <div>
                   <div className="space-y-4">
                     {section.body.map((para, j) => (
-                      <p key={j} className="font-body text-[15px] text-cool-grey leading-[1.7]">{para}</p>
+                      <p key={j} className="font-body text-body-lg text-cool-grey leading-[1.7]">{para}</p>
                     ))}
                   </div>
                   <div className="mt-5 flex flex-wrap gap-5">
                     {'link' in section && section.link && (
-                      <Link to={section.link.to} className="font-body text-[13px] font-medium text-link-gold hover:text-bright-gold transition-colors">
+                      <Link to={section.link.to} className="font-body text-small font-medium text-link-gold hover:text-bright-gold transition-colors">
                         {section.link.label} →
                       </Link>
                     )}
                     {'links' in section && section.links && section.links.map(l => (
-                      <Link key={l.to} to={l.to} className="font-body text-[13px] font-medium text-link-gold hover:text-bright-gold transition-colors">
+                      <Link key={l.to} to={l.to} className="font-body text-small font-medium text-link-gold hover:text-bright-gold transition-colors">
                         {l.label} →
                       </Link>
                     ))}
@@ -149,7 +149,7 @@ export default function About() {
           {/* What we are / are not */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16 pt-12 border-t border-light-grey">
             <div>
-              <h3 className="font-display text-deep-navy text-[20px] mb-5">What we are</h3>
+              <h3 className="font-display text-deep-navy text-title mb-5">What we are</h3>
               <ul className="space-y-3">
                 {[
                   'A public directory of every active 501(c)(3)',
@@ -157,7 +157,7 @@ export default function About() {
                   'A discovery platform for the 97% that go unseen',
                   'A giving record that stays on your device',
                 ].map(item => (
-                  <li key={item} className="flex items-start gap-3 font-body text-[15px] text-cool-grey">
+                  <li key={item} className="flex items-start gap-3 font-body text-body-lg text-cool-grey">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2.5" className="shrink-0 mt-0.5">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -168,7 +168,7 @@ export default function About() {
             </div>
 
             <div>
-              <h3 className="font-display text-deep-navy text-[20px] mb-5">What we are not</h3>
+              <h3 className="font-display text-deep-navy text-title mb-5">What we are not</h3>
               <ul className="space-y-3">
                 {[
                   'Not a rating agency',
@@ -177,7 +177,7 @@ export default function About() {
                   'Not a nonprofit ranking platform',
                   'Not influenced by paid placement',
                 ].map(item => (
-                  <li key={item} className="flex items-start gap-3 font-body text-[15px] text-cool-grey">
+                  <li key={item} className="flex items-start gap-3 font-body text-body-lg text-cool-grey">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" strokeWidth="2.5" className="shrink-0 mt-0.5">
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
@@ -190,7 +190,7 @@ export default function About() {
 
           {/* Our commitments */}
           <div className="mt-16 pt-12 border-t border-light-grey">
-            <h2 className="font-display italic text-deep-navy text-[26px] md:text-[32px] mb-8">What we commit to</h2>
+            <h2 className="font-display italic text-deep-navy text-headline md:text-headline-lg mb-8">What we commit to</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {[
                 {
@@ -219,8 +219,8 @@ export default function About() {
                 },
               ].map(c => (
                 <div key={c.title} className="bg-white border border-light-grey rounded-xl p-6">
-                  <h3 className="font-display text-deep-navy text-[17px] mb-3">{c.title}</h3>
-                  <p className="font-body text-[14px] text-cool-grey leading-[1.65]">{c.body}</p>
+                  <h3 className="font-display text-deep-navy text-title-sm mb-3">{c.title}</h3>
+                  <p className="font-body text-body text-cool-grey leading-[1.65]">{c.body}</p>
                 </div>
               ))}
             </div>
@@ -229,14 +229,14 @@ export default function About() {
           {/* How we use AI */}
           <div className="mt-14 pt-10 border-t border-light-grey grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-8 md:gap-16">
             <div className="md:pt-1">
-              <p className="font-body text-[11px] tracking-[0.1em] text-link-gold uppercase mb-2">A note on AI</p>
-              <h2 className="font-display italic text-deep-navy text-[20px] md:text-[24px] leading-[1.2]">How we use AI responsibly</h2>
+              <p className="font-body text-label tracking-[0.1em] text-link-gold uppercase mb-2">A note on AI</p>
+              <h2 className="font-display italic text-deep-navy text-title md:text-title-lg leading-[1.2]">How we use AI responsibly</h2>
             </div>
             <div className="space-y-4">
-              <p className="font-body text-[15px] text-cool-grey leading-[1.7]">
+              <p className="font-body text-body-lg text-cool-grey leading-[1.7]">
                 When a nonprofit hasn't filed a mission statement with the IRS, we use AI to read the available filing data and write a starting-point description — the way a research volunteer would read an annual report and draft a summary paragraph. We label every AI-generated description clearly. Any organization can replace it at any time with their own words. You should verify anything important directly with the organization.
               </p>
-              <p className="font-body text-[15px] text-cool-grey leading-[1.7]">
+              <p className="font-body text-body-lg text-cool-grey leading-[1.7]">
                 AI never touches financial data, scores, or peer benchmarks. Those come directly from IRS records. AI fills gaps in the written record — it does not shape the numbers. We run our AI locally on our own servers, not through third party cloud services, which means organization data stays within the platform. AI outputs are reviewable, correctable, and clearly labeled wherever they appear.
               </p>
             </div>
@@ -249,8 +249,8 @@ export default function About() {
               className="flex items-center justify-between px-6 py-5 bg-deep-navy rounded-xl hover:bg-navy-mid transition-colors group"
             >
               <div>
-                <p className="font-body text-[11px] tracking-[0.08em] text-pale-gold uppercase mb-1">Start here</p>
-                <p className="font-display italic text-warm-cream text-[18px]">Browse the directory</p>
+                <p className="font-body text-label tracking-[0.08em] text-pale-gold uppercase mb-1">Start here</p>
+                <p className="font-display italic text-warm-cream text-title-sm">Browse the directory</p>
               </div>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" className="shrink-0 group-hover:translate-x-1 transition-transform">
                 <polyline points="9 18 15 12 9 6" />
@@ -262,8 +262,8 @@ export default function About() {
               className="flex items-center justify-between px-6 py-5 bg-white border border-light-grey rounded-xl hover:border-soft-gold transition-colors group"
             >
               <div>
-                <p className="font-body text-[11px] tracking-[0.08em] text-link-gold uppercase mb-1">Go deeper</p>
-                <p className="font-display italic text-deep-navy text-[18px]">Sector data and research</p>
+                <p className="font-body text-label tracking-[0.08em] text-link-gold uppercase mb-1">Go deeper</p>
+                <p className="font-display italic text-deep-navy text-title-sm">Sector data and research</p>
               </div>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" className="shrink-0 group-hover:translate-x-1 transition-transform">
                 <polyline points="9 18 15 12 9 6" />
@@ -272,7 +272,7 @@ export default function About() {
           </div>
 
           <div className="mt-10 text-center">
-            <p className="font-body text-[14px] text-cool-grey">
+            <p className="font-body text-body text-cool-grey">
               Questions? <Link to="/feedback" className="text-link-gold hover:text-bright-gold font-semibold">Get in touch</Link>.
             </p>
           </div>

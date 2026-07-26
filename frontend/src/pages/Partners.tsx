@@ -42,10 +42,10 @@ export default function Partners() {
           <h1 className="font-display italic text-deep-navy">
             Community Partners
           </h1>
-          <p className="mt-3 font-body text-[16px] text-cool-grey max-w-[640px]">
+          <p className="mt-3 font-body text-lead text-cool-grey max-w-[640px]">
             Services rated by nonprofit members. Use discount codes below.
           </p>
-          <p className="mt-4 font-body text-[12px] text-cool-grey bg-warm-cream border border-light-grey rounded p-3">
+          <p className="mt-4 font-body text-caption text-cool-grey bg-warm-cream border border-light-grey rounded p-3">
             Ratings are anonymous. Daanaa does not endorse these services. Ratings reflect real experiences from nonprofit members.
           </p>
         </div>
@@ -71,8 +71,8 @@ export default function Partners() {
             <div className="text-center py-12 text-cool-grey">Loading...</div>
           ) : sorted.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-lg border border-light-grey">
-              <p className="font-body text-cool-grey text-[16px]">No partners available yet.</p>
-              <p className="font-body text-cool-grey/60 text-[14px] mt-2">We're building our community partnership network. Check back soon.</p>
+              <p className="font-body text-cool-grey text-lead">No partners available yet.</p>
+              <p className="font-body text-cool-grey/60 text-body mt-2">We're building our community partnership network. Check back soon.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

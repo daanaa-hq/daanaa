@@ -22,7 +22,7 @@ export default function ClaimSuccess() {
           <h1 className="font-display italic text-deep-navy mb-3">
             Your changes are saved
           </h1>
-          <p className="font-body text-[16px] text-cool-grey">
+          <p className="font-body text-lead text-cool-grey">
             Thank you for claiming your Daanaa page. Your mission and giving links update on daanaa.org
             within 24 hours — usually sooner.
           </p>
@@ -30,26 +30,26 @@ export default function ClaimSuccess() {
         <div className="bg-white rounded-2xl shadow-sm border border-light-cream p-8 space-y-4">
           <Link
             to={`/org/${ein}`}
-            className="block w-full px-4 py-3 bg-soft-gold text-deep-navy font-body text-[15px] font-semibold rounded-xl hover:bg-bright-gold transition-colors text-center"
+            className="block w-full px-4 py-3 bg-soft-gold text-deep-navy font-body text-body-lg font-semibold rounded-xl hover:bg-bright-gold transition-colors text-center"
           >
             View your public page →
           </Link>
-          <p className="text-center font-body text-[11px] text-muted-cream -mt-1">
+          <p className="text-center font-body text-label text-muted-cream -mt-1">
             (may still show your prior info until the next update)
           </p>
           <Link
             to="/member/benefits"
-            className="block w-full px-4 py-3 border border-soft-gold/40 text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-soft-gold/8 transition-colors text-center"
+            className="block w-full px-4 py-3 border border-soft-gold/40 text-deep-navy font-body text-body font-semibold rounded-xl hover:bg-soft-gold/8 transition-colors text-center"
           >
             Access guild benefits →
           </Link>
           <Link
             to="/"
-            className="block w-full px-4 py-3 border border-light-cream text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-light-cream transition-colors text-center"
+            className="block w-full px-4 py-3 border border-light-cream text-deep-navy font-body text-body font-semibold rounded-xl hover:bg-light-cream transition-colors text-center"
           >
             Return home
           </Link>
-          <p className="text-center font-body text-[12px] text-muted-cream pt-2">
+          <p className="text-center font-body text-caption text-muted-cream pt-2">
             Questions? <a href="mailto:orgs@daanaa.org" className="text-soft-gold hover:underline">orgs@daanaa.org</a>
           </p>
         </div>

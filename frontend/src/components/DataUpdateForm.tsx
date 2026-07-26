@@ -144,7 +144,7 @@ export default function DataUpdateForm({
   if (form.success) {
     return (
       <div className="p-4 bg-success-green/5 border border-success-green/20 rounded-xl">
-        <p className="font-body text-[14px] text-success-green">
+        <p className="font-body text-body text-success-green">
           Your update was received! It will be included in our next scoring run (within 2-3 business days).
         </p>
       </div>
@@ -156,13 +156,13 @@ export default function DataUpdateForm({
       {form.error && (
         <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-          <p className="font-body text-[14px] text-destructive">{form.error}</p>
+          <p className="font-body text-body text-destructive">{form.error}</p>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Annual Revenue</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">Annual Revenue</span>
           <div className="relative">
             <span className="absolute left-3 top-2 text-cool-grey">$</span>
             <input
@@ -172,18 +172,18 @@ export default function DataUpdateForm({
               onChange={handleChange}
               disabled={form.isSubmitting}
               placeholder="e.g., 3100000"
-              className="pl-6 pr-3 py-2 w-full border border-light-cream rounded-lg font-body text-[13px] focus:outline-none focus:ring-2 focus:ring-soft-gold"
+              className="pl-6 pr-3 py-2 w-full border border-light-cream rounded-lg font-body text-small focus:outline-none focus:ring-2 focus:ring-soft-gold"
             />
           </div>
           {org.total_revenue && (
-            <p className="text-[10px] text-cool-grey mt-1">
+            <p className="text-micro text-cool-grey mt-1">
               IRS FY{org.latest_tax_year}: ${(org.total_revenue / 1_000_000).toFixed(2)}M
             </p>
           )}
         </label>
 
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Annual Expenses</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">Annual Expenses</span>
           <div className="relative">
             <span className="absolute left-3 top-2 text-cool-grey">$</span>
             <input
@@ -193,18 +193,18 @@ export default function DataUpdateForm({
               onChange={handleChange}
               disabled={form.isSubmitting}
               placeholder="e.g., 2850000"
-              className="pl-6 pr-3 py-2 w-full border border-light-cream rounded-lg font-body text-[13px] focus:outline-none focus:ring-2 focus:ring-soft-gold"
+              className="pl-6 pr-3 py-2 w-full border border-light-cream rounded-lg font-body text-small focus:outline-none focus:ring-2 focus:ring-soft-gold"
             />
           </div>
           {org.total_expenses && (
-            <p className="text-[10px] text-cool-grey mt-1">
+            <p className="text-micro text-cool-grey mt-1">
               IRS FY{org.latest_tax_year}: ${(org.total_expenses / 1_000_000).toFixed(2)}M
             </p>
           )}
         </label>
 
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Program Expense %</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">Program Expense %</span>
           <div className="relative">
             <input
               type="number"
@@ -215,19 +215,19 @@ export default function DataUpdateForm({
               placeholder="e.g., 81"
               min="0"
               max="100"
-              className="pr-6 px-3 py-2 w-full border border-light-cream rounded-lg font-body text-[13px] focus:outline-none focus:ring-2 focus:ring-soft-gold"
+              className="pr-6 px-3 py-2 w-full border border-light-cream rounded-lg font-body text-small focus:outline-none focus:ring-2 focus:ring-soft-gold"
             />
             <span className="absolute right-3 top-2 text-cool-grey">%</span>
           </div>
           {org.program_expense_pct && (
-            <p className="text-[10px] text-cool-grey mt-1">
+            <p className="text-micro text-cool-grey mt-1">
               IRS FY{org.latest_tax_year}: {org.program_expense_pct.toFixed(1)}%
             </p>
           )}
         </label>
 
         <label className="block">
-          <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">Months of Reserve</span>
+          <span className="block font-body text-caption font-medium text-deep-navy mb-1">Months of Reserve</span>
           <div className="relative">
             <input
               type="number"
@@ -237,12 +237,12 @@ export default function DataUpdateForm({
               disabled={form.isSubmitting}
               placeholder="e.g., 3.2"
               step="0.1"
-              className="pr-12 px-3 py-2 w-full border border-light-cream rounded-lg font-body text-[13px] focus:outline-none focus:ring-2 focus:ring-soft-gold"
+              className="pr-12 px-3 py-2 w-full border border-light-cream rounded-lg font-body text-small focus:outline-none focus:ring-2 focus:ring-soft-gold"
             />
-            <span className="absolute right-3 top-2 text-cool-grey text-[12px]">mo</span>
+            <span className="absolute right-3 top-2 text-cool-grey text-caption">mo</span>
           </div>
           {org.months_of_reserve && (
-            <p className="text-[10px] text-cool-grey mt-1">
+            <p className="text-micro text-cool-grey mt-1">
               IRS FY{org.latest_tax_year}: {org.months_of_reserve.toFixed(1)} months
             </p>
           )}
@@ -250,7 +250,7 @@ export default function DataUpdateForm({
       </div>
 
       <label className="block">
-        <span className="block font-body text-[12px] font-medium text-deep-navy mb-1">What changed? <span className="text-cool-grey font-normal">(optional)</span></span>
+        <span className="block font-body text-caption font-medium text-deep-navy mb-1">What changed? <span className="text-cool-grey font-normal">(optional)</span></span>
         <textarea
           name="explanation"
           value={form.explanation}
@@ -258,7 +258,7 @@ export default function DataUpdateForm({
           disabled={form.isSubmitting}
           placeholder="e.g., 2024 was a stronger year with increased fundraising"
           rows={2}
-          className="w-full px-3 py-2 border border-light-cream rounded-lg font-body text-[13px] placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
+          className="w-full px-3 py-2 border border-light-cream rounded-lg font-body text-small placeholder-muted-cream focus:outline-none focus:ring-2 focus:ring-soft-gold resize-none"
         />
       </label>
 
@@ -267,7 +267,7 @@ export default function DataUpdateForm({
           type="button"
           onClick={handleSubmit}
           disabled={form.isSubmitting}
-          className="px-4 py-2 bg-soft-gold text-deep-navy font-body text-[13px] font-semibold rounded-lg hover:bg-bright-gold disabled:opacity-40 transition-colors"
+          className="px-4 py-2 bg-soft-gold text-deep-navy font-body text-small font-semibold rounded-lg hover:bg-bright-gold disabled:opacity-40 transition-colors"
         >
           {form.isSubmitting ? 'Submitting…' : 'Submit Update'}
         </button>
@@ -276,14 +276,14 @@ export default function DataUpdateForm({
             type="button"
             onClick={onCancel}
             disabled={form.isSubmitting}
-            className="px-4 py-2 bg-light-cream text-cool-grey font-body text-[13px] font-semibold rounded-lg hover:bg-muted-cream disabled:opacity-40 transition-colors"
+            className="px-4 py-2 bg-light-cream text-cool-grey font-body text-small font-semibold rounded-lg hover:bg-muted-cream disabled:opacity-40 transition-colors"
           >
             Skip for now
           </button>
         )}
       </div>
 
-      <p className="font-body text-[11px] text-cool-grey italic">
+      <p className="font-body text-label text-cool-grey italic">
         💡 Updates are included in our next scoring run (2-3 business days), giving you time to prepare your story for donors.
       </p>
     </div>

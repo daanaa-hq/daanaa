@@ -194,7 +194,7 @@ export default function IntentModal({
             {step === 'details' && !isEditing && (
               <button
                 onClick={() => setStep('type')}
-                className="mb-2 inline-flex items-center gap-1 font-body text-[12px] text-cool-grey hover:text-deep-navy transition-colors"
+                className="mb-2 inline-flex items-center gap-1 font-body text-caption text-cool-grey hover:text-deep-navy transition-colors"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="15 18 9 12 15 6"/>
@@ -202,7 +202,7 @@ export default function IntentModal({
                 Back
               </button>
             )}
-            <h2 id="modal-title" className="font-display italic text-[20px] text-deep-navy leading-snug">
+            <h2 id="modal-title" className="font-display italic text-title text-deep-navy leading-snug">
               {step === 'type'
                 ? `How would you like to support ${orgName}?`
                 : isEditing
@@ -237,8 +237,8 @@ export default function IntentModal({
                     {t.icon}
                   </span>
                   <span className="flex-1 min-w-0">
-                    <span className="block font-body text-[15px] font-semibold text-deep-navy">{t.label}</span>
-                    <span className="block font-body text-[12px] text-cool-grey mt-0.5">{t.sub}</span>
+                    <span className="block font-body text-body-lg font-semibold text-deep-navy">{t.label}</span>
+                    <span className="block font-body text-caption text-cool-grey mt-0.5">{t.sub}</span>
                   </span>
                   <svg className="w-4 h-4 text-cool-grey group-hover:text-soft-gold transition-colors shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <polyline points="9 18 15 12 9 6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -249,7 +249,7 @@ export default function IntentModal({
 
             <button
               onClick={onClose}
-              className="w-full py-3 font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors text-center"
+              className="w-full py-3 font-body text-small text-cool-grey hover:text-deep-navy transition-colors text-center"
             >
               Not sure yet
             </button>
@@ -263,11 +263,11 @@ export default function IntentModal({
             {selectedType === 'giving' && (
               <div className="space-y-4">
                 <div>
-                  <label className="block font-body text-[13px] font-semibold text-deep-navy mb-2">
+                  <label className="block font-body text-small font-semibold text-deep-navy mb-2">
                     How much? <span className="font-normal text-cool-grey">(optional)</span>
                   </label>
                   <div className="flex items-center gap-2">
-                    <span className="font-body text-[15px] text-cool-grey">$</span>
+                    <span className="font-body text-body-lg text-cool-grey">$</span>
                     <input
                       type="number"
                       min="1"
@@ -282,7 +282,7 @@ export default function IntentModal({
                       }}
                       placeholder="Leave blank if unsure"
                       aria-label="Amount"
-                      className={`flex-1 px-4 py-2.5 border rounded-xl font-body text-[14px] focus:outline-none focus:ring-2 ${
+                      className={`flex-1 px-4 py-2.5 border rounded-xl font-body text-body focus:outline-none focus:ring-2 ${
                         errors.amount
                           ? 'border-red-400 focus:ring-red-400'
                           : 'border-light-grey focus:ring-soft-gold/50'
@@ -290,19 +290,19 @@ export default function IntentModal({
                     />
                   </div>
                   {errors.amount && (
-                    <p className="font-body text-destructive text-[12px] mt-1">{errors.amount}</p>
+                    <p className="font-body text-destructive text-caption mt-1">{errors.amount}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block font-body text-[13px] font-semibold text-deep-navy mb-2">How often?</label>
+                  <label className="block font-body text-small font-semibold text-deep-navy mb-2">How often?</label>
                   <div className="flex gap-2">
                     {(['year', 'month', 'one-time'] as Frequency[]).map((f) => (
                       <button
                         key={f}
                         type="button"
                         onClick={() => setFrequency(f)}
-                        className={`flex-1 py-2.5 rounded-xl border font-body text-[13px] font-medium transition-all ${
+                        className={`flex-1 py-2.5 rounded-xl border font-body text-small font-medium transition-all ${
                           frequency === f
                             ? 'border-soft-gold bg-soft-gold/10 text-deep-navy'
                             : 'border-light-grey text-cool-grey hover:border-soft-gold/40'
@@ -319,7 +319,7 @@ export default function IntentModal({
             {/* Volunteer details */}
             {selectedType === 'volunteer' && (
               <div>
-                <label className="block font-body text-[13px] font-semibold text-deep-navy mb-2">
+                <label className="block font-body text-small font-semibold text-deep-navy mb-2">
                   Hours per week <span className="font-normal text-cool-grey">(optional)</span>
                 </label>
                 <input
@@ -337,21 +337,21 @@ export default function IntentModal({
                   }}
                   placeholder="Leave blank if unsure"
                   aria-label="Hours per week"
-                  className={`w-full px-4 py-2.5 border rounded-xl font-body text-[14px] focus:outline-none focus:ring-2 ${
+                  className={`w-full px-4 py-2.5 border rounded-xl font-body text-body focus:outline-none focus:ring-2 ${
                     errors.hours
                       ? 'border-red-400 focus:ring-red-400'
                       : 'border-light-grey focus:ring-soft-gold/50'
                   }`}
                 />
                 {errors.hours && (
-                  <p className="font-body text-destructive text-[12px] mt-1">{errors.hours}</p>
+                  <p className="font-body text-destructive text-caption mt-1">{errors.hours}</p>
                 )}
               </div>
             )}
 
             {/* Notes */}
             <div>
-              <label className="block font-body text-[13px] font-semibold text-deep-navy mb-2">
+              <label className="block font-body text-small font-semibold text-deep-navy mb-2">
                 Notes <span className="font-normal text-cool-grey">(optional)</span>
               </label>
               <textarea
@@ -367,7 +367,7 @@ export default function IntentModal({
                 maxLength={200}
                 aria-label="Notes"
                 rows={3}
-                className={`w-full px-4 py-2.5 border rounded-xl font-body text-[14px] focus:outline-none focus:ring-2 resize-none ${
+                className={`w-full px-4 py-2.5 border rounded-xl font-body text-body focus:outline-none focus:ring-2 resize-none ${
                   errors.notes
                     ? 'border-red-400 focus:ring-red-400'
                     : 'border-light-grey focus:ring-soft-gold/50'
@@ -375,9 +375,9 @@ export default function IntentModal({
               />
               <div className="flex justify-between items-center mt-1">
                 {errors.notes && (
-                  <p className="font-body text-destructive text-[12px]">{errors.notes}</p>
+                  <p className="font-body text-destructive text-caption">{errors.notes}</p>
                 )}
-                <p className="font-body text-[11px] text-cool-grey ml-auto">{notes.length}/200</p>
+                <p className="font-body text-label text-cool-grey ml-auto">{notes.length}/200</p>
               </div>
             </div>
 
@@ -386,7 +386,7 @@ export default function IntentModal({
               <div className="text-center">
                 <button
                   onClick={handleWithdraw}
-                  className="font-body text-[12px] text-cool-grey hover:text-deep-navy underline transition-colors"
+                  className="font-body text-caption text-cool-grey hover:text-deep-navy underline transition-colors"
                 >
                   No longer interested in supporting this org?
                 </button>
@@ -397,13 +397,13 @@ export default function IntentModal({
             <div className="flex gap-3 pt-1">
               <button
                 onClick={onClose}
-                className="flex-1 py-2.5 rounded-xl border border-light-grey text-cool-grey font-body text-[13px] font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
+                className="flex-1 py-2.5 rounded-xl border border-light-grey text-cool-grey font-body text-small font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
+                className="flex-1 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold transition-colors"
               >
                 Save
               </button>

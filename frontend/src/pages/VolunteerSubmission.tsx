@@ -49,7 +49,7 @@ export default function VolunteerSubmission() {
     return (
       <div className="min-h-screen bg-warm-cream flex items-center justify-center px-4 py-16">
         <div className="max-w-md w-full text-center">
-          <h1 className="font-display italic text-deep-navy text-[28px] mb-3">No claim code</h1>
+          <h1 className="font-display italic text-deep-navy text-headline mb-3">No claim code</h1>
           <p className="font-body text-cool-grey mb-6">
             Ask your nonprofit for a claim code. It should look like: VOL-ABC123DEF456
           </p>
@@ -63,7 +63,7 @@ export default function VolunteerSubmission() {
     return (
       <div className="min-h-screen bg-warm-cream flex items-center justify-center px-4 py-16">
         <div className="max-w-md w-full text-center">
-          <h1 className="font-display italic text-deep-navy text-[28px] mb-3">Hours claimed!</h1>
+          <h1 className="font-display italic text-deep-navy text-headline mb-3">Hours claimed!</h1>
           <p className="font-body text-cool-grey mb-6">
             Your nonprofit will review and approve your volunteer hours. You'll receive an email when they take action.
           </p>
@@ -79,20 +79,20 @@ export default function VolunteerSubmission() {
     <div className="min-h-screen bg-warm-cream flex items-center justify-center px-4 py-16">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl p-8 border border-light-grey">
-          <h1 className="font-display italic text-deep-navy text-[28px] mb-2">Claim Your Hours</h1>
-          <p className="text-cool-grey text-[14px] mb-6">
+          <h1 className="font-display italic text-deep-navy text-headline mb-2">Claim Your Hours</h1>
+          <p className="text-cool-grey text-body mb-6">
             Code: <span className="font-mono text-deep-navy">{code}</span>
           </p>
 
           {error && (
             <div className="mb-6 p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
-              <p className="text-destructive text-[14px]">{error}</p>
+              <p className="text-destructive text-body">{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-[13px] font-semibold text-deep-navy mb-2">Email</label>
+              <label className="block text-small font-semibold text-deep-navy mb-2">Email</label>
               <input
                 type="email"
                 value={email}
@@ -101,7 +101,7 @@ export default function VolunteerSubmission() {
                 className="w-full px-4 py-2 border border-light-grey rounded-lg focus:outline-none focus:ring-2 focus:ring-soft-gold"
                 placeholder="your@email.com"
               />
-              <p className="text-[12px] text-cool-grey mt-1">Must match what you gave your nonprofit</p>
+              <p className="text-caption text-cool-grey mt-1">Must match what you gave your nonprofit</p>
             </div>
 
             <button
@@ -113,7 +113,7 @@ export default function VolunteerSubmission() {
             </button>
           </form>
 
-          <p className="text-[12px] text-cool-grey text-center mt-6">
+          <p className="text-caption text-cool-grey text-center mt-6">
             Your nonprofit will review and approve these hours.
           </p>
         </div>

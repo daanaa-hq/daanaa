@@ -58,7 +58,7 @@ export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({
       >
         <span className="text-sm">{conf.icon}</span>
         <span>{conf.label}</span>
-        <span className="text-[11px] opacity-75">({conf.percentage})</span>
+        <span className="text-label opacity-75">({conf.percentage})</span>
       </div>
 
       {showTooltip && (

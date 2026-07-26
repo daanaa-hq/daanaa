@@ -62,8 +62,8 @@ export default function DonorVoice({
     <CardPattern variant="subtle">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h3 className="font-semibold text-deep-navy text-[14px] mb-1">What supporters say</h3>
-          <p className="font-body text-[12px] text-cool-grey">
+          <h3 className="font-semibold text-deep-navy text-body mb-1">What supporters say</h3>
+          <p className="font-body text-caption text-cool-grey">
             {notes.length === 0
               ? 'Be the first to share'
               : `${notes.length} supporter${notes.length === 1 ? '' : 's'} have shared notes`}
@@ -72,7 +72,7 @@ export default function DonorVoice({
         {canLeaveNote && !showForm && (
           <button
             onClick={() => setShowForm(true)}
-            className="px-3 py-1.5 bg-soft-gold text-deep-navy rounded-lg font-body text-[12px] font-semibold hover:bg-bright-gold transition-colors shrink-0"
+            className="px-3 py-1.5 bg-soft-gold text-deep-navy rounded-lg font-body text-caption font-semibold hover:bg-bright-gold transition-colors shrink-0"
           >
             Add note
           </button>
@@ -87,7 +87,7 @@ export default function DonorVoice({
             onChange={e => setNote(e.target.value)}
             placeholder="Share what impressed you or what to know about {orgName}..."
             maxLength={200}
-            className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-[13px] focus:outline-none focus:ring-2 focus:ring-soft-gold/40 resize-none"
+            className="w-full px-3 py-2 border border-light-grey rounded-lg font-body text-small focus:outline-none focus:ring-2 focus:ring-soft-gold/40 resize-none"
             rows={3}
           />
 
@@ -99,7 +99,7 @@ export default function DonorVoice({
                 onChange={() => setAnonymous(!anonymous)}
                 className="rounded"
               />
-              <span className="font-body text-[12px] text-cool-grey">Stay anonymous</span>
+              <span className="font-body text-caption text-cool-grey">Stay anonymous</span>
             </label>
 
             {!anonymous && (
@@ -109,7 +109,7 @@ export default function DonorVoice({
                 onChange={e => setAuthorName(e.target.value)}
                 placeholder="Your first name"
                 maxLength={50}
-                className="flex-1 px-3 py-2 border border-light-grey rounded-lg font-body text-[12px] focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
+                className="flex-1 px-3 py-2 border border-light-grey rounded-lg font-body text-caption focus:outline-none focus:ring-2 focus:ring-soft-gold/40"
               />
             )}
           </div>
@@ -118,13 +118,13 @@ export default function DonorVoice({
             <button
               onClick={handleSubmit}
               disabled={!note.trim()}
-              className="px-4 py-2 bg-soft-gold text-deep-navy rounded-lg font-body text-[12px] font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-soft-gold text-deep-navy rounded-lg font-body text-caption font-semibold hover:bg-bright-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Post note
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 text-cool-grey font-body text-[12px] hover:text-deep-navy transition-colors"
+              className="px-4 py-2 text-cool-grey font-body text-caption hover:text-deep-navy transition-colors"
             >
               Cancel
             </button>
@@ -137,15 +137,15 @@ export default function DonorVoice({
         <div className="space-y-2">
           {recentNotes.map(n => (
             <CardPattern key={n.id} variant="default">
-              <p className="font-body text-[13px] text-deep-navy leading-relaxed">{n.text}</p>
-              <p className="mt-1.5 font-body text-[11px] text-muted-cream">
+              <p className="font-body text-small text-deep-navy leading-relaxed">{n.text}</p>
+              <p className="mt-1.5 font-body text-label text-muted-cream">
                 {n.authorName ? `— ${n.authorName}` : '— Anonymous'} · {new Date(n.addedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </p>
             </CardPattern>
           ))}
 
           {hasMore && (
-            <button className="w-full text-center text-soft-gold hover:text-bright-gold font-body text-[12px] py-2 transition-colors">
+            <button className="w-full text-center text-soft-gold hover:text-bright-gold font-body text-caption py-2 transition-colors">
               Show all {notes.length} notes
             </button>
           )}
@@ -153,7 +153,7 @@ export default function DonorVoice({
       )}
 
       {canLeaveNote && notes.length === 0 && !showForm && (
-        <p className="font-body text-[12px] text-cool-grey text-center py-4">
+        <p className="font-body text-caption text-cool-grey text-center py-4">
           You've supported this org. What was your experience?
         </p>
       )}

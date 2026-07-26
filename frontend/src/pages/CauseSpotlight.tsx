@@ -61,9 +61,9 @@ export default function CauseSpotlight() {
       <div className="bg-deep-navy">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-12 pb-14">
           <div className="flex items-center gap-2 mb-8">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Featured cause</span>
+            <span className="font-body text-caption text-muted-cream">Featured cause</span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center gap-8 md:gap-12">
@@ -73,21 +73,21 @@ export default function CauseSpotlight() {
               className="w-28 h-28 md:w-40 md:h-40 object-contain shrink-0 mx-auto md:mx-0 drop-shadow-[0_8px_32px_rgba(201,169,110,0.28)]"
             />
             <div className="text-center md:text-left">
-              <p className="font-body text-[12px] font-semibold tracking-[0.12em] text-soft-gold uppercase mb-2">
+              <p className="font-body text-caption font-semibold tracking-[0.12em] text-soft-gold uppercase mb-2">
                 Featured cause
               </p>
               <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(40px, 6vw, 68px)' }}>
                 {cat.name}
               </h1>
               {meta?.tagline && (
-                <p className="font-display italic text-pale-gold/90 mt-3 text-[19px] md:text-[22px]">
+                <p className="font-display italic text-pale-gold/90 mt-3 text-title md:text-title-lg">
                   {meta.tagline}
                 </p>
               )}
               {meta?.focus && (
                 <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-5">
                   {meta.focus.map(f => (
-                    <span key={f} className="font-body text-[12px] px-3 py-1 rounded-full bg-soft-gold/10 border border-soft-gold/25 text-pale-gold">
+                    <span key={f} className="font-body text-caption px-3 py-1 rounded-full bg-soft-gold/10 border border-soft-gold/25 text-pale-gold">
                       {f}
                     </span>
                   ))}
@@ -101,11 +101,11 @@ export default function CauseSpotlight() {
       {/* The landscape */}
       <div className="bg-warm-cream py-14 md:py-18">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12">
-          <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">The landscape</span>
+          <span className="font-body text-label font-medium tracking-[0.08em] text-soft-gold uppercase">The landscape</span>
           <h2 className="font-display italic text-deep-navy mt-3 leading-[1.1]" >
             {data.totalOrgs.toLocaleString()} {cat.name.toLowerCase()} nonprofits the IRS recognizes
           </h2>
-          <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.7] max-w-[680px]">
+          <p className="mt-4 font-body text-lead text-cool-grey leading-[1.7] max-w-[680px]">
             Most are small and local. {data.withContext.toLocaleString()} have enough public data for a peer financial
             context score so far. The rest are still part of the picture, waiting to be seen.
           </p>
@@ -117,7 +117,7 @@ export default function CauseSpotlight() {
             <Stat value={`${(data.withContext / data.totalOrgs * 100).toFixed(0)}%`} label="Scored so far" />
           </div>
 
-          <p className="mt-6 font-body text-[14px] text-cool-grey/80">
+          <p className="mt-6 font-body text-body text-cool-grey/80">
             Most common in{' '}
             {data.topStates.map((s, i) => (
               <span key={s.state}>
@@ -132,14 +132,14 @@ export default function CauseSpotlight() {
       {/* Worth discovering */}
       <div className="bg-soft-gold/[0.05] py-14 md:py-18">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12">
-          <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Worth discovering</span>
+          <span className="font-body text-label font-medium tracking-[0.08em] text-soft-gold uppercase">Worth discovering</span>
           <h2 className="font-display italic text-deep-navy mt-3 leading-[1.1]" >
             The invisible ones
           </h2>
-          <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.7] max-w-[680px]">
+          <p className="mt-4 font-body text-lead text-cool-grey leading-[1.7] max-w-[680px]">
             Small {cat.name.toLowerCase()} organizations doing quiet, steady work, far from the spotlight.
           </p>
-          <p className="mt-3 font-body text-[13px] text-cool-grey leading-[1.6] max-w-[680px]">
+          <p className="mt-3 font-body text-small text-cool-grey leading-[1.6] max-w-[680px]">
             How these are chosen: smaller organizations (under $500K in revenue) with strong peer
             financial context within their peer group, and a public mission on file. It is a starting
             point for your own research, not a verdict.{' '}
@@ -155,13 +155,13 @@ export default function CauseSpotlight() {
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <Link
                     to={`/org/${org.ein}`}
-                    className="font-display text-[18px] text-deep-navy leading-snug hover:text-soft-gold transition-colors"
+                    className="font-display text-title-sm text-deep-navy leading-snug hover:text-soft-gold transition-colors"
                   >
                     {org.name}
                   </Link>
-                  <span className="font-body text-[12px] text-cool-grey whitespace-nowrap shrink-0 pt-1">{org.city}, {org.state}</span>
+                  <span className="font-body text-caption text-cool-grey whitespace-nowrap shrink-0 pt-1">{org.city}, {org.state}</span>
                 </div>
-                <p className="mb-4 font-body text-[14px] text-cool-grey leading-[1.6]">{org.blurb}</p>
+                <p className="mb-4 font-body text-body text-cool-grey leading-[1.6]">{org.blurb}</p>
                 <AddToWalletButton ein={org.ein} orgName={org.name} />
               </div>
             ))}
@@ -170,7 +170,7 @@ export default function CauseSpotlight() {
           <div className="mt-10 text-center md:text-left">
             <Link
               to={`/directory?category=${code}`}
-              className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-deep-navy text-warm-cream font-body text-[14px] font-bold hover:bg-navy-mid transition-colors"
+              className="inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full bg-deep-navy text-warm-cream font-body text-body font-bold hover:bg-navy-mid transition-colors"
             >
               Explore all {data.totalOrgs.toLocaleString()} {cat.name} nonprofits
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
@@ -178,7 +178,7 @@ export default function CauseSpotlight() {
           </div>
 
           {asOf && (
-            <p className="mt-10 font-body text-[12px] text-cool-grey">
+            <p className="mt-10 font-body text-caption text-cool-grey">
               Based on public IRS data. Figures current as of {new Date(asOf).toLocaleDateString()}.
             </p>
           )}
@@ -192,7 +192,7 @@ function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="bg-soft-gold/10 rounded-2xl p-5">
       <div className="font-display text-soft-gold leading-none" >{value}</div>
-      <div className="mt-2 font-body text-[12px] text-cool-grey">{label}</div>
+      <div className="mt-2 font-body text-caption text-cool-grey">{label}</div>
     </div>
   )
 }

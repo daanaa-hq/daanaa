@@ -456,7 +456,7 @@ export default function Directory() {
           <h1 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]">
             Explore Causes &amp; Organizations
           </h1>
-          <p className="mt-3 font-body text-[16px] leading-[1.6] text-cool-grey">
+          <p className="mt-3 font-body text-lead leading-[1.6] text-cool-grey">
             Search public records, cause tags, and locations across the United States.
           </p>
 
@@ -481,7 +481,7 @@ export default function Directory() {
                   setFiltersExpanded(!filtersExpanded)
                 }
               }}
-              className="mt-7 inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all duration-150"
+              className="mt-7 inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-small font-medium border transition-all duration-150"
               style={{
                 backgroundColor: filtersExpanded || activeFilterCount > 0 ? '#F8F5F0' : 'transparent',
                 borderColor: filtersExpanded || activeFilterCount > 0 ? '#E5E0DB' : '#E5E0DB',
@@ -493,7 +493,7 @@ export default function Directory() {
               </svg>
               Filters
               {activeFilterCount > 0 && (
-                <span className="min-w-[16px] h-4 flex items-center justify-center bg-deep-navy text-soft-gold text-[10px] font-bold rounded-full px-1">
+                <span className="min-w-[16px] h-4 flex items-center justify-center bg-deep-navy text-soft-gold text-micro font-bold rounded-full px-1">
                   {activeFilterCount}
                 </span>
               )}
@@ -546,7 +546,7 @@ export default function Directory() {
             ))}
 
             {activeFilterCount > 0 && (
-              <button onClick={handleClearAll} className="font-body text-[12px] text-cool-grey hover:text-cool-grey transition-colors ml-1">
+              <button onClick={handleClearAll} className="font-body text-caption text-cool-grey hover:text-cool-grey transition-colors ml-1">
                 Clear all
               </button>
             )}
@@ -558,7 +558,7 @@ export default function Directory() {
               <button
                 key={cat.id}
                 onClick={() => handleFilterChange(cat.id)}
-                className="px-4 py-[6px] rounded-full font-body text-[12px] tracking-[0.02em] transition-all duration-150 border"
+                className="px-4 py-[6px] rounded-full font-body text-caption tracking-[0.02em] transition-all duration-150 border"
                 style={{
                   backgroundColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? '#C9A96E' : 'transparent',
                   color: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? '#0A1628' : '#4B5563',
@@ -574,7 +574,7 @@ export default function Directory() {
                 onClick={() => { setHasWebsite(!hasWebsite); setCurrentPage(1); scrollTop() }}
                 title="A working website you can visit to learn more"
                 aria-pressed={hasWebsite}
-                className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-[12px] font-medium border transition-all duration-150"
+                className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-caption font-medium border transition-all duration-150"
                 style={{
                   backgroundColor: hasWebsite ? '#0EA5E9' : '#0EA5E912',
                   color: hasWebsite ? '#FFFFFF' : '#374151',
@@ -589,13 +589,13 @@ export default function Directory() {
               {/* Open to volunteers — coming soon */}
               <div
                 title="Volunteer listings are coming soon. Claim your organization to be among the first."
-                className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-[12px] font-medium border border-dashed border-cool-grey/50 text-cool-grey/70 cursor-default select-none"
+                className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-caption font-medium border border-dashed border-cool-grey/50 text-cool-grey/70 cursor-default select-none"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 11V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12"/><path d="M14 22l4-4-4-4"/><line x1="14" y1="18" x2="22" y2="18"/>
                 </svg>
                 Open to volunteers
-                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-soft-gold/20 text-[10px] font-semibold text-deep-gold leading-none">Soon</span>
+                <span className="ml-0.5 px-1.5 py-0.5 rounded-full bg-soft-gold/20 text-micro font-semibold text-deep-gold leading-none">Soon</span>
               </div>
               {/* Proximity search */}
               <div className="inline-flex items-center gap-1 h-[34px]">
@@ -629,7 +629,7 @@ export default function Directory() {
                     }}
                     placeholder="Zip or city, state"
                     aria-label="Filter by location (zip code or city, state)"
-                    className="h-[34px] pl-3 pr-8 w-[148px] rounded-l-full font-body text-[12px] border outline-none transition-all duration-150"
+                    className="h-[34px] pl-3 pr-8 w-[148px] rounded-l-full font-body text-caption border outline-none transition-all duration-150"
                     style={{
                       backgroundColor: near ? '#C9A96E15' : 'transparent',
                       color: '#374151',
@@ -700,7 +700,7 @@ export default function Directory() {
                     }
                   }}
                   aria-label="Search radius in miles"
-                  className="h-[34px] pl-2 pr-6 rounded-r-full font-body text-[12px] border outline-none appearance-none cursor-pointer transition-all duration-150"
+                  className="h-[34px] pl-2 pr-6 rounded-r-full font-body text-caption border outline-none appearance-none cursor-pointer transition-all duration-150"
                   style={{
                     backgroundColor: near ? '#C9A96E15' : 'transparent',
                     color: near ? '#0A1628' : '#9CA3AF',
@@ -724,7 +724,7 @@ export default function Directory() {
                   <select
                     value={minRevenue}
                     onChange={(e) => handleMinRevenueChange(parseInt(e.target.value, 10))}
-                    className="h-[34px] px-3 rounded-full bg-warm-cream border border-light-grey font-body text-[12px] font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
+                    className="h-[34px] px-3 rounded-full bg-warm-cream border border-light-grey font-body text-caption font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
                     title="Minimum annual revenue"
                   >
                     <option value={0}>$0</option>
@@ -735,12 +735,12 @@ export default function Directory() {
                     <option value={100_000_000}>$100M</option>
                   </select>
                 </div>
-                <span className="text-cool-grey text-[12px] flex items-center">to</span>
+                <span className="text-cool-grey text-caption flex items-center">to</span>
                 <div>
                   <select
                     value={maxRevenue === 500_000_000 ? 'unlimited' : maxRevenue}
                     onChange={(e) => handleMaxRevenueChange(e.target.value === 'unlimited' ? 500_000_000 : parseInt(e.target.value, 10))}
-                    className="h-[34px] px-3 rounded-full bg-warm-cream border border-light-grey font-body text-[12px] font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
+                    className="h-[34px] px-3 rounded-full bg-warm-cream border border-light-grey font-body text-caption font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
                     title="Maximum annual revenue"
                   >
                     <option value={150_000}>$150K</option>
@@ -758,7 +758,7 @@ export default function Directory() {
                   value={stateFilter}
                   onChange={e => handleStateChange(e.target.value)}
                   aria-label="Filter by state"
-                  className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-[12px] tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
+                  className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-caption tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
                   style={{
                     backgroundColor: stateFilter ? '#C9A96E' : 'transparent',
                     color: stateFilter ? '#0A1628' : '#4B5563',
@@ -791,7 +791,7 @@ export default function Directory() {
             <div className="mt-3 space-y-2">
               {activeFilters.filter(c => (NTEE_SUBCATEGORIES[c]?.length ?? 0) > 0).map(catId => (
                 <div key={catId} className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-body text-[10px] uppercase tracking-[0.06em] text-cool-grey mr-1 shrink-0">
+                  <span className="font-body text-micro uppercase tracking-[0.06em] text-cool-grey mr-1 shrink-0">
                     {FILTER_CATEGORIES.find(c => c.id === catId)?.label ?? catId}
                   </span>
                   {NTEE_SUBCATEGORIES[catId].map(sub => {
@@ -800,7 +800,7 @@ export default function Directory() {
                       <button
                         key={sub.code}
                         onClick={() => handleSubChange(sub.code)}
-                        className="px-3 py-1 rounded-full font-body text-[11px] transition-all duration-150 border"
+                        className="px-3 py-1 rounded-full font-body text-label transition-all duration-150 border"
                         style={{
                           backgroundColor: on ? '#0A1628' : 'transparent',
                           color: on ? '#F5F0EB' : '#6B7280',
@@ -821,7 +821,7 @@ export default function Directory() {
             <div className="mt-2">
               <button
                 onClick={handleClearAll}
-                className="font-body text-[12px] text-cool-grey hover:text-cool-grey transition-colors"
+                className="font-body text-caption text-cool-grey hover:text-cool-grey transition-colors"
               >
                 Clear all filters
               </button>
@@ -872,11 +872,11 @@ export default function Directory() {
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
                 <div>
-                  <span className="font-body text-[20px] font-semibold tracking-[-0.02em] text-deep-navy">
+                  <span className="font-body text-title font-semibold tracking-[-0.02em] text-deep-navy">
                     {total.toLocaleString()} {effectiveHiddenGem ? 'orgs you may not have heard of' : (searchQuery || activeFilters.length > 0 || stateFilter ? 'results' : 'organizations')}
                   </span>
                   {effectiveHiddenGem && (
-                    <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
+                    <p className="font-body text-caption text-cool-grey mt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
                       <span>Small, overlooked organizations · a fresh set each week.</span>
                       <button onClick={handleSeeAll} className="font-semibold text-soft-gold hover:text-bright-gold transition-colors">
                         See all 1.7M →
@@ -887,13 +887,13 @@ export default function Directory() {
                       silently — the results would look filtered while being
                       nationwide (2026-07-10 "Houston Texas" incident). */}
                   {near && !orgsLoading && orgsData && !orgsData.nearby && (
-                    <p className="font-body text-[12px] text-alert-amber mt-1" role="status">
+                    <p className="font-body text-caption text-alert-amber mt-1" role="status">
                       We couldn't find "{near}" — showing results without the location filter.
                       Try "City, ST" (like Houston, TX) or a zip code.
                     </p>
                   )}
                   {near && !orgsLoading && orgsData?.nearby && (
-                    <p className="font-body text-[12px] text-cool-grey mt-1 flex items-center gap-2" role="status">
+                    <p className="font-body text-caption text-cool-grey mt-1 flex items-center gap-2" role="status">
                       <span>
                         Near {orgsData.nearby.city}, {orgsData.nearby.state} · within {orgsData.nearby.radius_mi} mi
                       </span>
@@ -909,12 +909,12 @@ export default function Directory() {
                     </p>
                   )}
                   {orgsData?.corrected_query && (
-                    <p className="font-body text-[12px] text-cool-grey mt-1" role="status">
+                    <p className="font-body text-caption text-cool-grey mt-1" role="status">
                       Showing results for "{orgsData.corrected_query}" — we didn't find any matches for "{searchQuery}"
                     </p>
                   )}
                   {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
-                    <p className="font-body text-[12px] text-cool-grey mt-1" role="status">
+                    <p className="font-body text-caption text-cool-grey mt-1" role="status">
                       Includes organizations that haven't reported revenue — smaller nonprofits often file
                       a simpler return.{' '}
                       <button
@@ -926,7 +926,7 @@ export default function Directory() {
                     </p>
                   )}
                   {(statsData?.irs_status_verified_at || statsData?.scores_last_updated) && (
-                    <p className="font-body text-[12px] text-cool-grey mt-1">
+                    <p className="font-body text-caption text-cool-grey mt-1">
                       Built from public IRS data
                       {statsData?.scores_last_updated && (
                         <> · Financial data as of {new Date(statsData.scores_last_updated).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</>
@@ -941,12 +941,12 @@ export default function Directory() {
                   {(searchQuery || activeFilters.length > 0 || subFilters.length > 0 || stateFilter || hasRevenueFilter || near) && (
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       {searchQuery && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-[11px]">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-navy-mid/8 text-deep-navy font-body text-label">
                           "{searchQuery}"
                         </span>
                       )}
                       {useFusedResults && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-soft-gold font-body text-[11px]" title="Results ranked by combining keyword matching and meaning, not by size or revenue">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/15 text-soft-gold font-body text-label" title="Results ranked by combining keyword matching and meaning, not by size or revenue">
                           Name + meaning
                         </span>
                       )}
@@ -954,7 +954,7 @@ export default function Directory() {
                         <button
                           key={f}
                           onClick={() => handleFilterChange(f)}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-label hover:bg-soft-gold/20 transition-colors"
                         >
                           {RAIL_CATEGORIES.find(c => c.id === f)?.label} ×
                         </button>
@@ -963,7 +963,7 @@ export default function Directory() {
                         <button
                           key={code}
                           onClick={() => handleSubChange(code)}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-deep-navy/8 text-deep-navy font-body text-[11px] hover:bg-deep-navy/15 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-deep-navy/8 text-deep-navy font-body text-label hover:bg-deep-navy/15 transition-colors"
                         >
                           {subLabelOf(code)} ×
                         </button>
@@ -971,7 +971,7 @@ export default function Directory() {
                       {stateFilter && (
                         <button
                           onClick={() => handleStateChange('')}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-label hover:bg-soft-gold/20 transition-colors"
                         >
                           {stateFilter} ×
                         </button>
@@ -979,7 +979,7 @@ export default function Directory() {
                       {hasRevenueFilter && (
                         <button
                           onClick={() => { handleMinRevenueChange(0); handleMaxRevenueChange(500_000_000) }}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-label hover:bg-soft-gold/20 transition-colors"
                         >
                           {revLabel} ×
                         </button>
@@ -991,18 +991,18 @@ export default function Directory() {
                             searchParams.delete('near'); searchParams.delete('radius_mi')
                             setSearchParams(searchParams)
                           }}
-                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-[11px] hover:bg-soft-gold/20 transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-soft-gold/10 text-soft-gold font-body text-label hover:bg-soft-gold/20 transition-colors"
                         >
                           {near} · {radiusMi}mi ×
                         </button>
                       )}
-                      <button onClick={handleClearAll} className="font-body text-[11px] text-cool-grey hover:text-deep-navy transition-colors">
+                      <button onClick={handleClearAll} className="font-body text-label text-cool-grey hover:text-deep-navy transition-colors">
                         Clear all
                       </button>
                     </div>
                   )}
                   {subFilters.includes('X70') && (
-                    <p className="mt-1.5 font-body text-[11px] text-cool-grey">
+                    <p className="mt-1.5 font-body text-label text-cool-grey">
                       The IRS classifies Hindu, Sikh, Jain, and other non-Western faith traditions under this code. This reflects official IRS data, not our own categorization.
                     </p>
                   )}
@@ -1011,10 +1011,10 @@ export default function Directory() {
                 <div className="flex items-center gap-3 shrink-0">
                   {/* Sort + direction — hidden while gems is on (static weekly order) */}
                   {effectiveHiddenGem ? (
-                    <span className="hidden sm:inline font-body text-[13px] text-cool-grey italic">Shuffled weekly</span>
+                    <span className="hidden sm:inline font-body text-small text-cool-grey italic">Shuffled weekly</span>
                   ) : (
                     <div className="hidden sm:flex items-center gap-2">
-                      <span className="font-body text-[14px] text-cool-grey">Sort:</span>
+                      <span className="font-body text-body text-cool-grey">Sort:</span>
                       <select
                         value={sortBy}
                         onChange={(e) => {
@@ -1024,7 +1024,7 @@ export default function Directory() {
                           setCurrentPage(1)
                         }}
                         aria-label="Sort organizations by"
-                        className="bg-transparent font-body text-[14px] text-deep-navy outline-none cursor-pointer"
+                        className="bg-transparent font-body text-body text-deep-navy outline-none cursor-pointer"
                       >
                         {SORT_OPTIONS.map(opt => (
                           <option key={opt.id} value={opt.id}>{opt.label}</option>
@@ -1053,7 +1053,7 @@ export default function Directory() {
                           }}
                           title="Randomize the list with a new shuffle"
                           aria-label="Randomize list"
-                          className="inline-flex items-center justify-center px-3 py-1 rounded-md border border-light-grey text-cool-grey hover:text-deep-navy hover:border-cool-grey transition-colors font-body text-[13px] whitespace-nowrap"
+                          className="inline-flex items-center justify-center px-3 py-1 rounded-md border border-light-grey text-cool-grey hover:text-deep-navy hover:border-cool-grey transition-colors font-body text-small whitespace-nowrap"
                         >
                           Randomize
                         </button>
@@ -1134,8 +1134,8 @@ export default function Directory() {
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
-                  <p className="font-body text-[16px] text-cool-grey">Unable to load organizations.</p>
-                  <p className="font-body text-[14px] text-cool-grey mt-2">Check that the API is running, then refresh.</p>
+                  <p className="font-body text-lead text-cool-grey">Unable to load organizations.</p>
+                  <p className="font-body text-body text-cool-grey mt-2">Check that the API is running, then refresh.</p>
                 </div>
               ) : organizations.length > 0 ? (
                 <>
@@ -1177,12 +1177,12 @@ export default function Directory() {
                         }
                         return pages.map((page, idx) =>
                           page === '…' ? (
-                            <span key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center font-body text-[14px] text-cool-grey">…</span>
+                            <span key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center font-body text-body text-cool-grey">…</span>
                           ) : (
                             <button
                               key={page}
                               onClick={() => { setCurrentPage(page); scrollTop() }}
-                              className="w-8 h-8 flex items-center justify-center rounded-full font-body text-[14px] transition-all duration-150"
+                              className="w-8 h-8 flex items-center justify-center rounded-full font-body text-body transition-all duration-150"
                               style={{
                                 backgroundColor: currentPage === page ? '#C9A96E' : 'transparent',
                                 color: currentPage === page ? '#0A1628' : '#6B7280',
@@ -1211,20 +1211,20 @@ export default function Directory() {
                       <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
                     </svg>
                   </div>
-                  <p className="font-body text-[17px] font-semibold text-deep-navy mb-2">Nothing matched those filters</p>
-                  <p className="font-body text-[14px] text-cool-grey mb-6 leading-relaxed">
+                  <p className="font-body text-title-sm font-semibold text-deep-navy mb-2">Nothing matched those filters</p>
+                  <p className="font-body text-body text-cool-grey mb-6 leading-relaxed">
                     Try removing a filter, shortening the keyword, or browsing by cause instead.
                   </p>
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <button
                       onClick={handleClearAll}
-                      className="px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
+                      className="px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold transition-colors"
                     >
                       Clear all filters
                     </button>
                     <Link
                       to="/"
-                      className="px-5 py-2.5 rounded-xl border border-light-grey text-cool-grey font-body text-[13px] font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
+                      className="px-5 py-2.5 rounded-xl border border-light-grey text-cool-grey font-body text-small font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
                     >
                       Browse by cause
                     </Link>

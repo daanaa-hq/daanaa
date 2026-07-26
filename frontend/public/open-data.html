@@ -7,17 +7,14 @@
   <title>Daanaa Open Data and AI Access</title>
   <meta name="description" content="Public entry points for Daanaa: directory, methodology, research, sitemap, llms.txt, and open data export.">
   <link rel="canonical" href="https://daanaa.org/open-data">
+  <link rel="stylesheet" href="/tokens.css">
   <style>
+    /* Palette and type scale come from /tokens.css. These three are local
+       aliases kept so existing rules below keep working. */
     :root {
-      --navy: #1A1A2E;
-      --cream: #F5F0E8;
-      --gold: #C9A96E;
-      --pale-gold: #E8D7C3;
-      --muted-cream: #D9CFC2;
-      --cool-grey: #6B6B6B;
-      --deep-navy: #1A1A2E;
-      --soft-gold: #C9A96E;
-      --light-grey: #E8E8E8;
+      --navy: var(--deep-navy);
+      --cream: var(--warm-cream);
+      --gold: var(--soft-gold);
     }
 
     @media (prefers-color-scheme: dark) {
@@ -65,7 +62,7 @@
     header h1 {
       font-family: 'Cormorant Garamond', 'Georgia', serif;
       font-style: italic;
-      font-size: clamp(32px, 5vw, 56px);
+      font-size: var(--text-fluid-h1);
       font-weight: 600;
       margin-bottom: 1rem;
       line-height: 1.1;
@@ -73,7 +70,7 @@
     }
 
     header p {
-      font-size: 16px;
+      font-size: var(--text-lead);
       max-width: 700px;
       color: var(--muted-cream);
       line-height: 1.7;
@@ -92,7 +89,7 @@
     section h2 {
       font-family: 'Cormorant Garamond', 'Georgia', serif;
       font-style: italic;
-      font-size: 28px;
+      font-size: var(--text-headline);
       font-weight: 600;
       color: var(--deep-navy);
       margin-bottom: 1.5rem;
@@ -139,7 +136,7 @@
     }
 
     .card h3 {
-      font-size: 14px;
+      font-size: var(--text-body);
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -148,7 +145,7 @@
     }
 
     .card p {
-      font-size: 15px;
+      font-size: var(--text-body-lg);
       color: var(--cool-grey);
       line-height: 1.6;
       margin-bottom: 1rem;
@@ -195,7 +192,7 @@
     }
 
     .info-box h3 {
-      font-size: 14px;
+      font-size: var(--text-body);
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -210,7 +207,7 @@
     }
 
     .info-box p {
-      font-size: 15px;
+      font-size: var(--text-body-lg);
       line-height: 1.7;
       color: var(--deep-navy);
     }
@@ -222,7 +219,7 @@
     }
 
     .footer-text {
-      font-size: 13px;
+      font-size: var(--text-small);
       color: var(--cool-grey);
       margin-top: 2rem;
       padding-top: 2rem;

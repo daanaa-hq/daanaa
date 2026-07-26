@@ -26,29 +26,29 @@ export default function CohortContext({ org }: CohortContextProps) {
           <h3 className="font-body text-xs tracking-widest uppercase font-semibold text-cool-grey">
             Financial Context
           </h3>
-          <p className="font-body text-[15px] text-deep-navy mt-2 leading-relaxed">
+          <p className="font-body text-body-lg text-deep-navy mt-2 leading-relaxed">
             We do not have public financial filings for this organization yet, so
             we cannot show its own numbers.
           </p>
         </div>
 
         <CardPattern variant="nested" className="space-y-2">
-          <p className="font-body text-[13px] tracking-wide uppercase text-cool-grey">
+          <p className="font-body text-small tracking-wide uppercase text-cool-grey">
             About {causeLabel.toLowerCase().startsWith('this') ? causeLabel : `its work in ${causeLabel}`}
           </p>
-          <p className="font-body text-[15px] text-deep-navy leading-relaxed">
+          <p className="font-body text-body-lg text-deep-navy leading-relaxed">
             Among the {cohort.n.toLocaleString()} organizations in this area we do
             have data for, the typical one keeps about{' '}
             <span className="font-semibold">{median} months</span> of operating
             costs in reserve.
           </p>
-          <p className="font-body text-[13px] text-cool-grey">
+          <p className="font-body text-small text-cool-grey">
             This is background on the cause area, not a measure of this organization.
           </p>
         </CardPattern>
 
         <div className="pt-1">
-          <p className="font-body text-[14px] text-deep-navy">
+          <p className="font-body text-body text-deep-navy">
             Run this organization?{' '}
             <Link
               to={`/for-nonprofits?ein=${org.EIN}`}

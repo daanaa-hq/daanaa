@@ -42,9 +42,9 @@ export default function StatusBadge({ status, withContext = true, size = 'md' }:
 
   const config = statusConfig[status]
   const sizeClasses = {
-    sm: 'px-2 py-1 text-[11px]',
-    md: 'px-3 py-1.5 text-[12px]',
-    lg: 'px-4 py-2 text-[13px]'
+    sm: 'px-2 py-1 text-label',
+    md: 'px-3 py-1.5 text-caption',
+    lg: 'px-4 py-2 text-small'
   }
 
   return (
@@ -56,7 +56,7 @@ export default function StatusBadge({ status, withContext = true, size = 'md' }:
       <span className="leading-none">{config.icon}</span>
       <span>{config.label}</span>
       {withContext && (
-        <span className={`ml-1 text-[11px] opacity-75 font-normal`}>
+        <span className={`ml-1 text-label opacity-75 font-normal`}>
           ({config.context})
         </span>
       )}

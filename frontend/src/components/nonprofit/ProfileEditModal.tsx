@@ -84,25 +84,25 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
         <div className="px-6 py-6 space-y-6">
           {/* Help Text */}
           <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <p className="font-body text-[13px] text-slate-900 font-semibold mb-1">About this field</p>
-            <p className="font-body text-[13px] text-slate-900">{config.help}</p>
+            <p className="font-body text-small text-slate-900 font-semibold mb-1">About this field</p>
+            <p className="font-body text-small text-slate-900">{config.help}</p>
           </div>
 
           {/* Current Value */}
           {currentValue && (
             <div>
-              <label className="block font-body text-[11px] font-semibold text-cool-grey uppercase mb-2">
+              <label className="block font-body text-label font-semibold text-cool-grey uppercase mb-2">
                 Current Value
               </label>
               <div className="p-3 bg-light-grey/30 rounded-lg border border-light-grey">
-                <p className="font-body text-[13px] text-deep-navy whitespace-pre-wrap">{currentValue}</p>
+                <p className="font-body text-small text-deep-navy whitespace-pre-wrap">{currentValue}</p>
               </div>
             </div>
           )}
 
           {/* New Value */}
           <div>
-            <label htmlFor="new-value" className="block font-body text-[11px] font-semibold text-cool-grey uppercase mb-2">
+            <label htmlFor="new-value" className="block font-body text-label font-semibold text-cool-grey uppercase mb-2">
               New Value
             </label>
             {field === 'website' || field === 'donate_url' ? (
@@ -113,7 +113,7 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
                 onChange={e => setNewValue(e.target.value)}
                 placeholder="https://example.com"
                 aria-label={`New ${config.label}`}
-                className="w-full px-4 py-3 border border-light-grey rounded-lg font-body text-[14px] focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                className="w-full px-4 py-3 border border-light-grey rounded-lg font-body text-body focus:outline-none focus:ring-2 focus:ring-soft-gold"
               />
             ) : (
               <textarea
@@ -123,15 +123,15 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
                 placeholder={`Enter ${config.label.toLowerCase()}...`}
                 rows={6}
                 aria-label={`New ${config.label}`}
-                className="w-full px-4 py-3 border border-light-grey rounded-lg font-body text-[14px] resize-none focus:outline-none focus:ring-2 focus:ring-soft-gold"
+                className="w-full px-4 py-3 border border-light-grey rounded-lg font-body text-body resize-none focus:outline-none focus:ring-2 focus:ring-soft-gold"
               />
             )}
             <div className="flex items-center justify-between mt-2">
-              <span className="font-body text-[11px] text-cool-grey">
+              <span className="font-body text-label text-cool-grey">
                 {charCount} / {config.maxChars} characters
               </span>
               {charCount < config.minChars && (
-                <span className="font-body text-[11px] text-destructive">
+                <span className="font-body text-label text-destructive">
                   Minimum {config.minChars} characters required
                 </span>
               )}
@@ -140,7 +140,7 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
 
           {/* Reason */}
           <div className="bg-soft-gold/10 p-4 rounded-lg border border-soft-gold/30">
-            <label htmlFor="reason" className="block font-body text-[11px] font-semibold text-cool-grey uppercase mb-2">
+            <label htmlFor="reason" className="block font-body text-label font-semibold text-cool-grey uppercase mb-2">
               ✍️ Why are you making this change?
             </label>
             <textarea
@@ -151,9 +151,9 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
               rows={3}
               aria-label="Reason for profile edit"
               aria-describedby="reason-help"
-              className="w-full px-4 py-3 border border-light-grey rounded-lg font-body text-[14px] resize-none focus:outline-none focus:ring-2 focus:ring-soft-gold"
+              className="w-full px-4 py-3 border border-light-grey rounded-lg font-body text-body resize-none focus:outline-none focus:ring-2 focus:ring-soft-gold"
             />
-            <p id="reason-help" className="font-body text-[11px] text-cool-grey mt-2">
+            <p id="reason-help" className="font-body text-label text-cool-grey mt-2">
               This message helps donors understand what changed and why. Be concise and honest.
             </p>
           </div>
@@ -161,14 +161,14 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
           {/* Error */}
           {error && (
             <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-lg">
-              <p className="font-body text-[13px] text-destructive">{error}</p>
+              <p className="font-body text-small text-destructive">{error}</p>
             </div>
           )}
 
           {/* Preview */}
           <div className="p-4 bg-success-green/5 rounded-lg border border-success-green/20">
-            <p className="font-body text-[12px] font-semibold text-success-green mb-2">Preview</p>
-            <p className="font-body text-[13px] text-success-green whitespace-pre-wrap">{newValue || '(empty)'}</p>
+            <p className="font-body text-caption font-semibold text-success-green mb-2">Preview</p>
+            <p className="font-body text-small text-success-green whitespace-pre-wrap">{newValue || '(empty)'}</p>
           </div>
         </div>
 
@@ -177,7 +177,7 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
           <button
             onClick={onClose}
             disabled={saving}
-            className="px-4 py-2.5 rounded-lg border border-light-grey text-deep-navy font-body text-[14px] font-semibold hover:bg-light-grey/30 disabled:opacity-50 transition"
+            className="px-4 py-2.5 rounded-lg border border-light-grey text-deep-navy font-body text-body font-semibold hover:bg-light-grey/30 disabled:opacity-50 transition"
             aria-label="Cancel edits"
           >
             Cancel
@@ -185,7 +185,7 @@ export default function ProfileEditModal({ field, currentValue, onSave, onClose 
           <button
             onClick={handleSave}
             disabled={!isValid || saving}
-            className="px-6 py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="px-6 py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold disabled:opacity-50 disabled:cursor-not-allowed transition"
             aria-label={`Save changes to ${config.label}`}
             aria-disabled={!isValid || saving}
           >

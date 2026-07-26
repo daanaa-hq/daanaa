@@ -54,36 +54,36 @@ export default function GuildSection({ ein }: GuildSectionProps) {
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <h3 className={`font-display italic text-[20px] ${colors.text}`}>
+            <h3 className={`font-display italic text-title ${colors.text}`}>
               {guild.guild_name}
             </h3>
-            <span className={`${colors.badge} px-2.5 py-1 rounded-full text-[12px] font-semibold uppercase`}>
+            <span className={`${colors.badge} px-2.5 py-1 rounded-full text-caption font-semibold uppercase`}>
               {guild.tier}
             </span>
           </div>
           {guild.website && (
-            <a href={guild.website} target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:underline text-[14px]">
+            <a href={guild.website} target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:underline text-body">
               Visit partner →
             </a>
           )}
         </div>
-        <Link to={`/partner/${guild.slug}`} className="text-soft-gold hover:underline text-[13px] font-semibold">
+        <Link to={`/partner/${guild.slug}`} className="text-soft-gold hover:underline text-small font-semibold">
           View benefits
         </Link>
       </div>
 
       {guild.benefits && guild.benefits.length > 0 && (
         <div className="space-y-2">
-          <p className="text-[12px] text-cool-grey font-semibold uppercase tracking-wide mb-3">
+          <p className="text-caption text-cool-grey font-semibold uppercase tracking-wide mb-3">
             {guild.tier} benefits
           </p>
           {guild.benefits.map((benefit, idx) => (
-            <div key={idx} className="flex gap-3 text-[13px]">
+            <div key={idx} className="flex gap-3 text-small">
               <span className="shrink-0 text-soft-gold">✓</span>
               <div>
                 <div className={`font-semibold ${colors.text}`}>{benefit.feature_name}</div>
                 {benefit.description && (
-                  <div className="text-cool-grey text-[12px]">{benefit.description}</div>
+                  <div className="text-cool-grey text-caption">{benefit.description}</div>
                 )}
               </div>
             </div>

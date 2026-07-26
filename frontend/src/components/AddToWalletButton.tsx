@@ -58,7 +58,7 @@ export default function AddToWalletButton({
           title={inFunding ? 'In donation list' : 'Add to donation list'}
           aria-pressed={inFunding}
           aria-label={inFunding ? `Remove ${orgName} from donation list` : `Add ${orgName} to donation list`}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-body text-[13px] font-medium transition-all duration-150"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-body text-small font-medium transition-all duration-150"
           style={{
             background: inFunding ? '#22c55e20' : 'rgba(0,0,0,0.04)',
             border: `1px solid ${inFunding ? '#22c55e' : 'rgba(0,0,0,0.12)'}`,
@@ -74,7 +74,7 @@ export default function AddToWalletButton({
           title={inVolunteering ? 'In volunteer list' : 'Add to volunteer list'}
           aria-pressed={inVolunteering}
           aria-label={inVolunteering ? `Remove ${orgName} from volunteer list` : `Add ${orgName} to volunteer list`}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-body text-[13px] font-medium transition-all duration-150"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-body text-small font-medium transition-all duration-150"
           style={{
             background: inVolunteering ? '#ef444420' : 'rgba(0,0,0,0.04)',
             border: `1px solid ${inVolunteering ? '#ef4444' : 'rgba(0,0,0,0.12)'}`,
@@ -88,7 +88,7 @@ export default function AddToWalletButton({
       {inFunding && (
         <Link
           to={`/wallet?intent=${ein}`}
-          className="font-body text-[12px] text-soft-gold hover:text-bright-gold transition-colors leading-snug"
+          className="font-body text-caption text-soft-gold hover:text-bright-gold transition-colors leading-snug"
           aria-label={existingIntent ? 'Edit your giving plan' : 'Set a giving plan'}
         >
           {existingIntent ? 'Edit your giving plan →' : 'How would you like to support them? →'}

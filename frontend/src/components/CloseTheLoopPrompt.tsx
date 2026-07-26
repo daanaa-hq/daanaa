@@ -28,18 +28,18 @@ export default function CloseTheLoopPrompt({
       {!selectedEin ? (
         // Prompt state: ask user if they gave recently
         <div>
-          <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">Did you give recently?</p>
-          <p className="font-body text-[13px] text-cool-grey mb-4">
+          <p className="font-body text-body font-semibold text-deep-navy mb-1">Did you give recently?</p>
+          <p className="font-body text-small text-cool-grey mb-4">
             Log your donation so you can track your impact.
           </p>
 
-          <label className="font-body text-[12px] font-semibold text-cool-grey uppercase tracking-wide block mb-2">
+          <label className="font-body text-caption font-semibold text-cool-grey uppercase tracking-wide block mb-2">
             Organization
           </label>
           <select
             value={selectedEin || ''}
             onChange={e => setSelectedEin(e.target.value || null)}
-            className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-[13px] text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
+            className="w-full px-4 py-2.5 border border-light-grey rounded-xl font-body text-small text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/40 bg-white"
           >
             <option value="">Select where you gave...</option>
             {fundingEntries.map(entry => {
@@ -57,8 +57,8 @@ export default function CloseTheLoopPrompt({
         <div>
           <div className="flex items-start justify-between mb-5">
             <div>
-              <p className="font-body text-[12px] text-cool-grey uppercase tracking-wide font-semibold mb-1">Logging to</p>
-              <p className="font-body text-[14px] font-semibold text-deep-navy">{selectedOrg?.organization_name ?? selectedEin}</p>
+              <p className="font-body text-caption text-cool-grey uppercase tracking-wide font-semibold mb-1">Logging to</p>
+              <p className="font-body text-body font-semibold text-deep-navy">{selectedOrg?.organization_name ?? selectedEin}</p>
             </div>
             <button
               onClick={() => setSelectedEin(null)}

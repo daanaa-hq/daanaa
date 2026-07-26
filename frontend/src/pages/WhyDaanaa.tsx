@@ -10,9 +10,9 @@ export default function WhyDaanaa() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <div className="flex items-center gap-2 mb-6">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Why Daanaa</span>
+            <span className="font-body text-caption text-muted-cream">Why Daanaa</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
             <div className="max-w-[720px]">
@@ -32,7 +32,7 @@ export default function WhyDaanaa() {
         <div className="max-w-[720px] mx-auto px-6 lg:px-12">
 
           {/* Founder's message */}
-          <div className="space-y-6 font-body text-[17px] leading-[1.8] text-cool-grey">
+          <div className="space-y-6 font-body text-title-sm leading-[1.8] text-cool-grey">
 
             <p>
               Daanaa began with a simple observation.
@@ -106,7 +106,7 @@ export default function WhyDaanaa() {
 
           {/* Story links */}
           <div className="mt-20 pt-12 border-t border-light-grey">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-6">
+            <p className="font-body text-label font-semibold tracking-[0.08em] text-cool-grey uppercase mb-6">
               The full story
             </p>
 
@@ -118,10 +118,10 @@ export default function WhyDaanaa() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="font-display text-deep-navy text-[18px] group-hover:text-soft-gold transition-colors">
+                    <h3 className="font-display text-deep-navy text-title-sm group-hover:text-soft-gold transition-colors">
                       How we score
                     </h3>
-                    <p className="mt-2 font-body text-[14px] text-cool-grey">
+                    <p className="mt-2 font-body text-body text-cool-grey">
                       Our methodology for peer financial context and peer group analysis
                     </p>
                   </div>
@@ -137,10 +137,10 @@ export default function WhyDaanaa() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="font-display text-deep-navy text-[18px] group-hover:text-soft-gold transition-colors">
+                    <h3 className="font-display text-deep-navy text-title-sm group-hover:text-soft-gold transition-colors">
                       Visibility levels
                     </h3>
-                    <p className="mt-2 font-body text-[14px] text-cool-grey">
+                    <p className="mt-2 font-body text-body text-cool-grey">
                       What each tier means and how public data completeness varies
                     </p>
                   </div>
@@ -156,10 +156,10 @@ export default function WhyDaanaa() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="font-display text-deep-navy text-[18px] group-hover:text-soft-gold transition-colors">
+                    <h3 className="font-display text-deep-navy text-title-sm group-hover:text-soft-gold transition-colors">
                       Governance
                     </h3>
-                    <p className="mt-2 font-body text-[14px] text-cool-grey">
+                    <p className="mt-2 font-body text-body text-cool-grey">
                       How we make decisions and remain accountable to the mission
                     </p>
                   </div>
@@ -175,10 +175,10 @@ export default function WhyDaanaa() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="font-display text-deep-navy text-[18px] group-hover:text-soft-gold transition-colors">
+                    <h3 className="font-display text-deep-navy text-title-sm group-hover:text-soft-gold transition-colors">
                       The invisible 97%
                     </h3>
-                    <p className="mt-2 font-body text-[14px] text-cool-grey">
+                    <p className="mt-2 font-body text-body text-cool-grey">
                       The nonprofits you've never heard of, and why they matter
                     </p>
                   </div>
@@ -194,10 +194,10 @@ export default function WhyDaanaa() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="font-display text-deep-navy text-[18px] group-hover:text-soft-gold transition-colors">
+                    <h3 className="font-display text-deep-navy text-title-sm group-hover:text-soft-gold transition-colors">
                       The directory
                     </h3>
-                    <p className="mt-2 font-body text-[14px] text-cool-grey">
+                    <p className="mt-2 font-body text-body text-cool-grey">
                       Search 1.7M nonprofits and discover organizations in your community
                     </p>
                   </div>
@@ -213,10 +213,10 @@ export default function WhyDaanaa() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h3 className="font-display text-deep-navy text-[18px] group-hover:text-soft-gold transition-colors">
+                    <h3 className="font-display text-deep-navy text-title-sm group-hover:text-soft-gold transition-colors">
                       Your wallet
                     </h3>
-                    <p className="mt-2 font-body text-[14px] text-cool-grey">
+                    <p className="mt-2 font-body text-body text-cool-grey">
                       Keep a private record of your giving, right on your device
                     </p>
                   </div>

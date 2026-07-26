@@ -306,10 +306,10 @@ export default function LightRevealField({
               backdropFilter: 'blur(2px)',
             }}
           >
-            <span className="block font-display text-[12px] sm:text-[13px] font-semibold text-warm-cream leading-tight">
+            <span className="block font-display text-caption sm:text-small font-semibold text-warm-cream leading-tight">
               {c.name}
             </span>
-            <span className="block font-body text-[10px] text-soft-gold">
+            <span className="block font-body text-micro text-soft-gold">
               {c.total.toLocaleString()}
             </span>
           </Link>
@@ -338,7 +338,7 @@ export default function LightRevealField({
       {reveal < 0.985 && (
         <button
           onClick={revealAll}
-          className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-soft-gold/40 bg-deep-navy/60 px-4 py-1.5 font-body text-[12px] text-warm-cream backdrop-blur-sm transition-colors hover:border-soft-gold"
+          className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border border-soft-gold/40 bg-deep-navy/60 px-4 py-1.5 font-body text-caption text-warm-cream backdrop-blur-sm transition-colors hover:border-soft-gold"
         >
           Drag the lamp →  or  tap to reveal all
         </button>

@@ -13,14 +13,14 @@ export default function Terms() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1120px] mx-auto px-6 md:px-12 pt-12 pb-10">
           <div className="flex items-center gap-2 mb-4">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Terms of Service</span>
+            <span className="font-body text-caption text-muted-cream">Terms of Service</span>
           </div>
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]">
             Terms of Service
           </h1>
-          <p className="mt-3 font-body text-[14px] text-muted-cream">
+          <p className="mt-3 font-body text-body text-muted-cream">
             Effective June 14, 2026 · Operated by EcoMargins Consulting LLC
           </p>
         </div>
@@ -29,10 +29,10 @@ export default function Terms() {
       <div className="bg-warm-cream py-16 md:py-20">
         <div className="max-w-[800px] mx-auto px-6 md:px-12">
 
-        <div className="space-y-12 font-body text-[16px] text-cool-grey leading-[1.7]">
+        <div className="space-y-12 font-body text-lead text-cool-grey leading-[1.7]">
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">1. Who we are and what Daanaa is</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">1. Who we are and what Daanaa is</h2>
             <p>
               Daanaa is operated by <strong className="text-deep-navy">EcoMargins Consulting LLC</strong>, a for-profit Texas
               limited liability company. Daanaa is not a nonprofit organization. We are not affiliated with the IRS
@@ -47,7 +47,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">2. What Daanaa does not do</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">2. What Daanaa does not do</h2>
             <p>
               <strong className="text-deep-navy">We never handle money.</strong> Daanaa does not receive, process,
               hold, transmit, or facilitate charitable donations. All giving happens directly between donors and the
@@ -62,7 +62,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">3. Acceptance of these terms</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">3. Acceptance of these terms</h2>
             <p>
               By accessing or using daanaa.org, you agree to be bound by these Terms of Service. If you do not agree,
               please do not use the site.
@@ -74,14 +74,14 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">4. The Giving Wallet</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">4. The Giving Wallet</h2>
             <p>
               The Giving Wallet is a free bookmarking tool. No account is required — wallet data is stored on your device by default. You may optionally sign in with Google to enable cross-device sync. Your wallet holds bookmarks and giving intent only — never transaction records. It is never shown publicly, never used for marketing or outreach, and can be deleted in full at any time. Browsing the directory does not require an account.
             </p>
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">5. Claimed organization pages</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">5. Claimed organization pages</h2>
             <p>
               Organizations that have claimed their page on Daanaa have provided their name, title, email, and phone
               number for verification. Claimed content is labeled accordingly. A claim does not constitute Daanaa's
@@ -94,7 +94,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">6. Accuracy of data</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">6. Accuracy of data</h2>
             <p>
               Financial data on Daanaa is derived from IRS Form 990 filings. The most recent filing available may
               lag the current fiscal year by 12–24 months. Daanaa peer financial context scores are a relative
@@ -119,7 +119,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">7. Acceptable use</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">7. Acceptable use</h2>
             <p>
               You may use daanaa.org for personal, academic, journalistic, or nonprofit research purposes. You may
               quote and cite Daanaa data with attribution (daanaa.org) under those purposes.
@@ -135,7 +135,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">8. Volunteer events</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">8. Volunteer events</h2>
             <p>
               Nonprofit organizations that have claimed their page may post volunteer opportunities. Daanaa is a
               listing service only. We do not organize, coordinate, supervise, staff, insure, or guarantee any
@@ -155,7 +155,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">9. Impact Network and partner benefits</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">9. Impact Network and partner benefits</h2>
             <p>
               Daanaa operates an Impact Network that connects nonprofits with businesses offering services at
               preferential rates. Partner participation — including any fees paid to Daanaa — never affects how any
@@ -173,7 +173,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">10. Intellectual property</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">10. Intellectual property</h2>
             <p>
               Daanaa's original expression — including our scoring methodology descriptions, platform design, and
               editorial content — is protected by copyright and owned by EcoMargins Consulting LLC.
@@ -189,7 +189,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">11. Third-party links</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">11. Third-party links</h2>
             <p>
               Daanaa links to nonprofit websites, donation pages, and vendor sites. We do not control those sites
               and are not responsible for their content, privacy practices, or availability. A link is not an
@@ -198,7 +198,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">12. Privacy</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">12. Privacy</h2>
             <p>
               Our full privacy practices are described on our{' '}
               <Link to="/legal" className="text-soft-gold hover:underline">Legal & Data Attribution page</Link>.
@@ -215,8 +215,8 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">13. Disclaimer of warranties</h2>
-            <p className="uppercase text-[13px] tracking-[0.01em]">
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">13. Disclaimer of warranties</h2>
+            <p className="uppercase text-small tracking-[0.01em]">
               Daanaa is provided "as is" without warranty of any kind. EcoMargins Consulting LLC disclaims all warranties,
               express or implied, including warranties of merchantability, fitness for a particular purpose, and
               non-infringement.
@@ -224,8 +224,8 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">14. Limitation of liability</h2>
-            <p className="uppercase text-[13px] tracking-[0.01em]">
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">14. Limitation of liability</h2>
+            <p className="uppercase text-small tracking-[0.01em]">
               To the maximum extent permitted by applicable law, EcoMargins Consulting LLC's total liability to you for any
               claim arising from or related to use of Daanaa is limited to $100. EcoMargins Consulting LLC is not liable for
               indirect, incidental, consequential, punitive, or special damages.
@@ -233,7 +233,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">15. Indemnification</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">15. Indemnification</h2>
             <p>
               You agree to indemnify, defend, and hold harmless EcoMargins Consulting LLC, its members, managers, officers,
               employees, and agents from any claim, liability, loss, or expense (including reasonable attorneys' fees)
@@ -242,7 +242,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">16. Governing law and disputes</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">16. Governing law and disputes</h2>
             <p>
               These Terms are governed by the laws of the State of Texas, without regard to conflict-of-law
               principles.
@@ -259,7 +259,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">17. Changes to these terms</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">17. Changes to these terms</h2>
             <p>
               We may update these Terms at any time. Material changes will be posted on this page with a new
               effective date. Continued use of the site after the effective date constitutes acceptance of the
@@ -268,7 +268,7 @@ export default function Terms() {
           </section>
 
           <section>
-            <h2 className="font-display italic text-deep-navy text-[24px] md:text-[28px] mb-4">18. Contact</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">18. Contact</h2>
             <p>
               Legal questions:{' '}
               <a href="mailto:legal@daanaa.org" className="text-soft-gold hover:underline">legal@daanaa.org</a>
@@ -279,12 +279,12 @@ export default function Terms() {
               Data corrections:{' '}
               <a href="mailto:trust@daanaa.org" className="text-soft-gold hover:underline">trust@daanaa.org</a>
             </p>
-            <p className="mt-2 text-[13px] text-muted-cream">
+            <p className="mt-2 text-small text-muted-cream">
               EcoMargins Consulting LLC · Operating as Daanaa · daanaa.org
             </p>
           </section>
 
-          <p className="text-[12px] text-cool-grey pt-4 border-t border-light-grey">
+          <p className="text-caption text-cool-grey pt-4 border-t border-light-grey">
             Last updated: June 2026
           </p>
         </div>

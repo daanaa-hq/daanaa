@@ -10,17 +10,17 @@ export default function Governance() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <div className="flex items-center gap-2 mb-6">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Governance</span>
+            <span className="font-body text-caption text-muted-cream">Governance</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
             <div className="max-w-[720px]">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Trust & Accountability</span>
+              <span className="font-body text-label font-medium tracking-[0.08em] text-soft-gold uppercase">Trust & Accountability</span>
               <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]">
                 Governance & Accountability
               </h1>
-              <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">
+              <p className="mt-5 font-body text-title-sm leading-[1.65] text-muted-cream">
                 How we make decisions, protect independence, and remain accountable.
               </p>
             </div>
@@ -37,10 +37,10 @@ export default function Governance() {
 
           {/* Our Purpose */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               Our Purpose
             </h2>
-            <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <div className="mt-5 space-y-4 font-body text-lead text-cool-grey leading-[1.7]">
               <p>
                 Daanaa exists to help people discover causes they care about and support them with confidence.
               </p>
@@ -57,55 +57,55 @@ export default function Governance() {
 
           {/* Our Commitments */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               Our Commitments
             </h2>
             <div className="mt-8 space-y-8">
               <div>
-                <h3 className="font-display text-deep-navy text-[20px] md:text-[24px]">We do not accept paid placement</h3>
-                <p className="mt-3 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <h3 className="font-display text-deep-navy text-title md:text-title-lg">We do not accept paid placement</h3>
+                <p className="mt-3 font-body text-lead text-cool-grey leading-[1.7]">
                   Organizations cannot pay to appear higher in search results.
                 </p>
-                <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="mt-2 font-body text-lead text-cool-grey leading-[1.7]">
                   Visibility is based on publicly available information and transparent methodologies, not advertising budgets.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-display text-deep-navy text-[20px] md:text-[24px]">We do not control donor funds</h3>
-                <p className="mt-3 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <h3 className="font-display text-deep-navy text-title md:text-title-lg">We do not control donor funds</h3>
+                <p className="mt-3 font-body text-lead text-cool-grey leading-[1.7]">
                   Donations do not pass through Daanaa.
                 </p>
-                <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="mt-2 font-body text-lead text-cool-grey leading-[1.7]">
                   Daanaa links to an organization's own official website. Anyone who chooses to give deals with the nonprofit directly.
                 </p>
-                <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="mt-2 font-body text-lead text-cool-grey leading-[1.7]">
                   Daanaa does not hold, process, or transfer charitable funds.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-display text-deep-navy text-[20px] md:text-[24px]">We do not sell donor activity</h3>
-                <p className="mt-3 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <h3 className="font-display text-deep-navy text-title md:text-title-lg">We do not sell donor activity</h3>
+                <p className="mt-3 font-body text-lead text-cool-grey leading-[1.7]">
                   We do not build profiles based on giving behavior.
                 </p>
-                <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="mt-2 font-body text-lead text-cool-grey leading-[1.7]">
                   We do not encourage public displays of generosity.
                 </p>
-                <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="mt-2 font-body text-lead text-cool-grey leading-[1.7]">
                   Giving is personal and should remain in the hands of the giver.
                 </p>
               </div>
 
               <div>
-                <h3 className="font-display text-deep-navy text-[20px] md:text-[24px]">We strive to treat organizations fairly</h3>
-                <p className="mt-3 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <h3 className="font-display text-deep-navy text-title md:text-title-lg">We strive to treat organizations fairly</h3>
+                <p className="mt-3 font-body text-lead text-cool-grey leading-[1.7]">
                   Large and small organizations deserve equal consideration.
                 </p>
-                <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="mt-2 font-body text-lead text-cool-grey leading-[1.7]">
                   We seek to provide context, not judgment.
                 </p>
-                <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="mt-2 font-body text-lead text-cool-grey leading-[1.7]">
                   Our goal is to help people understand public information, not to tell them what conclusions they must reach.
                 </p>
               </div>
@@ -116,10 +116,10 @@ export default function Governance() {
 
           {/* How Decisions Are Made */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               How Decisions Are Made
             </h2>
-            <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <div className="mt-5 space-y-4 font-body text-lead text-cool-grey leading-[1.7]">
               <p>
                 Most day to day decisions involve maintaining data, improving search results, verifying public information, and correcting errors.
               </p>
@@ -136,10 +136,10 @@ export default function Governance() {
 
           {/* Human Responsibility */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               Human Responsibility
             </h2>
-            <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <div className="mt-5 space-y-4 font-body text-lead text-cool-grey leading-[1.7]">
               <p>
                 Technology helps us organize information and improve the experience of using Daanaa.
               </p>
@@ -159,13 +159,13 @@ export default function Governance() {
 
           {/* Stewardship Principles */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               Stewardship Principles
             </h2>
-            <p className="mt-5 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <p className="mt-5 font-body text-lead text-cool-grey leading-[1.7]">
               Daanaa operates according to eleven stewardship principles:
             </p>
-            <ol className="mt-6 space-y-3 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <ol className="mt-6 space-y-3 font-body text-lead text-cool-grey leading-[1.7]">
               <li><span className="font-semibold">1. Mission before growth</span></li>
               <li><span className="font-semibold">2. Privacy is core</span></li>
               <li><span className="font-semibold">3. Trust signals must be evidence based</span></li>
@@ -178,7 +178,7 @@ export default function Governance() {
               <li><span className="font-semibold">10. AI is a tool, not a substitute for responsibility</span></li>
               <li><span className="font-semibold">11. Principles are strengthened, not quietly weakened</span></li>
             </ol>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <p className="mt-6 font-body text-lead text-cool-grey leading-[1.7]">
               These principles guide our work today and are intended to outlast any individual leader, technology, or methodology.
             </p>
           </section>
@@ -187,26 +187,26 @@ export default function Governance() {
 
           {/* Transparency */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               Transparency
             </h2>
-            <p className="mt-5 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <p className="mt-5 font-body text-lead text-cool-grey leading-[1.7]">
               We believe people should be able to understand how Daanaa operates.
             </p>
-            <p className="mt-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <p className="mt-4 font-body text-lead text-cool-grey leading-[1.7]">
               For that reason we publish:
             </p>
-            <ul className="mt-4 space-y-2 ml-6 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <ul className="mt-4 space-y-2 ml-6 font-body text-lead text-cool-grey leading-[1.7]">
               <li>• Our methodology</li>
               <li>• Our stewardship principles</li>
               <li>• Major governance updates</li>
               <li>• Material corrections</li>
               <li>• Data source information</li>
             </ul>
-            <p className="mt-6 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <p className="mt-6 font-body text-lead text-cool-grey leading-[1.7]">
               Transparency is not a feature of the platform.
             </p>
-            <p className="mt-2 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <p className="mt-2 font-body text-lead text-cool-grey leading-[1.7]">
               It is part of the responsibility that comes with building it.
             </p>
           </section>
@@ -215,10 +215,10 @@ export default function Governance() {
 
           {/* Looking Ahead */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               Looking Ahead
             </h2>
-            <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <div className="mt-5 space-y-4 font-body text-lead text-cool-grey leading-[1.7]">
               <p>
                 Governance is not something that is finished.
               </p>
@@ -236,25 +236,25 @@ export default function Governance() {
 
           {/* Related links */}
           <div className="mt-16 pt-12 border-t border-light-grey">
-            <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">
+            <p className="font-body text-label font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">
               Related
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
                 to="/methodology"
-                className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
+                className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold transition-colors"
               >
                 Our methodology →
               </Link>
               <Link
                 to="/tiers"
-                className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
+                className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold transition-colors"
               >
                 Visibility levels →
               </Link>
               <a
                 href="mailto:hello@daanaa.org"
-                className="inline-flex items-center gap-2 font-body text-[14px] text-soft-gold hover:text-bright-gold transition-colors"
+                className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold transition-colors"
               >
                 Send feedback →
               </a>

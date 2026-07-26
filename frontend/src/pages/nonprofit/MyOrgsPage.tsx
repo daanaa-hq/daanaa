@@ -18,7 +18,7 @@ function StatusBadge({ status }: { status: string }) {
   }
   const cfg = map[status] ?? { label: status, classes: 'bg-light-grey text-cool-grey border-light-grey' }
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-body text-[11px] font-semibold border ${cfg.classes}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-body text-label font-semibold border ${cfg.classes}`}>
       {cfg.label}
     </span>
   )
@@ -63,10 +63,10 @@ function OrgCard({ org, onDashboard, onEditProfile, loadingEin }: {
             🏢
           </div>
           <div className="min-w-0">
-            <h3 className="font-body text-[15px] font-semibold text-deep-navy truncate">
+            <h3 className="font-body text-body-lg font-semibold text-deep-navy truncate">
               {org.organization_name || 'Unnamed Organization'}
             </h3>
-            <p className="font-body text-[13px] text-cool-grey mt-0.5">
+            <p className="font-body text-small text-cool-grey mt-0.5">
               {[location, einFormatted ? `EIN: ${einFormatted}` : null].filter(Boolean).join(' · ')}
             </p>
           </div>
@@ -79,7 +79,7 @@ function OrgCard({ org, onDashboard, onEditProfile, loadingEin }: {
         {(status === 'pending' || status === 'letter_sent') && (
           <button
             onClick={() => navigate(`/claim/verify?ein=${org.ein}`)}
-            className="px-4 py-2 rounded-xl bg-alert-amber/5 border border-amber-200 text-amber-800 font-body text-[13px] font-semibold hover:bg-amber-100 transition-colors"
+            className="px-4 py-2 rounded-xl bg-alert-amber/5 border border-amber-200 text-amber-800 font-body text-small font-semibold hover:bg-amber-100 transition-colors"
           >
             Enter PIN
           </button>
@@ -90,20 +90,20 @@ function OrgCard({ org, onDashboard, onEditProfile, loadingEin }: {
             <button
               onClick={() => onDashboard(org.ein)}
               disabled={isLoading}
-              className="px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold disabled:opacity-50 transition-colors"
+              className="px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold disabled:opacity-50 transition-colors"
             >
               Dashboard
             </button>
             <button
               onClick={() => onEditProfile(org.ein)}
               disabled={isLoading}
-              className="px-4 py-2 rounded-xl border border-light-grey text-deep-navy font-body text-[13px] font-medium hover:border-soft-gold/40 disabled:opacity-50 transition-colors"
+              className="px-4 py-2 rounded-xl border border-light-grey text-deep-navy font-body text-small font-medium hover:border-soft-gold/40 disabled:opacity-50 transition-colors"
             >
               Edit profile
             </button>
             <Link
               to={`/nonprofit/events/${org.ein}`}
-              className="px-4 py-2 rounded-xl border border-light-grey text-deep-navy font-body text-[13px] font-medium hover:border-soft-gold/40 transition-colors"
+              className="px-4 py-2 rounded-xl border border-light-grey text-deep-navy font-body text-small font-medium hover:border-soft-gold/40 transition-colors"
             >
               Volunteer events
             </Link>
@@ -113,7 +113,7 @@ function OrgCard({ org, onDashboard, onEditProfile, loadingEin }: {
         {status !== 'revoked' && (
           <Link
             to={`/org/${org.ein}`}
-            className="px-4 py-2 rounded-xl border border-light-grey text-cool-grey font-body text-[13px] font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
+            className="px-4 py-2 rounded-xl border border-light-grey text-cool-grey font-body text-small font-medium hover:border-soft-gold/40 hover:text-deep-navy transition-colors"
           >
             View on Daanaa
           </Link>
@@ -190,17 +190,17 @@ export default function MyOrgsPage() {
       <div className="border-b border-light-grey bg-white">
         <div className="max-w-[720px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/" className="font-display italic text-deep-navy text-[17px]">Daanaa</Link>
+            <Link to="/" className="font-display italic text-deep-navy text-title-sm">Daanaa</Link>
             <span className="text-light-grey">·</span>
-            <span className="font-body text-[13px] text-cool-grey">Nonprofit Portal</span>
+            <span className="font-body text-small text-cool-grey">Nonprofit Portal</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="font-body text-[12px] text-cool-grey hidden sm:block">
+            <span className="font-body text-caption text-cool-grey hidden sm:block">
               {user?.email}
             </span>
             <button
               onClick={handleSignOut}
-              className="font-body text-[13px] text-cool-grey hover:text-deep-navy transition-colors"
+              className="font-body text-small text-cool-grey hover:text-deep-navy transition-colors"
             >
               Sign out
             </button>
@@ -211,12 +211,12 @@ export default function MyOrgsPage() {
       {/* Content */}
       <div className="max-w-[720px] mx-auto px-6 py-10">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="font-display italic text-deep-navy text-[28px]">
+          <h1 className="font-display italic text-deep-navy text-headline">
             Your organizations
           </h1>
           <Link
             to="/for-nonprofits"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold hover:bg-bright-gold transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold transition-colors"
           >
             <span>+</span>
             <span>Claim new</span>
@@ -225,7 +225,7 @@ export default function MyOrgsPage() {
 
         {error && (
           <div className="mb-6 p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
-            <p className="font-body text-[14px] text-destructive">{error}</p>
+            <p className="font-body text-body text-destructive">{error}</p>
           </div>
         )}
 
@@ -237,15 +237,15 @@ export default function MyOrgsPage() {
         ) : orgs.length === 0 ? (
           <div className="bg-white rounded-2xl border border-light-grey p-12 text-center">
             <div className="text-4xl mb-4">🏢</div>
-            <h2 className="font-display italic text-deep-navy text-[20px] mb-2">
+            <h2 className="font-display italic text-deep-navy text-title mb-2">
               No organizations yet
             </h2>
-            <p className="font-body text-[15px] text-cool-grey mb-6">
+            <p className="font-body text-body-lg text-cool-grey mb-6">
               Claim your nonprofit's page on Daanaa to manage your profile and connect with donors.
             </p>
             <Link
               to="/for-nonprofits"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors"
             >
               Claim your organization →
             </Link>

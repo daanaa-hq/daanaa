@@ -33,13 +33,13 @@ export default function NonprofitVerification() {
     <div className="min-h-screen flex items-center justify-center bg-warm-cream px-6">
       <div className="max-w-md text-center bg-white p-8 rounded-2xl shadow-sm">
         <h1 className="font-display text-2xl text-deep-navy mb-3">This page has moved</h1>
-        <p className="font-body text-[14px] text-cool-grey mb-6">
+        <p className="font-body text-body text-cool-grey mb-6">
           Volunteer hour approval now lives inside your organization dashboard,
           with a full audit trail and pending, approved, and rejected views.
         </p>
         <Link
           to="/nonprofit/login"
-          className="inline-block px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+          className="inline-block px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors"
         >
           Sign in to review hours
         </Link>

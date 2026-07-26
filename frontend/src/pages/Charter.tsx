@@ -56,17 +56,17 @@ export default function Charter() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-12 pb-16">
           <div className="flex items-center gap-2 mb-6">
-            <Link to="/" className="font-body text-[12px] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Charter</span>
+            <span className="font-body text-caption text-muted-cream">Charter</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
             <div className="max-w-[720px]">
-              <span className="font-body text-[11px] font-medium tracking-[0.08em] text-soft-gold uppercase">Our Promises, In Writing</span>
+              <span className="font-body text-label font-medium tracking-[0.08em] text-soft-gold uppercase">Our Promises, In Writing</span>
               <h1 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]">
                 The Daanaa Charter
               </h1>
-              <p className="mt-5 font-body text-[17px] leading-[1.65] text-muted-cream">
+              <p className="mt-5 font-body text-title-sm leading-[1.65] text-muted-cream">
                 Ten things we will never do. Published because promises kept in
                 private are just intentions &mdash; a promise published is a debt.
               </p>
@@ -83,7 +83,7 @@ export default function Charter() {
         <div className="max-w-[960px] mx-auto px-6 lg:px-12">
 
           <section className="mb-14">
-            <div className="space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <div className="space-y-4 font-body text-lead text-cool-grey leading-[1.7]">
               <p>
                 Daanaa exists to help people give well and to help nonprofit
                 organizations, especially small ones, be known truthfully and
@@ -96,16 +96,16 @@ export default function Charter() {
 
           {/* The ten promises */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               What Daanaa will never do
             </h2>
             <ol className="mt-8 space-y-10">
               {PROMISES.map((p, i) => (
                 <li key={i} className="flex gap-5">
-                  <span className="font-display italic text-soft-gold text-[28px] leading-none shrink-0 w-10 text-right">{i + 1}</span>
+                  <span className="font-display italic text-soft-gold text-headline leading-none shrink-0 w-10 text-right">{i + 1}</span>
                   <div>
-                    <h3 className="font-body text-[17px] font-semibold text-deep-navy leading-[1.4]">{p.title}</h3>
-                    <p className="mt-2 font-body text-[15px] text-cool-grey leading-[1.7]">{p.body}</p>
+                    <h3 className="font-body text-title-sm font-semibold text-deep-navy leading-[1.4]">{p.title}</h3>
+                    <p className="mt-2 font-body text-body-lg text-cool-grey leading-[1.7]">{p.body}</p>
                   </div>
                 </li>
               ))}
@@ -116,10 +116,10 @@ export default function Charter() {
 
           {/* What holds this up */}
           <section className="mb-16">
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
               What holds this up
             </h2>
-            <div className="mt-5 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+            <div className="mt-5 space-y-4 font-body text-lead text-cool-grey leading-[1.7]">
               <p>
                 Daanaa operates under a Founding Stewardship Commitment, a
                 governing constitution, and a data classification policy that
@@ -137,7 +137,7 @@ export default function Charter() {
                 You will get an answer from a human, and if you are right, you
                 will see the correction happen in public.
               </p>
-              <p className="text-[14px] text-cool-grey/80">
+              <p className="text-body text-cool-grey/80">
                 Charter version 1.0, adopted 2026-07-13. Revisions are listed
                 here with date, author, and reason. There are none yet. May it
                 stay a short list. See also our{' '}

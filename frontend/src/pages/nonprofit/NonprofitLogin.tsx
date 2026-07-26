@@ -74,10 +74,10 @@ export default function NonprofitLogin() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-soft-gold/20 mb-4">
             <span className="text-2xl">🏢</span>
           </div>
-          <h1 className="font-display italic text-deep-navy text-[28px] mb-2">
+          <h1 className="font-display italic text-deep-navy text-headline mb-2">
             Nonprofit Portal
           </h1>
-          <p className="font-body text-[15px] text-cool-grey">
+          <p className="font-body text-body-lg text-cool-grey">
             Sign in to manage your organization on Daanaa
           </p>
         </div>
@@ -86,7 +86,7 @@ export default function NonprofitLogin() {
         <div className="bg-white rounded-2xl shadow-sm border border-light-grey p-7">
           {error && (
             <div className="mb-5 p-4 bg-destructive/5 border border-destructive/20 rounded-xl">
-              <p className="font-body text-[14px] text-destructive">{error}</p>
+              <p className="font-body text-body text-destructive">{error}</p>
             </div>
           )}
 
@@ -94,7 +94,7 @@ export default function NonprofitLogin() {
             <div className="space-y-5">
               {/* Google OAuth */}
               <div>
-                <p className="font-body text-[12px] font-medium text-cool-grey uppercase tracking-wide mb-3">
+                <p className="font-body text-caption font-medium text-cool-grey uppercase tracking-wide mb-3">
                   Recommended
                 </p>
                 <GoogleSignInButton onSuccess={() => navigate('/nonprofit/my-orgs')} />
@@ -103,14 +103,14 @@ export default function NonprofitLogin() {
               {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-light-grey" />
-                <span className="font-body text-[12px] text-muted-cream">or</span>
+                <span className="font-body text-caption text-muted-cream">or</span>
                 <div className="flex-1 h-px bg-light-grey" />
               </div>
 
               {/* Email magic link */}
               <button
                 onClick={() => setMode('magic-link')}
-                className="w-full px-5 py-3 rounded-xl border border-light-grey bg-white font-body text-[14px] font-medium text-deep-navy hover:border-soft-gold/40 hover:bg-warm-cream/30 transition-colors text-left flex items-center gap-3"
+                className="w-full px-5 py-3 rounded-xl border border-light-grey bg-white font-body text-body font-medium text-deep-navy hover:border-soft-gold/40 hover:bg-warm-cream/30 transition-colors text-left flex items-center gap-3"
               >
                 <span className="text-lg">✉️</span>
                 <span>Send me a sign-in link</span>
@@ -119,7 +119,7 @@ export default function NonprofitLogin() {
               {/* Portal token option */}
               <button
                 onClick={() => setMode('portal-token')}
-                className="w-full px-5 py-3 rounded-xl border border-light-grey bg-white font-body text-[14px] font-medium text-cool-grey hover:border-soft-gold/40 hover:text-deep-navy transition-colors text-left flex items-center gap-3"
+                className="w-full px-5 py-3 rounded-xl border border-light-grey bg-white font-body text-body font-medium text-cool-grey hover:border-soft-gold/40 hover:text-deep-navy transition-colors text-left flex items-center gap-3"
               >
                 <span className="text-lg">🔑</span>
                 <span>I have a portal token</span>
@@ -131,26 +131,26 @@ export default function NonprofitLogin() {
             <div>
               <button
                 onClick={() => { setMode('options'); setMagicLinkSent(false) }}
-                className="flex items-center gap-1 font-body text-[13px] text-cool-grey hover:text-deep-navy mb-5 transition-colors"
+                className="flex items-center gap-1 font-body text-small text-cool-grey hover:text-deep-navy mb-5 transition-colors"
               >
                 ← Back
               </button>
               {magicLinkSent ? (
                 <div className="text-center py-4">
                   <div className="text-3xl mb-3">📬</div>
-                  <p className="font-body text-[15px] font-medium text-deep-navy mb-2">
+                  <p className="font-body text-body-lg font-medium text-deep-navy mb-2">
                     Check your inbox
                   </p>
-                  <p className="font-body text-[14px] text-cool-grey">
+                  <p className="font-body text-body text-cool-grey">
                     We sent a sign-in link to your email. Click it to access your portal.
                   </p>
                 </div>
               ) : (
                 <>
-                  <p className="font-body text-[14px] font-medium text-deep-navy mb-1">
+                  <p className="font-body text-body font-medium text-deep-navy mb-1">
                     Sign in with email
                   </p>
-                  <p className="font-body text-[13px] text-cool-grey mb-4">
+                  <p className="font-body text-small text-cool-grey mb-4">
                     We'll send a one-click sign-in link to your inbox.
                   </p>
                   <MagicLinkForm onSent={() => setMagicLinkSent(true)} />
@@ -163,19 +163,19 @@ export default function NonprofitLogin() {
             <div>
               <button
                 onClick={() => { setMode('options'); setError(null) }}
-                className="flex items-center gap-1 font-body text-[13px] text-cool-grey hover:text-deep-navy mb-5 transition-colors"
+                className="flex items-center gap-1 font-body text-small text-cool-grey hover:text-deep-navy mb-5 transition-colors"
               >
                 ← Back
               </button>
-              <p className="font-body text-[14px] font-medium text-deep-navy mb-1">
+              <p className="font-body text-body font-medium text-deep-navy mb-1">
                 Access with portal token
               </p>
-              <p className="font-body text-[13px] text-cool-grey mb-5">
+              <p className="font-body text-small text-cool-grey mb-5">
                 Use the EIN and token from your verification email or PIN verification page.
               </p>
               <form onSubmit={handlePortalToken} className="space-y-4">
                 <div>
-                  <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">
+                  <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">
                     EIN
                   </label>
                   <input
@@ -183,12 +183,12 @@ export default function NonprofitLogin() {
                     value={ein}
                     onChange={e => setEin(e.target.value)}
                     placeholder="12-3456789"
-                    className="w-full border border-light-grey rounded-xl px-4 py-2.5 font-body text-[14px] text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors"
+                    className="w-full border border-light-grey rounded-xl px-4 py-2.5 font-body text-body text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors"
                     disabled={loading}
                   />
                 </div>
                 <div>
-                  <label className="block font-body text-[12px] font-medium text-deep-navy mb-1.5">
+                  <label className="block font-body text-caption font-medium text-deep-navy mb-1.5">
                     Portal token
                   </label>
                   <input
@@ -196,14 +196,14 @@ export default function NonprofitLogin() {
                     value={token}
                     onChange={e => setToken(e.target.value)}
                     placeholder="Paste your token here"
-                    className="w-full border border-light-grey rounded-xl px-4 py-2.5 font-mono text-[13px] text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors"
+                    className="w-full border border-light-grey rounded-xl px-4 py-2.5 font-mono text-small text-deep-navy bg-white outline-none focus:border-soft-gold transition-colors"
                     disabled={loading}
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={loading || !ein.trim() || !token.trim()}
-                  className="w-full px-4 py-3 bg-soft-gold text-deep-navy font-body text-[14px] font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="w-full px-4 py-3 bg-soft-gold text-deep-navy font-body text-body font-semibold rounded-xl hover:bg-bright-gold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? 'Verifying…' : 'Access portal'}
                 </button>
@@ -213,7 +213,7 @@ export default function NonprofitLogin() {
         </div>
 
         {/* Footer */}
-        <p className="text-center font-body text-[13px] text-cool-grey mt-6">
+        <p className="text-center font-body text-small text-cool-grey mt-6">
           New to Daanaa?{' '}
           <Link to="/for-nonprofits" className="text-soft-gold hover:underline font-medium">
             Claim your organization

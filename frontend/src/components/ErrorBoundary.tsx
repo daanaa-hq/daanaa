@@ -45,7 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
             style={{ fontSize: 'clamp(26px, 4vw, 36px)' }}>
             {isChunkError ? 'A fresh version is ready' : 'Something went sideways'}
           </p>
-          <p className="font-body text-[15px] text-cool-grey leading-[1.6] mb-7">
+          <p className="font-body text-body-lg text-cool-grey leading-[1.6] mb-7">
             {isChunkError
               ? 'We just updated the site while you were here. Reload to pick up the latest version.'
               : 'This page ran into a problem on our end, not yours. A reload usually clears it. If it keeps happening, let us know and we will look into it.'}
@@ -53,13 +53,13 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <button
               onClick={() => window.location.reload()}
-              className="px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+              className="px-5 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors"
             >
               Reload the page
             </button>
             <a
               href="/"
-              className="px-5 py-2.5 rounded-xl border border-light-grey text-deep-navy font-body text-[14px] font-medium hover:border-soft-gold/40 transition-colors"
+              className="px-5 py-2.5 rounded-xl border border-light-grey text-deep-navy font-body text-body font-medium hover:border-soft-gold/40 transition-colors"
             >
               Back to home
             </a>

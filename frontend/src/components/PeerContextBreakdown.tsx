@@ -111,10 +111,10 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
   return (
     <CardPattern variant="gradient">
       <div className="mb-6">
-        <h3 className="font-display text-[18px] font-semibold text-deep-navy mb-2">
+        <h3 className="font-display text-title-sm font-semibold text-deep-navy mb-2">
           What the public record shows
         </h3>
-        <p className="font-body text-[13px] text-cool-grey">
+        <p className="font-body text-small text-cool-grey">
           A few comparisons from public IRS data. They are context, not a rating, endorsement, or complete picture of the organization.
         </p>
       </div>
@@ -123,25 +123,25 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
         {rows.map((row, i) => (
           <div key={i} className="pb-6 last:pb-0 last:border-b-0 border-b border-slate-100">
             <div className="mb-3">
-              <p className="font-body text-[12px] font-semibold text-cool-grey uppercase tracking-[0.05em] mb-1">
+              <p className="font-body text-caption font-semibold text-cool-grey uppercase tracking-[0.05em] mb-1">
                 {row.dimension}
               </p>
-              <p className="font-display text-[16px] font-semibold text-deep-navy">
+              <p className="font-display text-lead font-semibold text-deep-navy">
                 {row.label}
               </p>
               {row.value && (
-                <p className="font-body text-[13px] text-link-gold font-semibold mt-1">
+                <p className="font-body text-small text-link-gold font-semibold mt-1">
                   {row.value}
                 </p>
               )}
             </div>
 
-            <p className="font-body text-[14px] leading-relaxed text-deep-navy/80 mb-3">
+            <p className="font-body text-body leading-relaxed text-deep-navy/80 mb-3">
               {row.explanation}
             </p>
 
             {row.action && (
-              <button className="font-body text-[13px] font-semibold text-soft-gold hover:text-bright-gold transition-colors inline-flex items-center gap-1.5">
+              <button className="font-body text-small font-semibold text-soft-gold hover:text-bright-gold transition-colors inline-flex items-center gap-1.5">
                 <span>{row.action.text}</span>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6" />
@@ -153,7 +153,7 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
       </div>
 
       <div className="mt-6 pt-6 border-t border-slate-200">
-        <p className="font-body text-[12px] text-cool-grey italic">
+        <p className="font-body text-caption text-cool-grey italic">
           <strong>For nonprofits:</strong> Claim your profile to update your story. Donors want to understand your context—not judge it.
         </p>
       </div>

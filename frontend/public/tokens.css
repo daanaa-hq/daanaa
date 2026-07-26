@@ -1,0 +1,65 @@
+/* Daanaa design tokens — the single source of truth for type and color.
+ *
+ * Served statically from /tokens.css so EVERY Daanaa surface reads the same
+ * values, not just the React app:
+ *
+ *   - React app        linked in frontend/index.html; Tailwind's fontSize and
+ *                      color scales reference these vars, so `text-body` and
+ *                      friends resolve here.
+ *   - open-data.html   standalone visibility/data page, linked directly.
+ *   - Any future page  generated HTML, exports, embeds: link this file.
+ *
+ * Before this file existed, open-data.html hand-copied the palette into its
+ * own :root and picked its own font sizes. That is how a design system drifts:
+ * one surface at a time, each of them locally reasonable.
+ *
+ * Tailwind declares these with px fallbacks (e.g. `var(--text-body, 14px)`),
+ * so a failure to load this file degrades to the correct size rather than
+ * collapsing every text element.
+ */
+
+:root {
+  /* ── Type scale ──────────────────────────────────────────────────────────
+   * Derived from the sizes the codebase actually used: 2,038 hand-rolled
+   * `text-[Npx]` across 24 distinct values, of which thirteen were the real
+   * working scale and eleven were drift.
+   *
+   * Size only. Line height stays with the element so adopting a token never
+   * changes vertical rhythm.
+   */
+  --text-micro:       10px;  /* legal footnotes, dense metadata */
+  --text-label:       11px;  /* uppercase eyebrow labels, tags */
+  --text-caption:     12px;  /* captions, breadcrumbs, secondary metadata */
+  --text-small:       13px;  /* supporting copy, card body */
+  --text-body:        14px;  /* default body text */
+  --text-body-lg:     15px;  /* primary reading copy on guide pages */
+  --text-lead:        16px;  /* intro paragraphs */
+  --text-title-sm:    18px;  /* card titles, subsection headings */
+  --text-title:       20px;  /* section headings */
+  --text-title-lg:    24px;  /* page section headings */
+  --text-headline:    28px;  /* major headings */
+  --text-headline-lg: 32px;  /* page headings */
+  --text-display:     40px;  /* hero numerals and display figures */
+
+  /* Fluid heading sizes, for page titles that should scale with viewport.
+   * Mirrors the h1/h2/h3-display utilities in src/index.css. */
+  --text-fluid-h1: clamp(32px, 4vw, 44px);
+  --text-fluid-h2: clamp(28px, 3.5vw, 36px);
+  --text-fluid-h3: clamp(24px, 3vw, 32px);
+
+  /* ── Brand palette ───────────────────────────────────────────────────────
+   * Hex values matching frontend/tailwind.config.js. Any standalone page
+   * should reference these rather than re-declaring its own copy.
+   */
+  --deep-navy:   #1A1A2E;
+  --warm-cream:  #F5F0E8;
+  --soft-gold:   #C9A96E;
+  --pale-gold:   #E8D7C3;
+  --muted-cream: #D9CFC2;
+  --cool-grey:   #6B6B6B;
+  --light-grey:  #E8E8E8;
+
+  /* ── Font families ───────────────────────────────────────────────────── */
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body:    "DM Sans", Inter, system-ui, sans-serif;
+}

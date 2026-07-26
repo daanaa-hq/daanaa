@@ -42,8 +42,8 @@ export default function InstallPrompt() {
     <div className="fixed bottom-[68px] left-3 right-3 z-40 md:hidden bg-deep-navy text-warm-cream rounded-2xl px-5 py-4 shadow-xl flex items-center gap-3"
       style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div className="flex-1">
-        <p className="font-body text-[14px] font-semibold">Keep Daanaa on your home screen</p>
-        <p className="font-body text-[12px] opacity-80 mt-0.5">Your saved orgs, one tap away — works offline too.</p>
+        <p className="font-body text-body font-semibold">Keep Daanaa on your home screen</p>
+        <p className="font-body text-caption opacity-80 mt-0.5">Your saved orgs, one tap away — works offline too.</p>
       </div>
       <button
         onClick={async () => {
@@ -52,7 +52,7 @@ export default function InstallPrompt() {
           if (choice.outcome === 'dismissed') dismiss()
           setDeferred(null)
         }}
-        className="px-4 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-[13px] font-semibold"
+        className="px-4 py-2.5 rounded-xl bg-soft-gold text-deep-navy font-body text-small font-semibold"
       >
         Add
       </button>

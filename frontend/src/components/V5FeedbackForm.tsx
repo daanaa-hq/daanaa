@@ -67,12 +67,12 @@ export default function V5FeedbackForm({ org, archetype }: V5FeedbackProps) {
 
   const radioClass = "w-4 h-4 accent-[#C9A96E]"
   const inputClass = "w-full px-3 py-2.5 border border-light-grey rounded-lg font-body text-sm text-deep-navy focus:outline-none focus:ring-2 focus:ring-soft-gold/50 focus:border-soft-gold"
-  const labelClass = "block font-body text-[13px] font-medium text-deep-navy mb-1.5"
+  const labelClass = "block font-body text-small font-medium text-deep-navy mb-1.5"
 
   return (
     <CardPattern variant="subtle" className="space-y-4">
       <form onSubmit={handleSubmit} className="contents">
-      <p className="font-body text-[13px] font-semibold text-deep-navy">Help us improve this financial comparison</p>
+      <p className="font-body text-small font-semibold text-deep-navy">Help us improve this financial comparison</p>
 
       {/* Clarity */}
       <div className="space-y-2">
@@ -141,7 +141,7 @@ export default function V5FeedbackForm({ org, archetype }: V5FeedbackProps) {
         {loading ? 'Sending...' : 'Send feedback'}
       </button>
 
-      <p className="font-body text-[11px] text-cool-grey text-center">
+      <p className="font-body text-label text-cool-grey text-center">
         Anonymous — helps us improve the comparison system.
       </p>
       </form>

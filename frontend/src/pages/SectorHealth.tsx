@@ -116,7 +116,7 @@ export default function SectorHealth() {
 
   const Th = ({ label, sortBy, right, tip }: { label: string; sortBy: SortKey; right?: boolean; tip?: string }) => (
     <th
-      className={`text-[11px] font-medium tracking-[0.06em] text-cool-grey uppercase pb-3 select-none ${right ? 'text-right' : 'text-left'}`}
+      className={`text-label font-medium tracking-[0.06em] text-cool-grey uppercase pb-3 select-none ${right ? 'text-right' : 'text-left'}`}
     >
       <span className={`inline-flex items-center gap-1 ${right ? 'flex-row-reverse' : ''}`}>
         <span className="cursor-pointer hover:text-deep-navy" onClick={() => handleSort(sortBy)}>
@@ -130,7 +130,7 @@ export default function SectorHealth() {
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
               </button>
             </TooltipTrigger>
-            <TooltipContent className="max-w-[260px] font-body text-[12px] leading-[1.5] normal-case tracking-normal">
+            <TooltipContent className="max-w-[260px] font-body text-caption leading-[1.5] normal-case tracking-normal">
               {tip}
             </TooltipContent>
           </Tooltip>
@@ -146,24 +146,24 @@ export default function SectorHealth() {
       <div className="bg-deep-navy pt-[72px]" style={{ background: 'linear-gradient(to bottom, rgb(var(--deep-navy-rgb)) 80%, #F5F0E8)' }}>
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-16 md:py-24">
           <div className="flex items-center gap-2 mb-8">
-            <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] tracking-[0.02em] text-muted-cream">Sector Health</span>
+            <span className="font-body text-caption tracking-[0.02em] text-muted-cream">Sector Health</span>
           </div>
 
           <div className="flex items-center gap-3 mb-4">
             <div className="w-6 h-px bg-soft-gold/50" />
-            <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">Data analysis</span>
+            <span className="font-body text-label font-medium tracking-[0.10em] text-soft-gold uppercase">Data analysis</span>
           </div>
 
           <h1 className="font-display italic text-warm-cream leading-[1.0] tracking-[-0.02em] mb-6">
             Where the sector stands
           </h1>
-          <p className="font-body text-[18px] text-muted-cream/80 max-w-[580px] leading-[1.65]">
+          <p className="font-body text-title-sm text-muted-cream/80 max-w-[580px] leading-[1.65]">
             How nonprofit sectors compare. Peer financial context: reserve levels, expense ratios, and filing frequency. Many small or simplified filers don't report full financials, so this reflects patterns in available public records, not every organization.
           </p>
           {data?.generated_at && (
-            <p className="font-body text-[13px] text-muted-cream/60 mt-4">
+            <p className="font-body text-small text-muted-cream/60 mt-4">
               As of {new Date(data.generated_at).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'long',
@@ -180,8 +180,8 @@ export default function SectorHealth() {
               { value: '84%', label: 'of all orgs have reserve data', color: '#60A5FA' },
             ].map(stat => (
               <div key={stat.label} className="flex items-baseline gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
-                <span className="font-display text-[28px] font-medium" style={{ color: stat.color }}>{stat.value}</span>
-                <span className="font-body text-[13px] text-muted-cream">{stat.label}</span>
+                <span className="font-display text-headline font-medium" style={{ color: stat.color }}>{stat.value}</span>
+                <span className="font-body text-small text-muted-cream">{stat.label}</span>
               </div>
             ))}
           </div>
@@ -194,11 +194,11 @@ export default function SectorHealth() {
 
           {/* Lead finding */}
           <div className="mb-12 p-6 rounded-2xl bg-alert-amber/5 border border-amber-200/80">
-            <p className="font-body text-[15px] text-deep-navy leading-[1.7]">
+            <p className="font-body text-body-lg text-deep-navy leading-[1.7]">
               <strong>Financial patterns differ dramatically by sector.</strong>{' '}
               The table below shows how reserve levels vary across cause areas. Sectors doing urgent, hands-on work often run with thinner cushions, while grantmakers and endowed institutions hold capital to deploy over years. These differences reflect how organizations are structured and funded, not how well they are managed.
             </p>
-            <p className="mt-3 font-body text-[13px] text-cool-grey">
+            <p className="mt-3 font-body text-small text-cool-grey">
               Reserve levels that look thin for one type of organization may be entirely appropriate for another. A food bank spending every dollar on direct service operates under completely different financial logic than a foundation deploying endowment. Many small or simplified filers do not report full financials, so the benchmarks below reflect patterns in available public records. Every figure comes from the same live dataset, dated above.
             </p>
           </div>
@@ -212,7 +212,7 @@ export default function SectorHealth() {
                 <button
                   key={g}
                   onClick={() => setGroupFilter(g)}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-[13px] font-medium border transition-all ${
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-small font-medium border transition-all ${
                     active
                       ? `${meta.badge} border-transparent shadow-sm`
                       : 'bg-white text-cool-grey border-light-grey hover:border-cool-grey/40'
@@ -223,7 +223,7 @@ export default function SectorHealth() {
                   )}
                   {meta.label}
                   {g !== 'all' && (
-                    <span className="text-[11px] opacity-60">
+                    <span className="text-label opacity-60">
                       {sectors.filter(s => NTEE_GROUP[s.code] === g).length}
                     </span>
                   )}
@@ -275,26 +275,26 @@ export default function SectorHealth() {
                         <td className={`py-4 pr-6 ${groupMeta.border}`}>
                           <div className="flex items-center gap-3">
                             <div className="flex flex-col">
-                              <div className="font-body text-[14px] font-medium text-deep-navy group-hover:text-soft-gold transition-colors inline-flex items-center gap-1.5">
+                              <div className="font-body text-body font-medium text-deep-navy group-hover:text-soft-gold transition-colors inline-flex items-center gap-1.5">
                                 {stressed && <span className="w-1.5 h-1.5 rounded-full bg-alert-amber/50 flex-shrink-0" />}
                                 {sector.name}
                                 <span className="opacity-0 group-hover:opacity-100 transition-opacity text-soft-gold" aria-hidden="true">→</span>
                               </div>
                               <div className="flex items-center gap-2 mt-0.5">
-                                <span className={`inline-flex items-center gap-1 font-body text-[10px] font-medium px-1.5 py-0.5 rounded-full ${groupMeta.badge}`}>
+                                <span className={`inline-flex items-center gap-1 font-body text-micro font-medium px-1.5 py-0.5 rounded-full ${groupMeta.badge}`}>
                                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: groupMeta.dot }} />
                                   {groupMeta.label}
                                 </span>
-                                <span className="font-body text-[11px] text-cool-grey">{sector.total_orgs.toLocaleString()} total · {sector.has_reserve.toLocaleString()} with reserve data</span>
+                                <span className="font-body text-label text-cool-grey">{sector.total_orgs.toLocaleString()} total · {sector.has_reserve.toLocaleString()} with reserve data</span>
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <span className="font-body text-[14px] text-cool-grey">{sector.total_orgs.toLocaleString()}</span>
+                          <span className="font-body text-body text-cool-grey">{sector.total_orgs.toLocaleString()}</span>
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <span className={`font-body text-[14px] font-semibold ${
+                          <span className={`font-body text-body font-semibold ${
                             stressed ? 'text-amber-600' : elevated ? 'text-amber-500' : 'text-cool-grey'
                           }`}>
                             {sector.at_risk_pct.toFixed(1)}%
@@ -302,14 +302,14 @@ export default function SectorHealth() {
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex flex-col items-end gap-1.5 min-w-[120px]">
-                            <span className={`font-body text-[14px] font-medium ${thinReserves ? 'text-amber-600' : 'text-cool-grey'}`}>
+                            <span className={`font-body text-body font-medium ${thinReserves ? 'text-amber-600' : 'text-cool-grey'}`}>
                               {formatMonths(sector.avg_months_reserve)} mo
                             </span>
                             <ReserveBar months={sector.avg_months_reserve} />
                           </div>
                         </td>
                         <td className="py-4 pl-4 text-right">
-                          <span className="font-body text-[14px] text-cool-grey">
+                          <span className="font-body text-body text-cool-grey">
                             {sector.avg_program_pct !== null ? `${sector.avg_program_pct.toFixed(1)}%` : '—'}
                           </span>
                         </td>
@@ -331,18 +331,18 @@ export default function SectorHealth() {
             ].map(item => (
               <div key={item.label} className="flex items-center gap-2">
                 <div className="w-3 h-1.5 rounded-full" style={{ background: item.color }} />
-                <span className="font-body text-[12px] text-cool-grey">{item.label}</span>
+                <span className="font-body text-caption text-cool-grey">{item.label}</span>
               </div>
             ))}
           </div>
 
           {/* Methodology note */}
           <div className="mt-12 pt-8 border-t border-light-grey">
-            <p className="font-body text-[13px] text-cool-grey leading-[1.6] max-w-[680px]">
+            <p className="font-body text-small text-cool-grey leading-[1.6] max-w-[680px]">
               <strong className="text-cool-grey">How this is calculated.</strong> Reserves = (net assets ÷ total expenses) × 12. At-risk means fewer than 3 months of reserves. All data comes from IRS Form 990 filings for the most recent year on file. Only donation eligible 501(c)(3) organizations are included. Sector benchmarks reflect 356,000 organizations with complete filing data, approximately 21% of the 1.7 million donation eligible nonprofits Daanaa indexes. The remaining 79% file simplified returns or are exempt from filing; they are indexed and visible but not scored.
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="inline-flex items-center gap-1.5 font-body text-[12px] text-cool-grey">
+              <span className="inline-flex items-center gap-1.5 font-body text-caption text-cool-grey">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 IRS Statistics of Income · FY 2019–2024
               </span>
@@ -350,18 +350,18 @@ export default function SectorHealth() {
                 href="https://projects.propublica.org/nonprofits/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-body text-[12px] text-cool-grey hover:text-soft-gold transition-colors"
+                className="inline-flex items-center gap-1 font-body text-caption text-cool-grey hover:text-soft-gold transition-colors"
               >
                 ProPublica Nonprofit Explorer
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
               </a>
-              <span className="font-body text-[12px] text-cool-grey">NCCS</span>
+              <span className="font-body text-caption text-cool-grey">NCCS</span>
             </div>
             <div className="mt-4 flex items-center gap-4">
-              <Link to="/methodology" className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors">
+              <Link to="/methodology" className="font-body text-small text-soft-gold hover:text-bright-gold transition-colors">
                 Full methodology →
               </Link>
-              <Link to="/directory" className="font-body text-[13px] text-soft-gold hover:text-bright-gold transition-colors">
+              <Link to="/directory" className="font-body text-small text-soft-gold hover:text-bright-gold transition-colors">
                 Search organizations →
               </Link>
             </div>

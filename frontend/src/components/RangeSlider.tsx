@@ -35,11 +35,11 @@ export default function RevenueRangeInput({
       {/* Dropdown selectors */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="font-body text-[11px] font-semibold text-cool-grey uppercase block mb-1.5">From</label>
+          <label className="font-body text-label font-semibold text-cool-grey uppercase block mb-1.5">From</label>
           <select
             value={min}
             onChange={handleMinChange}
-            className="w-full h-[44px] px-3 rounded-lg bg-warm-cream border border-light-grey font-body text-[14px] font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
+            className="w-full h-[44px] px-3 rounded-lg bg-warm-cream border border-light-grey font-body text-body font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
           >
             {REVENUE_TIERS.map((tier) => (
               <option key={tier.value} value={tier.value}>
@@ -49,11 +49,11 @@ export default function RevenueRangeInput({
           </select>
         </div>
         <div>
-          <label className="font-body text-[11px] font-semibold text-cool-grey uppercase block mb-1.5">To</label>
+          <label className="font-body text-label font-semibold text-cool-grey uppercase block mb-1.5">To</label>
           <select
             value={max === 500_000_000 ? 'unlimited' : max}
             onChange={handleMaxChange}
-            className="w-full h-[44px] px-3 rounded-lg bg-warm-cream border border-light-grey font-body text-[14px] font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
+            className="w-full h-[44px] px-3 rounded-lg bg-warm-cream border border-light-grey font-body text-body font-semibold text-deep-navy outline-none focus:border-soft-gold transition-colors cursor-pointer"
           >
             {REVENUE_TIERS.map((tier) => (
               <option key={tier.value} value={tier.value}>

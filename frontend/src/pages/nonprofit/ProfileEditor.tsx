@@ -109,10 +109,10 @@ export default function ProfileEditor() {
         <div className="max-w-2xl mx-auto">
           <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-6 text-destructive">
             <h2 className="font-display text-lg mb-2">Could not load profile</h2>
-            <p className="font-body text-[14px] mb-4">{error}</p>
+            <p className="font-body text-body mb-4">{error}</p>
             <button
               onClick={() => navigate('/nonprofit/my-orgs')}
-              className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg font-body text-[14px] font-semibold transition"
+              className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg font-body text-body font-semibold transition"
             >
               Back
             </button>
@@ -136,17 +136,17 @@ export default function ProfileEditor() {
         <div className="mb-8">
           <button
             onClick={() => navigate(`/nonprofit/overview/${ein}`)}
-            className="text-soft-gold hover:text-bright-gold font-body text-[14px] font-semibold mb-4"
+            className="text-soft-gold hover:text-bright-gold font-body text-body font-semibold mb-4"
           >
             ← Back to Dashboard
           </button>
           <h1 className="font-display text-3xl text-deep-navy mb-1">Edit Profile</h1>
-          <p className="font-body text-[14px] text-cool-grey">{profile.organization.name}</p>
+          <p className="font-body text-body text-cool-grey">{profile.organization.name}</p>
         </div>
 
         {/* Success Message */}
         {saveSuccess && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 font-body text-[14px]">
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 font-body text-body">
             ✓ {saveSuccess}
           </div>
         )}
@@ -155,7 +155,7 @@ export default function ProfileEditor() {
         <div className="flex gap-1 mb-6 border-b border-light-grey">
           <button
             onClick={() => setTab('overview')}
-            className={`px-4 py-3 font-body text-[14px] font-semibold border-b-2 transition ${
+            className={`px-4 py-3 font-body text-body font-semibold border-b-2 transition ${
               tab === 'overview'
                 ? 'border-deep-navy text-deep-navy'
                 : 'border-transparent text-cool-grey hover:text-deep-navy'
@@ -166,7 +166,7 @@ export default function ProfileEditor() {
           </button>
           <button
             onClick={() => setTab('history')}
-            className={`px-4 py-3 font-body text-[14px] font-semibold border-b-2 transition ${
+            className={`px-4 py-3 font-body text-body font-semibold border-b-2 transition ${
               tab === 'history'
                 ? 'border-deep-navy text-deep-navy'
                 : 'border-transparent text-cool-grey hover:text-deep-navy'
@@ -195,23 +195,23 @@ export default function ProfileEditor() {
                     <h2 className="font-display text-lg text-deep-navy">Mission</h2>
                     <HelpTooltip text="A clear, concise statement of what your organization does and why it matters. This is often the first thing donors read." side="right" />
                   </div>
-                  <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.mission.source]}</p>
+                  <p className="font-body text-caption text-cool-grey">{sourceLabels[profile.editable_fields.mission.source]}</p>
                 </div>
                 {profile.editable_fields.mission.editable && (
                   <button
                     onClick={() => setEditingField('mission')}
-                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-caption font-semibold hover:bg-bright-gold transition"
                     aria-label="Edit mission statement"
                   >
                     Edit
                   </button>
                 )}
               </div>
-              <p className="font-body text-[14px] text-deep-navy leading-relaxed">
+              <p className="font-body text-body text-deep-navy leading-relaxed">
                 {profile.editable_fields.mission.value || '(Not set)'}
               </p>
               {profile.editable_fields.mission.value && profile.editable_fields.mission.char_count && (
-                <p className="font-body text-[11px] text-cool-grey mt-3">
+                <p className="font-body text-label text-cool-grey mt-3">
                   {profile.editable_fields.mission.char_count} / {profile.editable_fields.mission.char_limit} characters
                 </p>
               )}
@@ -225,12 +225,12 @@ export default function ProfileEditor() {
                     <h2 className="font-display text-lg text-deep-navy">Website</h2>
                     <HelpTooltip text="Your main website where donors can learn more about your organization. Must start with https://" side="right" />
                   </div>
-                  <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.website.source]}</p>
+                  <p className="font-body text-caption text-cool-grey">{sourceLabels[profile.editable_fields.website.source]}</p>
                 </div>
                 {profile.editable_fields.website.editable && (
                   <button
                     onClick={() => setEditingField('website')}
-                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-caption font-semibold hover:bg-bright-gold transition"
                     aria-label="Edit website URL"
                   >
                     Edit
@@ -242,12 +242,12 @@ export default function ProfileEditor() {
                   href={profile.editable_fields.website.value}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-body text-[14px] text-soft-gold hover:text-bright-gold underline"
+                  className="font-body text-body text-soft-gold hover:text-bright-gold underline"
                 >
                   {profile.editable_fields.website.value}
                 </a>
               ) : (
-                <p className="font-body text-[14px] text-cool-grey">(Not set)</p>
+                <p className="font-body text-body text-cool-grey">(Not set)</p>
               )}
             </div>
 
@@ -259,12 +259,12 @@ export default function ProfileEditor() {
                     <h2 className="font-display text-lg text-deep-navy">Donation Link</h2>
                     <HelpTooltip text="Where donors can give. This can be your website, a payment processor, or a fundraising platform. A working link is critical." side="right" />
                   </div>
-                  <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.donate_url.source]}</p>
+                  <p className="font-body text-caption text-cool-grey">{sourceLabels[profile.editable_fields.donate_url.source]}</p>
                 </div>
                 {profile.editable_fields.donate_url.editable && (
                   <button
                     onClick={() => setEditingField('donate_url')}
-                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-caption font-semibold hover:bg-bright-gold transition"
                     aria-label="Edit donation link"
                   >
                     Edit
@@ -276,12 +276,12 @@ export default function ProfileEditor() {
                   href={profile.editable_fields.donate_url.value}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-body text-[14px] text-soft-gold hover:text-bright-gold underline"
+                  className="font-body text-body text-soft-gold hover:text-bright-gold underline"
                 >
                   {profile.editable_fields.donate_url.value}
                 </a>
               ) : (
-                <p className="font-body text-[14px] text-cool-grey">(Not set)</p>
+                <p className="font-body text-body text-cool-grey">(Not set)</p>
               )}
             </div>
 
@@ -293,23 +293,23 @@ export default function ProfileEditor() {
                     <h2 className="font-display text-lg text-deep-navy">Programs & Services</h2>
                     <HelpTooltip text="What programs do you offer? Who do you serve? Be specific—donors want to understand the impact." side="right" />
                   </div>
-                  <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.programs.source]}</p>
+                  <p className="font-body text-caption text-cool-grey">{sourceLabels[profile.editable_fields.programs.source]}</p>
                 </div>
                 {profile.editable_fields.programs.editable && (
                   <button
                     onClick={() => setEditingField('programs')}
-                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-caption font-semibold hover:bg-bright-gold transition"
                     aria-label="Edit programs and services"
                   >
                     Edit
                   </button>
                 )}
               </div>
-              <p className="font-body text-[14px] text-deep-navy leading-relaxed whitespace-pre-wrap">
+              <p className="font-body text-body text-deep-navy leading-relaxed whitespace-pre-wrap">
                 {profile.editable_fields.programs.value || '(Not set)'}
               </p>
               {profile.editable_fields.programs.value && (
-                <p className="font-body text-[11px] text-cool-grey mt-3">
+                <p className="font-body text-label text-cool-grey mt-3">
                   {profile.editable_fields.programs.char_count} / {profile.editable_fields.programs.char_limit} characters
                 </p>
               )}
@@ -323,19 +323,19 @@ export default function ProfileEditor() {
                     <h2 className="font-display text-lg text-deep-navy">Service Areas</h2>
                     <HelpTooltip text="Geographic areas or communities you serve. This helps donors find organizations working in their area." side="right" />
                   </div>
-                  <p className="font-body text-[12px] text-cool-grey">{sourceLabels[profile.editable_fields.service_areas.source]}</p>
+                  <p className="font-body text-caption text-cool-grey">{sourceLabels[profile.editable_fields.service_areas.source]}</p>
                 </div>
                 {profile.editable_fields.service_areas.editable && (
                   <button
                     onClick={() => setEditingField('service_areas')}
-                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-[12px] font-semibold hover:bg-bright-gold transition"
+                    className="px-3 py-1.5 rounded-lg bg-soft-gold text-deep-navy font-body text-caption font-semibold hover:bg-bright-gold transition"
                     aria-label="Edit service areas"
                   >
                     Edit
                   </button>
                 )}
               </div>
-              <p className="font-body text-[14px] text-deep-navy">
+              <p className="font-body text-body text-deep-navy">
                 {profile.editable_fields.service_areas.value || '(Not set)'}
               </p>
             </div>

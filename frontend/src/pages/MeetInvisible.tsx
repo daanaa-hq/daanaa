@@ -29,10 +29,10 @@ function RevealCard({ org, i }: { org: ApiOrganization; i: number }) {
       style={{ animationDelay: `${(i % 6) * 0.08}s` }}
     >
       <Link to={`/org/${org.EIN}`} className="block group">
-        <p className="font-display text-warm-cream text-[19px] leading-tight group-hover:text-soft-gold transition-colors">{org.organization_name}</p>
-        {place && <p className="font-body text-[12px] text-soft-gold/70 mt-1 tracking-[0.02em]">{place}</p>}
+        <p className="font-display text-warm-cream text-title leading-tight group-hover:text-soft-gold transition-colors">{org.organization_name}</p>
+        {place && <p className="font-body text-caption text-soft-gold/70 mt-1 tracking-[0.02em]">{place}</p>}
         {mission && (
-          <p className="font-body text-[14px] text-muted-cream/85 leading-[1.6] mt-3 line-clamp-3">{mission}</p>
+          <p className="font-body text-body text-muted-cream/85 leading-[1.6] mt-3 line-clamp-3">{mission}</p>
         )}
       </Link>
       <div className="flex items-center gap-3 mt-auto pt-5 border-t border-white/5">
@@ -41,13 +41,13 @@ function RevealCard({ org, i }: { org: ApiOrganization; i: number }) {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-soft-gold text-deep-navy font-body text-[13px] font-bold hover:bg-bright-gold transition-colors"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-soft-gold text-deep-navy font-body text-small font-bold hover:bg-bright-gold transition-colors"
           >
             {link.label}
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
           </a>
         )}
-        <Link to={`/org/${org.EIN}`} className="inline-flex items-center gap-1 font-body text-[12px] text-soft-gold/80 hover:text-soft-gold ml-auto">
+        <Link to={`/org/${org.EIN}`} className="inline-flex items-center gap-1 font-body text-caption text-soft-gold/80 hover:text-soft-gold ml-auto">
           See their page
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </Link>
@@ -91,23 +91,23 @@ export default function MeetInvisible() {
     <div className="bg-deep-navy min-h-screen">
       {/* Hero */}
       <section className="max-w-[820px] mx-auto px-6 pt-28 pb-16 text-center">
-        <span className="inline-flex items-center px-3 py-1 rounded-full bg-soft-gold/10 border border-soft-gold/25 font-body text-[11px] font-semibold tracking-[0.12em] uppercase text-soft-gold mb-7">
+        <span className="inline-flex items-center px-3 py-1 rounded-full bg-soft-gold/10 border border-soft-gold/25 font-body text-label font-semibold tracking-[0.12em] uppercase text-soft-gold mb-7">
           The invisible 97%
         </span>
         <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(34px, 6vw, 68px)' }}>
           Many are doing real work. Most are just invisible.
         </h1>
-        <p className="font-body text-[17px] text-muted-cream leading-[1.7] mt-6 max-w-[560px] mx-auto">
+        <p className="font-body text-title-sm text-muted-cream leading-[1.7] mt-6 max-w-[560px] mx-auto">
           Of 1.7 million+ tax-deductible nonprofits in America, most operate without the visibility of household names. Many simply haven't published financial data yet. That doesn't make their work less real. Let's change that.
         </p>
       </section>
 
       {/* The few everyone knows */}
       <section className="max-w-[820px] mx-auto px-6 pb-4 text-center">
-        <p className="font-body text-[12px] tracking-[0.1em] uppercase text-cool-grey mb-4">The few everyone knows</p>
+        <p className="font-body text-caption tracking-[0.1em] uppercase text-cool-grey mb-4">The few everyone knows</p>
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
           {FAMOUS.map(n => (
-            <span key={n} className="font-display italic text-[20px] text-cool-grey">{n}</span>
+            <span key={n} className="font-display italic text-title text-cool-grey">{n}</span>
           ))}
         </div>
       </section>
@@ -115,8 +115,8 @@ export default function MeetInvisible() {
       {/* The divider line */}
       <div className="max-w-[820px] mx-auto px-6 py-14 text-center">
         <div className="w-px h-12 bg-gradient-to-b from-transparent via-soft-gold/40 to-transparent mx-auto mb-4" />
-        <p className="font-display italic text-warm-cream text-[26px]">The rest of the story</p>
-        <p className="font-body text-[14px] text-muted-cream mt-2">Organizations doing meaningful work in their communities.</p>
+        <p className="font-display italic text-warm-cream text-headline">The rest of the story</p>
+        <p className="font-body text-body text-muted-cream mt-2">Organizations doing meaningful work in their communities.</p>
       </div>
 
       {/* Real invisible orgs */}
@@ -139,7 +139,7 @@ export default function MeetInvisible() {
         </p>
         <Link
           to="/directory"
-          className="inline-flex items-center gap-2 mt-8 px-9 py-4 rounded-full bg-soft-gold text-deep-navy font-body text-[15px] font-semibold hover:bg-bright-gold transition-colors"
+          className="inline-flex items-center gap-2 mt-8 px-9 py-4 rounded-full bg-soft-gold text-deep-navy font-body text-body-lg font-semibold hover:bg-bright-gold transition-colors"
         >
           Explore more
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>

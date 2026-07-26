@@ -129,7 +129,7 @@ export default function SelfDiscoveryDashboard() {
           <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 4vw, 48px)' }}>
             {data.organization_name}
           </h1>
-          <p className="mt-3 font-body text-[16px] text-muted-cream">Your discovery dashboard on Daanaa</p>
+          <p className="mt-3 font-body text-lead text-muted-cream">Your discovery dashboard on Daanaa</p>
         </div>
       </div>
 
@@ -141,14 +141,14 @@ export default function SelfDiscoveryDashboard() {
           {data.page_health && (
             <section>
               <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
-                <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em]">
+                <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em]">
                   What Donors See
                 </h2>
                 <a
                   href={data.page_health.public_page_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-deep-navy text-warm-cream font-body text-[14px] font-semibold hover:bg-deep-navy/90 transition-colors"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-deep-navy text-warm-cream font-body text-body font-semibold hover:bg-deep-navy/90 transition-colors"
                 >
                   View your public page
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
@@ -158,18 +158,18 @@ export default function SelfDiscoveryDashboard() {
                 {/* Mission */}
                 <div className="bg-white rounded-2xl p-6 border border-light-grey shadow-md">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase">Mission</p>
-                    <span className={`font-body text-[11px] font-semibold px-2 py-0.5 rounded-full ${data.page_health.mission.shown ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
+                    <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase">Mission</p>
+                    <span className={`font-body text-label font-semibold px-2 py-0.5 rounded-full ${data.page_health.mission.shown ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
                       {data.page_health.mission.shown ? 'Live' : 'Not shown'}
                     </span>
                   </div>
                   {data.page_health.mission.text ? (
                     <>
-                      <p className="font-body text-[14px] text-deep-navy leading-[1.6] line-clamp-4">{data.page_health.mission.text}</p>
-                      <p className="font-body text-[12px] text-cool-grey mt-3">Source: {data.page_health.mission.source}</p>
+                      <p className="font-body text-body text-deep-navy leading-[1.6] line-clamp-4">{data.page_health.mission.text}</p>
+                      <p className="font-body text-caption text-cool-grey mt-3">Source: {data.page_health.mission.source}</p>
                     </>
                   ) : (
-                    <p className="font-body text-[14px] text-cool-grey leading-[1.6]">
+                    <p className="font-body text-body text-cool-grey leading-[1.6]">
                       Donors see no mission yet. Adding one in your own words is the single biggest upgrade to your page.
                     </p>
                   )}
@@ -177,29 +177,29 @@ export default function SelfDiscoveryDashboard() {
                 {/* Website */}
                 <div className="bg-white rounded-2xl p-6 border border-light-grey shadow-md">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase">Website</p>
-                    <span className={`font-body text-[11px] font-semibold px-2 py-0.5 rounded-full ${data.page_health.website.shown_to_donors ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
+                    <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase">Website</p>
+                    <span className={`font-body text-label font-semibold px-2 py-0.5 rounded-full ${data.page_health.website.shown_to_donors ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
                       {data.page_health.website.shown_to_donors ? 'Live' : 'Not shown'}
                     </span>
                   </div>
                   {data.page_health.website.url ? (
-                    <p className="font-body text-[14px] text-deep-navy break-all">{data.page_health.website.url}</p>
+                    <p className="font-body text-body text-deep-navy break-all">{data.page_health.website.url}</p>
                   ) : (
-                    <p className="font-body text-[14px] text-cool-grey leading-[1.6]">No website on file yet.</p>
+                    <p className="font-body text-body text-cool-grey leading-[1.6]">No website on file yet.</p>
                   )}
                 </div>
                 {/* Donate link */}
                 <div className="bg-white rounded-2xl p-6 border border-light-grey shadow-md">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase">Donate Button</p>
-                    <span className={`font-body text-[11px] font-semibold px-2 py-0.5 rounded-full ${data.page_health.donate_link.shown_to_donors ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
+                    <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase">Donate Button</p>
+                    <span className={`font-body text-label font-semibold px-2 py-0.5 rounded-full ${data.page_health.donate_link.shown_to_donors ? 'bg-success-green/15 text-success-green' : 'bg-light-grey text-cool-grey'}`}>
                       {data.page_health.donate_link.shown_to_donors ? 'Live' : 'Not shown'}
                     </span>
                   </div>
                   {data.page_health.donate_link.url && data.page_health.donate_link.shown_to_donors && (
-                    <p className="font-body text-[14px] text-deep-navy break-all mb-3">{data.page_health.donate_link.url}</p>
+                    <p className="font-body text-body text-deep-navy break-all mb-3">{data.page_health.donate_link.url}</p>
                   )}
-                  <p className="font-body text-[13px] text-cool-grey leading-[1.6]">{data.page_health.donate_link.note}</p>
+                  <p className="font-body text-small text-cool-grey leading-[1.6]">{data.page_health.donate_link.note}</p>
                 </div>
               </div>
             </section>
@@ -207,26 +207,26 @@ export default function SelfDiscoveryDashboard() {
 
           {/* Financial Context */}
           <section>
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em] mb-6">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em] mb-6">
               Your Financial Context
             </h2>
             <div className="bg-white rounded-2xl p-8 border border-light-grey shadow-md">
               <div className="grid md:grid-cols-2 gap-8 mb-8">
                 <div>
-                  <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">Health Signal</p>
-                  <p className="font-display italic text-[28px] text-soft-gold">{data.financial_context.health_signal}</p>
+                  <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">Health Signal</p>
+                  <p className="font-display italic text-headline text-soft-gold">{data.financial_context.health_signal}</p>
                 </div>
                 <div>
-                  <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">Your Category</p>
-                  <p className="font-body text-[16px] font-semibold text-deep-navy">{data.financial_context.archetype}</p>
-                  <p className="font-body text-[14px] text-cool-grey">{data.financial_context.band}</p>
+                  <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">Your Category</p>
+                  <p className="font-body text-lead font-semibold text-deep-navy">{data.financial_context.archetype}</p>
+                  <p className="font-body text-body text-cool-grey">{data.financial_context.band}</p>
                 </div>
               </div>
               <div className="border-t border-light-grey pt-6">
-                <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="font-body text-lead text-cool-grey leading-[1.7]">
                   {data.financial_context.narrative}
                 </p>
-                <p className="font-body text-[12px] text-cool-grey mt-4">
+                <p className="font-body text-caption text-cool-grey mt-4">
                   Peer group: {data.financial_context.peer_count} organizations with your funding model and size
                 </p>
               </div>
@@ -235,7 +235,7 @@ export default function SelfDiscoveryDashboard() {
 
           {/* Peer Context */}
           <section>
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em] mb-6">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em] mb-6">
               Organizations Like Yours
             </h2>
             <div className="space-y-4 mb-6">
@@ -244,11 +244,11 @@ export default function SelfDiscoveryDashboard() {
                   <div className="flex justify-between items-start gap-4 mb-2">
                     <div>
                       <p className="font-body font-semibold text-deep-navy">{peer.name}</p>
-                      <p className="font-body text-[14px] text-cool-grey">
+                      <p className="font-body text-body text-cool-grey">
                         {peer.city}, {peer.state}
                       </p>
                     </div>
-                    <span className="font-body text-[12px] font-medium text-soft-gold uppercase">
+                    <span className="font-body text-caption font-medium text-soft-gold uppercase">
                       {peer.health_signal}
                     </span>
                   </div>
@@ -257,7 +257,7 @@ export default function SelfDiscoveryDashboard() {
                       href={peer.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-body text-[12px] text-deep-navy underline underline-offset-2 hover:text-navy-mid"
+                      className="font-body text-caption text-deep-navy underline underline-offset-2 hover:text-navy-mid"
                     >
                       Visit their site
                     </a>
@@ -265,30 +265,30 @@ export default function SelfDiscoveryDashboard() {
                 </div>
               ))}
             </div>
-            <p className="font-body text-[14px] text-cool-grey leading-[1.6]">
+            <p className="font-body text-body text-cool-grey leading-[1.6]">
               {data.peer_context.note}
             </p>
           </section>
 
           {/* Donor Interest */}
           <section>
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em] mb-6">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em] mb-6">
               Discovery Interest
             </h2>
             <div className="bg-white rounded-2xl p-8 border border-light-grey shadow-md">
               <div className="grid md:grid-cols-2 gap-8 mb-8">
                 <div>
-                  <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">This Month</p>
-                  <p className="font-display italic text-[32px] text-soft-gold">{data.donor_interest.bookmarks_this_month}</p>
-                  <p className="font-body text-[12px] text-cool-grey">people saved your org</p>
+                  <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">This Month</p>
+                  <p className="font-display italic text-headline-lg text-soft-gold">{data.donor_interest.bookmarks_this_month}</p>
+                  <p className="font-body text-caption text-cool-grey">people saved your org</p>
                 </div>
                 <div>
-                  <p className="font-body text-[12px] font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">Last Month</p>
-                  <p className="font-display italic text-[32px] text-soft-gold">{data.donor_interest.bookmarks_last_month}</p>
+                  <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">Last Month</p>
+                  <p className="font-display italic text-headline-lg text-soft-gold">{data.donor_interest.bookmarks_last_month}</p>
                 </div>
               </div>
               <div className="border-t border-light-grey pt-6">
-                <p className="font-body text-[14px] text-cool-grey leading-[1.6]">
+                <p className="font-body text-body text-cool-grey leading-[1.6]">
                   {data.donor_interest.note}
                 </p>
               </div>
@@ -297,7 +297,7 @@ export default function SelfDiscoveryDashboard() {
 
           {/* Profile Completeness */}
           <section>
-            <h2 className="font-display italic text-deep-navy leading-[1.1] text-[32px] md:text-[40px] tracking-[-0.01em] mb-6">
+            <h2 className="font-display italic text-deep-navy leading-[1.1] text-headline-lg md:text-display tracking-[-0.01em] mb-6">
               Your Public Profile
             </h2>
             <div className="bg-white rounded-2xl p-8 border border-light-grey shadow-md">
@@ -305,14 +305,14 @@ export default function SelfDiscoveryDashboard() {
                 {Object.entries(data.profile.checks).map(([key, complete]) => (
                   <div key={key} className="flex items-center gap-3">
                     <div className={`w-5 h-5 rounded ${complete ? 'bg-success-green' : 'bg-light-grey'}`} />
-                    <p className="font-body text-[16px] text-deep-navy capitalize">
+                    <p className="font-body text-lead text-deep-navy capitalize">
                       {key.replace(/_/g, ' ')}
                     </p>
                   </div>
                 ))}
               </div>
               <div className="border-t border-light-grey pt-6">
-                <p className="font-body text-[16px] text-cool-grey leading-[1.7]">
+                <p className="font-body text-lead text-cool-grey leading-[1.7]">
                   {data.profile.narrative}
                 </p>
               </div>
@@ -321,13 +321,13 @@ export default function SelfDiscoveryDashboard() {
 
           {/* Help Section */}
           <section className="bg-soft-cream rounded-lg p-6 md:p-8">
-            <h3 className="font-body text-[16px] font-semibold text-deep-navy mb-3">Need Help?</h3>
-            <p className="font-body text-[14px] text-cool-grey mb-4">
+            <h3 className="font-body text-lead font-semibold text-deep-navy mb-3">Need Help?</h3>
+            <p className="font-body text-body text-cool-grey mb-4">
               {data.derived_data}
             </p>
             <a
               href="/claim/edit"
-              className="font-body text-[14px] text-deep-navy underline underline-offset-2 hover:text-navy-mid"
+              className="font-body text-body text-deep-navy underline underline-offset-2 hover:text-navy-mid"
             >
               Edit your profile →
             </a>

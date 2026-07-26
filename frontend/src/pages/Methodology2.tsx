@@ -58,12 +58,12 @@ function Section({ id, label, title, children }: { id: string; label: string; ti
       <div className="max-w-[760px]">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-6 h-px bg-soft-gold/50" />
-          <span className="font-body text-[11px] font-medium tracking-[0.10em] text-soft-gold uppercase">{label}</span>
+          <span className="font-body text-label font-medium tracking-[0.10em] text-soft-gold uppercase">{label}</span>
         </div>
         <h2 className="font-display italic text-deep-navy leading-[1.05] tracking-[-0.01em]" >
           {title}
         </h2>
-        <div className="mt-6 space-y-4 font-body text-[16px] text-cool-grey leading-[1.7]">
+        <div className="mt-6 space-y-4 font-body text-lead text-cool-grey leading-[1.7]">
           {children}
         </div>
       </div>
@@ -74,7 +74,7 @@ function Section({ id, label, title, children }: { id: string; label: string; ti
 function Callout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mt-6 p-5 rounded-xl bg-soft-gold/10 border border-soft-gold/20">
-      <p className="font-body text-[15px] text-deep-navy leading-[1.6]">{children}</p>
+      <p className="font-body text-body-lg text-deep-navy leading-[1.6]">{children}</p>
     </div>
   )
 }
@@ -87,9 +87,9 @@ function TierRow({ score, label, description }: { score: string; label: string; 
     : '#8a8f98'
   return (
     <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 py-3 border-b border-light-grey last:border-0">
-      <span className="shrink-0 sm:w-20 font-body text-[13px] font-semibold" style={{ color }}>{score}</span>
-      <span className="shrink-0 sm:w-48 font-body text-[14px] font-medium text-deep-navy">{label}</span>
-      <span className="font-body text-[14px] text-cool-grey">{description}</span>
+      <span className="shrink-0 sm:w-20 font-body text-small font-semibold" style={{ color }}>{score}</span>
+      <span className="shrink-0 sm:w-48 font-body text-body font-medium text-deep-navy">{label}</span>
+      <span className="font-body text-body text-cool-grey">{description}</span>
     </div>
   )
 }
@@ -109,16 +109,16 @@ export default function Methodology() {
       <div className="bg-deep-navy pt-[72px]">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 pt-8 pb-10 md:pt-12 md:pb-16">
           <div className="flex items-center gap-2 mb-6">
-            <Link to="/" className="font-body text-[12px] tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
+            <Link to="/" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
             <span className="text-muted-cream">/</span>
-            <span className="font-body text-[12px] text-muted-cream">Methodology</span>
+            <span className="font-body text-caption text-muted-cream">Methodology</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-10 md:gap-16">
             <div className="max-w-[640px]">
               <h1 className="font-display italic text-warm-cream leading-[1.05] tracking-[-0.01em]" style={{ fontSize: 'clamp(32px, 5vw, 64px)' }}>
                 How Daanaa Works
               </h1>
-              <p className="mt-4 font-body text-[18px] leading-[1.6] text-muted-cream">
+              <p className="mt-4 font-body text-title-sm leading-[1.6] text-muted-cream">
                 We don't score nonprofits on our opinion. We surface publicly available data, place each organization alongside its true peers, and let you decide. This page explains exactly how.
               </p>
             </div>
@@ -136,13 +136,13 @@ export default function Methodology() {
           {/* Sticky table of contents (desktop) */}
           <aside className="hidden lg:block shrink-0 w-56 pt-14">
             <div className="sticky top-[88px]">
-              <p className="font-body text-[11px] font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">On this page</p>
+              <p className="font-body text-label font-semibold tracking-[0.08em] text-cool-grey uppercase mb-4">On this page</p>
               <nav aria-label="On this page" className="space-y-2.5">
                 {TOC.map(item => (
                   <a
                     key={item.id}
                     href={`#${item.id}`}
-                    className="block font-body text-[13px] text-cool-grey hover:text-soft-gold transition-colors leading-snug"
+                    className="block font-body text-small text-cool-grey hover:text-soft-gold transition-colors leading-snug"
                   >
                     {item.label}
                   </a>
@@ -156,7 +156,7 @@ export default function Methodology() {
 
             {/* Critical disclaimer */}
             <div className="mt-12 mb-2 p-6 bg-white border-2 border-deep-navy/10 rounded-2xl max-w-[760px]">
-              <p className="font-body text-[16px] font-semibold text-deep-navy leading-[1.6]">
+              <p className="font-body text-lead font-semibold text-deep-navy leading-[1.6]">
                 Peer Financial Context is not a rating, endorsement, impact score, or recommendation. Daanaa does not rank human worth — we organize public information so people can give more thoughtfully.
               </p>
             </div>
@@ -183,8 +183,8 @@ export default function Methodology() {
                   <div key={source} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey">
                     <div className="shrink-0 w-2 h-2 mt-2 rounded-full bg-soft-gold" />
                     <div>
-                      <p className="font-body text-[14px] font-semibold text-deep-navy">{source}</p>
-                      <p className="font-body text-[14px] text-cool-grey mt-1">{what}</p>
+                      <p className="font-body text-body font-semibold text-deep-navy">{source}</p>
+                      <p className="font-body text-body text-cool-grey mt-1">{what}</p>
                     </div>
                   </div>
                 ))}
@@ -203,14 +203,14 @@ export default function Methodology() {
               </p>
               <div className="mt-2 space-y-3">
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
-                  <p className="font-body text-[14px] font-semibold text-deep-navy">Funding model</p>
-                  <p className="font-body text-[14px] text-cool-grey mt-1">
+                  <p className="font-body text-body font-semibold text-deep-navy">Funding model</p>
+                  <p className="font-body text-body text-cool-grey mt-1">
                     Each nonprofit is placed into one of three funding archetypes: Donation-Funded Programs (organizations that rely on community fundraising), Fee-for-Service Operators (organizations that earn revenue by providing services), or Endowment-Funded Grantmakers (organizations funded by endowment returns). A food bank is compared to other donation-funded programs, not to consulting firms or family foundations.
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
-                  <p className="font-body text-[14px] font-semibold text-deep-navy">Revenue band</p>
-                  <p className="font-body text-[14px] text-cool-grey mt-1">
+                  <p className="font-body text-body font-semibold text-deep-navy">Revenue band</p>
+                  <p className="font-body text-body text-cool-grey mt-1">
                     A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. We use three universal revenue bands: Micro (under $150K), Professional ($150K–$700K), and Established (over $700K). A small food bank is compared to other donation-funded programs in the Micro band, not to large hospitals or international NGOs.
                   </p>
                 </div>
@@ -220,8 +220,8 @@ export default function Methodology() {
               </p>
 
               <div className="mt-6">
-                <p className="font-body text-[14px] font-semibold text-deep-navy mb-1">What the score means</p>
-                <p className="font-body text-[13px] text-cool-grey mb-3 max-w-[640px]">
+                <p className="font-body text-body font-semibold text-deep-navy mb-1">What the score means</p>
+                <p className="font-body text-small text-cool-grey mb-3 max-w-[640px]">
                   The 0–100 score is a percentile: where this organization's reserves fall compared to similar organizations. A score of 75 means stronger reserves than 75% of its peers. This is not about size or budget; it is about financial resilience.
                 </p>
                 <div className="bg-white rounded-xl border border-light-grey p-4">
@@ -233,13 +233,13 @@ export default function Methodology() {
                 </div>
               </div>
 
-              <p className="mt-5 font-body text-[15px] text-cool-grey leading-[1.7]">
+              <p className="mt-5 font-body text-body-lg text-cool-grey leading-[1.7]">
                 When you visit an organization's page, you also see a <strong className="text-deep-navy font-medium">peer financial context signal</strong>: Healthy, Stable, or Needs Support. This is separate from the percentile number. The percentile shows where reserves fall among peers. The signal shows financial health: whether the organization is building reserves, holding steady, or operating with limited cushion. A small organization can have healthy reserves for its size; a large one can show Needs Support.
               </p>
-              <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
+              <p className="mt-3 font-body text-body-lg text-cool-grey leading-[1.7]">
                 <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower reserve position does not mean a lesser organization. It often means a group doing essential work within tight means, investing its resources directly into mission rather than building savings. That is exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
               </p>
-              <p className="mt-3 font-body text-[15px] text-cool-grey leading-[1.7]">
+              <p className="mt-3 font-body text-body-lg text-cool-grey leading-[1.7]">
                 <strong className="text-deep-navy font-medium">Economic context.</strong> On some organization pages, you'll also see a short note about the broader economy in that filing year, things like unemployment or interest rates. This is background, not part of the score. It doesn't change the percentile or the health signal. It's there so a lean reserve position in a hard year reads differently than the same position in a strong one.
               </p>
             </Section>
@@ -255,7 +255,7 @@ export default function Methodology() {
                   'Organizational leadership or governance',
                   'Staff expertise or program outcomes',
                 ].map(item => (
-                  <li key={item} className="flex items-start gap-3 font-body text-[15px] text-cool-grey">
+                  <li key={item} className="flex items-start gap-3 font-body text-body-lg text-cool-grey">
                     <span className="text-soft-gold mt-1.5 w-1.5 h-1.5 rounded-full bg-soft-gold shrink-0" />
                     {item}
                   </li>
@@ -275,7 +275,7 @@ export default function Methodology() {
                   'Classification challenges: NTEE categorization is imperfect and assigned by filing organizations.',
                   'Missing data: some organizations don\'t file or have incomplete financial records.',
                 ].map(item => (
-                  <li key={item} className="flex items-start gap-3 font-body text-[15px] text-cool-grey">
+                  <li key={item} className="flex items-start gap-3 font-body text-body-lg text-cool-grey">
                     <span className="text-soft-gold mt-1.5 w-1.5 h-1.5 rounded-full bg-soft-gold shrink-0" />
                     {item}
                   </li>
@@ -297,9 +297,9 @@ export default function Methodology() {
                   <div key={tier} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">
                     <div className="shrink-0 flex flex-col items-center gap-1.5 pt-0.5">
                       <LampMark tier={tier} size="sm" />
-                      <span className="font-body text-[10px] font-semibold tracking-[0.03em]" style={{ fontFamily: 'Cinzel, serif', color: TIER_COLORS[tier] }}>{tier}</span>
+                      <span className="font-body text-micro font-semibold tracking-[0.03em]" style={{ fontFamily: 'Cinzel, serif', color: TIER_COLORS[tier] }}>{tier}</span>
                     </div>
-                    <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{what}</p>
+                    <p className="font-body text-body text-cool-grey leading-[1.6]">{what}</p>
                   </div>
                 ))}
               </div>
@@ -309,7 +309,7 @@ export default function Methodology() {
               <div className="mt-6">
                 <Link
                   to="/tiers"
-                  className="inline-flex items-center gap-1.5 font-body text-[13px] font-semibold text-soft-gold hover:text-bright-gold transition-colors"
+                  className="inline-flex items-center gap-1.5 font-body text-small font-semibold text-soft-gold hover:text-bright-gold transition-colors"
                 >
                   Full tier reference →
                 </Link>
@@ -341,8 +341,8 @@ export default function Methodology() {
                   <div key={label} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey">
                     <div className="shrink-0 w-2 h-2 mt-2 rounded-full bg-soft-gold" />
                     <div>
-                      <p className="font-body text-[14px] font-semibold text-deep-navy">{label}</p>
-                      <p className="font-body text-[14px] text-cool-grey mt-1">{detail}</p>
+                      <p className="font-body text-body font-semibold text-deep-navy">{label}</p>
+                      <p className="font-body text-body text-cool-grey mt-1">{detail}</p>
                     </div>
                   </div>
                 ))}
@@ -356,11 +356,11 @@ export default function Methodology() {
               <p>Every page has two distinct layers:</p>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-5 bg-white rounded-xl border border-light-grey">
-                  <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Daanaa's data</p>
-                  <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
+                  <p className="font-body text-caption tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Daanaa's data</p>
+                  <p className="font-body text-small text-cool-grey leading-[1.6]">
                     Sourced from IRS public records. Objective, fact checked, timestamped. Organizations cannot edit this layer.
                   </p>
-                  <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
+                  <ul className="mt-3 space-y-1 font-body text-small text-cool-grey">
                     {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Peer financial context score', 'Data source & year'].map(i => (
                       <li key={i} className="flex items-center gap-2">
                         <span className="w-1 h-1 rounded-full bg-cool-grey shrink-0" />{i}
@@ -369,11 +369,11 @@ export default function Methodology() {
                   </ul>
                 </div>
                 <div className="p-5 bg-white rounded-xl border-2 border-dashed border-soft-gold/30">
-                  <p className="font-body text-[12px] tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Organization's data</p>
-                  <p className="font-body text-[13px] text-cool-grey leading-[1.6]">
+                  <p className="font-body text-caption tracking-[0.06em] text-soft-gold uppercase font-medium mb-2">Organization's data</p>
+                  <p className="font-body text-small text-cool-grey leading-[1.6]">
                     Added directly by the organization. Clearly labeled as self reported. Claim your page to update this information.
                   </p>
-                  <ul className="mt-3 space-y-1 font-body text-[13px] text-cool-grey">
+                  <ul className="mt-3 space-y-1 font-body text-small text-cool-grey">
                     {['Mission statement', 'Program descriptions', 'Leadership team', 'Photos & annual reports', 'Impact metrics'].map(i => (
                       <li key={i} className="flex items-center gap-2">
                         <span className="w-1 h-1 rounded-full bg-soft-gold/50 shrink-0" />{i}
@@ -397,8 +397,8 @@ export default function Methodology() {
                   { freq: 'Ongoing', what: 'Peer financial context scores recalculated after bulk revenue updates' },
                 ].map(({ freq, what }, i) => (
                   <div key={`${freq}-${i}`} className="flex gap-4 items-start">
-                    <span className="shrink-0 font-body text-[13px] font-semibold text-soft-gold w-20">{freq}</span>
-                    <span className="font-body text-[14px] text-cool-grey">{what}</span>
+                    <span className="shrink-0 font-body text-small font-semibold text-soft-gold w-20">{freq}</span>
+                    <span className="font-body text-body text-cool-grey">{what}</span>
                   </div>
                 ))}
               </div>
@@ -416,14 +416,14 @@ export default function Methodology() {
                       className="w-full px-5 py-4 flex items-center justify-between hover:bg-warm-cream/40 transition-colors text-left"
                       aria-expanded={openFaq === i}
                     >
-                      <span className="font-body text-[15px] font-semibold text-deep-navy">{faq.q}</span>
+                      <span className="font-body text-body-lg font-semibold text-deep-navy">{faq.q}</span>
                       <svg className={`w-5 h-5 shrink-0 text-soft-gold transition-transform ${openFaq === i ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <polyline points="6 9 12 15 18 9"></polyline>
                       </svg>
                     </button>
                     {openFaq === i && (
                       <div className="px-5 py-3 border-t border-light-grey bg-warm-cream/20">
-                        <p className="font-body text-[14px] text-cool-grey leading-[1.6]">{faq.a}</p>
+                        <p className="font-body text-body text-cool-grey leading-[1.6]">{faq.a}</p>
                       </div>
                     )}
                   </div>
@@ -436,27 +436,27 @@ export default function Methodology() {
             {/* CTA */}
             <div className="py-12">
               <div className="bg-deep-navy rounded-2xl p-8 md:p-12 text-center">
-                <h3 className="font-display italic text-warm-cream text-[28px] leading-[1.1]">Questions or corrections?</h3>
-                <p className="mt-3 font-body text-[16px] text-muted-cream max-w-[480px] mx-auto leading-[1.6]">
+                <h3 className="font-display italic text-warm-cream text-headline leading-[1.1]">Questions or corrections?</h3>
+                <p className="mt-3 font-body text-lead text-muted-cream max-w-[480px] mx-auto leading-[1.6]">
                   If you represent a listed organization and want to update or claim your page, or if you spot an error in our data, we want to hear from you. We correct errors quickly and disclose corrections publicly.
                 </p>
                 <Link
                   to="/feedback"
-                  className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-[14px] font-semibold hover:bg-bright-gold transition-colors"
+                  className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-soft-gold text-deep-navy font-body text-body font-semibold hover:bg-bright-gold transition-colors"
                 >
                   Contact us
                 </Link>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
-                  <Link to="/about" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                  <Link to="/about" className="font-body text-small text-muted-cream hover:text-warm-cream transition-colors">
                     About Daanaa →
                   </Link>
-                  <Link to="/research" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                  <Link to="/research" className="font-body text-small text-muted-cream hover:text-warm-cream transition-colors">
                     Research & data →
                   </Link>
-                  <Link to="/directory" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                  <Link to="/directory" className="font-body text-small text-muted-cream hover:text-warm-cream transition-colors">
                     Browse the directory →
                   </Link>
-                  <Link to="/legal" className="font-body text-[13px] text-muted-cream hover:text-warm-cream transition-colors">
+                  <Link to="/legal" className="font-body text-small text-muted-cream hover:text-warm-cream transition-colors">
                     Data attribution →
                   </Link>
                 </div>
