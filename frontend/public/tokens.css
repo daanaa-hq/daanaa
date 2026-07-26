@@ -75,3 +75,98 @@
   --nav-offset-lg: 108px;  /* nav clearance on tall hero sections */
   --anchor-offset: 88px;   /* scroll-margin so anchors clear the nav */
 }
+
+/* BEGIN generated cause palette
+   Do not edit by hand. Regenerate:
+     python3 scripts/generate_cause_palette.py
+
+   One hue per NCCS family; surface/border/text derived by a per-theme
+   recipe. Dark is the default (:root); light overrides it. */
+
+:root {
+  /* Arts, Culture & Humanities (A) */
+  --cause-arts-surface: #3B1C2B;
+  --cause-arts-border: #63364D;
+  --cause-arts-text: #E79DC2;
+  /* Education (BUV) */
+  --cause-education-surface: #1C263B;
+  --cause-education-border: #364563;
+  --cause-education-text: #9DB6E7;
+  /* Environment & Animals (CD) */
+  --cause-environment-surface: #1C3B26;
+  --cause-environment-border: #366345;
+  --cause-environment-text: #9DE7B6;
+  /* Health (EFGH) */
+  --cause-health-surface: #1C353B;
+  --cause-health-border: #365C63;
+  --cause-health-text: #9DDAE7;
+  /* Human Services (IJKLMNOP) */
+  --cause-human-surface: #3B291C;
+  --cause-human-border: #634936;
+  --cause-human-text: #E7BC9D;
+  /* International & Foreign Affairs (Q) */
+  --cause-global-surface: #291C3B;
+  --cause-global-border: #493663;
+  --cause-global-text: #BC9DE7;
+  /* Public & Societal Benefit (RSTW) */
+  --cause-public-surface: #3B331C;
+  --cause-public-border: #635836;
+  --cause-public-text: #E7D49D;
+  /* Religion-Related (X) */
+  --cause-religion-surface: #351C3B;
+  --cause-religion-border: #5C3663;
+  --cause-religion-text: #DA9DE7;
+  /* Mutual & Membership Benefit (Y) */
+  --cause-mutual-surface: #1C3B35;
+  --cause-mutual-border: #36635C;
+  --cause-mutual-text: #9DE7DA;
+  /* Unclassified (Z) - neutral, no hue */
+  --cause-unknown-surface: #1B2233;
+  --cause-unknown-border: #2C3547;
+  --cause-unknown-text: #AEB6C4;
+}
+
+:root[data-theme="light"] {
+  /* Arts, Culture & Humanities (A) */
+  --cause-arts-surface: #F1DAE6;
+  --cause-arts-border: #E3BFD1;
+  --cause-arts-text: #6F2047;
+  /* Education (BUV) */
+  --cause-education-surface: #DAE2F1;
+  --cause-education-border: #BFCBE3;
+  --cause-education-text: #203A6F;
+  /* Environment & Animals (CD) */
+  --cause-environment-surface: #DAF1E2;
+  --cause-environment-border: #BFE3CB;
+  --cause-environment-text: #206F3A;
+  /* Health (EFGH) */
+  --cause-health-surface: #DAEDF1;
+  --cause-health-border: #BFDDE3;
+  --cause-health-text: #20626F;
+  /* Human Services (IJKLMNOP) */
+  --cause-human-surface: #F1E4DA;
+  --cause-human-border: #E3CEBF;
+  --cause-human-text: #6F4120;
+  /* International & Foreign Affairs (Q) */
+  --cause-global-surface: #E4DAF1;
+  --cause-global-border: #CEBFE3;
+  --cause-global-text: #41206F;
+  /* Public & Societal Benefit (RSTW) */
+  --cause-public-surface: #F1EBDA;
+  --cause-public-border: #E3DABF;
+  --cause-public-text: #6F5B20;
+  /* Religion-Related (X) */
+  --cause-religion-surface: #EDDAF1;
+  --cause-religion-border: #DDBFE3;
+  --cause-religion-text: #62206F;
+  /* Mutual & Membership Benefit (Y) */
+  --cause-mutual-surface: #DAF1ED;
+  --cause-mutual-border: #BFE3DD;
+  --cause-mutual-text: #206F62;
+  /* Unclassified (Z) - neutral, no hue */
+  --cause-unknown-surface: #EDEDEB;
+  --cause-unknown-border: #DCDCD8;
+  --cause-unknown-text: #4A4A46;
+}
+
+/* END generated cause palette */

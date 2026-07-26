@@ -118,6 +118,22 @@ else
   echo -e "${GREEN}✅${NC}"
 fi
 
+# Check 8: Cause palette contrast
+# The palette is generated from 9 hues + 2 per-theme recipes. This re-runs the
+# contrast maths so a recipe tweak cannot silently push a family below WCAG AA
+# or turn the chips into glare. The old hand-picked palette was wrong in BOTH
+# themes (17:1 against the dark page, 1.0:1 against the light page) precisely
+# because nothing checked it.
+echo -n "Checking cause palette contrast... "
+if python3 "$REPO_ROOT/scripts/generate_cause_palette.py" --check >/tmp/.cause-lint 2>&1; then
+  echo -e "${GREEN}✅${NC}"
+else
+  echo -e "${RED}❌ Found${NC}"
+  sed 's/^/   /' /tmp/.cause-lint | head -12
+  violations=$((violations + 1))
+fi
+rm -f /tmp/.cause-lint
+
 echo ""
 echo "========================================"
 if [ $violations -eq 0 ]; then
