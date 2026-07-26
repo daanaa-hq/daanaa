@@ -94,33 +94,79 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
         />
       )}
 
-      {/* TIER 3: Donate Link (85%+) */}
-      {dataAvailable.donate ? (
-        <InfoBlock title="How to Give">
-          <a
-            href={org.donate_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-warm-red text-white rounded-lg hover:bg-warm-red/90 transition"
-          >
-            Donate now
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M7 17L17 7M17 7H7M17 7V17" />
-            </svg>
-          </a>
-          {org.donate_confidence && (
-            <p className="text-xs text-cool-grey mt-2">
-              Confidence: {Math.round(org.donate_confidence * 100)}% verified
+      {/* TIER 3: ALWAYS show ways to give */}
+      <InfoBlock title="How to Give">
+        <div className="space-y-3">
+          {/* Primary: Verified donate link */}
+          {dataAvailable.donate && org.donate_url ? (
+            <a
+              href={org.donate_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block p-3 bg-warm-red/10 border border-warm-red rounded-lg hover:bg-warm-red/20 transition"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-semibold text-warm-red text-sm">Donate via their website</p>
+                  {org.donate_confidence && (
+                    <p className="text-xs text-cool-grey mt-1">
+                      Verified {Math.round(org.donate_confidence * 100)}%
+                    </p>
+                  )}
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-warm-red">
+                  <path d="M7 17L17 7M17 7H7M17 7V17" />
+                </svg>
+              </div>
+            </a>
+          ) : null}
+
+          {/* Fallback 1: Organization website */}
+          {org.website && org.website_status === 'ok' ? (
+            <a
+              href={org.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block p-3 bg-navy-dark/5 border border-navy-dark/20 rounded-lg hover:bg-navy-dark/10 transition"
+            >
+              <p className="font-semibold text-navy-dark text-sm">Visit {new URL(org.website).hostname}</p>
+              <p className="text-xs text-cool-grey mt-1">Look for "Donate" on their site</p>
+            </a>
+          ) : null}
+
+          {/* Fallback 2: EIN-based giving (DAF, checks) */}
+          {org.ein ? (
+            <div className="p-3 bg-navy-dark/5 border border-navy-dark/20 rounded-lg">
+              <p className="font-semibold text-navy-dark text-sm">Give by EIN</p>
+              <p className="text-xs text-cool-grey mt-1">EIN: {org.ein}</p>
+              <p className="text-xs text-cool-grey mt-2">
+                Use this to donate via donor-advised fund (DAF), bank transfer, or check payment.
+              </p>
+            </div>
+          ) : null}
+
+          {/* Fallback 3: Contact directly */}
+          {org.street_address || org.phone ? (
+            <div className="p-3 bg-navy-dark/5 border border-navy-dark/20 rounded-lg">
+              <p className="font-semibold text-navy-dark text-sm">Contact directly</p>
+              {org.street_address && (
+                <p className="text-xs text-cool-grey mt-1">{org.street_address}</p>
+              )}
+              {org.phone && (
+                <p className="text-xs text-cool-grey mt-1">{org.phone}</p>
+              )}
+              <p className="text-xs text-cool-grey mt-2">Call or write to ask about giving options.</p>
+            </div>
+          ) : null}
+
+          {/* Meta: Help us improve */}
+          <div className="p-3 bg-soft-gold/10 border border-soft-gold/30 rounded-lg">
+            <p className="text-xs text-navy-mid">
+              <strong>Help us help you:</strong> If you know their donation process, <a href="#mistake-registry" className="text-warm-red hover:underline">tell us here</a> so we can verify it for others.
             </p>
-          )}
-        </InfoBlock>
-      ) : (
-        <InfoBlock
-          title="How to Give"
-          isMissing
-          missingReason="We haven't verified a donation link yet. Visit their website or call them directly to give."
-        />
-      )}
+          </div>
+        </div>
+      </InfoBlock>
 
       {/* TIER 4: Website (70%+) */}
       {dataAvailable.website && org.website && (
