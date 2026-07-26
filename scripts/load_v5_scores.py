@@ -1,115 +1,79 @@
 #!/usr/bin/env python3
-"""
-Load v5.0 scores from JSON into registry_enriched table.
-Run after merit_scorer_v5_0.py completes.
+"""Load v5 scorer output into merit_registry.db"""
 
-Usage:
-    python3 scripts/load_v5_scores.py scores_v5_0.json
-"""
-import sqlite3
 import json
-import sys
+import sqlite3
 from pathlib import Path
-from datetime import datetime, timezone
+import logging
 
-if len(sys.argv) < 2:
-    print("Usage: python3 load_v5_scores.py <scores.json>")
-    sys.exit(1)
+DB_PATH = Path('data/merit_registry.db')
+SCORES_FILE = Path('scores_v5_0_full.json')
+LOG_DIR = Path('logs')
 
-scores_file = Path(sys.argv[1])
-db_path = Path.home() / "meritgiving/data/merit_registry.db"
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_DIR / 'load_v5_scores.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-if not scores_file.exists():
-    print(f"Error: {scores_file} not found")
-    sys.exit(1)
+def load_scores():
+    logger.info(f"Loading scores from {SCORES_FILE}")
+    with open(SCORES_FILE) as f:
+        data = json.load(f)
+    return data['scores']
 
-print(f"[*] Loading v5.0 scores from {scores_file}")
-with open(scores_file) as f:
-    data = json.load(f)
+def update_db(scores):
+    conn = sqlite3.connect(str(DB_PATH))
+    c = conn.cursor()
 
-# Handle both direct list and wrapped format
-scores = data if isinstance(data, list) else data.get('scores', [])
-print(f"[*] Loaded {len(scores)} v5.0 scores")
+    logger.info(f"Updating {len(scores):,} orgs")
 
-conn = sqlite3.connect(db_path)
-c = conn.cursor()
+    updated = 0
+    for i, score in enumerate(scores):
+        if i % 100000 == 0:
+            logger.info(f"  {i:,}/{len(scores):,}")
 
-# Update each org with its v5 score
-loaded = 0
-for score_data in scores:
-    ein = score_data.get('ein')
-    if not ein:
-        continue
+        ein = score.get('ein')
+        if not ein:
+            continue
 
-    merit_score_v5 = score_data.get('reserves_percentile')
-    archetype_label = score_data.get('archetype')
-    band_label = score_data.get('band')
-    health_signal = score_data.get('health_signal')
+        # Map score fields to DB columns
+        updates = {
+            'merit_archetype_v5': score.get('archetype_key'),
+            'merit_archetype_v5_label': score.get('archetype'),
+            'merit_band_v5': score.get('band_key'),
+            'merit_band_v5_label': score.get('band'),
+            'merit_score_v5': score.get('reserves_percentile'),
+            'merit_health_signal_v5': score.get('health_signal'),
+            'merit_peer_group_v5': score.get('peer_group_label'),
+            'merit_peer_count_v5': score.get('peer_org_count'),
+        }
 
-    c.execute("""
-        UPDATE registry_enriched
-        SET merit_score_v5 = ?,
-            merit_archetype_v5_label = ?,
-            merit_band_v5_label = ?,
-            merit_health_signal_v5 = ?
-        WHERE EIN = ?
-    """, (
-        merit_score_v5,
-        archetype_label,
-        band_label,
-        health_signal,
-        ein
-    ))
-    loaded += 1
-    if loaded % 50000 == 0:
-        print(f"  [{loaded}/{len(scores)}] ...")
+        # Build UPDATE query
+        set_clause = ', '.join([f"{k} = ?" for k in updates.keys()])
+        values = list(updates.values()) + [ein]
+        query = f"UPDATE registry_enriched SET {set_clause} WHERE ein = ?"
 
-# Record this scoring run
-run_ts = datetime.now(timezone.utc).isoformat()
-total_scored = data.get('total_scored', len(scores)) if isinstance(data, dict) else len(scores)
+        try:
+            c.execute(query, values)
+            updated += 1
+        except Exception as e:
+            logger.error(f"Error updating {ein}: {e}")
 
-c.execute("""
-    INSERT INTO scoring_runs (
-        run_id, scorer_version, started_at, completed_at,
-        input_ein_count, scorable_count, output_ein_count,
-        notes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-""", (
-    f'v5_0_full_{run_ts}',
-    'v5.0',
-    datetime.now(timezone.utc).isoformat(),
-    datetime.now(timezone.utc).isoformat(),
-    1871724,  # canonical deductible count
-    total_scored,
-    loaded,
-    f'Full v5.0 recomputation: {total_scored} scored, 3 archetypes (Donation/Fee/Endowment), 3 bands'
-))
+    conn.commit()
+    conn.close()
 
-# Capture score history (2026-07-18): score_snapshots existed with zero rows
-# — no peer-trend-over-time was possible for the nonprofit dashboard. One
-# snapshot per EIN per week (not every night) keeps growth bounded to ~20M
-# rows/year across ~400K scored orgs while still giving weekly-resolution
-# trend data within a couple months.
-c.execute("""
-    INSERT INTO score_snapshots (
-        EIN, snapshot_date, peer_percentile, total_revenue, total_assets,
-        peer_group, group_key, group_size, scorer_version
-    )
-    SELECT r.EIN, date('now'), r.merit_score_v5, r.total_revenue, r.total_assets,
-           r.merit_peer_group_v5, r.merit_peer_group_v5, r.merit_peer_count_v5, 'v5.0'
-    FROM registry_enriched r
-    WHERE r.merit_score_v5 IS NOT NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM score_snapshots s
-          WHERE s.EIN = r.EIN AND julianday('now') - julianday(s.snapshot_date) < 7
-      )
-""")
-snapshot_count = c.rowcount
-print(f"[✓] Score history: {snapshot_count} new weekly snapshots written")
+    logger.info(f"Updated {updated:,} orgs")
 
-conn.commit()
-conn.close()
+def main():
+    logger.info("Loading v5 Scores into Database")
+    scores = load_scores()
+    update_db(scores)
+    logger.info("Done")
 
-print(f"[✓] Updated {loaded} organizations with v5.0 scores")
-print(f"[✓] Scores last updated: {run_ts}")
-print(f"[→] Restart API to load new scores: systemctl restart daanaa")
+if __name__ == '__main__':
+    main()

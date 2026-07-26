@@ -37,6 +37,7 @@ import GiveYourWayRouter from '../components/GiveYourWayRouter'
 import VolunteerInterest from '../components/VolunteerInterest'
 import RecurringSetup from '../components/RecurringSetup'
 import DataContextNote from '../components/DataContextNote'
+import FinancialContext from '../components/FinancialContext'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -876,6 +877,11 @@ export default function OrganizationDetail() {
       {/* Financial & Governance Context — now always visible, not collapsible */}
       <div className="py-12 md:py-16">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+
+          {/* v6.0 Tiered Peer Context — replaces v5 + cohort context */}
+          {apiOrg! && apiOrg!.scoring_tier && (
+            <FinancialContext org={apiOrg!} />
+          )}
 
           {/* Section header */}
           {(apiOrg!.v5_context || apiOrg!.cohort_context || apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (

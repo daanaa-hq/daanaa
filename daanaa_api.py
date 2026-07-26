@@ -2600,6 +2600,16 @@ def get_organization(ein):
     except Exception:
         org['upcoming_events_count'] = 0
 
+    # v6.0 Tiered peer context system: confidence levels for financial scoring
+    # Tier 1 (high): NTEE2 × Band × Region (≥25 scoreable peers)
+    # Tier 2 (good): NTEE2 × Band national (≥20 scoreable peers)
+    # Tier 3 (moderate): NTEE2 only (≥5 scoreable peers)
+    # Tier 4 (archetype): No peer group (no reserves data)
+    org['scoring_tier'] = org.get('scoring_tier')  # e.g., "1_Full_Context"
+    org['confidence'] = org.get('confidence')      # "high", "good", "moderate", "archetype_only"
+    org['peer_group_size'] = org.get('peer_group_size')  # count of comparable orgs
+    org['peer_group_description'] = org.get('peer_group_description')  # e.g., "Food banks, Grassroots, Midwest"
+
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)

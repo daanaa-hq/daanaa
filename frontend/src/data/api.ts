@@ -68,6 +68,11 @@ export interface ApiOrganization {
   merit_score?: number | null;       // 0-100 financial-health score
   merit_band?: string | null;        // journey band e.g. 'Blazing' | 'Burning Bright' | 'Steady Flame' | 'Growing' | 'Just Starting'
   score_tier?: string | null;        // 'full' | 'partial' | 'revenue_only' — data confidence level
+  // v6.0 Tiered peer context system (replaces v5 for frontend display)
+  scoring_tier?: string | null;      // '1_Full_Context' | '2_Regional_Context' | '3_Broad_Category' | '4_Archetype_Only'
+  confidence?: string | null;        // 'high' | 'good' | 'moderate' | 'archetype_only'
+  peer_group_size?: number | null;   // count of comparable orgs in the peer group
+  peer_group_description?: string | null; // e.g., "Food banks, Grassroots, Midwest region"
   // v5.0 peer-based financial context (archetype × revenue band). Present only
   // for orgs we have financials for; null otherwise (then cohort_context fills in).
   v5_context?: {

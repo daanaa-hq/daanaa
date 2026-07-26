@@ -1,3 +1,4 @@
+import React from 'react'
 import type { ApiOrganization } from '../data/api'
 
 interface FinancialContextProps {
@@ -5,115 +6,71 @@ interface FinancialContextProps {
 }
 
 export default function FinancialContext({ org }: FinancialContextProps) {
-  if (!org.financial_context) return null
+  const tier = org.scoring_tier
+  if (!tier) return null
 
-  const fc = org.financial_context
-  const isIncomplete = fc.status === 'DATA_INCOMPLETE'
-  const isHealthy = fc.status === 'VERIFIED_HEALTHY'
-  const isNote = fc.status === 'FINANCIAL_NOTE'
-
-  // Color schemes per status type
-  const getStyle = () => {
-    if (isIncomplete) {
-      return {
-        bg: 'bg-slate-50',
-        border: 'border-slate-200',
-        label: 'text-slate-600',
-        badge: 'bg-slate-100 text-slate-700',
-      }
-    }
-    if (isHealthy) {
-      return {
-        bg: 'bg-success-green/5',
-        border: 'border-success-green/20',
-        label: 'text-success-green',
-        badge: 'bg-success-green/10 text-success-green',
-      }
-    }
-    // FINANCIAL_NOTE
-    return {
-      bg: 'bg-alert-amber/5',
-      border: 'border-alert-amber/20',
-      label: 'text-alert-amber',
-      badge: 'bg-alert-amber/10 text-alert-amber',
-    }
-  }
-
-  const style = getStyle()
-
-  return (
-    <div className={`rounded-lg border p-6 ${style.bg} ${style.border}`}>
-      <div className="space-y-5">
-        {/* Header with status badge */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 className={`font-body text-xs tracking-widest uppercase font-semibold ${style.label}`}>
-              Financial Health Assessment
-            </h3>
-            <p className={`font-body text-lg font-semibold mt-2 ${style.label}`}>
-              {isIncomplete && 'Data Under Verification'}
-              {isHealthy && 'Healthy Financial Position'}
-              {isNote && 'Financially Strained'}
-            </p>
-          </div>
-          <span className={`inline-block px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${style.badge}`}>
-            {fc.confidence} confidence
+  if (tier === '1_Full_Context' || tier === '2_Regional_Context') {
+    const isT1 = tier === '1_Full_Context'
+    return (
+      <div className="rounded-lg border border-cool-grey/20 bg-cool-grey/5 p-6 mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-semibold">Financial Context</h2>
+          <span className={`text-xs px-2 py-1 rounded ${isT1 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+            {isT1 ? 'High' : 'Good'} Confidence
           </span>
         </div>
-
-        {/* Peer comparison (if available) */}
-        {!isIncomplete && fc.peer_model && (
-          <div className="space-y-3">
-            <div className="text-xs text-cool-grey">
-              Peer group: <span className="font-semibold">{fc.peer_model.replace(/_/g, ' ')}</span>
+        <div className="grid grid-cols-3 gap-6">
+          <div>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Funding Model</p>
+            <p className="font-semibold mb-2">{org.merit_archetype_v5_label}</p>
+            <p className="text-xs text-gray-600">Peer Group: {org.peer_group_size} orgs</p>
+            <p className="text-xs text-gray-500 italic">{org.peer_group_description}</p>
+          </div>
+          {org.months_of_reserve !== null ? (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 mb-1">Reserves</p>
+              <p className="font-semibold text-lg">{org.months_of_reserve.toFixed(1)} mo</p>
+              <p className="text-xs text-gray-600 mt-3">Signal</p>
+              <p className="text-sm font-semibold">{org.merit_health_signal_v5}</p>
             </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="text-center">
-                <span className="block text-xs text-cool-grey mb-1.5">Peer Baseline</span>
-                <span className={`block font-body text-3xl font-bold ${style.label}`}>
-                  {fc.peer_baseline.toFixed(0)}
-                </span>
-                <span className="text-xs text-cool-grey">months reserve</span>
-              </div>
-              {fc.months_reserve !== null && (
-                <div className="text-center">
-                  <span className="block text-xs text-cool-grey mb-1.5">This Organization</span>
-                  <span className={`block font-body text-3xl font-bold ${style.label}`}>
-                    {fc.months_reserve.toFixed(0)}
-                  </span>
-                  <span className="text-xs text-cool-grey">months reserve</span>
-                </div>
+          ) : null}
+          {org.board_size ? (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 mb-1">Governance</p>
+              <p className="font-semibold">{org.board_size} board members</p>
+              {org.nccs_program_ratio && (
+                <>
+                  <p className="text-xs text-gray-600 mt-3">Program Spending</p>
+                  <p className="font-semibold">{(org.nccs_program_ratio * 100).toFixed(0)}%</p>
+                </>
               )}
             </div>
-          </div>
-        )}
-
-        {/* Explanation — neutral dark for readability, not tinted */}
-        <p className="font-body text-[15px] leading-relaxed text-slate">
-          {fc.explanation}
-        </p>
-
-        {/* Data issues (if present) */}
-        {fc.data_issues && fc.data_issues.length > 0 && (
-          <div className="space-y-2 pt-2">
-            <p className="text-xs text-cool-grey">Data quality flags:</p>
-            <div className="flex flex-wrap gap-2">
-              {fc.data_issues.map(issue => (
-                <span key={issue} className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${style.badge}`}>
-                  {issue.replace(/_/g, ' ')}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Confidence disclaimer */}
-        {fc.confidence === 'LOW' && (
-          <p className="text-xs text-cool-grey italic pt-2">
-            Some of this organization's financial filings are still being processed, so this context is partial. We're working to bring in their latest information.
-          </p>
-        )}
+          ) : null}
+        </div>
+        {!isT1 && <p className="text-xs text-amber-700 mt-4 pt-4 border-t">⚠ National group spans all regions</p>}
       </div>
-    </div>
-  )
+    )
+  }
+
+  if (tier === '3_Broad_Category') {
+    return (
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 mb-8">
+        <h2 className="text-lg font-semibold mb-3">Funding Model Context</h2>
+        <p className="text-xs text-amber-800 mb-3">⚠ Peer group includes all sizes. Small scale operates differently.</p>
+        <p className="text-xs text-gray-700 mb-2"><strong>Ask them:</strong> Emergency reserve? Funding mix? Growth vision?</p>
+      </div>
+    )
+  }
+
+  if (tier === '4_Archetype_Only') {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 mb-8">
+        <h2 className="text-lg font-semibold mb-3">We're Still Learning</h2>
+        <p className="text-xs text-gray-700 mb-2">No financial data yet — not a quality issue. Many grassroots orgs file simplified forms.</p>
+        <p className="text-xs text-gray-600"><strong>Ask them:</strong> Operating reserve? Funding sources? Financial goals?</p>
+      </div>
+    )
+  }
+
+  return null
 }
