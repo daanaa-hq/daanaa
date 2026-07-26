@@ -12466,10 +12466,9 @@ def research_datasets():
     return jsonify({'dataset_count': len(datasets), 'datasets': datasets}), 200
 
 
-# ── Register student service blueprint ──────────────────────────────────────────
-
-from student_service_api_routes import student_bp
-app.register_blueprint(student_bp)
+# ── Student service routes run on daanaa_api.py (main backend), not on droplet ──
+# The droplet is a lightweight SPA + precompute server; student_service_api_routes
+# is not available in the droplet environment and not needed here.
 
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
