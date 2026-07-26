@@ -120,6 +120,45 @@ detection here worked only because the jobs were minutes old.
 
 # LESSONS.md
 
+## 2026-07-26: A monitor watching the wrong table cried wolf for hours
+
+**Symptom:** `blitz_efficiency_tracker.py` reported `0.0% SEVERE DROP` on every
+run across several hours. The daemon was healthy the entire time, queuing 772
+links/hour.
+
+**Root cause, two compounding bugs:**
+
+1. **Wrong table.** The tracker measured `registry_enriched.donate_url`, but the
+   pipeline is batched: the daemon queues into `link_deployment_queue`
+   continuously, and `deploy_queued_links.py` drains that into `donate_url` only
+   every 4 hours (cron `0 */4 * * *`). Between drains `donate_url` cannot change,
+   so the tracker read 0/h no matter how well the daemon ran. It was watching the
+   pipeline's output on a cadence that only made sense for its input.
+
+2. **Self-referential window.** It computed deltas against a state file it
+   rewrote on every run, while labelling the result "/2h". Two runs minutes apart
+   always showed zero by construction.
+
+**How I made it worse:** on the first 0% reading I offered a plausible
+explanation (recent daemon restart) without checking. That was wrong, and it cost
+an hour before the real diagnosis. A monitor disagreeing with reality deserves
+verification, not a story that makes the reading go away.
+
+**Fix:** measure `link_deployment_queue` growth from row timestamps
+(`created_at > datetime('now','-15 minutes')`), so the reading never depends on
+when the tracker last ran. Alert only on a genuine stall (nothing queued for 20
+minutes), with queue backlog surfaced separately since a stalled drain is a
+different failure from a dead daemon.
+
+**Preventing rule:** a monitor must measure the stage it claims to measure, at
+that stage's own cadence. Before trusting a metric, confirm which table it reads
+and how often that table can change. And test the alarm path on synthetic inputs
+before shipping: this monitor had only ever been observed in the healthy state,
+which is precisely why nobody noticed it could not distinguish healthy from dead.
+
+---
+
+
 Append-only engineering memory. Each entry: **symptom → root cause → rule that
 prevents recurrence.** Never make the same mistake twice. Consolidate into
 `CLAUDE.md` rules every ~5–10 entries.

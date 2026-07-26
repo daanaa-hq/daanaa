@@ -1,106 +1,130 @@
 #!/usr/bin/env python3
 """
 Website search blitz efficiency tracker — phase-aware.
-Monitors discovery and link extraction throughput every 2 hours.
-Detects phase transitions automatically.
+
+Measures live discovery throughput from `link_deployment_queue` row timestamps.
+
+Why not registry_enriched.donate_url (the previous approach): the pipeline is
+batched. The daemon queues links continuously, but `deploy_queued_links.py`
+drains the queue into `registry_enriched.donate_url` only every 4 hours (cron
+`0 */4 * * *`). Watching donate_url therefore reports 0/h for the ~4 hours
+between drains no matter how well the daemon is running.
+
+The old version compounded that by computing deltas against a state file it
+rewrote on every run, so two runs minutes apart always showed zero. On
+2026-07-26 it reported "0.0% SEVERE DROP" while the daemon was queuing 772
+links/hour. See LESSONS.md.
+
+Wall-clock windows off the row timestamps fix both: the reading no longer
+depends on when the tracker last ran.
 """
 import sqlite3
-import json
+import sys
 from pathlib import Path
 from datetime import datetime
 
 DB = Path.home() / 'meritgiving/data/merit_registry.db'
 LOG_DIR = Path.home() / 'meritgiving/logs'
-STATE_FILE = LOG_DIR / '.blitz_state.json'
 ALERT_FILE = LOG_DIR / 'blitz_efficiency_alert.log'
 
-def load_state():
-    """Load previous checkpoint."""
-    if STATE_FILE.exists():
-        return json.loads(STATE_FILE.read_text())
-    return {'websites': 0, 'donate_links': 0, 'timestamp': None, 'phase': 'discovery'}
+# Discovery is bounded by how many orgs permit crawling (robots.txt is honoured
+# per DECISIONS.md 2026-07-18), not by hardware. 100/h is a healthy floor.
+TARGET_LINKS_PER_HOUR = 100.0
 
-def save_state(state):
-    """Save current checkpoint."""
-    STATE_FILE.write_text(json.dumps(state))
+# Stale queue rows mean the daemon stopped even if the drain looks fine.
+STALL_MINUTES = 20
 
-def get_discovery_counts():
-    """Get current discovery progress."""
-    conn = sqlite3.connect(str(DB))
-    cursor = conn.cursor()
-    
-    cursor.execute("SELECT COUNT(*) FROM registry_enriched WHERE website IS NOT NULL AND website != ''")
-    websites = cursor.fetchone()[0]
-    
-    cursor.execute("SELECT COUNT(*) FROM registry_enriched WHERE donate_url IS NOT NULL")
-    donate_links = cursor.fetchone()[0]
-    
-    conn.close()
-    return websites, donate_links
 
-def detect_phase(delta_sites, delta_links):
-    """Detect current pipeline phase."""
-    if delta_sites > delta_links * 2:
-        return 'discovery'
-    elif delta_links > 0:
-        return 'link_extraction'
-    else:
-        return 'processing'
+def query(conn, sql, default=0):
+    try:
+        row = conn.execute(sql).fetchone()
+        return row[0] if row and row[0] is not None else default
+    except sqlite3.Error:
+        return default
+
 
 def main():
     now = datetime.now()
-    prev_state = load_state()
-    websites, donate_links = get_discovery_counts()
-    
-    # Calculate deltas
-    delta_websites = websites - prev_state.get('websites', websites)
-    delta_links = donate_links - prev_state.get('donate_links', donate_links)
-    
-    # Throughput per 2-hour interval
-    sites_per_hour = (delta_websites / 2.0) if delta_websites > 0 else 0
-    links_per_hour = (delta_links / 2.0) if delta_links > 0 else 0
-    
-    # Detect phase
-    phase = detect_phase(delta_websites, delta_links)
-    phase_change = " ⏭️ PHASE CHANGE" if phase != prev_state.get('phase', 'discovery') else ""
-    
-    # Efficiency depends on phase
-    if phase == 'discovery':
-        efficiency = min(100, (sites_per_hour / 500.0) * 100)  # Target: 500 sites/h
-        primary_metric = f"Sites: {delta_websites:+6d}/2h ({sites_per_hour:6.0f}/h)"
-    else:
-        efficiency = min(100, (links_per_hour / 100.0) * 100)  # Target: 100 links/h
-        primary_metric = f"Links: {delta_links:+6d}/2h ({links_per_hour:6.0f}/h)"
-    
     ts = now.strftime('%Y-%m-%d %H:%M:%S')
-    status = "✓"
-    
+
+    try:
+        conn = sqlite3.connect(f'file:{DB}?mode=ro', uri=True, timeout=10)
+    except sqlite3.Error as exc:
+        print(f"[{ts}] ✗ cannot open {DB}: {exc}", file=sys.stderr)
+        return 1
+
+    with conn:
+        # Live throughput, measured from row timestamps rather than from
+        # whenever this script last happened to run.
+        last_hour = query(conn, """
+            SELECT COUNT(*) FROM link_deployment_queue
+            WHERE created_at > datetime('now', '-1 hour')
+        """)
+        last_15m = query(conn, """
+            SELECT COUNT(*) FROM link_deployment_queue
+            WHERE created_at > datetime('now', '-15 minutes')
+        """)
+        pending = query(conn, """
+            SELECT COUNT(*) FROM link_deployment_queue WHERE status = 'pending'
+        """)
+        minutes_idle = query(conn, """
+            SELECT CAST((julianday('now') - julianday(MAX(created_at))) * 1440 AS INT)
+            FROM link_deployment_queue
+        """, default=99999)
+        deployed_total = query(conn, """
+            SELECT COUNT(*) FROM link_deployment_queue WHERE status = 'deployed'
+        """)
+
+    # 15-minute rate is the responsive signal; the hourly count is context.
+    rate = last_15m * 4.0
+    efficiency = min(100.0, (rate / TARGET_LINKS_PER_HOUR) * 100)
+
+    if minutes_idle >= STALL_MINUTES:
+        phase, status = 'stalled', '✗'
+    elif pending == 0 and last_hour == 0:
+        phase, status = 'idle', '·'
+    else:
+        phase, status = 'discovering', '✓'
+
     log_line = (
-        f"[{ts}] {status} Phase: {phase:17s} | {primary_metric:30s} | "
-        f"Efficiency: {efficiency:5.1f}%{phase_change}"
+        f"[{ts}] {status} Phase: {phase:12s} | "
+        f"Links: {last_15m:4d}/15m ({rate:5.0f}/h) | "
+        f"1h: {last_hour:5d} | pending: {pending:5d} | "
+        f"Efficiency: {efficiency:5.1f}%"
     )
-    
     print(log_line)
-    
-    # Log to file
+
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     with open(LOG_DIR / 'blitz_efficiency.log', 'a') as f:
         f.write(log_line + '\n')
-    
-    # Only alert on severe drop within same phase
-    if efficiency < 30:
-        alert = f"[{ts}] ⚠️  SEVERE DROP: {efficiency:.1f}% efficiency in {phase} phase. Check process.\n"
+
+    # Alert only on a real stall: nothing queued for STALL_MINUTES. A low rate
+    # during a quiet stretch is normal and must not page anyone, or the alert
+    # gets ignored and a genuine stall looks identical to noise.
+    if phase == 'stalled':
+        alert = (
+            f"[{ts}] ⚠️  STALLED: no links queued in {minutes_idle} minutes "
+            f"(threshold {STALL_MINUTES}). Check: ps aux | grep discovery_daemon; "
+            f"tail logs/discovery_daemon.log\n"
+        )
         with open(ALERT_FILE, 'a') as f:
             f.write(alert)
         print(alert, end='')
-    
-    # Save state for next iteration
-    save_state({
-        'websites': websites,
-        'donate_links': donate_links,
-        'timestamp': ts,
-        'efficiency': efficiency,
-        'phase': phase,
-    })
+        return 1
+
+    # Backlog only grows if the 4-hourly drain stopped. Worth surfacing, but it
+    # is a different failure from the daemon dying.
+    if pending > 5000:
+        print(
+            f"[{ts}] ⚠️  Queue backlog {pending}. deploy_queued_links.py runs "
+            f"0 */4 * * *; check logs/deployment_cron.log.\n",
+            end='',
+        )
+
+    if deployed_total:
+        print(f"          lifetime deployed: {deployed_total}")
+    return 0
+
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
