@@ -100,6 +100,24 @@ else
   echo -e "${GREEN}✅${NC}"
 fi
 
+# Check 7: Inline scripts in index.html
+# Production sends `script-src 'self'` with no 'unsafe-inline' and no hash, so
+# any inline <script> is silently blocked on daanaa.org while working fine in
+# local preview (which sends no CSP). That exact gap meant the theme init
+# script never ran in production and light mode never survived a page load.
+echo -n "Checking for CSP-blocked inline scripts... "
+inline_js=$(awk '/<script(>| [^>]*[^\/])>/{ if ($0 !~ /src=/) print FILENAME": "NR": "$0 }' \
+  "$FRONTEND/index.html" 2>/dev/null || true)
+if [ -n "$inline_js" ]; then
+  echo -e "${RED}❌ Found${NC}"
+  echo "$inline_js" | head -3 | sed 's/^/   /'
+  echo "    Production CSP blocks inline scripts. Move it to public/ and load"
+  echo "    with <script src=\"/your-file.js\"></script> ('self' permits it)."
+  violations=$((violations + 1))
+else
+  echo -e "${GREEN}✅${NC}"
+fi
+
 echo ""
 echo "========================================"
 if [ $violations -eq 0 ]; then

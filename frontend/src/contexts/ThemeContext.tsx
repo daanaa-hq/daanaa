@@ -1,10 +1,16 @@
 import { createContext, useContext, useState } from 'react'
 
 // Light/dark theme toggle. The saved theme is applied to <html data-theme>
-// by an inline script in index.html BEFORE React mounts (no flash of wrong
+// by /theme-init.js, loaded from <head> BEFORE React mounts (no flash of wrong
 // theme); this context just keeps React state in sync and handles toggling.
 // Light mode works by overriding the CSS custom properties in index.css
-// ([data-theme="light"]) that the .bg-*/.text-* utility classes read.
+// ([data-theme="light"]) that the .bg-*/.text-* utility classes read, and by
+// suppressing Tailwind's dark: variants (see darkMode in tailwind.config.js).
+//
+// theme-init.js is a separate file, not inline, because production sends
+// `script-src 'self'` with no 'unsafe-inline'. The previous inline version was
+// silently blocked by CSP, so light mode never survived a page load on
+// daanaa.org. Do not move this logic back inline.
 
 type Theme = 'light' | 'dark'
 
