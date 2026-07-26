@@ -805,11 +805,6 @@ export default function OrganizationDetail() {
                           </div>
                         )}
                       </div>
-                      {!apiOrg!.street_address && (
-                        <p className="mt-2.5 font-body text-[11px] text-muted-cream/60">
-                          Most donor-advised funds accept gifts to any IRS-recognized nonprofit by EIN alone.
-                        </p>
-                      )}
                     </div>
 
                     {/* Secondary CTAs: Ways to Give guides */}
