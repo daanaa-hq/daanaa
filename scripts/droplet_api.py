@@ -2169,7 +2169,7 @@ def _meta_for_path(path: str):
 # Prevents probe paths (/.env, /.git/config, /backup.zip) from getting a soft 200.
 _SPA_PREFIXES = {
     '', 'directory', 'category', 'causes', 'org', 'compare', 'legal',
-    'how-it-works', 'wallet', 'giving-wallet', 'for-nonprofits', 'about',
+    'how-it-works', 'wallet', 'giving-wallet', 'giving', 'for-nonprofits', 'about',
     'principles', 'governance', 'stewardship', 'why-daanaa-exists', 'tiers',
     'methodology', 'sector-health', 'learn', 'guides', 'faq', 'feedback',
     'partners', 'for-vendors', 'vendor-policy', 'terms', 'guild', 'member',
