@@ -811,6 +811,14 @@ export default function OrganizationDetail() {
                         </p>
                       )}
                     </div>
+
+                    {/* Secondary CTA: Donor-Advised Fund guide */}
+                    <Link
+                      to="/giving-via-daf"
+                      className="mt-3 inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
+                    >
+                      Learn how to give via donor-advised fund →
+                    </Link>
                   </>
                 );
               })()}
