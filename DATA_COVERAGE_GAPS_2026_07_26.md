@@ -2,16 +2,30 @@
 
 ## 📋 Pages Affected (Showing Financial Data/Coverage)
 
-**Currently displaying scoring/coverage info (need updates):**
-- `frontend/src/pages/OrganizationDetail.tsx` — org detail pages (2.06M orgs)
-- `frontend/src/pages/Methodology2.tsx` — methodology & explanation
+**Core pages displaying org scores/financial data (9 pages):**
+- `frontend/src/pages/OrganizationDetail.tsx` — org detail pages (2.06M orgs) — PRIMARY
+- `frontend/src/pages/Directory.tsx` — search results with scores
+- `frontend/src/pages/CategoryPage.tsx` — category filtering + scores
+- `frontend/src/pages/Methodology2.tsx` — methodology & explanation — PRIMARY
+- `frontend/src/pages/ResearchDashboard.tsx` — research/stats overview
+- `frontend/src/pages/WalletPage.tsx` — donor wallet (shows bookmarked org data)
 - `frontend/src/components/V5Context.tsx` — financial context component
 - `frontend/src/components/FinancialContext.tsx` — score display
-- `frontend/src/pages/ResearchDashboard.tsx` — research/stats overview
-- `frontend/src/pages/Directory.tsx` — search results with scores
-- `frontend/src/pages/CategoryPage.tsx` — category filtering
 - `frontend/src/components/OrgInfoHierarchy.tsx` — org info display (recently added)
-- `frontend/src/pages/WalletPage.tsx` — donor wallet
+
+**Secondary pages displaying org data/stats (11 pages — added per sitemap audit):**
+- `frontend/src/pages/ComparePage.tsx` — side-by-side comparison of multiple orgs + scores
+- `frontend/src/pages/CauseSpotlight.tsx` — featured org rotation + scores
+- `frontend/src/pages/OpenData.tsx` — data exports, org counts, aggregated statistics
+- `frontend/src/pages/SectorHealth.tsx` — sector-level analytics, org distribution by tier
+- `frontend/src/pages/TiersPage.tsx` — tier system explanation + tier distribution charts
+- `frontend/src/pages/NonprofitDashboard.tsx` — org admin dashboard showing their own data + peer context
+- `frontend/src/pages/OrgClaimEditor.tsx` — org claim editing, displays org financial data for verification
+- `frontend/src/pages/PartnerDetail.tsx` — partner profile, may display org counts/stats
+- `frontend/src/pages/GuildPage.tsx` — guild/community page, may display org counts
+- `frontend/src/pages/VolunteerDiscoveryPage.tsx` — volunteer search, may show org/event data
+- `frontend/src/pages/VolunteerSearch.tsx` — volunteer search results, org/event display
+- `frontend/src/pages/DonationReceipt.tsx` — post-donation confirmation, shows confirmed org
 
 **Will need new components:**
 - `CoverageVisualization.tsx` (5 new charts for Methodology page)

@@ -9,10 +9,15 @@
   - Copy changes: "Data limits" section expanded
   - Copy changes: "Lamp tiers" section clarified for small orgs
 
-**Secondary pages needing copy alignment:**
+**Secondary pages needing copy alignment (8 pages — expanded per sitemap audit):**
 - `frontend/src/pages/About.tsx` — Add link to methodology coverage section
 - `frontend/src/pages/Approach.tsx` — Emphasize "honest about data gaps"
 - `frontend/src/pages/OrganizationDetail.tsx` — Show confidence badge next to every score
+- `frontend/src/pages/OpenData.tsx` — Add data freshness date + confidence notes on exports
+- `frontend/src/pages/SectorHealth.tsx` — Add "Data coverage by tier" section + link to methodology
+- `frontend/src/pages/TiersPage.tsx` — Explain why 69% of orgs lack tier data + link to methodology
+- `frontend/src/pages/ResearchDashboard.tsx` — Add "Data confidence" legend to all visualizations
+- `frontend/src/pages/ComparePage.tsx` — Show confidence level for each org being compared
 
 **Components needing creation/update:**
 - `frontend/src/components/CoverageVisualization.tsx` (NEW) — 5 charts

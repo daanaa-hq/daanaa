@@ -19,15 +19,16 @@
 - `frontend/src/pages/CategoryPage.tsx` — Category headers
 
 ### CRITICAL: Missing Line-Height on Body Text
-**ALL pages with paragraphs (60+ files):**
-- Entire `frontend/src/pages/` directory
-- Entire `frontend/src/components/` directory
-- Affects: body, p, .font-body elements
+**ALL 60 pages in frontend/src/pages/ (comprehensive list):**
+- About.tsx, AdminCampaigns.tsx, AdminOperations.tsx, AdminPage.tsx, Approach.tsx, CategoryPage.tsx, CauseSpotlight.tsx, Charter.tsx, ClaimSuccess.tsx, ClaimVerify.tsx, ComparePage.tsx, DashboardHub.tsx, Directory.tsx, DonationReceipt.tsx, DonorFeedback.tsx, EmailAutomationDashboard.tsx, EventDetailPage.tsx, EventLogHours.tsx, Feedback.tsx, ForNonprofits.tsx, ForVendors.tsx, Governance.tsx, GuidedDiscovery.tsx, GuildPage.tsx, GuildReferral.tsx, Home.tsx, InvisibleLight.tsx, LearningDashboard.tsx, Legal.tsx, MeetInvisible.tsx, MemberBenefits.tsx, Methodology2.tsx, NonprofitDashboard.tsx, NonprofitVerification.tsx, NotFound.tsx, OpenData.tsx, OrganizationDetail.tsx, OrgClaimEditor.tsx, PartnerDetail.tsx, Partners.tsx, PilotSignup.tsx, Principles.tsx, PrivacyPolicy.tsx, Privacy.tsx, ProfileContextsPage.tsx, ResearchDashboard.tsx, SectorHealth.tsx, Security.tsx, SettingsPage.tsx, SocialManagerDashboard.tsx, SocialMediaDashboard.tsx, Terms.tsx, TiersPage.tsx, VendorPolicy.tsx, VerificationDashboard.tsx, VolunteerDiscoveryPage.tsx, VolunteerSearch.tsx, VolunteerSubmission.tsx, WalletPage.tsx, WalletPageV2.tsx, WhyDaanaa.tsx
+- **Plus entire `frontend/src/components/` directory** (all component files with body text)
+- **Affects:** body, p, .font-body elements site-wide
 
 ### CRITICAL: Light Mode Gold Contrast Fails WCAG AA
-**All pages in light mode:**
+**All 60 pages in light mode:**
 - Any page with gold/accent text on light background
 - Affects: links, badges, buttons, accent text
+- **All pages affected:** Home, About, Approach, CategoryPage, ComparePage, Directory, OrganizationDetail, WalletPage, ResearchDashboard, Methodology2, and all others with interactive elements
 - Currently failing: --merit-gold-rgb: 139 111 71 (3.8:1 on white)
 - Need: #654C26 or darker (5.2:1+)
 
