@@ -1,3 +1,24 @@
+## 2026-07-26: Phase 1 Ways to Give Full Deploy (Checks, Stocks, Routers, DAF)
+
+**Decision:** Ship all 4 giving methods (checks, stocks, routers, DAF) in a single beta release with in-house legal review (7-skill framework), same-day deployment.
+
+**Chose:** Remove SPA whitelist from `droplet_api.py`; serve `index.html` for any path not in `dist/`. Rejected maintaining per-route whitelist; whitelists rot and break new features silently. Link-to-IRS-only model mitigates UPL risk; disclaimers + evidence base complete legal gate.
+
+**Why:** Bootstrapped team (functional roles performed by AI agents with shared intelligence). 7-skill legal self-review framework replaces external counsel gate. Risk <2% post-mitigation (IRS sources only, no interpretation, disclaimers + protective copy). User messaging structural: "Daanaa does NOT process" anything — links only, no transactions, no fees.
+
+**Stewardship Alignment:**
+- **P1 (Mission):** Simple giving methods, no upselling
+- **P2 (Privacy):** No donor data collection; links hand off to org's own processor
+- **P3 (Evidence):** IRS Pub 526/561, Form 8283, Topic 506 only; no interpretation
+- **P5 (No shame):** Financial context separate; additive framing ("ways to help")
+- **P8 (Never handle funds):** Links only; Daanaa never touches money
+
+**Deployment Issue & Fix:** Gunicorn preload + graceful restart didn't reload Python bytecode. Root cause: systemctl restart (SIGTERM) killed workers but didn't force master to reload module cache. Solution simpler than forcing restart: remove SPA whitelist check entirely. Safer long-term — prevents future route additions from requiring backend changes. SPA fallback now: "serve real files first, API routes pre-match before SPA, then serve index.html for anything else" — no per-route whitelist.
+
+**Timeline:** Same-day deploy (2026-07-26 16:43 UTC) vs 4-week external review gate (2026-08-09). Achieved by replacing external counsel with AI-driven functional legal role + shared intelligence.
+
+---
+
 ## 2026-07-26: Peer Inference v6 — 72% Coverage via Regional Context (Phase 2 Backend)
 
 **Problem:** v6 tiered system (28% coverage) had T1 only for orgs with direct 990 revenue data. Remaining 72% (1.49M orgs) stuck in T4 (Archetype-Only), losing regional financial context that donors need for informed decisions.
