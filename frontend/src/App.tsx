@@ -82,6 +82,9 @@ const LogVolunteerHours = lazy(() => import('./pages/event/LogVolunteerHours'))
 const VolunteerApprovalDashboard = lazy(() => import('./pages/event/VolunteerApprovalDashboard'))
 const ProfileContextsPage = lazy(() => import('./pages/ProfileContextsPage'))
 const GivingViaDafPage = lazy(() => import('./pages/GivingViaDafPage'))
+const GivingViaChecksPage = lazy(() => import('./pages/GivingViaChecksPage'))
+const GivingViaStocksPage = lazy(() => import('./pages/GivingViaStocksPage'))
+const GivingViaRoutersPage = lazy(() => import('./pages/GivingViaRoutersPage'))
 
 function PageLoader() {
   return (
@@ -122,6 +125,9 @@ export default function App() {
             <Route path="/wallet" element={<WalletPage />} />
             <Route path="/giving-wallet" element={<Navigate to="/wallet" replace />} />
             <Route path="/giving-via-daf" element={<GivingViaDafPage />} />
+            <Route path="/giving-via-checks" element={<GivingViaChecksPage />} />
+            <Route path="/giving-via-stocks" element={<GivingViaStocksPage />} />
+            <Route path="/giving-via-routers" element={<GivingViaRoutersPage />} />
             <Route path="/volunteer" element={<VolunteerDiscoveryPage />} />
             <Route path="/profile-contexts" element={<ProfileContextsPage />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
