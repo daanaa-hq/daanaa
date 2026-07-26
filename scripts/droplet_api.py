@@ -2276,10 +2276,9 @@ def serve_spa(path):
         full = FRONTEND_DIR / path
         if full.is_file():
             return send_from_directory(FRONTEND_DIR, path)
-        # Only serve the SPA for known client-side routes; everything else is a real 404.
-        top = (path or '').strip('/').split('/')[0]
-        if top not in _SPA_PREFIXES:
-            return 'Not found', 404
+        # Serve index.html for any path that doesn't exist as a real file.
+        # API endpoints are routed before this fallback; /api/* paths never reach here.
+        # This allows React Router to handle all client-side paths without backend changes.
         index = FRONTEND_DIR / 'index.html'
         if index.exists():
             meta = _meta_for_path(path)
