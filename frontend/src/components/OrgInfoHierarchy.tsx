@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import type { ApiOrganization } from '../data/api'
+import GiveYourWayRouter from './GiveYourWayRouter'
 
 /**
  * OrgInfoHierarchy: Display org information from most common to least common.
@@ -96,68 +97,17 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
 
       {/* TIER 3: ALWAYS show ways to give */}
       <InfoBlock title="How to Give">
-        <div className="space-y-3">
-          {/* Primary: Verified donate link */}
-          {dataAvailable.donate && org.donate_url ? (
-            <a
-              href={org.donate_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block p-3 bg-warm-red/10 border border-warm-red rounded-lg hover:bg-warm-red/20 transition"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-warm-red text-sm">Donate via their website</p>
-                  {org.donate_confidence && (
-                    <p className="text-xs text-cool-grey mt-1">
-                      Verified {Math.round(org.donate_confidence * 100)}%
-                    </p>
-                  )}
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-warm-red">
-                  <path d="M7 17L17 7M17 7H7M17 7V17" />
-                </svg>
-              </div>
-            </a>
-          ) : null}
-
-          {/* Fallback 1: Organization website */}
-          {org.website && org.website_status === 'ok' ? (
-            <a
-              href={org.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block p-3 bg-navy-dark/5 border border-navy-dark/20 rounded-lg hover:bg-navy-dark/10 transition"
-            >
-              <p className="font-semibold text-navy-dark text-sm">Visit {new URL(org.website).hostname}</p>
-              <p className="text-xs text-cool-grey mt-1">Look for "Donate" on their site</p>
-            </a>
-          ) : null}
-
-          {/* Fallback 2: EIN-based giving (DAF, checks) */}
-          {org.ein ? (
-            <div className="p-3 bg-navy-dark/5 border border-navy-dark/20 rounded-lg">
-              <p className="font-semibold text-navy-dark text-sm">Give by EIN</p>
-              <p className="text-xs text-cool-grey mt-1">EIN: {org.ein}</p>
-              <p className="text-xs text-cool-grey mt-2">
-                Use this to donate via donor-advised fund (DAF), bank transfer, or check payment.
-              </p>
-            </div>
-          ) : null}
-
-          {/* Fallback 3: Contact directly */}
-          {org.street_address || org.phone ? (
-            <div className="p-3 bg-navy-dark/5 border border-navy-dark/20 rounded-lg">
-              <p className="font-semibold text-navy-dark text-sm">Contact directly</p>
-              {org.street_address && (
-                <p className="text-xs text-cool-grey mt-1">{org.street_address}</p>
-              )}
-              {org.phone && (
-                <p className="text-xs text-cool-grey mt-1">{org.phone}</p>
-              )}
-              <p className="text-xs text-cool-grey mt-2">Call or write to ask about giving options.</p>
-            </div>
-          ) : null}
+        <div className="space-y-4">
+          {/* Leverage existing GiveYourWayRouter component */}
+          <GiveYourWayRouter
+            ein={org.ein}
+            organizationName={org.organization_name}
+            streetAddress={org.street_address}
+            donateUrl={org.donate_url}
+            donateUrlStatus={org.donate_url_status}
+            website={org.website}
+            websiteStatus={org.website_status}
+          />
 
           {/* Meta: Help us improve */}
           <div className="p-3 bg-soft-gold/10 border border-soft-gold/30 rounded-lg">
