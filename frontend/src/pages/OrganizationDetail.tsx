@@ -812,13 +812,33 @@ export default function OrganizationDetail() {
                       )}
                     </div>
 
-                    {/* Secondary CTA: Donor-Advised Fund guide */}
-                    <Link
-                      to="/giving-via-daf"
-                      className="mt-3 inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
-                    >
-                      Learn how to give via donor-advised fund →
-                    </Link>
+                    {/* Secondary CTAs: Ways to Give guides */}
+                    <div className="mt-4 flex flex-col gap-2">
+                      <Link
+                        to="/giving-via-checks"
+                        className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
+                      >
+                        Give by check →
+                      </Link>
+                      <Link
+                        to="/giving-via-stocks"
+                        className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
+                      >
+                        Give appreciated stock →
+                      </Link>
+                      <Link
+                        to="/giving-via-routers"
+                        className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
+                      >
+                        Give via PayPal or Facebook →
+                      </Link>
+                      <Link
+                        to="/giving-via-daf"
+                        className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
+                      >
+                        Give via donor-advised fund →
+                      </Link>
+                    </div>
                   </>
                 );
               })()}
