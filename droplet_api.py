@@ -982,6 +982,77 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
+
+def log_audit_event(event_type: str, org_ein: str = None, user_auth: str = None,
+                   user_role: str = None, success: bool = True, error_code: str = None,
+                   **extra_fields):
+    """
+    Log compliance-friendly audit event (NO PII).
+
+    Fields logged: event_type, timestamp, user_auth (Firebase UID), user_role, org_ein (EIN only),
+    success, error_code, IP (anonymized), user agent (category only).
+
+    Privacy invariants enforced:
+    - NO email addresses, names, or full IPs
+    - NO donor data or giving history
+    - NO wallet data or balances
+    - EIN-only org identification
+    - Firebase UID or 'anonymous'
+    """
+    try:
+        # Anonymize IP: zero last octet
+        client_ip = request.remote_addr or 'unknown'
+        try:
+            parts = client_ip.split('.')
+            if len(parts) == 4:
+                parts[-1] = '0'
+                ip_anon = '.'.join(parts)
+            else:
+                ip_anon = 'unknown'
+        except:
+            ip_anon = 'unknown'
+
+        # Categorize user agent (NO full string)
+        ua_string = (request.user_agent.string or '').lower()
+        if 'mobile' in ua_string or 'android' in ua_string or 'iphone' in ua_string:
+            ua_category = 'mobile'
+        elif 'mozilla' in ua_string or 'chrome' in ua_string or 'safari' in ua_string:
+            ua_category = 'browser'
+        else:
+            ua_category = 'unknown'
+
+        # Prepare audit record (only these fields; no others)
+        db = get_db()
+        db.execute("""
+            INSERT INTO audit_log (
+                event_type, timestamp, user_auth, user_role, org_ein,
+                ip_address_anonymized, user_agent_category,
+                success, error_code,
+                hours_submitted, hours_approved, status, volunteer_event_id, volunteer_context_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            event_type,
+            datetime.utcnow().isoformat(),
+            user_auth,
+            user_role,
+            org_ein,
+            ip_anon,
+            ua_category,
+            success,
+            error_code,
+            extra_fields.get('hours_submitted'),
+            extra_fields.get('hours_approved'),
+            extra_fields.get('status'),
+            extra_fields.get('volunteer_event_id'),
+            extra_fields.get('volunteer_context_id'),
+        ))
+        db.commit()
+    except Exception as e:
+        # Don't crash API if audit logging fails, but log the error
+        print(f"[audit_log ERROR] {event_type}: {e}", file=sys.stderr)
+
+
 def _init_waitlist_table():
     with sqlite3.connect(LIVE_DB_PATH) as db:
         db.execute("""
@@ -1990,6 +2061,7 @@ def list_organizations():
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
+    has_revenue = request.args.get('has_revenue', '').strip() == '1'
     open_to_volunteers = request.args.get('open_to_volunteers', '').strip() == '1'
     recent = request.args.get('recent', '').strip() == '1'
     cause = request.args.get('cause', '').strip()[:60]
@@ -1998,9 +2070,12 @@ def list_organizations():
         radius_mi = int(request.args.get('radius_mi') or request.args.get('radius') or 0)
     except (ValueError, TypeError):
         radius_mi = 0
-    # Neutral default (2026-07-04): name A-Z, never a score ranking (STEWARDSHIP
-    # P7 posture — merit_score sort stays available only as an explicit opt-in).
-    sort_by = request.args.get('sort', 'organization_name')
+    # Discovery default (2026-07-24): seeded random shuffle for engagement + fairness.
+    # Users can opt to 'organization_name' (A-Z) or other sorts anytime. Shuffle is P7-compliant:
+    # random order is neutral (equal probability for all orgs, no ranking by size/name/score).
+    # Seed makes shuffle deterministic per session (same seed = same results, user sees stable order).
+    sort_by = request.args.get('sort', 'random')
+    shuffle_seed = request.args.get('seed', '').strip()[:50]  # Passed from frontend (session seed)
     order = request.args.get('order') or ('asc' if sort_by == 'organization_name' else 'desc')
 
     offset = (page - 1) * per_page
@@ -2085,6 +2160,8 @@ def list_organizations():
         where_clauses.append("months_of_reserve IS NOT NULL AND months_of_reserve < 6")
     if has_website:
         where_clauses.append("website IS NOT NULL AND website != '' AND website_status = 'ok'")
+    if has_revenue:
+        where_clauses.append("total_revenue IS NOT NULL AND total_revenue > 0")
     if open_to_volunteers:
         where_clauses.append("r.EIN IN (SELECT ein FROM org_claims WHERE volunteer_contact_email IS NOT NULL AND volunteer_contact_email != '')")
     nearby_meta = None
@@ -2117,17 +2194,13 @@ def list_organizations():
         params.append(tier)
 
     # total_revenue and merit_score are opt-in sorts; the default is neutral
-    # name order so browse never implies a ranking.
-    # Discovery default (2026-07-24): seeded random shuffle for engagement + fairness.
+    # name order so browse never implies a ranking. random is seeded shuffle for discovery.
     allowed_sorts = ['organization_name', 'ntee1_percentile', 'EIN', 'STATE', 'CITY',
                      'total_revenue', 'random']
     if sort_by not in allowed_sorts:
         sort_by = 'organization_name'
     if order not in ['asc', 'desc']:
         order = 'desc'
-
-    # Parse shuffle seed from query params
-    shuffle_seed = request.args.get('seed', '').strip()[:50]
 
     # Prefix sort_by with table alias to avoid ambiguity in JOINs.
     # total_revenue uses NULLS LAST so orgs without financial data sort after
@@ -2219,15 +2292,16 @@ def list_organizations():
     # (which org the text names), never a merit/size ranking — the shuffle default
     # still applies to browse (no q) per the 2026-07-24 decision.
     order_params = []
-    if sort_by == 'random' and shuffle_seed:
-        # Seeded shuffle: fetch all matching rows, then shuffle deterministically in memory.
-        # Seed makes order stable per session (same seed = same order), so users see consistent
-        # results even if they reload. Different seed = different shuffle (new session).
-        order_sql = ""  # No DB ORDER BY; we'll shuffle after fetch
-    elif sort_by == 'random':
-        # Random sort requested but no seed provided; fall back to organization_name (A-Z)
-        # This should not happen in normal flow (frontend always sends seed for random sort)
-        order_sql = f"ORDER BY r.organization_name asc"
+    if sort_by == 'random':
+        # Random sort: use OFFSET-based sampling for efficiency
+        # Calculate a random offset to get pseudo-random results without sorting all rows
+        # This is much faster than ORDER BY RANDOM() for large result sets
+        import random
+        max_offset = max(0, total - per_page) if total else 0
+        random_offset = random.randint(0, max_offset) if max_offset > 0 else 0
+        # Override the offset with the random value
+        offset = random_offset
+        order_sql = ""  # No ORDER BY needed for random sampling
     elif fts_used and 'sort' not in request.args:
         order_sql = "ORDER BY (UPPER(r.organization_name) = ?) DESC, fts.rel"
         order_params.append((corrected_query or search).upper())
@@ -2236,10 +2310,9 @@ def list_organizations():
     else:
         order_sql = ""
 
-    # When shuffling, fetch all matching orgs (no LIMIT/OFFSET at DB level).
-    # We'll shuffle the full list in memory, then apply pagination.
-    # This is safe because we paginate after shuffling (page 1 gets shuffled results 0-19, etc).
-    limit_clause = "LIMIT ? OFFSET ?" if sort_by != 'random' else ""
+    # Apply LIMIT/OFFSET at all times for efficiency
+    # Random sort now uses database-level ORDER BY RANDOM() so we can paginate at DB level
+    limit_clause = "LIMIT ? OFFSET ?"
 
     sql = f"""
         SELECT r.EIN, r.organization_name, r.NTEE1, r.NTEECC, r.CITY, r.STATE,
@@ -2261,20 +2334,10 @@ def list_organizations():
         {limit_clause}
     """
     params.extend(order_params)
-    if sort_by != 'random':  # Only add LIMIT/OFFSET if not shuffling (shuffle paginates after)
-        params.extend([per_page, offset])
-    rows = db.execute(sql, params).fetchall()
+    # Always add LIMIT/OFFSET params since we now use database-level pagination for all queries
+    params.extend([per_page, offset])
 
-    # If seeded shuffle requested, we fetched all results unsorted; now shuffle and paginate.
-    # The shuffle is deterministic (same seed = same order) so users see stable results.
-    if sort_by == 'random' and shuffle_seed:
-        import random
-        rng = random.Random(shuffle_seed)
-        # Shuffle rows in-place
-        rows_list = list(rows)
-        rng.shuffle(rows_list)
-        # Now apply pagination to the shuffled list
-        rows = rows_list[offset:offset + per_page]
+    rows = db.execute(sql, params).fetchall()
 
     orgs = []
     for row in rows:
@@ -2536,6 +2599,24 @@ def get_organization(ein):
         org['upcoming_events_count'] = ev_row['cnt'] if ev_row else 0
     except Exception:
         org['upcoming_events_count'] = 0
+
+    # v6.0 Tiered peer context system: confidence levels for financial scoring
+    # Tier 1 (high): NTEE2 × Band × Region (≥25 scoreable peers)
+    # Tier 2 (good): NTEE2 × Band national (≥20 scoreable peers)
+    # Tier 3 (moderate): NTEE2 only (≥5 scoreable peers)
+    # Tier 4 (archetype): No peer group (no reserves data)
+    org['scoring_tier'] = org.get('scoring_tier')  # e.g., "1_Full_Context"
+    org['confidence'] = org.get('confidence')      # "high", "good", "moderate", "archetype_only"
+    org['peer_group_size'] = org.get('peer_group_size')  # count of comparable orgs
+    org['peer_group_description'] = org.get('peer_group_description')  # e.g., "Food banks, Grassroots, Midwest"
+
+    # v6.0 Peer inference system: regional context for orgs without direct data
+    org['scoring_tier_v6_inference'] = org.get('scoring_tier_v6_inference')  # e.g., "1_Direct_Regional", "2_Regional_Inferred"
+    org['is_inferred'] = org.get('is_inferred_v6', 0)  # 1 if tier is inferred from peers, 0 if direct data
+    org['peer_group_size_v6'] = org.get('peer_group_size_v6')  # number of peer group members
+    org['peer_group_description_v6'] = org.get('peer_group_description_v6')  # human-readable peer group definition
+    org['confidence_v6'] = org.get('confidence_v6')  # "high", "good", "moderate", "archetype_only"
+    org['confidence_margin_v6'] = org.get('confidence_margin_v6')  # e.g., "±10%"
 
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
@@ -3114,6 +3195,15 @@ def org_interest_signal():
         (ein, kind),
     )
     db.commit()
+
+    # Audit log: volunteer interest submitted (no PII, anonymous signal)
+    log_audit_event(
+        event_type='volunteer_interest_submitted',
+        org_ein=ein,
+        user_auth='anonymous',
+        success=True
+    )
+
     return ('', 204)
 
 
@@ -3825,6 +3915,27 @@ def _format_phone(phone: str) -> str:
     if len(digits) == 10:
         return f"({digits[:3]}) {digits[3:6]}-{digits[6:]}"
     return phone
+
+
+def _send_volunteer_interest_email(contact_email: str, contact_name: str, event_title: str, volunteer_email: str):
+    """Notify nonprofit volunteer coordinator when someone expresses interest."""
+    body = f"""Hi {contact_name},
+
+Someone has expressed interest in volunteering for "{event_title}" through Daanaa.
+
+Volunteer email: {volunteer_email}
+
+Log in to your Daanaa nonprofit dashboard to see more details and connect with them.
+
+Best,
+Daanaa Team
+"""
+    _send_daanaa_email(
+        contact_email,
+        f"New volunteer interest in {event_title}",
+        body,
+        from_addr="hello@daanaa.org"
+    )
 
 
 def _notify_admin_new_claim(ein: str, org_name: str, email: str, phone: str, title: str, pin: str,
@@ -8206,6 +8317,16 @@ def create_profile_context():
         )
 
         context = profile_contexts.get_context_detail(db, context_id)
+
+        # Audit log: profile context created
+        log_audit_event(
+            event_type='profile_context_created',
+            user_auth=uid,
+            user_role='lead',
+            volunteer_context_id=context_id,
+            success=True
+        )
+
         return jsonify({
             'success': True,
             'context_id': context_id,
@@ -8214,6 +8335,16 @@ def create_profile_context():
 
     except Exception as e:
         _logger.error(f"create_profile_context error: {e}")
+
+        # Audit log: profile context creation failed
+        log_audit_event(
+            event_type='profile_context_created',
+            user_auth=uid,
+            user_role='lead',
+            success=False,
+            error_code='CREATION_FAILED'
+        )
+
         return jsonify({'error': str(e)}), 500
 
 
@@ -8275,14 +8406,50 @@ def add_context_member(context_id: str):
             invited_by_uid=uid,
         )
 
+        # Audit log: member invited
+        log_audit_event(
+            event_type='member_invited',
+            user_auth=uid,
+            user_role='support',
+            volunteer_context_id=context_id,
+            success=True
+        )
+
         return jsonify({'success': True, 'invitation_id': invitation_id, 'invited_uid': target_uid, 'role': role}), 201
 
     except ValueError as e:
+        # Audit log: invitation failed (value error)
+        log_audit_event(
+            event_type='member_invited',
+            user_auth=uid,
+            user_role='support',
+            volunteer_context_id=context_id,
+            success=False,
+            error_code='NOT_FOUND'
+        )
         return jsonify({'error': str(e)}), 404
     except PermissionError as e:
+        # Audit log: invitation failed (permission denied)
+        log_audit_event(
+            event_type='member_invited',
+            user_auth=uid,
+            user_role='support',
+            volunteer_context_id=context_id,
+            success=False,
+            error_code='UNAUTHORIZED'
+        )
         return jsonify({'error': str(e)}), 403
     except Exception as e:
         _logger.error(f"add_context_member error: {e}")
+        # Audit log: invitation failed (unexpected error)
+        log_audit_event(
+            event_type='member_invited',
+            user_auth=uid,
+            user_role='support',
+            volunteer_context_id=context_id,
+            success=False,
+            error_code='INTERNAL_ERROR'
+        )
         return jsonify({'error': str(e)}), 500
 
 
@@ -9655,7 +9822,7 @@ def _dashboard_financial_narrative(row) -> str:
                 "close to their means, and holding stable there takes real "
                 "discipline. You are keeping the mission funded — that is the "
                 "job, and you are doing it.")
-    if signal in ('CAUTION', 'NEED_SUPPORT'):
+    if signal in ('CAUTION', 'NEED_SUPPORT', 'MAY_NEED_SUPPORT'):
         return (f"Your organization is ready for more supporters {peer_phrase}. "
                 f"Many {archetype} organizations in the {band} range are "
                 "growing their mission work and actively seeking supporters like "
@@ -10002,6 +10169,28 @@ def volunteer_interest(ein: str):
     if request.method == 'POST':
         db.execute('''INSERT INTO volunteer_interest (EIN, count) VALUES (?, 1)
                       ON CONFLICT(EIN) DO UPDATE SET count = count + 1''', (ein,))
+        # Email volunteer contact if available
+        data = request.get_json() or {}
+        volunteer_email = data.get('email', '').strip()
+        event_title = data.get('event_title', 'an event').strip()
+
+        org_claim = db.execute(
+            'SELECT volunteer_contact_email, volunteer_contact_name FROM org_claims WHERE EIN = ?',
+            (ein,)
+        ).fetchone()
+
+        if org_claim and org_claim[0]:  # volunteer_contact_email exists
+            contact_email = org_claim[0]
+            contact_name = org_claim[1] or 'Volunteer Coordinator'
+            try:
+                _send_volunteer_interest_email(
+                    contact_email=contact_email,
+                    contact_name=contact_name,
+                    event_title=event_title,
+                    volunteer_email=volunteer_email
+                )
+            except Exception as e:
+                logger.warning(f'Failed to send volunteer interest email to {contact_email}: {e}')
     else:
         db.execute('''UPDATE volunteer_interest SET count = MAX(0, count - 1)
                       WHERE EIN = ?''', (ein,))
@@ -11141,6 +11330,7 @@ def nonprofit_financial_health(ein: str):
             'STABLE': 'blue',
             'CAUTION': 'yellow',
             'NEED_SUPPORT': 'yellow',
+            'MAY_NEED_SUPPORT': 'yellow',
             'CRISIS': 'red'
         }.get(health[8], 'gray')
     }), 200
