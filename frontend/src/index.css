@@ -91,6 +91,7 @@
     font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
     background-color: var(--deep-navy);
     color: var(--warm-cream);
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -127,6 +128,32 @@
 
   .font-body {
     font-family: 'DM Sans', 'Inter', system-ui, sans-serif;
+  }
+
+  /* Display heading utilities: Cormorant Garamond serif with responsive sizing
+     Min 32px ensures readability on mobile; max scales to 44px/36px on large screens */
+  .h1-display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(32px, 4vw, 44px);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+
+  .h2-display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(28px, 3.5vw, 36px);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-weight: 500;
+  }
+
+  .h3-display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: clamp(24px, 3vw, 32px);
+    line-height: 1.1;
+    letter-spacing: -0.005em;
+    font-weight: 500;
   }
 
   .text-deep-navy { color: var(--deep-navy); }
@@ -225,9 +252,9 @@ html {
   --dark-surface-rgb: 255 255 255;
   --navy-mid-rgb: 229 224 216;
   --warm-cream-rgb: 30 37 48;
-  --soft-gold-rgb: 139 111 71;
+  --soft-gold-rgb: 101 76 38;
   --bright-gold-rgb: 157 126 82;
-  --pale-gold-rgb: 139 111 71; /* darker in light mode: section labels on near-white */
+  --pale-gold-rgb: 101 76 38; /* darker in light mode: section labels on near-white, WCAG AA contrast 5.2:1+ */
   --muted-cream-rgb: 107 98 87;
   --cool-grey-rgb: 75 85 99;
   --light-cream-rgb: 237 232 224; /* constant: card borders/bg */
@@ -236,14 +263,14 @@ html {
   --success-green-rgb: 22 163 74;
   --alert-amber-rgb: 217 119 6;
   --merit-navy-rgb: 26 46 74;
-  --merit-gold-rgb: 139 111 71;
+  --merit-gold-rgb: 101 76 38;
   --civic-teal-rgb: 15 74 74;
   --teal-light-rgb: 26 107 107;
   --merit-cream-rgb: 250 248 243; /* constant: light card bg */
   --charcoal-rgb: 30 37 48;
   --slate-rgb: 75 85 99;
-  --tier-beacon-rgb: 139 111 71;
-  --tier-lantern-rgb: 157 126 82;
+  --tier-beacon-rgb: 101 76 38;
+  --tier-lantern-rgb: 128 103 65;
   --tier-flame-rgb: 138 115 80;
   --tier-ember-rgb: 143 122 80;
   --tier-spark-rgb: 133 113 76;
