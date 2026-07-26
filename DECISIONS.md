@@ -47,6 +47,39 @@ documenting tokens, rules, pre-ship checks, and known remaining debt.
 
 ---
 
+## 2026-07-26: Link deployment drain moved to hourly, with a concurrency lock
+
+**Problem:** `deploy_queued_links.py` ran every 4 hours (`0 */4 * * *`), so a
+verified donate link could sit in `link_deployment_queue` for up to 4 hours
+before reaching `registry_enriched.donate_url` where donors actually see it.
+The queue was at 1,314 pending when measured mid-cycle.
+
+**Chose:** hourly (`0 * * * *`), wrapped in `flock -n`.
+
+**Why hourly and not every 5 minutes:** the drain is genuinely cheap (1,361
+links in ~2 seconds), so frequency is nearly free on CPU. The real cost is
+write contention with the discovery daemon, which writes the same rows. The
+2026-07-25 incident (duplicate daemon, concurrent writes to the same EIN rows,
+rollbacks, 45K donate_links lost) is the reason to be conservative here. Hourly
+is a 4x improvement in time-to-live with a modest increase in contention
+windows; sub-hourly buys little because discovery only produces a few hundred
+links an hour.
+
+**Why flock:** the script had no guard against overlapping runs at all. At
+4-hourly with a 2-second runtime that was academic; at hourly it stays
+academic, but the failure mode it prevents is exactly the one that cost 45K
+links, so the guard is worth four words of cron. `-n` means a run that finds
+the lock held exits immediately rather than queueing up behind it.
+
+**Verified:** flock tested directly (second concurrent invocation correctly
+blocked, exit 1; uncontended run proceeds). Live drain executed as cron will
+run it: 1,418 deployed, 0 errors, queue cleared, `donate_url` 70,167 -> 71,191.
+
+**Not changed:** the discovery daemon cadence. It is not the bottleneck; it was
+already producing ~700-900 links/hour into the queue.
+
+---
+
 ## 2026-07-26: Phase 1 Ways to Give Full Deploy (Checks, Stocks, Routers, DAF)
 
 **Decision:** Ship all 4 giving methods (checks, stocks, routers, DAF) in a single beta release with in-house legal review (7-skill framework), same-day deployment.
