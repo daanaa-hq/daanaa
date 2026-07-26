@@ -156,6 +156,35 @@
     font-weight: 500;
   }
 
+  /* Fix for light mode borders: override the "constant" light colors
+     Dark mode: keep light colors (visible on dark bg)
+     Light mode: use dark colors (visible on light bg) */
+  [data-theme="light"] .border-light-grey {
+    border-color: var(--charcoal);
+  }
+
+  [data-theme="light"] .border-light-cream {
+    border-color: var(--charcoal);
+  }
+
+  [data-theme="light"] .border-muted-cream {
+    border-color: var(--charcoal);
+  }
+
+  [data-theme="light"] .bg-light-grey {
+    background-color: #E5E0DB;  /* slightly darker for visibility */
+  }
+
+  [data-theme="light"] .bg-light-cream {
+    background-color: #E8DFD0;  /* slightly darker for visibility */
+  }
+
+  /* Fix for dark mode navy-mid borders: invisible on deep navy background
+     Replace with a lighter color (Muted Cream) */
+  .border-navy-mid {
+    border-color: var(--muted-cream);  /* Light on dark for visibility */
+  }
+
   .text-deep-navy { color: var(--deep-navy); }
   .text-dark-surface { color: var(--dark-surface); }
   .text-navy-mid { color: var(--navy-mid); }
