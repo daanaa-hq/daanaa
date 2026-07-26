@@ -11,7 +11,14 @@
 **Daanaa is NOT a payment processor.**  
 **Daanaa is NOT a transaction intermediary.**  
 **Daanaa is NOT a merchant of record.**  
-**Daanaa ONLY provides discovery + education about giving methods.**
+**Daanaa is NOT a consultant or advisor.**  
+**Daanaa is NOT providing tax, legal, or financial guidance.**  
+
+**Daanaa ONLY:**
+- Aggregates public information (IRS, SEC, nonprofit data)
+- Makes public information user-friendly
+- Links to official authorities (IRS.gov, SEC.gov, org websites)
+- Respects donor autonomy (their funds, their intent, their decision)
 
 All copy must make this crystal-clear. No exceptions.
 
@@ -351,14 +358,20 @@ Your Wallet stays private — it's for you, not for public sharing or reporting 
 
 ## Section 8: Brand Positioning (What We ARE)
 
-✅ "Discovery platform"  
+✅ "Public information aggregator"  
 ✅ "Directory"  
-✅ "Education layer"  
-✅ "Resource for giving methods"  
+✅ "Information organizer"  
+✅ "Link to official sources"  
 ✅ "Nonprofit finder"  
-✅ "Independent research"  
-✅ "Ways to give educator"  
-✅ "You find the org, you give directly"
+✅ "IRS.gov navigator"  
+✅ "You decide, you control"  
+✅ "You find the org, you give directly"  
+
+**What we are NOT:**
+❌ "Advisor" (we don't advise)  
+❌ "Consultant" (we don't consult)  
+❌ "Guide" (implies hand-holding; we point to authorities)  
+❌ "Expert" (IRS/SEC/orgs are the experts)
 
 ---
 
@@ -435,9 +448,9 @@ Before ANY page or marketing material ships:
 
 Every help page, every marketing message, every Wallet interaction should distill to these three sentences:
 
-1. **We are a discovery platform.** We help you find organizations and learn about giving methods.
-2. **We do not process donations.** All giving happens directly between you and the organization.
-3. **You are in control.** You decide how much to give and to whom.
+1. **We make public information user-friendly.** IRS.gov, nonprofits, and official sources have all the details — we organize them so you can find what you need.
+2. **You decide. You control. You own the outcome.** Your funds, your intent, your decision. We don't advise, consult, or process — we just point you to the authorities.
+3. **We link to official sources.** IRS.gov, org websites, and verified data are the authorities. Trust them, not us.
 
 If your copy doesn't align with these three sentences, rewrite it.
 
