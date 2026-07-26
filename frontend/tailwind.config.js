@@ -1,6 +1,17 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: ["class"],
+  // Dark is this site's DEFAULT theme; light is opt-in via `data-theme="light"`
+  // (set by the inline script in index.html and by ThemeContext). There is no
+  // `.dark` class anywhere, so the previous `["class"]` setting meant every
+  // `dark:` utility in the codebase was dead — 145 of them across 27 files,
+  // silently never rendering. Verified with a live probe: an element with
+  // `text-black dark:text-white` computed to rgb(0,0,0) on production.
+  //
+  // This matches Tailwind to the switch the app actually uses, so `dark:`
+  // applies whenever the root is not explicitly light. No change to
+  // ThemeContext, index.html, or the 60 [data-theme="light"] blocks in
+  // index.css was needed.
+  darkMode: ["variant", ':root:not([data-theme="light"]) &'],
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
