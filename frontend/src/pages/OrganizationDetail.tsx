@@ -665,11 +665,11 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* Cause tags -- collapsible secondary detail */}
+              {/* Cause tags -- always visible */}
               {Array.isArray(apiOrg!.cause_tags) && apiOrg!.cause_tags.length > 0 && (
-                <details className="mt-4">
-                  <summary className="text-soft-gold hover:text-bright-gold cursor-pointer text-sm font-medium">Categories ({(apiOrg!.cause_tags as string[]).length})</summary>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-4">
+                  <p className="text-soft-gold text-sm font-medium mb-3">Categories</p>
+                  <div className="flex flex-wrap items-center gap-2">
                     {(apiOrg!.cause_tags as string[]).map((tag) => (
                       <span
                         key={tag}
@@ -682,7 +682,7 @@ export default function OrganizationDetail() {
                       <AiBadge title="These search tags were suggested by AI from public records. The organization can set its own once it claims this page." />
                     )}
                   </div>
-                </details>
+                </div>
               )}
 
               <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -873,21 +873,21 @@ export default function OrganizationDetail() {
 
       {/* Donation Attribution Banner removed — adds noise, not value */}
 
-      {/* Financial Overview */}
-      <div className="py-20">
+      {/* Financial & Governance Context — now always visible, not collapsible */}
+      <div className="py-12 md:py-16">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* Financial context — collapsible secondary detail. Wrapped behind disclosure
-              since the giving action is now complete at the top (GiveYourWayRouter). */}
+          {/* Section header */}
           {(apiOrg!.v5_context || apiOrg!.cohort_context || apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
-            <details className="mb-12">
-              <summary className="text-deep-navy font-semibold cursor-pointer text-base mb-4">Financial health details</summary>
-              <div>
+            <div className="mb-8">
+              <h2 className="text-deep-navy font-semibold text-lg">Financial health</h2>
+            </div>
+          )}
 
           {/* v5.0 Peer-based Financial Context — shown whenever the org has a
               peer-based assessment of its own. */}
           {apiOrg! && apiOrg!.v5_context && (
-            <div className="mb-12">
+            <div className="mb-8">
               <V5Context org={apiOrg!} />
             </div>
           )}
@@ -897,7 +897,7 @@ export default function OrganizationDetail() {
               this fills the blank financial section with honest cause-area
               context (P3/P4) without ever competing with real scores. */}
           {apiOrg! && apiOrg!.cohort_context && (
-            <div className="mb-12">
+            <div className="mb-8">
               <CohortContext org={apiOrg!} />
             </div>
           )}
@@ -962,9 +962,6 @@ export default function OrganizationDetail() {
                 </div>
               )}
             </div>
-          )}
-              </div>
-            </details>
           )}
 
           {/* Multi-dimensional peer context breakdown — shows where the org
