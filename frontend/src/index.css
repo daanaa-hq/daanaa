@@ -37,10 +37,10 @@
     --bright-gold-rgb: 212 184 122;
     --pale-gold-rgb: 232 213 163;
     --muted-cream-rgb: 212 204 191;
-    --cool-grey-rgb: 55 65 81;
+    --cool-grey-rgb: 160 175 195;
     --light-cream-rgb: 237 232 224;
     --light-grey-rgb: 229 224 219;
-    --deep-gold-rgb: 139 115 64;
+    --deep-gold-rgb: 200 165 95;
     --success-green-rgb: 74 222 128;
     --alert-amber-rgb: 245 158 11;
     --merit-navy-rgb: 13 28 54;
@@ -270,10 +270,10 @@ html {
   --charcoal-rgb: 30 37 48;
   --slate-rgb: 75 85 99;
   --tier-beacon-rgb: 101 76 38;
-  --tier-lantern-rgb: 128 103 65;
-  --tier-flame-rgb: 138 115 80;
-  --tier-ember-rgb: 143 122 80;
-  --tier-spark-rgb: 133 113 76;
+  --tier-lantern-rgb: 115 88 48;
+  --tier-flame-rgb: 110 83 45;
+  --tier-ember-rgb: 115 88 48;
+  --tier-spark-rgb: 105 80 42;
   --badge-green: #1F6B45;
   --badge-blue: #1E40AF;
 }
