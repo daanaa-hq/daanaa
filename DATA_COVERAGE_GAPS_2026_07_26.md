@@ -1,5 +1,24 @@
 # Data Coverage Gaps & Transparency Framework (2026-07-26)
 
+## 📋 Pages Affected (Showing Financial Data/Coverage)
+
+**Currently displaying scoring/coverage info (need updates):**
+- `frontend/src/pages/OrganizationDetail.tsx` — org detail pages (2.06M orgs)
+- `frontend/src/pages/Methodology2.tsx` — methodology & explanation
+- `frontend/src/components/V5Context.tsx` — financial context component
+- `frontend/src/components/FinancialContext.tsx` — score display
+- `frontend/src/pages/ResearchDashboard.tsx` — research/stats overview
+- `frontend/src/pages/Directory.tsx` — search results with scores
+- `frontend/src/pages/CategoryPage.tsx` — category filtering
+- `frontend/src/components/OrgInfoHierarchy.tsx` — org info display (recently added)
+- `frontend/src/pages/WalletPage.tsx` — donor wallet
+
+**Will need new components:**
+- `CoverageVisualization.tsx` (5 new charts for Methodology page)
+- `ConfidenceBadge.tsx` (show confidence level on every score)
+
+---
+
 **Principle:** Stewardship #3 (Evidence-based) + #6 (Mistakes corrected quickly) require honest accounting of what we can and cannot confidently say about orgs.
 
 ---

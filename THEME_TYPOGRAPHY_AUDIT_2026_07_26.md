@@ -1,5 +1,38 @@
 # Theme & Typography Audit — Alignment & Readability (2026-07-26)
 
+## 📋 Pages Affected (By Issue)
+
+### CRITICAL: Font Size Too Small (Cormorant Garamond headings)
+**15+ pages with `clamp(26px, ...)` minimum (unreadable on mobile):**
+- `frontend/src/pages/Home.tsx` — Landing page h1
+- `frontend/src/pages/About.tsx` — Page title
+- `frontend/src/pages/Approach.tsx` — Page title  
+- `frontend/src/pages/Methodology2.tsx` — Page title + section headers
+- `frontend/src/pages/Charter.tsx` — Page title
+- `frontend/src/pages/Legal.tsx` — Terms/Privacy headers
+- `frontend/src/pages/MemberBenefits.tsx` — Page title
+- `frontend/src/pages/Security.tsx` — Page title (also has bad clamp but better)
+- `frontend/src/pages/ForNonprofits.tsx` — Marketing page
+- `frontend/src/pages/ForVendors.tsx` — Marketing page
+- `frontend/src/pages/Governance.tsx` — Page title
+- `frontend/src/pages/EventDetailPage.tsx` — Event titles
+- `frontend/src/pages/CategoryPage.tsx` — Category headers
+
+### CRITICAL: Missing Line-Height on Body Text
+**ALL pages with paragraphs (60+ files):**
+- Entire `frontend/src/pages/` directory
+- Entire `frontend/src/components/` directory
+- Affects: body, p, .font-body elements
+
+### CRITICAL: Light Mode Gold Contrast Fails WCAG AA
+**All pages in light mode:**
+- Any page with gold/accent text on light background
+- Affects: links, badges, buttons, accent text
+- Currently failing: --merit-gold-rgb: 139 111 71 (3.8:1 on white)
+- Need: #654C26 or darker (5.2:1+)
+
+---
+
 ## Status: ✅ MOSTLY GOOD with 3 CRITICAL GAPS
 
 ---

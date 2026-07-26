@@ -1,5 +1,26 @@
 # Methodology Page Updates for Data Coverage Transparency
 
+## 📋 Pages Affected
+
+**Primary update location:**
+- `frontend/src/pages/Methodology2.tsx` — Main methodology page (all users visit this)
+  - New section: "Coverage & Confidence" with 5 visualizations
+  - Updated FAQ: why 69% of orgs lack financial scores
+  - Copy changes: "Data limits" section expanded
+  - Copy changes: "Lamp tiers" section clarified for small orgs
+
+**Secondary pages needing copy alignment:**
+- `frontend/src/pages/About.tsx` — Add link to methodology coverage section
+- `frontend/src/pages/Approach.tsx` — Emphasize "honest about data gaps"
+- `frontend/src/pages/OrganizationDetail.tsx` — Show confidence badge next to every score
+
+**Components needing creation/update:**
+- `frontend/src/components/CoverageVisualization.tsx` (NEW) — 5 charts
+- `frontend/src/components/ConfidenceBadge.tsx` (NEW) — Visual confidence indicator
+- `frontend/src/components/V5Context.tsx` (UPDATE) — Add confidence level display
+
+---
+
 **Goal:** Add Stewardship #3 (Evidence-based) and #6 (Mistakes corrected) transparency to Methodology2.tsx by visualizing actual data coverage gaps.
 
 ---
