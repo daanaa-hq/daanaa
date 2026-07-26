@@ -73,6 +73,13 @@ export interface ApiOrganization {
   confidence?: string | null;        // 'high' | 'good' | 'moderate' | 'archetype_only'
   peer_group_size?: number | null;   // count of comparable orgs in the peer group
   peer_group_description?: string | null; // e.g., "Food banks, Grassroots, Midwest region"
+  // v6.0 Peer inference system (new)
+  scoring_tier_v6_inference?: string | null;      // '1_Direct_Regional' | '2_Regional_Inferred' | '3_Limited_Context' | '4_Archetype_Only'
+  is_inferred?: number | null;                    // 1 if data inferred from peers, 0 if direct from org's 990
+  peer_group_size_v6?: number | null;             // count of peer group members for inference
+  peer_group_description_v6?: string | null;      // "X similar organizations in [state]" or "Category: Y nationwide"
+  confidence_v6?: string | null;                  // 'high' | 'good' | 'moderate' | 'archetype_only'
+  confidence_margin_v6?: string | null;           // e.g., "±10%" margin of error
   // v5.0 archetype & band labels
   merit_archetype_v5?: string | null;
   merit_archetype_v5_label?: string | null; // e.g., 'Donation-Funded Programs'

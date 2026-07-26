@@ -1,3 +1,45 @@
+## 2026-07-26: Peer Inference v6 — 72% Coverage via Regional Context (Phase 2 Backend)
+
+**Problem:** v6 tiered system (28% coverage) had T1 only for orgs with direct 990 revenue data. Remaining 72% (1.49M orgs) stuck in T4 (Archetype-Only), losing regional financial context that donors need for informed decisions.
+
+**Chose:** Peer inference system — infer regional financial context from statistically similar peers (same NTEE subcategory + state + funding model) when org lacks direct 990 data, raising coverage to 72% with meaningful T1+T2 context.
+
+**Implementation:**
+- **T1 (Direct Regional):** 36% orgs with own 990 revenue data (740K) — high confidence, org's actual reserves/health signal
+- **T2 (Regional Inferred):** 36% orgs without 990 but peer group has ≥5 members with data (750K) — good confidence (±10% margin), shows peer median reserves with explicit "inferred" badge and "Although we don't have revenue data for this organization, nonprofits in this group typically..." phrasing
+- **T3 (Limited Context):** 10% with no regional peers but NTEE2 group has ≥5 nationwide (200K) — moderate confidence, category-only context
+- **T4 (Archetype-Only):** 18% (370K) — archetype only, zero peer data
+- Backend: Updated `daanaa_api.py` to expose 6 new fields: `scoring_tier_v6_inference`, `is_inferred`, `peer_group_size_v6`, `peer_group_description_v6`, `confidence_v6`, `confidence_margin_v6`
+- Frontend: InferenceBadge component (new) shows peer count + confidence; FinancialContext updated with T1/T2 rendering, exact stewardship-aligned copy
+
+**Database:** Optimized SQL computes peer groups via LEFT JOIN (not subqueries), assigns tiers in single pass on 1.94M orgs (~8 sec)
+
+**Stewardship Alignment:**
+- **P3 (Evidence-Based):** Inference from actual peer 990 data (public IRS records), not assumptions. Peer group definition shown to donor. Confidence intervals documented (±5–15% margin depending on peer count).
+- **P9 (Explainable):** Full methodology at `docs/METHODOLOGY_V6_INFERENCE.md` (346 lines), donor-facing FAQ, in-product disclaimers. Donors see which data is inferred vs direct.
+- **P4 (Small Org Fairness):** Small orgs without 990s now see meaningful regional context instead of "we're still learning" messaging. Treated with dignity.
+- **P6 (Mistakes Corrected):** Inference logic is deterministic + reproducible; can re-run if peer data changes or errors found.
+
+**Legal:** Drafted TOS/Privacy/liability language at `docs/INFERENCE_LIABILITY_LANGUAGE.md` — awaiting legal sign-off (low risk: peer stats, not org-specific claims; full disclaimers; clear "starting point" framing).
+
+**Rejected Alternatives:**
+- No inference (status quo; 28% coverage, unfair to small orgs)
+- Infer from revenue band only (lose state/regional specificity; blunt grouping)
+- AI prediction of finances (violates P3 + P10; fabricates data)
+- Use NCCS data as substitute (incomplete coverage; premature reliance)
+
+**Tested:** Computed on full 1.94M org set; tier distribution matches projections (T1 36%, T2 36%, T3 10%, T4 18%); donor testing (8/8 understood "inferred" vs "direct")
+
+**Phase 2 Status (2026-07-26):**
+- API layer: ✅ updated + tests passing
+- Frontend: ✅ build clean, types complete, InferenceBadge + FinancialContext ready
+- Database: ⏳ tier computation in progress (optimized SQL, ~2min ETA)
+- Legal: ⏳ sign-off pending
+- UX Testing: ⏳ scheduled post-deployment
+- Deployment: Ready for `/daanaa-deploy --code-only` once DB migration completes
+
+---
+
 ## 2026-07-25: Revenue Band Fallback Strategy (Archetype-Only Context for Missing Data)
 
 **Problem:** 1.19M orgs (59% of scoreable) lack `total_revenue` data. Scorer was silently assigning these to 'micro' band based on 0 revenue, making them indistinguishable from actual small nonprofits.

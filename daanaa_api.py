@@ -2610,6 +2610,14 @@ def get_organization(ein):
     org['peer_group_size'] = org.get('peer_group_size')  # count of comparable orgs
     org['peer_group_description'] = org.get('peer_group_description')  # e.g., "Food banks, Grassroots, Midwest"
 
+    # v6.0 Peer inference system: regional context for orgs without direct data
+    org['scoring_tier_v6_inference'] = org.get('scoring_tier_v6_inference')  # e.g., "1_Direct_Regional", "2_Regional_Inferred"
+    org['is_inferred'] = org.get('is_inferred_v6', 0)  # 1 if tier is inferred from peers, 0 if direct data
+    org['peer_group_size_v6'] = org.get('peer_group_size_v6')  # number of peer group members
+    org['peer_group_description_v6'] = org.get('peer_group_description_v6')  # human-readable peer group definition
+    org['confidence_v6'] = org.get('confidence_v6')  # "high", "good", "moderate", "archetype_only"
+    org['confidence_margin_v6'] = org.get('confidence_margin_v6')  # e.g., "±10%"
+
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)
