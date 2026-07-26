@@ -73,19 +73,37 @@ export interface ApiOrganization {
   confidence?: string | null;        // 'high' | 'good' | 'moderate' | 'archetype_only'
   peer_group_size?: number | null;   // count of comparable orgs in the peer group
   peer_group_description?: string | null; // e.g., "Food banks, Grassroots, Midwest region"
+  // v5.0 archetype & band labels
+  merit_archetype_v5?: string | null;
+  merit_archetype_v5_label?: string | null; // e.g., 'Donation-Funded Programs'
+  merit_band_v5?: string | null;
+  merit_band_v5_label?: string | null;     // e.g., 'Grassroots'
+  merit_score_v5?: number | null;
+  merit_health_signal_v5?: string | null;  // 'HEALTHY' | 'STABLE' | 'MAY_NEED_SUPPORT'
+  merit_peer_group_v5?: string | null;
+  merit_peer_count_v5?: number | null;
   // v5.0 peer-based financial context (archetype × revenue band). Present only
   // for orgs we have financials for; null otherwise (then cohort_context fills in).
   v5_context?: {
     archetype: { key: string; label: string };
     band: { key: string; label: string };
     peer_group: { label: string; org_count: number };
-    score: { percentile: number; health_signal: 'HEALTHY' | 'STABLE' | 'CAUTION' };
+    score: { percentile: number; health_signal: 'HEALTHY' | 'STABLE' | 'CAUTION' | 'MAY_NEED_SUPPORT' };
     benchmarks: {
       reserves_months: { p25: number; p50: number; p75: number; your_value: number | null };
       healthy_rate_peer: number;
     };
     donor_explanation: string;
   } | null;
+  // NCCS governance data
+  board_size?: number | null;
+  board_independent_count?: number | null;
+  has_coi_policy?: number | null;
+  has_whistleblower_policy?: number | null;
+  has_doc_retention_policy?: number | null;
+  nccs_program_ratio?: number | null;
+  nccs_efficiency_score?: number | null;
+  nccs_data_year?: number | null;
   // Cause-cohort context for UNSCORED orgs (no v5_context of their own).
   // The typical financial shape of this org's NTEE cause-cohort, drawn from
   // scored orgs — NOT a statement about this org's own finances.
