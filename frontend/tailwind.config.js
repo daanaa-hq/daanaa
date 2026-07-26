@@ -84,6 +84,34 @@ module.exports = {
         cinzel:  ['Cinzel', 'serif'],
         body:    ['"DM Sans"', 'Inter', 'system-ui', 'sans-serif'],
       },
+      // Type scale — the single source of truth for text size.
+      //
+      // Derived from what the codebase actually used (2,038 hand-rolled
+      // `text-[Npx]` across 24 distinct values). The twelve sizes below were
+      // the real working scale; the other twelve were drift (17px, 19px, 22px,
+      // 26px, 30px, 34px, 42px, 48px, 52px, 8px, 9px) and now fold into their
+      // nearest neighbour.
+      //
+      // Size only, no paired line-height: existing `leading-[...]` classes stay
+      // authoritative, so adopting a token never changes vertical rhythm.
+      //
+      // Use these instead of `text-[Npx]`. The `lint:type-scale` script fails
+      // the build on raw pixel sizes so the scale cannot drift again.
+      fontSize: {
+        'micro':       '10px',  // legal footnotes, dense metadata
+        'label':       '11px',  // uppercase eyebrow labels, tags
+        'caption':     '12px',  // captions, breadcrumbs, secondary metadata
+        'small':       '13px',  // supporting copy, card body
+        'body':        '14px',  // default body text
+        'body-lg':     '15px',  // primary reading copy on guide pages
+        'lead':        '16px',  // intro paragraphs
+        'title-sm':    '18px',  // card titles, subsection headings
+        'title':       '20px',  // section headings
+        'title-lg':    '24px',  // page section headings
+        'headline':    '28px',  // major headings
+        'headline-lg': '32px',  // page headings
+        'display':     '40px',  // hero numerals and display figures
+      },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
