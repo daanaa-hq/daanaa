@@ -807,32 +807,29 @@ export default function OrganizationDetail() {
                       </div>
                     </div>
 
-                    {/* Secondary CTAs: Ways to Give guides */}
+                    {/* Secondary CTAs: Ways to Give guides.
+                        Ordered by how commonly each method is used, so the most
+                        likely path is the first one read. Grouping/disclosure is
+                        a Design System v2 item — seven flat links is at the edge
+                        of scannable. */}
                     <div className="mt-4 flex flex-col gap-2">
-                      <Link
-                        to="/giving-via-checks"
-                        className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
-                      >
-                        Give by check →
-                      </Link>
-                      <Link
-                        to="/giving-via-stocks"
-                        className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
-                      >
-                        Give appreciated stock →
-                      </Link>
-                      <Link
-                        to="/giving-via-routers"
-                        className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
-                      >
-                        Give via PayPal or Facebook →
-                      </Link>
-                      <Link
-                        to="/giving-via-daf"
-                        className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
-                      >
-                        Give via donor-advised fund →
-                      </Link>
+                      {[
+                        { to: '/giving-via-checks', label: 'Give by check' },
+                        { to: '/giving-via-recurring', label: 'Give monthly' },
+                        { to: '/giving-via-workplace', label: 'Give through your workplace' },
+                        { to: '/giving-via-stocks', label: 'Give appreciated stock' },
+                        { to: '/giving-via-crypto', label: 'Give cryptocurrency' },
+                        { to: '/giving-via-routers', label: 'Give via PayPal or Facebook' },
+                        { to: '/giving-via-daf', label: 'Give via donor-advised fund' },
+                      ].map((item) => (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          className="inline-flex items-center gap-2 font-body text-[12px] text-link-gold hover:text-bright-gold transition-colors"
+                        >
+                          {item.label} →
+                        </Link>
+                      ))}
                     </div>
                   </>
                 );

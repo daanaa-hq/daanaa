@@ -85,6 +85,9 @@ const GivingViaDafPage = lazy(() => import('./pages/GivingViaDafPage'))
 const GivingViaChecksPage = lazy(() => import('./pages/GivingViaChecksPage'))
 const GivingViaStocksPage = lazy(() => import('./pages/GivingViaStocksPage'))
 const GivingViaRoutersPage = lazy(() => import('./pages/GivingViaRoutersPage'))
+const GivingViaWorkplacePage = lazy(() => import('./pages/GivingViaWorkplacePage'))
+const GivingViaRecurringPage = lazy(() => import('./pages/GivingViaRecurringPage'))
+const GivingViaCryptoPage = lazy(() => import('./pages/GivingViaCryptoPage'))
 
 function PageLoader() {
   return (
@@ -128,6 +131,9 @@ export default function App() {
             <Route path="/giving-via-checks" element={<GivingViaChecksPage />} />
             <Route path="/giving-via-stocks" element={<GivingViaStocksPage />} />
             <Route path="/giving-via-routers" element={<GivingViaRoutersPage />} />
+            <Route path="/giving-via-workplace" element={<GivingViaWorkplacePage />} />
+            <Route path="/giving-via-recurring" element={<GivingViaRecurringPage />} />
+            <Route path="/giving-via-crypto" element={<GivingViaCryptoPage />} />
             <Route path="/volunteer" element={<VolunteerDiscoveryPage />} />
             <Route path="/profile-contexts" element={<ProfileContextsPage />} />
             <Route path="/for-nonprofits" element={<ForNonprofits />} />
