@@ -35,6 +35,7 @@ import GuildSection from '../components/GuildSection'
 import { sentenceCase } from '../utils/sentenceCase'
 import GiveYourWayRouter from '../components/GiveYourWayRouter'
 import VolunteerInterest from '../components/VolunteerInterest'
+import OrgInfoHierarchy from '../components/OrgInfoHierarchy'
 import RecurringSetup from '../components/RecurringSetup'
 import DataContextNote from '../components/DataContextNote'
 import FinancialContext from '../components/FinancialContext'
@@ -1071,28 +1072,25 @@ export default function OrganizationDetail() {
       </div>
 
 
-      {/* Mission & Programs */}
-      {/* Left column only renders when there is real content: no mission yet (show fallback text) or programs are listed.
-          When the mission is already shown in the hero and there are no programs, collapse to a single column. */}
+      {/* Organization Info Hierarchy — Mission, Financial, Ways to Give, Governance */}
+      {apiOrg && (
+        <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
+          <OrgInfoHierarchy org={apiOrg} />
+        </div>
+      )}
+
+      {/* Programs & Leadership (supplementary) */}
       <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
         <div>
-          <div className={`grid grid-cols-1 gap-12 ${(!org.mission || org.programs.length > 0) ? 'lg:grid-cols-2' : ''}`}>
-            {(!org.mission || org.programs.length > 0) && (
+          <div className={`grid grid-cols-1 gap-12 ${(org.programs.length > 0) ? 'lg:grid-cols-2' : ''}`}>
+            {org.programs.length > 0 && (
               <div>
-                {/* Mission fallback — only shown when the hero has no mission to display */}
-                {!org.mission && (
-                  <p className="mt-3 font-body text-cool-grey text-[15px]">A mission statement for this organization isn't in public records yet. You can often find more about their work by searching their name or calling them directly.</p>
-                )}
-                {org.programs.length > 0 && (
-                  <>
-                    <span className="block mt-8 font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">PROGRAMS</span>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {org.programs.map((program) => (
-                        <span key={program} className="px-3 py-1.5 rounded-full bg-navy-mid/10 text-deep-navy font-body text-[13px]">{program}</span>
-                      ))}
-                    </div>
-                  </>
-                )}
+                <span className="block font-body text-[11px] font-medium tracking-[0.08em] text-deep-gold uppercase">PROGRAMS</span>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {org.programs.map((program) => (
+                    <span key={program} className="px-3 py-1.5 rounded-full bg-navy-mid/10 text-deep-navy font-body text-[13px]">{program}</span>
+                  ))}
+                </div>
               </div>
             )}
             <div>

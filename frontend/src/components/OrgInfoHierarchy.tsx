@@ -13,7 +13,7 @@ import GiveYourWayRouter from './GiveYourWayRouter'
 
 interface InfoBlockProps {
   title: string
-  children: ReactNode
+  children?: ReactNode
   isMissing?: boolean
   missingReason?: string
 }
@@ -46,9 +46,9 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
     donate: org.donate_url_status === 'beta' || org.donate_url_status === 'claimed',
     website: org.website_status === 'ok',
     financial: !!org.merit_score,
-    board: org.board_size ?? false,
-    leadership: org.leadership_info ?? false,
-    programs: org.program_focus ?? false,
+    board: !!org.board_size,
+    leadership: false, // not in current ApiOrganization schema
+    programs: false, // not in current ApiOrganization schema
   }
 
   return (
@@ -100,7 +100,7 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
         <div className="space-y-4">
           {/* Leverage existing GiveYourWayRouter component */}
           <GiveYourWayRouter
-            ein={org.ein}
+            ein={org.EIN}
             organizationName={org.organization_name}
             streetAddress={org.street_address}
             donateUrl={org.donate_url}
@@ -139,9 +139,6 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
             {org.board_size && (
               <p>Board size: <strong>{org.board_size} members</strong></p>
             )}
-            {org.leadership_info && (
-              <p>Leadership available: Yes</p>
-            )}
           </div>
         </InfoBlock>
       ) : (
@@ -150,13 +147,6 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
           isMissing
           missingReason="Board and leadership information comes from recent Form 990 filings. It will appear here once available."
         />
-      )}
-
-      {/* TIER 6: Program Focus (20%+) */}
-      {dataAvailable.programs && org.program_focus && (
-        <InfoBlock title="Program Focus">
-          <p className="text-sm text-navy-mid">{org.program_focus}</p>
-        </InfoBlock>
       )}
 
       {/* ALWAYS SHOW: Trust Note */}

@@ -52,9 +52,9 @@ class AgenticSearchRouter:
 
         # Common location keywords
         self.location_keywords = {
-            "near", "in", "around", "city", "county", "state", "area",
+            "near", "around", "city", "county", "state", "area",
             "Cleveland", "New York", "Los Angeles", "Chicago", "Texas",
-            "California", "Ohio", "Pennsylvania", "New York", "Illinois",
+            "California", "Ohio", "Pennsylvania", "Illinois",
             "OH", "NY", "CA", "TX", "PA", "IL", "CO", "WA", "MA", "MN"
         }
 
@@ -77,22 +77,35 @@ class AgenticSearchRouter:
 
     def extract_location_intent(self, query: str) -> dict:
         """Extract location from query if present."""
+        import re
         query_lower = query.lower()
         location = None
 
-        for kw in self.location_keywords:
-            if kw.lower() in query_lower:
-                # Try to extract what follows location keyword
-                parts = query_lower.split(kw.lower())
-                if len(parts) > 1:
-                    after = parts[-1].strip().split()[0:2]  # grab next 1-2 words
-                    location = " ".join(after)
+        # First, look for explicit location indicators followed by a place
+        location_indicators = ["near", "around", "in", "by", "within"]
+        for indicator in location_indicators:
+            pattern = rf'{indicator}\s+([a-z\s]+?)(?:\s+(?:for|with|services|nonprofits|organizations|facility|facilities)|\s*$)'
+            match = re.search(pattern, query_lower)
+            if match:
+                location = match.group(1).strip()
+                # Filter out non-location words
+                if location.split()[0] not in ['for', 'with', 'to', 'at']:
                     break
+                location = None
+
+        # If no explicit location found, check for standalone place names with word boundaries
+        if not location:
+            for kw in self.location_keywords:
+                if len(kw) <= 2:  # State abbreviations
+                    pattern = rf'\b{re.escape(kw.lower())}\b'
+                    if re.search(pattern, query_lower):
+                        location = kw
+                        break
 
         return {
             "has_location": location is not None,
             "location": location,
-            "reason": f"Detected location keyword in query" if location else None
+            "reason": f"Detected location in query" if location else None
         }
 
     def extract_audience_intent(self, query: str) -> dict:
