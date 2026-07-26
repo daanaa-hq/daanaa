@@ -1057,29 +1057,7 @@ export default function OrganizationDetail() {
                     </div>
                   )}
                 </div>
-              ) : apiOrg!.claim_status !== 'letter_sent' && (
-                /* Unclaimed — show claim CTA */
-                <div className="rounded-xl border border-dashed border-soft-gold/30 bg-soft-gold/[0.03] px-6 py-5">
-                  <div className="flex items-start justify-between gap-6 flex-wrap">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-body text-[14px] font-semibold text-deep-navy">This page belongs to {apiOrg!.organization_name}.</p>
-                      <p className="font-body text-[13px] text-cool-grey mt-1.5 leading-relaxed">
-                        Right now it shows what's on public record. Claim it to tell your story in your own words — what you do, what you need, and how people can support your work. Free, always.
-                      </p>
-                    </div>
-                    <Link
-                      to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
-                      className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-deep-gold/50 text-deep-gold font-body text-[13px] font-medium hover:bg-soft-gold/10 transition-colors"
-                    >
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                      </svg>
-                      Claim your page
-                    </Link>
-                  </div>
-                </div>
-              )}
+              ) : null}
               </div>
             </div>
           </div>
