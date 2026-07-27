@@ -25,11 +25,33 @@ from typing import Dict, List, Tuple
 DB_PATH = 'data/merit_registry.db'
 
 
-def get_prior_active_run(db_path: str) -> str:
-    """Get the currently active v6 run ID."""
+def get_prior_active_run(db_path: str, explicit_baseline: str = None) -> str:
+    """
+    Get baseline run for comparison.
+
+    Args:
+        db_path: Database path
+        explicit_baseline: If provided, use this run ID as baseline (must exist in DB)
+
+    Returns:
+        Run ID of baseline, or None if not found
+    """
     try:
         db = sqlite3.connect(db_path)
         cursor = db.cursor()
+
+        # If explicit baseline provided, use it
+        if explicit_baseline:
+            cursor.execute('SELECT run_id FROM v6_scoring_runs WHERE run_id = ?', (explicit_baseline,))
+            result = cursor.fetchone()
+            db.close()
+            if result:
+                return result[0]
+            else:
+                print(f"ERROR: Explicit baseline run '{explicit_baseline}' not found in database")
+                return None
+
+        # Otherwise, try to find active run
         cursor.execute(
             'SELECT run_id FROM v6_scoring_runs WHERE status = ? ORDER BY started_at DESC LIMIT 1',
             ('active',)
@@ -294,17 +316,26 @@ def generate_fairness_report(db_path: str, new_run_id: str, prior_run_id: str) -
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: v6_fairness_comparison.py <new_run_id> [db_path]")
-        print("Example: v6_fairness_comparison.py v6_foundation_candidate_20260728_revised")
+        print("Usage: v6_fairness_comparison.py <new_run_id> [baseline_run_id] [db_path]")
+        print("Example: v6_fairness_comparison.py v6_foundation_candidate_20260728_revised v6_foundation_candidate_20260727_corrected")
+        print("If baseline_run_id not provided, uses currently active run (if any)")
         sys.exit(1)
 
     new_run_id = sys.argv[1]
-    db_path = sys.argv[2] if len(sys.argv) > 2 else DB_PATH
+    baseline_run_id = sys.argv[2] if len(sys.argv) > 2 else None
+    db_path = sys.argv[3] if len(sys.argv) > 3 else DB_PATH
 
     print(f"Generating fairness report for {new_run_id}...")
 
-    # Get prior run
-    prior_run_id = get_prior_active_run(db_path)
+    # Get baseline run (explicit or active)
+    if baseline_run_id:
+        print(f"Using explicit baseline: {baseline_run_id}")
+        prior_run_id = get_prior_active_run(db_path, explicit_baseline=baseline_run_id)
+        if not prior_run_id:
+            sys.exit(1)
+    else:
+        print("Looking for active run to use as baseline...")
+        prior_run_id = get_prior_active_run(db_path)
 
     # Generate report
     report = generate_fairness_report(db_path, new_run_id, prior_run_id)
