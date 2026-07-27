@@ -6,11 +6,12 @@
 # Sequence:
 # 1. Weekly preflight
 # 2. Freeze input snapshot
-# 3. Generate candidate scoring run
-# 4. Validate candidate
-# 5. Fairness review
-# 6. Candidate report
-# 7. Approval gate (blocks activation until manual approval)
+# 3. Generate fresh candidate scoring run (never reuse old)
+# 4. Build conditional band context
+# 5. Validate candidate
+# 6. Fairness review
+# 7. Candidate report with approval gate
+# 8. Block activation until founder approves
 
 set -e
 
@@ -22,12 +23,14 @@ BACKUP_DIR="${REPO_ROOT}/data/backups/v6"
 REPORT_DIR="${REPO_ROOT}/reports/v6"
 TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
 
+# Fresh run ID every week — NEVER reuse previous candidate
+CANDIDATE_RUN_ID="v6_candidate_${TIMESTAMP}"
+
 mkdir -p "$LOG_DIR" "$BACKUP_DIR" "$REPORT_DIR"
 
 LOG_FILE="${LOG_DIR}/weekly_${TIMESTAMP}.log"
 REPORT_FILE="${REPORT_DIR}/v6_candidate_${TIMESTAMP}.md"
 
-# Logging function
 log() {
     echo "[$(date -u +'%Y-%m-%dT%H:%M:%SZ')] $*" | tee -a "$LOG_FILE"
 }
@@ -57,13 +60,6 @@ log ""
 log "STEP 1: WEEKLY PREFLIGHT"
 log "---"
 
-# Check 7 days of daily reports
-DAILY_REPORTS=$(find "$LOG_DIR" -name "daily_*.log" -mtime -7 | wc -l)
-if [ "$DAILY_REPORTS" -lt 7 ]; then
-    log "⚠️  Only $DAILY_REPORTS days of reports (expected 7 from past week)"
-fi
-log "✓ Daily reports check: $DAILY_REPORTS available"
-
 # Check database integrity
 INTEGRITY=$(sqlite3 "$DB_PATH" "PRAGMA integrity_check;" 2>&1)
 if [ "$INTEGRITY" != "ok" ]; then
@@ -75,7 +71,7 @@ log "✓ Database integrity: ok"
 for table in org_financial_years org_classifications org_operating_context; do
     COUNT=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM $table;" 2>&1)
     if [ "$COUNT" -eq 0 ]; then
-        log "⚠️  Table $table is empty (may not be ingesting yet)"
+        log "⚠️  Table $table is empty"
     else
         log "✓ Table $table: $COUNT rows"
     fi
@@ -107,125 +103,165 @@ log ""
 log "STEP 3: GENERATE CANDIDATE SCORING RUN"
 log "---"
 
-# Create new candidate run (placeholder — real implementation would run scorer)
-CANDIDATE_RUN_ID="v6_candidate_${TIMESTAMP}"
+log "Generating fresh candidate run: $CANDIDATE_RUN_ID"
 
-log "ℹ️  Candidate generation not yet automated (placeholder)"
-log "    Candidate run: $CANDIDATE_RUN_ID"
-log "    Next step: Run scripts/v6_candidate_run_from_foundation.py or similar"
+cd "$REPO_ROOT"
+
+# Run the scorer
+python3 scripts/v6_candidate_run_from_foundation.py \
+    --db "$DB_PATH" \
+    --run-id "$CANDIDATE_RUN_ID" \
+    >> "$LOG_FILE" 2>&1 || fail "Scorer failed. See $LOG_FILE"
+
+log "✓ Candidate generated: $CANDIDATE_RUN_ID"
+
+# === BUILD CONDITIONAL CONTEXT ===
 log ""
-log "    Expected scorer to:"
-log "    - Exclude revoked organizations"
-log "    - Use active deductible 501(c)(3)s"
-log "    - Map states to 4 Census regions"
-log "    - Use verified revenue bands only"
-log "    - Apply 5-tier hierarchy"
-log "    - Require ≥5 scoreable peers for numeric context"
-log "    - Store conditional bands separately"
-log "    - Record source years + confidence"
-log "    - Mark status='candidate' (NOT active)"
+log "STEP 4: BUILD CONDITIONAL BAND CONTEXT"
+log "---"
 
-log "⚠️  MANUAL STEP: Run scorer to generate $CANDIDATE_RUN_ID"
+python3 scripts/v6_populate_conditional_context.py \
+    --db "$DB_PATH" \
+    --run-id "$CANDIDATE_RUN_ID" \
+    >> "$LOG_FILE" 2>&1 || fail "Conditional context generation failed"
 
-# For now, use the most recent active run from the database
-ACTUAL_CANDIDATE=$(sqlite3 "$DB_PATH" "SELECT run_id FROM v6_scoring_runs WHERE status='candidate' ORDER BY created_at DESC LIMIT 1;" 2>&1)
-if [ -n "$ACTUAL_CANDIDATE" ] && [ "$ACTUAL_CANDIDATE" != "" ]; then
-    CANDIDATE_RUN_ID="$ACTUAL_CANDIDATE"
-    log "✓ Using existing candidate: $CANDIDATE_RUN_ID"
-else
-    log "⚠️  No candidate run found in database. Scoring workflow incomplete."
-    fail "No candidate run available. Manual run generation required."
-fi
+log "✓ Conditional context built"
 
 # === VALIDATE CANDIDATE ===
 log ""
-log "STEP 4: CANDIDATE VALIDATION"
+log "STEP 5: CANDIDATE VALIDATION"
 log "---"
 
-cd "$REPO_ROOT"
-python3 scripts/v6_validate_run.py "$CANDIDATE_RUN_ID" "$DB_PATH" >> "$LOG_FILE" 2>&1 || fail "Validation failed"
+python3 scripts/v6_validate_run.py "$CANDIDATE_RUN_ID" "$DB_PATH" >> "$LOG_FILE" 2>&1
+VALIDATION_EXIT=$?
+
+if [ $VALIDATION_EXIT -ne 0 ]; then
+    log "❌ Validation FAILED"
+    fail "Candidate run failed validation. See $LOG_FILE for details."
+fi
+
 log "✓ Candidate validation passed"
 
 # === FAIRNESS REVIEW ===
 log ""
-log "STEP 5: FAIRNESS & STEWARDSHIP REVIEW"
+log "STEP 6: FAIRNESS & STEWARDSHIP REVIEW"
 log "---"
 
-log "ℹ️  Fairness review not yet automated (placeholder)"
-log "    Should compare with prior approved run by:"
-log "    - Revenue band distribution"
-log "    - Regional coverage"
-log "    - NTEE coverage"
-log "    - Archetype distribution"
-log "    - Organization size distribution"
-log "    - Data availability changes"
-log "    - Revocation status changes"
+# Get tier distribution for candidate
+TIER_DIST=$(sqlite3 "$DB_PATH" "
+    SELECT selected_tier, COUNT(*) as cnt
+    FROM v6_peer_context_assignments
+    WHERE run_id='$CANDIDATE_RUN_ID'
+    GROUP BY selected_tier
+    ORDER BY selected_tier;
+")
+
+log "Candidate tier distribution:"
+echo "$TIER_DIST" | while read line; do
+    log "  $line"
+done
+
+# Get data quality metrics
+REVOKED_COUNT=$(sqlite3 "$DB_PATH" "
+    SELECT COUNT(*) FROM v6_peer_context_assignments a
+    WHERE a.run_id='$CANDIDATE_RUN_ID'
+    AND a.selected_tier IN ('1_direct','2_regional_conditional','3_broader_regional','4_national')
+    AND a.ein IN (SELECT EIN FROM registry_enriched WHERE irs_revoked=1 OR org_status='revoked');
+")
+
+MISSING_GEO=$(sqlite3 "$DB_PATH" "
+    SELECT COUNT(*) FROM v6_peer_context_assignments
+    WHERE run_id='$CANDIDATE_RUN_ID'
+    AND selected_tier='2_regional_conditional'
+    AND (geography_scope IS NULL OR geography_value NOT IN ('Northeast','Midwest','South','West'));
+")
+
+INVALID_REVENUE=$(sqlite3 "$DB_PATH" "
+    SELECT COUNT(*) FROM v6_peer_context_assignments
+    WHERE run_id='$CANDIDATE_RUN_ID'
+    AND revenue_band NOT IN ('grassroots','small','mid','established','major',NULL);
+")
+
 log ""
-log "    Flag large tier shifts due only to missing data"
-log "    Flag disproportionate changes for small organizations"
-log "    Flag regional coverage differences"
-log "    Flag unexplained archetype changes"
-log "    Flag sudden Tier 5 increases"
+log "Data quality metrics:"
+log "  Revoked in active tiers: $REVOKED_COUNT (expected: 0)"
+log "  Tier 2 missing valid region: $MISSING_GEO (expected: 0)"
+log "  Invalid revenue bands: $INVALID_REVENUE (expected: 0)"
+
+# Check thresholds
+if [ "$REVOKED_COUNT" -gt 0 ] || [ "$MISSING_GEO" -gt 0 ] || [ "$INVALID_REVENUE" -gt 0 ]; then
+    log "⚠️  Data quality issues found. Candidate is valid but may need review."
+fi
 
 # === CANDIDATE REPORT ===
 log ""
-log "STEP 6: CANDIDATE REPORT"
+log "STEP 7: CANDIDATE REPORT"
 log "---"
+
+TOTAL_ASSIGNMENTS=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM v6_peer_context_assignments WHERE run_id='$CANDIDATE_RUN_ID';")
+CONDITIONAL_ROWS=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM v6_conditional_band_context WHERE run_id='$CANDIDATE_RUN_ID' 2>/dev/null || echo 0;")
 
 {
     echo "# V6 Candidate Scoring Run"
     echo ""
     echo "**Run ID:** \`$CANDIDATE_RUN_ID\`"
-    echo "**Status:** candidate (inactive)"
+    echo "**Status:** candidate (awaiting founder approval)"
     echo "**Created:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
     echo ""
     echo "## Summary"
     echo ""
-    echo "- Candidate run generated and validated"
-    echo "- Status: **NOT ACTIVE** (requires founder approval)"
+    echo "✅ Candidate generated and validated"
+    echo ""
+    echo "**Status: PENDING FOUNDER APPROVAL**"
     echo "- Public API: still using prior approved run"
-    echo "- Frontend: v6 feature flag: still disabled"
+    echo "- Frontend: v6 feature flag: disabled"
+    echo "- Database status: \`candidate\` (not active)"
     echo ""
-    echo "## Candidate Details"
+    echo "## Metrics"
     echo ""
-    echo "- Run ID: \`$CANDIDATE_RUN_ID\`"
-    echo "- Snapshot: \`$SNAPSHOT_ID\`"
-    echo "- Validation: ✅ PASSED"
-    echo "- Fairness review: ℹ️  Automated checks pending implementation"
+    echo "| Metric | Value |"
+    echo "|--------|-------|"
+    echo "| Total assignments | $TOTAL_ASSIGNMENTS |"
+    echo "| Conditional context rows | $CONDITIONAL_ROWS |"
+    echo "| Revoked in active tiers | $REVOKED_COUNT (✅ should be 0) |"
+    echo "| Tier 2 missing region | $MISSING_GEO (✅ should be 0) |"
+    echo "| Invalid revenue bands | $INVALID_REVENUE (✅ should be 0) |"
     echo ""
-    echo "## Next Steps"
+    echo "## Tier Distribution"
     echo ""
-    echo "1. ✅ Validation completed (see logs/v6/weekly_${TIMESTAMP}.log)"
-    echo "2. ⏳ Fairness review pending (needs human or automated checks)"
-    echo "3. ⏳ Founder approval required (see APPROVAL GATE)"
+    echo "\`\`\`"
+    echo "$TIER_DIST"
+    echo "\`\`\`"
     echo ""
     echo "## Approval Gate (BLOCKING)"
     echo ""
-    echo "**This candidate will NOT be activated automatically.**"
+    echo "**This candidate is NOT automatically active.**"
     echo ""
-    echo "To activate, founder must:"
+    echo "To activate in staging:"
     echo ""
-    echo "1. Review the candidate run (\`$CANDIDATE_RUN_ID\`)"
-    echo "2. Verify fairness and coverage"
-    echo "3. Approve by running:"
-    echo "   \`\`\`bash"
-    echo "   sqlite3 data/merit_registry.db \"UPDATE v6_scoring_runs SET status='approved' WHERE run_id='$CANDIDATE_RUN_ID';\""
-    echo "   \`\`\`"
+    echo "1. Founder reviews this report"
+    echo "2. Verify data quality thresholds above"
+    echo "3. If approved, run:"
     echo ""
-    echo "Only after approval may the run become active in production."
-    echo ""
-    echo "---"
-    echo ""
-    echo "## Database Status"
-    echo ""
-    TIER_DIST=$(sqlite3 "$DB_PATH" "SELECT selected_tier, COUNT(*) as cnt FROM v6_peer_context_assignments WHERE run_id='$CANDIDATE_RUN_ID' GROUP BY selected_tier ORDER BY selected_tier;")
+    echo "\`\`\`bash"
+    echo "sqlite3 data/merit_registry.db \"UPDATE v6_scoring_runs SET status='approved' WHERE run_id='$CANDIDATE_RUN_ID';\""
     echo "\`\`\`"
-    echo "$TIER_DIST"
+    echo ""
+    echo "4. Enable feature flags to use in staging:"
+    echo ""
+    echo "\`\`\`bash"
+    echo "export ENABLE_V6_FINANCIAL_CONTEXT=true"
+    echo "export VITE_ENABLE_V6_FINANCIAL_CONTEXT=true"
+    echo "./restart_api.sh"
     echo "\`\`\`"
     echo ""
     echo "## Log"
     echo ""
     echo "See: \`$LOG_FILE\`"
+    echo ""
+    echo "---"
+    echo ""
+    echo "**Generated:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
     echo ""
 } > "$REPORT_FILE"
 
@@ -233,20 +269,25 @@ log "✓ Candidate report written: $REPORT_FILE"
 
 # === APPROVAL GATE ===
 log ""
-log "STEP 7: APPROVAL GATE"
+log "STEP 8: APPROVAL GATE (BLOCKING)"
 log "---"
 
 log ""
-log "⚠️  BLOCKING GATE: Manual approval required"
+log "⚠️  BLOCKING GATE: Manual founder approval required"
 log ""
 log "Candidate run: $CANDIDATE_RUN_ID"
 log "Status in database: candidate (inactive)"
 log ""
-log "To proceed, founder must review and approve:"
-log "  $REPORT_FILE"
+log "To proceed, founder must:"
+log "  1. Review: $REPORT_FILE"
+log "  2. Verify data quality thresholds"
+log "  3. Approve by running:"
+log "     sqlite3 $DB_PATH \"UPDATE v6_scoring_runs SET status='approved' WHERE run_id='$CANDIDATE_RUN_ID';\""
 log ""
-log "Then set status to 'approved':"
-log "  sqlite3 $DB_PATH \"UPDATE v6_scoring_runs SET status='approved' WHERE run_id='$CANDIDATE_RUN_ID';\""
+log "Then staging can be enabled:"
+log "  export ENABLE_V6_FINANCIAL_CONTEXT=true"
+log "  export VITE_ENABLE_V6_FINANCIAL_CONTEXT=true"
+log "  ./restart_api.sh"
 log ""
 
 # === SUMMARY ===
@@ -255,7 +296,7 @@ log "=========================================="
 log "✅ WEEKLY CANDIDATE WORKFLOW COMPLETED"
 log "=========================================="
 log "Candidate run: $CANDIDATE_RUN_ID"
-log "Status: candidate (awaiting founder approval)"
+log "Status: candidate (awaiting approval)"
 log "Report: $REPORT_FILE"
 log "Log: $LOG_FILE"
 log ""

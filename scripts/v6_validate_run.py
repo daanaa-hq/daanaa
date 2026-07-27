@@ -71,26 +71,34 @@ def validate_run(run_id: str, db_path: str = DB_PATH) -> tuple[bool, list[str]]:
             errors.append(f"Found {len(dupes)} duplicate EINs in assignments")
 
         # 4. Check for revoked organizations in active tiers
+        # Reject any assignment where EITHER irs_revoked=1 OR org_status='revoked'
         cursor.execute('''
             SELECT COUNT(*) as cnt FROM v6_peer_context_assignments a
             WHERE a.run_id = ?
             AND a.selected_tier IN ('1_direct', '2_regional_conditional', '3_broader_regional', '4_national')
-            AND a.ein IN (SELECT EIN FROM registry_enriched WHERE irs_revoked = 1)
+            AND a.ein IN (
+                SELECT EIN FROM registry_enriched
+                WHERE irs_revoked = 1
+                   OR org_status = 'revoked'
+            )
         ''', (run_id,))
         revoked_active = cursor.fetchone()['cnt']
         if revoked_active > 0:
             errors.append(f"Found {revoked_active} revoked organizations in active tiers")
         print(f"  ✓ Revoked in active: {revoked_active}")
 
-        # 5. Check Tier 1: must have revenue_band
+        # 5. Check Tier 1: must have verified revenue data and valid revenue_band
         cursor.execute('''
             SELECT COUNT(*) as cnt FROM v6_peer_context_assignments
             WHERE run_id = ? AND selected_tier = '1_direct'
-            AND (revenue_band IS NULL OR revenue_band = '')
+            AND (
+                revenue_band IS NULL
+                OR revenue_band NOT IN ('grassroots', 'small', 'mid', 'established', 'major')
+            )
         ''', (run_id,))
         tier1_no_revenue = cursor.fetchone()['cnt']
         if tier1_no_revenue > 0:
-            errors.append(f"Tier 1 Direct: {tier1_no_revenue} assignments without revenue_band")
+            errors.append(f"Tier 1 Direct: {tier1_no_revenue} assignments without verified revenue_band")
 
         cursor.execute(
             'SELECT COUNT(*) as cnt FROM v6_peer_context_assignments WHERE run_id = ? AND selected_tier = ?',
@@ -99,15 +107,18 @@ def validate_run(run_id: str, db_path: str = DB_PATH) -> tuple[bool, list[str]]:
         tier1_cnt = cursor.fetchone()['cnt']
         print(f"  ✓ Tier 1 Direct: {tier1_cnt:,}")
 
-        # 6. Check Tier 2: must be regional conditional
+        # 6. Check Tier 2: must use four-region geography (Census regions, not states)
         cursor.execute('''
             SELECT COUNT(*) as cnt FROM v6_peer_context_assignments
             WHERE run_id = ? AND selected_tier = '2_regional_conditional'
-            AND geography_scope <> 'state'
+            AND (
+                geography_scope IS NULL OR geography_scope <> 'regional'
+                OR geography_value NOT IN ('Northeast', 'Midwest', 'South', 'West')
+            )
         ''', (run_id,))
-        tier2_not_state = cursor.fetchone()['cnt']
-        if tier2_not_state > 0:
-            errors.append(f"Tier 2 Regional: {tier2_not_state} assignments without state scope")
+        tier2_invalid_geo = cursor.fetchone()['cnt']
+        if tier2_invalid_geo > 0:
+            errors.append(f"Tier 2 Regional: {tier2_invalid_geo} assignments without valid Census-region (Northeast/Midwest/South/West)")
 
         cursor.execute(
             'SELECT COUNT(*) as cnt FROM v6_peer_context_assignments WHERE run_id = ? AND selected_tier = ?',
@@ -164,11 +175,11 @@ def validate_run(run_id: str, db_path: str = DB_PATH) -> tuple[bool, list[str]]:
         if not low_peer_tiers:
             print(f"  ✓ Minimum peer threshold: all numeric tiers ≥5 peers")
 
-        # 11. Check for invalid revenue bands
+        # 11. Check for invalid revenue bands (canonical lowercase values)
         cursor.execute('''
             SELECT DISTINCT revenue_band FROM v6_peer_context_assignments
-            WHERE run_id = ? AND revenue_band NOT IN
-            ('Grassroots', 'Small', 'Mid', 'Established', 'Major', NULL)
+            WHERE run_id = ? AND revenue_band IS NOT NULL
+            AND revenue_band NOT IN ('grassroots', 'small', 'mid', 'established', 'major')
         ''', (run_id,))
         invalid_bands = cursor.fetchall()
         if invalid_bands:
