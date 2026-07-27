@@ -7,6 +7,7 @@ import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
 import urllib.parse
 from math import radians, cos, sin, asin, sqrt
 from datetime import datetime, timezone, timedelta
+import traceback
 from difflib import get_close_matches
 
 # Sentry error tracking — activate by setting SENTRY_DSN env var.
@@ -2859,6 +2860,70 @@ def get_financials(ein):
         "financials": [record],
         "total": 1,
     })
+
+@app.route('/api/organizations/<ein>/financial-context')
+@limiter.limit("60 per minute")
+def get_financial_context_v6(ein):
+    """
+    V6 Financial Context endpoint.
+
+    Returns comprehensive peer context using the v6 foundation.
+    Feature-flagged via ENABLE_V6_FINANCIAL_CONTEXT env var (default: false).
+
+    Response includes:
+    - organization_ein
+    - methodology_version
+    - data_status
+    - ntee_code, ntee_level
+    - geography_scope, geography_value
+    - funding_archetype
+    - revenue_band
+    - selected_tier (Tier 1-5)
+    - peer_group_description
+    - organization_metric (months of reserve)
+    - peer statistics (median, p25, p75, counts)
+    - confidence and limitations
+    - conditional_band_context (for Tier 2 without revenue)
+    """
+
+    ENABLE_V6 = os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'false').lower() == 'true'
+
+    if not ENABLE_V6:
+        return jsonify({
+            'error': 'v6 financial context not yet enabled',
+            'message': 'This endpoint is in development. Please check back soon.'
+        }), 503
+
+    # Sanitize EIN
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean or len(ein_clean) != 9:
+        return jsonify({"error": "Invalid EIN format"}), 400
+
+    try:
+        from scripts.v6_financial_context_api import get_v6_financial_context
+        db = get_db()
+        context = get_v6_financial_context(db, ein_clean)
+
+        if context is None:
+            return jsonify({
+                'organization_ein': ein_clean,
+                'data_status': 'not_found',
+                'message': 'Organization not found in v6 financial context'
+            }), 404
+
+        # Add metadata
+        context['retrieved_at'] = datetime.utcnow().isoformat() + 'Z'
+        context['endpoint_version'] = 'v6_foundation_2026-07-27'
+
+        return jsonify(context)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': 'Internal server error',
+            'ein': ein_clean
+        }), 500
 
 @app.route('/api/ntee-categories')
 @limiter.exempt
