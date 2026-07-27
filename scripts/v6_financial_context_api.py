@@ -13,6 +13,10 @@ import os
 from datetime import datetime
 
 ENABLE_V6 = os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'false').lower() == 'true'
+V6_CANDIDATE_RUN_ID = os.environ.get(
+    'V6_CANDIDATE_RUN_ID',
+    'v6_foundation_candidate_20260727_corrected',
+)
 
 def get_v6_financial_context(db, ein):
     """
@@ -59,13 +63,12 @@ def get_v6_financial_context(db, ein):
         assignment_sql = '''
             SELECT
                 v.run_id,
-                v.ein,
+                v.EIN AS ein,
                 v.selected_tier,
                 v.ntee_level,
                 v.ntee_code,
                 v.geography_scope,
                 v.geography_value,
-                v.archetype,
                 v.revenue_band,
                 v.revenue_band_source,
                 v.peer_group_key,
@@ -82,14 +85,16 @@ def get_v6_financial_context(db, ein):
                 v.confidence,
                 v.confidence_margin,
                 v.is_inferred,
-                r.methodology_version
+                org.merit_archetype_v5 AS archetype,
+                r.scorer_version AS methodology_version
             FROM v6_peer_context_assignments v
             JOIN v6_scoring_runs r ON v.run_id = r.run_id
-            WHERE v.ein = ? AND r.status = 'active'
+            LEFT JOIN registry_enriched org ON org.EIN = v.EIN
+            WHERE v.ein = ? AND v.run_id = ? AND r.status IN ('candidate', 'active')
             LIMIT 1
         '''
 
-        assignment = db.execute(assignment_sql, (ein,)).fetchone()
+        assignment = db.execute(assignment_sql, (ein, V6_CANDIDATE_RUN_ID)).fetchone()
         if not assignment:
             return {
                 'organization_ein': ein,
@@ -157,8 +162,14 @@ def get_v6_financial_context(db, ein):
 
         # If organization is Tier 2 (Regional Conditional) with missing revenue,
         # include conditional band context
-        if assignment_dict['selected_tier'] == '2_Regional_Conditional' and not assignment_dict['revenue_band']:
-            context['conditional_band_context'] = _get_conditional_bands(db, ein, assignment_dict)
+        if (
+            assignment_dict['selected_tier'] in ('2_regional_conditional', '2_Regional_Conditional')
+            and not assignment_dict['revenue_band']
+        ):
+            context['peer_median'] = None
+            context['peer_p25'] = None
+            context['peer_p75'] = None
+            context['conditional_band_context'] = _get_conditional_bands(db, assignment_dict)
 
         return context
 
@@ -182,11 +193,11 @@ def _get_limitations(assignment):
         limitations.append('Limited peer group size')
     if scoreable < 10:
         limitations.append('Very limited peer data')
-    if tier == '3_Broader_Regional':
+    if tier in ('3_broader_regional', '3_Broader_Regional'):
         limitations.append('Broader peer group (fewer exact matches)')
-    if tier == '4_National':
+    if tier in ('4_national', '4_National'):
         limitations.append('National peer group (geographic variation)')
-    if tier == '5_Archetype_Only':
+    if tier in ('5_archetype_only', '5_Archetype_Only'):
         limitations.append('No numeric comparison available')
     if assignment.get('is_inferred'):
         limitations.append('Archetype inferred from revenue composition')
@@ -194,28 +205,30 @@ def _get_limitations(assignment):
     return limitations if limitations else None
 
 
-def _get_conditional_bands(db, ein, assignment):
+def _get_conditional_bands(db, assignment):
     """Fetch conditional revenue-band context for orgs without direct revenue data."""
 
     try:
         sql = '''
             SELECT
                 revenue_band,
-                peer_median,
-                peer_p25,
-                peer_p75,
+                median_reserves AS peer_median,
+                p25_reserves AS peer_p25,
+                p75_reserves AS peer_p75,
                 peer_count,
                 scoreable_peer_count,
                 confidence
             FROM v6_conditional_band_context
-            WHERE ein = ? AND scoreable_peer_count >= 5
+            WHERE run_id = ?
+              AND peer_group_key = ?
+              AND scoreable_peer_count >= 5
             ORDER BY revenue_band
         '''
 
-        rows = db.execute(sql, (ein,)).fetchall()
-        if not rows:
-            return None
-
+        rows = db.execute(
+            sql,
+            (assignment['run_id'], assignment['peer_group_key']),
+        ).fetchall()
         bands = []
         for row in rows:
             bands.append({
@@ -231,7 +244,12 @@ def _get_conditional_bands(db, ein, assignment):
 
         return {
             'explanation': 'Revenue information was not available for this organization. The table below shows financial context for organizations in the same peer group across different revenue bands. This is not an assessment of this organization.',
-            'bands': bands
+            'bands': bands,
+            'message': (
+                'No revenue band currently has enough scoreable peers for a '
+                'numeric comparison.'
+                if not bands else None
+            ),
         }
     except Exception:
         return None
