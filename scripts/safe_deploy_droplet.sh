@@ -268,6 +268,40 @@ frontend_build() {
   log "✓ frontend built ($(du -sh "$FRONTEND_LOCAL/dist" | cut -f1))"
 }
 
+# Bound the hashed-asset compatibility window.
+#
+# frontend_ship deliberately keeps prior hashed chunks (see its comments) so
+# cached HTML referencing old chunk names keeps working after a swap. That was
+# right, but unbounded: assets accumulated to 1,461 files / 49M over four days
+# (~600 files a day) because nothing ever removed them.
+#
+# index.html is served `cache-control: no-cache`, so a returning browser always
+# revalidates and gets the current chunk names. Old chunks are only needed by a
+# session that already loaded an older index.html and then lazy-loads a route
+# chunk. That window is minutes to hours, so 7 days is generous.
+#
+# Never removes anything the live index.html references, regardless of age.
+ASSET_RETENTION_DAYS="${ASSET_RETENTION_DAYS:-7}"
+prune_old_assets() {
+  local before after freed
+  before=$($SSH "find ${FRONTEND_DROPLET}/assets -type f | wc -l" 2>/dev/null || echo 0)
+  $SSH "set -e
+    keep=\$(mktemp)
+    grep -oE 'assets/[A-Za-z0-9_.-]+' ${FRONTEND_DROPLET}/index.html \
+      | sed 's|assets/||' | sort -u > \"\$keep\"
+    find ${FRONTEND_DROPLET}/assets -type f -mtime +${ASSET_RETENTION_DAYS} -printf '%f\n' \
+      | sort -u | comm -23 - \"\$keep\" \
+      | while IFS= read -r f; do rm -f ${FRONTEND_DROPLET}/assets/\"\$f\"; done
+    rm -f \"\$keep\"" >>"$LOG" 2>&1 || { log "WARN: asset prune failed (non-fatal)"; return 0; }
+  after=$($SSH "find ${FRONTEND_DROPLET}/assets -type f | wc -l" 2>/dev/null || echo 0)
+  freed=$(( before - after ))
+  if [ "$freed" -gt 0 ]; then
+    log "Pruned ${freed} asset(s) older than ${ASSET_RETENTION_DAYS}d (${before} → ${after})"
+  else
+    log "Asset prune: nothing older than ${ASSET_RETENTION_DAYS}d (${after} files)"
+  fi
+}
+
 # Ship the SPA bundle. droplet_api serves files fresh from FRONTEND_DROPLET, so an
 # rsync updates the site with no service restart. Atomic-ish: rsync to a temp dir then swap.
 frontend_ship() {
@@ -307,6 +341,7 @@ frontend_ship() {
   if [ "$ok" = "1" ]; then
     $SSH "rm -rf ${FRONTEND_DROPLET}.old" >>"$LOG" 2>&1 || true
     log "✓ frontend live — all smoke checks passed; .old cleaned up"
+    prune_old_assets
   else
     # Roll back to previous release; preserve the failed bundle for inspection.
     $SSH "( [ -d ${FRONTEND_DROPLET} ] && mv ${FRONTEND_DROPLET} ${FRONTEND_DROPLET}.failed || true ) && \
