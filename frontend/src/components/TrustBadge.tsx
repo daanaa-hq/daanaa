@@ -132,13 +132,13 @@ export function buildCriteria(org: ApiOrganization): TierCriterion[] {
     {
       id: 'financial_health',
       label: 'Financial health',
-      description: org.merit_band
-        ? `Financial report score: ${Math.round(org.merit_score ?? 0)}/100 (${org.merit_band})`
+      description: org.scoring_tier
+        ? `Peer financial context available (confidence: ${org.confidence || 'standard'})`
         : 'Computed from annual report expense, revenue, and asset detail when filed',
-      status: org.merit_band
-        ? (PASSING_BANDS.includes(org.merit_band) ? 'met' : 'partial')
+      status: org.scoring_tier
+        ? (org.scoring_tier === '1_Full_Context' || org.scoring_tier === '2_Regional_Context' ? 'met' : 'partial')
         : 'unavailable',
-      shortFact: org.merit_band ? `Financials: ${org.merit_band}` : 'Financials scored',
+      shortFact: org.scoring_tier ? `Financial context: ${org.scoring_tier.split('_')[0]}` : 'Financials scored',
     },
     {
       id: 'mission',

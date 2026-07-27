@@ -4,21 +4,12 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useJsonLd, websiteSchema } from '../hooks/useJsonLd'
 import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
-import LampMark from '../components/LampMark'
 import { useApi } from '../hooks/useApi'
 import { getStats, getCategories, getOrganizations, type ApiOrganization } from '../data/api'
-import { TIER_INK } from '../components/TrustBadge'
-import type { TierName } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { getFeaturedCategory } from '../data/featuredCategory'
 import AddToWalletButton from '../components/AddToWalletButton'
 
-const TIER_STRIP: { name: TierName; pct: string; blurb: string }[] = [
-  { name: 'Beacon',  pct: '0.6%',  blurb: 'Complete public data: financial reports, mission statement, website, and current Form 990' },
-  { name: 'Torch',   pct: '15.6%', blurb: 'Strong public data: financial context available, recent filings, organizational information' },
-  { name: 'Candle',  pct: '28.7%', blurb: 'Moderate public data: some financial information, basic organizational records' },
-  { name: 'Spark',   pct: '55.1%', blurb: 'Recognized nonprofit with minimal public information available' },
-]
 
 // Returns the week number anchored to Monday so all users see the same shuffle each week
 function weekSeed(): number {
@@ -750,61 +741,6 @@ function StatsBar() {
   )
 }
 
-// ─── Trust Tiers strip ────────────────────────────────────────────────────────
-function TiersStrip() {
-  return (
-    <section className="bg-white border-t border-b border-light-grey py-14 md:py-20">
-      <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-        <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-0">
-
-          {/* Label column */}
-          <div className="md:w-[200px] shrink-0">
-            <p className="font-body text-label font-semibold tracking-[0.08em] text-deep-gold uppercase mb-1">
-              Public Data Completeness
-            </p>
-            <p className="font-body text-body text-cool-grey leading-[1.5]">
-              Some organizations have published websites and Form 990s. Others are small, local, or online-only. Each tier reflects what public records are available.
-            </p>
-            <Link
-              to="/tiers"
-              className="mt-2 inline-block font-body text-small text-soft-gold hover:text-bright-gold transition-colors"
-            >
-              How tiers work →
-            </Link>
-          </div>
-
-          {/* Five tier cells — horizontal scroll on mobile, fixed 5-col grid on md+ */}
-          <div className="flex-1 md:border-l md:border-light-grey md:ml-10 md:pl-10">
-            <div className="flex overflow-x-auto md:grid md:grid-cols-5 snap-x snap-mandatory scrollbar-none -mx-6 px-6 md:mx-0 md:px-0 gap-0">
-            {TIER_STRIP.map(({ name, pct, blurb }) => (
-              <Link
-                key={name}
-                to={name === 'Spark' ? '/directory' : `/directory?min_tier=${name}`}
-                className="snap-start shrink-0 w-[88px] md:w-auto flex flex-col items-center gap-1.5 px-2 py-3 border-r border-light-grey last:border-r-0 hover:bg-warm-cream/60 transition-colors group"
-              >
-                <LampMark tier={name} size="sm" />
-                <span
-                  className="font-body text-label font-semibold tracking-[0.03em] text-center"
-                  style={{ fontFamily: 'Cinzel, serif', color: TIER_INK[name] }}
-                >
-                  {name}
-                </span>
-                <span className="font-body text-micro text-cool-grey text-center leading-tight hidden lg:block">
-                  {pct}
-                </span>
-                <span className="font-body text-micro text-cool-grey text-center leading-tight hidden xl:block">
-                  {blurb}
-                </span>
-              </Link>
-            ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 // ─── Giving Wallet ────────────────────────────────────────────────────────────
 function WalletSection() {
   return (
@@ -851,31 +787,40 @@ function WalletSection() {
             </Link>
           </div>
 
-          {/* Wallet mockup */}
+          {/* Wallet preview — mirrors the real WalletPage: a light surface with
+              funding/volunteering tabs and OrgCardRow-style rows. Keep this in
+              step with WalletPage.tsx; a preview that flatters what the page
+              does not do is the kind of promise we do not get to make. */}
           <div>
-            <div className="bg-dark-surface border border-warm-cream/10 rounded-2xl p-6 shadow-2xl">
-              <div className="flex items-center justify-between mb-5">
-                <span className="font-display italic text-title-sm text-warm-cream">Your Giving Wallet</span>
-                <span className="font-body text-label tracking-[0.04em]" style={{ color: 'rgb(var(--muted-cream-rgb) / 0.8)' }}>3 saved</span>
+            <div className="bg-warm-cream border border-light-grey rounded-2xl p-6 shadow-2xl">
+              <div className="mb-4">
+                <p className="font-display italic text-title-sm text-deep-navy">Your Giving Wallet</p>
+                <p className="font-body text-label text-cool-grey mt-0.5">3 organizations saved</p>
               </div>
-              <div className="space-y-3">
+
+              {/* Funding / Volunteering tabs, funding active (WalletPage default) */}
+              <div className="flex items-center gap-2 mb-4">
+                <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-green-500 text-white font-body text-caption font-semibold">
+                  Funding
+                </span>
+                <span className="inline-flex items-center px-4 py-1.5 rounded-full bg-white border border-light-grey text-cool-grey font-body text-caption font-semibold">
+                  Volunteering
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2">
                 {[
-                  { org: 'Houston Food Bank', location: 'Houston, TX', healthClass: 'bg-emerald-500/15 text-emerald-300', health: 'Financially healthy', intent: 'Giving · $500/yr', gem: false },
-                  { org: 'Literacy Coalition', location: 'Austin, TX', healthClass: 'bg-blue-500/15 text-blue-300', health: 'Financially stable', intent: 'Volunteering · 4 hrs/wk', gem: true },
-                  { org: 'Houston SPCA', location: 'Houston, TX', healthClass: 'bg-emerald-500/15 text-emerald-300', health: 'Financially healthy', intent: null, gem: false },
+                  { org: 'Houston Food Bank',  location: 'Houston, TX', log: '2 donations' },
+                  { org: 'Literacy Coalition', location: 'Austin, TX',  log: '1 donation' },
+                  { org: 'Houston SPCA',       location: 'Houston, TX', log: null },
                 ].map(d => (
-                  <div key={d.org} className="bg-white/5 rounded-xl px-4 py-3.5">
-                    <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <p className="font-body text-small text-warm-cream font-semibold leading-snug">{d.org}</p>
-                      {d.gem && (
-                        <span className="font-body text-micro px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-300 shrink-0">Hidden gem</span>
-                      )}
-                    </div>
-                    <p className="font-body text-label text-muted-cream mb-2">{d.location}</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`font-body text-micro px-2 py-0.5 rounded-full ${d.healthClass}`}>{d.health}</span>
-                      {d.intent && (
-                        <span className="font-body text-micro text-soft-gold/80">{d.intent}</span>
+                  <div key={d.org} className="bg-white border border-light-grey rounded-xl px-5 py-4">
+                    <p className="font-display text-lead text-deep-navy leading-snug">{d.org}</p>
+                    <p className="font-body text-micro text-cool-grey mt-0.5">{d.location}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="font-body text-caption text-deep-navy font-medium">View log</span>
+                      {d.log && (
+                        <span className="font-body text-label text-green-600">{d.log}</span>
                       )}
                     </div>
                   </div>
@@ -945,7 +890,7 @@ function HiddenGemsSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {gems.map((org, i) => {
-            const signal = org.v5_context?.score?.health_signal ?? 'STABLE'
+            const hasFullContext = org.scoring_tier && (org.scoring_tier === '1_Full_Context' || org.scoring_tier === '2_Regional_Context')
             const causes = (org.cause_tags ?? []).slice(0, 2)
             return (
               <div
@@ -979,8 +924,8 @@ function HiddenGemsSection() {
                   </div>
                 )}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-micro font-semibold border font-body ${HEALTH_CLASSES[signal] ?? HEALTH_CLASSES.STABLE}`}>
-                    {HEALTH_LABEL[signal] ?? 'Financially stable'}
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-micro font-semibold border font-body ${hasFullContext ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                    {hasFullContext ? 'Financial context' : 'Emerging profile'}
                   </span>
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-micro font-semibold border bg-violet-50 text-violet-700 border-violet-200 font-body">
                     Hidden gem
@@ -1129,7 +1074,6 @@ export default function Home() {
 
       <PeerFinancialContextSection />
       <WalletSection />
-      <TiersStrip />
       <StewardshipSection />
       <FinalCTA />
     </div>

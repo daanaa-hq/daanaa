@@ -79,12 +79,8 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
       {dataAvailable.financial ? (
         <InfoBlock title="Financial Context">
           <div className="text-sm text-navy-mid space-y-2">
-            {org.merit_score && (
-              <p>Financial health ranking: <strong>{Math.round(org.merit_score)}/100</strong> in their peer group</p>
-            )}
-            {org.merit_band && (
-              <p>Organization size: <strong>{org.merit_band}</strong></p>
-            )}
+            {/* Peer context and health signal shown via V5Context + FinancialContext
+                components on the main detail page — no ranking here (Principle #7). */}
           </div>
         </InfoBlock>
       ) : (
@@ -96,13 +92,17 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
       )}
 
       {/* TIER 3: ALWAYS show ways to give */}
-      <InfoBlock title="How to Give">
+      <div id="ways-to-give" className="scroll-mt-24">
+        <InfoBlock title="Ways to Give">
         <div className="space-y-4">
           {/* Leverage existing GiveYourWayRouter component */}
           <GiveYourWayRouter
             ein={org.EIN}
             organizationName={org.organization_name}
             streetAddress={org.street_address}
+            city={org.CITY}
+            state={org.STATE}
+            zipcode={org.zipcode}
             donateUrl={org.donate_url}
             donateUrlStatus={org.donate_url_status}
             website={org.website}
@@ -117,6 +117,7 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
           </div>
         </div>
       </InfoBlock>
+      </div>
 
       {/* TIER 4: Website (70%+) */}
       {dataAvailable.website && org.website && (
@@ -132,20 +133,23 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
         </InfoBlock>
       )}
 
-      {/* TIER 5: Board/Governance (40%+) */}
-      {dataAvailable.board ? (
-        <InfoBlock title="Governance">
+      {/* TIER 5: Organization Profile — size + board (40%+ coverage) */}
+      {(dataAvailable.board || org.merit_band) ? (
+        <InfoBlock title="Organization">
           <div className="text-sm text-navy-mid space-y-2">
+            {org.merit_band && (
+              <p>Size: <strong>{org.merit_band}</strong></p>
+            )}
             {org.board_size && (
-              <p>Board size: <strong>{org.board_size} members</strong></p>
+              <p>Board: <strong>{org.board_size} members</strong></p>
             )}
           </div>
         </InfoBlock>
       ) : (
         <InfoBlock
-          title="Governance"
+          title="Organization"
           isMissing
-          missingReason="Board and leadership information comes from recent Form 990 filings. It will appear here once available."
+          missingReason="Organization and board information comes from recent Form 990 filings. It will appear here once available."
         />
       )}
 

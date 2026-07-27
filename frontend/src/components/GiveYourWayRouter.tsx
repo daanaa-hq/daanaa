@@ -17,6 +17,7 @@ interface GiveMethodProps {
   streetAddress?: string | null
   city?: string | null
   state?: string | null
+  zipcode?: string | null
   donateUrl?: string | null
   donateUrlStatus?: 'beta' | 'claimed' | null | string
   website?: string | null
@@ -64,7 +65,17 @@ const methods: MethodConfig[] = [
         <p className="text-deep-navy font-medium">Enter in your DAF provider:</p>
         <div className="bg-slate-100 border border-slate-300 p-2 rounded font-mono text-xs text-deep-navy space-y-1">
           <div>EIN: {p.ein}</div>
-          {p.streetAddress && <div className="text-slate-600">{p.streetAddress}</div>}
+          {p.streetAddress && (
+            <>
+              <div className="text-slate-600">{p.streetAddress}</div>
+              {(p.city || p.state || p.zipcode) && (
+                <div className="text-slate-600">
+                  {[p.city, p.state].filter(Boolean).join(', ')}
+                  {p.zipcode && ` ${p.zipcode}`}
+                </div>
+              )}
+            </>
+          )}
         </div>
         <button
           onClick={() => navigator.clipboard.writeText(`${p.ein}`)}
@@ -89,7 +100,12 @@ const methods: MethodConfig[] = [
           {p.streetAddress && (
             <>
               <div className="text-slate-600">{p.streetAddress}</div>
-              {p.city && p.state && <div className="text-slate-600">{p.city}, {p.state}</div>}
+              {(p.city || p.state || p.zipcode) && (
+                <div className="text-slate-600">
+                  {[p.city, p.state].filter(Boolean).join(', ')}
+                  {p.zipcode && ` ${p.zipcode}`}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -110,7 +126,12 @@ const methods: MethodConfig[] = [
           {p.streetAddress && (
             <>
               <div className="text-slate-600">{p.streetAddress}</div>
-              {p.city && p.state && <div className="text-slate-600">{p.city}, {p.state}</div>}
+              {(p.city || p.state || p.zipcode) && (
+                <div className="text-slate-600">
+                  {[p.city, p.state].filter(Boolean).join(', ')}
+                  {p.zipcode && ` ${p.zipcode}`}
+                </div>
+              )}
             </>
           )}
         </div>

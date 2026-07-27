@@ -1,3 +1,67 @@
+## 2026-07-26: V6 Scoring Ledger Architecture (Founder Decision)
+
+**Problem:** Two inconsistent v6 datasets exist (`tier_assignments` vs `registry_enriched`), no scoring_run record, data quality issues (13,991 Tier 1 nulls, 405,987 blank NTEECC). Initial quick-fix approach (migrate one table into the other) failed due to SQLite performance + database locking.
+
+**Founder Decision:** Create new immutable, versioned v6 scoring ledger. Do NOT migrate between existing tables.
+
+**Architecture (approved):**
+
+Three-table design:
+1. **v6_scoring_runs** — metadata about each v6 scoring run (version, commit, input snapshot, criteria, source years, dates, row counts, status)
+2. **v6_peer_context_assignments** — authoritative v6 assignments per EIN per run (tier, data_status, peer metrics, confidence, methodology version, source years)
+3. **registry_enriched** — nonprofit catalog + API serving table (receives materialized copy of active run for performance, but never canonical)
+
+Historical snapshots:
+- `tier_assignments` — preserve as prior snapshot for comparison and rollback
+
+**Design benefits:**
+- ✅ Reproducibility: each run versioned, immutable, traceable to code commit + input snapshot
+- ✅ Rollback: can revert to any prior run without data loss
+- ✅ Audit trail: full history of scoring decisions + changes
+- ✅ No partial migrations: clean separation of source-of-truth from serving projections
+- ✅ Stewardship P9 (decisions explainable later): complete run record with criteria + results
+
+**API flow:** API reads active run_id from config → v6_peer_context_assignments joined to registry_enriched → returns unified response.
+
+**Why not migrate:** Migration loses history, risks data loss, creates ambiguity about what "current" means. Ledger keeps all runs + makes active run selection explicit.
+
+**Four plan adjustments from founder:**
+1. ✅ Generate fresh canonical v6 run (don't migrate existing data). Compare against both datasets, publish only after differences explained.
+2. ✅ Blank NTEECC ≠ Tier 2. Use broader fallback tier or Tier 4 (do not describe state+archetype peers as same type).
+3. ✅ Tier 1 requires direct revenue. Relabel or exclude 13,991 Tier 1 nulls (do not impute).
+4. ✅ Frontend v6 display is deployed but broken (field mismatches, hardcoding). Keep v6 hidden/staged until Phase 2 complete.
+
+**Phase 0 approved** with canonical decision: "Create new immutable, versioned v6 scoring ledger."
+
+**Next:** Create `v6_scoring_runs` + `v6_peer_context_assignments` schema, generate fresh canonical run (Phase 0a).
+
+---
+
+## 2026-07-26: V6 Scoring Backend Reconciliation (Audit & Fix Plan)
+
+**Finding:** Frontend v6 code deployed to localhost:5000 and daanaa.org, but backend data audit (docs/V6_SCORING_DATA_AUDIT_2026_07_26.md) revealed critical gaps:
+- tier_assignments ↔ registry_enriched disagree on 8,672+ rows
+- No v6 scoring_run record (reproducibility gap)
+- 405,987 Tier 2 orgs have blank NTEECC (peer groups undefined)
+- 13,991 Tier 1 orgs missing revenue (violates "Direct" label)
+- Frontend hardcodes "2.1 months" and "±10%" instead of using DB values
+- Search API omits v6 fields entirely
+
+**Decision:** Keep frontend deployed (code is sound) but keep v6 displays staging-only. Fix backend in phases:
+1. Choose canonical v6 definition (exact NTEE granularity, fallback rules for blank NTEECC)
+2. Reconcile tier_assignments → single authoritative table
+3. Add v6 scoring_run record with code version, input snapshot, thresholds, counts
+4. Fix search API to return v6 fields (currently v5-only)
+5. Update FinancialContext.tsx to read actual margin and median from DB
+6. Add invariant tests (direct→revenue, peer counts match, no hardcoded values)
+7. Reroll frontend once backend passes validation
+
+**Why this order:** Frontend logic is correct; data consistency is the blocker. Fixing backend first means one clean reroll to prod. Keeps Stewardship P3 (evidence-based) and P6 (quick correction) intact.
+
+**Related:** `docs/V6_SCORING_DATA_AUDIT_2026_07_26.md` for full findings.
+
+---
+
 ## 2026-07-26: Type Scale Unified Across All Surfaces (Design System v2, step 1)
 
 **Problem:** `tailwind.config.js` had no `fontSize` key at all, so every page

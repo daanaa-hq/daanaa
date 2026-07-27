@@ -25,7 +25,7 @@ import {
 type SortBy = 'recent' | 'name' | 'health'
 type WalletTab = 'funding' | 'volunteering'
 type FilterIntent = 'all' | 'giving' | 'volunteer'
-type FilterHealth = 'all' | 'HEALTHY' | 'STABLE' | 'CAUTION'
+type FilterHealth = 'all' | 'full_context' | 'regional_context' | 'emerging' | 'unscored'
 
 interface FilterState {
   intent: FilterIntent
@@ -176,7 +176,12 @@ export default function WalletPage() {
     if (filterState.health !== 'all') {
       result = result.filter(entry => {
         const org = orgDataMap.get(entry.ein)
-        return org?.v5_context?.score.health_signal === filterState.health
+        const tier = org?.scoring_tier
+        if (filterState.health === 'full_context') return tier === '1_Full_Context'
+        if (filterState.health === 'regional_context') return tier === '2_Regional_Context'
+        if (filterState.health === 'emerging') return tier === '3_Limited_Context' || tier === '4_Archetype_Only'
+        if (filterState.health === 'unscored') return !tier
+        return true
       })
     }
 
@@ -193,11 +198,11 @@ export default function WalletPage() {
         })
         break
       case 'health': {
-        const healthOrder: Record<string, number> = { HEALTHY: 0, STABLE: 1, CAUTION: 2 }
+        const tierOrder: Record<string, number> = { '1_Full_Context': 0, '2_Regional_Context': 1, '3_Limited_Context': 2, '4_Archetype_Only': 3 }
         sorted.sort((a, b) => {
-          const ha = orgDataMap.get(a.ein)?.v5_context?.score.health_signal ?? 'STABLE'
-          const hb = orgDataMap.get(b.ein)?.v5_context?.score.health_signal ?? 'STABLE'
-          return (healthOrder[ha] ?? 1) - (healthOrder[hb] ?? 1)
+          const ta = orgDataMap.get(a.ein)?.scoring_tier ?? ''
+          const tb = orgDataMap.get(b.ein)?.scoring_tier ?? ''
+          return (tierOrder[ta] ?? 99) - (tierOrder[tb] ?? 99)
         })
         break
       }

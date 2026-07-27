@@ -10,6 +10,7 @@ Detail:  precomputed org file → fallback to search.db orgs table
 import gzip
 import json
 import os
+import random
 import re
 import sqlite3
 import time
@@ -910,7 +911,11 @@ def get_organizations():
         # Fall through to DB query if file not found
 
     # ── Filter browse: DB query when flags, revenue, or multi-select used ───
-    any_filter = hidden_gem or needs_funding or has_website or open_to_volunteers or bool(tier) or bool(nearby_zips)
+    # has_revenue belongs here: the precompute files below carry every org
+    # regardless of revenue, so omitting it silently served unfiltered rows
+    # (QA 2026-07-24 #3) even though _db_filter_browse's SQL was correct.
+    any_filter = (hidden_gem or needs_funding or has_website or has_revenue
+                  or open_to_volunteers or bool(tier) or bool(nearby_zips))
     multi_select = len(ntee_list) > 1 or len(sub_list) > 1 or (ntee_list and sub_list)
     # Explicit non-name sort must hit the DB — the precompute files below are
     # baked in name order and ignore sort/order (bug found 2026-07-17: the
@@ -959,6 +964,23 @@ def get_organizations():
 
     return jsonify({'organizations': [], 'total': 0, 'pages': 0,
                     'page': page, 'per_page': per_page})
+
+
+def _sample_offset(shuffle_seed: str, page: int, max_offset: int) -> int:
+    """Pick the slice offset for sort=random, honouring the caller's seed.
+
+    Same seed + page always yields the same slice, so a session's shuffle is
+    reproducible and "show another list" only changes when the seed does. The
+    page mixes into the seed so page 2 draws a different slice than page 1.
+    Without a seed we keep the previous per-request randomness.
+
+    Seeded shuffle shipped 2026-07-24 threading `seed` through both query paths
+    but never reading it, so every request reshuffled (QA 2026-07-24 #1).
+    """
+    if max_offset <= 0:
+        return 0
+    rng = random.Random(f"{shuffle_seed}:{page}") if shuffle_seed else random
+    return rng.randint(0, max_offset)
 
 
 def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
@@ -1012,9 +1034,8 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
 
         if sort == 'random':
             # Calculate random offset for efficient sampling without sorting all rows
-            import random
             max_offset = max(0, total - per_page) if total else 0
-            random_offset = random.randint(0, max_offset) if max_offset > 0 else 0
+            random_offset = _sample_offset(shuffle_seed, page, max_offset)
             query_sql += f" LIMIT ? OFFSET ?"
             query_params.extend([per_page, random_offset])
         else:
@@ -1121,9 +1142,8 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
         # Use OFFSET-based sampling for random sort (no expensive ORDER BY RANDOM())
         if sort == 'random':
             # Calculate random offset for efficient sampling
-            import random
             max_offset = max(0, total - per_page) if total else 0
-            random_offset = random.randint(0, max_offset) if max_offset > 0 else 0
+            random_offset = _sample_offset(shuffle_seed, page, max_offset)
             rows_sql = (
                 f"WITH c AS (SELECT ein FROM org_fts WHERE org_fts MATCH ? "
                 f"ORDER BY rank LIMIT {cand_cap}) "

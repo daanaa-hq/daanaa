@@ -116,3 +116,57 @@ def test_filter_indexes_exist():
     con.close()
     for idx in ('idx_orgs_ntee1_rev', 'idx_orgs_rev', 'idx_orgs_nteecc'):
         assert idx in names, f"missing index {idx} — rebuild_droplet_search_db.py creates it"
+
+
+# ── QA 2026-07-24 regressions: seeded shuffle + has_revenue routing ──────────
+# Both shipped as accepted-but-ignored parameters, which returns confidently
+# wrong results rather than an error — the failure mode the trust principles
+# care about most.
+
+def test_has_revenue_excludes_orgs_without_revenue(client):
+    """has_revenue=1 must not return orgs with null/zero total_revenue.
+
+    Prod bug: `any_filter` omitted has_revenue, so a bare has_revenue=1 never
+    reached the DB path (whose SQL is correct) and fell through to the
+    precomputed browse files, which ignore the filter entirely.
+    """
+    d = client.get('/api/organizations?per_page=25&has_revenue=1').get_json()
+    assert d['organizations'], "no rows returned — cannot evaluate the filter"
+    bad = [o for o in d['organizations'] if not o.get('total_revenue')]
+    assert not bad, (
+        f"{len(bad)}/{len(d['organizations'])} rows have null/zero revenue "
+        f"despite has_revenue=1, e.g. {bad[0].get('organization_name')!r}"
+    )
+
+
+def _eins(payload):
+    return [o['EIN'] for o in payload['organizations']]
+
+
+def test_same_seed_returns_same_order(client):
+    """Same seed must reproduce the same slice — the documented session contract.
+
+    Prod bug: shuffle_seed was threaded through both query paths but never
+    used; random.randint() ran unseeded, so every request reshuffled. The
+    determinism observed against daanaa.org was Cloudflare caching the URL.
+    """
+    a = _eins(client.get('/api/organizations?sort=random&seed=qa-one&per_page=5').get_json())
+    b = _eins(client.get('/api/organizations?sort=random&seed=qa-one&per_page=5').get_json())
+    assert a, "random sort returned no rows"
+    assert a == b, f"same seed gave different results: {a} vs {b}"
+
+
+def test_different_seeds_return_different_orders(client):
+    """Different seeds must actually shuffle differently."""
+    a = _eins(client.get('/api/organizations?sort=random&seed=qa-one&per_page=5').get_json())
+    b = _eins(client.get('/api/organizations?sort=random&seed=qa-two&per_page=5').get_json())
+    assert a and b
+    assert a != b, "different seeds produced an identical page"
+
+
+def test_seeded_random_paging_advances(client):
+    """Page 2 must not repeat page 1 for the same seed."""
+    p1 = _eins(client.get('/api/organizations?sort=random&seed=qa-one&per_page=5&page=1').get_json())
+    p2 = _eins(client.get('/api/organizations?sort=random&seed=qa-one&per_page=5&page=2').get_json())
+    assert p1 and p2
+    assert p1 != p2, "page 2 repeated page 1 under the same seed"

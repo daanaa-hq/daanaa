@@ -76,7 +76,7 @@ function OrgColumn({ ein }: { ein: string }) {
 
   const lampTier = getTierFromOrg(org)
   const cat = NTEE_CATEGORIES.find(c => c.id === org.NTEE1)
-  const health = org.financial_health
+  const hasScoringTier = org.scoring_tier && (org.scoring_tier === '1_Full_Context' || org.scoring_tier === '2_Regional_Context')
   const reserve = org.months_of_reserve
   const externalLink = (org.website_status === 'ok' || org.website_status === 'beta')
     ? getPrimaryExternalLink(org)
@@ -90,8 +90,10 @@ function OrgColumn({ ein }: { ein: string }) {
     { label: 'Revenue', value: formatCurrency(org.total_revenue) },
     {
       label: 'Peer financial context',
-      value: health ? (
-        <span className="font-semibold" style={{ color: HEALTH_COLORS[health] }}>{financialContextLabel(health)}</span>
+      value: hasScoringTier ? (
+        <span className="font-semibold text-emerald-600">Financial context available</span>
+      ) : org.scoring_tier ? (
+        <span className="font-semibold text-amber-600">Limited context</span>
       ) : (
         <span className="text-cool-grey font-normal">Not yet scored</span>
       ),

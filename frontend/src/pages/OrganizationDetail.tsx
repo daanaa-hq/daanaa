@@ -18,7 +18,7 @@ import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrg
 import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
-import { getOrgBadges } from '../utils/badges'
+import { getOrgBadges, getSectorName } from '../utils/badges'
 import { getActionRowLinks } from '../utils/actionRow'
 import { trackEvent } from '../utils/analytics'
 import OrgWallPanel from '../components/OrgWallPanel'
@@ -33,7 +33,6 @@ import ImpactWidget from '../components/ImpactWidget'
 import OrgEnrichmentCard from '../components/OrgEnrichmentCard'
 import GuildSection from '../components/GuildSection'
 import { sentenceCase } from '../utils/sentenceCase'
-import GiveYourWayRouter from '../components/GiveYourWayRouter'
 import VolunteerInterest from '../components/VolunteerInterest'
 import OrgInfoHierarchy from '../components/OrgInfoHierarchy'
 import RecurringSetup from '../components/RecurringSetup'
@@ -216,46 +215,6 @@ function adaptOrg(apiOrg: ApiOrganization) {
 }
 
 const AI_MISSION_SOURCES = new Set(['ai_ntee', 'ai_haiku', 'ai_web', 'ai_generated'])
-function HeroMission({ mission, missionSrc }: { mission: string; missionSrc: string }) {
-  const cleaned = mission.replace(/^[""\s]+|[""\s]+$/g, '')
-  return (
-    <div className="mt-4 flex items-start gap-2">
-      <p className="font-body text-body-lg text-muted-cream/90 leading-[1.7] max-w-[600px] italic">
-        &ldquo;{cleaned}&rdquo;
-      </p>
-      {AI_MISSION_SOURCES.has(missionSrc) && (
-        <span className="shrink-0 mt-1">
-          <AiBadge />
-        </span>
-      )}
-    </div>
-  )
-}
-
-function EinCopyButton({ ein }: { ein: string }) {
-  const [copied, setCopied] = useState(false)
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(ein)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      setCopied(false)
-    }
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      className={`shrink-0 px-2 py-1 rounded-md font-body text-label font-semibold transition-all ${
-        copied ? 'bg-emerald-500/20 text-emerald-300' : 'bg-soft-gold/15 text-soft-gold hover:bg-soft-gold/25'
-      }`}
-    >
-      {copied ? 'Copied!' : 'Copy'}
-    </button>
-  )
-}
 
 // One shared control for the funding (green) and volunteering (red) intent
 // hearts. Both live on the page in two placements each (compact icon in the
@@ -561,7 +520,7 @@ export default function OrganizationDetail() {
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
             <div>
-              {/* ORG NAME & LOCATION */}
+              {/* ORG NAME */}
               <div className="flex items-start gap-4 sm:gap-5">
                 <div className="shrink-0 mt-1.5 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border border-white/15 bg-white/[0.06]">
                   <span className="font-display text-title-lg sm:text-headline text-soft-gold leading-none tracking-tight">
@@ -572,6 +531,22 @@ export default function OrganizationDetail() {
                   {org.name}
                 </h1>
               </div>
+
+              {/* Mission statement — all caps, no italics, sits under the name to
+                  clarify what's a proper noun and what's descriptive. Simple. */}
+              {org.mission && (
+                <div className="mt-3 flex items-start gap-2">
+                  <p className="font-body text-body text-muted-cream/80 leading-[1.6] max-w-[600px] uppercase tracking-wide">
+                    {org.mission.replace(/^[""\s]+|[""\s]+$/g, '')}
+                  </p>
+                  {apiOrg && AI_MISSION_SOURCES.has(apiOrg.data_badges?.mission ?? apiOrg.mission_source ?? '') && (
+                    <span className="shrink-0 mt-0.5">
+                      <AiBadge />
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center gap-3 mt-6 flex-wrap">
                 <div className="flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -581,26 +556,20 @@ export default function OrganizationDetail() {
                 </div>
               </div>
 
-              {org.mission && (
-                <div className="mt-8">
-                  <HeroMission mission={org.mission} missionSrc={apiOrg?.data_badges?.mission ?? apiOrg?.mission_source ?? ''} />
-                </div>
-              )}
-
-              {/* Give-your-way router: donor picks the method (DAF, check, etc.)
-                  Selection stays client-side. 96% of orgs have address. */}
+              {/* One way in, not four. The full method list (DAF, check, bank
+                  bill pay, employer match) lives in "How to give" further down;
+                  repeating it here made the donor choose before they had read
+                  anything about the org. */}
               {apiOrg! && (
-                <GiveYourWayRouter
-                  ein={apiOrg.EIN}
-                  organizationName={apiOrg.organization_name}
-                  streetAddress={apiOrg.street_address}
-                  city={apiOrg.CITY}
-                  state={apiOrg.STATE}
-                  donateUrl={apiOrg.donate_url}
-                  donateUrlStatus={apiOrg.donate_url_status}
-                  website={apiOrg.website}
-                  websiteStatus={apiOrg.website_status}
-                />
+                <div className="mt-8">
+                  <a
+                    href="#ways-to-give"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-soft-gold text-deep-navy hover:bg-bright-gold transition-colors font-body text-small font-semibold"
+                  >
+                    Give now
+                    <span aria-hidden="true">↓</span>
+                  </a>
+                </div>
               )}
 
               {/* Data context note: supportive explanation for archetype-only orgs
@@ -672,14 +641,26 @@ export default function OrganizationDetail() {
                 <div className="mt-4">
                   <p className="text-soft-gold text-sm font-medium mb-3">Categories</p>
                   <div className="flex flex-wrap items-center gap-2">
-                    {(apiOrg!.cause_tags as string[]).map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center px-2.5 py-1 rounded-full font-body text-label tracking-[0.02em] text-muted-cream/80 border border-white/10 bg-white/6"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                    {(() => {
+                      let tags = (apiOrg!.cause_tags as string[])
+                      // Filter out "unknown" if we have NTEE data
+                      if (apiOrg!.NTEE1) {
+                        tags = tags.filter(t => t.toLowerCase() !== 'unknown')
+                        // Add the NTEE sector name if it's not already in the list
+                        const sectorName = getSectorName(apiOrg!.NTEE1)
+                        if (sectorName && !tags.includes(sectorName)) {
+                          tags = [sectorName, ...tags]
+                        }
+                      }
+                      return tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center px-2.5 py-1 rounded-full font-body text-label tracking-[0.02em] text-muted-cream/80 border border-white/10 bg-white/6"
+                        >
+                          {tag}
+                        </span>
+                      ))
+                    })()}
                     {(apiOrg?.data_badges?.tags === 'ai_generated' || apiOrg?.mission_source === 'ai_ntee' || apiOrg?.mission_source === 'ai_generated') && (
                       <AiBadge title="These search tags were suggested by AI from public records. The organization can set its own once it claims this page." />
                     )}
@@ -780,57 +761,7 @@ export default function OrganizationDetail() {
                         Print
                       </button>
                     </div>
-                    {/* Give by EIN: always present, never blank (design doc
-                        "empty action row" requirement) -- previously only
-                        shown when there was no website link. */}
-                    <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-4 max-w-[480px]">
-                      <p className="font-body text-label tracking-[0.06em] uppercase font-medium text-muted-cream mb-3">How to give</p>
-                      <div className="flex flex-col gap-2.5">
-                        <div className="flex items-start gap-2">
-                          <span className="font-body text-caption text-muted-cream shrink-0 mt-0.5">EIN:</span>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-body text-small font-semibold text-warm-cream">{apiOrg!.EIN}</span>
-                              <EinCopyButton ein={apiOrg!.EIN} />
-                            </div>
-                            <p className="font-body text-label text-muted-cream/70 mt-0.5">Use this for a donor-advised fund gift or when writing a check.</p>
-                          </div>
-                        </div>
-                        {apiOrg!.street_address && (
-                          <div className="flex items-start gap-2">
-                            <span className="font-body text-caption text-muted-cream shrink-0 mt-0.5">Address:</span>
-                            <span className="font-body text-caption text-warm-cream/90">
-                              {[apiOrg!.street_address, apiOrg!.CITY, apiOrg!.STATE, apiOrg!.zipcode].filter(Boolean).join(', ')}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Secondary CTAs: Ways to Give guides.
-                        Ordered by how commonly each method is used, so the most
-                        likely path is the first one read. Grouping/disclosure is
-                        a Design System v2 item — seven flat links is at the edge
-                        of scannable. */}
-                    <div className="mt-4 flex flex-col gap-2">
-                      {[
-                        { to: '/giving-via-checks', label: 'Give by check' },
-                        { to: '/giving-via-recurring', label: 'Give monthly' },
-                        { to: '/giving-via-workplace', label: 'Give through your workplace' },
-                        { to: '/giving-via-stocks', label: 'Give appreciated stock' },
-                        { to: '/giving-via-crypto', label: 'Give cryptocurrency' },
-                        { to: '/giving-via-routers', label: 'Give via PayPal or Facebook' },
-                        { to: '/giving-via-daf', label: 'Give via donor-advised fund' },
-                      ].map((item) => (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className="inline-flex items-center gap-2 font-body text-caption text-link-gold hover:text-bright-gold transition-colors"
-                        >
-                          {item.label} →
-                        </Link>
-                      ))}
-                    </div>
                   </>
                 );
               })()}

@@ -134,8 +134,8 @@ export default function CategoryPage() {
                   const ein = org.EIN || ''
                   const inFunding = isInFunding(ein)
                   const inVolunteering = isInVolunteering(ein)
-                  const signal = org.v5_context?.score?.health_signal ?? ''
-                  const scoreV5 = org.v5_context?.score?.percentile ?? org.ntee1_percentile ?? 0
+                  const hasFullContext = org.scoring_tier && (org.scoring_tier === '1_Full_Context' || org.scoring_tier === '2_Regional_Context')
+                  const peerScore = org.peer_percentile ?? org.ntee1_percentile ?? 0
                   return (
                     <div key={ein} className="bg-white rounded-2xl border border-light-grey p-5 hover:border-soft-gold/30 transition-colors flex flex-col">
                       <div className="flex items-start justify-between gap-2 mb-2">
@@ -206,9 +206,9 @@ export default function CategoryPage() {
                         </div>
                       )}
                       <div className="flex items-center gap-2 flex-wrap mt-auto">
-                        {signal && healthLabel[signal] && (
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-micro font-semibold border font-body ${healthClasses[signal] ?? ''}`}>
-                            {healthLabel[signal]}
+                        {org.scoring_tier && (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-micro font-semibold border font-body ${hasFullContext ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+                            {hasFullContext ? 'Financial context' : 'Emerging profile'}
                           </span>
                         )}
                         {org.is_hidden_gem && (

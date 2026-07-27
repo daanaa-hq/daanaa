@@ -148,7 +148,14 @@ export default function Directory() {
   const [debouncedCause, setDebouncedCause] = useState(cause)
   const [currentPage, setCurrentPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  // Default view follows the viewport: the grid only reads as a grid once it
+  // goes 3-up at lg, so that same breakpoint picks the default. Phones and
+  // tablets start on the list, where one column per row stays scannable.
+  // Initial value only — once the reader touches the toggle, their choice wins.
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return 'list'
+    return window.matchMedia('(min-width: 1024px)').matches ? 'grid' : 'list'
+  })
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const searchMode = 'browse'
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)

@@ -67,34 +67,42 @@ export default function ResearchMethodology() {
             <div>
               <dt className="font-semibold text-deep-navy">Peer Group</dt>
               <dd className="text-sm mt-1">
-                A peer group is formed by combining archetype + revenue band. An organization is
-                benchmarked only against others in its peer group. Each peer group has its own
-                typical financial profile.
+                A peer group is formed by combining archetype + revenue band + census region.
+                An organization is benchmarked only against others in its peer group—the same
+                funding model, similar size, and same geography. Each peer group has its own
+                typical financial profile shaped by regional economic conditions.
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-deep-navy">Financial Context Score</dt>
+              <dt className="font-semibold text-deep-navy">Financial Context Score (v5)</dt>
               <dd className="text-sm mt-1">
-                A 0–100 percentile rank within the peer group, based on months of operating
-                reserves. A score of 75 means the organization holds more reserves than 75% of
-                its peers. This is context, not a verdict. A lower score often means an
-                organization needs more community support — not that it is doing less good.
+                A 0–100 percentile rank showing how an organization's financial position compares
+                within its peer group (same archetype, revenue band, and region). The score is
+                calculated from months of operating reserves adjusted for the organization's
+                revenue stability and cash position. A score of 75 means the organization holds
+                stronger reserves than 75% of its peer group. This is context for donors, not a
+                verdict on mission quality. A lower score indicates an organization may benefit
+                from additional community support, not that it is doing less good.
               </dd>
             </div>
             <div>
               <dt className="font-semibold text-deep-navy">Health Signal</dt>
               <dd className="text-sm mt-1">
-                An independent assessment of financial context: Financially healthy (strong reserves
-                and revenue stability), Financially stable (adequate resources for peers), or Needs
-                support (limited reserves or revenue volatility). Not a verdict — a flag for deeper review.
+                An independent assessment of financial sustainability: Financially healthy (strong
+                reserves and revenue stability), Financially stable (adequate resources for peers), or
+                In need of support (limited reserves or revenue volatility). Not a judgment—a flag
+                indicating the organization may benefit from additional community support or strategic
+                planning.
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-deep-navy">Lamp Tier</dt>
+              <dt className="font-semibold text-deep-navy">Data Completeness</dt>
               <dd className="text-sm mt-1">
-                A separate visibility indicator (Beacon, Torch, Candle, Spark) based on data
-                completeness, not financial performance. Visibility and financial context are
-                independent dimensions.
+                Organizations have varying levels of public data available: some file complete 990s
+                with detailed financials, others are smaller and file simpler returns, and some are
+                newly formed or have incomplete records. This affects which metrics we can calculate
+                and how confident we are in the context we provide. Financial context and data
+                availability are independent—a complete dataset does not indicate better performance.
               </dd>
             </div>
           </dl>

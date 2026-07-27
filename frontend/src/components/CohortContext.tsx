@@ -37,13 +37,13 @@ export default function CohortContext({ org }: CohortContextProps) {
             About {causeLabel.toLowerCase().startsWith('this') ? causeLabel : `its work in ${causeLabel}`}
           </p>
           <p className="font-body text-body-lg text-deep-navy leading-relaxed">
-            Among the {cohort.n.toLocaleString()} organizations in this area we do
-            have data for, the typical one keeps about{' '}
-            <span className="font-semibold">{median} months</span> of operating
-            costs in reserve.
+            In this sector, similar organizations we have data for (a group of{' '}
+            <span className="font-semibold">{cohort.n.toLocaleString()}</span> nonprofits)
+            typically maintain about <span className="font-semibold">{median} months</span> of
+            operating reserves.
           </p>
           <p className="font-body text-small text-cool-grey">
-            This is background on the cause area, not a measure of this organization.
+            This shows the typical pattern for organizations in this field — not a target or measure of this organization's performance.
           </p>
         </CardPattern>
 
