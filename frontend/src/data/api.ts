@@ -388,6 +388,16 @@ export async function getFinancials(ein: string): Promise<{
   return fetchJson(`/api/organizations/${ein}/financials`);
 }
 
+// GET /api/organizations/:ein/financial-context (v6)
+export async function getFinancialContextV6(ein: string): Promise<any> {
+  try {
+    return await fetchJson(`/api/organizations/${ein}/financial-context`);
+  } catch (error) {
+    // v6 may not be available or org may not be scored yet
+    return null;
+  }
+}
+
 // GET /api/organizations/:ein/score-history
 export interface ScoreSnapshot {
   snapshot_date: string;
