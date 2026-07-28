@@ -96,6 +96,12 @@ def org_to_dict(row):
         # volunteer_url added 2026-07-16: discovered volunteer hand-off links,
         # surfaced alongside donate. Same public-data, fail-closed posture.
         'volunteer_url': row[53],
+        # IRS eligibility fields added 2026-07-28 (Phase 3): evidence-based
+        # deductibility status from Pub78 + BMF. Stewardship P3 (evidence-based).
+        'irs_eligibility_status': row[54],
+        'irs_eligibility_checked_at': row[55],
+        'irs_eligibility_sources': json.loads(row[56]) if row[56] else None,
+        'irs_eligibility_explanation': row[57],
     }
     # v5.0 peer-based financial context. Built from the org's own v5 fields
     # (archetype=row[40], labels/band/score/health/peer at row[41..47],
@@ -213,7 +219,8 @@ def main():
             merit_score_v5, merit_health_signal_v5, merit_peer_group_v5,
             merit_peer_count_v5, is_hidden_gem,
             donate_url, donate_url_status, donate_confidence, donate_platform,
-            volunteer_url
+            volunteer_url,
+            irs_eligibility_status, irs_eligibility_checked_at, irs_eligibility_sources, irs_eligibility_explanation
         FROM registry_enriched
         WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN
