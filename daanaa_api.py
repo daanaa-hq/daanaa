@@ -6233,8 +6233,8 @@ def volunteer_events_search():
     events = []
     for row in rows:
         e = _format_event(row, signup_count=row["signup_count"])
-        e["org_name"]    = row["org_name"]
-        e["org_mission"] = row["org_mission"]
+        e["organization_name"] = row["org_name"]
+        e["org_mission"]       = row["org_mission"]
         events.append(e)
     return jsonify({"events": events, "count": len(events)})
 
