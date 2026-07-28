@@ -1,3 +1,35 @@
+## 2026-07-28 — Phase 3 IRS Eligibility Deployment: Checksum file format blocks droplet atomic swap
+
+**Symptom:** Deployment to staging failed twice with "Checksum verification failed" on droplet. 
+Error message: `.deploy_scratch/precompute_payload.tar.gz: No such file or directory`. The payload 
+had transferred successfully, but the atomic swap never completed.
+
+**Root cause:** The sha256sum file (`.sha256`) was generated with a relative path from the local 
+machine's working directory. When the droplet's `deploy_droplet.sh` script tried to verify the 
+checksum with `sha256sum -c`, it looked for a file at `.deploy_scratch/precompute_payload.tar.gz` 
+in the droplet's filesystem, which doesn't exist. The payload was in `/opt/daanaa/staging/`.
+
+**Fix:** Regenerate the checksum file from the scratch directory itself, with just the filename:
+```bash
+cd .deploy_scratch
+sha256sum -b precompute_payload.tar.gz > precompute_payload.tar.gz.sha256
+# Result: "e239...  *precompute_payload.tar.gz" (no path, just filename)
+```
+
+The `-b` (binary) flag also changes the format (adds `*` prefix), which helps the droplet script 
+parse it correctly. After this fix, checksum verification passed and extraction proceeded normally 
+(extraction took 20–30 min for 1.98M files, which is expected).
+
+**Preventing rule:** Always generate checksum files from the same directory where the payload 
+lives (`.deploy_scratch/`), never from the parent directory. Test locally first: 
+`sha256sum -c precompute_payload.tar.gz.sha256` before deploying. Add this validation to 
+`safe_deploy_droplet.sh` preflight (line ~90) to catch it before transferring to droplet.
+
+**Related:** Documented complete repeatable playbook at `docs/PHASE3_DEPLOYMENT_PLAYBOOK.md` 
+to ensure this process works reliably every time.
+
+---
+
 ## 2026-07-22 — 16.5GB WAL file + 88GB of dead backup copies on the home server
 
 **Symptom:** Founder flagged "droplet isn't sustainable long term" (disk was at 75%). Investigation
