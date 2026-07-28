@@ -106,9 +106,7 @@ function NoDataBanner({ org }: { org: ApiOrganization }) {
         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       <p className="font-body text-small text-muted-cream leading-[1.55]">
-        This organization is a registered 501(c)(3) and donations are tax-deductible.
-        We don't have enough public financial detail to add context yet — that's common
-        for smaller and local organizations.
+        This organization appears in our nonprofit records. Tax deductibility is shown separately and is not verified here. We do not have enough public financial detail to add context yet — that's common for smaller and local organizations.
         {year && ` Doing the work since ${year}.`}
       </p>
     </div>

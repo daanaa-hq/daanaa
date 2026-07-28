@@ -9,6 +9,12 @@ export interface LoggedDonation {
   amount: number
   date: string  // ISO date (YYYY-MM-DD)
   notes?: string
+  // Optional point-in-time IRS evidence captured when this gift was logged.
+  // This is an observation, not a tax determination or receipt.
+  irsEligibilityStatus?: 'verified' | 'unverified' | 'revoked' | 'unknown' | 'exception_possible'
+  irsEligibilityRecordedAt?: string
+  irsEligibilityCheckedAt?: string | null
+  irsEligibilitySources?: string[]
   letterRequested?: boolean
   letterStatus?: 'pending' | 'approved' | 'generated' | 'downloaded'
   helpedDaanaa?: boolean  // one-way: once true, permanent. indicates opt-in to impact tracking
@@ -131,7 +137,7 @@ export interface WalletContextType {
   isInFunding: (ein: string) => boolean
   isInVolunteering: (ein: string) => boolean
   // Logging actual giving/volunteering
-  logDonation: (ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean) => void
+  logDonation: (ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean, irsSnapshot?: Pick<LoggedDonation, 'irsEligibilityStatus' | 'irsEligibilityCheckedAt' | 'irsEligibilitySources'>) => void
   logVolunteerHours: (ein: string, hours: number, date: string, notes?: string, helpedDaanaa?: boolean, link?: VolunteerSubmissionLink) => void
   getDonations: (ein: string) => LoggedDonation[] | undefined
   getVolunteerHours: (ein: string) => LoggedVolunteerHours[] | undefined

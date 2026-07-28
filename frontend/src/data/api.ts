@@ -147,6 +147,10 @@ export interface ApiOrganization {
   // the source, so a revoked org's page is only reachable via this fallback).
   org_status?: string | null;
   irs_revoked?: number | null;
+  irs_eligibility_status?: "verified" | "unverified" | "revoked" | "unknown" | "exception_possible" | null;
+  irs_eligibility_checked_at?: string | null;
+  irs_eligibility_sources?: string[];
+  irs_eligibility_explanation?: string | null;
   activ1: string | null;              // NTEE activity code 1 (NCCS)
   activ2: string | null;
   activ3: string | null;

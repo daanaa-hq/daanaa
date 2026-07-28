@@ -3,6 +3,7 @@ import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import AnswerCard from '../components/AnswerCard'
+import { IrsEligibilityContext } from '../components/IrsEligibilityContext'
 import Breadcrumb from '../components/Breadcrumb'
 import DonationReturnPrompt from '../components/DonationReturnPrompt'
 import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
@@ -581,7 +582,7 @@ export default function OrganizationDetail() {
                   bill pay, employer match) lives in "How to give" further down;
                   repeating it here made the donor choose before they had read
                   anything about the org. */}
-              {apiOrg! && (
+              {apiOrg! && apiOrg!.irs_eligibility_status !== 'revoked' && (
                 <div className="mt-8">
                   <a
                     href="#ways-to-give"
@@ -601,7 +602,14 @@ export default function OrganizationDetail() {
                   org including the ~82% with no financial score and revoked
                   orgs reached by direct/stale link. See AnswerCard.tsx. */}
               <div className="mt-8">
-                {apiOrg! && <AnswerCard org={apiOrg!} />}
+                                {apiOrg! && <AnswerCard org={apiOrg!} />}
+                {apiOrg! && <IrsEligibilityContext
+                  status={apiOrg!.irs_eligibility_status || 'unknown'}
+                  checkedAt={apiOrg!.irs_eligibility_checked_at}
+                  sources={apiOrg!.irs_eligibility_sources}
+                  explanation={apiOrg!.irs_eligibility_explanation || undefined}
+                  organizationName={apiOrg!.organization_name}
+                />}
               </div>
 
               {/* Badge row -- click any badge to see what earned it */}
@@ -792,7 +800,7 @@ export default function OrganizationDetail() {
             </div>
 
             {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) &&
-             apiOrg!.org_status !== 'revoked' && apiOrg!.irs_revoked !== 1 && (
+             apiOrg!.irs_eligibility_status !== 'revoked' && apiOrg!.org_status !== 'revoked' && apiOrg!.irs_revoked !== 1 && (
             <div className="flex flex-col items-center gap-3 lg:pt-4">
               {/* Lamp tier retired from donor-facing profiles 2026-07-17
                   (founder-approved): its facts are covered by the plain
@@ -860,7 +868,7 @@ export default function OrganizationDetail() {
           {apiOrg! && (
             <div className="mb-12 bg-warm-cream rounded-lg p-8 border border-gray-200">
               <V6FinancialContext
-                ein={apiOrg!.ein}
+                ein={apiOrg!.EIN}
                 context={v6Context}
                 loading={v6ContextLoading}
               />
@@ -1169,7 +1177,7 @@ export default function OrganizationDetail() {
               </div>
               <div>
                 <p className="font-body text-small font-semibold text-deep-navy">US Nonprofit · Active</p>
-                <p className="font-body text-caption text-cool-grey">IRS-listed as eligible to receive tax-deductible contributions</p>
+                <p className="font-body text-caption text-cool-grey">IRS nonprofit registration verified</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

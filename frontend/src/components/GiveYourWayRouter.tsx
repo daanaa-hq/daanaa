@@ -22,6 +22,7 @@ interface GiveMethodProps {
   donateUrlStatus?: 'beta' | 'claimed' | null | string
   website?: string | null
   websiteStatus?: 'ok' | null | string
+  irsEligibilityStatus?: 'verified' | 'unverified' | 'revoked' | 'unknown' | 'exception_possible' | null
 }
 
 type GiveMethod = 'daf' | 'check' | 'billpay' | 'employermatch' | 'site'
@@ -165,7 +166,7 @@ const methods: MethodConfig[] = [
 
 export default function GiveYourWayRouter(props: GiveMethodProps) {
   const [expanded, setExpanded] = React.useState<GiveMethod | null>(null)
-  const available = methods.filter((m) => m.available(props)).sort((a, b) => a.priority - b.priority)
+  const available = props.irsEligibilityStatus === 'revoked' ? [] : methods.filter((m) => m.available(props)).sort((a, b) => a.priority - b.priority)
 
   if (available.length === 0) {
     return null

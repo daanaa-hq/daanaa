@@ -1,15 +1,17 @@
 import React, { useState } from 'react'
 import { useWallet } from '../contexts/WalletContext'
 import { CardPattern } from './ui/CardPattern'
+import type { LoggedDonation } from '../types/wallet'
 
 interface DonationLoggerProps {
   ein: string
   orgName: string
   orgOptedInLetters?: boolean
+  irsSnapshot?: Pick<LoggedDonation, 'irsEligibilityStatus' | 'irsEligibilityCheckedAt' | 'irsEligibilitySources'>
   onLogged?: (amount: number) => void
 }
 
-export default function DonationLogger({ ein, orgName, orgOptedInLetters = false, onLogged }: DonationLoggerProps) {
+export default function DonationLogger({ ein, orgName, orgOptedInLetters = false, irsSnapshot, onLogged }: DonationLoggerProps) {
   const { logDonation } = useWallet()
   const [donorName, setDonorName] = useState('')
   const [amount, setAmount] = useState('')
@@ -58,7 +60,7 @@ export default function DonationLogger({ ein, orgName, orgOptedInLetters = false
 
     try {
       // Log donation to wallet with Daanaa help flag
-      logDonation(ein, parsedAmount, date, notes || undefined, helpedDaanaa)
+      logDonation(ein, parsedAmount, date, notes || undefined, helpedDaanaa, irsSnapshot)
 
       // If requesting letter, send to nonprofit approval queue
       if (requestLetter && canRequestLetter) {

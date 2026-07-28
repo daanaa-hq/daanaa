@@ -94,6 +94,11 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
       {/* TIER 3: ALWAYS show ways to give */}
       <div id="ways-to-give" className="scroll-mt-24">
         <InfoBlock title="Ways to Give">
+          {org.irs_eligibility_status && org.irs_eligibility_status !== "verified" && org.irs_eligibility_status !== "revoked" && (
+            <p className="text-sm text-navy-mid bg-soft-gold/10 border border-soft-gold/30 rounded-lg p-3 mb-4">
+              Tax deductibility is not fully verified in the latest IRS evidence. Check the IRS before giving.
+            </p>
+          )}
         <div className="space-y-4">
           {/* Leverage existing GiveYourWayRouter component */}
           <GiveYourWayRouter
@@ -107,6 +112,7 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
             donateUrlStatus={org.donate_url_status}
             website={org.website}
             websiteStatus={org.website_status}
+            irsEligibilityStatus={org.irs_eligibility_status}
           />
 
           {/* Meta: Help us improve */}

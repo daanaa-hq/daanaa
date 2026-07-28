@@ -558,12 +558,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setMigrationData(null)
   }, [])
 
-  const logDonation = useCallback((ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean) => {
+  const logDonation = useCallback((ein: string, amount: number, date: string, notes?: string, helpedDaanaa?: boolean, irsSnapshot?: Pick<LoggedDonation, 'irsEligibilityStatus' | 'irsEligibilityCheckedAt' | 'irsEligibilitySources'>) => {
     const donation: LoggedDonation = {
       id: `don_${uuid()}`,
       amount,
       date,
       notes,
+      ...irsSnapshot,
+      irsEligibilityRecordedAt: irsSnapshot?.irsEligibilityStatus ? new Date().toISOString() : undefined,
       letterRequested: false,
       helpedDaanaa: helpedDaanaa ?? false,
     }

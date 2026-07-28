@@ -43,6 +43,28 @@ except ImportError:
     def expand_query_with_synonyms(q):
         return q  # Fallback: return query as-is if synonyms not available
 
+# IRS Eligibility Helper — Phase 2 integration
+try:
+    from scripts.irs_eligibility_helper import (
+        initialize_helper as init_irs_eligibility,
+        get_eligibility_fields,
+        should_show_profile_publicly,
+    )
+    _irs_eligibility_available = True
+except Exception as e:
+    _irs_eligibility_available = False
+    print(f"[Startup] ⚠ IRS eligibility helper not available: {e}", file=sys.stderr)
+    # Fallback functions if helper unavailable
+    def get_eligibility_fields(ein):
+        return {
+            "irs_eligibility_status": "unknown",
+            "irs_eligibility_checked_at": None,
+            "irs_eligibility_sources": [],
+            "irs_eligibility_explanation": "Helper unavailable"
+        }
+    def should_show_profile_publicly(ein):
+        return True
+
 # Search Phase 2: intent classifier (loaded at startup for preload safety)
 try:
     from scripts.search_intent_classifier import SearchIntentClassifier
@@ -754,6 +776,20 @@ try:
     print("[startup] ✓ Embeddings loaded, search ready", flush=True)
 except Exception as e:
     print(f"[startup] ⚠ Embedding pre-load failed: {e}", flush=True)
+
+# Initialize IRS Eligibility Helper for Phase 2
+if _irs_eligibility_available:
+    try:
+        # Repository-relative manifest path (not hard-coded home directory)
+        repo_root = os.path.dirname(os.path.abspath(__file__))
+        manifest_path = os.path.join(repo_root, "data/irs_authority/v6_eligibility/eligibility_manifest.json")
+        init_irs_eligibility(
+            db_path=_db_path,
+            manifest_path=manifest_path
+        )
+        print("[startup] ✓ IRS eligibility helper initialized", flush=True)
+    except Exception as e:
+        print(f"[startup] ⚠ IRS eligibility helper initialization failed: {e}", flush=True)
 
 # Register nonprofit portal endpoints
 if register_nonprofit_endpoints:
@@ -2370,7 +2406,11 @@ def list_organizations():
         for _col in ('merit_score_v5', 'merit_health_signal_v5', 'merit_archetype_v5',
                      'merit_archetype_v5_label', 'merit_peer_count_v5'):
             d.pop(_col, None)
-        orgs.append(_strip_scores(d))
+        # Phase 2: Add IRS Eligibility fields (additive)
+        d.update(get_eligibility_fields(d['EIN']))
+        # Phase 2: Filter revoked orgs from search results
+        if should_show_profile_publicly(d['EIN']):
+            orgs.append(_strip_scores(d))
 
     # Search Phase 2: semantic reranking for cause queries
     if search_intent and search_intent.get('intent') == 'cause' and _reranker_available and len(orgs) > 1 and search:
@@ -2619,6 +2659,10 @@ def get_organization(ein):
     org['confidence_v6'] = org.get('confidence_v6')  # "high", "good", "moderate", "archetype_only"
     org['confidence_margin_v6'] = org.get('confidence_margin_v6')  # e.g., "±10%"
 
+    # Phase 2: IRS Eligibility Status (additive)
+    # Adds 4 fields: status, checked_at, sources, explanation
+    org.update(get_eligibility_fields(ein_clean))
+
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)
@@ -2709,7 +2753,7 @@ def get_recall_packet(ein):
     # Assemble recall packet
     recall_packet = {
         "public_record": public_record,
-        "peer_context": peer_context,
+        "irs_eligibility": get_eligibility_fields(ein_clean),
         "macro_context": macro_context,
         "knowledge_graph": {
             "entities": kg_entities,
@@ -6157,7 +6201,7 @@ def volunteer_events_search():
     if event_type not in valid_event_types:
         event_type = ''
 
-    where, params = ["ve.status='active'", "ve.event_date >= date('now')"], []
+    where, params = ["ve.status='active'", "ve.event_date >= date('now')", "COALESCE(r.irs_revoked,0) != 1", "COALESCE(r.org_status,'') != 'revoked'"], []
     if zip_code:
         where.append("ve.location_zip=?"); params.append(zip_code)
     elif city and state:

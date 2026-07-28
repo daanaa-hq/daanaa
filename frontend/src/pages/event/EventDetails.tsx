@@ -95,7 +95,7 @@ export default function EventDetails() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700 mb-6">
-                Every contribution directly supports {event.name}. All donations are tax-deductible.
+                Every contribution directly supports {event.name}. Check the organization and IRS records for current tax treatment.
               </p>
               <Button asChild className="w-full bg-red-600 hover:bg-red-700 text-white py-3 text-lg rounded-lg font-semibold">
                 <a href={event.donation_url} target="_blank" rel="noopener noreferrer">

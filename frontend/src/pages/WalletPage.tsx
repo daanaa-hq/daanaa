@@ -14,6 +14,7 @@ import { RhythmNudges, RhythmControl } from '../components/GivingRhythm'
 import RecurringNudge from '../components/RecurringNudge'
 import { isTemplateDue } from '../types/wallet'
 import type { ApiOrganization } from '../data/api'
+import type { LoggedDonation } from '../types/wallet'
 import { API_BASE } from '../lib/platform'
 import {
   validateSearchTerm,
@@ -30,6 +31,22 @@ type FilterHealth = 'all' | 'full_context' | 'regional_context' | 'emerging' | '
 interface FilterState {
   intent: FilterIntent
   health: FilterHealth
+}
+
+function IrsDonationSnapshot({ donation }: { donation: LoggedDonation }) {
+  if (!donation.irsEligibilityStatus) return null
+  const labels: Record<NonNullable<LoggedDonation['irsEligibilityStatus']>, string> = {
+    verified: 'IRS eligibility verified',
+    unverified: 'Tax status not verified',
+    revoked: 'IRS revocation record found',
+    unknown: 'Tax status not verified',
+    exception_possible: 'IRS listing may not tell the whole story',
+  }
+  return (
+    <span className="text-cool-grey text-xs" title="This records Daanaa's IRS evidence observation; it is not a tax receipt or deductibility determination.">
+      IRS status recorded: {labels[donation.irsEligibilityStatus]}{donation.irsEligibilityRecordedAt ? new Date(donation.irsEligibilityRecordedAt).toLocaleDateString() : ''}
+    </span>
+  )
 }
 
 // Approval status chip for event-submitted volunteer hours. Absent status =
@@ -501,7 +518,12 @@ export default function WalletPage() {
                   cadence={entry.recurringTemplate.cadence}
                   onConfirm={() => {
                     // Log donation with template amount, today's date
-                    logDonation(entry.ein, entry.recurringTemplate!.amount, today)
+                    const irsSnapshot = apiOrg ? {
+                      irsEligibilityStatus: apiOrg.irs_eligibility_status || 'unknown',
+                      irsEligibilityCheckedAt: apiOrg.irs_eligibility_checked_at,
+                      irsEligibilitySources: apiOrg.irs_eligibility_sources,
+                    } : undefined
+                    logDonation(entry.ein, entry.recurringTemplate!.amount, today, undefined, undefined, irsSnapshot)
                   }}
                   onSnooze={() => {
                     // Snooze until next cycle: 30 days for monthly, 91 for quarterly, 365 for yearly
@@ -600,6 +622,7 @@ export default function WalletPage() {
                                 <span className="text-cool-grey font-medium w-[90px] shrink-0">{d.date}</span>
                                 <span className="font-semibold text-green-700">${d.amount.toLocaleString()}</span>
                                 {d.notes && <span className="text-cool-grey truncate">{d.notes}</span>}
+                                <IrsDonationSnapshot donation={d} />
                               </div>
                             ))}
                           </div>
@@ -712,6 +735,7 @@ export default function WalletPage() {
                               <span className="text-cool-grey font-medium w-[90px] shrink-0">{d.date}</span>
                               <span className="font-semibold text-green-700">${d.amount.toLocaleString()}</span>
                               {d.notes && <span className="text-cool-grey truncate">{d.notes}</span>}
+                                <IrsDonationSnapshot donation={d} />
                             </div>
                           ))}
                         </div>
@@ -746,7 +770,15 @@ export default function WalletPage() {
                     {/* Logger forms */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       {showDonationLogger && (
-                        <DonationLogger ein={entry.ein} orgName={org.organization_name} />
+                        <DonationLogger
+                          ein={entry.ein}
+                          orgName={org.organization_name}
+                          irsSnapshot={{
+                            irsEligibilityStatus: org.irs_eligibility_status || 'unknown',
+                            irsEligibilityCheckedAt: org.irs_eligibility_checked_at,
+                            irsEligibilitySources: org.irs_eligibility_sources,
+                          }}
+                        />
                       )}
                       {showVolunteerLogger && (
                         <VolunteerLogger ein={entry.ein} orgName={org.organization_name} />

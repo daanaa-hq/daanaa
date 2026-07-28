@@ -70,7 +70,15 @@ export default function CloseTheLoopPrompt({
           </div>
 
           <div className="border-t border-light-grey pt-6">
-            <DonationLogger ein={selectedEin} orgName={selectedOrg?.organization_name ?? selectedEin} />
+            <DonationLogger
+              ein={selectedEin}
+              orgName={selectedOrg?.organization_name ?? selectedEin}
+              irsSnapshot={selectedOrg ? {
+                irsEligibilityStatus: selectedOrg.irs_eligibility_status || 'unknown',
+                irsEligibilityCheckedAt: selectedOrg.irs_eligibility_checked_at,
+                irsEligibilitySources: selectedOrg.irs_eligibility_sources,
+              } : undefined}
+            />
           </div>
         </div>
       )}

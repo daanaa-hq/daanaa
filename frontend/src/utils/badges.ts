@@ -44,10 +44,10 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   if (!isRevoked) {
     badges.push({
       id: 'tax_deductible',
-      label: 'Tax-deductible',
-      detail: 'Confirmed active 501(c)(3) in the IRS Business Master File, listed as eligible to receive tax-deductible contributions.',
-      source: 'IRS Business Master File',
-      color: 'green',
+      label: org.irs_eligibility_status === 'verified' ? 'IRS eligibility verified' : 'Tax status not verified',
+      detail: org.irs_eligibility_status === 'verified' ? 'Current IRS BMF, Publication 78, and revocation records support tax-deductible eligibility.' : 'The latest IRS evidence does not include a complete verification. Check the IRS before giving.',
+      source: 'IRS BMF + Publication 78',
+      color: org.irs_eligibility_status === 'verified' ? 'green' : 'gold',
       icon: 'check-shield',
     })
   }

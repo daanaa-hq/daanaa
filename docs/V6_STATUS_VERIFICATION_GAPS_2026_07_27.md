@@ -23,31 +23,52 @@
 
 ## TWO CRITICAL GAPS IDENTIFIED
 
-### Gap 1: Fairness Report Must Compare Against Baseline ⏳
+### Gap 1: Fairness Report Interpretation (CRITICAL) ⏳
 
-**Issue Found:**
-- Fairness comparison script ran but found no prior active run
-- Returned "No prior run found" because no run marked `status='active'`
-- Cannot evaluate fairness without baseline comparison
+**Issue Found (Updated 2026-07-27):**
+- Original fairness report found coverage reduction of 120,888 organizations
+- Baseline contained 120,887 revoked organizations (incorrectly included)
+- New candidate correctly excludes revoked orgs
+- Report failed to explain this as eligibility cleanup, not harm
+- Report prematurely stated "ready for approval" without this analysis
+- Report lacked complete small-organization transition data
+
+**Root Cause:**
+Coverage reduction interpretation error. The 120,888 drop is primarily due to removal of 120,887 revoked organizations — an eligibility CORRECTION, not a regression or harm to small organizations.
 
 **Fix Applied:**
-- Updated `scripts/v6_fairness_comparison.py` to accept explicit baseline
-- Script now supports: `python3 v6_fairness_comparison.py <new_run> <baseline_run> [db_path]`
-- Example: `python3 v6_fairness_comparison.py v6_foundation_candidate_20260728_revised v6_foundation_candidate_20260727_corrected`
+- Created `scripts/v6_fairness_comparison_corrected.py` (~400 lines)
+- New script includes:
+  - **Explicit revocation analysis:** Count revoked in baseline vs. revised candidate
+  - **Coverage reduction explanation:** Quantify revocation removal as % of total reduction
+  - **Complete small-org transitions:** Count grassroots/small orgs in each tier, track removals by cause (revocation vs. other)
+  - **Clear baseline labeling:** "Comparison Baseline Run" (not "Prior Active Run")
+  - **NO premature approval:** Lists blocking conditions (integrity check, staging QA, founder review)
 
 **Required Action:**
 ```bash
-# Run fairness comparison with explicit baseline
-python3 scripts/v6_fairness_comparison.py \
+# Run corrected fairness comparison with explicit baseline
+python3 scripts/v6_fairness_comparison_corrected.py \
   v6_foundation_candidate_20260728_revised \
   v6_foundation_candidate_20260727_corrected \
   data/merit_registry.db
 ```
 
 **Expected Output:**
-- Markdown report in `reports/v6/fairness_comparison_v6_foundation_candidate_20260728_revised.md`
-- Comparison showing tier distribution, coverage, regional balance, small-org impact
-- Flags any significant shifts requiring founder review
+- Markdown report in `reports/v6/fairness_analysis_corrected_v6_foundation_candidate_20260728_revised.md`
+- Section 1: Revocation Analysis (baseline revoked count, new revoked count, correctly excluded)
+- Section 2: Coverage Analysis (reduction explained: X orgs due to revocation, Y due to other factors)
+- Section 3: Small-Organization Impact (complete tier transition analysis, not just sampling)
+- Section 4: Tier Distribution Comparison (all 5 tiers, baseline vs. revised)
+- Section 5: Status & Blocking Conditions
+  - ✅ Coverage reduction explained (revocation cleanup)
+  - ✅ Small-org impact quantified (complete analysis)
+  - ⏳ SQLite integrity check must return exactly `ok`
+  - ⏳ Staging QA must pass (all 5 tiers tested)
+  - ⏳ Founder review of presentation + tier assignments
+  - ❌ NO approval recommendation until all conditions met
+
+**CRITICAL:** The report will NOT recommend approval. It will list what remains to be verified.
 
 **Status:** ⏳ Needs to be run during next quiet maintenance window
 

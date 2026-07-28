@@ -88,7 +88,12 @@ export function RhythmNudges({ entries, orgDataMap }: {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
-                    logDonation(entry.ein, t.amount, todayIso(), 'Recurring gift')
+                    const irsSnapshot = org ? {
+                      irsEligibilityStatus: org.irs_eligibility_status || 'unknown',
+                      irsEligibilityCheckedAt: org.irs_eligibility_checked_at,
+                      irsEligibilitySources: org.irs_eligibility_sources,
+                    } : undefined
+                    logDonation(entry.ein, t.amount, todayIso(), 'Recurring gift', undefined, irsSnapshot)
                     setConfirming(prev => { const n = new Set(prev); n.delete(entry.ein); return n })
                   }}
                   className="px-4 py-2.5 rounded-xl bg-success-green text-white font-body text-small font-semibold hover:opacity-90 transition-colors"

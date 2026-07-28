@@ -59,6 +59,7 @@ interface V6ContextData {
   conditional_band_context?: {
     explanation: string;
     bands: ConditionalBand[];
+    message?: string | null;
   };
 }
 
@@ -171,7 +172,7 @@ export const V6FinancialContext: React.FC<V6FinancialContextProps> = ({
               <div>
                 <p className="text-xs font-medium text-gray-600 uppercase">Typical range</p>
                 <p className="text-xl font-semibold text-gray-900">
-                  {context.peer_p25.toFixed(1)}–{context.peer_p75.toFixed(1)} mo
+                  {context.peer_p25!.toFixed(1)}–{context.peer_p75!.toFixed(1)} mo
                 </p>
                 <p className="text-xs text-gray-500 mt-1">25th–75th percentile</p>
               </div>
@@ -202,7 +203,12 @@ export const V6FinancialContext: React.FC<V6FinancialContextProps> = ({
             {context.conditional_band_context.explanation}
           </p>
 
-          <div className="overflow-x-auto">
+          {context.conditional_band_context.bands.length === 0 ? (
+            <p className="text-sm text-yellow-800">
+              {context.conditional_band_context.message ||
+                'No conditional numeric comparison is available yet.'}
+            </p>
+          ) : <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-yellow-100">
                 <tr>
@@ -231,7 +237,7 @@ export const V6FinancialContext: React.FC<V6FinancialContextProps> = ({
                 ))}
               </tbody>
             </table>
-          </div>
+          </div>}
         </div>
       )}
 

@@ -17,7 +17,7 @@ export interface ActionRowLinks {
 }
 
 export function getActionRowLinks(
-  org: Pick<ApiOrganization, 'website_status' | 'website' | 'donate_url_status' | 'donate_url' | 'volunteer_url'> | null | undefined
+  org: Pick<ApiOrganization, 'website_status' | 'website' | 'donate_url_status' | 'donate_url' | 'volunteer_url' | 'irs_eligibility_status'> | null | undefined
 ): ActionRowLinks {
   // Show website if: (1) verified as 'ok'/'beta', OR (2) URL exists but unchecked (NULL status)
   // NULL status = "we haven't checked this yet" — better to show it than hide real websites.
@@ -28,7 +28,7 @@ export function getActionRowLinks(
   // which is NULL for ~99.7% of orgs with a URL (2026-07-10 eng review,
   // finding T3). 'beta' = AI-suggested, unverified by the org; 'claimed' =
   // org-verified via the claim flow.
-  const donateOk = org?.donate_url_status === 'beta' || org?.donate_url_status === 'claimed'
+  const donateOk = (org?.irs_eligibility_status || 'unknown') !== 'revoked' && (org?.donate_url_status === 'beta' || org?.donate_url_status === 'claimed')
   const donateUrl = donateOk ? normalizeExternalUrl(org?.donate_url) : null
   const volunteerUrl = normalizeExternalUrl(org?.volunteer_url)
 

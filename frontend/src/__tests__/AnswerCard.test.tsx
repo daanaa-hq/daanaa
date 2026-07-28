@@ -126,7 +126,7 @@ describe('AnswerCard', () => {
   describe('no-data branch (the majority case, ~82% of public orgs)', () => {
     it('shows the dignity-layer copy, not a blank space, when v5_context is null', () => {
       render(<AnswerCard org={makeOrg({ v5_context: null })} />)
-      expect(screen.getByText(/registered 501\(c\)\(3\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/appears in our nonprofit records/i)).toBeInTheDocument()
       expect(screen.getByText(/common for smaller and local organizations/i)).toBeInTheDocument()
     })
 
@@ -157,7 +157,7 @@ describe('AnswerCard', () => {
       // ever sends a v5_context without a score sub-object.
       const org = makeOrg({ v5_context: { archetype: { key: 'a', label: 'A' } } as never })
       render(<AnswerCard org={org} />)
-      expect(screen.getByText(/registered 501\(c\)\(3\)/i)).toBeInTheDocument()
+      expect(screen.getByText(/appears in our nonprofit records/i)).toBeInTheDocument()
     })
   })
 })
