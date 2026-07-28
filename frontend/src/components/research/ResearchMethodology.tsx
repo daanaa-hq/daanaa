@@ -1,13 +1,12 @@
+import { Link } from 'react-router-dom'
 export default function ResearchMethodology() {
   return (
     <div>
-      <h2 className="text-3xl font-display text-deep-navy mb-6">Our Methodology</h2>
+      <h2 className="text-3xl font-display text-deep-navy mb-6">v6 technical notes</h2>
 
       <div className="prose prose-sm max-w-none text-cool-grey space-y-6">
         <p>
-          Daanaa's approach is built on three pillars: public data, peer context, and
-          radical transparency. We don't predict impact—we provide the financial and
-          operational context donors need to evaluate fit.
+          The public explanation lives on the Methodology page. This section records the technical choices behind v6 for advisors, researchers, and nonprofit practitioners. The aim is useful context without turning peer patterns into ratings.
         </p>
 
         <div>
@@ -34,65 +33,45 @@ export default function ResearchMethodology() {
 
         <div className="bg-soft-gold/10 rounded-lg p-4">
           <p className="text-sm font-semibold text-deep-navy mb-2">
-            🔒 Financial scores derive solely from public IRS data
+            v6 context is traceable and versioned
           </p>
           <p className="text-sm">
-            All peer context scores and health signals are deterministic: traceable to
-            public Form 990 filings and explicit calculation rules, with no black-box
-            algorithms or paid data providers. Mission summaries and cause tags are generated
-            by a local AI model and are labeled accordingly — they do not affect scores.
+            Organization-reported data, peer reference data, and AI-assisted summaries are kept separate. AI-assisted summaries do not determine peer groups or financial context.
           </p>
         </div>
+        <p className="text-sm"><Link to="/methodology" className="font-semibold text-soft-gold hover:text-bright-gold">Read the plain-language methodology →</Link></p>
 
         <div>
           <h3 className="text-lg font-semibold text-deep-navy mb-3">Key Concepts</h3>
           <dl className="space-y-4">
             <div>
-              <dt className="font-semibold text-deep-navy">Financial Archetype</dt>
+              <dt className="font-semibold text-deep-navy">Funding pattern</dt>
               <dd className="text-sm mt-1">
-                How an organization funds itself: Donation-Funded Programs (community
-                fundraising), Fee-for-Service Operators (earned revenue), or Endowment-Funded
-                Grantmakers (reserve-driven). Archetype shapes financial strategy and
-                sustainability drivers.
+                The available funding pattern is one input to a comparable peer group. It may be reported or inferred, and it never stands in for the organization's own explanation of its work.
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-deep-navy">Revenue Band</dt>
+              <dt className="font-semibold text-deep-navy">Scale and revenue</dt>
               <dd className="text-sm mt-1">
-                Three universal bands applied across all archetypes: Micro (&lt;$150K),
-                Professional ($150K–$700K), Established (&gt;$700K). Bands prevent unfair
-                comparison between a $100K startup and a $50M institution.
+                Revenue is used when available to avoid comparing organizations of very different scale. When it is missing, we do not invent it and may show broader or descriptive context.
               </dd>
             </div>
             <div>
               <dt className="font-semibold text-deep-navy">Peer Group</dt>
               <dd className="text-sm mt-1">
-                A peer group is formed by combining archetype + revenue band + census region.
-                An organization is benchmarked only against others in its peer group—the same
-                funding model, similar size, and same geography. Each peer group has its own
-                typical financial profile shaped by regional economic conditions.
+                A peer group uses the available category, geography, scale, and funding pattern. The page shows the group and source years so donors can understand what the comparison does—and does not—say.
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-deep-navy">Financial Context Score (v5)</dt>
+              <dt className="font-semibold text-deep-navy">Peer financial context</dt>
               <dd className="text-sm mt-1">
-                A 0–100 percentile rank showing how an organization's financial position compares
-                within its peer group (same archetype, revenue band, and region). The score is
-                calculated from months of operating reserves adjusted for the organization's
-                revenue stability and cash position. A score of 75 means the organization holds
-                stronger reserves than 75% of its peer group. This is context for donors, not a
-                verdict on mission quality. A lower score indicates an organization may benefit
-                from additional community support, not that it is doing less good.
+                We show direct financial information when it is available. When it is not, we may show typical patterns among similar organizations. Inferred context never claims to describe the organization’s actual finances. It is context for donors, not a verdict on mission quality.
               </dd>
             </div>
             <div>
-              <dt className="font-semibold text-deep-navy">Health Signal</dt>
+              <dt className="font-semibold text-deep-navy">Confidence and limits</dt>
               <dd className="text-sm mt-1">
-                An independent assessment of financial sustainability: Financially healthy (strong
-                reserves and revenue stability), Financially stable (adequate resources for peers), or
-                In need of support (limited reserves or revenue volatility). Not a judgment—a flag
-                indicating the organization may benefit from additional community support or strategic
-                planning.
+                Confidence describes the strength of the available evidence and the size of the comparison group. It does not describe the organization’s worth, effectiveness, or need for support.
               </dd>
             </div>
             <div>

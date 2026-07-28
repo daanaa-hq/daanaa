@@ -227,15 +227,23 @@ def verify_persistence(db_path: str) -> bool:
     return True
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description='Phase 3 IRS Eligibility Persistence')
-    parser.add_argument('--dry-run', action='store_true', help='Run without writing to database')
-    parser.add_argument('--add-columns-only', action='store_true', help='Add columns but do not persist data')
+    parser = argparse.ArgumentParser(description="Phase 3 IRS Eligibility Persistence")
+    parser.add_argument("--dry-run", action="store_true", help="Run without writing to database")
+    parser.add_argument("--add-columns-only", action="store_true", help="Add columns but do not persist data")
     args = parser.parse_args()
 
-    # Step 1: Add columns
+    # Dry-run is strictly read-only: no schema or data writes.
+    if args.dry_run:
+        stats = persist_irs_eligibility(str(DB_PATH), str(MANIFEST_PATH), dry_run=True)
+        if not stats or stats.get("errors"):
+            print("\n✗ Dry-run encountered errors")
+            sys.exit(1)
+        print("\n✓ Dry-run complete (no schema or data writes)")
+        sys.exit(0)
+
     if not add_irs_columns(str(DB_PATH)):
         print("\n✗ Failed to add columns")
         sys.exit(1)
@@ -244,17 +252,13 @@ if __name__ == '__main__':
         print("\n✓ Columns added successfully")
         sys.exit(0)
 
-    # Step 2: Persist IRS eligibility
-    stats = persist_irs_eligibility(str(DB_PATH), str(MANIFEST_PATH), dry_run=args.dry_run)
-
-    if not stats:
-        print("\n✗ Failed to persist IRS eligibility")
+    stats = persist_irs_eligibility(str(DB_PATH), str(MANIFEST_PATH), dry_run=False)
+    if not stats or stats.get("errors") or stats.get("updated") != stats.get("total"):
+        print("\n✗ Persistence incomplete or encountered errors")
         sys.exit(1)
 
-    # Step 3: Verify (only if not dry-run)
-    if not args.dry_run:
-        if not verify_persistence(str(DB_PATH)):
-            print("\n✗ Verification failed")
-            sys.exit(1)
+    if not verify_persistence(str(DB_PATH)):
+        print("\n✗ Verification failed")
+        sys.exit(1)
 
-    print(f"\n{'✓ Dry-run complete' if args.dry_run else '✓ Phase 3 persistence complete'}")
+    print("\n✓ Phase 3 persistence complete")

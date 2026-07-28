@@ -1,12 +1,72 @@
+## 2026-07-28 — V6 Activation: Validation-first gate prevents silent failures + undetected partial deployments
+
+**Symptom:** Risk of v6 going live with incomplete Phase 3 artifacts, broken assignments, or API misconfigurations undetected because validation and activation are separate/optional steps. Founder approval + QA sign-off might occur at different times, creating window for incomplete deployment.
+
+**Solution:** Implement `scripts/deploy_v6_validate.sh` as single-source-of-truth validation gate that runs **before** database activation and **explicitly prohibits** service restart within script.
+
+**Key design:**
+- Validation phase always runs (checks all critical preconditions)
+- Activation phase only runs if ACTIVATE=true + candidate run exists
+- Configuration output printed but service NOT restarted (human step required)
+- Fail-closed: unset PHASE3_EXPECTED_COUNT → script dies (requires explicit confirmation)
+- All checks logged and visible before activation
+
+**Why this works:**
+- (a) **Single entry point:** Founder/QA runs ONE script, sees ALL checks in dependency order
+- (b) **Explicit approval gates:** ACTIVATE=true is a binary flag, easy to review + document
+- (c) **No silent failures:** If Phase 3 artifacts missing or PHASE3_EXPECTED_COUNT unset, script dies (doesn't activate)
+- (d) **Separation of concerns:** Script does validation + database update; ops team does service restart (with explicit confirmation)
+- (e) **Audit trail:** All validation output is logged; QA can sign off on specific output
+
+**PHASE3_EXPECTED_COUNT strategy:**
+- **Never use auto-detected counts** (1,981,212 from local artifacts is stale/mixed and not authoritative)
+- **Always require explicit count after clean rebuild:** Run clean precompute builder, count files, query database for active/candidate count, confirm they match, then set PHASE3_EXPECTED_COUNT= in config
+- **Unset count causes failure:** Script dies if PHASE3_EXPECTED_COUNT is empty (prevents guessing)
+- **Document the count:** Add to DECISIONS.md + config comments why this specific count was chosen + when it was verified
+
+**Preventing rules:**
+- (a) Always run with ACTIVATE=false first (validation dry-run). Review output. Get approval. Then run with ACTIVATE=true.
+- (b) Never set PHASE3_EXPECTED_COUNT without documenting where the count came from + how it was verified against database.
+- (c) Service restart must be manual + explicit (not in script). Approval → activate database → restart service (three separate steps).
+- (d) If any validation fails, script dies. Do not bypass with --force flags. Fix the underlying issue first.
+
+**Related:** See `scripts/deploy_v6_validate.sh` for full implementation and `DECISIONS.md` 2026-07-28 for architecture.
+
+---
+
+## 2026-07-28 — Phase 3 IRS Eligibility Deployment: Archive incomplete + I/O contention halted retry
+
+**Symptom:** Phase 3 deployment appeared to extract for 2h+ but no files were actually extracted on droplet. Investigation revealed: (1) Archive payload only contained 1.76M files (88% of expected 1.98M), (2) Tar extraction process never started despite "Extracting archive..." in logs, (3) Attempt to rebuild archive locally caused tar to hang (I/O contention), impacting platform search performance as user warned.
+
+**Root cause — Archive Incompleteness:** Initial tar command to create `.deploy_scratch/precompute_payload.tar.gz` failed silently or timed out, capturing only 1.76M/1.98M files (836MB of 4.3GB). Symlink strategy (`.deploy_scratch/precompute/orgs` → `precompute_output/orgs`) may not have been dereferenced by tar properly, or tar was interrupted. No progress visibility meant failure went undetected until extraction was already attempted on droplet.
+
+**Root cause — Extraction Never Started:** Deployment script on droplet entered "Extracting archive..." phase but no tar process ever spawned. After 2h37m elapsed, zero files had been extracted; no error was logged. Suggests deployment script got stuck in a wait loop or extraction silently failed to start.
+
+**Root cause — I/O Contention on Retry:** Precompute directory (16GB, 1.98M files) causes tar to hang when reading. Simple `tar -cf` (no compression) timed out after 30s. Compressed archive creation hung at 836MB. This is a metadata-heavy operation (1.98M stat() calls) that causes high I/O load, directly impacting platform's search/loading speed.
+
+**Impact:** Deployment was rolled back. No production impact (live API healthy). But discovery reveals archive strategy is unreliable for 1.98M files.
+
+**Preventing rules:**
+- (a) Archive creation MUST verify file count before uploading: `tar -tzf archive.tar.gz | grep "\.json\.gz$" | wc -l` — must be ≥1,900,000. Add to preflight in `safe_deploy_droplet.sh`.
+- (b) Never rely on single large tar+gzip for 1.98M files. Use chunked strategy by EIN prefix (000–999 = 1000 small archives, 4–16MB each). Allows resume if one chunk fails.
+- (c) Tar command MUST include explicit timeout + progress reporting: `timeout 3600 tar -czf ... --checkpoint=1000 --checkpoint-action=echo='[%s]'`. Monitor process PID in deployment script.
+- (d) Run archive creation during off-peak hours (night window). Monitor system load (`iostat -x` in parallel). Archive creation on live system causes search/loading stress.
+- (e) Test tar command locally before deployment. Verify: (1) output file size ≥4.3GB, (2) file count ≥1,900,000, (3) integrity check passes. Never trust tar completion without verification.
+- (f) Droplet extraction MUST monitor tar progress every 30s and auto-abort if zero files extracted after N minutes.
+
+**Related:** Full incident report at `docs/PHASE3_DEPLOYMENT_INCIDENT_2026_07_28.md` with I/O investigation checklist.
+
+---
+
 ## 2026-07-28 — Phase 3 IRS Eligibility Deployment: Checksum file format blocks droplet atomic swap
 
-**Symptom:** Deployment to staging failed twice with "Checksum verification failed" on droplet. 
-Error message: `.deploy_scratch/precompute_payload.tar.gz: No such file or directory`. The payload 
+**Symptom:** Deployment to staging failed twice with "Checksum verification failed" on droplet.
+Error message: `.deploy_scratch/precompute_payload.tar.gz: No such file or directory`. The payload
 had transferred successfully, but the atomic swap never completed.
 
-**Root cause:** The sha256sum file (`.sha256`) was generated with a relative path from the local 
-machine's working directory. When the droplet's `deploy_droplet.sh` script tried to verify the 
-checksum with `sha256sum -c`, it looked for a file at `.deploy_scratch/precompute_payload.tar.gz` 
+**Root cause:** The sha256sum file (`.sha256`) was generated with a relative path from the local
+machine's working directory. When the droplet's `deploy_droplet.sh` script tried to verify the
+checksum with `sha256sum -c`, it looked for a file at `.deploy_scratch/precompute_payload.tar.gz`
 in the droplet's filesystem, which doesn't exist. The payload was in `/opt/daanaa/staging/`.
 
 **Fix:** Regenerate the checksum file from the scratch directory itself, with just the filename:
@@ -16,16 +76,16 @@ sha256sum -b precompute_payload.tar.gz > precompute_payload.tar.gz.sha256
 # Result: "e239...  *precompute_payload.tar.gz" (no path, just filename)
 ```
 
-The `-b` (binary) flag also changes the format (adds `*` prefix), which helps the droplet script 
-parse it correctly. After this fix, checksum verification passed and extraction proceeded normally 
+The `-b` (binary) flag also changes the format (adds `*` prefix), which helps the droplet script
+parse it correctly. After this fix, checksum verification passed and extraction proceeded normally
 (extraction took 20–30 min for 1.98M files, which is expected).
 
-**Preventing rule:** Always generate checksum files from the same directory where the payload 
-lives (`.deploy_scratch/`), never from the parent directory. Test locally first: 
-`sha256sum -c precompute_payload.tar.gz.sha256` before deploying. Add this validation to 
+**Preventing rule:** Always generate checksum files from the same directory where the payload
+lives (`.deploy_scratch/`), never from the parent directory. Test locally first:
+`sha256sum -c precompute_payload.tar.gz.sha256` before deploying. Add this validation to
 `safe_deploy_droplet.sh` preflight (line ~90) to catch it before transferring to droplet.
 
-**Related:** Documented complete repeatable playbook at `docs/PHASE3_DEPLOYMENT_PLAYBOOK.md` 
+**Related:** Documented complete repeatable playbook at `docs/PHASE3_DEPLOYMENT_PLAYBOOK.md`
 to ensure this process works reliably every time.
 
 ---

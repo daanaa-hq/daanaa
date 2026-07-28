@@ -7,7 +7,6 @@ import ResearchAbout from './research/ResearchAbout'
 import ResearchProblem from './research/ResearchProblem'
 import ResearchMethodology from './research/ResearchMethodology'
 
-import ResearchFinancialArchetypes from './research/ResearchFinancialArchetypes'
 import ResearchEntityTypes from './research/ResearchEntityTypes'
 
 import ResearchFindings from './research/ResearchFindings'
@@ -35,7 +34,6 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
     { id: 'problem', component: ResearchProblem },
     { id: 'methodology', component: ResearchMethodology },
 
-    { id: 'financial-archetypes', component: ResearchFinancialArchetypes },
     { id: 'entity-types', component: ResearchEntityTypes },
 
     { id: 'findings', component: ResearchFindings },
@@ -76,7 +74,7 @@ export default function ResearchContent({ sessionToken }: ResearchContentProps) 
           </div>
           <RelatedPages
             links={[
-              { to: '/methodology', label: 'How we score' },
+              { to: '/methodology', label: 'Public methodology' },
               { to: '/about', label: 'About Daanaa' },
               { to: '/sector-health', label: 'Sector health data' },
             ]}

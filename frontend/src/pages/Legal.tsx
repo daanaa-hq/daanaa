@@ -83,7 +83,7 @@ export default function Legal() {
               financial data shown. Daanaa refreshes data from ProPublica and IRS sources monthly, and supplements with NCCS extracts as they become available.
             </p>
             <p className="mt-3">
-              Daanaa peer financial context scores are recalculated whenever the underlying data is updated. Scores are relative. A score reflects an organization's reserve position among its true peers — same funding model and similar revenue size — not an absolute quality rating.
+              Daanaa peer v6 public contexts are recalculated whenever the underlying data is updated. Scores are relative. A score reflects an organization's reserve position among its true peers — same funding model and similar revenue size — not an absolute quality rating.
             </p>
           </section>
 

@@ -1,0 +1,230 @@
+/* Card Enhancements — Expanding the design system (navy+cream+gold) */
+/* Purpose: Improve visual hierarchy, spacing rhythm, and IRS eligibility prominence */
+
+/* Org Card Container — Refined border treatment and hover state */
+.org-card {
+  @apply bg-white border border-light-grey/70 rounded-xl transition-all duration-250;
+}
+
+.org-card:hover {
+  @apply border-soft-gold/40 shadow-[0_8px_24px_rgba(10,22,40,0.08)];
+}
+
+.org-card:focus-within {
+  @apply border-soft-gold/60 ring-2 ring-soft-gold/20;
+}
+
+/* Typography Hierarchy — Serif for primary, body for supporting */
+.org-card__name {
+  @apply font-display text-title-sm text-deep-navy/95 leading-tight tracking-[0.01em];
+  /* Serif typography signals intentionality and trust */
+  font-feature-settings: "liga" 1, "calt" 1; /* Enable ligatures for serif elegance */
+}
+
+.org-card__name:hover {
+  @apply text-soft-gold transition-colors duration-200;
+}
+
+/* Financial context — Elevated emphasis */
+.org-card__inline-fact {
+  @apply font-body text-label font-medium text-soft-gold/90 mt-1.5 leading-none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Location + Category — Secondary tier */
+.org-card__metadata {
+  @apply flex items-center gap-1.5 mb-3 text-caption text-cool-grey/75 font-body;
+  /* Subtle icon with muted text for supporting information */
+}
+
+/* Category badge — Refined treatment */
+.org-card__category {
+  @apply inline-flex flex-col px-2.5 py-1 rounded-lg bg-gradient-to-b from-soft-gold/12 to-soft-gold/6 cursor-default transition-all duration-150;
+  border: 1px solid rgba(201, 169, 110, 0.1);
+}
+
+.org-card__category:hover {
+  @apply bg-soft-gold/15 border-soft-gold/20;
+}
+
+.org-card__category-major {
+  @apply font-body text-micro text-cool-grey/70 leading-tight tracking-[0.06em] uppercase;
+  /* Extra small, tightly spaced for visual hierarchy */
+}
+
+.org-card__category-label {
+  @apply font-body text-label text-deep-navy/75 font-medium leading-tight;
+}
+
+/* Cause tags — Refined chip design */
+.org-card__cause-tag {
+  @apply inline-flex items-center px-2.5 py-1 rounded-full bg-soft-gold/10 text-soft-gold font-body text-micro font-medium transition-all duration-150;
+  border: 1px solid rgba(201, 169, 110, 0.15);
+}
+
+.org-card__cause-tag:hover {
+  @apply bg-soft-gold/18 border-soft-gold/30 shadow-[0_2px_8px_rgba(201,169,110,0.12)];
+}
+
+/* Mission statement — Optimized for readability */
+.org-card__mission {
+  @apply font-body text-caption text-cool-grey/80 leading-relaxed line-clamp-2 mb-2.5 -mt-1;
+  /* Increased line height for legibility and visual breathing room */
+}
+
+/* Badges container — Improved spacing and hierarchy */
+.org-card__badges {
+  @apply flex flex-wrap gap-1.5 mt-2.5 pt-2.5 border-t border-light-grey/50;
+}
+
+.org-card__badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-body text-micro font-medium transition-all duration-150;
+}
+
+/* IRS Eligibility Badge — Enhanced visibility */
+.org-card__badge--irs-verified {
+  @apply bg-green-50 border border-green-200 text-green-700;
+}
+
+.org-card__badge--irs-verified:hover {
+  @apply bg-green-100 border-green-300 shadow-[0_2px_8px_rgba(74,222,128,0.15)];
+}
+
+.org-card__badge--irs-unverified {
+  @apply bg-amber-50 border border-amber-200 text-amber-700;
+}
+
+.org-card__badge--irs-unverified:hover {
+  @apply bg-amber-100 border-amber-300 shadow-[0_2px_8px_rgba(245,158,11,0.15)];
+}
+
+.org-card__badge--irs-revoked {
+  @apply bg-red-50 border border-red-200 text-red-700;
+}
+
+.org-card__badge--irs-revoked:hover {
+  @apply bg-red-100 border-red-300 shadow-[0_2px_8px_rgba(239,68,68,0.15)];
+}
+
+.org-card__badge--irs-unknown {
+  @apply bg-cool-grey/8 border border-cool-grey/20 text-cool-grey/70;
+}
+
+.org-card__badge--irs-unknown:hover {
+  @apply bg-cool-grey/15 border-cool-grey/40 shadow-[0_2px_8px_rgba(122,113,102,0.1)];
+}
+
+/* Action buttons footer — Refined layout */
+.org-card__actions {
+  @apply flex items-center justify-end gap-1.5 mt-3;
+}
+
+.org-card__action-btn {
+  @apply flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-lg transition-all duration-150;
+  @apply text-cool-grey/70 hover:text-soft-gold hover:bg-soft-gold/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold/40;
+}
+
+.org-card__action-btn--active {
+  @apply text-soft-gold;
+}
+
+/* Card Row variant — Horizontal layout for search results */
+.org-card-row {
+  @apply flex items-center gap-4 bg-white border border-light-grey/70 rounded-xl px-5 py-4 transition-all duration-250;
+}
+
+.org-card-row:hover {
+  @apply border-soft-gold/40 shadow-[0_4px_16px_rgba(10,22,40,0.06)];
+}
+
+.org-card-row__name {
+  @apply font-display text-lead text-deep-navy/95 hover:text-soft-gold transition-colors line-clamp-2 mb-0.5;
+}
+
+/* Spacing scale — Consistent rhythm throughout */
+:root {
+  /* Base spacing unit: 4px */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+
+  /* Card spacing rhythm */
+  --card-padding: var(--space-lg); /* 24px internal padding */
+  --card-gap-vertical: var(--space-md); /* 16px between sections */
+  --card-gap-horizontal: var(--space-lg); /* 24px for row layout */
+}
+
+/* Refinement: Reduced spacing intensity for compact mode */
+.org-card--compact {
+  @apply p-4 gap-3;
+}
+
+.org-card--compact .org-card__name {
+  @apply text-base;
+}
+
+.org-card--compact .org-card__mission {
+  @apply hidden;
+}
+
+/* Visual separator — Improved subtle line treatment */
+.divider-soft {
+  @apply border-light-grey/50;
+  /* Softer than default borders for hierarchical separation */
+}
+
+/* Focus states — Better keyboard navigation visibility */
+:focus-visible {
+  @apply outline-none ring-2 ring-soft-gold/50 ring-offset-2;
+}
+
+/* Dark mode fallback — Maintain contrast */
+@media (prefers-color-scheme: dark) {
+  .org-card {
+    @apply bg-slate-900 border-slate-700/50;
+  }
+
+  .org-card:hover {
+    @apply border-soft-gold/50;
+  }
+
+  .org-card__name {
+    @apply text-warm-cream;
+  }
+
+  .org-card__metadata {
+    @apply text-cool-grey/60;
+  }
+
+  .org-card__mission {
+    @apply text-cool-grey/70;
+  }
+}
+
+/* Motion: Smooth transitions for interactive elements */
+@media (prefers-reduced-motion: no-preference) {
+  .org-card,
+  .org-card__action-btn,
+  .org-card__cause-tag,
+  .org-card__category {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .org-card__name:hover {
+    @apply translate-x-0.5;
+  }
+}
+
+/* Accessibility: Ensure minimum touch targets */
+.org-card__action-btn {
+  @apply min-w-[44px] min-h-[44px];
+}
+
+/* Performance optimization */
+.org-card {
+  contain: layout style paint;
+}

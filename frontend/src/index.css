@@ -228,6 +228,179 @@
     transform: translateY(-4px);
     box-shadow: 0 12px 40px rgba(10, 22, 40, 0.08);
   }
+
+  /* IRS Eligibility Theme-Aware Styles — Dark mode default, light mode overrides */
+  .irs-badge-verified {
+    background-color: rgba(var(--success-green-rgb), 0.15);
+    color: var(--success-green);
+    border: 1px solid rgba(var(--success-green-rgb), 0.3);
+  }
+  [data-theme="light"] .irs-badge-verified {
+    background-color: #DBEAFE;
+    color: #065F46;
+    border-color: #A7F3D0;
+  }
+
+  .irs-badge-unverified {
+    background-color: rgba(var(--alert-amber-rgb), 0.15);
+    color: var(--alert-amber);
+    border: 1px solid rgba(var(--alert-amber-rgb), 0.3);
+  }
+  [data-theme="light"] .irs-badge-unverified {
+    background-color: #FEFCE8;
+    color: #854D0E;
+    border-color: #FCD34D;
+  }
+
+  .irs-badge-revoked {
+    background-color: rgba(220, 38, 38, 0.15);
+    color: #EF4444;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+  }
+  [data-theme="light"] .irs-badge-revoked {
+    background-color: #FEE2E2;
+    color: #7F1D1D;
+    border-color: #FECACA;
+  }
+
+  .irs-badge-unknown {
+    background-color: rgba(107, 114, 128, 0.15);
+    color: var(--cool-grey);
+    border: 1px solid rgba(107, 114, 128, 0.3);
+  }
+  [data-theme="light"] .irs-badge-unknown {
+    background-color: #F3F4F6;
+    color: #1F2937;
+    border-color: #E5E7EB;
+  }
+
+  .irs-badge-exception {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60A5FA;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+  }
+  [data-theme="light"] .irs-badge-exception {
+    background-color: #DBEAFE;
+    color: #1E40AF;
+    border-color: #93C5FD;
+  }
+
+  .irs-detail-text {
+    color: var(--warm-cream);
+  }
+  [data-theme="light"] .irs-detail-text {
+    color: #374151;
+  }
+
+  .irs-detail-sources,
+  .irs-detail-footer {
+    color: var(--muted-cream);
+  }
+  [data-theme="light"] .irs-detail-sources,
+  [data-theme="light"] .irs-detail-footer {
+    color: #6B7280;
+  }
+
+  .irs-disclaimer {
+    background-color: rgba(var(--alert-amber-rgb), 0.1);
+    border: 1px solid rgba(var(--alert-amber-rgb), 0.3);
+    border-radius: 0.625rem;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--warm-cream);
+  }
+  [data-theme="light"] .irs-disclaimer {
+    background-color: #FEFCE8;
+    border-color: #FCD34D;
+    color: #374151;
+  }
+
+  .irs-modal {
+    background-color: var(--warm-cream);
+    color: var(--deep-navy);
+  }
+  [data-theme="light"] .irs-modal {
+    background-color: white;
+  }
+
+  .irs-modal-title {
+    color: var(--deep-navy);
+  }
+  [data-theme="light"] .irs-modal-title {
+    color: #111827;
+  }
+
+  .irs-modal-message {
+    color: var(--deep-navy);
+  }
+  [data-theme="light"] .irs-modal-message {
+    color: #374151;
+  }
+
+  .irs-modal-details {
+    background-color: rgba(var(--deep-navy-rgb), 0.05);
+    color: var(--deep-navy);
+  }
+  [data-theme="light"] .irs-modal-details {
+    background-color: #F9FAFB;
+    color: #111827;
+  }
+
+  .irs-modal-cancel {
+    background-color: rgba(var(--cool-grey-rgb), 0.2);
+    color: var(--warm-cream);
+    border: 1px solid rgba(var(--cool-grey-rgb), 0.3);
+  }
+  .irs-modal-cancel:hover {
+    background-color: rgba(var(--cool-grey-rgb), 0.3);
+  }
+  [data-theme="light"] .irs-modal-cancel {
+    background-color: #E5E7EB;
+    color: #111827;
+    border-color: #D1D5DB;
+  }
+  [data-theme="light"] .irs-modal-cancel:hover {
+    background-color: #D1D5DB;
+  }
+
+  .irs-modal-confirm {
+    background-color: var(--soft-gold);
+    color: var(--deep-navy);
+  }
+  .irs-modal-confirm:hover {
+    background-color: var(--bright-gold);
+  }
+  [data-theme="light"] .irs-modal-confirm {
+    background-color: #2563EB;
+    color: white;
+  }
+  [data-theme="light"] .irs-modal-confirm:hover {
+    background-color: #1D4ED8;
+  }
+
+  .irs-revoked-warning {
+    background-color: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: var(--warm-cream);
+  }
+  [data-theme="light"] .irs-revoked-warning {
+    background-color: #FEE2E2;
+    border-color: #FECACA;
+    color: #374151;
+  }
+
+  .irs-revoked-link {
+    background-color: #DC2626;
+  }
+  .irs-revoked-link:hover {
+    background-color: #B91C1C;
+  }
+  [data-theme="light"] .irs-revoked-link {
+    background-color: #DC2626;
+  }
+  [data-theme="light"] .irs-revoked-link:hover {
+    background-color: #B91C1C;
+  }
 }
 
 html {

@@ -4,7 +4,7 @@ V6 Financial Context API Handler
 Implements /api/organizations/{ein}/financial-context endpoint.
 Returns comprehensive peer context using normalized v6 data foundation.
 
-Feature-flagged via ENABLE_V6_FINANCIAL_CONTEXT env var (default: false).
+Uses v6 by default; ENABLE_V6_FINANCIAL_CONTEXT=false is an emergency rollback switch.
 """
 
 import sqlite3
@@ -12,10 +12,10 @@ import json
 import os
 from datetime import datetime
 
-ENABLE_V6 = os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'false').lower() == 'true'
+ENABLE_V6 = os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'true').lower() == 'true'
 V6_CANDIDATE_RUN_ID = os.environ.get(
     'V6_CANDIDATE_RUN_ID',
-    'v6_foundation_candidate_20260727_corrected',
+    'v6_foundation_candidate_20260727_revocation_refresh',
 )
 
 def get_v6_financial_context(db, ein):
@@ -98,9 +98,16 @@ def get_v6_financial_context(db, ein):
         if not assignment:
             return {
                 'organization_ein': ein,
-                'methodology_version': 'v6_foundation',
+                'methodology_version': 'v6.1-foundation-candidate',
                 'data_status': 'insufficient_data',
-                'message': 'Organization not yet scored in v6 financial context system.'
+                'selected_tier': '5_archetype_only',
+                'peer_group_description': 'We do not have enough public records to make a numeric peer comparison yet.',
+                'funding_archetype': None,
+                'confidence': 'limited',
+                'confidence_margin': 'Limited evidence',
+                'sources': ['IRS public filings', 'Public nonprofit datasets'],
+                'limitations': ['No sufficiently complete public financial record for a numeric comparison'],
+                'message': 'We do not have enough public information for a numeric comparison yet. This is a data limitation, not a judgment.'
             }
 
         assignment_dict = dict(assignment)

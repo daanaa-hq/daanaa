@@ -114,7 +114,7 @@ export default function CauseSpotlight() {
             <Stat value={data.totalOrgs.toLocaleString()} label="Organizations" />
             <Stat value={data.withContext.toLocaleString()} label="With financial context" />
             <Stat value={data.topStates[0].state} label="Most organizations" />
-            <Stat value={`${(data.withContext / data.totalOrgs * 100).toFixed(0)}%`} label="Scored so far" />
+            <Stat value={`${(data.withContext / data.totalOrgs * 100).toFixed(0)}%`} label="With peer context" />
           </div>
 
           <p className="mt-6 font-body text-body text-cool-grey/80">

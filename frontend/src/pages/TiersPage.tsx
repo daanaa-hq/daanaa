@@ -17,7 +17,7 @@ const TIERS: {
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
-      { label: 'Top quartile financial context score (≥75th percentile)', met: true },
+      { label: 'Peer context available for comparable organizations', met: true },
       { label: 'Mission statement on public record', met: true },
       { label: 'Active website on record', met: true },
     ],
@@ -29,7 +29,7 @@ const TIERS: {
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: true },
-      { label: 'Financial context score assigned', met: true },
+      { label: 'Peer context state assigned', met: true },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
     ],
@@ -41,7 +41,7 @@ const TIERS: {
     criteria: [
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later) or revenue on record', met: true },
-      { label: 'Financial context score assigned', met: false },
+      { label: 'Peer context state assigned', met: false },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
     ],
@@ -54,7 +54,7 @@ const TIERS: {
       { label: 'Recognized as a nonprofit by the IRS', met: true },
       { label: 'Annual financial report on file (2022 or later)', met: false },
       { label: 'Revenue data on record', met: false },
-      { label: 'Financial context score assigned', met: false },
+      { label: 'Peer context state assigned', met: false },
       { label: 'Mission statement on public record', met: false },
       { label: 'Active website on record', met: false },
     ],

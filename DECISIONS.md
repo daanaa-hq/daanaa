@@ -1,3 +1,70 @@
+## 2026-07-28: V6 Rollout Validation-First Gate (deploy_v6_validate.sh)
+
+**Problem:** v6 is staged but not yet live. Activation requires careful orchestration: database schema validation, Phase 3 artifact integrity, revocation checks, assignment coverage, and API smoke tests. Risk: premature activation (missing Phase 3, incomplete assignments, broken API) or activation skipped due to missing guardrails.
+
+**Decision:** Implement validation-first gate script (`scripts/deploy_v6_validate.sh`) that performs all checks **before** database activation and explicitly prohibits service restart/deployment within the script.
+
+**Architecture:**
+
+1. **Validation phase (always runs):**
+   - Database backup with integrity check
+   - Required v6 tables exist (v6_scoring_runs, v6_peer_context_assignments, registry_enriched)
+   - Candidate/active run exists
+   - Run status is candidate or active
+   - Validate candidate run (if status=candidate)
+   - Revocation protection (block assignments for revoked orgs)
+   - Phase 3 artifacts present (if required) with expected count validation
+   - Assignment coverage: ASSIGNED_COUNT ≤ ACTIVE_COUNT (prevents assignment overflow)
+   - Tier distribution reporting
+   - API smoke test (existing service only)
+
+2. **Activation phase (only if ACTIVATE=true):**
+   - Requires candidate run (active runs cannot be re-activated)
+   - Updates status: candidate → active, previous active runs → archived
+   - Verifies activation succeeded
+
+3. **Configuration phase (output only):**
+   - Prints environment variables (ENABLE_V6_FINANCIAL_CONTEXT, V6_CANDIDATE_RUN_ID)
+   - **Explicitly warns:** exporting shell variables does NOT restart service
+   - **Next step:** QA review, methodology checks, design audit, manual service restart
+
+**Fail-closed safeguards:**
+- ✅ ACTIVATE must be "true" or "false" (no magic values)
+- ✅ RUN_ID must be alphanumeric + safe chars (no injection)
+- ✅ PHASE3_EXPECTED_COUNT unset → die with message (requires explicit confirmation after clean rebuild)
+- ✅ Phase 3 artifacts required by default (REQUIRE_PHASE3_ARTIFACTS=true)
+- ✅ Full assignments required by default (REQUIRE_FULL_ASSIGNMENTS=true)
+- ✅ Backup must exist and pass integrity check
+- ✅ Assignment count cannot exceed active organizations
+
+**Key design decision: No service restart in script.** The script validates + updates database only. Founder/ops team must:
+1. Run script with ACTIVATE=false (validation dry-run)
+2. Review QA checklist + findings
+3. Get approval from founder
+4. Run script with ACTIVATE=true (database activation)
+5. **Manually** restart service (systemctl restart droplet-api or equivalent)
+
+This separation prevents accidental activation without approval + ensures visibility of activation timing.
+
+**Example workflows:**
+
+Dry-run (validation only):
+```bash
+PHASE3_EXPECTED_COUNT=1758078 ACTIVATE=false bash scripts/deploy_v6_validate.sh
+```
+
+Production activation (after approval):
+```bash
+PHASE3_EXPECTED_COUNT=1758078 ACTIVATE=true bash scripts/deploy_v6_validate.sh
+systemctl restart droplet-api
+```
+
+**Phase 3 count strategy:** 1,758,078 is the authoritative active/candidate org count in v6 (not 1,981,212, which is stale/mixed local artifacts). Count must be confirmed after clean rebuild + database reconciliation. Until then, PHASE3_EXPECTED_COUNT="" and script fails closed.
+
+**Why validation-first:** Prevents silent failures + undetected partial deployments. Combines all checks in one place, visible logs, explicit approval gates.
+
+---
+
 ## 2026-07-26: V6 Scoring Ledger Architecture (Founder Decision)
 
 **Problem:** Two inconsistent v6 datasets exist (`tier_assignments` vs `registry_enriched`), no scoring_run record, data quality issues (13,991 Tier 1 nulls, 405,987 blank NTEECC). Initial quick-fix approach (migrate one table into the other) failed due to SQLite performance + database locking.

@@ -129,7 +129,7 @@ function PersonaTiles() {
     {
       to: '/directory',
       label: 'I want to give',
-      sub: 'Cause filters · financial health',
+      sub: 'Cause filters · public financial context',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
@@ -875,7 +875,7 @@ function HiddenGemsSection() {
               The ones doing quiet, steady work
             </h2>
             <p className="mt-3 font-body text-body-lg text-cool-grey max-w-xl leading-[1.6]">
-              Small nonprofits under $500K in revenue with strong peer financial context scores relative to similar organizations.
+              Small nonprofits under $500K in revenue with useful peer financial context relative to similar organizations.
               Starting points for your own research, not verdicts.
             </p>
           </div>

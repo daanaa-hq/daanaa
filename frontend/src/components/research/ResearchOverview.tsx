@@ -32,21 +32,20 @@ export default function ResearchOverview({
             <div className="text-sm text-cool-grey">States represented</div>
           </div>
           <div className="bg-soft-gold/10 rounded-lg p-4">
-            <div className="text-3xl font-display text-link-gold">3</div>
-            <div className="text-sm text-cool-grey">Financial Archetypes</div>
+            <div className="text-3xl font-display text-link-gold">v6</div>
+            <div className="text-sm text-cool-grey">Current context system</div>
           </div>
         </div>
       )}
 
       <div className="mt-12 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 className="text-sm font-semibold text-deep-navy mb-2">📌 What you'll learn</h3>
+        <h3 className="text-sm font-semibold text-deep-navy mb-2">What this research covers</h3>
         <ul className="space-y-2 text-sm text-cool-grey">
-          <li>✓ How we source and verify nonprofit data</li>
-          <li>✓ Our peer financial context scoring methodology (v5)</li>
-          <li>✓ Three financial archetypes and how they define nonprofit strategy</li>
-          <li>✓ Revenue bands and peer group benchmarking</li>
-          <li>✓ Health signals and what they reveal about financial sustainability</li>
-          <li>✓ Transparency about our data limitations and coverage</li>
+          <li>How we source and verify nonprofit data</li>
+          <li>How v6 forms reasonable peer context groups</li>
+          <li>Reported, peer-reference, and limited context</li>
+          <li>How we describe uncertainty and coverage</li>
+          <li>What changed across scoring versions</li>
         </ul>
       </div>
     </div>

@@ -15,13 +15,13 @@ export default function ResearchDataMovement({
 }: ResearchDataMovementProps) {
   const [loading, setLoading] = useState(true)
   const [monthlyData, setMonthlyData] = useState<any[]>([])
-  const [v5Total, setV5Total] = useState<number>(0)
+  const [historicalTotal, setHistoricalTotal] = useState<number>(0)
 
   useEffect(() => {
     loadResearchSnapshot()
       .then((snap) => {
         setMonthlyData(snap.monthly_changes ?? [])
-        setV5Total(snap.v5?.total_scored ?? 0)
+        setHistoricalTotal(snap.v5?.total_scored ?? 0)
       })
       .catch((error) => console.error('Failed to load snapshot:', error))
       .finally(() => setLoading(false))
@@ -30,7 +30,7 @@ export default function ResearchDataMovement({
   if (loading) {
     return (
       <div>
-        <h2 className="text-3xl font-display text-deep-navy mb-4">What's Changed</h2>
+        <h2 className="text-3xl font-display text-deep-navy mb-4">Data and version history</h2>
         <p className="text-sm text-cool-grey">Loading…</p>
       </div>
     )
@@ -75,7 +75,7 @@ export default function ResearchDataMovement({
 
   return (
     <div>
-      <h2 className="text-3xl font-display text-deep-navy mb-4">What's Changed</h2>
+      <h2 className="text-3xl font-display text-deep-navy mb-4">Data and version history</h2>
 
       <p className="text-lg text-cool-grey mb-6 max-w-2xl">
         We monitor nonprofit data continuously. Here's what the most recent IRS data
@@ -258,17 +258,11 @@ export default function ResearchDataMovement({
             </div>
             <div className="border-l-4 border-soft-gold pl-4">
               <div className="flex justify-between items-baseline">
-                <p className="font-semibold text-deep-navy">Financial context</p>
+                <p className="font-semibold text-deep-navy">Current v6 and historical coverage</p>
                 <span className="text-xs text-cool-grey">As of {lastUpdate}</span>
               </div>
               <p className="text-sm text-slate mt-1">
-                We provide peer financial context for{' '}
-                {v5Total > 0
-                  ? `${v5Total.toLocaleString()} organizations (${Math.round((v5Total / totalOrgs) * 100)}% of the index)`
-                  : 'approximately 457,000 organizations (26% of the index)'}{' '}
-                using recent IRS 990 data. The remainder lack sufficient financial disclosure to
-                benchmark fairly — many excellent nonprofits fall below the 990 filing threshold
-                or are too new to have multi-year data.
+                Earlier v5 context was shown for {historicalTotal > 0 ? `${historicalTotal.toLocaleString()} organizations` : "the organizations in the archived snapshot"}. That figure is historical only, not current v6 coverage. v6 now gives each indexed organization a context state: reported, peer reference, or limited. The current run should be used for coverage reporting because peer groups and source data can change.
               </p>
             </div>
           </div>

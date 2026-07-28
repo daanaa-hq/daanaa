@@ -27,8 +27,6 @@ import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import { useAuth } from '../contexts/AuthContext'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
-import V5Context from '../components/V5Context'
-import CohortContext from '../components/CohortContext'
 import PeerContextBreakdown from '../components/PeerContextBreakdown'
 import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
@@ -39,7 +37,6 @@ import VolunteerInterest from '../components/VolunteerInterest'
 import OrgInfoHierarchy from '../components/OrgInfoHierarchy'
 import RecurringSetup from '../components/RecurringSetup'
 import DataContextNote from '../components/DataContextNote'
-import FinancialContext from '../components/FinancialContext'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -859,11 +856,7 @@ export default function OrganizationDetail() {
       <div className="py-12 md:py-16">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* v6.0 Tiered Peer Context — replaces v5 + cohort context */}
-          {apiOrg! && apiOrg!.scoring_tier && (
-            <FinancialContext org={apiOrg!} />
-          )}
-
+          {/* v6 peer context is the only public financial context system */}
           {/* V6 Financial Context (feature-flagged) */}
           {apiOrg! && (
             <div className="mb-12 bg-warm-cream rounded-lg p-8 border border-gray-200">
@@ -872,31 +865,6 @@ export default function OrganizationDetail() {
                 context={v6Context}
                 loading={v6ContextLoading}
               />
-            </div>
-          )}
-
-          {/* Section header */}
-          {(apiOrg!.v5_context || apiOrg!.cohort_context || apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
-            <div className="mb-8">
-              <h2 className="text-deep-navy font-semibold text-lg">Financial health</h2>
-            </div>
-          )}
-
-          {/* v5.0 Peer-based Financial Context — shown whenever the org has a
-              peer-based assessment of its own. */}
-          {apiOrg! && apiOrg!.v5_context && (
-            <div className="mb-8">
-              <V5Context org={apiOrg!} />
-            </div>
-          )}
-
-          {/* Cause-cohort context — UNSCORED orgs only. Backend sets
-              cohort_context only when the org has no v5_context of its own, so
-              this fills the blank financial section with honest cause-area
-              context (P3/P4) without ever competing with real scores. */}
-          {apiOrg! && apiOrg!.cohort_context && (
-            <div className="mb-8">
-              <CohortContext org={apiOrg!} />
             </div>
           )}
 
@@ -1322,7 +1290,7 @@ export default function OrganizationDetail() {
         </div>
       )}
 
-      {/* Volunteer Interest Modal */}
+      {/* Volunteer Interest Modal — Event-Specific */}
       {volunteeringInterestEventId && volunteerEvents.length > 0 && (() => {
         const selectedEvent = volunteerEvents.find(e => e.id === volunteeringInterestEventId)
         return selectedEvent ? (

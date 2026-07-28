@@ -2912,7 +2912,7 @@ def get_financial_context_v6(ein):
     V6 Financial Context endpoint.
 
     Returns comprehensive peer context using the v6 foundation.
-    Feature-flagged via ENABLE_V6_FINANCIAL_CONTEXT env var (default: false).
+    Uses v6 by default; ENABLE_V6_FINANCIAL_CONTEXT=false is an emergency rollback switch.
 
     Response includes:
     - organization_ein
@@ -2930,7 +2930,7 @@ def get_financial_context_v6(ein):
     - conditional_band_context (for Tier 2 without revenue)
     """
 
-    ENABLE_V6 = os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'false').lower() == 'true'
+    ENABLE_V6 = os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'true').lower() == 'true'
 
     if not ENABLE_V6:
         return jsonify({

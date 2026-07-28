@@ -7,14 +7,13 @@ const SECTIONS = [
   { id: 'overview', label: 'Overview' },
   { id: 'about', label: 'About Daanaa' },
   { id: 'problem', label: 'The Discovery Problem' },
-  { id: 'methodology', label: 'Our Methodology' },
-  { id: 'financial-archetypes', label: 'Financial Archetypes' },
+  { id: 'methodology', label: 'v6 technical notes' },
 
   { id: 'entity-types', label: 'Organization Types' },
   { id: 'findings', label: 'Research Findings' },
   { id: 'spending', label: 'Program Spending' },
 
-  { id: 'data-movement', label: "What's Changed" },
+  { id: 'data-movement', label: "Version history" },
 ]
 
 export default function ResearchSidebar({

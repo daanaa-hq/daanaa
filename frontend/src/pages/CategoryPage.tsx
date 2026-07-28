@@ -48,7 +48,7 @@ export default function CategoryPage() {
   useEffect(() => {
     if (!category) return
     setOrgsLoading(true)
-    getOrganizations({ ntee: category.id, per_page: 9, sort: 'ntee1_percentile', order: 'desc' })
+    getOrganizations({ ntee: category.id, per_page: 9, sort: 'organization_name', order: 'asc' })
       .then(r => { setOrgs(r.organizations); setTotal(r.total) })
       .catch(() => {})
       .finally(() => setOrgsLoading(false))
@@ -135,8 +135,7 @@ export default function CategoryPage() {
                   const inFunding = isInFunding(ein)
                   const inVolunteering = isInVolunteering(ein)
                   const hasFullContext = org.scoring_tier && (org.scoring_tier === '1_Full_Context' || org.scoring_tier === '2_Regional_Context')
-                  const peerScore = org.peer_percentile ?? org.ntee1_percentile ?? 0
-                  return (
+                                    return (
                     <div key={ein} className="bg-white rounded-2xl border border-light-grey p-5 hover:border-soft-gold/30 transition-colors flex flex-col">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <Link

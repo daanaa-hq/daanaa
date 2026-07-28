@@ -17,15 +17,15 @@ const SECTIONS = [
     title: 'Including the 97% that go unseen',
     body: [
       'Most giving platforms highlight the same few hundred well known organizations. The other 97% — small community groups, local mutual aid networks, neighborhood health clinics, regional arts organizations — are registered, active, and doing real work. They just lack the staff and budget to build a public profile.',
-      'Daanaa treats every organization with equal dignity. A $40,000 food pantry gets the same care as a $40 million hospital foundation. Our hidden gems feature actively surfaces small organizations with strong financial health precisely because they are the ones that benefit most from being found.',
+      'Daanaa treats every organization with equal dignity. A $40,000 food pantry gets the same care as a $40 million hospital foundation. Our hidden gems feature actively surfaces small organizations with strong public context precisely because they are the ones that benefit most from being found.',
     ],
     link: { to: '/directory', label: 'Browse the directory' },
   },
   {
     tag: 'How we present data',
-    title: 'Financial context, not ratings',
+    title: 'v6 context, not ratings',
     body: [
-      'Daanaa does not rate, rank, endorse, or recommend organizations. We show financial context: where an organization\'s reserves stand relative to genuinely similar organizations — same funding model, similar revenue size, same peer group. A score of 75 means stronger reserves than 75% of its peers. That is a fact from public IRS data, not a judgment.',
+      'Daanaa does not rate, rank, endorse, or recommend organizations. v6 shows what public records tell us directly and what comparable organizations typically report when direct information is missing. We label the difference clearly; this is context, not a judgment.',
       'No organization can pay to improve its score. No partner can influence how an organization appears. The methodology is public, versioned, and derived entirely from IRS Form 990 filings. We publish it so anyone can check our work.',
     ],
     link: { to: '/methodology', label: 'Read the full methodology' },
@@ -43,7 +43,7 @@ const SECTIONS = [
     tag: 'How we operate',
     title: 'Independent and evidence based',
     body: [
-      'No organization can pay for placement, boost its score, or suppress how it appears on Daanaa. No partner or sponsor can influence what users see. Independence is structural — there is no mechanism in the platform for money to change how an organization ranks or appears.',
+      'No organization can pay for placement, change its public context, or suppress how it appears on Daanaa. No partner or sponsor can influence what users see. Independence is structural — there is no mechanism in the platform for money to change how an organization ranks or appears.',
       'Every trust signal comes from public IRS data, NCCS financial summaries, or ProPublica 990 records. When we use AI to generate a mission summary, we label it clearly. When data is incomplete or stale, we say so. We do not present assumptions as facts.',
     ],
     links: [
@@ -55,7 +55,7 @@ const SECTIONS = [
     tag: 'How we benchmark',
     title: 'Equal dignity for every organization',
     body: [
-      'A $200,000 community health clinic is never compared against a $2 billion hospital system. Daanaa benchmarks every organization within its true peer group: organizations with the same funding model and a similar revenue band. This means a small organization can show strong financial health for its size, and a large one can show a need for community support.',
+      'A $200,000 community health clinic is never compared against a $2 billion hospital system. Daanaa benchmarks every organization within its true peer group: organizations with the comparable category, geography, size, and funding pattern. This means a small organization can be understood in context without being compared with a much larger organization.',
       'We built Daanaa for the organizations most people have never heard of. The lamp tier system is not a verdict — it reflects how much public data is available today. Any organization can raise its visibility by adding its mission, website, and financial records, and that path is always free.',
     ],
     link: { to: '/methodology#peer-financial-context', label: 'How peer groups work' },

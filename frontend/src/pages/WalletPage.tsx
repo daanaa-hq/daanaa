@@ -432,7 +432,7 @@ export default function WalletPage() {
                 >
                   <option value="recent">Recently added</option>
                   <option value="name">Name (A–Z)</option>
-                  <option value="health">Financial health</option>
+                  <option value="health">Peer financial context</option>
                 </select>
               </div>
 

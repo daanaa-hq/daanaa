@@ -97,7 +97,7 @@ export default function Terms() {
             <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">6. Accuracy of data</h2>
             <p>
               Financial data on Daanaa is derived from IRS Form 990 filings. The most recent filing available may
-              lag the current fiscal year by 12–24 months. Daanaa peer financial context scores are a relative
+              lag the current fiscal year by 12–24 months. Daanaa peer v6 public contexts are a relative
               benchmark — they indicate how an organization compares to similar organizations in the same NTEE category
               and revenue range based on public filing data. A score is not an audit, a recommendation, a rating of
               organizational quality, or an endorsement. It is a data point.
@@ -159,7 +159,7 @@ export default function Terms() {
             <p>
               Daanaa operates an Impact Network that connects nonprofits with businesses offering services at
               preferential rates. Partner participation — including any fees paid to Daanaa — never affects how any
-              organization appears in search results, its financial context score, its tier, or any other trust signal
+              organization appears in search results, its v6 public context, its tier, or any other trust signal
               on the platform. This principle is absolute and is embedded in our{' '}
               <Link to="/stewardship" className="text-soft-gold hover:underline">
                 Founding Stewardship Commitment

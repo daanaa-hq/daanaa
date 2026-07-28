@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getApiBase } from '../utils/env'
 
 // Privacy-preserving volunteer interest. The user composes a short intro and sends it
 // from their OWN device — Daanaa stores no contact list, so there is nothing to harvest or spam.
@@ -9,11 +10,13 @@ export default function VolunteerInterest({
   orgName,
   website,
   contactEmail,
+  ein,
   onClose,
 }: {
   orgName: string
   website?: string | null
   contactEmail?: string | null
+  ein?: string
   onClose: () => void
 }) {
   const [anonymous, setAnonymous] = useState(true)
@@ -21,6 +24,7 @@ export default function VolunteerInterest({
   const [ageRange, setAgeRange] = useState<string>('')
   const [copied, setCopied] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const who = anonymous
     ? `An interested supporter${ageRange ? ` (age ${ageRange})` : ''}`
@@ -30,13 +34,36 @@ export default function VolunteerInterest({
     `Hi ${orgName}, I found you on Daanaa and I'd like to help out as a volunteer. ` +
     `Please let me know how to get involved.\n\n— ${who}`
 
-  const sendByEmail = () => {
+  // Log volunteer interest to backend (org-level, not event-specific)
+  const logVolunteerInterest = async () => {
+    if (!ein) return
+    try {
+      setIsSubmitting(true)
+      await fetch(`${getApiBase()}/api/volunteer-interest/${ein}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: anonymous ? null : firstName.trim(),
+          age_range: ageRange || null,
+          timestamp: new Date().toISOString(),
+        }),
+      })
+    } catch (err) {
+      console.error('Failed to log volunteer interest:', err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const sendByEmail = async () => {
+    await logVolunteerInterest()
     const subject = encodeURIComponent(`Volunteer interest — via Daanaa`)
     const body = encodeURIComponent(message)
     window.location.href = `mailto:${contactEmail}?subject=${subject}&body=${body}`
   }
 
   const copyAndOpenSite = async () => {
+    await logVolunteerInterest()
     try { await navigator.clipboard.writeText(message); setCopied(true) } catch { /* ignore */ }
     if (website) window.open(website, '_blank', 'noopener')
   }

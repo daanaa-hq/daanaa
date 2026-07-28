@@ -30,11 +30,11 @@ interface IrsEligibilityContextProps {
  */
 export const IrsEligibilityBadge: React.FC<{ status: EligibilityStatus }> = ({ status }) => {
   const badgeConfig = {
-    verified: { icon: '✓', label: 'IRS eligibility verified', color: 'bg-green-100 text-green-800' },
-    unverified: { icon: '⚠', label: 'Tax deductibility not verified', color: 'bg-yellow-100 text-yellow-800' },
-    revoked: { icon: '✗', label: 'IRS revocation record found', color: 'bg-red-100 text-red-800' },
-    unknown: { icon: '?', label: 'Tax status not verified', color: 'bg-gray-100 text-gray-800' },
-    exception_possible: { icon: 'ℹ', label: 'IRS listing may not tell the whole story', color: 'bg-blue-100 text-blue-800' },
+    verified: { icon: '✓', label: 'IRS eligibility verified', color: 'irs-badge-verified' },
+    unverified: { icon: '⚠', label: 'Tax deductibility not verified', color: 'irs-badge-unverified' },
+    revoked: { icon: '✗', label: 'IRS revocation record found', color: 'irs-badge-revoked' },
+    unknown: { icon: '?', label: 'Tax status not verified', color: 'irs-badge-unknown' },
+    exception_possible: { icon: 'ℹ', label: 'IRS listing may not tell the whole story', color: 'irs-badge-exception' },
   };
 
   const config = badgeConfig[status];
@@ -63,17 +63,17 @@ export const IrsEligibilityDetail: React.FC<{
   };
 
   return (
-    <div className="text-sm text-gray-700">
+    <div className="text-sm text-warm-cream irs-detail-text">
       <p className="mb-2">{explanation || defaultExplanations[status]}</p>
       {sources && sources.length > 0 && (
-        <div className="text-xs text-gray-600">
+        <div className="text-xs text-muted-cream irs-detail-sources">
           <p className="font-semibold mb-1">Sources:</p>
           <ul className="list-disc pl-5">
             {sources.map((source, idx) => <li key={idx}>{source}</li>)}
           </ul>
         </div>
       )}
-      <p className="text-xs text-gray-600 mt-2">
+      <p className="text-xs text-muted-cream mt-2 irs-detail-footer">
         See IRS Publication 526 for rules on charitable contributions.
       </p>
     </div>
@@ -88,13 +88,13 @@ export const IrsEligibilityDisclaimer: React.FC<{
   organizationName?: string;
 }> = ({ recordedAt, organizationName }) => {
   return (
-    <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-sm text-gray-700">
+    <div className="irs-disclaimer">
       <p className="mb-2">
         Daanaa recorded this organization as not revoked on <strong>{recordedAt || 'an unknown date'}</strong>.
         This is not a tax receipt, a determination of deductibility, or proof that a donation occurred.
         See IRS Publication 526 for rules on charitable contributions.
       </p>
-      <p className="text-xs text-gray-600">
+      <p className="text-xs">
         This is your giving intent, not a completed transaction. To make an actual donation, visit the organization's website directly.
       </p>
     </div>
@@ -148,12 +148,12 @@ export const IrsEligibilityWarningModal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h2 className="text-lg font-bold mb-2 text-gray-900">{config.title}</h2>
-        <p className="text-sm text-gray-700 mb-4">{config.message}</p>
-        <div className="bg-gray-50 rounded p-4 mb-6">
-          <p className="text-sm font-semibold text-gray-900 mb-2">This means:</p>
-          <ul className="text-sm text-gray-700 space-y-1">
+      <div className="irs-modal rounded-lg p-6 max-w-md w-full mx-4">
+        <h2 className="text-lg font-bold mb-2 irs-modal-title">{config.title}</h2>
+        <p className="text-sm mb-4 irs-modal-message">{config.message}</p>
+        <div className="irs-modal-details rounded p-4 mb-6">
+          <p className="text-sm font-semibold mb-2">This means:</p>
+          <ul className="text-sm space-y-1">
             {config.details.map((detail, idx) => (
               <li key={idx} className="flex">
                 <span className="mr-2">•</span>
@@ -165,13 +165,13 @@ export const IrsEligibilityWarningModal: React.FC<{
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2 bg-gray-200 text-gray-900 rounded font-medium hover:bg-gray-300 transition"
+            className="flex-1 px-4 py-2 irs-modal-cancel rounded font-medium transition"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 transition"
+            className="flex-1 px-4 py-2 irs-modal-confirm text-white rounded font-medium transition"
           >
             Continue to Donate
           </button>
@@ -189,9 +189,9 @@ export const IrsEligibilityRevokedWarning: React.FC<{
   organizationWebsite?: string;
 }> = ({ organizationName, organizationWebsite }) => {
   return (
-    <div className="bg-red-50 border border-red-200 rounded p-4 text-sm">
-      <p className="text-red-900 font-semibold mb-2">IRS revocation record found</p>
-      <p className="text-red-800 mb-3">
+    <div className="irs-revoked-warning rounded p-4 text-sm">
+      <p className="font-semibold mb-2">IRS revocation record found</p>
+      <p className="mb-3">
         Do not assume a contribution is tax-deductible without confirming the current IRS status.
       </p>
       {organizationWebsite && (
@@ -199,7 +199,7 @@ export const IrsEligibilityRevokedWarning: React.FC<{
           href={organizationWebsite}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block px-4 py-2 bg-red-600 text-white rounded font-medium hover:bg-red-700 transition"
+          className="inline-block px-4 py-2 irs-revoked-link text-white rounded font-medium transition"
         >
           Visit {organizationName || 'Organization'} Website
         </a>

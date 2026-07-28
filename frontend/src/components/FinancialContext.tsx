@@ -32,7 +32,7 @@ export default function FinancialContext({ org }: FinancialContextProps) {
               peerCount={org.peer_group_size}
               confidence="good"
               peerGroupDescription={org.peer_group_description || ''}
-              confidenceMargin="±10%"
+              confidenceMargin={org.confidence_margin_v6 || undefined}
             />
           </div>
         )}
@@ -62,9 +62,9 @@ export default function FinancialContext({ org }: FinancialContextProps) {
             ) : isInferred ? (
               <>
                 <p className="text-xs font-semibold text-gray-500 mb-1">Typical Reserves (Peer Median)</p>
-                <p className="font-semibold text-lg">2.1 mo</p>
+                <p className="font-semibold text-lg">Not shown</p>
                 <p className="text-xs text-gray-600 mt-3">Note</p>
-                <p className="text-xs text-gray-700">Although we don't have revenue data for this organization, nonprofits in this group typically carry this amount</p>
+                <p className="text-xs text-gray-700">Peer context describes similar organizations, not this organization’s actual finances</p>
               </>
             ) : null}
           </div>
@@ -94,7 +94,7 @@ export default function FinancialContext({ org }: FinancialContextProps) {
   if (tier === '3_Limited_Context') {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-3">Financial Context (Limited Data)</h2>
+        <h2 className="text-lg font-semibold mb-3">Peer context (limited data)</h2>
         <p className="text-xs text-amber-800 mb-3">We have limited peer data for this type of organization in this region.</p>
         <p className="text-xs text-gray-700 mb-3">
           <strong>Funding Model:</strong> {org.merit_archetype_v5_label}
@@ -112,7 +112,7 @@ export default function FinancialContext({ org }: FinancialContextProps) {
   if (tier === '4_Archetype_Only') {
     return (
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 mb-8">
-        <h2 className="text-lg font-semibold mb-3">We're Still Learning About This Organization</h2>
+        <h2 className="text-lg font-semibold mb-3">Descriptive context only</h2>
         <p className="text-xs text-gray-700 mb-3">
           We don't have detailed financial data from their IRS filings yet. That's not a reflection on their quality — many grassroots and newer organizations file simplified forms.
         </p>

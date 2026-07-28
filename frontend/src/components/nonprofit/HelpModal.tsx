@@ -28,9 +28,9 @@ const faqItems: FAQItem[] = [
     answer: `You can reject hours within 30 days of approval. Once 30 days have passed, approved hours are locked (this prevents retroactive changes). If you need to correct something after 30 days, reach out to Daanaa support.`
   },
   {
-    question: 'How is my financial context score calculated?',
+    question: 'How is v6 financial context calculated?',
     icon: '📊',
-    answer: `Your Financial Health score shows how financially stable you are compared to similar-sized organizations in your sector. It comes from your IRS Form 990 data (public record). We never manually adjust scores—they're calculated from the data. If your data changes, your score updates automatically.`
+    answer: `v6 uses public filing data to show direct or inferred context among comparable organizations. It does not rate your organization or measure mission effectiveness. When data is missing, v6 says so instead of inventing a number.`
   },
   {
     question: 'Can I mark information as private or request removal?',

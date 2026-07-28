@@ -4,20 +4,8 @@
 // and the ones the IRS has revoked. Extracted 2026-07-10 eng review (finding
 // 2A) out of OrganizationDetail.tsx, which was already 1,631 lines.
 //
-//   render(org)
-//     |
-//     +-- revoked?  (org_status==='revoked' || irs_revoked===1)
-//     |     -> RevokedBanner: factual, no shame language, no donate actions
-//     |
-//     +-- has v5 score?  (v5_context?.score?.health_signal present)
-//     |     -> HealthChips: percentile + program-expense + health signal
-//     |        (HEALTHY -> "Financially steady", STABLE -> "Managing well",
-//     |         CAUTION -> "Could use community support" -- never the word
-//     |         CAUTION itself, per research-copy-voice rule)
-//     |
-//     +-- else (the majority case, ~82% of public orgs)
-//           -> NoDataBanner: standing + longevity + place (the "dignity
-//              layer" -- what every org has even with zero filings)
+// This card handles basic public-record status. v6 financial context is rendered
+// separately below it so every organization follows the same presentation.
 import type { ApiOrganization } from '../data/api'
 
 interface AnswerCardProps {
@@ -106,7 +94,7 @@ function NoDataBanner({ org }: { org: ApiOrganization }) {
         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       <p className="font-body text-small text-muted-cream leading-[1.55]">
-        This organization appears in our nonprofit records. Tax deductibility is shown separately and is not verified here. We do not have enough public financial detail to add context yet — that's common for smaller and local organizations.
+        This organization appears in our nonprofit records. Tax deductibility is shown separately and is not verified here. v6 peer financial context appears below when the public record supports it; otherwise, we say what is not known.
         {year && ` Doing the work since ${year}.`}
       </p>
     </div>
@@ -115,6 +103,5 @@ function NoDataBanner({ org }: { org: ApiOrganization }) {
 
 export default function AnswerCard({ org }: AnswerCardProps) {
   if (isRevoked(org)) return <RevokedBanner org={org} />
-  if (org.v5_context?.score?.health_signal) return <HealthChips org={org} />
   return <NoDataBanner org={org} />
 }

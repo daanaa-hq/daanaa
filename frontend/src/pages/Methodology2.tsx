@@ -31,8 +31,8 @@ const FAQS = [
     a: 'No. Daanaa does not rate, rank, endorse, or recommend nonprofits. We organize public information to add context to giving decisions, which is different from rating.',
   },
   {
-    q: 'What is Peer Financial Context?',
-    a: 'Peer Financial Context shows public financial information within comparable peer groups. It is designed to add context, not to rate, rank, or recommend organizations.',
+    q: 'What happens when an organization's finances are missing?',
+    a: 'v6 may show financial patterns reported by a reasonable peer group—organizations comparable by category, geography, scale, and funding pattern. That is reference context, not an estimate of the organization's own finances. If the peer evidence is too weak, we show limited context instead.',
   },
   {
     q: 'What are Lamp Tiers?',
@@ -79,20 +79,6 @@ function Callout({ children }: { children: React.ReactNode }) {
   )
 }
 
-function TierRow({ score, label, description }: { score: string; label: string; description: string }) {
-  // Reserve strength is not a danger gradient. Stronger reserves get a gentle
-  // green; everything else is calm slate. Lower reserves are not "worse".
-  const color = label === '90th percentile or above' || label === '75th–89th percentile'
-    ? '#5a9e6f'
-    : '#8a8f98'
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-4 py-3 border-b border-light-grey last:border-0">
-      <span className="shrink-0 sm:w-20 font-body text-small font-semibold" style={{ color }}>{score}</span>
-      <span className="shrink-0 sm:w-48 font-body text-body font-medium text-deep-navy">{label}</span>
-      <span className="font-body text-body text-cool-grey">{description}</span>
-    </div>
-  )
-}
 
 export default function Methodology() {
   usePageMeta(
@@ -119,7 +105,7 @@ export default function Methodology() {
                 How Daanaa Works
               </h1>
               <p className="mt-4 font-body text-title-sm leading-[1.6] text-muted-cream">
-                We don't score nonprofits on our opinion. We surface publicly available data, place each organization alongside its true peers, and let you decide. This page explains exactly how.
+                We do not turn public records into a rating. We place each organization alongside relevant peers, explain what the evidence supports, and let you decide. This page explains how.
               </p>
             </div>
             <div className="shrink-0 hidden md:flex justify-end">
@@ -167,7 +153,7 @@ export default function Methodology() {
                 <Link to="/about" className="text-soft-gold hover:text-bright-gold font-medium">How we approach this →</Link>
               </p>
               <Callout>
-                Two signals work together on every page. The peer financial context score (0–100) measures months of operating reserves as a percentile within a peer group. The peer financial context signal (Healthy, Stable, or Needs Support) adds a plain-language summary of financial health. Neither measures impact, mission quality, or whether a group deserves support. Daanaa is not a charity rating agency.
+                v6 is the public peer-context system on every organization page. It shows what public records tell us directly and, when direct data is missing, what similar organizations typically report. It is context for a giving decision—not a rating, endorsement, impact score, or recommendation.
               </Callout>
             </Section>
 
@@ -196,7 +182,7 @@ export default function Methodology() {
 
             <Section id="peer-financial-context" label="The financial picture" title="How peer financial context works">
               <p>
-                This number sits quietly behind the lamp. It is not a grade and it is not a judgment. It says nothing about the quality of the work, the people, or the good they do. All it does is measure one organization's financial reserves compared to genuinely similar groups. The lamp is the journey. This is just one fact along the way.
+                v6 does not grade an organization or judge its work. It presents a small set of financial facts and peer patterns so donors can ask better questions. The result never claims to describe more than the public evidence supports.
               </p>
               <p>
                 We use two dimensions to find organizations that are truly comparable:
@@ -205,42 +191,47 @@ export default function Methodology() {
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
                   <p className="font-body text-body font-semibold text-deep-navy">Funding model</p>
                   <p className="font-body text-body text-cool-grey mt-1">
-                    Each nonprofit is placed into one of three funding archetypes: Donation-Funded Programs (organizations that rely on community fundraising), Fee-for-Service Operators (organizations that earn revenue by providing services), or Endowment-Funded Grantmakers (organizations funded by endowment returns). A food bank is compared to other donation-funded programs, not to consulting firms or family foundations.
+                    We use the available category, geography, revenue information, and funding pattern to build a comparable peer group. A food bank should not be compared with a hospital system simply because both are nonprofits. When a field is inferred, we label it.
                   </p>
                 </div>
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
                   <p className="font-body text-body font-semibold text-deep-navy">Revenue band</p>
                   <p className="font-body text-body text-cool-grey mt-1">
-                    A nonprofit raising $60,000 a year operates in a completely different reality from one raising $5 million. We use three universal revenue bands: Micro (under $150K), Professional ($150K–$700K), and Established (over $700K). A small food bank is compared to other donation-funded programs in the Micro band, not to large hospitals or international NGOs.
+                    Revenue is used when it is available to avoid comparing organizations of very different scale. We do not invent revenue when it is missing. In that case, v6 shows a broader or descriptive context and says what is not known.
                   </p>
                 </div>
               </div>
               <p className="mt-4">
-                Within each peer group, organizations are ranked by one metric: months of operating reserves. This is how many months an organization could keep operating on its unrestricted net assets if income stopped completely. It comes directly from the most recent IRS Form 990 filing and is calculated the same way for every organization, regardless of funding model or size.
+                Where public filings support it, v6 shows a reserve-related metric and the range reported by the peer group. The page identifies the source years, peer group, and uncertainty. A peer pattern is not a prediction of what an organization has or will do.
               </p>
 
               <div className="mt-6">
-                <p className="font-body text-body font-semibold text-deep-navy mb-1">What the score means</p>
+                <p className="font-body text-body font-semibold text-deep-navy mb-1">What the context means</p>
                 <p className="font-body text-small text-cool-grey mb-3 max-w-[640px]">
-                  The 0–100 score is a percentile: where this organization's reserves fall compared to similar organizations. A score of 75 means stronger reserves than 75% of its peers. This is not about size or budget; it is about financial resilience.
+                  Direct context describes the organization's reported metric. Inferred context describes similar organizations, not this organization's actual finances. Limited context means we do not have enough public information for a numeric comparison. None of these is a judgment about mission or effectiveness.
                 </p>
-                <div className="bg-white rounded-xl border border-light-grey p-4">
-                  <TierRow score="90 to 100" label="90th percentile or above" description="Holds more reserves than nearly all similar organizations. A strong financial cushion." />
-                  <TierRow score="75 to 89" label="75th–89th percentile" description="Holds more reserves than most similar organizations." />
-                  <TierRow score="50 to 74" label="Above median reserves" description="Financial position is comparable to or slightly better than the peer median." />
-                  <TierRow score="25 to 49" label="Below median reserves" description="Holds fewer reserves than the peer median. Often because resources go directly into programs." />
-                  <TierRow score="0 to 24" label="Lowest reserves" description="Among the lowest reserves in its peer group. Often a sign of lean operations focused on mission delivery, not weakness." />
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {[
+                    { label: "Reported", detail: "The organization filing supports the figure shown." },
+                    { label: "Peer reference", detail: "Comparable organizations provide a useful reference when its own figure is missing." },
+                    { label: "Limited", detail: "The evidence is too thin for a responsible numeric comparison." },
+                  ].map(({ label, detail }) => (
+                    <div key={label} className="rounded-lg bg-warm-cream p-3">
+                      <p className="font-body text-small font-semibold text-deep-navy">{label}</p>
+                      <p className="mt-1 font-body text-caption text-cool-grey leading-[1.5]">{detail}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <p className="mt-5 font-body text-body-lg text-cool-grey leading-[1.7]">
-                When you visit an organization's page, you also see a <strong className="text-deep-navy font-medium">peer financial context signal</strong>: Healthy, Stable, or Needs Support. This is separate from the percentile number. The percentile shows where reserves fall among peers. The signal shows financial health: whether the organization is building reserves, holding steady, or operating with limited cushion. A small organization can have healthy reserves for its size; a large one can show Needs Support.
+                On an organization page, look for the data status: reported, inferred, or limited. Reported means the record supports a direct comparison. Inferred means the peer pattern is being used because the organization-specific field is missing. Limited means we stop short of a numeric comparison.
               </p>
               <p className="mt-3 font-body text-body-lg text-cool-grey leading-[1.7]">
-                <strong className="text-deep-navy font-medium">Why "Needs Support"?</strong> A lower reserve position does not mean a lesser organization. It often means a group doing essential work within tight means, investing its resources directly into mission rather than building savings. That is exactly the kind of organization that benefits most from community support. It is an invitation, not a verdict.
+                A lower reserve figure is not a verdict. Organizations may spend available resources on current work, operate seasonally, or have incomplete public records. Use this context alongside the organization's mission, community knowledge, and information from the organization itself.
               </p>
               <p className="mt-3 font-body text-body-lg text-cool-grey leading-[1.7]">
-                <strong className="text-deep-navy font-medium">Economic context.</strong> On some organization pages, you'll also see a short note about the broader economy in that filing year, things like unemployment or interest rates. This is background, not part of the score. It doesn't change the percentile or the health signal. It's there so a lean reserve position in a hard year reads differently than the same position in a strong one.
+                Filing years can lag the current year. Read the source year shown on the page, and contact the organization when you need current information.
               </p>
             </Section>
 
@@ -262,7 +253,7 @@ export default function Methodology() {
                 ))}
               </ul>
               <p className="mt-4">
-                These are important decisions you should make based on your own research, not assumptions from a score.
+                These are important decisions you should make based on your own research, not assumptions from peer context.
               </p>
             </Section>
 
@@ -284,72 +275,43 @@ export default function Methodology() {
             </Section>
 
             <Section id="lamp-tiers" label="Visibility levels" title="Visibility levels: how much information is available">
-              <p>
-                Every page displays a lamp tier, and it is a journey, not a verdict. The lamp shows how much public data backs a page <em>today</em>, never our opinion of the organization's work. Most U.S. nonprofits are small, rooted in their communities, and nearly invisible in public data. They are exactly who we built Daanaa for. A fainter lamp isn't a judgment. It's an invitation. Any organization can add more context by sharing its mission, website, and available financial detail, and that path stays free and open, always.
-              </p>
+              <p>Every page displays a lamp tier. It shows how much public information backs the page today, never our opinion of the organization or its work. A fainter lamp is not a judgment. It is a sign that the public record has more room to grow.</p>
               <div className="mt-4 space-y-3">
-                {([
-                  { tier: 'Beacon' as TierName, what: 'Complete public data: financial reports, mission statement, website, and current Form 990.' },
-                  { tier: 'Torch' as TierName, what: 'Strong public data: financial context available, recent filings, and organizational information.' },
-                  { tier: 'Candle' as TierName, what: 'Moderate public data: some financial information and basic organizational records.' },
-                  { tier: 'Spark' as TierName, what: 'Recognized nonprofit with minimal public information available. Many small organizations filing simplified forms fall here.' },
-                ] as const).map(({ tier, what }) => (
+                {[
+                  { tier: "Beacon" as TierName, what: "Broad public record: financial filings, mission information, website, and current organization details." },
+                  { tier: "Torch" as TierName, what: "Strong public record: financial context and recent organization information are available." },
+                  { tier: "Candle" as TierName, what: "Some public context is available, with gaps in financial or organization information." },
+                  { tier: "Spark" as TierName, what: "The organization is recognized by the IRS, but the public record is still limited." },
+                ].map(({ tier, what }) => (
                   <div key={tier} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">
                     <div className="shrink-0 flex flex-col items-center gap-1.5 pt-0.5">
                       <LampMark tier={tier} size="sm" />
-                      <span className="font-body text-micro font-semibold tracking-[0.03em]" style={{ fontFamily: 'Cinzel, serif', color: TIER_COLORS[tier] }}>{tier}</span>
+                      <span className="font-body text-micro font-semibold tracking-[0.03em]" style={{ fontFamily: "Cinzel, serif", color: TIER_COLORS[tier] }}>{tier}</span>
                     </div>
                     <p className="font-body text-body text-cool-grey leading-[1.6]">{what}</p>
                   </div>
                 ))}
               </div>
-              <Callout>
-                A lower tier is not a negative judgment. It reflects what public data is available, not the organization's character or importance. A small organization filing a simplified annual form while doing extraordinary community work will show as Spark. That can change as more data enters the public record.
-              </Callout>
-              <div className="mt-6">
-                <Link
-                  to="/tiers"
-                  className="inline-flex items-center gap-1.5 font-body text-small font-semibold text-soft-gold hover:text-bright-gold transition-colors"
-                >
-                  Full tier reference →
-                </Link>
-              </div>
+              <Callout>A lower tier reflects public-data availability, not organizational character, importance, or mission quality.</Callout>
+              <div className="mt-6"><Link to="/tiers" className="inline-flex items-center gap-1.5 font-body text-small font-semibold text-soft-gold hover:text-bright-gold transition-colors">Full tier reference →</Link></div>
             </Section>
 
             <Section id="hidden-gems" label="Orgs you may not have heard of" title="Organizations you may not have heard of">
-              <p>
-                These are small organizations with strong financial health for their size — solid reserve funds, reasonable expense ratios, and mission-driven operations. They often get overlooked in favor of larger, more visible nonprofits. Daanaa surfaces them specifically because they deserve to be found.
-              </p>
-              <p className="mt-4">
-                Three criteria must all be true, based entirely on public IRS data:
-              </p>
+              <p>Daanaa surfaces smaller and less visible organizations so donors can discover more local and community-rooted work.</p>
+              <p className="mt-4">Hidden-gem discovery uses public information, not editorial judgment or paid promotion:</p>
               <div className="mt-4 space-y-3">
                 {[
-                  {
-                    label: '85th percentile or above within peer group',
-                    detail: 'A peer financial context score of 85 or above — stronger reserves than at least 85% of organizations with the same funding model and revenue band.',
-                  },
-                  {
-                    label: 'Annual revenue under $500,000',
-                    detail: 'The organization is genuinely small. Revenue must be verified from IRS filings — organizations with no reported revenue don\'t qualify.',
-                  },
-                  {
-                    label: 'Has a mission statement',
-                    detail: 'There is a readable description of what the organization does, sourced from IRS filings or the organization\'s own public records.',
-                  },
+                  { label: "Small and easy to miss", detail: "A lower public profile or smaller revenue footprint helps surface organizations donors may not otherwise encounter." },
+                  { label: "Public context available", detail: "The public record provides enough information to show useful, clearly labeled context." },
+                  { label: "Mission information", detail: "There is a readable description of what the organization does, from public records or the organization itself." },
                 ].map(({ label, detail }) => (
                   <div key={label} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey">
                     <div className="shrink-0 w-2 h-2 mt-2 rounded-full bg-soft-gold" />
-                    <div>
-                      <p className="font-body text-body font-semibold text-deep-navy">{label}</p>
-                      <p className="font-body text-body text-cool-grey mt-1">{detail}</p>
-                    </div>
+                    <div><p className="font-body text-body font-semibold text-deep-navy">{label}</p><p className="font-body text-body text-cool-grey mt-1">{detail}</p></div>
                   </div>
                 ))}
               </div>
-              <Callout>
-                Hidden gem status is determined algorithmically from public IRS data — not by editorial judgment, paid promotion, or any relationship with Daanaa. An organization either meets all three criteria or it doesn't. About 33,000 organizations currently qualify, including micro-organizations with as little as $7,000 in annual revenue that rank at the top of their peer group.
-              </Callout>
+              <Callout>Hidden-gem status is a discovery aid, not an endorsement. It never changes how an organization is ranked, described, or treated because of payment or partnership.</Callout>
             </Section>
 
             <Section id="two-layers" label="Two layer model" title="What the organization controls">
@@ -361,7 +323,7 @@ export default function Methodology() {
                     Sourced from IRS public records. Objective, fact checked, timestamped. Organizations cannot edit this layer.
                   </p>
                   <ul className="mt-3 space-y-1 font-body text-small text-cool-grey">
-                    {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Peer financial context score', 'Data source & year'].map(i => (
+                    {['Legal name', 'Nonprofit category', 'Revenue from IRS filings', 'Peer financial context', 'Data source & year'].map(i => (
                       <li key={i} className="flex items-center gap-2">
                         <span className="w-1 h-1 rounded-full bg-cool-grey shrink-0" />{i}
                       </li>
@@ -394,7 +356,7 @@ export default function Methodology() {
                   { freq: 'Monthly', what: 'ProPublica data for organizations with new financial reports' },
                   { freq: 'Monthly', what: 'IRS financial data update for newly published years' },
                   { freq: 'Monthly', what: 'IRS tax-exempt status check against the federal auto-revocation list' },
-                  { freq: 'Ongoing', what: 'Peer financial context scores recalculated after bulk revenue updates' },
+                  { freq: 'Ongoing', what: 'v6 peer context recalculated after underlying data updates' },
                 ].map(({ freq, what }, i) => (
                   <div key={`${freq}-${i}`} className="flex gap-4 items-start">
                     <span className="shrink-0 font-body text-small font-semibold text-soft-gold w-20">{freq}</span>

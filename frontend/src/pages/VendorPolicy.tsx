@@ -86,7 +86,7 @@ export default function VendorPolicy() {
             <p>
               <strong className="text-deep-navy">Independence is non-negotiable.</strong> Partner
               participation — including the payment of any fees — never affects how an organization
-              appears in Daanaa search results, its financial context score, its tier, its visibility
+              appears in Daanaa search results, its v6 public context, its tier, its visibility
               ranking, or any other trust signal on the platform. No partner may pay for placement.
               This principle is absolute and derives directly from{' '}
               <Link to="/stewardship" className="text-soft-gold hover:underline">Principle 7</Link>{' '}
