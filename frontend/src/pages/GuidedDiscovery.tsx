@@ -347,8 +347,30 @@ export default function GuidedDiscovery() {
 
   // Step 3: Place
   if (state.step === 3) {
-    const handleNearMe = () => {
-      setGeoError('Coming soon! For now, use a city name or ZIP code above.')
+    const handleNearMe = async () => {
+      setGeoError('')
+      setGeolocating(true)
+      try {
+        const { getUserLocation, getZipFromCoordinates } = await import('../lib/discovery')
+        const location = await getUserLocation()
+        if (!location) {
+          setGeoError('Unable to get your location. Please enable location permissions and try again.')
+          setGeolocating(false)
+          return
+        }
+        const zip = await getZipFromCoordinates(location.lat, location.lng)
+        if (!zip) {
+          setGeoError('Could not determine your ZIP code. Try entering it manually above.')
+          setGeolocating(false)
+          return
+        }
+        // Update discovery state with geolocation result
+        setState((s) => ({ ...s, place: `custom-zip:${zip}` }))
+        setGeolocating(false)
+      } catch (err) {
+        setGeoError('Location error. Please try again or enter your ZIP manually.')
+        setGeolocating(false)
+      }
     }
 
     const selectedPlaceId = state.place.split(':')[0]
