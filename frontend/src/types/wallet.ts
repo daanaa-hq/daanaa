@@ -151,6 +151,8 @@ export interface WalletContextType {
   snoozeRecurringTemplate: (ein: string, untilIsoDate: string) => void
   archiveDonationHistory: (ein: string, beforeDate: string) => void
   syncImpactLog: (entry: LoggedDonation | LoggedVolunteerHours, type: 'giving' | 'volunteer', ein: string) => Promise<void>
+  // Donor voice notes (qualitative trust signals)
+  addDonorNote: (ein: string, note: any) => void
   // Legacy intent methods (deprecated, kept for backward compat)
   updateIntent: (ein: string, intent: GivingIntent) => void
   getIntent: (ein: string) => GivingIntent | undefined

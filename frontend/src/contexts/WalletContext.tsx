@@ -649,6 +649,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: 'UPDATE_DONATION_LETTER_STATUS', ein, donationId, status })
   }, [])
 
+  const addDonorNote = useCallback((ein: string, note: any) => {
+    dispatch({ type: 'ADD_DONOR_NOTE', ein, note })
+  }, [])
+
   const setRecurringTemplate = useCallback((ein: string, template: RecurringTemplate) => {
     dispatch({ type: 'SET_RECURRING', ein, template })
   }, [])
@@ -710,6 +714,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       migrationData, applyMigration, dismissMigration,
       archiveDonationHistory,
       syncImpactLog,
+      addDonorNote,
     }}>
       {children}
     </WalletContext.Provider>

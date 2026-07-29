@@ -33,7 +33,7 @@ export default function DonorVoice({
   const [anonymous, setAnonymous] = useState(true)
   const [notes, setNotes] = useState<DonorNote[]>(entry?.donorNotes || [])
 
-  const { dispatch } = useWallet()
+  const { addDonorNote } = useWallet()
 
   const handleSubmit = () => {
     if (!note.trim()) return
@@ -51,11 +51,7 @@ export default function DonorVoice({
     setShowForm(false)
 
     // Save to wallet entry
-    dispatch({
-      type: 'ADD_DONOR_NOTE',
-      ein,
-      note: newNote,
-    })
+    addDonorNote(ein, newNote)
   }
 
   const recentNotes = notes.slice(0, 3)

@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-29T00:00:00Z",
+  "title": "Design System: Daanaa",
+  "extensions": {
+    "colorMeta": {
+      "deep-navy": {
+        "role": "primary",
+        "displayName": "Deep Navy",
+        "canonical": "rgb(10 22 40)",
+        "tonalRamp": [
+          "rgb(3 8 15)",
+          "rgb(6 14 27)",
+          "rgb(10 22 40)",
+          "rgb(18 35 58)",
+          "rgb(28 50 80)",
+          "rgb(50 85 130)",
+          "rgb(100 140 180)",
+          "rgb(150 180 220)"
+        ]
+      },
+      "warm-cream": {
+        "role": "neutral",
+        "displayName": "Warm Cream",
+        "canonical": "rgb(245 240 235)",
+        "tonalRamp": [
+          "rgb(60 55 45)",
+          "rgb(100 90 75)",
+          "rgb(150 140 120)",
+          "rgb(200 190 170)",
+          "rgb(230 220 205)",
+          "rgb(240 235 225)",
+          "rgb(245 240 235)",
+          "rgb(250 248 243)"
+        ]
+      },
+      "soft-gold": {
+        "role": "primary-accent",
+        "displayName": "Soft Gold",
+        "canonical": "rgb(201 169 110)",
+        "tonalRamp": [
+          "rgb(80 65 40)",
+          "rgb(120 100 60)",
+          "rgb(160 135 85)",
+          "rgb(180 155 105)",
+          "rgb(201 169 110)",
+          "rgb(212 184 122)",
+          "rgb(232 213 163)",
+          "rgb(245 235 210)"
+        ]
+      },
+      "success-green": {
+        "role": "semantic",
+        "displayName": "Success Green",
+        "canonical": "rgb(74 222 128)",
+        "tonalRamp": [
+          "rgb(15 60 35)",
+          "rgb(30 100 60)",
+          "rgb(42 130 75)",
+          "rgb(50 170 95)",
+          "rgb(74 222 128)",
+          "rgb(120 235 155)",
+          "rgb(160 245 185)",
+          "rgb(200 250 210)"
+        ]
+      },
+      "alert-amber": {
+        "role": "semantic",
+        "displayName": "Alert Amber",
+        "canonical": "rgb(245 158 11)",
+        "tonalRamp": [
+          "rgb(100 65 5)",
+          "rgb(150 95 10)",
+          "rgb(180 120 15)",
+          "rgb(210 145 20)",
+          "rgb(245 158 11)",
+          "rgb(255 180 50)",
+          "rgb(255 205 100)",
+          "rgb(255 230 150)"
+        ]
+      },
+      "destructive": {
+        "role": "semantic",
+        "displayName": "Destructive Red",
+        "canonical": "rgb(239 68 68)",
+        "tonalRamp": [
+          "rgb(80 20 20)",
+          "rgb(120 30 30)",
+          "rgb(160 50 50)",
+          "rgb(200 80 80)",
+          "rgb(239 68 68)",
+          "rgb(248 120 120)",
+          "rgb(252 165 165)",
+          "rgb(254 205 205)"
+        ]
+      },
+      "charcoal": {
+        "role": "neutral-text",
+        "displayName": "Charcoal",
+        "canonical": "rgb(30 37 48)",
+        "tonalRamp": [
+          "rgb(10 12 15)",
+          "rgb(18 22 30)",
+          "rgb(30 37 48)",
+          "rgb(50 60 75)",
+          "rgb(80 95 115)",
+          "rgb(120 140 165)",
+          "rgb(160 180 210)",
+          "rgb(200 220 240)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headlines and page-level identifiers. One per page maximum.",
+        "variants": ["italic", "bold"]
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Major section titles and organization names."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card titles, subsection headings, secondary hierarchy."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default reading copy, description text, body content. Max 75ch line length."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Eyebrow labels, tags, buttons, form field labels. Always visible."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 8px 30px rgba(10, 22, 40, 0.06)",
+        "purpose": "Ambient shadow on card elements at rest. Establishes light elevation without drama."
+      },
+      {
+        "name": "card-hover",
+        "value": "0 12px 40px rgba(10, 22, 40, 0.08)",
+        "purpose": "Increased shadow on hover. Subtle state change; not a dramatic lift."
+      },
+      {
+        "name": "gold-glow",
+        "value": "0 0 0 3px rgba(201, 169, 110, 0.15)",
+        "purpose": "Subtle glow around primary gold accents on hover/focus. Rarely used; reserved for high-emphasis interactions."
+      },
+      {
+        "name": "green-glow",
+        "value": "0 0 0 3px rgba(42, 107, 69, 0.20)",
+        "purpose": "Glow for success/validated states. Uses tighter chroma to avoid obnoxiousness."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for state transitions (button hover, focus ring appearance)."
+      },
+      {
+        "name": "duration-200",
+        "value": "200ms",
+        "purpose": "Quick micro-interactions (button hover, shadow shift, color transitions)."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "375px",
+        "purpose": "Mobile (iPhone SE). Default design target."
+      },
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "Tablet (iPad). Navigation collapses to hamburger menu here."
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "Desktop. Full navigation, multi-column layouts."
+      },
+      {
+        "name": "xl",
+        "value": "1440px",
+        "purpose": "Wide desktop. Optional, for ultra-wide displays."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main call-to-action. Soft gold background, deep navy text. 44px minimum touch target.",
+      "html": "<button class=\"ds-btn-primary\">Give Now</button>",
+      "css": ".ds-btn-primary { background-color: rgb(201 169 110); color: rgb(10 22 40); padding: 10px 24px; font-size: 14px; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease-out, box-shadow 0.2s ease-out; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; } .ds-btn-primary:hover { background-color: rgb(212 184 122); box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.15); } .ds-btn-primary:focus-visible { outline: 2px solid rgb(201 169 110); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Supporting action. Warm cream background, deep navy text.",
+      "html": "<button class=\"ds-btn-secondary\">Learn More</button>",
+      "css": ".ds-btn-secondary { background-color: rgb(245 240 235); color: rgb(10 22 40); padding: 10px 24px; font-size: 14px; font-weight: 500; border: 1px solid rgb(229 224 219); border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease-out, border-color 0.2s ease-out; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; } .ds-btn-secondary:hover { background-color: rgb(237 232 224); border-color: rgb(201 169 110); } .ds-btn-secondary:focus-visible { outline: 2px solid rgb(201 169 110); outline-offset: 2px; } .ds-btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Card Container",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Unified container for related content. Warm cream background, soft shadow, 24px padding.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><h3 class=\"ds-card-title\">Your Giving Wallet</h3></div><div class=\"ds-card-content\"><p>Track and manage your giving history.</p></div></div>",
+      "css": ".ds-card { background-color: rgb(245 240 235); border-radius: 10px; padding: 24px; box-shadow: 0 8px 30px rgba(10, 22, 40, 0.06); transition: box-shadow 0.2s ease-out, background-color 0.2s ease-out; } .ds-card:hover { background-color: rgb(237 232 224); box-shadow: 0 12px 40px rgba(10, 22, 40, 0.08); } .ds-card-header { margin-bottom: 16px; } .ds-card-title { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; font-weight: 400; color: rgb(10 22 40); line-height: 1.3; } .ds-card-content { color: rgb(30 37 48); font-size: 14px; line-height: 1.65; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Form field with visible label. Warm cream background, light grey border, gold focus ring.",
+      "html": "<div class=\"ds-input-group\"><label class=\"ds-input-label\">Organization name</label><input class=\"ds-input\" type=\"text\" placeholder=\"Search nonprofits...\" /></div>",
+      "css": ".ds-input-group { display: flex; flex-direction: column; gap: 8px; } .ds-input-label { font-size: 11px; font-weight: 500; color: rgb(10 22 40); letter-spacing: 0.05em; text-transform: uppercase; } .ds-input { background-color: rgb(245 240 235); border: 1px solid rgb(229 224 219); border-radius: 8px; padding: 8px 12px; font-size: 14px; color: rgb(30 37 48); min-height: 44px; font-family: 'DM Sans', Inter, system-ui, sans-serif; transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out; } .ds-input::placeholder { color: rgba(160, 175, 195, 0.65); } .ds-input:focus { outline: none; border-color: rgb(201 169 110); box-shadow: 0 0 0 3px rgba(201, 169, 110, 0.15); }"
+    },
+    {
+      "name": "Heading (h1–h3)",
+      "kind": "custom",
+      "refersTo": "heading",
+      "description": "Semantic hierarchy via serif display font. Responsive scaling with clamp(). Deep navy text.",
+      "html": "<h1 class=\"ds-h1\">Browse 1.7M nonprofits</h1><h2 class=\"ds-h2\">Find organizations working on causes you care about</h2><h3 class=\"ds-h3\">Peer comparison</h3>",
+      "css": ".ds-h1 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(2rem, 5vw, 3rem); font-weight: 300; color: rgb(10 22 40); line-height: 1.15; letter-spacing: normal; } .ds-h2 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 400; color: rgb(10 22 40); line-height: 1.2; letter-spacing: normal; } .ds-h3 { margin: 0; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 20px; font-weight: 400; color: rgb(10 22 40); line-height: 1.3; letter-spacing: normal; }"
+    },
+    {
+      "name": "Navigation Bar",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Top-fixed primary navigation. Deep navy background, warm cream text. Active state in soft gold.",
+      "html": "<nav class=\"ds-nav\"><div class=\"ds-nav-logo\">Daanaa</div><ul class=\"ds-nav-menu\"><li><a href=\"#\" class=\"ds-nav-link active\">Directory</a></li><li><a href=\"#\" class=\"ds-nav-link\">Giving Wallet</a></li><li><a href=\"#\" class=\"ds-nav-link\">About</a></li></ul></nav>",
+      "css": ".ds-nav { position: fixed; top: 0; left: 0; right: 0; background-color: rgb(10 22 40); color: rgb(245 240 235); padding: 12px 24px; height: 72px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(10, 22, 40, 0.1); z-index: 100; } .ds-nav-logo { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 24px; font-weight: 400; color: rgb(245 240 235); } .ds-nav-menu { display: flex; list-style: none; gap: 32px; margin: 0; padding: 0; } .ds-nav-link { color: rgb(245 240 235); text-decoration: none; font-size: 14px; transition: color 0.2s ease-out; } .ds-nav-link:hover { color: rgb(201 169 110); } .ds-nav-link.active { color: rgb(201 169 110); border-bottom: 2px solid rgb(201 169 110); }"
+    },
+    {
+      "name": "Badge / Chip",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Categorical or status indicator. Compact, scannable. Cause-specific or tier-specific colors.",
+      "html": "<span class=\"ds-badge ds-badge-cause-education\">Education</span><span class=\"ds-badge ds-badge-tier-beacon\">Tier 1</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font-size: 11px; font-weight: 500; border-radius: 6px; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid transparent; } .ds-badge-cause-education { background-color: rgb(200 230 245); color: rgb(10 60 120); border-color: rgb(100 170 220); } .ds-badge-tier-beacon { background-color: rgb(184 144 47); color: rgb(245 240 235); border-color: rgb(200 165 95); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Trustworthy Directory",
+    "overview": "Daanaa is built on a commitment to specificity over vibes. Every design choice serves the mission: help donors make more informed and sincere giving decisions.\n\nThe visual system reflects this through precise, evidence-based copy; a warm but authoritative palette (navy + cream + gold); and semantic, never-decorative component patterns.\n\nThe typography pairing of Cormorant Garamond (editorial serif for headings) and DM Sans (humanistic sans for body) signals care and intention without pretense. The navy establishes trust and professionalism; the cream adds warmth and approachability; the gold provides intentional accent without noise.",
+    "keyCharacteristics": [
+      "Specificity over marketing vagueness — every copy line must be provable from data or user behavior",
+      "Respectful of all organizations — small community orgs treated with the same dignity as national foundations",
+      "Evidence-based trust signals — no shame language; no unverified claims",
+      "Transparent about limitations — acknowledge gaps in data, methodology, and what users should verify directly",
+      "Accessible and semantic — WCAG AA compliance is non-negotiable"
+    ],
+    "rules": [
+      {
+        "name": "The One Voice Rule",
+        "body": "Soft Gold is used on ≤10% of any given screen. Its rarity is the point — it should feel intentional, not defaulted.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Shame Rule",
+        "body": "Tier colors intentionally progress from bright to pale, never from 'good' (green) to 'bad' (red). The palette resists judgment language; every org is presented with equal dignity.",
+        "section": "colors"
+      },
+      {
+        "name": "The Serif-Is-For-Headings Rule",
+        "body": "Cormorant Garamond is used only for h1–h4 and major section headings. Never in body text or UI labels. The readability tax is too high.",
+        "section": "typography"
+      },
+      {
+        "name": "The Line-Length Rule",
+        "body": "Body text paragraphs must not exceed 75ch. Narrow columns improve scannability and reading comfort.",
+        "section": "typography"
+      },
+      {
+        "name": "The Mobile-First Rule",
+        "body": "Design for 375px first, then expand thoughtfully. Never just 'stack desktop columns vertically' — rethink layout, typography sizing, touch targets, and hierarchy for mobile.",
+        "section": "layout"
+      },
+      {
+        "name": "The Proximity Rule",
+        "body": "Related items sit closer (8–16px). Distinct sections sit farther (32–48px). Use this spacing as a visual grammar of relationship.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest. Shadows appear only as a response to interaction (hover, focus, elevation) or to establish container hierarchy (cards on white background).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Use semantic token names (text-soft-gold, bg-success-green) instead of raw Tailwind utilities",
+      "Use component abstractions (Button, Card, Heading, Input) for all UI elements",
+      "Test all interactive elements for ≥44×44px touch target and WCAG AA contrast (4.5:1 body text, 3:1 large text/UI)",
+      "Use Cormorant Garamond only for headings (h1–h5); never in body text",
+      "Write specific, evidence-based copy ('Browse 1.7M nonprofits indexed from IRS records' vs. 'Discover causes you care about')",
+      "Acknowledge data gaps and limitations ('This data is 12–24 months old per IRS filing timelines')",
+      "Respect all organization sizes equally — no size-based ranking or shame language",
+      "Use proper icons (Lucide, Heroicons) instead of emoji in functional UI",
+      "Keep gold accent use to ≤10% of any screen"
+    ],
+    "donts": [
+      "Use raw Tailwind color utilities (bg-green-600, text-red-700). Use semantic tokens instead",
+      "Build custom button/card/heading styles. Use the component abstraction",
+      "Use emoji as UI iconography (❌ '🎯 Financial Health'). Use icon fonts or SVG",
+      "Center all headings, descriptions, and buttons. Left-align for scannability; center only hero sections",
+      "Add decorative elements (wavy dividers, floating blobs, ornamental shadows) unless content is insufficient",
+      "Use shade.scss or custom color values. All colors come from index.css CSS variables or tailwind.config.js",
+      "Create new heading levels or font sizes outside the defined type scale",
+      "Hardcode hex colors in component style attributes. Always use semantic tokens or Tailwind class names",
+      "Ship unverified or experimental outputs as established fact. Mark uncertain guidance as 'provisional'",
+      "Use shame language or negative framing ('Poor financial health', 'Bottom-tier org'). Use neutral descriptors"
+    ]
+  }
+}

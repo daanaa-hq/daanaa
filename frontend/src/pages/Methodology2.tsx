@@ -31,8 +31,8 @@ const FAQS = [
     a: 'No. Daanaa does not rate, rank, endorse, or recommend nonprofits. We organize public information to add context to giving decisions, which is different from rating.',
   },
   {
-    q: 'What happens when an organization's finances are missing?',
-    a: 'v6 may show financial patterns reported by a reasonable peer group—organizations comparable by category, geography, scale, and funding pattern. That is reference context, not an estimate of the organization's own finances. If the peer evidence is too weak, we show limited context instead.',
+    q: 'What happens when an organization\'s finances are missing?',
+    a: 'v6 may show financial patterns reported by a reasonable peer group—organizations comparable by category, geography, scale, and funding pattern. That is reference context, not an estimate of the organization\'s own finances. If the peer evidence is too weak, we show limited context instead.',
   },
   {
     q: 'What are Lamp Tiers?',

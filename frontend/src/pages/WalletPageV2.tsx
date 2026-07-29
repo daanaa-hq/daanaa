@@ -94,6 +94,46 @@ export default function WalletPageV2() {
     return result
   }, [givingEntries, orgDataMap, searchTerm, selectedCause, sortBy])
 
+  // Export wallet to CSV
+  const handleExportCSV = () => {
+    const headers = ['Organization EIN', 'Organization Name', 'Total Donated', 'Number of Donations', 'Last Donation Date', 'Causes']
+    const rows = givingEntries.map((entry) => {
+      const org = orgDataMap.get(entry.ein)
+      const totalDonated = Array.isArray(entry.donations)
+        ? entry.donations.reduce((sum, d: any) => sum + (d.amount || 0), 0)
+        : 0
+      const donationCount = Array.isArray(entry.donations) ? entry.donations.length : 0
+      const lastDonation = Array.isArray(entry.donations) && entry.donations.length > 0
+        ? new Date(entry.donations[entry.donations.length - 1].date).toLocaleDateString()
+        : ''
+      const causes = org?.cause_tags ? org.cause_tags.join('; ') : ''
+
+      return [
+        entry.ein,
+        org?.organization_name || '',
+        totalDonated,
+        donationCount,
+        lastDonation,
+        causes
+      ]
+    })
+
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `daanaa-wallet-${new Date().toISOString().split('T')[0]}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="min-h-screen bg-soft-cream">
       {/* Header with user profile */}
@@ -165,7 +205,7 @@ export default function WalletPageV2() {
         {activeTab === 'giving' && (
           <div className="space-y-4">
             {/* Quick log donation */}
-            <QuickDonationLogger onLog={logDonation} />
+            <QuickDonationLogger onLog={logDonation} entries={givingEntries} />
 
             {/* Sort and filter controls */}
             {givingEntries.length > 0 && (
@@ -202,6 +242,14 @@ export default function WalletPageV2() {
                       </select>
                     </div>
                   )}
+
+                  {/* Export CSV button */}
+                  <button
+                    onClick={handleExportCSV}
+                    className="px-3 py-2 text-xs bg-warm-cream text-deep-navy border border-light-grey rounded hover:bg-light-cream transition-colors"
+                  >
+                    Download CSV
+                  </button>
 
                   {/* Clear filters button (visible when active) */}
                   {(selectedCause || sortBy !== 'name') && (
@@ -354,10 +402,11 @@ export default function WalletPageV2() {
 
 /**
  * Quick donation logger — inline form for logging gifts.
- * Minimal friction: amount, date, optional note.
+ * Minimal friction: org selector, amount, date, optional note.
  */
-function QuickDonationLogger({ onLog }: { onLog: (ein: string, amount: number, date: string, notes?: string) => void }) {
+function QuickDonationLogger({ onLog, entries }: { onLog: (ein: string, amount: number, date: string, notes?: string) => void; entries: any[] }) {
   const [expanded, setExpanded] = useState(false)
+  const [selectedEin, setSelectedEin] = useState('')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
@@ -386,6 +435,23 @@ function QuickDonationLogger({ onLog }: { onLog: (ein: string, amount: number, d
       </div>
 
       <div className="space-y-2">
+        {/* Organization */}
+        <div>
+          <label className="block text-xs font-medium text-deep-navy mb-1">Organization</label>
+          <select
+            value={selectedEin}
+            onChange={(e) => setSelectedEin(e.target.value)}
+            className="w-full px-3 py-2 border border-light-grey rounded text-sm focus:outline-none focus:ring-2 focus:ring-soft-gold/50"
+          >
+            <option value="">Select an organization</option>
+            {entries.map((e) => (
+              <option key={e.ein} value={e.ein}>
+                {e.ein}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Amount */}
         <div>
           <label className="block text-xs font-medium text-deep-navy mb-1">Amount</label>
@@ -426,15 +492,16 @@ function QuickDonationLogger({ onLog }: { onLog: (ein: string, amount: number, d
       <div className="flex gap-2">
         <button
           onClick={() => {
-            if (amount) {
-              // TODO: get current org from context or parameter
-              onLog('', parseInt(amount), date, notes || undefined)
+            if (amount && selectedEin) {
+              onLog(selectedEin, parseInt(amount), date, notes || undefined)
+              setSelectedEin('')
               setAmount('')
               setNotes('')
               setExpanded(false)
             }
           }}
-          className="flex-1 py-2 bg-soft-gold text-deep-navy rounded font-medium text-sm hover:bg-gold transition-colors"
+          disabled={!selectedEin || !amount}
+          className="flex-1 py-2 bg-soft-gold text-deep-navy rounded font-medium text-sm hover:bg-gold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Log
         </button>
