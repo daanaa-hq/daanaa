@@ -504,13 +504,7 @@ export default function OrganizationDetail() {
       <div className="bg-deep-navy pt-nav relative overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 md:py-12 lg:py-16">
           <div className="flex items-center justify-between gap-2 mb-6">
-            <div className="flex items-center gap-2">
-              <Link to="/" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Home</Link>
-              <span className="text-muted-cream">/</span>
-              <Link to="/directory" className="font-body text-caption tracking-[0.02em] text-muted-cream hover:text-warm-cream transition-colors">Directory</Link>
-              <span className="text-muted-cream">/</span>
-              <span className="font-body text-caption tracking-[0.02em] text-muted-cream truncate max-w-[200px]">{org.name}</span>
-            </div>
+            <div />
             <div className="flex items-center gap-2">
               {/* Green heart — funding intent */}
               <WalletHeartButton
@@ -554,7 +548,7 @@ export default function OrganizationDetail() {
               {/* Mission statement — all caps, no italics, sits under the name to
                   clarify what's a proper noun and what's descriptive. Simple. */}
               {org.mission && (
-                <div className="mt-3 flex items-start gap-2">
+                <div className="mt-2 sm:mt-3 flex items-start gap-2">
                   <p className="font-body text-body text-muted-cream/80 leading-[1.6] max-w-[600px] uppercase tracking-wide">
                     {org.mission.replace(/^[""\s]+|[""\s]+$/g, '')}
                   </p>
@@ -566,7 +560,7 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              <div className="flex items-center gap-3 mt-6 flex-wrap">
+              <div className="flex items-center gap-3 mt-2 sm:mt-4 flex-wrap">
                 <div className="flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
@@ -575,12 +569,9 @@ export default function OrganizationDetail() {
                 </div>
               </div>
 
-              {/* One way in, not four. The full method list (DAF, check, bank
-                  bill pay, employer match) lives in "How to give" further down;
-                  repeating it here made the donor choose before they had read
-                  anything about the org. */}
-              {apiOrg! && apiOrg!.irs_eligibility_status !== 'revoked' && (
-                <div className="mt-8">
+              {/* Primary CTA: Give Now + Visit Website (side by side) */}
+              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                {apiOrg! && apiOrg!.irs_eligibility_status !== 'revoked' && (
                   <a
                     href="#ways-to-give"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-soft-gold text-deep-navy hover:bg-bright-gold transition-colors font-body text-small font-semibold"
@@ -588,18 +579,23 @@ export default function OrganizationDetail() {
                     Give now
                     <span aria-hidden="true">↓</span>
                   </a>
-                </div>
-              )}
+                )}
+                {apiOrg?.website && (
+                  <a
+                    href={apiOrg.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-soft-gold text-soft-gold hover:bg-soft-gold/10 transition-colors font-body text-small font-semibold"
+                  >
+                    Visit website
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                  </a>
+                )}
+              </div>
 
-              {/* Data context note: supportive explanation for archetype-only orgs
-                  (no revenue data). Honors Stewardship Charter #7. */}
-              {apiOrg! && <DataContextNote org={apiOrg!} />}
-
-              {/* Answer card: legit / deductible / healthy in <10s, for every
-                  org including the ~82% with no financial score and revoked
-                  orgs reached by direct/stale link. See AnswerCard.tsx. */}
-              <div className="mt-8">
-                                {apiOrg! && <AnswerCard org={apiOrg!} />}
+              {/* Quick verification: legit/deductible/healthy + IRS status */}
+              <div className="mt-6 sm:mt-8 space-y-3">
+                {apiOrg! && <AnswerCard org={apiOrg!} />}
                 {apiOrg! && <IrsEligibilityContext
                   status={apiOrg!.irs_eligibility_status || 'unknown'}
                   checkedAt={apiOrg!.irs_eligibility_checked_at}
@@ -607,10 +603,11 @@ export default function OrganizationDetail() {
                   explanation={apiOrg!.irs_eligibility_explanation || undefined}
                   organizationName={apiOrg!.organization_name}
                 />}
+                {apiOrg! && <DataContextNote org={apiOrg!} />}
               </div>
 
               {/* Badge row -- click any badge to see what earned it */}
-              <div className="mt-6 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 {badges.map(badge => (
                   <BadgeChip
                     key={badge.id}
@@ -738,61 +735,6 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* Volunteer + public record fallback */}
-              {(() => {
-                const { websiteUrl } = actionLinks
-
-                return (
-                  <>
-                    <div className="mt-8 flex flex-wrap items-center gap-3">
-                      <WalletHeartButton
-                        kind="funding"
-                        variant="pill"
-                        isActive={isInFunding(org.ein)}
-                        onToggle={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
-                        titleActive="Remove from donation list"
-                        titleInactive="Add to donation list"
-                        labelActive="In donation list"
-                        labelInactive="Add to donation list"
-                      />
-                      {/* Stage 1 (Time features deferred): interest signal only. No hour
-                          logging or commitment promise yet. Maps to the existing wallet
-                          volunteering list — no forked data model. */}
-                      <WalletHeartButton
-                        kind="volunteering"
-                        variant="pill"
-                        isActive={isInVolunteering(org.ein)}
-                        onToggle={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
-                        titleActive="Remove from your volunteer list"
-                        titleInactive="Let them know you are interested in volunteering"
-                        labelActive="Interested in volunteering"
-                        labelInactive="Interested in volunteering?"
-                      />
-                      {!websiteUrl && (
-                        <a
-                          href={propublicaOrgUrl(org.ein)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 font-body text-small text-muted-cream/80 underline underline-offset-2 hover:text-warm-cream transition-colors"
-                        >
-                          View public record
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
-                        </a>
-                      )}
-                      {/* E7: Print / Save */}
-                      <button
-                        onClick={() => window.print()}
-                        title="Print or save this page"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-warm-cream/30 font-body text-caption text-warm-cream/70 hover:text-warm-cream hover:border-warm-cream/50 transition-colors"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                        Print
-                      </button>
-                    </div>
-
-                  </>
-                );
-              })()}
 
               {/* Loop-closer: connect the give moment to a private record.
                   Appears under whichever CTA rendered. */}
@@ -851,14 +793,13 @@ export default function OrganizationDetail() {
 
       {/* Donation Attribution Banner removed — adds noise, not value */}
 
-      {/* Financial & Governance Context — now always visible, not collapsible */}
-      <div className="py-12 md:py-16">
+      {/* Main Content: Financial Context + Ways to Give */}
+      <div className="py-12 md:py-16 bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* v6 peer context is the only public financial context system */}
-          {/* V6 Financial Context (feature-flagged) */}
+          {/* V6 peer financial context — the central financial insight */}
           {apiOrg! && (
-            <div className="mb-12 bg-warm-cream rounded-lg p-8 border border-gray-200">
+            <div className="mb-16 bg-white rounded-lg p-8 border border-light-grey">
               <V6FinancialContext
                 ein={apiOrg!.EIN}
                 context={v6Context}
@@ -867,9 +808,18 @@ export default function OrganizationDetail() {
             </div>
           )}
 
-          {/* Key financial metrics row -- the raw numbers, after the interpretation above */}
+          {/* Ways to Give — Mission-aligned giving methods */}
+          {apiOrg && (
+            <div className="mb-16">
+              <OrgInfoHierarchy org={apiOrg} />
+            </div>
+          )}
+
+          {/* Key financial metrics — supporting data after peer comparison */}
           {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="mb-16">
+              <h3 className="font-display italic text-deep-navy text-title-sm mb-6">Financial snapshot</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {apiOrg!.months_of_reserve !== null && (
                 <div
                   className="rounded-xl p-5 border"
@@ -927,6 +877,7 @@ export default function OrganizationDetail() {
                 </div>
               )}
             </div>
+            </div>
           )}
 
           {/* Multi-dimensional peer context breakdown — shows where the org
@@ -958,32 +909,9 @@ export default function OrganizationDetail() {
             />
           )}
 
-          {/* About this listing + the org's claimable spaces get the full width
-              and are clearly defined. The wide revenue trend chart moves to its
-              own full-width block below this (see "Revenue Trend" section). */}
-          <div>
-            <div className="flex flex-col gap-4">
-              {/* Contextual handoff links */}
-              <div className="flex flex-wrap gap-x-5 gap-y-2 px-1">
-                {apiOrg!.NTEE1 && (
-                  <Link
-                    to={`/category/${apiOrg!.NTEE1}`}
-                    className="font-body text-caption text-link-gold hover:text-deep-gold transition-colors"
-                  >
-                    Browse {getNteeLabel(apiOrg!.NTEE1 || '')} orgs →
-                  </Link>
-                )}
-                <Link to="/methodology" className="font-body text-caption text-link-gold hover:text-deep-gold transition-colors">
-                  How we score →
-                </Link>
-                <Link to="/research" className="font-body text-caption text-link-gold hover:text-deep-gold transition-colors">
-                  Sector research →
-                </Link>
-              </div>
-
-              {/* Manage / Claim CTA */}
-              <div className="print-hide">
-              {apiOrg!.claim_status === 'active' ? (
+          {/* Manage / Claim CTA */}
+          <div className="print-hide">
+            {apiOrg!.claim_status === 'active' ? (
                 /* Claimed — show "Edit this page" for the org rep */
                 <div className="rounded-xl border border-soft-gold/30 bg-soft-gold/[0.04] px-5 py-4">
                   <p className="font-body text-small font-medium text-deep-navy mb-1">Is this your organization?</p>
@@ -1023,108 +951,32 @@ export default function OrganizationDetail() {
                   )}
                 </div>
               ) : null}
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-
-      {/* Organization Info Hierarchy — Mission, Financial, Ways to Give, Governance */}
-      {apiOrg && (
-        <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
-          <OrgInfoHierarchy org={apiOrg} />
+      {/* Leadership (if available) */}
+      {ppLeadership.length > 0 && (
+        <div className="border-t border-light-grey py-12 md:py-16 mt-0">
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+            <span className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">Leadership</span>
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {ppLeadership.map((person) => (
+                <div key={person.name}>
+                  <p className="font-body text-body font-medium text-deep-navy">{person.name}</p>
+                  <p className="font-body text-caption text-cool-grey mt-1">{person.title}</p>
+                  {person.compensation && (
+                    <p className="font-body text-caption text-cool-grey mt-2">{formatCurrency(person.compensation)}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+            <p className="font-body text-label text-cool-grey mt-8">
+              Source: IRS Form 990{ppFilingYear ? `, ${ppFilingYear} filing` : ''} via ProPublica · public record
+            </p>
+          </div>
         </div>
       )}
-
-      {/* Programs & Leadership (supplementary) */}
-      <div className="border-t border-light-grey pt-12 md:pt-16 mt-0">
-        <div>
-          <div className={`grid grid-cols-1 gap-12 ${(org.programs.length > 0) ? 'lg:grid-cols-2' : ''}`}>
-            {org.programs.length > 0 && (
-              <div>
-                <span className="block font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">PROGRAMS</span>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {org.programs.map((program) => (
-                    <span key={program} className="px-3 py-1.5 rounded-full bg-navy-mid/10 text-deep-navy font-body text-small">{program}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div>
-              {(() => {
-                const leaders = ppLeadership.length > 0 ? ppLeadership : org.leadership
-                return leaders.length > 0 ? (
-                <>
-                  <span className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">LEADERSHIP</span>
-                  <div className="mt-4 space-y-4">
-                    {leaders.map((person) => (
-                      <div key={person.name}>
-                        <p className="font-body text-body font-medium text-deep-navy">{person.name}</p>
-                        <p className="font-body text-caption text-cool-grey">{person.title}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {ppLeadership.length > 0 && (
-                    <p className="font-body text-label text-cool-grey mt-3">
-                      Source: IRS Form 990{ppFilingYear ? `, ${ppFilingYear} filing` : ''} via ProPublica · public record
-                    </p>
-                  )}
-                </>
-                ) : (
-                <div className="pt-2">
-                  <span className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">DATA SOURCE</span>
-                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 font-body text-small text-cool-grey">
-                    <div>
-                      <p className="text-micro uppercase tracking-[0.07em] text-cool-grey mb-0.5">Type</p>
-                      <p className="text-deep-navy font-medium">Registered US nonprofit</p>
-                    </div>
-                    <div>
-                      <p className="text-micro uppercase tracking-[0.07em] text-cool-grey mb-0.5">EIN</p>
-                      <p className="text-deep-navy font-medium">{formatEIN(org.ein)}</p>
-                    </div>
-                    {(() => {
-                      const nteeCode = (org as any).nteecc || org.category || ''
-                      if (!nteeCode) return null
-                      const label = getNteeLabel(nteeCode)
-                      return (
-                        <div>
-                          <p className="text-micro uppercase tracking-[0.07em] text-cool-grey mb-0.5">NTEE Category</p>
-                          <p className="text-deep-navy font-medium">{label}</p>
-                          {label.toLowerCase() !== nteeCode.toLowerCase() && (
-                            <p className="text-label text-cool-grey mt-0.5">Code {nteeCode}</p>
-                          )}
-                        </div>
-                      )
-                    })()}
-                    {nonprofitSizeLabel(apiOrg!.total_revenue) && (
-                      <div>
-                        <p className="text-micro uppercase tracking-[0.07em] text-cool-grey mb-0.5">Size</p>
-                        <p className="text-deep-navy font-medium">{nonprofitSizeLabel(apiOrg!.total_revenue)} nonprofit</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <DataFreshnessBadge
-                      taxYear={(org as any).latestTaxYear}
-                      dataSource={(org as any).dataSource}
-                      updatedAt={(org as any).updatedAt}
-                    />
-                  </div>
-                  <p className="mt-3">
-                    <a href={propublicaOrgUrl(org.ein)}
-                       target="_blank" rel="noopener noreferrer"
-                       className="font-body text-small text-link-gold hover:text-deep-gold transition-colors">
-                      View on ProPublica Nonprofit Explorer →
-                    </a>
-                  </p>
-                </div>
-                )
-              })()}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Accountability Strip */}
       <div className="border-t border-light-grey py-8">

@@ -672,6 +672,7 @@ def _load_embeddings():
 def _get_org_vec(ein: str) -> np.ndarray | None:
     if not _emb_loaded:
         # DISABLED: _load_embeddings()
+        pass
     if _emb_index is None:
         return None
     idx = _emb_index.get(ein)
@@ -2913,6 +2914,70 @@ def get_financials(ein):
         "financials": [record],
         "total": 1,
     })
+
+@app.route('/api/organizations/<ein>/financial-context')
+@limiter.limit("60 per minute")
+def get_financial_context_v6(ein):
+    """
+    V6 Financial Context endpoint.
+
+    Returns comprehensive peer context using the v6 foundation.
+    Uses v6 by default; ENABLE_V6_FINANCIAL_CONTEXT=false is an emergency rollback switch.
+
+    Response includes:
+    - organization_ein
+    - methodology_version
+    - data_status
+    - ntee_code, ntee_level
+    - geography_scope, geography_value
+    - funding_archetype
+    - revenue_band
+    - selected_tier (Tier 1-5)
+    - peer_group_description
+    - organization_metric (months of reserve)
+    - peer statistics (median, p25, p75, counts)
+    - confidence and limitations
+    - conditional_band_context (for Tier 2 without revenue)
+    """
+
+    ENABLE_V6 = os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'true').lower() == 'true'
+
+    if not ENABLE_V6:
+        return jsonify({
+            'error': 'v6 financial context not yet enabled',
+            'message': 'This endpoint is in development. Please check back soon.'
+        }), 503
+
+    # Sanitize EIN
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean or len(ein_clean) != 9:
+        return jsonify({"error": "Invalid EIN format"}), 400
+
+    try:
+        from scripts.v6_financial_context_api import get_v6_financial_context
+        db = get_db()
+        context = get_v6_financial_context(db, ein_clean)
+
+        if context is None:
+            return jsonify({
+                'organization_ein': ein_clean,
+                'data_status': 'not_found',
+                'message': 'Organization not found in v6 financial context'
+            }), 404
+
+        # Add metadata
+        context['retrieved_at'] = datetime.utcnow().isoformat() + 'Z'
+        context['endpoint_version'] = 'v6_foundation_2026-07-27'
+
+        return jsonify(context)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': 'Internal server error',
+            'ein': ein_clean
+        }), 500
 
 @app.route('/api/ntee-categories')
 @limiter.exempt
@@ -5659,6 +5724,7 @@ def semantic_search():
 
     if not _emb_loaded:
         # DISABLED: _load_embeddings()
+        pass
     if _emb_matrix is None or len(_emb_matrix) == 0:
         return jsonify({"error": "embeddings not ready yet", "results": []}), 503
 
@@ -5757,6 +5823,7 @@ def fused_search():
     if kw_eins and len(kw_eins) >= 5:  # Only rerank if we have meaningful FTS results
         if not _emb_loaded:
             # DISABLED: _load_embeddings()
+            pass
         if _emb_matrix is not None and len(_emb_matrix) > 0:
             vec = _embed_query(q)
             if vec is not None:
@@ -5790,6 +5857,7 @@ def fused_search():
         # ── Path 2: Semantic vector ───────────────────────────────────────────
         if not _emb_loaded:
             # DISABLED: _load_embeddings()
+            pass
         if _emb_matrix is not None and len(_emb_matrix) > 0:
             vec = _embed_query(q)
             if vec is not None:
@@ -12531,6 +12599,7 @@ def research_datasets():
 # DAANAA_SKIP_EMBEDDINGS=1 (tests) avoids the ~2 GB load on import.
 if not os.environ.get("DAANAA_SKIP_EMBEDDINGS"):
     # DISABLED: _load_embeddings()
+    pass
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

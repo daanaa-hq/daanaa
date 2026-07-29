@@ -1,0 +1,31 @@
+[Unit]
+Description=Daanaa API Server
+After=network.target
+
+[Service]
+Type=notify
+User=root
+WorkingDirectory=/opt/daanaa
+Environment="PYTHONDONTWRITEBYTECODE=1"
+Environment="ENABLE_V6_FINANCIAL_CONTEXT=true"
+Environment="DB_PATH=/opt/daanaa/data/merit_registry.db"
+ExecStart=/opt/daanaa/venv/bin/gunicorn \
+  --workers 4 \
+  --worker-class sync \
+  --bind 127.0.0.1:5000 \
+  --timeout 60 \
+  --access-logfile /var/log/daanaa-gunicorn-access.log \
+  --error-logfile /var/log/daanaa-gunicorn-error.log \
+  droplet_api:app
+
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/daanaa-gunicorn-access.log
+StandardError=append:/var/log/daanaa-gunicorn-error.log
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
