@@ -4,6 +4,37 @@
     "ignoreFiles": [
       "/tmp/claude-1000/-home-akbar-meritgiving/712637e0-160a-4248-b3aa-066c17912e23/scratchpad/giving-hub-mockup.html"
     ],
-    "ignoreValues": []
+    "ignoreValues": [
+      {
+        "rule": "design-system-color",
+        "value": "rgba(139,26,26,0.05)",
+        "createdAt": "2026-07-29T13:35:21.097Z",
+        "reason": "Financial health data viz: negative net assets background"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fffbf0",
+        "createdAt": "2026-07-29T13:35:31.143Z",
+        "reason": "Financial health data viz: low reserve background"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#fde68a",
+        "createdAt": "2026-07-29T13:35:41.503Z",
+        "reason": "Financial health data viz: low reserve border"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#8b1a1a",
+        "createdAt": "2026-07-29T13:35:41.522Z",
+        "reason": "Financial health data viz: negative reserves text"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#92400e",
+        "createdAt": "2026-07-29T13:35:41.541Z",
+        "reason": "Financial health data viz: low reserves text"
+      }
+    ]
   }
 }
