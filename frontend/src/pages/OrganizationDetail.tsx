@@ -693,6 +693,9 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
+              {/* Donor Voice — social proof from people who've supported this org */}
+              {apiOrg && <div className="mt-6"><DonorVoice ein={apiOrg.EIN} orgName={apiOrg.organization_name} /></div>}
+
               <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
                 {[
                   (() => {
@@ -1137,8 +1140,6 @@ export default function OrganizationDetail() {
               <p className="font-body text-caption text-cool-grey">Verified by government records</p>
             </div>
           </div>
-          {/* Supporter Voice */}
-          {apiOrg && <DonorVoice ein={apiOrg.EIN} orgName={apiOrg.organization_name} />}
         </div>
       </div>
 

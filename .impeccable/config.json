@@ -34,6 +34,12 @@
         "value": "#92400e",
         "createdAt": "2026-07-29T13:35:41.541Z",
         "reason": "Financial health data viz: low reserves text"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "34px",
+        "createdAt": "2026-07-29T13:40:31.507Z",
+        "reason": "Responsive headline using clamp(34px, 5.5vw, 66px) per DESIGN.md typography guidance"
       }
     ]
   }
