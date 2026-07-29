@@ -40,6 +40,18 @@
         "value": "34px",
         "createdAt": "2026-07-29T13:40:31.507Z",
         "reason": "Responsive headline using clamp(34px, 5.5vw, 66px) per DESIGN.md typography guidance"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "rgba(139,26,26,0.20)",
+        "createdAt": "2026-07-29T13:40:53.946Z",
+        "reason": "Financial health data viz: negative net assets border"
+      },
+      {
+        "rule": "design-system-color",
+        "value": "#ffffff",
+        "createdAt": "2026-07-29T13:40:53.965Z",
+        "reason": "Financial health data viz: healthy reserves background"
       }
     ]
   }
