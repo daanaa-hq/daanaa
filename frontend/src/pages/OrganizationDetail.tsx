@@ -501,7 +501,7 @@ export default function OrganizationDetail() {
       `}</style>
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Directory', href: '/directory' }, { label: org?.name || 'Organization' }]} />
       {/* Profile Header */}
-      <div className="bg-deep-navy pt-nav relative overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgb(var(--deep-navy-rgb)) 70%, transparent)' }}>
+      <div className="bg-deep-navy pt-nav relative overflow-hidden">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12 py-8 md:py-12 lg:py-16">
           <div className="flex items-center justify-between gap-2 mb-6">
             <div className="flex items-center gap-2">
@@ -636,12 +636,11 @@ export default function OrganizationDetail() {
 
               {/* Financial stress indicator */}
               {apiOrg!.months_of_reserve !== null && apiOrg!.months_of_reserve < 3 && (
-                <div
-                  className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-caption font-medium border"
-                  style={apiOrg!.months_of_reserve < 0
-                    ? { backgroundColor: 'rgba(139,26,26,0.22)', color: '#D07070', borderColor: 'rgba(139,26,26,0.45)' }
-                    : { backgroundColor: 'rgba(245,158,11,0.18)', color: '#FCD34D', borderColor: 'rgba(245,158,11,0.38)' }}
-                >
+                <div className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded font-body text-caption font-medium border ${
+                  apiOrg!.months_of_reserve < 0
+                    ? 'bg-destructive/10 text-destructive border-destructive/30'
+                    : 'bg-alert-amber/10 text-alert-amber border-alert-amber/30'
+                }`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" />
                   {apiOrg!.months_of_reserve < 0
                     ? 'Negative net assets. This group owes more than it owns.'
@@ -798,21 +797,18 @@ export default function OrganizationDetail() {
 
             {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) &&
              apiOrg!.irs_eligibility_status !== 'revoked' && apiOrg!.org_status !== 'revoked' && apiOrg!.irs_revoked !== 1 && (
-            <div className="flex flex-col items-center gap-3 lg:pt-4">
+            <div className="space-y-2">
               {/* Lamp tier retired from donor-facing profiles 2026-07-17
                   (founder-approved): its facts are covered by the plain
                   elements below, and the tier vocabulary read as a grade
                   (P4). Tiers live on in the nonprofit-facing claim flow. */}
               {/* IRS verification -- a real, defensible fact for every org */}
-              <div className="flex flex-col items-center gap-2 text-center">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 font-body text-caption font-medium">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  Registered US Nonprofit
-                </span>
+              <div className="space-y-1">
+                <p className="font-body text-caption font-medium text-success-green">✓ Registered US Nonprofit</p>
                 {apiOrg!.latest_tax_year && (
-                  <span className="font-body text-label text-muted-cream">
+                  <p className="font-body text-label text-muted-cream">
                     Annual report filed · {apiOrg!.latest_tax_year}
-                  </span>
+                  </p>
                 )}
                 {/* Claimed / Unclaimed badge -- Yelp-style */}
                 {apiOrg!.claim_status === 'active' ? (
@@ -1060,14 +1056,9 @@ export default function OrganizationDetail() {
                   <span className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">LEADERSHIP</span>
                   <div className="mt-4 space-y-4">
                     {leaders.map((person) => (
-                      <div key={person.name} className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-soft-gold/20 flex items-center justify-center">
-                          <span className="font-body text-body font-semibold text-deep-gold">{person.initials}</span>
-                        </div>
-                        <div>
-                          <p className="font-body text-body font-medium text-deep-navy">{person.name}</p>
-                          <p className="font-body text-caption text-cool-grey">{person.title}</p>
-                        </div>
+                      <div key={person.name}>
+                        <p className="font-body text-body font-medium text-deep-navy">{person.name}</p>
+                        <p className="font-body text-caption text-cool-grey">{person.title}</p>
                       </div>
                     ))}
                   </div>
@@ -1137,27 +1128,13 @@ export default function OrganizationDetail() {
         <div className="space-y-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-12">
             <MistakeRegistry compact />
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-success-green/15 flex items-center justify-center shrink-0">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>
-                </svg>
-              </div>
-              <div>
-                <p className="font-body text-small font-semibold text-deep-navy">US Nonprofit · Active</p>
-                <p className="font-body text-caption text-cool-grey">IRS nonprofit registration verified</p>
-              </div>
+            <div className="space-y-1">
+              <p className="font-body text-small font-semibold text-deep-navy">✓ US Nonprofit · Active</p>
+              <p className="font-body text-caption text-cool-grey">IRS nonprofit registration verified</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-soft-gold/15 flex items-center justify-center shrink-0">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A96E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-              </div>
-              <div>
-                <p className="font-body text-small font-semibold text-deep-navy">EIN {formatEIN(org.ein)}</p>
-                <p className="font-body text-caption text-cool-grey">Verified by government records</p>
-              </div>
+            <div className="space-y-1">
+              <p className="font-body text-small font-semibold text-deep-navy">✓ EIN {formatEIN(org.ein)}</p>
+              <p className="font-body text-caption text-cool-grey">Verified by government records</p>
             </div>
           </div>
           {/* Supporter Voice */}
