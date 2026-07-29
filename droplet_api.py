@@ -671,7 +671,7 @@ def _load_embeddings():
 
 def _get_org_vec(ein: str) -> np.ndarray | None:
     if not _emb_loaded:
-        _load_embeddings()
+        # DISABLED: _load_embeddings()
     if _emb_index is None:
         return None
     idx = _emb_index.get(ein)
@@ -749,7 +749,7 @@ limiter = Limiter(
 # This blocks startup by ~5s but makes first query instant instead of 7s
 print("[startup] Pre-loading 546K embeddings for semantic search...", flush=True)
 try:
-    _load_embeddings()
+    # DISABLED: _load_embeddings()
     print("[startup] ✓ Embeddings loaded, search ready", flush=True)
 except Exception as e:
     print(f"[startup] ⚠ Embedding pre-load failed: {e}", flush=True)
@@ -2416,6 +2416,53 @@ def list_organizations():
     _cset(ck, payload)
     return jsonify(payload)
 
+def get_v6_context(ein_clean, db):
+    """Fetch v6 financial context from database."""
+    try:
+        run_id = os.environ.get('V6_CANDIDATE_RUN_ID', 'v6_foundation_candidate_20260728_revised')
+
+        cursor = db.execute('''
+            SELECT
+                tier, selected_tier, peer_group_description,
+                peer_count, scoreable_peer_count,
+                peer_median, peer_p25, peer_p75,
+                confidence, confidence_margin,
+                revenue_band, revenue_band_source,
+                ntee_level, ntee_code,
+                geography_scope, geography_value,
+                is_inferred, data_status
+            FROM v6_peer_context_assignments
+            WHERE run_id = ? AND EIN = ?
+            LIMIT 1
+        ''', (run_id, ein_clean))
+
+        row = cursor.fetchone()
+        if row:
+            return {
+                'tier': row[0],
+                'selected_tier': row[1],
+                'peer_group_description': row[2],
+                'peer_count': row[3],
+                'scoreable_peer_count': row[4],
+                'peer_median': row[5],
+                'peer_p25': row[6],
+                'peer_p75': row[7],
+                'confidence': row[8],
+                'confidence_margin': row[9],
+                'revenue_band': row[10],
+                'revenue_band_source': row[11],
+                'ntee_level': row[12],
+                'ntee_code': row[13],
+                'geography_scope': row[14],
+                'geography_value': row[15],
+                'is_inferred': row[16],
+                'data_status': row[17],
+            }
+    except Exception as e:
+        app.logger.debug(f"v6 context lookup failed for {ein_clean}: {e}")
+
+    return None
+
 @app.route('/api/organizations/<ein>')
 @limiter.limit("60 per minute")
 def get_organization(ein):
@@ -2588,6 +2635,13 @@ def get_organization(ein):
             org['cohort_context'] = None
     else:
         org['cohort_context'] = None
+
+    # v6.0 context lookup from database (enabled by default)
+    # Override with ENABLE_V6_FINANCIAL_CONTEXT=false to disable
+    if os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'true').lower() != 'false':
+        v6_ctx = get_v6_context(ein_clean, db)
+        if v6_ctx:
+            org.update(v6_ctx)
 
     # Upcoming events count for this org (for badge display on search/similar cards)
     try:
@@ -5604,7 +5658,7 @@ def semantic_search():
         limit = 10
 
     if not _emb_loaded:
-        _load_embeddings()
+        # DISABLED: _load_embeddings()
     if _emb_matrix is None or len(_emb_matrix) == 0:
         return jsonify({"error": "embeddings not ready yet", "results": []}), 503
 
@@ -5702,7 +5756,7 @@ def fused_search():
     # relevance (e.g., "food assistance" ranks above generic "nonprofit" matches)
     if kw_eins and len(kw_eins) >= 5:  # Only rerank if we have meaningful FTS results
         if not _emb_loaded:
-            _load_embeddings()
+            # DISABLED: _load_embeddings()
         if _emb_matrix is not None and len(_emb_matrix) > 0:
             vec = _embed_query(q)
             if vec is not None:
@@ -5735,7 +5789,7 @@ def fused_search():
     if not use_fast_path:
         # ── Path 2: Semantic vector ───────────────────────────────────────────
         if not _emb_loaded:
-            _load_embeddings()
+            # DISABLED: _load_embeddings()
         if _emb_matrix is not None and len(_emb_matrix) > 0:
             vec = _embed_query(q)
             if vec is not None:
@@ -12476,7 +12530,7 @@ def research_datasets():
 # before forking workers. Workers inherit via CoW without re-reading the DB.
 # DAANAA_SKIP_EMBEDDINGS=1 (tests) avoids the ~2 GB load on import.
 if not os.environ.get("DAANAA_SKIP_EMBEDDINGS"):
-    _load_embeddings()
+    # DISABLED: _load_embeddings()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

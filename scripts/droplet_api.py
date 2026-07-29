@@ -1309,6 +1309,50 @@ def _filtered_orgs(ntee1, state, nteecc_filter, page, per_page):
 
 _EIN_RE = re.compile(r'^\d{9}$')
 
+def get_v6_context(ein_clean, db):
+    """Fetch v6 financial context from database."""
+    try:
+        run_id = os.environ.get('V6_CANDIDATE_RUN_ID', 'v6_foundation_candidate_20260728_revised')
+        cursor = db.execute('''
+            SELECT
+                tier, selected_tier, peer_group_description,
+                peer_count, scoreable_peer_count,
+                peer_median, peer_p25, peer_p75,
+                confidence, confidence_margin,
+                revenue_band, revenue_band_source,
+                ntee_level, ntee_code,
+                geography_scope, geography_value,
+                is_inferred, data_status
+            FROM v6_peer_context_assignments
+            WHERE run_id = ? AND EIN = ?
+            LIMIT 1
+        ''', (run_id, ein_clean))
+        row = cursor.fetchone()
+        if row:
+            return {
+                'tier': row[0],
+                'selected_tier': row[1],
+                'peer_group_description': row[2],
+                'peer_count': row[3],
+                'scoreable_peer_count': row[4],
+                'peer_median': row[5],
+                'peer_p25': row[6],
+                'peer_p75': row[7],
+                'confidence': row[8],
+                'confidence_margin': row[9],
+                'revenue_band': row[10],
+                'revenue_band_source': row[11],
+                'ntee_level': row[12],
+                'ntee_code': row[13],
+                'geography_scope': row[14],
+                'geography_value': row[15],
+                'is_inferred': row[16],
+                'data_status': row[17],
+            }
+    except Exception as e:
+        app.logger.debug(f"v6 context lookup failed for {ein_clean}: {e}")
+    return None
+
 @app.route('/api/organizations/<ein>')
 def get_organization(ein):
     ein = ein.strip().upper()
@@ -1327,6 +1371,13 @@ def get_organization(ein):
         enrichment = _fetch_s3_enrichment(ein)
         if enrichment:
             org_data.update(enrichment)
+
+    # v6.0 context lookup from database (enabled by default)
+    db = get_search_db()
+    if db:
+        v6_ctx = get_v6_context(ein, db)
+        if v6_ctx:
+            org_data.update(v6_ctx)
 
     return jsonify(org_data)
 

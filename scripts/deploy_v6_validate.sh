@@ -5,7 +5,7 @@ set -Eeuo pipefail
 # transfer, or production deployment occurs unless explicitly requested.
 
 APP_DIR="${APP_DIR:-/opt/daanaa}"
-DB_PATH="${DB_PATH:-$APP_DIR/data/merit_registry.db}"
+DB_PATH="${DB_PATH:-$APP_DIR/merit_registry.db}"
 BASE_URL="${BASE_URL:-http://127.0.0.1:8000}"
 RUN_ID="${RUN_ID:-}"
 ACTIVATE="${ACTIVATE:-false}"
