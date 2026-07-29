@@ -58,6 +58,41 @@ export function decodeDiscoveryState(params: URLSearchParams): Partial<Discovery
   return state
 }
 
+// Reverse geocode coordinates to zip code (client-side only, no server tracking)
+export async function getZipFromCoordinates(lat: number, lng: number): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+    )
+    const data = await response.json()
+    return data.address?.postcode || null
+  } catch {
+    return null
+  }
+}
+
+// Request user geolocation (client-side only, no server tracking)
+export async function getUserLocation(): Promise<{ lat: number; lng: number } | null> {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(null)
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        })
+      },
+      () => {
+        resolve(null)
+      },
+      { timeout: 5000, enableHighAccuracy: false }
+    )
+  })
+}
+
 // Map discovery choices to API filters
 export function mapToDirectoryFilters(state: DiscoveryState): DiscoveryFilters {
   const filters: DiscoveryFilters = {}
@@ -71,8 +106,8 @@ export function mapToDirectoryFilters(state: DiscoveryState): DiscoveryFilters {
   if (state.place === 'nationwide') {
     // no location filter
   } else if (state.place === 'near-me') {
-    // TODO: Get user's geolocation coordinates and pass as near param
-    // For now, this would require client-side geolocation API call
+    // Geolocation will be resolved dynamically by caller (DiscoveryPage)
+    // Store marker so caller knows to fetch location
   } else if (state.place.startsWith('custom-zip:')) {
     const zipOrCity = state.place.replace('custom-zip:', '')
     filters.near = zipOrCity

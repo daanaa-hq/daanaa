@@ -52,6 +52,7 @@ type Action =
   | { type: 'SET_RECURRING'; ein: string; template: RecurringTemplate }
   | { type: 'CLEAR_RECURRING'; ein: string }
   | { type: 'SNOOZE_RECURRING'; ein: string; until: string }
+  | { type: 'ADD_DONOR_NOTE'; ein: string; note: any }
   | { type: 'SET_SYNC_STATUS'; status: State['syncStatus'] }
   | { type: 'LOCK' }
 
@@ -220,6 +221,15 @@ function reducer(state: State, action: Action): State {
       const newDonations = [...donations]
       newDonations[donIdx] = { ...newDonations[donIdx], letterStatus: action.status }
       next[idx] = { ...next[idx], donations: newDonations }
+      return { ...state, entries: next }
+    }
+    case 'ADD_DONOR_NOTE': {
+      const idx = state.entries.findIndex(e => e.ein === action.ein)
+      if (idx === -1) return state
+      const next = [...state.entries]
+      const entry = { ...next[idx] }
+      entry.donorNotes = [...(entry.donorNotes || []), action.note]
+      next[idx] = entry
       return { ...state, entries: next }
     }
     case 'SET_SYNC_STATUS':

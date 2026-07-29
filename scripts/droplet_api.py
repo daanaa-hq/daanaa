@@ -1372,12 +1372,16 @@ def get_organization(ein):
         if enrichment:
             org_data.update(enrichment)
 
-    # v6.0 context lookup from database (enabled by default)
-    db = get_search_db()
-    if db:
-        v6_ctx = get_v6_context(ein, db)
+    # v6.0 context lookup from production database (enabled by default)
+    try:
+        prod_db_path = os.environ.get('DB_PATH', '/opt/daanaa/merit_registry.db')
+        prod_db = sqlite3.connect(prod_db_path, timeout=5, check_same_thread=False)
+        v6_ctx = get_v6_context(ein, prod_db)
+        prod_db.close()
         if v6_ctx:
             org_data.update(v6_ctx)
+    except Exception as e:
+        app.logger.debug(f"v6 lookup failed: {e}")
 
     return jsonify(org_data)
 
@@ -1423,7 +1427,29 @@ def get_financials(ein):
 
 @app.route('/api/organizations/<ein>/score-history')
 def get_score_history(ein):
-    return jsonify({'ein': ein.strip().upper(), 'history': [], 'total': 0})
+    """Score history from snapshots table — shows peer percentile trend over time."""
+    ein = ein.strip().upper()
+    if not _EIN_RE.match(ein):
+        return jsonify({'error': 'invalid ein', 'history': [], 'total': 0}), 400
+
+    try:
+        conn = get_search_db()
+        if not conn:
+            return jsonify({'ein': ein, 'history': [], 'total': 0, 'note': 'snapshots unavailable'})
+
+        rows = conn.execute('''
+            SELECT snapshot_date, peer_percentile, total_revenue, reserve_ratio
+            FROM score_snapshots
+            WHERE ein = ?
+            ORDER BY snapshot_date DESC
+            LIMIT 12
+        ''', (ein,)).fetchall()
+
+        history = [dict(r) for r in rows]
+        return jsonify({'ein': ein, 'history': history, 'total': len(history), 'period': 'snapshots'})
+    except Exception as e:
+        app.logger.debug(f"score history lookup failed for {ein}: {e}")
+        return jsonify({'ein': ein, 'history': [], 'total': 0})
 
 
 @app.route('/api/search')
