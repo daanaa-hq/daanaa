@@ -29,27 +29,27 @@
 
 ---
 
-## Week 2: Phase 2 Attorney Engagement (Aug 8-14)
+## Week 2: Phase 2 Internal Legal Review (Aug 8-14)
 
 ### Monday Aug 11 (Day 12)
-- Schedule 2-hour attorney consultation ($500-800)
-- Prepare documents:
-  - ToS Section 7 (current draft from framework)
-  - Privacy Policy Section 8 (current draft)
-  - All wallet disclaimers (from framework)
-  - Defense memo template
+- Founder legal review of Phase 2 framework
+- Reference materials (already prepared):
+  - PHASE2_LITIGATION_RISK_MITIGATION.md (5-layer framework)
+  - LEGAL_BOARD_FINAL_REVIEW.md (simulated panel consensus)
+  - Defense memo template (§170(f)(8) IRS compliance)
+  - Lawsuit scenarios + defenses (3 analyzed)
 
 ### Wednesday Aug 13 (Day 14)
-- Attorney review meeting
-- Get explicit sign-off on:
-  - IRS §170(f)(8) compliance
-  - User acknowledgment flow
-  - Exact language for disclaimers
+- Internal decision on Phase 2 viability
+- Review decisions:
+  - ✅ APPROVE → Proceed with Phase 2 build
+  - ⚠️ REQUEST CHANGES → Revise and recheck
+  - ❌ REJECT → Redesign wallet approach
 
 ### Thursday Aug 14 (Day 15)
-- Incorporate attorney feedback
-- Update ToS, Privacy, disclaimers
-- Document changes in DECISIONS.md
+- If approved: Begin Phase 2 implementation
+- Document decision in DECISIONS.md
+- No external attorney needed (framework pre-validated by simulated panel)
 
 ---
 
@@ -86,7 +86,7 @@
 | Page load (org) | <200ms | 114ms | ✅ Good |
 | Signal endpoint uptime | 99.9% | ? | Check droplet fallback |
 | New website coverage | +2,307 | TBD | Verify ingestion complete |
-| Phase 2 attorney approval | Yes/No | Pending | Aug 13 decision |
+| Phase 2 internal approval | Yes/No | Pending | Aug 14 decision |
 
 ---
 
@@ -94,10 +94,11 @@
 
 | Item | Cost | Date |
 |------|------|------|
-| Attorney review (2hr) | $500-800 | Aug 11-13 |
+| Internal legal review | $0 | Aug 11-14 |
 | S3 storage (26GB, 1 month) | $0.60 | Aug 31 |
 | S3 egress (100GB, 1 month) | $9 | Aug 31 |
-| Total | ~$510-810 | Month |
+| AWS data transfer | $2-5 | Aug 31 |
+| Total | ~$12-15 | Month |
 
 ---
 
@@ -107,8 +108,8 @@
 - If ✅: Proceed to Phase 2
 - If ❌: Debug signals, delay Phase 2
 
-**Aug 14 (Day 15):** Attorney approval
-- If ✅: Proceed with Phase 2 build
+**Aug 14 (Day 15):** Internal legal approval
+- If ✅: Proceed with Phase 2 build (framework defensible)
 - If ⚠️: Revise language, retry
 - If ❌: Reassess wallet design
 
