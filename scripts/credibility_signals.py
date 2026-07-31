@@ -223,7 +223,7 @@ class CredibilitySignals:
         try:
             # Get peer group info
             cur.execute(
-                '''SELECT merit_peer_group_v5, merit_peer_count_v5, merit_peer_rank_v5
+                '''SELECT merit_peer_group_v5, merit_peer_count_v5, peer_rank
                    FROM registry_enriched WHERE EIN = ?''',
                 (ein,)
             )
