@@ -12575,6 +12575,29 @@ def research_datasets():
     return jsonify({'dataset_count': len(datasets), 'datasets': datasets}), 200
 
 
+@app.route('/api/organizations/<ein>/signals')
+@limiter.limit("60 per minute")
+def get_credibility_signals(ein):
+    """Credibility signals: IRS verification, data freshness, expense ratio, peer context, completeness, mission alignment."""
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    try:
+        from credibility_signals import compute_signals
+        result = compute_signals(ein_clean)
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "ein": ein_clean,
+            "error": str(e),
+            "signals": {},
+            "composite_confidence": 0,
+        }), 500
+
+
 # ── Register student service blueprint ──────────────────────────────────────────
 
 from student_service_api_routes import student_bp
