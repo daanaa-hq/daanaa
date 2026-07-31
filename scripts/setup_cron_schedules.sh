@@ -46,8 +46,8 @@ cat > "$CRONTAB_TMP" << 'CRON'
 # duplication. Script kept for ad-hoc use: scripts/delta_scorer_v5_nightly.py
 # Overnight pipeline: daily 02:30 (scoring, FTS, enrichment, snapshot)
 30 2 * * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 scripts/overnight_pipeline.py >> logs/overnight.log 2>&1
-# IRS revocation sync: daily 03:00 (full sync — marks revoked orgs inactive)
-0 3 * * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 scripts/sync_irs_revocations.py >> logs/irs_revocations.log 2>&1
+# IRS revocation sync: daily 03:00 (downloads fresh revocation list, marks revoked orgs inactive)
+0 3 * * * cd /home/akbar/meritgiving && /home/akbar/meritgiving/venv/bin/python3 scripts/sync_irs_revocations.py --force >> logs/irs_revocations.log 2>&1
 # Daily data audit: 00:30
 30 0 * * * python3 /home/akbar/meritgiving/scripts/daily_data_audit.py >> /home/akbar/meritgiving/logs/daily_data_audit.log 2>&1
 

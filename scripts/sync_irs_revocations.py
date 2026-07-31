@@ -9,9 +9,9 @@ is updated roughly monthly and is ~40 MB uncompressed.
 Source: https://apps.irs.gov/pub/epostcard/data-download-revocation.zip
 
 Run modes:
-  python3 sync_irs_revocations.py            # download + load + report
-  python3 sync_irs_revocations.py --check    # daily check only, no download
-  python3 sync_irs_revocations.py --force    # re-download even if cache is fresh
+  python3 sync_irs_revocations.py            # download (daily by default) + load + report
+  python3 sync_irs_revocations.py --check    # report only, no download
+  python3 sync_irs_revocations.py --force    # force re-download (used by cron)
 """
 
 import csv
@@ -37,7 +37,7 @@ STAMP  = Path.home() / 'meritgiving' / 'data' / 'irs_revocation_last_sync.txt'
 IRS_URL = 'https://apps.irs.gov/pub/epostcard/data-download-revocation.zip'
 
 # Re-download if cache is older than this many days
-REFRESH_DAYS = 28
+REFRESH_DAYS = 1
 
 # ---------------------------------------------------------------------------
 # Logging
