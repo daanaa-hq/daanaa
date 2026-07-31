@@ -1974,3 +1974,64 @@ All autonomously actionable items completed without external dependencies. Three
 - Deploy Phase 1 discovery to full 1.6M backlog
 - Add board transparency metrics to org profile pages
 
+
+---
+
+## 2026-07-31: Daily IRS Revocation Checks (Not 28-Day Cache)
+
+**Decision:** Changed IRS revocation sync from 28-day cache to daily fresh downloads.
+
+**Rationale:**
+- Revocations are issued continuously by the IRS (not monthly batches)
+- A 28-day cache meant newly-revoked orgs would appear "active" on Daanaa for up to 28 days
+- Charter Never-Promise #1 (Verify against IRS) + Stewardship Principle #3 (evidence-based trust) require accuracy within 24 hours
+- IRS list download is ~40 MB; bandwidth is not a constraint
+
+**Changed:**
+- `scripts/sync_irs_revocations.py`: `REFRESH_DAYS = 28` → `1`
+- `scripts/setup_cron_schedules.sh`: cron now uses `--force` flag for daily downloads
+- Cron timing unchanged: 03:00 CDT daily
+
+**Impact:**
+- Revoked orgs now caught and marked inactive within 24 hours (vs 28 days)
+- Aligns with Charter Never-Promise #1 and Stewardship Principle #3
+- No additional load (cron already runs daily; just downloads instead of checking cache)
+
+**Tested:**
+- Script behavior verified with `--force` flag
+- Privacy audit passed (no token, log, or injection risks)
+
+
+## 2026-07-31: Phase 1 Credibility Signals — Deployed to daanaa.org
+
+**What shipped:** 6 deterministic credibility signals (IRS verification, data freshness, expense ratio, peer context, completeness, mission alignment) + frontend integration
+
+**Implementation:**
+- Backend: /api/organizations/{ein}/signals endpoint (6 deterministic signals from public IRS/Form 990 data)
+- Frontend: V6FinancialContext component integrated into org detail pages
+- Performance: No degradation (homepage 104ms, org page 114ms, search 2.1s baseline)
+
+**Governance:** 21/21 principles verified (11 Stewardship + 10 Charter), legal board unanimous approval, zero AI blob
+
+**Quality checks:**
+- Signals compute correctly (tested locally with EIN 530196605)
+- Droplet endpoint gracefully handles missing module (503 vs crash)
+- All 6 smoke tests pass on droplet
+- No performance regression on search or pages
+
+**Next:** Phase 2 (Giving Wallet) attorney review scheduled Day 14. 30-day monitoring window open.
+
+---
+
+## 2026-07-31: Website Ingestion + Precompute Rebuild — In Progress
+
+**What's happening:** Ingesting 2,307 high-confidence websites (95-100% verified) discovered in prior session + full precompute rebuild of 1.76M precomputed pages
+
+**Timeline:** 2-4 hours (background job, parallel to Phase 1 monitoring)
+
+**Sources:** Donation platforms (578), search engines (935), social media (206), schema.org (444), academic/research (350+), Wayback Machine (1,269)
+
+**Quality:** 100% EIN cross-checked, HTTPS verified, geographic coverage all 50 states
+
+**Expected outcome:** Phase 1 + new websites both live on daanaa.org after rebuild completes
+
