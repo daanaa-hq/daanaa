@@ -12584,16 +12584,31 @@ def get_credibility_signals(ein):
         return jsonify({"error": "Invalid EIN"}), 400
 
     try:
-        from credibility_signals import compute_signals
+        from scripts.credibility_signals import compute_signals
         result = compute_signals(ein_clean)
         return jsonify(result), 200
+    except ImportError:
+        # Fallback for droplet (no local scripts available): proxy to localhost
+        try:
+            import requests
+            resp = requests.get(f'http://localhost:5000/api/organizations/{ein_clean}/signals', timeout=5)
+            if resp.status_code == 200:
+                return jsonify(resp.json()), 200
+        except Exception:
+            pass
+        return jsonify({
+            "ein": ein_clean,
+            "error": "Signals unavailable on this deployment",
+            "signals": [],
+            "composite_confidence": 0,
+        }), 503
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({
             "ein": ein_clean,
             "error": str(e),
-            "signals": {},
+            "signals": [],
             "composite_confidence": 0,
         }), 500
 
