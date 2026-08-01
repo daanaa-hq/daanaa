@@ -1,0 +1,118 @@
+╔════════════════════════════════════════════════════════════════╗
+║           TUESDAY RETURN CHECKLIST (Aug 6, 2026)              ║
+║         Everything You Need to Know in 15 Minutes              ║
+╚════════════════════════════════════════════════════════════════╝
+
+STEP 1: VERIFY SYSTEM STATUS (2 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Run this command:
+  ~/meritgiving/scripts/status_check.sh
+
+Expected output:
+  ✅ API Status: ok
+  ✅ Backups created: 8+
+  ✅ Monitoring collected: 7 checks
+  ✅ Database: healthy
+  ✅ Critical alerts: 0
+
+
+STEP 2: READ PHASE 1 REPORT (5 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Run this command:
+  cat ~/.daanaa/phase1-monitoring/2026-08-07-weekly.md
+
+Key section: "DECISION RECOMMENDATION"
+  ✅ PASS QUALITY GATE → Proceed to Phase 2
+  ⚠️  CONDITIONAL → Review findings + request changes
+  ❌ FAIL → Investigate root cause
+
+
+STEP 3: REVIEW DATA IMPROVEMENTS (3 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Run this command:
+  sqlite3 ~/meritgiving/data/merit_registry.db "
+    SELECT 
+      COUNT(*) as total,
+      COUNT(CASE WHEN website IS NOT NULL THEN 1 END) as websites,
+      COUNT(CASE WHEN donate_url IS NOT NULL THEN 1 END) as donate_urls
+    FROM registry_enriched WHERE org_status='active'
+  "
+
+Expected: Websites and donate_urls higher than Jul 28 baseline
+
+
+STEP 4: CHECK AUTONOMOUS EVENTS (2 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Run this command:
+  tail -20 /home/akbar/meritgiving/logs/autonomous_health.log
+  tail -20 /home/akbar/meritgiving/logs/autonomous_alerts.log
+
+Expected: No critical alerts, all systems "✅ healthy"
+
+
+STEP 5: MAKE DECISION (3 minutes)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Based on Phase 1 report recommendation:
+
+IF PASS:
+  → Document approval in DECISIONS.md
+  → Schedule Phase 2 build (Aug 8-30)
+  → Notify team Phase 1 quality gate passed
+
+IF CONDITIONAL:
+  → Note required changes
+  → Update Phase 2 framework per feedback
+  → Retry quality gate (estimate 2-3 days)
+
+IF FAIL:
+  → Review logs: tail -100 ~/meritgiving/logs/phase1_monitor.log
+  → Identify root cause
+  → Debug + extend monitoring window
+
+
+═══════════════════════════════════════════════════════════════════
+
+DOCUMENTATION TO REVIEW (background context):
+
+  docs/AUTONOMOUS_SYSTEM_SUMMARY.md
+    → What ran while you were away
+    → All 6 initiatives + results
+
+  docs/AWAY_MODE_AUTONOMOUS_RUN.md
+    → Detailed breakdown of each initiative
+    → Expected data improvements
+    → Resource usage + safety
+
+  docs/BACKGROUND_INITIATIVES_AUG1-6.md
+    → Timeline of everything that ran
+    → Monitoring strategy
+    → Deliverables by component
+
+═══════════════════════════════════════════════════════════════════
+
+QUESTIONS?
+
+  • How's the API? → Run status_check.sh
+  • What's the gate decision? → Read 2026-08-07-weekly.md
+  • Did data improve? → Check donate_urls & website counts
+  • Any critical issues? → Check autonomous_alerts.log
+
+═══════════════════════════════════════════════════════════════════
+
+NEXT STEPS (after Tuesday assessment):
+
+  Phase 2 (Aug 8-14):
+    • Internal legal review of wallet framework
+    • Founder approval decision on implementation
+    • Begin Phase 2 build if approved
+
+  Phase 2 Build (Aug 15-30):
+    • Wallet backend (intent logging)
+    • Frontend UI (React component)
+    • Disclaimers (21-point compliance)
+    • QA testing (5 scenarios)
+
+═══════════════════════════════════════════════════════════════════
+
+Safe travels. Everything is monitored. See you Tuesday! 🎯
+

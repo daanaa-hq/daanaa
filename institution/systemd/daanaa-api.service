@@ -10,7 +10,7 @@ Environment="PYTHONDONTWRITEBYTECODE=1"
 Environment="ENABLE_V6_FINANCIAL_CONTEXT=true"
 Environment="DB_PATH=/opt/daanaa/data/merit_registry.db"
 ExecStart=/opt/daanaa/venv/bin/gunicorn \
-  --workers 4 \
+  --workers 2 \
   --worker-class sync \
   --bind 127.0.0.1:5000 \
   --timeout 60 \
