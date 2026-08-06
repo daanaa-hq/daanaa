@@ -49,8 +49,8 @@ def validate_production_database(db_path: str) -> Tuple[bool, str]:
         cur.execute("PRAGMA table_info(registry_enriched)")
         columns = {row[1]: row[2] for row in cur.fetchall()}
         
-        if 'ein' not in columns:
-            return False, "Missing ein column"
+        if 'EIN' not in columns:
+            return False, "Missing EIN column"
         
         # Get row count
         cur.execute("SELECT COUNT(*) FROM registry_enriched")
@@ -78,20 +78,76 @@ def load_recovery_manifest(manifest_path: str) -> Tuple[bool, Dict]:
 def calculate_checksum_for_table(db_path: str, table_name: str) -> str:
     """
     Calculate aggregate checksum for table (deterministic, sorted by EIN).
-    
-    Returns SHA256 of all row_checksum values concatenated in EIN order.
+
+    For recovery tables with row_checksum: use pre-calculated checksums.
+    For production tables: calculate checksums on the fly from EIN/org_status/irs_revoked.
     """
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    
-    cur.execute(f"""
-        SELECT GROUP_CONCAT(row_checksum, '|')
-        FROM {table_name}
-        ORDER BY ein
-    """)
+
+    # Check if table has row_checksum column
+    cur.execute(f"PRAGMA table_info({table_name})")
+    columns = {row[1] for row in cur.fetchall()}
+
+    if 'row_checksum' in columns:
+        # Use pre-calculated checksums (recovery table)
+        cur.execute(f"""
+            SELECT GROUP_CONCAT(row_checksum, '|')
+            FROM {table_name}
+            ORDER BY ein
+        """)
+    else:
+        # Calculate checksums on the fly (production table)
+        cur.execute(f"""
+            SELECT GROUP_CONCAT(
+                hex(randomblob(32)),  -- placeholder for actual checksum
+                '|'
+            )
+            FROM (
+                SELECT
+                    printf('%x_%s_%d',
+                        EIN,
+                        COALESCE(org_status, 'NULL'),
+                        COALESCE(irs_revoked, -1)
+                    ) as row_data
+                FROM {table_name}
+                ORDER BY EIN
+            )
+        """)
+        # Actually, this won't work because we need SHA256 which SQLite doesn't have built-in
+        # Let's use Python to calculate
+        conn.close()
+        return calculate_checksum_via_python(db_path, table_name)
+
     checksums_concat = cur.fetchone()[0] or ""
     conn.close()
-    
+
+    return hashlib.sha256(checksums_concat.encode()).hexdigest()
+
+def calculate_checksum_via_python(db_path: str, table_name: str) -> str:
+    """Calculate checksum using Python for production tables without row_checksum."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    # Get all relevant rows sorted by EIN
+    cur.execute(f"""
+        SELECT EIN, org_status, irs_revoked
+        FROM {table_name}
+        ORDER BY EIN
+    """)
+
+    checksums = []
+    for row in cur.fetchall():
+        # Calculate row checksum same way as recovery artifact
+        checksum_str = f"{row['EIN']}|{row['org_status']}|{row['irs_revoked']}"
+        checksum = hashlib.sha256(checksum_str.encode()).hexdigest()
+        checksums.append(checksum)
+
+    conn.close()
+
+    # Aggregate all checksums
+    checksums_concat = '|'.join(checksums)
     return hashlib.sha256(checksums_concat.encode()).hexdigest()
 
 def get_table_stats(db_path: str, table_name: str) -> Dict:
@@ -143,6 +199,9 @@ def apply_migration(
     cur_rec = conn_rec.cursor()
     
     try:
+        # Attach recovery database for cross-database queries
+        cur_prod.execute(f"ATTACH DATABASE '{recovery_db}' AS recovery")
+
         # Phase 1: Validate pre-migration state
         print("\n[PHASE 1] Pre-migration validation...")
         
@@ -195,16 +254,16 @@ def apply_migration(
         cur_prod.execute("""
             SELECT COUNT(*)
             FROM tax_status_recovery r
-            LEFT JOIN registry_enriched e ON e.ein = r.ein
-            WHERE e.ein IS NULL
+            LEFT JOIN registry_enriched e ON e.EIN = r.ein
+            WHERE e.EIN IS NULL
         """)
         # Note: This query needs proper join; let me fix it
         
         # Actually, let's use a simpler approach: check within the prod DB what's missing
         cur_prod.execute("""
             CREATE TEMPORARY TABLE recovery_eins AS
-            SELECT ein FROM registry_enriched
-            WHERE ein IN (SELECT ein FROM tax_status_recovery)
+            SELECT EIN FROM registry_enriched
+            WHERE EIN IN (SELECT ein FROM recovery.tax_status_recovery)
         """)
         
         cur_prod.execute("""
@@ -255,7 +314,7 @@ def apply_migration(
         
         # Phase 5: Apply migration (transactional)
         print("\n[PHASE 5] Applying migration...")
-        
+
         cur_prod.execute("BEGIN TRANSACTION")
         try:
             # Add columns if missing
@@ -276,7 +335,7 @@ def apply_migration(
             # Create temporary recovery import
             cur_prod.execute("""
                 CREATE TEMPORARY TABLE recovery_import AS
-                SELECT * FROM tax_status_recovery
+                SELECT * FROM recovery.tax_status_recovery
             """)
             
             # Update rows using set-based SQL
@@ -284,13 +343,13 @@ def apply_migration(
                 UPDATE registry_enriched
                 SET org_status = (
                     SELECT org_status FROM recovery_import
-                    WHERE recovery_import.ein = registry_enriched.ein
+                    WHERE recovery_import.ein = registry_enriched.EIN
                 ),
                 irs_revoked = (
                     SELECT irs_revoked FROM recovery_import
-                    WHERE recovery_import.ein = registry_enriched.ein
+                    WHERE recovery_import.ein = registry_enriched.EIN
                 )
-                WHERE ein IN (SELECT ein FROM recovery_import)
+                WHERE EIN IN (SELECT ein FROM recovery_import)
             """)
             
             updated_rows = cur_prod.total_changes
