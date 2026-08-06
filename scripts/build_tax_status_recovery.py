@@ -61,8 +61,8 @@ def build_recovery_artifact(
         raise ValueError("Source database missing org_status column")
     if 'irs_revoked' not in columns:
         raise ValueError("Source database missing irs_revoked column")
-    if 'ein' not in columns:
-        raise ValueError("Source database missing ein column")
+    if 'EIN' not in columns:
+        raise ValueError("Source database missing EIN column")
     
     # Create recovery database
     if output_path.exists():
@@ -88,18 +88,18 @@ def build_recovery_artifact(
     
     # Extract data with validation
     cur_src.execute("""
-        SELECT ein, org_status, irs_revoked
+        SELECT EIN, org_status, irs_revoked
         FROM registry_enriched
         WHERE org_status IS NOT NULL OR irs_revoked IS NOT NULL
-        ORDER BY ein
+        ORDER BY EIN
     """)
-    
+
     records = []
     seen_eins = set()
     validation_errors = []
-    
+
     for row in cur_src.fetchall():
-        ein = row['ein']
+        ein = row['EIN']
         org_status = row['org_status']
         irs_revoked = row['irs_revoked']
         
