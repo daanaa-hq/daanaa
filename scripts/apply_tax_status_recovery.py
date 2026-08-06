@@ -97,25 +97,8 @@ def calculate_checksum_for_table(db_path: str, table_name: str) -> str:
             ORDER BY ein
         """)
     else:
-        # Calculate checksums on the fly (production table)
-        cur.execute(f"""
-            SELECT GROUP_CONCAT(
-                hex(randomblob(32)),  -- placeholder for actual checksum
-                '|'
-            )
-            FROM (
-                SELECT
-                    printf('%x_%s_%d',
-                        EIN,
-                        COALESCE(org_status, 'NULL'),
-                        COALESCE(irs_revoked, -1)
-                    ) as row_data
-                FROM {table_name}
-                ORDER BY EIN
-            )
-        """)
-        # Actually, this won't work because we need SHA256 which SQLite doesn't have built-in
-        # Let's use Python to calculate
+        # Production table without row_checksum: use Python to calculate
+        # (This handles both pre-migration and post-migration states)
         conn.close()
         return calculate_checksum_via_python(db_path, table_name)
 
@@ -125,24 +108,50 @@ def calculate_checksum_for_table(db_path: str, table_name: str) -> str:
     return hashlib.sha256(checksums_concat.encode()).hexdigest()
 
 def calculate_checksum_via_python(db_path: str, table_name: str) -> str:
-    """Calculate checksum using Python for production tables without row_checksum."""
+    """Calculate checksum using Python for production tables without row_checksum.
+
+    Handles both pre-migration (missing columns) and post-migration (columns exist) states.
+    """
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # Get all relevant rows sorted by EIN
-    cur.execute(f"""
-        SELECT EIN, org_status, irs_revoked
-        FROM {table_name}
-        ORDER BY EIN
-    """)
+    # Check which columns exist
+    cur.execute(f"PRAGMA table_info({table_name})")
+    columns = {row[1] for row in cur.fetchall()}
 
-    checksums = []
-    for row in cur.fetchall():
-        # Calculate row checksum same way as recovery artifact
-        checksum_str = f"{row['EIN']}|{row['org_status']}|{row['irs_revoked']}"
-        checksum = hashlib.sha256(checksum_str.encode()).hexdigest()
-        checksums.append(checksum)
+    has_org_status = 'org_status' in columns
+    has_irs_revoked = 'irs_revoked' in columns
+
+    # Get rows based on available columns
+    if has_org_status and has_irs_revoked:
+        # Post-migration: columns exist, use them
+        cur.execute(f"""
+            SELECT EIN, org_status, irs_revoked
+            FROM {table_name}
+            ORDER BY EIN
+        """)
+
+        checksums = []
+        for row in cur.fetchall():
+            # Calculate row checksum same way as recovery artifact
+            checksum_str = f"{row['EIN']}|{row['org_status']}|{row['irs_revoked']}"
+            checksum = hashlib.sha256(checksum_str.encode()).hexdigest()
+            checksums.append(checksum)
+    else:
+        # Pre-migration: columns don't exist, checksum on EIN only (baseline)
+        cur.execute(f"""
+            SELECT EIN
+            FROM {table_name}
+            ORDER BY EIN
+        """)
+
+        checksums = []
+        for row in cur.fetchall():
+            # Pre-migration checksum: just EIN (will differ after migration adds data)
+            checksum_str = f"{row['EIN']}"
+            checksum = hashlib.sha256(checksum_str.encode()).hexdigest()
+            checksums.append(checksum)
 
     conn.close()
 
@@ -151,29 +160,46 @@ def calculate_checksum_via_python(db_path: str, table_name: str) -> str:
     return hashlib.sha256(checksums_concat.encode()).hexdigest()
 
 def get_table_stats(db_path: str, table_name: str) -> Dict:
-    """Get table statistics for reporting."""
+    """Get table statistics for reporting.
+
+    Handles both pre-migration (missing columns) and post-migration states.
+    """
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    
+
     cur.execute(f"SELECT COUNT(*) FROM {table_name}")
     total = cur.fetchone()[0]
-    
-    cur.execute(f"""
-        SELECT COUNT(*) FROM {table_name} 
-        WHERE org_status IS NULL OR irs_revoked IS NULL
-    """)
-    nulls = cur.fetchone()[0]
-    
-    if table_name == 'registry_enriched':
+
+    # Check which columns exist
+    cur.execute(f"PRAGMA table_info({table_name})")
+    columns = {row[1] for row in cur.fetchall()}
+
+    has_org_status = 'org_status' in columns
+    has_irs_revoked = 'irs_revoked' in columns
+
+    # Only count nulls if columns exist
+    if has_org_status and has_irs_revoked:
         cur.execute(f"""
             SELECT COUNT(*) FROM {table_name}
-            WHERE irs_revoked = 1
+            WHERE org_status IS NULL OR irs_revoked IS NULL
         """)
-        revoked = cur.fetchone()[0]
-        
+        nulls = cur.fetchone()[0]
+    else:
+        nulls = 0  # Pre-migration: no columns = no nulls to count
+
+    if table_name == 'registry_enriched':
+        if has_irs_revoked:
+            cur.execute(f"""
+                SELECT COUNT(*) FROM {table_name}
+                WHERE irs_revoked = 1
+            """)
+            revoked = cur.fetchone()[0]
+        else:
+            revoked = 0  # Pre-migration: no column = no revoked count
+
         conn.close()
         return {'total': total, 'nulls': nulls, 'revoked': revoked}
-    
+
     conn.close()
     return {'total': total, 'nulls': nulls}
 
