@@ -72,6 +72,28 @@ log "  ok content"
 for f in browse content faiss_index.bin ein_map.json.gz; do
   [ -e "$PRECOMPUTE_OUT/$f" ] || die "missing precompute artifact: $f"
 done
+
+# NOT built here, but REQUIRED by the droplet (learned the hard way 2026-08-08):
+#   search.db           -- has its own nightly pipeline (scripts/ops/nightly_search_deploy.sh)
+#   cohort_context.json -- built elsewhere
+#   hidden_gems/        -- built elsewhere
+# Shipping a precompute tree without these takes down search, org-page cohort
+# context and the hidden-gems directory. Directory counts matching is NOT
+# sufficient evidence that a tree is shippable; the first swap attempt today had
+# 1,750,881/1,750,881 org files and would still have broken three features.
+#
+# Fail loudly here rather than let a caller discover it in production.
+MISSING=""
+for f in search.db cohort_context.json hidden_gems; do
+  [ -e "$PRECOMPUTE_OUT/$f" ] || MISSING="$MISSING $f"
+done
+if [ -n "$MISSING" ]; then
+  log "NOTE: this tree is INCOMPLETE for deployment. Missing:$MISSING"
+  log "      These are built by other pipelines. Before swapping PRECOMPUTE_DIR,"
+  log "      copy them from the currently-live tree, e.g. on the droplet:"
+  log "        for f in$MISSING; do cp -a /data/precompute/v1/\$f /data/precompute/vN/; done"
+  log "      Then diff the two trees and confirm only intended additions remain."
+fi
 log "artifacts present; size: $(du -sh "$PRECOMPUTE_OUT" | cut -f1)"
 
 # LINK-INTEGRITY GATE — donate/website links must match source exactly (fail closed).
