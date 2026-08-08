@@ -22,8 +22,8 @@ from urllib import request as urlreq, error as urlerr
 
 BASE    = Path.home() / "meritgiving"
 DB_PATH = BASE / "data" / "merit_registry.db"
-LLM_URL = "http://localhost:11437/v1/chat/completions"
-MODEL   = "local"   # llama-server accepts any string as model name
+LLM_URL = "http://127.0.0.1:8080/v1/chat/completions"
+MODEL   = "agent"   # llama-server accepts any string as model name
 BATCH   = 12        # orgs per LLM call (batching reduces per-token overhead)
 
 SYSTEM_PROMPT = """\
@@ -153,7 +153,7 @@ def main():
 
     # Check llama-server is up
     try:
-        urlreq.urlopen("http://localhost:11437/health", timeout=5)
+        urlreq.urlopen("http://127.0.0.1:8080/health", timeout=5)
     except Exception:
         print("ERROR: llama-server not responding on :11437 — run gpu_night.sh start first")
         sys.exit(1)

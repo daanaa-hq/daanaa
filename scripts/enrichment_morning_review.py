@@ -134,8 +134,8 @@ class MorningReview:
     def check_inference_servers(self):
         """Verify inference servers are healthy."""
         servers = {
-            'embeddings (11436)': 11436,
-            'llm (11437)': 11437,
+            'embeddings (11434)': 11434,
+            'llm (8080)': 8080,
         }
 
         results = {}

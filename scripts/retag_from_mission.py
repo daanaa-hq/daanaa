@@ -28,8 +28,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 
 DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
-GEN_URL = "http://127.0.0.1:11437/v1/chat/completions"
-MODEL   = "Qwen2.5-14B-Instruct-Q4_K_M"
+GEN_URL = "http://127.0.0.1:8080/v1/chat/completions"
+MODEL   = "agent"
 
 # Controlled vocabulary — tags must come from this list so they stay clean and
 # searchable. Grouped for readability; the model sees a flat list.

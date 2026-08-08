@@ -25,8 +25,8 @@ from collections import Counter
 
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 API_BASE = "http://localhost:5000"
-INFERENCE_BASE_EMBED = "http://127.0.0.1:11436"
-INFERENCE_BASE_CHAT = "http://127.0.0.1:11437"
+INFERENCE_BASE_EMBED = "http://127.0.0.1:11434"
+INFERENCE_BASE_CHAT = "http://127.0.0.1:8080"
 
 def log(msg):
     t = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

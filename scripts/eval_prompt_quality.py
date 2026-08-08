@@ -2,7 +2,7 @@
 import sqlite3, requests, json, re, sys
 
 DB      = str(__import__('pathlib').Path.home() / 'meritgiving/data/merit_registry.db')
-GEN_URL = 'http://127.0.0.1:11437/v1/chat/completions'
+GEN_URL = 'http://127.0.0.1:8080/v1/chat/completions'
 MODEL   = 'deepseek-r1-distill-qwen-14b'
 
 NTEE_LABELS = {

@@ -39,7 +39,7 @@ REPO_ROOT = Path(__file__).parent.parent
 DB = REPO_ROOT / "data" / "merit_registry.db"
 
 # Local embedding server (llama.cpp, mxbai-embed-large)
-EMBED_URL = "http://127.0.0.1:11436/api/embeddings"
+EMBED_URL = "http://127.0.0.1:11434/api/embeddings"
 EMBED_MODEL = "mxbai-embed-large"
 
 # Weights for composite score: (BM25 * w_fts) + (cosine_sim * w_semantic)

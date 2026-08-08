@@ -34,14 +34,14 @@ SERVICES = {
     },
     'inference_embed': {
         'name': 'Inference — Embeddings',
-        'port': 11436,
-        'check': 'curl -s http://localhost:11436/health > /dev/null',
+        'port': 11434,
+        'check': 'curl -s http://127.0.0.1:11434/health > /dev/null',
         'timeout': 5,
     },
     'inference_llm': {
         'name': 'Inference — LLM',
-        'port': 11437,
-        'check': 'curl -s http://localhost:11437/health > /dev/null',
+        'port': 8080,
+        'check': 'curl -s http://127.0.0.1:8080/health > /dev/null',
         'timeout': 5,
     },
     'enrichment_daemon': {

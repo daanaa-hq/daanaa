@@ -106,7 +106,7 @@ def get_embeddings_fn() -> Callable:
     return mock_embeddings
 
 
-def get_real_qwen_fn(port: int = 11437, timeout: int = 60) -> Callable:
+def get_real_qwen_fn(port: int = 8080, timeout: int = 60) -> Callable:
     """Real Qwen inference via local llama-server HTTP API.
 
     Talks to the OpenAI-compatible chat completions endpoint served by
@@ -197,7 +197,7 @@ def get_claude_qwen_fn(api_key: Optional[str] = None) -> Callable:
     return claude_call
 
 
-def get_real_embeddings_fn(port: int = 11436, timeout: int = 60) -> Callable:
+def get_real_embeddings_fn(port: int = 11434, timeout: int = 60) -> Callable:
     """Real embeddings via local llama-server HTTP API.
 
     Talks to the llama.cpp embedding endpoint on `port` (default 11436,
@@ -673,11 +673,11 @@ def main():
              'inference servers (for testing/offline use without servers running)'
     )
     parser.add_argument(
-        '--qwen-port', type=int, default=11437,
+        '--qwen-port', type=int, default=8080,
         help='Port for the real Qwen llama-server (default 11437; ignored with --mock)'
     )
     parser.add_argument(
-        '--embeddings-port', type=int, default=11436,
+        '--embeddings-port', type=int, default=11434,
         help='Port for the real embeddings llama-server (default 11436; ignored with --mock)'
     )
 

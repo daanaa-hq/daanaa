@@ -35,10 +35,10 @@ from website_normalize import normalize_website
 
 DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
 LOG_PATH = Path.home() / "meritgiving/logs/web_finder_50k.log"
-EMBED_URL = "http://127.0.0.1:11436/v1/embeddings"
+EMBED_URL = "http://127.0.0.1:11434/v1/embeddings"
 EMBED_MODEL = "mxbai-embed-large"
-LLM_URL = "http://127.0.0.1:11437/v1/chat/completions"
-LLM_MODEL = "local"
+LLM_URL = "http://127.0.0.1:8080/v1/chat/completions"
+LLM_MODEL = "agent"
 
 UA = ("Mozilla/5.0 (compatible; DaanaaWebFinder/1.0; "
       "+https://daanaa.org/about) website-discovery")

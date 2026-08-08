@@ -10,7 +10,7 @@ from typing import Optional, List
 
 logger = logging.getLogger(__name__)
 
-EMBED_SERVER_URL = "http://localhost:11436/embedding"
+EMBED_SERVER_URL = "http://127.0.0.1:11434/embedding"
 EMBED_TIMEOUT = 30
 
 

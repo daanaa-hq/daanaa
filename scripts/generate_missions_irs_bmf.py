@@ -17,7 +17,7 @@ from pathlib import Path
 from threading import Lock
 
 DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
-GEN_URL = "http://127.0.0.1:11437/v1/chat/completions"
+GEN_URL = "http://127.0.0.1:8080/v1/chat/completions"
 MODEL = "Qwen3-30B-A3B-Instruct-2507-Q4_K_M"
 BATCH_SIZE = 20
 TOKENS_PER_ORG = 80
