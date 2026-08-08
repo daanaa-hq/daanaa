@@ -11133,7 +11133,15 @@ def nonprofit_badge_progress(ein: str):
         (ein,)
     ).fetchone()
 
-    verified_steps = sum([website_v and website_v[0]=='verified', donate_v and donate_v[0]=='verified', mission_v and mission_v[0]=='verified'])
+    # `row and row[0]=='verified'` returns None (not False) when row is None,
+    # because Python's `and` yields the first falsy operand -- and sum() cannot
+    # add None to an int. nonprofit_verifications is currently empty, so every
+    # lookup returns None and this endpoint 500'd for EVERY org (found 2026-08-08
+    # while checking the nonprofit dashboard). Coerce explicitly.
+    def _is_verified(row):
+        return bool(row) and row[0] == 'verified'
+
+    verified_steps = sum([_is_verified(website_v), _is_verified(donate_v), _is_verified(mission_v)])
     progress['verified_org'] = {
         'name': 'Verified Organization',
         'description': 'Claims verified: website active, donation link working, mission current',
