@@ -20,20 +20,67 @@ log() {
 # PHASE 1: Pre-Backup Integrity Check
 # ============================================================================
 
-check_db_integrity() {
-    log "📋 Checking database integrity..."
-
-    # Quick 30-second check (fast timeout)
-    INTEGRITY_RESULT=$(timeout 30 sqlite3 "$DB_PATH" "PRAGMA quick_check;" 2>&1 || echo "CHECK_TIMEOUT")
-
-    if [[ "$INTEGRITY_RESULT" == "ok" || "$INTEGRITY_RESULT" == "CHECK_TIMEOUT" ]]; then
-        log "✅ Database integrity check passed (or timeout, proceeding)"
+# Verify a SQLite file really is structurally sound. Returns 0 ok, 1 corrupt,
+# 2 inconclusive (timed out). Callers MUST distinguish 1 from 2 — treating a
+# timeout as success is what let six corrupt 2026-08-01 backups be retained and
+# trusted (quick_check on a 23GB DB needs ~1h; the old 30s timeout could never
+# finish, and the code logged that guaranteed timeout as "passed").
+verify_sqlite_file() {
+    local f="$1" limit="${2:-5400}" out
+    [ -f "$f" ] || { log "   verify: file missing: $f"; return 1; }
+    out=$(timeout "$limit" sqlite3 "$f" "PRAGMA quick_check;" 2>&1) || {
+        if [ $? -eq 124 ]; then
+            log "   verify: INCONCLUSIVE (timed out after ${limit}s): $f"
+            return 2
+        fi
+        log "   verify: FAILED to run quick_check: $f"
+        return 1
+    }
+    if [ "$out" = "ok" ]; then
         return 0
-    else
-        log "🚨 CRITICAL: Database integrity check failed"
-        log "   Error: $INTEGRITY_RESULT"
+    fi
+    log "   verify: CORRUPT: $f"
+    log "   verify: $(echo "$out" | head -3 | tr '\n' ' ')"
+    return 1
+}
+
+# Copy a live SQLite DB safely.
+#
+# Uses VACUUM INTO rather than the sqlite3_backup API (".backup"): the backup API
+# restarts from page 1 on any concurrent write to the source, and this database
+# always has gunicorn workers holding it read-write. VACUUM INTO reads one
+# consistent snapshot and writes once, so it completes under live write load.
+#
+# Also verifies the copy carries the same row count as the source — size and
+# structure can both look fine while content is truncated.
+backup_db_to() {
+    local src="$1" dst="$2" src_rows dst_rows
+    # VACUUM INTO refuses to write to an existing file.
+    rm -f "$dst" "$dst"-shm "$dst"-wal "$dst"-journal 2>/dev/null || true
+    sqlite3 "$src" "VACUUM INTO '$dst';" 2>&1 || { log "   copy: VACUUM INTO failed"; return 1; }
+    [ -f "$dst" ] || { log "   copy: destination missing after VACUUM INTO"; return 1; }
+
+    src_rows=$(sqlite3 "$src" "SELECT COUNT(*) FROM registry_enriched;" 2>/dev/null || echo "")
+    dst_rows=$(sqlite3 "$dst" "SELECT COUNT(*) FROM registry_enriched;" 2>/dev/null || echo "")
+    if [ -n "$src_rows" ] && [ -n "$dst_rows" ] && [ "$src_rows" != "$dst_rows" ]; then
+        log "   copy: ROW COUNT MISMATCH src=$src_rows dst=$dst_rows"
         return 1
     fi
+    log "   copy: ok ($dst_rows rows)"
+    return 0
+}
+
+check_db_integrity() {
+    log "📋 Checking source database integrity (advisory pre-check)..."
+    local rc=0
+    verify_sqlite_file "$DB_PATH" 300 || rc=$?
+    case "$rc" in
+        0) log "✅ Source integrity verified clean" ;;
+        2) log "⚠️  Source integrity INCONCLUSIVE (too large for 300s pre-check) — proceeding; the produced backup is verified separately" ;;
+        *) log "🚨 CRITICAL: Source database is corrupt — refusing to overwrite good backups with a bad copy"
+           return 1 ;;
+    esac
+    return 0
 }
 
 # ============================================================================
@@ -46,17 +93,42 @@ create_hourly_backup() {
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     HOUR_BACKUP="$BACKUP_DIR/merit_registry_hourly_$TIMESTAMP.db"
 
-    # Stop any active connections (optional, for safety)
-    # This uses sqlite3 backup API which is non-blocking
-    sqlite3 "$DB_PATH" ".backup '$HOUR_BACKUP'" 2>&1
+    # VACUUM INTO, not .backup (changed 2026-08-08). The sqlite3_backup API
+    # RESTARTS from page 1 whenever a writer touches the source, and the gunicorn
+    # workers hold merit_registry.db open read-write around the clock. Measured
+    # 2026-08-08: a single nightly run had read 5,008GB and written 6,672GB of a
+    # 23GB database (~290 full passes) over 5h21m and was no closer to finishing.
+    # That is why 2026-08-04/05/06 have no daily backup at all, only orphaned
+    # -journal files. VACUUM INTO takes one consistent read snapshot and writes
+    # once, so concurrent writers cannot restart it.
+    backup_db_to "$DB_PATH" "$HOUR_BACKUP" || {
+        log "🚨 Hourly backup copy failed"
+        rm -f "$HOUR_BACKUP" "$HOUR_BACKUP"-shm "$HOUR_BACKUP"-wal 2>/dev/null || true
+        return 1
+    }
 
-    # Verify backup is valid (file exists and size is within 5% tolerance)
-    ORIGINAL_SIZE=$(stat -f%z "$DB_PATH" 2>/dev/null || stat -c%s "$DB_PATH" 2>/dev/null)
-    BACKUP_SIZE=$(stat -f%z "$HOUR_BACKUP" 2>/dev/null || stat -c%s "$HOUR_BACKUP" 2>/dev/null)
-    SIZE_TOLERANCE=$((ORIGINAL_SIZE / 20))  # 5% tolerance
+    # NOTE: VACUUM INTO defragments, so the copy is legitimately SMALLER than the
+    # source (the old ±5% window would reject every good backup). Sanity-check a
+    # lower bound only; correctness is established by verify_sqlite_file + rowcount.
+    ORIGINAL_SIZE=$(stat -c%s "$DB_PATH" 2>/dev/null)
+    BACKUP_SIZE=$(stat -c%s "$HOUR_BACKUP" 2>/dev/null || echo 0)
 
-    if [ -f "$HOUR_BACKUP" ] && [ "$BACKUP_SIZE" -gt "$((ORIGINAL_SIZE - SIZE_TOLERANCE))" ] && [ "$BACKUP_SIZE" -lt "$((ORIGINAL_SIZE + SIZE_TOLERANCE))" ]; then
+    if [ -f "$HOUR_BACKUP" ] && [ "$BACKUP_SIZE" -gt "$((ORIGINAL_SIZE / 2))" ]; then
         log "✅ Hourly backup created: $HOUR_BACKUP ($(numfmt --to=iec-i --suffix=B $BACKUP_SIZE 2>/dev/null || echo "$BACKUP_SIZE bytes"))"
+
+        # Size alone proves nothing: corruption does not change file size, which
+        # is how the 2026-08-01 backups passed. Structurally verify the copy.
+        local vrc=0
+        verify_sqlite_file "$HOUR_BACKUP" || vrc=$?
+        if [ "$vrc" = "1" ]; then
+            log "🚨 CRITICAL: hourly backup is CORRUPT — deleting so it is never trusted"
+            rm -f "$HOUR_BACKUP" "$HOUR_BACKUP"-shm "$HOUR_BACKUP"-wal 2>/dev/null || true
+            return 1
+        elif [ "$vrc" = "2" ]; then
+            log "⚠️  hourly backup UNVERIFIED (quick_check timed out) — retained but not trusted"
+        else
+            log "✅ hourly backup structurally verified"
+        fi
 
         # Clean up SQLite temporary files
         rm -f "$HOUR_BACKUP"-shm "$HOUR_BACKUP"-wal 2>/dev/null
@@ -84,22 +156,58 @@ create_daily_backup() {
     TIMESTAMP=$(date +%Y%m%d)
     DAILY_BACKUP="$BACKUP_DIR/merit_registry_daily_$TIMESTAMP.db"
 
-    # Don't create duplicate if one already exists for today
+    # Don't create a duplicate if today's backup already exists AND is sound.
+    # Existence alone is not enough (2026-08-08): a run killed mid-copy leaves a
+    # truncated file, and the old guard would skip past it all day, leaving a
+    # corrupt partial standing in as that day's backup — the exact failure mode
+    # this script is supposed to prevent. Validate before trusting it.
     if [ -f "$DAILY_BACKUP" ]; then
-        log "⏭️  Daily backup already exists for today, skipping"
-        return 0
+        local existing_size src_size erc=0
+        existing_size=$(stat -c%s "$DAILY_BACKUP" 2>/dev/null || echo 0)
+        src_size=$(stat -c%s "$DB_PATH" 2>/dev/null || echo 0)
+        if [ "$existing_size" -lt "$((src_size / 2))" ]; then
+            log "⚠️  Existing daily backup is undersized ($((existing_size/1073741824))GB vs source $((src_size/1073741824))GB) — treating as failed partial, rebuilding"
+            rm -f "$DAILY_BACKUP" "$DAILY_BACKUP"-shm "$DAILY_BACKUP"-wal "$DAILY_BACKUP"-journal 2>/dev/null || true
+        else
+            verify_sqlite_file "$DAILY_BACKUP" || erc=$?
+            if [ "$erc" = "1" ]; then
+                log "⚠️  Existing daily backup is CORRUPT — discarding and rebuilding"
+                rm -f "$DAILY_BACKUP" "$DAILY_BACKUP"-shm "$DAILY_BACKUP"-wal "$DAILY_BACKUP"-journal 2>/dev/null || true
+            else
+                log "⏭️  Daily backup already exists for today and verified sound, skipping"
+                return 0
+            fi
+        fi
     fi
 
-    sqlite3 "$DB_PATH" ".backup '$DAILY_BACKUP'" 2>&1
+    # VACUUM INTO, not .backup — see create_hourly_backup for the full rationale.
+    backup_db_to "$DB_PATH" "$DAILY_BACKUP" || {
+        log "🚨 Daily backup copy failed"
+        rm -f "$DAILY_BACKUP" "$DAILY_BACKUP"-shm "$DAILY_BACKUP"-wal 2>/dev/null || true
+        return 1
+    }
 
-    # Verify backup is valid (file exists and size is within 5% tolerance)
-    ORIGINAL_SIZE=$(stat -f%z "$DB_PATH" 2>/dev/null || stat -c%s "$DB_PATH" 2>/dev/null)
-    BACKUP_SIZE=$(stat -f%z "$DAILY_BACKUP" 2>/dev/null || stat -c%s "$DAILY_BACKUP" 2>/dev/null)
-    SIZE_TOLERANCE=$((ORIGINAL_SIZE / 20))  # 5% tolerance
+    # VACUUM INTO defragments; copy is legitimately smaller. Lower bound only.
+    ORIGINAL_SIZE=$(stat -c%s "$DB_PATH" 2>/dev/null)
+    BACKUP_SIZE=$(stat -c%s "$DAILY_BACKUP" 2>/dev/null || echo 0)
 
-    if [ -f "$DAILY_BACKUP" ] && [ "$BACKUP_SIZE" -gt "$((ORIGINAL_SIZE - SIZE_TOLERANCE))" ] && [ "$BACKUP_SIZE" -lt "$((ORIGINAL_SIZE + SIZE_TOLERANCE))" ]; then
+    if [ -f "$DAILY_BACKUP" ] && [ "$BACKUP_SIZE" -gt "$((ORIGINAL_SIZE / 2))" ]; then
         SIZE=$(du -h "$DAILY_BACKUP" | awk '{print $1}')
         log "✅ Daily backup created: $DAILY_BACKUP ($SIZE)"
+
+        # Size alone proves nothing: corruption does not change file size, which
+        # is how the 2026-08-01 backups passed. Structurally verify the copy.
+        local vrc=0
+        verify_sqlite_file "$DAILY_BACKUP" || vrc=$?
+        if [ "$vrc" = "1" ]; then
+            log "🚨 CRITICAL: daily backup is CORRUPT — deleting so it is never trusted"
+            rm -f "$DAILY_BACKUP" "$DAILY_BACKUP"-shm "$DAILY_BACKUP"-wal 2>/dev/null || true
+            return 1
+        elif [ "$vrc" = "2" ]; then
+            log "⚠️  daily backup UNVERIFIED (quick_check timed out) — retained but not trusted"
+        else
+            log "✅ daily backup structurally verified"
+        fi
 
         # Clean up SQLite temporary files
         rm -f "$DAILY_BACKUP"-shm "$DAILY_BACKUP"-wal 2>/dev/null
@@ -124,14 +232,18 @@ create_pre_enrichment_checkpoint() {
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     CHECKPOINT="$BACKUP_DIR/merit_registry_pre_enrichment_$TIMESTAMP.db"
 
-    sqlite3 "$DB_PATH" ".backup '$CHECKPOINT'" 2>&1
+    # VACUUM INTO, not .backup — see create_hourly_backup for the full rationale.
+    backup_db_to "$DB_PATH" "$CHECKPOINT" || {
+        log "🚨 Pre-enrichment checkpoint copy failed"
+        rm -f "$CHECKPOINT" "$CHECKPOINT"-shm "$CHECKPOINT"-wal 2>/dev/null || true
+        return 1
+    }
 
-    # Verify checkpoint is valid (file exists and size is within 5% tolerance)
-    ORIGINAL_SIZE=$(stat -f%z "$DB_PATH" 2>/dev/null || stat -c%s "$DB_PATH" 2>/dev/null)
-    CHECKPOINT_SIZE=$(stat -f%z "$CHECKPOINT" 2>/dev/null || stat -c%s "$CHECKPOINT" 2>/dev/null)
-    SIZE_TOLERANCE=$((ORIGINAL_SIZE / 20))  # 5% tolerance
+    # VACUUM INTO defragments; copy is legitimately smaller. Lower bound only.
+    ORIGINAL_SIZE=$(stat -c%s "$DB_PATH" 2>/dev/null)
+    CHECKPOINT_SIZE=$(stat -c%s "$CHECKPOINT" 2>/dev/null || echo 0)
 
-    if [ -f "$CHECKPOINT" ] && [ "$CHECKPOINT_SIZE" -gt "$((ORIGINAL_SIZE - SIZE_TOLERANCE))" ] && [ "$CHECKPOINT_SIZE" -lt "$((ORIGINAL_SIZE + SIZE_TOLERANCE))" ]; then
+    if [ -f "$CHECKPOINT" ] && [ "$CHECKPOINT_SIZE" -gt "$((ORIGINAL_SIZE / 2))" ]; then
         SIZE=$(du -h "$CHECKPOINT" | awk '{print $1}')
         log "✅ Pre-enrichment checkpoint: $CHECKPOINT ($SIZE)"
 
