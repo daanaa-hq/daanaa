@@ -32,6 +32,11 @@ except Exception:
     build_v5_context = None
 
 DB_PATH = os.environ.get("MERIT_DB_PATH", "data/merit_registry.db")
+
+# Date the IRS Auto-Revocation List was last synced. Populated once in main()
+# from irs_sync_log; surfaced per org so the tax-deductibility claim carries its
+# own freshness ("checked August 8, 2026") instead of being an undated assertion.
+IRS_CHECKED_AT = None
 _OUT = os.environ.get("PRECOMPUTE_OUT", "precompute_output")
 FAISS_INDEX_PATH = os.path.join(_OUT, "faiss_index.bin")
 EIN_MAP_PATH = os.path.join(_OUT, "ein_map.json.gz")
@@ -96,12 +101,22 @@ def org_to_dict(row):
         # volunteer_url added 2026-07-16: discovered volunteer hand-off links,
         # surfaced alongside donate. Same public-data, fail-closed posture.
         'volunteer_url': row[53],
-        # IRS eligibility fields added 2026-07-28 (Phase 3): evidence-based
-        # deductibility status from Pub78 + BMF. Stewardship P3 (evidence-based).
-        'irs_eligibility_status': row[54],
-        'irs_eligibility_checked_at': row[55],
-        'irs_eligibility_sources': json.loads(row[56]) if row[56] else None,
-        'irs_eligibility_explanation': row[57],
+        # Tax deductibility, reworked 2026-08-08 (founder-approved wording).
+        #
+        # The previous irs_eligibility_* columns were dropped from the schema on
+        # ~2026-08-01 with the org_status/irs_revoked migration, which silently
+        # broke this whole script (no such column: irs_eligibility_status) and is
+        # why precompute stalled at 2026-07-28. Those columns also cited Pub 78,
+        # which we no longer hold, so "verified" could not be honestly reproduced.
+        #
+        # What we can state from current evidence: the IRS Business Master File
+        # deductibility code (1 = contributions are deductible) plus the IRS
+        # Auto-Revocation List, which irs_sync_log shows syncing daily. The query
+        # already filters deductibility = 1 AND org_status = 'active', so every
+        # org reaching here qualifies; we carry the evidence anyway so the claim
+        # stays traceable per Stewardship P3 rather than implied by absence.
+        'tax_deductible': str(row[54]) == '1' and not row[55],
+        'tax_deductible_checked_at': IRS_CHECKED_AT,
     }
     # v5.0 peer-based financial context. Built from the org's own v5 fields
     # (archetype=row[40], labels/band/score/health/peer at row[41..47],
@@ -171,12 +186,27 @@ def _load_financials_index(conn):
 
 
 def main():
+    global IRS_CHECKED_AT
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     Path(OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().isoformat()
     print(f"[{timestamp}] Pre-computing org detail pages...")
+
+    # Freshness of the tax-deductibility claim. Fail closed: if we cannot read
+    # when the revocation list was last synced, ship no date rather than an
+    # implied-current one — an undated claim is honest, a wrong date is not.
+    try:
+        row = cursor.execute(
+            "SELECT synced_at FROM irs_sync_log WHERE source = 'irs_auto_revocation' "
+            "ORDER BY synced_at DESC LIMIT 1"
+        ).fetchone()
+        IRS_CHECKED_AT = row[0][:10] if row and row[0] else None
+    except Exception as e:
+        IRS_CHECKED_AT = None
+        print(f"  WARN: could not read irs_sync_log ({e}); shipping undated deductibility")
+    print(f"  IRS revocation list last checked: {IRS_CHECKED_AT or 'unknown'}")
 
     # Load financial history index once (keyed by EIN)
     print("  Loading financial history index...")
@@ -220,7 +250,7 @@ def main():
             merit_peer_count_v5, is_hidden_gem,
             donate_url, donate_url_status, donate_confidence, donate_platform,
             volunteer_url,
-            irs_eligibility_status, irs_eligibility_checked_at, irs_eligibility_sources, irs_eligibility_explanation
+            deductibility, irs_revoked
         FROM registry_enriched
         WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN
