@@ -1,3 +1,56 @@
+## 2026-08-08 — Checked the status code, not the response body, in a security claim
+
+A route was reported as "live and exploitable in production" based on `curl ...
+-> 200` at `daanaa.org`. It was the SPA catch-all returning HTML (confirmed
+`content-type: text/html`, not `application/json`) -- the vulnerable JSON
+endpoint only ever existed on the home server (localhost/LAN), never on the
+droplet that serves the public internet. The fix itself was correct and worth
+shipping either way; the SEVERITY framing ("same weight as P0-SEC-001") was
+inflated by one unchecked assumption and stood for hours before being caught
+during deployment. Same root cause as the 404-assumption test bug logged
+above, but here it inflated a security narrative rather than just a test
+assertion -- higher stakes, same fix. **Preventing rule: a security claim
+needs the response BODY and content-type checked, not just the status code.
+2xx is not evidence of anything specific.**
+
+## 2026-08-08 — Three more instances of "the check didn't check what it claimed"
+
+Same day, same root pattern as the entry above, three fresh instances found
+while resolving a Codex review:
+
+**1. `pgrep -f "codex exec"` matched its own wrapper text, not the process.**
+Five separate `until ! pgrep -f "codex exec" ...; do sleep 30; done` loops were
+launched to wait for a background review. Every one matched the STRING
+"codex exec" inside its own `ps` listing (the wrapper command itself contains
+that text), so the loop condition was permanently true and would never have
+exited — five stale infinite loops, discovered only because the codex CLI
+process had actually finished ten+ minutes earlier and nothing noticed. Fixed
+going forward: capture the exact PID with `$!` and wait/poll that PID, or use
+the harness's own background-task completion signal — never `pgrep -f` on a
+string that plausibly appears in your own polling command.
+
+**2. Proved a test fix against the wrong file.** Working across a main repo
+and an isolated git worktree, a test's `ROOT = Path(__file__).parent.parent`
+resolved to the WORKTREE's own copy of `Footer.tsx`. The "proof" edited the
+MAIN REPO's copy instead — a different file — ran the test, saw it pass, and
+nearly reported success on a claim that was never actually exercised. Caught
+by checking `ROOT`'s literal definition before trusting the result, not by
+suspicion. **Preventing rule: when proving a test against a live edit, print
+or `cat` the exact absolute path the test will read, not the path you edited
+— in a multi-worktree session those are not guaranteed to be the same file.**
+
+**3. Assumed a REST convention instead of checking actual behavior.** A new
+regression test asserted a removed route returns 404. It returned 200. Not a
+bug — this app's SPA catch-all serves `index.html` for ANY unmatched path,
+confirmed by comparing against a path that had never existed (also 200). A
+route that IS matched but can't find its resource returns 404 JSON instead
+(different code path, explicit `return ..., 404` in the handler). The fix
+wasn't the app; it was the test's assumption. **Preventing rule: "should
+return 404" is a guess dressed as a fact until you've confirmed it against a
+known-nonexistent baseline in the same app — REST conventions are not
+universal, and an SPA catch-all is a common, legitimate reason they don't
+hold.**
+
 ## 2026-08-08 — Systems that report success while doing nothing
 
 **The pattern, and the real lesson of the day.** Seven separate failures were found in
@@ -1287,3 +1340,32 @@ watch it survive a second live occurrence before considering it done.
   re-verification backlog, SELECT the actual URLs — a status column can lie
   about what exists. Bulk status migrations must always carry the
   corresponding value column in their WHERE clause.
+
+## 2026-08-08 — "full lamp-tier retirement, verified live" overstated what was actually done
+- **Symptom:** earlier the same day, lamp-tier retirement was reported as complete
+  and verified live ("zero tier names") after removing Beacon/Torch/Candle/Spark
+  language from frontend copy, precompute content, and backend filters, and
+  confirming `/api/methodology` returns v6.0 with no tier names.
+- **Root cause:** "verified" checked the specific surfaces that were touched
+  (methodology page, research page, backend filters) but not the codebase for
+  other live consumers. `frontend/src/components/TrustBadge.tsx` still exports
+  a full tier-computation engine (`getTierFromOrg`, `getTierSummary`,
+  `TIER_COLORS`, `TIER_INK`, `TIER_MICROCOPY`, `merit_tier` logic) that
+  `Directory.tsx` and `OrganizationDetail.tsx` still call on every card render.
+  Independent Codex review (read-only, cited file:line) confirmed the actual
+  donor-facing impact was narrow — the returned string never contains a tier
+  name, and `OrgCard` doesn't even render the prop it's passed — but the
+  broader "fully retired" claim was still inaccurate; the engine is dormant,
+  not gone. A second component, `LampMark.tsx` (tier-colored icon), turned out
+  to be dead/unrouted code (`/admin` routes to `DashboardHub`, not the
+  `AdminPage` that imports `LampMark`) — never live even on the admin surface
+  it was written for.
+- **Fix:** `DESIGN.md`'s tier-color tokens re-documented as dormant/internal
+  (not deleted — `TrustBadge.tsx`/CSS/Tailwind still reference them) rather
+  than pretending they don't exist. Actual removal of the dead engine and
+  component logged as a TODO instead of being silently left in place.
+- **Preventing rule:** "verified live" for a retirement/removal claim means
+  grepping the whole codebase for the retired name (component names, function
+  names, exported constants), not just the specific pages that were the
+  original target. A page-level check can be honestly true and the
+  system-level claim built on top of it can still be false.

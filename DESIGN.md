@@ -19,11 +19,14 @@ colors:
   destructive: "rgb(239 68 68)"
   civic-teal: "rgb(26 74 74)"
   teal-light: "rgb(45 112 112)"
-  tier-beacon: "rgb(184 144 47)"
-  tier-lantern: "rgb(201 168 76)"
-  tier-flame: "rgb(212 185 104)"
-  tier-ember: "rgb(217 168 118)"
-  tier-spark: "rgb(232 200 150)"
+  # tier-beacon/lantern/flame/ember/spark: DORMANT. The lamp-tier visibility
+  # system was retired from all public copy 2026-08-08, but these tokens are
+  # still defined in index.css/tailwind.config.js and still consumed by
+  # frontend/src/components/TrustBadge.tsx (TIER_COLORS/TIER_INK) and
+  # LampMark.tsx (currently unrouted, dead code — see 2026-08-08 correction
+  # in LESSONS.md). Kept here so this doc matches the actual codebase; do not
+  # delete from index.css/tailwind without first removing the TrustBadge/
+  # LampMark code that reads them.
 typography:
   display:
     fontFamily: "Cormorant Garamond, Georgia, serif"
@@ -150,19 +153,25 @@ The Daanaa palette conveys warmth, trust, and intentionality. Primary colors (na
 - **Alert Amber** (#F59E0B / `rgb(245 158 11)`): Attention needed. Data is outdated, missing, or requires verification. Conveys caution, not alarm.
 - **Destructive** (#EF4444 / `rgb(239 68 68)`): Truly destructive actions only (delete, revoke, irreversible state changes). Reserved for confirmation dialogs. Never used for passive warnings.
 
-### Tier Colors (Financial Context)
+### Tier Colors (Financial Context) — DORMANT, not part of the live design language
 
-- **Beacon** (#B8902F / `rgb(184 144 47)`): Tier 1 — Top peer-group percentile. Brightest and most saturated.
-- **Lantern** (#C9A84C / `rgb(201 168 76)`): Tier 2 — Upper-mid percentile.
-- **Flame** (#D4B968 / `rgb(212 185 104)`): Tier 3 — Mid percentile.
-- **Ember** (#D9A876 / `rgb(217 168 118)`): Tier 4 — Lower-mid percentile.
-- **Spark** (#E8C896 / `rgb(232 200 150)`): Tier 5 — Lowest percentile or missing data. Palest to avoid stigma language.
+The lamp-tier visibility system (Beacon/Torch/Candle/Spark) was retired from all
+public copy 2026-08-08. These 5 colors remain defined only because
+`frontend/src/components/TrustBadge.tsx` and `LampMark.tsx` (currently dead,
+unrouted code — see LESSONS.md 2026-08-08) still reference them. Do not design
+new UI against this palette; it is not live product language.
+
+- **Beacon** (#B8902F / `rgb(184 144 47)`)
+- **Lantern** (#C9A84C / `rgb(201 168 76)`)
+- **Flame** (#D4B968 / `rgb(212 185 104)`)
+- **Ember** (#D9A876 / `rgb(217 168 118)`)
+- **Spark** (#E8C896 / `rgb(232 200 150)`)
 
 ### Named Rules
 
 **The One Voice Rule:** Soft Gold (#C9A96E) is used on ≤10% of any given screen. Its rarity is the point — it should feel intentional, not defaulted.
 
-**The No Shame Rule:** Tier colors intentionally progress from bright to pale, never from "good" (green) to "bad" (red). The palette resists judgment language; every org is presented with equal dignity.
+**The No Shame Rule:** No color or copy pattern anywhere in the product may progress from "good" (green) to "bad" (red) framing. The v6 financial-context signals (Full Context/Regional Context/Broad Category/Archetype Only, and the HEALTHY/STABLE/NEED_SUPPORT health language) use neutral, supportive framing instead — every org is presented with equal dignity. (The retired tier system above followed this same rule in its own palette; the rule itself outlives that system.)
 
 ## Typography
 
@@ -313,7 +322,7 @@ Daanaa uses **soft shadows for depth**, not borders or tonal layering. The syste
 **Character:** Categorical or status indicators. Compact, scannable, never functional.
 
 - **Shape:** Rounded corners (md or sm), small padding (4px–8px).
-- **Color:** One per category (causes use generated cause palette; tiers use tier colors).
+- **Color:** One per category (causes use generated cause palette; the v6 health signals use semantic tokens — success-green/alert-amber — never the dormant tier colors above).
 - **Text:** Small font (11px label), uppercase optional.
 - **Dark variant:** Used on gold/colored backgrounds for legibility.
 
