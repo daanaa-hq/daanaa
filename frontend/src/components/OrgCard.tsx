@@ -131,8 +131,15 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
     >
       {/* Lamp tier removed 2026-08-08 (founder). Completes the retirement the
           board began 2026-07-17 when tiers were pulled from the directory filter.
-          They rested on assumptions that did not hold; v6 financial context now
-          carries the signal at 99.78% coverage vs the lamp tier's 87.5%. */}
+          They rested on assumptions that did not hold; v6 financial context
+          covers more of the live directory. Measured 2026-08-08 against
+          data/merit_registry.db, live-directory rows (EIN IS NOT NULL AND
+          deductibility=1 AND org_status='active'), n=1,750,881:
+            v6 (scoring_tier IS NOT NULL):   1,747,111 / 1,750,881 = 99.78%
+            lamp (merit_tier IS NOT NULL):   1,532,474 / 1,750,881 = 87.53%
+          Re-run: SELECT COUNT(scoring_tier), COUNT(merit_tier), COUNT(*) FROM
+          registry_enriched WHERE EIN IS NOT NULL AND deductibility=1 AND
+          org_status='active'; -- figures will drift as the registry grows. */}
 
       {/* Name + fact + location */}
       <div className="flex-1 min-w-0">

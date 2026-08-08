@@ -138,10 +138,10 @@ export default function WhyDaanaa() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="font-display text-deep-navy text-title-sm group-hover:text-soft-gold transition-colors">
-                      Visibility levels
+                      Financial context
                     </h3>
                     <p className="mt-2 font-body text-body text-cool-grey">
-                      What each tier means and how public data completeness varies
+                      How we compare an organization to similar peers, and how confident we are
                     </p>
                   </div>
                   <svg className="w-5 h-5 text-soft-gold mt-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
