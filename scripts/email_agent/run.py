@@ -179,6 +179,36 @@ def main():
             stats["skipped"] += 1
             continue
 
+        # Ops alerts must never be silently archived (2026-08-08).
+        #
+        # The watchdog sends from security@daanaa.org — an own domain — so
+        # _is_internal() matched and every alert was filed away with nothing
+        # sent. That completed the chain behind the ~14h outage on 2026-08-08:
+        # the watchdog DID detect it, DID alert, and the alert was archived here
+        # before any human saw it. Each component behaved as designed; the design
+        # was wrong, because ops mail legitimately originates from our own domain.
+        #
+        # Ops alerts are forwarded to the founder instead. Subject prefixes are
+        # emitted by scripts/ops/mailer.py callers (watchdog, deploy sync).
+        _subj = (headers.get("Subject") or "")
+        if _subj.startswith("[Daanaa ALERT]") or _subj.startswith("[Daanaa OK]"):
+            stats["needs_human"] += 1
+            print(f"  [ops!!] → founder | {subject}")
+            if not args.dry_run:
+                try:
+                    svc.users().messages().send(
+                        userId="me",
+                        body=_build_founder_alert(route, sender, subject, False),
+                    ).execute()
+                    svc.users().messages().modify(
+                        userId="me", id=msg["id"],
+                        body={"addLabelIds": [labels[TRIAGED]]},
+                    ).execute()
+                except Exception as e:
+                    stats["errors"] += 1
+                    print(f"           ✗ {e}")
+            continue
+
         # Internal — silently archive
         if _is_internal(headers):
             stats["automated"] += 1
