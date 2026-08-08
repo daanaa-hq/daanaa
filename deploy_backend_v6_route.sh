@@ -2,7 +2,7 @@
   set -Eeuo pipefail
 
   APP_DIR="/home/akbar/meritgiving"
-  DROPLET="root@162.243.97.179"
+  DROPLET="root@107.170.26.8"
   REMOTE_DIR="/opt/daanaa"
   DB="/opt/daanaa/merit_registry.db"
   EIN="${EIN:-000019818}"
