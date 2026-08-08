@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
-import LampMark from '../components/LampMark'
 
 export default function NotFound() {
   usePageMeta('Page Not Found')
@@ -8,7 +7,6 @@ export default function NotFound() {
     <div className="min-h-[100dvh] bg-warm-cream flex items-center justify-center px-6">
       <div className="text-center max-w-[420px]">
         <div className="flex justify-center mb-6 opacity-30">
-          <LampMark size="xl" tier="Spark" />
         </div>
         <h1 className="font-display italic text-deep-navy leading-[1.05]">
           Page not found

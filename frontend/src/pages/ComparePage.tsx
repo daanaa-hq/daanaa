@@ -3,8 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useApi } from '../hooks/useApi'
 import { getOrganization } from '../data/api'
 import type { ApiOrganization } from '../data/api'
-import { getTierFromOrg, financialContextLabel, TIER_COLORS } from '../components/TrustBadge'
-import LampMark from '../components/LampMark'
+import { financialContextLabel } from '../components/TrustBadge'
 import { NTEE_CATEGORIES } from '../data/ntee'
 import { formatEIN } from '../data/organizations'
 import { getPrimaryExternalLink } from '../utils/externalLink'
@@ -74,7 +73,6 @@ function OrgColumn({ ein }: { ein: string }) {
     )
   }
 
-  const lampTier = getTierFromOrg(org)
   const cat = NTEE_CATEGORIES.find(c => c.id === org.NTEE1)
   const hasScoringTier = org.scoring_tier && (org.scoring_tier === '1_Full_Context' || org.scoring_tier === '2_Regional_Context')
   const reserve = org.months_of_reserve
@@ -104,15 +102,9 @@ function OrgColumn({ ein }: { ein: string }) {
         : reserve >= 120 ? '120+ mo'
         : `${reserve % 1 === 0 ? reserve.toFixed(0) : reserve.toFixed(1)} mo`,
     },
-    {
-      label: 'Visibility',
-      value: (
-        <span className="inline-flex items-center gap-1.5">
-          <LampMark tier={lampTier} size="xs" />
-          <span style={{ color: TIER_COLORS[lampTier] }}>{lampTier}</span>
-        </span>
-      ),
-    },
+      // 'Visibility' row removed 2026-08-08: the lamp tier WAS this row, so an
+      // empty row would be worse than none. v6 financial context appears on the
+      // org detail page; compare shows the factual fields only.
     { label: 'Founded', value: rulingYear(org.ruling_date) },
     { label: 'Tax Year', value: org.latest_tax_year ? String(org.latest_tax_year) : '—' },
     { label: 'Data Source', value: org.data_source ?? '—' },
