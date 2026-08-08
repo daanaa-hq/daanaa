@@ -1310,7 +1310,38 @@ def _filtered_orgs(ntee1, state, nteecc_filter, page, per_page):
 _EIN_RE = re.compile(r'^\d{9}$')
 
 def get_v6_context(ein_clean, db):
-    """Fetch v6 financial context from database."""
+    """Fetch v6 financial context from database.
+
+    Source of truth is the `v6_context` table (projected from
+    registry_enriched.scoring_tier), because that is the taxonomy the shipped
+    frontend actually keys on: TrustBadge.tsx compares scoring_tier literally
+    against '1_Full_Context' / '2_Regional_Context'. The older
+    v6_peer_context_assignments table uses a different 5-tier vocabulary
+    ('1_direct', '2_regional_conditional', ...) which silently degrades every
+    badge to 'partial' — wrong without looking broken. Kept as fallback only.
+    """
+    try:
+        cursor = db.execute('''
+            SELECT scoring_tier, tier_label, confidence,
+                   peer_group_size_v6, peer_group_description_v6,
+                   confidence_margin_v6, is_inferred_v6
+            FROM v6_context WHERE EIN = ? LIMIT 1
+        ''', (ein_clean,))
+        row = cursor.fetchone()
+        if row and row[0]:
+            return {
+                'scoring_tier': row[0],
+                'tier_label': row[1],
+                'confidence': row[2],
+                'peer_group_size': row[3],
+                'peer_group_description': row[4],
+                'confidence_margin': row[5],
+                'is_inferred': row[6],
+            }
+    except Exception as e:
+        app.logger.debug(f"v6_context lookup failed for {ein_clean}: {e}")
+
+    # Fallback: legacy peer-context run (different tier vocabulary).
     try:
         run_id = os.environ.get('V6_CANDIDATE_RUN_ID', 'v6_foundation_candidate_20260728_revised')
         cursor = db.execute('''

@@ -17,7 +17,7 @@
 set -euo pipefail
 
 REPO="/home/akbar/meritgiving"
-DROPLET="root@162.243.97.179"
+DROPLET="root@107.170.26.8"
 SSH_KEY="$HOME/.ssh/daanaa_do_cron"
 REMOTE_DIR="/opt/daanaa/visibility"
 

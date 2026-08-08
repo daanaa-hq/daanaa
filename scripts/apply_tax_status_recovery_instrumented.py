@@ -276,9 +276,6 @@ def apply_migration(
 
         print(f"   Differing values (org_status/irs_revoked): {differing_conflicts}")
 
-        # Determine if this would be a first run (columns would be added)
-        would_add_columns = not has_org_status or not has_irs_revoked
-
         if differing_conflicts > 0 and not force_overwrite:
             return {
                 'success': False,
@@ -322,28 +319,17 @@ def apply_migration(
         
         # Phase 4: Dry run report
         print("\n[PHASE 4] Migration plan...")
-
+        
         changes = []
-
+        
         # Column additions
         if not has_org_status:
             changes.append("ADD COLUMN org_status TEXT")
         if not has_irs_revoked:
             changes.append("ADD COLUMN irs_revoked INTEGER")
-
-        # Data updates: calculate actual rows that would be affected
-        # If columns would be added or don't exist: all matched rows would be updated
-        # If columns exist: only rows with DIFFERING values would be updated (idempotent)
-        if would_add_columns:
-            planned_updates = matched_count  # First run: update all matched
-        else:
-            planned_updates = differing_conflicts  # Subsequent run: only differing
-
-        if planned_updates > 0:
-            changes.append(f"UPDATE {planned_updates} matched rows")
-        else:
-            changes.append(f"UPDATE 0 rows (all values identical, idempotent no-op)")
-
+        
+        # Data updates
+        changes.append(f"UPDATE {matched_count} matched rows")
         if unmatched_count > 0:
             changes.append(f"SKIP {unmatched_count} unmatched rows (new EINs)")
         

@@ -20,7 +20,7 @@ from pathlib import Path
 DB = Path(os.environ.get("DB_PATH", "/home/akbar/meritgiving/data/merit_registry.db"))
 BUCKET = "daanaa-backups"
 REGION = "us-east-1"
-DROPLET = "root@162.243.97.179"
+DROPLET = "root@107.170.26.8"
 LOG = Path("/home/akbar/meritgiving/logs/s3_backup.log")
 
 CRITICAL_TABLES = ["org_claims", "community_partners"]

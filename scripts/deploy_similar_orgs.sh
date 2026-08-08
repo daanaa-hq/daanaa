@@ -3,7 +3,7 @@
 # Usage: bash scripts/deploy_similar_orgs.sh
 
 set -e
-DROPLET="root@162.243.97.179"
+DROPLET="root@107.170.26.8"
 SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 SSH_OPTS="-i $SSH_KEY -o ConnectTimeout=20 -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
 LOCAL_ORGS="$HOME/meritgiving/precompute_output/orgs"

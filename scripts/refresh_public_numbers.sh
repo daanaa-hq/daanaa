@@ -17,7 +17,7 @@ set -euo pipefail
 
 ROOT="/home/akbar/meritgiving"
 PY="$ROOT/venv/bin/python3"
-DROPLET="root@162.243.97.179"
+DROPLET="root@107.170.26.8"
 SSH=(ssh -o ServerAliveInterval=10 -o ConnectTimeout=20 -o BatchMode=yes "$DROPLET")
 RSYNC_RSH="ssh -o ServerAliveInterval=10 -o ConnectTimeout=20 -o BatchMode=yes"
 

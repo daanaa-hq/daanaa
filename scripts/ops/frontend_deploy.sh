@@ -10,7 +10,7 @@ set -euo pipefail
 BASE="$HOME/meritgiving"
 FRONTEND="$BASE/frontend"
 SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
-DROPLET="root@162.243.97.179"
+DROPLET="root@107.170.26.8"
 SSH="ssh -i $SSH_KEY -o ConnectTimeout=15 -o StrictHostKeyChecking=accept-new $DROPLET"
 REMOTE_SHA_FILE="/opt/daanaa/.frontend_sha"
 REMOTE_DIST="/opt/daanaa/frontend/dist"

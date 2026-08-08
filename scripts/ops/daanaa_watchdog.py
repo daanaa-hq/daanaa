@@ -30,7 +30,7 @@ from mailer import send_ops_email
 
 STATE_FILE = Path.home() / "meritgiving/logs/watchdog_state.json"
 SSH_KEY = str(Path.home() / ".ssh/daanaa_do_cron")  # passphrase-free automation key (see LESSONS.md 2026-07-05)
-DROPLET = "root@162.243.97.179"
+DROPLET = "root@107.170.26.8"
 DISK_ALERT_PCT = 85
 REALERT_HOURS = 6
 LATENCY_SLO_S = 3.0
@@ -172,11 +172,11 @@ def main():
                 "claim_path":   "SSH tunnel dropped → systemctl --user restart daanaa-claim-tunnel",
                 "wallet_proxy": "Wallet tunnel down (same as claim tunnel) or local API auth broken",
                 "local_api":    "cd ~/meritgiving && ./restart_api.sh",
-                "public_site":  "ssh root@162.243.97.179 'systemctl restart daanaa'",
+                "public_site":  "ssh root@107.170.26.8 'systemctl restart daanaa'",
                 "homepage":     "Pages 500 while /health OK → check journalctl -u daanaa on droplet; likely bad droplet_api.py deploy → restore /opt/daanaa/droplet_api.py.prev + restart",
                 "search":       "FTS index empty → cd ~/meritgiving && venv/bin/python3 scripts/build_fts_index.py --rebuild && bash scripts/deploy_browse.sh",
                 "search_latency": "Search slow but up → reproduce ONCE isolated on the droplet, then EXPLAIN QUERY PLAN (join-order flip class, LESSONS.md 2026-07-18); check for concurrent deploys/backups pinning droplet CPU before touching code",
-                "droplet_disk": "Droplet disk full → ssh root@162.243.97.179 'du -sh /data/precompute/v1/*/* | sort -rh | head -20'",
+                "droplet_disk": "Droplet disk full → ssh root@107.170.26.8 'du -sh /data/precompute/v1/*/* | sort -rh | head -20'",
             }
             hint = "\n".join(f"• {n}: {hints[n]}" for n in downs if n in hints)
         else:

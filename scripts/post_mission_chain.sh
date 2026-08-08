@@ -59,7 +59,7 @@ log "--- Step 5: Sync orgs to droplet ---"
 rsync -az --inplace \
   -e "ssh -i $HOME/.ssh/daanaa_do_cron -o StrictHostKeyChecking=accept-new" \
   "$BASE/precompute_output/orgs/" \
-  root@162.243.97.179:/data/precompute/v1/orgs/ >> "$LOG" 2>&1
+  root@107.170.26.8:/data/precompute/v1/orgs/ >> "$LOG" 2>&1
 log "Droplet orgs sync done (exit $?)"
 
 # 6. Sync frontend (in case it changed)
@@ -67,7 +67,7 @@ log "--- Step 6: Sync frontend to droplet ---"
 rsync -az --delete \
   -e "ssh -i $HOME/.ssh/daanaa_do_cron -o StrictHostKeyChecking=accept-new" \
   "$BASE/frontend/dist/" \
-  root@162.243.97.179:/opt/daanaa/frontend/ >> "$LOG" 2>&1
+  root@107.170.26.8:/opt/daanaa/frontend/ >> "$LOG" 2>&1
 log "Frontend sync done (exit $?)"
 
 log "=== post_mission_chain complete ==="

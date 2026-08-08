@@ -11,7 +11,7 @@
 
 set -e
 
-DROPLET_IP="162.243.97.179"
+DROPLET_IP="107.170.26.8"
 DROPLET_USER="root"
 DB_PATH="data/merit_registry.db"
 DROPLET_DB_PATH="/data/precompute/v1/search.db"

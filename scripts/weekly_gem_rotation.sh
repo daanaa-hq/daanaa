@@ -18,7 +18,7 @@ python3 scripts/precompute_hidden_gems.py >> "$LOG" 2>&1
 echo "[$(date)] Syncing gems to droplet..." | tee -a "$LOG"
 if [ -d "precompute_output/browse/hidden_gems" ]; then
   rsync -avz --delete precompute_output/browse/hidden_gems/ \
-    root@162.243.97.179:/data/precompute/v1/browse/hidden_gems/ >> "$LOG" 2>&1
+    root@107.170.26.8:/data/precompute/v1/browse/hidden_gems/ >> "$LOG" 2>&1
   echo "[$(date)] ✓ Gem rotation complete" | tee -a "$LOG"
 else
   echo "[$(date)] ✗ Gems directory not found" | tee -a "$LOG"
