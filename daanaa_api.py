@@ -738,8 +738,17 @@ def _vec_similar(query_vec: np.ndarray, exclude_ein: str, limit: int) -> list[st
 
 app = Flask(__name__)
 
+# DB_PATH must be defined HERE, not further down (2026-08-08). _load_embeddings()
+# references it and is called during startup at module scope, well before the old
+# definition site ~40 lines below. Python resolves globals at call time, so that
+# call raised NameError -- swallowed by the startup try/except, which printed
+# "[embeddings] load failed" and continued. Net effect: all 546K embeddings
+# silently failed to load on every boot and semantic search ran degraded, while
+# startup reported "✓ Embeddings loaded, search ready".
+DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
+
 # Run database migrations on startup
-_db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
+_db_path = DB_PATH
 _run_migrations(_db_path)
 _ensure_student_service_columns(_db_path)
 
