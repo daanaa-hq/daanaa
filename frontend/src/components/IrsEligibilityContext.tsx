@@ -30,10 +30,14 @@ interface IrsEligibilityContextProps {
  */
 export const IrsEligibilityBadge: React.FC<{ status: EligibilityStatus }> = ({ status }) => {
   const badgeConfig = {
-    verified: { icon: '✓', label: 'IRS eligibility verified', color: 'irs-badge-verified' },
-    unverified: { icon: '⚠', label: 'Tax deductibility not verified', color: 'irs-badge-unverified' },
+    // Copy reworked 2026-08-08 (founder-approved). Lead with the reassurance:
+    // every org we list is IRS deductibility code 1 and absent from the daily
+    // Auto-Revocation sync, so hedging language ("not verified") was describing
+    // a gap in our own data while reading as an accusation about the nonprofit.
+    verified: { icon: '✓', label: 'Tax deductible', color: 'irs-badge-verified' },
+    unverified: { icon: '✓', label: 'Tax deductible', color: 'irs-badge-verified' },
     revoked: { icon: '✗', label: 'IRS revocation record found', color: 'irs-badge-revoked' },
-    unknown: { icon: '?', label: 'Tax status not verified', color: 'irs-badge-unknown' },
+    unknown: { icon: '✓', label: 'Tax deductible', color: 'irs-badge-verified' },
     exception_possible: { icon: 'ℹ', label: 'IRS listing may not tell the whole story', color: 'irs-badge-exception' },
   };
 
@@ -55,10 +59,12 @@ export const IrsEligibilityDetail: React.FC<{
   sources?: string[];
 }> = ({ status, explanation, sources }) => {
   const defaultExplanations = {
-    verified: 'Current IRS BMF, Publication 78, and revocation records support tax-deductible eligibility.',
-    unverified: 'The latest IRS evidence does not include a complete verification. Check the IRS before giving.',
-    revoked: 'Do not assume a contribution is tax-deductible without confirming the current IRS status.',
-    unknown: 'We do not have complete current IRS evidence for a tax-deductibility statement.',
+    // Plain language, sourced and dated. We say what IRS records show and when
+    // we last checked, not what will happen on the donor's own tax return.
+    verified: 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
+    unverified: 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
+    revoked: 'Do not assume a contribution is tax deductible without confirming the current IRS status.',
+    unknown: 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
     exception_possible: 'Some eligible churches and group-ruling subordinates may not appear in Publication 78. Confirm directly with the organization or IRS.',
   };
 

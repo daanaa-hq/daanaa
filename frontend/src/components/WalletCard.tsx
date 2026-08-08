@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { WalletEntry, GivingIntent } from '../types/wallet'
+import { normalizeExternalUrl } from '../utils/externalLink'
 import type { ApiOrganization } from '../data/api'
 
 interface WalletCardProps {
@@ -157,9 +158,9 @@ function WalletCardComponent({ entry, orgData, onRemove, onEdit }: WalletCardPro
 
       {/* Actions */}
       <div className="flex gap-2 items-center">
-        {website && (
+        {normalizeExternalUrl(website) && (
           <a
-            href={website}
+            href={normalizeExternalUrl(website)!}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`Visit ${orgName}'s website`}

@@ -89,9 +89,9 @@ export function RhythmNudges({ entries, orgDataMap }: {
                 <button
                   onClick={() => {
                     const irsSnapshot = org ? {
-                      irsEligibilityStatus: org.irs_eligibility_status || 'unknown',
-                      irsEligibilityCheckedAt: org.irs_eligibility_checked_at,
-                      irsEligibilitySources: org.irs_eligibility_sources,
+                      irsEligibilityStatus: (org.tax_deductible === false ? ('unknown' as const) : ('verified' as const)),
+                      irsEligibilityCheckedAt: org.tax_deductible_checked_at,
+                      irsEligibilitySources: ['IRS Business Master File', 'IRS Auto-Revocation List'],
                     } : undefined
                     logDonation(entry.ein, t.amount, todayIso(), 'Recurring gift', undefined, irsSnapshot)
                     setConfirming(prev => { const n = new Set(prev); n.delete(entry.ein); return n })

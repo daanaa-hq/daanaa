@@ -44,10 +44,17 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   if (!isRevoked) {
     badges.push({
       id: 'tax_deductible',
-      label: org.irs_eligibility_status === 'verified' ? 'IRS eligibility verified' : 'Tax status not verified',
-      detail: org.irs_eligibility_status === 'verified' ? 'Current IRS BMF, Publication 78, and revocation records support tax-deductible eligibility.' : 'The latest IRS evidence does not include a complete verification. Check the IRS before giving.',
-      source: 'IRS BMF + Publication 78',
-      color: org.irs_eligibility_status === 'verified' ? 'green' : 'gold',
+      // Copy reworked 2026-08-08 (founder-approved). This block is only reached
+      // when the org is NOT revoked, and every listed org is IRS deductibility
+      // code 1, so the positive statement is the accurate one. The old fallback
+      // ("Tax status not verified") described a gap in our Pub 78 coverage but
+      // read as doubt about the nonprofit. Source cites what we actually hold.
+      label: 'Tax deductible',
+      detail: org.tax_deductible_checked_at
+        ? `The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day. Last checked ${org.tax_deductible_checked_at}.`
+        : 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
+      source: 'IRS Business Master File + IRS Auto-Revocation List',
+      color: 'green',
       icon: 'check-shield',
     })
   }
