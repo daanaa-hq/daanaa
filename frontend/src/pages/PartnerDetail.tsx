@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../contexts/AuthContext'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
@@ -110,7 +111,7 @@ export default function PartnerDetail() {
               <p className="text-deep-navy text-base mb-4">{vendor.description}</p>
               
               {vendor.website && (
-                <a href={vendor.website} target="_blank" rel="noopener noreferrer" className="text-soft-gold font-medium hover:underline text-sm">
+                <a href={normalizeExternalUrl(vendor.website) || undefined} target="_blank" rel="noopener noreferrer" className="text-soft-gold font-medium hover:underline text-sm">
                   Visit Website →
                 </a>
               )}

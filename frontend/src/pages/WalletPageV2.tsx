@@ -8,6 +8,7 @@ import WalletAccountLink from '../components/WalletAccountLink'
 import { CardPattern } from '../components/ui/CardPattern'
 import type { ApiOrganization } from '../data/api'
 import { API_BASE } from '../lib/platform'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 type WalletTab = 'giving' | 'volunteering' | 'account'
 
@@ -330,7 +331,7 @@ export default function WalletPageV2() {
                         <div className="flex gap-1 flex-shrink-0">
                           {org?.donate_url && (
                             <a
-                              href={org.donate_url}
+                              href={normalizeExternalUrl(org.donate_url) || undefined}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-3 py-1 bg-soft-gold text-deep-navy rounded text-xs font-medium hover:bg-gold transition-colors"

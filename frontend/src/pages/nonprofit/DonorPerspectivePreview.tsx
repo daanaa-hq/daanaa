@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { usePageMeta } from '../../hooks/usePageMeta'
 import { API_BASE } from '../../data/api'
+import { normalizeExternalUrl } from '../../utils/externalLink'
 
 interface SourceInfo {
   value: string | null
@@ -158,7 +159,7 @@ export default function DonorPerspectivePreview() {
                 </div>
                 <p className="font-body text-small text-cool-grey mb-2">{profile.sources.website.source_label}</p>
                 <a
-                  href={profile.sources.website.value}
+                  href={normalizeExternalUrl(profile.sources.website.value) || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-body text-body text-soft-gold hover:text-bright-gold underline break-all"
@@ -177,7 +178,7 @@ export default function DonorPerspectivePreview() {
                 </div>
                 <p className="font-body text-small text-cool-grey mb-2">{profile.sources.donate_url.source_label}</p>
                 <a
-                  href={profile.sources.donate_url.value}
+                  href={normalizeExternalUrl(profile.sources.donate_url.value) || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block px-4 py-2.5 rounded-lg bg-soft-gold text-deep-navy font-body text-small font-semibold hover:bg-bright-gold transition"

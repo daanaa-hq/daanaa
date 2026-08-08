@@ -37,6 +37,7 @@ import VolunteerInterest from '../components/VolunteerInterest'
 import OrgInfoHierarchy from '../components/OrgInfoHierarchy'
 import RecurringSetup from '../components/RecurringSetup'
 import DataContextNote from '../components/DataContextNote'
+import { normalizeExternalUrl } from '../utils/externalLink'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -582,7 +583,7 @@ export default function OrganizationDetail() {
                 )}
                 {apiOrg?.website && (
                   <a
-                    href={apiOrg.website}
+                    href={normalizeExternalUrl(apiOrg.website) || undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-soft-gold text-soft-gold hover:bg-soft-gold/10 transition-colors font-body text-small font-semibold"

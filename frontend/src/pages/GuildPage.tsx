@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 interface GuildData {
   guild_id: number
@@ -81,7 +82,7 @@ export default function GuildPage() {
         <div className="max-w-4xl mx-auto px-6 py-12">
           <h1 className="font-display italic text-deep-navy text-headline-lg mb-4">{guild.name}</h1>
           {guild.website && (
-            <a href={guild.website} target="_blank" rel="noopener noreferrer" className="inline-block text-soft-gold hover:underline font-semibold">
+            <a href={normalizeExternalUrl(guild.website) || undefined} target="_blank" rel="noopener noreferrer" className="inline-block text-soft-gold hover:underline font-semibold">
               Visit partner →
             </a>
           )}

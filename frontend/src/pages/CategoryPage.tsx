@@ -6,6 +6,7 @@ import { useJsonLd, categoryPageSchema } from '../hooks/useJsonLd'
 import { getOrganizations, type ApiOrganization } from '../data/api'
 import { useWallet } from '../contexts/WalletContext'
 import { CAUSE_ACCENT } from './Home'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 const healthLabel: Record<string, string> = {
   HEALTHY: 'Financially healthy',
@@ -147,7 +148,7 @@ export default function CategoryPage() {
                         <div className="flex items-center gap-1 shrink-0">
                           {org.website_status === 'ok' && org.website && (
                             <a
-                              href={org.website}
+                              href={normalizeExternalUrl(org.website) || undefined}
                               target="_blank"
                               rel="noopener noreferrer"
                               title="Visit their website. From our public records, may not always be current."

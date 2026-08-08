@@ -7,6 +7,7 @@ import ProfileEditModal from '../../components/nonprofit/ProfileEditModal'
 import ProfileChangeHistory from '../../components/nonprofit/ProfileChangeHistory'
 import HelpTooltip from '../../components/nonprofit/HelpTooltip'
 import LearnMoreLink from '../../components/nonprofit/LearnMoreLink'
+import { normalizeExternalUrl } from '../../utils/externalLink'
 
 interface EditableFields {
   mission: { value: string; source: string; editable: boolean; char_limit: number; char_count?: number }
@@ -239,7 +240,7 @@ export default function ProfileEditor() {
               </div>
               {profile.editable_fields.website.value ? (
                 <a
-                  href={profile.editable_fields.website.value}
+                  href={normalizeExternalUrl(profile.editable_fields.website.value) || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-body text-body text-soft-gold hover:text-bright-gold underline"
@@ -273,7 +274,7 @@ export default function ProfileEditor() {
               </div>
               {profile.editable_fields.donate_url.value ? (
                 <a
-                  href={profile.editable_fields.donate_url.value}
+                  href={normalizeExternalUrl(profile.editable_fields.donate_url.value) || undefined}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-body text-body text-soft-gold hover:text-bright-gold underline"

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { getGuildBenefits, getGuildMemberCount, submitGuildWaitlist, type VendorBenefit } from '../data/api'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 // Member milestone targets — member-count based until vendor contracts define dollar thresholds
 const MILESTONES = [
@@ -72,7 +73,7 @@ function VendorCard({ v }: { v: VendorBenefit }) {
 
       {v.website_url && (
         <a
-          href={v.website_url}
+          href={normalizeExternalUrl(v.website_url) || undefined}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-auto inline-flex items-center gap-1.5 font-body text-small text-soft-gold font-semibold hover:text-bright-gold transition-colors"
