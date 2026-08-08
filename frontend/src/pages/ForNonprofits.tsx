@@ -4,9 +4,6 @@ import { submitWaitlist, getOrganization, getMyOrgs, getPortalToken } from '../d
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useAuth } from '../contexts/AuthContext'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
-import LampMark from '../components/LampMark'
-import { TIER_COLORS } from '../components/TrustBadge'
-import type { TierName } from '../components/TrustBadge'
 import { formatEINInput } from '../data/organizations'
 
 function StepDot({ n, label }: { n: number; label: string }) {
@@ -275,76 +272,56 @@ export default function ForNonprofits() {
         </div>
       </div>
 
-      {/* Build a fuller public page — visibility journey */}
-      {(() => {
-        const STEPS: { tier: TierName; pct: string; description: string; nextStep: string | null }[] = [
-          {
-            tier: 'Spark',
-            pct: '~55% of tax-deductible 501(c)(3)s',
-            description: "The IRS recognizes you. You're already in our index.",
-            nextStep: 'To reach Candle: file a full annual report with the government. Required for nonprofits earning over $50,000 a year.',
-          },
-          {
-            tier: 'Candle',
-            pct: '~27% of tax-deductible 501(c)(3)s',
-            description: 'Financial data is on record, but a recent filing helps people understand your current context.',
-            nextStep: 'To reach Torch: file an annual report dated 2022 or later. This happens automatically once the IRS publishes it. Nothing for you to do.',
-          },
-          {
-            tier: 'Torch',
-            pct: '~17.5% of tax-deductible 501(c)(3)s',
-            description: 'You have a current annual report and peer financial context. Add a mission statement and website so people can understand more of your work.',
-            nextStep: 'To reach Beacon: ensure your mission, website, and current annual report are all on the public record.',
-          },
-          {
-            tier: 'Beacon',
-            pct: '~0.6% of tax-deductible 501(c)(3)s',
-            description: 'Complete page. Current public records, mission, and website are available, giving people a fuller picture to review.',
-            nextStep: null,
-          },
-        ]
-        return (
-          <div className="bg-white py-10 md:py-16 border-t border-light-grey">
-            <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-              <span className="font-body text-label font-medium tracking-[0.08em] text-link-gold uppercase">Building a fuller public page</span>
-              <h2 className="font-display italic text-deep-navy mt-3 text-headline-lg leading-[1.1] mb-3">
-                Improve your visibility
-              </h2>
-              <p className="font-body text-lead text-cool-grey leading-[1.7] mb-10 max-w-[580px]">
-                Visibility is not a grade. It shows how much helpful information a donor can see today. Every group can improve visibility for free, regardless of size, revenue, staffing, or filing type.
-              </p>
-              <div className="max-w-[640px] space-y-0">
-                {STEPS.map((step, i) => (
-                  <div key={step.tier} className="flex gap-6">
-                    <div className="flex flex-col items-center shrink-0">
-                      <div className="mt-1">
-                        <LampMark tier={step.tier} size="sm" />
-                      </div>
-                      {i < STEPS.length - 1 && (
-                        <div className="w-px bg-light-grey mt-2 mb-0" style={{ minHeight: '44px' }} />
-                      )}
-                    </div>
-                    <div className="pb-8 last:pb-0 flex-1">
-                      <div className="flex items-center gap-2.5 mb-1.5">
-                        <span className="font-body text-lead font-semibold" style={{ fontFamily: 'Cinzel, serif', color: TIER_COLORS[step.tier] }}>
-                          {step.tier}
-                        </span>
-                        <span className="font-body text-caption text-cool-grey">{step.pct}</span>
-                      </div>
-                      <p className="font-body text-body text-cool-grey leading-[1.6]">{step.description}</p>
-                      {step.nextStep && (
-                        <p className="mt-2 font-body text-small text-deep-navy/70 leading-[1.5]">
-                          {step.nextStep}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {/* Replaced 2026-08-08. This was a four-step "visibility journey"
+            (Spark -> Candle -> Torch -> Beacon) telling nonprofits how to climb a
+            public ranking. The lamp tiers were retired, and the framing was wrong
+            regardless: an organization's standing should not appear to improve
+            because it filed paperwork with us. What replaces it says what donors
+            can see today and what the organization can add -- actions, not levels.
+            Percentages were dropped; the old ones were unsourced. */}
+        <div className="bg-white py-10 md:py-16 border-t border-light-grey">
+          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+            <span className="font-body text-label font-medium tracking-[0.08em] text-link-gold uppercase">Building a fuller public page</span>
+            <h2 className="font-display italic text-deep-navy mt-3 text-headline-lg leading-[1.1] mb-3">
+              What donors can see, and what you can add
+            </h2>
+            <p className="font-body text-lead text-cool-grey leading-[1.7] mb-10 max-w-[580px]">
+              Your page is built from public records. How much it shows depends on what those
+              records contain, never on our opinion of your work. Nothing here is a grade, and
+              everything below is free.
+            </p>
+            <div className="max-w-[680px] space-y-6">
+              {[
+                {
+                  title: 'From IRS records, automatically',
+                  body: 'Your name, location, cause area, and tax-deductible status come from IRS data. If you file a Form 990, financial details appear once the IRS publishes them. You do not need to send us anything for this.',
+                },
+                {
+                  title: 'Peer financial context, where the record supports it',
+                  body: 'Where enough comparable organizations exist, we show how your finances compare with peers doing similar work at a similar scale. This is context, not a rating. When we cannot find a close peer group, we say so plainly rather than guess.',
+                },
+                {
+                  title: 'What you can add by claiming your page',
+                  body: 'A short mission description, your website, a donation link, and volunteer information. These are the details donors most often look for and that public records rarely carry.',
+                },
+                {
+                  title: 'What you can correct',
+                  body: 'If something on your page is wrong or out of date, tell us and we will fix it and record the correction. Errors in public data are common, and correcting them is not an admission of anything.',
+                },
+              ].map(({ title, body }) => (
+                <div key={title} className="p-5 bg-warm-cream/40 rounded-lg border border-light-grey">
+                  <h3 className="font-body text-lead font-semibold text-deep-navy mb-1.5">{title}</h3>
+                  <p className="font-body text-body text-cool-grey leading-[1.65]">{body}</p>
+                </div>
+              ))}
             </div>
+            <p className="font-body text-small text-cool-grey mt-8 max-w-[580px]">
+              Smaller and newer organizations often have thinner public records. That reflects
+              how filing requirements work, not the value of the work, and it is never held
+              against an organization here.
+            </p>
           </div>
-        )
-      })()}
+        </div>
 
       {/* Claim form */}
       {/* Return portal — signed-in nonprofits jump straight to their editor */}

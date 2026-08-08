@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import TrustNav from '../components/TrustNav'
-import LampMark from '../components/LampMark'
-import { TIER_COLORS } from '../components/TrustBadge'
-import type { TierName } from '../components/TrustBadge'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useJsonLd, faqPageSchema } from '../hooks/useJsonLd'
 
@@ -14,7 +11,7 @@ const TOC = [
   { id: 'peer-financial-context', label: 'Peer financial context' },
   { id: 'not-measured', label: 'What we don’t measure' },
   { id: 'data-limits', label: 'Data limits' },
-  { id: 'lamp-tiers', label: 'Visibility levels' },
+  { id: 'financial-context', label: 'Financial context' },
   { id: 'hidden-gems', label: 'Orgs you may not have heard of' },
   { id: 'two-layers', label: 'What the organization controls' },
   { id: 'updates', label: 'How data stays current' },
@@ -274,27 +271,28 @@ export default function Methodology() {
               </ul>
             </Section>
 
-            <Section id="lamp-tiers" label="Visibility levels" title="Visibility levels: how much information is available">
-              <p>Every page displays a lamp tier. It shows how much public information backs the page today, never our opinion of the organization or its work. A fainter lamp is not a judgment. It is a sign that the public record has more room to grow.</p>
-              <div className="mt-4 space-y-3">
-                {[
-                  { tier: "Beacon" as TierName, what: "Broad public record: financial filings, mission information, website, and current organization details." },
-                  { tier: "Torch" as TierName, what: "Strong public record: financial context and recent organization information are available." },
-                  { tier: "Candle" as TierName, what: "Some public context is available, with gaps in financial or organization information." },
-                  { tier: "Spark" as TierName, what: "The organization is recognized by the IRS, but the public record is still limited." },
-                ].map(({ tier, what }) => (
-                  <div key={tier} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">
-                    <div className="shrink-0 flex flex-col items-center gap-1.5 pt-0.5">
-                      <LampMark tier={tier} size="sm" />
-                      <span className="font-body text-micro font-semibold tracking-[0.03em]" style={{ fontFamily: "Cinzel, serif", color: TIER_COLORS[tier] }}>{tier}</span>
+              <Section id="financial-context" label="Financial context" title="Financial context: how much peer comparison we can offer">
+                <p>Where the public record supports it, a page shows financial context: how an organization compares with peers doing similar work at a similar scale in a similar place. It is context, never a rating, and never our opinion of the organization or its work.</p>
+                <p className="mt-4">How closely we can match peers depends on what the public record contains, so we say which kind of comparison we were able to make:</p>
+                <div className="mt-4 space-y-3">
+                  {[
+                    { label: "Full context", what: "Compared with organizations of similar type, size, and region." },
+                    { label: "Regional context", what: "Compared within a broader regional peer group." },
+                    { label: "Broad category", what: "Compared across a wider category when a closer peer group was too small to be meaningful." },
+                    { label: "Category only", what: "We can describe the kind of work, but the public record does not yet support a peer comparison." },
+                  ].map(({ label, what }) => (
+                    <div key={label} className="flex gap-4 p-4 bg-white rounded-lg border border-light-grey items-start">
+                      <div className="shrink-0 pt-0.5 min-w-[7.5rem]">
+                        <span className="font-body text-small font-semibold text-deep-navy">{label}</span>
+                      </div>
+                      <p className="font-body text-body text-cool-grey leading-[1.6]">{what}</p>
                     </div>
-                    <p className="font-body text-body text-cool-grey leading-[1.6]">{what}</p>
-                  </div>
-                ))}
-              </div>
-              <Callout>A lower tier reflects public-data availability, not organizational character, importance, or mission quality.</Callout>
-              <div className="mt-6"><Link to="/tiers" className="inline-flex items-center gap-1.5 font-body text-small font-semibold text-soft-gold hover:text-bright-gold transition-colors">Full tier reference →</Link></div>
-            </Section>
+                  ))}
+                </div>
+                <p className="mt-4 font-body text-small text-cool-grey">Each page also shows how confident we are in that comparison, and how many peers it is based on.</p>
+                <Callout>A broader comparison reflects what the public record contains, not organizational character, importance, or mission quality. Smaller and newer organizations often have thinner records; that is a gap in the data, not a judgment about the work.</Callout>
+                <p className="mt-6 font-body text-small text-cool-grey">Previously this section described a four-level &ldquo;lamp tier&rdquo; visibility mark shown on every page. Those marks were retired on 8 August 2026 because they rested on assumptions that did not hold, and because peer financial context covers more organizations and says something more useful. Research published before that date describes the retired system.</p>
+              </Section>
 
             <Section id="hidden-gems" label="Orgs you may not have heard of" title="Organizations you may not have heard of">
               <p>Daanaa surfaces smaller and less visible organizations so donors can discover more local and community-rooted work.</p>

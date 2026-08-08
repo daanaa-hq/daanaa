@@ -64,11 +64,22 @@ export default function ResearchFindings({
 
         <div>
           <h3 className="text-xl font-semibold text-deep-navy mb-4">
+            <div className="mb-6 p-4 rounded-lg border border-soft-gold/40 bg-soft-gold/10">
+              <p className="text-sm font-semibold text-deep-navy mb-1">Superseded — 8 August 2026</p>
+              <p className="text-sm text-cool-grey leading-relaxed">
+                These findings describe the lamp-tier visibility system, which was retired on
+                8 August 2026. They are kept as a record of what was measured and believed at
+                the time, not as a current description of the site. Peer financial context
+                replaced these marks and covers more organizations. A lower tier here reflects
+                how much public data existed for an organization, never a judgment about its
+                work.
+              </p>
+            </div>
             Top Cause Areas (NTEE1)
           </h3>
           <p className="text-sm text-cool-grey mb-6">
-            Organizations grouped by primary cause category. Beacon/Torch/Candle/Spark
-            percentages show data completeness distribution.
+              Organizations grouped by primary cause category, showing the distribution of
+              the retired lamp-tier data-completeness marks.
           </p>
           {loading ? (
             <div className="text-cool-grey">Loading...</div>

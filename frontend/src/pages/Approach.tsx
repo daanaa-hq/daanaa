@@ -55,7 +55,7 @@ const SECTIONS = [
     title: 'Equal dignity for every organization',
     body: [
       'A $200,000 community health clinic is never compared against a $2 billion hospital system. Daanaa benchmarks every organization within its true peer group: organizations with the same funding model and a similar revenue band. This means a small organization can show strong financial health for its size, and a large one can show a need for support.',
-      'We built Daanaa for the organizations most people have never heard of. The lamp tier system is not a verdict — it reflects how much public data is available today. Any organization can raise its visibility by adding its mission, website, and financial records, and that path is always free.',
+      'We built Daanaa for the organizations most people have never heard of. What we can show about an organization depends on how much public information exists, never on our opinion of its work. Any organization can add its mission, website, and financial records so more of its story is visible, and that path is always free.',
     ],
     link: { to: '/methodology#peer-financial-context', label: 'How peer groups work' },
   },

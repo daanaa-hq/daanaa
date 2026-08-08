@@ -132,7 +132,7 @@ export default function WhyDaanaa() {
               </Link>
 
               <Link
-                to="/tiers"
+                to="/methodology#financial-context"
                 className="group p-6 border border-light-grey rounded-lg hover:border-soft-gold/50 hover:bg-white/60 transition-all"
               >
                 <div className="flex items-start justify-between">
