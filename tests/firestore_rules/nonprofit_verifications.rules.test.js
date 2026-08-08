@@ -1,16 +1,20 @@
 /**
  * P0-SEC-001 — behavioural authorization tests for nonprofit_verifications.
  *
- * STATUS: NOT YET EXECUTED. These require the Firebase emulator
- * (@firebase/rules-unit-testing + a Java runtime), neither of which is
- * installed in this repository. Adding that toolchain is a dependency decision
- * that has not been made. Until these run, P0-SEC-001 is verified only
- * statically by tests/test_firestore_rules_p0_sec_001.py — do not report the
- * package as behaviourally verified.
+ * STATUS: EXECUTED AND PASSING (2026-08-08). 9/9 against the Firestore emulator.
  *
- * To run once tooling exists:
- *   npm i -D @firebase/rules-unit-testing firebase-tools
- *   npx firebase emulators:exec --only firestore "npx jest tests/firestore_rules"
+ * Clean-environment command:
+ *   npm install -D @firebase/rules-unit-testing firebase-tools jest
+ *   npx firebase emulators:exec --only firestore --project daanaa-rules-test \
+ *     "npx jest tests/firestore_rules"
+ *
+ * Result: Tests: 9 passed, 9 total.
+ * Reverting firestore.rules to `allow read, write: if request.auth.uid != null`
+ * yields 4 failed / 5 passed, confirming these tests detect the original defect.
+ *
+ * Requires a Java runtime (default-jre-headless) for the emulator. The emulator
+ * is pinned to 127.0.0.1:8571 in firebase.json because port 8080 is held by
+ * llama-swap on the Daanaa host.
  *
  * These assert the authorization model in
  * audits/2026-08-daanaa-baseline/16-first-implementation-package.md:
