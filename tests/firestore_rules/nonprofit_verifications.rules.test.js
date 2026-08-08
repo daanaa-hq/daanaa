@@ -76,20 +76,25 @@ describe('nonprofit_verifications — client access denied (P0-SEC-001)', () => 
   });
 });
 
+// NOTE on path shape: these rules use `match /{uid}/<name>/{document=**}`, where
+// {uid} binds to a top-level COLLECTION and <name> to a DOCUMENT id. A document
+// reference therefore needs an even number of segments, e.g.
+// `user-a/saved_organizations/items/org1`. A 3-segment path is a collection ref
+// and the SDK rejects it before rules are ever consulted.
 describe('scope guard — wallet rules unchanged', () => {
   test('owner can read and write their own saved_organizations', async () => {
     const db = testEnv.authenticatedContext('user-a').firestore();
-    await assertSucceeds(db.doc('user-a/saved_organizations/org1').set({ ein: '123456789' }));
-    await assertSucceeds(db.doc('user-a/saved_organizations/org1').get());
+    await assertSucceeds(db.doc('user-a/saved_organizations/items/org1').set({ ein: '123456789' }));
+    await assertSucceeds(db.doc('user-a/saved_organizations/items/org1').get());
   });
 
   test('another user cannot read someone else\'s saved_organizations', async () => {
     const db = testEnv.authenticatedContext('user-b').firestore();
-    await assertFails(db.doc('user-a/saved_organizations/org1').get());
+    await assertFails(db.doc('user-a/saved_organizations/items/org1').get());
   });
 
   test('audit logs remain write-denied to clients', async () => {
     const db = testEnv.authenticatedContext('user-a').firestore();
-    await assertFails(db.doc('user-a/audit_logs/e1').set({ event: 'x' }));
+    await assertFails(db.doc('user-a/audit_logs/items/e1').set({ event: 'x' }));
   });
 });
