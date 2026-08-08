@@ -1,3 +1,108 @@
+## 2026-08-08 — Systems that report success while doing nothing
+
+**The pattern, and the real lesson of the day.** Seven separate failures were found in
+one session. Not one announced itself; every one logged success or stayed silent while
+doing nothing. The common defect is not any individual bug — it is that **verification
+was written to describe intent rather than to test outcome**.
+
+If a check cannot fail, it is not a check. Each of these passed for months:
+
+| System | Reported | Reality |
+|---|---|---|
+| Backup integrity | `✅ integrity check passed` | `timeout 30` on a 23GB DB — always timed out, and timeout was coded as success |
+| Backup validation | size within 5% → OK | corruption does not change file size; six unreadable backups passed |
+| API startup | `✓ Embeddings loaded, search ready` | NameError swallowed; **0 of 546K** vectors loaded, semantic search degraded on every boot |
+| Nightly integrity cron | (silent) | `PRAGMA integrity_check LIMIT 1` — invalid SQL, errored nightly into an unread log |
+| Watchdog | `no change` ×1,791 | claim + wallet paths dead ~6 days; a check that never changes state never re-alerts |
+| Email agent | `internal → silently archived` | **archived the outage alerts themselves** |
+| llama-swap | 4 model slots configured | all four were dangling symlinks; GPU idle at 1.6GB/34GB |
+
+**Preventing rule:** every verification must be proven to fail. Before trusting a check,
+break the thing it guards and confirm it goes red. Applied here: the new backup script
+was verified by reverting the fix and watching tests fail (2 static, 4 emulator), and the
+retention policy was dry-run before it was ever allowed to delete.
+
+---
+
+## 2026-08-08 — sqlite3 `.backup` cannot complete against a live database
+
+**Symptom:** Nightly backups produced nothing on 08-04, 08-05 and 08-06, leaving only
+orphaned `-journal` files, while the log reported success. One run had been executing for
+5h21m when found.
+
+**Root cause:** The `sqlite3_backup` API **restarts from page 1 whenever a writer touches
+the source**. gunicorn holds `merit_registry.db` open read-write permanently, so the copy
+could never finish. Measured: **5,008GB read / 6,672GB written** for a 23GB database —
+about 290 full passes at ~6GB/s, indefinitely.
+
+**Fix:** `VACUUM INTO` — one consistent read snapshot, written once. **198 seconds.**
+
+**Preventing rule:** never use `.backup` on a database with live writers. Note the
+diagnostic that revealed it: file size looked static while mtime advanced every second.
+Progress was invisible in size, but `/proc/<pid>/io` counters made ~290 rewrites obvious.
+When something looks stuck, read the I/O counters before assuming slow.
+
+---
+
+## 2026-08-08 — Alerting that eats its own alarms
+
+**Symptom:** daanaa.org was down ~14 hours. Nobody was notified.
+
+**Root cause — a four-link chain in which every component worked as designed:**
+1. watchdog detected the outage (within 5 min) ✓
+2. watchdog sent the alert; Gmail delivery confirmed working ✓
+3. email agent saw sender `security@daanaa.org`, matched `_is_internal()` (own domain),
+   and applied its documented rule: *"internal → silently archived, nothing sent"* ✓
+4. nobody ever saw it
+
+Ops mail legitimately originates from our own domain, so "own domain means internal
+chatter" silences precisely the mail that matters most.
+
+**Fix (three layers, because one is not enough):** ops-prefixed subjects now forward to
+the founder instead of archiving; `scripts/ops/mailer.py` pushes to a phone via ntfy on
+every alert path; the watchdog's 6-hour re-alert cadence stays.
+
+**Preventing rule:** an alert is not delivered until a human sees it. Test the whole
+chain end to end — detection, send, classification, inbox — not each link alone. A
+dry-run of the email agent showed repeated `[Daanaa ALERT] public_site, homepage,
+claim_path` messages sitting archived, which is what proved the chain rather than the
+theory.
+
+---
+
+## 2026-08-08 — Retention that moves instead of deletes
+
+**Symptom:** `backups/` reached 250GB; 115GB was five corrupt copies of a single day.
+
+**Root cause:** expiry `mv`'d files to `archive/` rather than deleting. Nothing was ever
+reclaimed. At ~22GB per copy, the documented 30-day daily policy needs **660GB** against
+~105GB free — the backup system would eventually have filled the disk and taken the box
+down with it.
+
+**Fix:** real retention (7 daily / 3 hourly local) with two safeguards — it refuses to
+prune unless a verified offsite copy exists, and warns below 40GB free. Local is for fast
+recovery; offsite is the durable tier.
+
+**Preventing rule:** any retention policy must be checked against `capacity ÷ object size`.
+A policy that cannot fit on the disk is a scheduled outage.
+
+---
+
+## 2026-08-08 — One stale IP silently broke four subsystems
+
+**Symptom:** nightly deploys, the claim path, the donor wallet, and S3 code backups had
+all been failing for days to weeks. Each looked like a separate problem.
+
+**Root cause:** the droplet was replaced and `162.243.97.179` was hardcoded in **24
+scripts** plus a systemd unit. The claim tunnel additionally used key `daanaa_do`, which
+stopped authenticating when a snapshot restore wiped `authorized_keys` — only
+`daanaa_do_cron` works. With `Restart=always` it retried a dead host every 10s for weeks.
+
+**Preventing rule:** infrastructure addresses belong in one place. The same reasoning
+produced `scripts/lib/local_llm.py` after 16 scripts were found hardcoding dead inference
+ports. **Fixing only the IP would have left the tunnel broken** — when a component has
+been failing a long time, expect more than one cause and verify each independently.
+
 ## 2026-07-28 — V6 Activation: Validation-first gate prevents silent failures + undetected partial deployments
 
 **Symptom:** Risk of v6 going live with incomplete Phase 3 artifacts, broken assignments, or API misconfigurations undetected because validation and activation are separate/optional steps. Founder approval + QA sign-off might occur at different times, creating window for incomplete deployment.

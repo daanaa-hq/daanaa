@@ -223,6 +223,54 @@ create_daily_backup() {
 }
 
 # ============================================================================
+# PHASE 3.5: Retention (added 2026-08-08)
+# ============================================================================
+# The old policy MOVED expired backups to archive/ instead of deleting them, so
+# nothing was ever reclaimed: backups/ reached 250GB, and 115GB of that was five
+# corrupt copies of a single day. At ~22GB per copy a 30-day daily policy needs
+# 660GB against ~105GB free -- the backup system would have filled the disk and
+# taken the box down with it.
+#
+# Local retention is deliberately short because offsite is the durable tier:
+# weekly full DB (s3://daanaa-backups) + nightly ~80MB core export
+# (s3://daanaa-nonprofit-data) + DigitalOcean snapshots. Local exists for fast
+# recovery, not history.
+#
+# Fail-safe: never prune unless a verified offsite copy exists.
+prune_local_backups() {
+    local keep_daily="${KEEP_DAILY_LOCAL:-7}" keep_hourly="${KEEP_HOURLY_LOCAL:-3}"
+    log "🧹 retention: keeping ${keep_daily} daily / ${keep_hourly} hourly locally"
+
+    local offsite_ok=0
+    if aws s3 ls "s3://daanaa-backups/home-server/full/" >/dev/null 2>&1; then
+        offsite_ok=1
+    fi
+    if [ "$offsite_ok" != "1" ]; then
+        log "⚠️  retention SKIPPED — could not confirm an offsite copy exists"
+        return 0
+    fi
+
+    local removed=0
+    for pat in "merit_registry_daily_*.db:$keep_daily" "merit_registry_hourly_*.db:$keep_hourly"; do
+        local glob="${pat%%:*}" keep="${pat##*:}"
+        # Sort by mtime, newest first; delete past the keep count.
+        find "$BACKUP_DIR" "$ARCHIVE_DIR" -maxdepth 1 -name "$glob" -type f -printf '%T@ %p\n' 2>/dev/null \
+          | sort -rn | tail -n +$((keep + 1)) | cut -d' ' -f2- | while read -r old; do
+                [ -n "$old" ] || continue
+                rm -f "$old" "$old"-shm "$old"-wal "$old"-journal 2>/dev/null || true
+                log "   pruned $(basename "$old")"
+            done
+    done
+
+    local free_gb
+    free_gb=$(df -BG "$BACKUP_DIR" | tail -1 | awk '{gsub(/G/,"",$4); print $4}')
+    log "🧹 retention done — ${free_gb}G free on the backup volume"
+    if [ "$free_gb" -lt 40 ]; then
+        log "🚨 LOW DISK: ${free_gb}G free after retention — review backup sizing"
+    fi
+}
+
+# ============================================================================
 # PHASE 4: Pre-Enrichment Checkpoint
 # ============================================================================
 
@@ -358,7 +406,9 @@ main() {
         list_recoverable_backups
     fi
 
-    log "✅ Backup strategy cycle complete"
+    prune_local_backups
+
+log "✅ Backup strategy cycle complete"
     log "════════════════════════════════════════"
 }
 
