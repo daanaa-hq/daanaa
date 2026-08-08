@@ -2111,10 +2111,11 @@ def list_organizations():
     min_rev = request.args.get('min_revenue', type=float)
     max_rev = request.args.get('max_revenue', type=float)
     min_pct = request.args.get('min_percentile', type=float)
-    min_tier = request.args.get('min_tier', '').strip()
-    if min_tier == 'Glow':  # frontend alias for DB name Ember
-        min_tier = 'Ember'
-    tier = request.args.get('tier', '').strip()  # Filter by specific visibility tier
+    # min_tier/tier lamp-visibility params retired 2026-08-08 (founder decision).
+    # Never applied to a WHERE clause in this file (verified before removal) --
+    # were parsed and silently unused. Not accepted at all here, unlike
+    # droplet_api.py, which keeps accepting-but-ignoring them for stale-URL
+    # compatibility on the public site; this is the local/dev API only.
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
@@ -2243,12 +2244,10 @@ def list_organizations():
         )
         params.append(f'%{cause}%')
 
-    _TIER_HIERARCHY = ['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark']
-    # Exact visibility tier filter (e.g., show only Beacon orgs)
-    _VISIBILITY_TIERS = ['Beacon', 'Torch', 'Lantern', 'Candle', 'Ember', 'Spark']
-    if tier and tier in _VISIBILITY_TIERS:
-        where_clauses.append("merit_tier = ?")
-        params.append(tier)
+    # Exact visibility (lamp) tier filter retired 2026-08-08 (founder decision).
+    # _TIER_HIERARCHY was dead code even before this -- defined, never read
+    # anywhere. Confirmed via full-file grep before removing (the earlier pass
+    # missed this block; a truncated line-range grep is not a real check).
 
     # total_revenue and merit_score are opt-in sorts; the default is neutral
     # name order so browse never implies a ranking. random is seeded shuffle for discovery.

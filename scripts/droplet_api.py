@@ -487,22 +487,12 @@ def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias='', verifie
     return conds, params
 
 
-# Visibility level (lamp tier) filter. The DB stores a wider set of historical
-# tier names than the 4 the UI shows, so map each display tier to its DB values.
-_TIER_DB_VALUES = {
-    'beacon': ('Beacon',),
-    'torch':  ('Torch', 'Lantern', 'Flame'),
-    'candle': ('Candle', 'Ember', 'Glow'),
-    'spark':  ('Spark', 'Seed'),
-}
-
-
-def _tier_condition(tier: str, alias: str = ''):
-    """WHERE fragment + params for a visibility-level filter, or (None, [])."""
-    vals = _TIER_DB_VALUES.get((tier or '').strip().lower())
-    if not vals:
-        return None, []
-    return f"{alias}merit_tier IN ({','.join('?' * len(vals))})", list(vals)
+# Lamp-tier visibility filter retired 2026-08-08 (founder decision, "retire it
+# with the rest"): _TIER_DB_VALUES + _tier_condition() removed. The `tier` /
+# `min_tier` query params are still accepted for backward compatibility with
+# any stale bookmarked/cached URLs, but are now a no-op -- filtering by the
+# retired mechanic has no effect, matching the frontend, which stopped sending
+# these params in July 2026.
 
 
 def _order_clause(sort: str, order: str, alias: str = '') -> str:
@@ -1014,10 +1004,7 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
             placeholders = ','.join('?' * len(nearby_zips))
             conditions.append(f"SUBSTR(zipcode, 1, 5) IN ({placeholders})")
             params.extend(nearby_zips)
-        tier_cond, tier_params = _tier_condition(tier)
-        if tier_cond:
-            conditions.append(tier_cond)
-            params.extend(tier_params)
+        # lamp-tier filter retired 2026-08-08 -- see note at former _tier_condition
 
         where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
         # COALESCE instead of NULLS LAST: same ordering, but the non-indexable
@@ -1094,10 +1081,7 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
             placeholders = ','.join('?' * len(nearby_zips))
             conditions.append(f"SUBSTR(o.zipcode, 1, 5) IN ({placeholders})")
             params.extend(nearby_zips)
-        tier_cond, tier_params = _tier_condition(tier, alias='o.')
-        if tier_cond:
-            conditions.append(tier_cond)
-            params.extend(tier_params)
+        # lamp-tier filter retired 2026-08-08 -- see note at former _tier_condition
 
         order = _order_clause(sort, order, alias='o.')
 
