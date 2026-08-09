@@ -197,26 +197,25 @@ Secondary/legacy: `data/meritgiving.db`, `data/merit_state.db` — do not treat 
 
 ### Data pipeline (`scripts/`)
 
-**Financial context system:** v5 (Donation-Funded/Fee-for-Service/Endowment-Funded,
-3 revenue bands, health signals) drives all user-facing financial context. v4 (9
-operating models) and lamp tiers remain for backwards compatibility and the
-visibility layer. The research page documents v5; org detail pages show v5 context.
+**Financial context system:** v6 (Daanaa tiered context with NTEE2 × revenue band × region
+peer groups) is the current scoring system. v4 (9 operating models) and lamp tiers remain
+for backwards compatibility. The research page documents v6 context; org detail pages show
+v6 context with fallback tiers.
 
-Production scorer: `scripts/merit_scorer_v4_0.py` (runs nightly via
-`overnight_pipeline.py`). v5 columns are pre-computed and stable in the database
-(411K+ orgs scored; coverage bounded by financial data availability, not partial
-run). Dry-run revealed v5 only assigns 3 archetypes (NTEE mapping constraint);
-re-scoring would not add missing archetypes or expand coverage.
+Production scorer: `scripts/daanaa_scorer.py` (v6, runs nightly via
+`overnight_pipeline.py`). v6 assigns tiered peer context with confidence levels
+(2,053K+ orgs with context assignment; coverage bounded by peer group availability).
 
-Legacy scorers (v2_0, v3_3, _db, _tier_b/_c, agent2) archived to
-`archive/legacy_scorers_20260609/` — never run those.
+Historical scorers (v4, v5) archived to
+`scripts/archive_scorers/` (merit_scorer_v4_0.py, merit_scorer_v5_0.py).
+Older scorers (v2_0, v3_3, etc.) archived to `archive/legacy_scorers_20260609/` — never run those.
 
 Key pipeline scripts:
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/merit_scorer_v4_0.py` | Compute peer financial context scores + v4 tiers (validated by `validate_v4_scores.py`) |
-| `scripts/overnight_pipeline.py` | Nightly orchestrator: score → rebuild FTS → refresh stats |
+| `scripts/daanaa_scorer.py` | Compute v6 tiered peer financial context (NTEE2 × revenue band × region) |
+| `scripts/overnight_pipeline.py` | Nightly orchestrator: score (daanaa_scorer) → rebuild FTS → refresh stats |
 | `scripts/build_fts_index.py` | Rebuild the `org_fts` FTS5 full-text search virtual table |
 | `scripts/build_org_embeddings.py` | Generate mxbai-embed-large vectors into `org_embeddings` |
 | `scripts/generate_missions.py` | AI mission generation via Qwen2.5-32B (local, port 11437) |
@@ -255,7 +254,7 @@ Do not load additional models without checking available VRAM and impact on nigh
 
 ## Key gotchas
 
-- **Scorer location**: `scripts/merit_scorer_v4_0.py` — legacy scorers live in `archive/legacy_scorers_20260609/`, never run them.
+- **Scorer location**: `scripts/daanaa_scorer.py` (v6, current active). v4/v5 archived in `scripts/archive_scorers/`, older versions in `archive/legacy_scorers_20260609/` — never run archived scorers.
 - **Root-level debris**: stray `fix_*.py` and backup files from iterative development are not part of the active codebase — do not import or extend them.
 - **Two databases**: `merit_registry.db` vs `meritgiving.db`. Only `merit_registry.db` feeds the live API.
 - **Frontend package name**: `frontend/package.json` still says `"name": "my-app"` — scaffold default, never updated; ignore it.

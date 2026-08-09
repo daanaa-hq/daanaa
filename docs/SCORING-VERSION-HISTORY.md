@@ -118,12 +118,12 @@ That structure would let the team answer “how did we improve?” with both a n
 
 ## Source files reviewed
 
-- `archive/legacy_scorers_20260609/merit_scorer.py`
-- `archive/legacy_scorers_20260609/merit_scorer_v2_0.py`
-- `archive/legacy_scorers_20260609/merit_scorer_v3_3.py`
-- `scripts/merit_scorer_v4_0.py`
-- `scripts/merit_scorer_v5_0.py`
-- `scripts/merit_scorer_v6_0.py`
+- `archive/legacy_scorers_20260609/merit_scorer.py` (v1 baseline)
+- `archive/legacy_scorers_20260609/merit_scorer_v2_0.py` (v2.0)
+- `archive/legacy_scorers_20260609/merit_scorer_v3_3.py` (v3.3)
+- `scripts/archive_scorers/merit_scorer_v4_0.py` (v4.0, archived)
+- `scripts/archive_scorers/merit_scorer_v5_0.py` (v5.0, archived)
+- `scripts/daanaa_scorer.py` (v6 — current active scorer, renamed from merit_scorer_v6_0.py)
 - `docs/METHODOLOGY-CHANGELOG.md`
 - `docs/V6_SCORING_DATA_AUDIT_2026_07_26.md`
 - `docs/METHODOLOGY_V6_INFERENCE.md`
