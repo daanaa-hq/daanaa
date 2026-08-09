@@ -32,8 +32,8 @@ const FAQS = [
     a: 'v6 may show financial patterns reported by a reasonable peer group—organizations comparable by category, geography, scale, and funding pattern. That is reference context, not an estimate of the organization\'s own finances. If the peer evidence is too weak, we show limited context instead.',
   },
   {
-    q: 'What are Lamp Tiers?',
-    a: 'Lamp Tiers are visibility indicators based on public information completeness and availability. They are not ratings. They reflect how much public context Daanaa can show.',
+    q: 'What were Lamp Tiers?',
+    a: 'Lamp Tiers were a visibility indicator based on public information completeness, shown on every organization page through 8 August 2026. They were retired because peer financial context (above) covers more organizations and says something more useful. They were never a rating.',
   },
   {
     q: 'Does Daanaa process donations?',

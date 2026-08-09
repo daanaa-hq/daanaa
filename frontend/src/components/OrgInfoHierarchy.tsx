@@ -2,6 +2,7 @@ import { ReactNode } from 'react'
 import type { ApiOrganization } from '../data/api'
 import GiveYourWayRouter from './GiveYourWayRouter'
 import { normalizeExternalUrl } from '../utils/externalLink'
+import { nonprofitSizeLabel } from '../utils/orgSize'
 
 /**
  * OrgInfoHierarchy: Display org information from most common to least common.
@@ -43,7 +44,6 @@ interface OrgInfoHierarchyProps {
 export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
   // Determine data availability score for each field
   const dataAvailable = {
-    mission: !!org.mission,
     donate: org.donate_url_status === 'beta' || org.donate_url_status === 'claimed',
     // Match the app's established rule (utils/actionRow.ts), not a stricter local
     // one: show a website when it verified ok/beta, OR when we hold a URL we simply
@@ -60,27 +60,11 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
 
   return (
     <div className="space-y-6">
-      {/* TIER 1: Mission (95%+ have) */}
-      {dataAvailable.mission ? (
-        <InfoBlock title="Mission" >
-          <p className="text-sm leading-relaxed text-navy-mid">{org.mission}</p>
-          {org.mission_source && (
-            <p className="text-xs text-cool-grey mt-2">
-              Source: {org.mission_source === 'irs_990' ? 'IRS Form 990'
-                : org.mission_source === 'ai_ntee' ? 'NTEE category'
-                : org.mission_source === 'ai_web_grounded' ? 'Organization website'
-                : org.mission_source === 'claimed' ? 'Verified by organization'
-                : 'Public sources'}
-            </p>
-          )}
-        </InfoBlock>
-      ) : (
-        <InfoBlock
-          title="Mission"
-          isMissing
-          missingReason="We're still learning about this organization's mission. Help us by verifying their website or Form 990 filing."
-        />
-      )}
+      {/* Mission removed from this tier 2026-08-08: it duplicated the hero's
+          mission paragraph verbatim (OrganizationDetail.tsx renders org.mission
+          directly under the org name). Source attribution / AI-generated
+          disclosure the hero doesn't yet carry is TODO'd separately rather
+          than kept here as a reason to duplicate the whole paragraph. */}
 
       {/* TIER 2: Financial Context (97%+ with v6) */}
       {dataAvailable.financial ? (
@@ -157,12 +141,18 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
         </InfoBlock>
       )}
 
-      {/* TIER 5: Organization Profile — size + board (40%+ coverage) */}
-      {(dataAvailable.board || org.merit_band) ? (
+      {/* TIER 5: Organization Profile — size + board (40%+ coverage).
+          Size derives from total_revenue, not the dormant `merit_band`
+          lamp-tier field this used to read — that field is unset for most
+          orgs post-retirement and was rendering as a bare "Size: 0" or
+          blank. See LESSONS.md 2026-08-08. */}
+      {(() => {
+        const sizeLabel = nonprofitSizeLabel(org.total_revenue)
+        return (dataAvailable.board || sizeLabel) ? (
         <InfoBlock title="Organization">
           <div className="text-sm text-navy-mid space-y-2">
-            {org.merit_band && (
-              <p>Size: <strong>{org.merit_band}</strong></p>
+            {sizeLabel && (
+              <p>Size: <strong>{sizeLabel}</strong></p>
             )}
             {org.board_size && (
               <p>Board: <strong>{org.board_size} members</strong></p>
@@ -175,7 +165,8 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
           isMissing
           missingReason="Organization and board information comes from recent Form 990 filings. It will appear here once available."
         />
-      )}
+        )
+      })()}
 
       {/* ALWAYS SHOW: Trust Note */}
       <div className="mt-8 p-4 bg-navy-dark/5 rounded-lg border border-navy-dark/10">

@@ -38,6 +38,41 @@ within ~75–90 days. Lower priority; Every.org covers the reachable majority fi
 
 ## Trust & brand
 
+### P3 — Mission source attribution in the hero (text, not just the AI badge)
+**What:** The hero mission paragraph shows an `AiBadge` icon when the mission is
+AI-generated, but doesn't say which source (IRS Form 990 / NTEE category /
+organization website / verified by organization) the way the removed
+`OrgInfoHierarchy` Mission tier used to.
+**Why:** Removing that tier (2026-08-08, duplicate-content fix) dropped the only
+place that spelled out the source in text. Stewardship P3 (evidence-based,
+explainable) is still met via the icon + tooltip, but a text line would be
+clearer for a donor who doesn't hover.
+**Pros:** Small, focused addition; keeps the hero as the single home for mission
+info instead of splitting it across two page locations again.
+**Cons:** Hero is already dense (name, mission, location, CTAs, badges) — needs a
+compact treatment, not a full sentence.
+**Context:** Not urgent — the AiBadge already discloses AI-generated missions
+visually; this closes a smaller gap (source for non-AI missions too, e.g. "IRS
+Form 990" vs "organization website").
+**Depends on:** None.
+
+### P2 — Org page loading skeleton (replaces blank-screen spinner)
+**What:** Build a skeleton loading state for `OrganizationDetail.tsx` that matches the
+real layout (hero shape, badge row, content blocks) instead of the current blank navy
+screen with a centered spinner.
+**Why:** Surfaced 2026-08-08 during the org-page design review (Pass 2, Interaction
+State Coverage). On a slow connection a blank screen reads as broken, not loading —
+the highest-traffic decision page on the site shouldn't risk that impression.
+**Pros:** Standard, well-understood pattern; meaningfully improves perceived
+performance without any backend change.
+**Cons:** Real, separate work — needs to track the actual DOM shape (hero height,
+badge row, sidebar) closely enough to avoid layout shift when real content arrives.
+**Context:** Deferred out of the same pass that shipped the flame-language fix,
+FAQ tense fix, category-dedup fix, "Size: 0" fix, financial-history consolidation,
+and duplicate-content removal — kept those changes focused and independently
+verifiable rather than bundling in a bigger UI addition.
+**Depends on:** None.
+
 ### P3 — Wallet explainer video (replaces the homepage text pitch)
 **What:** A short explainer video/audio for how the Giving Wallet works, to replace the
 homepage's WalletSection text pitch + preview mockup once produced. Explore NotebookLM

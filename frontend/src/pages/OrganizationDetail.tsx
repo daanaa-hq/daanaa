@@ -97,18 +97,6 @@ function formatOrdinal(n: number): string {
 }
 
 // Decode a peer_group string like "B24:Medium" into a readable label
-// Plain-English size for the "Size" field. The stored revenue_band is a
-// model-specific scoring tier (0-7) — meaningless to a reader — so we derive a
-// universal size from actual annual revenue instead. Null when revenue is
-// unknown, so we hide the field rather than guess.
-function nonprofitSizeLabel(revenue: number | null | undefined): string | null {
-  if (revenue == null || revenue <= 0) return null
-  if (revenue < 250_000) return 'Micro'
-  if (revenue < 1_000_000) return 'Small'
-  if (revenue < 10_000_000) return 'Mid-size'
-  if (revenue < 100_000_000) return 'Large'
-  return 'Major'
-}
 
 // Single source of truth for the ProPublica Nonprofit Explorer org URL.
 // Was hand-built inline in 3 places; centralized so the path never drifts.
@@ -294,6 +282,7 @@ export default function OrganizationDetail() {
   const [enrichmentLoading, setEnrichmentLoading] = useState(false)
   const [volunteeringInterestEventId, setVolunteeringInterestEventId] = useState<number | null>(null)
   const [showRecurringSetup, setShowRecurringSetup] = useState(false)
+  const [showFinancialHistory, setShowFinancialHistory] = useState(false)
   const [lastDonationAmount, setLastDonationAmount] = useState<number | undefined>()
 
 
@@ -669,9 +658,13 @@ export default function OrganizationDetail() {
                       // Filter out "unknown" if we have NTEE data
                       if (apiOrg!.NTEE1) {
                         tags = tags.filter(t => t.toLowerCase() !== 'unknown')
-                        // Add the NTEE sector name if it's not already in the list
+                        // Add the NTEE sector name if it's not already in the list.
+                        // Case-insensitive check: cause_tags can carry a lowercase
+                        // variant of the same sector name, which the exact-match
+                        // `includes()` this replaced didn't catch, showing
+                        // "Education" and "education" as two separate tags.
                         const sectorName = getSectorName(apiOrg!.NTEE1)
-                        if (sectorName && !tags.includes(sectorName)) {
+                        if (sectorName && !tags.some(t => t.toLowerCase() === sectorName.toLowerCase())) {
                           tags = [sectorName, ...tags]
                         }
                       }
@@ -878,6 +871,76 @@ export default function OrganizationDetail() {
                 </div>
               )}
             </div>
+
+            {/* Financial history — compact by default (moved up from below Similar
+                Orgs, and folded into the snapshot instead of duplicating it, per the
+                2026-08-08 design review). The most recent year's figures already
+                appear in the cards above; this is only the multi-year table,
+                collapsed unless there's more than one year to show. */}
+            {financials.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-light-grey">
+                {financials.length > 1 ? (
+                  <button
+                    onClick={() => setShowFinancialHistory(v => !v)}
+                    className="inline-flex items-center gap-1.5 font-body text-small text-link-gold hover:text-deep-gold transition-colors"
+                    aria-expanded={showFinancialHistory}
+                  >
+                    {showFinancialHistory ? 'Hide' : 'Show'} {financials.length} years of Form 990 filing history
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${showFinancialHistory ? 'rotate-180' : ''}`}>
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                ) : (
+                  <p className="font-body text-small text-cool-grey">One year of Form 990 filing history on record.</p>
+                )}
+
+                {(showFinancialHistory || financials.length === 1) && (
+                  <div className="mt-4 overflow-x-auto max-w-[820px]">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-light-grey">
+                          <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Year</th>
+                          <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Revenue</th>
+                          <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Expenses</th>
+                          <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Net Assets</th>
+                          <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Contributions</th>
+                          <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2">Report</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...financials].reverse().map((f) => (
+                          <tr key={f.tax_prd_yr} className="border-b border-light-grey/50 hover:bg-white/50 transition-colors">
+                            <td className="font-body text-small font-medium text-deep-navy py-3 pr-4">{f.tax_prd_yr}</td>
+                            <td className="font-body text-small text-deep-navy py-3 pr-4">{f.totrevenue != null ? formatCurrency(f.totrevenue) : '--'}</td>
+                            <td className="font-body text-small text-cool-grey py-3 pr-4">{f.totfuncexpns != null ? formatCurrency(f.totfuncexpns) : '--'}</td>
+                            <td className={`font-body text-small py-3 pr-4 ${(f.totnetassetend ?? 0) < 0 ? 'text-amber-600' : 'text-cool-grey'}`}>
+                              {f.totnetassetend != null ? formatCurrency(f.totnetassetend) : '--'}
+                            </td>
+                            <td className="font-body text-small text-cool-grey py-3 pr-4">{f.totcntrbgfts != null ? formatCurrency(f.totcntrbgfts) : '--'}</td>
+                            <td className="py-3">
+                              {f.pdf_url ? (
+                                <a
+                                  href={f.pdf_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 font-body text-label text-link-gold hover:text-deep-gold transition-colors"
+                                >
+                                  PDF
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                </a>
+                              ) : '--'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="mt-4 font-body text-caption text-cool-grey">
+                      Source: ProPublica Nonprofit Explorer · Government annual financial reports
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
             </div>
           )}
 
@@ -1198,61 +1261,6 @@ export default function OrganizationDetail() {
           </div>
         </div>
       ) : null}
-
-      {/* Multi-year Financial History (ProPublica 990 data) */}
-      {financials.length > 0 && (
-        <div className="bg-warm-cream border-t border-light-grey py-12 md:py-16">
-          <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
-            <span className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">Annual filings</span>
-            <h2 className="font-display italic text-deep-navy mt-3 text-headline leading-[1.1] mb-6">
-              Financial history
-            </h2>
-            <div className="overflow-x-auto max-w-[820px]">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-light-grey">
-                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Year</th>
-                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Revenue</th>
-                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Expenses</th>
-                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Net Assets</th>
-                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2 pr-4">Contributions</th>
-                    <th className="font-body text-label tracking-[0.06em] text-cool-grey uppercase pb-2">Report</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...financials].reverse().map((f) => (
-                    <tr key={f.tax_prd_yr} className="border-b border-light-grey/50 hover:bg-white/50 transition-colors">
-                      <td className="font-body text-small font-medium text-deep-navy py-3 pr-4">{f.tax_prd_yr}</td>
-                      <td className="font-body text-small text-deep-navy py-3 pr-4">{f.totrevenue != null ? formatCurrency(f.totrevenue) : '--'}</td>
-                      <td className="font-body text-small text-cool-grey py-3 pr-4">{f.totfuncexpns != null ? formatCurrency(f.totfuncexpns) : '--'}</td>
-                      <td className={`font-body text-small py-3 pr-4 ${(f.totnetassetend ?? 0) < 0 ? 'text-amber-600' : 'text-cool-grey'}`}>
-                        {f.totnetassetend != null ? formatCurrency(f.totnetassetend) : '--'}
-                      </td>
-                      <td className="font-body text-small text-cool-grey py-3 pr-4">{f.totcntrbgfts != null ? formatCurrency(f.totcntrbgfts) : '--'}</td>
-                      <td className="py-3">
-                        {f.pdf_url ? (
-                          <a
-                            href={f.pdf_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-body text-label text-link-gold hover:text-deep-gold transition-colors"
-                          >
-                            PDF
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                          </a>
-                        ) : '--'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-4 font-body text-caption text-cool-grey">
-              Source: ProPublica Nonprofit Explorer · Government annual financial reports
-            </p>
-          </div>
-        </div>
-      )}
 
       {promptState && (
         <DonationReturnPrompt
