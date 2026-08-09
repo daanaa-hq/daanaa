@@ -13,39 +13,11 @@ listing a decision you don't need to make is a cost, not diligence.
 
 ## OPEN
 
-### 1. Cloudflare DNS still points at the dead droplet
-**Decided already — this is an action, not a decision.** Both A records
-(`daanaa.org`, `www`) still resolve to `162.243.97.179`, which no longer exists.
-The site has been returning 522 throughout. My token has DNS read but not write.
-- **You:** two field edits to `107.170.26.8`, or a token with Zone:DNS:Edit
-- **Blocks:** every user-visible thing built on 2026-08-08 — v6 scoring, the rebuilt
-  droplet, 92ms org pages, the tax-deductibility copy, the refreshed org data
-- **Impact if deferred:** the site stays down
-
-### 2. Firebase emulator toolchain for P0-SEC-001
-Behavioural authorization tests are written but **cannot run** — no
-`@firebase/rules-unit-testing`, no Java runtime. P0-SEC-001 is verified statically only.
-- **Recommended default:** add both as dev dependencies (free, dev-only, no runtime cost)
-- **If deferred:** the package ships behaviourally unverified, or waits
-- **Cost:** none recurring; ~2 dev packages + a JRE
-
-### 3. Codex review integration — does one exist?
-The mandate routes significant work through independent Codex review. I have not
-verified any integration exists on this server. Without one, packages accumulate in
-`AWAITING_CODEX_REVIEW` and nothing ever leaves it.
-- **Recommended default:** confirm whether a Codex CLI/workflow is configured; if not,
-  decide whether review happens another way rather than letting the queue grow silently
-- **Blocks:** P0-SEC-001 leaving `AWAITING_CODEX_REVIEW`
-
-### 4. Lamp tier removal — scope is larger than first estimated
-Approved in principle 2026-08-08 ("remove from all public-facing items"). Verified
-surface: **20 frontend files**, 3 publicly served content pages (homepage,
-how_it_works, methodology), the tier filter in `droplet_api.py`, a page description,
-and **two published research pages** that document the tier system as findings.
-- **Needs your read specifically on:** the research pages. Removing a mechanic the
-  published research describes is a methodology-consistency question (Stewardship P9),
-  not a UI cleanup. Options: retire the findings, or annotate them as superseded.
-- **Not blocking:** the rest can proceed once the rebuild ships
+Nothing open right now. Everything from today's session is resolved (below) or
+tracked as ordinary work in `TODOS.md` (doesn't need your judgment, just time):
+card-level evidence markers, AI-slop audit for Directory/category pages, actual
+deletion of the dormant lamp-tier engine, wallet explainer video, org-page loading
+skeleton, hero mission-source attribution.
 
 ---
 
@@ -53,9 +25,18 @@ and **two published research pages** that document the tier system as findings.
 
 | Date | Decision | Outcome |
 |---|---|---|
+| 2026-08-08 | Search-and-discovery-first redesign | Homepage rebuilt (1081→360 lines, 11→4 sections) and org detail page (7 real bugs fixed) via `/plan-design-review` + `/plan-eng-review`. Both deployed, hash-verified against production. |
+| 2026-08-08 | Tax-deductibility badge showing identical treatment for verified/unverified/unknown | Root cause found: frontend was reading a dead field (`irs_eligibility_status`, DB columns dropped ~2026-08-01) instead of the real `tax_deductible` boolean the backend already computed. Independently verified with Codex (caught a real gap in the first-pass plan — the search.db fallback path, where revoked orgs' pages live, never computed the field). Fixed frontend + backend, deployed, verified live. |
+| 2026-08-08 | `daanaa-api` systemd unit renamed on droplet rebuild, 13 scripts still said `daanaa` | Found live when it blocked the tax-deductibility deploy. Fixed all 13 (including 2 on cron: 1:30am and 08:15 daily deploys were silently failing). Stale 55-day-old memory file (wrong droplet IP) also corrected — it caused a real misdiagnosis mid-incident, caught by a DigitalOcean console screenshot, not by retrying. |
+| 2026-08-08 | `feat/retire-lamp-tiers` branch (5 commits, all deployed) — merge to master? | PR #1 opened and merged; branch deleted. |
+| 2026-08-08 | `firebase login` blocking P0-SEC-001 deploy | Done; deployed, verified live against production Firestore (403 on unauthenticated access). |
+| 2026-08-08 | Cloudflare DNS pointed at dead droplet | Fixed — both A records repointed, SSL Full→cert installed, site live |
+| 2026-08-08 | Firebase emulator toolchain for P0-SEC-001 | Installed; 9/9 behavioural tests pass, proven against reverted rule |
+| 2026-08-08 | Codex review integration — does one exist? | Confirmed yes; used for P0-SEC-001, lamp-tier (2 rounds), backend security review, and tax-deductibility fix |
+| 2026-08-08 | Lamp tier removal — full scope (20+ files, content pages, research pages, backend filters) | Shipped and deployed. Founder poll resolved WhyDaanaa copy ("v6-only, beta, no history on live site") and backend tier-filter ("retire with the rest"). Verified live: `/api/methodology` → v6.0, zero tier names |
 | 2026-08-08 | Autonomy rule: reversibility + public claims, not backend/frontend | Approved; `CLAUDE.md` + `DECISIONS.md` reconciled |
-| 2026-08-08 | Tax-deductibility wording | Approved; implemented, builds clean, not yet deployed |
+| 2026-08-08 | Tax-deductibility wording | Approved; deployed, verified live |
 | 2026-08-08 | v6 scoring only; retire v4/v5 surfaces | Approved; v6 coverage confirmed 99.78% of live orgs |
-| 2026-08-08 | Hide lamp tiers | Approved in principle; scope item above |
 | 2026-08-08 | Backup approach (`VACUUM INTO` + real verification) | Approved; 198s vs never-completing |
 | 2026-08-08 | Delete 5 corrupt Aug-1 hourly backups | Approved; 115GB reclaimed |
+| 2026-08-08 | Backend security fix (giving-profile route) — deploy now | Deployed to home server; severity corrected in the record (was LAN-scoped, never internet-facing — original claim was wrong) |
