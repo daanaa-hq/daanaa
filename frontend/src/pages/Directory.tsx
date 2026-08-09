@@ -911,7 +911,7 @@ export default function Directory() {
                       nationwide (2026-07-10 "Houston Texas" incident). */}
                   {near && !orgsLoading && orgsData && !orgsData.nearby && (
                     <p className="font-body text-caption text-alert-amber mt-1" role="status">
-                      We couldn't find "{near}" — showing results without the location filter.
+                      We couldn't find "{near}". Showing results without the location filter.
                       Try "City, ST" (like Houston, TX) or a zip code.
                     </p>
                   )}
@@ -933,12 +933,12 @@ export default function Directory() {
                   )}
                   {orgsData?.corrected_query && (
                     <p className="font-body text-caption text-cool-grey mt-1" role="status">
-                      Showing results for "{orgsData.corrected_query}" — we didn't find any matches for "{searchQuery}"
+                      Showing results for "{orgsData.corrected_query}". We didn't find any matches for "{searchQuery}"
                     </p>
                   )}
                   {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
                     <p className="font-body text-caption text-cool-grey mt-1" role="status">
-                      Includes organizations that haven't reported revenue — smaller nonprofits often file
+                      Includes organizations that haven't reported revenue. Smaller nonprofits often file
                       a simpler return.{' '}
                       <button
                         onClick={() => { setVerifiedRevenueOnly(true); setCurrentPage(1) }}

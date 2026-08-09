@@ -38,33 +38,28 @@ within ~75–90 days. Lower priority; Every.org covers the reachable majority fi
 
 ## Trust & brand
 
-### P3 — Finish the em-dash-as-connector sweep (donor-facing pages only)
-**What:** 2026-08-08/09 fixed ~50 em-dash-as-connector instances across 17 core
-pages (About, Approach, Legal, Terms, VendorPolicy, Privacy, Methodology2, and
-research/nonprofit components — including GivingViaChecksPage, GivingViaStocksPage,
-GivingViaRoutersPage, ResearchAbout, ResearchProblem, ResearchPeerContext,
-ResearchLimitations, all done as of 2026-08-08). A full-repo grep found em-dashes
-in 90+ files total. Codex's sampled classification: most of the remainder splits
-between legitimate parenthetical use (leave alone) and admin/internal tooling
-nobody reads for voice (also leave alone) — but a real donor-facing remainder is
-still untouched: the rest of the giving-via-* page family (workplace, recurring,
-crypto, DAF), ResearchFinancialArchetypes (already rewritten wholesale off v5 for
-the V6 migration, so re-check it's clean rather than re-diffing), and the main app
-pages (Directory, Home, OrganizationDetail, ComparePage, WalletPage — spot-check
-first, some may already be clean from earlier design-review passes).
-**Why:** Same copy-voice rule ("no dashes as connectors") the first pass fixed;
-just didn't fit in one session given the true scope wasn't known until a full
-grep ran mid-pass.
-**Pros:** Consistent voice across the whole donor-facing surface, not just the
-legal/methodology pages.
-**Cons:** Real, careful editorial work per file — not a mechanical find-replace,
-each instance needs a judgment call on comma vs. period vs. colon vs. parentheses,
-same as today's pass.
-**Context:** Use today's pattern — grep the file, read surrounding context before
-editing, verify tsc/eslint/build after. Skip UI placeholder glyphs (bare "—" for
-missing table values) and title-separator patterns ("Page Title — Daanaa") — those
-aren't the connector pattern the rule targets.
-**Depends on:** None.
+### ✅ DONE — em-dash-as-connector sweep (donor-facing pages)
+**What:** 2026-08-08/09, in two passes, fixed every real em-dash-as-connector
+instance across the donor-facing surface: 17 core pages in the first pass
+(About, Approach, Legal, Terms, VendorPolicy, Privacy, Methodology2, research/
+nonprofit components, giving-via-checks/stocks/routers), then the remaining
+scope closed out in this pass — Directory.tsx (3 fixes) and WalletPage.tsx
+(2 fixes) had real user-facing instances; GivingViaWorkplacePage,
+GivingViaRecurringPage, GivingViaCryptoPage, GivingViaDafPage,
+ResearchFinancialArchetypes, Home.tsx, OrganizationDetail.tsx, and
+ComparePage.tsx were checked and found clean (their em-dashes are all in code
+comments, UI placeholder glyphs for missing table values, a title-separator
+pattern, or — in ComparePage.tsx — a literal `.split('—')` matching an
+external NTEE-description data format, not copy). Verified: `tsc -b` (the
+real build check, `npm run build`) clean, eslint clean (pre-existing warnings
+only, confirmed via stash comparison), full test suite unchanged (254
+passed, same 6 pre-existing unrelated failures).
+**Context for the next similar sweep:** grep the file, then separate hits
+into user-facing JSX text (fix: comma/period/colon/parentheses depending on
+context) vs. `//`/`{/* */}` comments, `'—'` placeholder returns, and
+title-separator strings (all exempt — comments aren't read for voice,
+placeholders and title separators aren't the connector pattern the rule
+targets).
 
 ### P2 — Research page V6 migration follow-ups: interactive peer-group funnel + EIN peer lookup
 **What:** 2026-08-08 the Research page's peer-context content was rewritten off
