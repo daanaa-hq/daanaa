@@ -46,7 +46,7 @@ log "✅ Frontend synced"
 
 # 3. Restart droplet API
 log "Restarting droplet API..."
-ssh "$DROPLET" "systemctl restart daanaa && sleep 3" >> "$LOG_FILE" 2>&1 || {
+ssh "$DROPLET" "systemctl restart daanaa-api && sleep 3" >> "$LOG_FILE" 2>&1 || {
   log "❌ Service restart failed"
   exit 1
 }
@@ -58,7 +58,7 @@ HEALTH=$(curl -s "$DROPLET_API/health" 2>&1 | jq -r '.status' 2>/dev/null || ech
 if [ "$HEALTH" != "ok" ]; then
   log "❌ Health check failed: $HEALTH"
   log "ROLLING BACK..."
-  ssh "$DROPLET" "systemctl restart daanaa" >> "$LOG_FILE" 2>&1
+  ssh "$DROPLET" "systemctl restart daanaa-api" >> "$LOG_FILE" 2>&1
   exit 1
 fi
 
@@ -67,7 +67,7 @@ if echo "$ORG_RESPONSE" | jq . >/dev/null 2>&1; then
   log "✅ Org endpoint OK"
 else
   log "❌ Org endpoint failed"
-  ssh "$DROPLET" "systemctl restart daanaa" >> "$LOG_FILE" 2>&1
+  ssh "$DROPLET" "systemctl restart daanaa-api" >> "$LOG_FILE" 2>&1
   exit 1
 fi
 

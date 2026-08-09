@@ -26,6 +26,6 @@ rsync -az --delete "$LOCAL_GEMS/" "$DROPLET:$REMOTE_GEMS/"
 
 # 3. Clear the API in-memory cache so the new week's order is served.
 echo "Step 3/3: restart API..."
-ssh "$DROPLET" "systemctl restart daanaa" || true
+ssh "$DROPLET" "systemctl restart daanaa-api" || true
 
 echo "=== Done: $(date) ==="

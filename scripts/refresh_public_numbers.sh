@@ -69,7 +69,7 @@ rsync -az -e "$RSYNC_RSH" "$SNAPSHOT" "$DROPLET:$REMOTE_DIST/research-snapshot.j
 
 # 4. Restart the service so all workers re-read the new files ----------------
 log "Restarting daanaa service…"
-"${SSH[@]}" "systemctl restart daanaa" || fail "service restart failed"
+"${SSH[@]}" "systemctl restart daanaa-api" || fail "service restart failed"
 sleep 5
 
 # 5. Verify the live API matches the DB -------------------------------------

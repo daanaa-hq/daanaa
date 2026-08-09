@@ -28,7 +28,7 @@ rsync -e "ssh $SSH_OPTS" -az --checksum --stats \
 # freshly-deployed browse regen invisible to real traffic for ~1h before
 # being caught by manual verification. Use systemctl directly instead.
 echo "Step 2/2: Restarting daanaa.service to clear cache..."
-ssh $SSH_OPTS "$DROPLET" "systemctl restart daanaa && sleep 4 && curl -s http://localhost:5000/health"
+ssh $SSH_OPTS "$DROPLET" "systemctl restart daanaa-api && sleep 4 && curl -s http://localhost:5000/health"
 
 echo ""
 echo "=== Deploy complete: $(date) ==="

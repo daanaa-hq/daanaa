@@ -46,7 +46,7 @@ log "✓ Code synced to droplet"
 # Step 3: Promote updated droplet_api.py and restart via systemd
 log "Restarting API on droplet (systemd)..."
 ssh -i "$SSH_KEY" "root@$DROPLET_IP" \
-  "cp /opt/daanaa/scripts/droplet_api.py /opt/daanaa/droplet_api.py && systemctl restart daanaa" \
+  "cp /opt/daanaa/scripts/droplet_api.py /opt/daanaa/droplet_api.py && systemctl restart daanaa-api" \
   >> "$LOG_FILE" 2>&1 || {
   log "ERROR: API restart failed"
   exit 1

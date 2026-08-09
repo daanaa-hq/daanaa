@@ -1369,3 +1369,49 @@ watch it survive a second live occurrence before considering it done.
   names, exported constants), not just the specific pages that were the
   original target. A page-level check can be honestly true and the
   system-level claim built on top of it can still be false.
+
+## 2026-08-08 — systemd unit renamed on rebuild; 13 scripts and my own memory both stale
+- **Symptom:** a backend deploy (`scripts/safe_deploy_droplet.sh --code-only`)
+  failed with `Failed to restart daanaa.service: Unit daanaa.service not
+  found.` I then tried to SSH in directly to diagnose it and got
+  `Connection timed out` three times in a row — from a stale memory file
+  (`feedback_droplet_ssh_ip.md`, 55 days old) recalling the droplet's IP as
+  `162.243.97.179`. That box no longer exists; the droplet was rebuilt from a
+  snapshot earlier the same day ([[droplet_rebuild_2026_08_08]]) and got a new
+  address, `107.170.26.8`. I reported "SSH is down" to the founder based on
+  testing the wrong host, twice.
+- **Root cause:** the rebuild recreated the backend service under the unit
+  name `daanaa-api.service`, not the `daanaa` name every deploy/ops script
+  expected. `systemctl restart daanaa` on a nonexistent unit fails
+  immediately and touches nothing — the actually-running `daanaa-api`
+  process was never stopped or restarted, so the site stayed up and safe
+  throughout, just serving the pre-deploy code.
+- **How it actually got found:** the founder pasted a screenshot of the
+  DigitalOcean console showing the real current public IP. That's the fact
+  that broke the loop — not another retry, not Codex (which has no live
+  network access to verify a connectivity claim either).
+- **Fix:** `systemctl restart daanaa` → `systemctl restart daanaa-api`
+  (and `is-active daanaa` → `is-active daanaa-api`) across all 13 scripts
+  that referenced it: `scripts/ops/sync_droplet_api.sh`,
+  `scripts/ops/nightly_search_deploy.sh`, `scripts/ops/daanaa_watchdog.py`
+  (alert-hint text too, not just executed commands), `scripts/deploy.sh`,
+  `scripts/deploy_via_s3.sh`, `scripts/deploy_browse.sh`,
+  `scripts/deploy_similar_orgs.sh`, `scripts/deploy_morning.sh`,
+  `scripts/sync_db.sh`, `scripts/refresh_hidden_gems.sh`,
+  `scripts/refresh_public_numbers.sh`, `scripts/monitor_site_health.sh`,
+  `scripts/load_v4_scores.py`. Also corrected the stale IP in
+  `feedback_droplet_ssh_ip.md` and added the current systemd unit name to
+  the same memory, plus a pointer to the canonical script (
+  `scripts/ops/sync_droplet_api.sh`) instead of a hardcoded value, so the
+  next rebuild doesn't silently go stale the same way.
+- **Preventing rule:** an infrastructure identifier (IP, unit name, hostname)
+  recalled from memory is a snapshot, not a live fact, and a droplet rebuild
+  invalidates exactly the kind of thing memory is worst at keeping current.
+  Before trusting a hardcoded infra value more than a few days old, check it
+  against the one script that's actually exercised recently (here,
+  `scripts/ops/sync_droplet_api.sh`, which had the *right* IP already
+  hardcoded — the file, not my memory, was the source of truth all along).
+  And: two consecutive automated failures reaching the same wrong conclusion
+  is not evidence the conclusion is right — it's evidence to check the
+  premise, e.g. by asking the human to look at ground truth (a console
+  screenshot) rather than retrying the same broken diagnostic a third time.

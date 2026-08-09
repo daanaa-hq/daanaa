@@ -77,4 +77,4 @@ conn.close()
 
 print(f"[✓] Updated {loaded} organizations")
 print(f"[✓] Scores last updated: {run_ts}")
-print(f"[→] Restart API to load new scores: systemctl restart daanaa")
+print(f"[→] Restart API to load new scores: systemctl restart daanaa-api")

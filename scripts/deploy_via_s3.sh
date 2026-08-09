@@ -194,7 +194,7 @@ SSH_EOF
 restart_api() {
     log "Restarting API on droplet..."
     ssh "$DROPLET_HOST" << SSH_EOF
-    systemctl restart daanaa
+    systemctl restart daanaa-api
     sleep 3
     curl -s https://daanaa.org/api/stats | jq '.total_organizations' | xargs echo "API responding, total orgs:"
     echo "✅ API restarted and verified"

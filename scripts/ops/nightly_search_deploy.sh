@@ -108,7 +108,7 @@ if [ "${UPDATED:-0}" -gt 0 ]; then
     log "Org files synced."
 
     # Restart API to clear cache
-    $SSH "systemctl restart daanaa" 2>>"$LOG" && log "API restarted." \
+    $SSH "systemctl restart daanaa-api" 2>>"$LOG" && log "API restarted." \
         || log "WARN: API restart failed (cache may be stale)"
 else
     log "Step 6/6: No org file changes. Skipping rsync."

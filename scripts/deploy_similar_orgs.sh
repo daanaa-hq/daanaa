@@ -31,7 +31,7 @@ scp -i "$SSH_KEY" -o ConnectTimeout=20 -o BatchMode=yes -o StrictHostKeyChecking
 # already bound to 127.0.0.1:5000, fails to bind, and silently no-ops
 # (see scripts/deploy_browse.sh for the same fix + full explanation).
 echo "Step 3/3: Restarting daanaa.service to clear cache..."
-ssh $SSH_OPTS "$DROPLET" "systemctl restart daanaa && sleep 4 && curl -s http://localhost:5000/health"
+ssh $SSH_OPTS "$DROPLET" "systemctl restart daanaa-api && sleep 4 && curl -s http://localhost:5000/health"
 
 echo ""
 echo "=== Deploy complete: $(date) ==="

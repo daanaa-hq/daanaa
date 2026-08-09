@@ -48,7 +48,7 @@ rsync -az -e "ssh -i /home/akbar/.ssh/daanaa_do_cron -o StrictHostKeyChecking=no
     "$LEAN_DB" root@107.170.26.8:/opt/daanaa/data/merit_registry.db
 
 echo "$LOG Restarting cloud service..."
-ssh -i /home/akbar/.ssh/daanaa_do_cron root@107.170.26.8 "systemctl restart daanaa"
+ssh -i /home/akbar/.ssh/daanaa_do_cron root@107.170.26.8 "systemctl restart daanaa-api"
 
 echo "$LOG Sync complete."
 rm -f "$LEAN_DB"
