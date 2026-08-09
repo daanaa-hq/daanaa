@@ -73,7 +73,7 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
               <div className="pt-2 border-t border-light-grey/50 space-y-1">
                 {leadership_info.has_coi_policy && (
                   <div className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     <span className="text-xs">Conflict of Interest Policy</span>
@@ -81,7 +81,7 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
                 )}
                 {leadership_info.has_whistleblower_policy && (
                   <div className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     <span className="text-xs">Whistleblower Policy</span>
@@ -121,7 +121,7 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
 
         {/* Org Stability Signal */}
         {org_stability_signal && signal && signalColor && (
-          <div className={`rounded-xl p-5 border-2 ${signalColor.bgClass} ${signalColor.borderClass}`}>
+          <div className={`rounded-xl p-5 border-2 ${signalColor.bgClass} ${signalColor.borderClass}`} role="status">
             <h3 className="font-body text-small font-semibold mb-3 text-deep-navy">Stability</h3>
             <div className="inline-block px-3 py-1.5 rounded-full font-body text-small font-semibold mb-3 text-white" style={{ backgroundColor: signalColor.textColor }}>
               {signal}
@@ -129,8 +129,10 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
             {org_stability_signal.reasons && org_stability_signal.reasons.length > 0 && (
               <div className="space-y-1">
                 {org_stability_signal.reasons.slice(0, 3).map((reason, idx) => (
-                  <div key={idx} className="font-body text-small flex items-start gap-1.5 text-cool-grey" style={{ color: signalColor.textColor }}>
-                    <span className="mt-1 shrink-0">✓</span>
+                  <div key={idx} className="font-body text-small flex items-start gap-1.5" style={{ color: signalColor.textColor }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-0.5 shrink-0">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
                     <span>{reason}</span>
                   </div>
                 ))}
