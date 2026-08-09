@@ -1415,3 +1415,52 @@ watch it survive a second live occurrence before considering it done.
   is not evidence the conclusion is right — it's evidence to check the
   premise, e.g. by asking the human to look at ground truth (a console
   screenshot) rather than retrying the same broken diagnostic a third time.
+
+## 2026-08-08 — "V6" was two disjoint pipelines; the live org-detail financial-context box always showed "not enough data"
+- **Symptom:** asked to migrate the Research page off retired v5 fields onto V6.
+  Codex review of the draft caught that even the "V6" data I'd migrated to was
+  wrong — a "percentile" claim that turned out to be the retired v4 lamp score,
+  and a "Regional Context" tier description that claimed the opposite of what
+  the tier does. Chasing those down further surfaced that the org-detail page's
+  main financial-context component had been non-functional for every
+  organization: it called `/api/organizations/:ein/financial-context`, a route
+  that never existed in `droplet_api.py`, so it always 404d and rendered "not
+  enough public information for a numeric comparison yet" regardless of the
+  organization's actual data. The component meant to replace it
+  (`FinancialContext.tsx`) was imported nowhere — dead code — and was itself
+  broken, checking `scoring_tier` against `1_Direct_Regional`/
+  `2_Regional_Inferred`/`3_Limited_Context`, values that don't exist on that
+  column at all.
+- **Root cause:** the database has two unrelated field families that both
+  sound like "the V6 columns": `scoring_tier`/`tier_label`/`confidence`/
+  `peer_group_size`/`peer_group_description` (written by
+  `scripts/merit_scorer_v6_0.py`, the real, board-approved system) and
+  `scoring_tier_v6_inference`/`confidence_v6`/`peer_group_size_v6`/
+  `peer_group_description_v6` (written by a separate, older inference run).
+  Row-level check: the two tier columns agree on 58 of 2,056,834 rows — not
+  "mostly the same with some drift," genuinely disjoint. `droplet_api.py`'s
+  `get_v6_context()` mixed the two: it read the correct `scoring_tier` but the
+  wrong `peer_group_size_v6`/`peer_group_description_v6`, so even a
+  frontend-only fix would have kept showing wrong peer-group numbers. Multiple
+  components independently guessed at three different tier-value vocabularies
+  over time, and nothing forced them to agree with each other or with the
+  scorer that actually writes the column.
+- **Fix:** `FinancialContext.tsx`'s tier checks corrected to the real
+  vocabulary; `V6FinancialContext.tsx` (dead, broken) deleted along with its
+  dead API call; `droplet_api.py`'s `get_v6_context()` rewritten to query
+  `registry_enriched` directly for the columns the real scorer writes, no
+  detour through the disjoint `_v6`-suffixed family or a separate
+  `v6_peer_context_assignments` table; same wrong-vocabulary bug fixed in
+  `WalletPage.tsx`'s filter/sort. Added `FinancialContext.test.tsx` pinning the
+  real vocabulary with an explicit test that the retired values are rejected.
+  Logged in `governance/DECISION_QUEUE.md` since it touches P3/P6 at
+  significant live-traffic scale, even though it corrects an already-approved
+  methodology rather than deciding a new one.
+- **Preventing rule:** when a field name has a suffix that echoes the current
+  system's name (`_v6`, `_v2`, etc.), verify it's actually written by that
+  system's current script before trusting it — a plausible-sounding name is
+  not provenance. When two "obviously the same" columns exist, check row-level
+  agreement before assuming one is just a stale copy of the other; 58/2,056,834
+  is a different bug than "usually in sync." And: a component being imported
+  and rendered is not evidence it renders correctly — this one rendered a
+  fallback message on every single page for months without looking broken.

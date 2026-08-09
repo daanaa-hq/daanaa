@@ -2085,3 +2085,33 @@ All autonomously actionable items completed without external dependencies. Three
 
 **Expected outcome:** Phase 1 + new websites both live on daanaa.org after rebuild completes
 
+---
+
+## 2026-08-08: `get_v6_context()` queries `registry_enriched` directly, not the `v6_context` table
+
+**Chose:** Rewrote `droplet_api.py`'s `get_v6_context()` to `SELECT scoring_tier,
+tier_label, confidence, peer_group_size, peer_group_description FROM
+registry_enriched WHERE EIN = ?` directly, deleting the `v6_context` table
+lookup and the `v6_peer_context_assignments` legacy fallback entirely.
+
+**Why:** The `v6_context` table's own SELECT read `peer_group_size_v6`/
+`peer_group_description_v6` — columns from a disjoint pipeline that agrees
+with the real `scoring_tier` on 58 of 2,056,834 rows (see LESSONS.md
+2026-08-08). I couldn't inspect `v6_context` on production (doesn't exist in
+the local dev DB), so I couldn't tell whether it was built correctly with
+misleadingly-named columns or genuinely wrong. `registry_enriched`'s own
+non-suffixed columns are unambiguous — verified directly against
+`scripts/merit_scorer_v6_0.py`, the script that writes them — so querying
+those instead removes the whole class of uncertainty rather than trying to
+patch a table I couldn't verify.
+
+**Rejected:** Fixing `v6_context`'s SELECT to read non-suffixed columns
+from that table instead. Would have kept a needless indirection (a
+materialized table duplicating columns `registry_enriched` already has) and
+left the "is `v6_context` itself correct" question unanswered. Also rejected:
+keeping the `v6_peer_context_assignments` legacy fallback path "just in
+case" — its only caller was this same function, and it uses a third,
+unrelated tier vocabulary (`1_direct`, `2_regional_conditional`, ...), so
+keeping it as a fallback risked silently reintroducing the same bug under
+different conditions (e.g. a missing `registry_enriched` row).
+

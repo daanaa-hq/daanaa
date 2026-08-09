@@ -149,3 +149,46 @@ Format:
   for founder; 5 (state registries) scoping ONLY, returns to board with
   per-state terms table before any ingestion. Process lesson recorded:
   proposals go through gates BEFORE reaching the founder.
+
+## [resolved] V6 financial-context accuracy: dead component, wrong tier vocabulary, disjoint data pipeline
+- Raised: 2026-08-08 by AI agent, mid-task — asked to bring the Research page's
+  V6 data up to date; verifying that draft with Codex surfaced a live donor-facing
+  defect much bigger than the original task.
+- Principles touched: P3 (trust signals must be evidence-based and honestly
+  stated — the org-detail "financial context" box was showing "not enough
+  data" for every organization, and a separate false "percentile" claim was
+  actually the retired v4 lamp score under an unrelated grouping), P6 (errors
+  corrected quickly, documented not hidden), P4 (Broad Category orgs were
+  silently excluded from Wallet's "emerging" filter due to the same
+  wrong-vocabulary bug).
+- Data gathered: yes.
+  - Codex review #1 (codex exec, read-only): flagged the false percentile
+    claim and the "Regional Context" tier's description claiming the
+    opposite of what it does (drops region, compares nationally).
+  - Direct SQL verification against scripts/merit_scorer_v6_0.py (the script
+    that actually writes scoring_tier): confirmed scoring_tier and
+    scoring_tier_v6_inference — two columns that look like variants of the
+    same thing — agree on 58 of 2,056,834 rows. They are disjoint pipelines.
+  - Codex review #2: confirmed the org-detail page's "central financial
+    insight" component called a route that never existed in droplet_api.py
+    (/api/organizations/:ein/financial-context), always 404ing; the intended
+    replacement (FinancialContext.tsx) was dead code (imported nowhere) and
+    itself checked scoring_tier against a third, unrelated vocabulary.
+  - Codex review #3: caught that fixing the frontend alone was insufficient —
+    droplet_api.py's get_v6_context() sourced peer-group size/description
+    from the same disjoint pipeline, which could overwrite correct
+    precomputed values even after the frontend fix.
+- Simulation: none run — this was framed as a correction to methodology
+  already board-approved 2026-07-25 (NTEE2 x 5-Band x Census Region), not a
+  new methodology decision, so no docs/BOARD_SIMULATION_*.md was written.
+  Founder explicitly asked whether this reasoning was sound ("does codex have
+  any recommendations or have you run it by the board") before deploy;
+  logging this entry is the founder-directed answer to that question.
+- Resolution: founder approved via direct question-and-answer (not a board
+  simulation) after the AI agent presented Codex's three review passes, the
+  live-impact scope (every org page), and the SQL verification. Merged
+  65a029dde13 (PR #6). Fixed: FinancialContext.tsx tier vocabulary,
+  droplet_api.py get_v6_context() data source, WalletPage.tsx filter/sort,
+  Methodology page + Research page tier descriptions, two deploy scripts'
+  dead smoke tests. Deferred to TODOS.md: guided peer-group funnel + EIN
+  peer-lookup features (Codex-reviewed for feasibility, not built this pass).
