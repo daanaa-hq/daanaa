@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-09T17:19:06.637788",
+  "timestamp": "2026-08-09T17:28:52.127786",
   "database": "/home/akbar/meritgiving/data/merit_registry.db",
   "queries": {
     "count_all_orgs": {
@@ -7,154 +7,170 @@
       "iterations": 5,
       "result_count": 1,
       "times_ms": [
-        5.357503890991211,
-        4.07719612121582,
-        4.122018814086914,
-        4.291296005249023,
-        4.264593124389648
+        2.6090145111083984,
+        2.2139549255371094,
+        2.118825912475586,
+        2.0432472229003906,
+        1.9745826721191406
       ],
-      "min_ms": 4.07719612121582,
-      "max_ms": 5.357503890991211,
-      "mean_ms": 4.422521591186523,
-      "median_ms": 4.264593124389648,
-      "stdev_ms": 0.5305433665669044
+      "min_ms": 1.9745826721191406,
+      "max_ms": 2.6090145111083984,
+      "mean_ms": 2.191925048828125,
+      "median_ms": 2.118825912475586,
+      "stdev_ms": 0.24956723712491566
     },
     "fetch_100_orgs": {
       "query": "SELECT * FROM registry_enriched LIMIT 100",
       "iterations": 3,
       "result_count": 100,
       "times_ms": [
-        0.8466243743896484,
-        0.6387233734130859,
-        0.5741119384765625
+        0.8614063262939453,
+        0.6632804870605469,
+        0.5927085876464844
       ],
-      "min_ms": 0.5741119384765625,
-      "max_ms": 0.8466243743896484,
-      "mean_ms": 0.686486562093099,
-      "median_ms": 0.6387233734130859,
-      "stdev_ms": 0.1423964486090957
+      "min_ms": 0.5927085876464844,
+      "max_ms": 0.8614063262939453,
+      "mean_ms": 0.7057984670003256,
+      "median_ms": 0.6632804870605469,
+      "stdev_ms": 0.13930345527726284
     },
     "fetch_by_ein": {
       "query": "SELECT * FROM registry_enriched WHERE EIN = '391855543'",
       "iterations": 10,
       "result_count": 1,
       "times_ms": [
-        0.06532669067382812,
-        0.012636184692382812,
+        0.072479248046875,
+        0.01239776611328125,
         0.010728836059570312,
+        0.010251998901367188,
         0.010013580322265625,
         0.0095367431640625,
-        0.009775161743164062,
-        0.009775161743164062,
         0.010013580322265625,
-        0.013828277587890625,
-        0.010728836059570312
+        0.009775161743164062,
+        0.0095367431640625,
+        0.0095367431640625
       ],
       "min_ms": 0.0095367431640625,
-      "max_ms": 0.06532669067382812,
-      "mean_ms": 0.016236305236816406,
-      "median_ms": 0.010371208190917969,
-      "stdev_ms": 0.017304820568287402
+      "max_ms": 0.072479248046875,
+      "mean_ms": 0.016427040100097656,
+      "median_ms": 0.010013580322265625,
+      "stdev_ms": 0.01971357885537133
     },
     "fts_search_health": {
       "query": "SELECT ein FROM org_fts WHERE org_fts MATCH 'health' LIMIT 2000",
       "iterations": 5,
       "result_count": 2000,
       "times_ms": [
-        59.844970703125,
-        2.0139217376708984,
-        1.7957687377929688,
-        1.7502307891845703,
-        1.68609619140625
+        2.0227432250976562,
+        1.8308162689208984,
+        1.7154216766357422,
+        1.6679763793945312,
+        1.6362667083740234
       ],
-      "min_ms": 1.68609619140625,
-      "max_ms": 59.844970703125,
-      "mean_ms": 13.418197631835938,
-      "median_ms": 1.7957687377929688,
-      "stdev_ms": 25.95364750054428
+      "min_ms": 1.6362667083740234,
+      "max_ms": 2.0227432250976562,
+      "mean_ms": 1.7746448516845703,
+      "median_ms": 1.7154216766357422,
+      "stdev_ms": 0.15711626984035254
     },
     "fts_search_nonprofit": {
       "query": "SELECT ein FROM org_fts WHERE org_fts MATCH 'nonprofit' LIMIT 2000",
       "iterations": 5,
       "result_count": 2000,
       "times_ms": [
-        35.967111587524414,
-        2.371549606323242,
-        1.8351078033447266,
-        1.76239013671875,
-        1.7473697662353516
+        2.023458480834961,
+        2.1173954010009766,
+        1.7762184143066406,
+        1.7516613006591797,
+        1.7333030700683594
       ],
-      "min_ms": 1.7473697662353516,
-      "max_ms": 35.967111587524414,
-      "mean_ms": 8.736705780029297,
-      "median_ms": 1.8351078033447266,
-      "stdev_ms": 15.224438945282614
+      "min_ms": 1.7333030700683594,
+      "max_ms": 2.1173954010009766,
+      "mean_ms": 1.8804073333740234,
+      "median_ms": 1.7762184143066406,
+      "stdev_ms": 0.17726922396907452
     },
     "count_scored_orgs": {
       "query": "SELECT COUNT(*) FROM registry_enriched WHERE merit_score IS NOT NULL",
       "iterations": 3,
       "result_count": 1,
       "times_ms": [
-        263.32831382751465,
-        270.08056640625,
-        264.61172103881836
+        3.530263900756836,
+        3.393411636352539,
+        3.3168792724609375
       ],
-      "min_ms": 263.32831382751465,
-      "max_ms": 270.08056640625,
-      "mean_ms": 266.006867090861,
-      "median_ms": 264.61172103881836,
-      "stdev_ms": 3.585812753289996
+      "min_ms": 3.3168792724609375,
+      "max_ms": 3.530263900756836,
+      "mean_ms": 3.413518269856771,
+      "median_ms": 3.393411636352539,
+      "stdev_ms": 0.10810391959313874
     },
     "filter_by_ntee": {
       "query": "SELECT COUNT(*) FROM registry_enriched WHERE NTEE1 = 'D'",
       "iterations": 3,
       "result_count": 1,
       "times_ms": [
-        237.31422424316406,
-        237.8864288330078,
-        239.1664981842041
+        0.751495361328125,
+        0.6701946258544922,
+        0.6704330444335938
       ],
-      "min_ms": 237.31422424316406,
-      "max_ms": 239.1664981842041,
-      "mean_ms": 238.12238375345865,
-      "median_ms": 237.8864288330078,
-      "stdev_ms": 0.9484122160367419
+      "min_ms": 0.6701946258544922,
+      "max_ms": 0.751495361328125,
+      "mean_ms": 0.6973743438720703,
+      "median_ms": 0.6704330444335938,
+      "stdev_ms": 0.04687032759341082
     },
     "top_100_by_score": {
       "query": "SELECT EIN, organization_name, merit_score FROM registry_enriched WHERE merit_score IS NOT NULL ORDE...",
       "iterations": 3,
       "result_count": 100,
       "times_ms": [
-        272.01271057128906,
-        271.1777687072754,
-        269.67716217041016
+        0.22363662719726562,
+        0.059604644775390625,
+        0.04649162292480469
       ],
-      "min_ms": 269.67716217041016,
-      "max_ms": 272.01271057128906,
-      "mean_ms": 270.9558804829915,
-      "median_ms": 271.1777687072754,
-      "stdev_ms": 1.1834789272601711
+      "min_ms": 0.04649162292480469,
+      "max_ms": 0.22363662719726562,
+      "mean_ms": 0.10991096496582031,
+      "median_ms": 0.059604644775390625,
+      "stdev_ms": 0.0987073073434742
     },
     "peer_group_stats": {
       "query": "\n            SELECT\n                NTEE1,\n                COUNT(*) as count,\n                AVG(me...",
       "iterations": 3,
       "result_count": 28,
       "times_ms": [
-        409.4111919403076,
-        404.36363220214844,
-        403.3946990966797
+        58.73513221740723,
+        58.9604377746582,
+        58.756351470947266
       ],
-      "min_ms": 403.3946990966797,
-      "max_ms": 409.4111919403076,
-      "mean_ms": 405.72317441304523,
-      "median_ms": 404.36363220214844,
-      "stdev_ms": 3.2304508666383027
+      "min_ms": 58.73513221740723,
+      "max_ms": 58.9604377746582,
+      "mean_ms": 58.81730715433756,
+      "median_ms": 58.756351470947266,
+      "stdev_ms": 0.12440797818157441
     }
   },
   "indexes": [
     {
+      "name": "idx_donate_url_status",
+      "sql": "CREATE INDEX idx_donate_url_status ON registry_enriched (donate_url_status)"
+    },
+    {
+      "name": "idx_merit_score",
+      "sql": "CREATE INDEX idx_merit_score ON registry_enriched (merit_score)"
+    },
+    {
+      "name": "idx_ntee1_merit_score",
+      "sql": "CREATE INDEX idx_ntee1_merit_score ON registry_enriched (NTEE1, merit_score)"
+    },
+    {
       "name": "idx_website_missing_links",
       "sql": "CREATE INDEX idx_website_missing_links ON registry_enriched(website, donate_url, volunteer_url) WHERE website IS NOT NULL AND website != ''"
+    },
+    {
+      "name": "idx_website_status",
+      "sql": "CREATE INDEX idx_website_status ON registry_enriched (website_status)"
     },
     {
       "name": "sqlite_autoindex_registry_enriched_1",
@@ -162,7 +178,7 @@
     }
   ],
   "table_stats": {
-    "db_size_mb": 23416.1640625,
+    "db_size_mb": 23489.78515625,
     "total_orgs": 2056834,
     "v4_scored": 537776,
     "v5_scored": 372781,
