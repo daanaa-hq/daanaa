@@ -306,6 +306,23 @@ You'll be credited by commit, and your reasoning will live in the codebase.
 - Start with [GOVERNANCE.md](GOVERNANCE.md) to understand the autonomy rules
 - Check [institution/AUTONOMY_FRAMEWORK.md](institution/AUTONOMY_FRAMEWORK.md) to know what you can decide autonomously
 - Run all 8 privacy gates before committing
+- Sign commits with appropriate co-author line (see below)
+
+### AI Contributors
+
+**Daanaa explicitly welcomes AI agent contributions** under governance:
+
+| Agent | Role | Authorization |
+|---|---|---|
+| **Claude Code** | Implementation, planning, architecture | Autonomous on reversible work; founder gates on public claims, spending, data changes |
+| **Codex** | Code review, quality assurance, architectural analysis | Autonomous on technical reviews; recommends on gated decisions |
+
+Both agents operate under the **Stewardship Commitment** and follow the **8 privacy gates**. Commit signatures:
+```
+Co-Authored-By: Claude Code <claude@daanaa.org>
+Co-Authored-By: Codex <codex@daanaa.org>
+Claude-Session: [session-url]
+```
 
 ---
 
