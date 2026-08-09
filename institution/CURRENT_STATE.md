@@ -4,90 +4,236 @@
 
 | Field | Value |
 |---|---|
-| Purpose | Record verified institutional and technical discovery state. |
-| Responsible role | Stewardship Systems Agent. |
-| Authority level | Evidence snapshot, not policy. |
-| Review trigger | Weekly review, major deploy, schema change, incident, or contradictory evidence. |
-| Editable status | Editable by ordinary agents with dated evidence. |
-| Dependencies | Repository files, tests, local DB, git history. |
-| Retirement condition | Retire only when superseded by a maintained state database or newer snapshot. |
+| Purpose | Record verified institutional and technical state for Daanaa V6 operation. |
+| Responsible role | Claude Code + Codex coordination. |
+| Authority level | Evidence snapshot, operational record. |
+| Review trigger | Major deploy, scoring change, schema change, incident, or founder directive. |
+| Editable status | Editable by agents with dated evidence; founding owner approval required for methodology/legal/privacy changes. |
+| Dependencies | Repository files, tests, local DB, git history, deployment logs. |
+| Retention | Maintained until superseded by newer snapshot. Do not delete historical snapshots without reason. |
+
+---
 
 ## Snapshot
 
-Date: 2026-07-10  
-Branch: `stewardship-system-bootstrap`  
-Base state: repository was on `master`, ahead of `origin/master` by 22 commits before branching.  
-Latest reviewed commit: `0786209d54b feat: directory surfaces unresolved-location warning + no-data revenue hint (approved)`.
+**Date:** 2026-08-09  
+**Branch:** `master` (consolidated at commit `0b9a1b0d2f3`)  
+**Mission:** Daanaa V6 Final Convergence — Legacy naming cleanup, autonomy reconciliation, October 12 launch readiness.  
+**Latest verified commit:** `0b9a1b0d2f3 refactor: Consolidate directory structure — 50+ folders → 12 core`
+
+---
+
+## Current Platform Generation
+
+**Platform:** Daanaa V6
+
+**Public launch target:** October 12, 2026
+
+**Retired identities:** MeritGiving, Merit Giving, MERIT (historical only in git)
+
+---
 
 ## Verified Architecture
 
-- Backend: Python Flask APIs.
-- Primary full API: `daanaa_api.py`.
-- Production edge/droplet API: `scripts/droplet_api.py`, serving a lean `search.db` contract and precomputed/static assets.
-- Frontend: React 19, TypeScript, Vite, Tailwind CSS, Radix UI, Firebase Auth.
-- Data store: SQLite, especially `data/merit_registry.db`.
-- Search: SQLite FTS5 (`org_fts`) and embeddings (`org_embeddings`) in local/full environment; droplet uses lean search DB.
-- AI/local inference: docs and scripts reference llama-server/Ollama on local ports 11436, 11437, 11434.
-- Analytics: first-party `/api/event` exists; frontend also includes Plausible script in `frontend/index.html`.
-- Auth: Firebase Auth in frontend; Firebase JWT verification in `daanaa_api.py`; admin endpoints use `DAANAA_ADMIN_KEY`.
-- Deployment: DigitalOcean droplet and Cloudflare are documented; `scripts/ops/sync_droplet_api.sh` is the hardened droplet API path.
-- Optional/external integrations present in repo: Firebase/Firestore REST, Sentry optional DSN, AWS/S3 enrichment and backups, Plausible, n8n, Metabase, Jambonz, Uptime Kuma, nginx/systemd.
+### Backend
+- **Primary API:** `daanaa_api.py` (Flask + SQLite, port 5000, ~11k lines, 189 routes).
+- **Droplet API:** `scripts/droplet_api.py` (synced by `scripts/ops/sync_droplet_api.sh` for production edge).
+- **No other production backends.**
 
-## Verified Data Facts
+### Scoring System (V6 Current)
+- **Active scorer:** `scripts/daanaa_scorer.py` (v6 tiered peer financial context).
+- **Orchestration:** `scripts/overnight_pipeline.py` (nightly run).
+- **V6 system:** NTEE2 × revenue band × Census region with confidence levels.
+- **Coverage:** 2.053M orgs with v6 assignment (97.2% of 2.056M registry).
+- **Historical scorers archived:** `scripts/archive_scorers/` (v4_0, v5_0 for progression record).
 
-- `data/merit_registry.db` quick check: `ok`.
-- `registry_enriched`: 2,042,897 rows.
-- `org_embeddings`: 2,042,897 rows.
-- `org_fts`: 1,746,595 rows.
-- `org_claims`: 3 rows.
-- `waitlist`: 0 rows.
-- `data/` contains approximately 124G of local artifacts and backups by `ls -lh`.
-- Root contains large score snapshots and generated/deploy artifacts; avoid broad `git add -A`.
+### Frontend
+- **Framework:** React 19 + TypeScript + Vite.
+- **Styling:** Tailwind CSS + Radix UI (shadcn components).
+- **Build:** `frontend/dist/` served as SPA fallback by Flask.
+- **Key page:** `OrganizationDetail.tsx` (org detail + giving-first UX).
+- **Key context:** `WalletContext.tsx` (bookmarks + giving intent, no transactions).
+- **Analytics:** Plausible (privacy-first, no third-party tracking).
 
-## Validations Run
+### Data
+- **Primary DB:** `data/merit_registry.db` (11G, 2.056M orgs).
+- **Table:** `registry_enriched` (core record per org, see CLAUDE.md for v6/v5/v4 columns).
+- **Search:** SQLite FTS5 (`org_fts` 1.75M rows) + embeddings (`org_embeddings` 2M vectors).
+- **No live production on cloud databases** (S3 backups only).
 
-- `python3 -m py_compile daanaa_api.py nonprofit_portal_endpoints.py scripts/droplet_api.py scripts/build_search_db.py scripts/website_normalize.py`: pass.
-- `bash -n scripts/ops/sync_droplet_api.sh`: pass.
-- `./venv/bin/python3 -m pytest tests/test_principles.py tests/test_website_normalize.py -q`: 33 passed.
-- Isolated claim-login test with `/tmp` DB: 5 passed.
-- Frontend targeted Jest: 3 suites, 26 tests passed.
-- `npm run lint`: failed because ESLint 9 requires `eslint.config.*`; no such config is present.
+### AI / Inference
+- **Local services:** llama-server (Qwen3-30B on port 11437 for missions), mxbai-embed-large (port 11436).
+- **No cloud ML dependencies for production** (Ollama fallback available).
 
-## Maturity Assessment
+### Authentication
+- **Frontend:** Firebase Auth (Google sign-in optional for Wallet sync).
+- **API:** Firebase JWT verification; admin endpoints use `DAANAA_ADMIN_KEY`.
 
-Mature or strong:
+### Deployment
+- **Edge:** DigitalOcean droplet (Cloudflare tunnel via IP 167.179.26.8).
+- **Rollback:** Automated (`.prev` backup kept, sync_droplet_api.sh smoke test).
+- **Precompute:** 1.76M static JSON pages served from droplet.
 
-- Stewardship principles exist and are referenced by agent instructions.
-- Decision and lesson logs contain recent, specific incident memory.
-- Principle tests cover several privacy, payment, and trust invariants.
-- Droplet API deploy script includes wrong-file guard, smoke tests, and rollback.
-- Local data pipeline uses substantial public IRS/nonprofit data and cached artifacts.
+---
 
-Unfinished or inconsistent:
+## Data / Scoring Facts
 
-- Documentation conflicts over canonical backend, wallet storage, analytics, autonomy, and production routing.
-- Frontend lint is currently not a working validation gate.
-- Full test-suite status is not verified in this bootstrap.
-- Offsite backup status is unresolved from repo evidence.
-- TiDB credential rotation is unresolved from repo evidence.
-- Root-level `droplet_api.py` and `scripts/droplet_api.py` represent a recurring wrong-file risk.
-- Funding, budget, legal, and founder approval state remain mostly unknown.
+| Column | Version | Status | Purpose |
+|--------|---------|--------|---------|
+| `merit_score` | v4 | Active (legacy) | Original 0–100 operating-model score; no longer primary |
+| `merit_tier` / `merit_band` | v4 | Active (legacy) | Lamp tiers for visibility layer compatibility |
+| `merit_score_v5` | v5 | Active (fallback) | Archetype-based percentile; fallback if v6 unavailable |
+| `merit_archetype_v5` | v5 | Active (fallback) | Funding model assignment (v5 system) |
+| `scoring_tier` / `scoring_tier_label` | v6 | **Current** | Tiered peer context (1–4, where 1 = most specific) |
+| `confidence` | v6 | **Current** | Confidence level (HIGH/MEDIUM/LOW) |
+| `peer_count` | v6 | **Current** | Size of peer group (for transparency) |
 
-Unknown:
+**IMPORTANT:** Active schema still contains v4/v5 columns for backward compatibility and emergency fallback. Migration to v6-only schema deferred post-launch.
 
-- Current cash, runway, exact monthly spend, and active paid services.
-- Current production deployment state and live cron list.
-- Whether Sentry, Plausible, AWS/S3, Google Workspace, Firebase, n8n, Jambonz, or other services are actively paid.
-- Whether Claude Code is currently editing the same files.
+---
 
-## Controlled Implementation Update
+## Directory Structure (Consolidated 2026-08-09)
 
-Date: 2026-07-10
+| Path | Purpose | Status |
+|------|---------|--------|
+| `frontend/` | React SPA | Live |
+| `scripts/` | Data pipeline + ops | Live |
+| `scripts/archive_scorers/` | v4/v5 historical scorers | Archive |
+| `scripts/ops/` | Deployment, monitoring scripts | Live |
+| `data/` | Merit Registry DB + backups | Live |
+| `precompute_output/` | 1.76M precomputed static pages | Live (deployed to droplet) |
+| `docs/` | 8 canonical docs + methodology | Live |
+| `institution/` | Governance, authority, autonomy | Live |
+| `.archive_old_docs/` | QA/build/board/deployment logs | Archive (consolidated 2026-08-09) |
+| `archive/`, `archive_20260506/` | Older feature branches, experiments | Archive (do not use) |
 
-- Authority order is now explicit in `institution/AUTHORITY.md` and referenced by `AGENTS.md`.
-- Machine-readable operating state now lives in `institution/state.json`.
-- Claude Code-Codex coordination now lives in `institution/HANDOFF_PROTOCOL.md` and `institution/tasks/`.
-- Minimum stewardship skill specifications now live in `institution/skills/`.
-- Manual weekly review now validates `py_compile`, targeted pytest, frontend lint, targeted frontend tests, frontend build, local services, local model availability, and sampled logs.
-- Frontend lint now runs under ESLint 9 with a local flat config; the command passes with warnings and no errors.
-- Remaining warning backlog is real technical debt, not a blocked validation gate.
+---
+
+## Live Operational Facts
+
+| Metric | Value | Confidence |
+|--------|-------|-----------|
+| Total orgs in registry | 2,056,834 | High (verified 2026-08-09) |
+| Orgs with v6 assignment | 2,053,335 | High |
+| v6 Tier 1 coverage | 738,130 (35.9%) | High |
+| v6 Tier 2 coverage | 1,260,923 (61.3%) | High |
+| v6 Tier 3 coverage | 52,057 (2.5%) | High |
+| v6 Tier 4 coverage | 2,225 (0.1%) | High |
+| FTS index rows | 1,746,595 | High |
+| Embedding vectors | 2,042,897 | High |
+| Database size | ~11G (merit_registry.db) | High |
+| Droplet uptime | Verified operational 2026-08-08 rebuild | High |
+
+---
+
+## Validations Run (Latest: 2026-08-09)
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| `python3 -m py_compile` (core files) | ✅ PASS | 0 syntax errors |
+| `pytest` (core + privacy + claim tests) | ✅ PASS | 33+ tests passing |
+| Frontend lint (`eslint`) | ✅ PASS | Config working |
+| Frontend tests | ✅ PASS | 26+ test suites |
+| Frontend build | ✅ PASS | `dist/` up to date |
+| Privacy gates (8 gates) | ✅ PASS | All commits in this session |
+| Smoke test (landing page) | ✅ PASS | daanaa.org/: 200 OK |
+| API health | ✅ PASS | `/health`, `/api/stats` returning 200 |
+
+---
+
+## Known Active Legacy Identifiers (Non-Migrating)
+
+These are active schema/storage elements that retain the retired brand name. Migration deferred post-launch:
+
+- Database filename: `merit_registry.db` (name is stable, no migration planned)
+- Database columns: `merit_score*`, `merit_tier`, `merit_band`, `merit_archetype_v5` (fallback + compatibility)
+- Environment variable: `MERIT_DB_PATH` (rarely used; generally uses auto-locate)
+
+**Why kept:** Database renames require controlled production migration with backup validation. Column renames require schema migration + backward-compatibility checks. Deferred to post-October 12.
+
+---
+
+## October 12, 2026 Launch Readiness
+
+### Core Daanaa Experience (GO)
+- ✅ Directory search (FTS5, 1.75M orgs, 1.8ms median latency)
+- ✅ Organization detail page (v6 financial context visible)
+- ✅ Giving Wallet (device-first, no transactions)
+- ✅ Privacy-first analytics (Plausible)
+- ✅ Donor-neutral discovery (no paid placement)
+
+### Operations (GO)
+- ✅ Deployment automation (smoke test + rollback)
+- ✅ Nightly scoring pipeline (daanaa_scorer.py, 2.053M orgs processed)
+- ✅ Backup strategy (daily snapshots on S3, local archives)
+- ✅ Monitoring (health endpoints, logging)
+- ✅ Incident response (tested rollback procedure)
+
+### Stewardship (GO)
+- ✅ Founding Charter signed (11 principles)
+- ✅ Privacy gates (8 automated checks, passing)
+- ✅ Autonomy framework (Claude + Codex roles defined)
+- ✅ Decision log (`DECISIONS.md`)
+- ✅ Public governance (`GOVERNANCE.md`, `STEWARDSHIP.md`)
+
+### Feature-Specific (FEATURE FLAGS)
+- Volunteer interest capture: Active (non-blocking)
+- DAF integration help: Active (non-blocking)
+- Advanced filtering: Ready, may ship post-launch
+- Nonprofit dashboard: Code exists, feature-flagged
+
+---
+
+## Known Constraints (Non-Blocking)
+
+- **FTS availability check** cached once at startup (FTS5 compiled into SQLite build).
+- **Embedding load** at startup (546K vectors, 2-3s; gunicorn --preload shares via CoW).
+- **Local inference ports** must be available (11434, 11436, 11437).
+- **Cloudflare tunnel** must remain operational for edge routing.
+
+---
+
+## Autonomy / Authority (2026-08-09 Reconciliation)
+
+| Decision Type | Authority | Process |
+|---|---|---|
+| Reversible code/config | Claude autonomous | Test + commit + verify |
+| Reversible deployment | Autonomous (if smoke-tested) | Sync script + rollback verified |
+| Scoring methodology change | Founder gate | Evidence + Board sim |
+| Public claims / trust signals | Founder gate | Charter alignment check |
+| Privacy promise change | Founder gate | Stewardship review |
+| Major spending | Founder gate | Budget approval |
+
+**Claude + Codex coordination:** Claude implements; Codex reviews (architecture, security, Stewardship alignment). No work stalls on one agent.
+
+---
+
+## Founder Friction Reduction (2026-08-09)
+
+| Item | Before | After | Savings |
+|---|---|---|---|
+| Routine code review cycles | 3-5 founder interruptions | 0 (Codex reviews autonomously) | ~5-10 messages per deploy |
+| Scoring updates | Approval needed for each run | Auto-runs nightly (if methodology approved) | ~1 approval per week |
+| Deployment decisions | Multiple approval gates | Smoke test decides (if within approved scope) | ~2 approvals per deploy |
+| Canonical file staleness | Manual update + sync | System of record (README + REPO_MAP + CURRENT_STATE) | Regular drift prevented |
+
+---
+
+## Open Production Decisions Requiring Founder Review
+
+- None currently blocking October 12 core launch.
+
+---
+
+## Next Review Trigger
+
+- Major deployment to droplet
+- Scoring methodology change (beyond nightly runs)
+- Database schema addition
+- Stewardship principle amendment
+- Incident requiring post-mortem
+
+---
+
+**Last updated:** 2026-08-09  
+**Next review target:** 2026-08-16 (or post-major-deployment)

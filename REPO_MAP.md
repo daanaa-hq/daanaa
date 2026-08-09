@@ -43,7 +43,7 @@ reports, phase checklists, funder scripts, board sims, launch plans. Do NOT load
 | Job | Canonical path | Never use |
 |-----|---------------|-----------|
 | Nightly orchestration | `scripts/overnight_pipeline.py` | — |
-| Scoring | `scripts/merit_scorer_v4_0.py` (v5 cols pre-computed in DB) | `archive/legacy_scorers_*` |
+| Scoring | `scripts/daanaa_scorer.py` (v6 tiered peer context; runs nightly) | `scripts/archive_scorers/` (v4, v5 historical) |
 | Continuous link/website discovery | `scripts/discovery_daemon.py` → `website_discovery_comprehensive.py` (`WebsiteDiscovery`, extracts links from a known site) + `charity_navigator_verify.py` (`CharityNavigatorVerifier`, finds site/donate by EIN via **official CN API**) | the ~10 other `*website_discovery*` / `*scraper*` scripts (0-1 refs = debris) |
 | Donate-link pipeline | `scripts/donation_link_pipeline.py` | — |
 | FTS search index | `scripts/build_fts_index.py` (+ `search_index_delta.py` for new orgs) | — |
