@@ -16,8 +16,8 @@ import DonorVoice from '../components/DonorVoice'
 import { useApi } from '../hooks/useApi'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
 import { useWallet } from '../contexts/WalletContext'
-import { getOrganization, getScoreHistory, getFinancials, getFinancialContextV6, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
-import V6FinancialContext from '../components/V6FinancialContext'
+import { getOrganization, getScoreHistory, getFinancials, getSimilarOrgs, getOrgVolunteerEvents, getServiceArea, getMyOrgs, getPortalToken } from '../data/api'
+import FinancialContext from '../components/FinancialContext'
 import { getNteeLabel } from '../data/ntee'
 import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent, ServiceArea } from '../data/api'
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
@@ -277,8 +277,6 @@ export default function OrganizationDetail() {
   // 990 Part VII — public compensation disclosure
   const [ppLeadership, setPpLeadership] = useState<{name:string;title:string;initials:string;compensation?:number}[]>([])
   const [ppFilingYear, setPpFilingYear] = useState<number|null>(null)
-  const [v6Context, setV6Context] = useState<any | null>(null)
-  const [v6ContextLoading, setV6ContextLoading] = useState(false)
   const [enrichmentData, setEnrichmentData] = useState<any>(null)
   const [enrichmentLoading, setEnrichmentLoading] = useState(false)
   const [volunteeringInterestEventId, setVolunteeringInterestEventId] = useState<number | null>(null)
@@ -385,24 +383,6 @@ export default function OrganizationDetail() {
         setPpLeadership(mapped)
       })
       .catch(() => {})
-  }, [id])
-
-  // Fetch v6 financial context
-  useEffect(() => {
-    if (!id) return
-    const ein = id.replace(/\D/g, '').slice(0, 9)
-    if (ein.length !== 9) return
-
-    setV6ContextLoading(true)
-    getFinancialContextV6(ein)
-      .then(context => {
-        setV6Context(context)
-        setV6ContextLoading(false)
-      })
-      .catch(err => {
-        console.debug('V6 financial context fetch failed:', err)
-        setV6ContextLoading(false)
-      })
   }, [id])
 
   const org = apiOrg ? adaptOrg(apiOrg) : null
@@ -790,16 +770,10 @@ export default function OrganizationDetail() {
       <div className="py-12 md:py-16 bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* V6 peer financial context — the central financial insight */}
-          {apiOrg! && (
-            <div className="mb-16 bg-white rounded-lg p-8 border border-light-grey">
-              <V6FinancialContext
-                ein={apiOrg!.EIN}
-                context={v6Context}
-                loading={v6ContextLoading}
-              />
-            </div>
-          )}
+          {/* Peer financial context — the central financial insight. Each tier
+              branch in FinancialContext renders its own styled card, so no
+              extra wrapper here. */}
+          {apiOrg && <FinancialContext org={apiOrg} />}
 
           {/* Ways to Give — Mission-aligned giving methods */}
           {apiOrg && (

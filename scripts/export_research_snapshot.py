@@ -271,7 +271,7 @@ V6_TIER_INFO = {
     },
     '3_Broad_Category': {
         'name': 'Broad Category',
-        'description': 'Compared across a wider category, size and region dropped, when a closer peer group was too small to be meaningful.',
+        'description': 'Compared across a wider category when a closer peer group was too small to be meaningful.',
     },
     '4_Archetype_Only': {
         'name': 'Archetype Only',
