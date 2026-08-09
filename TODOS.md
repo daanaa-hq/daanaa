@@ -38,6 +38,32 @@ within ~75–90 days. Lower priority; Every.org covers the reachable majority fi
 
 ## Trust & brand
 
+### P3 — Finish the em-dash-as-connector sweep (donor-facing pages only)
+**What:** 2026-08-09 fixed ~40 em-dash-as-connector instances across 14 core pages
+(About, Approach, Legal, Terms, VendorPolicy, Privacy, Methodology2, research/
+nonprofit components). A full-repo grep found em-dashes in 90+ files total.
+Codex's sampled classification: most of the remainder splits between legitimate
+parenthetical use (leave alone) and admin/internal tooling nobody reads for voice
+(also leave alone) — but a real donor-facing remainder is still untouched:
+the giving-via-* page family (checks, stocks, workplace, recurring, crypto, DAF,
+routers), remaining research components (ResearchAbout, ResearchFinancialArchetypes,
+ResearchLimitations, ResearchPeerContext, ResearchProblem), and the main app pages
+(Directory, Home, OrganizationDetail, ComparePage, WalletPage — spot-check first,
+some may already be clean from today's earlier design-review passes).
+**Why:** Same copy-voice rule ("no dashes as connectors") the first pass fixed;
+just didn't fit in one session given the true scope wasn't known until a full
+grep ran mid-pass.
+**Pros:** Consistent voice across the whole donor-facing surface, not just the
+legal/methodology pages.
+**Cons:** Real, careful editorial work per file — not a mechanical find-replace,
+each instance needs a judgment call on comma vs. period vs. colon vs. parentheses,
+same as today's pass.
+**Context:** Use today's pattern — grep the file, read surrounding context before
+editing, verify tsc/eslint/build after. Skip UI placeholder glyphs (bare "—" for
+missing table values) and title-separator patterns ("Page Title — Daanaa") — those
+aren't the connector pattern the rule targets.
+**Depends on:** None.
+
 ### P3 — Nested `<a>` inside `<a>` on org cards (HTML validity / hydration warning)
 **What:** `OrgCard.tsx:336`'s cause-tag link renders inside `OrgCard.tsx:273`'s
 whole-card link — an anchor nested inside an anchor. Browsers auto-correct this in
