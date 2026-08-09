@@ -38,6 +38,23 @@ within ~75–90 days. Lower priority; Every.org covers the reachable majority fi
 
 ## Trust & brand
 
+### P3 — Nested `<a>` inside `<a>` on org cards (HTML validity / hydration warning)
+**What:** `OrgCard.tsx:336`'s cause-tag link renders inside `OrgCard.tsx:273`'s
+whole-card link — an anchor nested inside an anchor. Browsers auto-correct this in
+rendering but React logs "In HTML, `<a>` cannot be a descendant of `<a>`. This will
+cause a hydration error" and "`<a>` cannot contain a nested `<a>`."
+**Why:** Surfaced 2026-08-09 during the Directory page design review (console
+errors while verifying an unrelated fix). Confirmed pre-existing, not caused by
+today's changes.
+**Pros:** Real hydration-warning fix; cause-tag clicks currently work by accident
+(browser DOM correction), not by design.
+**Cons:** Needs a structural fix (e.g. `stopPropagation` + a non-anchor clickable
+span, or restructure so the cause tag isn't a true nested link) — not a one-line
+change.
+**Context:** Found via `agent-browser console --errors` while confirming the
+mission-casing fix; not investigated further, no fix scoped yet.
+**Depends on:** None.
+
 ### P3 — Mission source attribution in the hero (text, not just the AI badge)
 **What:** The hero mission paragraph shows an `AiBadge` icon when the mission is
 AI-generated, but doesn't say which source (IRS Form 990 / NTEE category /
