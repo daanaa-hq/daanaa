@@ -230,6 +230,34 @@ export interface ApiOrganization {
     programs_verified_date?: string;
     program_sources?: string[];
   } | null;
+  // Small Org Clarity: Phase 3 (2026-08-09)
+  // Display existing data better for small nonprofit visibility
+  leadership_info?: {
+    board_size?: number | null;
+    board_independence_pct?: number | null;
+    employee_count?: number | null;
+    has_coi_policy?: boolean;
+    has_whistleblower_policy?: boolean;
+    has_doc_retention_policy?: boolean;
+  } | null;
+  service_scope?: {
+    primary_cause_area?: string | null;  // e.g., "Arts & Culture", "Education"
+    service_states?: string[] | null;    // e.g., ["NY", "CT", "MA"]
+    primary_state?: string | null;       // e.g., "NY"
+    revenue_band?: string | null;        // e.g., "Micro", "Professional", "Established"
+  } | null;
+  org_stability_signal?: {
+    signal?: 'At-risk' | 'Emerging' | 'Solid' | 'Strong' | 'Excellent' | null;
+    reasons?: string[] | null;           // e.g., ["Has board oversight", "Operating 10+ years"]
+    confidence?: 'high' | 'moderate' | null;
+  } | null;
+  mission_attribution?: {
+    text?: string | null;
+    source?: 'claimed' | 'ai_web' | 'ai_ntee' | 'extracted' | null;
+    verified_date?: string | null;       // ISO timestamp
+    source_explanation?: string | null;  // human-readable explanation
+    confidence?: number | null;          // 0.0-1.0
+  } | null;
 }
 
 export interface ApiCategory {

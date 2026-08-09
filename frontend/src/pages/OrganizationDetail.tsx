@@ -39,6 +39,7 @@ import OrgInfoHierarchy from '../components/OrgInfoHierarchy'
 import RecurringSetup from '../components/RecurringSetup'
 import DataContextNote from '../components/DataContextNote'
 import { normalizeExternalUrl } from '../utils/externalLink'
+import AtAGlance from '../components/AtAGlance'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -769,6 +770,11 @@ export default function OrganizationDetail() {
       {/* Main Content: Financial Context + Ways to Give */}
       <div className="py-12 md:py-16 bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
+
+          {/* Small Org Clarity: At a Glance section (Phase 3, 2026-08-09)
+              Display existing data to help donors understand small nonprofits better:
+              leadership, service scope, stability signal, mission attribution */}
+          {apiOrg && <AtAGlance org={apiOrg} />}
 
           {/* Peer financial context — the central financial insight. Each tier
               branch in FinancialContext renders its own styled card, so no

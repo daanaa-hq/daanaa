@@ -2749,16 +2749,21 @@ def get_organization(ein):
     stability_score = 0
     stability_reasons = []
 
-    if org.get('board_size', 0) >= 3:
+    board_size = org.get('board_size') or 0
+    if board_size >= 3:
         stability_score += 1
         stability_reasons.append('Has board oversight')
-    if org.get('employee_count', 0) > 0:
+
+    employee_count = org.get('employee_count') or 0
+    if employee_count > 0:
         stability_score += 1
         stability_reasons.append('Has paid staff')
-    if org.get('years_active', 0) >= 10:
+
+    years_active = org.get('years_active') or 0
+    if years_active >= 10:
         stability_score += 1
         stability_reasons.append('Operating 10+ years')
-    elif org.get('years_active', 0) >= 5:
+    elif years_active >= 5:
         stability_reasons.append('Operating 5+ years')
 
     if org.get('merit_health_signal_v5'):
@@ -2768,7 +2773,8 @@ def get_organization(ein):
         elif org['merit_health_signal_v5'] == 'STABLE':
             stability_reasons.append('Financially stable')
 
-    if org.get('nccs_program_ratio', 0) >= 0.75:
+    nccs_program_ratio = org.get('nccs_program_ratio') or 0
+    if nccs_program_ratio >= 0.75:
         stability_score += 1
         stability_reasons.append('High program spend ratio')
 
