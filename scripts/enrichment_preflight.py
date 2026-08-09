@@ -127,7 +127,7 @@ def check_inference_embeddings():
     """Embedding inference server is responding."""
     try:
         result = subprocess.run(
-            ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://localhost:11436/health'],
+            ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://127.0.0.1:11434/health'],
             capture_output=True,
             timeout=5,
             text=True
@@ -140,7 +140,7 @@ def check_inference_llm():
     """LLM inference server is responding."""
     try:
         result = subprocess.run(
-            ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://localhost:11437/health'],
+            ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://127.0.0.1:8080/health'],
             capture_output=True,
             timeout=5,
             text=True

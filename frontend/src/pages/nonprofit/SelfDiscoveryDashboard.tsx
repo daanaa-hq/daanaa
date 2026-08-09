@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePageMeta } from '../../hooks/usePageMeta'
+import { normalizeExternalUrl } from '../../utils/externalLink'
 
 interface PageHealth {
   public_page_url: string
@@ -254,7 +255,7 @@ export default function SelfDiscoveryDashboard() {
                   </div>
                   {peer.website && (
                     <a
-                      href={peer.website}
+                      href={normalizeExternalUrl(peer.website) || undefined}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-body text-caption text-deep-navy underline underline-offset-2 hover:text-navy-mid"

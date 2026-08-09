@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 interface Guild {
   guild_id: number
@@ -62,7 +63,7 @@ export default function GuildSection({ ein }: GuildSectionProps) {
             </span>
           </div>
           {guild.website && (
-            <a href={guild.website} target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:underline text-body">
+            <a href={normalizeExternalUrl(guild.website) || undefined} target="_blank" rel="noopener noreferrer" className="text-soft-gold hover:underline text-body">
               Visit partner →
             </a>
           )}

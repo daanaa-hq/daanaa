@@ -26,7 +26,7 @@ DB           = BASE / "data/merit_registry.db"
 TASKS        = BASE / "meritgiving-ops/state/tasks.md"
 CHATS        = BASE / "meritgiving-ops/chats"
 LOG_MISSIONS = BASE / "logs/generate_missions.log"
-LOCAL_LLM    = "http://127.0.0.1:11437/v1/chat/completions"
+LOCAL_LLM    = "http://127.0.0.1:8080/v1/chat/completions"
 ANTHROPIC_API = "https://api.anthropic.com/v1/messages"
 _lock        = threading.Lock()
 

@@ -29,8 +29,8 @@ from threading import Lock
 from check_link_health import extract_donate_url
 
 DB_PATH    = Path.home() / "meritgiving" / "data" / "merit_registry.db"
-GEN_URL    = "http://127.0.0.1:11437/v1/chat/completions"
-MODEL      = "Qwen2.5-14B-Instruct-Q4_K_M"
+GEN_URL    = "http://127.0.0.1:8080/v1/chat/completions"
+MODEL      = "agent"
 BATCH_SIZE      = 50   # orgs per LLM call — aggressive batch with 30GB RAM available
 BATCH_SIZE_WEB  = 20   # web-context batch — larger with full resource utilization
 TOKENS_PER_ORG  = 80   # output token budget per org

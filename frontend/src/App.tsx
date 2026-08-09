@@ -19,7 +19,6 @@ const ForNonprofits = lazy(() => import('./pages/ForNonprofits'))
 // const GivingListPage = lazy(() => import('./pages/GivingListPage'))  // Giving List feature hidden
 // const GivingReview = lazy(() => import('./pages/GivingReview'))  // Giving List feature hidden
 // const GivingConfirmation = lazy(() => import('./pages/GivingConfirmation'))  // Giving List feature hidden
-const TiersPage = lazy(() => import('./pages/TiersPage'))
 const CauseSpotlight = lazy(() => import('./pages/CauseSpotlight'))
 const Methodology = lazy(() => import('./pages/Methodology2'))
 const SectorHealth = lazy(() => import('./pages/SectorHealth'))
@@ -148,7 +147,10 @@ export default function App() {
             {/* <Route path="/giving-list" element={<GivingListPage />} /> */}
             {/* <Route path="/giving-list/review" element={<GivingReview />} /> */}
             {/* <Route path="/giving-list/confirmation" element={<GivingConfirmation />} /> */}
-            <Route path="/tiers" element={<TiersPage />} />
+            {/* /tiers retired 2026-08-08 with the lamp-tier system. Redirected rather
+                than removed: the path is linked and indexed, and a 404 is a worse answer
+                than sending people to what replaced it. */}
+            <Route path="/tiers" element={<Navigate to="/methodology#financial-context" replace />} />
             <Route path="/methodology" element={<Methodology />} />
             <Route path="/sector-health" element={<SectorHealth />} />
             {/* Merged into /methodology (one canonical page) — redirect legacy paths */}

@@ -1,16 +1,3 @@
-const LAMP_PATH = [
-  'M 12,1.5',
-  'C 12.4,1.6 13.8,7.2 13.9,7.4',
-  'C 14.6,8.0 19.8,11.5 20,12',
-  'C 19.8,12.5 14.6,16.0 13.9,16.6',
-  'C 13.7,16.8 12.6,20.5 12,22.5',
-  'C 11.4,20.5 10.3,16.8 10.1,16.6',
-  'C 9.4,16.0 4.2,12.5 4,12',
-  'C 4.2,11.5 9.4,8.0 10.1,7.4',
-  'C 10.2,7.2 11.6,1.6 12,1.5',
-  'Z',
-].join(' ')
-
 import { Link } from 'react-router-dom'
 import SupportIntent from './SupportIntent'
 
@@ -33,21 +20,21 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
         </span>
       </div>
 
-      {/* Unlit lamp + copy */}
+      {/* Unclaimed state + copy */}
       <div className="px-5 py-8 flex flex-col items-center text-center gap-4">
         <div
           className="w-14 h-14 rounded-full flex items-center justify-center"
           style={{ background: 'rgba(201,169,110,0.08)' }}
         >
           <svg
-            viewBox="0 0 24 24"
-            width={28}
-            height={28}
-            fill="rgba(201,169,110,0.30)"
+            width={26} height={26} viewBox="0 0 24 24" fill="none"
+            stroke="rgba(201,169,110,0.65)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
             aria-hidden="true"
             style={{ display: 'block' }}
           >
-            <path d={LAMP_PATH} />
+            <path d="M3 21h18" />
+            <path d="M5 21V7l7-4 7 4v14" />
+            <path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01" />
           </svg>
         </div>
 
@@ -56,7 +43,7 @@ export default function OrgWallPanel({ orgName, ein }: OrgWallPanelProps) {
             This corner belongs to {orgName}.
           </p>
           <p className="mt-1 font-body text-small text-cool-grey leading-[1.55]">
-            Their flame hasn&rsquo;t reached here yet.
+            They haven&rsquo;t claimed their page yet.
           </p>
         </div>
 

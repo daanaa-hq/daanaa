@@ -1,6 +1,8 @@
 import { ReactNode } from 'react'
 import type { ApiOrganization } from '../data/api'
 import GiveYourWayRouter from './GiveYourWayRouter'
+import { normalizeExternalUrl } from '../utils/externalLink'
+import { nonprofitSizeLabel } from '../utils/orgSize'
 
 /**
  * OrgInfoHierarchy: Display org information from most common to least common.
@@ -42,9 +44,14 @@ interface OrgInfoHierarchyProps {
 export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
   // Determine data availability score for each field
   const dataAvailable = {
-    mission: !!org.mission,
     donate: org.donate_url_status === 'beta' || org.donate_url_status === 'claimed',
-    website: org.website_status === 'ok',
+    // Match the app's established rule (utils/actionRow.ts), not a stricter local
+    // one: show a website when it verified ok/beta, OR when we hold a URL we simply
+    // have not checked yet (status null). The old `=== 'ok'` gate hid real websites
+    // -- e.g. Harvard carries www.harvard.edu with status 'no_website_found' -- which
+    // is a coverage gap on our side, not evidence the org has no site (P4/P5).
+    website: org.website_status === 'ok' || org.website_status === 'beta'
+      || (!!org.website && org.website_status == null),
     financial: !!org.merit_score,
     board: !!org.board_size,
     leadership: false, // not in current ApiOrganization schema
@@ -53,27 +60,11 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
 
   return (
     <div className="space-y-6">
-      {/* TIER 1: Mission (95%+ have) */}
-      {dataAvailable.mission ? (
-        <InfoBlock title="Mission" >
-          <p className="text-sm leading-relaxed text-navy-mid">{org.mission}</p>
-          {org.mission_source && (
-            <p className="text-xs text-cool-grey mt-2">
-              Source: {org.mission_source === 'irs_990' ? 'IRS Form 990'
-                : org.mission_source === 'ai_ntee' ? 'NTEE category'
-                : org.mission_source === 'ai_web_grounded' ? 'Organization website'
-                : org.mission_source === 'claimed' ? 'Verified by organization'
-                : 'Public sources'}
-            </p>
-          )}
-        </InfoBlock>
-      ) : (
-        <InfoBlock
-          title="Mission"
-          isMissing
-          missingReason="We're still learning about this organization's mission. Help us by verifying their website or Form 990 filing."
-        />
-      )}
+      {/* Mission removed from this tier 2026-08-08: it duplicated the hero's
+          mission paragraph verbatim (OrganizationDetail.tsx renders org.mission
+          directly under the org name). Source attribution / AI-generated
+          disclosure the hero doesn't yet carry is TODO'd separately rather
+          than kept here as a reason to duplicate the whole paragraph. */}
 
       {/* TIER 2: Financial Context (97%+ with v6) */}
       {dataAvailable.financial ? (
@@ -94,9 +85,14 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
       {/* TIER 3: ALWAYS show ways to give */}
       <div id="ways-to-give" className="scroll-mt-24">
         <InfoBlock title="Ways to Give">
-          {org.irs_eligibility_status && org.irs_eligibility_status !== "verified" && org.irs_eligibility_status !== "revoked" && (
+          {/* Removed 2026-08-08: this warned "not fully verified" whenever our own
+              data lacked a Pub 78 signal, which read to donors as doubt about the
+              nonprofit rather than a gap in our coverage. Every org listed here is
+              IRS deductibility code 1 and absent from the daily Auto-Revocation
+              sync, so the honest presentation is the positive statement below. */}
+          {org.tax_deductible === false && (
             <p className="text-sm text-navy-mid bg-soft-gold/10 border border-soft-gold/30 rounded-lg p-3 mb-4">
-              Tax deductibility is not fully verified in the latest IRS evidence. Check the IRS before giving.
+              Confirm this organization's current status with the IRS before giving.
             </p>
           )}
         <div className="space-y-4">
@@ -112,7 +108,7 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
             donateUrlStatus={org.donate_url_status}
             website={org.website}
             websiteStatus={org.website_status}
-            irsEligibilityStatus={org.irs_eligibility_status}
+            irsEligibilityStatus={org.tax_deductible === false ? 'unknown' : 'verified'}
           />
 
           {/* Meta: Help us improve */}
@@ -126,10 +122,16 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
       </div>
 
       {/* TIER 4: Website (70%+) */}
-      {dataAvailable.website && org.website && (
+      {/* normalizeExternalUrl, not the raw value (2026-08-08): stored websites are
+          bare domains ("www.harvard.edu"), which a browser resolves as a RELATIVE
+          path -- clicking sent visitors to /org/<ein>/www.harvard.edu instead of the
+          org's site. The helper also rejects javascript:/data: schemes, so the raw
+          href was an XSS vector as well as a broken link. OrgCard already used it;
+          this page did not. */}
+      {dataAvailable.website && normalizeExternalUrl(org.website) && (
         <InfoBlock title="Learn More">
           <a
-            href={org.website}
+            href={normalizeExternalUrl(org.website)!}
             target="_blank"
             rel="noopener noreferrer"
             className="text-warm-red hover:underline text-sm"
@@ -139,12 +141,18 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
         </InfoBlock>
       )}
 
-      {/* TIER 5: Organization Profile — size + board (40%+ coverage) */}
-      {(dataAvailable.board || org.merit_band) ? (
+      {/* TIER 5: Organization Profile — size + board (40%+ coverage).
+          Size derives from total_revenue, not the dormant `merit_band`
+          lamp-tier field this used to read — that field is unset for most
+          orgs post-retirement and was rendering as a bare "Size: 0" or
+          blank. See LESSONS.md 2026-08-08. */}
+      {(() => {
+        const sizeLabel = nonprofitSizeLabel(org.total_revenue)
+        return (dataAvailable.board || sizeLabel) ? (
         <InfoBlock title="Organization">
           <div className="text-sm text-navy-mid space-y-2">
-            {org.merit_band && (
-              <p>Size: <strong>{org.merit_band}</strong></p>
+            {sizeLabel && (
+              <p>Size: <strong>{sizeLabel}</strong></p>
             )}
             {org.board_size && (
               <p>Board: <strong>{org.board_size} members</strong></p>
@@ -157,7 +165,8 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
           isMissing
           missingReason="Organization and board information comes from recent Form 990 filings. It will appear here once available."
         />
-      )}
+        )
+      })()}
 
       {/* ALWAYS SHOW: Trust Note */}
       <div className="mt-8 p-4 bg-navy-dark/5 rounded-lg border border-navy-dark/10">

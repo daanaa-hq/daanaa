@@ -3,7 +3,7 @@
 
 set -e
 
-DROPLET_IP="162.243.97.179"
+DROPLET_IP="107.170.26.8"
 DROPLET_USER="root"
 SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 REPO_DIR="$HOME/meritgiving"
@@ -46,7 +46,7 @@ log "✓ Code synced to droplet"
 # Step 3: Promote updated droplet_api.py and restart via systemd
 log "Restarting API on droplet (systemd)..."
 ssh -i "$SSH_KEY" "root@$DROPLET_IP" \
-  "cp /opt/daanaa/scripts/droplet_api.py /opt/daanaa/droplet_api.py && systemctl restart daanaa" \
+  "cp /opt/daanaa/scripts/droplet_api.py /opt/daanaa/droplet_api.py && systemctl restart daanaa-api" \
   >> "$LOG_FILE" 2>&1 || {
   log "ERROR: API restart failed"
   exit 1

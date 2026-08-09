@@ -55,6 +55,25 @@ describe('getActionRowLinks', () => {
     })
   })
 
+  describe('revocation gate (2026-08-09: migrated off the dead irs_eligibility_status field)', () => {
+    it('hides Donate when tax_deductible is explicitly false, even with an otherwise-valid donate URL', () => {
+      const r = getActionRowLinks({ website_status: null, website: null, donate_url_status: 'claimed', donate_url: 'https://give.example.org', volunteer_url: null, tax_deductible: false })
+      expect(r.donateUrl).toBeNull()
+    })
+
+    it('shows Donate when tax_deductible is true', () => {
+      const r = getActionRowLinks({ website_status: null, website: null, donate_url_status: 'claimed', donate_url: 'https://give.example.org', volunteer_url: null, tax_deductible: true })
+      expect(r.donateUrl).toBe('https://give.example.org/')
+    })
+
+    it('shows Donate when tax_deductible is null/undefined (unknown, not confirmed-revoked -- fail-open here, unlike the badge which fails to a neutral display)', () => {
+      const r = getActionRowLinks({ website_status: null, website: null, donate_url_status: 'claimed', donate_url: 'https://give.example.org', volunteer_url: null, tax_deductible: null })
+      expect(r.donateUrl).toBe('https://give.example.org/')
+      const r2 = getActionRowLinks({ website_status: null, website: null, donate_url_status: 'claimed', donate_url: 'https://give.example.org', volunteer_url: null })
+      expect(r2.donateUrl).toBe('https://give.example.org/')
+    })
+  })
+
   describe('volunteer gate', () => {
     it('shows Volunteer whenever a volunteer_url is present, regardless of any status field', () => {
       const r = getActionRowLinks({ website_status: null, website: null, donate_url_status: null, donate_url: null, volunteer_url: 'volunteer.example.org' })

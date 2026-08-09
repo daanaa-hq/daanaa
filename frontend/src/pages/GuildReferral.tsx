@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { usePageMeta } from '../hooks/usePageMeta'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 interface VendorDeal {
   id: number
@@ -87,7 +88,7 @@ export default function GuildReferral() {
           </p>
           {vendor.website_url && (
             <a
-              href={vendor.website_url}
+              href={normalizeExternalUrl(vendor.website_url) || undefined}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block px-8 py-3.5 bg-soft-gold text-deep-navy font-body text-body-lg font-semibold rounded-xl hover:bg-bright-gold transition-colors"

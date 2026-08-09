@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { CheckCircle, XCircle, Edit2, AlertCircle } from 'lucide-react'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 interface LinkItem {
   ein: number
@@ -239,7 +240,7 @@ export function VerificationDashboard() {
                     <div className="bg-blue-50 border border-blue-200 p-3 rounded">
                       <p className="text-xs text-blue-700 font-medium">🌐 MAIN WEBSITE</p>
                       {item.website ? (
-                        <a href={item.website} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 break-all mt-1 hover:underline">
+                        <a href={normalizeExternalUrl(item.website) || undefined} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 break-all mt-1 hover:underline">
                           {item.website}
                         </a>
                       ) : (
@@ -251,7 +252,7 @@ export function VerificationDashboard() {
                       <p className="text-xs text-green-700 font-medium">💚 DONATE LINK</p>
                       {item.donate_url ? (
                         <>
-                          <a href={item.donate_url} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 break-all mt-1 hover:underline">
+                          <a href={normalizeExternalUrl(item.donate_url) || undefined} target="_blank" rel="noopener noreferrer" className="text-sm text-green-600 break-all mt-1 hover:underline">
                             {item.donate_url}
                           </a>
                           {item.donate_button_text && (
@@ -266,7 +267,7 @@ export function VerificationDashboard() {
                     <div className="bg-purple-50 border border-purple-200 p-3 rounded">
                       <p className="text-xs text-purple-700 font-medium">Volunteer Link</p>
                       {item.volunteer_url ? (
-                        <a href={item.volunteer_url} target="_blank" rel="noopener noreferrer" className="text-sm text-purple-600 break-all mt-1 hover:underline">
+                        <a href={normalizeExternalUrl(item.volunteer_url) || undefined} target="_blank" rel="noopener noreferrer" className="text-sm text-purple-600 break-all mt-1 hover:underline">
                           {item.volunteer_url}
                         </a>
                       ) : (

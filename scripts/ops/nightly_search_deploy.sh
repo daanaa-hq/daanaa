@@ -21,7 +21,7 @@ set -euo pipefail
 
 BASE="$HOME/meritgiving"
 SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
-DROPLET="root@162.243.97.179"
+DROPLET="root@107.170.26.8"
 SSH="ssh -i $SSH_KEY -o ConnectTimeout=20 -o StrictHostKeyChecking=accept-new $DROPLET"
 LOG="$BASE/logs/nightly_search_deploy.log"
 LOCK="$BASE/logs/.nightly_search_deploy.lock"
@@ -108,7 +108,7 @@ if [ "${UPDATED:-0}" -gt 0 ]; then
     log "Org files synced."
 
     # Restart API to clear cache
-    $SSH "systemctl restart daanaa" 2>>"$LOG" && log "API restarted." \
+    $SSH "systemctl restart daanaa-api" 2>>"$LOG" && log "API restarted." \
         || log "WARN: API restart failed (cache may be stale)"
 else
     log "Step 6/6: No org file changes. Skipping rsync."

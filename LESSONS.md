@@ -1,3 +1,161 @@
+## 2026-08-08 — Checked the status code, not the response body, in a security claim
+
+A route was reported as "live and exploitable in production" based on `curl ...
+-> 200` at `daanaa.org`. It was the SPA catch-all returning HTML (confirmed
+`content-type: text/html`, not `application/json`) -- the vulnerable JSON
+endpoint only ever existed on the home server (localhost/LAN), never on the
+droplet that serves the public internet. The fix itself was correct and worth
+shipping either way; the SEVERITY framing ("same weight as P0-SEC-001") was
+inflated by one unchecked assumption and stood for hours before being caught
+during deployment. Same root cause as the 404-assumption test bug logged
+above, but here it inflated a security narrative rather than just a test
+assertion -- higher stakes, same fix. **Preventing rule: a security claim
+needs the response BODY and content-type checked, not just the status code.
+2xx is not evidence of anything specific.**
+
+## 2026-08-08 — Three more instances of "the check didn't check what it claimed"
+
+Same day, same root pattern as the entry above, three fresh instances found
+while resolving a Codex review:
+
+**1. `pgrep -f "codex exec"` matched its own wrapper text, not the process.**
+Five separate `until ! pgrep -f "codex exec" ...; do sleep 30; done` loops were
+launched to wait for a background review. Every one matched the STRING
+"codex exec" inside its own `ps` listing (the wrapper command itself contains
+that text), so the loop condition was permanently true and would never have
+exited — five stale infinite loops, discovered only because the codex CLI
+process had actually finished ten+ minutes earlier and nothing noticed. Fixed
+going forward: capture the exact PID with `$!` and wait/poll that PID, or use
+the harness's own background-task completion signal — never `pgrep -f` on a
+string that plausibly appears in your own polling command.
+
+**2. Proved a test fix against the wrong file.** Working across a main repo
+and an isolated git worktree, a test's `ROOT = Path(__file__).parent.parent`
+resolved to the WORKTREE's own copy of `Footer.tsx`. The "proof" edited the
+MAIN REPO's copy instead — a different file — ran the test, saw it pass, and
+nearly reported success on a claim that was never actually exercised. Caught
+by checking `ROOT`'s literal definition before trusting the result, not by
+suspicion. **Preventing rule: when proving a test against a live edit, print
+or `cat` the exact absolute path the test will read, not the path you edited
+— in a multi-worktree session those are not guaranteed to be the same file.**
+
+**3. Assumed a REST convention instead of checking actual behavior.** A new
+regression test asserted a removed route returns 404. It returned 200. Not a
+bug — this app's SPA catch-all serves `index.html` for ANY unmatched path,
+confirmed by comparing against a path that had never existed (also 200). A
+route that IS matched but can't find its resource returns 404 JSON instead
+(different code path, explicit `return ..., 404` in the handler). The fix
+wasn't the app; it was the test's assumption. **Preventing rule: "should
+return 404" is a guess dressed as a fact until you've confirmed it against a
+known-nonexistent baseline in the same app — REST conventions are not
+universal, and an SPA catch-all is a common, legitimate reason they don't
+hold.**
+
+## 2026-08-08 — Systems that report success while doing nothing
+
+**The pattern, and the real lesson of the day.** Seven separate failures were found in
+one session. Not one announced itself; every one logged success or stayed silent while
+doing nothing. The common defect is not any individual bug — it is that **verification
+was written to describe intent rather than to test outcome**.
+
+If a check cannot fail, it is not a check. Each of these passed for months:
+
+| System | Reported | Reality |
+|---|---|---|
+| Backup integrity | `✅ integrity check passed` | `timeout 30` on a 23GB DB — always timed out, and timeout was coded as success |
+| Backup validation | size within 5% → OK | corruption does not change file size; six unreadable backups passed |
+| API startup | `✓ Embeddings loaded, search ready` | NameError swallowed; **0 of 546K** vectors loaded, semantic search degraded on every boot |
+| Nightly integrity cron | (silent) | `PRAGMA integrity_check LIMIT 1` — invalid SQL, errored nightly into an unread log |
+| Watchdog | `no change` ×1,791 | claim + wallet paths dead ~6 days; a check that never changes state never re-alerts |
+| Email agent | `internal → silently archived` | **archived the outage alerts themselves** |
+| llama-swap | 4 model slots configured | all four were dangling symlinks; GPU idle at 1.6GB/34GB |
+
+**Preventing rule:** every verification must be proven to fail. Before trusting a check,
+break the thing it guards and confirm it goes red. Applied here: the new backup script
+was verified by reverting the fix and watching tests fail (2 static, 4 emulator), and the
+retention policy was dry-run before it was ever allowed to delete.
+
+---
+
+## 2026-08-08 — sqlite3 `.backup` cannot complete against a live database
+
+**Symptom:** Nightly backups produced nothing on 08-04, 08-05 and 08-06, leaving only
+orphaned `-journal` files, while the log reported success. One run had been executing for
+5h21m when found.
+
+**Root cause:** The `sqlite3_backup` API **restarts from page 1 whenever a writer touches
+the source**. gunicorn holds `merit_registry.db` open read-write permanently, so the copy
+could never finish. Measured: **5,008GB read / 6,672GB written** for a 23GB database —
+about 290 full passes at ~6GB/s, indefinitely.
+
+**Fix:** `VACUUM INTO` — one consistent read snapshot, written once. **198 seconds.**
+
+**Preventing rule:** never use `.backup` on a database with live writers. Note the
+diagnostic that revealed it: file size looked static while mtime advanced every second.
+Progress was invisible in size, but `/proc/<pid>/io` counters made ~290 rewrites obvious.
+When something looks stuck, read the I/O counters before assuming slow.
+
+---
+
+## 2026-08-08 — Alerting that eats its own alarms
+
+**Symptom:** daanaa.org was down ~14 hours. Nobody was notified.
+
+**Root cause — a four-link chain in which every component worked as designed:**
+1. watchdog detected the outage (within 5 min) ✓
+2. watchdog sent the alert; Gmail delivery confirmed working ✓
+3. email agent saw sender `security@daanaa.org`, matched `_is_internal()` (own domain),
+   and applied its documented rule: *"internal → silently archived, nothing sent"* ✓
+4. nobody ever saw it
+
+Ops mail legitimately originates from our own domain, so "own domain means internal
+chatter" silences precisely the mail that matters most.
+
+**Fix (three layers, because one is not enough):** ops-prefixed subjects now forward to
+the founder instead of archiving; `scripts/ops/mailer.py` pushes to a phone via ntfy on
+every alert path; the watchdog's 6-hour re-alert cadence stays.
+
+**Preventing rule:** an alert is not delivered until a human sees it. Test the whole
+chain end to end — detection, send, classification, inbox — not each link alone. A
+dry-run of the email agent showed repeated `[Daanaa ALERT] public_site, homepage,
+claim_path` messages sitting archived, which is what proved the chain rather than the
+theory.
+
+---
+
+## 2026-08-08 — Retention that moves instead of deletes
+
+**Symptom:** `backups/` reached 250GB; 115GB was five corrupt copies of a single day.
+
+**Root cause:** expiry `mv`'d files to `archive/` rather than deleting. Nothing was ever
+reclaimed. At ~22GB per copy, the documented 30-day daily policy needs **660GB** against
+~105GB free — the backup system would eventually have filled the disk and taken the box
+down with it.
+
+**Fix:** real retention (7 daily / 3 hourly local) with two safeguards — it refuses to
+prune unless a verified offsite copy exists, and warns below 40GB free. Local is for fast
+recovery; offsite is the durable tier.
+
+**Preventing rule:** any retention policy must be checked against `capacity ÷ object size`.
+A policy that cannot fit on the disk is a scheduled outage.
+
+---
+
+## 2026-08-08 — One stale IP silently broke four subsystems
+
+**Symptom:** nightly deploys, the claim path, the donor wallet, and S3 code backups had
+all been failing for days to weeks. Each looked like a separate problem.
+
+**Root cause:** the droplet was replaced and `162.243.97.179` was hardcoded in **24
+scripts** plus a systemd unit. The claim tunnel additionally used key `daanaa_do`, which
+stopped authenticating when a snapshot restore wiped `authorized_keys` — only
+`daanaa_do_cron` works. With `Restart=always` it retried a dead host every 10s for weeks.
+
+**Preventing rule:** infrastructure addresses belong in one place. The same reasoning
+produced `scripts/lib/local_llm.py` after 16 scripts were found hardcoding dead inference
+ports. **Fixing only the IP would have left the tunnel broken** — when a component has
+been failing a long time, expect more than one cause and verify each independently.
+
 ## 2026-07-28 — V6 Activation: Validation-first gate prevents silent failures + undetected partial deployments
 
 **Symptom:** Risk of v6 going live with incomplete Phase 3 artifacts, broken assignments, or API misconfigurations undetected because validation and activation are separate/optional steps. Founder approval + QA sign-off might occur at different times, creating window for incomplete deployment.
@@ -1182,3 +1340,78 @@ watch it survive a second live occurrence before considering it done.
   re-verification backlog, SELECT the actual URLs — a status column can lie
   about what exists. Bulk status migrations must always carry the
   corresponding value column in their WHERE clause.
+
+## 2026-08-08 — "full lamp-tier retirement, verified live" overstated what was actually done
+- **Symptom:** earlier the same day, lamp-tier retirement was reported as complete
+  and verified live ("zero tier names") after removing Beacon/Torch/Candle/Spark
+  language from frontend copy, precompute content, and backend filters, and
+  confirming `/api/methodology` returns v6.0 with no tier names.
+- **Root cause:** "verified" checked the specific surfaces that were touched
+  (methodology page, research page, backend filters) but not the codebase for
+  other live consumers. `frontend/src/components/TrustBadge.tsx` still exports
+  a full tier-computation engine (`getTierFromOrg`, `getTierSummary`,
+  `TIER_COLORS`, `TIER_INK`, `TIER_MICROCOPY`, `merit_tier` logic) that
+  `Directory.tsx` and `OrganizationDetail.tsx` still call on every card render.
+  Independent Codex review (read-only, cited file:line) confirmed the actual
+  donor-facing impact was narrow — the returned string never contains a tier
+  name, and `OrgCard` doesn't even render the prop it's passed — but the
+  broader "fully retired" claim was still inaccurate; the engine is dormant,
+  not gone. A second component, `LampMark.tsx` (tier-colored icon), turned out
+  to be dead/unrouted code (`/admin` routes to `DashboardHub`, not the
+  `AdminPage` that imports `LampMark`) — never live even on the admin surface
+  it was written for.
+- **Fix:** `DESIGN.md`'s tier-color tokens re-documented as dormant/internal
+  (not deleted — `TrustBadge.tsx`/CSS/Tailwind still reference them) rather
+  than pretending they don't exist. Actual removal of the dead engine and
+  component logged as a TODO instead of being silently left in place.
+- **Preventing rule:** "verified live" for a retirement/removal claim means
+  grepping the whole codebase for the retired name (component names, function
+  names, exported constants), not just the specific pages that were the
+  original target. A page-level check can be honestly true and the
+  system-level claim built on top of it can still be false.
+
+## 2026-08-08 — systemd unit renamed on rebuild; 13 scripts and my own memory both stale
+- **Symptom:** a backend deploy (`scripts/safe_deploy_droplet.sh --code-only`)
+  failed with `Failed to restart daanaa.service: Unit daanaa.service not
+  found.` I then tried to SSH in directly to diagnose it and got
+  `Connection timed out` three times in a row — from a stale memory file
+  (`feedback_droplet_ssh_ip.md`, 55 days old) recalling the droplet's IP as
+  `162.243.97.179`. That box no longer exists; the droplet was rebuilt from a
+  snapshot earlier the same day ([[droplet_rebuild_2026_08_08]]) and got a new
+  address, `107.170.26.8`. I reported "SSH is down" to the founder based on
+  testing the wrong host, twice.
+- **Root cause:** the rebuild recreated the backend service under the unit
+  name `daanaa-api.service`, not the `daanaa` name every deploy/ops script
+  expected. `systemctl restart daanaa` on a nonexistent unit fails
+  immediately and touches nothing — the actually-running `daanaa-api`
+  process was never stopped or restarted, so the site stayed up and safe
+  throughout, just serving the pre-deploy code.
+- **How it actually got found:** the founder pasted a screenshot of the
+  DigitalOcean console showing the real current public IP. That's the fact
+  that broke the loop — not another retry, not Codex (which has no live
+  network access to verify a connectivity claim either).
+- **Fix:** `systemctl restart daanaa` → `systemctl restart daanaa-api`
+  (and `is-active daanaa` → `is-active daanaa-api`) across all 13 scripts
+  that referenced it: `scripts/ops/sync_droplet_api.sh`,
+  `scripts/ops/nightly_search_deploy.sh`, `scripts/ops/daanaa_watchdog.py`
+  (alert-hint text too, not just executed commands), `scripts/deploy.sh`,
+  `scripts/deploy_via_s3.sh`, `scripts/deploy_browse.sh`,
+  `scripts/deploy_similar_orgs.sh`, `scripts/deploy_morning.sh`,
+  `scripts/sync_db.sh`, `scripts/refresh_hidden_gems.sh`,
+  `scripts/refresh_public_numbers.sh`, `scripts/monitor_site_health.sh`,
+  `scripts/load_v4_scores.py`. Also corrected the stale IP in
+  `feedback_droplet_ssh_ip.md` and added the current systemd unit name to
+  the same memory, plus a pointer to the canonical script (
+  `scripts/ops/sync_droplet_api.sh`) instead of a hardcoded value, so the
+  next rebuild doesn't silently go stale the same way.
+- **Preventing rule:** an infrastructure identifier (IP, unit name, hostname)
+  recalled from memory is a snapshot, not a live fact, and a droplet rebuild
+  invalidates exactly the kind of thing memory is worst at keeping current.
+  Before trusting a hardcoded infra value more than a few days old, check it
+  against the one script that's actually exercised recently (here,
+  `scripts/ops/sync_droplet_api.sh`, which had the *right* IP already
+  hardcoded — the file, not my memory, was the source of truth all along).
+  And: two consecutive automated failures reaching the same wrong conclusion
+  is not evidence the conclusion is right — it's evidence to check the
+  premise, e.g. by asking the human to look at ground truth (a console
+  screenshot) rather than retrying the same broken diagnostic a third time.

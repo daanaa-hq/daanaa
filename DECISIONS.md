@@ -1,3 +1,53 @@
+## 2026-08-08: Firestore rules-testing toolchain (dev-only)
+
+**Chose:** `@firebase/rules-unit-testing`, `firebase-tools`, `jest` as devDependencies,
+plus `default-jre-headless` on the host, to run behavioural authorization tests against
+the Firestore emulator.
+
+**Why:** P0-SEC-001 changes an authorization boundary. Static parsing of `firestore.rules`
+can prove the text says "deny"; only the emulator proves Firestore *enforces* it. The
+distinction is not academic — the first test draft failed on path-segment shape, not on a
+rules defect, which a static test would never have surfaced. Founder-approved and installed
+2026-08-08.
+
+**Cost:** none recurring. Dev-only; no runtime dependency, nothing ships to the droplet.
+
+**Rejected:** static-only verification (cannot demonstrate enforcement); hosted Firebase
+test project (needs credentials and network, and would put test writes near production).
+
+**Note:** emulator pinned to 127.0.0.1:8571 in `firebase.json` — port 8080 is held by
+`llama-swap` on the Daanaa host.
+
+## 2026-08-08: Autonomy rule reframed — reversibility + public claims, not backend/frontend
+
+**Problem:** `CLAUDE.md` granted autonomy by *directory* ("backend is autonomous,
+frontend requires review"). The Continuous Stewardship Operating Mandate grants it by
+*risk* (Level 4 = production deployment, methodology, public claims). The two disagreed,
+and the disagreement was live: on 2026-08-08 v6 scoring was shipped to production under
+`CLAUDE.md`'s backend autonomy, which the mandate would have gated. Ambiguity of this
+kind gets resolved by whoever is convenient at the time, which is the wrong resolver.
+
+**Decision (founder-approved 2026-08-08):** Autonomy is decided by two questions, not by
+file path:
+
+1. Is it reversible and smoke-testable? → autonomous.
+2. Does it change what Daanaa asserts to the public, how a number is derived, or money? → founder gate.
+
+**Why this line:** a smoke test can prove a page still renders. It cannot prove a claim is
+true. Deploying v6 tiers was reversible and verifiable (`.prev` retained, origin smoke-tested)
+— autonomous. Rewording the tax-deductibility badge asserts something to donors about their
+taxes that no test can validate — gated. The old rule got both of these wrong in principle:
+it would have allowed the wording change (it began as a backend precompute field) and blocked
+a pure CSS fix.
+
+**Rejected:** (a) adopting Level 4 wholesale, which would gate routine ops deploys and push
+work toward the founder — the opposite of the mandate's own goal of reducing founder
+dependency; (b) keeping the directory rule and noting the exception, which leaves two
+documents disagreeing.
+
+**Follow-on:** frontend is no longer blanket-gated. UI changes that only affect layout,
+styling, or interaction are autonomous under the reversibility test.
+
 ## 2026-07-28: V6 Rollout Validation-First Gate (deploy_v6_validate.sh)
 
 **Problem:** v6 is staged but not yet live. Activation requires careful orchestration: database schema validation, Phase 3 artifact integrity, revocation checks, assignment coverage, and API smoke tests. Risk: premature activation (missing Phase 3, incomplete assignments, broken API) or activation skipped due to missing guardrails.

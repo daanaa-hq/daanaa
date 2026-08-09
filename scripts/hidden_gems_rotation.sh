@@ -8,6 +8,6 @@ cd /home/akbar/meritgiving
 python3 scripts/precompute_hidden_gems.py 2>&1 | tail -5
 
 # Sync to droplet
-rsync -avz precompute_output/browse/hidden_gems/ root@162.243.97.179:/data/precompute/v1/browse/hidden_gems/ --delete
+rsync -avz precompute_output/browse/hidden_gems/ root@107.170.26.8:/data/precompute/v1/browse/hidden_gems/ --delete
 
 echo "Hidden gems rotated $(date)" >> /home/akbar/.logs/gems_rotation.log

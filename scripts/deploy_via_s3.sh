@@ -22,7 +22,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 S3_BUCKET="meritgiving-staging"
 S3_REGION="us-east-1"
 LOCAL_DB="$PROJECT_DIR/data/merit_registry.db"
-DROPLET_HOST="root@162.243.97.179"
+DROPLET_HOST="root@107.170.26.8"
 DROPLET_DB="/opt/daanaa/data/merit_registry.db"
 DROPLET_BACKUP="/opt/daanaa/data/merit_registry.db.backup"
 LOG_FILE="$PROJECT_DIR/logs/s3_deploy.log"
@@ -194,7 +194,7 @@ SSH_EOF
 restart_api() {
     log "Restarting API on droplet..."
     ssh "$DROPLET_HOST" << SSH_EOF
-    systemctl restart daanaa
+    systemctl restart daanaa-api
     sleep 3
     curl -s https://daanaa.org/api/stats | jq '.total_organizations' | xargs echo "API responding, total orgs:"
     echo "✅ API restarted and verified"

@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
-EMBEDDING_SERVICE = "http://127.0.0.1:11436/v1/embeddings"
+EMBEDDING_SERVICE = "http://127.0.0.1:11434/v1/embeddings"
 BATCH_SIZE = 32  # Batch size for GPU embedding
 
 # Known donation link patterns (as reference embeddings)

@@ -46,8 +46,10 @@ export default function ResearchLimitations() {
               financial state may differ significantly from published records.
             </li>
             <li>
-              <strong>Sampling bias:</strong> Organizations without recent filings are
-              underrepresented. Spark tier orgs may be under-resourced or dormant.
+                <strong>Sampling bias:</strong> Organizations without recent filings are
+                underrepresented in this analysis. A missing filing reflects the limits of
+                our data coverage, not evidence that an organization is inactive or
+                struggling — smaller and newer nonprofits routinely file less often.
             </li>
             <li>
               <strong>Accounting variation:</strong> Nonprofits apply GAAP differently.

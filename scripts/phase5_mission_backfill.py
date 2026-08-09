@@ -46,7 +46,7 @@ DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 CHECKPOINT_PATH = Path.home() / "meritgiving" / "logs" / "phase5_checkpoint.json"
 PROGRESS_LOG = Path("/tmp/phase5_progress.log")
 
-LLM_URL = "http://127.0.0.1:11437/v1/chat/completions"
+LLM_URL = "http://127.0.0.1:8080/v1/chat/completions"
 LLM_MODEL = "Qwen2.5-32B-Instruct-Q4_K_M"
 BATCH_SIZE = 16
 TOKENS_PER_MISSION = 60

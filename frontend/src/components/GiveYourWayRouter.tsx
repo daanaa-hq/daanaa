@@ -10,6 +10,7 @@
  */
 
 import React, { useState } from 'react'
+import { normalizeExternalUrl } from '../utils/externalLink'
 
 interface GiveMethodProps {
   ein: string | null | undefined
@@ -41,11 +42,16 @@ const methods: MethodConfig[] = [
     id: 'site',
     label: "Organization's website",
     description: 'Give directly on their site',
-    available: (p) => !!(p.donateUrl && p.donateUrlStatus && ['beta', 'claimed'].includes(String(p.donateUrlStatus))),
+    // normalizeExternalUrl (2026-08-08): donate_url is stored unnormalized like
+    // website, so a bare domain rendered as a relative link and never reached the
+    // org's donation page. Gating on the normalized value also means a URL we
+    // cannot make safe (javascript:, data:, malformed) hides the option rather
+    // than rendering a dead or hostile link.
+    available: (p) => !!(normalizeExternalUrl(p.donateUrl) && p.donateUrlStatus && ['beta', 'claimed'].includes(String(p.donateUrlStatus))),
     render: (p) => (
       <div className="text-xs">
         <a
-          href={p.donateUrl || ''}
+          href={normalizeExternalUrl(p.donateUrl) || ''}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-block px-3 py-2 bg-deep-navy text-warm-cream rounded text-xs hover:bg-soft-gold transition-colors"

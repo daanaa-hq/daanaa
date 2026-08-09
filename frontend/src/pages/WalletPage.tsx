@@ -16,6 +16,7 @@ import { isTemplateDue } from '../types/wallet'
 import type { ApiOrganization } from '../data/api'
 import type { LoggedDonation } from '../types/wallet'
 import { API_BASE } from '../lib/platform'
+import { taxDeductibleToStatus } from '../utils/taxDeductible'
 import {
   validateSearchTerm,
   validateFilterValue,
@@ -519,9 +520,11 @@ export default function WalletPage() {
                   onConfirm={() => {
                     // Log donation with template amount, today's date
                     const irsSnapshot = apiOrg ? {
-                      irsEligibilityStatus: apiOrg.irs_eligibility_status || 'unknown',
-                      irsEligibilityCheckedAt: apiOrg.irs_eligibility_checked_at,
-                      irsEligibilitySources: apiOrg.irs_eligibility_sources,
+                      // Migrated 2026-08-09 off the dead irs_eligibility_status
+                      // field -- see LESSONS.md.
+                      irsEligibilityStatus: taxDeductibleToStatus(apiOrg.tax_deductible),
+                      irsEligibilityCheckedAt: apiOrg.tax_deductible_checked_at,
+                      irsEligibilitySources: undefined,
                     } : undefined
                     logDonation(entry.ein, entry.recurringTemplate!.amount, today, undefined, undefined, irsSnapshot)
                   }}
@@ -774,9 +777,9 @@ export default function WalletPage() {
                           ein={entry.ein}
                           orgName={org.organization_name}
                           irsSnapshot={{
-                            irsEligibilityStatus: org.irs_eligibility_status || 'unknown',
-                            irsEligibilityCheckedAt: org.irs_eligibility_checked_at,
-                            irsEligibilitySources: org.irs_eligibility_sources,
+                            irsEligibilityStatus: taxDeductibleToStatus(org.tax_deductible),
+                            irsEligibilityCheckedAt: org.tax_deductible_checked_at,
+                            irsEligibilitySources: undefined,
                           }}
                         />
                       )}

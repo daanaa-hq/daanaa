@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getOrganizations } from '../data/api'
 import type { ApiOrganization } from '../data/api'
-import LampMark from './LampMark'
-import { getTierFromOrg } from './TrustBadge'
 
 interface SearchBarProps {
   value: string
@@ -127,7 +125,6 @@ export default function SearchBar({
       {open && suggestions.length > 0 && (
         <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-white rounded-2xl shadow-xl border border-light-grey z-50 overflow-hidden">
           {suggestions.map(org => {
-            const tier = getTierFromOrg(org)
             return (
               <button
                 key={org.EIN}
@@ -135,7 +132,6 @@ export default function SearchBar({
                 onMouseDown={e => { e.preventDefault(); setOpen(false); navigate(`/org/${org.EIN}`) }}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-warm-cream transition-colors text-left group"
               >
-                <LampMark tier={tier} size="xs" />
                 <div className="flex-1 min-w-0">
                   <p className="font-body text-small font-medium text-deep-navy truncate group-hover:text-soft-gold transition-colors">
                     {org.organization_name}

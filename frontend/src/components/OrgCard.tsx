@@ -4,8 +4,7 @@ import type { Organization } from '../data/organizations'
 import { formatCurrency, NTEE1_NAMES } from '../data/organizations'
 import { NTEE_SUBCATEGORIES } from '../data/categories'
 import BadgeChip from './BadgeChip'
-import { getTierFromOrg, getInlineVerifiedFact } from './TrustBadge'
-import LampMark from './LampMark'
+import { getInlineVerifiedFact } from './TrustBadge'
 import type { ApiOrganization } from '../data/api'
 import { normalizeExternalUrl } from '../utils/externalLink'
 import OrgSignals from './OrgSignals'
@@ -100,7 +99,6 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
   const { isInFunding: walletInFunding, isInVolunteering: walletInVolunteering, addToFunding, addToVolunteering, removeFromFunding, removeFromVolunteering } = useWallet()
   const { isInCompare, addItem: addCompare, removeItem: removeCompare, canAdd } = useCompare()
   const inCompare  = isInCompare(org.ein)
-  const lampTier   = apiOrg ? getTierFromOrg(apiOrg) : undefined
   const inlineFact = apiOrg ? getInlineVerifiedFact(apiOrg) : ''
 
   const inFunding      = propInFunding      ?? walletInFunding(org.ein)
@@ -131,8 +129,17 @@ export function OrgCardRow({ org, isInFunding: propInFunding, isInVolunteering: 
       to={`/org/${org.id}`}
       className="flex items-center gap-4 bg-white border border-light-grey rounded-xl px-5 py-4 transition-all duration-200 hover:border-soft-gold/50 hover:shadow-card"
     >
-      {/* LampMark sm */}
-      {lampTier && <LampMark tier={lampTier} size="sm" className="self-start mt-0.5" />}
+      {/* Lamp tier removed 2026-08-08 (founder). Completes the retirement the
+          board began 2026-07-17 when tiers were pulled from the directory filter.
+          They rested on assumptions that did not hold; v6 financial context
+          covers more of the live directory. Measured 2026-08-08 against
+          data/merit_registry.db, live-directory rows (EIN IS NOT NULL AND
+          deductibility=1 AND org_status='active'), n=1,750,881:
+            v6 (scoring_tier IS NOT NULL):   1,747,111 / 1,750,881 = 99.78%
+            lamp (merit_tier IS NOT NULL):   1,532,474 / 1,750,881 = 87.53%
+          Re-run: SELECT COUNT(scoring_tier), COUNT(merit_tier), COUNT(*) FROM
+          registry_enriched WHERE EIN IS NOT NULL AND deductibility=1 AND
+          org_status='active'; -- figures will drift as the registry grows. */}
 
       {/* Name + fact + location */}
       <div className="flex-1 min-w-0">
@@ -237,7 +244,6 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
   const { isInFunding: walletInFunding, isInVolunteering: walletInVolunteering, addToFunding, addToVolunteering, removeFromFunding, removeFromVolunteering } = useWallet()
   const { isInCompare, addItem: addCompare, removeItem: removeCompare, canAdd } = useCompare()
   const inCompare  = isInCompare(org.ein)
-  const lampTier   = apiOrg ? getTierFromOrg(apiOrg) : undefined
   const inlineFact = apiOrg ? getInlineVerifiedFact(apiOrg) : ''
 
   const inFunding      = propInFunding      ?? walletInFunding(org.ein)
@@ -268,9 +274,8 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
       to={`/org/${org.id}`}
       className="block bg-white border border-light-grey rounded-xl p-5 transition-all duration-200 hover:border-soft-gold/50 hover:-translate-y-[3px] hover:shadow-card"
     >
-      {/* Top row: lamp + name (full width, no button crowding it) */}
+        {/* Top row: name (lamp tier removed 2026-08-08 — see note above) */}
       <div className="flex items-start gap-3 mb-1.5">
-        {lampTier && <LampMark tier={lampTier} size="md" className="mt-0.5 shrink-0" />}
         <div className="flex-1 min-w-0">
           <h3 className="font-display text-title-sm text-deep-navy leading-tight hover:text-soft-gold transition-colors line-clamp-2">
             {org.name}

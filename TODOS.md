@@ -38,6 +38,59 @@ within ~75–90 days. Lower priority; Every.org covers the reachable majority fi
 
 ## Trust & brand
 
+### P3 — Mission source attribution in the hero (text, not just the AI badge)
+**What:** The hero mission paragraph shows an `AiBadge` icon when the mission is
+AI-generated, but doesn't say which source (IRS Form 990 / NTEE category /
+organization website / verified by organization) the way the removed
+`OrgInfoHierarchy` Mission tier used to.
+**Why:** Removing that tier (2026-08-08, duplicate-content fix) dropped the only
+place that spelled out the source in text. Stewardship P3 (evidence-based,
+explainable) is still met via the icon + tooltip, but a text line would be
+clearer for a donor who doesn't hover.
+**Pros:** Small, focused addition; keeps the hero as the single home for mission
+info instead of splitting it across two page locations again.
+**Cons:** Hero is already dense (name, mission, location, CTAs, badges) — needs a
+compact treatment, not a full sentence.
+**Context:** Not urgent — the AiBadge already discloses AI-generated missions
+visually; this closes a smaller gap (source for non-AI missions too, e.g. "IRS
+Form 990" vs "organization website").
+**Depends on:** None.
+
+### P2 — Org page loading skeleton (replaces blank-screen spinner)
+**What:** Build a skeleton loading state for `OrganizationDetail.tsx` that matches the
+real layout (hero shape, badge row, content blocks) instead of the current blank navy
+screen with a centered spinner.
+**Why:** Surfaced 2026-08-08 during the org-page design review (Pass 2, Interaction
+State Coverage). On a slow connection a blank screen reads as broken, not loading —
+the highest-traffic decision page on the site shouldn't risk that impression.
+**Pros:** Standard, well-understood pattern; meaningfully improves perceived
+performance without any backend change.
+**Cons:** Real, separate work — needs to track the actual DOM shape (hero height,
+badge row, sidebar) closely enough to avoid layout shift when real content arrives.
+**Context:** Deferred out of the same pass that shipped the flame-language fix,
+FAQ tense fix, category-dedup fix, "Size: 0" fix, financial-history consolidation,
+and duplicate-content removal — kept those changes focused and independently
+verifiable rather than bundling in a bigger UI addition.
+**Depends on:** None.
+
+### P3 — Wallet explainer video (replaces the homepage text pitch)
+**What:** A short explainer video/audio for how the Giving Wallet works, to replace the
+homepage's WalletSection text pitch + preview mockup once produced. Explore NotebookLM
+(feed it the wallet docs/methodology, generate an Audio Overview or video overview) as a
+low-effort production path before committing to a full video shoot.
+**Why:** Surfaced 2026-08-08 during the homepage redesign — video explains "how it works"
+better than a text pitch for a skeptical first-time visitor (ease-over-persuasion
+research cited in that session). Video production is its own workstream, not a same-day
+build.
+**Pros:** Stronger trust/comprehension than text; NotebookLM path is genuinely low-effort
+compared to a real production pipeline.
+**Cons:** Still needs a script/source doc, a review pass for accuracy (Stewardship P3 —
+nothing unverified stated as fact), and hosting/embed decisions.
+**Context:** For now, the homepage carries one line + a link to /wallet instead of the
+full pitch section — swap this TODO's output in later without re-touching the homepage IA.
+**Depends on:** None to start exploring NotebookLM; final embed depends on where the
+homepage settles after this redesign ships.
+
 ### P2 — Partnership logos (build when the first partner signs)
 **Honesty guardrail (Stewardship): a logo only renders once that partner is genuinely on
 board. No logo before a signed deal — that would be a fake trust signal.**
@@ -50,6 +103,71 @@ Data-driven so it's structurally impossible to show an unconfirmed partner:
   (and maybe Home).
 Trigger to build: the moment Every.org (or any partner) is confirmed. ~10-minute add then.
 Do NOT build the empty component now (YAGNI — no caller yet).
+
+### P2 — Card-level evidence markers (data source + last-verified date)
+**What:** Small marker on `OrgCard.tsx` (and search results) showing where the data came
+from (IRS/ProPublica) and when it was last verified — not just asserted once on the
+homepage trust block.
+**Why:** Proves trust at the actual decision moment (the card the donor is about to click),
+not only on first landing. Ties to the Fogg credibility research (specificity beats a
+single hero-level claim) surfaced during the 2026-08-08 homepage design review.
+**Pros:** Reinforces credibility sitewide; cheap per-card once the data field exists.
+**Cons:** `OrgCard.tsx` is a widely-reused component — any change ripples across
+Directory, category pages, compare, wallet. Needs a data-freshness field wired through
+the API (`daanaa_api.py` response), not just a frontend change.
+**Context:** Surfaced as an explicit alternative to (not a replacement for) the homepage
+second-beat trust block — founder chose the single block for now, logged this as the
+distributed-trust follow-up.
+**Depends on:** API exposing a last-verified/data-source field per org (check if one
+already exists before adding a new column).
+
+### P2 — AI-slop audit beyond the homepage
+**What:** Run `/design-review` (or a targeted plan-design-review pass) on Directory,
+category pages, and the org-card grid against the AI Slop blacklist (icon-in-circle
+grids, cookie-cutter section rhythm, generic 3-column feature grids).
+**Why:** The "doesn't look like AI" ask covered the whole site; the 2026-08-08 review
+only audited the homepage.
+**Pros:** Completes the original ask; these pages get far more traffic per session than
+the homepage does once a visitor starts browsing.
+**Cons:** Separate review pass, separate approval cycle — don't want to block the
+homepage ship on it.
+**Context:** Sequencing one surface at a time (homepage first, since it ships the new
+trust-beat and consolidated IA) keeps each pass reviewable.
+**Depends on:** Homepage redesign shipping first, so there's a consistent pattern to
+extend rather than two designs evolving in parallel.
+
+### P3 — Actually delete the dormant lamp-tier/visibility engine (not just retired copy)
+**What:** Remove `getTierFromOrg`/`getTierSummary`/`TIER_COLORS`/`TIER_INK`/`TIER_MICROCOPY`/
+`merit_tier` logic from `TrustBadge.tsx`, delete `LampMark.tsx`, and the 5 `tier-*` CSS
+vars from `index.css`/`tailwind.config.js`. Update the two call sites in
+`Directory.tsx`/`OrganizationDetail.tsx` to stop computing `trustSummary` from tier logic
+(it's currently unused by `OrgCard` anyway — confirm nothing else needs it, then drop the
+prop entirely).
+**Bigger than first scoped:** `AdminPage.tsx` (624 lines, the only importer of `LampMark`)
+is itself entirely dead code — `App.tsx:25` lazy-imports it but no `<Route>` in the app
+ever renders it (`/admin` routes to `DashboardHub`, `/admin/operations` to
+`AdminOperations`). Confirmed via full-repo grep: `AdminPage` has exactly one reference
+outside its own file, the unused import. Before deleting, check whether `AdminPage.tsx`
+has functionality (org moderation? data QA?) that's genuinely needed and just lost its
+route by accident — if so, re-route it instead of deleting; if it was superseded by
+`DashboardHub`/`AdminOperations`, delete the whole file.
+**Why:** 2026-08-08's retirement removed the tier system from public copy but left the
+underlying engine live — see LESSONS.md 2026-08-08 entry. Dead code that still computes
+"Beacon/Torch/Candle/Spark" classifications is a Toyota-muda + explainability smell: a
+future engineer greps for "tier" and finds a fully wired system, not a retired one. Same
+logic applies to a 624-line unrouted admin page — either it's needed (re-route it) or it's
+muda (delete it); leaving it orphaned is the worst of both.
+**Pros:** Codebase actually matches the "retired" claim; removes ~150 lines of dead tier
+logic, one dead component, and resolves whether a 624-line admin page is lost
+functionality or dead weight.
+**Cons:** Touches a widely-imported file (`TrustBadge.tsx` — also exports
+`getFinancialHealth`, `financialContextLabel`, `PASSING_BANDS`, which ARE still live and
+must NOT be removed in the same pass). Needs care to remove only the dormant tier exports.
+Determining whether `AdminPage.tsx` lost its route by accident needs a git-blame/history
+check, not just a grep.
+**Context:** Low urgency — nothing user-facing is broken, this is pure cleanup. Not
+blocking the homepage redesign.
+**Depends on:** None — can be done independently, any time.
 
 ---
 

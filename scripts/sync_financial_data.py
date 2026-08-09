@@ -13,7 +13,7 @@ from datetime import datetime
 import tempfile
 
 HOME_DB = Path.home() / "meritgiving" / "data" / "merit_registry.db"
-DROPLET_HOST = "root@162.243.97.179"
+DROPLET_HOST = "root@107.170.26.8"
 DROPLET_DB = "/data/precompute/v1/search.db"
 DROPLET_SYNC_DIR = "/tmp/daanaa_sync"
 

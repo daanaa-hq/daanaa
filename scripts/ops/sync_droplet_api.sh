@@ -15,7 +15,7 @@ BASE="$HOME/meritgiving"
 LOCAL_API="$BASE/scripts/droplet_api.py"
 REMOTE_API="/opt/daanaa/droplet_api.py"
 SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
-DROPLET="root@162.243.97.179"
+DROPLET="root@107.170.26.8"
 SSH="ssh -i $SSH_KEY -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=accept-new $DROPLET"
 LOG="$BASE/logs/sync_droplet_api.log"
 CONFIG="$BASE/.aws-backup-config"
@@ -95,7 +95,7 @@ retry rsync -e "ssh -i $SSH_KEY -o BatchMode=yes -o StrictHostKeyChecking=accept
 
 # Restart service
 log "Restarting daanaa service..."
-$SSH "systemctl restart daanaa" 2>>"$LOG"
+$SSH "systemctl restart daanaa-api" 2>>"$LOG"
 
 # Verify it came back. A single systemctl probe conflates a transient SSH
 # refusal with a dead service (false FAILED on 2026-07-13, sshd briefly
@@ -104,7 +104,7 @@ $SSH "systemctl restart daanaa" 2>>"$LOG"
 STATUS="FAILED"
 for _attempt in 1 2 3; do
     sleep 5
-    if $SSH "systemctl is-active daanaa" 2>/dev/null | grep -q "^active$"; then
+    if $SSH "systemctl is-active daanaa-api" 2>/dev/null | grep -q "^active$"; then
         STATUS="OK"
         log "Service restarted successfully."
         break
@@ -137,7 +137,7 @@ if smoke; then
 else
     STATUS="FAILED"
     log "SMOKE TEST FAILED: homepage or search not serving. Rolling back to ${REMOTE_API}.prev..."
-    if $SSH "test -f ${REMOTE_API}.prev && cp ${REMOTE_API}.prev $REMOTE_API && systemctl restart daanaa"; then
+    if $SSH "test -f ${REMOTE_API}.prev && cp ${REMOTE_API}.prev $REMOTE_API && systemctl restart daanaa-api"; then
         sleep 5
         if smoke; then
             log "Rollback OK — previous version restored and serving."

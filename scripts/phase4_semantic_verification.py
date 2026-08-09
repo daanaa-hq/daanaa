@@ -38,7 +38,7 @@ import threading
 DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
 CHECKPOINT_PATH = Path.home() / "meritgiving/logs/phase4_checkpoint.json"
 PROGRESS_LOG = Path("/tmp/phase4_progress.log")
-EMBED_URL = "http://127.0.0.1:11436/embedding"  # GPU-accelerated llama-server endpoint
+EMBED_URL = "http://127.0.0.1:11434/embedding"  # GPU-accelerated llama-server endpoint
 EMBED_MODEL = "mxbai-embed-large"
 
 UA = ("Mozilla/5.0 (compatible; DaanaaWebFinder/1.0; "

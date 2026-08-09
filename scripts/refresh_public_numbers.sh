@@ -17,7 +17,7 @@ set -euo pipefail
 
 ROOT="/home/akbar/meritgiving"
 PY="$ROOT/venv/bin/python3"
-DROPLET="root@162.243.97.179"
+DROPLET="root@107.170.26.8"
 SSH=(ssh -o ServerAliveInterval=10 -o ConnectTimeout=20 -o BatchMode=yes "$DROPLET")
 RSYNC_RSH="ssh -o ServerAliveInterval=10 -o ConnectTimeout=20 -o BatchMode=yes"
 
@@ -69,7 +69,7 @@ rsync -az -e "$RSYNC_RSH" "$SNAPSHOT" "$DROPLET:$REMOTE_DIST/research-snapshot.j
 
 # 4. Restart the service so all workers re-read the new files ----------------
 log "Restarting daanaa service…"
-"${SSH[@]}" "systemctl restart daanaa" || fail "service restart failed"
+"${SSH[@]}" "systemctl restart daanaa-api" || fail "service restart failed"
 sleep 5
 
 # 5. Verify the live API matches the DB -------------------------------------

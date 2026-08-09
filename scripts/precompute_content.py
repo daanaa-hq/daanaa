@@ -159,18 +159,8 @@ def main():
 
     stats['categories'] = category_stats
 
-    # Tier distribution
-    cursor.execute(f"""
-        SELECT merit_tier, COUNT(*) as count
-        FROM registry_enriched
-        WHERE {DEDUCTIBLE} AND merit_tier IS NOT NULL
-        GROUP BY merit_tier
-        ORDER BY merit_tier
-    """)
-    tier_dist = {}
-    for row in cursor.fetchall():
-        tier_dist[row['merit_tier']] = row['count']
-    stats['tier_distribution'] = tier_dist
+    # merit_tier distribution removed 2026-08-08 (founder decision, retiring
+    # lamp tiers) -- confirmed unconsumed by any frontend page before removal.
 
     # Reserve health
     cursor.execute(f"""
@@ -204,43 +194,29 @@ def main():
     # 2. Methodology page
     print("  Generating methodology data...")
     methodology = {
-        'version': 'v4.0',
+        'version': 'v6.0',
         'scoring_approach': 'Peer-group financial context scoring with cause awareness',
-        'tiers': [
+        # Lamp tiers retired 2026-08-08 (founder decision). Replaced with the
+        # v6 financial-context levels, matching Methodology2.tsx wording exactly
+        # so frontend and precompute-generated content never disagree again --
+        # that inconsistency was the reason this file blocked the frontend
+        # deploy for the rest of the day.
+        'context_levels': [
             {
-                'name': 'Beacon',
-                'description': 'Top performers in peer group',
-                'percentile_min': 75,
-                'score_min': 75,
-                'color': '#FF4A4A',
+                'name': 'Full Context',
+                'description': 'Compared with organizations of similar type, size, and region.',
             },
             {
-                'name': 'Lantern',
-                'description': 'Strong performers',
-                'percentile_min': 50,
-                'score_min': 60,
-                'color': '#FF8C42',
+                'name': 'Regional Context',
+                'description': 'Compared within a broader regional peer group.',
             },
             {
-                'name': 'Flame',
-                'description': 'Solid performers',
-                'percentile_min': 25,
-                'score_min': 45,
-                'color': '#FFB627',
+                'name': 'Broad Category',
+                'description': 'Compared across a wider category when a closer peer group was too small to be meaningful.',
             },
             {
-                'name': 'Ember',
-                'description': 'Emerging organizations',
-                'percentile_min': 0,
-                'score_min': 30,
-                'color': '#F0B86C',
-            },
-            {
-                'name': 'Seed',
-                'description': 'Early stage or limited data',
-                'percentile_min': -100,
-                'score_min': 0,
-                'color': '#D4A574',
+                'name': 'Archetype Only',
+                'description': 'We can describe the kind of work, but the public record does not yet support a peer comparison.',
             },
         ],
         'operating_models': OPERATING_MODELS,
@@ -308,39 +284,28 @@ def main():
     }
     save_json_gz('sector_health.json.gz', sector_health)
 
-    # 4. How it works (Lamp journey)
+    # 4. How it works
+    # Lamp journey (Spark -> Blazing tier-advancement narrative) removed
+    # 2026-08-08 -- same framing problem fixed on ForNonprofits.tsx: implied an
+    # org could "advance" through a public ranking by filing paperwork.
+    # /how-it-works redirects to /methodology (App.tsx) and no frontend page
+    # currently reads this endpoint's 'journey' field, but scripts/droplet_api.py
+    # still serves it directly, so the content is replaced rather than left
+    # stale for anyone hitting the API path directly.
     print("  Generating how-it-works data...")
     how_it_works = {
-        'journey': [
+        'steps': [
             {
-                'stage': 'Spark',
-                'tier': 'Seed',
-                'description': 'New or small organizations finding their footing',
-                'characteristics': ['Limited financial history', 'Emerging mission', 'Building capacity'],
+                'step': 'IRS records, automatically',
+                'description': 'Name, location, cause area, and tax-deductible status come from IRS data. Financial details appear once the IRS publishes them.',
             },
             {
-                'stage': 'Growing',
-                'tier': 'Ember',
-                'description': 'Organizations gaining strength and stability',
-                'characteristics': ['Improving reserves', 'Expanding reach', 'Building expertise'],
+                'step': 'Peer financial context, where the record supports it',
+                'description': 'Where enough comparable organizations exist, we show how an organization compares with peers doing similar work at a similar scale.',
             },
             {
-                'stage': 'Steady Flame',
-                'tier': 'Flame',
-                'description': 'Well-established, reliable organizations',
-                'characteristics': ['Solid reserves', 'Consistent impact', 'Stable operations'],
-            },
-            {
-                'stage': 'Burning Bright',
-                'tier': 'Lantern',
-                'description': 'Strong performers with growing impact',
-                'characteristics': ['Strong reserves', 'Scaling impact', 'Leading in sector'],
-            },
-            {
-                'stage': 'Blazing',
-                'tier': 'Beacon',
-                'description': 'Top performers and sector leaders',
-                'characteristics': ['Exceptional reserves', 'Maximum impact', 'Industry leadership'],
+                'step': 'What an organization can add',
+                'description': 'A mission description, website, donation link, and volunteer information -- the details donors most often look for.',
             },
         ],
     }

@@ -4,7 +4,7 @@
 # Handles both state-specific and ALL-state browse files.
 
 set -e
-DROPLET="root@162.243.97.179"
+DROPLET="root@107.170.26.8"
 SSH_KEY="$HOME/.ssh/daanaa_do_cron"  # passphrase-free automation key (see LESSONS.md 2026-07-05)
 SSH_OPTS="-i $SSH_KEY -o ConnectTimeout=20 -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
 LOCAL_BROWSE="$HOME/meritgiving/precompute_output/browse"
@@ -28,7 +28,7 @@ rsync -e "ssh $SSH_OPTS" -az --checksum --stats \
 # freshly-deployed browse regen invisible to real traffic for ~1h before
 # being caught by manual verification. Use systemctl directly instead.
 echo "Step 2/2: Restarting daanaa.service to clear cache..."
-ssh $SSH_OPTS "$DROPLET" "systemctl restart daanaa && sleep 4 && curl -s http://localhost:5000/health"
+ssh $SSH_OPTS "$DROPLET" "systemctl restart daanaa-api && sleep 4 && curl -s http://localhost:5000/health"
 
 echo ""
 echo "=== Deploy complete: $(date) ==="

@@ -50,19 +50,40 @@ Senior-engineer bar. The system gets smarter every session. Read this file,
 - **Boy-scout rule.** Leave touched files better. **Secrets only from env/config**,
   never logged, never in code.
 
-### Autonomy (revised 2026-07-05 — see DECISIONS.md for why)
+### Autonomy (revised 2026-08-08 — reconciles this file with the Continuous
+### Stewardship Operating Mandate; see DECISIONS.md for why)
+
+**The test is not "backend or frontend." It is: can this be reversed, and does it
+change what Daanaa asserts to the public?**
+
 - Local edits, research, reads, builds, local tests → just do them.
-- **Backend is autonomous.** Droplet API (`droplet_api.py` / `scripts/droplet_api.py`),
-  ops scripts, the data/scoring pipeline, and backend git commits/pushes may be deployed
-  and shipped without stopping for approval — but every autonomous deploy MUST pass its
-  smoke test (homepage + one core API return 200 from the public URL) before being
-  considered done, and MUST auto-rollback to the last known-good version on failure
-  (see `scripts/ops/sync_droplet_api.sh`). A deploy that "restarts the service" but
-  doesn't verify real pages render is not verified — this exact gap caused the
-  2026-07-05 outage (see LESSONS.md).
-- **Frontend still requires review.** Any change under `frontend/` (React/TS/UI) →
-  stop, show the diff, get explicit approval before building or deploying.
-- **Spending money → stop, show, get approval.** Unchanged.
+- **Reversible, smoke-tested deploys are autonomous.** Droplet API
+  (`droplet_api.py` / `scripts/droplet_api.py`), ops scripts, the data/scoring
+  pipeline, precompute, and backend git commits/pushes may be shipped without
+  stopping for approval — but every autonomous deploy MUST pass its smoke test
+  (homepage + one core API return 200 from the public URL) before being
+  considered done, and MUST auto-rollback to the last known-good version on
+  failure (see `scripts/ops/sync_droplet_api.sh`). A deploy that "restarts the
+  service" but doesn't verify real pages render is not verified — this exact gap
+  caused the 2026-07-05 outage (see LESSONS.md).
+- **Founder gate, regardless of which directory the change lives in:**
+  - **Public claims.** Anything altering what the site asserts about an
+    organization — tax deductibility, verification status, trust badges, scoring
+    labels, or the copy that explains them.
+  - **Methodology.** Changes to how scores, tiers, peer groups, or eligibility
+    are derived, and to the published pages that explain them.
+  - **Money.** Spending, subscriptions, contracts, anything with recurring cost.
+  - **Irreversible or destructive.** Schema migrations, data or backup deletion,
+    permission/security-boundary changes, bulk external communication.
+- **Frontend: judgment, not a blanket rule.** UI work that only changes layout,
+  styling, or interaction is autonomous under the reversibility test above. UI
+  work that changes a public claim is gated by the rule above — the deciding
+  factor is what it says, not where the file sits.
+
+Worked example (2026-08-08): shipping v6 scoring to the droplet was autonomous —
+reversible, smoke-tested, `.prev` kept for rollback. Rewording the
+tax-deductibility badge was correctly gated — it changes what Daanaa asserts to
+donors about their taxes, which no smoke test can validate.
 
 ### Learning loop (do without being asked)
 - Non-obvious choice → 2-line entry in `DECISIONS.md` (chose / why / rejected).

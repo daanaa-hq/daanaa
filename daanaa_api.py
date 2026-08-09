@@ -738,8 +738,17 @@ def _vec_similar(query_vec: np.ndarray, exclude_ein: str, limit: int) -> list[st
 
 app = Flask(__name__)
 
+# DB_PATH must be defined HERE, not further down (2026-08-08). _load_embeddings()
+# references it and is called during startup at module scope, well before the old
+# definition site ~40 lines below. Python resolves globals at call time, so that
+# call raised NameError -- swallowed by the startup try/except, which printed
+# "[embeddings] load failed" and continued. Net effect: all 546K embeddings
+# silently failed to load on every boot and semantic search ran degraded, while
+# startup reported "✓ Embeddings loaded, search ready".
+DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
+
 # Run database migrations on startup
-_db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
+_db_path = DB_PATH
 _run_migrations(_db_path)
 _ensure_student_service_columns(_db_path)
 
@@ -773,7 +782,18 @@ limiter = Limiter(
 print("[startup] Pre-loading 546K embeddings for semantic search...", flush=True)
 try:
     _load_embeddings()
-    print("[startup] ✓ Embeddings loaded, search ready", flush=True)
+    # _load_embeddings() catches its OWN exceptions internally and never
+    # re-raises (see its body) -- it prints "[embeddings] load failed" and
+    # returns normally either way. So this try/except can never actually
+    # fire, and a blind "call it, print success" here reports success
+    # unconditionally regardless of outcome. That is the deeper version of
+    # the 2026-08-08 embeddings incident: fixing the one known failure cause
+    # (DB_PATH ordering) did not fix this shape, which would silently
+    # misreport the NEXT failure the same way. Check the real outcome.
+    if _emb_loaded:
+        print("[startup] ✓ Embeddings loaded, search ready", flush=True)
+    else:
+        print("[startup] ⚠ Embeddings did not load — see [embeddings] log line above; search degraded to keyword-only", flush=True)
 except Exception as e:
     print(f"[startup] ⚠ Embedding pre-load failed: {e}", flush=True)
 
@@ -2091,10 +2111,11 @@ def list_organizations():
     min_rev = request.args.get('min_revenue', type=float)
     max_rev = request.args.get('max_revenue', type=float)
     min_pct = request.args.get('min_percentile', type=float)
-    min_tier = request.args.get('min_tier', '').strip()
-    if min_tier == 'Glow':  # frontend alias for DB name Ember
-        min_tier = 'Ember'
-    tier = request.args.get('tier', '').strip()  # Filter by specific visibility tier
+    # min_tier/tier lamp-visibility params retired 2026-08-08 (founder decision).
+    # Never applied to a WHERE clause in this file (verified before removal) --
+    # were parsed and silently unused. Not accepted at all here, unlike
+    # droplet_api.py, which keeps accepting-but-ignoring them for stale-URL
+    # compatibility on the public site; this is the local/dev API only.
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
@@ -2223,12 +2244,10 @@ def list_organizations():
         )
         params.append(f'%{cause}%')
 
-    _TIER_HIERARCHY = ['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark']
-    # Exact visibility tier filter (e.g., show only Beacon orgs)
-    _VISIBILITY_TIERS = ['Beacon', 'Torch', 'Lantern', 'Candle', 'Ember', 'Spark']
-    if tier and tier in _VISIBILITY_TIERS:
-        where_clauses.append("merit_tier = ?")
-        params.append(tier)
+    # Exact visibility (lamp) tier filter retired 2026-08-08 (founder decision).
+    # _TIER_HIERARCHY was dead code even before this -- defined, never read
+    # anywhere. Confirmed via full-file grep before removing (the earlier pass
+    # missed this block; a truncated line-range grep is not a real check).
 
     # total_revenue and merit_score are opt-in sorts; the default is neutral
     # name order so browse never implies a ranking. random is seeded shuffle for discovery.
@@ -11133,7 +11152,15 @@ def nonprofit_badge_progress(ein: str):
         (ein,)
     ).fetchone()
 
-    verified_steps = sum([website_v and website_v[0]=='verified', donate_v and donate_v[0]=='verified', mission_v and mission_v[0]=='verified'])
+    # `row and row[0]=='verified'` returns None (not False) when row is None,
+    # because Python's `and` yields the first falsy operand -- and sum() cannot
+    # add None to an int. nonprofit_verifications is currently empty, so every
+    # lookup returns None and this endpoint 500'd for EVERY org (found 2026-08-08
+    # while checking the nonprofit dashboard). Coerce explicitly.
+    def _is_verified(row):
+        return bool(row) and row[0] == 'verified'
+
+    verified_steps = sum([_is_verified(website_v), _is_verified(donate_v), _is_verified(mission_v)])
     progress['verified_org'] = {
         'name': 'Verified Organization',
         'description': 'Claims verified: website active, donation link working, mission current',
@@ -11369,30 +11396,16 @@ def donor_org_impact(donor_id: str, ein: str):
     }), 200
 
 
-@app.route('/api/donor/<donor_id>/giving-profile', methods=['GET'])
-def donor_giving_profile(donor_id: str):
-    """Get donor's learning profile and giving preferences."""
-    donor_id = donor_id[:64]
+# Route removed 2026-08-08. GET /api/donor/<donor_id>/giving-profile served
+# donor cause_interests/giving_style/size_preference for ANY donor_id with no
+# authentication -- live in production, reachable, and violates the explicit
+# architecture principle enforced by test_wallet_routes_require_firebase_auth:
+# "No giving/donation routes may exist -- those stay in localStorage only."
+# donor_learning_profiles held 0 rows at removal time (verified 2026-08-08), so
+# no donor data is known to have been exposed. Confirmed unused by any frontend
+# caller before removal. The donor_learning_profiles table itself is untouched
+# -- dropping/migrating it is a data decision outside this fix's scope.
 
-    db = get_db()
-
-    profile = db.execute(
-        """SELECT cause_interests, size_preference, giving_style, learning_preference, outcome_focus
-           FROM donor_learning_profiles WHERE donor_id=?""",
-        (donor_id,)
-    ).fetchone()
-
-    if not profile:
-        return jsonify({'status': 'no_profile', 'message': 'Create a profile to get personalized recommendations'}), 200
-
-    return jsonify({
-        'donor_id': donor_id,
-        'interests': profile[0],  # JSON
-        'size_preference': profile[1],
-        'giving_style': profile[2],
-        'learning_preference': profile[3],
-        'outcome_focus': profile[4]
-    }), 200
 
 
 # ── PHASE 11: Financial Health Coaching ────────────────────────────────────────

@@ -147,6 +147,13 @@ export interface ApiOrganization {
   // the source, so a revoked org's page is only reachable via this fallback).
   org_status?: string | null;
   irs_revoked?: number | null;
+  // Tax deductibility (2026-08-08). Emitted by precompute_orgs.py from the IRS
+  // BMF deductibility code plus the daily Auto-Revocation sync. Replaces the
+  // irs_eligibility_* fields, whose source columns were dropped from the schema
+  // on ~2026-08-01; those are kept optional below only so older cached payloads
+  // still type-check, and should be removed once precompute has fully rolled.
+  tax_deductible?: boolean | null;
+  tax_deductible_checked_at?: string | null;
   irs_eligibility_status?: "verified" | "unverified" | "revoked" | "unknown" | "exception_possible" | null;
   irs_eligibility_checked_at?: string | null;
   irs_eligibility_sources?: string[];

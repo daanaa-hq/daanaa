@@ -74,9 +74,9 @@ export default function CloseTheLoopPrompt({
               ein={selectedEin}
               orgName={selectedOrg?.organization_name ?? selectedEin}
               irsSnapshot={selectedOrg ? {
-                irsEligibilityStatus: selectedOrg.irs_eligibility_status || 'unknown',
-                irsEligibilityCheckedAt: selectedOrg.irs_eligibility_checked_at,
-                irsEligibilitySources: selectedOrg.irs_eligibility_sources,
+                irsEligibilityStatus: (selectedOrg.tax_deductible === false ? ('unknown' as const) : ('verified' as const)),
+                irsEligibilityCheckedAt: selectedOrg.tax_deductible_checked_at,
+                irsEligibilitySources: ['IRS Business Master File', 'IRS Auto-Revocation List'],
               } : undefined}
             />
           </div>

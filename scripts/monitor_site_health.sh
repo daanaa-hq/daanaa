@@ -64,7 +64,7 @@ recover_on_failure() {
   log "🔧 Attempting recovery..."
 
   # Try to restart the service
-  if systemctl restart daanaa 2>/dev/null; then
+  if systemctl restart daanaa-api 2>/dev/null; then
     log "✓ Service restarted"
     sleep 5
 

@@ -247,10 +247,10 @@ export default function Governance() {
                 Our methodology →
               </Link>
               <Link
-                to="/tiers"
+                to="/methodology#financial-context"
                 className="inline-flex items-center gap-2 font-body text-body text-soft-gold hover:text-bright-gold transition-colors"
               >
-                Visibility levels →
+                Financial context →
               </Link>
               <a
                 href="mailto:hello@daanaa.org"

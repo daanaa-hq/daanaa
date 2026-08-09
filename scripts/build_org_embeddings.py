@@ -26,7 +26,7 @@ from threading import Lock
 
 DB_PATH       = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 OLLAMA_URL    = "http://localhost:11434/api/embed"
-VULKAN_URL    = "http://127.0.0.1:11436/v1/embeddings"  # llama-server Vulkan, gfx1201 native
+VULKAN_URL    = "http://127.0.0.1:11434/v1/embeddings"  # llama-server Vulkan, gfx1201 native
 MODEL         = "mxbai-embed-large"
 BATCH_SIZE    = 256  # increased for GPU utilization
 DIM           = 1024
@@ -254,7 +254,7 @@ if __name__ == "__main__":
     ap.add_argument("--overwrite", action="store_true",
                     help="Re-embed all orgs, replacing existing vectors")
     ap.add_argument("--vulkan", action="store_true",
-                    help="Use llama-server Vulkan endpoint at 127.0.0.1:11436 instead of Ollama")
+                    help="Use llama-server Vulkan endpoint at 127.0.0.1:11434 instead of Ollama")
     ap.add_argument("--all-orgs", action="store_true",
                     help="Embed all 1.8M orgs, not just scored ones (fills 1.27M gap)")
     args = ap.parse_args()

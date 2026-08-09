@@ -487,22 +487,12 @@ def _cat_rev_conditions(ntee_list, sub_list, min_rev, max_rev, alias='', verifie
     return conds, params
 
 
-# Visibility level (lamp tier) filter. The DB stores a wider set of historical
-# tier names than the 4 the UI shows, so map each display tier to its DB values.
-_TIER_DB_VALUES = {
-    'beacon': ('Beacon',),
-    'torch':  ('Torch', 'Lantern', 'Flame'),
-    'candle': ('Candle', 'Ember', 'Glow'),
-    'spark':  ('Spark', 'Seed'),
-}
-
-
-def _tier_condition(tier: str, alias: str = ''):
-    """WHERE fragment + params for a visibility-level filter, or (None, [])."""
-    vals = _TIER_DB_VALUES.get((tier or '').strip().lower())
-    if not vals:
-        return None, []
-    return f"{alias}merit_tier IN ({','.join('?' * len(vals))})", list(vals)
+# Lamp-tier visibility filter retired 2026-08-08 (founder decision, "retire it
+# with the rest"): _TIER_DB_VALUES + _tier_condition() removed. The `tier` /
+# `min_tier` query params are still accepted for backward compatibility with
+# any stale bookmarked/cached URLs, but are now a no-op -- filtering by the
+# retired mechanic has no effect, matching the frontend, which stopped sending
+# these params in July 2026.
 
 
 def _order_clause(sort: str, order: str, alias: str = '') -> str:
@@ -620,6 +610,16 @@ def _row_to_org(row) -> dict:
             d['cause_tags'] = []
     d['is_hidden_gem'] = bool(d.get('is_hidden_gem'))
     d['data_badges'] = {'mission': d.get('mission_source')}
+    # Tax deductibility (2026-08-09) — this fallback path is reached specifically
+    # for orgs precompute excludes (precompute_orgs.py filters deductibility=1
+    # AND org_status='active'), which includes revoked orgs. Compute the same
+    # way precompute does (scripts/precompute_orgs.py, "tax_deductible" comment)
+    # rather than leaving it unset: an unset value was rendering as the
+    # reassuring "unknown" badge on exactly the pages most likely to be revoked.
+    # .get() so this is a no-op, not a crash, if these columns aren't in a given
+    # search.db build yet.
+    if d.get('deductibility') is not None:
+        d['tax_deductible'] = str(d.get('deductibility')) == '1' and not d.get('irs_revoked')
     # Assemble v5_context from v5 columns (present after search.db rebuild with v5 fields)
     if 'merit_archetype_v5' in d:
         d['v5_context'] = _assemble_v5_context(d)
@@ -1014,10 +1014,7 @@ def _db_filter_browse(ntee_list, sub_list, min_rev, max_rev,
             placeholders = ','.join('?' * len(nearby_zips))
             conditions.append(f"SUBSTR(zipcode, 1, 5) IN ({placeholders})")
             params.extend(nearby_zips)
-        tier_cond, tier_params = _tier_condition(tier)
-        if tier_cond:
-            conditions.append(tier_cond)
-            params.extend(tier_params)
+        # lamp-tier filter retired 2026-08-08 -- see note at former _tier_condition
 
         where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
         # COALESCE instead of NULLS LAST: same ordering, but the non-indexable
@@ -1094,10 +1091,7 @@ def _fts_directory(q, ntee_list, sub_list, min_rev, max_rev,
             placeholders = ','.join('?' * len(nearby_zips))
             conditions.append(f"SUBSTR(o.zipcode, 1, 5) IN ({placeholders})")
             params.extend(nearby_zips)
-        tier_cond, tier_params = _tier_condition(tier, alias='o.')
-        if tier_cond:
-            conditions.append(tier_cond)
-            params.extend(tier_params)
+        # lamp-tier filter retired 2026-08-08 -- see note at former _tier_condition
 
         order = _order_clause(sort, order, alias='o.')
 
@@ -1310,7 +1304,38 @@ def _filtered_orgs(ntee1, state, nteecc_filter, page, per_page):
 _EIN_RE = re.compile(r'^\d{9}$')
 
 def get_v6_context(ein_clean, db):
-    """Fetch v6 financial context from database."""
+    """Fetch v6 financial context from database.
+
+    Source of truth is the `v6_context` table (projected from
+    registry_enriched.scoring_tier), because that is the taxonomy the shipped
+    frontend actually keys on: TrustBadge.tsx compares scoring_tier literally
+    against '1_Full_Context' / '2_Regional_Context'. The older
+    v6_peer_context_assignments table uses a different 5-tier vocabulary
+    ('1_direct', '2_regional_conditional', ...) which silently degrades every
+    badge to 'partial' — wrong without looking broken. Kept as fallback only.
+    """
+    try:
+        cursor = db.execute('''
+            SELECT scoring_tier, tier_label, confidence,
+                   peer_group_size_v6, peer_group_description_v6,
+                   confidence_margin_v6, is_inferred_v6
+            FROM v6_context WHERE EIN = ? LIMIT 1
+        ''', (ein_clean,))
+        row = cursor.fetchone()
+        if row and row[0]:
+            return {
+                'scoring_tier': row[0],
+                'tier_label': row[1],
+                'confidence': row[2],
+                'peer_group_size': row[3],
+                'peer_group_description': row[4],
+                'confidence_margin': row[5],
+                'is_inferred': row[6],
+            }
+    except Exception as e:
+        app.logger.debug(f"v6_context lookup failed for {ein_clean}: {e}")
+
+    # Fallback: legacy peer-context run (different tier vocabulary).
     try:
         run_id = os.environ.get('V6_CANDIDATE_RUN_ID', 'v6_foundation_candidate_20260728_revised')
         cursor = db.execute('''
