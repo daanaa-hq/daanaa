@@ -63,6 +63,18 @@ Every assessment comes with a **confidence level** showing how certain we are:
 - **IRS Revocation List:** Current status of tax-exempt status
 - **NCCS Data:** Nonprofit sector benchmarks by NTEE category
 
+## Tax-Deductibility Status
+
+For donors considering tax-deductible giving, we verify tax-exempt status using the **IRS Tax Exempt Organization Search**.
+
+We confirm that an organization:
+- Is listed as an active 501(c)(3) nonprofit
+- Has not been revoked from the IRS tax-exempt status list
+
+This verification does not guarantee tax deductibility—that depends on the donor's individual tax situation and the type of contribution. We recommend consulting a tax professional or your financial advisor for specific questions about tax deductibility.
+
+**Search the IRS database directly:** [IRS Tax Exempt Organization Search](https://www.irs.gov/charities-non-profits/tax-exempt-organization-search)
+
 ### What We Don't Do
 - ❌ We don't survey organizations (no questionnaires)
 - ❌ We don't make site visits (no inspections)
