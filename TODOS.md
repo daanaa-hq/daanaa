@@ -381,3 +381,37 @@ archive confirmed-dead files to archive/dead_code_$(date +%Y%m%d)/ with a
 30-day recall README. See DECISIONS.md 2026-07-21 for the reference pattern.
 (Next auto-reminder: ~2026-10-19)
 
+### P1 — Sync a corrected v6_context table to the droplet (real peer_group_size)
+**What:** 2026-08-08's live financial-context fix (see LESSONS.md, DECISIONS.md)
+found that the droplet's `/opt/daanaa/merit_registry.db` ships exactly one
+table, `v6_context` (1.94M rows), and its `peer_group_size_v6`/
+`peer_group_description_v6` columns are the disjoint, unrelated pipeline
+(verified: 95 vs 22 peer orgs for the same EIN, different description format
+entirely). `scoring_tier`/`tier_label`/`confidence` in that same table ARE
+correct (verified identical to `registry_enriched`'s non-suffixed columns).
+`droplet_api.py`'s `get_v6_context()` now only reads the three verified
+fields and omits peer_group_size/peer_group_description from the API
+response entirely rather than ship a wrong number. `FinancialContext.tsx`
+uses `tier_label`'s text description in place of a numeric peer count.
+**Why:** Donors currently see "Financial Context (Broader Comparison)" with
+no peer count at all for Tier 2/3 orgs — honest, but less informative than
+it should be. A real peer count (from `registry_enriched.peer_group_size`,
+verified correct in the dev DB) would make the widened-comparison and
+broad-category cards noticeably better.
+**Fix:** Build a corrected `v6_context` export from `registry_enriched`'s
+real `peer_group_size`/`peer_group_description` columns (not the `_v6`
+pipeline), sync the resulting SQLite file to `/opt/daanaa/merit_registry.db`
+on the droplet (same mechanism that produced the current file — find and
+document that script, it wasn't identified during this session), then
+restore the `peer_group_size`/`peer_group_description` reads in
+`get_v6_context()` and the numeric peer-count UI in `FinancialContext.tsx`
+(git history has the pre-tier_label version to reference).
+**Pros:** Richer, more specific peer-context display; closes the last gap
+from the 2026-08-08 fix.
+**Cons:** Requires finding/building the ETL that produces `v6_context` on
+the droplet (not located in this session — grep `scripts/` for `v6_context`
+CREATE TABLE or INSERT statements as a starting point) and a data sync,
+which is bigger than a code change.
+**Depends on:** None, but should reuse whatever process built the current
+(wrong) `v6_context` table rather than inventing a new sync mechanism.
+

@@ -1,6 +1,5 @@
 import React from 'react'
 import type { ApiOrganization } from '../data/api'
-import InferenceBadge from './InferenceBadge'
 
 interface FinancialContextProps {
   org: ApiOrganization
@@ -9,13 +8,22 @@ interface FinancialContextProps {
 // Real values from registry_enriched.scoring_tier, written by
 // scripts/merit_scorer_v6_0.py. This must stay in sync with that scorer's
 // vocabulary, not any other tier naming used elsewhere in the codebase.
+//
+// Uses org.tier_label for the peer group description, not
+// org.peer_group_size/peer_group_description. The droplet's v6_context table
+// only ships scoring_tier/tier_label/confidence -- its peer_group_size_v6/
+// peer_group_description_v6 columns are a separate, unrelated pipeline
+// (verified disagreeing with the real numbers: 95 vs 22 peers for the same
+// EIN). No verified-correct peer count is available yet. tier_label is
+// confirmed correct and descriptive ("Donation-Funded Programs, Established,
+// national"), so it carries the peer-group description here instead of a
+// numeric count until a corrected table ships. See TODOS.md.
 export default function FinancialContext({ org }: FinancialContextProps) {
   const tier = org.scoring_tier
   if (!tier) return null
 
   if (tier === '1_Full_Context' || tier === '2_Regional_Context') {
     const isT1 = tier === '1_Full_Context'
-    const isWidened = tier === '2_Regional_Context'
 
     return (
       <div className="rounded-lg border border-cool-grey/20 bg-cool-grey/5 p-6 mb-8">
@@ -28,24 +36,12 @@ export default function FinancialContext({ org }: FinancialContextProps) {
           </span>
         </div>
 
-        {/* Inference badge when the comparison widened beyond the tightest peer group */}
-        {isWidened && org.peer_group_size && (
-          <div className="mb-4">
-            <InferenceBadge
-              peerCount={org.peer_group_size}
-              confidence="good"
-              peerGroupDescription={org.peer_group_description || ''}
-            />
-          </div>
-        )}
-
         {/* Main content grid */}
         <div className="grid grid-cols-3 gap-6">
           <div>
             <p className="text-xs font-semibold text-gray-500 mb-1">Funding Model</p>
             <p className="font-semibold mb-2">{org.merit_archetype_v5_label}</p>
-            <p className="text-xs text-gray-600">Peer Group: {org.peer_group_size} similar orgs</p>
-            <p className="text-xs text-gray-500 italic">{org.peer_group_description}</p>
+            <p className="text-xs text-gray-500 italic">{org.tier_label}</p>
           </div>
 
           {/* Reserves */}
@@ -76,7 +72,7 @@ export default function FinancialContext({ org }: FinancialContextProps) {
 
         {/* Footer caveat */}
         {isT1 && <p className="text-xs text-gray-600 mt-4 pt-4 border-t">Data source: IRS Form 990 (this organization's filing), compared against similar organizations of the same type, size, and region.</p>}
-        {isWidened && <p className="text-xs text-blue-600 mt-4 pt-4 border-t">Data source: IRS Form 990 (this organization's filing), compared against similar organizations nationally.</p>}
+        {!isT1 && <p className="text-xs text-blue-600 mt-4 pt-4 border-t">Data source: IRS Form 990 (this organization's filing), compared against similar organizations nationally (the regional group was too small).</p>}
       </div>
     )
   }
@@ -89,9 +85,9 @@ export default function FinancialContext({ org }: FinancialContextProps) {
         <p className="text-xs text-gray-700 mb-3">
           <strong>Funding Model:</strong> {org.merit_archetype_v5_label}
         </p>
-        {org.peer_group_size && (
+        {org.tier_label && (
           <p className="text-xs text-gray-700 mb-3">
-            <strong>Peer Group:</strong> {org.peer_group_size.toLocaleString()} organizations. {org.peer_group_description}
+            <strong>Comparison group:</strong> {org.tier_label}
           </p>
         )}
         <p className="text-xs text-gray-700">

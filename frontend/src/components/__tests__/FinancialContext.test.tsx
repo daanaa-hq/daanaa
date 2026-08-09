@@ -48,33 +48,32 @@ describe('FinancialContext', () => {
     expect(screen.getByText('6.2 mo')).toBeInTheDocument();
   });
 
-  it('renders the widened-comparison card with an inference badge for 2_Regional_Context', () => {
+  it('renders the widened-comparison card for 2_Regional_Context using tier_label, not a peer count', () => {
     render(
       <FinancialContext
         org={makeOrg({
           scoring_tier: '2_Regional_Context',
-          peer_group_size: 250,
-          peer_group_description: 'Donation-Funded Programs, Small, national',
+          tier_label: 'Donation-Funded Programs, Small, national',
           merit_archetype_v5_label: 'Donation-Funded Programs',
         })}
       />
     );
     expect(screen.getByText('Financial Context (Broader Comparison)')).toBeInTheDocument();
-    expect(screen.getByText(/250 similar organizations/)).toBeInTheDocument();
+    expect(screen.getByText('Donation-Funded Programs, Small, national')).toBeInTheDocument();
   });
 
-  it('renders the broad-category card for 3_Broad_Category', () => {
+  it('renders the broad-category card for 3_Broad_Category using tier_label, not a peer count', () => {
     render(
       <FinancialContext
         org={makeOrg({
           scoring_tier: '3_Broad_Category',
-          peer_group_size: 5835,
-          peer_group_description: 'Donation-Funded Programs, all sizes',
+          tier_label: 'Donation-Funded Programs, all sizes',
           merit_archetype_v5_label: 'Donation-Funded Programs',
         })}
       />
     );
     expect(screen.getByText('Peer context (broader comparison)')).toBeInTheDocument();
+    expect(screen.getByText(/Donation-Funded Programs, all sizes/)).toBeInTheDocument();
   });
 
   it('renders the descriptive-only card for 4_Archetype_Only with no peer group claim', () => {

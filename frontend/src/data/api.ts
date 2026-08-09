@@ -70,9 +70,10 @@ export interface ApiOrganization {
   score_tier?: string | null;        // 'full' | 'partial' | 'revenue_only' — data confidence level
   // v6.0 Tiered peer context system (replaces v5 for frontend display)
   scoring_tier?: string | null;      // '1_Full_Context' | '2_Regional_Context' | '3_Broad_Category' | '4_Archetype_Only'
+  tier_label?: string | null;        // e.g. "Donation-Funded Programs, Established, national" -- the verified-correct peer-group description; see FinancialContext.tsx for why peer_group_size/peer_group_description below are not used for display
   confidence?: string | null;        // 'high' | 'good' | 'moderate' | 'archetype_only'
-  peer_group_size?: number | null;   // count of comparable orgs in the peer group
-  peer_group_description?: string | null; // e.g., "Food banks, Grassroots, Midwest region"
+  peer_group_size?: number | null;   // NOT reliably populated on the droplet -- see FinancialContext.tsx comment, 2026-08-08
+  peer_group_description?: string | null; // NOT reliably populated on the droplet -- see FinancialContext.tsx comment, 2026-08-08
   // v6.0 Peer inference system (new)
   scoring_tier_v6_inference?: string | null;      // '1_Direct_Regional' | '2_Regional_Inferred' | '3_Limited_Context' | '4_Archetype_Only'
   is_inferred?: number | null;                    // 1 if data inferred from peers, 0 if direct from org's 990

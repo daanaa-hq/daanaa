@@ -1304,29 +1304,35 @@ def _filtered_orgs(ntee1, state, nteecc_filter, page, per_page):
 _EIN_RE = re.compile(r'^\d{9}$')
 
 def get_v6_context(ein_clean, db):
-    """Fetch v6 financial context from registry_enriched directly.
+    """Fetch v6 financial context.
 
-    Queries the columns scripts/merit_scorer_v6_0.py actually writes:
-    scoring_tier, tier_label, confidence, peer_group_size,
-    peer_group_description. These are the real taxonomy the shipped frontend
-    keys on -- TrustBadge.tsx and FinancialContext.tsx compare scoring_tier
-    literally against '1_Full_Context' / '2_Regional_Context' / etc.
+    2026-08-08, corrected twice in one evening -- see LESSONS.md and
+    DECISIONS.md for the full account. First fix queried registry_enriched
+    directly for scoring_tier/tier_label/confidence/peer_group_size/
+    peer_group_description (the columns scripts/merit_scorer_v6_0.py
+    actually writes), which is correct in the dev DB -- but registry_enriched
+    does not exist in the slim DB the droplet actually ships
+    (/opt/daanaa/merit_registry.db, 1.94M rows, one table: v6_context).
+    That deploy 500'd/timed out and auto-rolled back.
 
-    2026-08-08 fix: this used to read peer_group_size_v6 /
-    peer_group_description_v6 (and, in a fallback, v6_peer_context_assignments
-    entirely) -- a separate, disjoint pipeline. Row-level check: scoring_tier
-    and scoring_tier_v6_inference (the column backing that _v6-suffixed field
-    family) agree on 58 of 2,056,834 rows. Reading from that family and
-    merging it into org_data was overwriting correct precomputed values with
-    unrelated ones. Query registry_enriched directly instead of relying on a
-    separate v6_context table/legacy run -- one source, verified against the
-    scorer that actually writes it.
+    This version queries v6_context, which does exist on the droplet, but
+    ONLY for scoring_tier/tier_label/confidence -- verified identical to
+    registry_enriched's non-suffixed columns for the same EIN. Deliberately
+    NOT reading v6_context.peer_group_size_v6 / peer_group_description_v6:
+    checked against registry_enriched for a live EIN and they disagree
+    (95 vs 22 peer orgs, different description format entirely) -- the same
+    disjoint pipeline as everywhere else this bug showed up, just shipped
+    into this table's _v6-suffixed columns too. No verified-correct peer
+    count exists on the droplet right now. Showing none is honest; showing
+    the wrong one is not. peer_group_size/peer_group_description are
+    omitted from the response until a corrected v6_context (built from
+    registry_enriched's real peer_group_size/peer_group_description, not
+    the _v6-suffixed pipeline) is synced to the droplet -- see TODOS.md.
     """
     try:
         cursor = db.execute('''
-            SELECT scoring_tier, tier_label, confidence,
-                   peer_group_size, peer_group_description
-            FROM registry_enriched WHERE EIN = ? LIMIT 1
+            SELECT scoring_tier, tier_label, confidence
+            FROM v6_context WHERE EIN = ? LIMIT 1
         ''', (ein_clean,))
         row = cursor.fetchone()
         if row and row[0]:
@@ -1334,8 +1340,6 @@ def get_v6_context(ein_clean, db):
                 'scoring_tier': row[0],
                 'tier_label': row[1],
                 'confidence': row[2],
-                'peer_group_size': row[3],
-                'peer_group_description': row[4],
             }
     except Exception as e:
         app.logger.debug(f"v6 context lookup failed for {ein_clean}: {e}")
