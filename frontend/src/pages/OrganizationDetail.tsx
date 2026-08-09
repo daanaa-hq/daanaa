@@ -4,6 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
 import AnswerCard from '../components/AnswerCard'
 import { IrsEligibilityContext } from '../components/IrsEligibilityContext'
+import { taxDeductibleToStatus } from '../utils/taxDeductible'
 import Breadcrumb from '../components/Breadcrumb'
 import DonationReturnPrompt from '../components/DonationReturnPrompt'
 import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
@@ -561,7 +562,7 @@ export default function OrganizationDetail() {
 
               {/* Primary CTA: Give Now + Visit Website (side by side) */}
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                {apiOrg! && apiOrg!.irs_eligibility_status !== 'revoked' && (
+                {apiOrg! && apiOrg!.tax_deductible !== false && (
                   <a
                     href="#ways-to-give"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-soft-gold text-deep-navy hover:bg-bright-gold transition-colors font-body text-small font-semibold"
@@ -587,10 +588,8 @@ export default function OrganizationDetail() {
               <div className="mt-6 sm:mt-8 space-y-3">
                 {apiOrg! && <AnswerCard org={apiOrg!} />}
                 {apiOrg! && <IrsEligibilityContext
-                  status={apiOrg!.irs_eligibility_status || 'unknown'}
-                  checkedAt={apiOrg!.irs_eligibility_checked_at}
-                  sources={apiOrg!.irs_eligibility_sources}
-                  explanation={apiOrg!.irs_eligibility_explanation || undefined}
+                  status={taxDeductibleToStatus(apiOrg!.tax_deductible)}
+                  checkedAt={apiOrg!.tax_deductible_checked_at}
                   organizationName={apiOrg!.organization_name}
                 />}
                 {apiOrg! && <DataContextNote org={apiOrg!} />}
@@ -735,7 +734,7 @@ export default function OrganizationDetail() {
             </div>
 
             {!(apiOrg!.source === 'bmf_stub' && apiOrg!.total_revenue == null) &&
-             apiOrg!.irs_eligibility_status !== 'revoked' && apiOrg!.org_status !== 'revoked' && apiOrg!.irs_revoked !== 1 && (
+             apiOrg!.tax_deductible !== false && (
             <div className="space-y-2">
               {/* Lamp tier retired from donor-facing profiles 2026-07-17
                   (founder-approved): its facts are covered by the plain

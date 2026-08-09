@@ -18,14 +18,17 @@ import {
 describe('IrsEligibilityBadge', () => {
   it('renders verified badge', () => {
     render(<IrsEligibilityBadge status="verified" />);
-    expect(screen.getByText(/IRS eligibility verified/i)).toBeInTheDocument();
+    // Copy reworked 2026-08-08 (founder-approved) -- leads with reassurance
+    // rather than a hedged "verified" claim. See IrsEligibilityContext.tsx.
+    expect(screen.getByText(/Tax deductible/i)).toBeInTheDocument();
     expect(screen.getByText('✓')).toBeInTheDocument();
   });
 
   it('renders unverified badge', () => {
     render(<IrsEligibilityBadge status="unverified" />);
-    expect(screen.getByText(/Tax deductibility not verified/i)).toBeInTheDocument();
-    expect(screen.getByText('⚠')).toBeInTheDocument();
+    // Same reassuring copy as verified -- see the 2026-08-08 rework comment.
+    expect(screen.getByText(/Tax deductible/i)).toBeInTheDocument();
+    expect(screen.getByText('✓')).toBeInTheDocument();
   });
 
   it('renders revoked badge', () => {
@@ -36,7 +39,11 @@ describe('IrsEligibilityBadge', () => {
 
   it('renders unknown badge', () => {
     render(<IrsEligibilityBadge status="unknown" />);
-    expect(screen.getByText(/Tax status not verified/i)).toBeInTheDocument();
+    // Reworked 2026-08-09: no longer shares the reassuring "verified" copy --
+    // 'unknown' now means a genuine data gap (most often the search.db
+    // fallback path, where revoked orgs' pages live). See LESSONS.md.
+    expect(screen.getByText(/Tax status not available/i)).toBeInTheDocument();
+    expect(screen.getByText('ℹ')).toBeInTheDocument();
   });
 
   it('renders exception_possible badge', () => {
@@ -48,17 +55,18 @@ describe('IrsEligibilityBadge', () => {
 describe('IrsEligibilityDetail', () => {
   it('shows verified explanation', () => {
     render(<IrsEligibilityDetail status="verified" />);
-    expect(screen.getByText(/Current IRS BMF, Publication 78/i)).toBeInTheDocument();
+    expect(screen.getByText(/IRS revocation list every day/i)).toBeInTheDocument();
   });
 
   it('shows unverified explanation', () => {
     render(<IrsEligibilityDetail status="unverified" />);
-    expect(screen.getByText(/latest IRS evidence does not include/i)).toBeInTheDocument();
+    // Same reassuring copy as verified -- see the 2026-08-08 rework comment.
+    expect(screen.getByText(/IRS revocation list every day/i)).toBeInTheDocument();
   });
 
   it('shows revoked explanation', () => {
     render(<IrsEligibilityDetail status="revoked" />);
-    expect(screen.getByText(/Do not assume a contribution is tax-deductible/i)).toBeInTheDocument();
+    expect(screen.getByText(/Do not assume a contribution is tax deductible/i)).toBeInTheDocument();
   });
 
   it('displays sources when provided', () => {
@@ -229,7 +237,7 @@ describe('IrsEligibilityContext (main component)', () => {
         explanation="Test explanation"
       />
     );
-    expect(screen.getByText(/IRS eligibility verified/i)).toBeInTheDocument();
+    expect(screen.getByText(/Tax deductible/i)).toBeInTheDocument();
     expect(screen.getByText(/Test explanation/i)).toBeInTheDocument();
   });
 
@@ -242,7 +250,12 @@ describe('IrsEligibilityContext (main component)', () => {
         onConfirmDonate={onConfirmDonate}
       />
     );
-    expect(screen.getByText(/Tax deductibility not verified/i)).toBeInTheDocument();
+    // Badge reassures (same copy as verified); the warning modal is what
+    // actually hedges, and it's gated behind showWarningBeforeDonate + the
+    // donate click, not shown by default -- see IrsEligibilityContext.tsx.
+    // Multiple matches expected: the badge label AND the detail paragraph
+    // both contain "tax deductible".
+    expect(screen.getAllByText(/Tax deductible/i).length).toBeGreaterThan(0);
   });
 
   it('renders revoked status without donate button', () => {

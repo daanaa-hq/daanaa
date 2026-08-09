@@ -37,7 +37,15 @@ export const IrsEligibilityBadge: React.FC<{ status: EligibilityStatus }> = ({ s
     verified: { icon: '✓', label: 'Tax deductible', color: 'irs-badge-verified' },
     unverified: { icon: '✓', label: 'Tax deductible', color: 'irs-badge-verified' },
     revoked: { icon: '✗', label: 'IRS revocation record found', color: 'irs-badge-revoked' },
-    unknown: { icon: '✓', label: 'Tax deductible', color: 'irs-badge-verified' },
+    // Reworked 2026-08-09: this used to share the reassuring "Tax deductible"
+    // treatment above, on the reasoning that every listed org is already
+    // deductibility-code 1. That held when 'unknown' meant only-Daanaa's-own-
+    // check-is-pending. After migrating off the dead irs_eligibility_status
+    // field to org.tax_deductible, 'unknown' now means we have no computed
+    // signal at all for this org (a genuine data gap, most often the search.db
+    // fallback path — which is specifically where revoked orgs' pages live).
+    // Reassuring copy on that path is exactly backwards.
+    unknown: { icon: 'ℹ', label: 'Tax status not available', color: 'irs-badge-exception' },
     exception_possible: { icon: 'ℹ', label: 'IRS listing may not tell the whole story', color: 'irs-badge-exception' },
   };
 
@@ -64,7 +72,7 @@ export const IrsEligibilityDetail: React.FC<{
     verified: 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
     unverified: 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
     revoked: 'Do not assume a contribution is tax deductible without confirming the current IRS status.',
-    unknown: 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
+    unknown: 'We do not have current IRS deductibility data for this organization. Confirm directly with the organization or IRS before assuming a contribution is tax deductible.',
     exception_possible: 'Some eligible churches and group-ruling subordinates may not appear in Publication 78. Confirm directly with the organization or IRS.',
   };
 

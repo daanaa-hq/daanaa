@@ -610,6 +610,16 @@ def _row_to_org(row) -> dict:
             d['cause_tags'] = []
     d['is_hidden_gem'] = bool(d.get('is_hidden_gem'))
     d['data_badges'] = {'mission': d.get('mission_source')}
+    # Tax deductibility (2026-08-09) — this fallback path is reached specifically
+    # for orgs precompute excludes (precompute_orgs.py filters deductibility=1
+    # AND org_status='active'), which includes revoked orgs. Compute the same
+    # way precompute does (scripts/precompute_orgs.py, "tax_deductible" comment)
+    # rather than leaving it unset: an unset value was rendering as the
+    # reassuring "unknown" badge on exactly the pages most likely to be revoked.
+    # .get() so this is a no-op, not a crash, if these columns aren't in a given
+    # search.db build yet.
+    if d.get('deductibility') is not None:
+        d['tax_deductible'] = str(d.get('deductibility')) == '1' and not d.get('irs_revoked')
     # Assemble v5_context from v5 columns (present after search.db rebuild with v5 fields)
     if 'merit_archetype_v5' in d:
         d['v5_context'] = _assemble_v5_context(d)
