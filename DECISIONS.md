@@ -2115,3 +2115,32 @@ unrelated tier vocabulary (`1_direct`, `2_regional_conditional`, ...), so
 keeping it as a fallback risked silently reintroducing the same bug under
 different conditions (e.g. a missing `registry_enriched` row).
 
+
+## 2026-08-09: Small Org Visibility — Display First, External Data After Validation
+
+**Decision:** Build small org clarity via display layer (leadership, service scope, stability, mission attribution) BEFORE integrating external data sources like UnitedWay or Mission Capital.
+
+**Rationale (Board Simulation):**
+- **Stewardship P3 (evidence-based):** Don't add external data risk until we verify existing data display solves the problem
+- **Stewardship P4 (small org fairness):** We already have the data (990s, extracted metadata). Display it better first.
+- **Stewardship P2 (privacy):** Scraping UnitedWay or integrating Mission Capital carries ToS/legal risk. Validate need first.
+- **Ops:** Each external source adds maintenance debt. One source at a time, not all at once.
+
+**Phases:**
+1. **Phase 3 (Next, 2-3 days):** Ship display layer (leadership, scope, stability, mission attribution)
+   - Update org detail page UI to surface existing data prominently
+   - Deploy to staging, validate with 5-10 small orgs
+   
+2. **Measurement (Week 1 post-launch):** Track small org CTR vs. large org CTR
+   - Question: Does better display actually improve discoverability?
+   - If yes → Phase 4; if no → investigate root cause
+   
+3. **Phase 4 (Conditional, after measurement):** Integrate Mission Capital
+   - Cleanest ToS, lowest integration cost
+   - Test proof of concept
+   - Then assess UnitedWay scraping vs. other sources
+
+**Rejected:** Integrating multiple external sources (UnitedWay + Mission Capital + Idealist) before validating display layer solves the problem.
+
+**Next Owner:** Frontend implementation for Phase 3 (org detail page display updates).
+
