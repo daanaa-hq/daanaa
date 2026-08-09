@@ -1464,3 +1464,27 @@ watch it survive a second live occurrence before considering it done.
   is a different bug than "usually in sync." And: a component being imported
   and rendered is not evidence it renders correctly — this one rendered a
   fallback message on every single page for months without looking broken.
+- **Addendum — the first fix deployed broken:** the `registry_enriched`-based
+  rewrite above was correct against `data/merit_registry.db` (the local dev
+  copy) but wrong against production: `/opt/daanaa/merit_registry.db` on the
+  droplet is a deliberately slim file (1.94M rows, one table, `v6_context`)
+  that does not have `registry_enriched` at all — confirmed by
+  `sync_droplet_api.sh`'s smoke test failing (curl timeout) and auto-rolling
+  back on the first attempt, and by null v6 fields on live, non-cached EINs
+  after a retried deploy that "succeeded." Root cause of the false confidence:
+  I verified the query against the local dev DB and against
+  `merit_scorer_v6_0.py`'s logic, but never checked what schema the droplet's
+  copy of that file actually has — the two databases sharing a name
+  (`merit_registry.db`) doesn't mean they share a schema, and this project's
+  own architecture note ("static precompute served... never SQLite [the full
+  DB] on droplet") was the exact fact that contradicted my assumption, sitting
+  in CLAUDE.md the whole time. **Preventing rule:** before writing a query
+  meant to run in production, check the production database's actual schema
+  (`ssh ... sqlite3 <prod path> .tables`), not just the schema of whatever
+  local copy has the same filename — a passing local test against the wrong
+  database is not verification. Separately: `cf-cache-status: HIT` with
+  `age: 399` on an API response made post-deploy verification look like the
+  bug was still live for several minutes after the real fix had already
+  shipped — check response cache headers (`Age`, `CF-Cache-Status`) before
+  concluding a fresh deploy didn't work, and cache-bust (`?_cb=<timestamp>`)
+  before trusting a "still broken" read.
