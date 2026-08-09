@@ -78,7 +78,7 @@ Daanaa operates under a **Founding Stewardship Commitment** that applies to ever
 
 ### Backend
 - **Flask + SQLite** (`daanaa_api.py`, 7,800 lines)
-- **Scoring pipeline** (`scripts/merit_scorer_v4_0.py`, overnight runs)
+- **Scoring pipeline** (`scripts/daanaa_scorer.py`, v6 financial context, overnight runs)
 - **FTS5 full-text search** with cosine similarity embeddings
 - **Local inference** (Qwen3-30B for missions, mxbai-embed-large for org embeddings)
 
