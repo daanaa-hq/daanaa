@@ -12,7 +12,7 @@ export default function ResearchLimitations() {
           </h3>
           <p>
             Our methodology is intentionally narrow. We measure operating reserves and data
-            completeness—not these important factors:
+            completeness, not these important factors:
           </p>
           <ul className="list-disc pl-5 space-y-2 mt-3">
             <li>
@@ -49,16 +49,17 @@ export default function ResearchLimitations() {
                 <strong>Sampling bias:</strong> Organizations without recent filings are
                 underrepresented in this analysis. A missing filing reflects the limits of
                 our data coverage, not evidence that an organization is inactive or
-                struggling — smaller and newer nonprofits routinely file less often.
+                struggling. Smaller and newer nonprofits routinely file less often.
             </li>
             <li>
               <strong>Accounting variation:</strong> Nonprofits apply GAAP differently.
               Revenue recognition, depreciation, and allocation methods vary widely.
             </li>
             <li>
-              <strong>Geographic blindness:</strong> Our funding model and sector categories reflect
-              national patterns, not local context. A human services org in rural
-              Montana may operate nothing like its urban peer.
+              <strong>Regional granularity:</strong> Peer groups can account for region, but at
+              a state or census-region scale, not a neighborhood one. A human services org in
+              rural Montana and one in a small Montana city land in the same regional peer
+              group even though their operating conditions differ.
             </li>
           </ul>
         </div>

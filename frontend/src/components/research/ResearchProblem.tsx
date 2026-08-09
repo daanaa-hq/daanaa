@@ -8,7 +8,7 @@ export default function ResearchProblem() {
       <div className="prose prose-sm max-w-none text-cool-grey space-y-6">
         <p>
           Philanthropy has a visibility problem. Donors, foundations, and community leaders
-          easily find the household-name nonprofits—the 3% with major endowments, foundation
+          easily find the household-name nonprofits: the 3% with major endowments, foundation
           backing, or national profiles.
         </p>
 

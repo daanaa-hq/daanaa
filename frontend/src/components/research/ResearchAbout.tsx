@@ -7,7 +7,7 @@ export default function ResearchAbout() {
         <div>
           <h3 className="text-xl font-semibold text-deep-navy mb-3">Our Mission</h3>
           <p>
-            Daanaa means wise. We help you discover the invisible 97%—the
+            Daanaa means wise. We help you discover the invisible 97%: the
             thousands of effective nonprofits doing world-changing work in quiet corners,
             far from major donors and foundation awareness.
           </p>
@@ -17,7 +17,7 @@ export default function ResearchAbout() {
           <h3 className="text-xl font-semibold text-deep-navy mb-3">Our Approach</h3>
           <p>
             We index public data from the IRS, ProPublica, and verified nonprofit disclosures.
-            We don't rank "better" or "worse." We provide peer financial context—how an
+            We don't rank "better" or "worse." We provide peer financial context: how an
             organization's revenue and reserve strength compares to similar nonprofits in
             its field.
           </p>
@@ -37,7 +37,7 @@ export default function ResearchAbout() {
         <div className="bg-soft-gold/10 rounded-lg p-4 mt-6">
           <p className="text-sm">
             <strong>Privacy commitment:</strong> Browsing the directory requires no account.
-            Optional sign-in enables cross-device wallet sync only — wallet data is
+            Optional sign-in enables cross-device wallet sync only. Wallet data is
             bookmarks and giving intent, never transactions, never shared, never used for
             advertising. We use Plausible for analytics: no third-party tracking, no
             advertising profiles.

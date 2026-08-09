@@ -117,9 +117,13 @@ def build_revenue_bands(db):
 
 
 def build_categories(db):
+    # pct_beacon/torch/candle/spark dropped from the export 2026-08-09 (lamp-tier
+    # retirement, continued -- research_category_summary itself still computes
+    # them, but nothing should read tier percentages out of this snapshot).
+    # Still SELECTed here so a schema change to the source table surfaces loudly
+    # as a query error instead of silently returning nothing.
     rows = db.execute("""
-        SELECT ntee1, ntee_label, count, pct_of_total, avg_revenue, avg_peer_percentile,
-               pct_beacon, pct_torch, pct_candle, pct_spark
+        SELECT ntee1, ntee_label, count, pct_of_total, avg_revenue, avg_peer_percentile
         FROM research_category_summary
         WHERE period = (SELECT MAX(period) FROM research_category_summary)
         ORDER BY count DESC
@@ -132,10 +136,6 @@ def build_categories(db):
             'pct_of_total': round(r['pct_of_total'], 1),
             'avg_revenue': r['avg_revenue'],
             'avg_peer_percentile': r['avg_peer_percentile'],
-            'pct_beacon': r['pct_beacon'],
-            'pct_torch': r['pct_torch'],
-            'pct_candle': r['pct_candle'],
-            'pct_spark': r['pct_spark'],
         }
         for r in rows
     ]
@@ -161,23 +161,27 @@ def build_states(db):
 
 
 def build_spending(db):
-    """V5-compatible spending data: program expense percentiles by funding archetype."""
+    """Program expense percentiles by V6 context tier.
+
+    Was v5 archetype-grouped (Donation-Funded/Fee-for-Service/Endowment-Funded), but
+    that query matched against the wrong label strings and had been silently
+    returning zero rows -- the chart on the Research page was empty. Rebuilt on
+    scoring_tier, the same V6 grouping the rest of this file now uses, so it can't
+    drift out of sync with the tier definitions again.
+    """
     data = []
-    archetypes = [
-        'Donation-Funded',
-        'Fee-for-Service',
-        'Endowment-Funded'
-    ]
-    for archetype in archetypes:
+    for tier in V6_TIER_ORDER:
         vals = [
             row['p'] for row in db.execute("""
                 SELECT CAST(program_expense_pct AS FLOAT) as p
                 FROM registry_enriched
-                WHERE merit_archetype_v5_label = ?
+                WHERE scoring_tier = ?
                   AND program_expense_pct IS NOT NULL
-                  AND deductibility = '1'
+                  AND subsection = '3' AND deductibility = '1'
+                  AND COALESCE(irs_revoked, 0) != 1
+                  AND COALESCE(org_status, '') != 'revoked'
                 ORDER BY program_expense_pct
-            """, [archetype]).fetchall()
+            """, [tier]).fetchall()
         ]
         if not vals:
             continue
@@ -185,7 +189,8 @@ def build_spending(db):
         p25 = _percentile(vals, 0.25)
         p75 = _percentile(vals, 0.75)
         data.append({
-            'archetype': archetype,
+            'tier': tier,
+            'tier_name': V6_TIER_INFO[tier]['name'],
             'count': len(vals),
             'median_program_spend': round(median, 1) if median is not None else None,
             'p25_program_spend': round(p25, 1) if p25 is not None else None,
@@ -242,62 +247,84 @@ def build_entity_types(db):
     }
 
 
-V5_BAND_ORDER = {'Micro (<$150K)': 0, 'Professional ($150K–$700K)': 1, 'Established (>$700K)': 2}
-V5_ARCHETYPE_ORDER = {
-    'Donation-Funded Programs': 0,
-    'Fee-for-Service Operators': 1,
-    'Endowment-Funded Grantmakers': 2,
+V6_TIER_ORDER = ['1_Full_Context', '2_Regional_Context', '3_Broad_Category', '4_Archetype_Only']
+
+# Wording matches scripts/precompute_content.py's context_levels exactly, so the
+# Methodology page and the Research page never disagree on what a tier means.
+V6_TIER_INFO = {
+    '1_Full_Context': {
+        'name': 'Full Context',
+        'description': 'Compared with organizations of similar type, size, and region.',
+    },
+    '2_Regional_Context': {
+        'name': 'Regional Context',
+        'description': 'Compared within a broader regional peer group.',
+    },
+    '3_Broad_Category': {
+        'name': 'Broad Category',
+        'description': 'Compared across a wider category when a closer peer group was too small to be meaningful.',
+    },
+    '4_Archetype_Only': {
+        'name': 'Archetype Only',
+        'description': 'We can describe the kind of work, but the public record does not yet support a peer comparison.',
+    },
 }
 
 
-def build_v5(db):
-    """v5 financial-context taxonomy, computed from the merit_*_v5 columns already
-    in registry_enriched. Peer cell = archetype + revenue band; score = percentile
-    rank within that cell; health signal = HEALTHY/STABLE/CAUTION. Only the
-    deductible set is counted. Lamp tiers are a separate visibility layer (not v5).
+def build_v6(db):
+    """V6 financial-context taxonomy, computed from the scoring_tier column already
+    in registry_enriched. Peer group = archetype + revenue band + region; when that
+    exact group is too small to be meaningful, the group widens (region drops, then
+    category broadens) until it holds enough peers -- a reference-class approach
+    (find the narrowest comparable set with enough data, widen it when there isn't
+    enough) rather than a single universal yardstick. Score = peer_percentile, a
+    percentile rank of reserve strength within that peer group.
+
+    There is no V6 health-signal bucketing (no HEALTHY/STABLE/CAUTION). V6 measures
+    reserve strength relative to peers, not a verdict on financial health -- that
+    distinction is deliberate (Stewardship P4: small orgs treated fairly; P5: no
+    shame framing). Only the deductible, non-revoked set is counted.
     """
     rows = db.execute(
-        """SELECT merit_archetype_v5_label AS archetype,
-                  merit_band_v5_label      AS band,
-                  COUNT(*)                 AS count,
-                  ROUND(AVG(merit_score_v5), 1)        AS avg_score,
-                  ROUND(AVG(program_expense_pct), 1)   AS avg_program_pct,
+        """SELECT scoring_tier,
+                  COUNT(*)                              AS count,
+                  ROUND(AVG(peer_percentile), 1)        AS avg_percentile,
+                  ROUND(AVG(peer_group_size_v6), 0)     AS avg_peer_group_size,
+                  ROUND(AVG(program_expense_pct), 1)    AS avg_program_pct,
                   ROUND(AVG(CASE WHEN months_of_reserve BETWEEN -120 AND 120
-                                 THEN months_of_reserve END), 1) AS avg_months_reserve,
-                  SUM(CASE WHEN merit_health_signal_v5='HEALTHY' THEN 1 ELSE 0 END) AS healthy,
-                  SUM(CASE WHEN merit_health_signal_v5='STABLE'  THEN 1 ELSE 0 END) AS stable,
-                  SUM(CASE WHEN merit_health_signal_v5='CAUTION' THEN 1 ELSE 0 END) AS caution
+                                 THEN months_of_reserve END), 1) AS avg_months_reserve
              FROM registry_enriched
             WHERE subsection = '3' AND deductibility = '1'
               AND COALESCE(irs_revoked, 0) != 1
               AND COALESCE(org_status, '') != 'revoked'
-              AND merit_archetype_v5_label IS NOT NULL
-              AND merit_band_v5_label IS NOT NULL
-            GROUP BY merit_archetype_v5_label, merit_band_v5_label"""
+            GROUP BY scoring_tier"""
     ).fetchall()
-    cells = [dict(r) for r in rows]
-    cells.sort(key=lambda c: (V5_ARCHETYPE_ORDER.get(c['archetype'], 99),
-                              V5_BAND_ORDER.get(c['band'], 99)))
-    total = sum(c['count'] for c in cells) or 1
-    # Per-archetype rollup
-    arche = {}
-    for c in cells:
-        a = arche.setdefault(c['archetype'], {'archetype': c['archetype'], 'count': 0,
-                                              'healthy': 0, 'stable': 0, 'caution': 0})
-        a['count'] += c['count']
-        a['healthy'] += c['healthy']; a['stable'] += c['stable']; a['caution'] += c['caution']
-    archetypes = sorted(arche.values(), key=lambda a: V5_ARCHETYPE_ORDER.get(a['archetype'], 99))
-    for a in archetypes:
-        a['pct'] = round(a['count'] * 100 / total, 1)
+    by_tier = {r['scoring_tier']: dict(r) for r in rows}
+    total = sum(r['count'] for r in by_tier.values()) or 1
+    unscored = by_tier.get(None, {}).get('count', 0)
+
+    tiers = []
+    for key in V6_TIER_ORDER:
+        r = by_tier.get(key)
+        count = r['count'] if r else 0
+        tiers.append({
+            'key': key,
+            'name': V6_TIER_INFO[key]['name'],
+            'description': V6_TIER_INFO[key]['description'],
+            'count': count,
+            'pct': round(count * 100 / total, 1),
+            'avg_percentile': r['avg_percentile'] if r else None,
+            'avg_peer_group_size': r['avg_peer_group_size'] if r else None,
+            'avg_program_pct': r['avg_program_pct'] if r else None,
+            'avg_months_reserve': r['avg_months_reserve'] if r else None,
+        })
+
     return {
-        'total_scored': total,
-        'cells': cells,
-        'archetypes': archetypes,
-        'health_totals': {
-            'healthy': sum(c['healthy'] for c in cells),
-            'stable': sum(c['stable'] for c in cells),
-            'caution': sum(c['caution'] for c in cells),
-        },
+        'total_active': total,
+        'total_scored': total - unscored,
+        'unscored_count': unscored,
+        'coverage_pct': round((total - unscored) * 100 / total, 1),
+        'tiers': tiers,
     }
 
 
@@ -377,7 +404,7 @@ def main():
             'states': build_states(db),
             'spending': build_spending(db),
             'entity_types': build_entity_types(db),
-            'v5': build_v5(db),
+            'v6': build_v6(db),
             'monthly_changes': build_monthly_changes(db),
         }
     finally:
@@ -398,9 +425,9 @@ def main():
     print(f"   entity_types:  {et['pct_public_charity']}% public charity, "
           f"{et['pct_private_foundation']}% private foundation, "
           f"{et['pct_unclassified']}% unclassified")
-    v5 = snapshot['v5']
-    print(f"   v5:            {v5['total_scored']:,} scored, "
-          f"{len(v5['archetypes'])} archetypes, {len(v5['cells'])} cells")
+    v6 = snapshot['v6']
+    print(f"   v6:            {v6['total_scored']:,} scored ({v6['coverage_pct']}% coverage), "
+          f"{len(v6['tiers'])} context tiers")
     mc = snapshot['monthly_changes']
     batch_months = [m['month'] for m in mc if m['is_batch_revocation']]
     print(f"   monthly:       {len(mc)} months, batch-revocation months: {batch_months or 'none'}")

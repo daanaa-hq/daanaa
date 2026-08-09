@@ -133,7 +133,7 @@ export default function GivingViaChecksPage() {
               <h3 className="font-display text-deep-navy text-title-sm mb-3">Important: How Daanaa works</h3>
               <p className="font-body text-body text-cool-grey leading-[1.65]">
                 <strong>Daanaa does NOT process your check.</strong> We show you the nonprofit's mailing address and help you find organizations.
-                That's all. Your check goes directly to them — not through Daanaa, not through any payment processor.
+                That's all. Your check goes directly to them, not through Daanaa, not through any payment processor.
               </p>
               <p className="font-body text-small text-muted-cream/70 mt-3">
                 This keeps us independent and keeps your gift direct.

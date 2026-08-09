@@ -21,7 +21,7 @@ export default function ResearchDataMovement({
     loadResearchSnapshot()
       .then((snap) => {
         setMonthlyData(snap.monthly_changes ?? [])
-        setHistoricalTotal(snap.v5?.total_scored ?? 0)
+        setHistoricalTotal(snap.v6?.total_scored ?? 0)
       })
       .catch((error) => console.error('Failed to load snapshot:', error))
       .finally(() => setLoading(false))

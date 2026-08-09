@@ -59,7 +59,7 @@ export default function GivingViaRoutersPage() {
                 </div>
                 <p className="font-body text-body-lg text-cool-grey leading-[1.65]">
                   On the platform's website, use their search to find the nonprofit you want to support.
-                  You can search by name or EIN (employer identification number — available on every nonprofit's Daanaa page).
+                  You can search by name or EIN (employer identification number, available on every nonprofit's Daanaa page).
                 </p>
               </div>
 
@@ -154,7 +154,7 @@ export default function GivingViaRoutersPage() {
               </p>
               <p className="font-body text-body text-cool-grey leading-[1.65]">
                 Every nonprofit on Daanaa has an EIN. Look for it on the nonprofit's page.
-                If a platform's search doesn't find the nonprofit by name, try searching by EIN — it always works.
+                If a platform's search doesn't find the nonprofit by name, try searching by EIN. It always works.
               </p>
             </div>
           </section>
@@ -196,7 +196,7 @@ export default function GivingViaRoutersPage() {
               <p className="font-body text-body text-cool-grey leading-[1.65]">
                 <strong>Daanaa does NOT process your donation.</strong> We show you information about nonprofits
                 and link to platforms where you can give. You donate directly through the platform of your choice.
-                Your donation goes directly to the nonprofit — not through Daanaa.
+                Your donation goes directly to the nonprofit, not through Daanaa.
               </p>
               <p className="font-body text-small text-muted-cream/70 mt-3">
                 This keeps us independent and keeps your gift direct.

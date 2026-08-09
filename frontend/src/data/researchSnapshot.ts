@@ -31,10 +31,6 @@ export interface ResearchSnapshot {
     pct_of_total: number
     avg_revenue: number | null
     avg_peer_percentile: number | null
-    pct_beacon: number
-    pct_torch: number
-    pct_candle: number
-    pct_spark: number
   }>
   states: Array<{
     state: string
@@ -44,7 +40,8 @@ export interface ResearchSnapshot {
     avg_peer_percentile: number | null
   }>
   spending: Array<{
-    archetype: string
+    tier: string
+    tier_name: string
     count: number
     median_program_spend: number | null
     p25_program_spend: number | null
@@ -59,32 +56,22 @@ export interface ResearchSnapshot {
     pct_private_foundation: number
     pct_unclassified: number
   }
-  v5?: {
+  v6?: {
+    total_active: number
     total_scored: number
-    cells: Array<{
-      archetype: string
-      band: string
-      count: number
-      avg_score: number
-      avg_program_pct: number
-      avg_months_reserve: number
-      healthy: number
-      stable: number
-      caution: number
-    }>
-    archetypes: Array<{
-      archetype: string
+    unscored_count: number
+    coverage_pct: number
+    tiers: Array<{
+      key: string
+      name: string
+      description: string
       count: number
       pct: number
-      healthy: number
-      stable: number
-      caution: number
+      avg_percentile: number | null
+      avg_peer_group_size: number | null
+      avg_program_pct: number | null
+      avg_months_reserve: number | null
     }>
-    health_totals: {
-      healthy: number
-      stable: number
-      caution: number
-    }
   }
   monthly_changes?: Array<{
     month: string
