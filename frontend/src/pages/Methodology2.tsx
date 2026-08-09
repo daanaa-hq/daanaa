@@ -6,16 +6,17 @@ import { useJsonLd, faqPageSchema } from '../hooks/useJsonLd'
 
 // Table of contents — drives the sticky sidebar and the anchor IDs below.
 const TOC = [
-  { id: 'overview', label: 'What Daanaa is' },
-  { id: 'public-data-sources', label: 'Where the data comes from' },
-  { id: 'peer-financial-context', label: 'Peer financial context' },
-  { id: 'not-measured', label: 'What we don’t measure' },
-  { id: 'data-limits', label: 'Data limits' },
-  { id: 'financial-context', label: 'Financial context' },
-  { id: 'hidden-gems', label: 'Orgs you may not have heard of' },
-  { id: 'two-layers', label: 'What the organization controls' },
-  { id: 'updates', label: 'How data stays current' },
-  { id: 'faq', label: 'Frequently asked questions' },
+  { id: ‘overview’, label: ‘What Daanaa is’ },
+  { id: ‘public-data-sources’, label: ‘Where the data comes from’ },
+  { id: ‘peer-financial-context’, label: ‘Peer financial context’ },
+  { id: ‘not-measured’, label: ‘What we don’t measure’ },
+  { id: ‘data-limits’, label: ‘Data limits’ },
+  { id: ‘financial-context’, label: ‘Financial context’ },
+  { id: ‘hidden-gems’, label: ‘Orgs you may not have heard of’ },
+  { id: ‘two-layers’, label: ‘What the organization controls’ },
+  { id: ‘updates’, label: ‘How data stays current’ },
+  { id: ‘tax-deductibility’, label: ‘Tax-deductibility verification’ },
+  { id: ‘faq’, label: ‘Frequently asked questions’ },
 ] as const
 
 const FAQS = [
@@ -365,6 +366,30 @@ export default function Methodology() {
               <p className="mt-4">
                 Every organization's detail page shows when the data is from and where it came from, so you're never guessing how old the information is.
               </p>
+            </Section>
+
+            <Section id="tax-deductibility" label="Tax status" title="Tax-deductibility verification">
+              <p>
+                For donors considering tax-deductible giving, we verify tax-exempt status using the{' '}
+                <a href="https://www.irs.gov/charities-non-profits/tax-exempt-organization-search" className="text-soft-gold hover:text-bright-gold font-medium">IRS Tax Exempt Organization Search</a>.
+              </p>
+              <p className="mt-3">
+                We confirm that an organization:
+              </p>
+              <ul className="mt-2 space-y-2.5 max-w-[640px]">
+                {[
+                  'Is listed as an active 501(c)(3) nonprofit',
+                  'Has not been revoked from the IRS tax-exempt status list',
+                ].map(item => (
+                  <li key={item} className="flex items-start gap-3 font-body text-body-lg text-cool-grey">
+                    <span className="text-soft-gold mt-1.5 w-1.5 h-1.5 rounded-full bg-soft-gold shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Callout>
+                This verification does not guarantee tax deductibility. Tax deductibility depends on the donor's individual tax situation and the type of contribution. We recommend consulting a tax professional or your financial advisor for specific questions about tax deductibility.
+              </Callout>
             </Section>
 
             <Section id="faq" label="Questions" title="Frequently asked questions">
