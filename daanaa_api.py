@@ -2682,6 +2682,117 @@ def get_organization(ein):
     # Adds 4 fields: status, checked_at, sources, explanation
     org.update(get_eligibility_fields(ein_clean))
 
+    # Small Org Clarity: Leadership, Service Scope, Stability Signal, Mission Attribution
+    # These fields help donors understand small orgs better without requiring new data extraction
+
+    # 1. Leadership Info (from 990 Part VII + governance data)
+    org['leadership_info'] = {
+        'board_size': org.get('board_size'),
+        'board_independence_pct': (
+            int(100 * org.get('board_independent_count', 0) / org.get('board_size', 1))
+            if org.get('board_size', 0) > 0
+            else None
+        ),
+        'employee_count': org.get('employee_count'),
+        'has_coi_policy': bool(org.get('has_coi_policy')),
+        'has_whistleblower_policy': bool(org.get('has_whistleblower_policy')),
+        'has_doc_retention_policy': bool(org.get('has_doc_retention_policy')),
+    }
+
+    # 2. Service Scope (from NTEE + extracted metadata + 990 Part X data)
+    service_area_states = None
+    if org.get('extracted_metadata'):
+        try:
+            meta = json.loads(org['extracted_metadata']) if isinstance(org['extracted_metadata'], str) else org['extracted_metadata']
+            service_area_states = meta.get('service_area_states')
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # Map NTEE1 to typical population served
+    ntee1_population_map = {
+        'A': 'Arts & Culture',
+        'B': 'Education',
+        'C': 'Environment',
+        'D': 'Animal Welfare',
+        'E': 'Health',
+        'F': 'Mental Health & Addiction',
+        'G': 'Family Services',
+        'H': 'Youth Development',
+        'I': 'Disability & Rehabilitation',
+        'J': 'Senior Services',
+        'K': 'Housing & Community Development',
+        'L': 'Public Safety',
+        'M': 'Employment & Job Training',
+        'N': 'Food & Agriculture',
+        'O': 'Business & Economics',
+        'P': 'Civic & Advocacy',
+        'Q': 'Law & Legal',
+        'R': 'Philanthropy',
+        'S': 'International Affairs',
+        'T': 'Religion',
+        'U': 'Mutual & Membership Benefit',
+        'V': 'Science & Technology',
+        'W': 'Social Science',
+        'X': 'Religion-Related',
+        'Y': 'Community Development',
+        'Z': 'Unclassified',
+    }
+
+    org['service_scope'] = {
+        'primary_cause_area': ntee1_population_map.get(org.get('NTEE1'), 'Nonprofits'),
+        'service_states': service_area_states,  # from LLM extraction
+        'primary_state': org.get('STATE'),
+        'revenue_band': org.get('merit_band_v5_label'),  # e.g., "Micro", "Professional", "Established"
+    }
+
+    # 3. Org Stability Signal (composite of leadership + financial + longevity)
+    stability_score = 0
+    stability_reasons = []
+
+    if org.get('board_size', 0) >= 3:
+        stability_score += 1
+        stability_reasons.append('Has board oversight')
+    if org.get('employee_count', 0) > 0:
+        stability_score += 1
+        stability_reasons.append('Has paid staff')
+    if org.get('years_active', 0) >= 10:
+        stability_score += 1
+        stability_reasons.append('Operating 10+ years')
+    elif org.get('years_active', 0) >= 5:
+        stability_reasons.append('Operating 5+ years')
+
+    if org.get('merit_health_signal_v5'):
+        if org['merit_health_signal_v5'] == 'HEALTHY':
+            stability_score += 1
+            stability_reasons.append('Financially healthy')
+        elif org['merit_health_signal_v5'] == 'STABLE':
+            stability_reasons.append('Financially stable')
+
+    if org.get('nccs_program_ratio', 0) >= 0.75:
+        stability_score += 1
+        stability_reasons.append('High program spend ratio')
+
+    stability_signals = ['At-risk', 'Emerging', 'Solid', 'Strong', 'Excellent']
+    org['org_stability_signal'] = {
+        'signal': stability_signals[min(stability_score, 4)],
+        'reasons': stability_reasons,
+        'confidence': 'high' if org.get('nccs_form_990_filed') else 'moderate',
+    }
+
+    # 4. Mission Attribution (improve mission display metadata)
+    org['mission_attribution'] = {
+        'text': org.get('mission'),
+        'source': org.get('mission_source'),  # 'claimed', 'ai_web', 'ai_ntee', 'extracted', etc.
+        'verified_date': org.get('mission_last_verified'),
+        'source_explanation': {
+            'claimed': "This mission statement was provided by the nonprofit",
+            'ai_web': "This mission was extracted from the nonprofit's website",
+            'ai_ntee': "This is a template mission for this type of nonprofit",
+            'extracted': "This mission was extracted from the nonprofit's website",
+        }.get(org.get('mission_source'), 'Mission source unknown'),
+        'confidence': org.get('mission_confidence', 0.5),
+    }
+
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)
