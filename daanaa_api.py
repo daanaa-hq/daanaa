@@ -12743,6 +12743,213 @@ def get_credibility_signals(ein):
         }), 500
 
 
+# ── NEEDS NETWORK API (Phase 3B) ────────────────────────────────────────────────
+
+@app.route('/api/needs', methods=['GET'])
+@limiter.limit("100 per minute")
+def list_needs():
+    """Donor-facing: Search funding/volunteer needs by type, location, cause."""
+    db = get_db()
+    need_type = request.args.get('type', '').upper()  # FUNDING or VOLUNTEER
+    primary_state = request.args.get('state', '').upper()[:2]
+    cause_area = request.args.get('cause', '').strip()[:60]
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
+
+    try:
+        where_clauses = ["status = 'published'"]
+        params = []
+
+        if need_type in ('FUNDING', 'VOLUNTEER'):
+            where_clauses.append("need_type = ?")
+            params.append(need_type)
+
+        if primary_state:
+            where_clauses.append("service_states LIKE ?")
+            params.append(f'%{primary_state}%')
+
+        if cause_area:
+            where_clauses.append("cause_area = ?")
+            params.append(cause_area)
+
+        where_sql = " AND ".join(where_clauses)
+        offset = (page - 1) * per_page
+
+        cursor = db.execute(f"""
+            SELECT need_id, ein, need_type, title, description, amount_needed,
+                   deadline_date, cause_area, service_states, published_date,
+                   click_count, volunteer_interest_count
+            FROM needs
+            WHERE {where_sql}
+            ORDER BY published_date DESC
+            LIMIT ? OFFSET ?
+        """, params + [per_page, offset])
+
+        needs = [dict(row) for row in cursor.fetchall()]
+
+        # Get total count
+        count_cursor = db.execute(f"SELECT COUNT(*) FROM needs WHERE {where_sql}", params)
+        total = count_cursor.fetchone()[0]
+
+        return jsonify({
+            "needs": needs,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": (total + per_page - 1) // per_page
+        }), 200
+    except Exception as e:
+        app.logger.error(f"list_needs error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/nonprofits/<ein>/needs', methods=['GET'])
+@limiter.limit("60 per minute")
+def get_nonprofit_needs(ein):
+    """Nonprofit dashboard: List their own Needs (all statuses)."""
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean or len(ein_clean) != 9:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    # Verify nonprofit ownership via Firebase JWT (if auth enabled)
+    # For now, allow any access (auth to be added in Phase 4)
+
+    try:
+        db = get_db()
+        cursor = db.execute("""
+            SELECT need_id, need_type, title, description, amount_needed,
+                   deadline_date, cause_area, service_states, status,
+                   published_date, last_confirmed_date, click_count, volunteer_interest_count
+            FROM needs
+            WHERE ein = ?
+            ORDER BY published_date DESC
+        """, (ein_clean,))
+
+        needs = [dict(row) for row in cursor.fetchall()]
+        return jsonify({"ein": ein_clean, "needs": needs}), 200
+    except Exception as e:
+        app.logger.error(f"get_nonprofit_needs error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/nonprofits/<ein>/needs', methods=['POST'])
+@limiter.limit("20 per minute")
+def create_need(ein):
+    """Nonprofit dashboard: Submit a new funding or volunteer Need."""
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean or len(ein_clean) != 9:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    try:
+        data = request.get_json() or {}
+        need_type = data.get('need_type', '').upper()
+        title = data.get('title', '').strip()
+        description = data.get('description', '').strip()
+        amount_needed = data.get('amount_needed', type=int)
+        deadline_date = data.get('deadline_date')
+        cause_area = data.get('cause_area', '').strip()
+        service_states = data.get('service_states', [])  # List of state codes
+
+        # Validation
+        if need_type not in ('FUNDING', 'VOLUNTEER'):
+            return jsonify({"error": "need_type must be FUNDING or VOLUNTEER"}), 400
+        if not title:
+            return jsonify({"error": "title required"}), 400
+        if not description:
+            return jsonify({"error": "description required"}), 400
+        if need_type == 'FUNDING' and not amount_needed:
+            return jsonify({"error": "amount_needed required for FUNDING needs"}), 400
+
+        # Create need
+        import uuid
+        need_id = str(uuid.uuid4())
+        service_states_json = json.dumps(service_states) if service_states else '[]'
+
+        db = get_db()
+        db.execute("""
+            INSERT INTO needs
+            (need_id, ein, need_type, title, description, amount_needed,
+             deadline_date, cause_area, service_states, status, published_date,
+             last_confirmed_date, freshness_status, click_count, volunteer_interest_count)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', datetime('now'), datetime('now'), 'confirmed', 0, 0)
+        """, (need_id, ein_clean, need_type, title, description, amount_needed,
+              deadline_date, cause_area, service_states_json))
+
+        db.commit()
+
+        return jsonify({
+            "need_id": need_id,
+            "status": "created",
+            "message": "Need saved as draft. Publish when ready."
+        }), 201
+
+    except Exception as e:
+        app.logger.error(f"create_need error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/needs/<need_id>/confirm', methods=['POST'])
+@limiter.limit("60 per minute")
+def confirm_need_freshness(need_id):
+    """Nonprofit re-confirms a Need is still accurate (freshness check)."""
+    try:
+        db = get_db()
+
+        db.execute("""
+            UPDATE needs
+            SET last_confirmed_date = datetime('now'),
+                freshness_status = 'confirmed'
+            WHERE need_id = ?
+        """, (need_id,))
+
+        db.commit()
+
+        return jsonify({"need_id": need_id, "status": "confirmed"}), 200
+    except Exception as e:
+        app.logger.error(f"confirm_need_freshness error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/needs/<need_id>/interest', methods=['POST'])
+@limiter.limit("100 per minute")
+def record_need_interest(need_id):
+    """Track donor interest in a Need (view, save, share, volunteer)."""
+    try:
+        data = request.get_json() or {}
+        interest_type = data.get('type', 'VIEW')  # VIEW, SAVE, SHARE, VOLUNTEER_APPLICATION
+
+        db = get_db()
+
+        # Get need info
+        need_row = db.execute("SELECT ein FROM needs WHERE need_id = ?", (need_id,)).fetchone()
+        if not need_row:
+            return jsonify({"error": "Need not found"}), 404
+
+        ein = need_row['ein']
+
+        # Record aggregate interest (no user PII — Stewardship P2)
+        import uuid
+        interest_id = str(uuid.uuid4())
+        db.execute("""
+            INSERT INTO need_donor_interest
+            (interest_id, need_id, ein, interest_type, recorded_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+        """, (interest_id, need_id, ein, interest_type))
+
+        # Update click/interest counters
+        if interest_type == 'VIEW':
+            db.execute("UPDATE needs SET click_count = click_count + 1 WHERE need_id = ?", (need_id,))
+        elif interest_type == 'VOLUNTEER_APPLICATION':
+            db.execute("UPDATE needs SET volunteer_interest_count = volunteer_interest_count + 1 WHERE need_id = ?", (need_id,))
+
+        db.commit()
+
+        return jsonify({"recorded": True, "interest_type": interest_type}), 200
+    except Exception as e:
+        app.logger.error(f"record_need_interest error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 # ── Register student service blueprint ──────────────────────────────────────────
 
 from student_service_api_routes import student_bp

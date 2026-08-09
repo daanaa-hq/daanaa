@@ -1,170 +1,155 @@
-# Daanaa Methodology: How We Compare Nonprofits
+# How We Assess Nonprofit Financial Health
 
-## The Problem
+At Daanaa, we help donors understand how financially stable a nonprofit is within its peer group. We don't rank organizations by size or impact—we show financial context: whether a nonprofit has enough reserves for its operating model, compared to similar organizations.
 
-When you're trying to decide which nonprofit to support, you get a single number: their "score." But what does that number mean?
+## Our Scoring System (v5)
 
-A small community clinic and a major hospital both serve healthcare. But they operate completely differently. Comparing them doesn't make sense.
+Every nonprofit on Daanaa gets a financial health assessment based on **three dimensions:**
 
-That's the problem Daanaa solves.
+### 1. **Funding Model** (Archetype)
 
-## The Solution: Peer-Based Comparison
+How does the organization fund its work?
 
-Instead of rating every nonprofit on a single absolute scale, Daanaa compares each organization to **financially similar peers**.
+- **Donation-Funded:** Relies primarily on individual and foundation donations (typical for food banks, animal shelters, community centers)
+- **Fee-for-Service:** Generates revenue through program fees, contracts, or managed care (typical for counseling, education, vocational services)
+- **Endowment-Funded:** Sustained by investment returns on a large endowment (typical for research institutions, universities)
 
-A donation-funded clinic is compared to other donation-funded clinics. A Medicaid clinic is compared to other Medicaid clinics. A foundation is compared to other foundations.
+We compare organizations only within their funding model. A food bank is never compared to a hospital.
 
-This approach answers the question you actually want to ask: **"How is this organization doing compared to others like it?"**
+### 2. **Revenue Band** (Size)
 
-## How Daanaa Groups Organizations
+How much does the organization spend annually?
 
-We organize nonprofits into 15 peer groups based on two factors:
+- **Micro:** Less than $150,000/year (grassroots, volunteer-heavy)
+- **Professional:** $150,000–$700,000/year (established local presence)
+- **Established:** Over $700,000/year (regional or national reach)
 
-### 1. Financial Operating Model (How they fund themselves)
+Peer groups are sized-adjusted. A $200K food bank is compared to other $150K–$700K nonprofits, not to $10M health systems.
 
-There are five distinct ways nonprofits operate financially:
+### 3. **Financial Context** (Peer Performance)
 
-- **Donation-Funded Programs (52% of sector)**: Primary revenue from donations, grants, contributions
-- **Fee-for-Service Operators (37%)**: Primary revenue from earned revenue (patient fees, tuition, billing)
-- **Endowment-Funded Grantmakers (9%)**: Primary revenue from endowment or investment income
-- **Membership Dues Organizations (1%)**: Primary revenue from membership dues
-- **Mutual-Benefit Payers (1%)**: Primary revenue from earned revenue + member benefits
+How healthy is this organization compared to peers in the same funding model and size band?
 
-### 2. Revenue Size (Different challenges at different scales)
+We measure **months of operating reserve**: How many months of operating expenses the organization could cover with liquid assets if donations stopped.
 
-Size matters. A $100K organization faces different constraints than a $1M organization:
+- **Healthy:** At or above peer median (typical: 3–6 months for donation-funded orgs)
+- **Stable:** Within 1 standard deviation below peer median (sustainable, minor stress)
+- **Needs Support:** Below 1 standard deviation (at risk, may need fundraising focus)
 
-- **Micro (<$150K)**: Typically volunteer-run. High reserves, no paid staff.
-- **Professional ($150K–$700K)**: The transition zone. First hiring wave, stretched finances, peak financial stress.
-- **Established (>$700K)**: Mature operations. Professional staff, stable reserves, optimized operations.
+## Confidence Levels
 
-The $150K breakpoint is not arbitrary. Our analysis of 1.75 million nonprofit-years from IRS 990 data shows:
+Every assessment comes with a **confidence level** showing how certain we are:
 
-- **Reserves drop 63%** from sub-$150K to professional band (from 37 months to 13.5 months)
-- **Labor jumps 15x**: from 0% of budget (volunteer-only) to 15% (first staff hire)
-- **Health deteriorates 22 percentage points**: from 75% to 53% of orgs "healthy" by reserve standards
+| Confidence | Margin | Meaning |
+|------------|--------|---------|
+| **High** | ±5% | Direct financial data + 25+ peer organizations with reserve data |
+| **Good** | ±7% | Direct financial data + 15–24 peer organizations |
+| **Moderate** | ±10% | Limited peer data or inferred from similar regions |
+| **Archetype Only** | ±15% | No peer reserve data; grouped only by funding model |
 
-This transition is real, measurable, and consistent across all five operating models.
+**Why margins matter:** A nonprofit with "Moderate (±10%)" confidence might be healthy or needs support—there's genuine uncertainty. We show both possibilities rather than false precision.
 
-## The 15 Peer Groups
+## How We Gather Data
 
-| Archetype | Micro (<$150K) | Professional ($150K–$700K) | Established (>$700K) |
-|-----------|--------|--------|--------|
-| Donation-Funded Programs | 29K orgs | 77K orgs | 62K orgs |
-| Fee-for-Service Operators | 9K orgs | 43K orgs | 62K orgs |
-| Endowment-Funded Grantmakers | 12K orgs | 9K orgs | 8K orgs |
-| Membership Dues Organizations | 174 orgs | 524 orgs | 1.3K orgs |
-| Mutual-Benefit Payers | 527 orgs | 1.1K orgs | 3.3K orgs |
+### Primary Source: IRS Form 990
+- Annual nonprofit tax return (filed for orgs with $50K+ revenue)
+- Published by the IRS and aggregated by ProPublica
+- Contains: revenue, expenses, reserves, board composition, compensation
+- **Limitation:** Filed ~18 months after year-end; we show the most recent available
 
-## What We Measure
+### Secondary Sources
+- **Nonprofit websites:** Program descriptions, mission clarity, leadership transparency
+- **ProPublica Nonprofit Explorer:** Enhanced 990 data and visualizations
+- **IRS Revocation List:** Current status of tax-exempt status
+- **NCCS Data:** Nonprofit sector benchmarks by NTEE category
 
-Within each peer group, we track three key financial health indicators:
+### What We Don't Do
+- ❌ We don't survey organizations (no questionnaires)
+- ❌ We don't make site visits (no inspections)
+- ❌ We don't evaluate mission or program impact
+- ❌ We don't rank organizations (no "best" or "worst")
 
-### 1. Reserves (Months of Operating Costs)
+## For Organizations Without Financial Data
 
-How long could this organization operate if all funding stopped?
+Some nonprofits file simplified tax returns (Form 990-N) or are too new to have 990 data. For these organizations, we show:
 
-- A 6-month reserve is considered prudent
-- Below 3 months is considered risky
-- Organizations with 12+ months are well-cushioned
+- **Funding model** (if evident from their website or NTEE category)
+- **Similar organizations** in the same category and region
+- **Typical reserves** for their peer group (as context, not a score)
 
-**Why it matters**: Reserves are the organization's ability to weather funding gaps, adapt to emergencies, or invest in growth.
+We mark this clearly as "limited context" so donors aren't misled.
 
-### 2. Labor Intensity (% of Budget Spent on Salaries)
+## Limitations & Known Gaps
 
-How much does the organization invest in people?
+### 1. **Tax Return Age**
+Form 990s are filed 18 months after fiscal year end. Our data reflects financial snapshots from 12–24 months ago. Recent events (program growth, donation surge, leadership changes) won't show until the next filing.
 
-- Donation-funded programs typically run 0–40% labor (from volunteers to full teams)
-- Medicaid-reimbursed clinics typically run 50%+ labor (staffing is the service)
-- Endowment-funded orgs scale from 0% (minimal grantmaking) to 80%+ (large staffs)
+### 2. **Reserve Definition Varies**
+Nonprofits calculate "reserves" differently. Some count only cash; others include investments or pledges. We use the most conservative definition (liquid reserves) to avoid overstating stability.
 
-**Why it matters**: This shows whether the organization is volunteer-driven, growing into staff, or fully professionalized.
+### 3. **Small Nonprofits May Lack Peer Data**
+Fewer than 5 organizations in a specific niche = we can't compute reliable peer statistics. We show "Archetype Only" and recommend donors ask the organization directly about reserves.
 
-### 3. Financial Health Rate (% of Peer Group That Is Stable)
+### 4. **Sector-Specific Factors**
+- **International NGOs** may hold reserves in multiple currencies and countries
+- **Religious organizations** may have endowments not fully reported on 990
+- **Grantee networks** may function differently than independent nonprofits
+- **Newly registered** orgs (< 2 years) have limited history
 
-What percentage of similar organizations are in good financial shape?
+### 5. **What We Don't Measure**
+- Program effectiveness or impact
+- Donor satisfaction or organizational culture
+- Strategic planning or leadership quality
+- Community relationships or advocacy influence
 
-This gives you context: if 51% of your peer group is financially healthy, an organization at the median is in a squeezed-but-typical position.
+## Our Commitment to Transparency
 
-## How We Assign Archetype
+We publish:
+- ✅ **Our methodology** (this page)
+- ✅ **Data sources** (IRS, ProPublica, websites)
+- ✅ **Confidence levels** on every assessment
+- ✅ **Known limitations** (this section)
+- ✅ **Correction process** (mistakes page on every org detail page)
 
-### Straightforward Cases (13 categories)
+We don't:
+- ❌ Use proprietary models or "secret sauces"
+- ❌ Accept payment for higher rankings
+- ❌ Partner with organizations we score
+- ❌ Hide or delay corrections
 
-For most NTEE categories, the funding model is clear:
+## How to Use This Information
 
-- Religion (D), Social Services (F), International (R), Foundations (Y) — we know exactly how they operate
-- No questions asked; use the primary archetype
+**For Donors:**
+- Use financial health as ONE factor in giving decisions
+- Pair with program research (Does the organization do work you care about?)
+- Check the org's website for recent updates (990s are historical)
+- Contact the organization if you want current information
 
-### Mixed Cases (14 categories)
+**For Nonprofit Leaders:**
+- Your score reflects your most recent 990 filing; it will improve when you file again
+- Confidence levels show where peer data is solid vs. limited
+- "Needs Support" is not a judgment—it's actionable: focus on fundraising or reserve-building
+- Corrections: Found an error? Use the corrections tool on your organization page
 
-For some categories, organizations genuinely vary. We ask you about your funding model:
-
-- **Healthcare (C)**: "Are you funded by donations (free clinics) or patient fees (Medicaid clinics)?"
-- **Youth (N)**: "Do you run community programs (donations) or camps (tuition)?"
-- **Animals (L)**: "Are you a rescue (donations) or a veterinary clinic (fees)?"
-- Other mixed categories: Civic/Mutual, Mental Health, Education, Hospitals, Grantmaking, Advocacy
-
-Your answer tells us which peer group to compare you against.
-
-## The Data: IRS 990 Form
-
-All of Daanaa's peer benchmarks come from **public IRS 990 data from 2019–2024**.
-
-The 990 is the form nonprofits file with the IRS each year, and it's public. It includes:
-
-- Total revenue and expenses
-- Breakdown of funding sources
-- Detailed expense categories
-- Balance sheet data (reserves, assets, liabilities)
-- Program outcomes and impact data
-
-We analyzed **1.75 million nonprofit-year records** to build Daanaa's peer groups.
-
-### Validation
-
-Our peer groups are validated through:
-
-- **Stability**: The same organizations stay in the same group 92.5% year-over-year (proof the groups are real, not statistical noise)
-- **Coherence**: Organizations within the same group have similar financial patterns across 10 dimensions
-- **Discrimination**: Different groups show meaningfully different financial health rates (18–100%, depending on archetype and size)
-- **Sample size**: Every peer group has 174–100K+ organizations (robust benchmarking)
-
-## What We Don't Do
-
-- **We don't rank size**: Bigger is not better. A $500K community clinic is not "better" than a $100K clinic.
-- **We don't use donor data**: We never see or use information about individual donors or giving patterns.
-- **We don't shame organizations**: We don't use language like "failing" or "at-risk." We explain financial position relative to peers.
-- **We don't predict outcomes**: We compare current financial position; we don't predict whether an organization will survive.
-- **We don't hide mistakes**: If we find data errors, we correct them openly and promptly.
-
-## How to Interpret Your Results
-
-When you see an organization's Daanaa profile:
-
-- **Healthy**: Reserves and staffing are above the peer median. This suggests financial strength and stability.
-- **Stable**: Reserves and staffing are near the peer median. This is typical for the size and type of organization.
-- **Caution**: Reserves are below the peer median. This doesn't mean the organization is failing—it may be young, or in a growth phase, or intentionally lean. But it's worth knowing.
-
-For donors, the key question is: **"Does this organization's financial position match my giving goals?"**
-
-- If you want to fund stability, look for organizations with above-median reserves.
-- If you want to fund growth, look for young organizations (caution-level reserves) with a strong mission.
-- If you want to fund efficiency, look at labor intensity—is this organization lean or staffed?
-
-## Transparency and Updates
-
-Daanaa's benchmarks are updated **monthly** as new IRS 990 data becomes available.
-
-The peer grouping methodology is documented in code: [link to GitHub]. Anyone can verify how Daanaa works, and anyone can suggest improvements.
-
-If you find errors in Daanaa's data, use the **Mistake Registry** on any organization's page to report them. We review all corrections.
+**For Researchers:**
+- All data is from public sources (IRS, ProPublica)
+- Methodology is documented and auditable
+- We track methodology versions (all v5 assessments use the same logic)
+- Peer groups are reproducible (NTEE + band + region)
 
 ## Questions?
 
-For questions about the methodology, email **questions@daanaa.org** or visit the **Help** section on the site.
+**About your organization's score?**  
+Use the "Report an error" tool on your organization page, or email hello@daanaa.org
+
+**About our methodology?**  
+Read the full technical documentation at [internal link: /research/methodology-v5]
+
+**About giving decisions?**  
+See our guide: [/about/how-to-give](how-to-give) and [/about/faq](faq)
 
 ---
 
-**Data source**: IRS SOI 990 microdata, 2019–2024 filings (400K+ unique organizations, 1.75M org-years)  
-**Last updated**: [timestamp]  
-**Methodology version**: v5.0 (released 2026-06-11)
+*Last updated: August 2026*  
+*Methodology version: v5*  
+*Data sources: IRS Form 990, ProPublica Nonprofit Explorer, NCCS, nonprofit websites*
