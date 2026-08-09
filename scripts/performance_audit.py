@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 import urllib.request
 import urllib.error
+from urllib.parse import urlencode
 
 API_BASE = "http://localhost:5000"
 DB_PATH = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
@@ -52,7 +53,8 @@ class PerformanceAudit:
             for _ in range(iterations):
                 start = time.time()
                 try:
-                    url = f"{API_BASE}/api/search?q={query}&per_page=10"
+                    params = urlencode({"q": query, "per_page": 10})
+                    url = f"{API_BASE}/api/search?{params}"
                     with urllib.request.urlopen(url, timeout=5) as response:
                         data = response.read()
                     latency_ms = (time.time() - start) * 1000
