@@ -61,6 +61,22 @@ title-separator strings (all exempt — comments aren't read for voice,
 placeholders and title separators aren't the connector pattern the rule
 targets).
 
+### P2 — /terms page typography inconsistency (clean up font hierarchy)
+**What:** `frontend/src/pages/Terms.tsx` wraps all body content in a global `text-lead` (16px) container, creating inconsistent font hierarchy. Headings use `text-title-lg` (24px) and `text-headline` (28–32px responsive), but the base size created a jumpy responsive breakpoint. Replace with per-section hierarchy: remove the global wrapper, let each section control its own baseline size using typography utilities from DESIGN.md.
+**Why:** Discovered 2026-08-09; user reported "all over the place with fonts and size". Page is live but looks unprofessional, signals low polish.
+**Pros:** Small fix (~5 min), improves perceived quality on a legal/transparency page (user-facing trust surface).
+**Cons:** None — straightforward typography cleanup.
+**Context:** Surfaced during design review of ResearchDataMovement; applies to Terms as well.
+**Depends on:** None.
+
+### P2 — Data quality: incorrect website URLs (example: EIN 263248544)
+**What:** Timbergrove Sports Association (EIN 263248544) shows incorrect website `https://www.eteamz.com` on daanaa.org; correct website is `https://www.timbergrovesports.com/`. Website data in `registry_enriched.website` is stale or scraped wrong. Identify scope: how many orgs have outdated/incorrect websites, and whether this is a one-off or systemic enrichment pipeline issue.
+**Why:** Data accuracy is a core stewardship principle (STEWARDSHIP.md P3). User-visible errors undermine trust in the platform. Discovered 2026-08-09.
+**Pros:** Fixing incorrect data improves credibility; if systemic, the root cause (scraper, redirect, data source lag) affects many orgs.
+**Cons:** Website verification is manual or requires active crawling; large scope if many orgs are affected. May be caught by donation-link pipeline (which also scrapes websites) on next enrichment run.
+**Context:** Donation link pipeline already scores website reachability; might detect this during next run if the site is down or content has changed.
+**Depends on:** (a) Scope audit: SELECT COUNT(*) where website_status != 'verified' or website_final_domain differs from website; (b) decision on fix method (manual corrections, re-scrape trigger, org claims).
+
 ### P2 — Research page V6 migration follow-ups: interactive peer-group funnel + EIN peer lookup
 **What:** 2026-08-08 the Research page's peer-context content was rewritten off
 retired v5 fields onto real V6 fields (`build_v6()` in
