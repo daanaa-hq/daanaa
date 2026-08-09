@@ -129,13 +129,13 @@ export default function ResearchDataMovement({
               >
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                  tick={{ fontSize: 10, fill: '#A0AFC3' }}
                   axisLine={false}
                   tickLine={false}
                   interval={3}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: '#9CA3AF' }}
+                  tick={{ fontSize: 10, fill: '#A0AFC3' }}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v}
@@ -242,7 +242,7 @@ export default function ResearchDataMovement({
         <div>
           <h3 className="text-lg font-semibold text-deep-navy mb-4">Coverage</h3>
           <div className="space-y-4">
-            <div className="border-l-4 border-soft-gold pl-4">
+            <div>
               <div className="flex justify-between items-baseline">
                 <p className="font-semibold text-deep-navy">Mission statements</p>
                 <span className="text-xs text-cool-grey">As of {lastUpdate}</span>
@@ -256,7 +256,7 @@ export default function ResearchDataMovement({
                 its page, which also improves how it surfaces in search and cause tags.
               </p>
             </div>
-            <div className="border-l-4 border-soft-gold pl-4">
+            <div>
               <div className="flex justify-between items-baseline">
                 <p className="font-semibold text-deep-navy">Peer context coverage</p>
                 <span className="text-xs text-cool-grey">As of {lastUpdate}</span>

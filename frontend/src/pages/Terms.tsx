@@ -29,7 +29,7 @@ export default function Terms() {
       <div className="bg-warm-cream py-16 md:py-20">
         <div className="max-w-[800px] mx-auto px-6 md:px-12">
 
-        <div className="space-y-12 font-body text-lead text-cool-grey leading-[1.7]">
+        <div className="space-y-12 font-body text-body text-cool-grey leading-[1.7]">
 
           <section>
             <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">1. Who we are and what Daanaa is</h2>
