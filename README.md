@@ -160,13 +160,14 @@ daanaa/
 │   └── dist/                  ← Built SPA (deployed to droplet)
 │
 ├── scripts/                    ← Data pipeline
-│   ├── merit_scorer_v4_0.py   ← Score computation (nightly)
+│   ├── daanaa_scorer.py       ← Score computation (v6, nightly)
 │   ├── build_fts_index.py     ← FTS5 search index
 │   ├── overnight_pipeline.py  ← Orchestrator
+│   ├── archive_scorers/       ← v4/v5 archived (never run)
 │   └── ops/                   ← Deployment & monitoring
 │
 └── archive/                    ← Historical (read-only)
-    └── legacy_scorers_20260609/ ← Old scoring versions (never run)
+    └── legacy_scorers_20260609/ ← Old scoring versions v1-v3 (never run)
 ```
 
 For detailed guidance: [REPO_MAP.md](REPO_MAP.md)

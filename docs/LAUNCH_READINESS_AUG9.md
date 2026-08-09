@@ -38,7 +38,7 @@
 ### Code (Backend/Frontend)
 - ✅ daanaa_api.py (7,800 lines, Flask + SQLite)
 - ✅ frontend/ (React 19 + TypeScript, Vite)
-- ✅ Data pipeline (merit_scorer_v4_0.py, FTS5 index, embeddings)
+- ✅ Data pipeline (daanaa_scorer.py v6, FTS5 index, embeddings)
 
 ### Data
 - ✅ merit_registry.db (2,056,834 orgs, live)
