@@ -7,8 +7,8 @@ const SECTIONS = [
     tag: 'Who we cover',
     title: 'Every active 501(c)(3) in America',
     body: [
-      'Daanaa indexes every 501(c)(3) organization the IRS recognizes as active and eligible for tax deductible giving. We check each organization against the IRS automatic revocation list every month — if an organization has lost its tax exempt status, it does not appear in browse or search.',
-      'Most platforms stop at a curated subset. We cover all 1.7 million. The words "active" and "tax deductible" are not marketing language — they are the filter we enforce in the database and verify continuously against federal records.',
+      'Daanaa indexes every 501(c)(3) organization the IRS recognizes as active and eligible for tax deductible giving. We check each organization against the IRS automatic revocation list every month. If an organization has lost its tax exempt status, it does not appear in browse or search.',
+      'Most platforms stop at a curated subset. We cover all 1.7 million. The words "active" and "tax deductible" are not marketing language: they are the filter we enforce in the database and verify continuously against federal records.',
     ],
     link: { to: '/legal', label: 'How we source and verify the data' },
   },
@@ -16,16 +16,16 @@ const SECTIONS = [
     tag: 'Who we surface',
     title: 'Including the 97% that go unseen',
     body: [
-      'Most giving platforms highlight the same few hundred well known organizations. The other 97% — small community groups, local mutual aid networks, neighborhood health clinics, regional arts organizations — are registered, active, and doing real work. They just lack the staff and budget to build a public profile.',
+      'Most giving platforms highlight the same few hundred well known organizations. The other 97% (small community groups, local mutual aid networks, neighborhood health clinics, regional arts organizations) are registered, active, and doing real work. They just lack the staff and budget to build a public profile.',
       'Daanaa treats every organization with equal dignity. A $40,000 food pantry gets the same care as a $40 million hospital foundation. Our hidden gems feature actively surfaces small organizations with strong public context precisely because they are the ones that benefit most from being found.',
     ],
     link: { to: '/directory', label: 'Browse the directory' },
   },
   {
     tag: 'How we present data',
-    title: 'v6 context, not ratings',
+    title: 'V6 context, not ratings',
     body: [
-      'Daanaa does not rate, rank, endorse, or recommend organizations. v6 shows what public records tell us directly and what comparable organizations typically report when direct information is missing. We label the difference clearly; this is context, not a judgment.',
+      'Daanaa does not rate, rank, endorse, or recommend organizations. V6 shows what public records tell us directly and what comparable organizations typically report when direct information is missing. We label the difference clearly; this is context, not a judgment.',
       'No organization can pay to improve its score. No partner can influence how an organization appears. The methodology is public, versioned, and derived entirely from IRS Form 990 filings. We publish it so anyone can check our work.',
     ],
     link: { to: '/methodology', label: 'Read the full methodology' },
@@ -34,7 +34,7 @@ const SECTIONS = [
     tag: 'The giving experience',
     title: 'Easy to give, easy to remember',
     body: [
-      'Finding an organization should be the beginning, not the end. The Giving Wallet lets you save organizations you care about, log the time and money you\'ve given, and return to your list whenever you\'re ready — all without creating an account.',
+      'Finding an organization should be the beginning, not the end. The Giving Wallet lets you save organizations you care about, log the time and money you\'ve given, and return to your list whenever you\'re ready, all without creating an account.',
       'We never process donations, hold donor funds, or issue tax receipts. Every gift goes directly to the nonprofit through their own page. Our role is to make that hand off frictionless and to give you a personal record of the giving that matters to you.',
     ],
     link: { to: '/wallet', label: 'Learn about the Giving Wallet' },
@@ -43,7 +43,7 @@ const SECTIONS = [
     tag: 'How we operate',
     title: 'Independent and evidence based',
     body: [
-      'No organization can pay for placement, change its public context, or suppress how it appears on Daanaa. No partner or sponsor can influence what users see. Independence is structural — there is no mechanism in the platform for money to change how an organization ranks or appears.',
+      'No organization can pay for placement, change its public context, or suppress how it appears on Daanaa. No partner or sponsor can influence what users see. Independence is structural: there is no mechanism in the platform for money to change how an organization ranks or appears.',
       'Every trust signal comes from public IRS data, NCCS financial summaries, or ProPublica 990 records. When we use AI to generate a mission summary, we label it clearly. When data is incomplete or stale, we say so. We do not present assumptions as facts.',
     ],
     links: [
@@ -65,7 +65,7 @@ const SECTIONS = [
 export default function About() {
   usePageMeta(
     'About Daanaa',
-    'Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with independent, evidence based financial context so giving is easy to understand, easy to record, and easy to return to.'
+    'Daanaa is a public directory of every active 501(c)(3) in America (including the 97% that go unseen) organized with independent, evidence based financial context so giving is easy to understand, easy to record, and easy to return to.'
   )
 
   return (
@@ -83,7 +83,7 @@ export default function About() {
 
           {/* Canonical identity statement */}
           <p className="font-display italic text-warm-cream max-w-[820px] h2-display">
-            Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy to understand, easy to record, and easy to return to.
+            Daanaa is a public directory of every active 501(c)(3) in America (including the 97% that go unseen) organized with financial context so giving is easy to understand, easy to record, and easy to return to.
           </p>
 
           {/* Positioning line */}
@@ -91,7 +91,7 @@ export default function About() {
             {[
               'Independent of paid influence.',
               'Evidence based on public IRS data.',
-              'No ratings. Every organization benchmarked within its true peer group — never against a different type or size.',
+              'No ratings. Every organization benchmarked within its true peer group, never against a different type or size.',
               'Equal dignity for the small org doing extraordinary work as for the large one everyone has heard of.',
             ].map(line => (
               <p key={line} className="font-body text-body-lg text-muted-cream leading-[1.6]">{line}</p>
@@ -234,10 +234,10 @@ export default function About() {
             </div>
             <div className="space-y-4">
               <p className="font-body text-body-lg text-cool-grey leading-[1.7]">
-                When a nonprofit hasn't filed a mission statement with the IRS, we use AI to read the available filing data and write a starting-point description — the way a research volunteer would read an annual report and draft a summary paragraph. We label every AI-generated description clearly. Any organization can replace it at any time with their own words. You should verify anything important directly with the organization.
+                When a nonprofit hasn't filed a mission statement with the IRS, we use AI to read the available filing data and write a starting-point description, the way a research volunteer would read an annual report and draft a summary paragraph. We label every AI-generated description clearly. Any organization can replace it at any time with their own words. You should verify anything important directly with the organization.
               </p>
               <p className="font-body text-body-lg text-cool-grey leading-[1.7]">
-                AI never touches financial data, scores, or peer benchmarks. Those come directly from IRS records. AI fills gaps in the written record — it does not shape the numbers. We run our AI locally on our own servers, not through third party cloud services, which means organization data stays within the platform. AI outputs are reviewable, correctable, and clearly labeled wherever they appear.
+                AI never touches financial data, scores, or peer benchmarks. Those come directly from IRS records. AI fills gaps in the written record; it does not shape the numbers. We run our AI locally on our own servers, not through third party cloud services, which means organization data stays within the platform. AI outputs are reviewable, correctable, and clearly labeled wherever they appear.
               </p>
             </div>
           </div>

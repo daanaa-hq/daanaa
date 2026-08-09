@@ -15,12 +15,12 @@ const faqItems: FAQItem[] = [
   {
     question: 'What information do donors want to see?',
     icon: '💡',
-    answer: `Donors want to understand: (1) What your mission is—what problem you solve, (2) What programs you run—what you actually do, (3) How they can help—donate link or volunteer, (4) Where you work—geographic area. Fill these four fields and your profile is 100% complete.`
+    answer: `Donors want to understand: (1) what your mission is, the problem you solve, (2) what programs you run, what you actually do, (3) how they can help, donate link or volunteer, (4) where you work, geographic area. Fill these four fields and your profile is 100% complete.`
   },
   {
     question: 'How long until my profile changes appear?',
     icon: '⏱️',
-    answer: `Changes appear to donors within 5 minutes of you clicking "Save." No approval needed—you control when your information updates. This is your organization's data, so edits are published immediately.`
+    answer: `Changes appear to donors within 5 minutes of you clicking "Save." No approval needed: you control when your information updates. This is your organization's data, so edits are published immediately.`
   },
   {
     question: 'What if I make a mistake after approving hours?',
@@ -28,9 +28,9 @@ const faqItems: FAQItem[] = [
     answer: `You can reject hours within 30 days of approval. Once 30 days have passed, approved hours are locked (this prevents retroactive changes). If you need to correct something after 30 days, reach out to Daanaa support.`
   },
   {
-    question: 'How is v6 financial context calculated?',
+    question: 'How is V6 financial context calculated?',
     icon: '📊',
-    answer: `v6 uses public filing data to show direct or inferred context among comparable organizations. It does not rate your organization or measure mission effectiveness. When data is missing, v6 says so instead of inventing a number.`
+    answer: `V6 uses public filing data to show direct or inferred context among comparable organizations. It does not rate your organization or measure mission effectiveness. When data is missing, V6 says so instead of inventing a number.`
   },
   {
     question: 'Can I mark information as private or request removal?',
@@ -40,7 +40,7 @@ const faqItems: FAQItem[] = [
   {
     question: 'How do I get more volunteer sign-ups?',
     icon: '👥',
-    answer: `Create events in your events dashboard and share the QR code or volunteer link. Make sure your profile is complete—donors check your mission and programs before volunteering. The clearer your description, the more aligned volunteers you'll attract.`
+    answer: `Create events in your events dashboard and share the QR code or volunteer link. Make sure your profile is complete: donors check your mission and programs before volunteering. The clearer your description, the more aligned volunteers you'll attract.`
   },
   {
     question: 'What does "nonprofit-supplied" vs "IRS" mean?',

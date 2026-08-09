@@ -29,7 +29,7 @@ const FAQS = [
   },
   {
     q: 'What happens when an organization\'s finances are missing?',
-    a: 'v6 may show financial patterns reported by a reasonable peer group—organizations comparable by category, geography, scale, and funding pattern. That is reference context, not an estimate of the organization\'s own finances. If the peer evidence is too weak, we show limited context instead.',
+    a: 'V6 may show financial patterns reported by a reasonable peer group: organizations comparable by category, geography, scale, and funding pattern. That is reference context, not an estimate of the organization\'s own finances. If the peer evidence is too weak, we show limited context instead.',
   },
   {
     q: 'What were Lamp Tiers?',
@@ -140,17 +140,17 @@ export default function Methodology() {
             {/* Critical disclaimer */}
             <div className="mt-12 mb-2 p-6 bg-white border-2 border-deep-navy/10 rounded-2xl max-w-[760px]">
               <p className="font-body text-lead font-semibold text-deep-navy leading-[1.6]">
-                Peer Financial Context is not a rating, endorsement, impact score, or recommendation. Daanaa does not rank human worth — we organize public information so people can give more thoughtfully.
+                Peer Financial Context is not a rating, endorsement, impact score, or recommendation. Daanaa does not rank human worth. We organize public information so people can give more thoughtfully.
               </p>
             </div>
 
             <Section id="overview" label="Our foundation" title="What Daanaa is, and what it isn't">
               <p>
-                Daanaa is a public directory of every active 501(c)(3) in America — independent of paid influence, not affiliated with the IRS or any rating agency, and not a donation processor.{' '}
+                Daanaa is a public directory of every active 501(c)(3) in America: independent of paid influence, not affiliated with the IRS or any rating agency, and not a donation processor.{' '}
                 <Link to="/about" className="text-soft-gold hover:text-bright-gold font-medium">How we approach this →</Link>
               </p>
               <Callout>
-                v6 is the public peer-context system on every organization page. It shows what public records tell us directly and, when direct data is missing, what similar organizations typically report. It is context for a giving decision—not a rating, endorsement, impact score, or recommendation.
+                V6 is the public peer-context system on every organization page. It shows what public records tell us directly and, when direct data is missing, what similar organizations typically report. It is context for a giving decision, not a rating, endorsement, impact score, or recommendation.
               </Callout>
             </Section>
 
@@ -179,7 +179,7 @@ export default function Methodology() {
 
             <Section id="peer-financial-context" label="The financial picture" title="How peer financial context works">
               <p>
-                v6 does not grade an organization or judge its work. It presents a small set of financial facts and peer patterns so donors can ask better questions. The result never claims to describe more than the public evidence supports.
+                V6 does not grade an organization or judge its work. It presents a small set of financial facts and peer patterns so donors can ask better questions. The result never claims to describe more than the public evidence supports.
               </p>
               <p>
                 We use two dimensions to find organizations that are truly comparable:
@@ -194,12 +194,12 @@ export default function Methodology() {
                 <div className="p-4 bg-white rounded-lg border border-light-grey">
                   <p className="font-body text-body font-semibold text-deep-navy">Revenue band</p>
                   <p className="font-body text-body text-cool-grey mt-1">
-                    Revenue is used when it is available to avoid comparing organizations of very different scale. We do not invent revenue when it is missing. In that case, v6 shows a broader or descriptive context and says what is not known.
+                    Revenue is used when it is available to avoid comparing organizations of very different scale. We do not invent revenue when it is missing. In that case, V6 shows a broader or descriptive context and says what is not known.
                   </p>
                 </div>
               </div>
               <p className="mt-4">
-                Where public filings support it, v6 shows a reserve-related metric and the range reported by the peer group. The page identifies the source years, peer group, and uncertainty. A peer pattern is not a prediction of what an organization has or will do.
+                Where public filings support it, V6 shows a reserve-related metric and the range reported by the peer group. The page identifies the source years, peer group, and uncertainty. A peer pattern is not a prediction of what an organization has or will do.
               </p>
 
               <div className="mt-6">
@@ -354,7 +354,7 @@ export default function Methodology() {
                   { freq: 'Monthly', what: 'ProPublica data for organizations with new financial reports' },
                   { freq: 'Monthly', what: 'IRS financial data update for newly published years' },
                   { freq: 'Monthly', what: 'IRS tax-exempt status check against the federal auto-revocation list' },
-                  { freq: 'Ongoing', what: 'v6 peer context recalculated after underlying data updates' },
+                  { freq: 'Ongoing', what: 'V6 peer context recalculated after underlying data updates' },
                 ].map(({ freq, what }, i) => (
                   <div key={`${freq}-${i}`} className="flex gap-4 items-start">
                     <span className="shrink-0 font-body text-small font-semibold text-soft-gold w-20">{freq}</span>

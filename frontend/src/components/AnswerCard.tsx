@@ -94,7 +94,7 @@ function NoDataBanner({ org }: { org: ApiOrganization }) {
         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       <p className="font-body text-small text-muted-cream leading-[1.55]">
-        This organization appears in our nonprofit records. Tax deductibility is shown separately and is not verified here. v6 peer financial context appears below when the public record supports it; otherwise, we say what is not known.
+        This organization appears in our nonprofit records. Tax deductibility is shown separately and is not verified here. V6 peer financial context appears below when the public record supports it; otherwise, we say what is not known.
         {year && ` Doing the work since ${year}.`}
       </p>
     </div>
