@@ -1304,22 +1304,29 @@ def _filtered_orgs(ntee1, state, nteecc_filter, page, per_page):
 _EIN_RE = re.compile(r'^\d{9}$')
 
 def get_v6_context(ein_clean, db):
-    """Fetch v6 financial context from database.
+    """Fetch v6 financial context from registry_enriched directly.
 
-    Source of truth is the `v6_context` table (projected from
-    registry_enriched.scoring_tier), because that is the taxonomy the shipped
-    frontend actually keys on: TrustBadge.tsx compares scoring_tier literally
-    against '1_Full_Context' / '2_Regional_Context'. The older
-    v6_peer_context_assignments table uses a different 5-tier vocabulary
-    ('1_direct', '2_regional_conditional', ...) which silently degrades every
-    badge to 'partial' — wrong without looking broken. Kept as fallback only.
+    Queries the columns scripts/merit_scorer_v6_0.py actually writes:
+    scoring_tier, tier_label, confidence, peer_group_size,
+    peer_group_description. These are the real taxonomy the shipped frontend
+    keys on -- TrustBadge.tsx and FinancialContext.tsx compare scoring_tier
+    literally against '1_Full_Context' / '2_Regional_Context' / etc.
+
+    2026-08-08 fix: this used to read peer_group_size_v6 /
+    peer_group_description_v6 (and, in a fallback, v6_peer_context_assignments
+    entirely) -- a separate, disjoint pipeline. Row-level check: scoring_tier
+    and scoring_tier_v6_inference (the column backing that _v6-suffixed field
+    family) agree on 58 of 2,056,834 rows. Reading from that family and
+    merging it into org_data was overwriting correct precomputed values with
+    unrelated ones. Query registry_enriched directly instead of relying on a
+    separate v6_context table/legacy run -- one source, verified against the
+    scorer that actually writes it.
     """
     try:
         cursor = db.execute('''
             SELECT scoring_tier, tier_label, confidence,
-                   peer_group_size_v6, peer_group_description_v6,
-                   confidence_margin_v6, is_inferred_v6
-            FROM v6_context WHERE EIN = ? LIMIT 1
+                   peer_group_size, peer_group_description
+            FROM registry_enriched WHERE EIN = ? LIMIT 1
         ''', (ein_clean,))
         row = cursor.fetchone()
         if row and row[0]:
@@ -1329,54 +1336,11 @@ def get_v6_context(ein_clean, db):
                 'confidence': row[2],
                 'peer_group_size': row[3],
                 'peer_group_description': row[4],
-                'confidence_margin': row[5],
-                'is_inferred': row[6],
-            }
-    except Exception as e:
-        app.logger.debug(f"v6_context lookup failed for {ein_clean}: {e}")
-
-    # Fallback: legacy peer-context run (different tier vocabulary).
-    try:
-        run_id = os.environ.get('V6_CANDIDATE_RUN_ID', 'v6_foundation_candidate_20260728_revised')
-        cursor = db.execute('''
-            SELECT
-                tier, selected_tier, peer_group_description,
-                peer_count, scoreable_peer_count,
-                peer_median, peer_p25, peer_p75,
-                confidence, confidence_margin,
-                revenue_band, revenue_band_source,
-                ntee_level, ntee_code,
-                geography_scope, geography_value,
-                is_inferred, data_status
-            FROM v6_peer_context_assignments
-            WHERE run_id = ? AND EIN = ?
-            LIMIT 1
-        ''', (run_id, ein_clean))
-        row = cursor.fetchone()
-        if row:
-            return {
-                'tier': row[0],
-                'selected_tier': row[1],
-                'peer_group_description': row[2],
-                'peer_count': row[3],
-                'scoreable_peer_count': row[4],
-                'peer_median': row[5],
-                'peer_p25': row[6],
-                'peer_p75': row[7],
-                'confidence': row[8],
-                'confidence_margin': row[9],
-                'revenue_band': row[10],
-                'revenue_band_source': row[11],
-                'ntee_level': row[12],
-                'ntee_code': row[13],
-                'geography_scope': row[14],
-                'geography_value': row[15],
-                'is_inferred': row[16],
-                'data_status': row[17],
             }
     except Exception as e:
         app.logger.debug(f"v6 context lookup failed for {ein_clean}: {e}")
     return None
+
 
 @app.route('/api/organizations/<ein>')
 def get_organization(ein):

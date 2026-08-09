@@ -208,7 +208,7 @@ def main():
             },
             {
                 'name': 'Regional Context',
-                'description': 'Compared within a broader regional peer group.',
+                'description': 'The regional group was too small, so this compares organizations of similar type and size nationally instead.',
             },
             {
                 'name': 'Broad Category',

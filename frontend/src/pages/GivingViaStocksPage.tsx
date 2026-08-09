@@ -170,7 +170,7 @@ export default function GivingViaStocksPage() {
               <h3 className="font-display text-deep-navy text-title-sm mb-3">How Daanaa works</h3>
               <p className="font-body text-body text-cool-grey leading-[1.65]">
                 <strong>Daanaa does NOT process your stock transfer.</strong> We show you the nonprofit's contact information and help you find organizations.
-                You work directly with the nonprofit and your broker. Your stock goes directly to them — not through Daanaa.
+                You work directly with the nonprofit and your broker. Your stock goes directly to them, not through Daanaa.
               </p>
               <p className="font-body text-small text-muted-cream/70 mt-3">
                 This keeps us independent and keeps your gift direct.

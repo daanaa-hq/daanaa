@@ -277,7 +277,7 @@ export default function Methodology() {
                 <div className="mt-4 space-y-3">
                   {[
                     { label: "Full context", what: "Compared with organizations of similar type, size, and region." },
-                    { label: "Regional context", what: "Compared within a broader regional peer group." },
+                    { label: "Regional context", what: "The regional group was too small, so this compares organizations of similar type and size nationally instead." },
                     { label: "Broad category", what: "Compared across a wider category when a closer peer group was too small to be meaningful." },
                     { label: "Category only", what: "We can describe the kind of work, but the public record does not yet support a peer comparison." },
                   ].map(({ label, what }) => (

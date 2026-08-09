@@ -39,17 +39,19 @@ within ~75–90 days. Lower priority; Every.org covers the reachable majority fi
 ## Trust & brand
 
 ### P3 — Finish the em-dash-as-connector sweep (donor-facing pages only)
-**What:** 2026-08-09 fixed ~40 em-dash-as-connector instances across 14 core pages
-(About, Approach, Legal, Terms, VendorPolicy, Privacy, Methodology2, research/
-nonprofit components). A full-repo grep found em-dashes in 90+ files total.
-Codex's sampled classification: most of the remainder splits between legitimate
-parenthetical use (leave alone) and admin/internal tooling nobody reads for voice
-(also leave alone) — but a real donor-facing remainder is still untouched:
-the giving-via-* page family (checks, stocks, workplace, recurring, crypto, DAF,
-routers), remaining research components (ResearchAbout, ResearchFinancialArchetypes,
-ResearchLimitations, ResearchPeerContext, ResearchProblem), and the main app pages
-(Directory, Home, OrganizationDetail, ComparePage, WalletPage — spot-check first,
-some may already be clean from today's earlier design-review passes).
+**What:** 2026-08-08/09 fixed ~50 em-dash-as-connector instances across 17 core
+pages (About, Approach, Legal, Terms, VendorPolicy, Privacy, Methodology2, and
+research/nonprofit components — including GivingViaChecksPage, GivingViaStocksPage,
+GivingViaRoutersPage, ResearchAbout, ResearchProblem, ResearchPeerContext,
+ResearchLimitations, all done as of 2026-08-08). A full-repo grep found em-dashes
+in 90+ files total. Codex's sampled classification: most of the remainder splits
+between legitimate parenthetical use (leave alone) and admin/internal tooling
+nobody reads for voice (also leave alone) — but a real donor-facing remainder is
+still untouched: the rest of the giving-via-* page family (workplace, recurring,
+crypto, DAF), ResearchFinancialArchetypes (already rewritten wholesale off v5 for
+the V6 migration, so re-check it's clean rather than re-diffing), and the main app
+pages (Directory, Home, OrganizationDetail, ComparePage, WalletPage — spot-check
+first, some may already be clean from earlier design-review passes).
 **Why:** Same copy-voice rule ("no dashes as connectors") the first pass fixed;
 just didn't fit in one session given the true scope wasn't known until a full
 grep ran mid-pass.
@@ -63,6 +65,59 @@ editing, verify tsc/eslint/build after. Skip UI placeholder glyphs (bare "—" f
 missing table values) and title-separator patterns ("Page Title — Daanaa") — those
 aren't the connector pattern the rule targets.
 **Depends on:** None.
+
+### P2 — Research page V6 migration follow-ups: interactive peer-group funnel + EIN peer lookup
+**What:** 2026-08-08 the Research page's peer-context content was rewritten off
+retired v5 fields onto real V6 fields (`build_v6()` in
+`scripts/export_research_snapshot.py`, `ResearchFinancialArchetypes.tsx`,
+`ResearchPeerContext.tsx`, `ResearchSpending.tsx`, `ResearchDataMovement.tsx`).
+Also fixed in that pass: a literal "CAUTION:" tooltip leak (now removed along
+with the whole v5 health-signal concept, which V6 has no equivalent of), and a
+silently-broken `build_spending()` query that had been returning zero rows since
+its archetype-label strings didn't match the DB (Program Spending chart was empty
+on the live site; now grouped by scoring_tier instead and populated). Coverage
+finding worth keeping visible: 99.8% of active, deductible orgs land in one of the
+4 V6 context tiers (only 0.2% unscored) — the reference-class widening design
+(narrow peer group → wider region → wider category → archetype-only) is *why*
+coverage is near-universal, and that's not yet said plainly anywhere on the site.
+
+Two product ideas came out of that investigation, reviewed with Codex
+(2026-08-08), founder decided to scope this pass down and defer both:
+1. **Guided peer-group funnel** (methodology/research page demo): step through
+   archetype → size band → region, see the live peer count and which of the 4
+   tiers you land in. Codex: worth building, low risk, aggregate-only (no org
+   search), backed by the existing `v6_conditional_band_context` table
+   (52.8K peer-group rows with `archetype`, `revenue_band`, `geography_scope`,
+   `geography_value`, `peer_count` already materialized — no new pipeline needed).
+2. **"Show my peer group"** (EIN/org-name lookup): see up to ~10-25 other orgs in
+   the same peer group. Codex: build only after (1) validates demand; needs a new
+   backend endpoint resolving EIN/name → `v6_peer_context_assignments` (latest
+   run_id) → peer_group_key → sibling EINs; explicit safety rails — no sort by
+   score, no "leaderboard" framing, minimum-group-size handling so tiny groups
+   don't create pseudo-precision, disclaimer copy ("share a comparison frame, not
+   necessarily similar in programs, quality, or impact"), no logging tied to
+   identity.
+
+Real citations gathered for the "is peer benchmarking legitimate" question
+(for whichever of these ships, and for the Methodology page's academic grounding):
+[Flyvbjerg 2008 on reference-class forecasting](https://doi.org/10.1080/09654310701747936),
+[Festinger 1954 on social comparison](https://doi.org/10.1177/001872675400700202),
+[Taylor & Lobel 1989 on upward-comparison threat](https://doi.org/10.1037/0033-295X.96.4.569)
+(the caveat: comparison isn't inherently non-shaming, framing matters),
+[Coupet et al. 2021 on nonprofit peer benchmarking](https://doi.org/10.1177/0899764020977670),
+[Bowman 2011 on nonprofit financial capacity benchmarks](https://doi.org/10.1002/nml.20039),
+[CPA Journal practice guidance](https://www.cpajournal.com/2019/06/05/using-ratio-analysis-to-manage-not-for-profit-organizations/)
+on comparing against small similar-mission peer groups rather than universal
+thresholds.
+**Why deferred:** Both are new product surfaces (new UI, in idea 2's case a new
+aggregate endpoint; in idea 3's case a new lookup endpoint + privacy review), not
+text/data fixes — Methodology-gated per CLAUDE.md ("changes to how... peer groups
+are derived, and to the published pages that explain them"). Founder chose to ship
+the data-correctness fix alone this pass and scope the features separately.
+**Depends on:** Confirming discrete V6 dimensions per-org (not just the combined
+`tier_label` string) are queryable at acceptable latency — `v6_peer_context_assignments`
+has 9.36M rows across historical `run_id`s; needs a "latest run" filter defined
+before either feature queries it.
 
 ### P3 — Nested `<a>` inside `<a>` on org cards (HTML validity / hydration warning)
 **What:** `OrgCard.tsx:336`'s cause-tag link renders inside `OrgCard.tsx:273`'s
