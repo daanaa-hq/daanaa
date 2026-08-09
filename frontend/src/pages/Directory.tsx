@@ -14,6 +14,7 @@ import { RAIL_CATEGORIES, ALL_CATEGORIES, NTEE_SUBCATEGORIES } from '../data/cat
 import { US_STATES, US_TERRITORIES, US_MILITARY } from '../data/locations'
 import { trackSearchMetrics } from '../lib/analytics'
 import { parseLocationQuery } from '../utils/locationQuery'
+import { sentenceCase } from '../utils/sentenceCase'
 
 const FILTER_CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -58,7 +59,11 @@ function OrgCardApi({ org, listView = false }: { org: ApiOrganization; listView?
     assets: 0,
     employees: 0,
     founded: 0,
-    mission: org.mission || '',
+    // sentenceCase (2026-08-09): OrganizationDetail.tsx's adaptOrg() already
+    // does this; Directory's card-building path was missed, so every card's
+    // mission snippet rendered raw IRS Form 990 casing (often all-caps) --
+    // "shouting" stacked on an already-uppercase org name and category label.
+    mission: sentenceCase(org.mission) || '',
     programs: [] as string[],
     leadership: [] as { name: string; title: string; initials: string }[],
     boardSize: 0,
@@ -521,14 +526,21 @@ export default function Directory() {
                 because they're the point of the directory. */}
             {searchMode === 'browse' && <div className="flex items-center gap-2 flex-wrap pb-4">
             {/* Discovery toggles — each keeps its own color (even when off) + a tooltip */}
+            {/* Colors sourced from DESIGN.md CSS vars, not literal hex (2026-08-09
+                design-system-alignment fix). 'Lower reported reserve' moved off an
+                unauthorized violet (#7C3AED, not in any documented palette --
+                also the AI-slop blacklist's #1 flagged color family) onto
+                civic-teal, DESIGN.md's tertiary token: distinct from gold/green,
+                and neutral rather than alarming, matching the toggle's own
+                "context, not a judgment" copy. */}
             {[
-              { key: 'hg', label: 'Hidden gems', tip: 'Small, financially healthy, lower profile orgs. A fresh set each week.', on: hiddenGem, color: '#C9A96E', textOn: '#0A1628',
+              { key: 'hg', label: 'Hidden gems', tip: 'Small, financially healthy, lower profile orgs. A fresh set each week.', on: hiddenGem, color: 'var(--soft-gold-rgb)', textOn: 'var(--charcoal-rgb)',
                 icon: <><path d="M6 3h12l4 6-10 13L2 9z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></>,
                 toggle: () => { setHiddenGem(!hiddenGem); setCurrentPage(1); scrollTop() } },
-              { key: 'ns', label: 'Lower reported reserve', tip: 'Show organizations with a lower reported reserve metric. This is context, not a judgment of the work.', on: needsSupport, color: '#7C3AED', textOn: '#FFFFFF',
+              { key: 'ns', label: 'Lower reported reserve', tip: 'Show organizations with a lower reported reserve metric. This is context, not a judgment of the work.', on: needsSupport, color: 'var(--civic-teal-rgb)', textOn: '255 255 255',
                 icon: <><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></>,
                 toggle: () => { setNeedsSupport(!needsSupport); setCurrentPage(1); scrollTop() } },
-              { key: 'rev', label: 'Has revenue data', tip: 'Show only orgs with reported financial data.', on: showOnlyWithRevenue, color: '#059669', textOn: '#FFFFFF',
+              { key: 'rev', label: 'Has revenue data', tip: 'Show only orgs with reported financial data.', on: showOnlyWithRevenue, color: 'var(--success-green-rgb)', textOn: '255 255 255',
                 icon: <><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></>,
                 toggle: () => { setShowOnlyWithRevenue(!showOnlyWithRevenue); setCurrentPage(1); scrollTop() } },
             ].map(t => (
@@ -537,14 +549,14 @@ export default function Directory() {
                 onClick={t.toggle}
                 title={t.tip}
                 aria-pressed={t.on}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-body text-[12.5px] font-medium border transition-all duration-150"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-body text-caption font-medium border transition-all duration-150"
                 style={{
-                  backgroundColor: t.on ? t.color : `${t.color}12`,
-                  color: t.on ? t.textOn : '#374151',
-                  borderColor: t.on ? t.color : `${t.color}59`,
+                  backgroundColor: t.on ? `rgb(${t.color})` : `rgb(${t.color} / 0.07)`,
+                  color: t.on ? `rgb(${t.textOn})` : 'rgb(var(--slate-rgb))',
+                  borderColor: t.on ? `rgb(${t.color})` : `rgb(${t.color} / 0.35)`,
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.on ? t.textOn : t.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.on ? `rgb(${t.textOn})` : `rgb(${t.color})`} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   {t.icon}
                 </svg>
                 {t.label}
@@ -708,11 +720,11 @@ export default function Directory() {
                   aria-label="Search radius in miles"
                   className="h-[34px] pl-2 pr-6 rounded-r-full font-body text-caption border outline-none appearance-none cursor-pointer transition-all duration-150"
                   style={{
-                    backgroundColor: near ? '#C9A96E15' : 'transparent',
-                    color: near ? '#0A1628' : '#9CA3AF',
-                    borderColor: near ? '#C9A96E' : '#E5E0DB',
+                    backgroundColor: near ? 'rgb(var(--soft-gold-rgb) / 0.08)' : 'transparent',
+                    color: near ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))',
+                    borderColor: near ? 'rgb(var(--soft-gold-rgb))' : 'rgb(var(--light-grey-rgb))',
                     borderLeft: '1px solid',
-                    borderLeftColor: near ? '#C9A96E80' : '#E5E0DB',
+                    borderLeftColor: near ? 'rgb(var(--soft-gold-rgb) / 0.5)' : 'rgb(var(--light-grey-rgb))',
                   }}
                 >
                   <option value={5}>5mi</option>
@@ -808,9 +820,9 @@ export default function Directory() {
                         onClick={() => handleSubChange(sub.code)}
                         className="px-3 py-1 rounded-full font-body text-label transition-all duration-150 border"
                         style={{
-                          backgroundColor: on ? '#0A1628' : 'transparent',
-                          color: on ? '#F5F0EB' : '#6B7280',
-                          borderColor: on ? '#0A1628' : '#E5E0DB',
+                          backgroundColor: on ? 'rgb(var(--deep-navy-rgb))' : 'transparent',
+                          color: on ? 'rgb(var(--warm-cream-rgb))' : 'rgb(var(--slate-rgb))',
+                          borderColor: on ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--light-grey-rgb))',
                         }}
                       >
                         {sub.label}
@@ -1190,8 +1202,8 @@ export default function Directory() {
                               onClick={() => { setCurrentPage(page); scrollTop() }}
                               className="w-8 h-8 flex items-center justify-center rounded-full font-body text-body transition-all duration-150"
                               style={{
-                                backgroundColor: currentPage === page ? '#C9A96E' : 'transparent',
-                                color: currentPage === page ? '#0A1628' : '#6B7280',
+                                backgroundColor: currentPage === page ? 'rgb(var(--soft-gold-rgb))' : 'transparent',
+                                color: currentPage === page ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))',
                               }}
                             >
                               {page}
