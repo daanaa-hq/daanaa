@@ -18,11 +18,6 @@ function formatPercent(value: number | null): string {
   return `${value.toFixed(1)}%`
 }
 
-function formatScore(value: number | null): string {
-  if (value === null || value === undefined) return '—'
-  return value.toFixed(1)
-}
-
 function formatMonths(value: number | null): string {
   if (value === null || value === undefined) return '—'
   return `${value.toFixed(1)}mo`
@@ -66,8 +61,8 @@ export default function ResearchFinancialArchetypes({
 
   const tiers = v6Data.tiers || []
   const totalActive = v6Data.total_active || 0
-  const totalScored = v6Data.total_scored || 0
-  const coveragePct = v6Data.coverage_pct ?? 0
+  const totalPlaced = v6Data.total_placed || 0
+  const placementCoveragePct = v6Data.placement_coverage_pct ?? 0
 
   return (
     <div>
@@ -75,20 +70,22 @@ export default function ResearchFinancialArchetypes({
         Peer Context Coverage
       </h2>
       <p className="text-lg text-cool-grey mb-6 max-w-2xl">
-        Every organization gets compared to a peer group, chosen as narrowly as the public
-        record allows. When there isn't enough data for a tight comparison, the group
-        widens step by step. This is the reference-class approach: use the narrowest
-        comparable set with enough data, and widen it only when there isn't enough.
+        Every organization is placed into a context tier that says how specific its peer
+        comparison is. When there isn't enough data for a tight comparison, the group widens
+        one step at a time: drop region, then drop revenue band. This is the reference-class
+        approach: use the narrowest comparable set with enough data, and widen it only when
+        there isn't enough.
       </p>
 
       {/* Coverage summary */}
       <div className="mb-12 bg-soft-gold/10 border border-soft-gold/20 rounded-lg p-5 max-w-2xl">
         <p className="text-sm text-deep-navy">
-          <span className="font-display text-2xl text-deep-navy mr-2">{coveragePct}%</span>
+          <span className="font-display text-2xl text-deep-navy mr-2">{placementCoveragePct}%</span>
           of the {totalActive.toLocaleString()} active, tax-deductible organizations we track
-          land in one of the four context tiers below ({totalScored.toLocaleString()} orgs).
-          The rest ({(totalActive - totalScored).toLocaleString()}) don't yet have enough
-          public financial data to place in any tier.
+          are placed into one of the four tiers below ({totalPlaced.toLocaleString()} orgs).
+          The rest ({(totalActive - totalPlaced).toLocaleString()}) are missing the category or
+          location data a tier assignment needs. Three of the four tiers include an actual peer
+          comparison; the fourth, Archetype Only, does not.
         </p>
       </div>
 
@@ -127,9 +124,10 @@ export default function ResearchFinancialArchetypes({
       <div className="mb-12">
         <h3 className="text-xl font-semibold text-deep-navy mb-4">Tier averages</h3>
         <p className="text-sm text-cool-grey mb-6">
-          Peer percentile is a percentile rank of reserve strength within an organization's
-          peer group, not a measure of impact or quality. A lower percentile often means an
-          organization is spending down reserves on programs, not that it is struggling.
+          These are descriptive averages of what organizations in each tier actually report, not
+          a score. Daanaa does not compute a percentile ranking within V6 tiers; the tier itself
+          says how specific the comparison is, and reserves and program spending are shown as
+          reference points.
         </p>
 
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable data table">
@@ -138,7 +136,7 @@ export default function ResearchFinancialArchetypes({
               <tr className="border-b border-light-grey bg-deep-navy/[0.02]">
                 <th className="text-left px-4 py-3 font-semibold text-deep-navy">Context tier</th>
                 <th className="text-right px-4 py-3 font-semibold text-deep-navy">Count</th>
-                <th className="text-right px-4 py-3 font-semibold text-cool-grey">Avg peer percentile</th>
+                <th className="text-right px-4 py-3 font-semibold text-cool-grey">Peer comparison</th>
                 <th className="text-right px-4 py-3 font-semibold text-cool-grey">Avg peer group size</th>
                 <th className="text-right px-4 py-3 font-semibold text-cool-grey">Avg program %</th>
                 <th className="text-right px-4 py-3 font-semibold text-cool-grey">Avg reserves</th>
@@ -156,8 +154,8 @@ export default function ResearchFinancialArchetypes({
                   <td className="px-4 py-3 text-right font-mono text-deep-navy">
                     {t.count.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-cool-grey">
-                    {formatScore(t.avg_percentile)}
+                  <td className="px-4 py-3 text-right text-cool-grey">
+                    {t.has_peer_comparison ? 'Yes' : 'No'}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-cool-grey">
                     {t.avg_peer_group_size ? Math.round(t.avg_peer_group_size).toLocaleString() : '—'}

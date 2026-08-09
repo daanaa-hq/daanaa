@@ -120,8 +120,8 @@ def build_categories(db):
     # pct_beacon/torch/candle/spark dropped from the export 2026-08-09 (lamp-tier
     # retirement, continued -- research_category_summary itself still computes
     # them, but nothing should read tier percentages out of this snapshot).
-    # Still SELECTed here so a schema change to the source table surfaces loudly
-    # as a query error instead of silently returning nothing.
+    # Not SELECTed below on purpose: if the source table's schema ever drops
+    # these columns for real, that's a non-event for this file now.
     rows = db.execute("""
         SELECT ntee1, ntee_label, count, pct_of_total, avg_revenue, avg_peer_percentile
         FROM research_category_summary
@@ -251,6 +251,15 @@ V6_TIER_ORDER = ['1_Full_Context', '2_Regional_Context', '3_Broad_Category', '4_
 
 # Wording matches scripts/precompute_content.py's context_levels exactly, so the
 # Methodology page and the Research page never disagree on what a tier means.
+#
+# Descriptions verified 2026-08-08 against scripts/merit_scorer_v6_0.py, the
+# script that actually writes scoring_tier/tier_label/peer_group_size/confidence.
+# Tier 2 is NOT "a broader regional peer group" -- the scorer drops region
+# entirely at tier 2 (NTEE2 x revenue band, national). That's the opposite of
+# what "Regional Context" implies, so the description below says what the tier
+# actually compares, not what its name suggests. The tier *names* are the
+# scorer's own vocabulary (registry_enriched.scoring_tier values) and aren't
+# renamed here to avoid drifting from the DB.
 V6_TIER_INFO = {
     '1_Full_Context': {
         'name': 'Full Context',
@@ -258,11 +267,11 @@ V6_TIER_INFO = {
     },
     '2_Regional_Context': {
         'name': 'Regional Context',
-        'description': 'Compared within a broader regional peer group.',
+        'description': 'The regional group was too small, so this compares organizations of similar type and size nationally instead.',
     },
     '3_Broad_Category': {
         'name': 'Broad Category',
-        'description': 'Compared across a wider category when a closer peer group was too small to be meaningful.',
+        'description': 'Compared across a wider category, size and region dropped, when a closer peer group was too small to be meaningful.',
     },
     '4_Archetype_Only': {
         'name': 'Archetype Only',
@@ -273,23 +282,33 @@ V6_TIER_INFO = {
 
 def build_v6(db):
     """V6 financial-context taxonomy, computed from the scoring_tier column already
-    in registry_enriched. Peer group = archetype + revenue band + region; when that
-    exact group is too small to be meaningful, the group widens (region drops, then
-    category broadens) until it holds enough peers -- a reference-class approach
-    (find the narrowest comparable set with enough data, widen it when there isn't
-    enough) rather than a single universal yardstick. Score = peer_percentile, a
-    percentile rank of reserve strength within that peer group.
+    in registry_enriched (written by scripts/merit_scorer_v6_0.py). Peer group =
+    NTEE category + revenue band + region, narrowing or widening one dimension at
+    a time (drop region, then drop band) until the group holds enough peers with
+    reserves data -- a reference-class approach (find the narrowest comparable set
+    with enough data, widen it when there isn't enough) rather than a single
+    universal yardstick.
 
-    There is no V6 health-signal bucketing (no HEALTHY/STABLE/CAUTION). V6 measures
-    reserve strength relative to peers, not a verdict on financial health -- that
+    IMPORTANT: V6 assigns a comparison TIER (how specific the peer group is), not
+    a percentile score. There is no per-org percentile in this pipeline -- do not
+    read `peer_percentile` here, that column is written by the older, retired v4
+    lamp-tier scorer under a different (NTEE1 x band, no region) grouping and has
+    nothing to do with the V6 tier shown alongside it. Likewise `peer_group_size`
+    (no suffix, from merit_scorer_v6_0.py) is the real per-tier group size;
+    `peer_group_size_v6`/`confidence_v6`/`scoring_tier_v6_inference` are a separate,
+    largely disjoint pipeline (row-level check 2026-08-08: scoring_tier and
+    scoring_tier_v6_inference agree on 58 of 2,056,834 rows) and must not be used
+    here or anywhere donor-facing until that's reconciled -- see TODOS.md.
+
+    There is no V6 health-signal bucketing (no HEALTHY/STABLE/CAUTION). V6 states
+    how reliable the comparison is, not a verdict on financial health -- that
     distinction is deliberate (Stewardship P4: small orgs treated fairly; P5: no
     shame framing). Only the deductible, non-revoked set is counted.
     """
     rows = db.execute(
         """SELECT scoring_tier,
                   COUNT(*)                              AS count,
-                  ROUND(AVG(peer_percentile), 1)        AS avg_percentile,
-                  ROUND(AVG(peer_group_size_v6), 0)     AS avg_peer_group_size,
+                  ROUND(AVG(peer_group_size), 0)        AS avg_peer_group_size,
                   ROUND(AVG(program_expense_pct), 1)    AS avg_program_pct,
                   ROUND(AVG(CASE WHEN months_of_reserve BETWEEN -120 AND 120
                                  THEN months_of_reserve END), 1) AS avg_months_reserve
@@ -307,13 +326,16 @@ def build_v6(db):
     for key in V6_TIER_ORDER:
         r = by_tier.get(key)
         count = r['count'] if r else 0
+        # Tier 4 has no peer group by definition (that's what "Archetype Only"
+        # means) -- peer_group_size is NULL for those rows in the source data,
+        # so avg_peer_group_size naturally comes back None for this tier.
         tiers.append({
             'key': key,
             'name': V6_TIER_INFO[key]['name'],
             'description': V6_TIER_INFO[key]['description'],
+            'has_peer_comparison': key != '4_Archetype_Only',
             'count': count,
             'pct': round(count * 100 / total, 1),
-            'avg_percentile': r['avg_percentile'] if r else None,
             'avg_peer_group_size': r['avg_peer_group_size'] if r else None,
             'avg_program_pct': r['avg_program_pct'] if r else None,
             'avg_months_reserve': r['avg_months_reserve'] if r else None,
@@ -321,9 +343,9 @@ def build_v6(db):
 
     return {
         'total_active': total,
-        'total_scored': total - unscored,
+        'total_placed': total - unscored,
         'unscored_count': unscored,
-        'coverage_pct': round((total - unscored) * 100 / total, 1),
+        'placement_coverage_pct': round((total - unscored) * 100 / total, 1),
         'tiers': tiers,
     }
 
@@ -426,8 +448,8 @@ def main():
           f"{et['pct_private_foundation']}% private foundation, "
           f"{et['pct_unclassified']}% unclassified")
     v6 = snapshot['v6']
-    print(f"   v6:            {v6['total_scored']:,} scored ({v6['coverage_pct']}% coverage), "
-          f"{len(v6['tiers'])} context tiers")
+    print(f"   v6:            {v6['total_placed']:,} placed in a tier "
+          f"({v6['placement_coverage_pct']}% of active orgs), {len(v6['tiers'])} context tiers")
     mc = snapshot['monthly_changes']
     batch_months = [m['month'] for m in mc if m['is_batch_revocation']]
     print(f"   monthly:       {len(mc)} months, batch-revocation months: {batch_months or 'none'}")

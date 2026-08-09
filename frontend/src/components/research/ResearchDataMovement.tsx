@@ -21,7 +21,7 @@ export default function ResearchDataMovement({
     loadResearchSnapshot()
       .then((snap) => {
         setMonthlyData(snap.monthly_changes ?? [])
-        setHistoricalTotal(snap.v6?.total_scored ?? 0)
+        setHistoricalTotal(snap.v6?.total_placed ?? 0)
       })
       .catch((error) => console.error('Failed to load snapshot:', error))
       .finally(() => setLoading(false))
@@ -258,11 +258,14 @@ export default function ResearchDataMovement({
             </div>
             <div className="border-l-4 border-soft-gold pl-4">
               <div className="flex justify-between items-baseline">
-                <p className="font-semibold text-deep-navy">Current V6 and historical coverage</p>
+                <p className="font-semibold text-deep-navy">Peer context coverage</p>
                 <span className="text-xs text-cool-grey">As of {lastUpdate}</span>
               </div>
               <p className="text-sm text-slate mt-1">
-                Earlier v5 context was shown for {historicalTotal > 0 ? `${historicalTotal.toLocaleString()} organizations` : "the organizations in the archived snapshot"}. That figure is historical only, not current V6 coverage. V6 now gives each indexed organization a context state: reported, peer reference, or limited. The current run should be used for coverage reporting because peer groups and source data can change.
+                {historicalTotal.toLocaleString()} active organizations are placed into one of
+                the four V6 context tiers. Three of the four tiers include an actual peer
+                comparison; the fourth, Archetype Only, means the public record does not yet
+                support one. See "Peer Context Coverage" above for the full breakdown.
               </p>
             </div>
           </div>

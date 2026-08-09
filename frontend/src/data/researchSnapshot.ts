@@ -58,16 +58,16 @@ export interface ResearchSnapshot {
   }
   v6?: {
     total_active: number
-    total_scored: number
+    total_placed: number
     unscored_count: number
-    coverage_pct: number
+    placement_coverage_pct: number
     tiers: Array<{
       key: string
       name: string
       description: string
+      has_peer_comparison: boolean
       count: number
       pct: number
-      avg_percentile: number | null
       avg_peer_group_size: number | null
       avg_program_pct: number | null
       avg_months_reserve: number | null
