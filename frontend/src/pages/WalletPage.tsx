@@ -197,7 +197,7 @@ export default function WalletPage() {
         const tier = org?.scoring_tier
         if (filterState.health === 'full_context') return tier === '1_Full_Context'
         if (filterState.health === 'regional_context') return tier === '2_Regional_Context'
-        if (filterState.health === 'emerging') return tier === '3_Limited_Context' || tier === '4_Archetype_Only'
+        if (filterState.health === 'emerging') return tier === '3_Broad_Category' || tier === '4_Archetype_Only'
         if (filterState.health === 'unscored') return !tier
         return true
       })
@@ -216,7 +216,7 @@ export default function WalletPage() {
         })
         break
       case 'health': {
-        const tierOrder: Record<string, number> = { '1_Full_Context': 0, '2_Regional_Context': 1, '3_Limited_Context': 2, '4_Archetype_Only': 3 }
+        const tierOrder: Record<string, number> = { '1_Full_Context': 0, '2_Regional_Context': 1, '3_Broad_Category': 2, '4_Archetype_Only': 3 }
         sorted.sort((a, b) => {
           const ta = orgDataMap.get(a.ein)?.scoring_tier ?? ''
           const tb = orgDataMap.get(b.ein)?.scoring_tier ?? ''

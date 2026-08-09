@@ -125,7 +125,11 @@ sqlite3 "$DB_PATH" "
 "
 
 echo "API smoke test (existing service only):"
-curl -fsS --max-time 15 "$BASE_URL/api/organizations/000000000/financial-context" | head -c 500 || true
+# /api/organizations/:ein/financial-context never existed as a route -- this
+# always 404'd silently (|| true masked it). V6 context is served on the main
+# org endpoint now (droplet_api.py get_v6_context(), fixed 2026-08-08 to read
+# registry_enriched's real scoring_tier/peer_group_size columns directly).
+curl -fsS --max-time 15 "$BASE_URL/api/organizations/000000000" | head -c 500 || true
 echo
 
 if [[ "$ACTIVATE" == "true" ]]; then
