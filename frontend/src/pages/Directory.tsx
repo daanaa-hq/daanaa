@@ -13,6 +13,7 @@ import type { TierName } from '../components/TrustBadge'
 import { RAIL_CATEGORIES, ALL_CATEGORIES, NTEE_SUBCATEGORIES } from '../data/categories'
 import { US_STATES, US_TERRITORIES, US_MILITARY } from '../data/locations'
 import { trackSearchMetrics } from '../lib/analytics'
+import { trackSearchFilter } from '../utils/analytics'
 import { parseLocationQuery } from '../utils/locationQuery'
 import { sentenceCase } from '../utils/sentenceCase'
 

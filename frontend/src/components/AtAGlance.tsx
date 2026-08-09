@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { ApiOrganization } from '../data/api'
+import { trackAtAGlanceVisible } from '../utils/analytics'
 
 /**
  * AtAGlance: Small Org Clarity Display
@@ -11,9 +13,17 @@ import { ApiOrganization } from '../data/api'
  *
  * All data sourced from Form 990 + website extraction; no new collection.
  * Stewardship P3 (evidence-based), P4 (small org fairness), P5/P6 (honest transparency).
+ *
+ * Phase 3 measurement: Tracks visibility to measure if better display of context
+ * helps small orgs reach parity with large orgs (Gate A.1 reliability).
  */
 export default function AtAGlance({ org }: { org: ApiOrganization }) {
   const { leadership_info, service_scope, org_stability_signal, mission_attribution } = org
+
+  // Track when this section becomes visible for Phase 3 measurement (Gate A.1)
+  useEffect(() => {
+    trackAtAGlanceVisible(service_scope?.revenue_band)
+  }, [service_scope?.revenue_band])
 
   // Don't render if we have no new data
   if (!leadership_info && !service_scope && !org_stability_signal && !mission_attribution) {

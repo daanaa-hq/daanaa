@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { usePageMeta } from '../hooks/usePageMeta'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import OrgCard from '../components/OrgCard'
@@ -23,7 +23,7 @@ import type { ApiOrganization, ScoreSnapshot, ApiFinancialRecord, VolunteerEvent
 import { formatCurrency, formatNumber, formatEIN } from '../data/organizations'
 import { getOrgBadges, getSectorName } from '../utils/badges'
 import { getActionRowLinks } from '../utils/actionRow'
-import { trackEvent } from '../utils/analytics'
+import { trackEvent, trackOrgBookmark } from '../utils/analytics'
 import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import { useAuth } from '../contexts/AuthContext'
@@ -322,6 +322,17 @@ export default function OrganizationDetail() {
   const serviceArea = serviceAreaData ?? null
   const similarApiOrgs: ApiOrganization[] = (similarData?.results ?? []) as ApiOrganization[]
 
+  // Phase 3 measurement: Track bookmarks with org size for small org CTR analysis (Gate A.1)
+  const handleAddToFunding = useCallback((ein: string) => {
+    addToFunding(ein)
+    trackOrgBookmark(apiOrg?.service_scope?.revenue_band)
+  }, [addToFunding, apiOrg?.service_scope?.revenue_band])
+
+  const handleAddToVolunteering = useCallback((ein: string) => {
+    addToVolunteering(ein)
+    trackOrgBookmark(apiOrg?.service_scope?.revenue_band)
+  }, [addToVolunteering, apiOrg?.service_scope?.revenue_band])
+
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [id])
@@ -483,7 +494,7 @@ export default function OrganizationDetail() {
                 kind="funding"
                 variant="icon"
                 isActive={isInFunding(org.ein)}
-                onToggle={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : addToFunding(apiOrg?.EIN ?? org.ein)}
+                onToggle={() => isInFunding(org.ein) ? removeFromFunding(org.ein) : handleAddToFunding(apiOrg?.EIN ?? org.ein)}
                 titleActive="Remove from funding list"
                 titleInactive="Add to funding list"
                 ariaActive="Remove from funding list"
@@ -494,7 +505,7 @@ export default function OrganizationDetail() {
                 kind="volunteering"
                 variant="icon"
                 isActive={isInVolunteering(org.ein)}
-                onToggle={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : addToVolunteering(apiOrg?.EIN ?? org.ein)}
+                onToggle={() => isInVolunteering(org.ein) ? removeFromVolunteering(org.ein) : handleAddToVolunteering(apiOrg?.EIN ?? org.ein)}
                 titleActive="Remove from volunteer list"
                 titleInactive="I want to volunteer here"
                 ariaActive="Remove from volunteer list"
