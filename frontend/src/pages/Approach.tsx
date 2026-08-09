@@ -6,8 +6,8 @@ const SECTIONS = [
     tag: 'Who we cover',
     title: 'Every active 501(c)(3) in America',
     body: [
-      'Daanaa indexes every 501(c)(3) organization that the IRS recognizes as active and eligible for tax-deductible giving. That means we check each organization against the IRS automatic revocation list every month — if an organization has lost its tax-exempt status, it does not appear in browse or search.',
-      'Most platforms stop at a curated subset. We cover all 1.7 million. The words "active" and "tax-deductible" are not marketing language — they are the filter we enforce in the database and verify continuously against federal records.',
+      'Daanaa indexes every 501(c)(3) organization that the IRS recognizes as active and eligible for tax-deductible giving. That means we check each organization against the IRS automatic revocation list every month. If an organization has lost its tax-exempt status, it does not appear in browse or search.',
+      'Most platforms stop at a curated subset. We cover all 1.7 million. The words "active" and "tax-deductible" are not marketing language: they are the filter we enforce in the database and verify continuously against federal records.',
     ],
     link: { to: '/legal#data-sources', label: 'How we source and verify the data' },
   },
@@ -15,7 +15,7 @@ const SECTIONS = [
     tag: 'Who we surface',
     title: 'Including the 97% that go unseen',
     body: [
-      'Most giving platforms highlight the same few hundred well-known organizations. The other 97% — small community groups, local mutual aid networks, neighborhood health clinics, regional arts organizations — are registered, active, and doing real work. They just lack the staff and budget to build a public profile.',
+      'Most giving platforms highlight the same few hundred well-known organizations. The other 97% (small community groups, local mutual aid networks, neighborhood health clinics, regional arts organizations) are registered, active, and doing real work. They just lack the staff and budget to build a public profile.',
       'Daanaa treats every organization with equal dignity. A $40,000 food pantry gets the same care as a $40 million hospital foundation. Our hidden gems feature actively surfaces small organizations with strong financial health precisely because they are the ones that benefit most from being found.',
     ],
     link: { to: '/directory', label: 'Browse the directory' },
@@ -24,7 +24,7 @@ const SECTIONS = [
     tag: 'How we present data',
     title: 'Financial context, not ratings',
     body: [
-      'Daanaa does not rate, rank, endorse, or recommend organizations. We show financial context: where an organization\'s reserves stand relative to genuinely similar organizations — same funding model, similar revenue size, same peer group. A score of 75 means stronger reserves than 75% of its peers. That is a fact derived from public IRS data, not a judgment.',
+      'Daanaa does not rate, rank, endorse, or recommend organizations. We show financial context: where an organization\'s reserves stand relative to genuinely similar organizations (same funding model, similar revenue size, same peer group). A score of 75 means stronger reserves than 75% of its peers. That is a fact derived from public IRS data, not a judgment.',
       'No organization can pay to improve its score. No partner can influence how an organization appears. The methodology is public, versioned, and derived entirely from IRS Form 990 filings. We publish it so anyone can check our work.',
     ],
     link: { to: '/methodology', label: 'Read the full methodology' },
@@ -33,7 +33,7 @@ const SECTIONS = [
     tag: 'The giving experience',
     title: 'Easy to give, easy to remember',
     body: [
-      'Finding an organization should be the beginning, not the end. Daanaa\'s Giving Wallet lets you save organizations you care about, log the time and money you\'ve given, and return to your list whenever you\'re ready to give again — all without creating an account.',
+      'Finding an organization should be the beginning, not the end. Daanaa\'s Giving Wallet lets you save organizations you care about, log the time and money you\'ve given, and return to your list whenever you\'re ready to give again, all without creating an account.',
       'We never process donations, hold donor funds, or issue tax receipts. Every gift goes directly to the nonprofit through their own page. Our role is to make that hand-off clear and to give you a personal record of the giving that matters to you.',
     ],
     link: { to: '/wallet', label: 'Learn about the Giving Wallet' },
@@ -42,7 +42,7 @@ const SECTIONS = [
     tag: 'How we operate',
     title: 'Independent and evidence-based',
     body: [
-      'No organization can pay for placement, boost its score, or suppress how it appears on Daanaa. No partner or sponsor can influence what users see. Independence is structural — there is no mechanism in the platform for money to change how an organization ranks or appears.',
+      'No organization can pay for placement, boost its score, or suppress how it appears on Daanaa. No partner or sponsor can influence what users see. Independence is structural: there is no mechanism in the platform for money to change how an organization ranks or appears.',
       'Every trust signal we show comes from public IRS data, NCCS financial summaries, or ProPublica 990 records. When we use AI to generate a mission summary, we label it clearly. When data is incomplete or stale, we say so. We do not present assumptions as facts.',
     ],
     links: [
@@ -64,7 +64,7 @@ const SECTIONS = [
 export default function Approach() {
   usePageMeta(
     'Our Approach — Daanaa',
-    'How Daanaa covers every active 501(c)(3) in America — including the 97% that go unseen — with independent, evidence-based financial context so giving is easy to understand, easy to record, and easy to return to.'
+    'How Daanaa covers every active 501(c)(3) in America (including the 97% that go unseen) with independent, evidence-based financial context so giving is easy to understand, easy to record, and easy to return to.'
   )
 
   return (
@@ -82,7 +82,7 @@ export default function Approach() {
 
           {/* Canonical identity statement */}
           <p className="font-display italic text-warm-cream leading-[1.1] tracking-[-0.01em] max-w-[820px]">
-            Daanaa is a public directory of every active 501(c)(3) in America — including the 97% that go unseen — organized with financial context so giving is easy to understand, easy to record, and easy to return to.
+            Daanaa is a public directory of every active 501(c)(3) in America (including the 97% that go unseen) organized with financial context so giving is easy to understand, easy to record, and easy to return to.
           </p>
 
           {/* Positioning line */}
@@ -90,7 +90,7 @@ export default function Approach() {
             {[
               'Independent of paid influence.',
               'Evidence-based from public IRS data.',
-              'No ratings. Every organization benchmarked within its true peer group — never against a different type or size.',
+              'No ratings. Every organization benchmarked within its true peer group, never against a different type or size.',
               'Equal dignity for the small org doing extraordinary work as for the large one everyone has heard of.',
             ].map(line => (
               <p key={line} className="font-body text-body-lg text-muted-cream leading-[1.6]">{line}</p>

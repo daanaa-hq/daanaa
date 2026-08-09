@@ -56,7 +56,7 @@ export default function Privacy() {
 
           {/* 2. What we collect */}
           <section>
-            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">What we collect — and what we don't</h2>
+            <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">What we collect, and what we don't</h2>
             <p>We collect different information depending on how you interact with Daanaa.</p>
 
             <div className="mt-6 space-y-6">
@@ -64,7 +64,7 @@ export default function Privacy() {
               <div className="bg-white border border-light-grey rounded-xl p-6">
                 <h3 className="font-display text-deep-navy text-title-sm mb-2">Browsing the directory</h3>
                 <p className="text-body">
-                  No account is required to browse, search, or view any organization page. We do not use cookies for tracking. We use <strong className="text-deep-navy">Plausible Analytics</strong> — a privacy-first analytics tool — to count page views and understand which features are used. Plausible does not use cookies, does not collect any personal information, does not track you across other websites, and does not build advertising profiles. The aggregate data Plausible collects (page views, country, device type, referrer) is never shared with or sold to any third party. You can learn more at <a href="https://plausible.io/privacy" target="_blank" rel="noopener noreferrer" className="text-deep-navy underline hover:text-deep-navy/70">plausible.io/privacy</a>.
+                  No account is required to browse, search, or view any organization page. We do not use cookies for tracking. We use <strong className="text-deep-navy">Plausible Analytics</strong> (a privacy-first analytics tool) to count page views and understand which features are used. Plausible does not use cookies, does not collect any personal information, does not track you across other websites, and does not build advertising profiles. The aggregate data Plausible collects (page views, country, device type, referrer) is never shared with or sold to any third party. You can learn more at <a href="https://plausible.io/privacy" target="_blank" rel="noopener noreferrer" className="text-deep-navy underline hover:text-deep-navy/70">plausible.io/privacy</a>.
                 </p>
               </div>
 
@@ -74,7 +74,7 @@ export default function Privacy() {
                   The Giving Wallet stores organizations you've bookmarked and giving intent you've logged. <strong className="text-deep-navy">No account is required.</strong> By default, wallet data is stored locally on your device using your browser's localStorage. It does not leave your device, and we cannot access it.
                 </p>
                 <p className="mt-3 text-body">
-                  You may optionally sign in with Google to enable sync across your devices. Signing in is not required to use the wallet. When you sign in, Google shares your name and email address with us solely to identify your account for sync purposes. Your wallet data (bookmarks and giving intent only — never transaction records) is synced to our servers and is never shown publicly, never used for marketing or outreach, and can be deleted in full at any time from your account settings.
+                  You may optionally sign in with Google to enable sync across your devices. Signing in is not required to use the wallet. When you sign in, Google shares your name and email address with us solely to identify your account for sync purposes. Your wallet data (bookmarks and giving intent only, never transaction records) is synced to our servers and is never shown publicly, never used for marketing or outreach, and can be deleted in full at any time from your account settings.
                 </p>
               </div>
 
@@ -102,7 +102,7 @@ export default function Privacy() {
               <div className="bg-white border border-light-grey rounded-xl p-6">
                 <h3 className="font-display text-deep-navy text-title-sm mb-2">Nonprofit accounts and partner inquiries</h3>
                 <p className="text-body">
-                  Nonprofits who create an account to manage their page sign in via Google. We receive your name and email from Google for account identification only. Partner and network inquiries submitted through our site go to our inbox so we can respond — we do not add you to any list.
+                  Nonprofits who create an account to manage their page sign in via Google. We receive your name and email from Google for account identification only. Partner and network inquiries submitted through our site go to our inbox so we can respond. We do not add you to any list.
                 </p>
               </div>
 
@@ -149,7 +149,7 @@ export default function Privacy() {
               ))}
             </ul>
             <p className="mt-4">
-              We do not use personal information for marketing, do not create behavioral profiles, and do not use it to train AI models. AI mission generation runs locally on our own servers using publicly available IRS filing data — personal data you submit to Daanaa is never used as AI training input.
+              We do not use personal information for marketing, do not create behavioral profiles, and do not use it to train AI models. AI mission generation runs locally on our own servers using publicly available IRS filing data. Personal data you submit to Daanaa is never used as AI training input.
             </p>
           </section>
 
@@ -285,7 +285,7 @@ export default function Privacy() {
               <p><strong className="text-deep-navy">California (CCPA / CPRA).</strong> California residents may exercise the rights above. We respond within 45 days of a verifiable request. We do not sell or share personal information as those terms are defined under California law.</p>
               <p><strong className="text-deep-navy">Virginia (VCDPA), Colorado (CPA), Connecticut (CTDPA).</strong> Residents of these states have the rights described above. We respond within 45 days. You may appeal a denial by emailing <a href="mailto:privacy@daanaa.org" className="text-deep-navy underline hover:text-deep-navy/70">privacy@daanaa.org</a> with "Privacy Appeal" in the subject line.</p>
               <p><strong className="text-deep-navy">Texas (TDPSA).</strong> Texas residents have the rights described above. We respond within 60 days. You may appeal a denial by emailing <a href="mailto:privacy@daanaa.org" className="text-deep-navy underline hover:text-deep-navy/70">privacy@daanaa.org</a> with "Privacy Appeal" in the subject line.</p>
-              <p><strong className="text-deep-navy">EU and UK (GDPR / UK GDPR).</strong> Daanaa is a U.S.-directed service focused on U.S. nonprofit data. EcoMargins Consulting LLC is the data controller for any personal data submitted to us by EU or UK residents. Our lawful basis for processing varies by activity: for claim data, our basis is Article 6(1)(b) — processing necessary to take steps at the data subject's request prior to entering into an agreement; for contact and inquiry data, our basis is Article 6(1)(f) — legitimate interest in responding to requests. We do not use your data for profiling or automated decision-making. You have the rights to access, correct, erase, restrict, and port your data, and to object to processing. We respond within 30 days. You may also lodge a complaint with your local supervisory authority.</p>
+              <p><strong className="text-deep-navy">EU and UK (GDPR / UK GDPR).</strong> Daanaa is a U.S.-directed service focused on U.S. nonprofit data. EcoMargins Consulting LLC is the data controller for any personal data submitted to us by EU or UK residents. Our lawful basis for processing varies by activity: for claim data, our basis is Article 6(1)(b), processing necessary to take steps at the data subject's request prior to entering into an agreement; for contact and inquiry data, our basis is Article 6(1)(f), legitimate interest in responding to requests. We do not use your data for profiling or automated decision-making. You have the rights to access, correct, erase, restrict, and port your data, and to object to processing. We respond within 30 days. You may also lodge a complaint with your local supervisory authority.</p>
             </div>
 
             <p className="mt-4">

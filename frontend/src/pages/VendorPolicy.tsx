@@ -37,8 +37,8 @@ export default function VendorPolicy() {
             </p>
             <p className="mt-3">The network has two tiers:</p>
             <ul className="mt-3 space-y-2 ml-4 list-disc">
-              <li><strong className="text-deep-navy">Community Partners</strong> — Any business that offers a genuine benefit to nonprofits. No formal contract required. Applications are reviewed by Daanaa staff and activated at Daanaa's discretion.</li>
-              <li><strong className="text-deep-navy">Network Partners</strong> — Businesses that have entered into a formal Collective Action Framework (CAF) agreement with EcoMargins Consulting LLC. Network partners agree to reporting requirements and milestone-based pricing commitments.</li>
+              <li><strong className="text-deep-navy">Community Partners:</strong> Any business that offers a genuine benefit to nonprofits. No formal contract required. Applications are reviewed by Daanaa staff and activated at Daanaa's discretion.</li>
+              <li><strong className="text-deep-navy">Network Partners:</strong> Businesses that have entered into a formal Collective Action Framework (CAF) agreement with EcoMargins Consulting LLC. Network partners agree to reporting requirements and milestone-based pricing commitments.</li>
             </ul>
           </section>
 
@@ -85,9 +85,9 @@ export default function VendorPolicy() {
             <h2 className="font-display italic text-deep-navy text-title-lg mb-4">What Daanaa commits to</h2>
             <p>
               <strong className="text-deep-navy">Independence is non-negotiable.</strong> Partner
-              participation — including the payment of any fees — never affects how an organization
-              appears in Daanaa search results, its v6 public context, its tier, its visibility
-              ranking, or any other trust signal on the platform. No partner may pay for placement.
+              participation, including the payment of any fees, never affects how an organization
+              appears in Daanaa search results, its V6 public context, or any other trust signal
+              on the platform. No partner may pay for placement.
               This principle is absolute and derives directly from{' '}
               <Link to="/stewardship" className="text-soft-gold hover:underline">Principle 7</Link>{' '}
               of the Founding Stewardship Commitment.
@@ -132,8 +132,8 @@ export default function VendorPolicy() {
               and the partner.
             </p>
             <p className="mt-3">
-              <strong className="text-deep-navy">Daanaa makes no warranty</strong> — express, implied,
-              or otherwise — that any listed benefit is available, accurate, of merchantable quality,
+              <strong className="text-deep-navy">Daanaa makes no warranty</strong>, express, implied,
+              or otherwise, that any listed benefit is available, accurate, of merchantable quality,
               or fit for any particular purpose. Nonprofits use partner benefits at their own
               discretion.
             </p>

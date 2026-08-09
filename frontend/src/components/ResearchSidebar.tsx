@@ -7,7 +7,7 @@ const SECTIONS = [
   { id: 'overview', label: 'Overview' },
   { id: 'about', label: 'About Daanaa' },
   { id: 'problem', label: 'The Discovery Problem' },
-  { id: 'methodology', label: 'v6 technical notes' },
+  { id: 'methodology', label: 'V6 technical notes' },
 
   { id: 'entity-types', label: 'Organization Types' },
   { id: 'findings', label: 'Research Findings' },

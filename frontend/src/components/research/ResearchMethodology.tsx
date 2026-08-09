@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom'
 export default function ResearchMethodology() {
   return (
     <div>
-      <h2 className="text-3xl font-display text-deep-navy mb-6">v6 technical notes</h2>
+      <h2 className="text-3xl font-display text-deep-navy mb-6">V6 technical notes</h2>
 
       <div className="prose prose-sm max-w-none text-cool-grey space-y-6">
         <p>
-          The public explanation lives on the Methodology page. This section records the technical choices behind v6 for advisors, researchers, and nonprofit practitioners. The aim is useful context without turning peer patterns into ratings.
+          The public explanation lives on the Methodology page. This section records the technical choices behind V6 for advisors, researchers, and nonprofit practitioners. The aim is useful context without turning peer patterns into ratings.
         </p>
 
         <div>
@@ -33,7 +33,7 @@ export default function ResearchMethodology() {
 
         <div className="bg-soft-gold/10 rounded-lg p-4">
           <p className="text-sm font-semibold text-deep-navy mb-2">
-            v6 context is traceable and versioned
+            V6 context is traceable and versioned
           </p>
           <p className="text-sm">
             Organization-reported data, peer reference data, and AI-assisted summaries are kept separate. AI-assisted summaries do not determine peer groups or financial context.
@@ -59,7 +59,7 @@ export default function ResearchMethodology() {
             <div>
               <dt className="font-semibold text-deep-navy">Peer Group</dt>
               <dd className="text-sm mt-1">
-                A peer group uses the available category, geography, scale, and funding pattern. The page shows the group and source years so donors can understand what the comparison does—and does not—say.
+                A peer group uses the available category, geography, scale, and funding pattern. The page shows the group and source years so donors can understand what the comparison does and does not say.
               </dd>
             </div>
             <div>
@@ -81,7 +81,7 @@ export default function ResearchMethodology() {
                 with detailed financials, others are smaller and file simpler returns, and some are
                 newly formed or have incomplete records. This affects which metrics we can calculate
                 and how confident we are in the context we provide. Financial context and data
-                availability are independent—a complete dataset does not indicate better performance.
+                availability are independent. A complete dataset does not indicate better performance.
               </dd>
             </div>
           </dl>

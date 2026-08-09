@@ -79,7 +79,7 @@ export default function ResearchDataMovement({
 
       <p className="text-lg text-cool-grey mb-6 max-w-2xl">
         We monitor nonprofit data continuously. Here's what the most recent IRS data
-        reveals — observations without conclusions. We're all learning how to read this
+        reveals: observations without conclusions. We're all learning how to read this
         data responsibly.
       </p>
 
@@ -115,7 +115,7 @@ export default function ResearchDataMovement({
             </h3>
             <p className="text-sm text-cool-grey mb-4">
               New IRS registrations and revocations over the past 24 months. Bars show
-              both flows — taller bars mean more activity, not necessarily growth.
+              both flows. Taller bars mean more activity, not necessarily growth.
             </p>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart
@@ -195,7 +195,7 @@ export default function ResearchDataMovement({
         <div>
           <h3 className="text-lg font-semibold text-deep-navy mb-2">Sector growth: 990 filers</h3>
           <p className="text-sm text-cool-grey mb-4">
-            Based on IRS Statistics of Income annual extracts — organizations that file a full Form 990.
+            Based on IRS Statistics of Income annual extracts, organizations that file a full Form 990.
           </p>
           <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Scrollable data table">
             <table className="w-full text-sm border-collapse">
@@ -218,7 +218,7 @@ export default function ResearchDataMovement({
             </table>
           </div>
           <p className="text-xs text-cool-grey mt-3 leading-relaxed">
-            {filerGrowth.toLocaleString()} more organizations filed a 990 in tax year 2024 versus 2022 — a {((filerGrowth / irsData[0].filers501c3) * 100).toFixed(1)}% increase over two years. {revenueNote}
+            {filerGrowth.toLocaleString()} more organizations filed a 990 in tax year 2024 versus 2022, a {((filerGrowth / irsData[0].filers501c3) * 100).toFixed(1)}% increase over two years. {revenueNote}
           </p>
         </div>
 
@@ -249,20 +249,20 @@ export default function ResearchDataMovement({
               </div>
               <p className="text-sm text-slate mt-1">
                 We have mission information for all {(totalOrgs / 1_000_000).toFixed(1)}M active
-                nonprofits — drawn from IRS 990 forms and NTEE classification. Where no public
+                nonprofits, drawn from IRS 990 forms and NTEE classification. Where no public
                 description exists, we generate an AI-assisted summary from the organization's
                 public filing data so the organization is still findable. These are clearly
                 labeled, and a nonprofit can replace its summary with its own words when it claims
-                its page — which also improves how it surfaces in search and cause tags.
+                its page, which also improves how it surfaces in search and cause tags.
               </p>
             </div>
             <div className="border-l-4 border-soft-gold pl-4">
               <div className="flex justify-between items-baseline">
-                <p className="font-semibold text-deep-navy">Current v6 and historical coverage</p>
+                <p className="font-semibold text-deep-navy">Current V6 and historical coverage</p>
                 <span className="text-xs text-cool-grey">As of {lastUpdate}</span>
               </div>
               <p className="text-sm text-slate mt-1">
-                Earlier v5 context was shown for {historicalTotal > 0 ? `${historicalTotal.toLocaleString()} organizations` : "the organizations in the archived snapshot"}. That figure is historical only, not current v6 coverage. v6 now gives each indexed organization a context state: reported, peer reference, or limited. The current run should be used for coverage reporting because peer groups and source data can change.
+                Earlier v5 context was shown for {historicalTotal > 0 ? `${historicalTotal.toLocaleString()} organizations` : "the organizations in the archived snapshot"}. That figure is historical only, not current V6 coverage. V6 now gives each indexed organization a context state: reported, peer reference, or limited. The current run should be used for coverage reporting because peer groups and source data can change.
               </p>
             </div>
           </div>

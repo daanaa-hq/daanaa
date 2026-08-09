@@ -83,7 +83,7 @@ export default function Legal() {
               financial data shown. Daanaa refreshes data from ProPublica and IRS sources monthly, and supplements with NCCS extracts as they become available.
             </p>
             <p className="mt-3">
-              Daanaa peer v6 public contexts are recalculated whenever the underlying data is updated. Scores are relative. A score reflects an organization's reserve position among its true peers — same funding model and similar revenue size — not an absolute quality rating.
+              Daanaa peer V6 public contexts are recalculated whenever the underlying data is updated. Scores are relative. A score reflects an organization's reserve position among its true peers (same funding model and similar revenue size), not an absolute quality rating.
             </p>
           </section>
 
@@ -121,7 +121,7 @@ export default function Legal() {
           <section id="privacy">
             <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">Privacy Policy</h2>
             <p className="mb-4 p-4 bg-white border border-light-grey rounded-lg text-body">
-              This is a summary. The full privacy policy — including the data retention schedule and your state privacy rights — is at{' '}
+              This is a summary. The full privacy policy (including the data retention schedule and your state privacy rights) is at{' '}
               <Link to="/privacy" className="text-soft-gold hover:text-bright-gold font-medium">daanaa.org/privacy</Link>.
             </p>
             <p>
@@ -131,16 +131,16 @@ export default function Legal() {
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">We do not use tracking cookies or build advertising profiles.</strong> We
-              do not sell or share user data with third parties. We use <strong className="text-deep-navy">Plausible Analytics</strong> — a cookieless, privacy-respecting service — to collect anonymous page-view counts. Plausible does not identify individual visitors, does not use cookies, and does not track you across sites. No personal data is collected by analytics.
+              do not sell or share user data with third parties. We use <strong className="text-deep-navy">Plausible Analytics</strong> (a cookieless, privacy-respecting service) to collect anonymous page-view counts. Plausible does not identify individual visitors, does not use cookies, and does not track you across sites. No personal data is collected by analytics.
             </p>
             <p className="mt-3">
-              When you voluntarily submit information — such as an email address in the claim form, feedback form, or waitlist — we store that information to respond to your request. We do not use it for marketing, share it with third parties, or connect it to your browsing activity.
+              When you voluntarily submit information, such as an email address in the claim form, feedback form, or waitlist, we store that information to respond to your request. We do not use it for marketing, share it with third parties, or connect it to your browsing activity.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">When you register for an event</strong> through a nonprofit's event page, your name and email are shared with the organizing nonprofit and stored by Daanaa to manage your reservation and process cancellations. We do not use this information for marketing. You can cancel at any time using the link in your confirmation email, and your information will be removed within 30 days of cancellation or event completion.
             </p>
             <p className="mt-3">
-              <strong className="text-deep-navy">When you log an impact record</strong> (such as volunteer hours or a donation note) through an organization's page, that record is stored in your device wallet and — if synced — associated with your account. Impact records are personal notes for your own reference; they are never shared publicly or with the nonprofit without your explicit action.
+              <strong className="text-deep-navy">When you log an impact record</strong> (such as volunteer hours or a donation note) through an organization's page, that record is stored in your device wallet and, if synced, associated with your account. Impact records are personal notes for your own reference; they are never shared publicly or with the nonprofit without your explicit action.
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">When you claim your organization's page</strong>, we collect your
@@ -157,7 +157,7 @@ export default function Legal() {
             <p className="mt-3">
               <strong className="text-deep-navy">The Giving Wallet requires no account.</strong> Wallet data
               is stored on your device by default. You may optionally sign in with Google to enable cross-device
-              sync. Your wallet holds bookmarks and giving intent only — never transaction records, event registrations,
+              sync. Your wallet holds bookmarks and giving intent only, never transaction records, event registrations,
               or impact reports. It is never shown publicly, never used for marketing or outreach, and can be deleted in
               full at any time. We do not track your browsing activity on the site.
             </p>
@@ -172,8 +172,8 @@ export default function Legal() {
             </p>
             <p className="mt-3">
               <strong className="text-deep-navy">California residents (CCPA).</strong> If you have
-              submitted personal information to Daanaa — such as an email address through the claim
-              form or feedback form — you have the right to know what information we hold, the right
+              submitted personal information to Daanaa, such as an email address through the claim
+              form or feedback form, you have the right to know what information we hold, the right
               to request deletion, and the right to opt out of any sale of your personal information.
               We do not sell personal information. To exercise any of these rights, email{' '}
               <a href="mailto:privacy@daanaa.org" className="text-soft-gold hover:underline">privacy@daanaa.org</a>{' '}

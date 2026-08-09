@@ -16,7 +16,7 @@ const topicMap: Record<string, { text: string; description: string }> = {
   },
   'financial-health': {
     text: 'Learn about financial context',
-    description: 'How your v6 financial context is calculated'
+    description: 'How your V6 financial context is calculated'
   },
   'donation-link': {
     text: 'Learn about donation links',

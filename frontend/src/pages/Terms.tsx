@@ -41,7 +41,7 @@ export default function Terms() {
             <p className="mt-3">
               Daanaa is a public-data directory of U.S. 501(c)(3) organizations. We aggregate publicly available
               information from IRS filings, ProPublica, and the National Center for Charitable Statistics, and present
-              it in a searchable format. Our purpose is to help people discover and learn about nonprofits —
+              it in a searchable format. Our purpose is to help people discover and learn about nonprofits,
               particularly smaller organizations with limited public visibility.
             </p>
           </section>
@@ -51,7 +51,7 @@ export default function Terms() {
             <p>
               <strong className="text-deep-navy">We never handle money.</strong> Daanaa does not receive, process,
               hold, transmit, or facilitate charitable donations. All giving happens directly between donors and the
-              nonprofits they choose — through the nonprofit's own payment processor, bank account, or a third-party
+              nonprofits they choose, through the nonprofit's own payment processor, bank account, or a third-party
               giving service. We are not a merchant of record, not a payment intermediary, not an escrow service, and
               not a fundraising platform.
             </p>
@@ -76,7 +76,7 @@ export default function Terms() {
           <section>
             <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">4. The Giving Wallet</h2>
             <p>
-              The Giving Wallet is a free bookmarking tool. No account is required — wallet data is stored on your device by default. You may optionally sign in with Google to enable cross-device sync. Your wallet holds bookmarks and giving intent only — never transaction records. It is never shown publicly, never used for marketing or outreach, and can be deleted in full at any time. Browsing the directory does not require an account.
+              The Giving Wallet is a free bookmarking tool. No account is required: wallet data is stored on your device by default. You may optionally sign in with Google to enable cross-device sync. Your wallet holds bookmarks and giving intent only, never transaction records. It is never shown publicly, never used for marketing or outreach, and can be deleted in full at any time. Browsing the directory does not require an account.
             </p>
           </section>
 
@@ -97,8 +97,8 @@ export default function Terms() {
             <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">6. Accuracy of data</h2>
             <p>
               Financial data on Daanaa is derived from IRS Form 990 filings. The most recent filing available may
-              lag the current fiscal year by 12–24 months. Daanaa peer v6 public contexts are a relative
-              benchmark — they indicate how an organization compares to similar organizations in the same NTEE category
+              lag the current fiscal year by 12–24 months. Daanaa peer V6 public contexts are a relative
+              benchmark. They indicate how an organization compares to similar organizations in the same NTEE category
               and revenue range based on public filing data. A score is not an audit, a recommendation, a rating of
               organizational quality, or an endorsement. It is a data point.
             </p>
@@ -158,8 +158,8 @@ export default function Terms() {
             <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">9. Impact Network and partner benefits</h2>
             <p>
               Daanaa operates an Impact Network that connects nonprofits with businesses offering services at
-              preferential rates. Partner participation — including any fees paid to Daanaa — never affects how any
-              organization appears in search results, its v6 public context, its tier, or any other trust signal
+              preferential rates. Partner participation, including any fees paid to Daanaa, never affects how any
+              organization appears in search results, its V6 public context, or any other trust signal
               on the platform. This principle is absolute and is embedded in our{' '}
               <Link to="/stewardship" className="text-soft-gold hover:underline">
                 Founding Stewardship Commitment
@@ -175,8 +175,8 @@ export default function Terms() {
           <section>
             <h2 className="font-display italic text-deep-navy text-title-lg md:text-headline mb-4">10. Intellectual property</h2>
             <p>
-              Daanaa's original expression — including our scoring methodology descriptions, platform design, and
-              editorial content — is protected by copyright and owned by EcoMargins Consulting LLC.
+              Daanaa's original expression, including our scoring methodology descriptions, platform design, and
+              editorial content, is protected by copyright and owned by EcoMargins Consulting LLC.
             </p>
             <p className="mt-3">
               Organization data (names, addresses, EINs, financial figures from 990 filings) is derived from

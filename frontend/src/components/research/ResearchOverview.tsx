@@ -32,7 +32,7 @@ export default function ResearchOverview({
             <div className="text-sm text-cool-grey">States represented</div>
           </div>
           <div className="bg-soft-gold/10 rounded-lg p-4">
-            <div className="text-3xl font-display text-link-gold">v6</div>
+            <div className="text-3xl font-display text-link-gold">V6</div>
             <div className="text-sm text-cool-grey">Current context system</div>
           </div>
         </div>
@@ -42,7 +42,7 @@ export default function ResearchOverview({
         <h3 className="text-sm font-semibold text-deep-navy mb-2">What this research covers</h3>
         <ul className="space-y-2 text-sm text-cool-grey">
           <li>How we source and verify nonprofit data</li>
-          <li>How v6 forms reasonable peer context groups</li>
+          <li>How V6 forms reasonable peer context groups</li>
           <li>Reported, peer-reference, and limited context</li>
           <li>How we describe uncertainty and coverage</li>
           <li>What changed across scoring versions</li>
