@@ -1,22 +1,29 @@
-// Privacy-safe, aggregate behavior events via self-hosted Plausible
-// (stats.daanaa.org). No PII, no cookies — Plausible custom events are anonymous
-// counts, never tied to a person (Stewardship P2). This is our genchi genbutsu
-// instrument: it lets us OBSERVE whether design changes actually shift behavior
-// (the PDCA "Check" step). See docs/DESIGN_PHILOSOPHY.md.
+// Privacy-safe, aggregate behavior events via Firebase Analytics
+// (Google's PDPA-compliant service). No PII tracking — only coarse, org-level
+// properties (revenue_band, section) aggregated by Firebase. Never EIN or identifiable data.
+// This is our genchi genbutsu instrument: it lets us OBSERVE whether design changes
+// actually shift behavior (the PDCA "Check" step). See docs/DESIGN_PHILOSOPHY.md.
 //
-// Deliberately minimal: only coarse, org-level properties are sent (revenue_band,
-// section) — never EIN, email, or anything identifiable. Plausible aggregates
-// these for breakdowns (e.g. "At a Glance visibility by org size") without
-// storing individual rows. See PRIVACY-INVARIANTS.md.
-interface PlausibleEvent {
+// Stewardship P2 (privacy-safe) implementation:
+// - Events logged to Firebase (aggregated server-side)
+// - Properties only org-level (revenue_band = Micro/Professional/Established)
+// - Never user-identifiable, never individual EIN
+// - Dashboards show aggregates (e.g., "At a Glance visibility % by band")
+// See PRIVACY-INVARIANTS.md.
+
+import { logEvent } from '../lib/firebase'
+
+interface EventParams {
   props?: Record<string, string | number>
 }
 
-export function trackEvent(event: string, opts?: PlausibleEvent): void {
+export function trackEvent(event: string, opts?: EventParams): void {
   try {
-    ;(window as unknown as { plausible?: (e: string, opts?: PlausibleEvent) => void }).plausible?.(event, opts)
-  } catch {
+    // Firebase logEvent is already privacy-safe (aggregates server-side)
+    logEvent(event, opts?.props)
+  } catch (e) {
     // Analytics must never break the user experience.
+    console.debug('Event tracking failed:', e instanceof Error ? e.message : e)
   }
 }
 
