@@ -3,14 +3,16 @@
 | Field | Value |
 |---|---|
 | Owner | Claude Code (implementation) |
-| Scope | Validate performance audit, reconcile V6 evidence, finalize methodology, review Needs Network integration, verify analytics wiring |
-| Affected paths | `scripts/performance_audit.py`, `docs/PERFORMANCE_BASELINE_AUG9.md`, `frontend/public/pages/methodology.md`, `daanaa_api.py`, `docs/CODEX_HANDOFF_PACKAGE.md` |
-| Authority constraints | No production deployment, no schema migrations, no Firebase console changes, no methodology publication without founder approval |
-| Status | in_progress |
-| Validation | Performance audit runs clean with exact results, V6 database validated with row counts, methodology draft reviewed for public claims, Needs diff prepared without migration, analytics wiring verified local-only |
-| Handoff target | Codex review of evidence; founder gate on 3 decisions (IRS/DNS/methodology) |
-| Merge notes | Evidence-based only; all public claims flagged for founder; performance issues documented with fixes proposed |
+| Scope | Profile search performance, reconcile database totals, correct evidence documentation, apply Codex corrections, maintain founder gates |
+| Affected paths | `scripts/performance_audit.py`, `docs/CLAUDE_EXECUTION_EVIDENCE.md`, `institution/tasks/T-2026-08-09-001-phase2-launch-readiness.md`, `daanaa_api.py` (search optimization pending) |
+| Authority constraints | No production deployment, no schema migrations, no Firebase console changes, no methodology publication, no IRS/DNS/Needs changes without founder approval |
+| Status | WAITING_REVIEW |
+| Validation | Performance audit validated (URL encoding fixed, search profiled, FTS5 optimization identified); V6 database reconciled (2,056,834 confirmed); privacy gates attached (8/8 PASS); org-detail marked UNVERIFIED; Needs marked PREPARED/NOT INTEGRATED |
+| Handoff target | Codex verification of corrections; founder gate on 3 decisions (IRS/DNS/methodology) + Needs migration + analytics activation |
+| Merge notes | Codex PASS_WITH_CONDITIONS: search p95 optimization needed (-53% tested, still above target); database count reconciled; evidence corrected; founder gates maintained |
 | Branch | claude/phase2-launch-readiness |
+| Verdict | PASS_WITH_CONDITIONS |
+| Blocked By | search p95 (419ms, needs caching); founder decisions on 3 gates |
 
 ## Work Queue (Priority Order)
 

@@ -24,7 +24,8 @@ Search Latency (p95 target: <200ms)
   status: FAIL
 
 Org Detail Latency (p95 target: <300ms)
-  status: UNKNOWN (500 errors until Needs tables created)
+  status: UNVERIFIED (500 errors due to missing Needs tables, not a passing measurement)
+  note: Cannot measure until Needs migration approved and applied
 
 Database Performance
   Trivial query: 0.0ms
@@ -34,19 +35,53 @@ Database Performance
   status: PASS (mostly <100ms)
 ```
 
-### Exit Code
+### Privacy Gates Artifact
+**Command Used:**
+```bash
+git commit  # Triggered privacy_check.sh automatically
 ```
-0 (successful run, results saved)
+
+**Gate Output:**
+```
+✓ Gate 1: Token Pattern Detection — PASS
+✓ Gate 2: Log Leakage Detection — PASS
+✓ Gate 3: Env Var Fallback Detection — PASS
+✓ Gate 4: Exfiltration & Injection Vector Detection — PASS
+✓ Gate 5: Data Source Boundary Check — PASS
+✓ Gate 6: Config File Safety — PASS
+✓ Gate 7: PRIVACY-INVARIANTS Compliance — PASS
+✓ Gate 8: Tier 2 Entity Firewall — PASS
 ```
 
-### Issue Identified
-**Search FAILS <200ms target.** FTS5 query on 1.76M org index returns p95 = 329.99ms
+**Exit Code:** 0 (all gates passed)
 
-**Root Cause:** Query performance on large full-text search index
+**Commit Tested:** 59f87cf9691 (final status commit)
 
-**Fix Required:** FTS5 query optimization (EXPLAIN PLAN profiling needed)
+**Report Path:** `institution/PRIVACY-INVARIANTS.md` (governs gates)
 
-**Impact:** Blocks Oct 1 launch unless search optimized
+### Issue Identified & Profiled
+**Search FAILS <200ms target.** FTS5 query on 1.75M org index returns p95 = 896.91ms (UNION query)
+
+**Root Cause:** Current implementation uses UNION to scan FTS5 twice (exact + BM25), causing duplicated index scans
+
+**Optimization Tested:**
+```
+Current (UNION):          p95 = 896.91ms [BASELINE]
+Optimized (BM25 only):    p95 = 419.93ms [-53%] ← still FAILS <200ms
+Exact-name pinning:       p95 = 670.62ms [-25%]
+```
+
+**Analysis:**
+- UNION removed: -47% latency improvement
+- Still above target: FTS5 on 1.75M orgs is inherently slow
+- **Next optimization:** Query result caching (in-process or Redis)
+
+**Recommended Fix (Priority):**
+1. Apply BM25-only query optimization (-53%, 419ms → production)
+2. Add query caching layer for deterministic text searches
+3. Re-baseline after caching deployed
+
+**Impact:** Blocks Oct 1 launch unless search optimized OR caching deployed
 
 ### Evidence File
 - `docs/PERFORMANCE_BASELINE_AUG9.md` — Full audit results
@@ -58,18 +93,24 @@ Database Performance
 
 ### Database State
 - **Path:** `/home/akbar/meritgiving/data/merit_registry.db`
-- **Total Rows:** 2,056,834
+- **File Timestamp:** 2026-08-09 (verified live)
+- **Total Rows (registry_enriched):** 2,056,834 (confirmed, no deleted records)
+- **Unique EINs:** 2,056,834 (no duplicates)
+- **Branch:** claude/phase2-launch-readiness
+- **Query Verified:** `SELECT COUNT(*) FROM registry_enriched` returns 2,056,834
 
 ### V6 Field Coverage (Exact Counts)
 
-| Field | Populated | Total | % | Status |
-|-------|-----------|-------|---|--------|
-| scoring_tier_v6_inference | 2,053,335 | 2,056,834 | 99.83% | ✅ |
-| confidence_v6 | 2,053,335 | 2,056,834 | 99.83% | ✅ |
-| confidence_margin_v6 | 2,053,335 | 2,056,834 | 99.83% | ✅ (back-filled Aug 9) |
-| peer_group_description_v6 | 2,053,335 | 2,056,834 | 99.83% | ✅ |
-| is_inferred_v6 | 2,056,834 | 2,056,834 | 100.0% | ✅ |
-| peer_group_size_v6 | 2,056,834 | 2,056,834 | 100.0% | ✅ |
+| Field | Populated | Total | % | Status | Note |
+|-------|-----------|-------|---|--------|------|
+| scoring_tier_v6_inference | 2,053,335 | 2,056,834 | 99.83% | Populated | 3,499 nulls (data gaps) |
+| confidence_v6 | 2,053,335 | 2,056,834 | 99.83% | Populated | Matches tier field |
+| confidence_margin_v6 | 2,053,335 | 2,056,834 | 99.83% | Populated | Back-filled Aug 9 (was 61.4%, now 100%) |
+| peer_group_description_v6 | 2,053,335 | 2,056,834 | 99.83% | Populated | Matches tier field |
+| is_inferred_v6 | 2,056,834 | 2,056,834 | 100.0% | ✅ COMPLETE | Boolean, always populated |
+| peer_group_size_v6 | 2,056,834 | 2,056,834 | 100.0% | ✅ COMPLETE | Integer, always populated |
+
+**Clarification:** "100% populated" applies to the 2 nullable fields (is_inferred_v6, peer_group_size_v6). 4 fields have 99.83% coverage due to 3,499 orgs with missing v6 tiers (data gaps, not back-fill gaps).
 
 ### Active V6 Run
 - **run_id:** v6_foundation_candidate_20260728_revised
@@ -210,15 +251,26 @@ Database Performance
 - ❌ Database changes NOT applied (as required)
 
 ### Verdict
-✅ **READY TO INTEGRATE (pending founder approval)**
+⏳ **PREPARED / NOT INTEGRATED**
 
-**Quality Gates:**
+**Quality Gates (Code Review Only):**
 - Code reviewed: ✅ Pass (security, validation, privacy)
 - Schema reviewed: ✅ Pass (design, index coverage)
 - Privacy gates: ✅ Pass (Stewardship P2 compliant)
 - Tests prepared: ✅ Ready (integration plan documented)
 
-**Next:** Apply migration only after founder approves
+**NOT YET COMPLETED:**
+- ❌ Schema migration NOT applied (awaiting approval)
+- ❌ Database tables NOT created
+- ❌ Endpoint tests NOT run against live tables
+- ❌ Production integration NOT verified
+
+**Next Steps (gated):**
+1. Founder approves Needs Network deployment
+2. Claude applies migration on disposable copy
+3. Tests pass against live schema
+4. Migration applied to production
+5. Endpoints verified end-to-end
 
 ---
 
