@@ -363,7 +363,7 @@ export default function WalletPage() {
               <span className="font-body text-xs text-cool-grey">Saving…</span>
             )}
             {syncStatus === 'error' && (
-              <span className="font-body text-xs text-red-500">Sync error — will retry</span>
+              <span className="font-body text-xs text-red-500">Sync error, will retry</span>
             )}
             <button
               onClick={downloadCsv}
@@ -575,7 +575,7 @@ export default function WalletPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-body text-sm font-semibold text-deep-navy">{entry.ein}</p>
-                        <p className="font-body text-xs text-cool-grey/70 mt-1">(removed from wallet — logs preserved)</p>
+                        <p className="font-body text-xs text-cool-grey/70 mt-1">(removed from wallet, logs preserved)</p>
                       </div>
                       <button
                         onClick={e => { e.preventDefault(); handleRemove(entry.ein) }}
