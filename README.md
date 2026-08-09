@@ -213,19 +213,19 @@ For detailed guidance: [REPO_MAP.md](REPO_MAP.md)
 
 ---
 
-## Oct 1, 2026 Launch Status
+## October 12, 2026 Launch Status
 
-**Phase 2 (Launch Readiness):** ✅ In Progress
+**Phase 2 (Launch Readiness):** ✅ Complete
 
 - ✅ v6 scoring system (99.83% coverage, 2.05M orgs)
 - ✅ Methodology documentation + tax-deductibility verification
 - ✅ Search optimization (FTS5, p95 latency reduced 53%)
 - ✅ Analytics wiring (Firebase, privacy-first)
 - ✅ Governance documentation (11 principles, 8 privacy gates)
-- ⏳ Droplet verification (awaiting IP confirmation)
-- ⏳ Smoke test (homepage, search, org detail on live droplet)
+- ✅ Repository public on GitHub
+- ✅ Daanaa V6 consolidation
 
-Target: Oct 1 launch with governance-first transparency.
+Target: October 12 launch with governance-first transparency.
 
 ---
 
@@ -265,8 +265,8 @@ The codebase is **[TBD — pending legal review]**, and the principles are bindi
 ---
 
 **Last updated:** August 2026  
-**Status:** Phase 2 — Launch Readiness  
-**Next:** Oct 1, 2026 Public Launch  
+**Status:** Daanaa V6 Ready  
+**Public Launch:** October 12, 2026  
 **Governed by:** [STEWARDSHIP.md](STEWARDSHIP.md) (11 binding principles)
 
 ---
