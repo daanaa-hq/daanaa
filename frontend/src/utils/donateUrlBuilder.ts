@@ -169,7 +169,7 @@ export async function completeDonateFlow(
   ein: string,
   donateUrl: string,
   donorData: DonorData,
-  source: string = 'direct'
+  source: 'directory' | 'wallet' | 'search' | 'org_detail' = 'org_detail'
 ): Promise<void> {
   // 1. Log the attempt (for completion tracking)
   const trackingId = await logDonationAttempt(ein, donorData, source)
