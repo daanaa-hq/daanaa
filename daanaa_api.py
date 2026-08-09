@@ -849,12 +849,12 @@ _LIVE_SPLIT = os.path.abspath(LIVE_DB_PATH) != os.path.abspath(DB_PATH)
 # ── Feature flags ─────────────────────────────────────────────────────────────
 # ENABLE_SCORES=false → null out merit_score / merit_tier / merit_band in all
 # org responses. Allows a clean no-scores preview of the directory.
-# Default: true (scores are on). Toggle: ENABLE_SCORES=false python3 merit_api.py
+# Default: true (scores are on). Toggle: ENABLE_SCORES=false python3 daanaa_api.py
 ENABLE_SCORES: bool = os.environ.get("ENABLE_SCORES", "true").lower() == "true"
 
 # ENABLE_V4_SCORES=true → include v4.0 financial health scores (financial_health,
 # operating_model, revenue_band, peer_cell_size) in org responses.
-# Default: true (v4 scores enabled). Toggle: ENABLE_V4_SCORES=false python3 merit_api.py
+# Default: true (v4 scores enabled). Toggle: ENABLE_V4_SCORES=false python3 daanaa_api.py
 ENABLE_V4_SCORES: bool = os.environ.get("ENABLE_V4_SCORES", "true").lower() == "true"
 
 # ENABLE_V4_METRICS=true → include detailed metrics_json and percentiles_json
