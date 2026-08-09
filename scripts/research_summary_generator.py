@@ -19,7 +19,7 @@ now = datetime.now()
 last_monday = (now - timedelta(days=now.weekday() + 7)).replace(hour=0, minute=0, second=0, microsecond=0)
 PERIOD = last_monday.strftime("%Y-%m-%d")
 
-# Operating models from merit_scorer_v4_0.py with revenue band thresholds
+# Operating models from archive_scorers/merit_scorer_v4_0.py (v4 historical) with revenue band thresholds
 OPERATING_MODELS = [
     'Clinical_Reimbursement',
     'Direct_Delivery',

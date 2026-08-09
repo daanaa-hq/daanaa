@@ -7,7 +7,7 @@ Monday IRS data load). Full scoring of all orgs still happens Saturday via
 overnight_pipeline.py.
 
 An org is "scorable" when total_revenue, months_of_reserve and
-program_expense_pct are all present — the same requirement merit_scorer_v5_0
+program_expense_pct are all present — the same requirement daanaa_scorer
 enforces in extract_metrics(). Orgs missing financial data are never scored
 (evidence-based trust signals, STEWARDSHIP P3).
 
@@ -63,13 +63,13 @@ def run_delta_score() -> bool:
         log('No scorable unscored orgs. Nothing to do.')
         return True
 
-    log(f'Found {unscored:,} scorable unscored orgs. Running v5 scorer...')
+    log(f'Found {unscored:,} scorable unscored orgs. Running Daanaa scorer...')
 
     try:
         result = subprocess.run(
             [
                 'python3',
-                str(Path(__file__).parent / 'merit_scorer_v5_0.py'),
+                str(Path(__file__).parent / 'daanaa_scorer.py'),
                 '--output', str(SCORES_JSON),
             ],
             capture_output=True,

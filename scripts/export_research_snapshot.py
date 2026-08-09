@@ -252,7 +252,7 @@ V6_TIER_ORDER = ['1_Full_Context', '2_Regional_Context', '3_Broad_Category', '4_
 # Wording matches scripts/precompute_content.py's context_levels exactly, so the
 # Methodology page and the Research page never disagree on what a tier means.
 #
-# Descriptions verified 2026-08-08 against scripts/merit_scorer_v6_0.py, the
+# Descriptions verified 2026-08-08 against scripts/daanaa_scorer.py (v6), the
 # script that actually writes scoring_tier/tier_label/peer_group_size/confidence.
 # Tier 2 is NOT "a broader regional peer group" -- the scorer drops region
 # entirely at tier 2 (NTEE2 x revenue band, national). That's the opposite of
@@ -282,7 +282,7 @@ V6_TIER_INFO = {
 
 def build_v6(db):
     """V6 financial-context taxonomy, computed from the scoring_tier column already
-    in registry_enriched (written by scripts/merit_scorer_v6_0.py). Peer group =
+    in registry_enriched (written by scripts/daanaa_scorer.py). Peer group =
     NTEE category + revenue band + region, narrowing or widening one dimension at
     a time (drop region, then drop band) until the group holds enough peers with
     reserves data -- a reference-class approach (find the narrowest comparable set
@@ -294,7 +294,7 @@ def build_v6(db):
     read `peer_percentile` here, that column is written by the older, retired v4
     lamp-tier scorer under a different (NTEE1 x band, no region) grouping and has
     nothing to do with the V6 tier shown alongside it. Likewise `peer_group_size`
-    (no suffix, from merit_scorer_v6_0.py) is the real per-tier group size;
+    (no suffix, from daanaa_scorer.py) is the real per-tier group size;
     `peer_group_size_v6`/`confidence_v6`/`scoring_tier_v6_inference` are a separate,
     largely disjoint pipeline (row-level check 2026-08-08: scoring_tier and
     scoring_tier_v6_inference agree on 58 of 2,056,834 rows) and must not be used

@@ -1309,7 +1309,7 @@ def get_v6_context(ein_clean, db):
     2026-08-08, corrected twice in one evening -- see LESSONS.md and
     DECISIONS.md for the full account. First fix queried registry_enriched
     directly for scoring_tier/tier_label/confidence/peer_group_size/
-    peer_group_description (the columns scripts/merit_scorer_v6_0.py
+    peer_group_description (the columns scripts/daanaa_scorer.py
     actually writes), which is correct in the dev DB -- but registry_enriched
     does not exist in the slim DB the droplet actually ships
     (/opt/daanaa/merit_registry.db, 1.94M rows, one table: v6_context).

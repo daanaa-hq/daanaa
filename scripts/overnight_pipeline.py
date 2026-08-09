@@ -412,13 +412,13 @@ def apply_nonprofit_updates():
         log(f'⚠️  Error processing nonprofit updates: {str(e)[:100]}')
 
 
-def run_v5_scorer():
-    """Run merit_scorer_v5_0 to keep v5 financial context scores fresh. Logs but doesn't fail pipeline if scorer errors."""
+def run_daanaa_scorer():
+    """Run daanaa_scorer (v6) to keep Daanaa financial context scores fresh. Logs but doesn't fail pipeline if scorer errors."""
     try:
         import subprocess
-        log('Running merit_scorer_v5_0...')
-        scorer_script = Path.home() / 'meritgiving' / 'scripts' / 'merit_scorer_v5_0.py'
-        scores_file = Path.home() / 'meritgiving' / f'scores_v5_0_{datetime.now().strftime("%Y%m%d")}.json'
+        log('Running daanaa_scorer (v6 financial context)...')
+        scorer_script = Path.home() / 'meritgiving' / 'scripts' / 'daanaa_scorer.py'
+        scores_file = Path.home() / 'meritgiving' / f'scores_daanaa_{datetime.now().strftime("%Y%m%d")}.json'
 
         result = subprocess.run(
             ['python3', str(scorer_script), '--output', str(scores_file)],
@@ -428,13 +428,13 @@ def run_v5_scorer():
         if result.returncode == 0 and scores_file.exists():
             log(f'✅ Scorer completed: {scores_file}')
             # Load scores into DB
-            load_script = Path.home() / 'meritgiving' / 'scripts' / 'load_v5_scores.py'
+            load_script = Path.home() / 'meritgiving' / 'scripts' / 'load_daanaa_scores.py'
             load_result = subprocess.run(
                 ['python3', str(load_script), str(scores_file)],
                 capture_output=True, text=True, timeout=600,
             )
             if load_result.returncode == 0:
-                log('✅ V5.0 scores loaded into registry_enriched')
+                log('✅ Daanaa scores loaded into registry_enriched')
                 # Mark all pending_scoring updates as included_in_run
                 try:
                     conn = get_db()
@@ -750,9 +750,8 @@ def main():
     # Step 5a: Apply nonprofit-submitted data updates before scoring
     apply_nonprofit_updates()
 
-    # Step 5: Re-score with v5.0
-    log('Running merit_scorer_v5_0 to keep v5 scores fresh...')
-    run_v5_scorer()
+    # Step 5: Re-score with Daanaa v6 (current scoring system)
+    run_daanaa_scorer()
 
     # Step 6: Rebuild cause-cohort context from fresh scores
     run_cohort_context()

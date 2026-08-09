@@ -58,7 +58,7 @@ def get_cohort_context(nteecc: str | None, ntee1: str | None) -> dict | None:
 # Maps every form that merit_archetype_v5 may contain → BENCHMARKS lookup key.
 # The DB column was populated by two different scripts:
 #   compute_v5_context.py  → integer codes '0','4','19','22' + label 'Donation-Funded' etc.
-#   merit_scorer_v5_0.py   → labels 'Donation-Funded Programs', 'Fee-for-Service Operators', etc.
+#   daanaa_scorer.py       → labels 'Donation-Funded Programs', 'Fee-for-Service Operators', etc.
 # Mutual-Benefit ('22') has no peer benchmark data → maps to None → empty bench.
 _ARCHETYPE_NORM: dict[str, str | None] = {
     '0': 'donation_funded',
