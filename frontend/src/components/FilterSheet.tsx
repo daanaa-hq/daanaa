@@ -77,7 +77,7 @@ export default function FilterSheet({
             )}
           </div>
           <button onClick={onClose} aria-label="Close filters" className="p-1.5 rounded-full hover:bg-light-grey transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--slate-rgb))" strokeWidth="2" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </button>
@@ -110,9 +110,9 @@ export default function FilterSheet({
                   onClick={() => onCategoryChange(cat.id)}
                   className="px-3.5 py-[7px] rounded-full font-body text-small tracking-[0.01em] transition-all duration-150 border"
                   style={{
-                    backgroundColor: activeCategory === cat.id ? '#C9A96E' : '#F5F0EB',
-                    color: activeCategory === cat.id ? '#0A1628' : '#6B7280',
-                    borderColor: activeCategory === cat.id ? '#C9A96E' : 'transparent',
+                    backgroundColor: activeCategory === cat.id ? 'rgb(var(--soft-gold-rgb))' : 'rgb(var(--warm-cream-rgb))',
+                    color: activeCategory === cat.id ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))',
+                    borderColor: activeCategory === cat.id ? 'rgb(var(--soft-gold-rgb))' : 'transparent',
                   }}
                 >
                   {cat.emoji ? `${cat.emoji} ${cat.label}` : cat.label}
@@ -147,7 +147,7 @@ export default function FilterSheet({
                   ))}
                 </optgroup>
               </select>
-              <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+              <svg className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--slate-rgb))" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
           </div>
 
@@ -185,8 +185,8 @@ export default function FilterSheet({
                   onClick={() => onSortChange(opt.value)}
                   className="flex-1 py-2.5 rounded-xl font-body text-small transition-all border"
                   style={{
-                    backgroundColor: sortBy === opt.value ? '#0A1628' : '#F5F0EB',
-                    color: sortBy === opt.value ? '#F5F0EB' : '#6B7280',
+                    backgroundColor: sortBy === opt.value ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--warm-cream-rgb))',
+                    color: sortBy === opt.value ? 'rgb(var(--warm-cream-rgb))' : 'rgb(var(--slate-rgb))',
                     borderColor: 'transparent',
                   }}
                 >

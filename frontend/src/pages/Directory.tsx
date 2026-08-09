@@ -494,9 +494,9 @@ export default function Directory() {
               }}
               className="mt-7 inline-flex items-center gap-2 px-4 py-2 rounded-full font-body text-small font-medium border transition-all duration-150"
               style={{
-                backgroundColor: filtersExpanded || activeFilterCount > 0 ? '#F8F5F0' : 'transparent',
-                borderColor: filtersExpanded || activeFilterCount > 0 ? '#E5E0DB' : '#E5E0DB',
-                color: '#0A1628',
+                backgroundColor: filtersExpanded || activeFilterCount > 0 ? 'rgb(var(--light-cream-rgb))' : 'transparent',
+                borderColor: filtersExpanded || activeFilterCount > 0 ? 'rgb(var(--light-grey-rgb))' : 'rgb(var(--light-grey-rgb))',
+                color: 'rgb(var(--deep-navy-rgb))',
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -578,9 +578,9 @@ export default function Directory() {
                 onClick={() => handleFilterChange(cat.id)}
                 className="px-4 py-[6px] rounded-full font-body text-caption tracking-[0.02em] transition-all duration-150 border"
                 style={{
-                  backgroundColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? '#C9A96E' : 'transparent',
-                  color: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? '#0A1628' : '#4B5563',
-                  borderColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? '#C9A96E' : '#E5E0DB',
+                  backgroundColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? 'rgb(var(--soft-gold-rgb))' : 'transparent',
+                  color: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))',
+                  borderColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? 'rgb(var(--soft-gold-rgb))' : 'rgb(var(--light-grey-rgb))',
                 }}
               >
                 {'emoji' in cat && cat.emoji ? `${cat.emoji} ` : ''}{cat.label}
@@ -594,12 +594,17 @@ export default function Directory() {
                 aria-pressed={hasWebsite}
                 className="inline-flex items-center gap-1.5 h-[34px] px-3.5 rounded-full font-body text-caption font-medium border transition-all duration-150"
                 style={{
-                  backgroundColor: hasWebsite ? '#0EA5E9' : '#0EA5E912',
-                  color: hasWebsite ? '#FFFFFF' : '#374151',
-                  borderColor: hasWebsite ? '#0EA5E9' : '#0EA5E959',
+                  // Neutral navy fill, not a 4th accent hue (2026-08-09): the
+                  // toggle group above already spends the palette's 3
+                  // available accent colors (gold/civic-teal/success-green);
+                  // matches the on/off pattern used by the sub-category chips
+                  // and pagination elsewhere in this file.
+                  backgroundColor: hasWebsite ? 'rgb(var(--deep-navy-rgb))' : 'transparent',
+                  color: hasWebsite ? 'rgb(var(--warm-cream-rgb))' : 'rgb(var(--slate-rgb))',
+                  borderColor: hasWebsite ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--light-grey-rgb))',
                 }}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={hasWebsite ? '#FFFFFF' : '#0EA5E9'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={hasWebsite ? 'rgb(var(--warm-cream-rgb))' : 'rgb(var(--slate-rgb))'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                 </svg>
                 Has a website
@@ -649,9 +654,9 @@ export default function Directory() {
                     aria-label="Filter by location (zip code or city, state)"
                     className="h-[34px] pl-3 pr-8 w-[148px] rounded-l-full font-body text-caption border outline-none transition-all duration-150"
                     style={{
-                      backgroundColor: near ? '#C9A96E15' : 'transparent',
-                      color: '#374151',
-                      borderColor: near ? '#C9A96E' : '#E5E0DB',
+                      backgroundColor: near ? 'rgb(var(--soft-gold-rgb) / 0.08)' : 'transparent',
+                      color: 'rgb(var(--slate-rgb))',
+                      borderColor: near ? 'rgb(var(--soft-gold-rgb))' : 'rgb(var(--light-grey-rgb))',
                       borderRight: 'none',
                     }}
                   />
@@ -778,9 +783,9 @@ export default function Directory() {
                   aria-label="Filter by state"
                   className="appearance-none h-[34px] pl-3 pr-8 rounded-full font-body text-caption tracking-[0.02em] border transition-all duration-150 outline-none cursor-pointer"
                   style={{
-                    backgroundColor: stateFilter ? '#C9A96E' : 'transparent',
-                    color: stateFilter ? '#0A1628' : '#4B5563',
-                    borderColor: stateFilter ? '#C9A96E' : '#E5E0DB',
+                    backgroundColor: stateFilter ? 'rgb(var(--soft-gold-rgb))' : 'transparent',
+                    color: stateFilter ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))',
+                    borderColor: stateFilter ? 'rgb(var(--soft-gold-rgb))' : 'rgb(var(--light-grey-rgb))',
                   }}
                 >
                   <option value="">All States & Territories</option>
@@ -1085,9 +1090,9 @@ export default function Directory() {
                       title="Grid view"
                       aria-label="Grid view"
                       className="p-1.5 rounded transition-colors"
-                      style={{ backgroundColor: viewMode === 'grid' ? '#E5E0DB' : 'transparent' }}
+                      style={{ backgroundColor: viewMode === 'grid' ? 'rgb(var(--light-grey-rgb))' : 'transparent' }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={viewMode === 'grid' ? '#0A1628' : '#A89F94'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={viewMode === 'grid' ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
                       </svg>
                     </button>
@@ -1096,9 +1101,9 @@ export default function Directory() {
                       title="List view"
                       aria-label="List view"
                       className="p-1.5 rounded transition-colors"
-                      style={{ backgroundColor: viewMode === 'list' ? '#E5E0DB' : 'transparent' }}
+                      style={{ backgroundColor: viewMode === 'list' ? 'rgb(var(--light-grey-rgb))' : 'transparent' }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={viewMode === 'list' ? '#0A1628' : '#A89F94'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={viewMode === 'list' ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
                         <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
                       </svg>
@@ -1147,7 +1152,7 @@ export default function Directory() {
                 )
               ) : activeError ? (
                 <div className="text-center py-16">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.5" className="mx-auto mb-4">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--slate-rgb))" strokeWidth="1.5" className="mx-auto mb-4">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -1225,7 +1230,7 @@ export default function Directory() {
               ) : (
                 <div className="text-center py-16 max-w-[420px] mx-auto">
                   <div className="w-14 h-14 rounded-full bg-light-grey/60 flex items-center justify-center mx-auto mb-5">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(var(--slate-rgb))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
                     </svg>
                   </div>
