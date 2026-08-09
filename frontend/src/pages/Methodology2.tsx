@@ -6,17 +6,17 @@ import { useJsonLd, faqPageSchema } from '../hooks/useJsonLd'
 
 // Table of contents — drives the sticky sidebar and the anchor IDs below.
 const TOC = [
-  { id: ‘overview’, label: ‘What Daanaa is’ },
-  { id: ‘public-data-sources’, label: ‘Where the data comes from’ },
-  { id: ‘peer-financial-context’, label: ‘Peer financial context’ },
-  { id: ‘not-measured’, label: ‘What we don’t measure’ },
-  { id: ‘data-limits’, label: ‘Data limits’ },
-  { id: ‘financial-context’, label: ‘Financial context’ },
-  { id: ‘hidden-gems’, label: ‘Orgs you may not have heard of’ },
-  { id: ‘two-layers’, label: ‘What the organization controls’ },
-  { id: ‘updates’, label: ‘How data stays current’ },
-  { id: ‘tax-deductibility’, label: ‘Tax-deductibility verification’ },
-  { id: ‘faq’, label: ‘Frequently asked questions’ },
+  { id: 'overview', label: 'What Daanaa is' },
+  { id: 'public-data-sources', label: 'Where the data comes from' },
+  { id: 'peer-financial-context', label: 'Peer financial context' },
+  { id: 'not-measured', label: 'What we don’t measure' },
+  { id: 'data-limits', label: 'Data limits' },
+  { id: 'financial-context', label: 'Financial context' },
+  { id: 'hidden-gems', label: 'Orgs you may not have heard of' },
+  { id: 'two-layers', label: 'What the organization controls' },
+  { id: 'updates', label: 'How data stays current' },
+  { id: 'tax-deductibility', label: 'Tax-deductibility verification' },
+  { id: 'faq', label: 'Frequently asked questions' },
 ] as const
 
 const FAQS = [
