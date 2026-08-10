@@ -263,7 +263,7 @@ Target: October 12 launch with governance-first transparency.
 
 ### Governance Questions
 - Read [institution/AUTONOMY_FRAMEWORK.md](institution/AUTONOMY_FRAMEWORK.md)
-- Check [DECISIONS.md](DECISIONS.md) for similar past decisions
+- Check [governance/DECISIONS.md](governance/DECISIONS.md) for similar past decisions
 - Ask in a GitHub issue if unclear
 
 ---
