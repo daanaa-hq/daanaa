@@ -18,15 +18,15 @@ file (that is the muda this map exists to prevent).
 | `CLAUDE.md` | Operating agreement, architecture, gotchas, autonomy rules. The primary. |
 | `STEWARDSHIP.md` | Supreme law — the 11 principles. Non-negotiable. |
 | `PRIVACY-INVARIANTS.md` | Structural privacy rules (enforced by `privacy_check.sh`). |
+| `REPO_MAP.md` | This file — canonical navigation paths to avoid token waste. |
+| `governance/DECISIONS.md` | Why non-obvious choices were made (newest on top). |
+| `governance/LESSONS.md` | Broke-then-fixed; preventing rules (newest on top). |
 | `docs/ROADMAP.md` | The 7 stages; Impact Wallet = spine + moat. |
 | `docs/DESIGN_PHILOSOPHY.md` | How we build: Toyota Way + Kondo + openness; the working test. |
-| `DECISIONS.md` | Why non-obvious choices were made (newest on top). |
-| `LESSONS.md` | Broke-then-fixed; preventing rules (newest on top). |
-| `TODOS.md` | Deferred work. |
 
-**Everything else in root `*.md` and `docs/*.md` (~240 files) is historical** — dated status
-reports, phase checklists, funder scripts, board sims, launch plans. Do NOT load them to
-"get context." Grep for a specific one only when a task explicitly needs it.
+**Root `.md` files:** The 8 above are entry points. Everything else in `archive/` or `docs/`
+subdirectories is historical context, audit trails, or project-specific documentation.
+Load them only when a task explicitly names one. Use `grep` to find archived docs, not broad reading.
 
 ---
 
@@ -84,13 +84,30 @@ scraper was built that duplicated `charity_navigator_verify.py`.)
 
 All paths smoke-test + auto-rollback. Never ship `merit_registry.db` to the droplet.
 
-## 7. Directories — signal vs noise
+## 7. Directories — active vs historical
 
-- **Signal:** `frontend/`, `scripts/`, `data/`, `docs/` (the 8 live docs), `tests/`, `institution/`
-  (governance corpus), `precompute_output/` (served static).
-- **Noise / historical (do not explore for context):** `archive/`, `archive_20260506/`,
-  `audit_results_*`, `05192026/`, `Agent C/`, `Agent E/`, `merit-platform/`, `meritgiving-ops/`,
-  `nonprofit-explorer/`, `autodev/`, `backups/`, `precompute_archive/`, `__pycache__/`, `node_modules/`, `venv/`.
+**Active (core system):**
+- `frontend/` — React app, TypeScript, Vite build
+- `scripts/` — Data pipeline, ML ops, discovery, batch jobs
+- `data/` — Canonical databases (merit_registry.db), CSV sources, precomputed vectors
+- `docs/` — Architecture, methodology, operations, projects
+- `tests/` — Unit/integration tests
+- `governance/` — Constitutional docs, decisions, audits, policies
+- `institution/` — Charter, library, organizational records
+- `ops/` — Deployment scripts, systemd configs, monitoring
+- `migrations/` — Database schema migrations (canonical)
+- `precompute_output/` — Generated static files served by droplet
+
+**Historical / development (ignore for context):**
+- `archive/` — Superseded docs, session reports, old implementations (organized by era)
+- `backups/` — Database backups (data protection, don't read)
+- `infrastructure/` — Deprecated infra configs (cloud vendor experiments)
+- `config/` — Old config files (reference only)
+- `logs/` — Operational logs
+- `newsletters/` — Content archives
+- `reports/` — Generated audit/analysis reports
+- `research_articles/` — Bookmark collection
+- `venv/` / `node_modules/` — Dependencies (do not explore)
 
 ---
 

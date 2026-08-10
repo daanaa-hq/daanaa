@@ -153,7 +153,6 @@ class UnifiedEngine:
             FROM registry_enriched
             WHERE deductibility = '1' AND org_status = 'active'
               AND (website IS NULL OR website = '')
-              AND total_revenue > 500000
             ORDER BY total_revenue DESC
             LIMIT ?
         """, (limit,))
