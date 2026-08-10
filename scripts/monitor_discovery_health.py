@@ -15,8 +15,12 @@ import sqlite3
 import json
 import logging
 import subprocess
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from daemon_health_lib import read_state, zero_output_is_not_healthy  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
+DAEMON_STATE_FILE = Path.home() / 'meritgiving' / 'logs' / 'discovery_daemon_state.json'
 
 
 def check_daemon_running():
@@ -100,7 +105,9 @@ def get_queue_depth():
 
 
 def check_health():
-    """Check daemon health. Alert if success rate < 25%."""
+    """Check daemon health. Alert if success rate < 25% OR if zero output
+    was produced at all (see 2026-08-10 fix below — these are NOT the same
+    condition and must not share one guard clause)."""
     logger.info("=" * 70)
     logger.info("🔍 DISCOVERY DAEMON HEALTH CHECK")
     logger.info("=" * 70)
@@ -108,31 +115,68 @@ def check_health():
     daemon_running = check_daemon_running()
     stats = get_discovery_stats(hours=24)
     queue_depth = get_queue_depth()
+    daemon_state = read_state(DAEMON_STATE_FILE)
 
     logger.info(f"Daemon Status: {'🟢 RUNNING' if daemon_running else '🔴 NOT RUNNING'}")
     logger.info(f"Success Rate (24h): {stats['success_rate']:.1f}% ({stats['verified']}/{stats['discovered']})")
     logger.info(f"Errors (24h): {stats['errors']}")
     logger.info(f"Queue Depth: {queue_depth} links waiting to deploy")
-
-    # Alert if below threshold
-    THRESHOLD = 25
-    if stats['success_rate'] < THRESHOLD and stats['discovered'] > 0:
-        logger.critical("=" * 70)
-        logger.critical(f"🚨 ALERT: Success rate {stats['success_rate']:.1f}% is below {THRESHOLD}% threshold")
-        logger.critical("   Action: Contact founder for strategy adjustment")
-        logger.critical("=" * 70)
-        return False  # Unhealthy
+    if daemon_state:
+        logger.info(
+            f"Daemon self-reported state: iteration={daemon_state.get('iteration')}, "
+            f"verified_total={daemon_state.get('verified_total')}, "
+            f"iterations_since_verified_change={daemon_state.get('iterations_since_verified_change')}, "
+            f"full_timeout_streak={daemon_state.get('full_timeout_streak')}"
+        )
+    else:
+        logger.warning("Daemon self-reported state file unavailable (missing/corrupt) — "
+                        "falling back to log-heuristic stats above only")
 
     if not daemon_running:
         logger.critical("🚨 ALERT: Discovery daemon is not running")
         logger.critical("   Action: Restart with: nohup python3 scripts/discovery_daemon.py 100 > logs/discovery_daemon.log 2>&1 &")
         return False
 
+    # 2026-08-10 fix: the ORIGINAL alert condition was
+    #   `stats['success_rate'] < THRESHOLD and stats['discovered'] > 0`
+    # The `discovered > 0` guard existed to avoid a div-by-zero-derived
+    # success_rate of 0 at startup being misread as "0% success", but its
+    # side effect was that discovered==0 (the daemon alive and producing
+    # NOTHING) never triggered the alert at all -- it fell through silently
+    # to "✅ Daemon healthy" every single hour. This was live and undetected
+    # for 370 consecutive hourly checks (~15.4 days). Zero output is now its
+    # own explicit, unconditional alert -- see governance/LESSONS.md
+    # 2026-08-10 and scripts/daemon_health_lib.py:zero_output_is_not_healthy.
+    if zero_output_is_not_healthy(stats['discovered'], stats['verified'], stats['success_rate']):
+        logger.critical("=" * 70)
+        logger.critical("🚨 ALERT: Zero discovery output in the last 24h — daemon is "
+                         "running but producing nothing. This is the exact state a "
+                         "'success_rate > 0' guard previously hid for ~15.4 days.")
+        if daemon_state:
+            logger.critical(
+                f"   Daemon self-report: iterations_since_verified_change="
+                f"{daemon_state.get('iterations_since_verified_change')}, "
+                f"full_timeout_streak={daemon_state.get('full_timeout_streak')}"
+            )
+        logger.critical("   Action: check watchdog_discovery.log for a stuck-thread-leak "
+                         "restart, or investigate upstream dependency (inference server, "
+                         "target-site availability) directly.")
+        logger.critical("=" * 70)
+        return False
+
+    # Alert if below threshold
+    THRESHOLD = 25
+    if stats['success_rate'] < THRESHOLD:
+        logger.critical("=" * 70)
+        logger.critical(f"🚨 ALERT: Success rate {stats['success_rate']:.1f}% is below {THRESHOLD}% threshold")
+        logger.critical("   Action: Contact founder for strategy adjustment")
+        logger.critical("=" * 70)
+        return False  # Unhealthy
+
     logger.info("✅ Daemon healthy")
     return True
 
 
 if __name__ == '__main__':
-    import sys
     healthy = check_health()
     sys.exit(0 if healthy else 1)

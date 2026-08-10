@@ -21,7 +21,7 @@ import sys
 import os
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from website_discovery_comprehensive import WebsiteDiscovery
 from verify_discovered_links import LinkVerifier
@@ -44,6 +44,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
+STATE_FILE = Path('/home/akbar/meritgiving/logs/discovery_daemon_state.json')
 
 
 def _json_safe(obj):
@@ -78,6 +79,53 @@ class ContinuousDiscoveryDaemon:
             'cn_verified': 0,
             'gpu_verified': 0
         }
+        # 2026-08-10: state published for the watchdog's health decision
+        # (scripts/discovery_daemon_health.py), replacing log-text grepping
+        # that silently broke when this process's batch-size argument drifted
+        # out of sync with a hardcoded string in a separate file.
+        self._prev_verified_snapshot = None
+        self._iterations_since_verified_change = 0
+        self._full_timeout_streak = 0
+        self._started_at = datetime.now(timezone.utc).isoformat()
+
+    def _write_state_snapshot(self, iteration, batch_size, workers, was_full_timeout):
+        """Atomic write (tmp + rename) of authoritative daemon state, read by
+        discovery_daemon_health.py. Never raises — a failure to write state
+        must not crash discovery itself; the watchdog's fallback path covers
+        a missing/stale state file."""
+        verified_total = self.stats['verified']
+        if self._prev_verified_snapshot is not None and verified_total == self._prev_verified_snapshot:
+            self._iterations_since_verified_change += 1
+        else:
+            self._iterations_since_verified_change = 0
+        self._prev_verified_snapshot = verified_total
+
+        if was_full_timeout:
+            self._full_timeout_streak += 1
+        else:
+            self._full_timeout_streak = 0
+
+        state = {
+            'pid': os.getpid(),
+            'batch_size': batch_size,
+            'workers': workers,
+            'iteration': iteration,
+            'verified_total': verified_total,
+            'discovered_total': self.stats['discovered'],
+            'gpu_verified_total': self.stats['gpu_verified'],
+            'errors_total': self.stats['errors'],
+            'iterations_since_verified_change': self._iterations_since_verified_change,
+            'full_timeout_streak': self._full_timeout_streak,
+            'started_at': self._started_at,
+            'last_updated_at': datetime.now(timezone.utc).isoformat(),
+        }
+        try:
+            tmp_path = STATE_FILE.with_suffix('.json.tmp')
+            with open(tmp_path, 'w', encoding='utf-8') as f:
+                json.dump(state, f, indent=2)
+            tmp_path.replace(STATE_FILE)  # atomic on POSIX
+        except OSError as e:
+            logger.warning(f"Could not write state snapshot (non-fatal): {e}")
 
     def get_orgs_needing_discovery(self, batch_size=50):
         """Get ALL active 501c3 organizations missing links, ordered by revenue (high to low).
@@ -450,6 +498,7 @@ class ContinuousDiscoveryDaemon:
 
                 attempts = []
                 done_eins = set()
+                was_full_timeout = False
                 try:
                     for fut in as_completed(futures, timeout=600):
                         ein, name = futures[fut]
@@ -470,6 +519,11 @@ class ContinuousDiscoveryDaemon:
                             logger.warning(f"❌ {name} ({ein}): {result.get('reason')}")
                 except TimeoutError:
                     stuck = [(e, n) for f, (e, n) in futures.items() if e not in done_eins]
+                    # Full timeout = zero futures completed this batch at all,
+                    # the thread-leak precursor pattern from the 2026-07-20
+                    # incident. Distinct from a partial timeout (one slow
+                    # site among many that finished fine).
+                    was_full_timeout = (len(done_eins) == 0)
                     logger.warning(f"⏱️  Batch timeout (600s): abandoning {len(stuck)} stuck workers: "
                                    + ", ".join(n[:30] for _, n in stuck[:5]))
                     for ein, _name in stuck:
@@ -499,6 +553,8 @@ class ContinuousDiscoveryDaemon:
                     f"errors={self.stats['errors']} | "
                     f"Queue: {high_conf} (90%+) | {under_review} (under review)"
                 )
+
+                self._write_state_snapshot(iteration, batch_size, workers, was_full_timeout)
 
                 # Sleep between batches (auto-regulated)
                 logger.info(f"Sleeping {adj_sleep_batch:.1f}s before next batch...")

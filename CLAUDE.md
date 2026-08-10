@@ -260,6 +260,7 @@ Do not load additional models without checking available VRAM and impact on nigh
 - **Frontend package name**: `frontend/package.json` still says `"name": "my-app"` — scaffold default, never updated; ignore it.
 - **venv**: always activate `~/meritgiving/venv` before running any Python in this project.
 - **Ports in use**: API=5000, FastAPI legacy=8081, Vite dev=5173. Check `./check_merit_status.sh` before starting servers.
+- **Daemon health checks**: never grep log text or count log symbols to decide if a background process is healthy — a hardcoded batch-size string and a `discovered > 0` guard clause both silently disabled restart/alert logic for ~15.4 days in the 2026-08-10 incident. Any daemon publishes its own state (`scripts/daemon_health_lib.py`); its watchdog reads that. See `docs/DAEMON_HEALTH_STANDARD.md` before writing a new watchdog or "is X running" check.
 
 ## Coding discipline
 

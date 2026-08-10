@@ -2264,3 +2264,71 @@ that execution.
 no state mutation, no schedule created.
 
 ---
+
+## 2026-08-10 — Standardized daemon health checks after two independent 15-day-silent bugs; recovered the donation-link discovery pipeline live
+
+**Chose:** While answering a routine "what's happening with website links" question,
+found `discovery_daemon.py` had been thread-leaked and producing zero output for
+~15.4 days (`discovery_health.log`: 370 consecutive hourly checks, all reporting
+`0.0% (0/0)` while labeled `✅ Daemon healthy`). Root-caused, fixed live, then
+generalized the fix into a standing pattern (`docs/DAEMON_HEALTH_STANDARD.md`,
+`scripts/daemon_health_lib.py`) rather than patching the one instance.
+
+**Two independent bugs found, both in the same "monitor trusted a side channel
+instead of the real signal" class:**
+
+1. `watchdog_discovery.sh`'s restart-on-stuck logic (built live in the proven
+   2026-07-20/21 incident) grepped log text for the literal string
+   `"abandoning 50 stuck"`. The daemon's actual invocation (`discovery_daemon.py
+   100`) uses batch size 100; the grep never matched anything, silently disabling
+   the restart entirely. Fixed immediately (structural regex, no hardcoded count),
+   then superseded by (3) below.
+2. `monitor_discovery_health.py`'s alert condition was `success_rate < THRESHOLD
+   and discovered > 0` — the `discovered > 0` guard existed to avoid a
+   division-by-zero at startup, but its side effect was that `discovered == 0`
+   (zero output at all — the worst case) silently bypassed the alert. Fixed:
+   zero-output is now its own unconditional alert, independent of the
+   success-rate threshold check.
+
+**Recovery, proven live, not just deployed:** restarted the stuck daemon (old
+PID 3258223 → new PID 1979175); confirmed real output within 30 seconds (20 new
+rows in `link_deployment_queue`, real EINs, real timestamps). Then upgraded the
+daemon to publish its own state and restarted again (→ PID 2021961) to prove the
+new instrumentation end-to-end: state file appeared, watchdog read it as primary
+signal (not fallback), reported `state: ok`; by iteration 10, 451 links verified,
+0 errors, 0 stuck-streak.
+
+**Generalized, not just patched (Toyota-informed, per founder request):** extracted
+`scripts/daemon_health_lib.py` — a generic, pure, independently-testable
+`evaluate_health()` used by both `discovery_daemon_health.py` (thin instantiation)
+and `monitor_discovery_health.py` (cross-check). Standard documented in
+`docs/DAEMON_HEALTH_STANDARD.md`, pointed to from `CLAUDE.md`'s gotchas. Audited
+(read-only) the other 3 daemon/watchdog scripts in the repo
+(`watchdog_llama.sh`, `agent7_daemon.py`, `daemon_monitor.py`,
+`monitor_daemon_memory.py`) — `watchdog_llama.sh` does a real HTTP `/health` check
+(stronger than discovery's was) but has no stuck-pattern detection; the other three
+not yet audited. Logged as follow-up in the standard doc, not fixed today — kept
+scope to the two live bugs and the reusable pattern, not a full-codebase daemon
+rewrite.
+
+**Rejected:** Leaving the watchdog's regex-only patch as the final fix — rejected
+because it addressed the specific string mismatch but not the underlying anti-
+pattern (deriving health from log text at all), which is exactly what let the
+second bug (`monitor_discovery_health.py`) exist independently and go unnoticed
+by the same class of blind spot.
+
+**Status:** Both fixes live and proven. 68 tests added across 3 new/changed test
+files (`test_daemon_health_lib.py`, `test_discovery_daemon_health.py` extended,
+`test_monitor_discovery_health.py`), all passing. One known remaining rough edge
+left as-is (flagged, not hidden): `monitor_discovery_health.py`'s `success_rate`
+can exceed 100% because its `discovered` count (crude log-symbol heuristic) and
+`verified` count (real DB query) come from inconsistent sources — the new
+zero-output and daemon-state checks are the load-bearing fixes; the metric-quality
+issue is cosmetic by comparison and not fixed in this pass.
+
+**Reversibility:** High — daemon restarts are routine and expected; state files
+are additive and gitignored where appropriate (`discovery_daemon_state.json` is
+in `logs/`, not `.claude/autonomous/`, since it's operational infra output, not
+an autonomous-agent artifact — consistent with existing `logs/` conventions).
+
+---

@@ -5,6 +5,9 @@
 
 LOG="/home/akbar/meritgiving/logs/watchdog_discovery.log"
 DAEMON_LOG="/home/akbar/meritgiving/logs/discovery_daemon.log"
+STATE_FILE="/home/akbar/meritgiving/logs/discovery_daemon_state.json"
+HEALTH_SCRIPT="/home/akbar/meritgiving/scripts/discovery_daemon_health.py"
+PYTHON="/home/akbar/meritgiving/venv/bin/python3"
 
 check_daemon() {
     pgrep -f "discovery_daemon.py" > /dev/null 2>&1
@@ -16,13 +19,52 @@ log_msg() {
 }
 
 restart_daemon() {
+    local reason="$1"
     cd /home/akbar/meritgiving
     nohup python3 scripts/discovery_daemon.py 100 >> logs/discovery_daemon.log 2>&1 &
     sleep 2
     if check_daemon; then
-        log_msg "✅ Daemon restarted successfully"
+        log_msg "✅ Daemon restarted successfully (reason: ${reason})"
     else
-        log_msg "❌ Failed to restart daemon"
+        log_msg "❌ Failed to restart daemon (reason: ${reason})"
+    fi
+}
+
+# Legacy log-text fallback (2026-08-10 fixed: was hardcoded to a stale batch
+# size, silently dead for ~15.4 days — see governance/LESSONS.md). Kept ONLY
+# as a fallback for when the daemon's own state file (below) is missing or
+# doesn't belong to the currently running PID — e.g. right after this
+# instrumentation is first deployed, before the daemon has written a
+# snapshot. This is NOT the primary detection path anymore.
+legacy_log_based_check() {
+    local daemon_pid="$1"
+    local thread_count="$2"
+
+    STARTUP_LINE=$(grep -n "CONTINUOUS DISCOVERY DAEMON STARTED" "$DAEMON_LOG" 2>/dev/null | tail -1 | cut -d: -f1)
+    if [ -n "$STARTUP_LINE" ]; then
+        CURRENT_LOG=$(tail -n +"$STARTUP_LINE" "$DAEMON_LOG" 2>/dev/null | tail -n 500)
+    else
+        CURRENT_LOG=""
+    fi
+    RECENT_TIMEOUTS=$(echo "$CURRENT_LOG" | tail -n 100 | grep -cE "Batch timeout \(600s\): abandoning [0-9]+ stuck")
+    PROGRESS_LINES=$(echo "$CURRENT_LOG" | grep "Progress: discovered=" | tail -n 6)
+    STUCK_BY_COUNTER=0
+    if [ "$(echo "$PROGRESS_LINES" | grep -c '^')" -ge 6 ]; then
+        FIRST_VERIFIED=$(echo "$PROGRESS_LINES" | head -1 | grep -oE 'verified=[0-9]+' | cut -d= -f2)
+        LAST_VERIFIED=$(echo "$PROGRESS_LINES" | tail -1 | grep -oE 'verified=[0-9]+' | cut -d= -f2)
+        if [ -n "$FIRST_VERIFIED" ] && [ -n "$LAST_VERIFIED" ] && [ "$FIRST_VERIFIED" = "$LAST_VERIFIED" ]; then
+            STUCK_BY_COUNTER=1
+        fi
+    fi
+
+    if [ "$RECENT_TIMEOUTS" -ge 4 ] && [ "$STUCK_BY_COUNTER" -eq 1 ]; then
+        log_msg "🚨 [fallback/log-based] Daemon STUCK: ${RECENT_TIMEOUTS} full-batch timeouts, verified counter frozen, ${thread_count} threads (PID ${daemon_pid}). Killing + restarting."
+        kill -TERM "$daemon_pid" 2>/dev/null
+        sleep 3
+        kill -0 "$daemon_pid" 2>/dev/null && kill -9 "$daemon_pid" 2>/dev/null
+        restart_daemon "fallback: log-based stuck detection"
+    else
+        log_msg "✅ Daemon running (${thread_count} threads, no state file yet — using log-based fallback, no stuck pattern found)"
     fi
 }
 
@@ -39,79 +81,53 @@ if check_daemon; then
         kill -CONT $STOPPED_PIDS 2>/dev/null
     fi
 
-    # Productivity check (2026-07-20 incident): pgrep sees the process as
-    # "running" even when a thread leak has left it 100% timing out on every
-    # batch. Root cause: pool.shutdown(wait=False, cancel_futures=True) on a
-    # batch timeout cancels pending futures but cannot kill threads already
-    # stuck mid-request — those threads leak forever. After enough consecutive
-    # timeouts the daemon accumulates hundreds of zombie threads contending for
-    # CPU/GIL, which starves every subsequent batch too (self-reinforcing).
-    #
-    # 2026-07-21 refinement: a fixed 100-log-line window is NOT a reliable
-    # "recent" window — each iteration only emits a few lines (worker
-    # results + one progress line), so stale ✅ lines from well before the
-    # daemon actually got stuck can still sit inside the last 100 lines,
-    # making RECENT_SUCCESS falsely nonzero and suppressing the restart for
-    # a long time (observed: 9 consecutive 100%-timeout iterations, 112
-    # threads, before this check would have fired). Progress counters
-    # (discovered=/verified=) are cumulative and monotonic, so instead check
-    # whether the verified count in the last progress line is IDENTICAL to
-    # the verified count several progress lines back — if so, nothing has
-    # succeeded in that whole span regardless of what's elsewhere in the log.
-    #
-    # 2026-07-21, same session, second bug: the log file is append-only
-    # across restarts. Right after ANY restart (manual or watchdog-driven),
-    # the tail of the file can still be dominated by the PREVIOUS process's
-    # frozen progress lines, since the fresh process hasn't logged 6 new
-    # ones yet — this caused a live false-positive restart of a daemon that
-    # was 3 minutes old and perfectly healthy (24 threads). Fix: scope all
-    # analysis to lines AFTER the current process's own startup banner, so
-    # a fresh restart always reads as "insufficient data yet", never "stuck".
-    STARTUP_LINE=$(grep -n "CONTINUOUS DISCOVERY DAEMON STARTED" "$DAEMON_LOG" 2>/dev/null | tail -1 | cut -d: -f1)
-    if [ -n "$STARTUP_LINE" ]; then
-        CURRENT_LOG=$(tail -n +"$STARTUP_LINE" "$DAEMON_LOG" 2>/dev/null | tail -n 500)
-    else
-        CURRENT_LOG=""
-    fi
-    # 2026-08-10 fix: the daemon is invoked with a configurable batch size
-    # (scripts/discovery_daemon.py 100 in current use) and its log line
-    # ("abandoning N stuck workers") embeds N=len(stuck), which varies per
-    # batch (60, 100, etc.) and is never literally "50". A hardcoded count
-    # here silently disables this entire check regardless of real timeouts —
-    # exactly what happened: 0 restarts fired across a ~15-day stall despite
-    # verified= being frozen the whole time, because RECENT_TIMEOUTS was
-    # permanently 0. Match the message structure, not a specific count, so
-    # this can't silently drift out of sync with the daemon's own parameters
-    # again (poka-yoke: make the check structurally unable to go stale).
-    RECENT_TIMEOUTS=$(echo "$CURRENT_LOG" | tail -n 100 | grep -cE "Batch timeout \(600s\): abandoning [0-9]+ stuck")
-    PROGRESS_LINES=$(echo "$CURRENT_LOG" | grep "Progress: discovered=" | tail -n 6)
-    STUCK_BY_COUNTER=0
-    if [ "$(echo "$PROGRESS_LINES" | grep -c '^')" -ge 6 ]; then
-        FIRST_VERIFIED=$(echo "$PROGRESS_LINES" | head -1 | grep -oE 'verified=[0-9]+' | cut -d= -f2)
-        LAST_VERIFIED=$(echo "$PROGRESS_LINES" | tail -1 | grep -oE 'verified=[0-9]+' | cut -d= -f2)
-        if [ -n "$FIRST_VERIFIED" ] && [ -n "$LAST_VERIFIED" ] && [ "$FIRST_VERIFIED" = "$LAST_VERIFIED" ]; then
-            STUCK_BY_COUNTER=1
-        fi
-    fi
-    THREAD_COUNT=0
     DAEMON_PID=$(pgrep -f "discovery_daemon.py" | head -1)
+    THREAD_COUNT=0
     if [ -n "$DAEMON_PID" ] && [ -r "/proc/$DAEMON_PID/status" ]; then
         THREAD_COUNT=$(awk '/^Threads:/{print $2}' "/proc/$DAEMON_PID/status" 2>/dev/null || echo 0)
     fi
 
-    if [ "$RECENT_TIMEOUTS" -ge 4 ] && [ "$STUCK_BY_COUNTER" -eq 1 ]; then
-        log_msg "🚨 Daemon STUCK (thread leak): ${RECENT_TIMEOUTS} full-batch timeouts, verified counter unchanged across last 6 iterations, ${THREAD_COUNT} threads (PID $DAEMON_PID). Killing + restarting."
-        kill -TERM "$DAEMON_PID" 2>/dev/null
-        sleep 3
-        kill -0 "$DAEMON_PID" 2>/dev/null && kill -9 "$DAEMON_PID" 2>/dev/null
-        restart_daemon
-    elif [ "$THREAD_COUNT" -gt 150 ]; then
-        log_msg "⚠️ Daemon thread count high (${THREAD_COUNT}) but still producing — watching, not restarting yet."
-        log_msg "✅ Daemon running (${THREAD_COUNT} threads)"
+    # 2026-08-10: primary health decision now comes from the daemon's own
+    # published state (scripts/discovery_daemon_health.py), not from this
+    # script reverse-engineering health via log-text grepping. See
+    # governance/LESSONS.md 2026-08-10 for why the old approach silently
+    # broke for ~15.4 days and governance/DECISIONS.md for the redesign.
+    if [ -x "$PYTHON" ] && [ -f "$HEALTH_SCRIPT" ]; then
+        DECISION=$("$PYTHON" "$HEALTH_SCRIPT" --state-file "$STATE_FILE" --pid "$DAEMON_PID" --pid-alive true 2>>"$LOG")
+        ACTION=$(echo "$DECISION" | grep -oE '"action": *"[a-z_]+"' | sed -E 's/.*"([a-z_]+)"$/\1/')
+        REASON=$(echo "$DECISION" | grep -oE '"reason": *"[^"]*"' | sed -E 's/.*"([^"]*)"$/\1/')
+
+        case "$ACTION" in
+            restart)
+                log_msg "🚨 [state-based] Daemon STUCK: ${REASON} (${THREAD_COUNT} threads, PID ${DAEMON_PID}). Killing + restarting."
+                kill -TERM "$DAEMON_PID" 2>/dev/null
+                sleep 3
+                kill -0 "$DAEMON_PID" 2>/dev/null && kill -9 "$DAEMON_PID" 2>/dev/null
+                restart_daemon "state-based: ${REASON}"
+                ;;
+            ok)
+                if [ "$THREAD_COUNT" -gt 150 ]; then
+                    log_msg "⚠️ Daemon thread count high (${THREAD_COUNT}) but state file confirms productive — watching, not restarting."
+                fi
+                log_msg "✅ Daemon running (${THREAD_COUNT} threads, state: ok)"
+                ;;
+            unknown_no_state|unknown_stale_pid|"")
+                # No trustworthy state yet (fresh instrumentation, or a
+                # restart just happened and the new process hasn't written
+                # its first snapshot). Fall back to the log-based check
+                # rather than assuming healthy.
+                legacy_log_based_check "$DAEMON_PID" "$THREAD_COUNT"
+                ;;
+            *)
+                log_msg "⚠️ Unrecognized health decision output, falling back to log-based check: ${DECISION}"
+                legacy_log_based_check "$DAEMON_PID" "$THREAD_COUNT"
+                ;;
+        esac
     else
-        log_msg "✅ Daemon running (${THREAD_COUNT} threads)"
+        log_msg "⚠️ Health script or venv python unavailable, using log-based fallback."
+        legacy_log_based_check "$DAEMON_PID" "$THREAD_COUNT"
     fi
 else
     log_msg "🚨 Daemon crashed, restarting..."
-    restart_daemon
+    restart_daemon "process not found"
 fi
