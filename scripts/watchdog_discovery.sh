@@ -73,7 +73,17 @@ if check_daemon; then
     else
         CURRENT_LOG=""
     fi
-    RECENT_TIMEOUTS=$(echo "$CURRENT_LOG" | tail -n 100 | grep -c "Batch timeout (600s): abandoning 50 stuck")
+    # 2026-08-10 fix: the daemon is invoked with a configurable batch size
+    # (scripts/discovery_daemon.py 100 in current use) and its log line
+    # ("abandoning N stuck workers") embeds N=len(stuck), which varies per
+    # batch (60, 100, etc.) and is never literally "50". A hardcoded count
+    # here silently disables this entire check regardless of real timeouts —
+    # exactly what happened: 0 restarts fired across a ~15-day stall despite
+    # verified= being frozen the whole time, because RECENT_TIMEOUTS was
+    # permanently 0. Match the message structure, not a specific count, so
+    # this can't silently drift out of sync with the daemon's own parameters
+    # again (poka-yoke: make the check structurally unable to go stale).
+    RECENT_TIMEOUTS=$(echo "$CURRENT_LOG" | tail -n 100 | grep -cE "Batch timeout \(600s\): abandoning [0-9]+ stuck")
     PROGRESS_LINES=$(echo "$CURRENT_LOG" | grep "Progress: discovered=" | tail -n 6)
     STUCK_BY_COUNTER=0
     if [ "$(echo "$PROGRESS_LINES" | grep -c '^')" -ge 6 ]; then

@@ -1,3 +1,54 @@
+## 2026-08-10 — The July thread-leak fix silently died: a hardcoded batch-size string drifted out of sync with the daemon's own parameter, disabling the restart for ~15.4 days
+
+**Symptom:** `discovery_health.log` showed 370 consecutive hourly checks (2026-07-27
+through 2026-08-10, ~15.4 days) reporting `Success Rate (24h): 0.0% (0/0)` while
+labeling itself `✅ Daemon healthy` every single time. `discovery_daemon.log`'s
+`verified=` counter was frozen at 2282 across 600+ iterations; every batch logged
+`⏱️ Batch timeout (600s): abandoning N stuck workers`. `watchdog_discovery.sh`
+(cron, every 5 min) saw thread count climbing (4800→4864 over 45 min) and logged
+`⚠️ ... but still producing — watching, not restarting yet` on every tick — the
+exact stuck-but-alive signature the 2026-07-20/21 incident already diagnosed and
+built a fix for.
+
+**Root cause:** The July fix's restart trigger required `RECENT_TIMEOUTS >= 4`,
+computed by `grep -c "Batch timeout (600s): abandoning 50 stuck"` — hardcoding the
+batch size (50) the daemon happened to use in July. The daemon is now invoked as
+`discovery_daemon.py 100` (batch size 100; `len(stuck)` in the abandon message also
+varies per batch — 60, 100, etc.). The literal substring `"abandoning 50 stuck"`
+never appears in the current log, so `RECENT_TIMEOUTS` has been permanently 0 since
+whichever session changed the invocation's batch-size argument without updating the
+watchdog that was tuned against it — silently disabling the kill-and-restart branch
+entirely. The watchdog fell through to a "thread count high, just log a warning"
+branch that takes no corrective action, forever.
+
+**This is precisely the failure the July 21 entry's own preventing rule warned
+about** ("a monitoring fix is not proven... until it survives its own trigger
+condition happening for real, more than once") — it *did* survive twice, live, in
+July. It just wasn't proven to survive an unrelated parameter change to the thing
+it was watching, months later, with nothing re-verifying the two stayed in sync.
+
+**Fix:** Changed the grep to `grep -cE "Batch timeout \(600s\): abandoning [0-9]+
+stuck"` — matches the message structure, not a specific count, so it cannot drift
+out of sync with the daemon's own invocation parameters again. Verified against the
+live stuck state before touching the daemon (`RECENT_TIMEOUTS` went from 0 to 20,
+`STUCK_BY_COUNTER` from would-never-fire to 1) — then ran the watchdog for real: it
+killed PID 3258223 and restarted cleanly (new PID 1979175). Confirmed recovery, not
+just restart: new process queued 20 real links (`link_deployment_queue`, timestamps
+within the same minute) within 30 seconds of starting.
+
+**Preventing rule:** any check that encodes a caller's current parameters (a batch
+size, a worker count, a specific string a process happens to emit today) as a
+literal in a *different* file needs one of: (a) derive the expected value from the
+same source of truth the caller uses (don't duplicate the number), or (b) match
+structurally (a wildcard/regex on the shape of the message) rather than on a value
+that can change independently. A safety mechanism that silently no-ops on drift is
+worse than no mechanism — it produces false confidence ("watchdog is running, so
+we'd know") for as long as nobody happens to read its actual decision logic.
+Corollary to the 2026-07-21 rule: proving a monitoring fix survives its trigger
+condition twice is necessary but not sufficient — it also needs to survive an
+unrelated parameter change to the system it watches, which nothing here tested for
+until this incident, 15 days later.
+
 ## 2026-08-08 — Checked the status code, not the response body, in a security claim
 
 A route was reported as "live and exploitable in production" based on `curl ...
