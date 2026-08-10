@@ -2204,3 +2204,63 @@ no commit, no retry, no guess).
 RemoteTrigger; no production or repository state was mutated by this decision.
 
 ---
+
+## 2026-08-10 — Chinese Phase deterministic state generator built; confirms zero execution has occurred
+
+**Chose:** Built `scripts/chinese_phase_state.py` — a stdlib-only, no-LLM, no-network,
+no-git script that reads real sources (docs/ directories, `pilot_invitations` table,
+social-platform env vars) and writes `.claude/autonomous/chinese-phase-status.json`
+(gitignored via `.claude/*`, confirmed with `git check-ignore -v`). 18 deterministic
+tests in `tests/test_chinese_phase_state.py`, all passing.
+
+**Finding, not just a build:** searching the repo for actual Chinese Phase execution
+turned up nothing — no code, empty/generic DB tables (no phase column on
+`pilot_invitations`), no social API credentials, no outreach files, no paper drafts.
+The "Chinese Phase" that existed before today was planning documentation from a
+single session, not execution. Corrected `.claude/autonomous/CHINESE_PHASE_PLAN.json`
+in the same pass: it had self-asserted `"budget": 12000, "autonomous": true` —
+spending authority that was never approved (same defect class as the fabricated
+$500 threshold caught earlier this session). No money was spent against it. Changed
+to `"status": "NOT_STARTED"`, `"budget_authorized": false`.
+
+**Codex review (2 rounds, `codex exec --sandbox read-only`):**
+- Round 1: REVISIONS REQUIRED. Found the checkpoint evaluator only string-matched
+  the literal "2+" academic-partnership requirement and ignored every other
+  threshold (papers, followers, pilot counts) — would produce a false ON_TRACK once
+  currently-UNKNOWN metrics became measured but still missed other targets; correct
+  so far only by accident. Also: missing source directories were reported as
+  measured-zero rather than UNKNOWN (absence isn't evidence of an empty-but-checked
+  source), and a timezone-midnight date comparison risked an off-by-one on
+  checkpoint due-dates.
+- Fixed: removed the ON_TRACK/OFF_TRACK/BLOCKED verdict entirely — checkpoints now
+  report facts only (`days_remaining`, `required_outcomes` passed through verbatim,
+  `verdict: NOT_EVALUATED`) until a structured `{metric, operator, target}`
+  requirements schema exists to evaluate against (future work, not built here).
+  Missing directories now UNKNOWN; existing-but-empty directories remain a genuine
+  measured 0. Date arithmetic switched to calendar-date comparison with explicit
+  boundary tests (day 0 / ±1).
+- Round 2: **APPROVED WITH OPTIMIZATION.** Confirmed Level 0/1 — may run on a
+  schedule without a further founder gate, "provided it remains internal, read-only
+  with respect to source data, reversible, and does not publish claims or send
+  communications." One non-blocking suggestion applied: explicit type guard on the
+  `today` parameter. Codex's sandbox hit a transient tool error on round 2 (noted
+  for the record — the verdict was given against the supplied diff rather than a
+  fresh independent execution; treating it as valid but weaker than round 1's
+  from-scratch review).
+
+**Rejected:** Keeping a partial checkpoint verdict (e.g., "just extend the '2+'
+matching to cover a couple more cases") — rejected because any partial rule is
+exactly the kind of half-correct authority the mandate's fail-closed principle
+exists to prevent. NOT_EVALUATED is honest; a slightly-less-wrong verdict is not.
+
+**Status:** Script complete, Codex-approved, Level 0/1. **Not scheduled.** Real
+Chinese Phase execution (actual outreach, actual account creation, actual pilot
+signups) has not begun — running this on a cron today would only confirm, weekly,
+that nothing has changed. Scheduling it is appropriate once execution starts
+generating real files/rows for it to read, or once the founder decides to begin
+that execution.
+
+**Reversibility:** High — script and tests are additive, gitignored output path,
+no state mutation, no schedule created.
+
+---
