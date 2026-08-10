@@ -2144,3 +2144,27 @@ different conditions (e.g. a missing `registry_enriched` row).
 
 **Next Owner:** Frontend implementation for Phase 3 (org detail page display updates).
 
+
+## 2026-08-10: Approve AI-Native Governance Architecture
+
+**Decision:** Proceed with 4-week build to transform governance from prose to machine-readable infrastructure.
+
+**Reasoning:**
+- 48-hour adoption path enables 10x faster team onboarding
+- Machine-readable FRAMEWORK.json lets AI agents validate code automatically
+- SEO + search optimization will surface framework to 20-30 orgs/year
+- Registry creates proof of scale and community trust
+- Investment is 16 hours over 4 weeks (2-4 hours/week)
+- ROI: 50+ organizations using this model within 6 months
+
+**Phases:**
+1. Week 1: FRAMEWORK.json + templates (8 hours)
+2. Week 2: SEO + discoverability (4 hours)
+3. Week 3: Registry + submission (3 hours)
+4. Week 4: Validation + launch (1 hour)
+
+**Reversibility:** High (can pause at any phase, no breaking changes)
+
+**Next:** Assign engineer to governance/IMPLEMENTATION_CHECKLIST.md
+
+---
