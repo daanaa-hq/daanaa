@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NGO/Nonprofit AI Governance Framework",
+  "description": "Machine-readable schema for teams adopting Daanaa-style governance",
+  "type": "object",
+  "required": ["organization", "principles", "autonomy_matrix"],
+  "properties": {
+    "organization": {
+      "type": "object",
+      "required": ["name", "mission"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Organization name"
+        },
+        "mission": {
+          "type": "string",
+          "description": "One-sentence mission statement"
+        },
+        "founded": {
+          "type": "string",
+          "format": "date",
+          "description": "Organization founding date (ISO 8601)"
+        },
+        "country": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Countries where organization operates"
+        },
+        "sector": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["nonprofit", "ngo", "civic-tech", "social-enterprise", "volunteer-network", "grant-matching", "other"]
+          },
+          "description": "Organization sector tags"
+        }
+      }
+    },
+    "principles": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 15,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "description"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Principle ID (1-N)"
+          },
+          "title": {
+            "type": "string",
+            "description": "Principle title (5-10 words)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Plain-language explanation (1-2 sentences)"
+          },
+          "adapted_from_daanaa": {
+            "type": "boolean",
+            "description": "Whether this is adapted from Daanaa's 11 principles"
+          },
+          "parent_principle": {
+            "type": "integer",
+            "description": "If adapted, which Daanaa principle (1-11)"
+          },
+          "context": {
+            "type": "string",
+            "description": "Why this principle matters for this organization"
+          }
+        }
+      }
+    },
+    "autonomy_matrix": {
+      "type": "object",
+      "description": "Who decides what",
+      "properties": {
+        "team_autonomous": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Decisions team can make alone (e.g., 'bug fixes', 'performance optimization')"
+        },
+        "tech_lead_approval": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Decisions needing tech lead review (e.g., 'data schema changes')"
+        },
+        "founder_gate": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Decisions requiring founder/board approval (e.g., 'public claims', 'spending')"
+        },
+        "automated_gates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "description", "pattern"],
+            "properties": {
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "pattern": { "type": "string", "description": "Regex or pattern for automated check" }
+            }
+          },
+          "description": "Automated checks that block commits"
+        }
+      }
+    },
+    "legal_context": {
+      "type": "object",
+      "description": "Jurisdiction-specific compliance rules",
+      "properties": {
+        "primary_jurisdiction": {
+          "type": "string",
+          "enum": ["EU (GDPR)", "USA (varies)", "Brazil (LGPD)", "Asia-Pacific", "Global South", "MENA", "Africa", "Other"]
+        },
+        "data_residency_required": {
+          "type": "boolean"
+        },
+        "compliance_gates": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Additional gates for legal compliance"
+        }
+      }
+    },
+    "adoption_timeline": {
+      "type": "object",
+      "properties": {
+        "quick_start_hours": {
+          "type": "integer",
+          "description": "Hours to adopt minimum viable governance"
+        },
+        "full_implementation_weeks": {
+          "type": "integer",
+          "description": "Weeks to full implementation"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    },
+    "team": {
+      "type": "object",
+      "properties": {
+        "founder_name": { "type": "string" },
+        "tech_lead_name": { "type": "string" },
+        "team_size": { "type": "integer" },
+        "ai_agents_used": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "AI agents involved (e.g., 'Claude', 'Codex')"
+        }
+      }
+    },
+    "governance_location": {
+      "type": "object",
+      "properties": {
+        "stewardship_file": { "type": "string", "description": "Path to principles file" },
+        "decisions_file": { "type": "string", "description": "Path to decisions log" },
+        "lessons_file": { "type": "string", "description": "Path to lessons learned" },
+        "autonomy_file": { "type": "string", "description": "Path to autonomy framework" },
+        "privacy_gate_script": { "type": "string", "description": "Path to privacy_check.sh or equivalent" }
+      }
+    },
+    "searchable_tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Tags for discovery (nonprofit, ngo, civic-tech, governance, AI, transparency, etc.)"
+    }
+  }
+}
