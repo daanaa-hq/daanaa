@@ -17,7 +17,7 @@ Daanaa is a civic nonprofit-discovery platform designed to help donors make more
 
 ### For Contributors
 - 👥 [Contributing guidelines](CONTRIBUTING.md)
-- 🏛️ [Governance framework](GOVERNANCE.md) — Start here
+- 🏛️ [Governance framework](governance/GOVERNANCE_OPERATIONAL.md) — How we work
 - 📋 [Stewardship commitment](STEWARDSHIP.md) — 11 binding principles
 
 ### For Developers
@@ -58,7 +58,7 @@ Daanaa operates under a **Founding Stewardship Commitment** that applies to ever
 - ✅ 11 binding principles embedded in code
 - ✅ Explicit AI autonomy framework (Claude autonomous on reversible work only)
 - ✅ Founder gates on public claims, spending, data changes
-- ✅ Full decision log (DECISIONS.md) + lesson log (LESSONS.md)
+- ✅ Full decision log (governance/DECISIONS.md) + lesson log (governance/LESSONS.md)
 
 ### Evidence-Based Scoring
 - ✅ v6 financial context system (3 dimensions: funding model × revenue band × peer performance)
@@ -101,7 +101,7 @@ Daanaa operates under a **Founding Stewardship Commitment** that applies to ever
 ### API (Flask)
 ```bash
 source ~/meritgiving/venv/bin/activate
-./restart_api.sh                # production: gunicorn + preload
+./scripts/ops/restart_api.sh    # production: gunicorn + preload
 python3 daanaa_api.py           # dev: single-process Flask
 curl http://localhost:5000/health
 ```
@@ -125,7 +125,7 @@ sqlite3 data/merit_registry.db "SELECT COUNT(*) FROM registry_enriched"
 
 ### Status Check
 ```bash
-./check_merit_status.sh         # Ports, process status, health endpoints
+./scripts/check_api_connection.sh  # Ports, process status, health endpoints
 ```
 
 ---
@@ -135,20 +135,29 @@ sqlite3 data/merit_registry.db "SELECT COUNT(*) FROM registry_enriched"
 ```
 daanaa/
 ├── README.md                   ← You are here
-├── GOVERNANCE.md               ← Governance entry point (read first!)
-├── CONTRIBUTING.md             ← How to contribute
+├── REPO_MAP.md                 ← Navigation guide (canonical paths)
+├── CLAUDE.md                   ← Operating agreement & autonomy rules
 ├── STEWARDSHIP.md              ← 11 binding principles
-├── DECISIONS.md                ← Decision log (choices made and why)
-├── LESSONS.md                  ← Lesson log (what broke and how we fixed it)
+├── CONTRIBUTING.md             ← How to contribute
 │
-├── institution/                ← Governance corpus
+├── governance/                 ← Governance & operations
+│   ├── GOVERNANCE_OPERATIONAL.md ← How we make decisions
+│   ├── DECISIONS.md            ← Decision log (choices made and why)
+│   ├── LESSONS.md              ← Lesson log (what broke and how we fixed it)
+│   ├── audits/                 ← Quality, UX, compliance audits
+│   └── policies/               ← Governance policies
+│
+├── institution/                ← Constitutional corpus
 │   ├── AUTONOMY_FRAMEWORK.md   ← When Claude decides vs. founder gates
 │   ├── PRIVACY_GATES.md        ← 8 automated privacy gates
 │   ├── CONSTITUTION.md         ← Organizational structure
 │   └── library/                ← Tier 0/1/2 data classification
 │
 ├── daanaa_api.py               ← Backend API (Flask, 7,800 lines)
-├── data/                       ← Databases
+├── droplet_api.py              ← Droplet variant
+├── DEPLOYMENT.md               ← Deployment procedures
+│
+├── data/                       ← Databases & sources
 │   └── merit_registry.db       ← Live database (2.05M orgs)
 │
 ├── frontend/                   ← React/Vite SPA
@@ -159,15 +168,25 @@ daanaa/
 │   │   └── utils/             ← Helpers, API client, analytics
 │   └── dist/                  ← Built SPA (deployed to droplet)
 │
-├── scripts/                    ← Data pipeline
+├── scripts/                    ← Data pipeline & operations
 │   ├── daanaa_scorer.py       ← Score computation (v6, nightly)
 │   ├── build_fts_index.py     ← FTS5 search index
 │   ├── overnight_pipeline.py  ← Orchestrator
-│   ├── archive_scorers/       ← v4/v5 archived (never run)
-│   └── ops/                   ← Deployment & monitoring
+│   └── ops/                   ← Deployment & monitoring scripts
 │
-└── archive/                    ← Historical (read-only)
-    └── legacy_scorers_20260609/ ← Old scoring versions v1-v3 (never run)
+├── docs/                       ← Documentation
+│   ├── architecture/           ← System design & integration
+│   ├── operations/             ← Deployment, monitoring, incidents
+│   ├── projects/               ← Feature-specific docs
+│   └── methodology/            ← Scoring & algorithms
+│
+├── tests/                      ← Unit & integration tests
+├── migrations/                 ← Database schema migrations
+│
+└── archive/                    ← Historical (read-only, organized by era)
+    ├── deployment-history/     ← Past deployment docs
+    ├── session-reports/        ← End-of-session summaries
+    └── projects/               ← Archived projects (visibility, etc.)
 ```
 
 For detailed guidance: [REPO_MAP.md](REPO_MAP.md)
@@ -177,8 +196,8 @@ For detailed guidance: [REPO_MAP.md](REPO_MAP.md)
 ## Key Files by Role
 
 ### If you're a **Founder** making strategic decisions:
-1. [GOVERNANCE.md](GOVERNANCE.md) — How decisions are made (5 min)
-2. [DECISIONS.md](DECISIONS.md) — What we've decided and why (scan)
+1. [governance/GOVERNANCE_OPERATIONAL.md](governance/GOVERNANCE_OPERATIONAL.md) — How decisions are made (5 min)
+2. [governance/DECISIONS.md](governance/DECISIONS.md) — What we've decided and why (scan)
 3. [STEWARDSHIP.md](STEWARDSHIP.md) — Principles you signed (10 min)
 
 ### If you're a **Contributor** writing code:
@@ -187,7 +206,7 @@ For detailed guidance: [REPO_MAP.md](REPO_MAP.md)
 3. [CLAUDE.md](CLAUDE.md) — Tech stack and autonomy rules
 
 ### If you're an **AI Agent** (Claude, Codex):
-1. [GOVERNANCE.md](GOVERNANCE.md) — Authority matrix (who decides what)
+1. [governance/GOVERNANCE_OPERATIONAL.md](governance/GOVERNANCE_OPERATIONAL.md) — Authority matrix (who decides what)
 2. [institution/AUTONOMY_FRAMEWORK.md](institution/AUTONOMY_FRAMEWORK.md) — When you can act autonomously
 3. [institution/PRIVACY_GATES.md](institution/PRIVACY_GATES.md) — What blocks commits
 
@@ -204,8 +223,8 @@ For detailed guidance: [REPO_MAP.md](REPO_MAP.md)
 ### Decision Making
 - ✅ **Founder gates:** Public claims, spending, data changes require approval
 - ✅ **AI autonomy:** Claude autonomous on reversible code; founders gate irreversible work
-- ✅ **Decision log:** [DECISIONS.md](DECISIONS.md) records all non-obvious choices
-- ✅ **Lesson log:** [LESSONS.md](LESSONS.md) documents what broke and how we fixed it
+- ✅ **Decision log:** [governance/DECISIONS.md](governance/DECISIONS.md) records all non-obvious choices
+- ✅ **Lesson log:** [governance/LESSONS.md](governance/LESSONS.md) documents what broke and how we fixed it
 
 ### Automated Enforcement
 - ✅ **8 privacy gates** on every commit (tokens, logs, exfiltration, boundaries, config, invariants, entity firewall)
@@ -233,10 +252,10 @@ Target: October 12 launch with governance-first transparency.
 ## Getting Help
 
 ### Documentation
-- **Architecture:** [REPO_MAP.md](REPO_MAP.md)
-- **Governance:** [GOVERNANCE.md](GOVERNANCE.md)
-- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md)
-- **Data flow:** [CLAUDE.md](CLAUDE.md)
+- **Navigation:** [REPO_MAP.md](REPO_MAP.md) — Where everything lives
+- **Governance:** [governance/GOVERNANCE_OPERATIONAL.md](governance/GOVERNANCE_OPERATIONAL.md) — How we decide
+- **Contributing:** [CONTRIBUTING.md](CONTRIBUTING.md) — How to help
+- **Technical:** [CLAUDE.md](CLAUDE.md) — Architecture & autonomy
 
 ### Issues & Bugs
 - Create a GitHub issue with reproduction steps
