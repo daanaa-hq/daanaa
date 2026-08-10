@@ -1,10 +1,12 @@
 # Daanaa
 
-**AI-Governed Nonprofit Transparency Platform**
+**AI-Governed Nonprofit Transparency Platform & Global Governance Model**
 
-Daanaa is a civic nonprofit-discovery platform designed to help donors make more informed giving decisions. We index 2M+ 501(c)(3) organizations, assess financial health using peer comparisons, and surface trustworthy giving paths.
+Daanaa is a civic nonprofit-discovery platform (USA) designed to help donors make more informed giving decisions. We index 2M+ 501(c)(3) organizations, assess financial health using peer comparisons, and surface trustworthy giving paths.
 
-**What makes Daanaa different:** We are governed by 11 binding principles, automated privacy gates on every commit, and an explicit AI autonomy framework. Governance is infrastructure, not bureaucracy.
+**Beyond the platform:** Daanaa is also a **replicable AI governance framework for NGO/nonprofit teams globally.** The 11 binding principles, automated privacy gates, and explicit autonomy rules work for any civic-tech platform, in any country, serving any type of organization.
+
+**What makes Daanaa different:** We built governance as infrastructure, not bureaucracy. It's team-enforced, code-automated, and transparent—not dependent on founder heroics.
 
 ---
 
@@ -24,6 +26,12 @@ Daanaa is a civic nonprofit-discovery platform designed to help donors make more
 - 📚 [Architecture overview](REPO_MAP.md) — Which files are live
 - 🔐 [Privacy gates](institution/PRIVACY_GATES.md) — How we protect donor data
 - 🤖 [AI autonomy rules](institution/AUTONOMY_FRAMEWORK.md) — When Claude decides
+
+### For Global Teams Building Civic Tech
+- 🌍 [AI Governance Framework](docs/AI_GOVERNANCE_FRAMEWORK.md) — Adapt this for your NGO/nonprofit (includes GDPR, LGPD, regional guidance)
+- 👥 [Team Story](TEAM_STORY.md) — How we built this as a collaborative effort (humans + AI agents)
+- 🎯 [Principles (Customizable)](STEWARDSHIP.md) — 11 core principles; adapt for your culture and context
+- 🤝 [Contributing as a Team](CONTRIBUTING.md) — Team workflow, decision-making, governance
 
 ---
 
