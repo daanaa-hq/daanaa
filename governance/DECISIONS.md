@@ -2168,3 +2168,39 @@ different conditions (e.g. a missing `registry_enriched` row).
 **Next:** Assign engineer to governance/IMPLEMENTATION_CHECKLIST.md
 
 ---
+
+## 2026-08-10 — Chinese Phase monitoring agents: held pending real data source, not activated
+
+**Chose:** Built two Anthropic cloud-trigger agents (Chinese Phase Weekly Status,
+Weekly Signal Digest) to monitor Chinese Phase checkpoints and report to founder
+signal-only. Codex independent review returned REVISIONS REQUIRED for both.
+Applied fixes: cleared unrequested MCP connections (Gmail/Calendar/Drive — default
+template inclusion, unnecessary capability, `clear_mcp_connections: true` on both
+triggers) and disabled both (`enabled: false`) rather than activating.
+
+**Why:** Codex identified the material blocker: both agents monitor progress metrics
+(orgs onboarded, WeChat/Bilibili followers, papers submitted) that no execution
+process currently populates — Chinese Phase kickoff has not started. "No data yet"
+reported weekly is not a meaningful health signal and would mask a missing pipeline
+rather than surface one. Also flagged: Bash tool access is broader than the intended
+"documentation-only" boundary unless separately sandboxed by the trigger runtime
+(prompt wording alone doesn't enforce it); two weekly writers touching the same
+status files risk collision; comparison logic should be deterministic (script) not
+LLM reasoning, for cost and consistency.
+
+**Rejected:** Activating on schedule anyway ("it'll just report cleanly with no
+data") — rejected per Codex: silence from a monitor with nothing to monitor is
+indistinguishable from silence from a healthy system, which defeats the signal's
+purpose.
+
+**Status:** Both triggers exist, disabled, MCP-cleared. Re-enable only after (a) an
+actual execution process writes real metrics to `.claude/autonomous/`, (b) the two
+agents are consolidated per Codex's recommendation (one deterministic checkpoint
+script + one summarizer, not two overlapping LLM writers), (c) fail-closed behavior
+is made explicit in the prompt (missing file / clone failure / comparison error →
+no commit, no retry, no guess).
+
+**Reversibility:** High — both triggers can be deleted or re-enabled at any time via
+RemoteTrigger; no production or repository state was mutated by this decision.
+
+---
