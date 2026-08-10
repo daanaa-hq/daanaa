@@ -1,4 +1,6 @@
-# The Daanaa Team Story
+# 💎 The Daanaa Team Story
+
+![Daanaa Logo](./frontend/public/logo.png)
 
 **How We Built Responsible AI for Nonprofit Transparency**
 

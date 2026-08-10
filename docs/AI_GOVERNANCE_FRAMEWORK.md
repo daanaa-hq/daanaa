@@ -1,4 +1,6 @@
-# AI Governance Framework for Civic & NGO Organizations
+# 💎 AI Governance Framework for Civic & NGO Organizations
+
+![Daanaa Logo](../frontend/public/logo.png)
 
 **A Reusable, Team-Driven Approach to Responsible AI — Globally**
 

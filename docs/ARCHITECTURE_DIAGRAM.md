@@ -1,4 +1,6 @@
-# AI-Native Governance Architecture — Visual Guide
+# 💎 AI-Native Governance Architecture — Visual Guide
+
+![Daanaa Logo](../frontend/public/logo.png)
 
 ## System Overview
 

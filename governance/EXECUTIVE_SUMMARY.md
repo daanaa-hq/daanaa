@@ -1,4 +1,6 @@
-# AI-Native Governance Architecture — Executive Summary
+# 💎 AI-Native Governance Architecture — Executive Summary
+
+![Daanaa Logo](../frontend/public/logo.png)
 
 **Prepared for:** Akbar Khowaja (Daanaa Founder)  
 **Date:** 2026-08-10  

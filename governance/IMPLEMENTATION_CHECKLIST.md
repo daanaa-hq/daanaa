@@ -1,4 +1,6 @@
-# AI-Native Governance — Implementation Checklist
+# 💎 AI-Native Governance — Implementation Checklist
+
+![Daanaa Logo](../frontend/public/logo.png)
 
 **Prepared for:** Daanaa Governance Framework  
 **Duration:** ~16 hours over 2-3 weeks  

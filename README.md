@@ -1,4 +1,6 @@
-# Daanaa
+# 💎 Daanaa
+
+![Daanaa Logo](./frontend/public/logo.png)
 
 **AI-Governed Nonprofit Transparency Platform & Global Governance Model**
 

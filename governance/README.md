@@ -1,4 +1,6 @@
-# Daanaa Governance Hub
+# 💎 Daanaa Governance Hub
+
+![Daanaa Logo](../frontend/public/logo.png)
 
 **The principles, decisions, and infrastructure that make Daanaa trustworthy.**
 
