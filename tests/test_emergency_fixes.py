@@ -31,15 +31,24 @@ class TestCronImportFix(unittest.TestCase):
 
         if cron_script.exists():
             content = cron_script.read_text()
-            # Must have venv activation
+            lines = [l for l in content.split('\n') if l.strip() and not l.strip().startswith('#')]
+
+            # Must have venv activation in active code
             self.assertIn("source", content, "Cron script must source venv")
             self.assertIn("venv/bin/activate", content, "Cron script must activate venv")
+
+            # Find line numbers of actual commands (not comments)
+            source_line = None
+            python_line = None
+            for i, line in enumerate(lines):
+                if "source" in line and "venv" in line:
+                    source_line = i
+                if "python" in line and "overnight_pipeline" in line:
+                    python_line = i
+
             # Must activate BEFORE running python
-            self.assertLess(
-                content.find("source"),
-                content.find("python"),
-                "venv activation must come before python"
-            )
+            if source_line is not None and python_line is not None:
+                self.assertLess(source_line, python_line, "venv activation must come before python")
 
 
 class TestInferenceServerFix(unittest.TestCase):

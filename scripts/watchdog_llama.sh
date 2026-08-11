@@ -1,25 +1,40 @@
 #!/bin/bash
-# Watchdog: restart Qwen2.5-32B llama-server if it stops responding
-MODEL="$HOME/models/Qwen2.5-32B-Instruct-Q4_K_M.gguf"
-LOG="$HOME/meritgiving/logs/llama-server-qwen32b.log"
+# Watchdog for llama inference server (migrated to daemon_health_lib.py 2026-08-10)
 
-start_server() {
-  /home/akbar/llama-vulkan/build/bin/llama-server \
-    -m "$MODEL" \
-    --port 11437 --host 127.0.0.1 \
-    -ngl 99 --device Vulkan1 \
-    --ctx-size 20480 --batch-size 2048 -np 5 \
-    >> "$LOG" 2>&1 &
-  echo "[$(date)] Watchdog: started llama-server PID $!" >> "$LOG"
-}
+PORT=${1:-11437}
+HEALTH_FILE="/tmp/llama_server.health.json"
+TIMEOUT=2
 
-while true; do
-  if ! curl -sf http://127.0.0.1:11437/health 2>/dev/null | grep -q '"status":"ok"'; then
-    echo "[$(date)] Watchdog: server down, restarting..." >> "$LOG"
-    pkill -f "llama-server.*11437" 2>/dev/null
-    sleep 5
-    start_server
-    sleep 60  # wait for model to load
-  fi
-  sleep 30
-done
+# Step 1: Check published health state
+if [ -f "$HEALTH_FILE" ]; then
+    STATUS=$(jq -r '.status // "unknown"' "$HEALTH_FILE" 2>/dev/null)
+    LAST_RUN=$(jq -r '.last_updated_at // ""' "$HEALTH_FILE" 2>/dev/null)
+
+    if [ "$STATUS" = "failed" ]; then
+        echo "[$(date)] Status=failed in health file"
+        exit 1
+    fi
+
+    if [ -n "$LAST_RUN" ]; then
+        LAST_RUN_EPOCH=$(date -d "$LAST_RUN" +%s 2>/dev/null || echo 0)
+        NOW_EPOCH=$(date +%s)
+        AGE=$((NOW_EPOCH - LAST_RUN_EPOCH))
+
+        if [ "$AGE" -gt 900 ]; then
+            echo "[$(date)] Llama health file stale ($AGE seconds)"
+            exit 1
+        fi
+    fi
+
+    echo "[$(date)] Llama server healthy (status=$STATUS)"
+    exit 0
+fi
+
+# Step 2: Fallback — if no health file, check port directly
+if timeout "$TIMEOUT" bash -c "echo > /dev/tcp/localhost/$PORT" 2>/dev/null; then
+    echo "[$(date)] Llama server port $PORT is open"
+    exit 0
+else
+    echo "[$(date)] Llama server port $PORT is closed"
+    exit 1
+fi
