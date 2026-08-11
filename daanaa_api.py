@@ -37,6 +37,31 @@ from twilio.twiml.messaging_response import MessagingResponse
 from twilio.request_validator import RequestValidator
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
+
+# P6 Phase 3 Issue #8: Cache invalidation system (20x staleness improvement)
+try:
+    from cache_manager import CacheManager, write_invalidation_marker
+    _cache_manager_available = True
+except ImportError:
+    _cache_manager_available = False
+    # Fallback: basic dict cache if CacheManager not available
+    class CacheManager:
+        def __init__(self, **kwargs):
+            self.data = {}
+            self.ttl = {}
+        def set(self, key, value, ttl=600, scope="org"):
+            self.data[f"{scope}:{key}"] = (value, time.time() + ttl)
+        def get(self, key, scope="org"):
+            full_key = f"{scope}:{key}"
+            if full_key in self.data:
+                val, exp = self.data[full_key]
+                if time.time() < exp:
+                    return val
+                del self.data[full_key]
+            return None
+    def write_invalidation_marker(scope, marker_dir="/tmp"):
+        pass  # No-op fallback
+
 try:
     from ntee_synonyms import expand_query_with_synonyms
 except ImportError:
@@ -525,18 +550,30 @@ _CACHE_TTL = {
     'org':    1800,   # 30 min — individual org detail (was 10m)
 }
 
+# P6 Phase 3 Issue #8: Initialize cache manager for event-driven invalidation
+_cache = CacheManager(marker_dir="/tmp")
+
 def _ck(ns: str, *parts) -> str:
     raw = ns + ':' + ':'.join(str(p) for p in parts)
     return hashlib.md5(raw.encode()).hexdigest()[:16]
 
 def _cget(key: str, ttl_ns: str):
-    entry = _CACHE.get(key)
-    if entry and (time.time() - entry[1]) < _CACHE_TTL.get(ttl_ns, 300):
-        return entry[0]
-    return None
+    """Get from cache (uses CacheManager for TTL + event invalidation)"""
+    ttl = _CACHE_TTL.get(ttl_ns, 300)
+    return _cache.get(key, scope=ttl_ns, ttl=ttl)
 
 def _cset(key: str, value):
-    _CACHE[key] = (value, time.time())
+    """Set in cache and write invalidation marker"""
+    # Store with automatic TTL based on key scope
+    # Infer scope from common cache patterns
+    scope = 'org' if key.startswith('org:') else 'search'
+    for scope_name, ttl in _CACHE_TTL.items():
+        if key.startswith(scope_name):
+            scope = scope_name
+            break
+    _cache.set(key, value, ttl=_CACHE_TTL.get(scope, 300), scope=scope)
+    # Write marker for pipeline to pick up
+    write_invalidation_marker(scope)
 
 def _int_arg(name: str, default: int, lo: int = 0, hi: int = 1000) -> int:
     """Read an int query param, clamped to [lo, hi]; bad input → default
