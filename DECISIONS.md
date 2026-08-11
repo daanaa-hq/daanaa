@@ -124,3 +124,29 @@
 ---
 
 **Status:** Phase 1-4 is LIVE on 107.170.26.8 (all smoke tests passing, all gates verified)
+
+---
+
+### Update 2026-08-11 23:50 UTC: Weeks 1-3 Deployment Complete
+
+**Chose:** Deploy Weeks 1-3 work to production (no production-facing code changes, droplet already healthy)
+
+**Why:**
+- Weeks 1-3 delivered: Critical Codex gaps fixed + Governance enforced + Token optimization foundation
+- All changes are local (tests, scripts, templates, documentation)
+- No changes to droplet_api.py, SPA precompute, or production database
+- Droplet verified healthy: all endpoints (health, homepage, org detail, search) return HTTP 200
+- 4 commits already merged to master (693221a2bf1, c9918489596, ebe4227bd27, 8be1d4efe08)
+
+**Implementation:**
+- Verify droplet health ✅ (all endpoints responding)
+- Log deployment in DECISIONS.md (this entry)
+- Commits already on master, no additional deployment steps needed
+
+**Verification (2026-08-11 23:50 UTC):**
+- Health endpoint: HTTP 200 ✅
+- Homepage: HTTP 200 ✅
+- Org detail (264837170): HTTP 200 ✅
+- API search: HTTP 200 ✅
+
+**Status:** Weeks 1-3 DEPLOYED. Governance gates active. Token optimization infrastructure ready for integration. All 15 tasks delivered.
