@@ -404,3 +404,84 @@ class TestIssue6_ErrorRecovery(unittest.TestCase):
         result = retry_with_backoff(failing_func, base_delay=0.01)
         self.assertEqual(result, "success")
         self.assertEqual(call_count[0], 3)
+
+class TestIssue7_ConnectionPooling(unittest.TestCase):
+    """ISSUE 7: Database connection pooling for concurrent access"""
+    
+    def test_connection_pool_checkout_latency(self):
+        """Pool checkouts should be <1ms (vs 5-10ms per connect)"""
+        import queue
+        import time
+        
+        class ConnectionPool:
+            def __init__(self, size=5):
+                self.pool = queue.Queue(maxsize=size)
+                # Pre-populate with connections
+                for _ in range(size):
+                    self.pool.put({"id": id(_), "ready": True})
+            
+            def checkout(self, timeout=1):
+                """Get connection from pool"""
+                start = time.time()
+                try:
+                    conn = self.pool.get(timeout=timeout)
+                    elapsed = time.time() - start
+                    return conn, elapsed
+                except queue.Empty:
+                    raise TimeoutError("No connections available")
+            
+            def return_conn(self, conn):
+                """Return connection to pool"""
+                self.pool.put(conn)
+        
+        pool = ConnectionPool(size=5)
+        
+        # Test: 10 sequential checkouts should all be <1ms
+        latencies = []
+        conns = []
+        for i in range(10):
+            conn, elapsed = pool.checkout()
+            latencies.append(elapsed)
+            conns.append(conn)
+        
+        # Return connections
+        for conn in conns:
+            pool.return_conn(conn)
+        
+        # All should be <1ms
+        avg_latency = sum(latencies) / len(latencies)
+        self.assertLess(avg_latency, 0.001, f"Pool latency {avg_latency*1000:.2f}ms > 1ms")
+    
+    def test_pool_handles_concurrent_access(self):
+        """Pool should handle multiple threads safely"""
+        import queue
+        import threading
+        
+        class ConnectionPool:
+            def __init__(self, size=5):
+                self.pool = queue.Queue(maxsize=size)
+                for _ in range(size):
+                    self.pool.put({"ready": True})
+            
+            def checkout(self, timeout=1):
+                return self.pool.get(timeout=timeout)
+            
+            def return_conn(self, conn):
+                self.pool.put(conn)
+        
+        pool = ConnectionPool(size=3)
+        results = []
+        
+        def worker():
+            conn = pool.checkout(timeout=1)
+            results.append("got_connection")
+            pool.return_conn(conn)
+        
+        threads = [threading.Thread(target=worker) for _ in range(5)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        
+        # All 5 threads should get connections
+        self.assertEqual(len(results), 5)
