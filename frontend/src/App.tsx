@@ -44,6 +44,7 @@ const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
 const Feedback = lazy(() => import('./pages/Feedback'))
 const MeetInvisible = lazy(() => import('./pages/MeetInvisible'))
 const ResearchDashboard = lazy(() => import('./pages/ResearchDashboard'))
+const ResearchExplorer = lazy(() => import('./pages/ResearchExplorer'))
 const OpenData = lazy(() => import('./pages/OpenData'))
 const NonprofitDashboard = lazy(() => import('./pages/NonprofitDashboard'))
 const NonprofitLogin = lazy(() => import('./pages/nonprofit/NonprofitLogin'))
@@ -182,6 +183,7 @@ export default function App() {
             <Route path="/events/:eventId" element={<EventDetailPage />} />
             <Route path="/donation/receipt" element={<DonationReceipt />} />
             <Route path="/feedback" element={<DonorFeedback />} />
+            <Route path="/research/explorer" element={<ResearchExplorer />} />
             <Route path="/research" element={<ResearchDashboard />} />
             <Route path="/open-data" element={<OpenData />} />
             <Route path="/settings" element={<SettingsPage />} />

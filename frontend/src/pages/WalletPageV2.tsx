@@ -63,7 +63,7 @@ export default function WalletPageV2() {
 
   // Filter by search and cause
   const filteredGiving = useMemo(() => {
-    let result = givingEntries.filter((e) => {
+    const result = givingEntries.filter((e) => {
       const org = orgDataMap.get(e.ein)
       const name = org?.organization_name || ''
 
