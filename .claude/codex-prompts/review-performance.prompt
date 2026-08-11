@@ -1,0 +1,33 @@
+<task>
+Performance review: [COMPONENT_OR_FILE]
+
+Current metrics: [BASELINE_METRICS]
+Problem: [WHAT_IS_SLOW]
+Constraints: [HARD_LIMITS]
+
+Context: See Context7 (npx context7 daanaa "performance baseline") for current targets.
+Key targets:
+- Org detail page: <3 sec
+- Search response: <1 sec
+- Homepage: immediate (interactive)
+</task>
+
+<structured_output_contract>
+1. Root cause of slowness (1-2 sentences with data)
+2. Top 3 optimizations:
+   - Name | Expected speedup (est. %) | Effort (S/M/L) | Risk (none/low/medium)
+3. Recommendation (which to do first)
+
+Max 300 words.
+If you propose caching: cite what to cache and TTL
+If you propose parallelization: explain the dependency chain
+If you propose async: explain what blocks and why async helps
+</structured_output_contract>
+
+<verification_loop>
+Before finalizing:
+1. Are estimates grounded in the code? (No "magic speedups")
+2. Did you consider the easy wins first? (caching, precompute)
+3. Is the recommendation justified by ROI?
+4. Did you flag breaking changes or compatibility risk?
+</verification_loop>

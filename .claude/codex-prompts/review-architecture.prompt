@@ -1,0 +1,42 @@
+<task>
+Review the Daanaa architecture for [CHANGE_TYPE]: [CHANGE_DESCRIPTION]
+
+Reference: See Context7 (npx context7 daanaa "how does [SYSTEM] work?") for background.
+Key files: Read DECISIONS.md and LESSONS.md from git log for recent context.
+
+Do not include full CLAUDE.md or STEWARDSHIP.md text—assume knowledge of:
+- 11 Stewardship principles (P1-P11)
+- Privacy invariants (PRIVACY-INVARIANTS.md)
+- Current deployment (CURRENT_STATE.md)
+- Recent decisions (DECISIONS.md)
+</task>
+
+<structured_output_contract>
+Format: Brief analysis only
+1. Current state (1 sentence)
+2. Top 3 gaps or risks:
+   - Name | Severity (high/medium/low) | Mitigation or impact
+3. Single highest-priority recommendation (1 sentence)
+4. Effort estimate (S/M/L/XL)
+
+Constraints:
+- Max 250 words total (no elaboration)
+- Flag speculative items: "(hypothesis)" or "(unverified)"
+- Cite STEWARDSHIP.md principles if relevant
+- Reference specific files or line numbers if needed
+</structured_output_contract>
+
+<grounding_rules>
+- Verify files exist before citing them
+- If a key file is missing, note that (e.g., "LESSONS.md not found")
+- Do not invent context; say "insufficient data" if uncertain
+- Distinguish findings from recommendations
+</grounding_rules>
+
+<verification_loop>
+After drafting, verify:
+1. Word count ≤ 250
+2. All references cite specific files/lines
+3. No generic best-practice advice unmoored to findings
+4. Principles cited are actual principles from STEWARDSHIP.md
+</verification_loop>

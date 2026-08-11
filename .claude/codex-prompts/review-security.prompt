@@ -1,0 +1,35 @@
+<task>
+Security review: [FINDING_TYPE]
+
+Tool output: [TOOL_NAME] found [ISSUE_COUNT] issues:
+[ISSUES_LIST]
+
+Context: The codebase enforces PRIVACY-INVARIANTS.md and STEWARDSHIP.md principles.
+Assume knowledge of:
+- Tier 2 data: wallet, org_claims, waitlist, feedback (never external AI)
+- Privacy gates (5 checks: filename, external AI, wallet exposure, sensitive logging, search tracking)
+- Founder approval gate for security-boundary changes
+</task>
+
+<structured_output_contract>
+For each issue:
+  Name | Risk level (critical/high/medium/low) | Fix (1 sentence) | Effort (S/M/L)
+
+Keep per-issue descriptions to 2-3 sentences max.
+Max 400 words total.
+
+If no real security issues:
+  "No security issues found. Tool output is noise/false positive."
+  Explain why the flagged code is safe.
+
+If unsure about severity:
+  Flag with "(unverified)" and note what would confirm it
+</structured_output_contract>
+
+<grounding_rules>
+- Severity must be justified by evidence (code snippet, data flow, principle violation)
+- No "could potentially" threats without concrete scenario
+- Distinguish compliance gaps from actual vulnerabilities
+- If related to PRIVACY-INVARIANTS.md, cite the specific invariant number
+- If a principle applies (STEWARDSHIP.md), cite the principle (P1-P11)
+</grounding_rules>

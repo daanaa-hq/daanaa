@@ -1,0 +1,35 @@
+<task>
+Fix [ERROR_TYPE] in [FILE_PATH] at lines [LINE_RANGE].
+
+Error: [ERROR_MESSAGE]
+Current behavior: [WHAT_HAPPENS]
+Expected behavior: [WHAT_SHOULD_HAPPEN]
+Context: [BRIEF_CONTEXT_IF_NEEDED]
+</task>
+
+<structured_output_contract>
+Output ONLY the fixed code block in [LANGUAGE] syntax. Nothing else.
+
+If fix requires explanation:
+  - One sentence before code explaining the change
+  - Then the code block
+  - No "here's what I did" narrative after
+
+Code must:
+- Compile/pass syntax check without warnings
+- Include inline comment if fix is non-obvious
+- Match the surrounding code style (indentation, naming, patterns)
+</structured_output_contract>
+
+<default_follow_through_policy>
+If the error is in a test file:
+  - Fix the implementation, not the test
+  - Unless the test itself is wrong (verify first)
+
+If multiple solutions exist:
+  - Choose the most conservative (minimal changes)
+  - Reject refactors unless explicitly requested
+
+If the fix requires new dependencies:
+  - Reject and explain why; ask if you should proceed
+</default_follow_through_policy>

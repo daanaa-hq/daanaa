@@ -1,0 +1,44 @@
+<task>
+Integration review: [COMPONENT_A] + [COMPONENT_B]
+
+Goal: [WHAT_SHOULD_HAPPEN]
+Current state: [HOW_THEY_INTERACT_NOW]
+Problem: [WHAT'S_BROKEN_OR_MISSING]
+
+Context: The system uses:
+- Context7 for doc indexing and lookup
+- Ralph for workflow orchestration (3 task templates)
+- Playwright for QC testing (17 test groups)
+- Codex for architectural review (phase deployment gates)
+- Stewardship principles (P1-P11) for governance
+</task>
+
+<structured_output_contract>
+1. Integration gap analysis (1-2 sentences)
+   - What's missing between the two components
+   - What would make it work
+
+2. Recommended integration pattern:
+   - Step 1 | Responsibility (component A or B)
+   - Step 2 | (continue sequence)
+   - Step 3 | (conclude with verification)
+
+3. Effort estimate (S/M/L/XL) and risk (none/low/medium/high)
+
+Max 350 words.
+
+If the integration requires governance gate:
+  - Flag which gate (principles, privacy, founder approval)
+  - Explain why it's needed
+
+If it changes a public API:
+  - Note backwards compatibility concerns
+  - Suggest migration path if needed
+</structured_output_contract>
+
+<missing_context_gating>
+If the scope is unclear:
+  - Ask which exact integration point is blocked
+  - List assumptions about the current state
+  - Say "cannot recommend without clarification"
+</missing_context_gating>
