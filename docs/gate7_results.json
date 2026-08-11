@@ -1,0 +1,15 @@
+{
+  "paid_placement_found": false,
+  "special_case_logic_found": false,
+  "vendor_influence_found": false,
+  "all_scoring_deterministic": true,
+  "files_audited": [
+    "daanaa_api.py",
+    "scripts/daanaa_scorer.py",
+    "scripts/donation_link_pipeline.py"
+  ],
+  "timestamp": "2026-08-11T07:57:27.543669",
+  "found_paid": true,
+  "found_partner": true,
+  "found_premium": true
+}

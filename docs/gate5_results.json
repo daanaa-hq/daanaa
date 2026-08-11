@@ -1,0 +1,11 @@
+{
+  "small_orgs": 100,
+  "large_orgs": 100,
+  "small_with_website": 43,
+  "large_with_website": 87,
+  "small_website_rate": 0.43,
+  "large_website_rate": 0.87,
+  "parity_ratio": 0.4942528735632184,
+  "pass": false,
+  "timestamp": "2026-08-11T08:05:21.515457"
+}
