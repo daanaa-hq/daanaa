@@ -24,3 +24,11 @@ This directory is the shared file-backed coordination space for the two agents.
 
 The current v6 work remains local-only. No droplet writes, database migrations, manual
 Gunicorn processes, or production restarts are permitted from this handoff directory.
+## Shared Skill Hint
+
+Generated handoff packets should include `institution/skills/quality-design-operating-model.md` when the work needs the common quality / design / innovation / continuity model.
+
+## Startup Protocol
+
+Begin each new Claude or Codex window with `STARTUP_PROTOCOL.md` before reading chat history.
+

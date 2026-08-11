@@ -6,6 +6,7 @@
 
 | Decision | Choice | Why | Date |
 |----------|--------|-----|------|
+| Gate 3 baseline | Snapshot validation sufficient for gate pass | Full 72h monitoring optional; baseline confirms V6 data 100% coverage + API correctness; continuous monitoring deferred to Phase 1-4 | Aug 11 |
 | Search index | Elasticsearch | Speed + filtering | Jun 18 |
 | EIN validation | Fuzzy 80%+ | Balance usability + verification; agent reviews edge cases for fraud | Jun 18 |
 | Email verification | Flag mismatch for review | Catch fraud without blocking small orgs (P4 fairness); agent triages in 2–5 min | Jun 18 |

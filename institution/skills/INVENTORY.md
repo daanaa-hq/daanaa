@@ -24,6 +24,7 @@ Implemented now:
 - `user-insight.md`
 - `cost-and-infrastructure.md`
 - `funding-verification.md`
+- `quality-design-operating-model.md`
 - `scripts/institution_weekly_review.py` as the first operating-loop entrypoint
 
 Not implemented now:

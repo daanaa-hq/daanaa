@@ -159,3 +159,71 @@
 - Lessons: A single domain fact (bounded dataset) can invalidate an entire infrastructure plan; surface load-bearing constraints before provisioning, not after.
 - Superseding decision: None.
 
+
+## DR-2026-08-11-009: Standardize Claude-to-Codex Task-Record-First Handoff Script
+
+- Identifier: DR-2026-08-11-009.
+- Date: 2026-08-11.
+- Issue: Claude and Codex need a repeatable working pattern that reduces rework, keeps scope explicit, and makes gaps visible before code changes start.
+- Context: The existing handoff protocol already requires task records, authority checks, validation, and Codex review; the missing piece was a single reusable prompt that tells Claude how to execute inside that loop.
+- Sources: `institution/HANDOFF_PROTOCOL.md`, `institution/tasks/README.md`, recent cross-agent work.
+- Options considered: leave the workflow implicit, add a one-off note in a task record, or codify a reusable prompt plus Codex review checklist in the handoff protocol.
+- Decision: Add a reusable Claude prompt and a reusable Codex review script to `institution/HANDOFF_PROTOCOL.md`, both anchored on the task record and explicit authority gates.
+- Decision owner: Stewardship Systems Agent.
+- Expected outcome: Fewer handoff gaps, less duplicated investigation, clearer validation expectations, and a shared artifact that future Claude/Codex sessions can reuse.
+- Risks accepted: one more template in the institutional layer; mitigated by keeping it short and pointing it back to the existing task record and authority docs.
+- Review trigger: If the workflow still produces recurring gaps or if a cleaner repository-visible task system replaces it later.
+- Actual outcome: Completed in this session.
+- Lessons: A single prompt is useful only when it forces the same evidence ladder, scope check, and verification step every time.
+- Superseding decision: None.
+
+## DR-2026-08-11-010: Add Task Handoff Packet Generator For Claude-Code-Codex Review Loop
+
+- Identifier: DR-2026-08-11-010.
+- Date: 2026-08-11.
+- Issue: Handoff review was still happening through a manual back-and-forth, even after the task record and protocol existed.
+- Context: Task records already hold scope, pass criteria, evidence, and handoff notes, but Codex still had to reconstruct the packet by reading several places manually.
+- Sources: `institution/HANDOFF_PROTOCOL.md`, `institution/tasks/T-2026-08-11-001-gate3-search-quality-audit.md`, recent Gate 3 verification.
+- Options considered: keep the manual process, add another doc template, or generate a reusable handoff packet directly from the task record.
+- Decision: Add `scripts/task_handoff_packet.py` and a protocol note so Claude can generate a Codex-ready packet from any task record and automatically flag pass/evidence mismatches.
+- Decision owner: Stewardship Systems Agent.
+- Expected outcome: One command produces the review artifact, Codex receives a consistent packet, and evidence gaps become visible before handoff.
+- Risks accepted: one more small script; mitigated by keeping it read-only, standard-library only, and tied to the existing task record format.
+- Review trigger: If the packet format drifts from the task record template or if a richer task system replaces markdown records later.
+- Actual outcome: Completed in this session.
+- Lessons: Automation is useful only when it compares claimed status against evidenced status, not when it just reprints the record.
+- Superseding decision: None.
+
+## DR-2026-08-11-011: Add Shared Quality-Design Operating Model Skill
+
+- Identifier: DR-2026-08-11-011.
+- Date: 2026-08-11.
+- Issue: The team needed a compact shared operating model for quality, design, coordination, and handoff work that both Claude Code and Codex could reuse without re-explaining the full charter each time.
+- Context: The repo already had task records, handoff protocol, and a packet generator. The remaining gap was a concise shared skill that encoded the working model: Toyota for quality, Apple for design coherence, NASA for preflight/resume safety, Amazon/Stripe for execution, GitHub for coordination, and Kaizen for learning.
+- Sources: `institution/HANDOFF_PROTOCOL.md`, `institution/skills/INVENTORY.md`, `scripts/task_handoff_packet.py`, recent coordination work.
+- Options considered: keep the guidance informal, add a long training doc, or create one compact shared skill.
+- Decision: Add `institution/skills/quality-design-operating-model.md` and list it in `institution/skills/INVENTORY.md` as the shared operating model for quality and design work.
+- Decision owner: Stewardship Systems Agent.
+- Expected outcome: Shorter prompts, fewer handoff gaps, faster task resumption, and a consistent mental model for both Claude Code and Codex.
+- Risks accepted: one additional skill file; mitigated by keeping it terse and tied to the existing handoff protocol and packet generator.
+- Review trigger: If the skill grows beyond the minimal operating model or if a stronger shared skill registry replaces markdown skills.
+- Actual outcome: Completed in this session.
+- Lessons: Shared operating models work best when they are small enough to load quickly and strict enough to prevent drift.
+- Superseding decision: None.
+
+## DR-2026-08-11-012: Add Tesla-Style Innovation And Founder-Independent Continuity To Shared Operating Model
+
+- Identifier: DR-2026-08-11-012.
+- Date: 2026-08-11.
+- Issue: The shared operating model needed an explicit innovation stance and a continuity stance so Daanaa stays open to reinvention while also being designed to outlast the founders.
+- Context: The quality-design skill already encoded Toyota, Apple, NASA, Amazon/Stripe, GitHub, and Kaizen. The remaining gap was first-principles innovation plus long-horizon continuity, modeled on durable Japanese businesses.
+- Sources: `institution/skills/quality-design-operating-model.md`, user directive, existing governance and handoff rules.
+- Options considered: keep the model fixed, add a separate innovation skill, or extend the shared operating model with Tesla-style first-principles innovation and continuity language.
+- Decision: Extend the shared operating model to include Tesla-style reinvention and an explicit continuity rule: keep the system documented, teachable, and evolvable so it can outlast current founders.
+- Decision owner: Stewardship Systems Agent.
+- Expected outcome: The team stays open to ground-up innovation without losing quality discipline, and the operating model can survive founder turnover.
+- Risks accepted: a slightly broader skill; mitigated by keeping the additions short and attaching them to the existing handoff and checkpoint workflow.
+- Review trigger: If innovation language starts to justify churn, or if continuity language becomes too vague to guide action.
+- Actual outcome: Completed in this session.
+- Lessons: Longevity requires both stability and the willingness to reinvent the parts that stop serving the mission.
+- Superseding decision: None.

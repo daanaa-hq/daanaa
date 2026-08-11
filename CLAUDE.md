@@ -39,6 +39,8 @@ Every AI agent and contributor is bound by these 11 principles:
 Senior-engineer bar. The system gets smarter every session. Read this file,
 `DECISIONS.md`, and `LESSONS.md` before starting work.
 
+Ultra-short bootstrap: read `AGENTS.md`, `CLAUDE.md`, `institution/handoffs/STARTUP_PROTOCOL.md`, `STEWARDSHIP.md`, `PRIVACY-INVARIANTS.md`, `DECISIONS.md`, `LESSONS.md`, `institution/README.md`, `institution/CONSTITUTION.md`, `institution/AUTHORITY.md`, `institution/CURRENT_STATE.md`, `institution/state.json`, and the relevant task record before work; restate scope, owner, files, and authority gates; stop if any load-bearing fact is missing; make the smallest reversible change, test it, update the task record, and hand off to Codex with exact files, tests, and open risks; do not change public claims, privacy, payments, auth, methodology, or deployment without explicit founder approval.
+
 ### The bar (every change)
 - **Pragmatic tests-first.** New backend endpoints and anything touching privacy,
   scoring, or money ship with a failing-first test. (Not retro-covering the whole
