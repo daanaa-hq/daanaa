@@ -335,8 +335,57 @@ while IFS= read -r file; do
   fi
 done <<< "$STAGED_FILES"
 
+# 8c: Wallet data must not be sent to external APIs
+# Flag any code that sends wallet bookmarks or giving intent outside localhost
+while IFS= read -r file; do
+  if exclude_filter "$file"; then continue; fi
+  if [[ ! "$file" =~ \.(ts|tsx|py|js)$ ]]; then continue; fi
+
+  if git show ":$file" 2>/dev/null | grep -qE "wallet|giving.*intent"; then
+    # Check if it also has external fetch/API calls (not localhost)
+    if git show ":$file" 2>/dev/null | grep -qE "fetch|axios|requests|http" | grep -v "localhost|127.0.0.1|/api/"; then
+      # Warn if both wallet data and external API calls are present
+      if git show ":$file" 2>/dev/null | grep -E "wallet|giving.*intent" | grep -qE "fetch|axios"; then
+        warn "Tier 2 data flow: '$file' may send wallet data to external API (verify localhost-only)"
+        TIER2_VIOLATIONS=$((TIER2_VIOLATIONS + 1))
+      fi
+    fi
+  fi
+done <<< "$STAGED_FILES"
+
+# 8d: Sensitive org data (revenue, donor info) must not be logged publicly
+# Flag console.log, print(), or warning() calls that reference sensitive fields
+SENSITIVE_FIELDS='donate_url|revenue|donation|program_revenue|donor|contribution_amount'
+while IFS= read -r file; do
+  if exclude_filter "$file"; then continue; fi
+  if [[ ! "$file" =~ \.(ts|tsx|py|js)$ ]]; then continue; fi
+
+  added="$(staged_added_lines "$file" || true)"
+  if [ -n "$added" ] && grep -qE "(console\.log|print\(|logger\.|log\()" <<< "$added"; then
+    # Check if the same file references sensitive org data
+    if git show ":$file" 2>/dev/null | grep -qE "$SENSITIVE_FIELDS"; then
+      warn "Sensitive data logging: '$file' has logging calls and references sensitive org fields (verify no data leaks)"
+      TIER2_VIOLATIONS=$((TIER2_VIOLATIONS + 1))
+    fi
+  fi
+done <<< "$STAGED_FILES"
+
+# 8e: Search endpoint must not track user identity
+# Flag if /api/search accepts or logs user_id, session_id, or auth tokens
+while IFS= read -r file; do
+  if exclude_filter "$file"; then continue; fi
+  if [[ "$file" =~ (search|api.*search) ]]; then
+    if [[ ! "$file" =~ \.(py|js|ts)$ ]]; then continue; fi
+
+    if git show ":$file" 2>/dev/null | grep -qE "user_id|session_id|auth.*token|Authorization|visitor_id"; then
+      warn "Search tracking: '$file' (search endpoint) may track user identity (verify P2 compliance)"
+      TIER2_VIOLATIONS=$((TIER2_VIOLATIONS + 1))
+    fi
+  fi
+done <<< "$STAGED_FILES"
+
 if [ $TIER2_VIOLATIONS -eq 0 ]; then
-  pass "Tier 2 entity firewall intact"
+  pass "Tier 2 entity firewall intact (gates 8a-8e all pass)"
 else
   VIOLATIONS=$((VIOLATIONS + TIER2_VIOLATIONS))
 fi

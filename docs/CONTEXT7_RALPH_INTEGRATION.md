@@ -75,7 +75,7 @@ When I need fresh documentation context, I can query Context7 instead of re-read
 
 ---
 
-## Using Ralph: Orchestrate Tasks
+## Using Ralph: Execute Tasks
 
 ### Built-In Task Templates
 
@@ -84,51 +84,95 @@ When I need fresh documentation context, I can query Context7 instead of re-read
 Local dev → QC tests → Commit → Approval gate → Deploy
 ```
 
-Used for:
-- New features
-- Bug fixes
-- Frontend changes
-- Non-breaking backend work
+**Workflow:**
+- Develop code locally
+- Run: `bash scripts/qc-test-suite.sh`
+- If pass: commit automatically
+- Await approval from founder or team lead
+- Deploy if approved
 
-**Autonomy:** Tests pass = safe to commit (no approval needed)
+**Used for:** New features, bug fixes, frontend changes, non-breaking backend work  
+**Autonomy:** Tests pass = safe to commit (no approval for reversible changes)
 
 #### 2. Data Pipeline
 ```
 Source validation → Run scorer → FTS index → Coverage check → Smoke test
 ```
 
-Used for:
-- Overnight scoring runs
-- FTS rebuilds
-- Embedding generation
+**Workflow:**
+- Validate data source (IRS, ProPublica, NCCS)
+- Run v6 scorer
+- Rebuild FTS search index
+- Verify coverage (% of orgs scored)
+- Run smoke tests (search, detail pages)
 
-**Autonomy:** Tests pass = safe to ship (no approval needed)
+**Used for:** Overnight scoring runs, FTS rebuilds, embedding generation  
+**Autonomy:** Tests pass = safe to ship (no approval for data updates)
 
 #### 3. Phase Deployment
 ```
 Verify → Test → Check → Prepare → FOUNDER GATE → Deploy → Verify → Document
 ```
 
-Used for:
-- Phase 1-4 rollouts
-- Methodology changes
-- Public claim updates
+**Workflow:**
+- Verify all blocker fixes in git
+- Run full QC test suite
+- Check Stewardship principles (STEWARDSHIP.md P1-P11)
+- Prepare deployment bundle
+- **STOPS: Wait for founder approval** (cannot proceed without human sign-off)
+- Deploy to production
+- Run smoke tests
+- Document in DECISIONS.md and LESSONS.md
 
-**Autonomy:** Founder approval required (gates at "FOUNDER GATE" step)
+**Used for:** Phase 1-4 rollouts, methodology changes, public claim updates  
+**Autonomy:** Founder approval required at "FOUNDER GATE" step (not autonomous for public-facing changes)
 
-### Running Orchestrated Workflows
+### Starting & Monitoring Tasks
 
-#### Via /daanaa-deploy skill (recommended)
+#### List available tasks
 ```bash
-/daanaa-deploy
-# Selects workflow automatically based on change
+node scripts/ralph-setup.js
+# Shows all 3 task templates with steps and governance gates
 ```
 
-#### Manual task execution
+#### Start a new task
 ```bash
-node scripts/ralph-setup.js --task feature_development
-node scripts/ralph-setup.js --task data_pipeline
-node scripts/ralph-setup.js --task phase_deployment
+node scripts/ralph-setup.js feature_development
+# OR
+node scripts/ralph-setup.js data_pipeline
+# OR
+node scripts/ralph-setup.js phase_deployment
+
+# Output shows:
+# - Task name and start time
+# - Step-by-step workflow
+# - Governance gates that will be checked
+```
+
+#### Check task status
+```bash
+node scripts/ralph-setup.js --status
+
+# Shows:
+# - Current task name
+# - Progress: X/Y steps completed
+# - Next step to execute
+```
+
+#### Resume a paused task
+```bash
+node scripts/ralph-setup.js --resume
+
+# Useful if:
+# - Task paused at founder approval gate
+# - Task paused due to failed check
+# - You want to continue from where it stopped
+```
+
+#### Via /daanaa-deploy skill (recommended for production)
+```bash
+/daanaa-deploy
+# Automatically selects workflow based on change type
 ```
 
 ---

@@ -15,12 +15,18 @@ Wire it as a pre-commit hook or CI step so the build fails if privacy regresses.
    cookieless, privacy-respecting provider per STEWARDSHIP principle 2.)
 
 2. **Giving data is account-scoped, not public.** Wallet data (bookmarks and giving
-   intent) is stored server-side under the user's Google account via Firebase Auth.
-   Wallet contents are never exposed publicly, never shared with third parties, never
-   used for advertising or outreach. No donor identity may be tied to giving amounts
-   or organization choices in any endpoint that is accessible without the owner's own
-   auth token. Browsing Daanaa never requires an account.
-   *(Changed 2026-06-14: wallet moved from localStorage-only to Google account-backed.)*
+   intent) is stored on the user's device (localStorage) by default. No account is
+   required to use the wallet; browsing Daanaa and bookmarking orgs works without
+   authentication. Users may optionally sign in with Google to enable cross-device
+   wallet sync; synced data contains bookmarks and intent only, never transactions or
+   donor identity. Wallet contents are never exposed publicly, never shared with third
+   parties, never used for advertising or outreach. No donor identity may be tied to
+   giving amounts or organization choices in any endpoint accessible without the owner's
+   own auth token. Evidence: `frontend/src/contexts/WalletContext.tsx` (device-first
+   localStorage primary, optional server sync).
+   *(Changed 2026-06-27: Product QA found wallet remains device-first. 2026-06-14 note
+   overstated auth requirement. Updated to match implementation and STEWARDSHIP.md
+   correction. Revised 2026-08-11 to match Codex findings.)*
 
 3. **No visitor IP retention.** The access log format must omit the client host
    (`%(h)`). IPs may be used transiently for rate-limiting (in-memory only) but never

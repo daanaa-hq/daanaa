@@ -70,5 +70,23 @@
       "role": "documentation_context",
       "command": "node scripts/context7-index.js"
     }
+  },
+  "currentTask": {
+    "name": "feature_development",
+    "started": "2026-08-11T23:43:56.825Z",
+    "currentStep": 0,
+    "steps": [
+      "develop_locally",
+      "run_qc_tests",
+      "commit_if_passing",
+      "await_approval",
+      "deploy_if_approved"
+    ],
+    "governance": [
+      "principles_check",
+      "privacy_gate"
+    ],
+    "status": "in_progress",
+    "results": {}
   }
 }
