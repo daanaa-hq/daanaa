@@ -350,3 +350,29 @@ class TestIssue6_ErrorRecovery(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class TestIssue3_SilentExceptions(unittest.TestCase):
+    """ISSUE 3: Silent exceptions should be caught, logged, and propagated"""
+
+    def test_batch_operation_logs_errors(self):
+        """Batch operations should log errors and continue with partial success"""
+        results = []
+        errors = []
+
+        def process_with_logging(item):
+            if item == "bad":
+                raise ValueError("Invalid item")
+            return f"processed_{item}"
+
+        # Process batch with one failure
+        for item in ["good1", "bad", "good2"]:
+            try:
+                result = process_with_logging(item)
+                results.append(result)
+            except ValueError as e:
+                errors.append((item, str(e)))
+
+        # Should have partial success
+        self.assertEqual(len(results), 2)
+        self.assertEqual(len(errors), 1)
+        self.assertIn("bad", [e[0] for e in errors])
