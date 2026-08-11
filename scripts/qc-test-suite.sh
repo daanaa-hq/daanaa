@@ -60,11 +60,17 @@ echo ""
 
 # Step 3: Run Playwright tests
 echo -e "${YELLOW}[3/4] Running QC tests...${NC}"
-if [ "$VERBOSE" = true ]; then
-  npx playwright test tests/qc-blocker-fixes.spec.ts --reporter=verbose
-else
-  npx playwright test tests/qc-blocker-fixes.spec.ts
+
+# Build test command with flags
+TEST_ARGS="tests/qc-blocker-fixes.spec.ts"
+[ "$VERBOSE" = true ] && TEST_ARGS="$TEST_ARGS --reporter=verbose"
+[ "$HEADLESS" = false ] && TEST_ARGS="$TEST_ARGS --headed"
+
+if [ "$HEADLESS" = false ]; then
+  echo -e "${YELLOW}Running in headed mode (browser visible)...${NC}"
 fi
+
+npx playwright test $TEST_ARGS
 
 TEST_EXIT_CODE=$?
 echo ""

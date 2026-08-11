@@ -84,7 +84,7 @@ Tests: QC suite passing
 
 ---
 
-## Test Coverage: Blocker Fixes
+## Test Coverage: Phase 1 (Complete)
 
 ### 1. Firebase Analytics Removal (P2)
 - ✅ Page HTML does NOT contain Firebase initialization
@@ -107,6 +107,19 @@ Tests: QC suite passing
 - ✅ Org detail pages load
 - ✅ No console errors (critical)
 - ✅ Performance meets baseline (<3s for detail, <1s for search)
+
+### 5. Live Search API Regression (Codex Finding 2026-08-11)
+- ✅ Search returns results for common queries (education, food, health)
+- ✅ Pagination works correctly (offset/limit don't overlap)
+- ✅ Empty results handled gracefully (returns empty array, not error)
+
+**Total Tests:** 17 test cases across 8 test groups
+
+### Phase 2 (Planned, Future)
+- Accessibility (WCAG AA) — keyboard navigation, screen reader compat
+- Mobile responsiveness — viewport tests for mobile/tablet
+- SEO meta tags — canonical tags, og:* tags, structured data
+- Wallet functionality — bookmark persistence, sync across devices
 
 ---
 
@@ -220,9 +233,12 @@ bash scripts/qc-test-suite.sh --headed
 # Browser opens; you can watch tests run
 ```
 
-### Option 2: Run single test with verbose
+### Option 2: Run specific test group (e.g., search regression)
 ```bash
-npx playwright test tests/qc-blocker-fixes.spec.ts -g "your test name" --reporter=verbose
+npx playwright test tests/qc-blocker-fixes.spec.ts -g "Search API" --reporter=verbose
+
+# Or run only search regression tests
+npx playwright test tests/qc-blocker-fixes.spec.ts -g "Search" --headed
 ```
 
 ### Option 3: Debug in code
@@ -233,6 +249,22 @@ await page.pause();
 // Debug output
 console.log('Current URL:', page.url());
 console.log('Element text:', await element.textContent());
+```
+
+### Troubleshooting Search Tests
+If search tests fail:
+```bash
+# 1. Verify API is responding
+curl http://localhost:5173/api/search?q=education
+
+# 2. Check if dev server is running
+lsof -Pi :5173 -sTCP:LISTEN
+
+# 3. Run search tests with verbose output
+npx playwright test tests/qc-blocker-fixes.spec.ts -g "Search API" --reporter=verbose
+
+# 4. Run in headed mode to see browser interaction
+bash scripts/qc-test-suite.sh --headed
 ```
 
 ---

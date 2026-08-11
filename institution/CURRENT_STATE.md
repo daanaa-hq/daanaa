@@ -70,9 +70,10 @@
 - **API:** Firebase JWT verification; admin endpoints use `DAANAA_ADMIN_KEY`.
 
 ### Deployment
-- **Edge:** DigitalOcean droplet (Cloudflare tunnel via IP 167.179.26.8).
+- **Edge:** DigitalOcean droplet (Cloudflare tunnel via IP 107.170.26.8, verified 2026-08-11).
 - **Rollback:** Automated (`.prev` backup kept, sync_droplet_api.sh smoke test).
 - **Precompute:** 1.76M static JSON pages served from droplet.
+- **Note:** IP reconciliation completed 2026-08-11 (see docs/IP_AUDIT_2026_08_11.md)
 
 ---
 

@@ -185,6 +185,70 @@ test.describe('Phase 1-4 Blocker Fixes QC', () => {
 });
 
 // ============================================================================
+// REGRESSION TESTS: Live /api/search (Codex Finding 2026-08-11)
+// ============================================================================
+
+test.describe('Search API Regression', () => {
+  test('should return search results for common queries', async ({ page }) => {
+    // Test education query against live /api/search endpoint
+    const response = await page.request.get('http://localhost:5173/api/search?q=education&limit=10');
+
+    expect(response.status()).toBe(200);
+
+    const data = await response.json();
+    expect(data).toHaveProperty('results');
+    expect(Array.isArray(data.results)).toBe(true);
+    expect(data.results.length).toBeGreaterThan(0);
+
+    // Verify org fields present
+    const firstOrg = data.results[0];
+    expect(firstOrg).toHaveProperty('ein');
+    expect(firstOrg).toHaveProperty('name');
+
+    console.log(`Search results: ${data.results.length} orgs found for "education"`);
+  });
+
+  test('should handle pagination correctly (offset/limit)', async ({ page }) => {
+    // Get page 1 (offset 0)
+    const page1Response = await page.request.get('http://localhost:5173/api/search?q=food&limit=5&offset=0');
+    expect(page1Response.status()).toBe(200);
+
+    const page1Data = await page1Response.json();
+    expect(page1Data.results.length).toBeGreaterThan(0);
+
+    // Get page 2 (offset 5)
+    const page2Response = await page.request.get('http://localhost:5173/api/search?q=food&limit=5&offset=5');
+    expect(page2Response.status()).toBe(200);
+
+    const page2Data = await page2Response.json();
+    expect(page2Data.results.length).toBeGreaterThan(0);
+
+    // Verify pages don't overlap (different results)
+    const page1Eins = page1Data.results.map((r: { ein: string }) => r.ein);
+    const page2Eins = page2Data.results.map((r: { ein: string }) => r.ein);
+
+    const overlap = page1Eins.filter((ein: string) => page2Eins.includes(ein));
+    expect(overlap.length).toBe(0);
+
+    console.log(`Pagination: page 1 has ${page1Eins.length} orgs, page 2 has ${page2Eins.length} orgs (no overlap)`);
+  });
+
+  test('should handle empty search results gracefully', async ({ page }) => {
+    // Query that should return no results
+    const response = await page.request.get('http://localhost:5173/api/search?q=zzzzzzzzzzzzzzz&limit=10');
+
+    expect(response.status()).toBe(200);
+
+    const data = await response.json();
+    expect(data.results).toBeDefined();
+    expect(Array.isArray(data.results)).toBe(true);
+    expect(data.results.length).toBe(0);
+
+    console.log(`Empty results handled correctly for nonsense query`);
+  });
+});
+
+// ============================================================================
 // Performance Baseline Tests
 // ============================================================================
 
