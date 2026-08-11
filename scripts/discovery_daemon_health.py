@@ -9,6 +9,7 @@ importable for tests (tests/test_discovery_daemon_health.py).
 """
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -19,12 +20,13 @@ from daemon_health_lib import read_state  # noqa: E402, F401 (re-exported for ca
 # Thresholds proven live in the 2026-07-20/21 incident: 4 consecutive
 # full-batch timeouts AND the verified counter frozen across 6 iterations,
 # both required together (not either alone) before declaring a thread leak.
-ITERATIONS_SINCE_CHANGE_THRESHOLD = 6
-FULL_TIMEOUT_STREAK_THRESHOLD = 4
+ITERATIONS_SINCE_CHANGE_THRESHOLD = int(os.getenv("DISCOVERY_ITERATIONS_THRESHOLD", "6"))
+FULL_TIMEOUT_STREAK_THRESHOLD = int(os.getenv("DISCOVERY_TIMEOUT_STREAK_THRESHOLD", "4"))
 
 # Generous relative to the daemon's own 600s per-batch timeout, so this
 # never fires on a single slow-but-fine batch.
-STALE_HEARTBEAT_SECONDS = 900
+# Configurable via DAEMON_STALE_THRESHOLD env var (default: 900 seconds).
+STALE_HEARTBEAT_SECONDS = int(os.getenv("DAEMON_STALE_THRESHOLD", "900"))
 
 _STUCK_THRESHOLDS = {
     "iterations_since_verified_change": ITERATIONS_SINCE_CHANGE_THRESHOLD,
