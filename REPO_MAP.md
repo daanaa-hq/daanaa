@@ -1,6 +1,6 @@
 # REPO_MAP — navigate in seconds, not tokens
 
-**Purpose:** This repo is large (~250 markdown docs, ~379 scripts, ~40 top-level dirs,
+**Purpose:** This repo is large (600+ tracked documents, ~379 scripts, ~40 top-level dirs,
 an 11k-line API). This map is the token-saving entry point: load THIS + `CLAUDE.md`, go
 straight to the canonical file, and ignore the historical sprawl unless you have a specific
 reason. Kept lean on purpose — if it grows into another 250-line doc, it has failed.
@@ -8,6 +8,7 @@ reason. Kept lean on purpose — if it grows into another 250-line doc, it has f
 Maintained per the Toyota working test (`docs/DESIGN_PHILOSOPHY.md`): one canonical path per
 job. Before building anything, find its canonical path here first — do not spawn a parallel
 file (that is the muda this map exists to prevent).
+For documentation navigation, start with docs/README.md. It distinguishes canonical starting points from historical or ambiguous material; a document in docs/ is not automatically implemented.
 
 ---
 
@@ -21,12 +22,10 @@ file (that is the muda this map exists to prevent).
 | `REPO_MAP.md` | This file — canonical navigation paths to avoid token waste. |
 | `governance/DECISIONS.md` | Why non-obvious choices were made (newest on top). |
 | `governance/LESSONS.md` | Broke-then-fixed; preventing rules (newest on top). |
-| `docs/ROADMAP.md` | The 7 stages; Impact Wallet = spine + moat. |
+| `docs/ROADMAP.md` | Product roadmap; verify status against code and current decisions. |
 | `docs/DESIGN_PHILOSOPHY.md` | How we build: Toyota Way + Kondo + openness; the working test. |
-
-**Root `.md` files:** The 8 above are entry points. Everything else in `archive/` or `docs/`
-subdirectories is historical context, audit trails, or project-specific documentation.
-Load them only when a task explicitly names one. Use `grep` to find archived docs, not broad reading.
+**Root .md files:** The files above are entry points, but PRODUCT.md, DESIGN.md, CONTRIBUTING.md, DEPLOYMENT.md, and TEAM_STORY.md remain intentionally root-level because they are referenced by tooling or are standard contributor/product entry points. The docs/ tree contains both active and historical material; use docs/README.md before opening a broad set of files.
+Load additional material only when a task explicitly names it. Use grep to find historical docs instead of broad reading.
 
 ---
 
@@ -98,11 +97,11 @@ All paths smoke-test + auto-rollback. Never ship `merit_registry.db` to the drop
 - `migrations/` — Database schema migrations (canonical)
 - `precompute_output/` — Generated static files served by droplet
 
-**Historical / development (ignore for context):**
+**Reference / historical / development (do not assume inactive without verification):**
 - `archive/` — Superseded docs, session reports, old implementations (organized by era)
 - `backups/` — Database backups (data protection, don't read)
 - `infrastructure/` — Deprecated infra configs (cloud vendor experiments)
-- `config/` — Old config files (reference only)
+- `config/` — Configuration and workflow material; verify each file before changing or retiring it
 - `logs/` — Operational logs
 - `newsletters/` — Content archives
 - `reports/` — Generated audit/analysis reports
@@ -114,7 +113,7 @@ All paths smoke-test + auto-rollback. Never ship `merit_registry.db` to the drop
 ## Token-saving rules (the point of this file)
 
 1. **Load `CLAUDE.md` + this map, then go to the one canonical file.** Don't broad-read.
-2. **Ignore the ~240 historical docs** unless a task names one.
+2. **Use docs/README.md to classify the 600+ documentation files** unless a task names one.
 3. **Grep the canonical path (section 3) before building** — the capability almost certainly exists.
 4. **Don't re-derive settled decisions** — check `DECISIONS.md` / memory first.
 5. Keep this map lean. Update the canonical-path table when a canonical owner changes; don't append status logs here.
