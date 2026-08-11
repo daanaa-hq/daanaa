@@ -559,8 +559,7 @@ def _ck(ns: str, *parts) -> str:
 
 def _cget(key: str, ttl_ns: str):
     """Get from cache (uses CacheManager for TTL + event invalidation)"""
-    ttl = _CACHE_TTL.get(ttl_ns, 300)
-    return _cache.get(key, scope=ttl_ns, ttl=ttl)
+    return _cache.get(key, scope=ttl_ns)
 
 def _cset(key: str, value):
     """Set in cache and write invalidation marker"""
@@ -2409,8 +2408,8 @@ def list_organizations():
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
                (r.website IS NOT NULL AND r.website != '') as has_website,
-               r.merit_score_v5, r.merit_health_signal_v5, r.merit_archetype_v5,
-               r.merit_archetype_v5_label, r.merit_peer_count_v5
+               r.scoring_tier_v6_inference, r.confidence_v6, r.peer_group_description_v6,
+               r.peer_group_size_v6, r.is_inferred_v6, r.confidence_margin_v6
         FROM registry_enriched r
         {fts_join_sql}WHERE {where_sql}
         {order_sql}
@@ -2432,25 +2431,22 @@ def list_organizations():
                 d['cause_tags'] = json.loads(d['cause_tags'])
             except (json.JSONDecodeError, TypeError):
                 d['cause_tags'] = None
-        # Build lightweight v5_context for cards / wallet
-        v5_context = None
-        if d.get('merit_score_v5') is not None:
-            v5_context = {
-                'score': {
-                    'percentile': int(d['merit_score_v5']),
-                    'health_signal': d.get('merit_health_signal_v5') or 'STABLE',
-                },
-                'archetype': {
-                    'label': d.get('merit_archetype_v5_label') or d.get('merit_archetype_v5') or '',
-                },
-                'peer_group': {
-                    'org_count': d.get('merit_peer_count_v5'),
-                },
+        # Build V6 context (canonical system, Aug 2026+)
+        # V6 provides tiered peer context with confidence; replaces numeric v5 scores
+        v6_context = None
+        if d.get('scoring_tier_v6_inference') is not None:
+            v6_context = {
+                'tier': d.get('scoring_tier_v6_inference'),
+                'confidence': d.get('confidence_v6'),
+                'peer_description': d.get('peer_group_description_v6'),
+                'peer_count': d.get('peer_group_size_v6'),
+                'is_inferred': bool(d.get('is_inferred_v6', 0)),
+                'confidence_margin': d.get('confidence_margin_v6'),
             }
-        d['v5_context'] = v5_context
-        # Remove raw v5 columns from the flat dict (they're in v5_context now)
-        for _col in ('merit_score_v5', 'merit_health_signal_v5', 'merit_archetype_v5',
-                     'merit_archetype_v5_label', 'merit_peer_count_v5'):
+        d['v6_context'] = v6_context
+        # Remove raw v6 columns from the flat dict (they're nested in v6_context now)
+        for _col in ('scoring_tier_v6_inference', 'confidence_v6', 'peer_group_description_v6',
+                     'peer_group_size_v6', 'is_inferred_v6', 'confidence_margin_v6'):
             d.pop(_col, None)
         # Phase 2: Add IRS Eligibility fields (additive)
         d.update(get_eligibility_fields(d['EIN']))
@@ -2662,9 +2658,9 @@ def get_organization(ein):
     # Cause-cohort context for UNSCORED orgs only. When we have no 990 financials
     # of our own for this org, show the *typical* financial shape of its NTEE
     # cause-cohort (drawn from scored orgs) — framed as "about this cause area,
-    # not this org" (Stewardship P3/P4). Only populate when merit_score_v5 is None
-    # (no v5 scoring — missing financials).
-    if not org.get('merit_score_v5'):
+    # not this org" (Stewardship P3/P4). Only populate when scoring_tier_v6 is None
+    # (no v6 scoring — missing financials).
+    if not org.get('scoring_tier_v6_inference'):
         try:
             from scripts.enrich_api_responses import get_cohort_context
             org['cohort_context'] = get_cohort_context(
@@ -2717,7 +2713,7 @@ def get_organization(ein):
         'board_size': org.get('board_size'),
         'board_independence_pct': (
             int(100 * org.get('board_independent_count', 0) / org.get('board_size', 1))
-            if org.get('board_size', 0) > 0
+            if org.get('board_size') and org.get('board_size', 0) > 0
             else None
         ),
         'employee_count': org.get('employee_count'),
@@ -12979,8 +12975,11 @@ def record_need_interest(need_id):
 
 # ── Register student service blueprint ──────────────────────────────────────────
 
-from student_service_api_routes import student_bp
-app.register_blueprint(student_bp)
+try:
+    from student_service_api_routes import student_bp
+    app.register_blueprint(student_bp)
+except ImportError:
+    pass  # Student service API optional
 
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
