@@ -1,0 +1,50 @@
+{
+  "project": "daanaa",
+  "indexed": "2026-08-11T22:59:25.543Z",
+  "sections": [
+    {
+      "type": "directory",
+      "name": "docs/",
+      "fileCount": 480,
+      "files": [
+        "11-STEWARDSHIP-PRINCIPLES.md",
+        "ACADEMIC_METHODS_OUTREACH_MESSAGES_2026-07-18.md",
+        "ACADEMIC_METHODS_REVIEW_PLAN.md",
+        "ACADEMIC_PARTNERSHIP_STRATEGY.md",
+        "ACTIVE_INITIATIVES.md"
+      ]
+    },
+    {
+      "type": "file",
+      "name": "CLAUDE.md",
+      "size": 20531
+    },
+    {
+      "type": "file",
+      "name": "STEWARDSHIP.md",
+      "size": 13064
+    },
+    {
+      "type": "file",
+      "name": "DECISIONS.md",
+      "size": 4710
+    },
+    {
+      "type": "file",
+      "name": "LESSONS.md",
+      "size": 4642
+    },
+    {
+      "type": "directory",
+      "name": "institution/",
+      "fileCount": 56,
+      "files": [
+        "001_FOUNDATION.md",
+        "AI_GOVERNANCE.md",
+        "AUTHORITY.md",
+        "AUTONOMOUS_BUILD_LOG.md",
+        "AUTONOMOUS_EXECUTION_START.md"
+      ]
+    }
+  ]
+}

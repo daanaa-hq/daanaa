@@ -1,0 +1,74 @@
+{
+  "projectName": "daanaa",
+  "autonomyLevel": "supervised",
+  "governanceGates": [
+    "principles_check",
+    "privacy_gate",
+    "data_source_verification",
+    "founder_approval"
+  ],
+  "taskTemplates": {
+    "feature_development": {
+      "steps": [
+        "develop_locally",
+        "run_qc_tests",
+        "commit_if_passing",
+        "await_approval",
+        "deploy_if_approved"
+      ],
+      "governance": [
+        "principles_check",
+        "privacy_gate"
+      ]
+    },
+    "data_pipeline": {
+      "steps": [
+        "validate_sources",
+        "run_scorer",
+        "build_fts_index",
+        "verify_coverage",
+        "smoke_test"
+      ],
+      "governance": [
+        "data_source_verification",
+        "privacy_gate"
+      ]
+    },
+    "phase_deployment": {
+      "steps": [
+        "verify_all_blockers_fixed",
+        "run_full_test_suite",
+        "check_principles",
+        "prepare_deployment",
+        "await_founder_approval",
+        "deploy_to_production",
+        "verify_smoke_tests",
+        "document_in_decisions"
+      ],
+      "governance": [
+        "principles_check",
+        "privacy_gate",
+        "founder_approval"
+      ]
+    }
+  },
+  "integrations": {
+    "codex": {
+      "enabled": true,
+      "role": "architectural_review",
+      "gates": [
+        "phase_deployment"
+      ]
+    },
+    "playwright": {
+      "enabled": true,
+      "role": "quality_assurance",
+      "command": "bash scripts/qc-test-suite.sh"
+    },
+    "context7": {
+      "enabled": true,
+      "role": "documentation_context",
+      "command": "node scripts/context7-index.js"
+    }
+  }
+}
