@@ -237,3 +237,24 @@ These are active schema/storage elements that retain the retired brand name. Mig
 
 **Last updated:** 2026-08-09  
 **Next review target:** 2026-08-16 (or post-major-deployment)
+
+---
+
+## Gate 3 Evidence & Reconciliation (2026-08-11)
+
+**NEW — Linked 2026-08-11:**
+- Gate 3 Search Quality Audit: **PASS** (T-2026-08-11-001)
+  - V6 coverage: 100.0% (sample: 100/100 orgs)
+  - Search latency: p50 260ms, p95 475ms
+  - HTTP 500 errors: 0 on 50 test queries
+  - Verdict: Data quality ready for Phase 1–4 integration
+  
+**Reconciliation:**
+See `institution/STATE_RECONCILIATION_2026_08_11.md` for:
+- Verified facts (cross-checked across sources)
+- Inferences (stated but not independently verified)
+- Unknowns (gaps requiring founder input)
+- Canonical current-state designation
+- Blockages before Phase 1–4 implementation
+
+**Status:** 🛑 **HALT — Awaiting Codex review and founder authorization before Phase 1–4 implementation or deployment.**

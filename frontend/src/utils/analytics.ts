@@ -1,15 +1,15 @@
-// Privacy-safe, aggregate behavior events via Firebase Analytics
-// (Google's PDPA-compliant service). No PII tracking — only coarse, org-level
-// properties (revenue_band, section) aggregated by Firebase. Never EIN or identifiable data.
+// Privacy-safe, aggregate behavior events via Plausible Analytics
+// (privacy-first, cookieless service). No PII tracking — only coarse, org-level
+// properties (revenue_band, section) aggregated by Plausible. Never EIN or identifiable data.
 // This is our genchi genbutsu instrument: it lets us OBSERVE whether design changes
 // actually shift behavior (the PDCA "Check" step). See docs/DESIGN_PHILOSOPHY.md.
 //
 // Stewardship P2 (privacy-safe) implementation:
-// - Events logged to Firebase (aggregated server-side)
+// - Events logged to Plausible (no cookies, aggregate only)
 // - Properties only org-level (revenue_band = Micro/Professional/Established)
 // - Never user-identifiable, never individual EIN
 // - Dashboards show aggregates (e.g., "At a Glance visibility % by band")
-// See PRIVACY-INVARIANTS.md.
+// See PRIVACY-INVARIANTS.md and https://plausible.io/privacy
 
 import { logEvent } from '../lib/firebase'
 
@@ -19,7 +19,7 @@ interface EventParams {
 
 export function trackEvent(event: string, opts?: EventParams): void {
   try {
-    // Firebase logEvent is already privacy-safe (aggregates server-side)
+    // Plausible logEvent is privacy-safe (no cookies, no third-party tracking)
     logEvent(event, opts?.props)
   } catch (e) {
     // Analytics must never break the user experience.
