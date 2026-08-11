@@ -3,6 +3,7 @@ import type { ApiOrganization } from '../data/api'
 import GiveYourWayRouter from './GiveYourWayRouter'
 import { normalizeExternalUrl } from '../utils/externalLink'
 import { nonprofitSizeLabel } from '../utils/orgSize'
+import { taxDeductibleToStatus } from '../utils/taxDeductible'
 
 /**
  * OrgInfoHierarchy: Display org information from most common to least common.
@@ -108,7 +109,7 @@ export default function OrgInfoHierarchy({ org }: OrgInfoHierarchyProps) {
             donateUrlStatus={org.donate_url_status}
             website={org.website}
             websiteStatus={org.website_status}
-            irsEligibilityStatus={org.tax_deductible === false ? 'unknown' : 'verified'}
+            irsEligibilityStatus={taxDeductibleToStatus(org.tax_deductible)}
           />
 
           {/* Meta: Help us improve */}

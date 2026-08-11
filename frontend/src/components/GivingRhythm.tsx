@@ -3,6 +3,7 @@ import { useWallet } from '../contexts/WalletContext'
 import { isTemplateDue, WALLET_CONSTRAINTS } from '../types/wallet'
 import type { WalletEntry, RecurringTemplate } from '../types/wallet'
 import type { ApiOrganization } from '../data/api'
+import { taxDeductibleToStatus } from '../utils/taxDeductible'
 
 const CADENCE_LABEL: Record<RecurringTemplate['cadence'], string> = {
   monthly: 'every month', quarterly: 'every quarter', yearly: 'every year',
@@ -89,7 +90,7 @@ export function RhythmNudges({ entries, orgDataMap }: {
                 <button
                   onClick={() => {
                     const irsSnapshot = org ? {
-                      irsEligibilityStatus: (org.tax_deductible === false ? ('unknown' as const) : ('verified' as const)),
+                      irsEligibilityStatus: taxDeductibleToStatus(org.tax_deductible),
                       irsEligibilityCheckedAt: org.tax_deductible_checked_at,
                       irsEligibilitySources: ['IRS Business Master File', 'IRS Auto-Revocation List'],
                     } : undefined

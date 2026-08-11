@@ -3,6 +3,7 @@ import DonationLogger from './DonationLogger'
 import type { WalletEntry } from '../types/wallet'
 import type { ApiOrganization } from '../data/api'
 import { CardPattern } from './ui/CardPattern'
+import { taxDeductibleToStatus } from '../utils/taxDeductible'
 
 interface CloseTheLoopPromptProps {
   walletEntries: WalletEntry[]
@@ -74,7 +75,7 @@ export default function CloseTheLoopPrompt({
               ein={selectedEin}
               orgName={selectedOrg?.organization_name ?? selectedEin}
               irsSnapshot={selectedOrg ? {
-                irsEligibilityStatus: (selectedOrg.tax_deductible === false ? ('unknown' as const) : ('verified' as const)),
+                irsEligibilityStatus: taxDeductibleToStatus(selectedOrg.tax_deductible),
                 irsEligibilityCheckedAt: selectedOrg.tax_deductible_checked_at,
                 irsEligibilitySources: ['IRS Business Master File', 'IRS Auto-Revocation List'],
               } : undefined}

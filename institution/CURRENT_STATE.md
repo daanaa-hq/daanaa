@@ -235,7 +235,7 @@ These are active schema/storage elements that retain the retired brand name. Mig
 
 ---
 
-**Last updated:** 2026-08-09  
+**Last updated:** 2026-08-11  
 **Next review target:** 2026-08-16 (or post-major-deployment)
 
 ---
@@ -257,4 +257,10 @@ See `institution/STATE_RECONCILIATION_2026_08_11.md` for:
 - Canonical current-state designation
 - Blockages before Phase 1–4 implementation
 
-**Status:** 🛑 **HALT — Awaiting Codex review and founder authorization before Phase 1–4 implementation or deployment.**
+**Status (2026-08-11 16:50 UTC):** ✅ **CODEX REVIEW + FOUNDER AUTHORIZATION COMPLETE**
+- Firebase Analytics removed (P2 compliance)
+- IRS status trust signal fixed (P3 compliance)
+- All blocker fixes deployed to droplet
+- DNS updated to correct IP (167.170.26.8)
+- Awaiting DNS propagation (~5 min)
+- Phase 1-4 deployment IN PROGRESS
