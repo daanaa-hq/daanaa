@@ -50,16 +50,25 @@ Analyze this code and provide a comprehensive review including:
 
 **After:**
 ```prompt
-<compact_output_contract>
-Brief analysis (200 words max):
-1. What works
-2. Top 3 gaps (name | impact | effort)
-3. Single highest-priority recommendation
+<task>
+Review this code change for quality and risks.
+</task>
 
-Keep output tight. No elaboration beyond what's in the contract.
-</compact_output_contract>
+<structured_output_contract>
+Format: Brief analysis only
+1. What works well (1-2 sentences)
+2. Top 3 gaps:
+   - Name | Severity (high/medium/low) | Impact
+3. Single highest-priority fix (1 sentence)
+4. Effort estimate (S/M/L)
+
+Constraints:
+- Max 200 words total
+- No generic advice unmoored to the code
+- Cite specific line numbers if flagging issues
+</structured_output_contract>
 ```
-**Tokens used:** Codex outputs 300-400 words, exactly what's needed
+**Tokens used:** Codex outputs 200-300 words, exactly what's needed (vs 2,000+ exploratory)
 
 **Implementation:**
 - Always include `<compact_output_contract>` with `format:` and `max_length:`
@@ -283,36 +292,89 @@ speed optimizations, token efficiency, and state synchronization."
 Tokens: ~15,000 for context + exploring all 8 areas
 ```
 
-**Optimized Approach:**
+**Optimized Approach (Using Context7 + Structured Contract):**
 ```
 <task>
-Review automation architecture (Context7: npx context7 daanaa). 
-Analyze: centralization, automation, bottleneck, quality, security, speed, 
-tokens, state-sync gaps.
+Review Daanaa automation architecture for gaps.
+
+Reference: See Context7 for system design (npx context7 daanaa "architecture"). 
+Read DECISIONS.md and LESSONS.md from git log for recent context.
+Do NOT include full CLAUDE.md or STEWARDSHIP.md — assume knowledge of principles.
+
+Analyze these 8 gap categories:
+1. Centralization — single sources of truth
+2. Automation — remaining manual steps
+3. Bottlenecks — human wait points
+4. Quality — missing test coverage
+5. Security — privacy edge cases
+6. Speed — parallel opportunities
+7. Tokens — LLM cost reduction
+8. State sync — git/config/runtime alignment
 </task>
 
-<compact_output_contract>
-8 sections, 2-3 sentences each:
-1. Centralization gaps (name | gap | impact)
-2. Automation gaps (name | gap | impact)
-[repeat for all 8]
-Then: Top 3 recommendations ranked by ROI.
-Max 800 words total. No elaboration.
-</compact_output_contract>
+<structured_output_contract>
+Format: 8 sections, 2-3 sentences each (one per gap above)
+Each section: Name | Root cause | Recommendation
 
-Tokens: ~5,000 for prompt + structured output forces conciseness
-Savings: 67% vs. unstructured review
+Then: Top 3 findings ranked by impact (Effort est. S/M/L)
+
+Constraints:
+- Max 800 words total
+- Cite specific files/lines if flagging gaps
+- Flag speculative findings with "(hypothesis)"
+- No elaboration beyond what's needed
+</structured_output_contract>
+
+Tokens: ~5,000 total (vs. 15,000 unoptimized)
+- Context7 reference saves: 10,500 tokens (context alone)
+- Structured contract saves: 1,000 tokens (prevents exploration)
+- Savings: 70% vs. unstructured approach
 ```
+
+---
+
+## Using the Prompt Templates (Week 3 Implementation)
+
+**Location:** `.claude/codex-prompts/`
+
+**5 Core Templates:** (see README.md for full guide)
+1. `review-architecture.prompt` — Architecture decisions, system design
+2. `fix-code.prompt` — Specific error fixes, bugfixes
+3. `review-security.prompt` — Security audits, compliance checks
+4. `review-performance.prompt` — Performance optimization, latency reduction
+5. `review-integration.prompt` — Cross-system integration, API contracts
+
+**Usage Pattern:**
+```bash
+# 1. Load template
+cat .claude/codex-prompts/review-architecture.prompt
+
+# 2. Substitute variables
+# Replace [CHANGE_TYPE], [CHANGE_DESCRIPTION], [SYSTEM] with actual values
+
+# 3. Send to Codex
+# Paste into Codex CLI or UI
+
+# 4. Verify output meets contract
+# Check word count, format, grounding rules
+```
+
+**Expected Token Savings:**
+- Full review (old): 14.5K tokens
+- Full review (optimized template): 2.7K tokens
+- Conservative estimate (Week 3): 25% reduction (to 10.8K)
+- Aggressive estimate: 81% reduction (achievable with discipline)
 
 ---
 
 ## References
 
 - **Context7 API:** https://github.com/upstash/context7
-- **Codex Prompting Guide:** `.claude/plugins/cache/openai-codex/codex/1.0.6/skills/gpt-5-4-prompting`
-- **Prompt Templates:** (to be created in `.claude/codex-prompts/`)
+- **Prompt Templates:** `.claude/codex-prompts/` (5 templates + README)
+- **Template Usage Guide:** `.claude/codex-prompts/README.md`
+- **Codex Prompting:** `.claude/plugins/cache/openai-codex/codex/1.0.6/skills/gpt-5-4-prompting`
 - **Token Counter:** Use `wc -w` on prompt text, divide by 4 for rough token estimate
 
 ---
 
-**Remember:** Optimized prompts aren't lazy — they're *precise*. Codex produces better output when you tell it exactly what you need.
+**Remember:** Optimized prompts aren't lazy — they're *precise*. Codex produces better output when you tell it exactly what you need. Use the templates; they're production-ready.
