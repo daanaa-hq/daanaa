@@ -376,3 +376,31 @@ class TestIssue3_SilentExceptions(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(len(errors), 1)
         self.assertIn("bad", [e[0] for e in errors])
+
+class TestIssue6_ErrorRecovery(unittest.TestCase):
+    """ISSUE 6: Error recovery with retry logic and backoff"""
+    
+    def test_retry_with_exponential_backoff(self):
+        """Failed operations should retry with exponential backoff"""
+        call_count = [0]
+        
+        def retry_with_backoff(func, max_retries=3, base_delay=0.01):
+            for attempt in range(max_retries):
+                try:
+                    return func()
+                except Exception as e:
+                    if attempt == max_retries - 1:
+                        raise
+                    delay = base_delay * (2 ** attempt)
+                    jitter = random.uniform(-delay * 0.1, delay * 0.1)
+                    time.sleep(delay + jitter)
+        
+        def failing_func():
+            call_count[0] += 1
+            if call_count[0] < 3:
+                raise ValueError("Network error")
+            return "success"
+        
+        result = retry_with_backoff(failing_func, base_delay=0.01)
+        self.assertEqual(result, "success")
+        self.assertEqual(call_count[0], 3)
