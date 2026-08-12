@@ -76,20 +76,26 @@ for cat in categories[:3]:
     exit 1
 fi
 
-# Try to load FAISS index
+# Try to load FAISS index (optional if faiss not installed)
 if [ -f "$STAGING_DIR/faiss_index.bin" ]; then
     python3 -c "
-import faiss
 try:
-    index = faiss.read_index('$STAGING_DIR/faiss_index.bin')
-    print(f'✓ FAISS index loaded: {index.ntotal} vectors')
-except Exception as e:
-    print(f'ERROR: Failed to load FAISS index: {e}')
-    exit(1)
+    import faiss
+    try:
+        index = faiss.read_index('$STAGING_DIR/faiss_index.bin')
+        print(f'✓ FAISS index loaded: {index.ntotal} vectors')
+    except Exception as e:
+        print(f'ERROR: Failed to load FAISS index: {e}')
+        exit(1)
+except ImportError:
+    print('⚠️  FAISS not installed (optional); skipping index validation')
 " || {
-        echo "ERROR: FAISS validation failed"
-        rm -rf "$STAGING_DIR"
-        exit 1
+        # Non-zero exit only if FAISS is available and validation failed
+        if python3 -c "import faiss" 2>/dev/null; then
+            echo "ERROR: FAISS validation failed"
+            rm -rf "$STAGING_DIR"
+            exit 1
+        fi
     }
 fi
 
