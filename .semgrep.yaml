@@ -1,0 +1,127 @@
+rules:
+  # TIER 2 DATA PROTECTION (PRIVACY-INVARIANTS #8)
+
+  - id: console-log-revenue
+    pattern: console.log($X.revenue)
+    message: >
+      Revenue data logged to console.
+      This exposes Tier 2 data in production error reports.
+      STEWARDSHIP P2: Remove revenue logging or use [REDACTED].
+    languages:
+      - typescript
+      - javascript
+    severity: MEDIUM
+
+  - id: console-log-wallet
+    pattern-either:
+      - pattern: console.log($X.wallet)
+      - pattern: console.log($X.giving_intent)
+      - pattern: console.log($X.donation)
+    message: >
+      Wallet or giving intent data logged to console.
+      This exposes Tier 2 data in production error reports.
+      STEWARDSHIP P2: Remove or redact sensitive logging.
+    languages:
+      - typescript
+      - javascript
+    severity: MEDIUM
+
+  - id: hardcoded-admin-key
+    pattern-either:
+      - pattern: headers["X-Admin-Key"] = $VAR
+      - pattern: '"X-Admin-Key": $VAR'
+    message: >
+      Admin key found in code.
+      STEWARDSHIP P2 + Security: Never commit credentials.
+      Suggested fix: Use process.env.DAANAA_ADMIN_KEY only.
+    languages:
+      - typescript
+      - javascript
+      - python
+    severity: CRITICAL
+
+  - id: env-fallback-insecure
+    pattern-either:
+      - pattern: process.env.API_KEY || "default"
+      - pattern: process.env.SECRET || ""
+      - pattern: process.env.$VAR || $DEFAULT
+    message: >
+      Environment variable with fallback value.
+      A missing env var should fail loudly, not silently.
+      STEWARDSHIP: Use strict env guards, never defaults for secrets.
+    languages:
+      - typescript
+      - javascript
+    severity: MEDIUM
+
+  - id: external-fetch-unvalidated
+    pattern: fetch($URL)
+    message: >
+      External fetch detected (pattern match only).
+      If sending user data, verify privacy compliance with PRIVACY-INVARIANTS.
+      STEWARDSHIP P2: Wallet and giving data must not reach external services.
+    languages:
+      - typescript
+      - javascript
+    severity: LOW
+
+  - id: navigate-without-validation
+    pattern-either:
+      - pattern: navigate($URL)
+      - pattern: window.location = $URL
+    message: >
+      Navigation without URL validation.
+      STEWARDSHIP P1/P8: Donation links must come from org.donate_url.
+      Suggested fix: Validate $URL against org.donate_url before navigation.
+    languages:
+      - typescript
+      - javascript
+    severity: MEDIUM
+
+  - id: score-assignment-no-evidence
+    pattern-either:
+      - pattern: $ORG.merit_score = $VAL
+      - pattern: $ORG.merit_tier = $VAL
+      - pattern: scores[$ID] = $VAL
+    message: >
+      Score/tier assignment without evidence comment.
+      STEWARDSHIP P3: All trust signals must be documented with data source.
+      Suggested fix: Add comment (e.g., "# v6 peer: NTEE2=H01, band=Micro").
+    languages:
+      - python
+      - typescript
+    severity: HIGH
+
+  - id: irs-status-inferred
+    pattern-either:
+      - pattern: tax_deductible = $X > 0
+      - pattern: irs_status = "verified" if $X else "unknown"
+    message: >
+      IRS eligibility inferred client-side.
+      STEWARDSHIP P3: Tax status must derive from server API only.
+      Suggested fix: Query /api/organization/:ein?fields=irs_status; use server truth.
+    languages:
+      - python
+      - typescript
+    severity: HIGH
+
+  - id: localStorage-unencrypted
+    pattern: localStorage.setItem($KEY, $VAL)
+    message: >
+      Data written to localStorage.
+      STEWARDSHIP P2: Verify wallet data is device-first (encrypted/https).
+      Suggested fix: Ensure $VAL is JSON-stringified, not raw objects.
+    languages:
+      - typescript
+      - javascript
+    severity: LOW
+
+  - id: precompute-no-bounds-check
+    pattern: $DICT[$ID] = $VAL
+    message: >
+      Data assignment without validation (pattern match only).
+      For scores: add assert 0 <= score <= 100.
+      STEWARDSHIP P3: Invalid data should fail, not silently write.
+    languages:
+      - python
+    severity: LOW

@@ -8,6 +8,8 @@
     "dev:mobile": "vite --host 0.0.0.0 --port 5174",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc -b --noEmit",
     "design-lint": "scripts/design-lint.sh",
     "preview": "vite preview",
     "test": "jest",
