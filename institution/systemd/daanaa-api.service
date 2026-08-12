@@ -1,31 +1,28 @@
 [Unit]
-Description=Daanaa API Server
+Description=Daanaa droplet API (static precompute)
 After=network.target
 
 [Service]
-Type=notify
-User=root
+Type=simple
 WorkingDirectory=/opt/daanaa
-Environment="PYTHONDONTWRITEBYTECODE=1"
-Environment="ENABLE_V6_FINANCIAL_CONTEXT=true"
-Environment="DB_PATH=/opt/daanaa/data/merit_registry.db"
-ExecStart=/opt/daanaa/venv/bin/gunicorn \
-  --workers 2 \
-  --worker-class sync \
-  --bind 127.0.0.1:5000 \
-  --timeout 60 \
-  --access-logfile /var/log/daanaa-gunicorn-access.log \
-  --error-logfile /var/log/daanaa-gunicorn-error.log \
+Environment="PRECOMPUTE_DIR=/data/precompute/v1"
+Environment="CLAIMS_DIR=/data/claims"
+Environment="FRONTEND_DIR=/opt/daanaa/frontend/dist"
+Environment="DAANAA_PROD=1"
+ExecStartPre=-/usr/bin/pkill -TERM -f "gunicorn.*droplet_api:app"
+ExecStartPre=/bin/sleep 2
+ExecStartPre=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"
+ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 -b 0.0.0.0:8880 \
+  --timeout 120 --graceful-timeout 30 \
+  --access-logfile /opt/daanaa/logs/access.log \
+  --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \
+  --error-logfile /opt/daanaa/logs/error.log \
   droplet_api:app
-
-Restart=on-failure
-RestartSec=10
-StandardOutput=append:/var/log/daanaa-gunicorn-access.log
-StandardError=append:/var/log/daanaa-gunicorn-error.log
-
-# Security hardening
-NoNewPrivileges=true
-PrivateTmp=true
+ExecStartPost=/bin/bash -c "/opt/daanaa/warm_cache.sh >/opt/daanaa/logs/warm.log 2>&1 &"
+ExecStopPost=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"
+Restart=always
+RestartSec=5
+TimeoutStopSec=45
 
 [Install]
 WantedBy=multi-user.target

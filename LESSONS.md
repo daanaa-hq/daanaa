@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-08-12: daanaa-api Crash Loop — Root Cause and Fix
+
+**Symptom:** During the Phase 1-4 deploy (see the incident below), `daanaa-api.service` was found with a restart counter already at 1198 — far more restarts than any deploy or known event that night could explain. Every `systemctl restart daanaa-api`, including the one inside the deploy's own atomic swap, silently failed to bind to port 5000 and got killed by systemd, while an old gunicorn master from hours earlier kept serving stale data. The site never returned an error to users, so nothing alerted on it — it just quietly stopped picking up any change that required a restart.
+
+**Root cause:** The unit's `ExecStart` ran gunicorn directly with no forceful cleanup step before or after. Gunicorn's `--graceful-timeout 30` gives workers up to 30s to finish in-flight requests before exiting; if a restart landed while a worker was mid-request, or if a previous stop didn't fully complete, the old process could still be holding `127.0.0.1:5000` / `0.0.0.0:8880` when systemd started the next one. Nothing in the unit forced the port to be free before `ExecStart` ran, and nothing forced a stale process to die after a stop — so a single missed graceful shutdown could compound into an indefinite loop of "start fails to bind → systemd retries → still fails to bind."
+
+**Fix applied (`/etc/systemd/system/daanaa-api.service` on the droplet, now mirrored at `institution/systemd/daanaa-api.service`):**
+- `ExecStartPre=-/usr/bin/pkill -TERM -f "gunicorn.*droplet_api:app"` then `sleep 2` then `ExecStartPre=-/usr/bin/pkill -KILL -f ...` — force any lingering process to die *before* attempting to bind, rather than hoping the previous stop already cleaned up.
+- `ExecStopPost=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"` — guarantee cleanup after a stop too, not just before the next start.
+- `TimeoutStopSec=45` — gives systemd's own stop sequence more room than gunicorn's 30s graceful timeout, so systemd doesn't force-kill mid-shutdown and leave things inconsistent.
+
+**Preventing rule:**
+
+> Any systemd unit wrapping a server process that manages its own graceful shutdown (gunicorn, uwsgi, node servers with SIGTERM handlers, etc.) needs an explicit forceful-cleanup guard — `ExecStartPre`/`ExecStopPost` `pkill` (or equivalent) — whenever the app's own graceful-shutdown window isn't provably shorter than systemd's restart cadence. Don't assume "it worked once when I tested a restart" means it's safe under repeated or rapid restarts; a race that only shows up 1 time in 50 will still eventually crash-loop silently in production, especially if the service's own health check doesn't verify a *new* process actually started (see the entry below on `is-active` vs `MainPID`/`ActiveEnterTimestamp`).
+
+---
+
 ## 2026-08-12: Phase 1-4 IRS Deployment — A "Successful" Deploy That Changed Nothing Live
 
 **Symptom:** `deploy_irs_phase1_4.py` ran clean end to end — precompute check passed, 14GB transfer + checksum verified, atomic swap reported success, smoke test... also initially reported success. But a manual `curl` against the live org detail endpoint showed `irs_eligibility_status` etc. simply absent from the response. The deploy pipeline had no idea anything was wrong.
