@@ -136,27 +136,47 @@ def package_precompute() -> bool:
 
 
 def transfer_to_droplet() -> bool:
-    """Copy payload to droplet staging and verify checksum"""
-    log("Transferring payload to droplet...")
+    """Copy payload to droplet staging using rsync (14GB ~30-40 min, resumable)"""
+    log("Transferring payload to droplet (14GB ~30-40 min, resumable via rsync)...")
 
     try:
-        # Transfer both tarball and checksum (25GB ~2-3 min over network)
-        for file_path in [PAYLOAD, Path(str(PAYLOAD) + ".sha256")]:
-            result = subprocess.run(
-                [
-                    "scp",
-                    "-i", str(SSH_KEY),
-                    str(file_path),
-                    f"{DROPLET_USER}@{DROPLET_IP}:{STAGING_DIR}/"
-                ],
-                capture_output=True,
-                text=True,
-                timeout=600
-            )
+        # Use rsync for resumable transfer (14GB ~30-40 min over network)
+        log("Using rsync for resumable transfer...")
+        result = subprocess.run(
+            [
+                "rsync",
+                "-avz",
+                "-e", f"ssh -i {SSH_KEY}",
+                str(PAYLOAD),
+                f"{DROPLET_USER}@{DROPLET_IP}:{STAGING_DIR}/"
+            ],
+            capture_output=True,
+            text=True,
+            timeout=3000  # 50 minutes
+        )
 
-            if result.returncode != 0:
-                log(f"Transfer failed: {result.stderr}", "ERROR")
-                return False
+        if result.returncode != 0:
+            log(f"Tarball transfer failed: {result.stderr}", "ERROR")
+            return False
+
+        # Transfer checksum file
+        checksum_file = Path(str(PAYLOAD) + ".sha256")
+        result = subprocess.run(
+            [
+                "rsync",
+                "-v",
+                "-e", f"ssh -i {SSH_KEY}",
+                str(checksum_file),
+                f"{DROPLET_USER}@{DROPLET_IP}:{STAGING_DIR}/"
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60
+        )
+
+        if result.returncode != 0:
+            log(f"Checksum transfer failed: {result.stderr}", "ERROR")
+            return False
 
         # Verify checksum on droplet to detect corruption
         log("Verifying checksum on droplet...")
