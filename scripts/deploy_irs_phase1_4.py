@@ -38,39 +38,61 @@ def log(msg: str, level: str = "INFO"):
 
 
 def check_precompute_complete() -> bool:
-    """Verify precompute rebuild finished and succeeded"""
+    """Verify precompute rebuild finished and succeeded with full expected data"""
     log("Checking precompute rebuild status...")
 
     # Check if rebuild process still running
     result = subprocess.run(
         ["pgrep", "-f", "rebuild_precompute_with_irs"],
-        capture_output=True
+        capture_output=True,
+        text=True
     )
 
     if result.returncode == 0:
         log("Precompute rebuild still running", "WARN")
         return False
 
-    # Verify rebuild succeeded by checking a sample of updated org files
-    # Files should have irs_eligibility_status field if rebuild completed
+    # Expected count from rebuild: 2,056,834 orgs processed (from PHASE_1_4_READINESS.md)
+    EXPECTED_MIN = 2000000  # Conservative threshold: at least 2M orgs rebuilt
+    EXPECTED_EXACT = 2056834
+
+    # Count total JSON files in precompute/orgs/ to verify full rebuild
     result = subprocess.run(
-        ["find", str(PRECOMPUTE_DIR / "orgs"), "-name", "*.json", "-type", "f",
-         "-exec", "grep", "-l", "irs_eligibility_status", "{}", "+"],
+        ["find", str(PRECOMPUTE_DIR / "orgs"), "-name", "*.json", "-type", "f"],
         capture_output=True,
-        timeout=30
+        text=True,
+        timeout=60
     )
 
-    if result.returncode != 0 or not result.stdout:
-        log("Precompute files do not contain irs_eligibility_status field", "ERROR")
+    if result.returncode != 0:
+        log("Failed to count precompute files", "ERROR")
         return False
 
-    # Count files with IRS data
-    file_count = len(result.stdout.strip().split(b'\n'))
-    if file_count < 1000000:  # Should have ~2M files
-        log(f"Only {file_count} orgs with IRS data; rebuild may be incomplete", "WARN")
+    total_files = len([f for f in result.stdout.strip().split('\n') if f])
+    if total_files < EXPECTED_MIN:
+        log(f"Precompute incomplete: {total_files} orgs (expected {EXPECTED_EXACT})", "ERROR")
         return False
 
-    log(f"✓ Precompute rebuild verified: {file_count} orgs with IRS data", "SUCCESS")
+    # Verify IRS fields are actually present in rebuilt files
+    # Check for all claimed fields: status, checked_at, sources, notes
+    required_fields = ["irs_eligibility_status", "irs_eligibility_checked_at",
+                       "irs_eligibility_sources", "irs_eligibility_notes"]
+
+    # Use single find with grep to check all fields simultaneously (faster than 4 sequential finds)
+    for field in required_fields:
+        result = subprocess.run(
+            ["grep", "-r", f'"{field}"', str(PRECOMPUTE_DIR / "orgs"),
+             "--include=*.json", "-q"],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode != 0:
+            log(f"Precompute missing IRS field: {field}", "ERROR")
+            return False
+
+    log(f"✓ Precompute rebuild verified: {total_files} orgs with all IRS fields", "SUCCESS")
     return True
 
 
@@ -86,11 +108,12 @@ def package_precompute() -> bool:
             ["tar", "--exclude=./vectors.f32.memmap", "-czf", str(PAYLOAD), "."],
             cwd=PRECOMPUTE_DIR,
             capture_output=True,
+            text=True,
             timeout=300
         )
 
         if result.returncode != 0:
-            log(f"Tar failed: {result.stderr.decode()}", "ERROR")
+            log(f"Tar failed: {result.stderr}", "ERROR")
             return False
 
         # Compute checksum
@@ -127,11 +150,12 @@ def transfer_to_droplet() -> bool:
                     f"{DROPLET_USER}@{DROPLET_IP}:{STAGING_DIR}/"
                 ],
                 capture_output=True,
+                text=True,
                 timeout=120
             )
 
             if result.returncode != 0:
-                log(f"Transfer failed: {result.stderr.decode()}", "ERROR")
+                log(f"Transfer failed: {result.stderr}", "ERROR")
                 return False
 
         # Verify checksum on droplet to detect corruption
@@ -181,7 +205,7 @@ def execute_atomic_swap() -> bool:
                     log(f"  {line}")
 
         if result.returncode != 0:
-            log(f"Atomic swap failed: {result.stderr.decode()}", "ERROR")
+            log(f"Atomic swap failed: {result.stderr}", "ERROR")
             return False
 
         log("✓ Atomic swap complete", "SUCCESS")
@@ -196,66 +220,102 @@ def execute_atomic_swap() -> bool:
 
 
 def verify_live_api() -> bool:
-    """Smoke test: verify IRS fields in live API with valid data"""
+    """Smoke test: verify IRS fields in live API with both eligible and revoked orgs"""
     log("Verifying IRS fields in live API...")
 
-    try:
-        # Use a real EIN that exists and was processed in rebuild
-        # Pick the first org with IRS data from the rebuilt precompute
-        result = subprocess.run(
-            ["find", str(PRECOMPUTE_DIR / "orgs"), "-name", "*.json", "-type", "f",
-             "-exec", "grep", "-l", "eligible", "{}", "+"],
-            capture_output=True,
-            timeout=10
-        )
+    # Required IRS fields that must be present in all responses
+    REQUIRED_IRS_FIELDS = [
+        "irs_eligibility_status",
+        "irs_eligibility_checked_at",
+        "irs_eligibility_sources",
+        "irs_eligibility_notes"
+    ]
 
-        if result.returncode != 0 or not result.stdout:
-            log("No test EIN found in precompute", "WARN")
-            return False
-
-        # Extract EIN from first file path
-        first_file = result.stdout.split(b'\n')[0].decode()
-        test_ein = Path(first_file).stem
-
-        log(f"Testing with EIN: {test_ein}")
-
-        # Query API with longer timeout (warmup may be slow)
+    def query_api(ein: str) -> dict:
+        """Query API for org and return parsed JSON or empty dict on failure"""
         result = subprocess.run(
             [
                 "curl",
                 "-s",
                 "-m", "15",  # Extended timeout for post-deployment warmup
-                f"https://daanaa.org/api/organizations/{test_ein}"
+                f"https://daanaa.org/api/organizations/{ein}"
             ],
             capture_output=True,
             text=True,
             timeout=20
         )
-
         if result.returncode != 0:
-            log("API not responding or timeout", "WARN")
-            return False
-
-        # Parse response
+            return {}
         try:
-            data = json.loads(result.stdout)
-
-            # Check for IRS eligibility field with valid data (not null)
-            if "irs_eligibility_status" not in data:
-                log("IRS eligibility field not found in API response", "ERROR")
-                return False
-
-            status = data.get("irs_eligibility_status")
-            if status is None or status == "":
-                log(f"IRS eligibility field is empty or null", "ERROR")
-                return False
-
-            log(f"✓ API returning valid IRS data (status: {status}, EIN: {test_ein})", "SUCCESS")
-            return True
-
+            return json.loads(result.stdout)
         except json.JSONDecodeError:
-            log("API returned non-JSON response", "ERROR")
+            return {}
+
+    def validate_org(ein: str, expected_status: str) -> bool:
+        """Validate org has all IRS fields and expected status"""
+        data = query_api(ein)
+        if not data:
+            log(f"  ✗ {ein}: API no response", "WARN")
             return False
+
+        # Check all required fields exist
+        for field in REQUIRED_IRS_FIELDS:
+            if field not in data:
+                log(f"  ✗ {ein}: missing field {field}", "ERROR")
+                return False
+
+        # Check status matches expected and is non-null
+        status = data.get("irs_eligibility_status")
+        if not status or status != expected_status:
+            log(f"  ✗ {ein}: expected status '{expected_status}', got '{status}'", "ERROR")
+            return False
+
+        # Verify checked_at is set (indicates rebuild ran)
+        checked_at = data.get("irs_eligibility_checked_at")
+        if not checked_at:
+            log(f"  ✗ {ein}: missing or empty irs_eligibility_checked_at", "ERROR")
+            return False
+
+        log(f"  ✓ {ein}: {expected_status} (all fields present)", "SUCCESS")
+        return True
+
+    try:
+        log("Finding test orgs (eligible and revoked)...")
+
+        # Find test EINs: one eligible, one revoked
+        test_eins = {"eligible": None, "revoked": None}
+
+        for status_type in ["eligible", "revoked"]:
+            result = subprocess.run(
+                ["grep", "-l", f'"{status_type}"', "-r", str(PRECOMPUTE_DIR / "orgs"),
+                 "--include=*.json"],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0 and result.stdout:
+                first_file = result.stdout.strip().split('\n')[0]
+                test_eins[status_type] = Path(first_file).stem
+
+        # Verify we found test cases
+        if not test_eins["eligible"]:
+            log("No eligible org found in precompute for testing", "ERROR")
+            return False
+        if not test_eins["revoked"]:
+            log("No revoked org found in precompute for testing", "ERROR")
+            return False
+
+        log("Testing eligible org...")
+        if not validate_org(test_eins["eligible"], "eligible"):
+            return False
+
+        log("Testing revoked org...")
+        if not validate_org(test_eins["revoked"], "revoked"):
+            return False
+
+        log("✓ API returning all required IRS fields with correct data", "SUCCESS")
+        return True
 
     except Exception as e:
         log(f"Verification failed: {e}", "ERROR")
