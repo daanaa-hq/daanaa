@@ -6,6 +6,7 @@ import socket
 import subprocess
 import sys
 import time
+from functools import lru_cache
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -15,19 +16,14 @@ OVERNIGHT_SCRIPT = BASE_DIR / "scripts" / "run_overnight_pipeline.sh"
 INFERENCE_HEALTH_URL = "http://localhost:11437/health"
 INFERENCE_PORT = 11437
 
-# Cache curl availability at module load (avoid repeated subprocess calls)
-_CURL_AVAILABLE = None
-
+@lru_cache(maxsize=1)
 def _check_curl_available():
-    """Check if curl is available (cached)"""
-    global _CURL_AVAILABLE
-    if _CURL_AVAILABLE is None:
-        try:
-            subprocess.run(["which", "curl"], capture_output=True, timeout=1, check=True)
-            _CURL_AVAILABLE = True
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            _CURL_AVAILABLE = False
-    return _CURL_AVAILABLE
+    """Check if curl is available (cached with thread-safe lru_cache)"""
+    try:
+        subprocess.run(["which", "curl"], capture_output=True, timeout=1, check=True)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
 
 def log(msg: str, level: str = "INFO"):
     ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
