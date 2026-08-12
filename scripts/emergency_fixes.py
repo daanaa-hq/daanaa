@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Emergency Fixes for Critical Production Issues - Ready for deployment Aug 15"""
-import os, sys, json, socket, subprocess, time
+import json
+import os
+import socket
+import subprocess
+import sys
+import time
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -14,36 +19,92 @@ def log(msg: str, level: str = "INFO"):
     ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     print(f"[{ts}] {level}: {msg}", file=sys.stderr)
 
-def is_inference_server_alive(port: int = INFERENCE_PORT) -> bool:
-    """Check port + /health endpoint"""
+def is_inference_server_alive(port: int = INFERENCE_PORT, timeout: int = 2) -> bool:
+    """Check port + /health endpoint with configurable timeout"""
     try:
+        # Validate curl is available
+        subprocess.run(["which", "curl"], capture_output=True, timeout=1, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        log("curl not found; cannot check inference server", "ERROR")
+        return False
+
+    try:
+        # Check if port is open with timeout
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
         result = sock.connect_ex(("127.0.0.1", port))
         sock.close()
-        if result != 0: return False
-        proc = subprocess.run(["curl", "-s", INFERENCE_HEALTH_URL], capture_output=True, timeout=5)
+        if result != 0:
+            return False
+
+        # Check if server responds to /health
+        proc = subprocess.run(["curl", "-s", INFERENCE_HEALTH_URL], capture_output=True, timeout=timeout)
         return proc.returncode == 0
-    except:
+    except Exception as e:
+        log(f"Error checking inference server: {e}", "WARNING")
         return False
+
+def write_daemon_health(daemon_name: str, status: str, error: str = None):
+    """Write daemon health state (aligns with daemon_health_lib pattern)"""
+    health_file = Path(f"/tmp/{daemon_name}_daemon.health.json")
+    health_data = {
+        "status": status,
+        "last_updated_at": datetime.now(timezone.utc).isoformat(),
+        "error": error
+    }
+    try:
+        health_file.write_text(json.dumps(health_data))
+    except Exception as e:
+        log(f"Failed to write health file for {daemon_name}: {e}", "WARNING")
 
 def restart_inference_server():
     """Kill and restart inference server"""
     try:
         log("Stopping inference server...")
-        subprocess.run(["killall", "llama-server"], capture_output=True)
+        # Kill with timeout to prevent hanging
+        subprocess.run(["killall", "llama-server"], capture_output=True, timeout=5)
         time.sleep(2)
+
+        # Validate embed_server.sh exists and is executable
         embed_script = BASE_DIR / "scripts" / "embed_server.sh"
-        if embed_script.exists():
-            log("Starting inference server...")
-            subprocess.Popen(["bash", str(embed_script)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(3)
-            if is_inference_server_alive():
-                log("Inference server restarted successfully", "SUCCESS")
-                return True
+        if not embed_script.exists():
+            log(f"embed_server.sh not found at {embed_script}", "ERROR")
+            return False
+
+        if not os.access(embed_script, os.X_OK):
+            log(f"embed_server.sh is not executable", "ERROR")
+            return False
+
+        log("Starting inference server...")
+        # Capture stderr to detect startup errors
+        proc = subprocess.Popen(
+            ["bash", str(embed_script)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        time.sleep(3)
+
+        # Check if process is still running
+        if proc.poll() is not None:
+            _, stderr = proc.communicate()
+            log(f"embed_server.sh failed: {stderr.decode()}", "ERROR")
+            return False
+
+        if is_inference_server_alive():
+            log("Inference server restarted successfully", "SUCCESS")
+            write_daemon_health("llama_server", "healthy")
+            return True
+
         log("Failed to restart inference server", "WARNING")
+        write_daemon_health("llama_server", "failed", "Restart failed - server not responding")
+        return False
+    except subprocess.TimeoutExpired:
+        log("killall timed out (process stuck)", "ERROR")
+        write_daemon_health("llama_server", "failed", "killall timeout")
         return False
     except Exception as e:
         log(f"Error restarting inference server: {e}", "ERROR")
+        write_daemon_health("llama_server", "failed", str(e))
         return False
 
 def fix_cron_import_error():
@@ -53,6 +114,10 @@ def fix_cron_import_error():
         log(f"venv not found at {VENV_PATH}", "ERROR")
         return False
     wrapper_content = f"""#!/bin/bash
+set -e  # Exit on any error
+set -u  # Exit on undefined variable
+set -o pipefail  # Exit on pipe failure
+
 source {VENV_PATH}
 cd {BASE_DIR}
 python3 scripts/overnight_pipeline.py

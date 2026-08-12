@@ -14,13 +14,15 @@ from scripts.emergency_fixes import is_inference_server_alive, BASE_DIR
 class TestCronImportFix(unittest.TestCase):
     """Test Cron ImportError fix"""
     def test_run_overnight_pipeline_has_venv_activation(self):
-        """Verify wrapper script activates venv"""
+        """Verify wrapper script activates venv and has error handling"""
         script_path = BASE_DIR / "scripts" / "run_overnight_pipeline.sh"
-        if script_path.exists():
-            content = script_path.read_text()
-            self.assertIn("source", content)
-            self.assertIn("venv", content)
-            self.assertIn("overnight_pipeline.py", content)
+        self.assertTrue(script_path.exists(), f"Wrapper script not found at {script_path}")
+
+        content = script_path.read_text()
+        self.assertIn("source", content, "Missing venv source command")
+        self.assertIn("venv", content, "Missing venv path")
+        self.assertIn("overnight_pipeline.py", content, "Missing overnight_pipeline.py call")
+        self.assertIn("set -e", content, "Missing error handling (set -e) - critical for venv activation")
 
 class TestInferenceServerFix(unittest.TestCase):
     """Test Inference Server health check fix"""
