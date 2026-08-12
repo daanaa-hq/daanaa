@@ -1,0 +1,147 @@
+{
+  "taskName": "codex_review_workflow",
+  "description": "Codex architectural review with pre-checks (Semgrep, FAISS, ESLint)",
+  "autonomyLevel": "supervised",
+  "steps": [
+    {
+      "step": 1,
+      "name": "security_scan",
+      "command": "./scripts/semgrep_security_scan.sh",
+      "purpose": "Catch security patterns before Codex review",
+      "failureMode": "stop",
+      "logging": {
+        "log_file": "/tmp/codex_workflow_semgrep.log",
+        "metric": "security_findings_count"
+      }
+    },
+    {
+      "step": 2,
+      "name": "lint_and_typecheck",
+      "command": "./scripts/lint_and_typecheck.sh",
+      "purpose": "Validate code quality before Codex review",
+      "failureMode": "warn",
+      "logging": {
+        "log_file": "/tmp/codex_workflow_lint.log",
+        "metric": "lint_error_count"
+      }
+    },
+    {
+      "step": 3,
+      "name": "documentation_search",
+      "command": "python3 scripts/search_docs.py \"$CONTEXT_QUERY\" --k 3 --json",
+      "purpose": "Prepare relevant documentation for Codex prompt",
+      "requiresInput": "CONTEXT_QUERY",
+      "logging": {
+        "log_file": "/tmp/codex_workflow_docs.log",
+        "metric": "docs_retrieved_count"
+      }
+    },
+    {
+      "step": 4,
+      "name": "codex_review",
+      "type": "human_review",
+      "purpose": "Codex architectural review (focuses on novel issues, pre-checks passed)",
+      "inputs": [
+        "security_scan_results",
+        "lint_results",
+        "documentation_search_results"
+      ],
+      "template": "codex_pre_validated_review.prompt",
+      "logging": {
+        "log_file": "/tmp/codex_workflow_review.log",
+        "metric": "codex_token_usage"
+      }
+    },
+    {
+      "step": 5,
+      "name": "log_results",
+      "command": "node scripts/ralph-log-codex-review.js",
+      "purpose": "Log token usage, findings, and recommendations",
+      "inputs": [
+        "semgrep_findings",
+        "lint_findings",
+        "codex_recommendations"
+      ],
+      "logging": {
+        "log_file": "docs/codex_review_logs.jsonl",
+        "metric": "total_tokens_used"
+      }
+    }
+  ],
+  "governanceGates": [
+    {
+      "gate": "principles_check",
+      "description": "Ensure review respects STEWARDSHIP P1-P11",
+      "requirement": "Codex findings must reference applicable principle"
+    },
+    {
+      "gate": "quality_threshold",
+      "description": "Pre-checks must pass before escalating to Codex",
+      "requirement": "0 security errors, 0 type errors (warnings OK)"
+    }
+  ],
+  "integrations": {
+    "semgrep": {
+      "role": "pre_check_security",
+      "failureMode": "stop",
+      "successThreshold": "0_critical_errors"
+    },
+    "eslint_typescript": {
+      "role": "pre_check_quality",
+      "failureMode": "warn",
+      "successThreshold": "0_errors"
+    },
+    "faiss": {
+      "role": "context_preparation",
+      "failureMode": "warn",
+      "successThreshold": "3_relevant_docs"
+    },
+    "codex": {
+      "role": "architectural_analysis",
+      "failureMode": "log_and_continue",
+      "metricsTracked": [
+        "tokens_used",
+        "findings_count",
+        "principles_referenced"
+      ]
+    },
+    "playwright": {
+      "role": "qa_verification",
+      "runsAfter": "codex_review",
+      "command": "bash scripts/qc-test-suite.sh"
+    }
+  ],
+  "metrics": {
+    "track": [
+      {
+        "name": "pre_check_effectiveness",
+        "description": "% of issues caught by pre-checks vs. Codex",
+        "calculation": "semgrep_findings + lint_errors / total_findings"
+      },
+      {
+        "name": "token_savings",
+        "description": "Tokens saved by pre-checks vs. full Codex review",
+        "calculation": "(baseline_cost - actual_cost) / baseline_cost"
+      },
+      {
+        "name": "discovery_latency",
+        "description": "Time from code change to issue discovery",
+        "calculation": "pre_check_time + codex_time"
+      }
+    ]
+  },
+  "logging": {
+    "centralLog": "docs/ralph_codex_reviews.jsonl",
+    "format": "json_lines",
+    "fields": [
+      "timestamp",
+      "task_id",
+      "step_name",
+      "status",
+      "tokens_used",
+      "findings_count",
+      "duration_ms",
+      "governance_gate_status"
+    ]
+  }
+}
