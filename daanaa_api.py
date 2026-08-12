@@ -79,16 +79,67 @@ try:
 except Exception as e:
     _irs_eligibility_available = False
     print(f"[Startup] ⚠ IRS eligibility helper not available: {e}", file=sys.stderr)
-    # Fallback functions if helper unavailable
+
+# Override: Read IRS fields from database columns (Phase 1-4 launch)
+def _get_irs_fields_from_db(ein: str) -> dict:
+    """Read IRS eligibility from database columns (faster, for Phase 1-4)."""
+    try:
+        # Get DB_PATH from environment or use default (will be set later)
+        db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT irs_eligibility_status, irs_eligibility_checked_at,
+                   irs_eligibility_sources, irs_eligibility_notes
+            FROM registry_enriched
+            WHERE ein = ?
+        """, (ein,))
+        row = cur.fetchone()
+        conn.close()
+
+        if row:
+            status, checked_at, sources_json, notes = row
+            try:
+                sources = json.loads(sources_json) if sources_json else []
+            except:
+                sources = []
+
+            explanations = {
+                "verified": "IRS Publication 78 and BMF confirm tax-deductible status.",
+                "eligible": "IRS records indicate likely eligibility. Verify before giving.",
+                "unverified": "Limited IRS evidence available. Confirm with IRS before giving.",
+                "revoked": "IRS records show revocation. Confirm current status before giving.",
+                "unknown": "IRS status not yet verified.",
+                "eligible_pending_verification": "Likely eligible per BMF. Full verification pending."
+            }
+
+            return {
+                "irs_eligibility_status": status or "unknown",
+                "irs_eligibility_checked_at": checked_at,
+                "irs_eligibility_sources": sources,
+                "irs_eligibility_explanation": explanations.get(status or "unknown", "Check IRS for current status.")
+            }
+    except Exception as e:
+        print(f"[IRS] Error reading {ein}: {e}", file=sys.stderr)
+
+    return {
+        "irs_eligibility_status": "unknown",
+        "irs_eligibility_checked_at": None,
+        "irs_eligibility_sources": [],
+        "irs_eligibility_explanation": "IRS status unavailable"
+    }
+
+# Fallback functions if helper unavailable
+if not _irs_eligibility_available:
     def get_eligibility_fields(ein):
-        return {
-            "irs_eligibility_status": "unknown",
-            "irs_eligibility_checked_at": None,
-            "irs_eligibility_sources": [],
-            "irs_eligibility_explanation": "Helper unavailable"
-        }
+        return _get_irs_fields_from_db(ein)
     def should_show_profile_publicly(ein):
         return True
+else:
+    # When helper is available, override to use DB first for speed
+    _original_get_eligibility_fields = get_eligibility_fields
+    def get_eligibility_fields(ein):
+        return _get_irs_fields_from_db(ein)
 
 # Search Phase 2: intent classifier (loaded at startup for preload safety)
 try:
