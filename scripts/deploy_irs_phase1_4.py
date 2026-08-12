@@ -253,7 +253,7 @@ fi
         result = subprocess.run(
             ["ssh", "-i", str(SSH_KEY), f"{DROPLET_USER}@{DROPLET_IP}", swap_script],
             capture_output=True,
-            timeout=300,
+            timeout=900,  # 15 min for tar extraction + validation + restart
             text=True
         )
 
