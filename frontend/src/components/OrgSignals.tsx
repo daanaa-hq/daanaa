@@ -7,6 +7,8 @@ interface OrgSignalsProps {
   cause_tags?: string[] | null
   latest_tax_year?: number | null
   total_revenue?: number | null
+  irs_eligibility_status?: string | null
+  irs_eligibility_explanation?: string | null
 }
 
 export default function OrgSignals({
@@ -16,8 +18,25 @@ export default function OrgSignals({
   cause_tags,
   latest_tax_year,
   total_revenue,
+  irs_eligibility_status,
+  irs_eligibility_explanation,
 }: OrgSignalsProps) {
   const signals: { icon: string; label: string; title: string }[] = []
+
+  // Signal 0: IRS Tax Status (highest priority)
+  if (irs_eligibility_status === 'revoked') {
+    signals.push({
+      icon: '⚠️',
+      label: 'Revoked by IRS',
+      title: irs_eligibility_explanation || 'This organization is not currently eligible for tax-deductible donations'
+    })
+  } else if (irs_eligibility_status === 'eligible' || irs_eligibility_status === 'verified') {
+    signals.push({
+      icon: '✅',
+      label: 'IRS Eligible',
+      title: irs_eligibility_explanation || 'IRS records indicate this organization is eligible for tax-deductible donations'
+    })
+  }
 
   // Signal 1: Website live
   if (website && website_status === 'ok') {
