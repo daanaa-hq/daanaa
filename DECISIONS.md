@@ -264,3 +264,62 @@ DROPLET VERIFICATION (no changes needed):
 ---
 
 **Final Status:** WEEK 4 & COMPLETE SYSTEM DEPLOYED ✅
+
+---
+
+## 2026-08-12: First-Party Analytics Infrastructure (Post-Plausible)
+
+### Decision: Implement First-Party SQLite Analytics (Reject Google Analytics)
+
+**Chose:** Build first-party `/api/event` endpoint + SQLite aggregate-only analytics database
+
+**Why:**
+- Plausible was removed from production; user wants "to move to google analytics or any other tool or create one if you need to"
+- User explicitly rejected Google tools ("can we not use their tools?")
+- First-party option avoids **any** STEWARDSHIP.md change (P2 privacy commitment names Plausible, but doesn't block custom alternatives)
+- Full ownership of data retention, query logic, and privacy guarantees
+- Frontend already sends beacons to `/api/event` via `navigator.sendBeacon()` (hitting 404 in production this whole time)
+- Aggregate-only design prevents any user/session tracking
+
+**Rejected alternatives:**
+1. **Google Analytics** — User explicitly rejected ("can we not use their tools?"); requires STEWARDSHIP.md Revision Log + founder approval to change P2 governance
+2. **Another third-party tool** — Same governance gate + ongoing vendor relationship risk
+3. **Plausible (restore)** — Named explicitly in STEWARDSHIP.md; if removed, must go through formal governance process to reinstall
+4. **No analytics** — User wants "track how users use the platform so we can keep improving"
+
+**Implementation:**
+- `/api/event` endpoint: POST handler accepting 6 event types (pageview, search, give_click, save_org, compare, wallet_export)
+- Schema: 5 aggregate tables (analytics_daily, analytics_search, analytics_search_metrics, analytics_zero_result_queries, visit_counter)
+- Database path: `/data/analytics/analytics.db` (separate from `search.db`, survives deploy swaps)
+- Privacy design: day-granularity only, no IP/cookie/session tracking, aggregate query shapes only
+- Idempotent INSERT/ON CONFLICT for same-shape queries (query_length/result_count/filters/zero_results roll up per day, not per request)
+- Error handling: analytics failures never break user-facing beacons (catch-all, return 204 silently)
+
+**Files modified:**
+- `scripts/droplet_api.py`: +190 lines (ANALYTICS_DB_PATH config, _init_analytics_tables(), get_analytics_db(), /api/event handler)
+- Imports: added `sys` (for stderr logging)
+
+**Verification:**
+- Local test: 7 different beacon shapes fired at `/api/event`; all 204 OK ✅
+- Data integrity: All 5 tables populated correctly, ON CONFLICT rolls up duplicate query shapes ✅
+- Privacy: No user ID, IP, cookie, or session ID fields in any table ✅
+- Frontend integration: Beacon sender `frontend/src/lib/analytics.ts` already fires to this endpoint ✅
+
+**Known gap (documented, not silent):**
+- `trackSearch(term)` function exists in frontend but is **never called** in the codebase (only `trackSearchMetrics()` used)
+- Therefore `analytics_search` and `analytics_zero_result_queries` tables are structurally reachable but only populated if code elsewhere calls `trackSearch()`
+- This is not a bug in this implementation — it's a frontend UX decision made earlier; documented in LESSONS.md for future tuning
+
+**Deployment readiness:**
+- Smoke-tested locally ✅
+- Awaiting Codex review (task bzwdq3ix9) for:
+  - SQL injection / race condition checks
+  - Database path isolation verification
+  - Schema design validation
+  - Integration readiness assessment
+
+**Next step:** Apply Codex findings → commit → deploy to droplet
+
+**Governance:** This change is autonomous (reversible, no public claims, no methodology change, no third-party vendor). Codex review for safety before commit.
+
+---

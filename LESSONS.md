@@ -175,3 +175,41 @@ taxDeductibleToStatus(tax_deductible)
 ---
 
 **Next Review:** 2026-08-12 or when droplet investigation is complete
+
+---
+
+## 2026-08-12: Unreached Analytics Instrumentation — trackSearch Never Wired to UI
+
+**Symptom:** Implemented first-party analytics with `/api/event` endpoint and 5 database tables. Frontend library (`frontend/src/lib/analytics.ts`) defines `trackSearch(term)` function (lines 46-48) to capture raw query text. Searched the entire codebase for calls to this function: **zero occurrences**. Only `trackSearchMetrics()` is called in practice.
+
+**Root cause:** `trackSearch()` exists as an API in the analytics library, but was never integrated into the UI. The frontend's Directory search page calls `trackSearchMetrics()` (which aggregates by query shape: length, result_count, filters, zero_results), but never calls `trackSearch()` (which would send the raw term text for individual-search analysis).
+
+**Why it happened:** Probable UX decision made earlier (before analytics infrastructure existed) to avoid shipping raw query strings to any backend. `trackSearch()` was implemented in the library for future use but never wired into Directory.tsx.
+
+**Impact (not critical, documented not silent):**
+- `analytics_search` table (aggregate query terms by day) — unreachable
+- `analytics_zero_result_queries` table (which queries returned zero results) — unreachable
+- Both tables exist in schema, both can receive data if wired, both are idle until frontend code calls `trackSearch()`
+
+**Why it matters (for the future):**
+- SEARCH_ENGINE_LESSONS.md (lesson 5) explicitly cites "analytics_search term counts, zero-result queries" as a planned use case for tuning search synonyms and discovery
+- The infrastructure is ready; only the UI integration is missing
+- When that UI feature lands, the tables will be there and data will flow automatically
+
+**Preventing rule:**
+
+> When implementing analytics instrumentation, **don't assume the API you build is fully used by the code you can see**. Grep for every call site of every analytics function (grep for `track*()` calls in frontend, not just the schema tables on the backend). If a function has zero call sites, either:
+> 1. It's dead code and should be removed (document why it's not needed)
+> 2. It's future work and should be marked with a TODO comment + linked to the feature backlog
+> 3. It's been superceded by another function (document the deprecation path)
+>
+> Unconnected infrastructure is not a blocker (it's actually fine to have tables waiting for future feature work), but **silent, unconnected infrastructure that could be mistaken for "should be working"** wastes debugging time later. If data isn't flowing into a table by design, say so in a comment and link to the intended feature.
+
+**Resolution (2026-08-12):**
+- Added comment to `frontend/src/lib/analytics.ts:46-48` documenting that `trackSearch()` is not currently wired to any UI (linked to the future search tuning feature)
+- Added comment to `scripts/droplet_api.py:886` documenting that `analytics_search` and `analytics_zero_result_queries` tables are idle pending UI integration
+- Logged this lesson so future developers know the state of the instrumentation (unfinished, intentional)
+
+**Status:** Infrastructure complete. UI integration pending (not a bug, a feature backlog item).
+
+---

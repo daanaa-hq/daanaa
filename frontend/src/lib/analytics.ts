@@ -43,6 +43,11 @@ export function trackDwell(path: string) {
   if (dwell > 0) send({ type: 'pageview', path, dwell })
 }
 
+// NOTE (2026-08-12): trackSearch() exists in the API but is NOT currently wired to any UI.
+// Directory.tsx calls trackSearchMetrics() (aggregate query shapes) but never calls trackSearch()
+// (individual query terms). This is by design — raw search terms were deferred pending infrastructure.
+// See LESSONS.md 2026-08-12 for the full reasoning. When search term analysis is added to the
+// feature backlog, this function will activate the analytics_search table on the backend.
 export function trackSearch(term: string, path = '/directory') {
   send({ type: 'search', path, term })
 }

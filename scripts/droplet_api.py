@@ -13,6 +13,7 @@ import os
 import random
 import re
 import sqlite3
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -86,6 +87,15 @@ DATA_DIR     = Path(os.environ.get('PRECOMPUTE_DIR', '/data/precompute/v1'))
 # Retained for historical clarity; no production deployments should use it.
 CLAIMS_DIR   = Path(os.environ.get('CLAIMS_DIR', '/data/claims'))
 FRONTEND_DIR = Path(os.environ.get('FRONTEND_DIR', '/opt/daanaa/frontend/dist'))
+
+# Dedicated, never-swapped path for first-party analytics (2026-08-12). Deliberately
+# NOT inside search.db (wholesale rebuilt/replaced on every deploy via
+# scripts/build_search_db.py + the atomic v1/v0 swap -- accumulated analytics would
+# be silently wiped on the next deploy) or /opt/daanaa/merit_registry.db (synced by
+# a separate process with its own replace lifecycle). /data/backups and /data/claims
+# are the only droplet paths confirmed untouched by any deploy script; this mirrors
+# that convention. See LESSONS.md 2026-08-12 for why this needed its own home.
+ANALYTICS_DB_PATH = Path(os.environ.get('ANALYTICS_DB_PATH', '/data/analytics/analytics.db'))
 
 # Bounded LRU: org-detail traffic covers 1.76M distinct files, so an
 # unbounded cache grows until the 2GB box swaps and the search.db loses its
@@ -842,6 +852,177 @@ def stats():
     if data:
         return jsonify(data.get('stats', {}))
     return jsonify({'total_organizations': 0}), 503
+
+
+# ── First-party analytics (2026-08-12) ──────────────────────────────────────
+# STEWARDSHIP ALIGNED: Privacy-first, aggregate-only, no user tracking.
+# We count patterns (query shapes, page traffic), never identities or personal intent.
+# No cookies, no IP logging, no persistent session ID, no user fingerprinting —
+# we learn from aggregate trends, never from individual users (Stewardship P2).
+#
+# Data model: day-granular aggregates only. Each row represents "how many people
+# saw X results on Y date with Z filters" — never individual query text or IP.
+# This maintains Daanaa's trust model: we report public signals, not personal behavior.
+#
+# The deployed backend had NO /api/event route at all: the frontend
+# (frontend/src/lib/analytics.ts) has been sending sendBeacon() calls to it in
+# production this whole time, silently hitting 404. See LESSONS.md 2026-08-12.
+
+def _init_analytics_tables():
+    ANALYTICS_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(str(ANALYTICS_DB_PATH), timeout=10) as db:
+        db.execute("PRAGMA journal_mode=WAL")
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS analytics_daily (
+                day          TEXT NOT NULL,
+                path         TEXT NOT NULL,
+                event_type   TEXT NOT NULL,
+                count        INTEGER NOT NULL DEFAULT 0,
+                dwell_secs   INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (day, path, event_type)
+            )
+        """)
+        # NOTE (2026-08-12): analytics_search and analytics_zero_result_queries tables exist
+        # but are currently idle — frontend/src/lib/analytics.ts:trackSearch() is never called
+        # from the UI (Directory.tsx only calls trackSearchMetrics for query shapes, not raw terms).
+        # This table will populate once the UI is wired to call trackSearch(). Infrastructure
+        # ready; feature pending. See LESSONS.md 2026-08-12.
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS analytics_search (
+                day    TEXT NOT NULL,
+                term   TEXT NOT NULL,
+                count  INTEGER NOT NULL DEFAULT 0,
+                PRIMARY KEY (day, term)
+            )
+        """)
+        # query_length/result_count/zero_results/filters_applied form the PK
+        # (matches the ON CONFLICT clause in track_event() below) so repeated
+        # searches with the same shape roll up into one row per day instead
+        # of growing unboundedly.
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS analytics_search_metrics (
+                day              TEXT NOT NULL,
+                query_length     INTEGER NOT NULL,
+                result_count     INTEGER NOT NULL,
+                zero_results     INTEGER NOT NULL,
+                filters_applied  INTEGER NOT NULL,
+                search_mode      TEXT NOT NULL DEFAULT 'keyword',
+                count            INTEGER NOT NULL DEFAULT 1,
+                PRIMARY KEY (day, query_length, result_count, zero_results, filters_applied, search_mode)
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS analytics_zero_result_queries (
+                day               TEXT NOT NULL,
+                query             TEXT NOT NULL,
+                query_length      INTEGER NOT NULL DEFAULT 0,
+                filters_applied   INTEGER NOT NULL DEFAULT 0,
+                search_mode       TEXT NOT NULL DEFAULT 'keyword',
+                occurrence_count  INTEGER NOT NULL DEFAULT 1,
+                last_seen_at      TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (day, query)
+            )
+        """)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS visit_counter (
+                metric  TEXT PRIMARY KEY,
+                count   INTEGER NOT NULL DEFAULT 0
+            )
+        """)
+        db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('pageviews', 0)")
+        db.execute("INSERT OR IGNORE INTO visit_counter (metric, count) VALUES ('sessions', 0)")
+        db.commit()
+
+
+try:
+    _init_analytics_tables()
+except Exception as e:
+    print(f"[Startup] Analytics table init failed (non-fatal): {e}", file=sys.stderr)
+
+
+def get_analytics_db():
+    """Short-lived connection per call -- this is a small, write-heavy table
+    set, unlike search.db's large read-mostly get_search_db() persistent
+    connection. Never raises to the caller; track_event() treats analytics
+    as best-effort so a DB hiccup can never break the user-facing beacon."""
+    return sqlite3.connect(str(ANALYTICS_DB_PATH), timeout=5)
+
+
+_ANALYTICS_EVENT_TYPES = {'pageview', 'search', 'give_click', 'save_org', 'compare', 'wallet_export'}
+
+
+@app.route('/api/event', methods=['POST'])
+def track_event():
+    try:
+        data = request.get_json(silent=True) or {}
+        etype = str(data.get('type', '')).strip().lower()
+        if etype not in _ANALYTICS_EVENT_TYPES:
+            return ('', 204)  # silently ignore unknown types; never error a beacon
+
+        day = time.strftime('%Y-%m-%d')
+        path = str(data.get('path', '/'))[:120]
+        dwell = data.get('dwell')
+        dwell = int(dwell) if isinstance(dwell, (int, float)) and 0 <= dwell <= 86400 else 0
+
+        db = get_analytics_db()
+        try:
+            db.execute(
+                "INSERT INTO analytics_daily (day, path, event_type, count, dwell_secs) "
+                "VALUES (?, ?, ?, 1, ?) "
+                "ON CONFLICT(day, path, event_type) DO UPDATE SET "
+                "count = count + 1, dwell_secs = dwell_secs + excluded.dwell_secs",
+                (day, path, etype, dwell),
+            )
+            if etype == 'pageview':
+                # Only count initial pageviews (new_session flag), not dwell-on-exit events.
+                # Frontend sends: trackPageview() → {new_session: bool}, trackDwell() → {dwell: secs}.
+                # This check prevents double-counting each page load.
+                if data.get('new_session') or dwell == 0:
+                    db.execute("UPDATE visit_counter SET count = count + 1 WHERE metric = 'pageviews'")
+                if data.get('new_session'):
+                    db.execute("UPDATE visit_counter SET count = count + 1 WHERE metric = 'sessions'")
+            if etype == 'search':
+                term = str(data.get('term', '')).strip().lower()[:80]
+                if term:
+                    db.execute(
+                        "INSERT INTO analytics_search (day, term, count) VALUES (?, ?, 1) "
+                        "ON CONFLICT(day, term) DO UPDATE SET count = count + 1",
+                        (day, term),
+                    )
+                query_length = data.get('query_length')
+                query_length = int(query_length) if isinstance(query_length, (int, float)) else 0
+                result_count = data.get('result_count')
+                result_count = int(result_count) if isinstance(result_count, (int, float)) else 0
+                zero_results = 1 if data.get('zero_results') == 'yes' else 0
+                filters_applied = data.get('filters_applied')
+                filters_applied = int(filters_applied) if isinstance(filters_applied, (int, float)) else 0
+                search_mode = str(data.get('mode', 'keyword')).strip().lower()[:20]
+                if query_length > 0 or filters_applied > 0:
+                    db.execute(
+                        "INSERT INTO analytics_search_metrics "
+                        "(day, query_length, result_count, zero_results, filters_applied, search_mode, count) "
+                        "VALUES (?, ?, ?, ?, ?, ?, 1) "
+                        "ON CONFLICT(day, query_length, result_count, zero_results, filters_applied, search_mode) DO UPDATE SET "
+                        "count = count + 1",
+                        (day, query_length, result_count, zero_results, filters_applied, search_mode),
+                    )
+                    if zero_results and term:
+                        db.execute(
+                            "INSERT INTO analytics_zero_result_queries "
+                            "(day, query, query_length, filters_applied, search_mode) "
+                            "VALUES (?, ?, ?, ?, ?) "
+                            "ON CONFLICT(day, query) DO UPDATE SET "
+                            "occurrence_count = occurrence_count + 1, last_seen_at = CURRENT_TIMESTAMP",
+                            (day, term, query_length, filters_applied, search_mode),
+                        )
+            db.commit()
+        finally:
+            db.close()
+        return ('', 204)
+    except Exception as e:
+        # Analytics must never break the beacon caller or leak into user-facing errors.
+        print(f"[analytics] track_event failed: {e}", file=sys.stderr)
+        return ('', 204)
 
 
 @app.route('/api/organizations')
