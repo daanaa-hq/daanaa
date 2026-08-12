@@ -4,11 +4,12 @@
 # Example: bash scripts/testing/run_perf_tests.sh http://localhost:5000 5 chromium
 
 BASE_URL="${1:-http://localhost:5000}"
-ITERATIONS="${2:-3}"
-BROWSER="${3:-chromium}"
+ITERATIONS="${2:-5}"
+BROWSER="${3:-brave}"
 
 echo "╔═══════════════════════════════════════════════════════════════╗"
 echo "║        Performance Testing - Task #5 Index Impact             ║"
+echo "║              🦁 Using Brave Browser 🦁                        ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""
 echo "Configuration:"
@@ -23,18 +24,30 @@ if ! command -v npx >/dev/null 2>&1; then
     exit 1
 fi
 
+# Check if Brave is installed
+if [ "$BROWSER" = "brave" ]; then
+    if ! command -v brave-browser >/dev/null 2>&1; then
+        echo "❌ Brave browser not found"
+        echo "   Install with: sudo apt-get install brave-browser"
+        exit 1
+    fi
+    echo "✅ Brave browser found: $(brave-browser --version | head -1)"
+    echo ""
+fi
+
 # Run tests
 cd ~/meritgiving
 export BASE_URL="$BASE_URL"
 export ITERATIONS="$ITERATIONS"
+export BROWSER_EXECUTABLE="brave-browser"
 
-echo "Running Playwright tests..."
+echo "Running Playwright tests with Brave..."
 echo ""
 
-npx playwright test scripts/testing/perf_test_playwright.ts \
-    --project="$BROWSER" \
-    --reporter=list \
-    --quiet
+# Use Brave-configured Playwright config
+npx playwright test \
+    --config=playwright.perf.config.ts \
+    --reporter=list
 
 if [ $? -eq 0 ]; then
     echo ""

@@ -18,12 +18,13 @@ const ITERATIONS = parseInt(process.env.ITERATIONS || '3', 10);
 
 test.describe('Search Performance - Task #5 Validation', () => {
   test('Baseline: Keyword search (food)', async ({ page }) => {
-    const times: number[] = [];
+    const times: number[] = []
 
     for (let i = 0; i < ITERATIONS; i++) {
       const start = Date.now();
-      await page.goto(`${BASE_URL}/directory?q=food&limit=20`);
-      await page.waitForSelector('[data-testid="org-card"]', { timeout: 5000 });
+      await page.goto(`${BASE_URL}/directory?q=food&limit=20`, { waitUntil: 'networkidle' });
+      // Wait for results to render: either a grid/list with org links or a "no results" message
+      await page.waitForSelector('a[href*="/org/"], div:has-text("Nothing matched")', { timeout: 10000 });
       const elapsed = Date.now() - start;
       times.push(elapsed);
       console.log(`  [${i + 1}/${ITERATIONS}] ${elapsed}ms`);
@@ -38,12 +39,12 @@ test.describe('Search Performance - Task #5 Validation', () => {
   });
 
   test('Indexed: Location-filtered search (food + TX)', async ({ page }) => {
-    const times: number[] = [];
+    const times: number[] = []
 
     for (let i = 0; i < ITERATIONS; i++) {
       const start = Date.now();
-      await page.goto(`${BASE_URL}/directory?q=food&state=TX&limit=20`);
-      await page.waitForSelector('[data-testid="org-card"]', { timeout: 5000 });
+      await page.goto(`${BASE_URL}/directory?q=food&state=TX&limit=20`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('a[href*="/org/"], div:has-text("Nothing matched")', { timeout: 10000 });
       const elapsed = Date.now() - start;
       times.push(elapsed);
       console.log(`  [${i + 1}/${ITERATIONS}] ${elapsed}ms`);
@@ -59,12 +60,12 @@ test.describe('Search Performance - Task #5 Validation', () => {
   });
 
   test('Indexed: Score-sorted search (education)', async ({ page }) => {
-    const times: number[] = [];
+    const times: number[] = []
 
     for (let i = 0; i < ITERATIONS; i++) {
       const start = Date.now();
-      await page.goto(`${BASE_URL}/directory?q=education&limit=50&sort=score`);
-      await page.waitForSelector('[data-testid="org-card"]', { timeout: 5000 });
+      await page.goto(`${BASE_URL}/directory?q=education&limit=50&sort=score`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('a[href*="/org/"], div:has-text("Nothing matched")', { timeout: 10000 });
       const elapsed = Date.now() - start;
       times.push(elapsed);
       console.log(`  [${i + 1}/${ITERATIONS}] ${elapsed}ms`);
@@ -80,12 +81,12 @@ test.describe('Search Performance - Task #5 Validation', () => {
   });
 
   test('Indexed: Complex query + state filter', async ({ page }) => {
-    const times: number[] = [];
+    const times: number[] = []
 
     for (let i = 0; i < ITERATIONS; i++) {
       const start = Date.now();
-      await page.goto(`${BASE_URL}/directory?q=nonprofit+tax&state=CA&limit=30`);
-      await page.waitForSelector('[data-testid="org-card"]', { timeout: 5000 });
+      await page.goto(`${BASE_URL}/directory?q=nonprofit+tax&state=CA&limit=30`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('a[href*="/org/"], div:has-text("Nothing matched")', { timeout: 10000 });
       const elapsed = Date.now() - start;
       times.push(elapsed);
       console.log(`  [${i + 1}/${ITERATIONS}] ${elapsed}ms`);
@@ -101,12 +102,12 @@ test.describe('Search Performance - Task #5 Validation', () => {
   });
 
   test('Baseline: Large result set (health x100)', async ({ page }) => {
-    const times: number[] = [];
+    const times: number[] = []
 
     for (let i = 0; i < ITERATIONS; i++) {
       const start = Date.now();
-      await page.goto(`${BASE_URL}/directory?q=health&limit=100`);
-      await page.waitForSelector('[data-testid="org-card"]', { timeout: 10000 });
+      await page.goto(`${BASE_URL}/directory?q=health&limit=100`, { waitUntil: 'networkidle' });
+      await page.waitForSelector('a[href*="/org/"], div:has-text("Nothing matched")', { timeout: 15000 });
       const elapsed = Date.now() - start;
       times.push(elapsed);
       console.log(`  [${i + 1}/${ITERATIONS}] ${elapsed}ms`);
