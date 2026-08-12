@@ -60,7 +60,7 @@
     git status --short | tee "$WORK_DIR/reports/git-status.txt"
     git diff --check
     git diff --stat | tee "$WORK_DIR/reports/diff-stat.txt"
-    git diff -- droplet_api.py frontend/src/pages/OrganizationDetail.tsx \
+    git diff -- scripts/core/droplet_api.py frontend/src/pages/OrganizationDetail.tsx \
       | tee "$WORK_DIR/reports/reviewed-diff.txt"
 
     echo
@@ -79,11 +79,11 @@
     claim_phase backend_syntax
     log "Phase 1: backend parser and route validation"
 
-    python3 -m py_compile droplet_api.py
+    python3 -m py_compile scripts/core/droplet_api.py
     python3 -m py_compile scripts/v6_financial_context_api.py
 
-    grep -q "/api/organizations/<ein>/financial-context" droplet_api.py
-    grep -q "get_v6_financial_context" droplet_api.py
+    grep -q "/api/organizations/<ein>/financial-context" scripts/core/droplet_api.py
+    grep -q "get_v6_financial_context" scripts/core/droplet_api.py
 
     echo "Checking parser repairs are limited to no-op pass statements:"
     git diff -- droplet_api.py | tee "$WORK_DIR/reports/backend-diff.txt"
@@ -189,7 +189,7 @@
 
     if ! curl -fsS --max-time 3 http://127.0.0.1:5000/health >/dev/null 2>&1; then
       echo "ERROR: Local API not running."
-      echo "Start it with: python3 droplet_api.py"
+      echo "Start it with: python3 scripts/core/droplet_api.py"
       exit 1
     fi
 
@@ -237,12 +237,12 @@ PY
     log "Phase 7: final local release gate"
 
     git diff --check
-    python3 -m py_compile droplet_api.py
+    python3 -m py_compile scripts/core/droplet_api.py
     python3 -m py_compile scripts/v6_financial_context_api.py
 
     echo
     echo "Final review checklist:"
-    echo "[ ] Backend route is present in droplet_api.py"
+    echo "[ ] Backend route is present in scripts/core/droplet_api.py"
     echo "[ ] Only five parser no-op repairs are present"
     echo "[ ] Frontend diff is limited to OrganizationDetail.tsx"
     echo "[ ] Backend tests pass"
