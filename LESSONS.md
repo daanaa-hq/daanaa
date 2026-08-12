@@ -213,3 +213,30 @@ taxDeductibleToStatus(tax_deductible)
 **Status:** Infrastructure complete. UI integration pending (not a bug, a feature backlog item).
 
 ---
+
+## 2026-08-12: FTS Query Building — Sanitizer Destroys Operators
+
+**Symptom:** Task #2 required expanding cause keywords with semantic synonyms via FTS OR operators (e.g., "food" → `("food"* OR "meals"* OR "nutrition"*)`). Initial approach passed the expanded query through `_sanitize_fts_query()`, which quotes every word, destroying the OR operators and turning them into literal words to search for: `"food"* "OR"* "meals"*...` instead of treating OR as a boolean operator.
+
+**Root cause:** `_sanitize_fts_query()` is designed to sanitize **user input** by quoting all words, explicitly neutralizing FTS operators like OR/AND/NOT (line 383 comment: "Double-quoted tokens keep donor-typed AND/OR/NOT literal, not operators"). This is correct for donor input (protects against syntax errors in org names like "St. Jude's" or "4-H"). However, when building FTS queries programmatically with intentional operators, passing the final query through this sanitizer ruins the operator semantics.
+
+**Fix applied:**
+- Extracted a new helper: `_build_fts_query_with_synonyms(fts_terms: list)` that:
+  - Sanitizes individual terms before combining them
+  - Assembles terms with FTS operators (OR) preserved and unquoted
+  - Example: ["food", "bank"] → `("food"* OR "meals"* OR ...) "bank"*`
+- Left `_sanitize_fts_query()` unchanged (still needed for donor input sanitization)
+- Updated `_fts_where()` to use the new helper instead of passing the final query through the sanitizer
+
+**Preventing rule:**
+
+> When building FTS queries programmatically with intentional boolean operators (OR, AND), **do not pass the final query through a user-input sanitizer**. Build a separate query-builder that:
+> 1. Sanitizes individual terms before combining them
+> 2. Preserves operator semantics (OR stays as OR, not quoted)
+> 3. Uses the sanitized terms to assemble the final query
+>
+> Reuse the general sanitizer only for actual user input. For programmatic query building, create domain-specific builders that respect your query structure.
+
+**Related:** DECISIONS.md 2026-08-12 Task #2 completion entry documents the full location parsing + synonym expansion feature.
+
+---

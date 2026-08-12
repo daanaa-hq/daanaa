@@ -291,6 +291,77 @@ _FTS5_NOISE = frozenset({
     'metro', 'greater', 'region', 'area',
 })
 
+# ── Task #2: City/State + Cause Synonyms (2026-08-12) ──────────────────────
+# Curated cause aliases for semantic query expansion (low-maintenance, high-impact).
+# These are validated against existing org_fts index data (cause_tags, NTEE).
+# See Codex design review for why small curated list > dynamic inference.
+_CAUSE_ALIASES = {
+    "food": ["food", "meals", "nutrition", "feeding", "hunger", "pantry", "groceries"],
+    "housing": ["housing", "shelter", "homeless", "homelessness", "residential"],
+    "health": ["health", "healthcare", "medical", "wellness", "clinical", "physician"],
+    "education": ["education", "school", "learning", "training", "student", "scholarship"],
+    "arts": ["arts", "music", "theater", "visual", "culture", "creative", "museum"],
+    "animals": ["animal", "wildlife", "humane", "shelter", "pet", "conservation"],
+    "environment": ["environment", "climate", "conservation", "sustainability", "ecological"],
+    "child": ["child", "youth", "kid", "adolescent", "family", "young people"],
+    "senior": ["senior", "elderly", "aging", "older", "retirement"],
+    "job": ["job", "employment", "career", "work", "workforce", "training"],
+}
+
+# US state abbreviations (quick validation for location parsing)
+_US_STATES = {
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
+}
+
+def _parse_location(query: str) -> tuple:
+    """
+    Parse query for location patterns: "City, State" or "City State"
+    Returns: (city_name, state_abbrev) or (None, state_abbrev) or (None, None)
+    Conservative parsing: only returns matches that are likely actual locations.
+
+    Examples:
+      "Austin, TX" → ("Austin", "TX")
+      "San Francisco CA" → ("San Francisco", "CA")
+      "TX" → (None, "TX")
+      "New York" → (None, None)  # ambiguous, let FTS handle
+    """
+    query = query.strip()
+    if not query:
+        return None, None
+
+    # Pattern 1: "City, State" (comma-separated, case-insensitive)
+    # Require at least one word before comma and exactly 2-letter state code
+    comma_match = re.match(r'^(.+?),\s*([A-Za-z]{2})$', query, re.IGNORECASE)
+    if comma_match:
+        city = comma_match.group(1).strip()
+        state = comma_match.group(2).upper()
+        if state in _US_STATES:
+            return city, state
+
+    # Pattern 2: "City State" (space-separated, last token is state)
+    # Conservative: only match if last word is exactly 2 letters (state code)
+    # and city part has at least 1 uppercase letter or is a 2-word combo
+    parts = query.rsplit(None, 1)
+    if len(parts) == 2:
+        city_part, state_part = parts
+        state_upper = state_part.upper()
+        if len(state_part) == 2 and state_upper in _US_STATES:
+            # Only accept if city_part looks capitalized (e.g., "Austin" or "San Francisco")
+            # not "food banks" which are all lowercase
+            if city_part[0].isupper():
+                return city_part, state_upper
+
+    # Pattern 3: bare state abbreviation (exactly 2 letters)
+    if len(query) == 2 and query.upper() in _US_STATES:
+        return None, query.upper()
+
+    return None, None
+
+
 def _sanitize_fts_query(text: str) -> str:
     """Donor text → valid FTS5 MATCH expression.
 
@@ -313,6 +384,34 @@ def _sanitize_fts_query(text: str) -> str:
     # Single-char tokens match EXACTLY (no star): '"n"*' range-scans every
     # n-word in the term dictionary — 15s+ timeouts on this 2GB box.
     return ' '.join(f'"{w}"*' if len(w) >= 2 else f'"{w}"' for w in words)
+
+
+def _build_fts_query_with_synonyms(fts_terms: list) -> str:
+    """Build FTS query from terms, expanding cause terms with synonyms.
+
+    Preserves FTS operators (OR) by sanitizing individual terms before combining.
+    Example: ["food", "bank"] → ("food" OR "meals" OR ...) AND "bank"
+    """
+    query_parts = []
+    for term in fts_terms:
+        term_lower = term.lower()
+        if term_lower in _CAUSE_ALIASES:
+            # Expand with synonyms using OR
+            aliases = _CAUSE_ALIASES[term_lower]
+            # Sanitize each alias individually
+            sanitized = []
+            for alias in aliases:
+                clean = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', alias))
+                # Just take the term as-is if it's reasonably short
+                if len(clean) > 0:
+                    sanitized.append(f'"{clean}"*')
+            if sanitized:
+                query_parts.append(f"({' OR '.join(sanitized)})")
+        else:
+            # Regular term: sanitize normally
+            query_parts.append(_sanitize_fts_query(term))
+
+    return ' '.join(p for p in query_parts if p)
 
 
 # ── Corpus-vocabulary typo correction (zero-result rescue) ─────────────────
@@ -412,10 +511,29 @@ def _typo_correct_query(text):
 def _fts_where(q: str, state: str = '', conn=None) -> tuple:
     """Build base FTS WHERE conditions and params for q + state.
     Returns (conditions, params, detected_zip_or_None).
+    Enhancements (Task #2, 2026-08-12):
+    - Recognize city/state patterns ("Austin, TX" or "Austin TX")
+    - Expand cause terms with semantic synonyms ("food" → "food OR meals OR nutrition...")
     If conn is provided, resolves zip to city name so FTS can find orgs."""
     detected_zip = None
     words = q.split()
-    # Extract any standalone 5-digit zip from any position in the query.
+
+    # ENHANCEMENT: Try parsing as location first ("Austin, TX" or "Austin TX")
+    parsed_city, parsed_state = _parse_location(q)
+    if parsed_city and conn:
+        # Validate city/state exists in zip_codes table
+        city_check = conn.execute(
+            "SELECT 1 FROM zip_codes WHERE city=? AND state_id=? LIMIT 1",
+            (parsed_city, parsed_state)
+        ).fetchone()
+        if city_check:
+            # Found valid city/state: use it as-is with FTS field specifiers
+            fts_q = _sanitize_fts_query(f'city:"{parsed_city}" AND state:"{parsed_state}"')
+            conditions: list = ["s.ein = o.EIN", "org_fts MATCH ?"]
+            params: list = [fts_q]
+            return conditions, params, None
+
+    # EXISTING: Handle bare 5-digit ZIP codes
     non_zip_words = []
     for w in words:
         if re.match(r'^\d{5}$', w) and detected_zip is None:
@@ -433,19 +551,20 @@ def _fts_where(q: str, state: str = '', conn=None) -> tuple:
             zip_city = zrow["city"]
             zip_state = zrow["state_id"]
 
-    # Build FTS query: if bare zip (no other keywords), search by resolved city.
-    # If mixed ("food bank 97701"), keep keywords and append city to help location.
+    # Build FTS query with cause synonym expansion (ENHANCEMENT)
+    fts_terms = []
     if non_zip_words:
-        fts_terms = non_zip_words
+        fts_terms.extend(non_zip_words)
         if zip_city and zip_city.lower() not in ' '.join(non_zip_words).lower():
-            fts_terms = non_zip_words + [zip_city]
+            fts_terms.append(zip_city)
     elif zip_city:
         fts_terms = [zip_city]
     else:
-        # Unknown zip or no conn: fall back to raw query so we return something
+        # Unknown zip or no conn: use all original words
         fts_terms = words
 
-    fts_q = _sanitize_fts_query(' '.join(w for w in fts_terms if w))
+    # Build FTS query with synonym expansion
+    fts_q = _build_fts_query_with_synonyms(fts_terms) if fts_terms else '""'
     conditions: list = ["s.ein = o.EIN", "org_fts MATCH ?"]
     params: list = [fts_q]
     # State filter: prefer explicit param, fall back to zip-resolved state
