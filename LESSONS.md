@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-08-12: Broke-Then-Fixed — Schema Mismatch in Precompute Rebuild
+
+**Symptom:** Script `rebuild_precompute_with_irs.py` crashed immediately with `sqlite3.OperationalError: no such column: irs_eligibility_explanation`.
+
+**Root Cause:** Schema column renamed without updating script.
+- Database has: `irs_eligibility_status`, `irs_eligibility_checked_at`, `irs_eligibility_sources`, `irs_eligibility_notes`
+- Script queried: `irs_eligibility_explanation` (column never existed in committed schema)
+- Gap: Added columns to database but didn't update dependent scripts before first use
+
+**Preventing Rule:**
+
+> When adding new database columns that scripts depend on:
+> 1. Update ALL scripts that reference the column in the SAME commit
+> 2. Test the script against the schema BEFORE committing
+> 3. Use automated schema validation if available (e.g., SQLAlchemy migrations)
+> 4. If field names are non-obvious, document the canonical names in schema comments
+> 5. Never assume a field name matches a docstring or external reference
+
+**What we did:**
+- Created database columns: `irs_eligibility_*` (notes, not explanation)
+- Wrote rebuild script with wrong column name (explanation, not notes)
+- Caught on first test run (no production impact)
+- Fixed in commit fd9bd6f116e
+
+**Recovery:** ~1 minute (grep + replace + re-run)
+
+---
+
 ## 2026-08-11: Phase 1-4 Deployment Incident (DNS/Cloudflare Timeout)
 
 **Symptom:** After updating Cloudflare DNS to new droplet IP (167.170.26.8), daanaa.org returned HTTP 522 (origin timeout), then no response. Site became unreachable.
