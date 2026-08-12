@@ -26,10 +26,12 @@ import time
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(BASE, "data", "merit_registry.db")
 
-# Columns to carry in registry_enriched — exactly the set the LIVE droplet
-# search.db ships (41 cols). Keeping parity holds the artifact near the live
-# 1.2GB (the disk runs tight) and guarantees identical frontend behaviour; the
-# new `metro` lives in org_fts (search), not here, so it is intentionally absent.
+# Columns to carry in registry_enriched — the live droplet search.db contract.
+# Keeping parity holds the artifact near the live 1.2GB range (the disk runs
+# tight) and guarantees identical frontend behaviour. `metro` still lives in
+# org_fts (search), not here; IRS eligibility fields are carried here because
+# the search.db fallback serves the orgs that do not have a sharded precompute
+# file and the frontend/API expect those fields to exist there too.
 LIVE_COLS = [
     "EIN", "organization_name", "NTEE1", "NTEECC", "CITY", "STATE", "zipcode",
     "mission", "mission_source", "merit_score", "merit_tier", "merit_band",
@@ -45,6 +47,8 @@ LIVE_COLS = [
     # and non-deductible orgs from browse/filter counts and results while the
     # full registry stays available for org-detail fallback (revoked card state).
     "subsection", "deductibility", "org_status", "irs_revoked",
+    "irs_eligibility_status", "irs_eligibility_checked_at",
+    "irs_eligibility_sources", "irs_eligibility_notes",
 ]
 
 # Indexes the API relies on (browse filters, FTS join, ordering). EIN PK comes
