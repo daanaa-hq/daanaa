@@ -103,13 +103,13 @@ def package_precompute() -> bool:
     DEPLOY_SCRATCH.mkdir(parents=True, exist_ok=True)
 
     try:
-        # Create tarball
+        # Create tarball (uncompressed for speed; 25GB takes ~2 min to tar)
         result = subprocess.run(
-            ["tar", "--exclude=./vectors.f32.memmap", "-czf", str(PAYLOAD), "."],
+            ["tar", "--exclude=./vectors.f32.memmap", "-cf", str(PAYLOAD), "."],
             cwd=PRECOMPUTE_DIR,
             capture_output=True,
             text=True,
-            timeout=300
+            timeout=600
         )
 
         if result.returncode != 0:
@@ -140,7 +140,7 @@ def transfer_to_droplet() -> bool:
     log("Transferring payload to droplet...")
 
     try:
-        # Transfer both tarball and checksum
+        # Transfer both tarball and checksum (25GB ~2-3 min over network)
         for file_path in [PAYLOAD, Path(str(PAYLOAD) + ".sha256")]:
             result = subprocess.run(
                 [
@@ -151,7 +151,7 @@ def transfer_to_droplet() -> bool:
                 ],
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=600
             )
 
             if result.returncode != 0:
@@ -184,21 +184,59 @@ def transfer_to_droplet() -> bool:
 
 
 def execute_atomic_swap() -> bool:
-    """Run deploy_droplet.sh to swap precompute live"""
+    """Execute atomic swap on droplet: backup v1 to v0, extract new to v1"""
     log("Executing atomic swap on droplet...")
 
     try:
-        # SSH into droplet and run deploy script
-        cmd = f"bash /opt/daanaa/scripts/deploy_droplet.sh {STAGING_DIR}/precompute_payload_irs.tar.gz"
+        # Inline atomic swap script: backup current, extract new, restart
+        swap_script = f"""
+set -e
+PAYLOAD="{STAGING_DIR}/precompute_payload_irs.tar.gz"
+PRECOMPUTE_DIR="/data/precompute"
+
+echo "Extracting payload to temporary directory..."
+TEMP_DIR=$(mktemp -d)
+cd "$TEMP_DIR"
+tar -xf "$PAYLOAD"
+
+if [ ! -f "$TEMP_DIR/orgs.json" ] || [ ! -d "$TEMP_DIR/orgs" ]; then
+  echo "ERROR: Invalid payload structure" >&2
+  exit 1
+fi
+
+echo "Backup current v1 to v0..."
+rm -rf "$PRECOMPUTE_DIR/v0"
+cp -r "$PRECOMPUTE_DIR/v1" "$PRECOMPUTE_DIR/v0" 2>/dev/null || true
+
+echo "Deploy new version to v1..."
+rm -rf "$PRECOMPUTE_DIR/v1"
+mv "$TEMP_DIR" "$PRECOMPUTE_DIR/v1"
+chmod -R 755 "$PRECOMPUTE_DIR/v1"
+
+echo "Restarting gunicorn..."
+systemctl restart gunicorn
+sleep 2
+
+if systemctl is-active gunicorn >/dev/null 2>&1; then
+  echo "✓ Atomic swap complete"
+  exit 0
+else
+  echo "ERROR: Gunicorn failed to start, rolling back..." >&2
+  rm -rf "$PRECOMPUTE_DIR/v1"
+  mv "$PRECOMPUTE_DIR/v0" "$PRECOMPUTE_DIR/v1"
+  systemctl restart gunicorn
+  exit 1
+fi
+"""
 
         result = subprocess.run(
-            ["ssh", "-i", str(SSH_KEY), f"{DROPLET_USER}@{DROPLET_IP}", cmd],
+            ["ssh", "-i", str(SSH_KEY), f"{DROPLET_USER}@{DROPLET_IP}", swap_script],
             capture_output=True,
             timeout=300,
             text=True
         )
 
-        # Log deployment output
+        # Log output
         if result.stdout:
             for line in result.stdout.split('\n')[-10:]:
                 if line.strip():
@@ -208,7 +246,7 @@ def execute_atomic_swap() -> bool:
             log(f"Atomic swap failed: {result.stderr}", "ERROR")
             return False
 
-        log("✓ Atomic swap complete", "SUCCESS")
+        log("✓ Atomic swap complete with automatic rollback safety", "SUCCESS")
         return True
 
     except subprocess.TimeoutExpired:
