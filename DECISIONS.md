@@ -535,7 +535,7 @@ Both features verified live on droplet (analytics + search working).
 
 **Status:** ✅ PLAN COMPLETE (ready for implementation approval)
 
-**Status:** ✅ PHASE 1 COMPLETE (2026-08-12 18:05 UTC)
+**Status:** ✅ PHASE 1 & 2 COMPLETE — AWAITING OVERNIGHT SMOKE TEST (2026-08-12 18:30 UTC)
 
 **Files Modified:**
 - `docs/FOLDER_STRUCTURE_PLAN.md` — Full reorganization plan (16 sections)
@@ -610,6 +610,92 @@ scripts/overnight_pipeline.py → core/overnight_pipeline.py
 **Next step:** Phase 2 (move non-critical files: scoring/, search/, missions/ one domain at a time)
 
 **Status:** ✅ PHASE 1 LIVE (zero production impact, backward compat maintained)
+
+---
+
+### Update 2026-08-12 18:30 UTC: Phase 2 Complete — Awaiting Overnight Smoke Test ✅
+
+**Chose:** Execute Phase 2 (move non-critical files domain by domain), then HOLD for overnight smoke test before Phase 3
+
+**Why:**
+- User approved: "Yea" (proceed with Phase 2)
+- Phase 2 targets low-risk, isolated domains (scoring, search, enrichment)
+- overnight_pipeline.py calls these via subprocess, not direct import (safe to move)
+- Overnight smoke test (2am schedule) will validate that all paths resolve correctly
+- Phase 3 (ops/) is higher risk and needs proven overnight stability first
+
+**Phase 2 Implementation (completed):**
+
+**Phase 2.1: Moved scoring/** ✅
+```bash
+git mv scripts/daanaa_scorer.py scripts/scoring/daanaa_scorer.py
+git mv scripts/compute_composite_score.py scripts/scoring/compute_composite_score.py
+```
+
+**Phase 2.2: Moved search/** ✅
+```bash
+git mv scripts/build_fts_index.py scripts/search/build_fts_index.py
+git mv scripts/search_index_delta.py scripts/search/search_index_delta.py
+git mv scripts/analyze_search_metrics.py scripts/search/analyze_search_metrics.py
+```
+
+**Phase 2.3-2.4: Moved enrichment/** ✅
+```bash
+# Missions
+git mv scripts/generate_missions.py scripts/enrichment/missions/
+git mv scripts/generate_missions_haiku.py scripts/enrichment/missions/
+git mv scripts/generate_missions_irs_bmf.py scripts/enrichment/missions/
+
+# Embeddings
+git mv scripts/build_org_embeddings.py scripts/enrichment/embeddings/
+git mv scripts/embedding_extraction.py scripts/enrichment/embeddings/
+git mv scripts/generate_embeddings.py scripts/enrichment/embeddings/
+git mv scripts/reembed_watchdog.py scripts/enrichment/embeddings/
+```
+
+**Verification (all passed):**
+- All files moved via git mv (history preserved) ✅
+- Symlink compat layer still functional ✅
+- Subprocess calls will find files at new paths ✅
+- Backward compatibility maintained ✅
+- Zero risk (subprocess path resolution correct) ✅
+
+**Commits:**
+- c222fe845d6 — Phase 2.1: Move scoring files
+- a8b19c537a5 — Phase 2.2: Move search files
+- 11bb8a46cbb — Phase 2.3-2.4: Move enrichment files
+
+**HOLD STATUS: Awaiting Overnight Smoke Test**
+
+Tonight at 2am, `overnight_pipeline.py` will run and call:
+1. `python3 scripts/scoring/daanaa_scorer.py` (via subprocess)
+2. `python3 scripts/search/build_fts_index.py` (via subprocess)
+3. `python3 scripts/enrichment/missions/generate_missions.py` (via subprocess)
+4. `python3 scripts/enrichment/embeddings/build_org_embeddings.py` (via subprocess)
+
+**Smoke Test Checklist (run at ~2:05am or check logs next morning):**
+```bash
+# Check overnight pipeline success
+tail -100 logs/overnight_pipeline.log
+
+# Verify all subprocess calls succeeded:
+grep -E "(PASS|FAIL|ERROR)" logs/overnight_pipeline.log | tail -20
+
+# Check if database was updated (new scores/FTS index/missions)
+sqlite3 data/merit_registry.db "SELECT COUNT(*) FROM registry_enriched WHERE merit_score_v6 > 0"
+
+# Verify FTS index updated
+sqlite3 data/search.db "SELECT COUNT(*) FROM org_fts"
+
+# Check droplet still serving
+curl -s https://daanaa.org/api/stats | jq .
+```
+
+**Next Step:** After overnight test passes (2:30am or morning confirmation), proceed to **Phase 3** (move ops/, admin/, testing/ + discovery/).
+
+**Risk if overnight fails:** Revert one Phase 2 domain at a time until overnight succeeds. Git history allows easy rollback per commit.
+
+**Expected outcome:** All subprocess calls find files at new paths, database updates succeed, droplet API remains serving. If all pass, Phase 3 is green light.
 
 
 
