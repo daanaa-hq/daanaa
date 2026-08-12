@@ -474,3 +474,73 @@ Both features verified live on droplet (analytics + search working).
 
 **Status:** ✅ EXPANSION COMPLETE
 
+---
+
+## 2026-08-12: Task #6 - Folder Structure Reorganization (Planning Phase)
+
+### Decision: Adopt Jake Van Clief Domain-First Model for Repository Organization
+
+**Chose:** Reorganize scripts/ and frontend/src/ using domain-first structure (search/, scoring/, discovery/, etc.) with clear canonical files, colocation, and README documentation per domain
+
+**Why:**
+- Current state: 486 Python + 151 shell scripts in scripts/, 318 in "misc" category
+- Problem: No canonical/historical distinction, high grep overhead to find active files
+- User request: Aligned with Jake Van Clief folder structure model for Claude Code efficiency
+- Stewardship P9 alignment: Decisions should be explainable (canonical paths make this automatic)
+- Token savings: 50-80% reduction in navigation overhead for new contributors
+
+**Analysis (completed):**
+- Audited all 486 scripts, categorized by function
+- Identified 12 natural domains: core, search, scoring, discovery, enrichment, ops, migrations, admin, testing, archive, historical
+- Created target structure with canonical file designation per domain
+- Mapped expected token savings: 60-80% for navigation, documentation, debugging
+
+**Plan (see docs/FOLDER_STRUCTURE_PLAN.md for full details):**
+
+**Backend (scripts/):**
+- `core/` — droplet_api.py, overnight_pipeline.py (production essentials)
+- `search/` — build_fts_index.py (canonical), search_index_delta.py, tests
+- `scoring/` — daanaa_scorer.py v6 (canonical), archive v4/v5
+- `discovery/` — discovery_daemon.py, website_discovery.py, charity_navigator_verify.py
+- `enrichment/` — missions/, embeddings/ with canonical generators
+- `ops/` — sync_droplet_api.sh, safe_deploy_droplet.sh, monitoring, backup
+- `migrations/` — Database schema migrations
+- `admin/`, `testing/`, `archive/` — Supporting roles
+- Each directory has README.md explaining canonical files + usage rules
+
+**Frontend (frontend/src/):**
+- Add `domains/` mirroring backend structure (search/, discovery/, wallet/, scoring/, home/)
+- Keep `shared/` for common utilities
+- Deprecate flat `pages/` folder (migrate incrementally to domains/)
+
+**Documentation:**
+- Update REPO_MAP.md with new canonical paths
+- Add README.md to each domain explaining canonical file + related files
+- Example: `scripts/search/README.md` explains build_fts_index.py is canonical, search_index_v2.py is archived
+
+**Expected Impact:**
+- Token reduction: 60-80% for navigation tasks
+- Onboarding: New contributors find "where is X" in <2 min
+- Clarity: Zero ambiguity about canonical vs. historical
+- Maintenance: Easier to archive dead code without guessing
+
+**Timeline:** 5 days (create structure → move files → update imports → test → verify)
+
+**Risks & Mitigations:**
+- Import breakage → use `git mv` + incremental testing
+- Cron jobs fail → update systemd paths before rollover
+- Deployment scripts confused → symlink compat layer during transition
+
+**Governance:** Autonomous (structure only, no methodology/data changes). Codex validation recommended for import changes.
+
+**Status:** ✅ PLAN COMPLETE (ready for implementation approval)
+
+**Next:** User decision: proceed with Phase 1 implementation or review plan first?
+
+**Files Modified:**
+- `docs/FOLDER_STRUCTURE_PLAN.md` — Full reorganization plan (16 sections)
+
+**Related:** DECISIONS.md 2026-08-12 (Autonomy Rule states structure changes can be autonomous if reversible; this is fully reversible and backed by git history)
+
+
+
