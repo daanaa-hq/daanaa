@@ -116,9 +116,10 @@ def package_precompute() -> bool:
             log(f"Tar failed: {result.stderr}", "ERROR")
             return False
 
-        # Compute checksum
+        # Compute checksum (with just filename, not full path, so it works on droplet)
         result = subprocess.run(
-            ["sha256sum", str(PAYLOAD)],
+            ["sha256sum", PAYLOAD.name],
+            cwd=DEPLOY_SCRATCH,
             capture_output=True,
             text=True
         )
