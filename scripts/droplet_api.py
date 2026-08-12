@@ -293,19 +293,45 @@ _FTS5_NOISE = frozenset({
 
 # ── Task #2: City/State + Cause Synonyms (2026-08-12) ──────────────────────
 # Curated cause aliases for semantic query expansion (low-maintenance, high-impact).
+# Expanded 2026-08-12: added 8 new categories + named diseases for health.
 # These are validated against existing org_fts index data (cause_tags, NTEE).
 # See Codex design review for why small curated list > dynamic inference.
 _CAUSE_ALIASES = {
+    # Core mission areas (original 10)
     "food": ["food", "meals", "nutrition", "feeding", "hunger", "pantry", "groceries"],
-    "housing": ["housing", "shelter", "homeless", "homelessness", "residential"],
-    "health": ["health", "healthcare", "medical", "wellness", "clinical", "physician"],
-    "education": ["education", "school", "learning", "training", "student", "scholarship"],
+    "housing": ["housing", "shelter", "residential", "homelessness"],
+    "health": ["health", "healthcare", "medical", "wellness", "clinical", "physician", "disease", "illness", "treatment"],
+    "education": ["education", "school", "learning", "training", "student", "scholarship", "teacher"],
     "arts": ["arts", "music", "theater", "visual", "culture", "creative", "museum"],
     "animals": ["animal", "wildlife", "humane", "shelter", "pet", "conservation"],
-    "environment": ["environment", "climate", "conservation", "sustainability", "ecological"],
-    "child": ["child", "youth", "kid", "adolescent", "family", "young people"],
-    "senior": ["senior", "elderly", "aging", "older", "retirement"],
+    "environment": ["environment", "climate", "conservation", "sustainability", "ecological", "green"],
+    "child": ["child", "youth", "kid", "adolescent", "family", "young people", "youth development"],
+    "senior": ["senior", "elderly", "aging", "older", "retirement", "older adults"],
     "job": ["job", "employment", "career", "work", "workforce", "training"],
+
+    # Expanded health subcategories (new, 2026-08-12)
+    "mental_health": ["mental", "mental health", "psychological", "therapy", "counseling", "behavioral", "anxiety", "depression", "PTSD", "substance abuse", "addiction", "recovery"],
+    "disability": ["disability", "disabilities", "disabled", "accessible", "accessibility", "inclusion", "accommodations", "blind", "deaf", "cerebral palsy", "autism"],
+
+    # Named diseases (new, 2026-08-12)
+    "cancer": ["cancer", "oncology", "tumor", "leukemia", "lymphoma"],
+    "diabetes": ["diabetes", "Type 1", "Type 2", "gestational diabetes"],
+    "neurological": ["neurological", "Alzheimer's", "dementia", "Parkinson's", "ALS", "multiple sclerosis", "MS", "seizure"],
+    "heart": ["heart", "cardiac", "cardiovascular", "hypertension", "stroke"],
+    "respiratory": ["respiratory", "asthma", "COPD", "lung", "cystic fibrosis"],
+    "maternal_child": ["pregnancy", "maternity", "maternal", "pediatric", "infant", "newborn", "child health"],
+
+    # Underrepresented communities (new, 2026-08-12)
+    "lgbtq": ["LGBTQ", "LGBT", "gay", "lesbian", "transgender", "trans", "nonbinary", "queer"],
+    "immigration": ["immigrant", "refugee", "asylum", "immigration", "migrant", "displaced", "undocumented"],
+    "racial_justice": ["racial justice", "racial equity", "BIPOC", "Black", "African American", "Hispanic", "Latino", "Asian American", "Native American", "indigenous"],
+
+    # Specialized education (new, 2026-08-12)
+    "stem": ["STEM", "science", "technology", "engineering", "math", "coding", "computer science", "programming"],
+    "early_education": ["preschool", "early childhood", "Head Start", "pre-K", "kindergarten", "daycare"],
+
+    # Veterans & military (new, 2026-08-12)
+    "veterans": ["veterans", "veteran", "military", "armed forces", "service member", "deployment", "active duty", "soldier"],
 }
 
 # US state abbreviations (quick validation for location parsing)

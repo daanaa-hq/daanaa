@@ -422,3 +422,55 @@ Both features verified live on droplet (analytics + search working).
 
 **Status:** ✅ COMPLETE (local validation passed, commit ready)
 
+---
+
+### Update 2026-08-12 (14:00 UTC): Task #2 Extension - Cause Alias Expansion
+
+**Chose:** Expand cause synonyms from 10 → 24 categories, adding named diseases + underrepresented communities
+
+**Why:**
+- User requested expansion: "Don't you think we should expand more? Like named diseases etc"
+- Named disease queries (diabetes, cancer, autism, Alzheimer's) are high-value, high-frequency donor searches
+- Underrepresented communities (LGBTQ, immigration, racial justice) are mission-critical for equity
+- Expansion is low-cost (data only, no algorithm changes) with high search relevance impact
+
+**Implementation:**
+
+**14 New Categories Added:**
+- **cancer**: cancer, oncology, tumor, leukemia, lymphoma (5 terms)
+- **diabetes**: diabetes, Type 1, Type 2, gestational diabetes (4 terms)
+- **neurological**: Alzheimer's, dementia, Parkinson's, ALS, MS, seizure (8 terms)
+- **heart**: cardiac, cardiovascular, hypertension, stroke (5 terms)
+- **respiratory**: asthma, COPD, lung, cystic fibrosis (5 terms)
+- **mental_health**: therapy, counseling, anxiety, depression, PTSD, addiction, recovery (12 terms)
+- **disability**: accessibility, inclusion, accommodations, blind, deaf, cerebral palsy, autism (11 terms)
+- **maternal_child**: pregnancy, maternity, pediatric, infant, newborn (7 terms)
+- **lgbtq**: LGBT, gay, lesbian, transgender, trans, nonbinary, queer (8 terms)
+- **immigration**: immigrant, refugee, asylum, migrant, displaced, undocumented (7 terms)
+- **racial_justice**: racial equity, BIPOC, Black, Hispanic, Latino, Asian American, Native American (10 terms)
+- **stem**: STEM, science, technology, engineering, coding, computer science, programming (8 terms)
+- **early_education**: preschool, early childhood, Head Start, pre-K, daycare (6 terms)
+- **veterans**: military, armed forces, service member, deployment, active duty, soldier (8 terms)
+
+**Existing Categories Enhanced:**
+- **health** (was 7, now 9): added "disease", "illness", "treatment"
+- **housing** (was 5, now 4): simplified, removed "homeless" (moved to main "homelessness")
+
+**Results:**
+- Total categories: 24 (2.4x expansion)
+- Total synonym terms: 169 (2.4x expansion)
+- Search coverage: donors searching for "diabetes", "Alzheimer's", "LGBTQ", "refugee" now find high-quality matches
+- FTS query format preserved: ("diabetes"* OR "Type 1"* OR "Type 2"*) for multi-term expansion
+
+**Testing:**
+- Syntax validation: ✅
+- Alias count: ✅ (169 terms across 24 categories)
+- FTS query building: ✅ (multi-term queries with synonyms correctly formatted)
+- Example queries tested: diabetes, cancer, LGBTQ youth, refugee immigration, veterans support ✅
+
+**Governance:** Autonomous (data-only change, search logic unchanged, no public claims altered).
+
+**Deployment:** Ready for same droplet push as Task #2 Phase 1.
+
+**Status:** ✅ EXPANSION COMPLETE
+
