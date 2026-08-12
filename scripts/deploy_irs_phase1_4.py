@@ -56,6 +56,10 @@ def check_precompute_complete() -> bool:
     if result.returncode == 0:
         log("Precompute rebuild still running", "WARN")
         return False
+    if result.returncode != 1:
+        log(f"Failed to check precompute rebuild status (rc={result.returncode}): {result.stderr.strip() or 'no stderr'}", "ERROR")
+        return False
+
 
     # The live API reads sharded orgs/<ein[:3]>/<ein>.json.gz files (see
     # LESSONS.md 2026-08-12) — verify against that tree, not the flat
@@ -85,11 +89,31 @@ def check_precompute_complete() -> bool:
     # reads gzip content directly — a plain grep here would silently match
     # nothing, since the files are binary-compressed.
     updated_count = subprocess.run(
-        ["zgrep", "-rl", '"irs_eligibility_status"', str(PRECOMPUTE_DIR / "orgs")],
+        [
+            "find",
+            str(PRECOMPUTE_DIR / "orgs"),
+            "-type",
+            "f",
+            "-name",
+            "*.json.gz",
+            "-exec",
+            "zgrep",
+            "-l",
+            '"irs_eligibility_status"',
+            "{}",
+            "+",
+        ],
         capture_output=True,
         text=True,
         timeout=180
     )
+    if updated_count.returncode not in (0, 1):
+        log(
+            f"Failed to verify IRS fields in sharded precompute files (rc={updated_count.returncode}): "
+            f"{updated_count.stderr.strip() or 'no stderr'}",
+            "ERROR",
+        )
+        return False
     matched = len([f for f in updated_count.stdout.strip().split('\n') if f])
     if matched < EXPECTED_SHARDED_MIN:
         log(f"Sharded files missing IRS fields: only {matched:,} of {total_files:,} contain irs_eligibility_status", "ERROR")
@@ -126,6 +150,9 @@ def package_precompute() -> bool:
             capture_output=True,
             text=True
         )
+        if result.returncode != 0:
+            log(f"Checksum generation failed: {result.stderr}", "ERROR")
+            return False
 
         checksum_file = Path(str(PAYLOAD) + ".sha256")
         checksum_file.write_text(result.stdout)
@@ -266,15 +293,19 @@ fi
             text=True
         )
 
-        # Log output
+        if result.returncode != 0:
+            log(f"Atomic swap failed: {result.stderr}", "ERROR")
+            if result.stdout:
+                for line in result.stdout.split('\n')[-10:]:
+                    if line.strip():
+                        log(f"  {line}")
+            return False
+
+        # Log output only after the command has succeeded.
         if result.stdout:
             for line in result.stdout.split('\n')[-10:]:
                 if line.strip():
                     log(f"  {line}")
-
-        if result.returncode != 0:
-            log(f"Atomic swap failed: {result.stderr}", "ERROR")
-            return False
 
         log("✓ Atomic swap complete with automatic rollback safety", "SUCCESS")
         return True
@@ -313,10 +344,12 @@ def verify_live_api() -> bool:
             timeout=20
         )
         if result.returncode != 0:
+            log(f"  ✗ {ein}: curl failed (rc={result.returncode})", "WARN")
             return {}
         try:
             return json.loads(result.stdout)
         except json.JSONDecodeError:
+            log(f"  ✗ {ein}: invalid JSON response from API", "WARN")
             return {}
 
     def validate_org(ein: str, expected_status: str) -> bool:
