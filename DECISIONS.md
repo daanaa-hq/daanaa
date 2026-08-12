@@ -768,3 +768,58 @@ curl -s https://daanaa.org/api/stats | jq .
 
 
 
+
+---
+
+## 2026-08-12: Task #6 Folder Refactoring Complete (Jake Van Clief Domain-First Model)
+
+### Decision: Organize scripts/ into Domain-Specific Subdirectories
+
+**Chose:** Refactor scripts/ using domain-first folder structure with symlink compat layer → final removal
+
+**Why:**
+- CLAUDE.md mandated "Senior-engineer bar" and reference DECISIONS.md for non-obvious choices
+- Previous flat scripts/ structure made it hard to find which scripts run in which phase
+- Jake Van Clief domain-first model groups scripts by responsibility: core, scoring, search, enrichment, ops, etc.
+- Symlink compat layer (Phase 2) allows safe transition; Phase 4 removes symlinks after verification
+
+**Model:**
+- `scripts/core/`: Production critical (droplet_api.py, overnight_pipeline.py)
+- `scripts/scoring/`: Financial context v6 scoring + helpers
+- `scripts/search/`: FTS indexing, search optimization
+- `scripts/enrichment/`: Mission generation, org embeddings
+- `scripts/ops/`: Deployment, backups, monitoring
+- `scripts/testing/`: Performance benchmarks, tests
+- `scripts/migrations/`: Database schema changes
+- `scripts/discovery/`: Website enrichment pipeline
+- `scripts/admin/`: Admin-gated utilities
+- `scripts/archive/`: Historical/unused scripts (safety net)
+
+**Rejected alternatives:**
+1. Keep flat structure (violates senior-engineer bar; navigation hard)
+2. Organize by layer (api/, db/, pipeline/) instead of domain (misses ownership)
+3. Skip Phase 4 (symlinks become hidden tech debt)
+
+**Implementation (Phases 1-4):**
+- Phase 1: Created 10 domain subdirs + 7 README.md (navigation docs)
+- Phase 2: Moved 12 production files via git mv; created symlinks (droplet_api.py, overnight_pipeline.py)
+- Phase 3: Organized remaining legacy scripts; moved agent*.py to archive/legacy_agents/
+- Phase 4: Removed symlinks; updated all refs (run_overnight_pipeline.sh, setup_cron_schedules.sh, local_release_coordination.sh)
+
+**Verification:**
+✓ scripts/core/droplet_api.py exists (2786 lines)
+✓ scripts/core/overnight_pipeline.py exists (846 lines)
+✓ All shell script references updated (2 files)
+✓ No Python imports reference old paths
+✓ 13 legacy agent files safely archived
+
+**Commits:**
+- Phase 1-2: dcd5f10acec (domain structure + symlinks)
+- Phase 4: 468a3a3ef8b (remove symlinks, update refs)
+
+**Impact:**
+- Codebase navigation now clear: grep scripts/ shows domain organization
+- New contributors can quickly find scripts by responsibility
+- Overnight pipeline and core API path is explicit
+- Legacy code safely archived without cluttering active scripts/
+
