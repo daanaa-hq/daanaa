@@ -232,8 +232,11 @@ export default function Directory() {
   const catsWithSubs = new Set(subFilters.map(s => s[0]))
   const nteeToSend = activeFilters.filter(c => !catsWithSubs.has(c))
 
+  // Skip browse request when in fused-search mode with active query (speed optimization: 2026-08-12).
+  // When isFusedMode && debouncedQuery, we fetch from /api/fused-search only, not /api/organizations.
+  // This eliminates the duplicate API call on the hot typing path while preserving category browse.
   const { data: orgsData, loading: orgsLoading, error: orgsError } = useApi(
-    () => getOrganizations({
+    () => (isFusedMode && debouncedQuery.trim()) ? Promise.resolve(null) : getOrganizations({
       ntee: nteeToSend.length ? nteeToSend.join(',') : undefined,
       sub: subFilters.length ? subFilters.join(',') : undefined,
       state: stateFilter || undefined,
@@ -254,7 +257,7 @@ export default function Directory() {
       near: near || undefined,
       radius_mi: near ? radiusMi : undefined,
     }),
-    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, verifiedRevenueOnly, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi, randomizeCount]
+    [activeFilters, subFilters, stateFilter, debouncedQuery, sortBy, sortOrder, currentPage, minRevenue, maxRevenue, verifiedRevenueOnly, hasWebsite, effectiveHiddenGem, needsSupport, debouncedCause, itemsPerPage, near, radiusMi, randomizeCount, isFusedMode]
   )
 
   const { data: fusedData, loading: fusedLoading, error: fusedError } = useApi(

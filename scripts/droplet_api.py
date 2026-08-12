@@ -1660,8 +1660,10 @@ def search():
         # Finite-corpus pin: if the typed text IS an org's name (as a phrase in
         # the name column), that org must appear even when bm25 buries it among
         # common-token matches ("N A B S", "BEST SCHOOL" class, 2026-07-19).
+        # Skip pin query if base results already have an exact name match (speed optimization: 2026-08-12).
+        exact_match_exists = any(r['organization_name'].upper() == query.upper() for r in results)
         name_toks = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', query)).split()[:12]
-        if name_toks:
+        if name_toks and not exact_match_exists:
             phrase_params = list(params)
             phrase_params[0] = f'org_name : "{" ".join(name_toks)}"'
             try:
