@@ -1,28 +1,31 @@
 #!/bin/bash
-# Watchdog for API daemon (migrated to daemon_health_lib.py 2026-08-10)
+# Watchdog for droplet_api - reads daemon-published health state
+# No grep, no hardcoded strings; pure decision logic
 
-HEALTH_FILE="/tmp/droplet_api.health.json"
-PORT=5000
+HEALTH_FILE="/tmp/droplet_api_daemon.health.json"
+MAX_AGE_SECONDS=900  # 15 minutes
 
-# Step 1: Check published health state
-if [ -f "$HEALTH_FILE" ]; then
-    STATUS=$(jq -r '.status // "unknown"' "$HEALTH_FILE" 2>/dev/null)
-
-    if [ "$STATUS" = "failed" ]; then
-        echo "[$(date)] API status=failed"
-        exit 1
-    fi
-
-    echo "[$(date)] API daemon healthy (status=$STATUS)"
-    exit 0
-fi
-
-# Step 2: Fallback — HTTP GET to /health endpoint
-TIMEOUT=2
-if timeout "$TIMEOUT" curl -s http://localhost:$PORT/health > /dev/null 2>&1; then
-    echo "[$(date)] API /health endpoint responding"
-    exit 0
-else
-    echo "[$(date)] API /health endpoint not responding"
+if [ ! -f "$HEALTH_FILE" ]; then
+    echo "Health file missing, restarting droplet_api..."
+    pkill -f droplet_api || true
     exit 1
 fi
+
+# Read health status
+STATUS=$(jq -r '.status // "unknown"' "$HEALTH_FILE" 2>/dev/null)
+AGE=$(jq -r '.age_seconds // 9999' "$HEALTH_FILE" 2>/dev/null)
+
+# Decision logic (pure, testable)
+if [ "$STATUS" = "failed" ]; then
+    echo "Daemon reported failure, restarting..."
+    pkill -f droplet_api || true
+    exit 1
+fi
+
+if [ "${AGE}" -gt "${MAX_AGE_SECONDS}" ]; then
+    echo "Health file stale (>15 min), daemon likely hung..."
+    pkill -f droplet_api || true
+    exit 1
+fi
+
+exit 0
