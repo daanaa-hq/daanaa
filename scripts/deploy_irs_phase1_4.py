@@ -220,8 +220,9 @@ TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
 tar -xf "$PAYLOAD"
 
-if [ ! -f "$TEMP_DIR/orgs.json" ] || [ ! -d "$TEMP_DIR/orgs" ]; then
-  echo "ERROR: Invalid payload structure" >&2
+# Validate structure: must have orgs/ directory with org JSON files
+if [ ! -d "$TEMP_DIR/orgs" ] || [ ! -f "$(find "$TEMP_DIR/orgs" -name "*.json" -type f | head -1)" ]; then
+  echo "ERROR: Invalid payload structure (missing orgs/)" >&2
   exit 1
 fi
 
