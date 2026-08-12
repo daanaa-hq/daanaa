@@ -535,12 +535,81 @@ Both features verified live on droplet (analytics + search working).
 
 **Status:** ✅ PLAN COMPLETE (ready for implementation approval)
 
-**Next:** User decision: proceed with Phase 1 implementation or review plan first?
+**Status:** ✅ PHASE 1 COMPLETE (2026-08-12 18:05 UTC)
 
 **Files Modified:**
 - `docs/FOLDER_STRUCTURE_PLAN.md` — Full reorganization plan (16 sections)
+- `scripts/README.md` — Master navigation index (280 lines)
+- `scripts/core/README.md` — Production essentials guide
+- `scripts/search/README.md` — FTS indexing guide
+- `scripts/scoring/README.md` — v6 scoring guide
+- `scripts/discovery/README.md` — Website discovery guide
+- `scripts/enrichment/README.md` — Missions & embeddings guide
+- `scripts/ops/README.md` — Deployment procedures guide
+- `git mv scripts/droplet_api.py scripts/core/droplet_api.py`
+- `git mv scripts/overnight_pipeline.py scripts/core/overnight_pipeline.py`
+- Created symlink compat layer: `scripts/droplet_api.py` → `scripts/core/droplet_api.py`
 
 **Related:** DECISIONS.md 2026-08-12 (Autonomy Rule states structure changes can be autonomous if reversible; this is fully reversible and backed by git history)
+
+---
+
+### Update 2026-08-12 18:05 UTC: Phase 1 Complete ✅
+
+**Chose:** Execute Phase 1 (create structure + symlink compat layer) using proven "parallel + compat + verify" pattern
+
+**Why:**
+- User approved: "Yes, proceed with Phase 1"
+- Best proven pattern (already used in sync_droplet_api.sh auto-rollback)
+- Zero risk: All additive, fully reversible
+- Compat layer ensures zero breakage to existing imports/cron/systemd
+
+**Implementation (completed):**
+
+**Step 1: Created new directory structure** ✅
+```
+scripts/{core,search,scoring,discovery,enrichment,ops,migrations,admin,testing,archive}/
+```
+
+**Step 2: Moved canonical files via git mv** ✅
+```bash
+git mv scripts/droplet_api.py scripts/core/droplet_api.py
+git mv scripts/overnight_pipeline.py scripts/core/overnight_pipeline.py
+```
+(Preserves git blame/history — critical for debugging)
+
+**Step 3: Created symlink compat layer** ✅
+```bash
+scripts/droplet_api.py → core/droplet_api.py
+scripts/overnight_pipeline.py → core/overnight_pipeline.py
+```
+**Result:** Both old and new import paths work:
+- `from scripts.droplet_api import app` ✅ (via symlink)
+- `from scripts.core.droplet_api import app` ✅ (direct)
+
+**Step 4: Created README.md documentation** ✅
+- Master `scripts/README.md` (280 lines, navigation index + rules)
+- Domain-specific READMEs explaining:
+  - Canonical files for that domain
+  - How to use/extend/test
+  - Troubleshooting
+  - Do not use (archived versions)
+
+**Verification (all passed):**
+- Directory structure: ✅ (10 domains created)
+- Symlinks working: ✅ (verified ls -lh)
+- Imports working: ✅ (both old + new paths tested)
+- README.md files: ✅ (6 domain guides created)
+
+**Commit:** `10ae8983786`
+
+**Reversibility:** 
+- Full rollback: `git reset HEAD~1` (undoes file moves + docs)
+- Partial rollback: Can revert any phase independently
+
+**Next step:** Phase 2 (move non-critical files: scoring/, search/, missions/ one domain at a time)
+
+**Status:** ✅ PHASE 1 LIVE (zero production impact, backward compat maintained)
 
 
 
