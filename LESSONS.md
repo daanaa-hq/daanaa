@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-08-12: Phase 1-4 IRS Deployment — A "Successful" Deploy That Changed Nothing Live
+
+**Symptom:** `deploy_irs_phase1_4.py` ran clean end to end — precompute check passed, 14GB transfer + checksum verified, atomic swap reported success, smoke test... also initially reported success. But a manual `curl` against the live org detail endpoint showed `irs_eligibility_status` etc. simply absent from the response. The deploy pipeline had no idea anything was wrong.
+
+**Root cause (three separate, stacked failures, each masking the next):**
+
+1. **Wrong artifact.** `rebuild_precompute_with_irs.py` wrote IRS fields into flat `orgs/<ein>.json` files. The deployed `droplet_api.py`'s `load_org_detail()` reads gzip-compressed, sharded `orgs/<ein[:3]>/<ein>.json.gz` files — a completely different tree that coexists in the same `precompute_output/orgs/` directory. The rebuild "succeeded" against files nothing in production reads. Two structures living side by side, one live and one dead, with no naming convention distinguishing them.
+2. **Stale service state masked the real test.** Separately, `daanaa-api.service` had been crash-looping for hours (`Address already in use` on port 5000 — a zombie gunicorn master from an earlier restart never released the port). Every `systemctl restart` — including the one inside our atomic swap — silently failed to bind and got killed by systemd, while the original ~11:49 AM process kept serving stale (but plausible-looking) data. The site never went down, so nothing alerted us; it just never actually picked up any of the night's changes.
+3. **The smoke test couldn't have caught #1 even with a healthy service.** `verify_live_api()` found test EINs via `grep -r --include=*.json` against the flat tree — the wrong tree, and even if it had targeted the right one, plain `grep` can't read gzip content at all. It would have silently matched zero sharded files and needed to be validated by hand regardless.
+
+**Compounding near-miss:** while debugging disk space (a *fourth*, unrelated blocker — droplet was 82-93% full from accumulated old precompute versions), an aggressive fix (delete `v1`, the live version, to free space before a swap) was applied. `--preload` gunicorn workers kept serving from RAM so the site *looked* fine, but systemd's crash-loop had already hit the missing directory and failed once before the mistake was caught and `v1` restored from a manual backup taken seconds earlier. Directly contributed to the decision NOT to delete a live directory again, in favor of `mv`-based rename-swaps that need no duplicate copy and go one filesystem rename, not a window of "backend has no data."
+
+**Preventing rules:**
+
+> 1. **When two directory structures can serve the same purpose, name the dead one obviously dead (or delete it).** A flat `orgs/<ein>.json` next to a sharded `orgs/<ein[:3]>/<ein>.json.gz` looks like redundancy; it was actually "one live, one write-only." Grep for the file-loading function (`load_org_detail`, `get_organization`, etc.) in the **actually deployed** file before writing a rebuild script that targets precompute paths by convention/assumption.
+> 2. **A local repo file and a deployed file are not the same file until diffed.** `droplet_api.py` at repo root was a stale, 12K-line dead copy; the deployed file matched `scripts/droplet_api.py` exactly. Before writing code that targets "the live API's behavior," pull the actual running file (`scp` it down) and read that, not whatever matches the filename locally.
+> 3. **A restart reporting success is not evidence a restart happened.** `systemctl is-active` right after `restart` can catch a service mid-crash-loop in a transient "active" window. Verify by PID/start-timestamp change (`systemctl show -p MainPID` or `ActiveEnterTimestamp`), not just exit code, whenever a deploy step depends on a clean process restart.
+> 4. **Smoke tests must query the same artifact the fix targets, using a tool that can actually read it.** `grep` on gzip-compressed files is a silent no-op, not an error — it will exit non-zero (no matches) and look like "verification correctly failed" rather than "verification was never capable of succeeding." Use `zgrep`, or decompress explicitly, for any compressed target.
+> 5. **Never delete a live serving directory as a disk-space fix, even briefly, even with `--preload` masking it.** Prefer `mv` (instant rename, same filesystem, zero duplication) over `cp` + `rm` for swap operations — it removes the disk-space pressure that motivates "delete first, restore if needed" shortcuts in the first place.
+
+**Known follow-up (not blocking, documented not silently dropped):** ~139K of 2.057M orgs with an IRS eligibility status (mostly revoked orgs — coverage is 40.4% for revoked vs 98.8% for eligible) have no sharded precompute file at all and fall back to `search.db`, which also lacks `irs_eligibility_*` columns. Those orgs will not show an IRS badge until `search.db`'s schema is separately migrated.
+
+---
+
 ## 2026-08-12: Broke-Then-Fixed — Schema Mismatch in Precompute Rebuild
 
 **Symptom:** Script `rebuild_precompute_with_irs.py` crashed immediately with `sqlite3.OperationalError: no such column: irs_eligibility_explanation`.
