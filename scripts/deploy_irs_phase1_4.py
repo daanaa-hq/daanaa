@@ -17,7 +17,6 @@ Steps:
 import json
 import subprocess
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -39,7 +38,7 @@ def log(msg: str, level: str = "INFO"):
 
 
 def check_precompute_complete() -> bool:
-    """Verify precompute rebuild finished"""
+    """Verify precompute rebuild finished and succeeded"""
     log("Checking precompute rebuild status...")
 
     # Check if rebuild process still running
@@ -52,7 +51,26 @@ def check_precompute_complete() -> bool:
         log("Precompute rebuild still running", "WARN")
         return False
 
-    log("✓ Precompute rebuild complete", "SUCCESS")
+    # Verify rebuild succeeded by checking a sample of updated org files
+    # Files should have irs_eligibility_status field if rebuild completed
+    result = subprocess.run(
+        ["find", str(PRECOMPUTE_DIR / "orgs"), "-name", "*.json", "-type", "f",
+         "-exec", "grep", "-l", "irs_eligibility_status", "{}", "+"],
+        capture_output=True,
+        timeout=30
+    )
+
+    if result.returncode != 0 or not result.stdout:
+        log("Precompute files do not contain irs_eligibility_status field", "ERROR")
+        return False
+
+    # Count files with IRS data
+    file_count = len(result.stdout.strip().split(b'\n'))
+    if file_count < 1000000:  # Should have ~2M files
+        log(f"Only {file_count} orgs with IRS data; rebuild may be incomplete", "WARN")
+        return False
+
+    log(f"✓ Precompute rebuild verified: {file_count} orgs with IRS data", "SUCCESS")
     return True
 
 
@@ -95,7 +113,7 @@ def package_precompute() -> bool:
 
 
 def transfer_to_droplet() -> bool:
-    """Copy payload to droplet staging"""
+    """Copy payload to droplet staging and verify checksum"""
     log("Transferring payload to droplet...")
 
     try:
@@ -116,7 +134,21 @@ def transfer_to_droplet() -> bool:
                 log(f"Transfer failed: {result.stderr.decode()}", "ERROR")
                 return False
 
-        log("✓ Payload transferred to droplet", "SUCCESS")
+        # Verify checksum on droplet to detect corruption
+        log("Verifying checksum on droplet...")
+        cmd = f"cd {STAGING_DIR} && sha256sum -c precompute_payload_irs.tar.gz.sha256"
+        result = subprocess.run(
+            ["ssh", "-i", str(SSH_KEY), f"{DROPLET_USER}@{DROPLET_IP}", cmd],
+            capture_output=True,
+            timeout=60,
+            text=True
+        )
+
+        if result.returncode != 0:
+            log(f"Checksum verification failed on droplet: {result.stderr}", "ERROR")
+            return False
+
+        log("✓ Payload transferred and checksum verified", "SUCCESS")
         return True
 
     except subprocess.TimeoutExpired:
@@ -164,41 +196,65 @@ def execute_atomic_swap() -> bool:
 
 
 def verify_live_api() -> bool:
-    """Smoke test: verify IRS fields in live API"""
+    """Smoke test: verify IRS fields in live API with valid data"""
     log("Verifying IRS fields in live API...")
 
     try:
-        # Test with a known EIN that should have IRS data
+        # Use a real EIN that exists and was processed in rebuild
+        # Pick the first org with IRS data from the rebuilt precompute
+        result = subprocess.run(
+            ["find", str(PRECOMPUTE_DIR / "orgs"), "-name", "*.json", "-type", "f",
+             "-exec", "grep", "-l", "eligible", "{}", "+"],
+            capture_output=True,
+            timeout=10
+        )
+
+        if result.returncode != 0 or not result.stdout:
+            log("No test EIN found in precompute", "WARN")
+            return False
+
+        # Extract EIN from first file path
+        first_file = result.stdout.split(b'\n')[0].decode()
+        test_ein = Path(first_file).stem
+
+        log(f"Testing with EIN: {test_ein}")
+
+        # Query API with longer timeout (warmup may be slow)
         result = subprocess.run(
             [
                 "curl",
                 "-s",
-                "-m", "5",
-                "https://daanaa.org/api/organizations/10001000"
+                "-m", "15",  # Extended timeout for post-deployment warmup
+                f"https://daanaa.org/api/organizations/{test_ein}"
             ],
             capture_output=True,
-            text=True
+            text=True,
+            timeout=20
         )
 
         if result.returncode != 0:
-            log("API not responding", "WARN")
+            log("API not responding or timeout", "WARN")
             return False
 
         # Parse response
         try:
             data = json.loads(result.stdout)
 
-            # Check for IRS eligibility field
-            if "irs_eligibility_status" in data:
-                status = data.get("irs_eligibility_status")
-                log(f"✓ API returning IRS fields (status: {status})", "SUCCESS")
-                return True
-            else:
-                log("IRS eligibility field not found in API response", "WARN")
+            # Check for IRS eligibility field with valid data (not null)
+            if "irs_eligibility_status" not in data:
+                log("IRS eligibility field not found in API response", "ERROR")
                 return False
 
+            status = data.get("irs_eligibility_status")
+            if status is None or status == "":
+                log(f"IRS eligibility field is empty or null", "ERROR")
+                return False
+
+            log(f"✓ API returning valid IRS data (status: {status}, EIN: {test_ein})", "SUCCESS")
+            return True
+
         except json.JSONDecodeError:
-            log("API returned non-JSON response", "WARN")
+            log("API returned non-JSON response", "ERROR")
             return False
 
     except Exception as e:
