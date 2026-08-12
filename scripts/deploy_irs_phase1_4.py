@@ -209,44 +209,49 @@ def execute_atomic_swap() -> bool:
     log("Executing atomic swap on droplet...")
 
     try:
-        # Inline atomic swap script: backup current, extract new, restart
+        # Inline atomic swap script: extract to fresh dir, then rename-swap (no data
+        # duplication — mv is instant and free on the same filesystem, unlike cp -r
+        # which doubled disk usage and contributed to the earlier disk-full failure).
+        # Service name is daanaa-api (verified via systemctl list-units), not "gunicorn".
         swap_script = f"""
 set -e
 PAYLOAD="{STAGING_DIR}/precompute_payload_irs.tar.gz"
 PRECOMPUTE_DIR="/data/precompute"
+SERVICE="daanaa-api"
 
 echo "Extracting payload to temporary directory..."
-TEMP_DIR=$(mktemp -d)
+TEMP_DIR=$(mktemp -d -p "$PRECOMPUTE_DIR")
 cd "$TEMP_DIR"
 tar -xf "$PAYLOAD"
 
 # Validate structure: must have orgs/ directory with org JSON files
 if [ ! -d "$TEMP_DIR/orgs" ] || [ ! -f "$(find "$TEMP_DIR/orgs" -name "*.json" -type f | head -1)" ]; then
   echo "ERROR: Invalid payload structure (missing orgs/)" >&2
+  rm -rf "$TEMP_DIR"
   exit 1
 fi
 
-echo "Backup current v1 to v0..."
-rm -rf "$PRECOMPUTE_DIR/v0"
-cp -r "$PRECOMPUTE_DIR/v1" "$PRECOMPUTE_DIR/v0" 2>/dev/null || true
+# Free the tar payload now that extraction succeeded (14GB reclaimed before swap)
+rm -f "$PAYLOAD" "$PAYLOAD.sha256"
 
-echo "Deploy new version to v1..."
-rm -rf "$PRECOMPUTE_DIR/v1"
+echo "Swapping v1 -> v0 (rename, no duplication) and staging new version into v1..."
+rm -rf "$PRECOMPUTE_DIR/v0"
+mv "$PRECOMPUTE_DIR/v1" "$PRECOMPUTE_DIR/v0"
 mv "$TEMP_DIR" "$PRECOMPUTE_DIR/v1"
 chmod -R 755 "$PRECOMPUTE_DIR/v1"
 
-echo "Restarting gunicorn..."
-systemctl restart gunicorn
-sleep 2
+echo "Restarting $SERVICE..."
+systemctl restart "$SERVICE"
+sleep 3
 
-if systemctl is-active gunicorn >/dev/null 2>&1; then
+if systemctl is-active "$SERVICE" >/dev/null 2>&1; then
   echo "✓ Atomic swap complete"
   exit 0
 else
-  echo "ERROR: Gunicorn failed to start, rolling back..." >&2
+  echo "ERROR: $SERVICE failed to start, rolling back..." >&2
   rm -rf "$PRECOMPUTE_DIR/v1"
   mv "$PRECOMPUTE_DIR/v0" "$PRECOMPUTE_DIR/v1"
-  systemctl restart gunicorn
+  systemctl restart "$SERVICE"
   exit 1
 fi
 """
