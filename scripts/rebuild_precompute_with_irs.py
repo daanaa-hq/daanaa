@@ -6,7 +6,7 @@ Rebuilds precomputed org detail JSON files to include:
 - irs_eligibility_status
 - irs_eligibility_checked_at
 - irs_eligibility_sources
-- irs_eligibility_explanation
+- irs_eligibility_notes
 
 This makes IRS eligibility data available on the droplet (staging/production).
 
@@ -47,7 +47,7 @@ def build_precompute_with_irs(limit: int = None, dry_run: bool = False) -> dict:
             irs_eligibility_status,
             irs_eligibility_checked_at,
             irs_eligibility_sources,
-            irs_eligibility_explanation
+            irs_eligibility_notes
         FROM registry_enriched
         WHERE irs_eligibility_status IS NOT NULL
         ORDER BY EIN
@@ -94,7 +94,7 @@ def build_precompute_with_irs(limit: int = None, dry_run: bool = False) -> dict:
             org_data['irs_eligibility_sources'] = json.loads(
                 row['irs_eligibility_sources']
             ) if row['irs_eligibility_sources'] else []
-            org_data['irs_eligibility_explanation'] = row['irs_eligibility_explanation']
+            org_data['irs_eligibility_notes'] = row['irs_eligibility_notes']
 
             # Write back (unless dry-run)
             if not dry_run:
