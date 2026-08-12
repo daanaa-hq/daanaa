@@ -15,27 +15,38 @@ OVERNIGHT_SCRIPT = BASE_DIR / "scripts" / "run_overnight_pipeline.sh"
 INFERENCE_HEALTH_URL = "http://localhost:11437/health"
 INFERENCE_PORT = 11437
 
+# Cache curl availability at module load (avoid repeated subprocess calls)
+_CURL_AVAILABLE = None
+
+def _check_curl_available():
+    """Check if curl is available (cached)"""
+    global _CURL_AVAILABLE
+    if _CURL_AVAILABLE is None:
+        try:
+            subprocess.run(["which", "curl"], capture_output=True, timeout=1, check=True)
+            _CURL_AVAILABLE = True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            _CURL_AVAILABLE = False
+    return _CURL_AVAILABLE
+
 def log(msg: str, level: str = "INFO"):
     ts = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     print(f"[{ts}] {level}: {msg}", file=sys.stderr)
 
 def is_inference_server_alive(port: int = INFERENCE_PORT, timeout: int = 2) -> bool:
     """Check port + /health endpoint with configurable timeout"""
-    try:
-        # Validate curl is available
-        subprocess.run(["which", "curl"], capture_output=True, timeout=1, check=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    # Check if curl is available (cached)
+    if not _check_curl_available():
         log("curl not found; cannot check inference server", "ERROR")
         return False
 
     try:
-        # Check if port is open with timeout
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(timeout)
-        result = sock.connect_ex(("127.0.0.1", port))
-        sock.close()
-        if result != 0:
-            return False
+        # Check if port is open with timeout (use context manager for guaranteed cleanup)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.settimeout(timeout)
+            result = sock.connect_ex(("127.0.0.1", port))
+            if result != 0:
+                return False
 
         # Check if server responds to /health
         proc = subprocess.run(["curl", "-s", INFERENCE_HEALTH_URL], capture_output=True, timeout=timeout)
