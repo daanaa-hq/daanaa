@@ -6,15 +6,16 @@ This script orchestrates the full deployment of IRS eligibility data to the live
 droplet, ensuring 1.86M orgs show accurate tax-deductible status badges.
 
 Steps:
-1. Verify precompute rebuild is complete
+1. Verify precompute rebuild is complete (sharded orgs/<ein[:3]>/<ein>.json.gz tree)
 2. Package precompute with IRS eligibility fields
-3. Transfer to droplet staging
-4. Execute atomic swap (deploy_droplet.sh)
-5. Verify live API responds with IRS fields
+3. Transfer to droplet staging (rsync)
+4. Execute atomic swap (inline SSH script: extract, mv-swap v1<->v0, restart daanaa-api)
+5. Verify live API responds with IRS fields (eligible + revoked)
 6. Report results
 """
 
 import json
+import sqlite3
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -52,47 +53,45 @@ def check_precompute_complete() -> bool:
         log("Precompute rebuild still running", "WARN")
         return False
 
-    # Expected count from rebuild: 2,056,834 orgs processed (from PHASE_1_4_READINESS.md)
-    EXPECTED_MIN = 2000000  # Conservative threshold: at least 2M orgs rebuilt
-    EXPECTED_EXACT = 2056834
+    # The live API reads sharded orgs/<ein[:3]>/<ein>.json.gz files (see
+    # LESSONS.md 2026-08-12) — verify against that tree, not the flat
+    # orgs/<ein>.json files (which nothing in production reads).
+    # Coverage is ~99% for eligible orgs, ~40% for revoked (orgs without an
+    # existing sharded file are skipped by the rebuild and fall back to
+    # search.db — a separate known gap). Threshold reflects that, not 2.06M.
+    EXPECTED_SHARDED_MIN = 1_900_000
 
-    # Count total JSON files in precompute/orgs/ to verify full rebuild
     result = subprocess.run(
-        ["find", str(PRECOMPUTE_DIR / "orgs"), "-name", "*.json", "-type", "f"],
+        ["find", str(PRECOMPUTE_DIR / "orgs"), "-mindepth", "2", "-name", "*.json.gz", "-type", "f"],
         capture_output=True,
         text=True,
-        timeout=60
+        timeout=120
     )
 
     if result.returncode != 0:
-        log("Failed to count precompute files", "ERROR")
+        log("Failed to count sharded precompute files", "ERROR")
         return False
 
     total_files = len([f for f in result.stdout.strip().split('\n') if f])
-    if total_files < EXPECTED_MIN:
-        log(f"Precompute incomplete: {total_files} orgs (expected {EXPECTED_EXACT})", "ERROR")
+    if total_files < EXPECTED_SHARDED_MIN:
+        log(f"Sharded precompute tree too small: {total_files} files (expected >= {EXPECTED_SHARDED_MIN:,})", "ERROR")
         return False
 
-    # Verify IRS fields are actually present in rebuilt files
-    # Check for all claimed fields: status, checked_at, sources, notes
-    required_fields = ["irs_eligibility_status", "irs_eligibility_checked_at",
-                       "irs_eligibility_sources", "irs_eligibility_notes"]
+    # Verify IRS fields actually landed in the sharded (gzip) files. zgrep
+    # reads gzip content directly — a plain grep here would silently match
+    # nothing, since the files are binary-compressed.
+    updated_count = subprocess.run(
+        ["zgrep", "-rl", '"irs_eligibility_status"', str(PRECOMPUTE_DIR / "orgs")],
+        capture_output=True,
+        text=True,
+        timeout=180
+    )
+    matched = len([f for f in updated_count.stdout.strip().split('\n') if f])
+    if matched < EXPECTED_SHARDED_MIN:
+        log(f"Sharded files missing IRS fields: only {matched:,} of {total_files:,} contain irs_eligibility_status", "ERROR")
+        return False
 
-    # Use single find with grep to check all fields simultaneously (faster than 4 sequential finds)
-    for field in required_fields:
-        result = subprocess.run(
-            ["grep", "-r", f'"{field}"', str(PRECOMPUTE_DIR / "orgs"),
-             "--include=*.json", "-q"],
-            capture_output=True,
-            text=True,
-            timeout=30
-        )
-
-        if result.returncode != 0:
-            log(f"Precompute missing IRS field: {field}", "ERROR")
-            return False
-
-    log(f"✓ Precompute rebuild verified: {total_files} orgs with all IRS fields", "SUCCESS")
+    log(f"✓ Precompute rebuild verified: {matched:,} sharded org files with IRS fields", "SUCCESS")
     return True
 
 
@@ -347,28 +346,37 @@ def verify_live_api() -> bool:
     try:
         log("Finding test orgs (eligible and revoked)...")
 
-        # Find test EINs: one eligible, one revoked
+        # Query the DB directly rather than grepping the precompute tree: the
+        # live API reads sharded orgs/<ein[:3]>/<ein>.json.gz files (gzip-
+        # compressed, so a text grep can't match their contents anyway), and
+        # not every EIN with an IRS status has one (see rebuild_precompute_
+        # with_irs.py's skipped_no_file count — coverage is ~99% for eligible,
+        # ~40% for revoked). We need an EIN that both has the status AND has
+        # a sharded file, or the smoke test targets data that was never
+        # rebuilt and fails for the wrong reason.
+        DB_PATH = BASE_DIR / "data" / "merit_registry.db"
         test_eins = {"eligible": None, "revoked": None}
 
+        db = sqlite3.connect(str(DB_PATH))
+        db.row_factory = sqlite3.Row
         for status_type in ["eligible", "revoked"]:
-            result = subprocess.run(
-                ["grep", "-l", f'"{status_type}"', "-r", str(PRECOMPUTE_DIR / "orgs"),
-                 "--include=*.json"],
-                capture_output=True,
-                text=True,
-                timeout=30
+            cur = db.execute(
+                "SELECT EIN FROM registry_enriched WHERE irs_eligibility_status = ? ORDER BY EIN",
+                (status_type,)
             )
-
-            if result.returncode == 0 and result.stdout:
-                first_file = result.stdout.strip().split('\n')[0]
-                test_eins[status_type] = Path(first_file).stem
+            for row in cur:
+                ein = row["EIN"]
+                if (PRECOMPUTE_DIR / "orgs" / ein[:3] / f"{ein}.json.gz").exists():
+                    test_eins[status_type] = ein
+                    break
+        db.close()
 
         # Verify we found test cases
         if not test_eins["eligible"]:
-            log("No eligible org found in precompute for testing", "ERROR")
+            log("No eligible org with a sharded precompute file found for testing", "ERROR")
             return False
         if not test_eins["revoked"]:
-            log("No revoked org found in precompute for testing", "ERROR")
+            log("No revoked org with a sharded precompute file found for testing", "ERROR")
             return False
 
         log("Testing eligible org...")

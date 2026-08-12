@@ -10,10 +10,24 @@ Rebuilds precomputed org detail JSON files to include:
 
 This makes IRS eligibility data available on the droplet (staging/production).
 
+IMPORTANT: the live API's load_org_detail() (droplet_api.py) reads
+orgs/<ein[:3]>/<ein>.json.gz — a sharded, gzip-compressed tree — NOT a flat
+orgs/<ein>.json file. An earlier version of this script wrote to the flat
+path, which meant the rebuild "succeeded" and deployed cleanly but the live
+API never saw the new fields (it doesn't read that path at all). See
+LESSONS.md 2026-08-12 for the incident. This version targets the sharded
+path the API actually reads.
+
+Orgs without an existing sharded .json.gz file (bmf_stub / minimal orgs,
+~121K of ~2.057M) are skipped here — load_org_detail() falls back to
+search.db for those, which is a separate artifact this script does not
+touch. Tracked as a known follow-up, not blocking the primary rebuild.
+
 Usage:
   python3 scripts/rebuild_precompute_with_irs.py [--dry-run] [--limit N]
 """
 
+import gzip
 import json
 import sqlite3
 import sys
@@ -69,6 +83,7 @@ def build_precompute_with_irs(limit: int = None, dry_run: bool = False) -> dict:
     stats = {
         'total': len(rows),
         'updated': 0,
+        'skipped_no_file': 0,
         'errors': [],
         'precompute_dir': str(PRECOMPUTE_DIR),
     }
@@ -79,14 +94,17 @@ def build_precompute_with_irs(limit: int = None, dry_run: bool = False) -> dict:
 
         try:
             ein = row['EIN']
-            org_file = PRECOMPUTE_DIR / f"{ein}.json"
+            org_file = PRECOMPUTE_DIR / ein[:3] / f"{ein}.json.gz"
 
-            # Try to load existing org data
-            if org_file.exists():
-                with open(org_file, 'r', encoding='utf-8') as f:
-                    org_data = json.load(f)
-            else:
-                org_data = {'ein': ein}
+            # Only update orgs that already have a precomputed detail file.
+            # Orgs without one (bmf_stub/minimal) are served from search.db by
+            # load_org_detail()'s fallback path, which this script doesn't touch.
+            if not org_file.exists():
+                stats['skipped_no_file'] += 1
+                continue
+
+            with gzip.open(org_file, 'rt', encoding='utf-8') as f:
+                org_data = json.load(f)
 
             # Add/update IRS fields
             org_data['irs_eligibility_status'] = row['irs_eligibility_status']
@@ -98,7 +116,7 @@ def build_precompute_with_irs(limit: int = None, dry_run: bool = False) -> dict:
 
             # Write back (unless dry-run)
             if not dry_run:
-                with open(org_file, 'w', encoding='utf-8') as f:
+                with gzip.open(org_file, 'wt', encoding='utf-8') as f:
                     json.dump(org_data, f, separators=(',', ':'))
                 stats['updated'] += 1
 
@@ -109,6 +127,7 @@ def build_precompute_with_irs(limit: int = None, dry_run: bool = False) -> dict:
     print(f"\n=== Precompute Results ===")
     print(f"Orgs processed: {stats['total']:,}")
     print(f"Files updated: {stats['updated']:,}")
+    print(f"Skipped (no precomputed file, served via search.db fallback): {stats['skipped_no_file']:,}")
 
     if stats['errors']:
         print(f"✗ Errors: {len(stats['errors'])}")
