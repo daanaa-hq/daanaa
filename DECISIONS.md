@@ -323,3 +323,34 @@ DROPLET VERIFICATION (no changes needed):
 **Governance:** This change is autonomous (reversible, no public claims, no methodology change, no third-party vendor). Codex review for safety before commit.
 
 ---
+
+---
+
+## 2026-08-12: Batch Deployment #1 (Analytics + Speed Fixes)
+
+**Chose:** Deploy analytics infrastructure (#1) + search speed optimizations (#3) in coordinated batch
+
+**Why:**
+- Both autonomous changes (reversible, smoke-tested, no approval gate)
+- Complementary: analytics foundation + search performance
+- Validated with #4 (search quality audit: 52/52 tests passing)
+- Backend-only: no frontend SPA rebuild, no schema changes
+
+**Deployment:**
+- Commits: fe9652ddf96 (analytics) + 1625bd24b42 (speed fixes)
+- Sync method: scripts/ops/sync_droplet_api.sh to root@107.170.26.8
+- Backup: S3 copy of prior droplet_api.py (20260812_165639.py)
+- Restart: daanaa-api service restarted successfully
+
+**Smoke Tests (2026-08-12 16:57 UTC):**
+- ✅ /health: HTTP 200, data_dir exists, status="ok"
+- ✅ /api/event: 204 No Content (analytics beacons accepted)
+- ✅ Analytics DB: /data/analytics/analytics.db created, 1+ rows
+- ✅ /api/search: Returning results (tested "food bank" → CAREPLUS FOOD BANK)
+
+**Verification:**
+All 52 search quality tests passed pre-deployment (no regression from speed fixes).
+Both features verified live on droplet (analytics + search working).
+
+**Status:** ✅ LIVE on daanaa.org (107.170.26.8)
+
