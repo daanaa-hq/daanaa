@@ -179,13 +179,13 @@ def transfer_to_droplet() -> bool:
             log(f"Checksum transfer failed: {result.stderr}", "ERROR")
             return False
 
-        # Verify checksum on droplet to detect corruption
+        # Verify checksum on droplet to detect corruption (can take 2-3 min for 14GB)
         log("Verifying checksum on droplet...")
         cmd = f"cd {STAGING_DIR} && sha256sum -c precompute_payload_irs.tar.gz.sha256"
         result = subprocess.run(
             ["ssh", "-i", str(SSH_KEY), f"{DROPLET_USER}@{DROPLET_IP}", cmd],
             capture_output=True,
-            timeout=60,
+            timeout=300,
             text=True
         )
 
