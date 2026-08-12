@@ -42,9 +42,13 @@ def check_precompute_complete() -> bool:
     """Verify precompute rebuild finished and succeeded with full expected data"""
     log("Checking precompute rebuild status...")
 
-    # Check if rebuild process still running
+    # Check if rebuild process still running. Pattern requires the .py suffix
+    # so this doesn't self-match shells/monitors that merely mention the
+    # script name in their own command text (e.g. `while pgrep -f
+    # rebuild_precompute_with_irs; do ...`) without invoking it directly —
+    # hit this exact false positive during tonight's deploy.
     result = subprocess.run(
-        ["pgrep", "-f", "rebuild_precompute_with_irs"],
+        ["pgrep", "-f", r"rebuild_precompute_with_irs\.py"],
         capture_output=True,
         text=True
     )
