@@ -258,10 +258,10 @@ See `institution/STATE_RECONCILIATION_2026_08_11.md` for:
 - Canonical current-state designation
 - Blockages before Phase 1–4 implementation
 
-**Status (2026-08-11 16:50 UTC):** ✅ **CODEX REVIEW + FOUNDER AUTHORIZATION COMPLETE**
+**Status (2026-08-11 20:00 UTC):** ✅ **SITE OPERATIONAL, IP AUDIT COMPLETE**
 - Firebase Analytics removed (P2 compliance)
 - IRS status trust signal fixed (P3 compliance)
 - All blocker fixes deployed to droplet
-- DNS updated to correct IP (167.170.26.8)
-- Awaiting DNS propagation (~5 min)
-- Phase 1-4 deployment IN PROGRESS
+- DNS reverted to authoritative IP 107.170.26.8 (2026-08-10 new-droplet attempt 167.170.26.8 failed; rollback restored service)
+- daanaa.org verified healthy (HTTP 200, origin responsive)
+- IP reference cleanup completed (stale 167.170.26.8 / 167.179.26.8 references corrected)

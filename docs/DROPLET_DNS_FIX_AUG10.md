@@ -1,12 +1,28 @@
-# 🔴 Droplet DNS & Connectivity Issue — Aug 10, 2026
+# 📋 DNS Cutover Attempt (Aug 10) — FAILED, REVERTED
 
-**Status:** Diagnosed. Awaiting reboot.  
-**Impact:** daanaa.org returning HTTP 522 (origin unreachable)  
-**Root Cause:** Multiple issues combined after Aug 8 rebuild
+**Status:** ✅ RESOLVED via rollback (2026-08-10 17:00 UTC)  
+**Outcome:** New droplet 167.170.26.8 failed; DNS reverted to authoritative IP 107.170.26.8  
+**Impact:** daanaa.org was DOWN (HTTP 522) during attempted cutover; now ✅ OPERATIONAL  
+**Duration:** ~10 minutes (16:50-17:00 UTC)
 
 ---
 
-## Diagnosis Summary
+## INCIDENT RESOLVED ✅
+
+**Timeline:**
+- **16:50 UTC:** DNS cutover to new droplet 167.170.26.8 initiated
+- **~16:55 UTC:** Cutover failed; daanaa.org returned HTTP 522
+- **17:00 UTC:** DNS reverted to authoritative IP 107.170.26.8 (old droplet)
+- **17:02 UTC:** daanaa.org restored to HTTP 200; services operational
+
+**Recovery Method:** Instant rollback (DNS revert, no data loss)  
+**Current State:** daanaa.org serving from **107.170.26.8** (verified 2026-08-11 20:00 UTC)
+
+**New Droplet Status:** 167.170.26.8 abandoned; issues undiagnosed. Old droplet remains authoritative.
+
+---
+
+## Original Diagnosis (Pre-Rollback)
 
 ### What's Working ✅
 - **Nginx:** Running (master + 2 worker processes)
