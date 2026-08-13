@@ -458,7 +458,8 @@ FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fronte
 # Scoring methodology version — the formula/algorithm. Changes rarely, and
 # only when the scoring logic itself changes (not on data refreshes). The
 # score-computation DATE is read dynamically from score_snapshots.
-METHODOLOGY_VERSION = "v1"
+# v6: Tiered Peer Financial Context (Archetype × Revenue Band × Percentile Tiers)
+METHODOLOGY_VERSION = "v6"
 
 # ── Legal Disclosures ──────────────────────────────────────────────────────────
 # Attached to all responses containing scores
