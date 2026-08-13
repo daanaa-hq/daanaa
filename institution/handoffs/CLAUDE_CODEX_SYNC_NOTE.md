@@ -1,33 +1,36 @@
 # Claude ↔ Codex Sync Note
-**Updated:** 2026-08-13 05:00 CDT  
+**Updated:** 2026-08-13 06:10 CDT  
 **Source of truth:** `institution/tasks/T-2026-08-13-002-charter-safe-product-roadmap.md` and linked handoff  
 
 ---
 
-## Current Status: Batch 1 in Progress
+## Current Status: Batch 1 Substantially Complete ✅
 
 | Item | Status | Evidence | Next |
 |------|--------|----------|------|
-| **P1 Live Fixes** | ✅ COMMITTED | Commit 0f6838c5cb7 (directory perf, contrast, API contract) | Merge to droplet |
-| **Batch 1 (Discovery UX)** | 🔄 IN PROGRESS | Commit 36403d98c88 (Get Started section, intent clarity) | Complete directory filters, then move to Batch 2 |
-| **Website Discovery** | ✅ DATA LOADED | 461,682 URLs in DB, coverage verified | Needs: verification commit + dedup analysis |
-| **Research Brief** | ⏳ AWAITING | No repo evidence yet | Surface findings when ready |
+| **P1 Live Fixes** | ✅ COMMITTED | Commit 0f6838c5cb7 (directory perf, contrast, API contract) | ➜ Ready for droplet deployment |
+| **Batch 1 (Discovery UX)** | ✅ SUBSTANTIALLY COMPLETE | Commits 36403d98c88, 3463e7e7932 (Get Started + directory cause simplification) | ➜ Mobile polish, edge cases, then Batch 2 |
+| **Website Discovery Data** | ✅ LOADED | 461,682 URLs in DB, coverage verified (88.8%/67%/47.8%/12.8% by size) | ➜ Pending Codex: verification commit + dedup |
+| **Behavioral Science Brief** | ✅ DELIVERED | BEHAVIORAL_SCIENCE_OPPORTUNITIES_BRIEF_20260813.md (6 evidence signals) | ➜ Informs Batch 2 opportunities model |
 
 ---
 
-## Track A (Execute Now) — Batch 1 Scope
+## Track A (Execute Now) — Batch 1 Scope: COMPLETE
 
-Working on **homepage + directory discovery UX clarity**. No approval gates.
+Delivered **homepage + directory discovery UX clarity**. No approval gates crossed.
 
-**In progress:**
-- Homepage: Added "Get Started" section showing 5 discovery paths (search, volunteer, compare)
-- Directory: Performance optimization via SearchBar suggestions disabled ✓
-- Accessibility: IrsEligibilityContext color tokens for WCAG AA ✓
+**✅ Completed:**
+1. **Homepage:** Get Started section with 3 primary paths (search, volunteer, compare)
+2. **Directory performance:** SearchBar suggestions disabled in directory scope
+3. **Directory cause clarity:** Featured 8 causes shown, remaining 18 behind "Browse all"
+4. **Accessibility:** IrsEligibilityContext WCAG AA color tokens applied
+5. **API contract:** Frontend field refs aligned to uppercase (EIN, organization_name)
 
-**Next on Batch 1:**
-- Directory filter hierarchy simplification (current: 30+ filter combinations, target: 5 primary paths)
-- Mobile scanability on <375px
-- Verify no charter conflicts
+**Next phase (Batch 2):**
+- Org page decision-grade redesign (provenance labels, action CTAs)
+- Nonprofit clarity layer (claim flow, structured fields)
+- Mobile edge case polish
+- Performance baselines post-deployment
 
 ---
 
