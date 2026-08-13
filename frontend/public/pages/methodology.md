@@ -2,7 +2,7 @@
 
 At Daanaa, we help donors understand how financially stable a nonprofit is within its peer group. We don't rank organizations by size or impact—we show financial context: whether a nonprofit has enough reserves for its operating model, compared to similar organizations.
 
-## Our Scoring System (v5)
+## Our Scoring System (v6)
 
 Every nonprofit on Daanaa gets a financial health assessment based on **three dimensions:**
 
@@ -10,8 +10,8 @@ Every nonprofit on Daanaa gets a financial health assessment based on **three di
 
 How does the organization fund its work?
 
-- **Donation-Funded:** Relies primarily on individual and foundation donations (typical for food banks, animal shelters, community centers)
-- **Fee-for-Service:** Generates revenue through program fees, contracts, or managed care (typical for counseling, education, vocational services)
+- **Donation-Funded Programs:** Relies primarily on individual and foundation donations (typical for food banks, animal shelters, community centers)
+- **Fee-for-Service Operations:** Generates revenue through program fees, contracts, or managed care (typical for counseling, education, vocational services)
 - **Endowment-Funded:** Sustained by investment returns on a large endowment (typical for research institutions, universities)
 
 We compare organizations only within their funding model. A food bank is never compared to a hospital.
@@ -24,30 +24,40 @@ How much does the organization spend annually?
 - **Professional:** $150,000–$700,000/year (established local presence)
 - **Established:** Over $700,000/year (regional or national reach)
 
-Peer groups are sized-adjusted. A $200K food bank is compared to other $150K–$700K nonprofits, not to $10M health systems.
+Peer groups are size-adjusted. A $200K food bank is compared to other $150K–$700K nonprofits, not to $10M health systems.
 
-### 3. **Financial Context** (Peer Performance)
+### 3. **Financial Context** (Tiered Peer Context)
 
-How healthy is this organization compared to peers in the same funding model and size band?
+How does this organization's financial health compare to peers in the same funding model and revenue band?
 
-We measure **months of operating reserve**: How many months of operating expenses the organization could cover with liquid assets if donations stopped.
+Our v6 system assigns one of four **tiers** based on financial stability within the peer group:
 
-- **Healthy:** At or above peer median (typical: 3–6 months for donation-funded orgs)
-- **Stable:** Within 1 standard deviation below peer median (sustainable, minor stress)
-- **Needs Support:** Below 1 standard deviation (at risk, may need fundraising focus)
+- **Tier 1 (Full Context):** Strongest financial position; above 75th percentile
+- **Tier 2 (Regional Context):** Strong position; 50th–75th percentile  
+- **Tier 3 (Limited Context):** Moderate position; 25th–50th percentile
+- **Tier 4 (Archetype Only):** Emerging or data-limited; below 25th percentile or insufficient peer data
 
-## Confidence Levels
+Each tier reflects **months of operating reserve** and cash flow relative to peers:
+- **Tier 1–2:** At or above peer median (sustainable, 3–6 months typical)
+- **Tier 3:** Within peer range (workable, may need focus)
+- **Tier 4:** Below peer median or limited data (may benefit from reserve-building)
 
-Every assessment comes with a **confidence level** showing how certain we are:
+## How Tiers Are Assigned
 
-| Confidence | Margin | Meaning |
-|------------|--------|---------|
-| **High** | ±5% | Direct financial data + 25+ peer organizations with reserve data |
-| **Good** | ±7% | Direct financial data + 15–24 peer organizations |
-| **Moderate** | ±10% | Limited peer data or inferred from similar regions |
-| **Archetype Only** | ±15% | No peer reserve data; grouped only by funding model |
+Each organization receives a **Tier** based on its position within its peer group:
 
-**Why margins matter:** A nonprofit with "Moderate (±10%)" confidence might be healthy or needs support—there's genuine uncertainty. We show both possibilities rather than false precision.
+1. **Data Quality:** We require sufficient financial data (typically 2 years of 990 filings minimum)
+2. **Peer Matching:** We identify 20+ similar organizations in the same archetype and revenue band
+3. **Reserve Calculation:** We measure liquid reserves (cash + near-cash assets) as months of operating expense
+4. **Percentile Ranking:** We rank the organization against peers and assign a tier
+
+**Tier Assignment Rules:**
+- **Tier 1:** Reserves at or above 75th percentile of peer group
+- **Tier 2:** Reserves at 50th–75th percentile
+- **Tier 3:** Reserves at 25th–50th percentile
+- **Tier 4:** Below 25th percentile, or fewer than 20 peer organizations with data
+
+**Data Freshness Note:** Our scoring reflects the most recent 990 data available (typically 12–18 months old). Financial positions may have changed since filing. Last scoring update: **July 25, 2026**.
 
 ## How We Gather Data
 
@@ -162,6 +172,7 @@ See our guide: [/about/how-to-give](how-to-give) and [/about/faq](faq)
 
 ---
 
-*Last updated: August 2026*  
-*Methodology version: v5*  
-*Data sources: IRS Form 990, ProPublica Nonprofit Explorer, NCCS, nonprofit websites*
+*Last updated: August 13, 2026*  
+*Methodology version: v6 (Tiered Peer Financial Context)*  
+*Data sources: IRS Form 990, ProPublica Nonprofit Explorer, NCCS, nonprofit websites*  
+*Scoring data currency: Most recent available (typical lag: 12–18 months from nonprofit fiscal year-end per IRS filing timeline)*
