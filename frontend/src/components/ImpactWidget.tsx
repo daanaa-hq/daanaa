@@ -4,7 +4,7 @@ import { CardPattern } from './ui/CardPattern'
 interface ImpactData {
   period: string
   donation_attributed: number
-  donation_count: number
+  donation_count: number | null
   volunteer_hours: number
   volunteer_reports: number
   volunteer_value: number
@@ -61,7 +61,7 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
     return null
   }
 
-  const hasContent = data.donation_count > 0 || data.volunteer_hours > 0 || data.unique_orgs > 0
+  const hasContent = (data.donation_count ?? 0) > 0 || data.volunteer_hours > 0 || data.unique_orgs > 0
   if (!hasContent) return null
 
   if (size === 'small') {
@@ -71,7 +71,7 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
           Community impact
         </div>
         <div className="space-y-2">
-          {data.donation_count > 0 && (
+          {data.donation_count !== null && data.donation_count > 0 && (
             <div className="flex justify-between">
               <span className="font-body text-small text-cool-grey">Donors helped here:</span>
               <span className="font-body text-small font-semibold text-deep-navy">{data.donation_count}</span>
@@ -106,7 +106,7 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
       </div>
 
       <div className="space-y-5">
-        {data.donation_count > 0 && (
+        {data.donation_count !== null && data.donation_count > 0 && (
           <div className="pb-5 border-b border-light-grey">
             <div className="font-display text-display text-deep-navy mb-1 leading-none">
               {data.donation_count.toLocaleString()}

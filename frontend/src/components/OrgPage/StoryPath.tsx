@@ -78,25 +78,6 @@ export default function StoryPath({ org }: StoryPathProps) {
         </div>
       </section>
 
-      {/* SOCIAL PROOF (Light) */}
-      <section className="mb-16 text-center">
-        <p className="text-label text-cool-grey/60 uppercase tracking-wide mb-4">
-          Joined by donors like you
-        </p>
-        <p className="text-3xl font-bold text-deep-navy mb-2">
-          3,847 people
-        </p>
-        <p className="text-body text-cool-grey">
-          have supported this org (including recurring donors)
-        </p>
-
-        {/* Optional: Show recent donor activity (aggregate only, no names default) */}
-        <div className="mt-6 text-sm text-cool-grey space-y-1">
-          <p>12 people gave this month</p>
-          <p>24 expressed volunteer interest</p>
-        </div>
-      </section>
-
       {/* PRIMARY CTA — Clear, high-contrast */}
       <section className="mb-16 flex flex-col gap-4">
         <button

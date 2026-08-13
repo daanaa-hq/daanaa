@@ -34,8 +34,8 @@ interface DashboardData {
     note: string
   }
   donor_interest: {
-    bookmarks_this_month: number
-    bookmarks_last_month: number
+    bookmarks_this_month: number | null
+    bookmarks_last_month: number | null
     note: string
   }
   profile: {
@@ -278,15 +278,19 @@ export default function SelfDiscoveryDashboard() {
             </h2>
             <div className="bg-white rounded-2xl p-8 border border-light-grey shadow-md">
               <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div>
-                  <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">This Month</p>
-                  <p className="font-display italic text-headline-lg text-soft-gold">{data.donor_interest.bookmarks_this_month}</p>
-                  <p className="font-body text-caption text-cool-grey">people saved your org</p>
-                </div>
-                <div>
-                  <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">Last Month</p>
-                  <p className="font-display italic text-headline-lg text-soft-gold">{data.donor_interest.bookmarks_last_month}</p>
-                </div>
+                {data.donor_interest.bookmarks_this_month !== null && (
+                  <div>
+                    <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">This Month</p>
+                    <p className="font-display italic text-headline-lg text-soft-gold">{data.donor_interest.bookmarks_this_month}</p>
+                    <p className="font-body text-caption text-cool-grey">people saved your org</p>
+                  </div>
+                )}
+                {data.donor_interest.bookmarks_last_month !== null && (
+                  <div>
+                    <p className="font-body text-caption font-medium tracking-[0.08em] text-cool-grey uppercase mb-2">Last Month</p>
+                    <p className="font-display italic text-headline-lg text-soft-gold">{data.donor_interest.bookmarks_last_month}</p>
+                  </div>
+                )}
               </div>
               <div className="border-t border-light-grey pt-6">
                 <p className="font-body text-body text-cool-grey leading-[1.6]">
