@@ -34,7 +34,7 @@ const SORT_OPTIONS = [
   { id: 'total_revenue', label: 'By Total Revenue' },  // Data transparency, not ranking
 ]
 
-const NETWORK_DIRECTORY_RESOURCES = [
+const NETWORK_DIRECTORY_RESOURCES: Array<{ matches: string[]; label: string; description: string; href: string }> = [
   {
     matches: ["habitat", "hfh"],
     label: "Find your local Habitat affiliate",
@@ -44,7 +44,7 @@ const NETWORK_DIRECTORY_RESOURCES = [
 ]
 
 function networkDirectoryResource(query: string) {
-  const words = query.toLowerCase().split(/\s+/)
+  const words: string[] = query.toLowerCase().match(/[a-z0-9]+/g) ?? []
   return NETWORK_DIRECTORY_RESOURCES.find(resource => resource.matches.some(match => words.includes(match)))
 }
 

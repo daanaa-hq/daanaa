@@ -32,15 +32,15 @@ How does this organization's financial health compare to peers in the same fundi
 
 Our v6 system assigns one of four **tiers** based on financial stability within the peer group:
 
-- **Tier 1 (Full Context):** Strongest financial position; above 75th percentile
+- **Tier 1 (Full Context):** Strongest financial position within peer group; above 75th percentile
 - **Tier 2 (Regional Context):** Strong position; 50th–75th percentile  
 - **Tier 3 (Limited Context):** Moderate position; 25th–50th percentile
-- **Tier 4 (Archetype Only):** Emerging or data-limited; below 25th percentile or insufficient peer data
+- **Tier 4 (No Peer Data):** We can't compare this org—not enough similar organizations filed 990s
 
-Each tier reflects **months of operating reserve** and cash flow relative to peers:
-- **Tier 1–2:** At or above peer median (sustainable, 3–6 months typical)
-- **Tier 3:** Within peer range (workable, may need focus)
-- **Tier 4:** Below peer median or limited data (may benefit from reserve-building)
+Each tier reflects **months of operating reserve** (liquid cash on hand) relative to peers:
+- **Tier 1–2:** Healthy reserves; 3–6 months typical for this type of org
+- **Tier 3:** Workable position; reserves exist but may need attention
+- **Tier 4:** We don't have the data to compare. Ask the org directly.
 
 ## How Tiers Are Assigned
 
@@ -55,9 +55,24 @@ Each organization receives a **Tier** based on its position within its peer grou
 - **Tier 1:** Reserves at or above 75th percentile of peer group
 - **Tier 2:** Reserves at 50th–75th percentile
 - **Tier 3:** Reserves at 25th–50th percentile
-- **Tier 4:** Below 25th percentile, or fewer than 20 peer organizations with data
+- **Tier 4:** Insufficient peer data (fewer than 20 comparable orgs with 990 filings)
+
+**Important:** Tier 4 doesn't mean "struggling." It means we can't compare. A $50K mutual aid network might be the only one in its county—that's not a failure, it's just reality. We show its funding model (what we do know) and recommend asking the org directly about finances.
 
 **Data Freshness Note:** Our scoring reflects the most recent 990 data available (typically 12–18 months old). Financial positions may have changed since filing. Last scoring update: **July 25, 2026**.
+
+## What About Small Orgs & Data Gaps?
+
+Some organizations are Tier 4 not because they're struggling, but because they're rare.
+
+A $75K food pantry run by two people might be the only one in its ZIP code. A disability-led mutual aid network might have no 990 comparables. A new nonprofit might have one year of filing instead of two.
+
+**We don't pretend we know what we don't.** Tier 4 means:
+- There aren't enough similar 990s to build a peer group
+- The org is real and has public data we can see
+- You should ask the organization about its finances (they know better than we do)
+
+We believe small organizations deserve the same honesty as large ones. "We don't know" is better than guessing.
 
 ## How We Gather Data
 
@@ -91,15 +106,15 @@ This verification does not guarantee tax deductibility—that depends on the don
 - ❌ We don't evaluate mission or program impact
 - ❌ We don't rank organizations (no "best" or "worst")
 
-## For Organizations Without Financial Data
+## For New & Very Small Organizations
 
-Some nonprofits file simplified tax returns (Form 990-N) or are too new to have 990 data. For these organizations, we show:
+If an organization doesn't have enough 990 history yet, or files a simplified return, we still show:
 
-- **Funding model** (if evident from their website or NTEE category)
-- **Similar organizations** in the same category and region
-- **Typical reserves** for their peer group (as context, not a score)
+- **What they do** (their NTEE category and mission)
+- **How they fund themselves** (individual donors, grants, fees, endowment)
+- **What similar orgs in this space typically look like** (as reference, not a grade)
 
-We mark this clearly as "limited context" so donors aren't misled.
+We don't pretend to know their financial health when we don't. If you're interested, email or call the organization. They'll give you real answers.
 
 ## Limitations & Known Gaps
 
@@ -109,8 +124,8 @@ Form 990s are filed 18 months after fiscal year end. Our data reflects financial
 ### 2. **Reserve Definition Varies**
 Nonprofits calculate "reserves" differently. Some count only cash; others include investments or pledges. We use the most conservative definition (liquid reserves) to avoid overstating stability.
 
-### 3. **Small Nonprofits May Lack Peer Data**
-Fewer than 5 organizations in a specific niche = we can't compute reliable peer statistics. We show "Archetype Only" and recommend donors ask the organization directly about reserves.
+### 3. **Some Niches Have No Peer Data**
+If there aren't at least 20 similar organizations with 990 filings, we can't build a peer group. This is common for specialized work: indigenous nonprofits, disability-led orgs, regional networks. We show what we know (how they fund themselves) and stop there. Ask the organization about finances directly.
 
 ### 4. **Sector-Specific Factors**
 - **International NGOs** may hold reserves in multiple currencies and countries
