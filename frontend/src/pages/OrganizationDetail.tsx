@@ -552,6 +552,42 @@ export default function OrganizationDetail() {
                 </div>
               </div>
 
+              {/* Phase 1: Key Stats Summary — Decision-Grade Header Enhancement
+                  Shows revenue size, peer context, financial health at a glance
+                  before donor decides to give. No new data — all from existing fields. */}
+              {apiOrg && (
+                <div className="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 pb-6 border-b border-white/10">
+                  {/* Org Size */}
+                  {apiOrg.total_revenue !== undefined && apiOrg.total_revenue !== null && (
+                    <div className="space-y-1">
+                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Annual Revenue</p>
+                      <p className="font-display text-lead text-soft-gold font-semibold">{formatCurrency(apiOrg.total_revenue)}</p>
+                    </div>
+                  )}
+
+                  {/* Peer Rank */}
+                  {apiOrg.ntee1_percentile !== undefined && apiOrg.ntee1_percentile !== null && (
+                    <div className="space-y-1">
+                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Peer Rank</p>
+                      <p className="font-display text-lead text-soft-gold font-semibold">{Math.round(apiOrg.ntee1_percentile)}th Percentile</p>
+                    </div>
+                  )}
+
+                  {/* Financial Health Signal — v6 scoring tier */}
+                  {apiOrg.scoring_tier && (
+                    <div className="space-y-1">
+                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Financial Context</p>
+                      <p className="font-display text-lead text-soft-gold font-semibold">
+                        {apiOrg.scoring_tier.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Phase 1: At-a-Glance Summary — Moved to header for decision-grade flow */}
+              {apiOrg && <AtAGlance org={apiOrg} />}
+
               {/* Primary CTA: Give Now + Visit Website (side by side) */}
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
                 {apiOrg! && apiOrg!.tax_deductible !== false && (
@@ -782,10 +818,8 @@ export default function OrganizationDetail() {
       <div className="py-12 md:py-16 bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* Small Org Clarity: At a Glance section (Phase 3, 2026-08-09)
-              Display existing data to help donors understand small nonprofits better:
-              leadership, service scope, stability signal, mission attribution */}
-          {apiOrg && <AtAGlance org={apiOrg} />}
+          {/* At a Glance moved to header section (Phase 1, 2026-08-13)
+              Reposition for decision-grade org page flow: key stats → glance → financial context */}
 
           {/* Peer financial context — the central financial insight. Each tier
               branch in FinancialContext renders its own styled card, so no
