@@ -63,7 +63,7 @@ def set_security_headers(response):
     # popup). Mirrors daanaa_api.py so prod and home server stay consistent.
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org https://plausible.io; "
+        "script-src 'self' https://apis.google.com https://daanaa-af9c2.firebaseapp.com https://stats.daanaa.org https://plausible.io https://static.cloudflareinsights.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "img-src 'self' data: https:; "
         "font-src 'self' data: https://fonts.gstatic.com; "

@@ -1,9 +1,9 @@
 #!/bin/bash
 # Run Playwright-based performance tests
 # Usage: bash scripts/testing/run_perf_tests.sh [base_url] [iterations] [browser]
-# Example: bash scripts/testing/run_perf_tests.sh http://localhost:5000 5 chromium
+# Example: bash scripts/testing/run_perf_tests.sh http://localhost:3000 5 chromium
 
-BASE_URL="${1:-http://localhost:5000}"
+BASE_URL="${1:-http://localhost:3000}"
 ITERATIONS="${2:-5}"
 BROWSER="${3:-brave}"
 
@@ -57,7 +57,7 @@ if [ $? -eq 0 ]; then
     echo "   See output above for timing details"
     echo ""
     echo "🔄 Next steps:"
-    if [ "$BASE_URL" = "http://localhost:5000" ]; then
+    if [ "$BASE_URL" = "http://localhost:3000" ]; then
         echo "   1. Deploy Task #5 to droplet"
         echo "   2. Run: bash scripts/testing/run_perf_tests.sh https://daanaa.org 5"
         echo "   3. Compare results (should see 5-10% improvement)"

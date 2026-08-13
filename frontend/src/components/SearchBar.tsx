@@ -7,6 +7,7 @@ interface SearchBarProps {
   value: string
   onChange: (v: string) => void
   onSearch?: (q: string) => void  // if omitted, navigates to /directory?q=
+  enableSuggestions?: boolean
   dark?: boolean                  // glass/blur variant (hero) vs light (default)
   placeholder?: string
   className?: string
@@ -17,6 +18,7 @@ export default function SearchBar({
   value,
   onChange,
   onSearch,
+  enableSuggestions = true,
   dark = false,
   placeholder = 'Search by name, city, or cause…',
   className = '',
@@ -31,6 +33,12 @@ export default function SearchBar({
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (!enableSuggestions) {
+      setSuggestions([])
+      setOpen(false)
+      setLoading(false)
+      return
+    }
     if (value.length < 2) {
       setSuggestions([])
       setOpen(false)
@@ -50,7 +58,7 @@ export default function SearchBar({
       }
     }, 250)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [value])
+  }, [enableSuggestions, value])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

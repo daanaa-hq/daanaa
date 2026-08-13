@@ -159,7 +159,7 @@ describe('IrsEligibilityWarningModal', () => {
     expect(screen.getByText(/Daanaa does not have complete/i)).toBeInTheDocument();
   });
 
-  it('renders revoked warning when open', () => {
+  it("renders revoked warning when open", () => {
     render(
       <IrsEligibilityWarningModal
         isOpen={true}
@@ -171,6 +171,22 @@ describe('IrsEligibilityWarningModal', () => {
     );
     expect(screen.getByText(/IRS Revocation Record Found/i)).toBeInTheDocument();
     expect(screen.getByText(/auto-revocation list/i)).toBeInTheDocument();
+  });
+
+  it("renders as a dialog and closes on Escape", () => {
+    const onCancel = jest.fn();
+    render(
+      <IrsEligibilityWarningModal
+        isOpen={true}
+        status="unverified"
+        organizationName="Test Org"
+        onConfirm={() => {}}
+        onCancel={onCancel}
+      />
+    );
+    expect(screen.getByRole("dialog")).toHaveAttribute("aria-modal", "true");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(onCancel).toHaveBeenCalled();
   });
 
   it('calls onConfirm when user clicks continue', () => {

@@ -17,7 +17,7 @@ export default defineConfig({
   reporter: 'list', // Simple list reporter
 
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:5000',
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'off', // No trace recording for faster tests
     screenshot: 'off',
     video: 'off',
@@ -28,16 +28,25 @@ export default defineConfig({
       name: 'brave',
       use: {
         ...devices['chromium'],
-        launchArgs: [
-          '--disable-blink-features=AutomationControlled',
-          '--disable-web-resources',
-          '--disable-client-side-phishing-detection',
-          '--disable-background-networking',
-        ],
+        launchOptions: {
+          executablePath: process.env.BROWSER_EXECUTABLE || undefined,
+          args: [
+            '--disable-blink-features=AutomationControlled',
+            '--disable-web-resources',
+            '--disable-client-side-phishing-detection',
+            '--disable-background-networking',
+          ],
+        },
       },
     },
   ],
 
-  webServer: undefined, // Don't auto-start server
+  webServer: {
+    command: 'npm run dev',
+    cwd: 'frontend',
+    url: 'http://localhost:3000',
+    reuseExistingServer: true,
+    timeout: 120_000,
+  },
   timeout: 60000, // 60 second timeout per test
 });

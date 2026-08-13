@@ -101,17 +101,17 @@ export default function OrgSignals({
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <ul className="flex flex-wrap gap-1.5" aria-label="Public signals">
       {signals.map((signal, idx) => (
-        <div
+        <li
           key={idx}
           title={signal.title}
           className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-light-grey/40 text-label text-cool-grey font-medium whitespace-nowrap"
         >
-          <span>{signal.icon}</span>
+          <span aria-hidden="true">{signal.icon}</span>
           <span>{signal.label}</span>
-        </div>
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }

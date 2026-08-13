@@ -478,6 +478,7 @@ export default function Directory() {
           {/* Search */}
           <SearchBar
             value={searchQuery}
+            enableSuggestions={false}
             onChange={v => { setSearchQuery(v); setCurrentPage(1) }}
             onSearch={q => { setSearchQuery(q); setDebouncedQuery(q); setCurrentPage(1) }}
             placeholder="Search by cause, city, community, name, or EIN…"
