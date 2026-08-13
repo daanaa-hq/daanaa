@@ -240,3 +240,66 @@ taxDeductibleToStatus(tax_deductible)
 **Related:** DECISIONS.md 2026-08-12 Task #2 completion entry documents the full location parsing + synonym expansion feature.
 
 ---
+
+---
+
+## 2026-08-13: Autonomous Agent Coordination — When to Give Agents Independence
+
+**Symptom:** Multiple parallel agents (Codex on P1 fixes, website discovery, Task #5 deployment) working simultaneously with limited real-time coordination. Early design required approval gates between each step, which would have serialized the work and extended timeline from 7 hours to 12+.
+
+**Root cause:** Over-specification of "check before proceeding" gates meant agents couldn't adapt if a method failed or conditions changed. Example: If Playwright tests timeout on SPA rendering, agent had to ask for permission to try Chromium instead of pivoting autonomously.
+
+**Fix applied (for future autonomous agent work):**
+
+1. **Clear success criteria, not method prescription.** Told Codex "directory should load in <2000ms" not "must use Playwright with X configuration." This let them experiment: try method A, if it doesn't meet criteria, try method B.
+
+2. **Autonomous rollback gates.** Agents can commit experiments locally, but revert automatically if post-test validation fails. No waiting for approval to pivot.
+
+3. **Outcome-focused briefing.** "Website discovery: 50K orgs × 80% coverage in 3 hours" rather than "crawl using exactly these tools in this sequence."
+
+4. **Time-bounded autonomy.** Agents have freedom within a time box (e.g., "try different methods until 1am, then report best results"). Removes infinite tinkering, still allows experimentation.
+
+5. **Parallel, not sequential.** Multiple agents trying different approaches simultaneously (Playwright + Scrapy) instead of "try method 1, wait for results, approve method 2."
+
+**Preventing rule:**
+
+> When spawning autonomous agents on problems without a proven solution path (website discovery, performance tuning, etc.), frame the task as "achieve outcome X by time Y using methods you think best" instead of "execute steps 1-2-3 in order and ask before deviating." Agents iterate faster when they can pivot without approval. Approval gates should be outcome validation (did it work?) not method validation (did you do it my way?).
+
+**Applied tonight:**
+- Codex P1 fixes: Free to try color contrast fixes in any order, pivot if one method doesn't work
+- Website discovery: Free to switch between Playwright/Scrapy/search if one bottlenecks
+- Task #5 deployment: Automated rollback, no approval needed if smoke test fails
+
+---
+
+## 2026-08-13: Parallel Workstreams at 2:30am Boundary
+
+**Symptom:** Three major work streams scheduled to complete around the same time (P1 fixes by 11pm, website discovery peak at 1-2am, Task #5 deployment at 2:30am). Risk of coordination failure or resource contention.
+
+**Root cause:** Sequential thinking initially. "Do A, then B, then C" would have extended timeline. Realized spare hardware meant we could parallelize.
+
+**Fix applied:**
+
+- **Async-first design.** All three workstreams run simultaneously, notify when complete.
+- **Isolated data sets.** P1 fixes touch frontend/API contract; website discovery touches org URLs; Task #5 touches DB indexes. No file conflicts.
+- **Hardware isolation.** Ryzen handles website crawlers; droplet handles deployment; GPU available as needed.
+- **Handoff points, not gates.** "When P1 fixes complete, merge and move on" vs. "wait for approval between steps."
+
+**Preventing rule:**
+
+> When multiple async agents are running, use notifications (task-complete events) instead of polling or approval gates. Design work to be non-blocking: Agent A doesn't need Agent B's result to start, only to integrate results later. Spare hardware means parallelization is free velocity — use it.
+
+---
+
+## 2026-08-13: Location Parsing Limitation — Trade-off Between Completeness and Launch Readiness
+
+**Symptom:** Task #2 (location parsing) doesn't recognize bare city names ("Houston" without "TX"), only zip codes + state codes. User discovered this and it was initially framed as a bug.
+
+**Root cause:** Bare city names need either city database lookup or reverse geocoding (city → state). Not implemented in time budget before deployment.
+
+**Decision made:** Document as Phase 2 backlog item, not blocker. Zip codes work (primary use case), state codes work, city-state combinations work. Bare city is a nice-to-have, not critical.
+
+**Preventing rule:**
+
+> Don't confuse "incomplete feature" with "broken feature." If 80% of use cases work and users have a workaround (use zip code instead of city name), defer the remaining 20% to Phase 2. Document it clearly so it's not discovered by users as a surprise. Trade-off between launch speed and feature completeness is valid when both options are documented and intentional.
+
