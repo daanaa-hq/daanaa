@@ -4,25 +4,25 @@
 
 ---
 
-## Current Status: Batch 1 Substantially Complete ✅
+## Current Status: Batch 1 Complete ✅ | Ready for Batch 2
 
 | Item | Status | Evidence | Next |
 |------|--------|----------|------|
-| **P1 Live Fixes** | ✅ COMMITTED | Commit 0f6838c5cb7 (directory perf, contrast, API contract) | ➜ Ready for droplet deployment |
-| **Batch 1 (Discovery UX)** | ✅ SUBSTANTIALLY COMPLETE | Commits 36403d98c88, 3463e7e7932 (Get Started + directory cause simplification) | ➜ Mobile polish, edge cases, then Batch 2 |
-| **Website Discovery Data** | ✅ LOADED | 461,682 URLs in DB, coverage verified (88.8%/67%/47.8%/12.8% by size) | ➜ Pending Codex: verification commit + dedup |
-| **Behavioral Science Brief** | ✅ DELIVERED | BEHAVIORAL_SCIENCE_OPPORTUNITIES_BRIEF_20260813.md (6 evidence signals) | ➜ Informs Batch 2 opportunities model |
+| **P1 Live Fixes** | ✅ COMMITTED | Commit 0f6838c5cb7 (directory perf, contrast, API contract) | ➜ Deploy to droplet |
+| **Batch 1 (Discovery UX)** | ✅ COMPLETE | Commits 36403d98c88, 3463e7e7932; Get Started (4 paths: Give/Volunteer/Research/Local); Directory simplified | ➜ Start Batch 2 |
+| **Website Discovery Data** | ✅ LOADED | 461,682 URLs, coverage verified (88.8%/67%/47.8%/12.8% by size) | ➜ Awaiting Codex dedup commit |
+| **Behavioral Science Brief** | ✅ DELIVERED | BEHAVIORAL_SCIENCE_OPPORTUNITIES_BRIEF_20260813.md (6 evidence-based signals) | ➜ Informs Batch 2 work |
 
 ---
 
-## Track A (Execute Now) — Batch 1 Scope: COMPLETE
+## Track A (Execute Now) — Batch 1 Scope: ✅ COMPLETE
 
-Delivered **homepage + directory discovery UX clarity**. No approval gates crossed.
+Delivered **homepage + directory discovery UX clarity**. No approval gates crossed. Task #7 complete.
 
-**✅ Completed:**
-1. **Homepage:** Get Started section with 3 primary paths (search, volunteer, compare)
-2. **Directory performance:** SearchBar suggestions disabled in directory scope
-3. **Directory cause clarity:** Featured 8 causes shown, remaining 18 behind "Browse all"
+**✅ Completed (All Objectives Met):**
+1. **Homepage:** Get Started section with 4 discovery paths (Give, Volunteer, Research, Local) — explicit intent clarity for first-time visitors
+2. **Directory performance:** SearchBar suggestions disabled in directory scope (reduces API calls + rendering)
+3. **Directory cause clarity:** Featured 8 causes shown, remaining 18 categories behind "Browse all" link
 4. **Accessibility:** IrsEligibilityContext WCAG AA color tokens applied
 5. **API contract:** Frontend field refs aligned to uppercase (EIN, organization_name)
 
