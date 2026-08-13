@@ -118,10 +118,10 @@ function HeroSection() {
   )
 }
 
-// ─── Get Started (Batch 1: discovery clarity) ────────────────────────────────
-// Explicit intent paths for first-time visitors. Track A work: clarifies
-// existing paths (give, volunteer, research, compare, find local) without
-// adding new features. Design system compliant (headline typography).
+// ─── Get Started (Batch 1 clarity improvement) ────────────────────────────
+// Explicit intent paths so first-time visitors know their options without
+// reading the entire page. Track A work: clarifies existing paths (give,
+// volunteer, research, compare, find local) without adding features.
 function GetStartedSection() {
   const paths = [
     {
@@ -154,7 +154,10 @@ function GetStartedSection() {
           <p className="font-body text-caption font-semibold tracking-[0.08em] text-deep-gold uppercase mb-2">
             Choose your path
           </p>
-          <h2 className="font-display italic text-deep-navy leading-tight tracking-[-0.015em]" style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)' }}>
+          <h2
+            className="font-display italic text-deep-navy leading-tight tracking-[-0.015em]"
+            style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}
+          >
             How do you want to explore?
           </h2>
         </div>

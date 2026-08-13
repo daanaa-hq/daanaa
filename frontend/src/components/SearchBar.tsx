@@ -7,7 +7,7 @@ interface SearchBarProps {
   value: string
   onChange: (v: string) => void
   onSearch?: (q: string) => void  // if omitted, navigates to /directory?q=
-  enableSuggestions?: boolean     // disable to reduce API calls (default: true)
+  enableSuggestions?: boolean
   dark?: boolean                  // glass/blur variant (hero) vs light (default)
   placeholder?: string
   className?: string

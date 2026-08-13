@@ -9,8 +9,7 @@
  * - exception_possible: Churches/group-ruling indicators
  */
 
-import React, { useState } from 'react';
-import type { ReactNode } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 type EligibilityStatus = 'verified' | 'unverified' | 'revoked' | 'unknown' | 'exception_possible';
 
@@ -125,46 +124,73 @@ export const IrsEligibilityWarningModal: React.FC<{
   onConfirm: () => void;
   onCancel: () => void;
 }> = ({ isOpen, status, organizationName, onConfirm, onCancel }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    dialogRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onCancel]);
+
   if (!isOpen) return null;
 
   const warningConfig = {
     unverified: {
-      title: 'Tax Deductibility Not Verified',
-      message: `Daanaa does not have complete current IRS evidence for ${organizationName || 'this organization'}.`,
+      title: "Tax Deductibility Not Verified",
+      message: `Daanaa does not have complete current IRS evidence for ${organizationName || "this organization"}.`,
       details: [
-        'We cannot confirm whether donations are tax-deductible',
-        'You should verify directly with the organization or IRS',
-        'Keep your own records of the donation for tax purposes',
+        "We cannot confirm whether donations are tax-deductible",
+        "You should verify directly with the organization or IRS",
+        "Keep your own records of the donation for tax purposes",
       ],
     },
     unknown: {
-      title: 'Tax Status Not Verified',
-      message: 'We do not have complete current IRS evidence for this organization.',
+      title: "Tax Status Not Verified",
+      message: "We do not have complete current IRS evidence for this organization.",
       details: [
-        'We cannot verify the current tax status',
-        'Check with the organization directly',
-        'Keep your own records of any donation',
+        "We cannot verify the current tax status",
+        "Check with the organization directly",
+        "Keep your own records of any donation",
       ],
     },
     revoked: {
-      title: 'IRS Revocation Record Found',
-      message: `${organizationName || 'This organization'} appears on the IRS auto-revocation list.`,
+      title: "IRS Revocation Record Found",
+      message: `${organizationName || "This organization"} appears on the IRS auto-revocation list.`,
       details: [
-        'Donations made after the revocation date are NOT tax-deductible',
-        'Check the organization directly for reinstatement status',
-        'You may be able to donate to an updated organization',
+        "Donations made after the revocation date are NOT tax-deductible",
+        "Check the organization directly for reinstatement status",
+        "You may be able to donate to an updated organization",
       ],
     },
   };
 
-  const config = warningConfig[status as 'unverified' | 'unknown' | 'revoked'];
+  const config = warningConfig[status as "unverified" | "unknown" | "revoked"];
   if (!config) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="irs-modal rounded-lg p-6 max-w-md w-full mx-4">
-        <h2 className="text-lg font-bold mb-2 irs-modal-title">{config.title}</h2>
-        <p className="text-sm mb-4 irs-modal-message">{config.message}</p>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" role="presentation" onMouseDown={onCancel}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="irs-warning-title"
+        aria-describedby="irs-warning-message"
+        className="irs-modal rounded-lg p-6 max-w-md w-full mx-4"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <h2 id="irs-warning-title" className="text-lg font-bold mb-2 irs-modal-title">{config.title}</h2>
+        <p id="irs-warning-message" className="text-sm mb-4 irs-modal-message">{config.message}</p>
         <div className="irs-modal-details rounded p-4 mb-6">
           <p className="text-sm font-semibold mb-2">This means:</p>
           <ul className="text-sm space-y-1">
@@ -178,12 +204,14 @@ export const IrsEligibilityWarningModal: React.FC<{
         </div>
         <div className="flex gap-3">
           <button
+            type="button"
             onClick={onCancel}
             className="flex-1 px-4 py-2 irs-modal-cancel rounded font-medium transition"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={onConfirm}
             className="flex-1 px-4 py-2 irs-modal-confirm text-white rounded font-medium transition"
           >

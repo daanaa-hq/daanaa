@@ -34,20 +34,6 @@ const SORT_OPTIONS = [
   { id: 'total_revenue', label: 'By Total Revenue' },  // Data transparency, not ranking
 ]
 
-const NETWORK_DIRECTORY_RESOURCES: Array<{ matches: string[]; label: string; description: string; href: string }> = [
-  {
-    matches: ["habitat", "hfh"],
-    label: "Find your local Habitat affiliate",
-    description: "Habitat for Humanity maintains an official locator for local affiliates, volunteer opportunities, and ReStores.",
-    href: "https://www.habitat.org/volunteer/near-you/find-your-local-habitat",
-  },
-]
-
-function networkDirectoryResource(query: string) {
-  const words: string[] = query.toLowerCase().match(/[a-z0-9]+/g) ?? []
-  return NETWORK_DIRECTORY_RESOURCES.find(resource => resource.matches.some(match => words.includes(match)))
-}
-
 function hasKnownDataSource(src: string | null) {
   return src === 'propublica' || src === 'irs_soi'
 }
@@ -432,7 +418,6 @@ export default function Directory() {
   const activeError = useFusedResults
     ? null
     : (orgsError ?? (isFusedMode && fusedError && organizations.length === 0 ? fusedError : null))
-  const networkResource = networkDirectoryResource(searchQuery)
 
   // Readable label for any subcategory code (searches across all categories)
   const subLabelOf = (code: string): string => {
@@ -493,9 +478,9 @@ export default function Directory() {
           {/* Search */}
           <SearchBar
             value={searchQuery}
+            enableSuggestions={false}
             onChange={v => { setSearchQuery(v); setCurrentPage(1) }}
             onSearch={q => { setSearchQuery(q); setDebouncedQuery(q); setCurrentPage(1) }}
-            enableSuggestions={false}
             placeholder="Search by cause, city, community, name, or EIN…"
             className="mt-7 max-w-[640px]"
           />
@@ -590,9 +575,9 @@ export default function Directory() {
             )}
           </div>}
 
-          {/* Category quick-pills (Batch 1: featured 8 + browse all) — all breakpoints */}
+          {/* Category quick-pills (Batch 1: show featured 8 + "Browse all") — all breakpoints */}
           {searchMode === 'browse' && <div className="mt-3 flex items-center gap-2 flex-wrap">
-            {/* "All" button */}
+            {/* "All" button — always visible */}
             {FILTER_CATEGORIES.slice(0, 1).map((cat) => (
               <button
                 key={cat.id}
@@ -607,7 +592,7 @@ export default function Directory() {
                 {cat.label}
               </button>
             ))}
-            {/* Featured 8 causes for discovery clarity */}
+            {/* Featured 8 causes (from Home.tsx FEATURED_CAUSE_IDS) for discovery clarity */}
             {FILTER_CATEGORIES.slice(1).filter(cat => ['E', 'B', 'P', 'C', 'D', 'A', 'O', 'S'].includes(cat.id)).map((cat) => (
               <button
                 key={cat.id}
@@ -622,7 +607,7 @@ export default function Directory() {
                 {'emoji' in cat && cat.emoji ? `${cat.emoji} ` : ''}{cat.label}
               </button>
             ))}
-            {/* Browse all causes link */}
+            {/* "Browse all causes" link — opens drawer with remaining categories */}
             <button
               onClick={() => setFilterSheetOpen(true)}
               className="px-4 py-[6px] rounded-full font-body text-caption font-medium text-link-gold hover:text-deep-gold transition-colors border border-dashed border-light-grey"
@@ -979,27 +964,7 @@ export default function Directory() {
                       Showing results for "{orgsData.corrected_query}". We didn't find any matches for "{searchQuery}"
                     </p>
                   )}
-                  {networkResource && (
-                    <aside className="mt-4 max-w-[680px] border border-light-grey bg-white px-4 py-3 rounded-xl" aria-label="Official network resource">
-                      <p className="font-body text-label font-semibold tracking-[0.04em] uppercase text-slate">
-                        Official network resource
-                      </p>
-                      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                        <a
-                          href={networkResource.href}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-body text-caption font-semibold text-link-gold hover:text-deep-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold focus-visible:ring-offset-2 rounded-sm"
-                        >
-                          {networkResource.label} <span aria-hidden="true">↗</span>
-                        </a>
-                        <span className="font-body text-caption text-slate">
-                          {networkResource.description}
-                        </span>
-                      </div>
-                    </aside>
-                  )}
-                                    {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
+                  {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
                     <p className="font-body text-caption text-cool-grey mt-1" role="status">
                       Includes organizations that haven't reported revenue. Smaller nonprofits often file
                       a simpler return.{' '}
