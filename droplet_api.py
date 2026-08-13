@@ -719,8 +719,12 @@ app = Flask(__name__)
 
 # Run database migrations on startup
 _db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
-_run_migrations(_db_path)
-_ensure_student_service_columns(_db_path)
+try:
+    _run_migrations(_db_path)
+    _ensure_student_service_columns(_db_path)
+except Exception as e:
+    print(f"[Startup warning] Database migration/check failed: {e}", file=sys.stderr)
+    # Continue - fallback to existing schema
 
 # Restrict CORS to known origins; add production domain when deploying
 _ALLOWED_ORIGINS = [
