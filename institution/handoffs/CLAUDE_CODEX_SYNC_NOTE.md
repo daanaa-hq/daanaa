@@ -7,39 +7,34 @@
 
 - Task record:
   - `institution/tasks/T-2026-08-13-002-charter-safe-product-roadmap.md`
-- Handoff:
-  - `institution/handoffs/2026-08-13-charter-safe-product-roadmap.md`
 - Behavioral brief:
   - `docs/BEHAVIORAL_SCIENCE_OPPORTUNITIES_BRIEF_20260813.md`
+- Verified website handoff:
+  - `institution/handoffs/CODEX_VERIFIED_WEBSITES_FOR_CLAUDE_20260813.md`
 
 ## Current Codex Scope
 
-- Batch 1: homepage, directory, search/discovery UX, accessibility, and performance hardening
-- Product scope explicitly includes:
-  - opportunities
-  - donor retention
-  - volunteer / skills / in-kind action paths
+- Batch 1 product work remains active
+- Website discovery engine has been fixed and run in staging-first mode
 
 ## Current Progress
 
 Completed by Codex:
 - Homepage discovery pass in `frontend/src/pages/Home.tsx`
-  - hero copy tightened around give / volunteer / research
-  - generic path cards replaced with clearer intent-led entry structure
-  - on-page guardrail copy added: no sponsored rankings, no platform checkout, no pressure loops
 - Directory orientation pass in `frontend/src/pages/Directory.tsx`
-  - header copy now reflects nearby organizations and verified giving paths
-  - lightweight intent links added: Give / Volunteer / Research / Near me
-  - top-of-page instructions clarified for search narrowing without losing public-record context
+- Domain guessing engine rewritten into staging-first workflow in `scripts/continuous_discovery/domain_guess_engine.py`
+- Verified website queue prepared for Claude in `institution/handoffs/CODEX_VERIFIED_WEBSITES_FOR_CLAUDE_20260813.md`
 
-Validation:
-- `cd frontend && npm run build` passed after homepage changes
-- `cd frontend && npm run build` passed after directory changes
+Website discovery status:
+- sample run completed cleanly
+- `candidate_verified` rows available
+- `candidate_needs_review` rows separated from verified queue
+- no canonical website writes performed by Codex during this run
 
 ## Next Codex Focus
 
-1. deeper directory pass
-2. org-page decision structure
+1. let larger staged website run continue / harvest results
+2. continue product work on org-page decision structure
 3. opportunities + retention spec refinement
 4. accessibility and performance follow-through on priority routes
 
@@ -56,14 +51,6 @@ Do not do these without explicit founder approval:
 
 ## Working Rule
 
-- Claude can implement Track A work.
-- Codex reviews for stewardship, provenance, quality, and user-journey coherence.
+- Claude can consume the verified website queue from the handoff file.
+- Codex keeps discovery staging-first unless explicitly asked to promote canonical website fields.
 - Update repo-visible files instead of relying on chat/plugin assumptions.
-
-## If You Need To Sync Fast
-
-Append:
-- what changed
-- files touched
-- what still needs review
-- whether a founder gate was reached
