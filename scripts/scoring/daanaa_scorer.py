@@ -56,6 +56,71 @@ for region, states in CENSUS_REGIONS.items():
 def get_region(state):
     return STATE_TO_REGION.get(state)
 
+def compute_revenue_percentiles(orgs, updates):
+    """Compute percentile rank (0-100) for each org within its peer group.
+
+    Returns: {EIN: (percentile, confidence, scoreable_peer_count)}
+    - percentile: 0-100 integer, or NULL if <5 scoreable peers
+    - confidence: HIGH (25+), MEDIUM (5-24), LOW (<5)
+    - scoreable_peer_count: count of peers with non-null revenue
+    """
+    from bisect import bisect_right
+
+    groups = defaultdict(list)
+    memberships = {}
+
+    # Map each org to its peer group and collect revenues
+    for org, (scoring_tier, peer_desc, size, scoreable, confidence, ein) in zip(orgs, updates):
+        ntee2 = org["NTEECC"][:2] if org["NTEECC"] else None
+        band = get_revenue_band(org["total_revenue"])
+        region = get_region(org["STATE"])
+
+        if scoring_tier == "1_Full_Context" and ntee2 and band and region:
+            peer_key = ("tier1", ntee2, band, region)
+        elif scoring_tier == "2_Regional_Context" and ntee2 and band:
+            peer_key = ("tier2", ntee2, band)
+        elif scoring_tier == "3_Broad_Category" and ntee2:
+            peer_key = ("tier3", ntee2)
+        else:
+            peer_key = None
+
+        memberships[ein] = peer_key
+
+        # Include only scoreable (non-null revenue + reserves) orgs for ranking
+        if (peer_key is not None and
+            org["months_of_reserve"] is not None and
+            org["total_revenue"] is not None):
+            groups[peer_key].append(org["total_revenue"])
+
+    # Sort revenue lists
+    for peer_key in groups:
+        groups[peer_key] = sorted(groups[peer_key])
+
+    # Compute percentiles
+    results = {}
+    for org, (scoring_tier, peer_desc, size, scoreable, confidence, ein) in zip(orgs, updates):
+        peer_key = memberships[ein]
+        revenues = groups.get(peer_key, [])
+        peer_count = len(revenues)
+
+        # Confidence tiers
+        if peer_count >= 25:
+            conf = "HIGH"
+        elif peer_count >= 5:
+            conf = "MEDIUM"
+        else:
+            conf = "LOW"
+
+        # Percentile: only calculate if >= 5 peers and org has revenue
+        percentile = None
+        if peer_count >= 5 and org["total_revenue"] is not None:
+            # Rank: (count of peers with revenue < this org) / total * 100
+            percentile = round(100.0 * bisect_right(revenues, org["total_revenue"]) / peer_count)
+
+        results[ein] = (percentile, conf, peer_count)
+
+    return results
+
 def main():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -194,8 +259,16 @@ def main():
         ))
         tier_distribution["4_Archetype_Only"] += 1
 
+    # Compute percentiles for all orgs
+    print(f"[v6.0] Computing revenue percentiles within peer groups...")
+    percentile_data = compute_revenue_percentiles(orgs, updates)
+    percentile_dist = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    for ein, (percentile, conf, count) in percentile_data.items():
+        percentile_dist[conf] += 1
+    print(f"  Percentile confidence: HIGH={percentile_dist['HIGH']:,}, MEDIUM={percentile_dist['MEDIUM']:,}, LOW={percentile_dist['LOW']:,}")
+
     # Write to database
-    print(f"\n[v6.0] Writing tier assignments...")
+    print(f"\n[v6.0] Writing tier assignments + percentiles...")
     cursor.execute("""
         ALTER TABLE registry_enriched ADD COLUMN scoring_tier TEXT DEFAULT NULL;
     """)
@@ -213,12 +286,16 @@ def main():
     """)
 
     for scoring_tier, peer_desc, size, scoreable, confidence, ein in updates:
+        percentile, percentile_confidence, percentile_peer_count = percentile_data[ein]
         cursor.execute("""
             UPDATE registry_enriched
             SET scoring_tier = ?, tier_label = ?, peer_group_size = ?,
-                peer_group_description = ?, confidence = ?
+                peer_group_description = ?, confidence = ?,
+                merit_percentile_v6 = ?,
+                merit_percentile_confidence_v6 = ?,
+                merit_peer_count_v6_scoreable = ?
             WHERE EIN = ?
-        """, (scoring_tier, peer_desc, size, peer_desc, confidence, ein))
+        """, (scoring_tier, peer_desc, size, peer_desc, confidence, percentile, percentile_confidence, percentile_peer_count, ein))
 
     conn.commit()
 

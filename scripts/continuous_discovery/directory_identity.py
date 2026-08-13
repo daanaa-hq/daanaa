@@ -30,13 +30,16 @@ ABBREVIATIONS = {
 
 def normalize_text(value: str | None) -> str:
     """Return an uppercase comparison key without punctuation noise."""
-    return re.sub(r"[^A-Z0-9 ]+", " ", (value or "").upper()).strip()
-
+    value = (value or "").upper()
+    value = re.sub(r"\b([A-Z])\.\s*([A-Z])\.", r"\1\2", value)
+    return re.sub(r"[^A-Z0-9 ]+", " ", value).strip()
 
 def normalize_address(value: str | None) -> str:
     """Normalize common USPS-style abbreviations while preserving street number."""
     tokens = normalize_text(value).split()
-    return " ".join(ABBREVIATIONS.get(token, token) for token in tokens)
+    normalized = " ".join(ABBREVIATIONS.get(token, token) for token in tokens)
+    # IRS exports can order state-route numbers before HIGHWAY ("NC 5 HWY").
+    return re.sub(r"\b([A-Z]{2}) (\d+) HIGHWAY\b", r"\1 HIGHWAY \2", normalized)
 
 
 def zip5(value: str | None) -> str:

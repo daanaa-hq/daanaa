@@ -2460,8 +2460,8 @@ def list_organizations():
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
                (r.website IS NOT NULL AND r.website != '') as has_website,
-               r.scoring_tier_v6_inference, r.confidence_v6, r.peer_group_description_v6,
-               r.peer_group_size_v6, r.is_inferred_v6, r.confidence_margin_v6
+               r.scoring_tier, r.confidence, r.peer_group_description,
+               r.peer_group_size, r.is_inferred_v6, r.confidence_margin_v6
         FROM registry_enriched r
         {fts_join_sql}WHERE {where_sql}
         {order_sql}
@@ -2486,19 +2486,21 @@ def list_organizations():
         # Build V6 context (canonical system, Aug 2026+)
         # V6 provides tiered peer context with confidence; replaces numeric v5 scores
         v6_context = None
-        if d.get('scoring_tier_v6_inference') is not None:
+        if d.get('scoring_tier') is not None:
             v6_context = {
-                'tier': d.get('scoring_tier_v6_inference'),
-                'confidence': d.get('confidence_v6'),
-                'peer_description': d.get('peer_group_description_v6'),
-                'peer_count': d.get('peer_group_size_v6'),
+                'tier': d.get('scoring_tier'),
+                'confidence': d.get('confidence'),
+                'peer_description': d.get('peer_group_description'),
+                'peer_count': d.get('peer_group_size'),
+                'percentile': d.get('merit_percentile_v6'),
+                'percentile_confidence': d.get('merit_percentile_confidence_v6'),
                 'is_inferred': bool(d.get('is_inferred_v6', 0)),
                 'confidence_margin': d.get('confidence_margin_v6'),
             }
         d['v6_context'] = v6_context
         # Remove raw v6 columns from the flat dict (they're nested in v6_context now)
-        for _col in ('scoring_tier_v6_inference', 'confidence_v6', 'peer_group_description_v6',
-                     'peer_group_size_v6', 'is_inferred_v6', 'confidence_margin_v6'):
+        for _col in ('scoring_tier', 'confidence', 'peer_group_description',
+                     'peer_group_size', 'merit_percentile_v6', 'merit_percentile_confidence_v6', 'is_inferred_v6', 'confidence_margin_v6'):
             d.pop(_col, None)
         # Phase 2: Add IRS Eligibility fields (additive)
         d.update(get_eligibility_fields(d['EIN']))

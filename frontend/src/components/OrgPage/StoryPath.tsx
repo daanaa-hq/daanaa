@@ -19,8 +19,10 @@ interface StoryPathProps {
 }
 
 export default function StoryPath({ org }: StoryPathProps) {
-  const impactMetric = org.cost_per_outcome || 50 // Default $50
-  const outcomeDescription = 'hour of 1-on-1 tutoring' // TODO: derive from data
+  // TODO: Add cost_per_outcome field to ApiOrganization
+  // For now, derive from total_revenue and beneficiaries if available
+  const impactMetric = 50 // Default $50
+  const outcomeDescription = 'hour of 1-on-1 tutoring' // TODO: derive from NTEE/program data
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">

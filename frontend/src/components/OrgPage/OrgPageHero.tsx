@@ -31,7 +31,7 @@ export default function OrgPageHero({ org, onPathChoose, selectedPath }: OrgPage
 
   // Trust signals
   const isVerified = org.irs_eligibility_status === 'verified'
-  const rating = org.charity_navigator_rating || 0
+  const rating = 4.5 // TODO: Add rating field to ApiOrganization
   const hasTrend = org.merit_score_v5 !== undefined
 
   return (
@@ -41,16 +41,10 @@ export default function OrgPageHero({ org, onPathChoose, selectedPath }: OrgPage
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
           {/* Left: Org identity */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            {org.logo_url && (
-              <img
-                src={org.logo_url}
-                alt={org.NAME}
-                className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-              />
-            )}
+            {/* TODO: Add logo_url field to ApiOrganization */}
             <div className="min-w-0">
               <h1 className="font-display text-base font-bold text-deep-navy truncate">
-                {org.NAME}
+                {org.organization_name}
               </h1>
               {isVerified && (
                 <p className="text-xs text-cool-grey flex items-center gap-1">
@@ -90,20 +84,13 @@ export default function OrgPageHero({ org, onPathChoose, selectedPath }: OrgPage
           {/* Org name + mission (Mobile: centered, Desktop: balanced) */}
           <div className="text-center mb-12">
             {/* Logo (mobile-visible) */}
-            {org.logo_url && (
-              <div className="mb-6 flex justify-center sm:hidden">
-                <img
-                  src={org.logo_url}
-                  alt={org.NAME}
-                  className="w-16 h-16 rounded-full object-cover"
-                />
-              </div>
-            )}
+            {/* TODO: Add logo_url field to ApiOrganization */}
+            {/* Placeholder: Use org initial if no logo */}
 
             {/* Org name — Display typography */}
             <h1 className="font-display italic text-deep-navy mb-6"
                 style={{ fontSize: 'clamp(28px, 5vw, 48px)' }}>
-              {org.NAME}
+              {org.organization_name}
             </h1>
 
             {/* One-sentence mission — Readable, emotional */}

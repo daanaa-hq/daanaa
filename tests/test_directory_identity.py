@@ -7,6 +7,7 @@ from scripts.continuous_discovery.directory_identity import (
 
 def test_normalize_address_expands_common_abbreviations():
     assert normalize_address("2268 N.C. Hwy 5, Ste. 4") == "2268 NC HIGHWAY 5 SUITE 4"
+    assert normalize_address("2268 NC 5 HWY") == "2268 NC HIGHWAY 5"
 
 
 def test_exact_address_match_accepts_zip_plus_four_and_abbreviations():
@@ -18,4 +19,4 @@ def test_exact_address_match_accepts_zip_plus_four_and_abbreviations():
 def test_exact_address_match_rejects_missing_or_different_street():
     irs = DirectoryIdentity("NC", "Aberdeen", "28315", "2268 NC Highway 5")
     directory = DirectoryIdentity("NC", "Aberdeen", "28315", "2270 NC Highway 5")
-    assert is_exact_address_match(irs, directory)
+    assert not is_exact_address_match(irs, directory)
