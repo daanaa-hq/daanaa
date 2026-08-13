@@ -118,6 +118,76 @@ function HeroSection() {
   )
 }
 
+// ─── Get Started (Batch 1 clarity improvement) ────────────────────────────
+// Explicit intent paths so first-time visitors know their options without
+// reading the entire page. Track A work: clarifies existing paths (give,
+// volunteer, research, compare, find local) without adding features.
+function GetStartedSection() {
+  const paths = [
+    {
+      title: 'Search by cause or place',
+      description: 'Find organizations working on what matters to you',
+      icon: '🔍',
+      to: '/directory',
+      cta: 'Browse directory'
+    },
+    {
+      title: 'I want to volunteer',
+      description: 'Discover nonprofits and volunteer opportunities near you',
+      icon: '🤝',
+      to: '/volunteer',
+      cta: 'Find volunteer roles'
+    },
+    {
+      title: 'Compare and research',
+      description: 'Review financials, track your giving, and compare orgs',
+      icon: '📊',
+      to: '/wallet',
+      cta: 'Open Giving Wallet'
+    },
+  ]
+
+  return (
+    <section className="bg-light-cream border-b border-light-grey py-14 md:py-20">
+      <div className="max-w-[1000px] mx-auto px-6 md:px-12">
+        <div className="text-center mb-10">
+          <p className="font-body text-caption font-semibold tracking-[0.08em] text-deep-gold uppercase mb-2">
+            Choose your path
+          </p>
+          <h2
+            className="font-display italic text-deep-navy leading-tight tracking-[-0.015em]"
+            style={{ fontSize: 'clamp(28px, 4vw, 40px)' }}
+          >
+            How do you want to explore?
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {paths.map(path => (
+            <Link
+              key={path.to}
+              to={path.to}
+              className="group flex flex-col rounded-2xl bg-white border border-light-grey p-6 transition-all hover:shadow-lg hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold"
+            >
+              <div className="text-4xl mb-3">{path.icon}</div>
+              <h3 className="font-body text-body-lg font-semibold text-deep-navy mb-2 group-hover:text-soft-gold transition-colors">
+                {path.title}
+              </h3>
+              <p className="font-body text-body text-cool-grey leading-relaxed flex-1 mb-4">
+                {path.description}
+              </p>
+              <span className="inline-flex items-center gap-2 text-link-gold group-hover:text-deep-gold font-semibold text-small transition-colors">
+                {path.cta}
+                <span aria-hidden="true" className="group-hover:translate-x-1 transition-transform">→</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ─── Trust beat ──────────────────────────────────────────────────────────────
 // Short and specific on purpose: per the 2026-08-08 design review, a single
 // hero-level trust claim reads as hype; three concrete, sourced facts read as
@@ -433,6 +503,7 @@ export default function Home() {
   return (
     <div>
       <HeroSection />
+      <GetStartedSection />
       <TrustBeat />
       <BrowseCauses />
       <FinalCTA />
