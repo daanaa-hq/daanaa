@@ -40,6 +40,7 @@ import RecurringSetup from '../components/RecurringSetup'
 import DataContextNote from '../components/DataContextNote'
 import { normalizeExternalUrl } from '../utils/externalLink'
 import AtAGlance from '../components/AtAGlance'
+import ProvenanceLayers from '../components/ProvenanceLayers'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -830,6 +831,15 @@ export default function OrganizationDetail() {
           {apiOrg && (
             <div className="mb-16">
               <OrgInfoHierarchy org={apiOrg} />
+            </div>
+          )}
+
+          {/* Phase 2: Provenance Layer Separation (2026-08-13)
+              Shows data source transparency: Public Record vs Nonprofit-Supplied vs Daanaa Inferred
+              Implements decision-grade org page principle: clear sourcing = trusted giving decisions */}
+          {apiOrg && (
+            <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
+              <ProvenanceLayers org={apiOrg} />
             </div>
           )}
 
