@@ -34,6 +34,20 @@ const SORT_OPTIONS = [
   { id: 'total_revenue', label: 'By Total Revenue' },  // Data transparency, not ranking
 ]
 
+const NETWORK_DIRECTORY_RESOURCES = [
+  {
+    matches: ["habitat", "hfh"],
+    label: "Find your local Habitat affiliate",
+    description: "Habitat for Humanity maintains an official locator for local affiliates, volunteer opportunities, and ReStores.",
+    href: "https://www.habitat.org/volunteer/near-you/find-your-local-habitat",
+  },
+]
+
+function networkDirectoryResource(query: string) {
+  const words = query.toLowerCase().split(/\s+/)
+  return NETWORK_DIRECTORY_RESOURCES.find(resource => resource.matches.some(match => words.includes(match)))
+}
+
 function hasKnownDataSource(src: string | null) {
   return src === 'propublica' || src === 'irs_soi'
 }
@@ -418,6 +432,7 @@ export default function Directory() {
   const activeError = useFusedResults
     ? null
     : (orgsError ?? (isFusedMode && fusedError && organizations.length === 0 ? fusedError : null))
+  const networkResource = networkDirectoryResource(searchQuery)
 
   // Readable label for any subcategory code (searches across all categories)
   const subLabelOf = (code: string): string => {
@@ -964,7 +979,27 @@ export default function Directory() {
                       Showing results for "{orgsData.corrected_query}". We didn't find any matches for "{searchQuery}"
                     </p>
                   )}
-                  {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
+                  {networkResource && (
+                    <aside className="mt-4 max-w-[680px] border border-light-grey bg-white px-4 py-3 rounded-xl" aria-label="Official network resource">
+                      <p className="font-body text-label font-semibold tracking-[0.04em] uppercase text-slate">
+                        Official network resource
+                      </p>
+                      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <a
+                          href={networkResource.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-body text-caption font-semibold text-link-gold hover:text-deep-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-soft-gold focus-visible:ring-offset-2 rounded-sm"
+                        >
+                          {networkResource.label} <span aria-hidden="true">↗</span>
+                        </a>
+                        <span className="font-body text-caption text-slate">
+                          {networkResource.description}
+                        </span>
+                      </div>
+                    </aside>
+                  )}
+                                    {hasRevenueFilter && !verifiedRevenueOnly && !effectiveHiddenGem && (
                     <p className="font-body text-caption text-cool-grey mt-1" role="status">
                       Includes organizations that haven't reported revenue. Smaller nonprofits often file
                       a simpler return.{' '}
