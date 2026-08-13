@@ -480,6 +480,7 @@ export default function Directory() {
             value={searchQuery}
             onChange={v => { setSearchQuery(v); setCurrentPage(1) }}
             onSearch={q => { setSearchQuery(q); setDebouncedQuery(q); setCurrentPage(1) }}
+            enableSuggestions={false}
             placeholder="Search by cause, city, community, name, or EIN…"
             className="mt-7 max-w-[640px]"
           />
