@@ -575,22 +575,45 @@ export default function Directory() {
             )}
           </div>}
 
-          {/* Category quick-pills + state — all breakpoints */}
+          {/* Category quick-pills (Batch 1: featured 8 + browse all) — all breakpoints */}
           {searchMode === 'browse' && <div className="mt-3 flex items-center gap-2 flex-wrap">
-            {FILTER_CATEGORIES.map((cat) => (
+            {/* "All" button */}
+            {FILTER_CATEGORIES.slice(0, 1).map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => handleFilterChange(cat.id)}
                 className="px-4 py-[6px] rounded-full font-body text-caption tracking-[0.02em] transition-all duration-150 border"
                 style={{
-                  backgroundColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? 'rgb(var(--soft-gold-rgb))' : 'transparent',
-                  color: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))',
-                  borderColor: (cat.id === 'all' ? activeFilters.length === 0 : activeFilters.includes(cat.id)) ? 'rgb(var(--soft-gold-rgb))' : 'rgb(var(--light-grey-rgb))',
+                  backgroundColor: activeFilters.length === 0 ? 'rgb(var(--soft-gold-rgb))' : 'transparent',
+                  color: activeFilters.length === 0 ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))',
+                  borderColor: activeFilters.length === 0 ? 'rgb(var(--soft-gold-rgb))' : 'rgb(var(--light-grey-rgb))',
+                }}
+              >
+                {cat.label}
+              </button>
+            ))}
+            {/* Featured 8 causes for discovery clarity */}
+            {FILTER_CATEGORIES.slice(1).filter(cat => ['E', 'B', 'P', 'C', 'D', 'A', 'O', 'S'].includes(cat.id)).map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleFilterChange(cat.id)}
+                className="px-4 py-[6px] rounded-full font-body text-caption tracking-[0.02em] transition-all duration-150 border"
+                style={{
+                  backgroundColor: activeFilters.includes(cat.id) ? 'rgb(var(--soft-gold-rgb))' : 'transparent',
+                  color: activeFilters.includes(cat.id) ? 'rgb(var(--deep-navy-rgb))' : 'rgb(var(--slate-rgb))',
+                  borderColor: activeFilters.includes(cat.id) ? 'rgb(var(--soft-gold-rgb))' : 'rgb(var(--light-grey-rgb))',
                 }}
               >
                 {'emoji' in cat && cat.emoji ? `${cat.emoji} ` : ''}{cat.label}
               </button>
             ))}
+            {/* Browse all causes link */}
+            <button
+              onClick={() => setFilterSheetOpen(true)}
+              className="px-4 py-[6px] rounded-full font-body text-caption font-medium text-link-gold hover:text-deep-gold transition-colors border border-dashed border-light-grey"
+            >
+              Browse all →
+            </button>
             <div className="sm:ml-auto flex flex-wrap items-center gap-2">
               {/* Has a website */}
               <button
