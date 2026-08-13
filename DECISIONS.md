@@ -823,3 +823,43 @@ curl -s https://daanaa.org/api/stats | jq .
 - Overnight pipeline and core API path is explicit
 - Legacy code safely archived without cluttering active scripts/
 
+
+---
+
+## 2026-08-13 Evening: Task #2 Location Parsing - Known Limitation
+
+### Decision: Defer Bare City Name Recognition to Phase 2
+
+**Chose:** Accept current limitation; zip codes + state codes work, bare city names deferred
+
+**Why:**
+- Zip codes (e.g., "77007") fully functional ✅ — covers ~80% of use case
+- State codes (e.g., "TX", "CA") fully functional ✅
+- Bare city names (e.g., "Houston", "Austin") not recognized ❌ — deferred
+- Adding city name lookup requires reverse geocoding or city database
+- Time budget: ~5 hours until Task #5 deployment; city lookup not critical path
+- Users can use zip codes as workaround (already working)
+
+**What works now:**
+- ✅ "77007" (Houston zip code)
+- ✅ "TX" (state)
+- ✅ "Austin, TX" (city + state with comma)
+- ✅ "Austin TX" (city + state without comma)
+
+**What doesn't work:**
+- ❌ "Houston" (bare city name)
+- ❌ "houston" (lowercase city)
+- ❌ "Austin" (bare city name without state)
+
+**Implementation note:**
+Bare city names require either:
+1. US city database lookup (1000+ major cities)
+2. Reverse geocoding (find state from city name)
+3. User disambiguation (which state?)
+
+Properly implemented in Phase 2 after user research on frequency.
+
+**Backlog item:** Task #7 - Enhance location parsing to recognize major US cities
+
+**User impact:** Workaround exists (use zip code); not blocking launch
+
