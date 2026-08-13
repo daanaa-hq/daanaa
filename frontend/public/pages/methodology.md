@@ -156,8 +156,8 @@ We don't:
 **For Researchers:**
 - All data is from public sources (IRS, ProPublica)
 - Methodology is documented and auditable
-- We track methodology versions (all v5 assessments use the same logic)
-- Peer groups are reproducible (NTEE + band + region)
+- We track methodology versions (all v6 assessments use the same tiered peer financial context logic)
+- Peer groups are reproducible (NTEE2 + archetype + revenue band + region)
 
 ## Questions?
 
@@ -165,7 +165,7 @@ We don't:
 Use the "Report an error" tool on your organization page, or email hello@daanaa.org
 
 **About our methodology?**  
-Read the full technical documentation at [internal link: /research/methodology-v5]
+Read the full technical documentation at [internal link: /research/methodology-v6]
 
 **About giving decisions?**  
 See our guide: [/about/how-to-give](how-to-give) and [/about/faq](faq)
