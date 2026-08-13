@@ -42,6 +42,7 @@ import { normalizeExternalUrl } from '../utils/externalLink'
 import AtAGlance from '../components/AtAGlance'
 import ProvenanceLayers from '../components/ProvenanceLayers'
 import ExpenseBreakdown from '../components/ExpenseBreakdown'
+import FinancialTrends from '../components/FinancialTrends'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -877,6 +878,17 @@ export default function OrganizationDetail() {
           {apiOrg && (
             <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
               <ExpenseBreakdown org={apiOrg} />
+            </div>
+          )}
+
+          {/* Visibility Enhancement: Priority 6 — Financial Trends (2026-08-13)
+              Shows 5-year revenue history + growth trajectory.
+              CauseIQ feature: trend analysis signals stability/growth/decline.
+              Addresses donor question: "Is this org stable and growing?"
+              Stewardship P3 (evidence-based) + P4 (context for small orgs) */}
+          {apiOrg && (
+            <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
+              <FinancialTrends org={apiOrg} />
             </div>
           )}
 
