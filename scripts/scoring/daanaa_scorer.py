@@ -269,21 +269,19 @@ def main():
 
     # Write to database
     print(f"\n[v6.0] Writing tier assignments + percentiles...")
-    cursor.execute("""
-        ALTER TABLE registry_enriched ADD COLUMN scoring_tier TEXT DEFAULT NULL;
-    """)
-    cursor.execute("""
-        ALTER TABLE registry_enriched ADD COLUMN tier_label TEXT DEFAULT NULL;
-    """)
-    cursor.execute("""
-        ALTER TABLE registry_enriched ADD COLUMN peer_group_size INTEGER DEFAULT NULL;
-    """)
-    cursor.execute("""
-        ALTER TABLE registry_enriched ADD COLUMN peer_group_description TEXT DEFAULT NULL;
-    """)
-    cursor.execute("""
-        ALTER TABLE registry_enriched ADD COLUMN confidence TEXT DEFAULT NULL;
-    """)
+
+    # Idempotent column creation (check if exists first)
+    def add_column_if_not_exists(cursor, table, column, definition):
+        cursor.execute(f"PRAGMA table_info({table})")
+        columns = [row[1] for row in cursor.fetchall()]
+        if column not in columns:
+            cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+    add_column_if_not_exists(cursor, "registry_enriched", "scoring_tier", "TEXT DEFAULT NULL")
+    add_column_if_not_exists(cursor, "registry_enriched", "tier_label", "TEXT DEFAULT NULL")
+    add_column_if_not_exists(cursor, "registry_enriched", "peer_group_size", "INTEGER DEFAULT NULL")
+    add_column_if_not_exists(cursor, "registry_enriched", "peer_group_description", "TEXT DEFAULT NULL")
+    add_column_if_not_exists(cursor, "registry_enriched", "confidence", "TEXT DEFAULT NULL")
 
     for scoring_tier, peer_desc, size, scoreable, confidence, ein in updates:
         percentile, percentile_confidence, percentile_peer_count = percentile_data[ein]
