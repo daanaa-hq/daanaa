@@ -103,12 +103,18 @@ export interface ApiOrganization {
     };
     donor_explanation: string;
   } | null;
-  // NCCS governance data
+  // NCCS governance data — Visibility Enhancement: Priority 1
   board_size?: number | null;
   board_independent_count?: number | null;
   has_coi_policy?: number | null;
   has_whistleblower_policy?: number | null;
   has_doc_retention_policy?: number | null;
+  // Expense breakdown (IRS 990 Part I & IX) — Visibility Enhancement: Priority 2
+  program_expenses?: number | null;      // Direct program services
+  management_expenses?: number | null;   // Admin & general operations
+  fundraising_expenses?: number | null;  // Cost to acquire donors
+  total_functional_expenses?: number | null; // Sum of above three
+  program_expense_ratio?: number | null; // program_expenses as % of total
   nccs_program_ratio?: number | null;
   nccs_efficiency_score?: number | null;
   nccs_data_year?: number | null;

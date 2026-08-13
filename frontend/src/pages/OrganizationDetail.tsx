@@ -41,6 +41,7 @@ import DataContextNote from '../components/DataContextNote'
 import { normalizeExternalUrl } from '../utils/externalLink'
 import AtAGlance from '../components/AtAGlance'
 import ProvenanceLayers from '../components/ProvenanceLayers'
+import ExpenseBreakdown from '../components/ExpenseBreakdown'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -554,11 +555,12 @@ export default function OrganizationDetail() {
               </div>
 
               {/* Phase 1: Key Stats Summary — Decision-Grade Header Enhancement
-                  Shows revenue size, peer context, financial health at a glance
-                  before donor decides to give. No new data — all from existing fields. */}
+                  Shows revenue size, peer context, financial health, governance at a glance
+                  before donor decides to give. Expanded with Priority 1: Governance stats (board + staff).
+                  All from existing fields — no new data collection. */}
               {apiOrg && (
-                <div className="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-3 gap-4 pb-6 border-b border-white/10">
-                  {/* Org Size */}
+                <div className="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 pb-6 border-b border-white/10">
+                  {/* Org Size — Annual Revenue */}
                   {apiOrg.total_revenue !== undefined && apiOrg.total_revenue !== null && (
                     <div className="space-y-1">
                       <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Annual Revenue</p>
@@ -580,6 +582,31 @@ export default function OrganizationDetail() {
                       <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Financial Context</p>
                       <p className="font-display text-lead text-soft-gold font-semibold">
                         {apiOrg.scoring_tier.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Priority 1: Board Size + Independence */}
+                  {apiOrg.board_size !== undefined && apiOrg.board_size !== null && (
+                    <div className="space-y-1">
+                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Board</p>
+                      <p className="font-display text-lead text-soft-gold font-semibold">
+                        {apiOrg.board_size} members
+                      </p>
+                      {apiOrg.board_independent_count !== undefined && apiOrg.board_independent_count !== null && (
+                        <p className="font-body text-label text-muted-cream/70">
+                          {Math.round((apiOrg.board_independent_count / apiOrg.board_size) * 100)}% independent
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Priority 1: Staff Size */}
+                  {apiOrg.employee_count !== undefined && apiOrg.employee_count !== null && (
+                    <div className="space-y-1">
+                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Staff</p>
+                      <p className="font-display text-lead text-soft-gold font-semibold">
+                        {apiOrg.employee_count} {apiOrg.employee_count === 1 ? 'person' : 'people'}
                       </p>
                     </div>
                   )}
@@ -840,6 +867,16 @@ export default function OrganizationDetail() {
           {apiOrg && (
             <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
               <ProvenanceLayers org={apiOrg} />
+            </div>
+          )}
+
+          {/* Visibility Enhancement: Priority 2 — Expense Breakdown (2026-08-13)
+              Shows program vs admin vs fundraising expenses visually.
+              Addresses donor question: "Does my $ actually fund the mission?"
+              Stewardship P3 (evidence-based) + P5 (no shame language) */}
+          {apiOrg && (
+            <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
+              <ExpenseBreakdown org={apiOrg} />
             </div>
           )}
 
