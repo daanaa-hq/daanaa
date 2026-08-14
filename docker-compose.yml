@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  daanaa-api:
+    build: .
+    container_name: daanaa-phase1
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_PATH=/app/data/merit_registry.db
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - daanaa
+
+  nginx:
+    image: nginx:alpine
+    container_name: daanaa-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - daanaa-api
+    restart: unless-stopped
+    networks:
+      - daanaa
+
+networks:
+  daanaa:
+    driver: bridge

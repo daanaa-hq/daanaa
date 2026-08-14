@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,10 +19,15 @@ from urllib.parse import urlparse
 
 import requests
 
+# Reuse the canonical discovery safeguards rather than maintaining a second
+# robots or per-domain-rate-limit implementation.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from website_discovery_comprehensive import UA, _can_fetch, _domain_pause
+
 
 ROOT = Path(__file__).resolve().parents[2]
 DB_PATH = ROOT / "data" / "merit_registry.db"
-USER_AGENT = "DaanaaWebsiteValidator/2026-08-13 (+https://daanaa.org)"
+USER_AGENT = UA
 
 
 def now_iso() -> str:
@@ -48,7 +54,10 @@ def candidates(conn: sqlite3.Connection, limit: int | None) -> list[sqlite3.Row]
 
 
 def validate(url: str) -> tuple[str | None, int | None, str]:
+    if not _can_fetch(url):
+        return None, None, "robots_disallowed"
     try:
+        _domain_pause(url)
         response = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=12, allow_redirects=True, stream=True)
         response.close()
         return response.url, response.status_code, "live" if response.status_code < 400 else "http_error"

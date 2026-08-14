@@ -27,7 +27,10 @@ def run(rate: float, workers: int, limit: int | None, dry_run: bool) -> dict[str
     run_id = "irs_990n_live_validation_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     totals: dict[str, int | str] = {"run_id": run_id, "checked": 0, "live": 0, "unavailable": 0, "staged": 0}
     interval = 1 / rate
-    with sqlite3.connect(DB_PATH) as conn:
+    # Discovery runs alongside other staging pipelines. Wait for their short
+    # transactions instead of failing or competing for a database lock.
+    with sqlite3.connect(DB_PATH, timeout=30) as conn:
+        conn.execute("PRAGMA busy_timeout = 30000")
         rows = candidates(conn, limit)
 
         def record(row: sqlite3.Row, final_url: str | None, status_code: int | None, result: str) -> None:

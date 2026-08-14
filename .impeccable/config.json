@@ -52,6 +52,18 @@
         "value": "#ffffff",
         "createdAt": "2026-07-29T13:40:53.965Z",
         "reason": "Financial health data viz: healthy reserves background"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "80px",
+        "createdAt": "2026-08-14T19:35:00.000Z",
+        "reason": "Phase 1 intentional — org page hero headline"
+      },
+      {
+        "rule": "design-system-font-size",
+        "value": "28px",
+        "createdAt": "2026-08-14T19:35:15.000Z",
+        "reason": "Phase 1 intentional — org page section subtitle"
       }
     ]
   }

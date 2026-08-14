@@ -46,22 +46,28 @@ _DOMAIN_MIN_SPACING_S = 2.0
 
 
 def _can_fetch(url: str) -> bool:
-    """False if robots.txt disallows this URL for our UA. Fails open."""
+    """Return whether robots.txt allows a request, with bounded policy lookup."""
     try:
         parsed = urlparse(url)
         base = f"{parsed.scheme}://{parsed.netloc}"
         with _robots_lock:
-            if base not in _robots_cache:
-                rp = RobotFileParser()
-                rp.set_url(base + "/robots.txt")
-                try:
-                    rp.read()
-                except Exception:
-                    pass
-                _robots_cache[base] = rp
-        return _robots_cache[base].can_fetch(UA, url)
-    except Exception:
-        return True
+            cached = _robots_cache.get(base)
+        if cached is not None:
+            return cached.can_fetch(UA, url)
+
+        response = requests.get(
+            base + "/robots.txt", headers={"User-Agent": UA}, timeout=(3, 5)
+        )
+        if response.status_code != 200:
+            return False
+        rp = RobotFileParser()
+        rp.set_url(base + "/robots.txt")
+        rp.parse(response.text.splitlines())
+        with _robots_lock:
+            _robots_cache[base] = rp
+        return rp.can_fetch(UA, url)
+    except requests.RequestException:
+        return False
 
 
 def _domain_pause(url: str) -> None:
