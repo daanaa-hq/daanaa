@@ -2461,7 +2461,8 @@ def list_organizations():
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
                (r.website IS NOT NULL AND r.website != '') as has_website,
                r.scoring_tier, r.confidence, r.peer_group_description,
-               r.peer_group_size, r.is_inferred_v6, r.confidence_margin_v6
+               r.peer_group_size, r.is_inferred_v6, r.confidence_margin_v6,
+               r.merit_percentile_v6, r.merit_percentile_confidence_v6
         FROM registry_enriched r
         {fts_join_sql}WHERE {where_sql}
         {order_sql}
