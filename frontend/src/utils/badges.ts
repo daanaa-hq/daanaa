@@ -40,15 +40,26 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   // badge was rendering "Tax-deductible" directly under a banner saying
   // donations would NOT be tax-deductible. Caught by visual testing, not
   // code review -- the contradiction only shows up rendered.
-  const isRevoked = org.org_status === 'revoked' || org.irs_revoked === 1
-  if (!isRevoked) {
+  //
+  // BUG FIX 2026-08-15: this badge gated only on org_status/irs_revoked,
+  // never on org.tax_deductible itself — the actual computed signal.
+  // taxDeductibleToStatus() (utils/taxDeductible.ts, added 2026-08-09)
+  // already correctly maps tax_deductible === null/undefined to 'unknown'
+  // ("a genuine data gap must never render as reassuring" — see
+  // LESSONS.md 2026-08-09), and IrsEligibilityContext.tsx on this same
+  // page already renders "Tax status not available" for that case — but
+  // this badge kept showing the reassuring "Tax deductible" pill anyway
+  // for any non-revoked org, contradicting that box directly on screen.
+  // Found via a user-reported screenshot: a PTA org's page showed both
+  // "Tax deductible" (this badge) and "Tax status not available" (the
+  // detail box) at once. Only render this badge when tax_deductible is
+  // explicitly true — the one case that's actually verified.
+  if (org.tax_deductible === true) {
     badges.push({
       id: 'tax_deductible',
-      // Copy reworked 2026-08-08 (founder-approved). This block is only reached
-      // when the org is NOT revoked, and every listed org is IRS deductibility
-      // code 1, so the positive statement is the accurate one. The old fallback
-      // ("Tax status not verified") described a gap in our Pub 78 coverage but
-      // read as doubt about the nonprofit. Source cites what we actually hold.
+      // Copy reworked 2026-08-08 (founder-approved). Reached only when
+      // tax_deductible is explicitly true, so the positive statement is
+      // accurate — not merely "not known to be revoked."
       label: 'Tax deductible',
       detail: org.tax_deductible_checked_at
         ? `The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day. Last checked ${org.tax_deductible_checked_at}.`
