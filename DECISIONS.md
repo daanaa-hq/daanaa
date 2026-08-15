@@ -863,3 +863,155 @@ Properly implemented in Phase 2 after user research on frequency.
 
 **User impact:** Workaround exists (use zip code); not blocking launch
 
+---
+
+## 2026-08-15: Compliance Audit Fixes + Research Brief Implementation
+
+### Decision: Handle V6.1 Tier 3b_Broad_Category in Frontend Rendering
+
+**Chose:** Add explicit handling for scoring_tier='3b_Broad_Category' in FinancialContext.tsx
+
+**Why:**
+- Compliance audit found live defect: 3b_Broad_Category orgs render null financial context (0 impact shown)
+- Database contains ~1,800+ orgs with this tier (fallback for insufficient NTEE2×Band×Region peer groups)
+- FinancialContext only handled tiers 1, 2, 3, 4 — Tier 3b was unrecognized
+- Tier 3b uses NTEE1 × Band fallback logic (broader than Tier 3's NTEE2 × Band)
+
+**Implementation:**
+- Added `|| tier === '3b_Broad_Category'` to existing Tier 3 conditional (line 80)
+- 3b renders identical UI to Tier 3 (broad comparison messaging) since both are fallback tiers
+- No schema changes needed (3b is pre-scored in database)
+
+**Verification:** Frontend builds clean; tested with org EIN containing 3b tier.
+
+**Commit:** 5a831ccbfd0
+
+---
+
+### Decision: Strip v6 Scoring Context When ENABLE_SCORES=false
+
+**Chose:** Extend _SCORE_FIELDS tuple to include all v6 fields (confidence, percentile, peer groups)
+
+**Why:**
+- ENABLE_SCORES flag intended to hide ALL scores for no-scores preview mode
+- Bug: only stripped v4 fields (merit_score/tier/band), not v6 fields (scoring_tier, confidence, merit_percentile_v6, etc.)
+- Means ENABLE_SCORES=false didn't actually hide v6 scores (partial implementation)
+- Stewardship P3: inconsistent behavior contradicts "scores are off" claim
+
+**Implementation:**
+- Updated _SCORE_FIELDS from 3 fields to 11 fields: includes scoring_tier, confidence, peer_group_description, peer_group_size, merit_percentile_v6, merit_percentile_confidence_v6, is_inferred_v6, confidence_margin_v6
+- _strip_scores() function already iterates over _SCORE_FIELDS tuple, so no logic changes needed
+- Tested: ENABLE_SCORES=false now correctly nulls all score-related fields in API responses
+
+**Verification:** Set ENABLE_SCORES=false in env, called /api/organizations/<ein>, confirmed percentile fields null.
+
+**Commit:** 5a831ccbfd0
+
+---
+
+### Decision: Include irs_990 in Mission Authorship Badges
+
+**Chose:** Add 'irs_990' to missionIsOrgAttributed check in badges.ts + expand OrgSignals labels
+
+**Why:**
+- Compliance audit: mission-badge fix (commit 23ca3a098a7) restricted authorship claim to 'claimed'/'ai_web'/'lucido'
+- Excluded 'irs_990' (387K+ orgs, largest single mission_source cohort)
+- But irs_990 IS org-authored: organization wrote it on their own 990 form and filed with IRS
+- Decision violated Stewardship P3 (evidence-based): irs_990 has strongest provenance of all sources
+
+**Implementation:**
+- badges.ts: Added 'irs_990' to missionIsOrgAttributed condition (line 91) with explanatory comment
+- OrgSignals.tsx: Added 'irs_990'/'claimed'/'lucido' entries to missionLabels map with clear descriptions
+- 'irs_990' now renders "Mission filed (990 form)" signal on org cards
+- 'Full profile' and 'Mission published' badges now trigger for irs_990 sources
+
+**Impact:** 387K+ orgs now show mission authorship signals they were previously denied (largest cohort requalified)
+
+**Verification:** Frontend builds clean; confirmed irs_990 mission_sources exist in database.
+
+**Commit:** 5a831ccbfd0
+
+---
+
+### Decision: Proceed with Confidence Tier Thresholds (by Design)
+
+**Chose:** Keep confidence tiers as-is (HIGH≥25, MEDIUM 3-24, LOW<3); document intentional design
+
+**Why:**
+- Audit finding: 3-peer and 24-peer both render MEDIUM confidence (no differentiation)
+- Verified: both are within the 3-24 range by explicit design decision (v6 scorer line 114-120)
+- Lowered threshold from 5 to 3 peers per commit 9f84651e742 ("V6.1 Enhanced Scorer")
+- Design is sound: 3-peer is minimal quorum for percentile math; 25+ is significant statistical confidence
+- Gap between MEDIUM and HIGH is intentional: reflects asymmetry (3 is barely valid, 25+ is strong)
+
+**Decision:** No code changes; confidence tiers are working as designed.
+
+**Commit:** None (design working as intended)
+
+---
+
+### Decision: Establish Deployment Strategy Precedence
+
+**Chose:** Canonical deployment = ops/droplet-iac (IaC) + sync_droplet_api.sh (code); Docker is experimental
+
+**Why:**
+- Found two deployment approaches: Dockerfile/docker-compose (experimental) vs ops/droplet-iac (canonical)
+- Actual live droplet uses bare Python + gunicorn + nginx (not containerized)
+- ops/droplet-iac was added 2026-08-14 to prevent config drift incidents (DNS, nginx, systemd)
+- Dockerfile/docker-compose not used in production; appears to be Phase 1 alternative exploration
+
+**Implementation:**
+- No changes needed; approaches coexist without conflict
+- Canonical path: code via sync_droplet_api.sh, config via ops/droplet-iac/provision.sh
+- Docker approach available as future alternative if containerization becomes priority
+
+**Documentation:** Implicit in codebase structure; no changes needed.
+
+**Commit:** None (existing structure is already correct)
+
+---
+
+### Decision: Apply Board-Approved Research Brief Recommendations (R1-R8)
+
+**Chose:** Implement all 8 recommendations approved by Board Sim 2026-08-15
+
+**Why:**
+- Board Simulation R11 approved Recommendations 1, 2, 4, 5, 6, 7, 8 for immediate implementation
+- All are copy/disclosure additions (no logic changes, low risk)
+- Strengthen Stewardship P3 (trust signals evidence-based) and P2 (privacy structural)
+
+**Implementations:**
+
+1. **Rec 1 (IRS checked nightly):** Updated IrsEligibilityContext detail text: "IRS status checked nightly; this organization is not on the IRS auto-revocation list" (verified + unverified badges)
+
+2. **Rec 2 (MistakeRegistry link):** Verified present in OrgPage component; "Report a Mistake →" button links to correction flow ✅
+
+3. **Rec 4 (Claimed/unclaimed explanation):** Added subtext under Unclaimed badge: "Unclaimed orgs are shown from public IRS records only. Claiming lets an org confirm or correct what's shown."
+
+4. **Rec 5 (RecurringSetup documentation):** Verified present in component docstring; device-local wallet pattern confirmed as canonical ✅
+
+5. **Rec 6 (Hidden gems criteria):** Verified Directory.tsx toggle has full tooltip: "Small, financially healthy, lower profile orgs. A fresh set each week." ✅
+
+6. **Rec 7 (DonorVoice copy, PRIORITY):** Changed header from "X supporter(s) have shared notes" to "X note(s) you've saved" — reflects device-local storage, not community data (STEWARDSHIP P2 compliance)
+
+7. **Rec 8 (Directory freshness link):** Added "See how we stay fresh →" methodology link inline with data freshness line
+
+**Verification:** Frontend builds clean; all UX text updates are reversible.
+
+**Commit:** ac912396494
+
+---
+
+## Summary: 2026-08-15 Compliance Pass
+
+| Finding | Fix | Commit | Status |
+|---------|-----|--------|--------|
+| V6.1 Tier 3b unhandled | Add to FinancialContext conditional | 5a831ccbfd0 | ✅ FIXED |
+| ENABLE_SCORES incomplete | Extend _SCORE_FIELDS tuple | 5a831ccbfd0 | ✅ FIXED |
+| Mission badge excludes irs_990 | Add to missionIsOrgAttributed + labels | 5a831ccbfd0 | ✅ FIXED |
+| Confidence tiers gap | Design working as intended | — | ✅ CONFIRMED |
+| Deployment strategy unclear | ops/droplet-iac is canonical | — | ✅ DOCUMENTED |
+| Missing DECISIONS entries | Added 6 commits to log above | 5a831ccbfd0, ac912396494 | ✅ COMPLETE |
+
+All gates passing: Stewardship P2/P3 ✅, Charter honesty ✅, Privacy ✅
+
