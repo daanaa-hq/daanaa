@@ -472,6 +472,18 @@ export default function OrganizationDetail() {
   // fallback both need these links (was called twice). Lean: no repeated work.
   const actionLinks = getActionRowLinks(apiOrg!)
 
+  // FinancialContext already shows "Reserves" (the months_of_reserve figure)
+  // for Tier 1/2 orgs, in its own peer-comparison framing. Showing the same
+  // number again, plainly, in the Financial Snapshot grid below adds no new
+  // information for those orgs (Bug Pattern 2 -- verified live on EIN
+  // 391214392, scoring_tier 1_Full_Context, months_of_reserve 3.44: both
+  // cards rendered identically). For Tier 3/4/unscored orgs, FinancialContext
+  // never shows reserves, so the snapshot card remains the only place this
+  // fact appears and stays as-is.
+  const reserveShownByFinancialContext =
+    apiOrg!.scoring_tier === '1_Full_Context' || apiOrg!.scoring_tier === '2_Regional_Context'
+  const showReserveSnapshotCard = apiOrg!.months_of_reserve !== null && !reserveShownByFinancialContext
+
   return (
     <div className="min-h-[100dvh]">
       {/* E7: Print stylesheet — hides chrome, keeps org content */}
@@ -905,28 +917,28 @@ export default function OrganizationDetail() {
           )}
 
           {/* Key financial metrics — supporting data after peer comparison */}
-          {(apiOrg!.months_of_reserve !== null || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
+          {(showReserveSnapshotCard || apiOrg!.net_assets !== null || apiOrg!.total_expenses !== null) && (
             <div className="mb-16">
               <h3 className="font-display italic text-deep-navy text-title-sm mb-6">Financial snapshot</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {apiOrg!.months_of_reserve !== null && (
+              {showReserveSnapshotCard && (
                 <div
                   className="rounded-xl p-5 border"
-                  style={apiOrg!.months_of_reserve < 0
+                  style={apiOrg!.months_of_reserve! < 0
                     ? { backgroundColor: 'rgba(139,26,26,0.05)', borderColor: 'rgba(139,26,26,0.20)' }
-                    : apiOrg!.months_of_reserve < 3
+                    : apiOrg!.months_of_reserve! < 3
                     ? { backgroundColor: '#FFFBF0', borderColor: '#FDE68A' }
                     : { backgroundColor: '#FFFFFF', borderColor: '#E5E0DB' }}
                 >
                   <span className="block font-body text-micro tracking-[0.07em] text-cool-grey uppercase font-medium mb-1">Months of reserve</span>
                   <span
                     className="block font-body text-headline font-semibold tracking-[-0.02em]"
-                    style={{ color: apiOrg!.months_of_reserve < 0 ? '#8B1A1A' : apiOrg!.months_of_reserve < 3 ? '#92400E' : '#0A1628' }}
+                    style={{ color: apiOrg!.months_of_reserve! < 0 ? '#8B1A1A' : apiOrg!.months_of_reserve! < 3 ? '#92400E' : '#0A1628' }}
                   >
                     {apiOrg!.months_of_reserve! > 999 ? '999+' : apiOrg!.months_of_reserve! < 0 ? `(${Math.round(Math.abs(apiOrg!.months_of_reserve!))})` : Math.round(apiOrg!.months_of_reserve!)}
                   </span>
                   <span className="font-body text-label text-cool-grey">
-                    {apiOrg!.months_of_reserve < 0
+                    {apiOrg!.months_of_reserve! < 0
                       ? 'net assets negative'
                       : 'net assets ÷ monthly costs'}
                   </span>
