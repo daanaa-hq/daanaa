@@ -150,6 +150,15 @@ def org_to_dict(row):
         except Exception:
             cohort = None
     d['cohort_context'] = cohort
+
+    # V6.1 tiered peer financial context (percentile-based with confidence levels)
+    # Added 2026-08-15 to precompute org details. V6 fields are:
+    # row[56] = merit_percentile_v6, row[57] = merit_percentile_confidence_v6,
+    # row[58] = merit_peer_count_v6_scoreable
+    d['merit_percentile_v6'] = row[56] if len(row) > 56 else None
+    d['merit_percentile_confidence_v6'] = row[57] if len(row) > 57 else None
+    d['merit_peer_count_v6_scoreable'] = row[58] if len(row) > 58 else None
+
     return d
 
 
@@ -250,7 +259,8 @@ def main():
             merit_peer_count_v5, is_hidden_gem,
             donate_url, donate_url_status, donate_confidence, donate_platform,
             volunteer_url,
-            deductibility, irs_revoked
+            deductibility, irs_revoked,
+            merit_percentile_v6, merit_percentile_confidence_v6, merit_peer_count_v6_scoreable
         FROM registry_enriched
         WHERE EIN IS NOT NULL AND deductibility = 1 AND org_status = 'active'
         ORDER BY EIN
