@@ -6,6 +6,32 @@
 
 ---
 
+## 2026-08-15: Org-Detail Latency Fix — Two Pre-Existing Query Bugs (Not a Deployment Regression)
+
+**Issue:** During V6.1 precompute deployment verification, org-detail endpoint (`GET /api/organizations/<ein>`) appeared to regress from ~50-100ms to 3.3-9+ seconds. Initial hypothesis (precompute v1→v2 swap, droplet resize side-effects) was wrong — rolling back to `v1` did not fix it, which led to deeper investigation.
+
+**Root cause (two separate bugs, both pre-existing, unrelated to today's precompute/resize work):**
+
+1. **`_find_similar_orgs()`** (droplet_api.py:4907): `ORDER BY ABS(computed_expression)` cannot use an index for sorting. Vector-similarity fast path has been disabled for a while (embeddings loading commented out, 6 occurrences), so every request fell through to this SQL fallback. For large NTEE1 categories (X/religious=299,317 rows, B/education=221,067, P/human-services=181,818), this forced a full scan + TEMP B-TREE sort of the entire category — 1.0-1.2s per query.
+
+2. **Category-rank computation**: `WHERE NTEECC = ? AND revenue_band = ?` (tier-1 similar-orgs fallback) had **no supporting index at all** — full table scan (`SCAN registry_enriched`) of 2.06M rows. Separately, `WHERE NTEE1 = ? AND total_revenue > ?` (category rank/state-rank, shown to donors as "ranked #X of Y") could only use the NTEE1 portion of `idx_ntee1`, checking `total_revenue` row-by-row.
+
+**How found:** cProfile on a fresh, isolated Python process (Flask test_client, bypassing gunicorn/network) reproduced the slowness deterministically — ruled out transient worker state, disk I/O, memory pressure, network/DNS/Sentry, and request queueing (all individually verified fast/idle). A control test (different org, empty NTEE1 category, 86ms) confirmed the issue was category-specific, not systemic. My own test org all session (Torah Foundation, the Charter #7 zero-revenue case) happened to sit in NTEE1='X', the single largest category — making a narrow pre-existing bug look like a universal regression.
+
+**Fix (two parts):**
+1. **Query fix** (droplet_api.py, commit 3ea21d53371): Wrap `_find_similar_orgs`'s indexed WHERE-filter in an inner subquery with `LIMIT 2000` before the join+sort, bounding the sort to 2000 candidates instead of the full category. Affects only the "similar organizations" sidebar — not scoring, percentiles, or any trust signal, so a slight selection-bias tradeoff (index-scan order, not random) is acceptable.
+2. **Index fix** (migrations/022_org_detail_perf_indexes.sql): Added `idx_nteecc_band`, `idx_ntee1_band`, `idx_ntee1_revenue`, `idx_state_ntee1_revenue`. The category-rank numbers (`category_rank`/`category_total`) are factual claims shown to donors — could NOT be approximated with a LIMIT-based sample without producing a wrong number (Stewardship P3 violation). A real index was the only correct fix.
+
+**Verified:** EIN 391644738 (worst case, NTEE1='X'): 3.3-3.5s → 74-82ms (~44x). EIN 941156476: 1,454ms → 26-31ms (~52x). Content correctness confirmed identical (same category_rank/category_total, same similar_organizations count). Search, health, homepage all verified working.
+
+**Process note:** Escalated to Codex for peer review (parallel diagnosis task + a focused peer-review task) but both ran long without returning results within a reasonable window (~20+ min). Given governance's escalation guidance ("if wait exceeds ~20 minutes, consider implementing directly"), implemented and verified the fix independently, then continued monitoring for Codex's findings to reconcile afterward.
+
+**Governance:** Backend performance fix, reversible (indexes can be dropped, query change is a single commit revert), smoke-tested with before/after timing on multiple orgs plus content-correctness checks. No public claims, scoring methodology, or trust signals changed — falls under CLAUDE.md's autonomous backend-deploy authority.
+
+**Confidence:** HIGH — reproduced deterministically via profiling (not guesswork), root cause confirmed via EXPLAIN QUERY PLAN before/after, fix verified with real before/after timing across multiple orgs and categories.
+
+---
+
 ## 2026-08-15: Charter #7 Confidence Labeling Fix (Governance-Driven)
 
 **Issue:** 10,522 organizations with zero/null revenue were displaying HIGH confidence to donors, violating Charter Promise #7 ("Where our data is thin, we say 'we don't know enough'") and Stewardship Principle P3 ("Trust signals must be evidence-based and honestly stated").

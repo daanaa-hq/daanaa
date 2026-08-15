@@ -4,6 +4,18 @@
 
 ---
 
+## 2026-08-15: "It's Slow After My Deploy" ≠ "My Deploy Caused It" — Don't Rollback Before Isolating
+
+**Symptom:** After deploying V6.1 precompute (v1→v2 swap) to production, org-detail endpoint response time jumped from ~50-100ms to 3.3-9+ seconds. Rolled back to v1 immediately, suspecting the swap. Latency was identical after rollback — the real cause was two pre-existing, unrelated SQL query bugs (`_find_similar_orgs` unindexed ORDER BY on a computed expression; category-rank COUNT queries with no supporting composite index), both hitting hardest on the *specific test org* used all session, which happened to sit in the single largest NTEE1 category (299K rows). A control test with a different org (86ms) would have shown this was category-specific, not deployment-wide, in under a minute — instead ~40 minutes were spent chasing disk I/O, memory pressure, DigitalOcean throttling, Sentry, and DNS before profiling (cProfile on an isolated Flask test_client call) pinpointed the actual queries.
+
+**Root cause of the wasted time:** Correlation-vs-causation — the timing of "deployed X, then noticed Y is slow" felt like strong evidence X caused Y, so the investigation started by re-litigating X (the precompute swap) instead of first testing whether Y reproduces independently of X. A rollback was executed before a single control request (different EIN, different org) was tried.
+
+**Preventing rule:**
+
+> Before rolling back a suspected deploy, run ONE cheap control test: repeat the same failing request against different input (different org, different endpoint, different user) to check if the failure is universal or input-specific. If it's input-specific, the deploy is very unlikely to be the cause — a code-level bug in the query/handler for that specific input is far more likely, and profiling (cProfile, EXPLAIN QUERY PLAN) will find it faster than infrastructure-level guessing (disk, memory, network) ever will. Rollback is for confirmed regressions, not first-response to "something's slow now."
+
+---
+
 ## 2026-08-12: daanaa-api Crash Loop — Root Cause and Fix
 
 **Symptom:** During the Phase 1-4 deploy (see the incident below), `daanaa-api.service` was found with a restart counter already at 1198 — far more restarts than any deploy or known event that night could explain. Every `systemctl restart daanaa-api`, including the one inside the deploy's own atomic swap, silently failed to bind to port 5000 and got killed by systemd, while an old gunicorn master from hours earlier kept serving stale data. The site never returned an error to users, so nothing alerted on it — it just quietly stopped picking up any change that required a restart.
