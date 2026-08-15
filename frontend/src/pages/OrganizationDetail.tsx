@@ -830,13 +830,16 @@ export default function OrganizationDetail() {
                     Claimed
                   </span>
                 ) : (
-                  <Link
-                    to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
-                    title="Is this your nonprofit? Claim your page free."
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-muted-cream/40 text-muted-cream hover:border-soft-gold/60 hover:text-soft-gold font-body text-label transition-colors"
-                  >
-                    Unclaimed
-                  </Link>
+                  <div className="flex flex-col gap-1">
+                    <Link
+                      to={`/for-nonprofits?ein=${apiOrg!.EIN}`}
+                      title="Is this your nonprofit? Claim your page free."
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-muted-cream/40 text-muted-cream hover:border-soft-gold/60 hover:text-soft-gold font-body text-label transition-colors w-fit"
+                    >
+                      Unclaimed
+                    </Link>
+                    <p className="text-xs text-muted-cream">Unclaimed orgs are shown from public IRS records only. Claiming lets an org confirm or correct what's shown.</p>
+                  </div>
                 )}
               </div>
               <Link

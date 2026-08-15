@@ -68,8 +68,8 @@ export const IrsEligibilityDetail: React.FC<{
   const defaultExplanations = {
     // Plain language, sourced and dated. We say what IRS records show and when
     // we last checked, not what will happen on the donor's own tax return.
-    verified: 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
-    unverified: 'The IRS lists donations to this nonprofit as tax deductible. We check the IRS revocation list every day.',
+    verified: 'The IRS lists donations to this nonprofit as tax deductible. IRS status checked nightly; this organization is not on the IRS auto-revocation list.',
+    unverified: 'The IRS lists donations to this nonprofit as tax deductible. IRS status checked nightly; this organization is not on the IRS auto-revocation list.',
     revoked: 'Do not assume a contribution is tax deductible without confirming the current IRS status.',
     unknown: 'We do not have current IRS deductibility data for this organization. Confirm directly with the organization or IRS before assuming a contribution is tax deductible.',
     exception_possible: 'Some eligible churches and group-ruling subordinates may not appear in Publication 78. Confirm directly with the organization or IRS.',

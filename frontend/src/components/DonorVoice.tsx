@@ -84,7 +84,7 @@ export default function DonorVoice({
           <p className="font-body text-caption text-cool-grey">
             {notes.length === 0
               ? 'Be the first to share'
-              : `${notes.length} supporter${notes.length === 1 ? '' : 's'} have shared notes`}
+              : `${notes.length} note${notes.length === 1 ? '' : 's'} you've saved`}
           </p>
         </div>
         {canLeaveNote && !showForm && (

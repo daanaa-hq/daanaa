@@ -985,6 +985,7 @@ export default function Directory() {
                       {statsData?.irs_status_verified_at && (
                         <> · IRS status checked {new Date(statsData.irs_status_verified_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</>
                       )}
+                      · <a href="/methodology" className="text-primary-blue hover:underline">See how we stay fresh →</a>
                     </p>
                   )}
 
