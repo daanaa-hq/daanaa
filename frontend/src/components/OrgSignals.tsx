@@ -7,8 +7,9 @@ interface OrgSignalsProps {
   cause_tags?: string[] | null
   latest_tax_year?: number | null
   total_revenue?: number | null
-  irs_eligibility_status?: string | null
-  irs_eligibility_explanation?: string | null
+  org_status?: string | null
+  irs_revoked?: number | null
+  tax_deductible?: boolean | null
 }
 
 export default function OrgSignals({
@@ -18,23 +19,32 @@ export default function OrgSignals({
   cause_tags,
   latest_tax_year,
   total_revenue,
-  irs_eligibility_status,
-  irs_eligibility_explanation,
+  org_status,
+  irs_revoked,
+  tax_deductible,
 }: OrgSignalsProps) {
   const signals: { icon: string; label: string; title: string }[] = []
 
   // Signal 0: IRS Tax Status (highest priority)
-  if (irs_eligibility_status === 'revoked') {
+  //
+  // BUG FIX 2026-08-15: previously read org.irs_eligibility_status, a field
+  // whose source DB columns were dropped ~2026-08-01 (see utils/taxDeductible.ts) —
+  // every read silently returned 'unknown', so this signal never fired for
+  // ANY org, including genuinely revoked ones. The "Revoked by IRS" warning
+  // silently never appeared on search-result cards. Rewired to the same
+  // fields AnswerCard.tsx and taxDeductibleToStatus() already use correctly.
+  const isRevoked = org_status === 'revoked' || irs_revoked === 1
+  if (isRevoked) {
     signals.push({
       icon: '⚠️',
       label: 'Revoked by IRS',
-      title: irs_eligibility_explanation || 'This organization is not currently eligible for tax-deductible donations'
+      title: 'IRS records show this organization\'s tax-exempt status was automatically revoked'
     })
-  } else if (irs_eligibility_status === 'eligible' || irs_eligibility_status === 'verified') {
+  } else if (tax_deductible === true) {
     signals.push({
       icon: '✅',
       label: 'IRS Eligible',
-      title: irs_eligibility_explanation || 'IRS records indicate this organization is eligible for tax-deductible donations'
+      title: 'IRS records indicate this organization is eligible for tax-deductible donations'
     })
   }
 

@@ -362,8 +362,9 @@ export default function OrgCard({ org, compact = false, isInFunding: propInFundi
             cause_tags={apiOrg.cause_tags}
             latest_tax_year={apiOrg.latest_tax_year}
             total_revenue={apiOrg.total_revenue}
-            irs_eligibility_status={apiOrg.irs_eligibility_status}
-            irs_eligibility_explanation={apiOrg.irs_eligibility_explanation}
+            org_status={apiOrg.org_status}
+            irs_revoked={apiOrg.irs_revoked}
+            tax_deductible={apiOrg.tax_deductible}
           />
         </div>
       )}
