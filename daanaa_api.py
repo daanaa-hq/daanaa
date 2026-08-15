@@ -963,7 +963,7 @@ ENABLE_EVENT_DISCOVERY: bool = os.environ.get("ENABLE_EVENT_DISCOVERY", "false")
 # Default: false. Enable after claiming system + intent/discovery stabilize.
 ENABLE_PROFILE_CONTEXTS: bool = os.environ.get("ENABLE_PROFILE_CONTEXTS", "false").lower() == "true"
 
-_SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
+_SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band", "scoring_tier", "confidence", "peer_group_description", "peer_group_size", "merit_percentile_v6", "merit_percentile_confidence_v6", "is_inferred_v6", "confidence_margin_v6")
 _V4_FIELDS = ("financial_health", "operating_model", "revenue_band", "peer_cell_size")
 
 # Legal posture (2026-06-10): Daanaa is a discovery platform, not a fundraising

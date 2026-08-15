@@ -88,7 +88,9 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   // or unset — asserting "this organization publishes its mission" in that
   // case would be an unverified claim stated as fact (Stewardship P3). When
   // provenance doesn't support authorship, we say nothing rather than guess.
-  const missionIsOrgAttributed = org.mission_source === 'claimed' || org.mission_source === 'ai_web' || org.mission_source === 'lucido'
+  // Authorship claim requires org-authored or org-filed source. irs_990 is org-authored
+  // because the organization filed it with the IRS (they wrote it on their 990 form).
+  const missionIsOrgAttributed = org.mission_source === 'claimed' || org.mission_source === 'ai_web' || org.mission_source === 'lucido' || org.mission_source === 'irs_990'
 
   if (missionIsOrgAttributed && org.has_website) {
     badges.push({

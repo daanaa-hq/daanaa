@@ -54,6 +54,9 @@ export default function OrgSignals({
       'ai_web': 'Mission documented',
       'ai_generated': 'Mission described',
       'scraped': 'Mission public',
+      'irs_990': 'Mission filed (990 form)',
+      'claimed': 'Mission confirmed',
+      'lucido': 'Mission documented',
     }
     if (missionLabels[mission_source]) {
       signals.push({

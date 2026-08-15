@@ -77,7 +77,7 @@ export default function FinancialContext({ org }: FinancialContextProps) {
     )
   }
 
-  if (tier === '3_Broad_Category') {
+  if (tier === '3_Broad_Category' || tier === '3b_Broad_Category') {
     return (
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 mb-8">
         <h2 className="text-lg font-semibold mb-3">Peer context (broader comparison)</h2>
