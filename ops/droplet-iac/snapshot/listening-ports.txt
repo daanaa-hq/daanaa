@@ -1,0 +1,23 @@
+# Captured 2026-08-14 via `ss -tlnp`
+
+State  Local Address:Port   Process
+LISTEN 127.0.0.53%lo:53     systemd-resolved (local DNS stub, normal)
+LISTEN 127.0.0.54:53        systemd-resolved (local DNS stub, normal)
+LISTEN 0.0.0.0:22           sshd
+LISTEN [::]:22              sshd
+LISTEN 127.0.0.1:5001       sshd (likely a forwarded/local tunnel port, not app-related)
+LISTEN 127.0.0.1:5000       gunicorn x4 workers  <- nginx proxies here, correct
+LISTEN 0.0.0.0:8880         gunicorn x4 workers  <- DIRECT, no TLS, no nginx, see finding #3
+LISTEN 0.0.0.0:80           nginx x3 workers
+LISTEN [::]:80              nginx x3 workers
+LISTEN 0.0.0.0:443          nginx x3 workers
+LISTEN [::]:443             nginx x3 workers
+
+# The 0.0.0.0:8880 bind comes straight from the systemd unit's
+# ExecStart: "-b 127.0.0.1:5000 -b 0.0.0.0:8880" -- gunicorn is told to
+# listen on both. Likely intended as a debug/back-door port at some point
+# in the deploy's history; nothing in the nginx config or docs references
+# 8880. Flagged, not removed (changing the systemd unit's bind list is a
+# live change, out of scope for this read-only recon; the canonical IaC
+# unit in files/systemd/daanaa-api.service drops the 0.0.0.0:8880 bind --
+# see README "Deviations from the live snapshot").

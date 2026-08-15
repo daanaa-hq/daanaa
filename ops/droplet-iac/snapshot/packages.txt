@@ -1,0 +1,18 @@
+# Captured 2026-08-14 via `dpkg -l` (filtered) and version flags
+
+OS:        Ubuntu 24.04.4 LTS (kernel 6.8.0-137-generic)
+nginx:     1.24.0-2ubuntu7.15           (dpkg: nginx, nginx-common)
+certbot:   2.9.0-1                      (dpkg: certbot, python3-certbot)
+python3:   3.12.3-1ubuntu0.15           (dpkg: python3.12, python3.12-dev,
+                                          python3.12-minimal, python3.12-venv,
+                                          libpython3.12*)
+gunicorn:  26.0.0                       (inside /opt/daanaa/venv, not a
+                                          system package — installed via pip
+                                          into the project venv)
+
+certbot mode: webroot (authenticator = webroot, webroot_path = /var/www/acme)
+              — NOT the nginx plugin, so certbot never auto-edits nginx
+              config on renewal. Renewal runs via certbot.timer (systemd),
+              next scheduled 2026-08-15 10:05 UTC. The legacy
+              /etc/cron.d/certbot entry is present but self-disables under
+              systemd (by its own script logic).

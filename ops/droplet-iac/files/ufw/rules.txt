@@ -1,0 +1,20 @@
+# Canonical ufw rule set for the Daanaa droplet.
+# Applied only by provision.sh --enable-firewall (opt-in, see README —
+# ufw is currently INACTIVE on the live droplet, see snapshot finding #3).
+#
+# Format: one rule per line, "<port>/<proto> <comment>". Parsed by
+# provision.sh's firewall_apply(). Keep in sync with what's actually
+# needed — every open port here is attack surface.
+
+22/tcp   SSH management
+80/tcp   HTTP (ACME challenge + redirect surface via nginx)
+443/tcp  HTTPS (nginx, TLS termination)
+
+# Deliberately NOT listed: 8880/tcp. The live droplet has gunicorn bound
+# directly to 0.0.0.0:8880 (snapshot finding #3) with no firewall rule
+# covering it (ufw is off entirely, so it doesn't matter yet, but the
+# moment ufw is enabled without a rule for it, ufw's default-deny would
+# close 8880 -- which is the correct outcome for a port nothing legitimate
+# should be hitting directly). If 8880 turns out to be needed for something
+# (verify with app owner before assuming it's dead), add it here explicitly
+# with a comment explaining why, not implicitly by leaving ufw off.

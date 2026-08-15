@@ -303,3 +303,19 @@ taxDeductibleToStatus(tax_deductible)
 
 > Don't confuse "incomplete feature" with "broken feature." If 80% of use cases work and users have a workaround (use zip code instead of city name), defer the remaining 20% to Phase 2. Document it clearly so it's not discovered by users as a surprise. Trade-off between launch speed and feature completeness is valid when both options are documented and intentional.
 
+
+---
+
+## 2026-08-15: DAANAA_PROD Fix Caused a Live Outage — Applied a Correct Diagnosis Without Checking Why the Wrong Value Was There
+
+**Symptom:** Codex's infra-as-code recon correctly found that `DAANAA_PROD=` (blank) in the droplet's systemd env-override was silently disabling HSTS and injecting a dev-only `connect-src http://localhost:5000` into the live production CSP header — verified directly via `curl -I` against the real endpoint. The diagnosis was right. Applying the fix (removing the blank override, letting the base unit's `DAANAA_PROD=1` take effect) crashed every gunicorn worker within seconds and took the site down for ~45 seconds before rollback.
+
+**Root cause:** `droplet_api.py` has a deliberate startup guard: if `DAANAA_PROD` is truthy, it refuses to boot unless `DAANAA_CLAIM_SECRET` or `DAANAA_ADMIN_KEY` is also configured — specifically to stop production running with a dev-default secret. Neither secret exists anywhere on this droplet. Someone had almost certainly blanked `DAANAA_PROD` on purpose, as a workaround to keep the service booting without those secrets set — trading away HSTS/CSP hardening for uptime. The bug report was accurate about the *symptom* (missing headers) but the "fix" ignored *why the drift existed*, which turned out to be load-bearing.
+
+A second near-miss in the same incident: the same recon flagged `DB_PATH` in that override as pointing at a nonexistent file and recommended dropping it. That was true at recon time, but a V6.1 database sync had landed at that exact path later the same session — the path was real and load-bearing by the time the fix was applied. Caught only because the org-detail endpoint was independently smoke-tested against production before the DB_PATH claim was trusted.
+
+**Fix applied:** Rolled back to the last-known-good env-override within under a minute of the crash loop starting (backup copy was taken before the change, per `provision.sh`'s convention — this is what made the fast rollback possible at all). Site fully recovered: homepage 200, org-detail with percentiles, search 200. The underlying CSP/HSTS gap is still live and documented as a scoped follow-up (generate a secret, deploy it, verify, only then re-enable `DAANAA_PROD`, each step independently smoke-tested) — not reattempted same-session after a fresh outage.
+
+**Preventing rule:**
+
+> A config value that looks wrong was often set wrong *on purpose*, as a workaround for a constraint that isn't visible from the diff alone. Before "fixing" a drifted value — env var, config flag, disabled check — grep the codebase for what reads it and what happens on every branch, not just the branch that explains the symptom you're chasing. If the fix removes a value, confirm nothing downstream requires it (`DB_PATH` here) as rigorously as you confirmed the bug (`DAANAA_PROD` here). And: the dry-run tooling built specifically to catch this class of failure (`provision.sh`'s dry-run mode, built the same session) has to actually get used — building the safety net and then hand-rolling the deploy around it defeats the purpose.

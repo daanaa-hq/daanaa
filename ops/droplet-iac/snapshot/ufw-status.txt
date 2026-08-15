@@ -1,0 +1,10 @@
+# Captured 2026-08-14 via `ufw status verbose`
+Status: inactive
+
+# No rules configured, firewall not enabled. Package is present
+# (ufw ships with Ubuntu server images) but was never turned on.
+# See finding #3 in SNAPSHOT_2026-08-14.md — gunicorn is directly
+# reachable on 0.0.0.0:8880 with no firewall in front of it.
+# DigitalOcean's cloud-level firewall (if any) is not visible from
+# inside the droplet and was not checked as part of this recon
+# (would require DO dashboard/API access, out of scope for read-only SSH).

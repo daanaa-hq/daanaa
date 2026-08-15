@@ -1,0 +1,33 @@
+# Captured 2026-08-14
+
+/opt/daanaa/ (total ~271MB excluding venv/frontend/dist):
+  .frontend_sha              40ebd20a0f6fb27dfcb0665e9427fad580a08c4b
+  __pycache__/
+  daanaa_api.py              534223 bytes, uid 1000, mtime Aug 14 22:22  (stray, see finding #5)
+  droplet_api.py              515280 bytes, root,    mtime Aug 13 18:26  (service entrypoint)
+  droplet_api.py.prev         110155 bytes, root,    mtime Aug 12 04:22  (rollback copy)
+  merit_registry.db        276750336 bytes, uid 1000, mtime Aug  8 05:50  (present but not the DB_PATH target, see finding #1)
+  frontend/
+    dist/                    uid 1000, drwxrwxr-x    mtime Aug 13 13:41  (live build, FRONTEND_DIR)
+    dist.prev/               root,     drwxr-xr-x    mtime Aug  8 21:42  (rollback copy)
+  data/                       root, drwxrwxrwx (777 -- world-writable, see finding #5)
+    analytics/
+    backups/
+    claims/                   CLAIMS_DIR
+    precompute/
+      v0/                     uid 1000
+      v1/                     uid 1000  -- PRECOMPUTE_DIR (live), 9.5GB:
+        browse/
+        content/
+        orgs/
+        ein_map.json.gz
+        faiss_index.bin
+        search.db
+  logs/                       access.log, error.log, warm.log
+  scripts/
+  staging/
+  venv/                       python3.12, gunicorn 26.0.0
+  warm_cache.sh                774 bytes, executable, root
+
+# /data/precompute/ only has v0 and v1 -- v2 (referenced by a stale
+# systemd .bak file) does not exist. See finding #2.

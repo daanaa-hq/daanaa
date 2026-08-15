@@ -1,0 +1,27 @@
+# Captured 2026-08-14
+# File: /etc/systemd/system/daanaa-api.service.d/env-override.conf
+# mtime: Aug 14 05:58 UTC — i.e. ~9 hours before this recon. Current, live.
+#
+# This is a drop-in for daanaa-api.service. systemd drop-ins REPLACE
+# same-key Environment= entries from the base unit — they do not merge.
+# See finding #1 in SNAPSHOT_2026-08-14.md.
+
+[Service]
+Environment="DAANAA_PROD="
+Environment="DB_PATH=/opt/daanaa/data/merit_registry.db"
+Environment="FLASK_ENV=production"
+
+# Problems found:
+# 1. DAANAA_PROD= is empty, silently overriding the base unit's
+#    DAANAA_PROD=1 -- if droplet_api.py branches on this the same way
+#    daanaa_api.py does (per CLAUDE.md: "DAANAA_PROD env flag: enables
+#    HTTPS-only CSP and HSTS headers; absent in dev"), production is
+#    currently missing those headers.
+# 2. DB_PATH points to /opt/daanaa/data/merit_registry.db -- no file
+#    exists there. The real DB is at /opt/daanaa/merit_registry.db
+#    (one directory up). /opt/daanaa/data/ only has analytics/, backups/,
+#    claims/, precompute/.
+#
+# Not fixed here (read-only recon, no live changes). Flagged for the
+# droplet_api.py owner to verify whether either variable is actually read
+# at runtime, and correct the drop-in if so.

@@ -1,0 +1,42 @@
+# /etc/systemd/system/daanaa-api.service
+# Pinned from the live, currently-enabled unit on 107.170.26.8 (2026-08-14) —
+# see ../../snapshot/systemd-unit.txt for the exact source and the two
+# stale .bak files this deliberately does NOT copy (one references a
+# precompute version, v2, that doesn't exist on disk — see snapshot
+# finding #2).
+#
+# ONE INTENTIONAL DEVIATION FROM THE LIVE UNIT: the live ExecStart binds
+# gunicorn to BOTH 127.0.0.1:5000 (correct, nginx-only) AND 0.0.0.0:8880
+# (all interfaces, no TLS, no nginx in front — see snapshot finding #3).
+# Nothing in nginx or the docs references 8880; this looks unintentional.
+# This canonical unit drops the 0.0.0.0:8880 bind. Applying this to the
+# live droplet is a live behavior change (closes a currently-open port) —
+# flag it for review before applying, don't apply silently.
+[Unit]
+Description=Daanaa droplet API (static precompute)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/daanaa
+Environment="PRECOMPUTE_DIR=/data/precompute/v1"
+Environment="CLAIMS_DIR=/data/claims"
+Environment="FRONTEND_DIR=/opt/daanaa/frontend/dist"
+Environment="DAANAA_PROD=1"
+ExecStartPre=-/usr/bin/pkill -TERM -f "gunicorn.*droplet_api:app"
+ExecStartPre=/bin/sleep 2
+ExecStartPre=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"
+ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 \
+  --timeout 120 --graceful-timeout 30 \
+  --access-logfile /opt/daanaa/logs/access.log \
+  --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \
+  --error-logfile /opt/daanaa/logs/error.log \
+  droplet_api:app
+ExecStartPost=/bin/bash -c "/opt/daanaa/warm_cache.sh >/opt/daanaa/logs/warm.log 2>&1 &"
+ExecStopPost=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"
+Restart=always
+RestartSec=5
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target

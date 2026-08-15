@@ -1,0 +1,107 @@
+# Captured 2026-08-14 — all daanaa-api.service* files found under /etc/systemd/system
+
+# ============================================================
+# LIVE / ENABLED unit (identical content in both locations —
+# multi-user.target.wants/daanaa-api.service is a symlink to this file):
+#   /etc/systemd/system/daanaa-api.service
+#   /etc/systemd/system/multi-user.target.wants/daanaa-api.service -> ../daanaa-api.service
+# ============================================================
+[Unit]
+Description=Daanaa droplet API (static precompute)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/daanaa
+Environment="PRECOMPUTE_DIR=/data/precompute/v1"
+Environment="CLAIMS_DIR=/data/claims"
+Environment="FRONTEND_DIR=/opt/daanaa/frontend/dist"
+Environment="DAANAA_PROD=1"
+ExecStartPre=-/usr/bin/pkill -TERM -f "gunicorn.*droplet_api:app"
+ExecStartPre=/bin/sleep 2
+ExecStartPre=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"
+ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 -b 0.0.0.0:8880 \
+  --timeout 120 --graceful-timeout 30 \
+  --access-logfile /opt/daanaa/logs/access.log \
+  --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \
+  --error-logfile /opt/daanaa/logs/error.log \
+  droplet_api:app
+ExecStartPost=/bin/bash -c "/opt/daanaa/warm_cache.sh >/opt/daanaa/logs/warm.log 2>&1 &"
+ExecStopPost=-/usr/bin/pkill -KILL -f "gunicorn.*droplet_api:app"
+Restart=always
+RestartSec=5
+TimeoutStopSec=45
+
+[Install]
+WantedBy=multi-user.target
+
+# NOTE the base Environment="DAANAA_PROD=1" above is overridden to empty
+# string by the drop-in — see systemd-env-override.txt and finding #1 in
+# SNAPSHOT_2026-08-14.md. systemd drop-ins replace same-key Environment=
+# entries wholesale; they do not merge.
+#
+# NOTE binds BOTH 127.0.0.1:5000 (nginx-only) AND 0.0.0.0:8880 (all
+# interfaces, unauthenticated, no TLS) — see finding #3.
+
+# ============================================================
+# STALE BACKUP #1 (not loaded by systemd, plain file on disk):
+#   /etc/systemd/system/daanaa-api.service.bak-1786549763
+# Differs from live only in PRECOMPUTE_DIR — points at v2, which
+# DOES NOT EXIST on disk (/data/precompute/ only has v0 and v1).
+# Also missing the ExecStartPre pkill guards and ExecStopPost/TimeoutStopSec
+# that the live unit has (i.e. this is an OLDER revision, predating those
+# additions, not a newer one).
+# ============================================================
+[Unit]
+Description=Daanaa droplet API (static precompute)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/daanaa
+Environment="PRECOMPUTE_DIR=/data/precompute/v2"
+Environment="CLAIMS_DIR=/data/claims"
+Environment="FRONTEND_DIR=/opt/daanaa/frontend/dist"
+Environment="DAANAA_PROD=1"
+ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 -b 0.0.0.0:8880 \
+  --timeout 120 --graceful-timeout 30 \
+  --access-logfile /opt/daanaa/logs/access.log \
+  --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \
+  --error-logfile /opt/daanaa/logs/error.log \
+  droplet_api:app
+ExecStartPost=/bin/bash -c "/opt/daanaa/warm_cache.sh >/opt/daanaa/logs/warm.log 2>&1 &"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+# ============================================================
+# STALE BACKUP #2 (not loaded by systemd, plain file on disk):
+#   /etc/systemd/system/daanaa-api.service.bak-1786559429
+# Identical to the live unit's PRECOMPUTE_DIR=v1, but still missing the
+# ExecStartPre/ExecStopPost/TimeoutStopSec hardening the live unit has.
+# ============================================================
+[Unit]
+Description=Daanaa droplet API (static precompute)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/daanaa
+Environment="PRECOMPUTE_DIR=/data/precompute/v1"
+Environment="CLAIMS_DIR=/data/claims"
+Environment="FRONTEND_DIR=/opt/daanaa/frontend/dist"
+Environment="DAANAA_PROD=1"
+ExecStart=/opt/daanaa/venv/bin/gunicorn -w 3 -b 127.0.0.1:5000 -b 0.0.0.0:8880 \
+  --timeout 120 --graceful-timeout 30 \
+  --access-logfile /opt/daanaa/logs/access.log \
+  --access-logformat '%(t)s "%(r)s" %(s)s %(b)s %(M)sms' \
+  --error-logfile /opt/daanaa/logs/error.log \
+  droplet_api:app
+ExecStartPost=/bin/bash -c "/opt/daanaa/warm_cache.sh >/opt/daanaa/logs/warm.log 2>&1 &"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

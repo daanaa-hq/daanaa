@@ -1,0 +1,88 @@
+# Captured 2026-08-14 via `nginx -T` (read-only) on 107.170.26.8
+# nginx/1.24.0 (Ubuntu)
+#
+# Full dump below is exactly what `nginx -T` printed. mime.types block
+# omitted here for brevity (stock Ubuntu default, unmodified) — see
+# /etc/nginx/mime.types on any stock Ubuntu 24.04 nginx install for the
+# identical reference copy.
+
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+# configuration file /etc/nginx/nginx.conf:
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+error_log /var/log/nginx/error.log;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+	worker_connections 768;
+}
+
+http {
+	sendfile on;
+	tcp_nopush on;
+	types_hash_max_size 2048;
+	include /etc/nginx/mime.types;
+	default_type application/octet-stream;
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+	ssl_prefer_server_ciphers on;
+	access_log /var/log/nginx/access.log;
+	gzip on;
+	include /etc/nginx/conf.d/*.conf;
+	include /etc/nginx/sites-enabled/*;
+}
+
+# configuration file /etc/nginx/sites-enabled/daanaa (-> sites-available/daanaa):
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name daanaa.org www.daanaa.org _;
+
+    client_max_body_size 10m;
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+    gzip_min_length 1024;
+
+    location /.well-known/acme-challenge/ { root /var/www/acme; }
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+    }
+}
+
+# configuration file /etc/nginx/sites-enabled/daanaa-ssl (-> sites-available/daanaa-ssl):
+server {
+    listen 443 ssl http2 default_server;
+    listen [::]:443 ssl default_server;
+
+    server_name daanaa.org www.daanaa.org _;
+
+    ssl_certificate     /etc/letsencrypt/live/daanaa.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/daanaa.org/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript;
+    gzip_min_length 1024;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_read_timeout 120s;
+    }
+}
+
+# NOTE: sites-available/ also contains:
+#   daanaa-ssl.prev  (614 bytes, one minute older than daanaa-ssl — rollback copy, NOT enabled/symlinked)
+#   default           (2412 bytes, stock Ubuntu default site, NOT enabled/symlinked)
+# conf.d/ and modules-enabled/ are both empty — no stray *.conf files there,
+# which is exactly where the "duplicate ssl_certificate" incident came from
+# (a second file both defining SSL). Confirmed clean as of this recon.
