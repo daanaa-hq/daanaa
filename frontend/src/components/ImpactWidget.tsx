@@ -49,9 +49,15 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
     fetchImpact()
   }, [period, orgEin])
 
+  // Margin lives on the component's own root (not a parent wrapper): whether
+  // this section has anything to show depends on an async fetch, which the
+  // page rendering this can't check synchronously. A parent-side wrapper div
+  // gated only on `apiOrg` would render an empty mb-12 gap on every org with
+  // no donation/volunteer activity yet -- most of them. Self-contained margin
+  // means an org with nothing to show renders nothing at all, no dead space.
   if (loading) {
     return (
-      <div className={`${size === 'small' ? 'p-4' : 'p-6'} bg-light-grey/30 rounded-xl animate-pulse`}>
+      <div className={`${size === 'small' ? 'p-4' : 'p-6'} mb-12 bg-light-grey/30 rounded-xl animate-pulse`}>
         <div className="h-4 bg-light-grey rounded w-1/3 mb-2"></div>
       </div>
     )
@@ -66,7 +72,7 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
 
   if (size === 'small') {
     return (
-      <CardPattern variant="subtle">
+      <CardPattern variant="subtle" className="mb-12">
         <div className="font-body text-micro tracking-[0.06em] text-cool-grey uppercase font-semibold mb-3">
           Community impact
         </div>
@@ -95,7 +101,7 @@ export default function ImpactWidget({ period = 'month', orgEin, size = 'large' 
   }
 
   return (
-    <CardPattern variant="default">
+    <CardPattern variant="default" className="mb-12">
       <div className="mb-6">
         <div className="font-body text-label tracking-[0.06em] text-link-gold uppercase font-semibold mb-2">
           Daanaa Impact

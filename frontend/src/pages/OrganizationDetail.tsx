@@ -28,7 +28,7 @@ import OrgWallPanel from '../components/OrgWallPanel'
 import AiBadge from '../components/AiBadge'
 import { useAuth } from '../contexts/AuthContext'
 import { GoogleSignInButton } from '../components/GoogleSignInButton'
-import PeerContextBreakdown from '../components/PeerContextBreakdown'
+import PeerContextBreakdown, { buildPeerContextRows } from '../components/PeerContextBreakdown'
 import DonationAttributionBanner from '../components/DonationAttributionBanner'
 import ImpactWidget from '../components/ImpactWidget'
 import OrgEnrichmentCard from '../components/OrgEnrichmentCard'
@@ -1054,19 +1054,19 @@ export default function OrganizationDetail() {
           {/* Multi-dimensional peer context breakdown — shows where the org
               ranks by category, state, revenue size, and financial model. Simple,
               clear format for nonprofits to understand their position.
-              Feature flag: peer_context_breakdown at 1% for testing. */}
-          {apiOrg! && showPeerContextBreakdown && (
-            <div className="mb-12">
-              <PeerContextBreakdown org={apiOrg!} />
-            </div>
+              Feature flag: peer_context_breakdown at 1% for testing. Gated on
+              buildPeerContextRows(apiOrg!).length (the same rows the component
+              itself computes) so orgs with no rows to show don't render an
+              empty mb-12 wrapper. */}
+          {apiOrg! && showPeerContextBreakdown && buildPeerContextRows(apiOrg!).length > 0 && (
+            <PeerContextBreakdown org={apiOrg!} />
           )}
 
-          {/* Community Impact */}
-          {apiOrg && (
-            <div className="mb-12">
-              <ImpactWidget orgEin={apiOrg.EIN} size="small" />
-            </div>
-          )}
+          {/* Community Impact. ImpactWidget owns its own mb-12 margin (its
+              donation/volunteer data loads async, so this page can't know
+              ahead of time whether it will render) -- a wrapper div here
+              would leave an empty gap on every org with no logged activity. */}
+          {apiOrg && <ImpactWidget orgEin={apiOrg.EIN} size="small" />}
 
           {/* Guild/Partner Membership */}
           {apiOrg && <GuildSection ein={apiOrg.EIN} />}

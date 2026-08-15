@@ -10,7 +10,11 @@ interface ContextRow {
   action?: { text: string; link?: string }
 }
 
-export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) {
+// Builds the same row set the component renders. Exported as the single
+// source of truth for whether this section has anything to show, so
+// OrganizationDetail.tsx can gate its wrapper div on the real condition
+// instead of duplicating (and risking drifting from) this branching logic.
+export function buildPeerContextRows(org: ApiOrganization): ContextRow[] {
   const rows: ContextRow[] = []
 
   // 1. CATEGORY CONTEXT — "You're in good company"
@@ -106,10 +110,16 @@ export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) 
     }
   }
 
+  return rows
+}
+
+export default function PeerContextBreakdown({ org }: { org: ApiOrganization }) {
+  const rows = buildPeerContextRows(org)
+
   if (rows.length === 0) return null
 
   return (
-    <CardPattern variant="gradient">
+    <CardPattern variant="gradient" className="mb-12">
       <div className="mb-6">
         <h3 className="font-display text-title-sm font-semibold text-deep-navy mb-2">
           What the public record shows
