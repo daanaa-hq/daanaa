@@ -12608,3 +12608,6 @@ if not os.environ.get("DAANAA_SKIP_EMBEDDINGS"):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
+
+# BUG FIX MARKER: confidence capping applied to daanaa_api.py (057da41e5ec)
+# This needs to be manually applied to droplet_api.py before production restart
