@@ -6,6 +6,36 @@
 
 ---
 
+## 2026-08-15: Charter #7 Confidence Labeling Fix (Governance-Driven)
+
+**Issue:** 10,522 organizations with zero/null revenue were displaying HIGH confidence to donors, violating Charter Promise #7 ("Where our data is thin, we say 'we don't know enough'") and Stewardship Principle P3 ("Trust signals must be evidence-based and honestly stated").
+
+**Root Cause:** Confidence was computed from peer group size only, not org-specific data quality. Orgs with no revenue data (indicating incomplete financial information) could show HIGH confidence despite lacking core financial evidence.
+
+**Chose:** Implement Option B (public correction + immediate fix). For any org with zero or null `total_revenue`, cap `confidence_v6` at MODERATE and widen the confidence margin to ±25% (vs. ±10%).
+
+**Why:**
+- Restores Charter #7 compliance: confidence label now reflects org-specific data quality
+- Aligns with Stewardship P3: trust signals honestly state data limitations
+- Stewardship P5: MODERATE is supportive framing (not shame language)
+- Stewardship P6: errors corrected within 24 hours of discovery
+- Stewardship P9: decisions documented and traceable
+
+**Implementation:**
+- Code changes: daanaa_api.py lines 2751-2764 (commit 057da41e5ec) + droplet_api.py lines 2681-2686 (commit 7ea233d480d)
+- Logic: After loading org from database, check `if total_revenue is None or == 0: cap confidence_v6 to 'moderate'`
+- Affected orgs: 10,522 (1.9% of 562,445 total scored)
+- Testing: Verified live on origin server (http://127.0.0.1:5000/api/organizations/391644738 returns MODERATE + ±25% margin)
+- Deployment: Production droplet (107.170.26.8) — origin correct immediately; Cloudflare edge cache auto-expires in 24 hours
+
+**Rejected alternatives:**
+1. Silent fix (Option A): Does not follow Stewardship P6 (mistakes corrected and documented)
+2. Temporary suppression (Option C): Defers the real fix; leaves trust signals compromised
+
+**Confidence:** HIGH — Fix is code-correct, tested, deployed, and complies with all governance gates (Charter + Stewardship + P3/P5/P6/P9).
+
+---
+
 ## 2026-08-11: Phase 1-4 Blocker Resolution & Deployment
 
 ### Decision: Remove Firebase Analytics, Use Plausible as Canonical
