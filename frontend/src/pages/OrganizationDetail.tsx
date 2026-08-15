@@ -11,7 +11,7 @@ import { useDonationReturnPrompt } from '../hooks/useDonationReturnPrompt'
 import { getTierSummary, getTierFromOrg } from '../components/TrustBadge'
 import BadgeChip from '../components/BadgeChip'
 import MistakeRegistry from '../components/MistakeRegistry'
-import DonorVoice from '../components/DonorVoice'
+import DonorVoice, { canShowDonorVoice } from '../components/DonorVoice'
 
 import { useApi } from '../hooks/useApi'
 import { useFeatureFlag } from '../hooks/useFeatureFlag'
@@ -271,7 +271,7 @@ export default function OrganizationDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user, getIdToken } = useAuth()
-  const { isInFunding, isInVolunteering, addToFunding, addToVolunteering,
+  const { entries: walletEntries, isInFunding, isInVolunteering, addToFunding, addToVolunteering,
           removeFromFunding, removeFromVolunteering, setRecurringTemplate } = useWallet()
   const { trackDonateClick, promptState, dismiss: dismissDonationPrompt } = useDonationReturnPrompt()
   const [portalLoading, setPortalLoading] = useState(false)
@@ -739,8 +739,15 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* Donor Voice — social proof from people who've supported this org */}
-              {apiOrg && <div className="mt-6"><DonorVoice ein={apiOrg.EIN} orgName={apiOrg.organization_name} /></div>}
+              {/* Donor Voice — social proof from people who've supported this org.
+                  Gated on the same wallet-entry check DonorVoice uses internally
+                  (canShowDonorVoice) so the wrapper never renders an empty mt-6
+                  gap -- this section only shows content back to the device/
+                  account that logged a gift, volunteered, or left a note here,
+                  which is true for a small minority of page loads. */}
+              {apiOrg && canShowDonorVoice(walletEntries.find(e => e.ein === apiOrg.EIN)) && (
+                <div className="mt-6"><DonorVoice ein={apiOrg.EIN} orgName={apiOrg.organization_name} /></div>
+              )}
 
               <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
                 {[

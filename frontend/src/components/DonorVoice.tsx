@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useWallet } from '../contexts/WalletContext'
+import type { WalletEntry } from '../types/wallet'
 import { CardPattern } from './ui/CardPattern'
 
 /**
@@ -12,6 +13,20 @@ export interface DonorNote {
   text: string
   addedAt: number
   authorName?: string
+}
+
+// Single source of truth for whether DonorVoice will render anything for this
+// org, so the parent page can gate its wrapper the same way ExpenseBreakdown/
+// FinancialTrends do -- an empty wrapper here would otherwise show a bare
+// mt-6 gap on nearly every org page, since this section only ever shows
+// content back to the same device/account that logged a gift, volunteered,
+// or left a note for this org (see DECISIONS.md / LESSONS.md for why that's
+// flagged separately as a product question, not just a layout one).
+export function canShowDonorVoice(entry: WalletEntry | undefined): boolean {
+  const hasDonated = (entry?.donations?.length ?? 0) > 0
+  const hasVolunteered = (entry?.volunteerHours?.length ?? 0) > 0
+  const hasNotes = (entry?.donorNotes?.length ?? 0) > 0
+  return hasDonated || hasVolunteered || hasNotes
 }
 
 export default function DonorVoice({
