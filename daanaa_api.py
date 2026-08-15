@@ -2756,6 +2756,16 @@ def get_organization(ein):
     org['confidence_v6'] = org.get('confidence_v6')  # "high", "good", "moderate", "archetype_only"
     org['confidence_margin_v6'] = org.get('confidence_margin_v6')  # e.g., "±10%"
 
+    # BUG FIX 2026-08-15: Cap confidence at MEDIUM for orgs without revenue data
+    # Root cause: confidence was computed from peer group size only, not org-specific data quality.
+    # Result: orgs with zero revenue could show HIGH confidence despite lacking core financial evidence.
+    # Violates Charter #7 ("where data is thin, we say so") and Stewardship P3 ("honestly stated").
+    # Fix: if org has no revenue data, cap confidence to MEDIUM max to reflect data incompleteness.
+    if org.get('total_revenue') is None or org.get('total_revenue') == 0:
+        if org['confidence_v6'] and org['confidence_v6'].lower() in ('high', 'good'):
+            org['confidence_v6'] = 'moderate'
+            org['confidence_margin_v6'] = '±25%'  # Widen margin for incomplete data
+
     # Phase 2: IRS Eligibility Status (additive)
     # Adds 4 fields: status, checked_at, sources, explanation
     org.update(get_eligibility_fields(ein_clean))
