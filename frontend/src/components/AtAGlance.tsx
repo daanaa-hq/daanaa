@@ -8,7 +8,7 @@ import { trackAtAGlanceVisible } from '../utils/analytics'
  * Surfaces existing data to help donors understand small orgs better:
  * - Leadership: board size, independence, staff, governance policies
  * - Service Scope: cause area, geography, revenue band
- * - Stability: composite health signal (At-risk to Excellent)
+ * - Stability: composite health signal (Need support to Excellent)
  * - Mission Attribution: source transparency (claimed vs. extracted)
  *
  * All data sourced from Form 990 + website extraction; no new collection.
@@ -30,12 +30,17 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
     return null
   }
 
+  // Stewardship P5: mission-aligned language, not shame. The lowest tier
+  // ("Need support") deliberately gets no alarm color — matches the neutral,
+  // no-color treatment PeerContextBreakdown.tsx already uses for its lowest
+  // tier (CAUTION). Never red/"At-risk" — a nonprofit having less financial
+  // cushion is not a verdict on the organization.
   const stabilityColors: Record<string, { bgClass: string; borderClass: string; textColor: string; label: string }> = {
     'Excellent': { bgClass: 'bg-green-50', borderClass: 'border-green-200', textColor: '#15803d', label: 'Excellent' },
     'Strong': { bgClass: 'bg-blue-50', borderClass: 'border-blue-200', textColor: '#1e40af', label: 'Strong' },
     'Solid': { bgClass: 'bg-blue-50', borderClass: 'border-blue-200', textColor: '#1e40af', label: 'Solid' },
     'Emerging': { bgClass: 'bg-amber-50', borderClass: 'border-amber-200', textColor: '#b45309', label: 'Emerging' },
-    'At-risk': { bgClass: 'bg-red-50', borderClass: 'border-red-200', textColor: '#dc2626', label: 'At-risk' },
+    'Need support': { bgClass: 'bg-slate-50', borderClass: 'border-light-grey', textColor: '#475569', label: 'Need support' },
   }
 
   const missionSourceLabels: Record<string, { label: string; explanation: string }> = {

@@ -2856,7 +2856,10 @@ def get_organization(ein):
         stability_score += 1
         stability_reasons.append('High program spend ratio')
 
-    stability_signals = ['At-risk', 'Emerging', 'Solid', 'Strong', 'Excellent']
+    # Stewardship P5: mission-aligned language, not shame. Matches the
+    # merit_health_signal_v5 convention (HEALTHY/STABLE/MAY_NEED_SUPPORT) —
+    # never "At-risk" or similar deficit framing for the lowest tier.
+    stability_signals = ['Need support', 'Emerging', 'Solid', 'Strong', 'Excellent']
     org['org_stability_signal'] = {
         'signal': stability_signals[min(stability_score, 4)],
         'reasons': stability_reasons,

@@ -79,7 +79,18 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
   }
 
   // 4. Profile completeness
-  if (org.has_mission && org.has_website) {
+  //
+  // "Publishes" is an authorship claim — only true when the mission text
+  // actually came from the org (claimed via our claim flow) or was pulled
+  // from their own website (ai_web/lucido). org.has_mission is true even
+  // when mission_source is 'ai_ntee' (a category template Daanaa generated
+  // from the org's NTEE code, not written or published by the org at all)
+  // or unset — asserting "this organization publishes its mission" in that
+  // case would be an unverified claim stated as fact (Stewardship P3). When
+  // provenance doesn't support authorship, we say nothing rather than guess.
+  const missionIsOrgAttributed = org.mission_source === 'claimed' || org.mission_source === 'ai_web' || org.mission_source === 'lucido'
+
+  if (missionIsOrgAttributed && org.has_website) {
     badges.push({
       id: 'full_profile',
       label: 'Full profile',
@@ -97,7 +108,7 @@ export function getOrgBadges(org: ApiOrganization): OrgBadge[] {
       color: 'blue',
       icon: 'globe',
     })
-  } else if (org.has_mission) {
+  } else if (missionIsOrgAttributed) {
     badges.push({
       id: 'mission_published',
       label: 'Mission published',
