@@ -2678,6 +2678,13 @@ def get_organization(ein):
     org['confidence_v6'] = org.get('confidence_v6')  # "high", "good", "moderate", "archetype_only"
     org['confidence_margin_v6'] = org.get('confidence_margin_v6')  # e.g., "±10%"
 
+    # BUG FIX 2026-08-15 (matching daanaa_api.py 057da41e5ec): Cap confidence at MEDIUM for zero-revenue orgs
+    # Charter #7 violation: orgs with no revenue data were showing HIGH confidence to donors.
+    if org.get('total_revenue') is None or org.get('total_revenue') == 0:
+        if org['confidence_v6'] and org['confidence_v6'].lower() in ('high', 'good'):
+            org['confidence_v6'] = 'moderate'
+            org['confidence_margin_v6'] = '±25%'
+
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)
