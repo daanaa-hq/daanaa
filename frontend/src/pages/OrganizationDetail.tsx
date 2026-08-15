@@ -40,7 +40,6 @@ import RecurringSetup from '../components/RecurringSetup'
 import DataContextNote from '../components/DataContextNote'
 import { normalizeExternalUrl } from '../utils/externalLink'
 import AtAGlance from '../components/AtAGlance'
-import ProvenanceLayers from '../components/ProvenanceLayers'
 import ExpenseBreakdown from '../components/ExpenseBreakdown'
 import FinancialTrends from '../components/FinancialTrends'
 // ---- Metric Card ----
@@ -862,20 +861,26 @@ export default function OrganizationDetail() {
             </div>
           )}
 
-          {/* Phase 2: Provenance Layer Separation (2026-08-13)
-              Shows data source transparency: Public Record vs Nonprofit-Supplied vs Daanaa Inferred
-              Implements decision-grade org page principle: clear sourcing = trusted giving decisions */}
-          {apiOrg && (
-            <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
-              <ProvenanceLayers org={apiOrg} />
-            </div>
-          )}
+          {/* Provenance Layer Separation removed 2026-08-15 (donor readability
+              pass): every field it showed — EIN, location, revenue, NTEE
+              category, financial tier, peer group size, website — already
+              appears earlier on this page (hero stats, category pills,
+              FinancialContext card), usually in a more readable format (e.g.
+              this section showed the raw NTEE letter code "P" where the
+              hero already shows human-readable category pills). Its "source
+              transparency" framing is real but wasn't adding new facts, just
+              re-grouping the same ones a third time — a repeated page reads
+              as buggy/bloated to a donor, not more trustworthy. The
+              transparency ethos itself is preserved in OrgInfoHierarchy's
+              existing "We believe in transparency" copy below. Component
+              (ProvenanceLayers.tsx) kept in the tree, unmounted here — easy
+              to revert if this reads wrong once more orgs are checked. */}
 
           {/* Visibility Enhancement: Priority 2 — Expense Breakdown (2026-08-13)
               Shows program vs admin vs fundraising expenses visually.
               Addresses donor question: "Does my $ actually fund the mission?"
               Stewardship P3 (evidence-based) + P5 (no shame language) */}
-          {apiOrg && (
+          {apiOrg && ((apiOrg.program_expenses || 0) + (apiOrg.management_expenses || 0) + (apiOrg.fundraising_expenses || 0)) > 0 && (
             <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
               <ExpenseBreakdown org={apiOrg} />
             </div>
@@ -886,7 +891,7 @@ export default function OrganizationDetail() {
               CauseIQ feature: trend analysis signals stability/growth/decline.
               Addresses donor question: "Is this org stable and growing?"
               Stewardship P3 (evidence-based) + P4 (context for small orgs) */}
-          {apiOrg && (
+          {apiOrg && apiOrg.total_revenue && (
             <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
               <FinancialTrends org={apiOrg} />
             </div>
