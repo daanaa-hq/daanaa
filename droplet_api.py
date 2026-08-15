@@ -4924,11 +4924,28 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
     band   = org.get('revenue_band')
     ntee1  = org.get('NTEE1')
 
+    # PERF FIX 2026-08-15: ORDER BY ABS(...) is a computed expression, so SQLite
+    # can't use an index for the sort — it must materialize and sort every
+    # matching row (TEMP B-TREE). For large NTEE1 categories (X/religious =
+    # 299K rows, B/education = 221K, P = 182K, etc.) this took 1-1.2s per
+    # query, consistently, regardless of caching (confirmed via cProfile +
+    # EXPLAIN QUERY PLAN + PRAGMA temp_store=MEMORY, which did not help — it's
+    # comparison-bound, not disk-bound). Wrapping the indexed WHERE-filter in
+    # an inner subquery with LIMIT bounds the candidate pool to 2000 rows
+    # *before* the join+sort, cutting the cost to a few ms. Trade-off: the
+    # 2000-row sample follows index scan order (not random), a mild selection
+    # bias acceptable for a secondary "similar orgs" sidebar — not a scoring
+    # or trust signal.
+    CANDIDATE_CAP = 2000
+
     if nteecc and band:
         rows = db.execute(f"""
-            SELECT {cols} FROM registry_enriched r
+            SELECT {cols} FROM (
+                SELECT * FROM registry_enriched
+                WHERE NTEECC = ? AND revenue_band = ? AND EIN != ?
+                LIMIT {CANDIDATE_CAP}
+            ) r
             LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
-            WHERE r.NTEECC = ? AND r.revenue_band = ? AND r.EIN != ?
             ORDER BY ABS(COALESCE(r.peer_percentile, 50) - ?) ASC LIMIT ?
         """, (nteecc, band, ein_clean, pct, limit)).fetchall()
         if len(rows) >= 3:
@@ -4936,9 +4953,12 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
 
     if ntee1 and band:
         rows = db.execute(f"""
-            SELECT {cols} FROM registry_enriched r
+            SELECT {cols} FROM (
+                SELECT * FROM registry_enriched
+                WHERE NTEE1 = ? AND revenue_band = ? AND EIN != ?
+                LIMIT {CANDIDATE_CAP}
+            ) r
             LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
-            WHERE r.NTEE1 = ? AND r.revenue_band = ? AND r.EIN != ?
             ORDER BY ABS(COALESCE(r.peer_percentile, r.ntee1_percentile, 50) - ?) ASC LIMIT ?
         """, (ntee1, band, ein_clean, pct, limit)).fetchall()
         if len(rows) >= 2:
@@ -4946,9 +4966,12 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
 
     if ntee1:
         rows = db.execute(f"""
-            SELECT {cols} FROM registry_enriched r
+            SELECT {cols} FROM (
+                SELECT * FROM registry_enriched
+                WHERE NTEE1 = ? AND EIN != ?
+                LIMIT {CANDIDATE_CAP}
+            ) r
             LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
-            WHERE r.NTEE1 = ? AND r.EIN != ?
             ORDER BY ABS(COALESCE(r.peer_percentile, r.ntee1_percentile, 50) - ?) ASC LIMIT ?
         """, (ntee1, ein_clean, pct, limit)).fetchall()
         return [_attach_v4_scores(dict(r), r) for r in rows], 'ntee1'
