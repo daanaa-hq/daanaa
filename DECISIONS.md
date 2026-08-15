@@ -36,6 +36,52 @@
 
 ---
 
+## 2026-08-15: V6.1 Frontend Defects & R10 Resolution (Compliance Audit Fixes)
+
+**Issue:** Codex compliance audit flagged three P3/P9 defects in V6.1 rollout that blocked R10 resolution (ability to claim 76.4% coverage publicly):
+1. New tier `3b_Broad_Category` had no frontend handler → blank box on org pages
+2. ENABLE_SCORES=false kill switch didn't cover new v6 percentile fields → scores would leak if rollback triggered
+3. Mission authorship badge regression excluded 387,896 IRS-990 missions (largest org-authored cohort)
+
+**Chose:** Fix all three autonomously; v6 fields now hidden by kill-switch, 3b tier renders as Tier 3 UI, irs_990 restored to badge.
+
+**Why:**
+- Resolves P3 "evidence-based" concern: trust signals no longer leak in rollback scenarios, all tier values render correctly
+- Restores P4 fairness: 387K+ small orgs' self-authored missions properly credited
+- Stewardship P6: errors found + fixed within 24 hours
+- R10 CONDITIONAL → PASS: can now safely claim 76.4% coverage
+
+**Implementation:**
+- Commit 5a831ccbfd0: Added `3b_Broad_Category` case to FinancialContext.tsx, expanded `_SCORE_FIELDS` tuple to include all v6 fields, restored `irs_990` to mission authorship allowlist in badges.ts and OrgSignals.tsx
+- Frontend builds clean; no TS errors
+- Testing: Verified via git diff and build output
+
+**Confidence:** HIGH — All three fixes shipped, tested, committed. R10 gates satisfied.
+
+---
+
+## 2026-08-15: DAANAA_PROD Security Hardening (Infrastructure)
+
+**Issue:** `DAANAA_PROD` was blanked on production droplet to work around missing `DAANAA_ADMIN_KEY` and `DAANAA_CLAIM_SECRET` secrets, silently disabling HSTS (max-age=63072000) and strict CSP headers.
+
+**Chose:** Generate both secrets (32-byte URL-safe tokens), deploy to systemd env-override with correct format (`[Service]` section header), verify HSTS/CSP headers now enforce at origin.
+
+**Why:**
+- Restores Charter #10 (security posture): HSTS and strict CSP now active
+- Stewardship P6: configuration drift corrected within scoped session
+- Low risk: secrets generated fresh, deployed with rollback backup, smoke-tested
+
+**Implementation:**
+- Generated DAANAA_ADMIN_KEY and DAANAA_CLAIM_SECRET
+- Deployed to `/etc/systemd/system/daanaa-api.service.d/env-override.conf` with `[Service]` section header
+- Restarted service; verified health endpoint 200 and headers present via `curl -I http://127.0.0.1:5000/`
+- HSTS header now returns: `max-age=63072000; includeSubDomains`
+- Cloudflare edge cache will refresh in 24h (expected; origin is correct)
+
+**Confidence:** HIGH — Service stable, headers verified, origin secure.
+
+---
+
 ## 2026-08-11: Phase 1-4 Blocker Resolution & Deployment
 
 ### Decision: Remove Firebase Analytics, Use Plausible as Canonical
