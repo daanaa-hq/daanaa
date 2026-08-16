@@ -10,6 +10,19 @@ interface ContextRow {
   action?: { text: string; link?: string }
 }
 
+// Ported exactly from scripts/scoring/daanaa_scorer.py's CENSUS_REGIONS --
+// the same table the v6 scorer itself uses for tier_label's region
+// component, not a re-derived approximation.
+const CENSUS_REGIONS: Record<string, string[]> = {
+  'Northeast': ['CT', 'ME', 'MA', 'NH', 'RI', 'VT', 'NJ', 'NY', 'PA'],
+  'Midwest': ['IL', 'IN', 'MI', 'OH', 'WI', 'IA', 'KS', 'MN', 'MO', 'NE', 'ND', 'SD'],
+  'South': ['DE', 'FL', 'GA', 'MD', 'NC', 'SC', 'VA', 'WV', 'AL', 'KY', 'MS', 'TN', 'AR', 'LA', 'OK', 'TX'],
+  'West': ['AZ', 'CO', 'ID', 'MT', 'NV', 'NM', 'UT', 'WY', 'AK', 'CA', 'HI', 'OR', 'WA'],
+}
+const CENSUS_REGION_BY_STATE: Record<string, string> = Object.fromEntries(
+  Object.entries(CENSUS_REGIONS).flatMap(([region, states]) => states.map(s => [s, region]))
+)
+
 // Builds the same row set the component renders. Exported as the single
 // source of truth for whether this section has anything to show, so
 // OrganizationDetail.tsx can gate its wrapper div on the real condition
@@ -55,22 +68,29 @@ export function buildPeerContextRows(org: ApiOrganization): ContextRow[] {
   }
 
   // 3. SIZE CONTEXT — "You're not undersized, you're focused"
-  // Fixed 2026-08-16: was reading org.v5_context.band.label -- v5_context is
-  // the retired scoring generation (18.1% coverage, same population as the
-  // now-removed Financial Health dimension below). Rebuilt on total_revenue
-  // directly, using v6's own band thresholds (Micro <$150K, Professional
-  // $150K-$700K, Established >$700K -- see CLAUDE.md's v6 architecture
-  // section), not a new invented scale.
+  // Fixed 2026-08-16, twice. First pass wrongly read org.v5_context.band.label
+  // (the retired scoring generation, 18.1% coverage). Second pass invented a
+  // 3-band scale (Micro/Professional/Established) paraphrased from CLAUDE.md's
+  // summary table -- wrong, and missing region. The REAL v6 methodology
+  // (scripts/scoring/daanaa_scorer.py get_revenue_band() + CENSUS_REGIONS,
+  // verified directly against source, not a summary) uses 5 IRS-aligned bands
+  // and groups by US Census region -- both ported here exactly.
   if (org.total_revenue !== null && org.total_revenue !== undefined && org.total_revenue > 0) {
     const revenue = org.total_revenue
-    const band = revenue < 150_000 ? 'Micro' : revenue < 700_000 ? 'Professional' : 'Established'
-    const isMicro = band === 'Micro'
-    const isLarge = band === 'Established'
+    const band =
+      revenue < 50_000 ? 'Grassroots' :
+      revenue < 200_000 ? 'Small' :
+      revenue < 500_000 ? 'Mid' :
+      revenue < 5_000_000 ? 'Established' :
+      'Major'
+    const region = org.STATE ? CENSUS_REGION_BY_STATE[org.STATE] : null
+    const isSmallest = band === 'Grassroots'
+    const isLargest = band === 'Major'
 
     rows.push({
       dimension: 'Your Scale',
-      label: band,
-      value: isMicro ? 'Smaller operating scale' : isLarge ? 'Established operating scale' : 'Growing operating scale',
+      label: region ? `${band}, ${region} region` : band,
+      value: isSmallest ? 'Smaller operating scale' : isLargest ? 'Largest operating scale' : 'Mid-sized operating scale',
       explanation: `This is a description of operating scale from public records. Scale does not tell us the quality, reach, or importance of an organization's work.`,
     })
   }
