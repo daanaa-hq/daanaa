@@ -1,7 +1,11 @@
 # 990 Narrative Enrichment — Architecture
 
-Status: draft, post Codex Review A. Synthesizes `system-audit.md` +
-`xml-field-inventory.md` + `codex-reviews.md` into the build plan.
+Status: **Phase 3 implemented and dry-run validated** (2026-08-16). Synthesizes
+`system-audit.md` + `xml-field-inventory.md` + `codex-reviews.md` into the
+build plan. Revised same day per founder directive to maximize reuse of
+existing tables/scripts over Codex Review A's original new-tables proposal —
+see `DECISIONS.md` 2026-08-16 "990 Narrative Enrichment — reuse existing
+tables/scripts instead of new ones."
 
 ---
 
@@ -14,9 +18,13 @@ latest-filing selection, safe atomic writes) already exists in
 
 1. New deterministic extraction: Schedule O, grant purposes, structured Part
    III program records, 990-EZ mission/programs (currently 990-only).
-2. A new, narrowly-scoped storage layer — not a reuse of `extracted_programs`
-   or `org_service_areas` (both wrong-shaped or actively used for ranking;
-   see Codex Review A).
+2. **Reuse, not new storage**: Schedule O writes into the existing
+   `extracted_programs` table (built for exactly this, never populated —
+   new `schedule_o_source='irs_990_xml'` value alongside its original
+   `'propublica_api'` design) and richer narrative text feeds `cause_tags`
+   via the existing `enrich_cause_tags_mission.py` rules module, imported
+   and reused as-is. No new tables shipped. `org_service_areas` is the one
+   deliberate exception — see below.
 3. GPU-derived semantic fields (mission summary, services, populations,
    geography, reported outcomes) computed only from the bounded deterministic
    excerpts above — never from a whole filing.
@@ -74,34 +82,73 @@ just "the row set with the max `tax_year` for that EIN" — no separate
 `_current` table needed at this scale; add one later only if query patterns
 demand it (YAGNI, per CLAUDE.md).
 
-## Parser extension (Phase 3)
+## Parser extension (Phase 3) — implemented
 
-Extend, don't replace, `scripts/ops/fetch_irs_direct_filing.py`:
+Extended, not replaced, `scripts/ops/fetch_irs_direct_filing.py` (same file,
+same functions, no parallel pipeline):
 
 - `parse_990_xml()` gains: Schedule O explanation/line-reference pairs
-  (filtered to a line-reference allowlist — see `config/990_narrative_fields.yaml`),
-  Schedule F/I/PF grant purposes (junk-filtered), and individual Part III
-  program records (not just joined into the mission fallback).
-- New function `parse_990ez_xml()` (or a `form_type` branch in the same
-  function) for 990-EZ's `PrimaryExemptPurposeTxt` +
-  `ProgramSrvcAccomplishmentGrp`. 990-PF has no mission-equivalent field —
-  only grant purposes/recipients apply there.
-- New `write_narrative(db, ein, filing, narrative_data, now)` function,
-  separate from `write_filing()`, called by a **new** producer script
-  (`scripts/enrichment/narrative_990/extract_narrative_batch.py`), not
-  inline in the nightly financial job. Reuses the same batch-download/extract
-  machinery (`iter_990_index_rows`, `batch_zip_url`) but writes to the new
-  tables only.
-- Fix flagged in Review A: the mission guard should let a **newer** `irs_990`
-  filing replace an **older** `irs_990` mission (currently blocked once
-  `mission_source='irs_990'` is set). Small, isolated fix — add tax-year
-  comparison to the guard.
-- Security hardening (Phase 3 Codex Review C target): `ET.fromstring` on
-  untrusted IRS XML — confirm `defusedxml` or an equivalent XXE-safe
-  configuration is used (Python's stdlib `xml.etree.ElementTree` disables
-  external entity expansion by default since 3.x, but confirm and add a test);
-  `unzip` shell-out needs a filename allowlist check (target XML name is
-  known ahead of time, but confirm no path traversal via crafted `OBJECT_ID`).
+  (filtered to `config/990_narrative_fields.yaml`'s allowlist), Schedule F/I
+  grant purposes (junk-filtered; PF excluded — see yaml, mostly "SEE ATTACHED"
+  in the sample), individual Part III program records via the *real*
+  schema (a correction — the original fallback field name never matched any
+  real 2026 filing), a second mission candidate (`MissionDesc`), and 990-EZ
+  narrative support (`PrimaryExemptPurposeTxt` + `ProgramSrvcAccomplishmentGrp`,
+  financials deliberately left unextracted pending EZ field-name verification).
+- `write_filing()` extended in place — not a separate `write_narrative()` /
+  separate producer script as Review A first proposed. One XML download, one
+  parse, one write path, same transaction as the existing financial write.
+  New writes: `extracted_programs` (Schedule O, `schedule_o_source='irs_990_xml'`),
+  `cause_tags` (via imported `enrich_cause_tags_mission.apply_rules`/`merge_tags`,
+  additive only), `programs_available` flip. All guarded the same way the
+  existing mission write is guarded — never destroys better/more-recent data.
+- Fixed: the mission guard now lets a **newer** `irs_990` filing replace an
+  **older** one (was blocked once `mission_source='irs_990'` — Codex Review A
+  finding).
+- Fixed, found during this work (not previously exercised): the financial
+  `UPDATE registry_enriched SET total_revenue = ?, ...` ran unconditionally
+  even when `total_revenue` parsed as `None`, which would have silently
+  written `NULL` over existing good financials once the tax-year guard
+  passed. Now skipped when `total_revenue is None` — also what makes the
+  990-EZ narrative-only path safe (EZ filings always have `total_revenue=None`
+  by design).
+- `iter_990_index_rows()`/`find_latest_filing()` gained an optional
+  `return_types` parameter (default unchanged: `{'990'}`) so 990-EZ can be
+  tested (`--include-ez` on the single-org CLI) without silently widening the
+  nightly 04:15 cron's scope — that's a separate, reviewable decision.
+
+**Validated** (24-filing dry run inside a rolled-back DB transaction — zero
+production risk): 12/24 missions upgraded to real IRS text, 6/24 orgs gained
+`cause_tags` (16 new tags total, manually verified against source text —
+zero false positives found), 16/24 flipped `programs_available`, 6 Schedule O
+rows written. Two concrete examples:
+
+1. **Correction, not just upgrade**: a Denver-area org's AI-generated mission
+   read "Delivers educational workshops and tutoring services to underserved
+   students" — plausible-sounding, and wrong. Its real 990-EZ text: "TO RAISE
+   FUNDS ANNUALLY TO SUPPORT STUDENTS IN FINANCIAL NEED AT DENVER ARCHIOCESE
+   SCHOOLS TO HAVE THE OPPORTUNITY TO PARTICIPATE IN SPORTS." It's a Catholic
+   school **sports scholarship fund**, not a tutoring org. Less polished
+   prose, materially more accurate — exactly the P3 tradeoff this project
+   exists to make, and the case for a separate GPU `mission_summary` layer
+   (readable AND accurate) rather than smoothing the authoritative field itself.
+2. **Real searchability signal a mission alone would miss**: a wildlife
+   refuge's mission says nothing about job training or the arts. Its Schedule
+   O does: "YOUNG SCIENTIST INTERNSHIPS AND HANDS-ON JOB TRAINING," an
+   annual "ART IN THE WILD" community event, and a library outreach
+   partnership. `cause_tags` correctly picked up `employment`, `job training`,
+   `arts`, `arts education`, `education`, `literacy`, `library` — all
+   traceable to literal program text, none invented. A donor searching "job
+   training programs" would not have found this org before; now they will,
+   through the existing FTS/embeddings pipeline, no new search code required.
+
+Security posture (self-reviewed, Codex Review B/C in progress at time of
+writing): `ET.fromstring` on untrusted IRS XML — stdlib `xml.etree
+.ElementTree` disables external entity expansion by default since Python
+3.7.1 (this repo runs 3.12); no `defusedxml` dependency added, matching
+existing project convention (the pre-existing financials/mission parser used
+the same approach). `unzip` shell-out extracts by a known, index-derived
+`OBJECT_ID` filename — not user input.
 
 ## GPU enrichment (Phase 4)
 

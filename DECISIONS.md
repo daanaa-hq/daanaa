@@ -1389,3 +1389,72 @@ Also confirmed several other unused-but-populated fields (total_assets/revenue_3
 **Second investigation (Codex), scoped to the actual gap:** the one differentiating capability relevant to "website discovery and review" is Jina Reader's clean-webpage-to-markdown extraction. Checked whether that's genuinely missing: it isn't. `scripts/discovery/website_content.py` already fetches confirmed homepages and extracts clean text (strips script/nav/header/footer via BeautifulSoup); `scripts/enrichment/enrich_batch.py` already consumes it for AI-grounded mission generation, cause-tag grounding, donate-link confidence, and identity verification. Additionally, Jina's free tier (20 req/min) is incompatible with the existing concurrent crawler without new throttling, and proxying every nonprofit URL through a third party conflicts with the established crawler-etiquette convention (identified UA, robots checks, direct fetch — DECISIONS.md 2026-07-18).
 
 **Decision: declined, nothing installed, nothing built.** Both the broad tool and the narrow equivalent capability turned out unnecessary — verified against actual code, not assumed. If a real quality gap on JS-heavy sites surfaces later, the reviewable place to evaluate an optional fallback is `website_content.py` itself (behind the existing fetch/identity/robots gates), not a new top-level script.
+
+## 2026-08-16: 990 Narrative Enrichment — reuse existing tables/scripts instead of new ones (founder directive)
+
+**Chose:** extend `extracted_programs` (deployed schema: `EIN, schedule_o_text,
+schedule_o_year, schedule_o_source, extraction_confidence, extracted_at`) with a
+new `schedule_o_source='irs_990_xml'` value, populated from the same one-pass XML
+download `fetch_irs_direct_filing.py` already does for financials+mission — instead
+of a new `irs_990_narrative_fields` evidence table (Codex Review A's original
+recommendation). Reuse `enrich_cause_tags_mission.py`'s `apply_rules()`/`merge_tags()`
+(additive, keyword-rule based) against Schedule O + Part III text for `cause_tags`,
+instead of a separate tagging pipeline — those functions already take a bare text
+string, not a hardcoded column read, so no rewrite needed. No writes to
+`org_service_areas` (holds a real `+0.04` ranking boost in `/api/search`'s RRF
+fusion per `daanaa_api.py:6176` — writing unverified model-derived geography there
+would be a stewardship P7 violation, not just an architecture preference).
+
+**Why:** founder directive, twice ("align with the tables we already have... make
+sure it all works as one system without rework and more efficiently"). Investigation
+found `extracted_programs` already has a live producer script
+(`scripts/enrichment/schedule_o_extraction.py`, ProPublica-sourced, checkpoint/resume,
+never scheduled/run — 0 rows) matching the deployed schema exactly, plus a second,
+dead, *incompatible* producer (`program_extraction.py`, assumes different columns,
+would fail on write, not in crontab) — confirms the deployed schema is the real one
+to extend, not a schema I should design fresh. `cause_tags` already feeds both
+`org_fts` (FTS5) and `org_embeddings` directly (`build_fts_index.py`,
+`build_org_embeddings.py`) — the highest-leverage, zero-new-infrastructure path to
+better searchability from richer 990 text is feeding that column, not inventing a
+new search surface.
+
+**Rejected:** Codex Review A's `irs_990_narrative_fields` + `irs_990_programs`
+generic evidence tables — real engineering, but duplicates what
+`extracted_programs`/`cause_tags`/`mission` already do, and the founder explicitly
+asked to avoid parallel systems. Evidence requirement (source excerpt, provenance)
+still satisfied via `schedule_o_source` + `extracted_at` on the existing table,
+matching the same "raw evidence table + denormalized display column" pattern
+`write_filing()` already uses for financials.
+
+**Not touched:** `org_service_areas`. Deliberate, not an oversight — see above.
+
+**Follow-up same day, post-Codex-Review-B/C:** two real bugs found and fixed
+(mission-year guard compared `mission_last_verified` as TEXT, would misorder
+against a non-4-digit-year value; the financial write guard protected
+`total_revenue` from NULL-clobber but not `total_assets` independently — now
+`COALESCE`d against the existing value on both). Added `MAX_FIELD_TEXT_LEN`/
+`MAX_LIST_ITEMS` caps on all new extraction paths (cheap hardening against a
+pathological filing; not an XXE risk, stdlib `ET.fromstring` doesn't resolve
+external entities). Also added a real per-filing skip check
+(`already_processed_eins()` in `refresh_recent_filings_batch.py`) — verified
+17,912 filings already existed from earlier `irs_direct` runs with no
+existing dedup check before this, so every pending-batch retry would have
+re-downloaded/re-parsed/re-written them regardless (founder flagged this
+directly: "skip the data which is available... so we don't duplicate the
+effort"). Gated on `parser_version` matching current, not just presence, so
+the one-time backfill of narrative fields for those 17,912 pre-narrative-era
+filings still happens — confirmed this doesn't block mission/program text
+capture, only true re-processing of an already-current filing.
+
+**Clarification on P7 (Codex Review B/C, finding #8):** `cause_tags` feeds
+both FTS ranking and semantic embeddings, so it affects search-relevance
+ordering — just not trust/merit scoring (no score/tier/percentile field
+touched). STEWARDSHIP.md P7's "no ranking manipulation" is read here as
+governing trust/merit signals, not search relevance, which improving is this
+project's stated purpose. What keeps this inside P7 either way: tags are
+rule-derived from the org's own IRS-filed narrative — deterministic,
+evidence-grounded, same bar the existing mission-derived `cause_tags` system
+already used — not inferred, guessed, or paid-for influence.
+
+See `docs/990-enrichment/codex-reviews.md` "Review B/C" for the full finding
+table.

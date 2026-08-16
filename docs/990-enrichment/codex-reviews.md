@@ -5,6 +5,39 @@ write access in this sandbox); Claude applies accepted findings directly.
 
 ---
 
+## Review B/C — Extended parser correctness/security (2026-08-16)
+
+**Scope:** combined (per founder's "one system" directive collapsing the
+originally separate XML-inventory and parser-correctness reviews into one
+pass on the actual Phase 3 diff). Read `scripts/ops/fetch_irs_direct_filing.py`
+directly (git diff against the pre-Phase-3 commit) and independently assessed
+8 questions: XML/security, Schedule O regex correctness, mission-year guard
+correctness, financial-write-guard correctness, idempotency, `cause_tags`
+import safety, batch concurrency, and stewardship/ranking impact.
+
+### Findings and resolution
+
+| # | Finding | Verdict | Resolution |
+|---|---|---|---|
+| 1 | `ET.fromstring()` has no cap on document size/nesting/text length/repeating-group count; not an XXE risk (stdlib doesn't resolve external entities) but no defense against a pathologically large/deep filing | Real, low-severity (IRS is a trusted upstream in practice) | **Fixed**: added `MAX_FIELD_TEXT_LEN` (20K chars, ~4x the largest real Schedule O snippet seen) on every extracted text field, `MAX_LIST_ITEMS` (200, an order of magnitude above real filings' single-digit-to-low-dozens program/grant counts) on every repeating-group `findall()`. Full XXE/DTD hardening (defusedxml) left as a follow-up — matches the pre-existing financial parser's posture, not a regression introduced here. |
+| 2 | `SCHEDULE_O_LINE_ALLOW` regex — checked against every documented real `FormAndLineReferenceDesc` value | **Correct**, no error found. Two acknowledged edge cases: rejects undocumented format variants ("Pt. III", "Part 3"), admits any line containing the literal word "MISSION" even hypothetically in an unrelated line | Not fixed — no counterexample found in real data; noted as a known limitation in the regex's own comment. |
+| 3 | Mission-year guard does implement "newer wins" correctly on current data, but `mission_last_verified` is `TEXT` and compared lexically — a value shaped differently than a 4-digit year (e.g. an ISO timestamp) would sort wrong | Correct on live data today, real schema-contract fragility | **Fixed**: `CAST(mission_last_verified AS INTEGER)` on both sides of the comparison. Fails safe — a malformed existing value casts to 0, sorting below any real year, so it's treated as staler (replaceable) rather than newer (protected), which is the safe direction to fail in. |
+| 4 | Financial guard (`if total_revenue is not None`) correctly protects revenue, but writes `total_assets` unconditionally within that block — a filing with parseable revenue but a failed/missing assets figure would still null out `total_assets` | **Real residual bug**, confirmed | **Fixed**: `COALESCE(new_value, existing_value)` on `total_assets` in both `org_revenue_history` and `registry_enriched` writes, so a per-field parse failure can never clobber a per-field value that was already known good. (Introduced a param-count bug applying this fix — caught by re-running the 24-filing regression test immediately after, fixed before commit.) |
+| 5 | Idempotency of `extracted_programs` INSERT OR REPLACE, `cause_tags` merge, financial upserts | **Good**, no issue found | No change. |
+| 6 | Importing `apply_rules`/`merge_tags` from `enrich_cause_tags_mission.py` at module level — safe today (no DB/network/CLI side effects at import time) but a script being used as a library without an explicit API contract | Correct as-is; architectural note for later | Not fixed now — noted as a future stability improvement (move `RULES`/`apply_rules`/`merge_tags` to a small dependency-free shared module) if/when that script's own CLI surface changes in a way that could break this import. |
+| 7 | `process_batch()` holds one SQLite write transaction for the whole batch; the narrative writes now add ~4 more statements per filing inside that transaction, extending the single-writer lock hold on a large batch | Real operational scaling concern, not a correctness bug | Not fixed now — recommended chunked commits (250-500 filings/transaction) as a follow-up if/when a batch's registry-matched EIN count grows large enough to matter; writes are idempotent so chunking is safe to add later without a migration. |
+| 8 | No writes to `org_service_areas` or any scoring/tier/percentile field (confirmed) — but `cause_tags` itself feeds both FTS ranking and semantic embeddings, so it DOES affect search-result ordering, just not trust/merit scoring | Accurate, needed explicit documentation | **Documented**: `architecture.md` and this file now state explicitly that STEWARDSHIP.md P7 ("no ranking manipulation") is understood here as governing *trust/merit* signals (score, tier, badges) — not *search relevance* ranking, which this project's stated goal is to improve. The distinction that makes this acceptable: tags are rule-derived from the org's own IRS-filed narrative (deterministic, evidence-grounded, same evidentiary bar the existing mission-derived `cause_tags` system already used), not inferred/guessed or paid-for influence. |
+
+### Post-review validation
+
+Re-ran the 24-filing dry-run regression (rolled-back DB transaction, same
+harness as pre-review) after applying all fixes: identical positive results
+(12/24 missions upgraded, 6/24 gained cause_tags, 16 new tags, 16/24
+programs_available flipped, 6 Schedule O rows written), zero errors, zero
+regressions on `total_assets`/`total_revenue` preservation.
+
+---
+
 ## Review A — Architecture challenge (2026-08-16)
 
 **Scope:** After Phase 0 system audit, before choosing final architecture.
