@@ -19,6 +19,7 @@ Usage (production, nightly):
 import argparse
 import json
 import logging
+import re
 import sqlite3
 import sys
 import time
@@ -78,7 +79,7 @@ def get_orgs_to_verify(limit=None, resume=False):
             logger.info(f"Resuming from checkpoint EIN: {last_ein}")
 
     query = """
-    SELECT EIN, organization_name, website
+    SELECT EIN, organization_name, website, CITY, STATE
     FROM registry_enriched
     WHERE website IS NOT NULL AND website != ''
     """
@@ -119,13 +120,85 @@ def ensure_output_table():
         http_status INTEGER,
         verification_status TEXT,  -- 'verified', 'redirect', 'dead_link', 'timeout', 'dns_fail', 'error'
         error_detail TEXT,
+        content_confidence TEXT,   -- 'HIGH', 'MEDIUM', 'LOW', or NULL (not content-checked)
+        matched_fields TEXT,       -- JSON array, e.g. '["name", "ein"]' — reviewable evidence (Stewardship P3)
+        page_title TEXT,
         verified_at TIMESTAMP,
         PRIMARY KEY (EIN, verified_at)
     )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_wvr_ein ON website_verification_results(EIN)")
+    # ALTER-based migration for tables created before this column set existed —
+    # CREATE TABLE IF NOT EXISTS above is a no-op on an existing table.
+    existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(website_verification_results)")}
+    for col, coltype in [('content_confidence', 'TEXT'), ('matched_fields', 'TEXT'), ('page_title', 'TEXT')]:
+        if col not in existing_cols:
+            conn.execute(f"ALTER TABLE website_verification_results ADD COLUMN {col} {coltype}")
     conn.commit()
     conn.close()
+
+
+def _normalize_for_match(text: str) -> str:
+    """Lowercase + collapse whitespace for substring comparison."""
+    return ' '.join(text.lower().split())
+
+
+_ORG_SUFFIXES = re.compile(
+    r'\b(inc|incorporated|corp|corporation|foundation|fund|association|assoc|'
+    r'organization|org|ltd|llc|co)\b\.?',
+    re.IGNORECASE,
+)
+
+
+def _loose_name(name: str) -> str:
+    """Strip common legal suffixes for a looser name match — 'PTA California
+    Congress of Parents Teachers & Students Inc' vs the same text without
+    'Inc' should still count as a name match."""
+    return ' '.join(_ORG_SUFFIXES.sub('', name).split())
+
+
+def match_content(page_text: str, org_name: str, city: str | None, state: str | None, ein: str) -> tuple[str, list[str]]:
+    """Check fetched page text against org identity. Returns
+    (confidence, matched_fields) — matched_fields is logged so the basis for
+    the confidence label is always reviewable (Stewardship P3), not a black box.
+
+    Confidence:
+      HIGH   — name (exact or loose) AND (city OR EIN) both match
+      MEDIUM — name matches alone, OR city+EIN match without a name match
+      LOW    — no name match and no city+EIN pair; weak or no signal
+    """
+    text = _normalize_for_match(page_text)
+    matched = []
+
+    name_exact = _normalize_for_match(org_name) in text
+    name_loose = (not name_exact) and _normalize_for_match(_loose_name(org_name)) in text
+    if name_exact:
+        matched.append('name_exact')
+    elif name_loose:
+        matched.append('name_loose')
+
+    city_match = bool(city) and _normalize_for_match(city) in text
+    if city_match:
+        matched.append('city')
+
+    # EIN may appear as raw 9 digits or IRS-formatted XX-XXXXXXX
+    ein_digits = re.sub(r'\D', '', ein)
+    ein_formatted = f"{ein_digits[:2]}-{ein_digits[2:]}" if len(ein_digits) == 9 else None
+    ein_match = bool(ein_digits) and (ein_digits in re.sub(r'\D', '', text) or (ein_formatted and ein_formatted in page_text))
+    if ein_match:
+        matched.append('ein')
+
+    has_name = name_exact or name_loose
+    has_secondary = city_match or ein_match
+
+    if has_name and has_secondary:
+        confidence = 'HIGH'
+    elif has_name or (city_match and ein_match):
+        confidence = 'MEDIUM'
+    else:
+        confidence = 'LOW'
+
+    return confidence, matched
 
 
 class WebsiteVerifierSpider(scrapy.Spider):
@@ -168,18 +241,38 @@ class WebsiteVerifierSpider(scrapy.Spider):
                 url,
                 callback=self.parse,
                 errback=self.errback,
-                meta={'ein': org['EIN'], 'org_name': org['organization_name'], 'original_url': org['website']},
+                meta={
+                    'ein': org['EIN'],
+                    'org_name': org['organization_name'],
+                    'original_url': org['website'],
+                    'city': org['CITY'] if 'CITY' in org.keys() else None,
+                    'state': org['STATE'] if 'STATE' in org.keys() else None,
+                },
                 dont_filter=True,
             )
 
     def parse(self, response):
         ein = response.meta['ein']
+        org_name = response.meta['org_name']
         original_url = response.meta['original_url']
         final_url = response.url
         final_domain = urlparse(final_url).netloc
 
         status = 'redirect' if final_url != response.meta.get('original_url') else 'verified'
         self.stats_local[status] += 1
+
+        # Content verification: does this page actually belong to this org?
+        # Only meaningful for text/html responses — skip PDFs, images, etc.
+        confidence, matched_fields, page_title = None, [], None
+        content_type = response.headers.get('Content-Type', b'').decode('utf-8', errors='replace')
+        if 'text/html' in content_type:
+            page_text = ' '.join(response.css('body ::text').getall())
+            confidence, matched_fields = match_content(
+                page_text, org_name, response.meta.get('city'), response.meta.get('state'), ein
+            )
+            page_title = response.css('title::text').get()
+            if page_title:
+                page_title = page_title.strip()[:200]
 
         result = {
             'EIN': ein,
@@ -189,9 +282,13 @@ class WebsiteVerifierSpider(scrapy.Spider):
             'http_status': response.status,
             'verification_status': status,
             'error_detail': None,
+            'content_confidence': confidence,
+            'matched_fields': json.dumps(matched_fields) if matched_fields else None,
+            'page_title': page_title,
         }
         self.results.append(result)
-        logger.info(f"OK  {ein} ({response.meta['org_name'][:30]}): {final_domain} [{response.status}]")
+        conf_str = f" content={confidence}({','.join(matched_fields)})" if confidence else ""
+        logger.info(f"OK  {ein} ({org_name[:30]}): {final_domain} [{response.status}]{conf_str}")
 
     def errback(self, failure):
         ein = failure.request.meta['ein']
@@ -222,6 +319,9 @@ class WebsiteVerifierSpider(scrapy.Spider):
             'http_status': None,
             'verification_status': error_type,
             'error_detail': detail[:500],
+            'content_confidence': None,
+            'matched_fields': None,
+            'page_title': None,
         })
 
     def closed(self, reason):
@@ -243,11 +343,13 @@ class WebsiteVerifierSpider(scrapy.Spider):
         conn = sqlite3.connect(DB_PATH)
         conn.executemany("""
         INSERT INTO website_verification_results
-        (EIN, original_url, final_url, final_domain, http_status, verification_status, error_detail, verified_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        (EIN, original_url, final_url, final_domain, http_status, verification_status, error_detail,
+         content_confidence, matched_fields, page_title, verified_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         """, [
             (r['EIN'], r['original_url'], r['final_url'], r['final_domain'],
-             r['http_status'], r['verification_status'], r['error_detail'])
+             r['http_status'], r['verification_status'], r['error_detail'],
+             r.get('content_confidence'), r.get('matched_fields'), r.get('page_title'))
             for r in self.results
         ])
         conn.commit()
