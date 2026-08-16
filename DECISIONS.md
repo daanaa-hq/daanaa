@@ -1213,3 +1213,21 @@ Properly implemented in Phase 2 after user research on frequency.
 
 All gates passing: Stewardship P2/P3 ✅, Charter honesty ✅, Privacy ✅
 
+---
+
+## 2026-08-16: Expense breakdown chart hidden site-wide pending data recovery — partner-reported misinformation
+
+**Trigger:** Founder demoed the site to a lead at Aga Khan Foundation (AKF), who flagged the "How money is spent" breakdown on their org page (EIN 521231983) as misinformation.
+
+**Investigation:** Confirmed via pure arithmetic, no external source needed: `program_expenses` ($64.83M) + `management_expenses` ($61.70M) + `fundraising_expenses` ($1.25M) = $127.78M for AKF, against a real `total_expenses` of $64.83M (verified against ProPublica's API — total revenue and total expenses match exactly). The three category "parts" summed to 1.97x the whole, a structural impossibility. `ExpenseBreakdown.tsx` computed its displayed percentages from the sum of the three (wrong) parts rather than cross-checking `total_expenses`, so it would have shown roughly 51% program / 48% management for a grantmaking foundation that in reality passes through the large majority of its budget to programs.
+
+**Scale:** Checked how widespread this is before deciding scope. Of 258,824 orgs with all three category fields populated, 244,428 (94.4%) deviate from `total_expenses` by more than 15%, and 238,024 (92%) sum to over 1.5x the total. Every sampled bad row (including Kaiser, UPMC, Mayo Clinic, Cleveland Clinic — largest orgs in the DB) shares `data_source='irs_soi'`. Traced the current `scripts/enrichment/ingest_irs_soi.py`: its docstring and SQL both confirm it only ever writes `total_revenue`/`total_assets`/`latest_tax_year`/`data_source` — it has never touched the expense category columns. The corrupted values are stale data from an older, since-removed ingestion pass that happened to stamp the same `data_source` label; there is no currently-running script actively making this worse.
+
+**Decision:** Did not attempt to recover or guess correct values in the same session the bug was found (P3 — never present an unverified fix as fact). Instead added a data-integrity guard in `ExpenseBreakdown.tsx`: cross-check the three parts against the authoritative `total_expenses`, render nothing if they don't reconcile within 20%. Verified against real data before shipping: AKF now correctly hides; spot-checked good-data orgs (Rogers Memorial Hospital Foundation, Wee Care Day Care Nursery Centers) still render normally.
+
+**Why this scope, not more:** Recovering 94% of a 258K-row category breakdown is a multi-step data-recovery project (find or re-derive a correct source, validate, backfill, spot-check) — not something to rush inside the same session a live-misinformation report came in. The guard stops active harm now; root-cause data recovery is tracked as a separate follow-up.
+
+**Commit:** 9d15d92a031. Confirmed this was live in production (not a dev-only path) — the AKF lead's demo was seeing exactly this.
+
+**Follow-up (open):** Recover correct program/management/fundraising figures — likely needs a fresh IRS SOI or NCCS re-extract with verified column mapping, or 990 XML re-parse for the highest-revenue orgs first. Also worth auditing `program_expense_pct` (used elsewhere on the page, e.g. AnswerCard's "¢ per dollar to programs" chip) for the same class of error — it's range-clamped to [0,100] by an existing `data_audit_fix.py` pass but that doesn't prove it's semantically correct, just in-range.
+

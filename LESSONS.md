@@ -331,3 +331,15 @@ A second near-miss in the same incident: the same recon flagged `DB_PATH` in tha
 **Preventing rule:**
 
 > A config value that looks wrong was often set wrong *on purpose*, as a workaround for a constraint that isn't visible from the diff alone. Before "fixing" a drifted value — env var, config flag, disabled check — grep the codebase for what reads it and what happens on every branch, not just the branch that explains the symptom you're chasing. If the fix removes a value, confirm nothing downstream requires it (`DB_PATH` here) as rigorously as you confirmed the bug (`DAANAA_PROD` here). And: the dry-run tooling built specifically to catch this class of failure (`provision.sh`'s dry-run mode, built the same session) has to actually get used — building the safety net and then hand-rolling the deploy around it defeats the purpose.
+
+---
+
+## 2026-08-16: A "breakdown" chart that derives its own total from its own parts can't self-detect corruption
+
+**Symptom:** `ExpenseBreakdown.tsx` computed `totalExpenses = programExpenses + managementExpenses + fundraisingExpenses` and built percentages from that self-derived total. When the three source fields were corrupted (legacy `irs_soi` ingestion, see DECISIONS.md same date), the component had no way to notice — the percentages always summed to 100% by construction, so nothing about the *rendered output* looked broken. The bug was only visible by comparing against a field the component never touched (`total_expenses`), or by a human who knew the real-world numbers (the AKF lead).
+
+**Root cause:** A chart/breakdown component trusted its own inputs to be internally consistent and never checked them against an independent, authoritative total already present on the same object.
+
+**Preventing rule:**
+
+> Any UI that breaks a total into parts (expense categories, revenue sources, time allocations) must verify the parts against an independently-sourced total before rendering, not just sum the parts and call that the total. If no independent total exists, that itself is worth flagging. A percentage breakdown that always sums to exactly 100% is not evidence of correctness — it's guaranteed by the arithmetic and proves nothing about whether the underlying category values are right.
