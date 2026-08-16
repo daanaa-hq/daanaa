@@ -588,12 +588,18 @@ export default function OrganizationDetail() {
                     </div>
                   )}
 
-                  {/* Financial Health Signal — v6 scoring tier */}
+                  {/* Financial Health Signal — v6 scoring tier.
+                      tier_label is the verified-correct human description
+                      ("Donation-Funded Programs, Established, national");
+                      the raw scoring_tier enum ("3_Broad_Category") is an
+                      internal pipeline code and was leaking to donors
+                      unexplained. See FinancialContext.tsx, which already
+                      uses tier_label for the same reason. */}
                   {apiOrg.scoring_tier && (
                     <div className="space-y-1">
                       <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Financial Context</p>
                       <p className="font-display text-lead text-soft-gold font-semibold">
-                        {apiOrg.scoring_tier.replace(/_/g, ' ')}
+                        {apiOrg.tier_label || apiOrg.scoring_tier.replace(/_/g, ' ')}
                       </p>
                     </div>
                   )}
