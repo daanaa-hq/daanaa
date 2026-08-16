@@ -5,6 +5,49 @@ write access in this sandbox); Claude applies accepted findings directly.
 
 ---
 
+## Review D — GPU enrichment (2026-08-16)
+
+**Scope:** Phase 4 (GPU-derived semantic fields). Read
+`scripts/enrichment/llm_extraction.py`'s narrative-enrichment additions,
+`scripts/enrichment/narrative_990/gpu_enrichment.py`, and
+`migrations/024_irs_990_narrative_gpu_summary.sql` directly, against the
+architecture doc's claims. 7 questions: deterministic-vs-LLM division of
+work, hallucination defenses, cache/version invalidation, batching, JSON
+failure behavior, storage/stewardship separation, GPU-window appropriateness.
+
+### Findings and resolution
+
+| # | Finding | Verdict | Resolution |
+|---|---|---|---|
+| 1 | `significant_new_program`/`significant_change` are deterministically parsed but weren't fed into `build_narrative_input()` at all (at the time Codex read the file) | Real gap | **Fixed**, twice over: first as an LLM prompt hint (same session, before this review), then — per this review's stronger recommendation — persisted as their own deterministic columns in migration 024, independent of the model narrating them. Program expense amounts in the input with no corresponding output field, risking "expense size = importance" inference | Real, minor | **Fixed**: removed from input; descriptions only. |
+| 2 | No source-span/evidence-reference on any generated claim, despite `architecture.md` claiming evidence IDs exist (stale language inherited from the original Codex Review A proposal, never actually implemented in the scoped-down v1). `grounded` is model self-certification, not independent verification, and conflates "thin input" with "unsupported output" | Real, most substantive finding | **Fixed**: `reported_outcomes` items now require a verbatim `evidence_quote`; `_verify_reported_outcomes()` mechanically checks it appears in the bounded input (normalized) before storage, drops and logs anything that doesn't match. `grounded`'s schema description reframed as diagnostic-only. |
+| 3 | Cache invalidation logic is correct (`already_cached()` requires input hash + model + prompt version to all match), but the stored `model_version` value was the API-facing model-name string, not a real artifact identifier — wouldn't invalidate if the served gguf changed under the same name | Real, minor | **Fixed**: `MODEL_ARTIFACT_VERSION` constant stores the specific quantized filename, independent of what string the API call itself uses. |
+| 4 | Sequential single-request calls are adequate for 24 filings but would take ~6.3 hours serial at 1.2s/filing against a ~19K-filing batch; the model launch already supports multi-slot continuous batching (`gpu_night.sh`'s `--parallel 6 --cont-batching`), matching the embedding server's `-np 16` convention — not used here | Real, scale concern | **Deliberately deferred** — a bounded-concurrency producer against a single-writer SQLite target is real engineering with real bug risk; better built carefully before the 1,000-filing gate than rushed same-session. Documented as an explicit open item, not silently skipped. |
+| 5 | `_call_llm()`'s exception handling only covered `KeyError`/`JSONDecodeError` — a non-JSON response body, empty/absent `choices`, or wrong-shaped-but-valid JSON weren't all guarded | Real | **Fixed**: widened to `(KeyError, IndexError, TypeError, ValueError)` — `JSONDecodeError` is a `ValueError` subclass, so still covered. Added `_validate_shape()` for a local structural check (required keys present, array fields are lists) beyond `json.loads()` succeeding. Shared function — also hardens the original website-extraction callers. |
+| 6 | Separate-table storage design confirmed correct: no Phase 4 write path touches `mission`, `cause_tags`, `org_service_areas`, scores, or embeddings — the only write is the standalone summary table | Confirmed, no issue | No change needed. Noted: row-level input hashing is provenance for the *filing*, not per-claim evidence — that's what finding #2's fix addresses. |
+| 7 | Founder's 1-hour daytime exception was appropriate; nothing in the code requires daytime operation (local, synchronous). Code doesn't itself enforce the night-only window — acceptable if scheduling is the intended gate. Separately: `gpu_night.sh` documents 9pm-9am, CLAUDE.md documents 10pm-6am — a pre-existing discrepancy, unrelated to this project | Confirmed appropriate + unrelated pre-existing drift | Not this project's call to reconcile; flagged in `DECISIONS.md` for founder awareness. |
+
+### Self-caught issue during fix verification (not a Codex finding)
+
+Testing migration 024 via `db.executescript()` inside a `BEGIN`/`ROLLBACK`
+block silently broke the rollback guarantee (`executescript()` implicitly
+commits pending transactions, DDL inside it isn't covered by a later
+`ROLLBACK`) — the table was created for real in production with the stale
+pre-fix schema. 0 rows, caught on the next test run failing, corrected via
+`DROP TABLE`, verified clean. Full writeup: `LESSONS.md` 2026-08-16. Test
+harness fixed to `execute()` per statement and to explicitly verify rollback
+by querying `sqlite_master` afterward.
+
+### Verdict
+
+"Directionally sound... require claim-level evidence plus local schema
+validation, deterministic treatment of the significant-change flags, and a
+measured 4-6-slot batch producer before the 1,000-filing run." First three
+addressed same session; batching explicitly deferred with reasoning, not
+silently dropped.
+
+---
+
 ## Review B/C — Extended parser correctness/security (2026-08-16)
 
 **Scope:** combined (per founder's "one system" directive collapsing the

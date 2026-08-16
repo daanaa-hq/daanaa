@@ -1458,3 +1458,63 @@ already used — not inferred, guessed, or paid-for influence.
 
 See `docs/990-enrichment/codex-reviews.md` "Review B/C" for the full finding
 table.
+
+## 2026-08-16: 990 Narrative Enrichment Phase 4 (GPU semantic layer) — evidence-quote verification, deferred batching
+
+**Chose:** GPU-derived fields (mission_summary, services, populations_served,
+geographies, reported_outcomes, new_or_changed_programs, other_useful_facts)
+computed only from Phase 3's bounded deterministic excerpts (never a whole
+filing), via Qwen3-30B on port 11437, with `response_format: json_schema`
+enforced structured output — extending `scripts/enrichment/llm_extraction.py`
+(the project's existing local-LLM calling module) rather than a new one. A
+new table (`migrations/024_irs_990_narrative_gpu_summary.sql`, **not yet
+applied — requires founder approval** per CLAUDE.md's schema-change gate) —
+the one place in this project that genuinely needed new storage, since
+AI-derived content can't share a home with the deterministic `mission`/
+`cause_tags` fields without contaminating their evidentiary bar.
+
+**Why:** founder granted an explicit 1-hour daytime exception to the
+night-only GPU policy for this session. Real design finding while building:
+making the schema's array output fields optional let the constrained JSON
+decoder stop early once required fields were satisfied, even with rich
+source text available (confirmed via a raw non-schema call hitting
+`finish_reason=length` on the same input) — making them required (empty
+array is still an honest answer) fixed it.
+
+**Codex Review D (`codex exec -s read-only`)** found the single biggest gap:
+no evidence linkage between a generated claim and its source text, despite
+`architecture.md` claiming evidence IDs existed (stale language from the
+original Review A proposal, never actually built into the scoped-down v1).
+Fixed: `reported_outcomes` items now require a verbatim `evidence_quote`,
+mechanically verified (normalized substring match) against the bounded
+input before storage — unverified items are dropped and logged, not stored.
+`grounded` reframed as diagnostic self-assessment only, never a publication
+gate. Also fixed: `significant_new_program`/`significant_change` now
+persisted as their own deterministic columns (not just an LLM hint), a
+fuller model-artifact identifier for cache provenance, widened `_call_llm()`
+exception handling, and local schema-shape validation. **Deliberately
+deferred**: 4-6-slot concurrent batching (real concurrency-bug risk against
+single-writer SQLite, better built carefully before a 1,000-filing gate than
+rushed same-session).
+
+**Self-caught process failure, corrected same session:** testing the
+migration via `db.executescript()` inside a `BEGIN`/`ROLLBACK` block didn't
+actually roll back — `executescript()` implicitly commits pending
+transactions, so the table was created for real in production with a stale
+schema (schema change without approval). Caught when a second test run
+failed on a missing column; 0 rows had been written; corrected via
+`DROP TABLE`, verified clean. Root cause + preventing rule: `LESSONS.md`
+2026-08-16.
+
+**Also found, not this project's to fix:** `gpu_night.sh` documents a 9pm-9am
+GPU window; CLAUDE.md documents 10pm-6am. Pre-existing discrepancy, flagging
+for founder awareness, not silently resolving one direction without knowing
+which is authoritative.
+
+**Rejected:** rushing the batching work to hit a "fully wired" state in one
+session. Codex's own framing — "before the 1,000-filing run," not "before
+this ships" — matches treating the smaller, already-validated increment as
+the deliverable, with the scale work as an explicit next step.
+
+See `docs/990-enrichment/{architecture,codex-reviews}.md` "Review D" for
+full detail.

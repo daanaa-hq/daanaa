@@ -150,32 +150,158 @@ existing project convention (the pre-existing financials/mission parser used
 the same approach). `unzip` shell-out extracts by a known, index-derived
 `OBJECT_ID` filename — not user input.
 
-## GPU enrichment (Phase 4)
+## GPU enrichment (Phase 4) — implemented, 24-filing dry run validated
 
-- Model: Qwen3-30B-A3B-Instruct via existing `llama-server` (port 11437,
-  currently not running — starts on demand). Per CLAUDE.md, GPU is
-  night-only (10pm-6am Central) for heat management; batch benchmarking and
-  production runs scheduled inside that window unless the founder grants an
-  explicit exception.
-- Input: bounded, concatenated deterministic excerpts for one filing (mission
-  candidates + Schedule O explanations + Part III program descriptions +
-  grant purposes) — never the whole XML file.
-- Output: strict JSON per the schema in the original project brief
-  (`mission_summary`, `services[]`, `populations_served[]`, `geographies[]`,
-  `programs[]` with `source_evidence_ids`, `reported_outcomes[]` explicitly
-  marked `organization_reported: true`, `new_or_changed_programs[]`,
-  `other_useful_facts[]`). Every derived claim must carry
-  `source_evidence_ids` pointing at `irs_990_narrative_fields`/
-  `irs_990_programs` rows; omit rather than guess when evidence is absent.
-- Skip-cache: `input_sha256` (hash of the bounded excerpt bundle) +
-  `model_version` + `prompt_version` — reuse the row if all three match a
-  prior run, per Codex Review A ("GPU input hash caching, keyed by normalized
-  bounded input + prompt/schema/model version").
-- Gate: 15-30 filing manual review (already sampled — Phase 1 output) → fix
-  obvious failure classes → 1,000-filing dry run for throughput/reliability
-  (Codex-recommended; standalone 100-filing gate cut unless the first review
-  surfaces something worth isolating) → 10,000-filing scale test deferred to
-  a background operational check post-ship, not a pre-ship gate.
+Founder granted an explicit 1-hour daytime exception to CLAUDE.md's
+night-only GPU policy for this session (2026-08-16); code itself has no
+day/night dependency, so it runs unattended overnight the same way.
+
+- **Model**: Qwen3-30B-A3B-Instruct-2507-Q4_K_M via `llama-server`
+  (`~/llama-vulkan/build/bin/llama-server`, port 11437, `--device Vulkan1
+  -ngl 99 --ctx-size 16384 --jinja`). Had to launch with `-fit off` — the
+  default auto-fit-to-device-memory step crashed silently on first attempt
+  (no error, process just exited after "fitting params to device memory");
+  the binary's own log suggested the flag. No daemon/launcher script for
+  this specific model currently exists in the repo (only a health-check
+  watchdog); started manually this session.
+- **Code**: `scripts/enrichment/llm_extraction.py` — extended, not
+  duplicated. That file already had the project's established local-LLM
+  calling convention (`_call_llm()`, `response_format: json_schema`,
+  temperature 0.1, fail-closed on any error) for scraped-website extraction;
+  added `NARRATIVE_ENRICHMENT_SCHEMA`, `NARRATIVE_SYSTEM_PROMPT`,
+  `build_narrative_input()`, `extract_narrative_enrichment()` to the same
+  file, reusing `_call_llm()` as-is (widened its `max_input_chars`/
+  `max_tokens` to optional parameters with unchanged defaults, so the
+  existing website-extraction callers are untouched).
+- **Input**: `build_narrative_input()` assembles Phase 3's already-extracted
+  deterministic fields (mission text, Schedule O explanations, Part III
+  program descriptions with expense amounts, grant purposes) into one
+  labeled text block — never the whole XML file, never a network call to
+  re-fetch anything.
+- **Output schema — one real design finding**: the first schema version made
+  `services`/`populations_served`/`geographies`/etc. optional. On a
+  wildlife refuge with 12,444 chars of rich Schedule O content, the model
+  returned only `mission_summary` + 4 empty arrays — not because the content
+  wasn't there, but because a schema-constrained decoder can legally stop
+  once required fields are satisfied. Confirmed via a raw non-schema call on
+  the same input that hit `finish_reason=length` at 1200 tokens — the model
+  could clearly generate more, the optional schema just let it not. Fix:
+  made every field required (empty array is still a valid, honest answer,
+  not a forced guess) — same input then correctly returned 7 services, 5
+  geographies, 4 quantified `reported_outcomes`, 4 other facts, all
+  manually verified traceable to source text.
+- **Grounding**: enforced by (1) bounded input — the model only ever sees
+  Phase 3's already-deterministic excerpts, never a whole filing or outside
+  knowledge, (2) `NARRATIVE_SYSTEM_PROMPT`'s explicit rules (use only
+  supplied text; never infer a population/geography from the org's name;
+  never turn a stated goal into a claimed accomplishment; honest-empty over
+  plausible-invented), (3) a model-self-assessed `grounded` boolean field,
+  and (4) manual spot-check against source text (done for every example in
+  this doc). `reported_outcomes` is structurally separate from
+  `other_useful_facts` and always organization-reported, never verified —
+  matches Stewardship P3/P5/P10.
+- **Skip-cache**: implemented and tested (`gpu_enrichment.py`,
+  `already_cached()`) — keyed on `(ein, tax_year, object_id)` +
+  `input_sha256` + `model_version` + `prompt_version`. Verified: identical
+  second call resolves in 0.000s with zero GPU cost; a hash/version mismatch
+  correctly falls through to a real call.
+- **Storage**: `migrations/024_irs_990_narrative_gpu_summary.sql` — **written
+  and schema-tested in a rolled-back transaction, NOT applied to the live
+  DB**. Requires founder approval per CLAUDE.md's schema-change gate. New
+  table, deliberately separate from `registry_enriched`/`mission`/
+  `cause_tags` — AI-derived summarization must stay visibly distinguishable
+  from Phase 3's deterministic layer (Stewardship P3/P10), and must never
+  reach `cause_tags` specifically, since Codex Review B/C confirmed that
+  column feeds search-relevance ranking and needs to stay rule-derived to
+  hold the same evidentiary bar.
+
+### Benchmark, initial pass (24-filing dry run, before Codex Review D)
+
+| Metric | Result |
+|---|---|
+| Filings with extractable input | 16/24 (8 were 990-PF, out of scope) |
+| Failures/exceptions | 0 |
+| Avg latency | 1.2s/filing (sequential, single request) |
+| `grounded: true` | 14/16 |
+| `services` / `geographies` / `populations_served` / `reported_outcomes` / `other_useful_facts` filled | 15 / 7 / 1 / 5 / 4 (of 16) |
+| `new_or_changed_programs` filled | 0/16 — checked afterward: none of the 24 sampled filings actually had `significant_new_program`/`significant_change` set true, so this was correct/honest, not a gap |
+
+### Codex Review D — findings and fixes (2026-08-16)
+
+Full record in `codex-reviews.md`. Summary of what changed:
+
+- **Evidence-quote verification added** — the single biggest finding.
+  `reported_outcomes` items now require a verbatim `evidence_quote`; a new
+  `_verify_reported_outcomes()` mechanically checks (whitespace/case
+  normalized) that the quote actually appears in the bounded input before
+  the item is kept — anything that doesn't match is dropped and logged, not
+  stored. `grounded` was reframed in its own schema description as a
+  diagnostic self-assessment, not independent verification or a publication
+  gate (it's the same model self-certifying its own output).
+- **Program expense amounts removed from GPU input** — included with no
+  output field using them, risking implicit "expense size = importance"
+  inference. Descriptions only now.
+- **`significant_new_program`/`significant_change` now persisted as their
+  own deterministic columns** (migration 024), not just an LLM prompt hint —
+  their provenance is the filing itself, independent of whether the model
+  successfully narrates what changed.
+- **Fuller model-artifact identifier** for cache provenance
+  (`Qwen3-30B-A3B-Instruct-2507-Q4_K_M`, not just the API-facing model-name
+  string, which doesn't distinguish a swapped gguf file served under the
+  same name).
+- **`_call_llm()`'s error handling widened** — the original except clause
+  only caught `KeyError`/`JSONDecodeError`; a non-JSON response body
+  (`ValueError`), empty/absent `choices` (`IndexError`/`TypeError`) weren't
+  covered. Shared function, so this also hardens the original
+  website-extraction callers.
+- **Local schema-shape validation added** (`_validate_shape()`) — confirms
+  every required key is present and array fields are actually lists before
+  the result is accepted, beyond just `json.loads()` succeeding.
+
+**Re-benchmarked after fixes** (same 24 filings, migration applied+rolled-back
+correctly this time — see production near-miss below): 16/16 written, 0
+failed. Evidence verification dropped 3 of 11 model-generated
+`reported_outcomes` (paraphrased rather than quoted verbatim — e.g. the
+model wrote "$300,0..." where the source said "300,000" without a dollar
+sign) — 8 outcomes survived verification across the 16 filings. This is the
+verification working as designed: it trades recall for precision (some
+true-but-paraphrased claims get dropped) rather than risk storing an
+unverifiable one, which is the correct direction for an accuracy-sensitive
+donor-facing claim.
+
+**Not fixed, deliberately deferred**: Codex's batching recommendation
+(4-6 concurrent requests with bounded-concurrency + chunked commits) — real
+engineering work with real concurrency-bug risk against a single-writer
+SQLite target; sequential is adequate for the sample size validated so far
+and should be built carefully before the 1,000-filing gate, not rushed
+inside this session. The `gpu_night.sh` vs. CLAUDE.md GPU-window discrepancy
+Codex found (9pm-9am vs. documented 10pm-6am) is pre-existing and unrelated
+to this project — flagged in `DECISIONS.md`, not silently resolved one way
+without knowing which is authoritative.
+
+### Production near-miss during testing (self-caught, corrected same session)
+
+Testing migration 024 used `db.executescript()` inside a `BEGIN`/`ROLLBACK`
+block, assuming the same rollback safety used throughout this session.
+`executescript()` doesn't honor that — it implicitly commits any pending
+transaction and its own DDL isn't covered by the later `ROLLBACK`. The table
+was created for real in production (schema-change without the approval
+CLAUDE.md requires), caught when a second test run failed on a missing
+column that should have been rolled back. **0 rows had been written** —
+caught before any data existed, corrected via `DROP TABLE`, verified clean.
+Full root-cause writeup: `LESSONS.md` 2026-08-16. Test harness fixed to
+`execute()` each statement individually (which does honor the transaction)
+and to explicitly verify rollback by querying `sqlite_master` afterward,
+not just trust it.
+
+### Open items before production wiring
+
+1. **Migration 024 needs founder approval** before any real
+   (non-rolled-back) write — everything in this section was validated in a
+   transaction that's confirmed to actually roll back now.
+2. Batching/concurrency for the 1,000-filing gate (see above) — not started.
+3. `gpu_night.sh` / CLAUDE.md GPU-window reconciliation — flagged, not this
+   project's call to resolve.
 
 ## Scheduling / concurrency
 
