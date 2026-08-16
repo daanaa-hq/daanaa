@@ -343,3 +343,15 @@ A second near-miss in the same incident: the same recon flagged `DB_PATH` in tha
 **Preventing rule:**
 
 > Any UI that breaks a total into parts (expense categories, revenue sources, time allocations) must verify the parts against an independently-sourced total before rendering, not just sum the parts and call that the total. If no independent total exists, that itself is worth flagging. A percentage breakdown that always sums to exactly 100% is not evidence of correctness — it's guaranteed by the arithmetic and proves nothing about whether the underlying category values are right.
+
+---
+
+## 2026-08-16: A folder migration is not done when the files land — it's done when every reference to them still resolves
+
+**Symptom:** A routine "close out open tasks" pass restarted the local API server and noticed `profile_contexts` failed to import. Chasing that one fix led to discovering 26 broken crontab entries and 21 broken `scripts.X` qualified Python imports — spanning this entire session's folder migration effort (batches 1-4), not just the most recent batch. Real operational infrastructure was silently offline: `backup_strategy.sh`, `monitor_db_corruption.sh`, `api_watchdog.sh`, `gpu_night.sh`, the IRS revocation sync, the overnight scoring pipeline, and more — all cron-scheduled, all failing with "No such file or directory" or `ModuleNotFoundError` on every scheduled run, none of it visible unless something actually tried to run them and checked.
+
+**Root cause:** Each folder-migration batch this session verified broken imports *within* `scripts/` (files importing siblings), and fixed known cron paths *when a symptom surfaced* (e.g. the gt990 cron, found only because a founder question about stale data led to investigating it). Nothing checked: (1) qualified `from scripts.X import Y` references from files *outside* `scripts/` (the two API files, `tests/`), or (2) the crontab itself, which lives outside the git repo entirely and so was invisible to any repo-level check.
+
+**Preventing rule:**
+
+> A file move is not verified by "does the mover script succeed" or "do sibling files in the same directory still import correctly." It's verified by: (1) a repo-wide grep for the old import path in every qualified form (bare, package-relative, and fully-qualified), not just same-directory bare imports; and (2) checking every reference to the file that lives *outside* version control — crontabs, systemd units, CI configs, launchd plists, anything with a hardcoded path pointing at a script. `git mv` tracks the file; it does not (and cannot) track everything that points at it. After any folder reorganization, treat "does the crontab still resolve" as its own explicit checklist item, not something you'll notice from a stack trace — a cron job with `2>&1 >> logfile` fails silently into a log file nobody is tailing.
