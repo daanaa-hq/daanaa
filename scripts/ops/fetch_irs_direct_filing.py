@@ -105,9 +105,14 @@ def find_latest_filing(ein: str, submission_years: list[int]) -> dict | None:
 
 
 def parse_990_xml(content: bytes) -> dict | None:
-    """Parses a single 990 XML's revenue/assets/expenses and Part IX
-    functional-expense breakdown. Returns None if it's not a parseable
-    IRS990 return."""
+    """Parses a single 990 XML's revenue/assets/expenses, Part IX
+    functional-expense breakdown, and organization-authored mission text.
+    Returns None if it's not a parseable IRS990 return.
+
+    Mission text added 2026-08-16 (Track B/C consolidation, see DECISIONS.md
+    same date): one XML download now produces financials + Part IX + a
+    mission-text candidate in a single pass, instead of a separate pipeline
+    re-downloading the same filing just for Part III text."""
     root = ET.fromstring(content)
     irs990 = root.find(f".//{{{NS}}}IRS990")
     if irs990 is None:
@@ -123,6 +128,29 @@ def parse_990_xml(content: bytes) -> dict | None:
         except ValueError:
             return None
 
+    def text(el):
+        if el is None or not el.text:
+            return None
+        value = " ".join(el.text.split())
+        return value or None
+
+    # Part I is the organization's explicit short mission statement, so prefer
+    # it to the longer Part III program-service accomplishment descriptions.
+    mission_text = text(irs990.find(f"{{{NS}}}ActivityOrMissionDesc"))
+    if mission_text is None:
+        program_descriptions = [
+            value
+            for value in (
+                text(description)
+                for description in irs990.findall(
+                    f"{{{NS}}}ProgramServiceAccomplishmentGrp/"
+                    f"{{{NS}}}DescriptionProgramServiceAccomTxt"
+                )
+            )
+            if value
+        ]
+        mission_text = "\n\n".join(program_descriptions) or None
+
     return {
         "total_revenue": amt("CYTotalRevenueAmt"),
         "total_assets": amt("TotalAssetsEOYAmt"),
@@ -130,6 +158,7 @@ def parse_990_xml(content: bytes) -> dict | None:
         "program_services_amt": amt("ProgramServicesAmt", grp) if grp is not None else None,
         "management_general_amt": amt("ManagementAndGeneralAmt", grp) if grp is not None else None,
         "fundraising_amt": amt("FundraisingAmt", grp) if grp is not None else None,
+        "mission_text": mission_text,
     }
 
 
@@ -198,6 +227,25 @@ def write_filing(db: sqlite3.Connection, ein: str, filing: dict, data: dict, now
         "data_source = 'irs_direct' WHERE EIN = ? AND (latest_tax_year IS NULL OR latest_tax_year < ?)",
         (data["total_revenue"], data["total_assets"], tax_year, ein, tax_year)
     )
+
+    # Mission text, added 2026-08-16. Guard clause copied verbatim from
+    # scripts/enrichment/ingest_990_missions.py's existing precedence rule
+    # (verified against that file, not assumed): only write when the org has
+    # no mission yet, or its current mission was AI-generated. Never
+    # overwrites a claimed/nonprofit-submitted mission, a scraped-from-website
+    # mission, or a mission from a previous, newer irs_990 filing.
+    mission_text = data.get("mission_text")
+    if mission_text and len(mission_text.strip()) >= 20:
+        db.execute(
+            "UPDATE registry_enriched "
+            "SET mission = ?, mission_source = 'irs_990', "
+            "    mission_last_verified = ? "
+            "WHERE EIN = ? "
+            "  AND (mission_source IS NULL OR mission_source LIKE 'ai_%' "
+            "       OR mission IS NULL OR mission = '')",
+            (mission_text, tax_year, ein),
+        )
+
     return reconciles
 
 
