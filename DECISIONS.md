@@ -1361,3 +1361,15 @@ Also confirmed several other unused-but-populated fields (total_assets/revenue_3
 **Also noted, not actioned:** Hidden Gems has a Directory toggle but no equivalent surfacing on the org-detail page itself. Codex's literature comparison (Candid's progressive Bronze→Platinum completeness marker, ProPublica's source-filing-first presentation) suggests Daanaa's biggest small-org gap isn't peer fairness (already handled reasonably) but a dedicated, trustworthy discovery lane for data-dark orgs plus an actual baseline+measurement for the stated "+20% CTR via transparency" goal, which is currently unmeasured.
 
 **Status:** Open, queued for founder review alongside the other gated items logged today.
+
+---
+
+## 2026-08-16: Track B ProPublica validation ran — result is INCONCLUSIVE, not a failure signal
+
+**Ran:** `scripts/discovery/validate_990_expense_recovery.py --apply`, full 96-filing stratified sample, live ProPublica cross-check. Result: 0/96 agreements, 96/96 "unresolved."
+
+**Root cause, verified before reporting (Stewardship P3 — do not present an unverified read as fact):** every single discrepancy's cause was `no_matching_tax_year` / `no_propublica_filings_with_year` — ProPublica's Nonprofit Explorer simply hasn't indexed the tax year we have yet, not a mismatch in the numbers themselves. Checked `irs_990_functional_expense_filings`'s actual tax_year distribution: 2026=702, 2025=15,352, 2024=486, 2023=50, nothing older. The daily IRS-direct batch refresh (Track C) has been populating this table almost entirely with very recent filings — exactly the freshness advantage that pipeline was built for — so the "latest two years vs. older" stratification design couldn't reach filings old enough for ProPublica to have caught up on. ProPublica's own processing lag is commonly 12+ months for full-text indexing.
+
+**Conclusion: this run does NOT validate or invalidate Track B/C's extraction accuracy either way.** The single manual spot-check done earlier this session (AKF's FY2025 filing cross-referenced against the founder's own CauseIQ screenshot, exact match to the dollar) remains the only real external validation performed so far.
+
+**Path forward, not yet decided:** (a) re-run this same script in a few months once ProPublica's index has caught up on 2025 filings, or (b) find a different near-real-time independent source to spot-check against now (CauseIQ worked once manually; could be scripted similarly), or (c) accept the internal-reconciliation-only validation (93.3%-92.6% Part IX arithmetic consistency across the pilot and the first live batch) as sufficient for now given (a) is slow and (b) isn't built. No expense-recovery data has been promoted to donor-facing display regardless — this remains gated on that decision, unchanged from earlier today.
