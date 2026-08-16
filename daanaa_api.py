@@ -2597,6 +2597,15 @@ def get_organization(ein):
         org.get('irs_revoked'), org.get('org_status'),
     )
 
+    # Real multi-year revenue history (added 2026-08-16, migration 023).
+    # Kept in sync with droplet_api.py's copy -- see DECISIONS.md same date.
+    history_rows = db.execute(
+        "SELECT tax_year, total_revenue, total_assets, total_expenses "
+        "FROM org_revenue_history WHERE EIN = ? ORDER BY tax_year ASC",
+        (ein_clean,)
+    ).fetchall()
+    org['revenue_history'] = [dict(r) for r in history_rows]
+
     # Donate fields are never serialized publicly (see _DONATE_FIELDS); the G2
     # eligibility gate (_donate_eligible_basic/_is_revoked) still protects the
     # claim flow, where donate data remains in use.
