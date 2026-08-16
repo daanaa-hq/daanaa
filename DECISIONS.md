@@ -6,6 +6,33 @@
 
 ---
 
+## 2026-08-15: Website Discovery Phase 2 — 1,458 Orgs Promoted from `beta` to `ok`
+
+**Context:** Extended `website_verifier_spider.py` with content verification (org name/city/EIN matched against actual fetched page text, see the "right-sized" spider commits earlier same day). Ran against the real Phase 1 backlog: 2,910 orgs with `website_status='beta'` — sites discovered by heuristic, HTTP-verified as loading, but never content-verified against org identity. Results: 1,501 HIGH confidence (name + city/EIN both matched), 820 MEDIUM, 549 LOW, 40 unreachable (robots.txt disallowed, correctly skipped).
+
+**Decision:** Promote the 1,501 HIGH-confidence results from `website_status='beta'` to `'ok'`.
+
+**Why this is evidence-justified, not overstated:** `beta`'s existing disclosure text says "we confirmed it loads, but the organization has not verified it with us" — i.e., the prior bar was HTTP 200 only. HIGH confidence means we found the org's actual name AND (city or EIN) present in the fetched page content — meaningfully stronger evidence than "the URL resolves." `'ok'` status removes the `BETA_WEBSITE_DISCLOSURE` banner from the org's page (`droplet_api.py`), which is the correct behavior once real content evidence exists — continuing to show "unverified" language against actual matched-content evidence would itself be a P3 violation (understating what we know), not just an accuracy nicety.
+
+**Left alone, not promoted:** MEDIUM (820, name matched but no city/EIN corroboration, or vice versa) and LOW (549, weak/no signal) stay at `beta` — the existing disclosure remains accurate for these until a stronger signal exists. Matched-field-level evidence is preserved in `website_verification_results` for a future review pass.
+
+**Execution:**
+- Local DB: `UPDATE registry_enriched SET website_status='ok' WHERE EIN IN (<1,501 HIGH-confidence EINs>) AND website_status='beta'` — backed up via CSV export of pre-change status first.
+- Production droplet: same EIN list, same scoped WHERE clause, applied directly against `/opt/daanaa/data/merit_registry.db` (full-DB backup taken first: `merit_registry.db.pre-website-promotion-<timestamp>`).
+- **1,458 promoted on production (43 fewer than local)** — those 43 EINs weren't in `beta` status on the droplet's DB at update time (local/droplet drift), so the scoped WHERE clause correctly skipped them rather than overwrite an unknown state. Not investigated further; low-stakes (worst case, those 43 stay un-promoted until a future sync).
+- Verified live: `curl https://daanaa.org/api/organizations/391030310` confirms `website_status: "ok"`, disclosure banner absent.
+
+**Governance:** Stewardship P3 (evidence-based trust signals — promotion reflects genuinely stronger evidence, not assumption). Reversible (rollback CSV + full-DB backup both preserved). No public claim about the org's programs/finances changed — this affects only whether we show a "we haven't verified this link" caveat on an already-loading website link.
+
+**Rollback, if needed:**
+```sql
+-- Using /tmp/.../promotion_rollback.csv (EIN, old_status), all rows old_status='beta':
+UPDATE registry_enriched SET website_status = 'beta' WHERE EIN IN (<EINs from CSV>);
+```
+Or restore `merit_registry.db.pre-website-promotion-<timestamp>` on the droplet directly.
+
+---
+
 ## 2026-08-15: droplet_api.py Triple-Divergence Fixed + Stale Deploy Safety Check Retired
 
 **Issue:** Found while auditing the Jake Van Clief folder migration — `scripts/droplet_api.py` (515KB) and `scripts/core/droplet_api.py` (127KB) were real, independent files, not symlinks as `scripts/core/README.md` claimed. Neither matched the canonical `$BASE/droplet_api.py` (517KB, actively edited/deployed all session). `scripts/core/droplet_api.py` was a snapshot frozen at the 2026-08-12 folder-reorg commit (2,786 lines vs. the canonical file's current 12,643) — the reorg physically copied the file once and was never kept in sync afterward.
