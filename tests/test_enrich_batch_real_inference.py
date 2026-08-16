@@ -22,7 +22,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from scripts.enrich_batch import (
+from scripts.enrichment.enrich_batch import (
     EnrichmentBatch,
     get_real_qwen_fn,
     get_real_embeddings_fn,

@@ -43,7 +43,7 @@ import json
 import sqlite3
 from unittest.mock import patch
 
-from scripts.enrich_batch import EnrichmentBatch
+from scripts.enrichment.enrich_batch import EnrichmentBatch
 
 # A deterministic "always validates" stand-in for validate_and_fetch_website,
 # used by the pre-Task-6 tests below so they exercise real orchestration
@@ -235,7 +235,7 @@ class TestConsolidatedEnrichment:
         """)
         test_db.commit()
 
-        from scripts.enrich_batch import EnrichmentBatch
+        from scripts.enrichment.enrich_batch import EnrichmentBatch
 
         # No website candidate validates in this test (website discovery is
         # mocked to return None) — cause_tags must still promote, since tag
@@ -274,7 +274,7 @@ class TestConsolidatedEnrichment:
             'volunteer_url': 'https://groundedtestorg.org/volunteer',
         }
 
-        from scripts.enrich_batch import EnrichmentBatch
+        from scripts.enrichment.enrich_batch import EnrichmentBatch
 
         with patch('scripts.enrich_batch.validate_and_fetch_website', return_value=fake_website_result):
             batch = EnrichmentBatch(
@@ -306,7 +306,7 @@ class TestConsolidatedEnrichment:
         def failing_qwen(prompt: str, max_tokens: int = 200) -> str:
             raise Exception("simulated failure")
 
-        from scripts.enrich_batch import EnrichmentBatch
+        from scripts.enrichment.enrich_batch import EnrichmentBatch
 
         with patch('scripts.enrich_batch.validate_and_fetch_website', return_value=None):
             batch = EnrichmentBatch(
@@ -345,7 +345,7 @@ class TestConsolidatedEnrichment:
         """)
         test_db.commit()
 
-        from scripts.enrich_batch import EnrichmentBatch
+        from scripts.enrichment.enrich_batch import EnrichmentBatch
         batch = EnrichmentBatch(
             db_con=test_db, qwen_fn=mock_qwen, embeddings_fn=mock_embeddings,
             config=enrich_config
@@ -388,7 +388,7 @@ class TestConsolidatedEnrichment:
                 return '{"tags": ["Education", "Community"]}'
             return '{"domain": "unrelatedcharity.org"}'
 
-        from scripts.enrich_batch import EnrichmentBatch
+        from scripts.enrichment.enrich_batch import EnrichmentBatch
 
         with patch('scripts.enrich_batch.validate_and_fetch_website', return_value=None):
             batch = EnrichmentBatch(
@@ -449,7 +449,7 @@ class TestFullConsolidatedFlow:
                 return '{"domain": "riversideyouthrobotics.org"}'
             return 'generic response'
 
-        from scripts.enrich_batch import EnrichmentBatch
+        from scripts.enrichment.enrich_batch import EnrichmentBatch
 
         with patch('scripts.enrich_batch.validate_and_fetch_website', return_value=fake_website):
             batch = EnrichmentBatch(
