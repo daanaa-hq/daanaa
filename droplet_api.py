@@ -27,6 +27,7 @@ except ImportError:
     pass  # Sentry optional
 import numpy as np
 import requests as _http
+from scripts.scoring import peer_group
 from flask import Flask, jsonify, request, g, abort, send_from_directory, Blueprint
 from flask_cors import CORS
 from flask_limiter import Limiter
@@ -5069,78 +5070,66 @@ def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[
 
 
 def _find_similar_orgs(db, ein_clean, org, limit=6):
-    """Similar orgs: vector cosine similarity when available, SQL bucket fallback."""
+    """Similar orgs, drawn ONLY from this org's own persisted v6 peer group
+    (scoring_tier) -- the same NTEE2 x band x region criteria Financial
+    Context states to the donor further up the same page. No looser
+    fallback: if the org's exact peer group has few candidates, that's what
+    gets shown (even 0-2 rows), rather than silently widening to a broader
+    match that would contradict the stated comparison group.
+
+    Replaced the previous legacy NTEECC+revenue_band cascade (and the
+    already-dead vector-similarity path -- _get_org_vec() always returned
+    None since embedding loading was disabled) 2026-08-16 after finding it
+    used different, looser criteria than what donors were told. See
+    DECISIONS.md 2026-08-16 and scripts/scoring/peer_group.py.
+    """
     cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
               r.latest_tax_year, r.data_source, r.updated_at"""
 
-    # ── Vector path ────────────────────────────────────────────────────────────
-    vec = _get_org_vec(ein_clean)
-    if vec is not None and _emb_matrix is not None:
-        top_eins = _vec_similar(vec, ein_clean, limit)
-        results  = _fetch_orgs_by_eins(db, top_eins, active_only=True)
-        if len(results) >= 3:
-            return results, 'vector'
+    criteria = peer_group.peer_group_criteria(
+        org.get('scoring_tier'),
+        org.get('NTEECC'),
+        org.get('STATE'),
+        org.get('total_revenue'),
+        org.get('merit_archetype_v5_label'),
+    )
+    if criteria is None:
+        return [], 'none'
 
-    # ── SQL fallback ───────────────────────────────────────────────────────────
-    pct   = org.get('peer_percentile') or org.get('ntee1_percentile', 50) or 50
-    nteecc = org.get('NTEECC')
-    band   = org.get('revenue_band')
-    ntee1  = org.get('NTEE1')
+    where_sql, where_params = peer_group.sql_predicate(criteria)
+    target_percentile = org.get('merit_percentile_v6')
 
-    # PERF FIX 2026-08-15: ORDER BY ABS(...) is a computed expression, so SQLite
-    # can't use an index for the sort — it must materialize and sort every
-    # matching row (TEMP B-TREE). For large NTEE1 categories (X/religious =
-    # 299K rows, B/education = 221K, P = 182K, etc.) this took 1-1.2s per
-    # query, consistently, regardless of caching (confirmed via cProfile +
-    # EXPLAIN QUERY PLAN + PRAGMA temp_store=MEMORY, which did not help — it's
-    # comparison-bound, not disk-bound). Wrapping the indexed WHERE-filter in
-    # an inner subquery with LIMIT bounds the candidate pool to 2000 rows
-    # *before* the join+sort, cutting the cost to a few ms. Trade-off: the
-    # 2000-row sample follows index scan order (not random), a mild selection
-    # bias acceptable for a secondary "similar orgs" sidebar — not a scoring
-    # or trust signal.
+    # PERF FIX 2026-08-15 (still applies): ORDER BY ABS(...) is a computed
+    # expression, so SQLite can't use an index for the sort — it must
+    # materialize and sort every matching row (TEMP B-TREE). Bounding the
+    # indexed WHERE-filter to CANDIDATE_CAP rows *before* the join+sort keeps
+    # this a few ms instead of 1+ second for large peer groups.
     CANDIDATE_CAP = 2000
+    rows = db.execute(f"""
+        SELECT {cols} FROM (
+            SELECT * FROM registry_enriched
+            WHERE {where_sql}
+              AND EIN != ?
+              AND {_DEDUCTIBILITY_FILTER}
+            LIMIT {CANDIDATE_CAP}
+        ) r
+        LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
+        ORDER BY ABS(COALESCE(r.merit_percentile_v6, 50) - COALESCE(?, 50)) ASC
+        LIMIT ?
+    """, [*where_params, ein_clean, target_percentile, limit]).fetchall()
 
-    if nteecc and band:
-        rows = db.execute(f"""
-            SELECT {cols} FROM (
-                SELECT * FROM registry_enriched
-                WHERE NTEECC = ? AND revenue_band = ? AND EIN != ?
-                LIMIT {CANDIDATE_CAP}
-            ) r
-            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
-            ORDER BY ABS(COALESCE(r.peer_percentile, 50) - ?) ASC LIMIT ?
-        """, (nteecc, band, ein_clean, pct, limit)).fetchall()
-        if len(rows) >= 3:
-            return [_attach_v4_scores(dict(r), r) for r in rows], 'nteecc+band'
-
-    if ntee1 and band:
-        rows = db.execute(f"""
-            SELECT {cols} FROM (
-                SELECT * FROM registry_enriched
-                WHERE NTEE1 = ? AND revenue_band = ? AND EIN != ?
-                LIMIT {CANDIDATE_CAP}
-            ) r
-            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
-            ORDER BY ABS(COALESCE(r.peer_percentile, r.ntee1_percentile, 50) - ?) ASC LIMIT ?
-        """, (ntee1, band, ein_clean, pct, limit)).fetchall()
-        if len(rows) >= 2:
-            return [_attach_v4_scores(dict(r), r) for r in rows], 'ntee1+band'
-
-    if ntee1:
-        rows = db.execute(f"""
-            SELECT {cols} FROM (
-                SELECT * FROM registry_enriched
-                WHERE NTEE1 = ? AND EIN != ?
-                LIMIT {CANDIDATE_CAP}
-            ) r
-            LEFT JOIN v4_scores v4 ON r.EIN = v4.EIN
-            ORDER BY ABS(COALESCE(r.peer_percentile, r.ntee1_percentile, 50) - ?) ASC LIMIT ?
-        """, (ntee1, ein_clean, pct, limit)).fetchall()
-        return [_attach_v4_scores(dict(r), r) for r in rows], 'ntee1'
-
-    return [], 'none'
+    mode_by_tier = {
+        '1_Full_Context': 'peer_group_tier1',
+        '2_Regional_Context': 'peer_group_tier2',
+        '3_Broad_Category': 'peer_group_tier3',
+        '3b_Broad_Category': 'peer_group_tier3b',
+        '4_Archetype_Only': 'peer_group_tier4',
+    }
+    return (
+        [_attach_v4_scores(dict(r), r) for r in rows],
+        mode_by_tier[criteria['tier']],
+    )
 
 
 # ── Partner inquiries ──────────────────────────────────────────────────────

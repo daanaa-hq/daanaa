@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 """
-Compute 9 similar orgs per org using location-aware matching.
-Matching priority: same NTEECC + same city > same NTEECC + same state > same NTEE1 + same state.
-Tiebreaker: cause_tags overlap, then merit_score desc.
-Monthly re-run on home server; upload org files to droplet.
+Compute 9 similar orgs per org from each organization's persisted v6 peer
+group (scoring_tier) -- the exact same NTEE2 x band x Census region criteria
+Financial Context states to donors on the org detail page.
+
+Rewritten 2026-08-16: the previous version matched on NTEECC + city/state
+(location-aware, no size or region-of-record concept), which disagreed with
+what Financial Context told donors this org was being compared against.
+This is the precomputed FALLBACK path (used only when the live
+/api/organizations/:ein/similar endpoint returns nothing, per
+OrganizationDetail.tsx:404-410) -- if it used different criteria than the
+live API, the fallback would silently reintroduce the exact drift the fix
+was for. See DECISIONS.md 2026-08-16 and scripts/scoring/peer_group.py,
+which both this script and the live API import from.
 
 Memory-safe rewrite (2026-07-16): the previous version loaded all 1.7M FULL
 org dicts into RAM (~25GB with Python object overhead) and was OOM-killed on
@@ -24,6 +33,8 @@ from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
 
+from scripts.scoring import peer_group
+
 # Matches precompute_orgs.py's env var so this script honors the same
 # sandbox when invoked from safe_deploy_droplet.sh (PRECOMPUTE_OUT points
 # at the deploy's scratch dir, not the repo's live precompute_output/).
@@ -32,8 +43,9 @@ ORGS_DIR = Path(_OUT) / "orgs"
 SIMILAR_COUNT = 9
 
 # Every field the frontend consumes from a similar-org entry (adaptOrg in
-# OrganizationDetail.tsx) plus what this script needs for matching/scoring
-# (cause_tags, merit_score) and the diamonds filter (is_hidden_gem).
+# OrganizationDetail.tsx) plus what this script needs for peer-group
+# matching (scoring_tier, merit_archetype_v5_label), ranking
+# (merit_percentile_v6, cause_tags), and the diamonds filter (is_hidden_gem).
 SLIM_FIELDS = (
     "EIN", "organization_name", "CITY", "STATE", "NTEE1", "NTEECC",
     "mission", "mission_source", "website",
@@ -41,6 +53,7 @@ SLIM_FIELDS = (
     "data_source", "merit_score", "merit_tier", "merit_band",
     "peer_percentile", "peer_rank", "peer_total", "peer_group",
     "ntee1_percentile", "cause_tags", "is_hidden_gem",
+    "scoring_tier", "merit_archetype_v5_label", "merit_percentile_v6",
 )
 
 
@@ -68,33 +81,51 @@ def load_slim_orgs():
 
 # ─── Build lookup indexes ──────────────────────────────────────────────────
 
+def _criteria_key(criteria):
+    """Turn a peer_group.peer_group_criteria() dict into a hashable index key."""
+    tier = criteria["tier"]
+    if tier == "1_Full_Context":
+        return criteria["ntee2"], criteria["band"], criteria["region"]
+    if tier == "2_Regional_Context":
+        return criteria["ntee2"], criteria["band"]
+    if tier == "3_Broad_Category":
+        return (criteria["ntee2"],)
+    if tier == "3b_Broad_Category":
+        return criteria["ntee1"], criteria["band"]
+    if tier == "4_Archetype_Only":
+        return criteria["archetype"], criteria["band"]
+    raise ValueError(f"Unsupported peer-group tier: {tier}")
+
+
+def _org_criteria(o):
+    return peer_group.peer_group_criteria(
+        o.get("scoring_tier"),
+        (o.get("NTEECC") or "").upper() or None,
+        (o.get("STATE") or "").upper() or None,
+        o.get("total_revenue"),
+        o.get("merit_archetype_v5_label"),
+    )
+
+
 def build_indexes(orgs):
-    print("  Building lookup indexes...")
-    # nteecc → city → [eins]
-    by_nteecc_city = defaultdict(lambda: defaultdict(list))
-    # nteecc → state → [eins]
-    by_nteecc_state = defaultdict(lambda: defaultdict(list))
-    # ntee1 → state → [eins]
-    by_ntee1_state = defaultdict(lambda: defaultdict(list))
-    # ntee1 → all eins (national fallback)
-    by_ntee1_all = defaultdict(list)
+    print("  Building v6 peer-group lookup indexes...")
+    # One index per tier -- an org is looked up ONLY in its own tier's
+    # index (no cascading to a broader tier), matching the live API's
+    # no-fallback behavior so the precomputed path can't drift from it.
+    indexes = {
+        "1_Full_Context": defaultdict(list),
+        "2_Regional_Context": defaultdict(list),
+        "3_Broad_Category": defaultdict(list),
+        "3b_Broad_Category": defaultdict(list),
+        "4_Archetype_Only": defaultdict(list),
+    }
 
     for ein, o in orgs.items():
-        nteecc = (o.get("NTEECC") or "").upper()
-        ntee1 = nteecc[0] if nteecc else (o.get("NTEE1") or "").upper()
-        state = (o.get("STATE") or "").upper()
-        city = (o.get("CITY") or "").upper()
+        criteria = _org_criteria(o)
+        if criteria is not None:
+            indexes[criteria["tier"]][_criteria_key(criteria)].append(ein)
 
-        if nteecc and state and city:
-            by_nteecc_city[nteecc][f"{city}|{state}"].append(ein)
-        if nteecc and state:
-            by_nteecc_state[nteecc][state].append(ein)
-        if ntee1 and state:
-            by_ntee1_state[ntee1][state].append(ein)
-        if ntee1:
-            by_ntee1_all[ntee1].append(ein)
-
-    return by_nteecc_city, by_nteecc_state, by_ntee1_state, by_ntee1_all
+    return indexes
 
 
 def tags_overlap(org, candidate):
@@ -106,70 +137,53 @@ def tags_overlap(org, candidate):
 
 
 def score_key(candidate, org):
-    """Higher = better match."""
-    score = candidate.get("merit_score") or 0
+    """Higher = better match within the organization's own peer group."""
     tag_bonus = tags_overlap(org, candidate) * 10
-    return score + tag_bonus
+    org_pct = org.get("merit_percentile_v6")
+    cand_pct = candidate.get("merit_percentile_v6")
+    if org_pct is not None and cand_pct is not None:
+        # Closer percentile = better; invert distance so higher is better.
+        return tag_bonus - abs(cand_pct - org_pct)
+    return tag_bonus + (candidate.get("merit_score") or 0)
 
 
-def find_similar(ein, org, orgs, by_nteecc_city, by_nteecc_state, by_ntee1_state, by_ntee1_all):
-    nteecc = (org.get("NTEECC") or "").upper()
-    ntee1 = nteecc[0] if nteecc else (org.get("NTEE1") or "").upper()
-    state = (org.get("STATE") or "").upper()
-    city = (org.get("CITY") or "").upper()
-    city_key = f"{city}|{state}" if city and state else ""
+def find_similar(ein, org, orgs, indexes):
+    criteria = _org_criteria(org)
+    if criteria is None:
+        return []
 
-    seen = {ein}
-    candidates = []
-
-    # Tier 1: same NTEECC + same city (same work, nearby)
-    if nteecc and city_key:
-        for e in by_nteecc_city[nteecc].get(city_key, []):
-            if e not in seen:
-                seen.add(e)
-                candidates.append((3, e))
-
-    # Tier 2: same NTEECC + same state
-    if nteecc and state:
-        for e in by_nteecc_state[nteecc].get(state, []):
-            if e not in seen:
-                seen.add(e)
-                candidates.append((2, e))
-
-    # Tier 3: same NTEE1 + same state (broader category)
-    if ntee1 and state:
-        for e in by_ntee1_state[ntee1].get(state, []):
-            if e not in seen:
-                seen.add(e)
-                candidates.append((1, e))
-
-    # Tier 4: same NTEE1, any state (national fallback — fills remaining slots)
-    if len(candidates) < SIMILAR_COUNT and ntee1:
-        for e in by_ntee1_all.get(ntee1, []):
-            if e not in seen:
-                seen.add(e)
-                candidates.append((0, e))
-            if len(candidates) >= SIMILAR_COUNT * 3:
-                break
-
+    candidate_eins = indexes[criteria["tier"]].get(_criteria_key(criteria), [])
+    candidates = [e for e in candidate_eins if e != ein]
     if not candidates:
         return []
 
-    # Sort: tier desc, then tag_overlap + merit_score desc
-    candidates.sort(key=lambda x: (x[0], score_key(orgs.get(x[1], {}), org)), reverse=True)
+    candidates.sort(key=lambda e: score_key(orgs.get(e, {}), org), reverse=True)
+
+    # Specificity score reflects how tight the shared peer group is, not
+    # geography -- region (tier 1) is now part of the peer-group definition
+    # itself, so there's no separate "same NTEECC, different tier" case the
+    # old code's tier 2/3 distinguished.
+    specificity = {
+        "1_Full_Context": 1.0,
+        "2_Regional_Context": 0.85,
+        "3_Broad_Category": 0.7,
+        "3b_Broad_Category": 0.7,
+        "4_Archetype_Only": 0.5,
+    }[criteria["tier"]]
+    # is_local: true only for tier 1, the only tier with a region component.
+    # The frontend must not claim a locality relationship for broader tiers
+    # (2026-07-10 eng review finding — the old code made that claim
+    # regardless of tier; the same rule now applies to the region concept).
+    is_local = criteria["tier"] == "1_Full_Context"
 
     # Take top SIMILAR_COUNT — embed SLIM entries only (never the full dict)
     result = []
-    for tier, e in candidates[:SIMILAR_COUNT]:
+    for e in candidates[:SIMILAR_COUNT]:
         c = orgs.get(e)
         if c:
             entry = dict(c)
-            entry["similarity_score"] = 1.0 if tier == 3 else (0.9 if tier == 2 else (0.75 if tier == 1 else 0.6))
-            # is_local: tiers 1-3 share the org's city or state; tier 0 is the
-            # nationwide NTEE1 fallback with no locality guarantee. The frontend
-            # must not claim "near [CITY]" for is_local=False matches (2026-07-10
-            # eng review finding — the old code made that claim regardless of tier).
-            entry["is_local"] = tier > 0
+            entry["similarity_score"] = specificity
+            entry["is_local"] = is_local
             result.append(entry)
 
     return result
@@ -186,7 +200,7 @@ def main():
         print("ERROR: No orgs loaded. Run precompute_orgs.py first.")
         return
 
-    by_nteecc_city, by_nteecc_state, by_ntee1_state, by_ntee1_all = build_indexes(orgs)
+    indexes = build_indexes(orgs)
 
     total = len(orgs)
     processed = 0
@@ -194,7 +208,7 @@ def main():
 
     print(f"  Pass 2: computing + patching {total} org files...")
     for ein, org in orgs.items():
-        similar = find_similar(ein, org, orgs, by_nteecc_city, by_nteecc_state, by_ntee1_state, by_ntee1_all)
+        similar = find_similar(ein, org, orgs, indexes)
 
         # Read the org's file, patch only if changed, write back.
         ein_prefix = ein[:3]

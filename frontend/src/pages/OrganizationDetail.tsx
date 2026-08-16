@@ -118,6 +118,27 @@ function peerGroupLabel(peerGroup: string | null, revenueBand: string | null): s
   return `${band}${peerGroup} category nonprofits`
 }
 
+// Names the ACTUAL criteria Similar Organizations was matched by, tied to
+// the org's own scoring_tier -- added 2026-08-16 after finding the section
+// always said "More groups working in this area" regardless of whether
+// geography was really part of the match (see DECISIONS.md 2026-08-16 and
+// _find_similar_orgs() in droplet_api.py, which now selects by this same
+// tier). Keep this in sync with FinancialContext.tsx's own tier language.
+function similarOrganizationsHeading(scoringTier?: string | null): string {
+  switch (scoringTier) {
+    case '1_Full_Context':
+      return 'Similar organizations, same field, size, and region'
+    case '2_Regional_Context':
+      return 'Similar organizations, same field and size, nationally'
+    case '3_Broad_Category':
+    case '3b_Broad_Category':
+      return 'Other organizations in the same broader field'
+    case '4_Archetype_Only':
+    default:
+      return 'Other organizations with a similar funding model'
+  }
+}
+
 function scoreSignals(org: ApiOrganization): { label: string; ok: boolean; warn: boolean }[] {
   const signals: { label: string; ok: boolean; warn: boolean }[] = []
 
@@ -1345,7 +1366,7 @@ export default function OrganizationDetail() {
               MORE LIKE THIS
             </span>
             <h2 className="font-display italic text-warm-cream mt-3 leading-[1.05] tracking-[-0.01em]">
-              More groups working in this area
+              {similarOrganizationsHeading(apiOrg?.scoring_tier)}
             </h2>
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {similarOrgs.map((o, idx) => {
