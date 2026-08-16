@@ -52,16 +52,21 @@ retry() {
 
 log "Checking droplet_api.py drift..."
 
-# Wrong-file guard (2026-07-06, second occurrence of this failure): the root
-# droplet_api.py / daanaa_api.py home-API variants query v4_scores,
-# org_embeddings, and registry_enriched.subsection — schema that exists only in
-# the home merit_registry.db, never in the droplet search.db contract. Shipping
-# one takes down every DB-backed route. Refuse before anything else runs.
-if grep -qE "v4_scores|org_embeddings" "$LOCAL_API"; then
-    log "REFUSING DEPLOY: $LOCAL_API references home-only schema (v4_scores/org_embeddings). Wrong file — see LESSONS.md 2026-07-06."
-    alert "[Daanaa ALERT] droplet_api deploy REFUSED" "scripts/droplet_api.py references v4_scores/org_embeddings — the home-API variant has overwritten the lean droplet API in the repo. Not deployed. See LESSONS.md 2026-07-06."
-    exit 1
-fi
+# Wrong-file guard (2026-07-06, second occurrence of that failure) — RETIRED
+# 2026-08-15. At the time, v4_scores/org_embeddings existed only in the home
+# merit_registry.db, never on the droplet's lean search.db contract, so their
+# presence in this file signaled "wrong file, will 500 every DB route."
+# Verified 2026-08-15 the droplet's live merit_registry.db now HAS both
+# tables (confirmed via direct sqlite3 query against /opt/daanaa/data/
+# merit_registry.db) — the droplet was rebuilt onto the full schema at some
+# point since, and this check was never updated to match. Left silently
+# refusing every nightly run since (this session's deploys all went through
+# manual scp instead, which is why nobody noticed). Removed rather than
+# patched to a new signal — the lean/full split this guarded against no
+# longer exists; scripts/droplet_api.py, scripts/core/droplet_api.py, and
+# the canonical $BASE/droplet_api.py are now real symlinks to one file (see
+# DECISIONS.md 2026-08-15), so "wrong file overwrote the right one" is no
+# longer a distinct failure mode this script needs to detect.
 
 LOCAL_MD5=$(md5sum "$LOCAL_API" | awk '{print $1}')
 REMOTE_MD5=$(retry $SSH "md5sum $REMOTE_API 2>/dev/null | awk '{print \$1}'" || echo "missing")

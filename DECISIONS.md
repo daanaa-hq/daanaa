@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-08-15: droplet_api.py Triple-Divergence Fixed + Stale Deploy Safety Check Retired
+
+**Issue:** Found while auditing the Jake Van Clief folder migration — `scripts/droplet_api.py` (515KB) and `scripts/core/droplet_api.py` (127KB) were real, independent files, not symlinks as `scripts/core/README.md` claimed. Neither matched the canonical `$BASE/droplet_api.py` (517KB, actively edited/deployed all session). `scripts/core/droplet_api.py` was a snapshot frozen at the 2026-08-12 folder-reorg commit (2,786 lines vs. the canonical file's current 12,643) — the reorg physically copied the file once and was never kept in sync afterward.
+
+**Deeper finding:** `scripts/ops/sync_droplet_api.sh` (the documented nightly auto-deploy cron) has a "wrong-file guard" from 2026-07-06 that refuses to deploy any `scripts/droplet_api.py` referencing `v4_scores`/`org_embeddings` — at the time, those tables existed only in the home database, never the droplet's lean `search.db` contract, so their presence signaled a wrong-file mixup. Verified directly against the live droplet (`sqlite3 /opt/daanaa/data/merit_registry.db`): **both tables now exist there.** The droplet was rebuilt onto the full schema at some point since 2026-07-06, and this check was never updated to match — it has likely been silently refusing every nightly run since, which is consistent with this session's deploys all going through manual `scp` instead (nobody noticed the automated path was dead).
+
+**Fix:**
+1. Removed the two stale copies (`git rm`, history preserved), replaced with real symlinks (`scripts/droplet_api.py` → `../droplet_api.py`, `scripts/core/droplet_api.py` → `../../droplet_api.py`) — makes the documentation's existing claim ("backward-compat symlink") actually true, and both paths now always resolve to the current file.
+2. Removed the stale wrong-file guard in `sync_droplet_api.sh`. Not patched to a new signal — the lean/full schema split it protected against no longer exists on the droplet, and the file-divergence failure mode it was built for is now structurally impossible (real symlinks, not copies, can't silently diverge).
+
+**Verification:** `md5sum`/`readlink -f` confirm both symlinks resolve to the canonical file's content; `rsync --checksum` and `md5sum` both follow symlinks correctly (no change needed to the rest of the sync script); `bash -n` confirms script syntax intact.
+
+**Governance:** Backend/ops-only change — no droplet deploy, no public claim, no schema change. Reversible (`git log` retains the deleted files' history in full). Falls under CLAUDE.md's autonomous backend-deploy authority.
+
+**Confidence:** HIGH for the symlink fix (directly verified before/after). MEDIUM-HIGH for the safety-check removal — verified the specific condition it guarded against no longer applies, but did not exhaustively audit whether `sync_droplet_api.sh`'s cron has other latent issues from the same period of drift.
+
+---
+
 ## 2026-08-15: Tax-Deductible Badge Contradiction — Critical Charter #7 / P3 Fix + Full Org-Page Audit
 
 **Issue (user-reported via screenshot):** an org detail page showed a green "Tax deductible" badge AND a "Tax status not available" warning box simultaneously — a direct contradiction about the same fact on the same page (EIN 900395608, PTA California Congress).
