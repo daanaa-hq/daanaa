@@ -1231,3 +1231,15 @@ All gates passing: Stewardship P2/P3 ✅, Charter honesty ✅, Privacy ✅
 
 **Follow-up (open):** Recover correct program/management/fundraising figures — likely needs a fresh IRS SOI or NCCS re-extract with verified column mapping, or 990 XML re-parse for the highest-revenue orgs first. Also worth auditing `program_expense_pct` (used elsewhere on the page, e.g. AnswerCard's "¢ per dollar to programs" chip) for the same class of error — it's range-clamped to [0,100] by an existing `data_audit_fix.py` pass but that doesn't prove it's semantically correct, just in-range.
 
+
+---
+
+## 2026-08-16: tax_deductible field was never computed — every org showed "Tax status not available"
+
+**Trigger:** Founder reported the "Tax status not available" line wasn't helping and asked us to check for an error on our side.
+
+**Investigation:** `taxDeductibleToStatus()` (frontend, added 2026-08-09) is correct — null/undefined intentionally maps to 'unknown', never to a reassuring default. The bug is upstream: `tax_deductible` was never set anywhere in `droplet_api.py` or `daanaa_api.py`, on either `list_organizations()` or `get_organization()`. Verified live against production for Aga Khan Foundation USA (EIN 521231983) — an unambiguous, active, non-revoked 501(c)(3) with IRS deductibility code '1' — and the API returned no `tax_deductible` key at all. Every org on the site fell through to 'unknown' regardless of actual status. This means the 2026-08-15 badge fix (commit 8629e164641, gating the "Tax deductible" badge on `tax_deductible === true`) was correct but exposed a deeper gap: the field it reads was never produced, so the badge now correctly never shows for anyone.
+
+**Fix:** `_compute_tax_deductible(subsection, deductibility, irs_revoked, org_status)` added to both files — true only for confirmed non-revoked 501(c)(3) + deductibility code '1'; false for revocation or explicit deductibility code '2'; null otherwise. Wired into both endpoints. Sanity-checked against 500K rows: 388,591 true / 97,302 false / 14,107 genuinely unknown.
+
+**Commit:** 87a48f455d8. Same session as the ExpenseBreakdown fix above — both found while responding to founder-reported org-page trust-signal complaints.
