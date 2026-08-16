@@ -45,11 +45,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_orgs_to_verify(limit=None, resume=False):
+def get_orgs_to_verify(limit=None, resume=False, website_status=None):
     """Fetch orgs needing website verification.
 
     Lesson applied (#6, checkpoint/resume): query past the last-verified
     EIN from enrichment_checkpoints rather than restarting from scratch.
+
+    website_status filters to a specific discovery status (e.g. 'beta' —
+    AI-suggested, org-unverified — the actual Phase 1 backlog awaiting
+    Phase 2 content verification; the full website-having population is
+    462K+ orgs and mostly doesn't need re-checking).
     """
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -84,6 +89,9 @@ def get_orgs_to_verify(limit=None, resume=False):
     WHERE website IS NOT NULL AND website != ''
     """
     params = []
+    if website_status:
+        query += " AND website_status = ?"
+        params.append(website_status)
     if last_ein:
         query += " AND EIN > ?"
         params.append(last_ein)
@@ -366,10 +374,13 @@ def main():
     parser.add_argument('--limit', type=int, default=1000, help='Max orgs to process (spike default: 1000)')
     parser.add_argument('--dry-run', action='store_true', help='Do not write results to DB')
     parser.add_argument('--resume', action='store_true', help='Resume from last checkpoint')
+    parser.add_argument('--status', type=str, default=None,
+                         help="Filter to a website_status (e.g. 'beta' — the Phase 1 discovery "
+                              "backlog awaiting content verification). Unset = all orgs with a website.")
     args = parser.parse_args()
 
     ensure_output_table()
-    orgs = get_orgs_to_verify(limit=args.limit, resume=args.resume)
+    orgs = get_orgs_to_verify(limit=args.limit, resume=args.resume, website_status=args.status)
 
     if not orgs:
         logger.info("No orgs to verify (empty queue or checkpoint exhausted).")
