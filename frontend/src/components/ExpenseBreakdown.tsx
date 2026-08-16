@@ -68,6 +68,7 @@ export default function ExpenseBreakdown({ org }: ExpenseBreakdownProps) {
   }
 
   return (
+    <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
     <div className="space-y-6">
       {/* Header */}
       <div>
@@ -186,6 +187,7 @@ export default function ExpenseBreakdown({ org }: ExpenseBreakdownProps) {
           <> This is {new Date().getFullYear() - org.latest_tax_year} year(s) old; check their website for recent updates.</>
         )}
       </p>
+    </div>
     </div>
   )
 }

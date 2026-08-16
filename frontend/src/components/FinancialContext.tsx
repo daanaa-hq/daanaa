@@ -1,8 +1,31 @@
 import React from 'react'
 import type { ApiOrganization } from '../data/api'
+import { NTEE1_NAMES } from '../data/organizations'
 
 interface FinancialContextProps {
   org: ApiOrganization
+}
+
+function getRevenueSizeLabel(revenue: number | null | undefined): string | null {
+  // Loose check catches both null and undefined -- the latter shows up when
+  // a field is simply absent from an object (e.g. in tests) rather than
+  // explicitly set to null, and a strict `=== null` check let undefined
+  // fall through every numeric comparison (all false, NaN-style) straight
+  // to the final 'return' below, mislabeling missing revenue as "$5M or more".
+  if (revenue == null || revenue <= 0) return null
+  if (revenue < 50_000) return 'under $50K'
+  if (revenue < 200_000) return '$50K–$200K'
+  if (revenue < 500_000) return '$200K–$500K'
+  if (revenue < 5_000_000) return '$500K–$5M'
+  return '$5M or more'
+}
+
+function formatRevenue(revenue: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(revenue)
 }
 
 // Real values from registry_enriched.scoring_tier, written by
@@ -20,7 +43,47 @@ interface FinancialContextProps {
 // numeric count until a corrected table ships. See TODOS.md.
 export default function FinancialContext({ org }: FinancialContextProps) {
   const tier = org.scoring_tier
-  if (!tier) return null
+
+  // Added 2026-08-16: 114,675 orgs (5.6% of registry_enriched) have no
+  // scoring_tier -- verified this is an eligibility/coverage gap in the v6
+  // scorer's loader (requires deductibility='1' + NTEECC + STATE; see
+  // scripts/scoring/daanaa_scorer.py:138), not a sign of financial weakness.
+  // 96.6% of these are excluded simply because deductibility != '1'. Rather
+  // than a blank section, show only what we can actually support -- the IRS
+  // category and reported revenue -- clearly labeled as category context,
+  // never a peer comparison or score (Stewardship P3/P4).
+  if (!tier) {
+    const ntee1 = org.NTEE1?.trim().toUpperCase()
+    const sector = ntee1 ? NTEE1_NAMES[ntee1] : null
+    const revenue = org.total_revenue
+    const revenueSize = getRevenueSizeLabel(revenue)
+
+    if (!sector && !revenueSize) return null
+
+    return (
+      <div className="rounded-lg border border-cool-grey/20 bg-cool-grey/5 p-6 mb-8">
+        <h2 className="text-lg font-semibold mb-3">Category context</h2>
+
+        {sector && (
+          <p className="text-sm text-gray-700 mb-2">
+            A <strong>{sector}</strong> organization.
+          </p>
+        )}
+
+        {revenueSize && revenue !== null && (
+          <p className="text-sm text-gray-700 mb-3">
+            Latest reported annual revenue: <strong>{formatRevenue(revenue)}</strong>{' '}
+            ({revenueSize} size range).
+          </p>
+        )}
+
+        <p className="text-xs text-gray-600 pt-4 border-t">
+          This is descriptive category context, not a peer comparison or financial score.
+          A peer financial context is not available for this organization yet.
+        </p>
+      </div>
+    )
+  }
 
   if (tier === '1_Full_Context' || tier === '2_Regional_Context') {
     const isT1 = tier === '1_Full_Context'

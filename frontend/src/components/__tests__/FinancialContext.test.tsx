@@ -26,8 +26,62 @@ function makeOrg(overrides: Partial<ApiOrganization>): ApiOrganization {
 }
 
 describe('FinancialContext', () => {
-  it('renders nothing when scoring_tier is missing', () => {
+  it('renders nothing when scoring_tier, category, and revenue are all missing', () => {
     const { container } = render(<FinancialContext org={makeOrg({ scoring_tier: null })} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  // 2026-08-16: 114,675 orgs (5.6% of the registry) have no scoring_tier --
+  // verified as an eligibility/coverage gap in the v6 scorer's loader, not a
+  // sign of financial weakness (see daanaa_scorer.py). Show category context
+  // instead of a blank section, clearly labeled as not a peer score.
+  it('renders category context, not a peer score, when the tier is missing', () => {
+    render(
+      <FinancialContext
+        org={makeOrg({
+          scoring_tier: null,
+          NTEE1: 'P',
+          total_revenue: 750_000,
+        })}
+      />
+    );
+
+    expect(screen.getByText('Category context')).toBeInTheDocument();
+    // Text spans a <strong> tag ("A <strong>Human Services</strong> organization."),
+    // so match on the bolded sector name rather than a regex across node boundaries.
+    expect(screen.getByText('Human Services')).toBeInTheDocument();
+    expect(screen.getByText(/\$750,000/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/not a peer comparison or financial score/i)
+    ).toBeInTheDocument();
+  });
+
+  it('renders revenue context without an NTEE category when the tier is missing', () => {
+    render(
+      <FinancialContext
+        org={makeOrg({
+          scoring_tier: null,
+          NTEE1: null,
+          total_revenue: 100_000,
+        })}
+      />
+    );
+
+    expect(screen.getByText('Category context')).toBeInTheDocument();
+    expect(screen.getByText(/\$100,000/)).toBeInTheDocument();
+  });
+
+  it('renders nothing when tier, category, and positive revenue are all unavailable', () => {
+    const { container } = render(
+      <FinancialContext
+        org={makeOrg({
+          scoring_tier: null,
+          NTEE1: null,
+          total_revenue: null,
+        })}
+      />
+    );
+
     expect(container).toBeEmptyDOMElement();
   });
 

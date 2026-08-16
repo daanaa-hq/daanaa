@@ -910,11 +910,15 @@ export default function OrganizationDetail() {
               Shows program vs admin vs fundraising expenses visually.
               Addresses donor question: "Does my $ actually fund the mission?"
               Stewardship P3 (evidence-based) + P5 (no shame language) */}
-          {apiOrg && ((apiOrg.program_expenses || 0) + (apiOrg.management_expenses || 0) + (apiOrg.fundraising_expenses || 0)) > 0 && (
-            <div className="mt-16 pt-12 mb-16 border-t border-cool-grey/20">
-              <ExpenseBreakdown org={apiOrg} />
-            </div>
-          )}
+          {/* No outer sum-gate here on purpose (removed 2026-08-16): the old
+              gate only checked program+management+fundraising > 0, which
+              stayed true even when those fields don't reconcile with
+              total_expenses (see ExpenseBreakdown's own guard) -- leaving a
+              bordered, empty-feeling gap on the page whenever the component
+              hid itself internally. ExpenseBreakdown now owns its own
+              wrapper/spacing and returns null (including the border/margin)
+              when it has nothing trustworthy to show. */}
+          {apiOrg && <ExpenseBreakdown org={apiOrg} />}
 
           {/* Visibility Enhancement: Priority 6 — Financial Trends (2026-08-13)
               Shows 5-year revenue history + growth trajectory.
