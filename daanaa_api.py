@@ -2478,6 +2478,10 @@ def list_organizations():
     for row in rows:
         d = dict(row)
         d = _attach_v4_scores(d, row)
+        # Every row here already passed _DEDUCTIBILITY_FILTER in the WHERE
+        # clause above -- see _compute_tax_deductible() and DECISIONS.md
+        # 2026-08-16.
+        d['tax_deductible'] = True
         d['total_revenue_formatted'] = f"${d['total_revenue']:,.0f}" if d['total_revenue'] else None
         if d.get('cause_tags'):
             try:
@@ -2588,6 +2592,10 @@ def get_organization(ein):
     org['total_revenue_formatted'] = f"${org['total_revenue']:,.0f}" if org['total_revenue'] else None
     org['has_mission'] = bool(org.get('mission') and str(org['mission']).strip())
     org['has_website'] = bool(org.get('website') and str(org['website']).strip())
+    org['tax_deductible'] = _compute_tax_deductible(
+        org.get('subsection'), org.get('deductibility'),
+        org.get('irs_revoked'), org.get('org_status'),
+    )
 
     # Donate fields are never serialized publicly (see _DONATE_FIELDS); the G2
     # eligibility gate (_donate_eligible_basic/_is_revoked) still protects the
@@ -3260,6 +3268,27 @@ _DEDUCTIBILITY_FILTER = (
     "AND COALESCE(irs_revoked, 0) != 1 "
     "AND COALESCE(org_status, '') != 'revoked'"
 )
+
+
+def _compute_tax_deductible(subsection, deductibility, irs_revoked, org_status):
+    """Tri-state tax-deductibility signal, shared by list_organizations() and
+    get_organization(). Kept in sync with droplet_api.py's copy (added
+    2026-08-16, see DECISIONS.md same date) -- the 'tax_deductible' key was
+    never computed anywhere in either file, so every org showed 'Tax status
+    not available' regardless of actual IRS status.
+
+    True only for a confirmed, non-revoked 501(c)(3) with IRS deductibility
+    code '1'. False for any explicit negative signal (revocation, or IRS
+    deductibility code '2' = explicitly not deductible). None ('unknown')
+    otherwise. null must never mean verified (P3).
+    """
+    if irs_revoked == 1 or str(org_status or '') == 'revoked':
+        return False
+    if str(deductibility or '') == '2':
+        return False
+    if str(subsection or '') == '3' and str(deductibility or '') == '1':
+        return True
+    return None
 
 
 def _donate_eligible_basic(subsection, deductibility):

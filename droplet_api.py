@@ -2349,6 +2349,12 @@ def list_organizations():
     for row in rows:
         d = dict(row)
         d = _attach_v4_scores(d, row)
+        # Every row here already passed _DEDUCTIBILITY_FILTER in the WHERE
+        # clause above (subsection='3' AND deductibility='1' AND not
+        # revoked), so this is always True -- added 2026-08-16, see
+        # _compute_tax_deductible() and DECISIONS.md same date. Previously
+        # this key was never set at all on the list endpoint either.
+        d['tax_deductible'] = True
         d['total_revenue_formatted'] = f"${d['total_revenue']:,.0f}" if d['total_revenue'] else None
         if d.get('cause_tags'):
             try:
@@ -2503,6 +2509,10 @@ def get_organization(ein):
     org['total_revenue_formatted'] = f"${org['total_revenue']:,.0f}" if org['total_revenue'] else None
     org['has_mission'] = bool(org.get('mission') and str(org['mission']).strip())
     org['has_website'] = bool(org.get('website') and str(org['website']).strip())
+    org['tax_deductible'] = _compute_tax_deductible(
+        org.get('subsection'), org.get('deductibility'),
+        org.get('irs_revoked'), org.get('org_status'),
+    )
 
     # Donate fields are never serialized publicly (see _DONATE_FIELDS); the G2
     # eligibility gate (_donate_eligible_basic/_is_revoked) still protects the
@@ -3046,6 +3056,30 @@ _DEDUCTIBILITY_FILTER = (
     "AND COALESCE(irs_revoked, 0) != 1 "
     "AND COALESCE(org_status, '') != 'revoked'"
 )
+
+
+def _compute_tax_deductible(subsection, deductibility, irs_revoked, org_status):
+    """Tri-state tax-deductibility signal, shared by list_organizations() and
+    get_organization(). Added 2026-08-16: the 'tax_deductible' key was never
+    computed anywhere in this file -- every org, including unambiguous ones
+    like a $65M active 501(c)(3) with deductibility='1', returned no
+    tax_deductible field at all, so taxDeductibleToStatus() (frontend) fell
+    through to 'unknown' and every single org showed 'Tax status not
+    available' regardless of actual IRS status. See DECISIONS.md 2026-08-16.
+
+    True only for a confirmed, non-revoked 501(c)(3) with IRS deductibility
+    code '1'. False for any explicit negative signal (revocation, or IRS
+    deductibility code '2' = explicitly not deductible). None ('unknown')
+    otherwise -- including deductibility code '0' (unverified) or missing
+    subsection/deductibility data. null must never mean verified (P3).
+    """
+    if irs_revoked == 1 or str(org_status or '') == 'revoked':
+        return False
+    if str(deductibility or '') == '2':
+        return False
+    if str(subsection or '') == '3' and str(deductibility or '') == '1':
+        return True
+    return None
 
 
 def _donate_eligible_basic(subsection, deductibility):
