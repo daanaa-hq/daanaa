@@ -2881,11 +2881,20 @@ def get_organization(ein):
         'text': org.get('mission'),
         'source': org.get('mission_source'),  # 'claimed', 'ai_web', 'ai_ntee', 'extracted', etc.
         'verified_date': org.get('mission_last_verified'),
+        # Covers every value seen in registry_enriched.mission_source (checked
+        # 2026-08-16) -- ai_generated alone is 1.45M orgs, the largest
+        # category, and previously fell through to "Mission source unknown".
         'source_explanation': {
             'claimed': "This mission statement was provided by the nonprofit",
+            'nonprofit_supplied': "This mission statement was provided by the nonprofit",
             'ai_web': "This mission was extracted from the nonprofit's website",
-            'ai_ntee': "This is a template mission for this type of nonprofit",
+            'ai_web_grounded': "This mission was extracted from the nonprofit's website",
             'extracted': "This mission was extracted from the nonprofit's website",
+            'irs_990': "This mission was taken from the nonprofit's IRS Form 990 filing",
+            'ai_ntee': "This is a template mission for this type of nonprofit",
+            'ai_generated': "This mission was written by AI from public filing and category data",
+            'ai_haiku': "This mission was written by AI from public filing and category data",
+            'lucido': "This mission was written by AI from public filing and category data",
         }.get(org.get('mission_source'), 'Mission source unknown'),
         'confidence': org.get('mission_confidence', 0.5),
     }

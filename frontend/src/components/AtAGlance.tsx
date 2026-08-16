@@ -43,11 +43,22 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
     'Need support': { bgClass: 'bg-slate-50', borderClass: 'border-light-grey', textColor: '#475569', label: 'Need support' },
   }
 
+  // Covers every value seen in registry_enriched.mission_source (checked
+  // 2026-08-16). Any value not listed here silently fell back to "Unknown
+  // source" -- including ai_generated, the single largest category at 1.45M
+  // orgs, which mislabeled a known AI-generated mission as unknown for the
+  // majority of the database.
   const missionSourceLabels: Record<string, { label: string; explanation: string }> = {
     'claimed': { label: 'Organization provided', explanation: 'This mission statement was provided by the nonprofit directly.' },
+    'nonprofit_supplied': { label: 'Organization provided', explanation: 'This mission statement was provided by the nonprofit directly.' },
     'ai_web': { label: 'Website extracted', explanation: 'This mission was extracted from the nonprofit\'s website.' },
-    'ai_ntee': { label: 'Category template', explanation: 'This is a template mission for this type of nonprofit.' },
+    'ai_web_grounded': { label: 'Website extracted', explanation: 'This mission was extracted from the nonprofit\'s website.' },
     'extracted': { label: 'Website extracted', explanation: 'This mission was extracted from the nonprofit\'s website.' },
+    'irs_990': { label: 'From IRS filing', explanation: 'This mission was taken from the nonprofit\'s IRS Form 990 filing.' },
+    'ai_ntee': { label: 'Category template', explanation: 'This is a template mission for this type of nonprofit.' },
+    'ai_generated': { label: 'AI generated', explanation: 'This mission was written by AI from public filing and category data.' },
+    'ai_haiku': { label: 'AI generated', explanation: 'This mission was written by AI from public filing and category data.' },
+    'lucido': { label: 'AI generated', explanation: 'This mission was written by AI from public filing and category data.' },
   }
 
   const signal = org_stability_signal?.signal as string | null
