@@ -24,13 +24,36 @@ export default function ExpenseBreakdown({ org }: ExpenseBreakdownProps) {
   const programExpenses = org.program_expenses || 0
   const managementExpenses = org.management_expenses || 0
   const fundraisingExpenses = org.fundraising_expenses || 0
-  
-  const totalExpenses = programExpenses + managementExpenses + fundraisingExpenses
-  
+
+  const partsSum = programExpenses + managementExpenses + fundraisingExpenses
+
   // If no expense data, don't render
-  if (totalExpenses === 0) {
+  if (partsSum === 0) {
     return null
   }
+
+  // Data-integrity guard (added 2026-08-16 after a partner org flagged this
+  // breakdown as wrong). registry_enriched.program_expenses/management_expenses/
+  // fundraising_expenses trace back to a legacy irs_soi ingestion pass and, for
+  // ~94% of orgs with all three fields populated, do NOT reconcile with the
+  // verified-correct total_expenses field -- commonly summing to ~2x the real
+  // total (e.g. management_expenses holding what looks like the true program
+  // figure). Rather than compute percentages against a self-derived total that
+  // may itself be wrong, cross-check against the authoritative total_expenses
+  // and refuse to render a breakdown we can't verify. See DECISIONS.md
+  // 2026-08-16 for the full investigation; root-cause data correction is a
+  // separate, larger follow-up (this guard just stops showing wrong numbers
+  // in the meantime).
+  const verifiedTotal = org.total_expenses
+  if (!verifiedTotal || verifiedTotal <= 0) {
+    return null
+  }
+  const reconciles = Math.abs(partsSum - verifiedTotal) <= 0.2 * verifiedTotal
+  if (!reconciles) {
+    return null
+  }
+
+  const totalExpenses = partsSum
 
   // Calculate percentages
   const programPct = Math.round((programExpenses / totalExpenses) * 100)
