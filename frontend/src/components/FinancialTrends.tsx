@@ -26,6 +26,7 @@ interface FinancialTrendsProps {
 }
 
 const MIN_YEARS_FOR_CHART = 3
+const MAX_YEARS_FOR_CHART = 5
 
 function formatShort(n: number): string {
   if (Math.abs(n) >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`
@@ -67,7 +68,14 @@ export default function FinancialTrends({ org }: FinancialTrendsProps) {
     return null
   }
 
-  const chartData = withRevenue.map(h => ({
+  // Cap at the most recent 5 years for consistency across org pages --
+  // history ranges from 3 to 17+ years depending on the org (org_revenue_history
+  // covers whatever the IRS extract has), and a chart that's sometimes 3 bars
+  // and sometimes 17 doesn't read as the same feature from page to page.
+  // API returns oldest-to-newest, so take the tail end (most recent).
+  const recentYears = withRevenue.slice(-MAX_YEARS_FOR_CHART)
+
+  const chartData = recentYears.map(h => ({
     year: String(h.tax_year),
     revenue: h.total_revenue as number,
   }))
