@@ -1518,3 +1518,35 @@ the deliverable, with the scale work as an explicit next step.
 
 See `docs/990-enrichment/{architecture,codex-reviews}.md` "Review D" for
 full detail.
+
+## 2026-08-16: Migration 024 applied; Phase 7 framing requirements made explicit go/no-go criteria
+
+**Chose:** applied `migrations/024_irs_990_narrative_gpu_summary.sql` to the
+live DB (founder-approved same session) — 17 columns verified via
+`PRAGMA table_info`, 0 rows, correctly committed this time (per-statement
+`execute()`, not `executescript()` — see `LESSONS.md` 2026-08-16). Also
+added a mandatory Phase 7 framing section to `architecture.md`, written
+after re-reading the Daanaa Charter (`institution/DAANAA-CHARTER.md`)
+directly against this session's actual sampled output, not the abstract
+principle text.
+
+**Why:** founder asked explicitly whether Phase 3/4's output aligns with the
+Charter and Stewardship guidelines. Checked systematically against all 10
+Charter promises and the 11 Stewardship principles; most don't apply
+(no money, no donor data touched). Two are real and concrete, evidenced by
+actual output from this session, not hypothetical: Charter #7 ("we don't
+know enough," never "they failed") and Stewardship P4 (small-org fairness)
+are both threatened by the same mechanism — narrative richness in a 990
+filing tracks the org's staff capacity to write a detailed Schedule O, not
+the quality of its work. A real sample from this session's 24-filing test —
+an org's own Schedule O reading "limited activity due to health issues" —
+is the concrete case: sympathetic and honest in the org's own words, but
+liable to read as a failure signal if shown without explicit "we don't know
+enough" framing next to a richer profile. Stewardship P10 (AI as tool, not
+authority) needs the GPU-summary tier visually distinguished from the
+deterministic-mission tier, not flattened into one equally-authoritative
+block.
+
+**Not yet built:** the actual Phase 7 UI. These three rules are recorded as
+explicit go/no-go criteria for that work, not general reminders — checked
+in code review or design review, not assumed from good intentions.

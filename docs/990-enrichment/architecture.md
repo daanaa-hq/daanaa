@@ -319,22 +319,65 @@ not just trust it.
 
 ## Search / org page integration (Phases 7-8, deferred until extraction is validated)
 
-- **v1 ships no search or ranking change.** New tables only.
+- **v1 ships no search or ranking change.** Storage only:
+  `extracted_programs` (Schedule O), `cause_tags` (deterministic rule-derived
+  tags, Phase 3), `irs_990_narrative_gpu_summary` (GPU-derived fields, Phase
+  4 — migration 024 applied 2026-08-16, table live, 0 rows until a real run).
 - When validated: extend `org_embeddings`' document composition (mission +
   services + populations + geography + program names, per the brief's
   compact-document example) and selectively re-embed changed EINs — do not
   introduce FAISS (confirmed dead in the live API path).
 - Org page: new "What they do" section reading from
-  `irs_990_narrative_fields`, clearly labeled organization-reported with a
-  filing-year citation (matches existing E6 compensation-disclosure
-  precedent — `tax_prd_yr` shown alongside 990 compensation data per
-  Stewardship Compliance Log 2026-07-01).
+  `irs_990_narrative_gpu_summary` (+ `extracted_programs` for raw Schedule O),
+  clearly labeled organization-reported with a filing-year citation (matches
+  existing E6 compensation-disclosure precedent — `tax_prd_yr` shown
+  alongside 990 compensation data per Stewardship Compliance Log 2026-07-01).
 - **Coordinate, don't duplicate, with the unshipped small-org-clarity
   Phase 3** (`leadership_info`/`service_scope`/`org_stability_signal`/
   `mission_attribution` API fields, committed but frontend never shipped —
   see `system-audit.md` §7). Both are "At a Glance"-style structured sections
   on the same page; propose one combined frontend pass when Phase 7 starts
   rather than shipping two separate sections that compete for the same space.
+
+### Required framing before any of this reaches a live page (blocking Phase 7)
+
+Checked against the Daanaa Charter (`institution/DAANAA-CHARTER.md`) and
+STEWARDSHIP.md directly, not just in the abstract — two concrete risks found
+in this session's own real output, not hypothetical:
+
+1. **Charter #7** ("we say 'we don't know enough,' never 'they failed'"):
+   one of the 24 real sampled filings — a small org whose Schedule O read
+   *"Supported a local drug take-back program; limited activity due to
+   health issues"* — is a real, sympathetic, honest self-report. Shown
+   without care next to an org whose Schedule O ran 5,700 characters, it
+   reads as *this org didn't do much*, even though it's the org's own words
+   offered in good faith, not a Daanaa judgment. **Rule for Phase 7**: a
+   thin or absent narrative section renders as "Limited public filing detail
+   available" or equivalent — never an empty section, a placeholder that
+   implies absence-of-effort, or a visual contrast that reads as a score.
+2. **Stewardship P4** (small-org fairness): narrative richness in a 990
+   filing correlates with the org having staff/time to write a detailed
+   Schedule O, not with the quality of the org's work — a data artifact, not
+   a merit signal. **Rule for Phase 7**: no UI treatment (badge, checkmark,
+   "complete profile" styling, sort order) may treat narrative-field
+   completeness as a positive signal. If completeness needs to be visible at
+   all, it's descriptive ("from the org's [year] filing"), never evaluative.
+3. **Stewardship P10** (AI is a tool, not an authority): every
+   `irs_990_narrative_gpu_summary` field shown on a page needs an explicit,
+   literal attribution — "Daanaa's summary of this organization's own
+   filing" or equivalent — visually distinct from `extracted_programs`'
+   deterministic Schedule O text (which is the org's own words verbatim,
+   a stronger evidentiary tier) and from `mission` (also the org's own
+   words, IRS-sourced, Phase 3). Three tiers, three different confidence
+   levels, must not be visually flattened into one "About this org" block
+   that reads as equally authoritative throughout. `reported_outcomes`
+   specifically needs "as reported by the organization, not independently
+   verified" on or immediately next to every instance where it's shown —
+   not just implied by field naming in the database.
+
+These three are now explicit go/no-go criteria for Phase 7's design pass,
+not general reminders — Phase 7 should not ship without them designed in,
+regardless of how good the underlying extraction is.
 
 ## What's explicitly deferred
 
