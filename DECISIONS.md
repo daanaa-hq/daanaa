@@ -1280,3 +1280,20 @@ All gates passing: Stewardship P2/P3 ✅, Charter honesty ✅, Privacy ✅
 3. **"Year of formation" is nearly free to add** — confirmed as a real column (`YearFormed`) already sitting in our gt990 index CSV, no XML parsing needed. Distinct from `ruling_date` (when IRS granted tax-exempt status, not when the org was actually formed). The repo also has dormant extraction code (`scripts/enrichment/extract_990_fields.py`, `scripts/xml_batch_parser.py`) for this and `TotalVolunteersCnt` (volunteer count) that was apparently never wired into `registry_enriched`. Worth checking why before building anything new.
 
 Also confirmed several other unused-but-populated fields (total_assets/revenue_3yr_avg/total_liabilities at 28-35%, several NCCS raw fields) — lower priority since their human-readable equivalents are mostly already shown elsewhere; full list in the session's Codex research output if needed later.
+
+---
+
+## 2026-08-16: Local-server execution pass — freshness refresh, real 5-year trends, expense-recovery pilot
+
+**Trigger:** Founder authorized building the queued schema-gated work locally ("do it on the local server what you and codex think should be done... approve both tables, run everything").
+
+**Shipped:**
+1. **Freshness refresh at scale** (existing columns only, no schema change): 156,400 orgs updated to their latest available IRS filing via `scripts/ops/refresh_stale_orgs_from_gt990.py`, verified bidirectional (both increases and decreases seen, confirming accuracy not growth-chasing).
+2. **employee_count backfill**: completed dormant write logic in `extract_990_fields.py` (parsed since baseline, never written — comment literally said "added later," never was). +17,553 orgs (9.4% → 10.2% coverage).
+3. **Two new tables** (migration 023, founder-approved): `org_revenue_history` and `irs_990_functional_expense_filings`. Both additive-only, clean rollback, never touch existing `registry_enriched` columns.
+4. **Real 5-year (often more) revenue trends**, replacing the fabricated placeholder found and neutralized earlier the same session. 442,739 orgs now have real history (317,942 with 5+ years), extracted CSV-only from the gt990 index (no XML downloads needed for this part). Chart is honest: renders nothing below 3 years of data rather than faking a trend, and adds no extra "we don't have this" notice when empty — the page's existing gap-messaging already covers that, and stacking a 4th disclaimer here would undo the consolidation done earlier this session.
+5. **Expense-breakdown recovery pilot**: validated the real IRS XML path (`IRS990/TotalFunctionalExpensesGrp`) against AKF's actual FY2024 filing before writing any extraction code — reconciled exactly, and confirmed AKF's real Program share is ~94.7%, nothing like the ~51% the corrupted legacy columns implied. Pilot run (30 largest orgs) hit 93.3% reconciliation; the 2 rejections were real (group-return-style filers missing Part IX sub-elements) and correctly caught rather than silently accepted.
+
+**Design principle applied throughout** (founder guidance this session): no AI-blob copy, plain language, framed via the existing archetype/peer-group system rather than generic captions, and — specifically for orgs without enough data to show a real trend — silence over a hedge-y placeholder. The respectful way to "make invisible orgs visible" is ensuring their other real, positive facts (mission, category, address, tags) carry the page, not stacking another apology box next to a blank chart.
+
+**Deliberately not done without further sign-off:** promoting any recovered expense-breakdown data to donor-facing display (still pending full-scale validation per Codex's original scoping — stratified ProPublica spot-check, manual review of mismatches), and the AtAGlance-to-production port / PeerContextBreakdown stalled-flag decisions from earlier the same session remain open.
