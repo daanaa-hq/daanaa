@@ -1,0 +1,122 @@
+# 990 XML narrative field mapping — machine-readable companion to
+# docs/990-enrichment/xml-field-inventory.md. Namespace for every path below:
+# http://www.irs.gov/efile (elided for readability, as in fetch_irs_direct_filing.py's NS).
+#
+# extraction: "deterministic" fields feed irs_990_programs / irs_990_narrative_fields
+# directly, no model involved. "gpu_derived" fields are produced FROM the
+# deterministic fields below by the local model — never from a whole filing.
+
+version: 1
+generated_from_sample: "2026_TEOS_XML_06A (24 filings: 8x 990, 8x 990EZ, 8x 990PF)"
+
+deterministic_fields:
+  mission:
+    - form: "990"
+      path: "IRS990/ActivityOrMissionDesc"
+      note: "Part I short mission statement. Preferred source — already used by parse_990_xml()."
+      priority: 1
+    - form: "990"
+      path: "IRS990/ProgramServiceAccomplishmentGrp/MissionDesc"
+      note: "Part III mission statement, distinct from ActivityOrMissionDesc. Not currently extracted. Check as fallback #2, before joining program descriptions."
+      priority: 2
+    - form: "990EZ"
+      path: "IRS990EZ/PrimaryExemptPurposeTxt"
+      note: "990-EZ mission equivalent. Requires extending parse_990_xml() to handle RETURN_TYPE == '990EZ' (currently 990-only)."
+      priority: 1
+
+  programs:
+    - form: "990"
+      path: "IRS990/ProgramServiceAccomplishmentGrp"
+      fields:
+        description: "DescriptionProgramServiceAccomTxt"
+        expense: "ExpenseAmt"
+        revenue: "RevenueAmt"
+        grants: "GrantAmt"
+      note: "Currently only joined into mission fallback. Should be stored as individual irs_990_programs rows."
+    - form: "990EZ"
+      path: "IRS990EZ/ProgramSrvcAccomplishmentGrp"
+      fields:
+        description: "DescriptionProgramSrvcAccomTxt"
+        expense: "ProgramServiceExpensesAmt"
+      note: "990-EZ equivalent of the above."
+
+  schedule_o:
+    - form: ["990", "990EZ"]
+      path: "IRS990ScheduleO/SupplementalInformationDetail"
+      fields:
+        explanation: "ExplanationTxt"
+        line_reference: "FormAndLineReferenceDesc"
+      note: >
+        High value, high volume (avg 5.5 explanations/filing in sample).
+        FormAndLineReferenceDesc must be used to filter to mission/program-relevant
+        lines (e.g. "PART III, LINE 4A") vs. governance boilerplate
+        (e.g. "PART VI, SECTION B, LINE 11B" — conflict-of-interest policy text,
+        not narrative about the org's work). Matches extracted_programs table's
+        original intent (schedule_o_text) but that table is empty and wrong-shaped
+        per Codex Review A — build a new table instead.
+      line_reference_allowlist_hint:
+        - "PART III"       # program service accomplishments detail
+        - "PART I, LINE 1"  # mission/activities
+
+  grant_purposes:
+    - form: "990"
+      schedule: "F"
+      path: "IRS990ScheduleF/GrantsToOrgOutsideUSGrp"
+      fields:
+        purpose: "PurposeOfGrantTxt"
+        region: "RegionTxt"
+        activity_type: "TypeOfActivitiesConductedTxt"
+      note: "Foreign grants — purpose + geography together. Directly maps to project's 'grantmaking purposes' + 'geographic areas served' fields."
+    - form: "990"
+      schedule: "I"
+      path: "IRS990ScheduleI/RecipientTable"
+      fields:
+        purpose: "PurposeOfGrantTxt"
+        recipient_name: ["RecipientBusinessName/BusinessNameLine1Txt", "RecipientPersonNm"]
+      note: "Domestic grants. Short values common — apply junk filter."
+    - form: "990PF"
+      path: "IRS990PF/SupplementaryInformationGrp/GrantOrContributionPdDurYrGrp"
+      fields:
+        purpose: "GrantOrContributionPurposeTxt"
+        recipient_name: ["RecipientBusinessName/BusinessNameLine1Txt", "RecipientPersonNm"]
+        recipient_address: "RecipientUSAddress"
+      note: >
+        NOISY in sample: majority of purpose values were literally "SEE ATTACHED"
+        (25/39 grant rows). Apply the same JUNK-string filter convention as
+        scripts/enrichment/ingest_990_missions.py before treating this as signal.
+        Recipient fields describe who the ORG FUNDS, not what the org itself does —
+        present separately, never merged into the filer's own program descriptions.
+
+junk_values_to_filter:
+  # Same convention as scripts/enrichment/ingest_990_missions.py JUNK set.
+  - "N/A"
+  - "NA"
+  - "NONE"
+  - "SEE ATTACHED"
+  - "SEE SCHEDULE O"
+  - "SEE SCH O"
+  - "SAME AS PRIOR YEAR"
+  - "NO CHANGE"
+  - "SEE PART III"
+  - "TBD"
+
+gpu_derived_fields:
+  # Produced ONLY from the bounded deterministic excerpts above — never from
+  # a whole filing. See docs/990-enrichment/architecture.md Phase 4.
+  - mission_summary
+  - services
+  - populations_served
+  - geographies
+  - programs_normalized      # cleans/dedupes irs_990_programs into presentable form
+  - reported_outcomes         # organization-reported only, never independently verified
+  - new_or_changed_programs
+  - other_useful_facts
+
+not_useful:
+  # Confirmed present but not narrative Daanaa should surface (per Phase 1 sample).
+  - "*/PersonNm"                          # officer/director/preparer names
+  - "*/USAddress/*"                       # addresses (already have via BMF)
+  - "*/ProgramServicesAmt"                # already captured via Part IX pipeline
+  - "IRS990ScheduleR/*"                   # related-org transactions, not narrative (low priority exception: ExplanationTxt occasionally restates mission)
+  - "ReasonableCauseExplanation/*"        # late-filing excuses
+  - "TransferPrsnlBnftContractsDecl/*"    # boilerplate declaration
