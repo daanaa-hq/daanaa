@@ -74,7 +74,8 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
 
         {/* Leadership Info */}
         {leadership_info && (leadership_info.board_size || leadership_info.employee_count ||
-                            leadership_info.has_coi_policy || leadership_info.has_whistleblower_policy) && (
+                            leadership_info.has_coi_policy || leadership_info.has_whistleblower_policy ||
+                            leadership_info.has_doc_retention_policy) && (
           <div className="rounded-xl p-5 bg-white border border-light-grey">
             <h3 className="font-body text-small font-semibold text-deep-navy mb-3">Leadership</h3>
             <div className="space-y-2 font-body text-small text-cool-grey">
@@ -111,6 +112,14 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                     <span className="text-xs">Whistleblower Policy</span>
+                  </div>
+                )}
+                {leadership_info.has_doc_retention_policy && (
+                  <div className="flex items-center gap-1.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <span className="text-xs">Document Retention Policy</span>
                   </div>
                 )}
               </div>

@@ -566,6 +566,9 @@ export default function OrganizationDetail() {
                     {apiOrg?.street_address && `${apiOrg.street_address}, `}{org.city}, {org.state}
                   </span>
                 </div>
+                {apiOrg?.metro && (
+                  <span className="font-body text-label text-muted-cream/70">{apiOrg.metro}</span>
+                )}
               </div>
 
               {/* Phase 1: Key Stats Summary — Decision-Grade Header Enhancement
@@ -655,6 +658,21 @@ export default function OrganizationDetail() {
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-soft-gold text-soft-gold hover:bg-soft-gold/10 transition-colors font-body text-small font-semibold"
                   >
                     Visit website
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
+                  </a>
+                )}
+                {/* General volunteer signup link (org-level, 6.6% coverage) --
+                    distinct from the event-specific "Express interest" flow
+                    further down the page, which only appears when the org
+                    has specific scheduled volunteer events. */}
+                {apiOrg?.volunteer_url && (
+                  <a
+                    href={normalizeExternalUrl(apiOrg.volunteer_url) || undefined}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-soft-gold text-soft-gold hover:bg-soft-gold/10 transition-colors font-body text-small font-semibold"
+                  >
+                    Volunteer
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 17 17 7M17 7H8M17 7v9"/></svg>
                   </a>
                 )}

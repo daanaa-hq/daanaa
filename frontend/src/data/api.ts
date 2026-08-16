@@ -149,6 +149,7 @@ export interface ApiOrganization {
   ruling_date: string | null;         // IRS ruling date for tax-exempt status
   zipcode: string | null;
   street_address: string | null;
+  metro: string | null;               // CBSA metro/micro area (73.4% coverage, added 2026-08-16)
   // Only present on the search.db-fallback path (revoked orgs never get a
   // precomputed file -- precompute_orgs.py filters org_status='active' at
   // the source, so a revoked org's page is only reachable via this fallback).
