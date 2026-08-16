@@ -1263,3 +1263,20 @@ All gates passing: Stewardship P2/P3 ✅, Charter honesty ✅, Privacy ✅
 **Not yet fixed (real follow-up, tracked as Track C):** Restoring the cron path only restores the *existing* (narrow) behavior — refreshing `bmf_stub` records only. It does not close the freshness gap for already-populated-but-stale orgs like AKF. That needs `ingest_gt990_index.py` (or a new companion script) extended to also refresh orgs where `latest_tax_year` is stale relative to what the gt990 index has available, prioritized by staleness and organization size (large orgs file quickly and reliably, so they're the best near-term freshness wins). Scope this properly before building — do not rush a broad backfill on top of a freshness bug found the same session as the expense-breakdown corruption bug.
 
 **Also confirmed correct, not a bug:** AKF's NTEE category (Q30), street address, and 1981 formation year all match CauseIQ exactly. The FY2023 revenue/expense top-line figures we do have are independently correct for that year (verified against ProPublica separately) — this is a staleness problem, not an accuracy problem, and it's distinct from the expense-category-breakdown corruption documented earlier today.
+
+---
+
+## 2026-08-16: Org-page deep dive — 3 quick wins shipped, 3 real findings queued
+
+**Trigger:** Founder asked for a deep dive into what else could be gracefully shared on the org page.
+
+**Method:** Enumerated all 123 registry_enriched columns with coverage %, cross-referenced against what OrganizationDetail.tsx and its subcomponents actually render (Codex background research, verified independently before applying — e.g. confirmed `YearFormed` really is a gt990 index column via direct file check, not trusted blind).
+
+**Shipped (commit 95b36fe0e15):** `metro` (73.4% coverage, e.g. "Washington-Arlington-Alexandria, DC-VA-MD-WV"), `volunteer_url` (6.6%, general org-level signup link distinct from the event-specific flow), `has_doc_retention_policy` (companion to the already-shown COI/whistleblower fields).
+
+**Found, not yet actioned:**
+1. **`PeerContextBreakdown` is a stalled experiment**, not an intentional slow rollout. Introduced commit `a75daee22d6` (2026-06-22) with a planned 1%→10%→50%→100% progression that was never advanced — no DECISIONS.md entry, no blocker found. Sitting at 1% for ~2 months. Needs a founder call: resume the progression, or was there a reason it stalled that isn't documented?
+2. **`mission_last_verified` has display code already built** (AtAGlance.tsx:188) but the droplet API route never maps it into the `mission_attribution.verified_date` field the canonical (dev) API does — a payload-parity gap, not a frontend gap. One-line backend fix once prioritized.
+3. **"Year of formation" is nearly free to add** — confirmed as a real column (`YearFormed`) already sitting in our gt990 index CSV, no XML parsing needed. Distinct from `ruling_date` (when IRS granted tax-exempt status, not when the org was actually formed). The repo also has dormant extraction code (`scripts/enrichment/extract_990_fields.py`, `scripts/xml_batch_parser.py`) for this and `TotalVolunteersCnt` (volunteer count) that was apparently never wired into `registry_enriched`. Worth checking why before building anything new.
+
+Also confirmed several other unused-but-populated fields (total_assets/revenue_3yr_avg/total_liabilities at 28-35%, several NCCS raw fields) — lower priority since their human-readable equivalents are mostly already shown elsewhere; full list in the session's Codex research output if needed later.
