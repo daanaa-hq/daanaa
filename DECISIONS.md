@@ -1333,3 +1333,15 @@ Also confirmed several other unused-but-populated fields (total_assets/revenue_3
 **Draft fix on file for founder review** (not yet built): unify all three systems on one importable v6 peer-group helper (five-band classification + Census region map + NTEE2 extraction + tier-key construction, extracted from `daanaa_scorer.py`), have `_find_similar_orgs()` honor the org's own persisted `scoring_tier` cascade instead of the legacy NTEECC/revenue_band query, update `precompute_similar_orgs.py` to call the same helper so the fallback path can't reintroduce drift, and replace "More groups working in this area" with a label naming the actual selected tier (e.g. "Same field, size, and region" for Tier 1, an honest broader-fallback line for Tiers 3/4 when there aren't enough regional peers). Full Codex writeup with file:line references saved at `/tmp/claude-1000/-home-akbar-meritgiving/b82069c2-a45a-4dfe-b466-b4c0c8365f0a/scratchpad/codex_peer_group_consistency.txt` (will not survive session end — summarized in full here so nothing is lost).
 
 **Status:** Open, awaiting founder decision to proceed.
+
+---
+
+## 2026-08-16: Track B/C consolidation scoped (Codex) — mission extraction from the same 990 XML, founder review needed
+
+**Finding:** Track C (`fetch_irs_direct_filing.py`/`refresh_recent_filings_batch.py`) already downloads and parses each org's IRS 990 XML for financials + Part IX. Track B (`backfill_990_functional_expenses.py`) separately re-downloads the same class of filing from gt990 just for Part IX. Codex's read-only scoping (full output: `/tmp/.../scratchpad/codex_track_bc_consolidation.txt`, not preserved past this session) recommends: extend `parse_990_xml()` to also pull Part III's `DescriptionProgramServiceAccomTxt` (program-service-accomplishments text — organization-authored, not AI-generated) in the same pass, so one XML download can seed `mission` directly when the existing value is empty or AI-generated, tagged `mission_source='irs_990'`. No batch-script change needed — `write_filing()` already runs inside the daily cron's existing transaction.
+
+**Not implemented — public-claims gate.** Changing what `mission` displays for donors is exactly what CLAUDE.md's founder gate names ("public claims... anything altering what the site asserts about an organization"). Codex's own conclusion, independently, flagged the same thing.
+
+**Also scoped, not run:** the stratified ProPublica spot-check Track B's original plan called for (96 filings: 4 revenue bands × 2 filing-age strata × 12 each, exact whole-dollar Part IX agreement) — needed before Track B's expense-recovery data can move beyond pilot status.
+
+**Status:** Open, queued for founder review alongside the peer-group fix precedent above.
