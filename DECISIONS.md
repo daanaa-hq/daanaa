@@ -1345,3 +1345,19 @@ Also confirmed several other unused-but-populated fields (total_assets/revenue_3
 **Also scoped, not run:** the stratified ProPublica spot-check Track B's original plan called for (96 filings: 4 revenue bands × 2 filing-age strata × 12 each, exact whole-dollar Part IX agreement) — needed before Track B's expense-recovery data can move beyond pilot status.
 
 **Status:** Open, queued for founder review alongside the peer-group fix precedent above.
+
+---
+
+## 2026-08-16: Small-org visibility check-in (Codex) — Hidden Gems has a narrow but real integrity gap
+
+**Trigger:** Founder asked for a literature scan + roadmap status check against the small-org visibility initiative (project_small_org_visibility.md). Full Codex output not preserved past session.
+
+**Status confirmed good:** v6's tiered peer-group cascade (Tier 1→4) is a genuine "data quality sort," not a size-ranking system — it keeps small/data-sparse orgs from being forced into a misleadingly precise comparison, and Tier 3/3b/4 copy already says so respectfully. Real disproportion exists but is modest for small-but-reporting orgs (Grassroots 5.7% vs 4.5-5.1% for larger bands land in broader tiers) — the much bigger driver is data-darkness itself (98.9% of zero/no-revenue records land in Tier 3/4), not size per se.
+
+**Real, verified gap:** `is_hidden_gem=1` has 39,938 flagged records. Verified directly against the DB (not just Codex's claim): 39,756 (99.5%) are under $500K, consistent with the UI's "small, financially healthy, lower profile" description — but 182 (0.46%) exceed $500K, including 2 over $5M and one at $13.1M revenue. Also one flagged record has negative revenue (-$420,312), itself a data-quality flag. Two definitions exist in the codebase — legacy `flag_hidden_gems.py` and a newer, stricter `scripts/scoring/compute_diamonds.py` (revenue <$500K + 3 years financial evidence + stability + reserves + age + program spending + cause tags present) — and the live flag appears to reflect the older, looser one.
+
+**Why not fixed now:** reconciling which definition is authoritative and recomputing the flag changes a public trust label (Stewardship P3/P4) — same founder gate as the peer-group and mission-extraction items above. 182 orgs is small enough to not be an emergency, but it's real mislabeling sitting in production right now.
+
+**Also noted, not actioned:** Hidden Gems has a Directory toggle but no equivalent surfacing on the org-detail page itself. Codex's literature comparison (Candid's progressive Bronze→Platinum completeness marker, ProPublica's source-filing-first presentation) suggests Daanaa's biggest small-org gap isn't peer fairness (already handled reasonably) but a dedicated, trustworthy discovery lane for data-dark orgs plus an actual baseline+measurement for the stated "+20% CTR via transparency" goal, which is currently unmeasured.
+
+**Status:** Open, queued for founder review alongside the other gated items logged today.
