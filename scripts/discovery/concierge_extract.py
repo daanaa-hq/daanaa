@@ -18,7 +18,7 @@ import re
 from pathlib import Path
 from typing import Callable, Optional
 
-from scripts.qwen_inference import _parse_json_obj, _normalize_domain
+from scripts.enrichment.qwen_inference import _parse_json_obj, _normalize_domain
 
 DRAFTS_DIR = Path(__file__).resolve().parent.parent / 'data' / 'concierge_drafts'
 

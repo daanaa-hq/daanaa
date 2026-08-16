@@ -27,7 +27,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from scripts.prompt_improvement import PromptImprovement
+from scripts.enrichment.prompt_improvement import PromptImprovement
 
 BASE = Path.home() / "meritgiving"
 DB_PATH = BASE / "data" / "merit_registry.db"

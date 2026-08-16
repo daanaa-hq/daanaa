@@ -9,7 +9,7 @@ screen (stewardship P3/P10). Mirrors the structured-output contract shipped
 
 import json
 import pytest
-from scripts.concierge_extract import extract_draft, write_draft, DRAFTS_DIR
+from scripts.discovery.concierge_extract import extract_draft, write_draft, DRAFTS_DIR
 
 
 TRANSCRIPT = (

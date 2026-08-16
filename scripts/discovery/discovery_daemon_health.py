@@ -6,7 +6,7 @@ import json
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
-from scripts.daemon_health_lib import evaluate_health, read_state
+from scripts.ops.daemon_health_lib import evaluate_health, read_state
 
 HEALTH_FILE = "/tmp/discovery_daemon.health.json"
 STALE_THRESHOLD = 900  # 15 minutes

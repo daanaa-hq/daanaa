@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 # Import the emergency fixes module
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from scripts.emergency_fixes import is_inference_server_alive, BASE_DIR
+from scripts.archive.emergency_fixes import is_inference_server_alive, BASE_DIR
 
 class TestCronImportFix(unittest.TestCase):
     """Test Cron ImportError fix"""

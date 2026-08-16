@@ -8,7 +8,7 @@ Tests the QwenInference class for:
 """
 
 import pytest
-from scripts.qwen_inference import QwenInference
+from scripts.enrichment.qwen_inference import QwenInference
 
 
 class TestQwenInference:

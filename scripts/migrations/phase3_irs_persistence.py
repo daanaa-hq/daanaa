@@ -18,7 +18,7 @@ from pathlib import Path
 
 # Add repo root to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from scripts.irs_eligibility_helper import (
+from scripts.lib.irs_eligibility_helper import (
     initialize_helper,
     get_eligibility_fields,
     IrsEligibilityHelper,

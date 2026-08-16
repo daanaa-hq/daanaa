@@ -28,7 +28,7 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from scripts.quality_measurement import QualityMeasurement
+from scripts.testing.quality_measurement import QualityMeasurement
 
 DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 

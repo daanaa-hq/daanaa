@@ -7,7 +7,7 @@ find_volunteer_link() are pure functions tested directly against
 sample HTML.
 """
 from unittest.mock import patch, MagicMock
-from scripts.website_content import (
+from scripts.discovery.website_content import (
     validate_and_fetch_website,
     extract_text_content,
     find_volunteer_link,

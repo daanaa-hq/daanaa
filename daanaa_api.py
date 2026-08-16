@@ -182,7 +182,7 @@ except Exception as e:
 
 # Profile contexts and shared context management
 try:
-    from scripts import profile_contexts
+    from scripts.scoring import profile_contexts
     _profile_contexts_available = True
     print(f"[Startup] ✓ profile_contexts imported successfully", file=sys.stderr)
 except Exception as e:

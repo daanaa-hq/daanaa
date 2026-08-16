@@ -17,7 +17,7 @@ most likely domain would be **example.org**...") that the raw
 
 import json
 import pytest
-from scripts.qwen_inference import QwenInference
+from scripts.enrichment.qwen_inference import QwenInference
 
 
 ORG = {

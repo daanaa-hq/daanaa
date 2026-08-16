@@ -44,15 +44,15 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from scripts.semantic_lookup import SemanticLookup
-from scripts.qwen_inference import QwenInference
-from scripts.quality_measurement import QualityMeasurement
-from scripts.prompt_improvement import PromptImprovement
-from scripts.website_content import validate_and_fetch_website, fetch_known_website
+from scripts.enrichment.semantic_lookup import SemanticLookup
+from scripts.enrichment.qwen_inference import QwenInference
+from scripts.testing.quality_measurement import QualityMeasurement
+from scripts.enrichment.prompt_improvement import PromptImprovement
+from scripts.discovery.website_content import validate_and_fetch_website, fetch_known_website
 from scripts.donate_confidence import score_confidence, identity_match
 from scripts.website_normalize import normalize_website
-from scripts.s3_enrichment import get_s3_client
-from scripts.ntee_cause_mapper import get_causes_from_ntee, should_override_cause_tags
+from scripts.ops.s3_enrichment import get_s3_client
+from scripts.enrichment.ntee_cause_mapper import get_causes_from_ntee, should_override_cause_tags
 
 logging.basicConfig(
     level=logging.INFO,

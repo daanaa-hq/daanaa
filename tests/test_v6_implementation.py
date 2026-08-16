@@ -17,7 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from scripts.v6_financial_context_api import get_v6_financial_context
+from scripts.scoring.v6_financial_context_api import get_v6_financial_context
 
 
 class TestV6DatabaseSchema(unittest.TestCase):

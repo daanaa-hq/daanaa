@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from scripts.agents.base import BaseAgent
-from scripts.email_service import get_email_service, EmailTemplate
+from scripts.admin.email_service import get_email_service, EmailTemplate
 
 
 # ── Profile completeness ──────────────────────────────────────────────────────

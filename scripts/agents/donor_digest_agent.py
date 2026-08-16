@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from scripts.agents.base import BaseAgent
-from scripts.email_service import get_email_service, wallet_digest_email
+from scripts.admin.email_service import get_email_service, wallet_digest_email
 
 
 class DonorDigestAgent(BaseAgent):
