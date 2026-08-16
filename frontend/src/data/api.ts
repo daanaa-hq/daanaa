@@ -150,6 +150,12 @@ export interface ApiOrganization {
   zipcode: string | null;
   street_address: string | null;
   metro: string | null;               // CBSA metro/micro area (73.4% coverage, added 2026-08-16)
+  revenue_history?: Array<{           // Real multi-year history (added 2026-08-16). Empty array,
+    tax_year: number;                 // not missing, when nothing is available -- see FinancialTrends.tsx.
+    total_revenue: number | null;
+    total_assets: number | null;
+    total_expenses: number | null;
+  }>;
   // Only present on the search.db-fallback path (revoked orgs never get a
   // precomputed file -- precompute_orgs.py filters org_status='active' at
   // the source, so a revoked org's page is only reachable via this fallback).
