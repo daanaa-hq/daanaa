@@ -5,28 +5,49 @@ import { trackAtAGlanceVisible } from '../utils/analytics'
 /**
  * AtAGlance: Small Org Clarity Display
  *
- * Surfaces existing data to help donors understand small orgs better:
- * - Leadership: board size, independence, staff, governance policies
- * - Service Scope: cause area, geography, revenue band
- * - Stability: composite health signal (Need support to Excellent)
- * - Mission Attribution: source transparency (claimed vs. extracted)
+ * Trimmed 2026-08-16 (founder-reported page duplication, after AtAGlance
+ * shipped to production for the first time this session): the original
+ * 4-card version repeated content already shown elsewhere on the same
+ * page, within a few seconds' scroll of the repeat:
+ *  - Leadership's board size / independence % / employee count duplicated
+ *    the "Key Stats Summary" header grid immediately above this section.
+ *  - Service Scope's cause area duplicated the Categories pills further
+ *    down; its state duplicated the location line at the very top; its
+ *    revenue band duplicated the "Financial Context" header stat. Removed
+ *    the whole card -- nothing in it was unique once the overlap was traced.
+ *  - Mission Attribution's source duplicated the existing "AI assisted"
+ *    pill shown next to the mission text; its one unique field
+ *    (verified_date) is currently always empty (a known backend payload
+ *    gap, unfixed), so the card added no real information. Removed.
+ *  - Stability kept: a distinct composite signal (governance + staff +
+ *    longevity + program ratio), not shown anywhere else on the page.
  *
- * All data sourced from Form 990 + website extraction; no new collection.
+ * Leadership kept but trimmed to governance policies only (COI,
+ * whistleblower, document retention) -- the one thing in that card the
+ * header stats don't already say.
+ *
+ * Same principle this session already applied elsewhere on this page
+ * (see the ProvenanceLayers.tsx unmount note further down
+ * OrganizationDetail.tsx): a fact repeated in a second box reads as
+ * buggy or padded to a donor, not more trustworthy. Say each real fact
+ * once, in its best place.
+ *
  * Stewardship P3 (evidence-based), P4 (small org fairness), P5/P6 (honest transparency).
- *
- * Phase 3 measurement: Tracks visibility to measure if better display of context
- * helps small orgs reach parity with large orgs (Gate A.1 reliability).
  */
 export default function AtAGlance({ org }: { org: ApiOrganization }) {
-  const { leadership_info, service_scope, org_stability_signal, mission_attribution } = org
+  const { leadership_info, service_scope, org_stability_signal } = org
 
   // Track when this section becomes visible for Phase 3 measurement (Gate A.1)
   useEffect(() => {
     trackAtAGlanceVisible(service_scope?.revenue_band)
   }, [service_scope?.revenue_band])
 
-  // Don't render if we have no new data
-  if (!leadership_info && !service_scope && !org_stability_signal && !mission_attribution) {
+  const hasPolicies = !!leadership_info && (
+    leadership_info.has_coi_policy || leadership_info.has_whistleblower_policy || leadership_info.has_doc_retention_policy
+  )
+
+  // Don't render if we have nothing left to say that isn't said elsewhere
+  if (!hasPolicies && !org_stability_signal) {
     return null
   }
 
@@ -43,24 +64,6 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
     'Need support': { bgClass: 'bg-slate-50', borderClass: 'border-light-grey', textColor: '#475569', label: 'Need support' },
   }
 
-  // Covers every value seen in registry_enriched.mission_source (checked
-  // 2026-08-16). Any value not listed here silently fell back to "Unknown
-  // source" -- including ai_generated, the single largest category at 1.45M
-  // orgs, which mislabeled a known AI-generated mission as unknown for the
-  // majority of the database.
-  const missionSourceLabels: Record<string, { label: string; explanation: string }> = {
-    'claimed': { label: 'Organization provided', explanation: 'This mission statement was provided by the nonprofit directly.' },
-    'nonprofit_supplied': { label: 'Organization provided', explanation: 'This mission statement was provided by the nonprofit directly.' },
-    'ai_web': { label: 'Website extracted', explanation: 'This mission was extracted from the nonprofit\'s website.' },
-    'ai_web_grounded': { label: 'Website extracted', explanation: 'This mission was extracted from the nonprofit\'s website.' },
-    'extracted': { label: 'Website extracted', explanation: 'This mission was extracted from the nonprofit\'s website.' },
-    'irs_990': { label: 'From IRS filing', explanation: 'This mission was taken from the nonprofit\'s IRS Form 990 filing.' },
-    'ai_ntee': { label: 'Category template', explanation: 'This is a template mission for this type of nonprofit.' },
-    'ai_generated': { label: 'AI generated', explanation: 'This mission was written by AI from public filing and category data.' },
-    'ai_haiku': { label: 'AI generated', explanation: 'This mission was written by AI from public filing and category data.' },
-    'lucido': { label: 'AI generated', explanation: 'This mission was written by AI from public filing and category data.' },
-  }
-
   const signal = org_stability_signal?.signal as string | null
   const signalColor = signal ? stabilityColors[signal] : null
 
@@ -69,92 +72,48 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
       {/* Section title */}
       <h2 className="font-display italic text-deep-navy text-title-sm mb-6">At a glance</h2>
 
-      {/* 4-column grid: Leadership | Service Scope | Stability | Mission Attribution */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* At most 2 cards now (Leadership policies, Stability) -- grid capped
+          at 2 columns so a single surviving card doesn't stretch full-width
+          on wide screens. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        {/* Leadership Info */}
-        {leadership_info && (leadership_info.board_size || leadership_info.employee_count ||
-                            leadership_info.has_coi_policy || leadership_info.has_whistleblower_policy ||
-                            leadership_info.has_doc_retention_policy) && (
+        {/* Leadership — governance policies only. Board size / independence %
+            / employee count live in the header stats grid above; repeating
+            them here was the main source of the page duplication. */}
+        {hasPolicies && (
           <div className="rounded-xl p-5 bg-white border border-light-grey">
-            <h3 className="font-body text-small font-semibold text-deep-navy mb-3">Leadership</h3>
-            <div className="space-y-2 font-body text-small text-cool-grey">
-              {leadership_info.board_size !== null && leadership_info.board_size !== undefined && (
-                <div className="flex items-center justify-between">
-                  <span>Board size</span>
-                  <span className="font-medium text-deep-navy">{leadership_info.board_size}</span>
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-3">Governance</h3>
+            <div className="space-y-1 font-body text-small text-cool-grey">
+              {leadership_info!.has_coi_policy && (
+                <div className="flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span className="text-xs">Conflict of Interest Policy</span>
                 </div>
               )}
-              {leadership_info.board_independence_pct !== null && leadership_info.board_independence_pct !== undefined && (
-                <div className="flex items-center justify-between">
-                  <span>Independent directors</span>
-                  <span className="font-medium text-deep-navy">{leadership_info.board_independence_pct}%</span>
+              {leadership_info!.has_whistleblower_policy && (
+                <div className="flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span className="text-xs">Whistleblower Policy</span>
                 </div>
               )}
-              {leadership_info.employee_count !== null && leadership_info.employee_count !== undefined && (
-                <div className="flex items-center justify-between">
-                  <span>Employees</span>
-                  <span className="font-medium text-deep-navy">{leadership_info.employee_count}</span>
-                </div>
-              )}
-              <div className="pt-2 border-t border-light-grey/50 space-y-1">
-                {leadership_info.has_coi_policy && (
-                  <div className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    <span className="text-xs">Conflict of Interest Policy</span>
-                  </div>
-                )}
-                {leadership_info.has_whistleblower_policy && (
-                  <div className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    <span className="text-xs">Whistleblower Policy</span>
-                  </div>
-                )}
-                {leadership_info.has_doc_retention_policy && (
-                  <div className="flex items-center gap-1.5">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    <span className="text-xs">Document Retention Policy</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Service Scope */}
-        {service_scope && (service_scope.primary_cause_area || service_scope.service_states || service_scope.revenue_band) && (
-          <div className="rounded-xl p-5 bg-white border border-light-grey">
-            <h3 className="font-body text-small font-semibold text-deep-navy mb-3">Service Scope</h3>
-            <div className="space-y-2 font-body text-small text-cool-grey">
-              {service_scope.primary_cause_area && (
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-cool-grey/60 mb-0.5">Focus area</div>
-                  <div className="font-medium text-deep-navy">{service_scope.primary_cause_area}</div>
-                </div>
-              )}
-              {service_scope.service_states && service_scope.service_states.length > 0 && (
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-cool-grey/60 mb-0.5">Serves</div>
-                  <div className="font-medium text-deep-navy">{service_scope.service_states.join(', ')}</div>
-                </div>
-              )}
-              {service_scope.revenue_band && (
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-cool-grey/60 mb-0.5">Size</div>
-                  <div className="font-medium text-deep-navy">{service_scope.revenue_band}</div>
+              {leadership_info!.has_doc_retention_policy && (
+                <div className="flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span className="text-xs">Document Retention Policy</span>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Org Stability Signal */}
+        {/* Org Stability Signal — the one AtAGlance card with no duplicate
+            elsewhere on the page. */}
         {org_stability_signal && signal && signalColor && (
           <div className={`rounded-xl p-5 border-2 ${signalColor.bgClass} ${signalColor.borderClass}`} role="status">
             <h3 className="font-body text-small font-semibold mb-3 text-deep-navy">Stability</h3>
@@ -175,32 +134,6 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
             )}
             <div className="mt-3 font-body text-xs text-cool-grey/60">
               {org_stability_signal.confidence === 'high' ? 'High confidence' : 'Moderate confidence'}
-            </div>
-          </div>
-        )}
-
-        {/* Mission Attribution */}
-        {mission_attribution && mission_attribution.source && (
-          <div className="rounded-xl p-5 bg-white border border-light-grey">
-            <h3 className="font-body text-small font-semibold text-deep-navy mb-3">Mission Source</h3>
-            <div className="space-y-2">
-              {mission_attribution.source && (
-                <div>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-soft-gold/20 text-deep-gold font-body text-xs font-medium mb-2">
-                    {missionSourceLabels[mission_attribution.source]?.label || 'Unknown source'}
-                  </span>
-                  <p className="font-body text-xs text-cool-grey leading-relaxed">
-                    {missionSourceLabels[mission_attribution.source]?.explanation}
-                  </p>
-                </div>
-              )}
-              {mission_attribution.verified_date && (
-                <div className="pt-2 border-t border-light-grey/50">
-                  <p className="font-body text-xs text-cool-grey/60">
-                    Last verified {new Date(mission_attribution.verified_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         )}
