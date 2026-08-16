@@ -176,7 +176,18 @@ def _write_batch(db, batch):
                 "UPDATE registry_enriched SET website = ? WHERE EIN = ? AND (website IS NULL OR website = '')",
                 (r["website"], ein)
             )
-        # Only update founded/employees if columns exist (added later)
+        # employee_count already exists as a real column (NCCS W-3-sourced,
+        # 9.4% coverage) -- this was previously parsed and silently discarded
+        # ("added later" never happened). Fill-only-if-empty, same pattern as
+        # mission/website above. Added 2026-08-16.
+        if r["employees"] is not None:
+            db.execute(
+                "UPDATE registry_enriched SET employee_count = ? WHERE EIN = ? AND employee_count IS NULL",
+                (r["employees"], ein)
+            )
+        # 'founded' (FormationYr) has no destination column -- adding one is
+        # a schema change and needs founder sign-off per CLAUDE.md's approval
+        # gate. Left unwritten on purpose; do not add a column here.
     db.commit()
 
 
