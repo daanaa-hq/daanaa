@@ -1243,3 +1243,23 @@ All gates passing: Stewardship P2/P3 ✅, Charter honesty ✅, Privacy ✅
 **Fix:** `_compute_tax_deductible(subsection, deductibility, irs_revoked, org_status)` added to both files — true only for confirmed non-revoked 501(c)(3) + deductibility code '1'; false for revocation or explicit deductibility code '2'; null otherwise. Wired into both endpoints. Sanity-checked against 500K rows: 388,591 true / 97,302 false / 14,107 genuinely unknown.
 
 **Commit:** 87a48f455d8. Same session as the ExpenseBreakdown fix above — both found while responding to founder-reported org-page trust-signal complaints.
+
+---
+
+## 2026-08-16: Data-freshness gap traced — gt990 refresh scoped to bmf_stub only, plus a self-inflicted cron break
+
+**Trigger:** Founder compared our Aga Khan Foundation USA page against CauseIQ and asked "how do they have 2025 data and we don't?"
+
+**Investigation:** Two separate causes, both confirmed with evidence, not assumed:
+
+1. **IRS SOI extracts lag real filings by 1-2+ years.** Directly checked our newest local SOI file (`24eoextract990.zip`) for AKF's EIN — its row still carries `tax_pd='202312'` (FY2023), the same year already in our DB. CauseIQ shows AKF's FY2024 (filed 2025-05-15) and FY2025 (filed 2026-05-15) returns already public. CauseIQ (and likely ProPublica) evidently source from raw e-filed 990 XML, which the IRS publishes within weeks of filing — much faster than the curated SOI statistical extract we rely on for freshness.
+
+2. **`scripts/ingest_gt990_index.py` — our own faster raw-XML source — only ever refreshes `source='bmf_stub'` rows** (confirmed by reading the script: both its `existing` query and update loop filter on `source='bmf_stub'`). AKF's `source='NCCS_ONLY'`, so this pipeline has never touched it despite the gt990 index itself containing pre-extracted `TotalRevenueCY`/`TotalExpensesCY`/`TotalAssetsBkEOY` covering tax years through 2025.
+
+3. **Self-inflicted, found investigating #2:** `logs/gt990_refresh.log` showed the last successful run was 2026-08-09 (7.3M-row index pulled, 94,849 stubs refreshed). The very next scheduled run — Sunday 2026-08-16 01:00, a few hours before this session — failed with `No such file or directory`: this session's earlier folder migration (Jake Van Clief reorg, commits `430cd67ef81`/`dbd523e4b66`/`a43d0374043`) moved `cron_refresh_gt990.sh` into `scripts/ops/` without updating the crontab, which still references the bare `scripts/` path. Checked the full crontab for other casualties of the same migration — this was the only one.
+
+**Fixed same session:** Restored via symlink (`scripts/cron_refresh_gt990.sh` → `ops/cron_refresh_gt990.sh`, commit follows this entry), matching the pattern already used for `droplet_api.py`'s own triple-divergence fix earlier this session. Crontab untouched; takes effect on the next scheduled run automatically.
+
+**Not yet fixed (real follow-up, tracked as Track C):** Restoring the cron path only restores the *existing* (narrow) behavior — refreshing `bmf_stub` records only. It does not close the freshness gap for already-populated-but-stale orgs like AKF. That needs `ingest_gt990_index.py` (or a new companion script) extended to also refresh orgs where `latest_tax_year` is stale relative to what the gt990 index has available, prioritized by staleness and organization size (large orgs file quickly and reliably, so they're the best near-term freshness wins). Scope this properly before building — do not rush a broad backfill on top of a freshness bug found the same session as the expense-breakdown corruption bug.
+
+**Also confirmed correct, not a bug:** AKF's NTEE category (Q30), street address, and 1981 formation year all match CauseIQ exactly. The FY2023 revenue/expense top-line figures we do have are independently correct for that year (verified against ProPublica separately) — this is a staleness problem, not an accuracy problem, and it's distinct from the expense-category-breakdown corruption documented earlier today.
