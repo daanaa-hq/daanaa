@@ -59,11 +59,12 @@ import requests
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 from scripts.enrichment.enrich_cause_tags_mission import apply_rules, merge_tags  # noqa: E402
+from scripts.enrichment.ingest_990_missions import JUNK as MISSION_JUNK  # noqa: E402
 
 DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 NS = "http://www.irs.gov/efile"
 INDEX_BASE = "https://apps.irs.gov/pub/epostcard/990/xml"
-PARSER_VERSION = "1.2-2026-08-16-narrative"
+PARSER_VERSION = "1.5-2026-08-16-mission-junk-filter-v2"
 
 # Schedule O carries dozens of explanations per filing, most of them governance
 # boilerplate (conflict-of-interest policy, compensation-review process, etc.)
@@ -173,6 +174,34 @@ def _text(el) -> str | None:
 
 def _is_grant_junk(value: str) -> bool:
     return value.upper().rstrip(".") in GRANT_PURPOSE_JUNK
+
+
+# Bug found 2026-08-16, after a real production backfill run: 76 of 16,057
+# missions written by this session's pipeline were literal cross-reference
+# boilerplate ("SEE PART III, LINE 1.") rather than an actual mission --
+# common when a lazy e-filer leaves Part I's mission field pointing at Part
+# III instead of restating it. scripts/enrichment/ingest_990_missions.py
+# (the older NCCS-based mission pipeline) already guards against exactly
+# this with its JUNK set and a startswith-prefix check; this file's mission
+# extraction never inherited that guard. Reusing the same JUNK set (imported,
+# not duplicated) rather than maintaining two junk-detection lists.
+def _is_mission_junk(value: str) -> bool:
+    upper = value.upper().rstrip(".")
+    if upper in MISSION_JUNK:
+        return True
+    # Deliberately specific prefixes, not a bare "starts with SEE" check --
+    # verified against real production data (2026-08-16) that a blanket rule
+    # would wrongly reject genuine mission text starting with the word "See"
+    # as an imperative (e.g. "SEE GOD'S CHILDREN AND CHOSEN DELIVERED...").
+    # Second batch added same day after the first pass left 231 real
+    # cross-reference variants uncaught (SEE PAGE/SUMMARY/MISSION STATEMENT/
+    # FORM 990/990) -- all unambiguous filing cross-references, not real
+    # prose openings.
+    return upper.startswith((
+        "SEE SCHEDULE", "SEE SCH", "SEE PART", "SEE ATTACH",
+        "SEE PAGE", "SEE SUMMARY", "SEE MISSION STATEMENT",
+        "SEE FORM 990", "SEE 990",
+    ))
 
 
 def _extract_schedule_o(root) -> list[dict]:
@@ -305,6 +334,8 @@ def parse_990_xml(content: bytes) -> dict | None:
         # docstring. write_filing() must not let None financials overwrite
         # an EIN's existing revenue/assets.
         mission_text = _text(irs990ez.find(f"{{{NS}}}PrimaryExemptPurposeTxt"))
+        if mission_text and _is_mission_junk(mission_text):
+            mission_text = None
         programs = _extract_990ez_programs(irs990ez)
         return {
             "total_revenue": None, "total_assets": None, "total_expenses": None,
@@ -338,10 +369,31 @@ def parse_990_xml(content: bytes) -> dict | None:
     # current-year filings -- verified against 8 real sampled 990s, never
     # matched. Replaced with the real schema, see xml-field-inventory.md.)
     programs = _extract_990_programs(irs990)
+
+    def _mission_candidate(text_value):
+        """None if empty or junk -- lets the caller fall through to the
+        next candidate instead of accepting a cross-reference as a mission."""
+        if not text_value or _is_mission_junk(text_value):
+            return None
+        return text_value
+
+    # Second bug found in the same review pass (2026-08-16): the two direct
+    # candidates above were junk-filtered, but this third fallback -- joining
+    # every Part III program description -- was not. A junk individual
+    # description ("SEE SCHEDULE O") joined ahead of a real one produced
+    # mission text like "SEE SCHEDULE O\n\nOUR Y IS COMMITTED TO..." (a real,
+    # observed production case). Filter each program description the same
+    # way before joining, and drop the whole candidate if nothing real
+    # survives, rather than joining unfiltered.
+    non_junk_program_descriptions = [
+        p["description"] for p in programs
+        if p.get("description") and not _is_mission_junk(p["description"])
+    ]
+
     mission_text = (
-        _text(irs990.find(f"{{{NS}}}ActivityOrMissionDesc"))
-        or _text(irs990.find(f"{{{NS}}}MissionDesc"))
-        or ("\n\n".join(p["description"] for p in programs) or None)
+        _mission_candidate(_text(irs990.find(f"{{{NS}}}ActivityOrMissionDesc")))
+        or _mission_candidate(_text(irs990.find(f"{{{NS}}}MissionDesc")))
+        or ("\n\n".join(non_junk_program_descriptions) or None)
     )
 
     def bool_ind(tag):

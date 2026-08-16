@@ -1603,3 +1603,17 @@ and the large batch `"partial"` (24/17,881 done, safely resumable).
 14.4GB DB backup from this morning (09:03, before this session's schema/data
 changes) exists as a safety net; scaling to the full backfill is the
 founder's call, not run automatically.
+
+## 2026-08-16: Two real mission-extraction bugs found reviewing production text, fixed, ~314 rows corrected
+
+**Chose:** ran the Phase 3 backfill to completion (all 17,882 in-scope filings), then reviewed a random sample of the actual written text at the founder's request ("review the results, especially the text parts") rather than trusting the aggregate counts alone.
+
+**Found, real, not hypothetical:** `542033897` had `mission = "SEE PART III, LINE 1."` — literal IRS cross-reference boilerplate written as a mission. Quantified: 76 of 16,057 (0.47%). Root cause: `ingest_990_missions.py` (the older NCCS-based mission pipeline) already filters this exact pattern (`JUNK` set, `SEE PART`/`SEE SCH`/`SEE ATTACH` prefixes); `fetch_irs_direct_filing.py`'s newer mission extraction never inherited that guard. Fixed by importing and reusing the same `JUNK` set (not duplicating it) in a new `_is_mission_junk()` check applied to both the 990 and 990-EZ mission candidates.
+
+**Second bug, found reviewing the fix's own output:** the junk filter caught the two direct mission fields but not the third fallback — joining Part III program descriptions — which produced results like `"SEE SCHEDULE O\n\nOUR Y IS COMMITTED TO..."` (a junk program description joined ahead of a real one via the code's own `\n\n` separator). Fixed: filter each program description individually before joining, drop the whole candidate if nothing real survives.
+
+**Third pass:** a broader manual scan surfaced 231 more cross-reference variants the original prefix list missed (`SEE PAGE`, `SEE SUMMARY`, `SEE MISSION STATEMENT ATTACHMENT`, `SEE FORM 990`) — added those prefixes too, deliberately keeping them specific rather than a blanket "starts with SEE" rule, since real mission text exists that legitimately opens with "See" as an imperative (`"SEE GOD'S CHILDREN AND CHOSEN DELIVERED..."` — verified this stays correctly unfiltered).
+
+**Process:** bumped `PARSER_VERSION` after each fix (1.2 → 1.3 → 1.4 → 1.5), targeted-cleared only the specifically-identified bad rows each time (not a blanket reset), reset the backfill's own state file (its "completed" status was for the old parser version and correctly refused to silently re-skip), and re-ran the full 17,882-filing backfill after each fix — all three re-runs completed in 30-40 seconds. Final verification: 0 junk missions remain across the full pattern set; broad random-sample review of missions, Schedule O text, and cause_tags across ~35 additional records all came back clean, specific, and correctly topical.
+
+**Rejected:** broadening the junk filter to catch any text starting with "See" — would have silently destroyed real mission statements that happen to open with an imperative "See."
