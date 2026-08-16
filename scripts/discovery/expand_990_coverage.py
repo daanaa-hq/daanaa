@@ -25,7 +25,7 @@ import threading
 from pathlib import Path
 from queue import Queue, Empty
 
-from website_normalize import normalize_website
+from scripts.website_normalize import normalize_website
 
 DB_PATH   = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 GT990_IDX = Path.home() / "meritgiving" / "data" / "cache" / "gt990_index_2026-03-20.csv"
