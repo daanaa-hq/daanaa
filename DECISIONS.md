@@ -1559,3 +1559,47 @@ block.
 **Not yet built:** the actual Phase 7 UI. These three rules are recorded as
 explicit go/no-go criteria for that work, not general reminders — checked
 in code review or design review, not assumed from good intentions.
+
+## 2026-08-16: Phase 3 backfill script — Codex drafted, real bug found in review, validated with a real small apply run
+
+**Chose:** `scripts/ops/backfill_990_narrative_phase3.py` — Codex (`codex
+exec -s read-only`) drafted the full file per the prior review's agreed
+scope (eligibility keyed on `parser_version`, batch-grouped ZIP-once
+downloads reusing `refresh_recent_filings_batch.py`'s helpers, separate
+state/lock file, dry-run default, before/after snapshotting for real
+verification counts, hard refusal rather than silent skip on inconsistent
+state). Claude applied it after review (workspace-write is broken in this
+Codex sandbox), per the session's established drafted-by-Codex/
+applied-by-Claude convention.
+
+**Real bug found in review, not assumed absent:** running `--batch-ids-only`
+against the live DB immediately hit a hard error — `source_url` for some
+eligible rows didn't match the `apps.irs.gov` shape the script assumed for
+all of them. Checked the actual data: `irs_990_functional_expense_filings`
+has rows from two different historical pipelines (17,882 from the
+`irs_direct` pipeline this backfill can re-fetch from; 30 from an older
+gt990 S3-sourced path it has no mechanism to re-fetch from). The script's
+own refusal-to-guess design caught this correctly (aborted rather than
+mishandling a wrong URL), but aborted the *entire* run on the *first*
+gt990 row rather than processing the 17,882 in-scope rows and reporting the
+30 out-of-scope ones separately. Fixed: `eligible_batches()` now filters to
+the known-compatible source and reports the excluded count, rather than
+treating "different, known, older pipeline" the same as "malformed data."
+
+**Validated, not just reviewed:** ran the built-in dry run (real download,
+real parse, zero DB writes) — clean. Then ran a real, small `--limit 25
+--apply` — this is the "small representative dry-run before applying" both
+reviews called for, actually executed, not just planned. Results: 23/24
+missions upgraded in one batch (higher than the earlier 24-filing curated
+sample — expected, since most of the registry's 1.58M+ AI-generated
+missions haven't been touched by this pipeline yet), 35 new cause_tags,
+8 Schedule O rows. Critically: `financial_substantive_changes=0` —
+empirically confirms `write_filing()`'s financial replay is truly
+idempotent on an already-known filing, not just assumed safe from reading
+the code. State file correctly marked one batch `"completed"` (1/1 done)
+and the large batch `"partial"` (24/17,881 done, safely resumable).
+
+**Not yet run:** the remaining ~17,857 filings (`--all --apply`). A full
+14.4GB DB backup from this morning (09:03, before this session's schema/data
+changes) exists as a safety net; scaling to the full backfill is the
+founder's call, not run automatically.
