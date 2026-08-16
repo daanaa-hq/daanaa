@@ -562,7 +562,9 @@ export default function OrganizationDetail() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
                   </svg>
-                  <span className="font-body text-lead text-muted-cream">{org.city}, {org.state}</span>
+                  <span className="font-body text-lead text-muted-cream">
+                    {apiOrg?.street_address && `${apiOrg.street_address}, `}{org.city}, {org.state}
+                  </span>
                 </div>
               </div>
 
