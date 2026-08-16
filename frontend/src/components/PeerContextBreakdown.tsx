@@ -30,29 +30,14 @@ const CENSUS_REGION_BY_STATE: Record<string, string> = Object.fromEntries(
 export function buildPeerContextRows(org: ApiOrganization): ContextRow[] {
   const rows: ContextRow[] = []
 
-  // 1. CATEGORY CONTEXT — "You're in good company"
-  if (org.NTEE1 && org.ntee1_total_orgs) {
-    const nteeLabel = getNteeLabel(org.NTEE1)
-    const pct = org.ntee1_percentile || 50
-    const inTopQuarter = pct >= 75
-    const inBottomQuarter = pct < 25
-
-    rows.push({
-      dimension: '🏛️ Your Sector',
-      label: nteeLabel,
-      value: inTopQuarter ? 'More reserves than most peers'
-        : inBottomQuarter ? 'Fewer reserves than most peers'
-        : 'Within the usual peer range',
-      explanation: inTopQuarter
-        ? `The public filings show more reserves than most ${nteeLabel} organizations in this comparison. That is one financial measure, not a judgment about the work.`
-        : inBottomQuarter
-        ? `The public filings show fewer reserves than most ${nteeLabel} organizations in this comparison. A reserve figure can reflect many choices and circumstances, so it should be read with the organization's own information.`
-        : `The public filings place this organization within the usual range for ${nteeLabel} organizations in this comparison. The figure is context, not a conclusion.`,
-      action: {
-        text: 'Claim profile → Add your own context',
-      }
-    })
-  }
+  // 1. CATEGORY CONTEXT — removed 2026-08-16 (page-duplication pass): this
+  // dimension read org.ntee1_percentile and restated it as reserve-standing
+  // copy ('More reserves than most peers' / etc.) -- the exact same field
+  // the page header already shows prominently as "Peer Rank / Nth
+  // Percentile" (OrganizationDetail.tsx:609-613). Same duplication pattern
+  // already fixed in AtAGlance.tsx and this file's own Financial Health
+  // dimension: say each real fact once. Verified both render paths before
+  // removing, not assumed.
 
   // 2. STATE CONTEXT — "Your community knows you're doing ok"
   if (org.STATE && org.state_category_total && org.state_category_total > 1) {
