@@ -703,7 +703,7 @@ export default function OrganizationDetail() {
               )}
 
               {/* Seeking board members */}
-              {apiOrg!.seeking_board_members && (
+              {!!apiOrg!.seeking_board_members && (
                 <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-body text-caption font-medium bg-blue-50 text-blue-700 border border-blue-200">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
