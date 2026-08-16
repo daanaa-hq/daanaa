@@ -54,14 +54,23 @@ _robots_cache: dict[str, urllib.robotparser.RobotFileParser] = {}
 
 
 def robots_allowed(url: str) -> bool:
+    """BUG FIX: RobotFileParser.read() uses urlopen() internally with NO
+    timeout — a server that accepts the connection but never sends data
+    (or never closes it) hangs this indefinitely. Confirmed live: a run
+    stalled for 10+ minutes on exactly this, an idle ESTABLISHED socket
+    to one site's robots.txt. Fetch via requests (which has an explicit
+    timeout) and feed the content to the parser manually instead."""
     domain = urlparse(url).netloc
     if domain not in _robots_cache:
         rp = urllib.robotparser.RobotFileParser()
-        rp.set_url(f"https://{domain}/robots.txt")
         try:
-            rp.read()
-        except Exception:
-            _robots_cache[domain] = None  # unreadable robots.txt -> fail closed below
+            resp = requests.get(f"https://{domain}/robots.txt", timeout=TIMEOUT, headers={"User-Agent": UA})
+            if resp.status_code == 200:
+                rp.parse(resp.text.splitlines())
+            else:
+                rp.allow_all = True  # no robots.txt -> permissive, matches RobotFileParser's own default
+        except requests.exceptions.RequestException:
+            _robots_cache[domain] = None  # unreachable -> fail closed below
             return False
         _robots_cache[domain] = rp
     rp = _robots_cache[domain]
@@ -91,6 +100,10 @@ def fetch_page_text(url: str) -> tuple[str | None, str | None]:
 def get_orgs_to_review(limit=None):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    # Resume support: exclude EINs already in website_llm_review, regardless
+    # of what verdict they got. Without this, re-running after a crash/kill
+    # (e.g. the robots.txt hang this was built to survive) re-does finished
+    # work AND re-hits whatever site caused a prior failure.
     rows = conn.execute("""
         SELECT v.EIN, v.final_url, v.matched_fields, v.content_confidence AS prior_confidence,
                r.organization_name, r.CITY, r.STATE
@@ -99,6 +112,7 @@ def get_orgs_to_review(limit=None):
         WHERE v.content_confidence IN ('MEDIUM', 'LOW')
           AND v.verified_at > datetime('now', '-1 day')
           AND r.website_status = 'beta'
+          AND v.EIN NOT IN (SELECT EIN FROM website_llm_review)
         ORDER BY v.EIN
     """).fetchall()
     conn.close()
