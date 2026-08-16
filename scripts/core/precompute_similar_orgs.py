@@ -29,6 +29,7 @@ droplet.
 import gzip
 import json
 import os
+import sqlite3
 from collections import defaultdict
 from pathlib import Path
 from datetime import datetime
@@ -41,6 +42,37 @@ from scripts.scoring import peer_group
 _OUT = os.environ.get("PRECOMPUTE_OUT", "precompute_output")
 ORGS_DIR = Path(_OUT) / "orgs"
 SIMILAR_COUNT = 9
+
+DB_PATH = os.environ.get("DAANAA_DB_PATH", "data/merit_registry.db")
+
+# precompute_orgs.py (the script that generates these per-org JSON files in
+# the first place) has never selected scoring_tier/tier_label from the DB at
+# all, and only ever writes merit_archetype_v5_label nested inside
+# v5_context (gated on the older v5 archetype column, not a flat top-level
+# field). Found 2026-08-16 while wiring this script to the new peer-group
+# criteria: every precomputed org file had scoring_tier=None, so
+# peer_group.peer_group_criteria() would have returned None for virtually
+# every org and silently emptied out similar_organizations everywhere.
+# Rather than risk a second script (precompute_orgs.py runs the OOM-prone
+# full org build -- not something to touch for a 3-field gap), this loads
+# the 3 missing fields straight from SQLite (cheap: ~2M rows x 3 short
+# strings) and both (a) overlays them onto the in-memory slim dict so
+# matching works correctly this run, and (b) patches them into each org's
+# persisted file during Pass 2's write-back, so the underlying gap is fixed
+# going forward too, not just papered over for this one run.
+TIER_FIELDS = ("scoring_tier", "tier_label", "merit_archetype_v5_label")
+
+
+def load_tier_fields_from_db():
+    print(f"  Loading {', '.join(TIER_FIELDS)} from {DB_PATH}...")
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.execute(
+        f"SELECT EIN, {', '.join(TIER_FIELDS)} FROM registry_enriched WHERE EIN IS NOT NULL"
+    )
+    fields = {row[0]: dict(zip(TIER_FIELDS, row[1:])) for row in cur}
+    conn.close()
+    print(f"  Loaded tier fields for {len(fields)} EINs")
+    return fields
 
 # Every field the frontend consumes from a similar-org entry (adaptOrg in
 # OrganizationDetail.tsx) plus what this script needs for peer-group
@@ -59,7 +91,7 @@ SLIM_FIELDS = (
 
 # ─── Pass 1: stream slim org data from pre-computed files ──────────────────
 
-def load_slim_orgs():
+def load_slim_orgs(tier_fields_by_ein):
     print("  Pass 1: streaming slim org data (memory-safe)...")
     orgs = {}
     count = 0
@@ -69,7 +101,11 @@ def load_slim_orgs():
                 d = json.load(fp)
             ein = d.get("EIN")
             if ein:
-                orgs[ein] = {k: d[k] for k in SLIM_FIELDS if k in d}
+                slim = {k: d[k] for k in SLIM_FIELDS if k in d}
+                # DB is the freshest source for these 3 fields -- the
+                # precomputed file's own copy (if any) is never newer.
+                slim.update(tier_fields_by_ein.get(ein, {}))
+                orgs[ein] = slim
             count += 1
             if count % 200000 == 0:
                 print(f"    [{datetime.now().strftime('%H:%M:%S')}] streamed {count} files...")
@@ -193,9 +229,10 @@ def find_similar(ein, org, orgs, indexes):
 
 def main():
     timestamp = datetime.now().isoformat()
-    print(f"[{timestamp}] Computing {SIMILAR_COUNT} similar orgs per org (location-aware, memory-safe)...")
+    print(f"[{timestamp}] Computing {SIMILAR_COUNT} similar orgs per org (v6 peer group, memory-safe)...")
 
-    orgs = load_slim_orgs()
+    tier_fields_by_ein = load_tier_fields_from_db()
+    orgs = load_slim_orgs(tier_fields_by_ein)
     if not orgs:
         print("ERROR: No orgs loaded. Run precompute_orgs.py first.")
         return
@@ -205,6 +242,7 @@ def main():
     total = len(orgs)
     processed = 0
     updated = 0
+    tier_fields_backfilled = 0
 
     print(f"  Pass 2: computing + patching {total} org files...")
     for ein, org in orgs.items():
@@ -220,8 +258,22 @@ def main():
             processed += 1
             continue
 
-        if similar != full.get("similar_organizations", []):
+        changed = similar != full.get("similar_organizations", [])
+        if changed:
             full["similar_organizations"] = similar
+
+        # Backfill scoring_tier/tier_label/merit_archetype_v5_label into the
+        # persisted file too -- precompute_orgs.py never wrote these as flat
+        # fields (see TIER_FIELDS comment above), so every file was carrying
+        # a permanent gap independent of this script's own similar-orgs job.
+        db_tier_fields = tier_fields_by_ein.get(ein, {})
+        for field, value in db_tier_fields.items():
+            if value is not None and full.get(field) != value:
+                full[field] = value
+                changed = True
+                tier_fields_backfilled += 1
+
+        if changed:
             with gzip.open(f_path, "wt", encoding="utf-8", compresslevel=1) as fp:
                 json.dump(full, fp, separators=(",", ":"))
             updated += 1
@@ -229,10 +281,10 @@ def main():
         processed += 1
         if processed % 100000 == 0:
             pct = processed / total * 100
-            print(f"  [{datetime.now().strftime('%H:%M:%S')}] {processed}/{total} ({pct:.1f}%) | updated: {updated}")
+            print(f"  [{datetime.now().strftime('%H:%M:%S')}] {processed}/{total} ({pct:.1f}%) | updated: {updated} | tier fields backfilled: {tier_fields_backfilled}")
 
     print(f"\n[{datetime.now().isoformat()}] Done!")
-    print(f"  Total: {total} orgs, {updated} updated with new similar orgs")
+    print(f"  Total: {total} orgs, {updated} files updated, {tier_fields_backfilled} tier-field values backfilled")
     total_size = sum(f.stat().st_size for f in ORGS_DIR.rglob("*") if f.is_file())
     print(f"  Disk: {total_size / 1024 / 1024:.0f} MB")
     print(f"\n  Next step: rsync orgs/ to droplet and restart search.db")
