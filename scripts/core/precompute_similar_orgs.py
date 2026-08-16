@@ -25,14 +25,27 @@ Embedded similar entries carry only the fields the frontend's adaptOrg()
 actually reads (OrganizationDetail.tsx:155) plus similarity_score/is_local —
 NOT the full org dict. This also shrinks the org-file payload shipped to the
 droplet.
+
+Parallelized 2026-08-16: the single-threaded version was killed after 6h
+having written only ~4.3GB of an estimated ~16-18GB (confirmed CPU-bound at
+91%+ on one core via /proc/<pid>/io, not I/O-bound -- NVMe disk otherwise
+idle, 16 logical cores mostly unused). Pass 2 is now parallelized with
+Linux's fork multiprocessing start method. The parent completes Pass 1 and
+builds the large org/index dicts before workers are forked, so workers
+inherit them through copy-on-write rather than pickling or re-sending ~2M
+entries to each process -- the same pattern gunicorn's --preload uses for
+embeddings (see CLAUDE.md's "Embedding load" section).
 """
+import argparse
 import gzip
 import json
+import multiprocessing as mp
 import os
+import signal
 import sqlite3
 from collections import defaultdict
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from scripts.scoring import peer_group
 
@@ -44,6 +57,21 @@ ORGS_DIR = Path(_OUT) / "orgs"
 SIMILAR_COUNT = 9
 
 DB_PATH = os.environ.get("DAANAA_DB_PATH", "data/merit_registry.db")
+
+# Leave significant CPU headroom on the 16-logical-core production machine
+# while matching the repository's established 6-worker convention for
+# similar-scale work (see scripts/enrichment/missions/generate_missions.py).
+MAX_DEFAULT_WORKERS = 6
+CPU_HEADROOM = 2
+PASS2_CHUNK_SIZE = 1_000
+PROGRESS_INTERVAL = 100_000
+
+# These are assigned in the parent after Pass 1/index construction and before
+# Pool creation. With Linux fork, workers inherit them without pickling.
+_PASS2_ORGS = None
+_PASS2_INDEXES = None
+_PASS2_TIER_FIELDS_BY_EIN = None
+_PASS2_DRY_RUN = False
 
 # precompute_orgs.py (the script that generates these per-org JSON files in
 # the first place) has never selected scoring_tier/tier_label from the DB at
@@ -63,6 +91,12 @@ DB_PATH = os.environ.get("DAANAA_DB_PATH", "data/merit_registry.db")
 TIER_FIELDS = ("scoring_tier", "tier_label", "merit_archetype_v5_label")
 
 
+def default_worker_count():
+    """Choose a conservative default while retaining useful parallelism."""
+    cpu_count = os.cpu_count() or 1
+    return min(MAX_DEFAULT_WORKERS, max(1, cpu_count - CPU_HEADROOM))
+
+
 def load_tier_fields_from_db():
     print(f"  Loading {', '.join(TIER_FIELDS)} from {DB_PATH}...")
     conn = sqlite3.connect(DB_PATH)
@@ -73,6 +107,7 @@ def load_tier_fields_from_db():
     conn.close()
     print(f"  Loaded tier fields for {len(fields)} EINs")
     return fields
+
 
 # Every field the frontend consumes from a similar-org entry (adaptOrg in
 # OrganizationDetail.tsx) plus what this script needs for peer-group
@@ -108,7 +143,11 @@ def load_slim_orgs(tier_fields_by_ein):
                 orgs[ein] = slim
             count += 1
             if count % 200000 == 0:
-                print(f"    [{datetime.now().strftime('%H:%M:%S')}] streamed {count} files...")
+                print(
+                    f"    [{datetime.now().strftime('%H:%M:%S')}] "
+                    f"streamed {count} files...",
+                    flush=True,
+                )
         except Exception:
             pass
     print(f"  Loaded {len(orgs)} slim orgs")
@@ -225,28 +264,41 @@ def find_similar(ein, org, orgs, indexes):
     return result
 
 
-# ─── Main ─────────────────────────────────────────────────────────────────
+# ─── Pass 2: parallel patching ─────────────────────────────────────────────
 
-def main():
-    timestamp = datetime.now().isoformat()
-    print(f"[{timestamp}] Computing {SIMILAR_COUNT} similar orgs per org (v6 peer group, memory-safe)...")
+def _write_gzip_atomically(f_path, full):
+    """
+    Write beside the destination, then atomically replace it.
 
-    tier_fields_by_ein = load_tier_fields_from_db()
-    orgs = load_slim_orgs(tier_fields_by_ein)
-    if not orgs:
-        print("ERROR: No orgs loaded. Run precompute_orgs.py first.")
-        return
+    The prior direct gzip.open(f_path, "wt") overwrite could leave a target
+    truncated if interrupted. A same-directory os.replace() is atomic on the
+    local filesystem: interruption can leave only a disposable temp file while
+    the prior complete target remains intact.
+    """
+    temp_path = f_path.with_name(f".{f_path.name}.{os.getpid()}.tmp")
+    try:
+        with gzip.open(temp_path, "wt", encoding="utf-8", compresslevel=1) as fp:
+            json.dump(full, fp, separators=(",", ":"))
+        os.replace(temp_path, f_path)
+    finally:
+        if temp_path.exists():
+            temp_path.unlink()
 
-    indexes = build_indexes(orgs)
 
-    total = len(orgs)
+def _process_ein_chunk(eins):
+    """
+    Process a small chunk using only fork-inherited Pass 1 structures.
+
+    Only the short EIN chunk is sent through Pool's task queue; orgs, indexes,
+    and DB tier fields are inherited by copy-on-write and never re-pickled.
+    """
     processed = 0
     updated = 0
     tier_fields_backfilled = 0
 
-    print(f"  Pass 2: computing + patching {total} org files...")
-    for ein, org in orgs.items():
-        similar = find_similar(ein, org, orgs, indexes)
+    for ein in eins:
+        org = _PASS2_ORGS[ein]
+        similar = find_similar(ein, org, _PASS2_ORGS, _PASS2_INDEXES)
 
         # Read the org's file, patch only if changed, write back.
         ein_prefix = ein[:3]
@@ -266,7 +318,7 @@ def main():
         # persisted file too -- precompute_orgs.py never wrote these as flat
         # fields (see TIER_FIELDS comment above), so every file was carrying
         # a permanent gap independent of this script's own similar-orgs job.
-        db_tier_fields = tier_fields_by_ein.get(ein, {})
+        db_tier_fields = _PASS2_TIER_FIELDS_BY_EIN.get(ein, {})
         for field, value in db_tier_fields.items():
             if value is not None and full.get(field) != value:
                 full[field] = value
@@ -274,17 +326,145 @@ def main():
                 tier_fields_backfilled += 1
 
         if changed:
-            with gzip.open(f_path, "wt", encoding="utf-8", compresslevel=1) as fp:
-                json.dump(full, fp, separators=(",", ":"))
+            if not _PASS2_DRY_RUN:
+                _write_gzip_atomically(f_path, full)
             updated += 1
 
         processed += 1
-        if processed % 100000 == 0:
-            pct = processed / total * 100
-            print(f"  [{datetime.now().strftime('%H:%M:%S')}] {processed}/{total} ({pct:.1f}%) | updated: {updated} | tier fields backfilled: {tier_fields_backfilled}")
+
+    return processed, updated, tier_fields_backfilled
+
+
+def _ein_chunks(eins, chunk_size):
+    """Yield bounded EIN chunks for balanced Pass 2 work distribution."""
+    chunk = []
+    for ein in eins:
+        chunk.append(ein)
+        if len(chunk) == chunk_size:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
+
+
+def _ignore_keyboard_interrupt():
+    """Let the parent coordinate Ctrl+C cleanup for the worker pool."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
+# ─── Main ─────────────────────────────────────────────────────────────────
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Precompute similar nonprofit organizations from v6 peer groups."
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=default_worker_count(),
+        help=(
+            "Pass 2 worker processes "
+            f"(default: {default_worker_count()}, based on os.cpu_count() with headroom)"
+        ),
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Compute and report Pass 2 changes without writing any org files.",
+    )
+    args = parser.parse_args()
+    if args.workers < 1:
+        parser.error("--workers must be at least 1")
+    return args
+
+
+def main():
+    global _PASS2_ORGS
+    global _PASS2_INDEXES
+    global _PASS2_TIER_FIELDS_BY_EIN
+    global _PASS2_DRY_RUN
+
+    args = parse_args()
+    timestamp = datetime.now().isoformat()
+    print(
+        f"[{timestamp}] Computing {SIMILAR_COUNT} similar orgs per org "
+        "(v6 peer group, memory-safe)..."
+    )
+
+    tier_fields_by_ein = load_tier_fields_from_db()
+    orgs = load_slim_orgs(tier_fields_by_ein)
+    if not orgs:
+        print("ERROR: No orgs loaded. Run precompute_orgs.py first.")
+        return
+
+    indexes = build_indexes(orgs)
+
+    # Assign all large structures before Pool creation. Linux fork workers
+    # inherit these allocations through copy-on-write.
+    _PASS2_ORGS = orgs
+    _PASS2_INDEXES = indexes
+    _PASS2_TIER_FIELDS_BY_EIN = tier_fields_by_ein
+    _PASS2_DRY_RUN = args.dry_run
+
+    total = len(orgs)
+    processed = 0
+    updated = 0
+    tier_fields_backfilled = 0
+    next_progress = PROGRESS_INTERVAL
+
+    mode = "computing (dry run; no writes)" if args.dry_run else "computing + patching"
+    print(
+        f"  Pass 2: {mode} {total} org files with {args.workers} worker(s) "
+        f"(chunk size {PASS2_CHUNK_SIZE})...",
+        flush=True,
+    )
+
+    # Explicitly request fork: this deployment target is Linux, and fork is
+    # essential for sharing the already-built Pass 1 structures via CoW.
+    context = mp.get_context("fork")
+    try:
+        with context.Pool(
+            processes=args.workers,
+            initializer=_ignore_keyboard_interrupt,
+        ) as pool:
+            chunks = _ein_chunks(orgs.keys(), PASS2_CHUNK_SIZE)
+            for chunk_processed, chunk_updated, chunk_backfilled in pool.imap_unordered(
+                _process_ein_chunk,
+                chunks,
+                chunksize=1,
+            ):
+                processed += chunk_processed
+                updated += chunk_updated
+                tier_fields_backfilled += chunk_backfilled
+
+                while processed >= next_progress:
+                    pct = processed / total * 100
+                    print(
+                        f"  [{datetime.now().strftime('%H:%M:%S')}] "
+                        f"{processed}/{total} ({pct:.1f}%) | updated: {updated} | "
+                        f"tier fields backfilled: {tier_fields_backfilled}",
+                        flush=True,
+                    )
+                    next_progress += PROGRESS_INTERVAL
+    except KeyboardInterrupt:
+        print(
+            "\nInterrupted. Completed files are intact; any in-progress write "
+            "was isolated in a temporary file.",
+            flush=True,
+        )
+        return
 
     print(f"\n[{datetime.now().isoformat()}] Done!")
-    print(f"  Total: {total} orgs, {updated} files updated, {tier_fields_backfilled} tier-field values backfilled")
+    if args.dry_run:
+        print(
+            f"  Total: {total} orgs, {updated} files would be updated, "
+            f"{tier_fields_backfilled} tier-field values would be backfilled"
+        )
+    else:
+        print(
+            f"  Total: {total} orgs, {updated} files updated, "
+            f"{tier_fields_backfilled} tier-field values backfilled"
+        )
     total_size = sum(f.stat().st_size for f in ORGS_DIR.rglob("*") if f.is_file())
     print(f"  Disk: {total_size / 1024 / 1024:.0f} MB")
     print(f"\n  Next step: rsync orgs/ to droplet and restart search.db")
