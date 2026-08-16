@@ -28,9 +28,13 @@ Scoped to single-org lookups (checking "does this specific org have newer
 data than we have") -- NOT a bulk backfill tool. Downloading a ~500MB batch
 ZIP per org doesn't scale; for bulk refresh, gt990's consolidated index
 (scripts/ops/refresh_stale_orgs_from_gt990.py) remains the right tool.
-A future batch-mode version of this script could download each monthly ZIP
-once and extract many EINs' filings from it in one pass, if this becomes a
-regular need rather than a one-off check.
+
+The index/parse/write building blocks below (iter_990_index_rows,
+batch_zip_url, parse_990_xml, write_filing) are also imported by
+scripts/ops/refresh_recent_filings_batch.py, the batch-mode version that
+downloads each monthly ZIP once and extracts every registry EIN found in it --
+built 2026-08-16 once single-org lookups proved this source out. Keep those
+functions' signatures stable; the batch script depends on them directly.
 
 Usage:
     python3 scripts/ops/fetch_irs_direct_filing.py 521231983
@@ -44,6 +48,7 @@ import sys
 import sqlite3
 import tempfile
 import xml.etree.ElementTree as ET
+from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -52,12 +57,19 @@ import requests
 DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 NS = "http://www.irs.gov/efile"
 INDEX_BASE = "https://apps.irs.gov/pub/epostcard/990/xml"
+PARSER_VERSION = "1.1-2026-08-16-direct-irs"
 
 
-def find_latest_filing(ein: str, submission_years: list[int]) -> dict | None:
-    """Check the given submission-year indices (newest first) for this EIN's
-    most recent Form 990 filing. Returns the newest match found."""
-    best = None
+def batch_zip_url(batch_id: str) -> str:
+    year = batch_id.split("_")[0]
+    return f"{INDEX_BASE}/{year}/{batch_id}.zip"
+
+
+def iter_990_index_rows(submission_years: list[int]) -> Iterator[dict]:
+    """Yields raw index rows (RETURN_TYPE == '990' only) for the given
+    submission years -- the year IRS processed/released the filing, not the
+    tax year it covers. Shared by single-org lookup and batch discovery so
+    there's one place that knows the index CSV's shape."""
     for year in submission_years:
         url = f"{INDEX_BASE}/{year}/index_{year}.csv"
         print(f"Checking {url} ...")
@@ -69,51 +81,33 @@ def find_latest_filing(ein: str, submission_years: list[int]) -> dict | None:
             continue
         reader = csv.DictReader(io.StringIO(resp.text))
         for row in reader:
-            if row.get("EIN", "").strip().zfill(9) != ein:
-                continue
             if row.get("RETURN_TYPE", "").strip() != "990":
                 continue  # skip EZ/PF -- different statement shape
-            tax_period = row.get("TAX_PERIOD", "").strip()
-            candidate = {
-                "tax_period": tax_period,
-                "object_id": row.get("OBJECT_ID", "").strip(),
-                "batch_id": row.get("XML_BATCH_ID", "").strip(),
-            }
-            if best is None or tax_period > best["tax_period"]:
-                best = candidate
-        if best:
-            break  # newest submission year already found a match
+            yield row
+
+
+def find_latest_filing(ein: str, submission_years: list[int]) -> dict | None:
+    """Check the given submission-year indices (newest first) for this EIN's
+    most recent Form 990 filing. Returns the newest match found."""
+    best = None
+    for row in iter_990_index_rows(submission_years):
+        if row.get("EIN", "").strip().zfill(9) != ein:
+            continue
+        tax_period = row.get("TAX_PERIOD", "").strip()
+        candidate = {
+            "tax_period": tax_period,
+            "object_id": row.get("OBJECT_ID", "").strip(),
+            "batch_id": row.get("XML_BATCH_ID", "").strip(),
+        }
+        if best is None or tax_period > best["tax_period"]:
+            best = candidate
     return best
 
 
-def fetch_and_parse(batch_id: str, object_id: str) -> dict | None:
-    year = batch_id.split("_")[0]
-    zip_url = f"{INDEX_BASE}/{year}/{batch_id}.zip"
-    print(f"Downloading {zip_url} (this is a full monthly batch, ~400-700MB)...")
-
-    xml_name = f"{object_id}_public.xml"
-    # Python's zipfile module doesn't support the compression method IRS uses
-    # for these archives ("That compression method is not supported") --
-    # confirmed the command-line `unzip` handles it fine, so shell out to it
-    # instead of fighting zipfile.
-    with tempfile.TemporaryDirectory() as tmpdir:
-        zip_path = Path(tmpdir) / "batch.zip"
-        resp = requests.get(zip_url, timeout=600, stream=True)
-        resp.raise_for_status()
-        with open(zip_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=1 << 20):
-                f.write(chunk)
-
-        result = subprocess.run(
-            ["unzip", "-o", str(zip_path), xml_name, "-d", tmpdir],
-            capture_output=True, text=True
-        )
-        xml_path = Path(tmpdir) / xml_name
-        if result.returncode != 0 or not xml_path.exists():
-            print(f"  {xml_name} not found in batch (unzip: {result.stderr.strip()})")
-            return None
-        content = xml_path.read_bytes()
-
+def parse_990_xml(content: bytes) -> dict | None:
+    """Parses a single 990 XML's revenue/assets/expenses and Part IX
+    functional-expense breakdown. Returns None if it's not a parseable
+    IRS990 return."""
     root = ET.fromstring(content)
     irs990 = root.find(f".//{{{NS}}}IRS990")
     if irs990 is None:
@@ -139,6 +133,74 @@ def fetch_and_parse(batch_id: str, object_id: str) -> dict | None:
     }
 
 
+def fetch_and_parse(batch_id: str, object_id: str) -> dict | None:
+    zip_url = batch_zip_url(batch_id)
+    print(f"Downloading {zip_url} (this is a full monthly batch, ~400-700MB)...")
+
+    xml_name = f"{object_id}_public.xml"
+    # Python's zipfile module doesn't support the compression method IRS uses
+    # for these archives ("That compression method is not supported") --
+    # confirmed the command-line `unzip` handles it fine, so shell out to it
+    # instead of fighting zipfile.
+    with tempfile.TemporaryDirectory() as tmpdir:
+        zip_path = Path(tmpdir) / "batch.zip"
+        resp = requests.get(zip_url, timeout=600, stream=True)
+        resp.raise_for_status()
+        with open(zip_path, "wb") as f:
+            for chunk in resp.iter_content(chunk_size=1 << 20):
+                f.write(chunk)
+
+        result = subprocess.run(
+            ["unzip", "-o", str(zip_path), xml_name, "-d", tmpdir],
+            capture_output=True, text=True
+        )
+        xml_path = Path(tmpdir) / xml_name
+        if result.returncode != 0 or not xml_path.exists():
+            print(f"  {xml_name} not found in batch (unzip: {result.stderr.strip()})")
+            return None
+        content = xml_path.read_bytes()
+
+    return parse_990_xml(content)
+
+
+def write_filing(db: sqlite3.Connection, ein: str, filing: dict, data: dict, now: str) -> bool:
+    """Writes one parsed filing to all 3 tables (org_revenue_history,
+    irs_990_functional_expense_filings, registry_enriched) using the
+    established safety rules: never downgrade, reconciliation-checked
+    expense breakdown. Returns whether the expense breakdown reconciled.
+    Shared by the single-org CLI and the batch script -- change write
+    behavior here only, not in both places."""
+    tax_year = int(filing["tax_period"][:4])
+    total = data["total_expenses"]
+    program = data["program_services_amt"] or 0
+    mgmt = data["management_general_amt"] or 0
+    fundraising = data["fundraising_amt"] or 0
+    reconciles = bool(total and abs((program + mgmt + fundraising) - total) <= 1)
+
+    db.execute(
+        "INSERT OR REPLACE INTO org_revenue_history "
+        "(EIN, tax_year, total_revenue, total_assets, total_expenses, form_type, source, extracted_at) "
+        "VALUES (?, ?, ?, ?, ?, '990', 'irs_direct', ?)",
+        (ein, tax_year, data["total_revenue"], data["total_assets"], data["total_expenses"], now)
+    )
+    if data["program_services_amt"] is not None:
+        db.execute(
+            "INSERT OR REPLACE INTO irs_990_functional_expense_filings "
+            "(EIN, tax_year, object_id, source_url, total_amt, program_services_amt, "
+            "management_general_amt, fundraising_amt, reconciles, validation_status, parser_version, extracted_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (ein, tax_year, filing["object_id"], batch_zip_url(filing["batch_id"]),
+             total, program, mgmt, fundraising, int(reconciles),
+             "accepted" if reconciles else "rejected", PARSER_VERSION, now)
+        )
+    db.execute(
+        "UPDATE registry_enriched SET total_revenue = ?, total_assets = ?, latest_tax_year = ?, "
+        "data_source = 'irs_direct' WHERE EIN = ? AND (latest_tax_year IS NULL OR latest_tax_year < ?)",
+        (data["total_revenue"], data["total_assets"], tax_year, ein, tax_year)
+    )
+    return reconciles
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("ein")
@@ -158,47 +220,25 @@ def main():
         print("Could not parse the filing.")
         sys.exit(1)
 
-    tax_year = int(filing["tax_period"][:4])
-    print(f"\nParsed (tax_year={tax_year}):")
+    print(f"\nParsed (tax_year={filing['tax_period'][:4]}):")
     for k, v in data.items():
         print(f"  {k}: {v}")
 
-    total = data["total_expenses"]
-    program = data["program_services_amt"] or 0
-    mgmt = data["management_general_amt"] or 0
-    fundraising = data["fundraising_amt"] or 0
-    reconciles = bool(total and abs((program + mgmt + fundraising) - total) <= 1)
-    print(f"  reconciles: {reconciles}")
-
     if not args.apply:
+        total = data["total_expenses"]
+        program = data["program_services_amt"] or 0
+        mgmt = data["management_general_amt"] or 0
+        fundraising = data["fundraising_amt"] or 0
+        reconciles = bool(total and abs((program + mgmt + fundraising) - total) <= 1)
+        print(f"  reconciles: {reconciles}")
         print("\nDry run -- no changes written. Re-run with --apply to write.")
         return
 
     db = sqlite3.connect(DB_PATH)
     now = datetime.now(timezone.utc).isoformat()
-    db.execute(
-        "INSERT OR REPLACE INTO org_revenue_history "
-        "(EIN, tax_year, total_revenue, total_assets, total_expenses, form_type, source, extracted_at) "
-        "VALUES (?, ?, ?, ?, ?, '990', 'irs_direct', ?)",
-        (ein, tax_year, data["total_revenue"], data["total_assets"], data["total_expenses"], now)
-    )
-    if data["program_services_amt"] is not None:
-        db.execute(
-            "INSERT OR REPLACE INTO irs_990_functional_expense_filings "
-            "(EIN, tax_year, object_id, source_url, total_amt, program_services_amt, "
-            "management_general_amt, fundraising_amt, reconciles, validation_status, parser_version, extracted_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (ein, tax_year, filing["object_id"],
-             f"{INDEX_BASE}/{filing['batch_id'].split('_')[0]}/{filing['batch_id']}.zip",
-             total, program, mgmt, fundraising, int(reconciles),
-             "accepted" if reconciles else "rejected", "1.1-2026-08-16-direct-irs", now)
-        )
-    db.execute(
-        "UPDATE registry_enriched SET total_revenue = ?, total_assets = ?, latest_tax_year = ?, "
-        "data_source = 'irs_direct' WHERE EIN = ? AND (latest_tax_year IS NULL OR latest_tax_year < ?)",
-        (data["total_revenue"], data["total_assets"], tax_year, ein, tax_year)
-    )
+    reconciles = write_filing(db, ein, filing, data, now)
     db.commit()
+    print(f"  reconciles: {reconciles}")
     print("Written.")
 
 
