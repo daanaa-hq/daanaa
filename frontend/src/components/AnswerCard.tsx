@@ -86,16 +86,34 @@ function HealthChips({ org }: { org: ApiOrganization }) {
   )
 }
 
+// Consolidated 2026-08-16: this banner used to always show a self-referential
+// sentence ("Tax deductibility is shown separately... V6 peer financial
+// context appears below") that just described the rest of the page's own
+// layout back to the reader -- redundant with IrsEligibilityContext right
+// below it (tax status) and FinancialContext further down (the actual score
+// gap explanation), and it read as three stacked disclaimers before any real
+// content. Now this only says something when it has something distinct to
+// add: the real "no financial score" gap (when scoring_tier is genuinely
+// absent -- Stewardship P3, we still say so) and/or the ruling year fact.
+// Renders nothing when neither applies, rather than an empty-feeling box.
 function NoDataBanner({ org }: { org: ApiOrganization }) {
   const year = rulingYear(org.ruling_date)
+  const hasFinancialContext = !!org.scoring_tier
+  const parts: string[] = []
+  if (!hasFinancialContext) {
+    parts.push("We don't have enough IRS financial data yet to compare this organization against its peers.")
+  }
+  if (year) {
+    parts.push(`Doing the work since ${year}.`)
+  }
+  if (parts.length === 0) return null
   return (
     <div className="mt-4 flex items-start gap-3 px-4 py-3 rounded-xl bg-white/8 border border-white/12">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0">
         <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       <p className="font-body text-small text-muted-cream leading-[1.55]">
-        This organization appears in our nonprofit records. Tax deductibility is shown separately and is not verified here. V6 peer financial context appears below when the public record supports it; otherwise, we say what is not known.
-        {year && ` Doing the work since ${year}.`}
+        {parts.join(' ')}
       </p>
     </div>
   )

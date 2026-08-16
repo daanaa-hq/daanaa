@@ -124,10 +124,10 @@ describe('AnswerCard', () => {
   })
 
   describe('no-data branch (the majority case, ~82% of public orgs)', () => {
-    it('shows the dignity-layer copy, not a blank space, when v5_context is null', () => {
+    it('states the real financial-data gap when scoring_tier is absent, not a self-referential page description', () => {
       render(<AnswerCard org={makeOrg({ v5_context: null })} />)
-      expect(screen.getByText(/appears in our nonprofit records/i)).toBeInTheDocument()
-      expect(screen.getByText(/common for smaller and local organizations/i)).toBeInTheDocument()
+      expect(screen.getByText(/don't have enough irs financial data/i)).toBeInTheDocument()
+      expect(screen.queryByText(/appears in our nonprofit records/i)).not.toBeInTheDocument()
     })
 
     it('does not show a health-signal chip or the word CAUTION/HEALTHY/STABLE', () => {
@@ -151,13 +151,28 @@ describe('AnswerCard', () => {
       expect(screen.queryByText(/doing the work since/i)).not.toBeInTheDocument()
     })
 
+    it('renders nothing when a financial score exists AND a ruling year exists -- nothing distinct left to say', () => {
+      const org = makeOrg({ v5_context: null, scoring_tier: '1_Full_Context', ruling_date: '1994-03-15' })
+      const { container } = render(<AnswerCard org={org} />)
+      // Ruling year still has something to say even with a score present.
+      expect(screen.getByText(/doing the work since 1994/i)).toBeInTheDocument()
+      expect(screen.queryByText(/don't have enough irs financial data/i)).not.toBeInTheDocument()
+      expect(container).toBeTruthy()
+    })
+
+    it('renders nothing at all when scoring_tier is present and ruling_date is absent -- no empty box', () => {
+      const org = makeOrg({ v5_context: null, scoring_tier: '1_Full_Context', ruling_date: null })
+      const { container } = render(<AnswerCard org={org} />)
+      expect(container.firstChild).toBeNull()
+    })
+
     it('renders the no-data branch even when v5_context is present but score is missing (malformed/partial data, defensive)', () => {
       // TS wouldn't normally allow this shape, but the API is an external
       // boundary -- verify the component degrades safely if the backend
       // ever sends a v5_context without a score sub-object.
       const org = makeOrg({ v5_context: { archetype: { key: 'a', label: 'A' } } as never })
       render(<AnswerCard org={org} />)
-      expect(screen.getByText(/appears in our nonprofit records/i)).toBeInTheDocument()
+      expect(screen.getByText(/don't have enough irs financial data/i)).toBeInTheDocument()
     })
   })
 })
