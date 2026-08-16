@@ -1441,10 +1441,19 @@ external entities). Also added a real per-filing skip check
 existing dedup check before this, so every pending-batch retry would have
 re-downloaded/re-parsed/re-written them regardless (founder flagged this
 directly: "skip the data which is available... so we don't duplicate the
-effort"). Gated on `parser_version` matching current, not just presence, so
-the one-time backfill of narrative fields for those 17,912 pre-narrative-era
-filings still happens — confirmed this doesn't block mission/program text
-capture, only true re-processing of an already-current filing.
+effort"). Gated on `parser_version` matching current, not just presence.
+
+**Correction, same day, found while explaining this to the founder**: the
+above is true only for a batch still `pending`. `already_processed_eins()`
+runs inside `process_batch()`, which is never reached for a batch already
+marked `"completed"` in the state file — and the one batch processed so far
+(`2026_TEOS_XML_06A`, 18,806 EINs) already is. So the "one-time backfill of
+narrative fields for pre-narrative-era filings" does NOT happen
+automatically for that backlog; it only applies going forward, to EINs that
+show up in a genuinely new IRS batch (i.e., orgs filing their next annual
+return). Backfilling the existing 17,912+ filings needs a separate,
+explicit script — not yet built. See `docs/990-enrichment/architecture.md`
+"Backfill gap" for the corrected record.
 
 **Clarification on P7 (Codex Review B/C, finding #8):** `cause_tags` feeds
 both FTS ranking and semantic embeddings, so it affects search-relevance

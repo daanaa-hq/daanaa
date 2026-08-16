@@ -303,6 +303,57 @@ not just trust it.
 3. `gpu_night.sh` / CLAUDE.md GPU-window reconciliation — flagged, not this
    project's call to resolve.
 
+## Backfill gap (found 2026-08-16, correcting an earlier overstatement)
+
+`refresh_recent_filings_batch.py`'s completion tracking operates at the
+**whole-batch** level: `pending = {batch_id: filings for ... if
+state["batches"].get(batch_id, {}).get("status") != "completed"}`
+(`refresh_recent_filings_batch.py:367-371`). A batch already marked
+`"completed"` is excluded before `process_batch()` — and therefore before
+this project's `already_processed_eins()` skip-check — ever runs.
+
+One batch has been processed so far: `2026_TEOS_XML_06A`, 18,806 EINs,
+marked completed **before** Phase 3 (Schedule O/cause_tags/mission-fix)
+existed. An earlier note in this doc (and in `DECISIONS.md`) claimed the
+narrative backfill for those pre-narrative-era filings "still happens" on
+the next cron run — **that was wrong**, caught explaining this project to
+the founder, not by testing. It doesn't happen, because the batch-level
+completion check short-circuits before reaching the per-EIN logic that
+would otherwise allow it.
+
+**What actually happens automatically**: going forward, as orgs file their
+*next* annual return, they'll appear in a *new* IRS batch, get processed
+fresh, and get full Phase 3 narrative extraction plus the mission-year-guard
+fix (newer `irs_990` correctly replaces older `irs_990`). The "evolves with
+the org" behavior is real for future filings.
+
+**What does NOT happen automatically**: the 18,806 EINs (and the broader
+17,912+ filings with `irs_direct` financial data from before Phase 3) do not
+get retroactive Schedule O/cause_tags/mission-correction. Two ways to close
+this, neither built yet:
+1. A small backfill script keyed off `irs_990_functional_expense_filings`
+   rows with `parser_version` older than current — each row already stores
+   `source_url` (the batch ZIP URL), so no fresh IRS index lookup is needed,
+   just re-download (or reuse if still cached locally) the same batch,
+   re-parse, re-run `write_filing()` with current code.
+2. Temporarily clear `2026_TEOS_XML_06A`'s `"completed"` status in
+   `data/ops_state/irs_direct_recent_filings_batches.json` and let the next
+   cron run reprocess it — simpler, but re-downloads and re-touches
+   financials unnecessarily for 18,806 filings that don't need a financial
+   refresh, only a narrative one.
+Option 1 is cleaner (narrative-only, no wasted financial re-work) but is new
+code; option 2 reuses existing code at the cost of unnecessary financial
+re-processing. Neither is built — this is an open decision, not a defect in
+what shipped.
+
+**Separately, a timing note** (pre-existing pipeline characteristic, not
+something this project changed): `org_fts`/`org_embeddings` are rebuilt by
+`overnight_pipeline.py` at 02:30 daily; the direct-filing job that writes
+new `cause_tags`/`mission` runs at 04:15, *after* that rebuild. So a
+`cause_tags` update from tonight's run isn't searchable until the *following*
+night's 02:30 rebuild — roughly a 22-24 hour lag, same as it's always been
+for mission updates from this pipeline.
+
 ## Scheduling / concurrency
 
 - Runs as its own cron entry, scheduled **after** 04:15 (e.g. 05:30, after
