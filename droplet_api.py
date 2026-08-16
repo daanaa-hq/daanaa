@@ -2527,6 +2527,123 @@ def get_organization(ein):
     ).fetchall()
     org['revenue_history'] = [dict(r) for r in history_rows]
 
+    # AtAGlance fields (added 2026-08-16): leadership_info/service_scope/
+    # org_stability_signal/mission_attribution. Ported from daanaa_api.py,
+    # where this has been live and reviewed since 2026-07 -- this file
+    # (production) never computed these, so the whole AtAGlance section
+    # (frontend/src/components/AtAGlance.tsx) has never rendered on
+    # daanaa.org. Local-only for now; production deployment is a separate
+    # decision, not made here. See DECISIONS.md 2026-08-16.
+
+    # 1. Leadership Info (from 990 Part VII + governance data)
+    org['leadership_info'] = {
+        'board_size': org.get('board_size'),
+        'board_independence_pct': (
+            int(100 * org.get('board_independent_count', 0) / org.get('board_size', 1))
+            if org.get('board_size') and org.get('board_size', 0) > 0
+            else None
+        ),
+        'employee_count': org.get('employee_count'),
+        'has_coi_policy': bool(org.get('has_coi_policy')),
+        'has_whistleblower_policy': bool(org.get('has_whistleblower_policy')),
+        'has_doc_retention_policy': bool(org.get('has_doc_retention_policy')),
+    }
+
+    # 2. Service Scope (from NTEE + extracted metadata)
+    service_area_states = None
+    if org.get('extracted_metadata'):
+        try:
+            meta = json.loads(org['extracted_metadata']) if isinstance(org['extracted_metadata'], str) else org['extracted_metadata']
+            service_area_states = meta.get('service_area_states')
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # Standard NTEE1 taxonomy -- reuses the same, already-correct map this
+    # file uses at the /api/ntee-categories route (~line 3140). The map
+    # daanaa_api.py originally had here was wrong from 'G' onward (e.g. it
+    # labeled 'Q' as 'Law & Legal' -- real NTEE1 'Q' is International; 'I'
+    # as 'Disability & Rehabilitation' -- real 'I' is Crime & Legal-Related).
+    # Caught 2026-08-16 verifying AKF (NTEE1='Q', confirmed International
+    # per its own NTEECC 'Q30' and cross-checked against CauseIQ) came back
+    # mislabeled 'Law & Legal' from the ported version. Not fixed in
+    # daanaa_api.py in this pass -- same bug, flagged separately.
+    _NTEE1_POPULATION_MAP = {
+        'A': 'Arts, Culture & Humanities', 'B': 'Education', 'C': 'Environment',
+        'D': 'Animal-Related', 'E': 'Health', 'F': 'Mental Health & Crisis',
+        'G': 'Voluntary Health Associations', 'H': 'Medical Research',
+        'I': 'Crime & Legal-Related', 'J': 'Employment',
+        'K': 'Food, Agriculture & Nutrition', 'L': 'Housing & Shelter',
+        'M': 'Public Safety', 'N': 'Recreation & Sports',
+        'O': 'Youth Development', 'P': 'Human Services',
+        'Q': 'International', 'R': 'Civil Rights & Advocacy',
+        'S': 'Community Improvement', 'T': 'Philanthropy & Voluntarism',
+        'U': 'Science & Technology', 'V': 'Social Science',
+        'W': 'Public & Societal Benefit', 'X': 'Religion-Related',
+        'Y': 'Mutual & Membership', 'Z': 'Unknown',
+    }
+    org['service_scope'] = {
+        'primary_cause_area': _NTEE1_POPULATION_MAP.get(org.get('NTEE1'), 'Nonprofits'),
+        'service_states': service_area_states,
+        'primary_state': org.get('STATE'),
+        'revenue_band': org.get('merit_band_v5_label'),
+    }
+
+    # 3. Org Stability Signal (composite of leadership + financial + longevity)
+    stability_score = 0
+    stability_reasons = []
+    board_size = org.get('board_size') or 0
+    if board_size >= 3:
+        stability_score += 1
+        stability_reasons.append('Has board oversight')
+    employee_count_val = org.get('employee_count') or 0
+    if employee_count_val > 0:
+        stability_score += 1
+        stability_reasons.append('Has paid staff')
+    years_active = org.get('years_active') or 0
+    if years_active >= 10:
+        stability_score += 1
+        stability_reasons.append('Operating 10+ years')
+    elif years_active >= 5:
+        stability_reasons.append('Operating 5+ years')
+    if org.get('merit_health_signal_v5'):
+        if org['merit_health_signal_v5'] == 'HEALTHY':
+            stability_score += 1
+            stability_reasons.append('Financially healthy')
+        elif org['merit_health_signal_v5'] == 'STABLE':
+            stability_reasons.append('Financially stable')
+    nccs_program_ratio = org.get('nccs_program_ratio') or 0
+    if nccs_program_ratio >= 0.75:
+        stability_score += 1
+        stability_reasons.append('High program spend ratio')
+
+    # Stewardship P5: mission-aligned language, not shame.
+    _STABILITY_SIGNALS = ['Need support', 'Emerging', 'Solid', 'Strong', 'Excellent']
+    org['org_stability_signal'] = {
+        'signal': _STABILITY_SIGNALS[min(stability_score, 4)],
+        'reasons': stability_reasons,
+        'confidence': 'high' if org.get('nccs_form_990_filed') else 'moderate',
+    }
+
+    # 4. Mission Attribution
+    org['mission_attribution'] = {
+        'text': org.get('mission'),
+        'source': org.get('mission_source'),
+        'verified_date': org.get('mission_last_verified'),
+        'source_explanation': {
+            'claimed': "This mission statement was provided by the nonprofit",
+            'nonprofit_supplied': "This mission statement was provided by the nonprofit",
+            'ai_web': "This mission was extracted from the nonprofit's website",
+            'ai_web_grounded': "This mission was extracted from the nonprofit's website",
+            'extracted': "This mission was extracted from the nonprofit's website",
+            'irs_990': "This mission was taken from the nonprofit's IRS Form 990 filing",
+            'ai_ntee': "This is a template mission for this type of nonprofit",
+            'ai_generated': "This mission was written by AI from public filing and category data",
+            'ai_haiku': "This mission was written by AI from public filing and category data",
+            'lucido': "This mission was written by AI from public filing and category data",
+        }.get(org.get('mission_source'), 'Mission source unknown'),
+        'confidence': org.get('mission_confidence', 0.5),
+    }
+
     # Donate fields are never serialized publicly (see _DONATE_FIELDS); the G2
     # eligibility gate (_donate_eligible_basic/_is_revoked) still protects the
     # claim flow, where donate data remains in use.

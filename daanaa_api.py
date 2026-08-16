@@ -2813,34 +2813,41 @@ def get_organization(ein):
         except (json.JSONDecodeError, TypeError):
             pass
 
-    # Map NTEE1 to typical population served
+    # Map NTEE1 to typical population served.
+    # Fixed 2026-08-16: this map was wrong from 'G' onward (e.g. labeled
+    # 'Q' as 'Law & Legal' -- real NTEE1 'Q' is International; 'I' as
+    # 'Disability & Rehabilitation' -- real 'I' is Crime & Legal-Related).
+    # Caught verifying AKF (NTEE1='Q', confirmed International per its own
+    # NTEECC 'Q30' and cross-checked against CauseIQ) came back mislabeled
+    # 'Law & Legal'. Now matches the standard taxonomy already used
+    # correctly elsewhere in this file's /api/ntee-categories route.
     ntee1_population_map = {
-        'A': 'Arts & Culture',
+        'A': 'Arts, Culture & Humanities',
         'B': 'Education',
         'C': 'Environment',
-        'D': 'Animal Welfare',
+        'D': 'Animal-Related',
         'E': 'Health',
-        'F': 'Mental Health & Addiction',
-        'G': 'Family Services',
-        'H': 'Youth Development',
-        'I': 'Disability & Rehabilitation',
-        'J': 'Senior Services',
-        'K': 'Housing & Community Development',
-        'L': 'Public Safety',
-        'M': 'Employment & Job Training',
-        'N': 'Food & Agriculture',
-        'O': 'Business & Economics',
-        'P': 'Civic & Advocacy',
-        'Q': 'Law & Legal',
-        'R': 'Philanthropy',
-        'S': 'International Affairs',
-        'T': 'Religion',
-        'U': 'Mutual & Membership Benefit',
-        'V': 'Science & Technology',
-        'W': 'Social Science',
+        'F': 'Mental Health & Crisis',
+        'G': 'Voluntary Health Associations',
+        'H': 'Medical Research',
+        'I': 'Crime & Legal-Related',
+        'J': 'Employment',
+        'K': 'Food, Agriculture & Nutrition',
+        'L': 'Housing & Shelter',
+        'M': 'Public Safety',
+        'N': 'Recreation & Sports',
+        'O': 'Youth Development',
+        'P': 'Human Services',
+        'Q': 'International',
+        'R': 'Civil Rights & Advocacy',
+        'S': 'Community Improvement',
+        'T': 'Philanthropy & Voluntarism',
+        'U': 'Science & Technology',
+        'V': 'Social Science',
+        'W': 'Public & Societal Benefit',
         'X': 'Religion-Related',
-        'Y': 'Community Development',
-        'Z': 'Unclassified',
+        'Y': 'Mutual & Membership',
+        'Z': 'Unknown',
     }
 
     org['service_scope'] = {
