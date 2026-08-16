@@ -2,7 +2,7 @@
 
 import unittest
 import threading
-from scripts.worker_queue import WorkerQueue, DataWriter
+from scripts.core.worker_queue import WorkerQueue, DataWriter
 
 
 class TestWorkerQueue(unittest.TestCase):

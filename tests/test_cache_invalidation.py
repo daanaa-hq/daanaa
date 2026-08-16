@@ -4,7 +4,7 @@ import unittest
 import time
 import json
 from pathlib import Path
-from scripts.cache_manager import CacheManager, write_invalidation_marker
+from scripts.core.cache_manager import CacheManager, write_invalidation_marker
 
 
 class TestCacheInvalidation(unittest.TestCase):
