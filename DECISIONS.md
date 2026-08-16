@@ -6,6 +6,28 @@
 
 ---
 
+## 2026-08-15: Precompute Patched for the 1,458 Website Status Promotion (Scoped, Not a Full Rebuild)
+
+**Issue:** Org detail pages read `registry_enriched` live, so the earlier `beta`→`ok` promotion showed correctly there immediately. Directory/search-browse pages read static precompute files, which still carried the stale `beta` status until patched.
+
+**Chose:** A targeted, idempotent patch (`scripts/patch_precompute_website_status.py`, follows the existing `patch_precompute_financials.py` convention) rather than a full precompute rebuild — the org-level change only touches one field on 1,458 specific EINs, not the other 1.9M+ org files.
+
+**Why not a full rebuild:** earlier the same day, a full 26GB precompute deploy hit real disk-space problems on the droplet (resize from 77GB→154GB required mid-session). A full rebuild here would have repeated that risk for a change that only needed ~2MB of actual data to move.
+
+**Execution:**
+- `precompute_output/orgs/`: 1,495 files patched locally (1,458 target EINs + a few already-correct from a test run; 6 EINs had no precompute file at all — expected, they fall outside `precompute_orgs.py`'s active+deductibility=1 filter). Deployed via targeted `rsync --files-from=<list>` (2.0MB transfer), not a full-tree sync. Pre-patch versions backed up to `/tmp/precompute_patch_backup/` on the droplet first.
+- `precompute_output/browse/`: fully regenerated (`scripts/precompute_browse.py`, 2m22s, 397MB) — cheaper and simpler than computing which specific category/pagination pages contained the 1,458 EINs. Deployed via `rsync --delete` on just the `browse/` subdirectory, prior version backed up first.
+- Disk space checked before both transfers (49GB free; combined transfer <500MB) — no repeat of the earlier disk-space incident, because this was scoped correctly from the start.
+- Service restarted to clear the in-process response cache (CLAUDE.md documents this as invalidating only on restart) — not strictly required (cache would self-expire), but gave immediate, certain verification rather than waiting on TTL.
+
+**Verified end-to-end on production:** precompute org file content directly (`website_status: ok`), and the actual browse listing file (`browse/E/WI_1.json.gz` contains the sample org with `website_status: ok`) — not just the API response, the underlying static file donors' browsers actually receive.
+
+**Process note:** this task was handed to Codex first with an unusually detailed, lesson-informed prompt (explicit warnings about the day's earlier disk-space incidents, a scoped-not-full-rebuild directive, empirical-verification requirements). It stalled with zero output — the 4th of 5 Codex background tasks today to do so. Took over directly using the exact plan already written for Codex. Given this pattern (80% of today's delegated background tasks produced nothing), worth a footnote for future sessions: Codex's background execution reliability was degraded for this entire session, not an isolated incident.
+
+**Governance:** Stewardship P3 (search/browse pages now match the evidence-based promotion already live elsewhere) and P6 (closes a real freshness gap same-day). Reversible — both backup archives preserved on the droplet.
+
+---
+
 ## 2026-08-15: Website Discovery Phase 2 — 1,458 Orgs Promoted from `beta` to `ok`
 
 **Context:** Extended `website_verifier_spider.py` with content verification (org name/city/EIN matched against actual fetched page text, see the "right-sized" spider commits earlier same day). Ran against the real Phase 1 backlog: 2,910 orgs with `website_status='beta'` — sites discovered by heuristic, HTTP-verified as loading, but never content-verified against org identity. Results: 1,501 HIGH confidence (name + city/EIN both matched), 820 MEDIUM, 549 LOW, 40 unreachable (robots.txt disallowed, correctly skipped).
