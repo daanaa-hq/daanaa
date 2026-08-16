@@ -25,38 +25,20 @@ import sys
 from collections import defaultdict
 from datetime import datetime
 
+# Revenue band thresholds, Census region mapping, and get_revenue_band()/
+# get_region() moved 2026-08-16 to scripts/scoring/peer_group.py -- now the
+# single shared definition used by this scorer, both API files' similar-orgs
+# lookup, and precompute_similar_orgs.py, so "peer group" means the exact
+# same thing everywhere it's used (see DECISIONS.md 2026-08-16). Imported
+# under their original names so nothing below this line changes.
+from scripts.scoring.peer_group import (
+    CENSUS_REGIONS,
+    STATE_TO_REGION,
+    get_region,
+    get_revenue_band,
+)
+
 DB_PATH = "data/merit_registry.db"
-
-# Revenue band thresholds (IRS-aligned)
-def get_revenue_band(revenue):
-    if revenue is None or revenue == 0:
-        return None
-    if revenue < 50000:
-        return "Grassroots"
-    elif revenue < 200000:
-        return "Small"
-    elif revenue < 500000:
-        return "Mid"
-    elif revenue < 5000000:
-        return "Established"
-    else:
-        return "Major"
-
-# Census region mapping
-CENSUS_REGIONS = {
-    "Northeast": ["CT", "ME", "MA", "NH", "RI", "VT", "NJ", "NY", "PA"],
-    "Midwest": ["IL", "IN", "MI", "OH", "WI", "IA", "KS", "MN", "MO", "NE", "ND", "SD"],
-    "South": ["DE", "FL", "GA", "MD", "NC", "SC", "VA", "WV", "AL", "KY", "MS", "TN", "AR", "LA", "OK", "TX"],
-    "West": ["AZ", "CO", "ID", "MT", "NV", "NM", "UT", "WY", "AK", "CA", "HI", "OR", "WA"],
-}
-
-STATE_TO_REGION = {}
-for region, states in CENSUS_REGIONS.items():
-    for state in states:
-        STATE_TO_REGION[state] = region
-
-def get_region(state):
-    return STATE_TO_REGION.get(state)
 
 def compute_revenue_percentiles(orgs, updates):
     """Compute percentile rank (0-100) for each org within its peer group.
