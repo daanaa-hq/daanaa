@@ -55,60 +55,34 @@ export function buildPeerContextRows(org: ApiOrganization): ContextRow[] {
   }
 
   // 3. SIZE CONTEXT — "You're not undersized, you're focused"
-  if ((org as any).v5_context?.band?.label) {
-    const v5 = (org as any).v5_context
-    const band = v5.band.label
-    const isMicro = band.includes('Micro')
-    const isLarge = band.includes('Established')
+  // Fixed 2026-08-16: was reading org.v5_context.band.label -- v5_context is
+  // the retired scoring generation (18.1% coverage, same population as the
+  // now-removed Financial Health dimension below). Rebuilt on total_revenue
+  // directly, using v6's own band thresholds (Micro <$150K, Professional
+  // $150K-$700K, Established >$700K -- see CLAUDE.md's v6 architecture
+  // section), not a new invented scale.
+  if (org.total_revenue !== null && org.total_revenue !== undefined && org.total_revenue > 0) {
+    const revenue = org.total_revenue
+    const band = revenue < 150_000 ? 'Micro' : revenue < 700_000 ? 'Professional' : 'Established'
+    const isMicro = band === 'Micro'
+    const isLarge = band === 'Established'
 
     rows.push({
       dimension: 'Your Scale',
       label: band,
       value: isMicro ? 'Smaller operating scale' : isLarge ? 'Established operating scale' : 'Growing operating scale',
-      explanation: isMicro
-        ? `This is a description of operating scale from public records. Scale does not tell us the quality, reach, or importance of an organization's work.`
-        : isLarge
-        ? `This is a description of operating scale from public records. Scale does not tell us the quality, reach, or importance of an organization's work.`
-        : `This is a description of operating scale from public records. Scale does not tell us the quality, reach, or importance of an organization's work.`,
+      explanation: `This is a description of operating scale from public records. Scale does not tell us the quality, reach, or importance of an organization's work.`,
     })
   }
 
-  // 4. FINANCIAL HEALTH — "Here's how donors see you"
-  if ((org as any).v5_context?.score?.health_signal) {
-    const v5 = (org as any).v5_context
-    const signal = v5.score?.health_signal
-
-    const signals = {
-      HEALTHY: {
-        icon: '✓',
-        title: 'More reserves in this comparison',
-        explanation: 'The available public filings show more reserves than most organizations in this comparison. This does not measure mission results or financial need.',
-      },
-      STABLE: {
-        icon: '◐',
-        title: 'Within the usual reserve range',
-        explanation: 'You manage year-to-year predictably. Most nonprofits run this way. It\'s normal and sustainable, and donors trust steady.',
-      },
-      CAUTION: {
-        icon: '○',
-        title: 'Fewer reserves than most peers',
-        explanation: 'You put most of your resources into the work, like many nonprofits do. What matters to donors is your transparency and your plan, and that\'s where claiming your profile helps.',
-      },
-    }
-
-    const s = signals[signal as keyof typeof signals]
-    if (s) {
-      rows.push({
-        dimension: 'Financial Health',
-        label: s.title,
-        value: '',
-        explanation: s.explanation,
-        action: signal === 'CAUTION' ? {
-          text: 'Claim profile → Add your own context',
-        } : undefined,
-      })
-    }
-  }
+  // 4. FINANCIAL HEALTH — removed 2026-08-16 (page-duplication pass): this
+  // dimension read org.v5_context.score.health_signal and restated it with
+  // more words ('More reserves in this comparison' / 'Within the usual
+  // reserve range' / 'Fewer reserves than most peers') -- the exact same
+  // signal AnswerCard's health chips already show prominently at the top of
+  // the page ('Financially steady' / 'Managing well' / 'Could use community
+  // support'), from the identical field. Same duplication pattern already
+  // fixed in AtAGlance.tsx this session: say each real fact once.
 
   return rows
 }
