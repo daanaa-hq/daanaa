@@ -1297,3 +1297,17 @@ Also confirmed several other unused-but-populated fields (total_assets/revenue_3
 **Design principle applied throughout** (founder guidance this session): no AI-blob copy, plain language, framed via the existing archetype/peer-group system rather than generic captions, and — specifically for orgs without enough data to show a real trend — silence over a hedge-y placeholder. The respectful way to "make invisible orgs visible" is ensuring their other real, positive facts (mission, category, address, tags) carry the page, not stacking another apology box next to a blank chart.
 
 **Deliberately not done without further sign-off:** promoting any recovered expense-breakdown data to donor-facing display (still pending full-scale validation per Codex's original scoping — stratified ProPublica spot-check, manual review of mismatches), and the AtAGlance-to-production port / PeerContextBreakdown stalled-flag decisions from earlier the same session remain open.
+
+---
+
+## 2026-08-16: Found and validated a direct-IRS source faster than gt990
+
+**Trigger:** Founder noticed AKF's chart was still missing 2025 data after the freshness refresh; asked to investigate a faster source than gt990's bulk index.
+
+**Research finding:** The IRS's own AWS S3 bucket (`s3://irs-form-990`) was discontinued December 31, 2021 and is no longer updated — some older docs/tutorials still reference it, but it's dead. gt990 (Giving Tuesday Data Lake) is the actual current, actively-maintained community successor, which is what our pipeline already uses. However, the IRS *separately* publishes Form 990 e-file data directly via `apps.irs.gov/pub/epostcard/990/xml/` — per-submission-year index CSVs plus monthly ZIP batches — and this updates monthly, materially faster than gt990's ~2-3 month bulk-rebuild cadence (gt990 build history: 2025-07-19 → 10-04 → 12-09 → 2026-03-20 → 06-04).
+
+**Verified, not assumed:** Confirmed AKF's real FY2025 filing (filed 2026-05-15) was findable in the IRS's own `index_2026.csv`, downloaded the May 2026 monthly batch, and parsed it directly. Every figure matched the founder's own CauseIQ screenshot exactly — revenue $106,705,948, expenses $96,147,712, assets $601,887,350, fundraising $1,445,364 — and the Part IX breakdown reconciles exactly to the dollar (Program $93,100,968 + Management $1,601,380 + Fundraising $1,445,364 = Total $96,147,712).
+
+**Shipped:** `scripts/ops/fetch_irs_direct_filing.py` — single-org lookup tool, applied to AKF's data directly (`org_revenue_history`, `registry_enriched`, `irs_990_functional_expense_filings`). Deliberately scoped to one-org-at-a-time (a monthly batch ZIP is 400-700MB; downloading one per org doesn't scale to a bulk refresh). gt990's consolidated index remains the right tool for bulk freshness work; this is for checking a specific org, or spot-verifying gt990 data against a more current source.
+
+**Not built (separate, larger scope if wanted later):** A batch-mode version that downloads each monthly ZIP once and extracts many EINs from it in a single pass would make this viable as a *bulk* freshness source too, closing the residual 2-3 month gt990 lag for every org, not just ones a founder happens to be looking at. Worth scoping properly as its own project rather than extending this single-org tool under time pressure.
