@@ -20,7 +20,7 @@
 --    see DECISIONS.md 2026-08-16 "Expense breakdown chart hidden site-wide").
 --    Confirmed the existing registry_enriched.program_expenses/
 --    management_expenses/fundraising_expenses/program_expense_pct columns
---    are unreliable at scale two independent ways; this table is populated
+--    are unreliable at scale two independent ways. This table is populated
 --    from direct 990 XML Part IX parsing, kept separate from and never
 --    overwriting the legacy columns, until validated at scale.
 
