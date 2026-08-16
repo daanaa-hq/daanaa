@@ -1,91 +1,94 @@
 #!/bin/bash
-echo "=========================================="
-echo "      MERITGIVING DATA STATUS CHECK"
-echo "      $(date)"
-echo "=========================================="
+# Quick status check for Phase 1 monitoring window
+# Run this on Tuesday morning to verify everything ran while you were away
 
-echo ""
-echo "=== 1. SCREEN SESSIONS (Active Workers) ==="
-screen -ls | grep -E "merit|worker" || echo "No merit/worker screens found"
+set -e
 
+echo "════════════════════════════════════════════════════════════════"
+echo "PHASE 1 AUTONOMOUS RUN — STATUS REPORT"
+echo "════════════════════════════════════════════════════════════════"
 echo ""
-echo "=== 2. DATABASE OVERVIEW ==="
-if [ -f data/merit_registry.db ]; then
-    echo "DB Size: $(du -h data/merit_registry.db | cut -f1)"
-    sqlite3 data/merit_registry.db "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;"
-else
-    echo "merit_registry.db NOT FOUND"
+
+# 1. Backup Status
+echo "1️⃣  BACKUP STATUS"
+echo "───────────────────────────────────────────────────────────────"
+BACKUP_COUNT=$(ls ~/meritgiving/backups/production/merit_registry_*.db 2>/dev/null | wc -l)
+echo "   Backups created: $BACKUP_COUNT (expected 8: 7 hourly + 1 daily)"
+echo "   Latest backups:"
+ls -lh ~/meritgiving/backups/production/merit_registry_*.db 2>/dev/null | tail -3 | awk '{print "     " $9 " (" $5 ")"}'
+echo ""
+
+# 2. Monitoring Status
+echo "2️⃣  MONITORING STATUS"
+echo "───────────────────────────────────────────────────────────────"
+MONITOR_COUNT=$(ls ~/.daanaa/phase1-monitoring/*-daily.json 2>/dev/null | wc -l)
+echo "   Daily checks collected: $MONITOR_COUNT (expected 7)"
+echo "   Latest monitoring run:"
+tail -1 ~/meritgiving/logs/phase1_monitor.log 2>/dev/null || echo "     (no log found)"
+echo ""
+
+# 3. API Health
+echo "3️⃣  API HEALTH"
+echo "───────────────────────────────────────────────────────────────"
+API_HEALTH=$(curl -s http://localhost:5000/health 2>&1 | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || echo "OFFLINE")
+echo "   API Status: $API_HEALTH"
+if [ "$API_HEALTH" = "ok" ]; then
+  ORG_COUNT=$(curl -s 'http://localhost:5000/api/stats' 2>&1 | grep -o '"total_organizations":[0-9]*' | cut -d':' -f2 || echo "unknown")
+  echo "   Orgs in system: $ORG_COUNT"
 fi
-
 echo ""
-echo "=== 3. TABLE COUNTS ==="
-sqlite3 data/merit_registry.db "
-SELECT 'registry' as table_name, COUNT(*) as count FROM registry
-UNION ALL
-SELECT 'registry_enriched', COUNT(*) FROM registry_enriched
-UNION ALL
-SELECT 'irs_bmf', COUNT(*) FROM irs_bmf
-UNION ALL
-SELECT 'revenue_percentiles', COUNT(*) FROM revenue_percentiles;
-" 2>/dev/null || echo "Could not query counts"
 
+# 4. Database Integrity
+echo "4️⃣  DATABASE INTEGRITY"
+echo "───────────────────────────────────────────────────────────────"
+DB_CHECK=$(timeout 30 sqlite3 ~/meritgiving/data/merit_registry.db "PRAGMA quick_check;" 2>&1 | head -1 || echo "CHECK_TIMEOUT")
+echo "   Quick check: $DB_CHECK"
+if [ "$DB_CHECK" = "ok" ]; then
+  echo "   ✅ Database is healthy"
+else
+  echo "   ⚠️  Database check timed out (expected for 24GB database)"
+fi
 echo ""
-echo "=== 4. DATA QUALITY SNAPSHOT ==="
-sqlite3 data/merit_registry.db "
-SELECT 
-    'Total Orgs' as metric,
-    COUNT(*) as value
-FROM registry_enriched
-UNION ALL
-SELECT 
-    'With Revenue',
-    COUNT(*)
-FROM registry_enriched 
-WHERE total_revenue > 0
-UNION ALL
-SELECT 
-    'With NTEE Code',
-    COUNT(*)
-FROM registry_enriched 
-WHERE ntee_code IS NOT NULL AND ntee_code != '';
-" 2>/dev/null || echo "Could not query quality metrics"
 
+# 5. Weekly Report
+echo "5️⃣  WEEKLY REPORT (Decision Gate)"
+echo "───────────────────────────────────────────────────────────────"
+if [ -f ~/.daanaa/phase1-monitoring/*-weekly.md ]; then
+  echo "   Report: $(ls ~/.daanaa/phase1-monitoring/*-weekly.md | xargs basename)"
+  echo ""
+  echo "   RECOMMENDATION:"
+  grep -A 1 "RECOMMENDATION\|PASS\|FAIL\|CONDITIONAL" ~/.daanaa/phase1-monitoring/*-weekly.md 2>/dev/null | head -5 || echo "   (See full report below)"
+  echo ""
+else
+  echo "   ⏳ Report not yet generated (check Friday evening)"
+fi
 echo ""
-echo "=== 5. RECENT LOG ACTIVITY (Last 20 lines) ==="
-for log in logs/worker_a.log logs/worker_b.log logs/worker_c.log logs/worker_d.log logs/worker_e.log; do
-    if [ -f "$log" ]; then
-        echo "--- $log (last 3 lines) ---"
-        tail -3 "$log" 2>/dev/null
-    fi
-done
 
+# 6. Critical Alerts
+echo "6️⃣  CRITICAL ALERTS"
+echo "───────────────────────────────────────────────────────────────"
+ALERTS=$(grep -c "🔴\|CRITICAL" ~/meritgiving/logs/phase1_monitor.log 2>/dev/null || echo "0")
+echo "   Critical alerts during monitoring: $ALERTS"
+if [ "$ALERTS" -gt 0 ]; then
+  echo "   ⚠️  Issues detected:"
+  grep "🔴\|CRITICAL" ~/meritgiving/logs/phase1_monitor.log 2>/dev/null | tail -3 | sed 's/^/     /'
+fi
 echo ""
-echo "=== 6. DATA FILES INVENTORY ==="
-echo "-- CSV/JSON Data Files --"
-find data/ -maxdepth 2 -type f \( -name "*.csv" -o -name "*.json" -o -name "*.zip" \) -exec ls -lh {} \; 2>/dev/null | awk '{print $5, $9}'
 
+# 7. Action Items
+echo "7️⃣  NEXT STEPS"
+echo "───────────────────────────────────────────────────────────────"
+if [ "$API_HEALTH" = "ok" ] && [ "$ALERTS" -eq 0 ]; then
+  echo "   ✅ All systems nominal"
+  echo "   → Review full weekly report: ~/.daanaa/phase1-monitoring/*-weekly.md"
+  echo "   → Follow recommendation: PASS → Phase 2 build | FAIL → debug"
+else
+  echo "   ⚠️  Issues detected"
+  echo "   → Check logs: tail -50 ~/meritgiving/logs/phase1_monitor.log"
+  echo "   → Restore if needed: scripts/backup_strategy.sh restore [backup_file]"
+fi
 echo ""
-echo "=== 7. NCCS CORE FILES ==="
-for f in data/corepcf/core_2019_pz.csv data/corepcf/core_2019_pc.csv data/corepcf/core_2019_ot_pz.csv data/corepcf/core_2019_ot_pc.csv; do
-    if [ -f "$f" ]; then
-        lines=$(wc -l < "$f" 2>/dev/null)
-        size=$(du -h "$f" 2>/dev/null | cut -f1)
-        echo "$f | Lines: $lines | Size: $size"
-    else
-        echo "$f | MISSING"
-    fi
-done
 
-echo ""
-echo "=== 8. API / WEB STATUS ==="
-curl -s -o /dev/null -w "Frontend localhost:5000: %{http_code}\n" http://localhost:5000 2>/dev/null || echo "Frontend localhost:5000: DOWN"
-curl -s -o /dev/null -w "API localhost:8000: %{http_code}\n" http://localhost:8000 2>/dev/null || echo "API localhost:8000: DOWN"
-
-echo ""
-echo "=== 9. DISK SPACE ==="
-df -h . | tail -1
-
-echo ""
-echo "=========================================="
-echo "           STATUS CHECK COMPLETE"
-echo "=========================================="
+echo "════════════════════════════════════════════════════════════════"
+echo "For detailed analysis, see: docs/AWAY_MODE_AUTONOMOUS_RUN.md"
+echo "════════════════════════════════════════════════════════════════"

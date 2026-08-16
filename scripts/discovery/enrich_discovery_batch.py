@@ -16,7 +16,7 @@ import json
 import requests
 from datetime import datetime
 from website_discovery_comprehensive import WebsiteDiscovery
-from verify_discovered_links import LinkVerifier
+from scripts.verify_discovered_links import LinkVerifier
 import logging
 import time
 

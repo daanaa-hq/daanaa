@@ -17,7 +17,7 @@ import sys
 import time
 from pathlib import Path
 from datetime import datetime, timedelta
-from check_link_health import extract_donate_url
+from scripts.check_link_health import extract_donate_url
 
 DB_PATH = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 

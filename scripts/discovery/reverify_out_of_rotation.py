@@ -19,8 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from threading import local
 
-sys.path.insert(0, str(Path(__file__).parent))
-from verify_discovered_links import LinkVerifier
+from scripts.verify_discovered_links import LinkVerifier
 
 DB = Path.home() / 'meritgiving' / 'data' / 'merit_registry.db'
 _tl = local()

@@ -31,7 +31,7 @@ from urllib.robotparser import RobotFileParser
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 
-from website_normalize import normalize_website
+from scripts.website_normalize import normalize_website
 
 DB_PATH = Path.home() / "meritgiving/data/merit_registry.db"
 LOG_PATH = Path.home() / "meritgiving/logs/web_finder_50k.log"

@@ -27,7 +27,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-from registry_filters import canonical_active_count
+from scripts.registry_filters import canonical_active_count
 
 DB_PATH = Path.home() / "meritgiving" / "data" / "merit_registry.db"
 

@@ -22,7 +22,7 @@ import csv
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 
-from registry_filters import DEDUCTIBLE_FILTER, canonical_active_count
+from scripts.registry_filters import DEDUCTIBLE_FILTER, canonical_active_count
 
 DB_PATH = os.environ.get("MERIT_DB_PATH", "/home/akbar/meritgiving/data/merit_registry.db")
 BMF_PATH = os.environ.get("MERIT_BMF_PATH", "/home/akbar/meritgiving/data/bmf.csv")
