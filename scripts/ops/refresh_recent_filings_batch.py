@@ -47,7 +47,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_STATE_PATH = (
     REPO_ROOT / "data" / "ops_state" / "irs_direct_recent_filings_batches.json"
 )
-BATCH_ID_MONTH_RE = re.compile(r"^(?P<year>\d{4})_TEOS_XML_(?P<month>\d{2})[A-Z]?$")
+BATCH_ID_MONTH_RE = re.compile(r"^(?P<year>\d{4})_TEOS_XML_(?P<month>\d{2})[A-Za-z]?$")
 
 
 class BatchProcessingError(RuntimeError):
