@@ -841,7 +841,10 @@ DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit
 # Run database migrations on startup
 _db_path = DB_PATH
 _run_migrations(_db_path)
-_ensure_student_service_columns(_db_path)
+# LAZY-LOAD: _ensure_student_service_columns() is called on first DB access
+# (not at startup) to avoid holding a write lock during gunicorn worker boot.
+# This prevents 20+ second hangs when nginx health checks race with startup.
+_student_columns_ensured = False
 
 # Restrict CORS to known origins; add production domain when deploying
 _ALLOWED_ORIGINS = [
@@ -1162,6 +1165,7 @@ def require_admin():
     _check_admin_auth()
 
 def get_db():
+    global _student_columns_ensured
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = sqlite3.connect(DB_PATH, timeout=30)
@@ -1174,6 +1178,10 @@ def get_db():
         db.execute("PRAGMA busy_timeout=30000")
         if _LIVE_SPLIT:
             db.execute("ATTACH DATABASE ? AS live", (LIVE_DB_PATH,))
+        # Lazy-load: ensure student columns on first DB access (not startup)
+        if not _student_columns_ensured:
+            _ensure_student_service_columns(DB_PATH)
+            _student_columns_ensured = True
     return db
 
 @app.teardown_appcontext
