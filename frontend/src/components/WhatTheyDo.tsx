@@ -17,8 +17,8 @@ export default function WhatTheyDo({ org }: { org: ApiOrganization }) {
   }
 
   return (
-    <section className="mb-16 py-12 md:py-16 border-b border-cool-grey/20">
-      <h2 className="font-display italic text-deep-navy text-title-sm mb-6">What do they do?</h2>
+    <section className="mb-12 py-8 md:py-12 border-b border-cool-grey/20">
+      <h2 className="font-display text-deep-navy text-title-lg mb-4">What do they do?</h2>
 
       {/* Mission narrative */}
       {hasMission && (
@@ -41,9 +41,9 @@ export default function WhatTheyDo({ org }: { org: ApiOrganization }) {
 
       {/* Program descriptions from enrichment */}
       {hasPrograms && org.programs && org.programs.program_descriptions && (
-        <div className="mb-8">
-          <h3 className="font-body text-small font-semibold text-deep-navy mb-4">Program areas</h3>
-          <ul className="space-y-3">
+        <div className="mb-6">
+          <h3 className="font-body text-small font-semibold text-deep-navy mb-3">Program areas</h3>
+          <ul className="space-y-2">
             {org.programs.program_descriptions.map((desc, i) => (
               <li key={i} className="flex gap-3">
                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-soft-gold/30 flex items-center justify-center mt-0.5">

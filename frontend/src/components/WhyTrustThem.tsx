@@ -20,15 +20,15 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
   }
 
   return (
-    <section className="mb-16 py-12 md:py-16 border-b border-cool-grey/20">
-      <h2 className="font-display italic text-deep-navy text-title-sm mb-8">Why should you trust them?</h2>
+    <section className="mb-12 py-8 md:py-12 border-b border-cool-grey/20">
+      <h2 className="font-display text-deep-navy text-title-lg mb-4">Why should you trust them?</h2>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Financial Strength */}
         {hasFinancials && (
           <div>
-            <h3 className="font-body text-small font-semibold text-deep-navy mb-4 uppercase tracking-wide">Financial Strength</h3>
-            <div className="space-y-3 mb-4">
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-3 uppercase tracking-wide">Financial Strength</h3>
+            <div className="space-y-2 mb-3">
               {org.total_revenue !== null && (
                 <div className="flex justify-between items-baseline">
                   <span className="font-body text-base text-cool-grey">Annual revenue</span>
@@ -59,8 +59,8 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
         {/* Governance & Leadership */}
         {hasGovernance && (
           <div>
-            <h3 className="font-body text-small font-semibold text-deep-navy mb-4 uppercase tracking-wide">Governance & Leadership</h3>
-            <div className="space-y-3 mb-4">
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-3 uppercase tracking-wide">Governance & Leadership</h3>
+            <div className="space-y-2 mb-3">
               {org.leadership_info!.board_size && org.leadership_info!.board_size > 0 && (
                 <div className="flex justify-between items-baseline">
                   <span className="font-body text-base text-cool-grey">Board size</span>
@@ -121,8 +121,8 @@ export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
         {/* Peer Group Comparison */}
         {org.peer_total && org.peer_total > 0 && org.peer_percentile !== null && (
           <div>
-            <h3 className="font-body text-small font-semibold text-deep-navy mb-4 uppercase tracking-wide">How they compare</h3>
-            <div className="space-y-3 mb-4">
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-3 uppercase tracking-wide">How they compare</h3>
+            <div className="space-y-2 mb-3">
               <div className="flex justify-between items-baseline">
                 <span className="font-body text-base text-cool-grey">Financial ranking</span>
                 <span className="font-body text-base font-medium text-deep-navy">

@@ -30,10 +30,10 @@ export default function HowToHelp({ org }: { org: ApiOrganization }) {
     : 0
 
   return (
-    <section className="mb-16 py-12 md:py-16 border-b border-cool-grey/20">
-      <h2 className="font-display italic text-deep-navy text-title-sm mb-8">How do I help?</h2>
+    <section className="mb-12 py-8 md:py-12 border-b border-cool-grey/20">
+      <h2 className="font-display text-deep-navy text-title-lg mb-4">How do I help?</h2>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Impact narrative */}
         <div>
           <p className="font-body text-base leading-relaxed text-deep-navy mb-6">
@@ -43,7 +43,7 @@ export default function HowToHelp({ org }: { org: ApiOrganization }) {
 
           {/* Mission-specific giving prompt */}
           {org.programs?.service_area && (
-            <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg mb-6">
+            <div className="p-2.5 bg-soft-gold/10 border border-soft-gold/25 rounded-md mb-4">
               <p className="font-body text-small text-deep-navy">
                 <strong>Service area:</strong> {org.programs.service_area}
                 {org.programs.years_active && ` · ${org.programs.years_active} years of experience`}
@@ -55,9 +55,9 @@ export default function HowToHelp({ org }: { org: ApiOrganization }) {
         {/* Expense allocation breakdown */}
         {hasAllocation && (
           <div>
-            <h3 className="font-body text-small font-semibold text-deep-navy mb-4 uppercase tracking-wide">Where your money goes</h3>
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-3 uppercase tracking-wide">Where your money goes</h3>
 
-            <div className="space-y-4 mb-6">
+            <div className="space-y-3 mb-4">
               {/* Program expenses bar */}
               <div>
                 <div className="flex justify-between items-center mb-2">
