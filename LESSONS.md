@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-08-16: Production migration runner marked partially-failed migrations as "successfully run," never to retry
+
+**Symptom:** `daanaa_api.py`'s `_run_migrations()` splits each `.sql` file on
+literal `;` (`sql.split(';')`), with no awareness that a `;` can appear
+inside an inline `-- comment`. Migration 024's prose comments ("this
+session; this file", "self-assessment; diagnostic signal only") produced
+malformed SQL fragments that failed with `OperationalError` — caught and
+logged as a warning, correctly non-fatal to the overall startup — but the
+code then **unconditionally** ran `INSERT INTO _migration_log (migration_name)
+VALUES (?)` afterward regardless of whether every statement actually
+succeeded. A migration with a botched statement got marked "done" and would
+never be retried on any future startup. Checked all migration files for the
+same inline-`;`-in-comment pattern: three earlier ones (004, 019, 020) have
+it too, meaning they may have silently partially applied on their original
+run months ago — not re-audited in this pass (their tables are in daily use
+without a reported issue, so if something's missing it hasn't surfaced),
+flagged as a separate follow-up.
+
+**Root cause:** two independent bugs compounding. (1) Same class as the
+`executescript()` finding earlier this session — code assumed `;`
+unambiguously means "end of SQL statement," which is false the moment a
+comment can contain one. (2) A stricter, separate bug: "did the file get
+processed" and "did every statement in it succeed" were conflated into one
+signal (the `_migration_log` INSERT), so a partial failure was
+indistinguishable from full success to every future startup.
+
+**Preventing rule:** strip `-- comment` content per line before splitting
+SQL on `;` — comments in this codebase's migrations don't intentionally use
+`;` as a real statement separator, so this is safe for the actual style in
+use here (not a general-purpose SQL tokenizer, and would need one if a
+migration ever needs a `;` inside a real string literal). More generally:
+when a loop runs N sub-operations and reports one combined "done" signal,
+track success per sub-operation and only report done overall if all of them
+succeeded — a partial failure should look like "not done, retry me," never
+silently look identical to full success. Verified this fix directly: cleared
+migration 024's log entry, re-ran `_run_migrations()`, confirmed zero
+skipped-statement warnings and the schema unchanged (17 columns, 0 rows)
+before trusting it.
+
+---
+
 ## 2026-08-16: `sqlite3.Connection.executescript()` doesn't honor an open transaction — a "rolled back" migration test wasn't
 
 **Symptom:** Testing a new migration (`migrations/024_irs_990_narrative_gpu_summary.sql`,

@@ -298,17 +298,51 @@ def _run_migrations(db_path: str):
             # failing statement instead of aborting the whole file — a
             # collision on one CREATE/ALTER must not block every later
             # migration file from running.
-            for statement in sql.split(';'):
+            #
+            # Bug found 2026-08-16 (same class as LESSONS.md's
+            # executescript() finding, third occurrence of it in this
+            # session): sql.split(';') doesn't know a ';' can appear inside
+            # an inline '-- comment' -- migration 024's prose comments
+            # ("this session; this file", "self-assessment; diagnostic
+            # signal only") split into malformed fragments that failed with
+            # OperationalError, caught below, but the migration was still
+            # marked "run" afterward regardless -- meaning a partially-failed
+            # migration would never be retried. Checked: migrations 004, 019,
+            # 020 have the same inline-';'-in-comment pattern and may have
+            # silently partially failed on their original run; not
+            # re-audited here (their tables already exist and get used daily
+            # without reported issues, so if something's missing it hasn't
+            # surfaced yet) -- flagged for a separate look, not fixed in this
+            # pass. Fix here is the root cause: strip '--' comments per line
+            # before splitting on ';' (comments can't legitimately contain
+            # unescaped ';' meant as a statement separator), and only mark a
+            # migration "run" if every statement in it actually succeeded --
+            # a partial failure now retries on the next startup instead of
+            # being silently accepted. Retrying an already-succeeded
+            # CREATE TABLE/INDEX is safe (IF NOT EXISTS / OperationalError
+            # caught the same way).
+            stripped_sql = '\n'.join(
+                line[:line.index('--')] if '--' in line else line
+                for line in sql.split('\n')
+            )
+            all_ok = True
+            for statement in stripped_sql.split(';'):
                 stmt = statement.strip()
                 if stmt:
                     try:
                         cursor.execute(stmt)
                     except sqlite3.OperationalError as e:
                         _logger.warning(f'Migration statement skipped in {filename}: {e}')
+                        all_ok = False
 
-            # Log that we ran it
-            cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
-            _logger.info(f'Ran migration: {filename}')
+            if all_ok:
+                cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
+                _logger.info(f'Ran migration: {filename}')
+            else:
+                _logger.warning(
+                    f'Migration {filename} had one or more failing statements -- '
+                    'not marked as run, will retry next startup.'
+                )
 
         conn.commit()
     except Exception as e:
