@@ -149,13 +149,16 @@ done
 # where /health was 200 but every page 500'd — service "active" is not "up".
 smoke() {
     local home_body
-    home_body=$(curl -sS --max-time 20 https://daanaa.org/ 2>>"$LOG" | head -c 300) || return 1
+    # Increased timeout from 20s to 40s (2026-08-17): allow for Cloudflare/HTTPS
+    # latency during post-restart cold-start. Service now starts in <2s but
+    # first HTTPS requests may take 15-20s due to TLS handshake and page warmup.
+    home_body=$(curl -sS --max-time 40 https://daanaa.org/ 2>>"$LOG" | head -c 300) || return 1
     echo "$home_body" | grep -qi '<!doctype html' || return 1
-    curl -sS --max-time 20 -o /dev/null -w '%{http_code}' \
+    curl -sS --max-time 40 -o /dev/null -w '%{http_code}' \
         'https://daanaa.org/api/search?q=food+bank&limit=1' 2>>"$LOG" | grep -q '^200$' || return 1
     # Directory listing route — died independently of /api/search in the
     # 2026-07-06 incident ("no such column: subsection"), so check it too.
-    curl -sS --max-time 20 -o /dev/null -w '%{http_code}' \
+    curl -sS --max-time 40 -o /dev/null -w '%{http_code}' \
         'https://daanaa.org/api/organizations?state=TX&limit=1' 2>>"$LOG" | grep -q '^200$'
 }
 
