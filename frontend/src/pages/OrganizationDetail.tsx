@@ -636,22 +636,7 @@ export default function OrganizationDetail() {
                 <ProfileCompletionPrompt {...profileCompletionLink} />
               ) : null)}
 
-              {/* Mission statement — all caps, no italics, sits under the name to
-                  clarify what's a proper noun and what's descriptive. Simple. */}
-              {org.mission && (
-                <div className="mt-2 sm:mt-3 flex items-start gap-2">
-                  <p className="font-body text-body text-muted-cream/80 leading-[1.6] max-w-[600px] uppercase tracking-wide">
-                    {org.mission.replace(/^[""\s]+|[""\s]+$/g, '')}
-                  </p>
-                  {apiOrg && AI_MISSION_SOURCES.has(apiOrg.data_badges?.mission ?? apiOrg.mission_source ?? '') && (
-                    <span className="shrink-0 mt-0.5">
-                      <AiBadge />
-                    </span>
-                  )}
-                </div>
-              )}
-
-              <div className="flex items-center gap-3 mt-2 sm:mt-4 flex-wrap">
+              <div className="flex items-center gap-3 mt-4 sm:mt-6 flex-wrap">
                 <div className="flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A89F94" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
