@@ -449,3 +449,17 @@ A second near-miss in the same incident: the same recon flagged `DB_PATH` in tha
 **Preventing rule:**
 
 > Any config file that claims to be "the source of truth, replaces X wholesale" (cron, systemd units, CI matrix, etc.) must be verified two ways whenever touched, not one: (1) `diff` every job/entry against the live/running state, line for line, not just spot-check the one entry you're adding; (2) independently check every path referenced in *either* copy against the filesystem, don't assume the live copy is correct just because it's running (a cron entry that silently fails leaves no trace that it's wrong). Fix both copies together, verify parity with an actual diff (not by eye), and only then trust either one again.
+
+---
+
+## 2026-08-17: A deploy script's file list is an incomplete spec — migrations/ was never in it, and every org page went down
+
+**Symptom:** Every `GET /api/organizations/<ein>` on production returned 500 (`sqlite3.OperationalError: no such table: org_revenue_history`). Homepage, search, and the org listing endpoint all stayed 200 — only single-org detail pages broke, which is every org's actual page on the site.
+
+**Root cause:** `scripts/ops/sync_droplet_api.sh` has only ever rsynced `droplet_api.py` (plus a narrow `scripts/` dependency allowlist added 2026-08-16 for the same reason) to the droplet. It never synced `migrations/`. `droplet_api.py`'s `_run_migrations()` runs at module import against `/opt/daanaa/migrations/` and is the only mechanism that creates new tables — but that directory was confirmed empty on the droplet. Migration 023 (`org_revenue_history`, founder-approved 2026-08-16) was applied locally and its consuming code shipped in `droplet_api.py`, but the migration file itself never reached production. Migrations 022, 024, and 025 were in the same state.
+
+**Preventing rule:**
+
+> A deploy script's own rsync/scp file list is itself an incomplete, silently-drifting spec of what a working deploy actually needs — new code can depend on a new file (a migration, a new module, a config) that nobody remembered to add to the transfer list, and the deploy will succeed, the service will restart cleanly, and a generic smoke test (homepage/search/list) will pass, because none of those routes happen to exercise the missing dependency. This is the third occurrence of this exact pattern in this codebase's history (2026-07-05 SPA-fallback outage; 2026-08-16 `peer_group.py` missing-import; this incident). When adding new code that depends on a new file class (any migration, any new `scripts/` import, any new data file), the deploy script's transfer list and the smoke test's route coverage are both things to check explicitly — "the service restarted and homepage loads" has never been sufficient evidence three times running now.
+
+**Fixed:** `sync_droplet_api.sh` now rsyncs the full `migrations/` directory on every deploy (idempotent — the runner tracks applied migrations by filename, so re-syncing already-applied files is a no-op). Smoke test now also checks a single org-detail route, not just homepage/search/list.
