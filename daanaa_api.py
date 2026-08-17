@@ -10015,8 +10015,12 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
         return jsonify({'error': 'You do not own this nonprofit'}), 403
 
     try:
+        # volunteer_hours.nonprofit_ein does not exist (migration 020 failed);
+        # join through volunteer_events which has ein column and event_id FK.
         row = db.execute(
-            'SELECT hours, service_date, status, locked_at FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            'SELECT vh.hours, vh.service_date, vh.status, vh.locked_at FROM volunteer_hours vh '
+            'JOIN volunteer_events ve ON vh.event_id = ve.id '
+            'WHERE vh.id=? AND ve.ein=?',
             (hour_id, ein)
         ).fetchone()
         if not row:
@@ -10034,7 +10038,7 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
         approved_at = datetime.now().isoformat()
         db.execute(
             'UPDATE volunteer_hours SET status=?, approved_by=?, approved_at=?, '
-            'locked_at=? WHERE id=? AND nonprofit_ein=?',
+            'locked_at=? WHERE id=? AND event_id IN (SELECT id FROM volunteer_events WHERE ein=?)',
             ('approved', uid, approved_at,
              (datetime.now() + timedelta(days=30)).isoformat(), hour_id, ein)
         )
@@ -10097,8 +10101,12 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
         return jsonify({'error': 'You do not own this nonprofit'}), 403
 
     try:
+        # volunteer_hours.nonprofit_ein does not exist (migration 020 failed);
+        # join through volunteer_events which has ein column and event_id FK.
         row = db.execute(
-            'SELECT status, locked_at FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            'SELECT vh.status, vh.locked_at FROM volunteer_hours vh '
+            'JOIN volunteer_events ve ON vh.event_id = ve.id '
+            'WHERE vh.id=? AND ve.ein=?',
             (hour_id, ein)
         ).fetchone()
         if not row:
@@ -10109,7 +10117,7 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
             return jsonify({'error': 'This submission is locked (30-day edit window has passed)'}), 409
 
         db.execute(
-            'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND nonprofit_ein=?',
+            'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND event_id IN (SELECT id FROM volunteer_events WHERE ein=?)',
             ('rejected', uid, datetime.now().isoformat(), reason, hour_id, ein)
         )
         try:
