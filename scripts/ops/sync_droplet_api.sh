@@ -92,6 +92,22 @@ elif $SSH "test -f $REMOTE_API"; then
         || log "WARN: S3 backup failed (continuing deploy anyway)"
 fi
 
+# API runtime dependency allowlist (2026-08-16, found this run): this script
+# has only ever shipped the single droplet_api.py file. safe_deploy_droplet.sh
+# doesn't ship scripts/ either (verified via Codex audit same day) -- so
+# scripts/scoring/peer_group.py, added 2026-08-16 (38e7ca879c5) for the V6
+# peer-group work, was never on the droplet at all, and droplet_api.py's
+# hard top-level `from scripts.scoring import peer_group` crashed gunicorn on
+# boot ('No module named scripts.scoring'). Auto-rollback caught it before
+# any outage. Keep this allowlist intentionally narrow -- add an entry only
+# when droplet_api.py gains a new hard (non try/except) import from scripts/.
+log "Deploying API runtime dependency: scripts/scoring/peer_group.py..."
+$SSH "mkdir -p /opt/daanaa/scripts/scoring"
+retry rsync --copy-links --checksum \
+    -e "ssh -i $SSH_KEY -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
+    "$BASE/scripts/scoring/peer_group.py" \
+    "$DROPLET:/opt/daanaa/scripts/scoring/peer_group.py" 2>>"$LOG"
+
 # Deploy new version
 #
 # --copy-links (2026-08-16, found this run): LOCAL_API is now a symlink
