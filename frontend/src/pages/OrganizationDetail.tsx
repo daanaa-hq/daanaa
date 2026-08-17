@@ -674,15 +674,15 @@ export default function OrganizationDetail() {
                     </div>
                   )}
 
-                  {/* Peer Rank */}
+                  {/* Financial Comparison — removes jargon "percentile" from hero */}
                   {apiOrg.ntee1_percentile !== undefined && apiOrg.ntee1_percentile !== null && (
                     <div className="space-y-1">
-                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Peer Rank</p>
-                      <p className="font-display text-lead text-soft-gold font-semibold">{Math.round(apiOrg.ntee1_percentile)}th Percentile</p>
+                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Financial Context</p>
+                      <p className="font-display text-lead text-soft-gold font-semibold">Top {Math.round(100 - apiOrg.ntee1_percentile)}%</p>
                     </div>
                   )}
 
-                  {/* Financial Health Signal — v6 scoring tier.
+                  {/* Financial Profile — v6 scoring tier.
                       tier_label is the verified-correct human description
                       ("Donation-Funded Programs, Established, national");
                       the raw scoring_tier enum ("3_Broad_Category") is an
@@ -691,7 +691,7 @@ export default function OrganizationDetail() {
                       uses tier_label for the same reason. */}
                   {apiOrg.scoring_tier && (
                     <div className="space-y-1">
-                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Financial Context</p>
+                      <p className="font-body text-xs uppercase text-muted-cream/60 tracking-wide">Financial Profile</p>
                       <p className="font-display text-lead text-soft-gold font-semibold">
                         {apiOrg.tier_label || apiOrg.scoring_tier.replace(/_/g, ' ')}
                       </p>
