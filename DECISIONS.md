@@ -1617,3 +1617,21 @@ founder's call, not run automatically.
 **Process:** bumped `PARSER_VERSION` after each fix (1.2 → 1.3 → 1.4 → 1.5), targeted-cleared only the specifically-identified bad rows each time (not a blanket reset), reset the backfill's own state file (its "completed" status was for the old parser version and correctly refused to silently re-skip), and re-ran the full 17,882-filing backfill after each fix — all three re-runs completed in 30-40 seconds. Final verification: 0 junk missions remain across the full pattern set; broad random-sample review of missions, Schedule O text, and cause_tags across ~35 additional records all came back clean, specific, and correctly topical.
 
 **Rejected:** broadening the junk filter to catch any text starting with "See" — would have silently destroyed real mission statements that happen to open with an imperative "See."
+
+---
+
+## 2026-08-16: Precompute regen efficiency investigated (Codex) — real architecture fix found, deferred as its own project
+
+**Trigger:** After the parallelized `precompute_similar_orgs.py` hit a real memory-sharing failure (CPython refcounting defeats fork's copy-on-write, causing 6-worker swap thrashing; fell back to 2 workers, which completed successfully in ~5h: 1,935,390 orgs, 882,785 updated, 2,361,326 tier fields backfilled), investigated whether querying SQLite directly per org (reusing `peer_group.sql_predicate()`, same pattern the live API already uses) would let future runs scale past 2 workers reliably.
+
+**Finding: the naive per-org SQL redesign would NOT help, and might be slower.** Checked actual index coverage against each tier's predicate shape: only Tier 3b (`NTEE1 + revenue`) has a matching index (`idx_ntee1_revenue`). Tiers 1, 2, 3, and 4 would hit full table scans or ineffective skip-scans at 1.94M-query volume — `EXPLAIN` confirmed this directly, not assumed.
+
+**Real fix identified: restructure around peer-group KEYS, not individual orgs.** Enumerate the (far fewer) distinct peer-group keys from SQLite once, query each group's members once, rank and write that group's files, release, move to the next group. Eliminates both the multi-gigabyte Python dict and ~1.94M redundant repeated candidate queries. Bounds each worker's memory to one peer group's size instead of the whole 2M-org graph — this should genuinely scale to many more workers safely.
+
+**Why not built today, two real blockers:**
+1. Full performance requires new indexes (a materialized `ntee2` column + composite indexes for tiers 1/2/4) — a schema change requiring founder approval per CLAUDE.md's gate, not something to add unilaterally.
+2. The live API's similar-orgs query caps candidates at 2,000 and ranks by percentile distance only; precompute currently ranks the FULL peer cell by tag-overlap + percentile. Reusing the peer-group *definition* (`sql_predicate()`) is safe and already correct; copying the live query's exact candidate-selection/ranking would silently change precomputed results and is a methodology review item, not a drop-in swap.
+
+Also checked: `gc.freeze()` (a documented fork/COW mitigation) would NOT meaningfully help here — it addresses GC metadata pages, not the per-object refcount writes that actually caused the observed duplication (workers were reaching ~4.6GB RSS each regardless).
+
+**Status:** Scoped, not built. Current 2-worker approach is correct and already shipped a working result; this is a real but non-urgent efficiency project for the next time this needs to run at scale, gated on founder review of the index addition.
