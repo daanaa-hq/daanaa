@@ -142,53 +142,21 @@ else:
     def get_eligibility_fields(ein):
         return _get_irs_fields_from_db(ein)
 
-# Search Phase 2: intent classifier (loaded at startup for preload safety)
-try:
-    from scripts.search.search_intent_classifier import SearchIntentClassifier
-    _classifier_available = True
-    print(f"[Startup] ✓ SearchIntentClassifier imported successfully", file=sys.stderr)
-except Exception as e:
-    _classifier_available = False
-    print(f"[Startup] ✗ Failed to import SearchIntentClassifier: {type(e).__name__}: {e}", file=sys.stderr)
-    import traceback
-    traceback.print_exc(file=sys.stderr)
+# Search Phase 2: intent classifier (lazy-loaded on first use to speed startup)
+_classifier_available = False
 _classifier_instance = None  # lazy per-worker instance (created on first search)
 
-# Search Phase 2: semantic reranker (lazy per-worker, only for cause queries)
-try:
-    from scripts.search.search_semantic_reranker import SearchSemanticReranker
-    _reranker_available = True
-    print(f"[Startup] ✓ SearchSemanticReranker imported successfully", file=sys.stderr)
-except Exception as e:
-    _reranker_available = False
-    print(f"[Startup] ✗ Failed to import SearchSemanticReranker: {type(e).__name__}: {e}", file=sys.stderr)
+# Search Phase 2: semantic reranker (lazy-loaded on first use to speed startup)
+_reranker_available = False
 _reranker_instance = None  # lazy per-worker instance (created on first cause query)
 
-# Intent signals and event discovery (additive, feature-flagged)
-try:
-    import intent_layer
-    _intent_available = True
-    print(f"[Startup] ✓ intent_layer imported successfully", file=sys.stderr)
-except Exception as e:
-    _intent_available = False
-    print(f"[Startup] ✗ Failed to import intent_layer: {type(e).__name__}: {e}", file=sys.stderr)
+# Intent signals and event discovery (additive, feature-flagged, lazy-loaded)
+_intent_available = False
 
-try:
-    import event_discovery_engine
-    _discovery_available = True
-    print(f"[Startup] ✓ event_discovery_engine imported successfully", file=sys.stderr)
-except Exception as e:
-    _discovery_available = False
-    print(f"[Startup] ✗ Failed to import event_discovery_engine: {type(e).__name__}: {e}", file=sys.stderr)
+_discovery_available = False
 
-# Profile contexts and shared context management
-try:
-    from scripts.scoring import profile_contexts
-    _profile_contexts_available = True
-    print(f"[Startup] ✓ profile_contexts imported successfully", file=sys.stderr)
-except Exception as e:
-    _profile_contexts_available = False
-    print(f"[Startup] ✗ Failed to import profile_contexts: {type(e).__name__}: {e}", file=sys.stderr)
+# Profile contexts and shared context management (lazy-loaded on first use)
+_profile_contexts_available = False
 
 
 def _ensure_student_service_columns(db_path: str):
