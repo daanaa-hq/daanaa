@@ -197,10 +197,24 @@ def _is_mission_junk(value: str) -> bool:
     # cross-reference variants uncaught (SEE PAGE/SUMMARY/MISSION STATEMENT/
     # FORM 990/990) -- all unambiguous filing cross-references, not real
     # prose openings.
+    #
+    # Third batch added 2026-08-17 after a Codex review of the GT990
+    # historical backfill's freshly written missions (177K new rows) found
+    # this filter still missed real, repeated cross-reference variants:
+    # "REFER TO SCHEDULE O", "SEE STATEMENT...", "SEE DESCRIPTION...",
+    # "SEE ORGANIZATION'S...", "SEE SUPPLEMENT...", "NOT APPLICABLE" (a
+    # spelled-out N/A the exact-match JUNK set didn't cover). Quantified
+    # against the live database at the time: 223 rows across the full
+    # irs_990-sourced population matched one of these missed prefixes (182
+    # under 100 chars, near-certain junk), out of roughly 595K total --
+    # a narrow, bounded defect, not a systemic corruption of the backfill
+    # (the review's 60-row random sample was otherwise clean).
     return upper.startswith((
         "SEE SCHEDULE", "SEE SCH", "SEE PART", "SEE ATTACH",
         "SEE PAGE", "SEE SUMMARY", "SEE MISSION STATEMENT",
         "SEE FORM 990", "SEE 990",
+        "REFER TO", "SEE STATEMENT", "SEE DESCRIPTION",
+        "SEE ORGANIZATION", "SEE SUPPLEMENT", "NOT APPLICABLE",
     ))
 
 

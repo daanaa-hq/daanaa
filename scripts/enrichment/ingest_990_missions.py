@@ -40,6 +40,10 @@ COMMIT_EVERY = 25_000
 JUNK = {
     "N/A", "NA", "NONE", "SEE SCHEDULE O", "SEE SCH O", "SEE ATTACHED",
     "SAME AS PRIOR YEAR", "NO CHANGE", "SEE PART III", "TBD", "N/A.",
+    # Added 2026-08-17 after Codex review of the GT990 backfill's freshly
+    # written missions found these as exact, repeated non-mission values --
+    # "OPERATIONS IN WIND-DOWN" alone occurred 14 times in one day's cohort.
+    "OPERATIONS IN WIND-DOWN", "SEE STATEMENT BELOW", "REFER TO SCHEDULE O",
 }
 
 
