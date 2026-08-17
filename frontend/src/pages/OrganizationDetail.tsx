@@ -42,6 +42,7 @@ import { normalizeExternalUrl } from '../utils/externalLink'
 import AtAGlance from '../components/AtAGlance'
 import ExpenseBreakdown from '../components/ExpenseBreakdown'
 import FinancialTrends from '../components/FinancialTrends'
+import BoardReviewSimulation from '../components/BoardReviewSimulation'
 import { nonprofitSizeLabel } from '../utils/orgSize'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
@@ -995,6 +996,13 @@ export default function OrganizationDetail() {
               branch in FinancialContext renders its own styled card, so no
               extra wrapper here. */}
           {apiOrg && <FinancialContext org={apiOrg} />}
+
+          {/* Board Review Simulation — P9 Explainability.
+              Neutral assessment of how a board/funder would perceive the org
+              based on financial data. Not a score or ranking, but an evidence-based
+              narrative. Stewardship P3 (evidence-based), P4 (no size bias),
+              P5 (no shame framing). */}
+          {apiOrg && <BoardReviewSimulation org={apiOrg} />}
 
           {/* Ways to Give — Mission-aligned giving methods */}
           {apiOrg && (
