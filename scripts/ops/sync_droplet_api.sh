@@ -93,8 +93,20 @@ elif $SSH "test -f $REMOTE_API"; then
 fi
 
 # Deploy new version
+#
+# --copy-links (2026-08-16, found this run): LOCAL_API is now a symlink
+# (scripts/droplet_api.py -> ../droplet_api.py, see DECISIONS.md 2026-08-15).
+# Without -L/--copy-links, rsync's default symlink handling prints "skipping
+# non-regular file" and transfers nothing -- exit code 0, service restarts
+# fine, generic smoke test (homepage/search/list all 200) passes, and the
+# deploy silently no-ops. This is the same failure class as the 2026-07-05
+# outage (service "up" != content correct) but one layer deeper: it never
+# even reaches the smoke test's ability to catch it because those routes
+# don't happen to exercise whatever was supposed to change. Caught only
+# because this specific deploy's fix (revenue_band) was checked against a
+# live value, not just HTTP status codes.
 log "Deploying new droplet_api.py..."
-retry rsync -e "ssh -i $SSH_KEY -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
+retry rsync --copy-links -e "ssh -i $SSH_KEY -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
     --checksum --backup --suffix=".prev" \
     "$LOCAL_API" "$DROPLET:$REMOTE_API" 2>>"$LOG"
 
