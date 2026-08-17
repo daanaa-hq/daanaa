@@ -989,6 +989,38 @@ def _strip_scores(org: dict) -> dict:
         return org
     return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
 
+def _replace_revenue_band(org: dict) -> dict:
+    """Overwrites the raw registry_enriched.revenue_band value with V6's
+    current band, computed live from total_revenue.
+
+    Found 2026-08-16: registry_enriched.revenue_band is a relic of a
+    pre-V6 scorer generation, last meaningfully written around 2026-05-20.
+    At least six different get_revenue_band() implementations exist across
+    this codebase's history (v2 through v6), each with different labels/
+    thresholds -- V6's own current function (scripts/scoring/peer_group.py)
+    uses "Grassroots"/"Small"/"Mid"/"Established"/"Major", not the
+    "Nano"/"Micro"/numeric-0-7/"Large" values actually stored in the column.
+    Nothing currently active rewrites that column; V6 computes its band
+    in-memory for peer-grouping only, never persists it back. The result:
+    real orgs (verified: "Micro" spans -$14.5M to $9.86B in stored revenue)
+    show a stale, wrong size tier on the live org page and in the
+    peer-comparison sentence built from it.
+
+    Fix, per founder decision 2026-08-16 ("move to V6... keep the old one
+    for 30 days"): every response that includes a top-level revenue_band key
+    computes it live from V6's get_revenue_band() instead of trusting the
+    stored column. The stored column itself is left in place (not backfilled,
+    not dropped) as a 30-day rollback window -- scheduled for removal
+    2026-09-15, see DECISIONS.md 2026-08-16.
+
+    Called at every site that serves a top-level revenue_band key --
+    list_organizations, get_organization, _fetch_orgs_by_eins,
+    _find_similar_orgs, fused_search. service_scope.revenue_band (a
+    different, nested field) was already correctly sourced from
+    merit_band_v5_label and is untouched by this function."""
+    org['revenue_band'] = peer_group.get_revenue_band(org.get('total_revenue'))
+    return org
+
 def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
     """V4 scores disabled (v5 only). Returns org unchanged."""
     return org
@@ -2479,6 +2511,7 @@ def list_organizations():
     for row in rows:
         d = dict(row)
         d = _attach_v4_scores(d, row)
+        d = _replace_revenue_band(d)
         # Every row here already passed _DEDUCTIBILITY_FILTER in the WHERE
         # clause above -- see _compute_tax_deductible() and DECISIONS.md
         # 2026-08-16.
@@ -2924,6 +2957,7 @@ def get_organization(ein):
         'confidence': org.get('mission_confidence', 0.5),
     }
 
+    _replace_revenue_band(org)
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)
@@ -5160,6 +5194,7 @@ def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[
     for r in rows:
         org = dict(r)
         org = _attach_v4_scores(org, r)
+        org = _replace_revenue_band(org)
         result.append(org)
     return sorted(result, key=lambda r: order.get(r["EIN"], 999))
 
@@ -5222,7 +5257,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
         '4_Archetype_Only': 'peer_group_tier4',
     }
     return (
-        [_attach_v4_scores(dict(r), r) for r in rows],
+        [_replace_revenue_band(_attach_v4_scores(dict(r), r)) for r in rows],
         mode_by_tier[criteria['tier']],
     )
 
@@ -6284,7 +6319,7 @@ def fused_search():
         fused_eins[:fetch_n]
     ).fetchall()
 
-    org_map = {dict(r)['EIN']: _attach_v4_scores(dict(r), r) for r in rows}
+    org_map = {dict(r)['EIN']: _replace_revenue_band(_attach_v4_scores(dict(r), r)) for r in rows}
 
     results = []
     for ein in fused_eins:
