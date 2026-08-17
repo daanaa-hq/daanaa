@@ -57,7 +57,7 @@ def eligible_registry_eins(db: sqlite3.Connection) -> set[str]:
     at all -- presence-based, not parser-version-based (stale rows belong to
     the Phase 3 backfill, not this job).
 
-    "Coverage" deliberately checks more than one signal, not just
+    "Coverage" deliberately checks more than three signals, not just
     irs_990_functional_expense_filings presence. That table is populated only
     when parse_990_xml() extracts financials -- which 990-EZ filings never do
     by design (their fields are unverified, see fetch_irs_direct_filing.py's
@@ -73,6 +73,19 @@ def eligible_registry_eins(db: sqlite3.Connection) -> set[str]:
     and extracted_programs.schedule_o_source='irs_990_xml' are both set
     regardless of form type, so either is a reliable "this pipeline already
     touched this EIN" signal on its own.
+
+    Fourth signal added in Codex review (2026-08-16), found real and
+    non-hypothetical: a 990-EZ filing can produce Part III program
+    descriptions (write_filing() sets programs_available=1) while having no
+    usable mission and no Schedule O explanation that passes the
+    junk/relevance filter -- none of the first three signals fire, so that
+    EIN would be endlessly re-selected as "uncovered" on every future
+    --year run despite having been fully processed. Confirmed real, not
+    theoretical: 4,163 current registry rows have programs_available=1 and
+    none of the other three signals. programs_available is written
+    exclusively by fetch_irs_direct_filing.py in this codebase (verified via
+    full grep), so it's a safe additional provenance signal, not a
+    false-positive risk from some other writer.
     """
     return {
         row[0].strip().zfill(9)
@@ -90,6 +103,7 @@ def eligible_registry_eins(db: sqlite3.Connection) -> set[str]:
               AND filing.EIN IS NULL
               AND programs.EIN IS NULL
               AND (registry.mission_source IS NULL OR registry.mission_source != 'irs_990')
+              AND (registry.programs_available IS NULL OR registry.programs_available = 0)
             """
         )
         if row[0]
@@ -240,7 +254,7 @@ def narrative_snapshot(
 def has_any_coverage(db: sqlite3.Connection, ein: str) -> bool:
     """
     Return whether an EIN now has any direct-pipeline coverage signal --
-    same three-signal check as eligible_registry_eins(), kept in sync with it
+    same four-signal check as eligible_registry_eins(), kept in sync with it
     so "newly covered" reporting matches what future runs will treat as
     already-covered.
     """
@@ -256,8 +270,12 @@ def has_any_coverage(db: sqlite3.Connection, ein: str) -> bool:
                 SELECT 1 FROM registry_enriched
                 WHERE EIN = ? AND mission_source = 'irs_990'
             )
+            OR EXISTS(
+                SELECT 1 FROM registry_enriched
+                WHERE EIN = ? AND programs_available = 1
+            )
         """,
-        (ein, ein, ein),
+        (ein, ein, ein, ein),
     ).fetchone()
     return bool(row and row[0])
 

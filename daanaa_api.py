@@ -1049,10 +1049,30 @@ def _replace_revenue_band(org: dict) -> dict:
 
     Called at every site that serves a top-level revenue_band key --
     list_organizations, get_organization, _fetch_orgs_by_eins,
-    _find_similar_orgs, fused_search. service_scope.revenue_band (a
-    different, nested field) was already correctly sourced from
-    merit_band_v5_label and is untouched by this function."""
-    org['revenue_band'] = peer_group.get_revenue_band(org.get('total_revenue'))
+    _find_similar_orgs, fused_search. Also now applied to
+    service_scope.revenue_band (previously sourced from the older,
+    static merit_band_v5_label -- inconsistent with the top-level fix,
+    found in Codex review same day) so a single response never shows two
+    disagreeing band systems.
+
+    Negative-revenue guard, found in Codex review same day: peer_group.
+    get_revenue_band() only treats None/0 as "no band" -- 1,013 live rows
+    have negative total_revenue (down to -$175.5M), and that shared
+    function would return "Grassroots" for all of them, a false size
+    assertion (Stewardship P3). Deliberately NOT fixed inside
+    peer_group.get_revenue_band() itself: that function is also the live
+    V6 scorer's peer-grouping primitive (scripts/scoring/daanaa_scorer.py),
+    and changing its behavior would be a scoring-methodology change,
+    gated separately per CLAUDE.md -- not something to fold into an API
+    display fix. Guarded here instead, at the display layer only."""
+    revenue = org.get('total_revenue')
+    if revenue is not None and revenue > 0:
+        band = peer_group.get_revenue_band(revenue)
+    else:
+        band = None
+    org['revenue_band'] = band
+    if 'service_scope' in org and isinstance(org['service_scope'], dict):
+        org['service_scope']['revenue_band'] = band
     return org
 
 def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
