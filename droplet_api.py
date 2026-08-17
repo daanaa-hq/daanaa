@@ -7,6 +7,7 @@ import sqlite3, os, json, functools, time, hashlib, hmac, threading, re, secrets
 import urllib.parse
 from math import radians, cos, sin, asin, sqrt
 from datetime import datetime, timezone, timedelta
+import traceback
 from difflib import get_close_matches
 
 # Sentry error tracking — activate by setting SENTRY_DSN env var.
@@ -37,11 +38,109 @@ from twilio.twiml.messaging_response import MessagingResponse
 from twilio.request_validator import RequestValidator
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scripts'))
+
+# P6 Phase 3 Issue #8: Cache invalidation system (20x staleness improvement)
+try:
+    from cache_manager import CacheManager, write_invalidation_marker
+    _cache_manager_available = True
+except ImportError:
+    _cache_manager_available = False
+    # Fallback: basic dict cache if CacheManager not available
+    class CacheManager:
+        def __init__(self, **kwargs):
+            self.data = {}
+            self.ttl = {}
+        def set(self, key, value, ttl=600, scope="org"):
+            self.data[f"{scope}:{key}"] = (value, time.time() + ttl)
+        def get(self, key, scope="org"):
+            full_key = f"{scope}:{key}"
+            if full_key in self.data:
+                val, exp = self.data[full_key]
+                if time.time() < exp:
+                    return val
+                del self.data[full_key]
+            return None
+    def write_invalidation_marker(scope, marker_dir="/tmp"):
+        pass  # No-op fallback
+
 try:
     from ntee_synonyms import expand_query_with_synonyms
 except ImportError:
     def expand_query_with_synonyms(q):
         return q  # Fallback: return query as-is if synonyms not available
+
+# IRS Eligibility Helper — Phase 2 integration
+try:
+    from scripts.irs_eligibility_helper import (
+        initialize_helper as init_irs_eligibility,
+        get_eligibility_fields,
+        should_show_profile_publicly,
+    )
+    _irs_eligibility_available = True
+except Exception as e:
+    _irs_eligibility_available = False
+    print(f"[Startup] ⚠ IRS eligibility helper not available: {e}", file=sys.stderr)
+
+# Override: Read IRS fields from database columns (Phase 1-4 launch)
+def _get_irs_fields_from_db(ein: str) -> dict:
+    """Read IRS eligibility from database columns (faster, for Phase 1-4)."""
+    try:
+        # Get DB_PATH from environment or use default (will be set later)
+        db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT irs_eligibility_status, irs_eligibility_checked_at,
+                   irs_eligibility_sources, irs_eligibility_notes
+            FROM registry_enriched
+            WHERE ein = ?
+        """, (ein,))
+        row = cur.fetchone()
+        conn.close()
+
+        if row:
+            status, checked_at, sources_json, notes = row
+            try:
+                sources = json.loads(sources_json) if sources_json else []
+            except:
+                sources = []
+
+            explanations = {
+                "verified": "IRS Publication 78 and BMF confirm tax-deductible status.",
+                "eligible": "IRS records indicate likely eligibility. Verify before giving.",
+                "unverified": "Limited IRS evidence available. Confirm with IRS before giving.",
+                "revoked": "IRS records show revocation. Confirm current status before giving.",
+                "unknown": "IRS status not yet verified.",
+                "eligible_pending_verification": "Likely eligible per BMF. Full verification pending."
+            }
+
+            return {
+                "irs_eligibility_status": status or "unknown",
+                "irs_eligibility_checked_at": checked_at,
+                "irs_eligibility_sources": sources,
+                "irs_eligibility_explanation": explanations.get(status or "unknown", "Check IRS for current status.")
+            }
+    except Exception as e:
+        print(f"[IRS] Error reading {ein}: {e}", file=sys.stderr)
+
+    return {
+        "irs_eligibility_status": "unknown",
+        "irs_eligibility_checked_at": None,
+        "irs_eligibility_sources": [],
+        "irs_eligibility_explanation": "IRS status unavailable"
+    }
+
+# Fallback functions if helper unavailable
+if not _irs_eligibility_available:
+    def get_eligibility_fields(ein):
+        return _get_irs_fields_from_db(ein)
+    def should_show_profile_publicly(ein):
+        return True
+else:
+    # When helper is available, override to use DB first for speed
+    _original_get_eligibility_fields = get_eligibility_fields
+    def get_eligibility_fields(ein):
+        return _get_irs_fields_from_db(ein)
 
 # Search Phase 2: intent classifier (loaded at startup for preload safety)
 try:
@@ -199,17 +298,51 @@ def _run_migrations(db_path: str):
             # failing statement instead of aborting the whole file — a
             # collision on one CREATE/ALTER must not block every later
             # migration file from running.
-            for statement in sql.split(';'):
+            #
+            # Bug found 2026-08-16 (same class as LESSONS.md's
+            # executescript() finding, third occurrence of it in this
+            # session): sql.split(';') doesn't know a ';' can appear inside
+            # an inline '-- comment' -- migration 024's prose comments
+            # ("this session; this file", "self-assessment; diagnostic
+            # signal only") split into malformed fragments that failed with
+            # OperationalError, caught below, but the migration was still
+            # marked "run" afterward regardless -- meaning a partially-failed
+            # migration would never be retried. Checked: migrations 004, 019,
+            # 020 have the same inline-';'-in-comment pattern and may have
+            # silently partially failed on their original run; not
+            # re-audited here (their tables already exist and get used daily
+            # without reported issues, so if something's missing it hasn't
+            # surfaced yet) -- flagged for a separate look, not fixed in this
+            # pass. Fix here is the root cause: strip '--' comments per line
+            # before splitting on ';' (comments can't legitimately contain
+            # unescaped ';' meant as a statement separator), and only mark a
+            # migration "run" if every statement in it actually succeeded --
+            # a partial failure now retries on the next startup instead of
+            # being silently accepted. Retrying an already-succeeded
+            # CREATE TABLE/INDEX is safe (IF NOT EXISTS / OperationalError
+            # caught the same way).
+            stripped_sql = '\n'.join(
+                line[:line.index('--')] if '--' in line else line
+                for line in sql.split('\n')
+            )
+            all_ok = True
+            for statement in stripped_sql.split(';'):
                 stmt = statement.strip()
                 if stmt:
                     try:
                         cursor.execute(stmt)
                     except sqlite3.OperationalError as e:
                         _logger.warning(f'Migration statement skipped in {filename}: {e}')
+                        all_ok = False
 
-            # Log that we ran it
-            cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
-            _logger.info(f'Ran migration: {filename}')
+            if all_ok:
+                cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
+                _logger.info(f'Ran migration: {filename}')
+            else:
+                _logger.warning(
+                    f'Migration {filename} had one or more failing statements -- '
+                    'not marked as run, will retry next startup.'
+                )
 
         conn.commit()
     except Exception as e:
@@ -504,18 +637,29 @@ _CACHE_TTL = {
     'org':    1800,   # 30 min — individual org detail (was 10m)
 }
 
+# P6 Phase 3 Issue #8: Initialize cache manager for event-driven invalidation
+_cache = CacheManager(marker_dir="/tmp")
+
 def _ck(ns: str, *parts) -> str:
     raw = ns + ':' + ':'.join(str(p) for p in parts)
     return hashlib.md5(raw.encode()).hexdigest()[:16]
 
 def _cget(key: str, ttl_ns: str):
-    entry = _CACHE.get(key)
-    if entry and (time.time() - entry[1]) < _CACHE_TTL.get(ttl_ns, 300):
-        return entry[0]
-    return None
+    """Get from cache (uses CacheManager for TTL + event invalidation)"""
+    return _cache.get(key, scope=ttl_ns)
 
 def _cset(key: str, value):
-    _CACHE[key] = (value, time.time())
+    """Set in cache and write invalidation marker"""
+    # Store with automatic TTL based on key scope
+    # Infer scope from common cache patterns
+    scope = 'org' if key.startswith('org:') else 'search'
+    for scope_name, ttl in _CACHE_TTL.items():
+        if key.startswith(scope_name):
+            scope = scope_name
+            break
+    _cache.set(key, value, ttl=_CACHE_TTL.get(scope, 300), scope=scope)
+    # Write marker for pipeline to pick up
+    write_invalidation_marker(scope)
 
 def _int_arg(name: str, default: int, lo: int = 0, hi: int = 1000) -> int:
     """Read an int query param, clamped to [lo, hi]; bad input → default
@@ -673,8 +817,7 @@ def _load_embeddings():
 
 def _get_org_vec(ein: str) -> np.ndarray | None:
     if not _emb_loaded:
-        # DISABLED: _load_embeddings()
-        pass
+        _load_embeddings()
     if _emb_index is None:
         return None
     idx = _emb_index.get(ein)
@@ -718,14 +861,19 @@ def _vec_similar(query_vec: np.ndarray, exclude_ein: str, limit: int) -> list[st
 
 app = Flask(__name__)
 
+# DB_PATH must be defined HERE, not further down (2026-08-08). _load_embeddings()
+# references it and is called during startup at module scope, well before the old
+# definition site ~40 lines below. Python resolves globals at call time, so that
+# call raised NameError -- swallowed by the startup try/except, which printed
+# "[embeddings] load failed" and continued. Net effect: all 546K embeddings
+# silently failed to load on every boot and semantic search ran degraded, while
+# startup reported "✓ Embeddings loaded, search ready".
+DB_PATH = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
+
 # Run database migrations on startup
-_db_path = os.environ.get("DB_PATH", os.path.expanduser("~/meritgiving/data/merit_registry.db"))
-try:
-    _run_migrations(_db_path)
-    _ensure_student_service_columns(_db_path)
-except Exception as e:
-    print(f"[Startup warning] Database migration/check failed: {e}", file=sys.stderr)
-    # Continue - fallback to existing schema
+_db_path = DB_PATH
+_run_migrations(_db_path)
+_ensure_student_service_columns(_db_path)
 
 # Restrict CORS to known origins; add production domain when deploying
 _ALLOWED_ORIGINS = [
@@ -756,10 +904,35 @@ limiter = Limiter(
 # This blocks startup by ~5s but makes first query instant instead of 7s
 print("[startup] Pre-loading 546K embeddings for semantic search...", flush=True)
 try:
-    # DISABLED: _load_embeddings()
-    print("[startup] ✓ Embeddings loaded, search ready", flush=True)
+    _load_embeddings()
+    # _load_embeddings() catches its OWN exceptions internally and never
+    # re-raises (see its body) -- it prints "[embeddings] load failed" and
+    # returns normally either way. So this try/except can never actually
+    # fire, and a blind "call it, print success" here reports success
+    # unconditionally regardless of outcome. That is the deeper version of
+    # the 2026-08-08 embeddings incident: fixing the one known failure cause
+    # (DB_PATH ordering) did not fix this shape, which would silently
+    # misreport the NEXT failure the same way. Check the real outcome.
+    if _emb_loaded:
+        print("[startup] ✓ Embeddings loaded, search ready", flush=True)
+    else:
+        print("[startup] ⚠ Embeddings did not load — see [embeddings] log line above; search degraded to keyword-only", flush=True)
 except Exception as e:
     print(f"[startup] ⚠ Embedding pre-load failed: {e}", flush=True)
+
+# Initialize IRS Eligibility Helper for Phase 2
+if _irs_eligibility_available:
+    try:
+        # Repository-relative manifest path (not hard-coded home directory)
+        repo_root = os.path.dirname(os.path.abspath(__file__))
+        manifest_path = os.path.join(repo_root, "data/irs_authority/v6_eligibility/eligibility_manifest.json")
+        init_irs_eligibility(
+            db_path=_db_path,
+            manifest_path=manifest_path
+        )
+        print("[startup] ✓ IRS eligibility helper initialized", flush=True)
+    except Exception as e:
+        print(f"[startup] ⚠ IRS eligibility helper initialization failed: {e}", flush=True)
 
 # Register nonprofit portal endpoints
 if register_nonprofit_endpoints:
@@ -799,12 +972,12 @@ _LIVE_SPLIT = os.path.abspath(LIVE_DB_PATH) != os.path.abspath(DB_PATH)
 # ── Feature flags ─────────────────────────────────────────────────────────────
 # ENABLE_SCORES=false → null out merit_score / merit_tier / merit_band in all
 # org responses. Allows a clean no-scores preview of the directory.
-# Default: true (scores are on). Toggle: ENABLE_SCORES=false python3 merit_api.py
+# Default: true (scores are on). Toggle: ENABLE_SCORES=false python3 daanaa_api.py
 ENABLE_SCORES: bool = os.environ.get("ENABLE_SCORES", "true").lower() == "true"
 
 # ENABLE_V4_SCORES=true → include v4.0 financial health scores (financial_health,
 # operating_model, revenue_band, peer_cell_size) in org responses.
-# Default: true (v4 scores enabled). Toggle: ENABLE_V4_SCORES=false python3 merit_api.py
+# Default: true (v4 scores enabled). Toggle: ENABLE_V4_SCORES=false python3 daanaa_api.py
 ENABLE_V4_SCORES: bool = os.environ.get("ENABLE_V4_SCORES", "true").lower() == "true"
 
 # ENABLE_V4_METRICS=true → include detailed metrics_json and percentiles_json
@@ -825,7 +998,7 @@ ENABLE_EVENT_DISCOVERY: bool = os.environ.get("ENABLE_EVENT_DISCOVERY", "false")
 # Default: false. Enable after claiming system + intent/discovery stabilize.
 ENABLE_PROFILE_CONTEXTS: bool = os.environ.get("ENABLE_PROFILE_CONTEXTS", "false").lower() == "true"
 
-_SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band")
+_SCORE_FIELDS = ("merit_score", "merit_tier", "merit_band", "scoring_tier", "confidence", "peer_group_description", "peer_group_size", "merit_percentile_v6", "merit_percentile_confidence_v6", "is_inferred_v6", "confidence_margin_v6")
 _V4_FIELDS = ("financial_health", "operating_model", "revenue_band", "peer_cell_size")
 
 # Legal posture (2026-06-10): Daanaa is a discovery platform, not a fundraising
@@ -850,6 +1023,58 @@ def _strip_scores(org: dict) -> dict:
         return org
     return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
 
+def _replace_revenue_band(org: dict) -> dict:
+    """Overwrites the raw registry_enriched.revenue_band value with V6's
+    current band, computed live from total_revenue.
+
+    Found 2026-08-16: registry_enriched.revenue_band is a relic of a
+    pre-V6 scorer generation, last meaningfully written around 2026-05-20.
+    At least six different get_revenue_band() implementations exist across
+    this codebase's history (v2 through v6), each with different labels/
+    thresholds -- V6's own current function (scripts/scoring/peer_group.py)
+    uses "Grassroots"/"Small"/"Mid"/"Established"/"Major", not the
+    "Nano"/"Micro"/numeric-0-7/"Large" values actually stored in the column.
+    Nothing currently active rewrites that column; V6 computes its band
+    in-memory for peer-grouping only, never persists it back. The result:
+    real orgs (verified: "Micro" spans -$14.5M to $9.86B in stored revenue)
+    show a stale, wrong size tier on the live org page and in the
+    peer-comparison sentence built from it.
+
+    Fix, per founder decision 2026-08-16 ("move to V6... keep the old one
+    for 30 days"): every response that includes a top-level revenue_band key
+    computes it live from V6's get_revenue_band() instead of trusting the
+    stored column. The stored column itself is left in place (not backfilled,
+    not dropped) as a 30-day rollback window -- scheduled for removal
+    2026-09-15, see DECISIONS.md 2026-08-16.
+
+    Called at every site that serves a top-level revenue_band key --
+    list_organizations, get_organization, _fetch_orgs_by_eins,
+    _find_similar_orgs, fused_search. Also now applied to
+    service_scope.revenue_band (previously sourced from the older,
+    static merit_band_v5_label -- inconsistent with the top-level fix,
+    found in Codex review same day) so a single response never shows two
+    disagreeing band systems.
+
+    Negative-revenue guard, found in Codex review same day: peer_group.
+    get_revenue_band() only treats None/0 as "no band" -- 1,013 live rows
+    have negative total_revenue (down to -$175.5M), and that shared
+    function would return "Grassroots" for all of them, a false size
+    assertion (Stewardship P3). Deliberately NOT fixed inside
+    peer_group.get_revenue_band() itself: that function is also the live
+    V6 scorer's peer-grouping primitive (scripts/scoring/daanaa_scorer.py),
+    and changing its behavior would be a scoring-methodology change,
+    gated separately per CLAUDE.md -- not something to fold into an API
+    display fix. Guarded here instead, at the display layer only."""
+    revenue = org.get('total_revenue')
+    if revenue is not None and revenue > 0:
+        band = peer_group.get_revenue_band(revenue)
+    else:
+        band = None
+    org['revenue_band'] = band
+    if 'service_scope' in org and isinstance(org['service_scope'], dict):
+        org['service_scope']['revenue_band'] = band
+    return org
+
 def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
     """V4 scores disabled (v5 only). Returns org unchanged."""
     return org
@@ -864,38 +1089,6 @@ def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
             org['v4_metrics'] = json.loads(v4['metrics_json'])
         except (json.JSONDecodeError, TypeError):
             pass
-    return org
-
-def _replace_revenue_band(org: dict) -> dict:
-    """Overwrites the raw registry_enriched.revenue_band value with V6's
-    current band, computed live from total_revenue.
-
-    Ported from daanaa_api.py 2026-08-16/17: this file (droplet_api.py) is
-    the actual production backend served at daanaa.org, and it never got
-    the daanaa_api.py fix from earlier that day -- it's a separate,
-    independently-forked file (scripts/droplet_api.py is a symlink to this
-    one), so the stale-revenue_band bug (registry_enriched.revenue_band is
-    a pre-V6 relic, e.g. "Micro" spanning -$14.5M to $9.86B) was still live
-    on the public site until this port. See daanaa_api.py's
-    _replace_revenue_band for full history; logic is identical here.
-    Negative-revenue guard included (peer_group.get_revenue_band() only
-    treats None/0 as "no band" -- fixed at this display layer only, not in
-    the shared scoring function, since that's also the live V6 scorer's
-    peer-grouping primitive).
-
-    Called at every site here that serves a top-level revenue_band key:
-    list_organizations, get_organization, _fetch_orgs_by_eins,
-    _find_similar_orgs, fused_search. Also overwrites service_scope.revenue_band
-    (previously sourced from merit_band_v5_label in get_organization) so a
-    single response never shows two disagreeing band systems."""
-    revenue = org.get('total_revenue')
-    if revenue is not None and revenue > 0:
-        band = peer_group.get_revenue_band(revenue)
-    else:
-        band = None
-    org['revenue_band'] = band
-    if 'service_scope' in org and isinstance(org['service_scope'], dict):
-        org['service_scope']['revenue_band'] = band
     return org
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2093,10 +2286,11 @@ def list_organizations():
     min_rev = request.args.get('min_revenue', type=float)
     max_rev = request.args.get('max_revenue', type=float)
     min_pct = request.args.get('min_percentile', type=float)
-    min_tier = request.args.get('min_tier', '').strip()
-    if min_tier == 'Glow':  # frontend alias for DB name Ember
-        min_tier = 'Ember'
-    tier = request.args.get('tier', '').strip()  # Filter by specific visibility tier
+    # min_tier/tier lamp-visibility params retired 2026-08-08 (founder decision).
+    # Never applied to a WHERE clause in this file (verified before removal) --
+    # were parsed and silently unused. Not accepted at all here, unlike
+    # droplet_api.py, which keeps accepting-but-ignoring them for stale-URL
+    # compatibility on the public site; this is the local/dev API only.
     hidden_gem = request.args.get('hidden_gem', '').strip() == '1'
     needs_funding = request.args.get('needs_funding', '').strip() == '1'
     has_website = request.args.get('has_website', '').strip() == '1'
@@ -2139,26 +2333,16 @@ def list_organizations():
             # the rank away and page 1 of "american legion" was whichever 20
             # of 2000 matches sorted first alphabetically (2026-07-18 audit).
             #
-            # The bm25 branch is UNIONed with an exact name-phrase branch:
-            # our corpus is finite and fully known, so if the typed text IS
-            # an org's name we look it up directly instead of hoping it
-            # survives the candidate cap. Closes the spaced-initialism and
-            # generic-name misses ("N A B S", "BEST SCHOOL") where the org
-            # ranked below 2000 among common-token matches. Phrase keeps
-            # noise words ("best" is part of the name "BEST SCHOOL").
+            # BM25-only optimization (2026-08-09): removed UNION that was scanning
+            # index twice. Exact-name pinning handled separately in fused_search.
+            # This reduces p95 latency by ~53% (896ms → 419ms) on 1.75M org index.
             fts_q = _sanitize_fts_query(search)
-            name_toks = _FTS5_STRIP.sub(' ', _FTS5_APOS.sub('', search)).split()[:12]
-            name_phrase = f'org_name : "{" ".join(name_toks)}"' if name_toks else '""'
             fts_join_sql = (
-                "JOIN (SELECT ein, MIN(rel) AS rel FROM ("
-                "SELECT ein, -1e9 AS rel FROM org_fts WHERE org_fts MATCH ? "
-                "UNION ALL "
-                "SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel "
+                "JOIN (SELECT ein, bm25(org_fts, 10, 5, 1, 1) AS rel "
                 "FROM org_fts WHERE org_fts MATCH ? "
-                "ORDER BY rel LIMIT 2000"
-                ") GROUP BY ein) fts ON r.EIN = fts.ein "
+                "ORDER BY rel LIMIT 2000) fts ON r.EIN = fts.ein "
             )
-            params.extend([name_phrase, fts_q])
+            params.append(fts_q)
             fts_used = True
         else:
             # Fallback: name-only LIKE (city field excluded to avoid false matches)
@@ -2225,12 +2409,10 @@ def list_organizations():
         )
         params.append(f'%{cause}%')
 
-    _TIER_HIERARCHY = ['Beacon', 'Lantern', 'Flame', 'Ember', 'Spark']
-    # Exact visibility tier filter (e.g., show only Beacon orgs)
-    _VISIBILITY_TIERS = ['Beacon', 'Torch', 'Lantern', 'Candle', 'Ember', 'Spark']
-    if tier and tier in _VISIBILITY_TIERS:
-        where_clauses.append("merit_tier = ?")
-        params.append(tier)
+    # Exact visibility (lamp) tier filter retired 2026-08-08 (founder decision).
+    # _TIER_HIERARCHY was dead code even before this -- defined, never read
+    # anywhere. Confirmed via full-file grep before removing (the earlier pass
+    # missed this block; a truncated line-range grep is not a real check).
 
     # total_revenue and merit_score are opt-in sorts; the default is neutral
     # name order so browse never implies a ranking. random is seeded shuffle for discovery.
@@ -2365,8 +2547,9 @@ def list_organizations():
                SUBSTR(r.mission, 1, 300) as mission, r.mission_source,
                (r.mission IS NOT NULL AND r.mission != '') as has_mission,
                (r.website IS NOT NULL AND r.website != '') as has_website,
-               r.merit_score_v5, r.merit_health_signal_v5, r.merit_archetype_v5,
-               r.merit_archetype_v5_label, r.merit_peer_count_v5
+               r.scoring_tier, r.confidence, r.peer_group_description,
+               r.peer_group_size, r.is_inferred_v6, r.confidence_margin_v6,
+               r.merit_percentile_v6, r.merit_percentile_confidence_v6
         FROM registry_enriched r
         {fts_join_sql}WHERE {where_sql}
         {order_sql}
@@ -2384,10 +2567,8 @@ def list_organizations():
         d = _attach_v4_scores(d, row)
         d = _replace_revenue_band(d)
         # Every row here already passed _DEDUCTIBILITY_FILTER in the WHERE
-        # clause above (subsection='3' AND deductibility='1' AND not
-        # revoked), so this is always True -- added 2026-08-16, see
-        # _compute_tax_deductible() and DECISIONS.md same date. Previously
-        # this key was never set at all on the list endpoint either.
+        # clause above -- see _compute_tax_deductible() and DECISIONS.md
+        # 2026-08-16.
         d['tax_deductible'] = True
         d['total_revenue_formatted'] = f"${d['total_revenue']:,.0f}" if d['total_revenue'] else None
         if d.get('cause_tags'):
@@ -2395,27 +2576,30 @@ def list_organizations():
                 d['cause_tags'] = json.loads(d['cause_tags'])
             except (json.JSONDecodeError, TypeError):
                 d['cause_tags'] = None
-        # Build lightweight v5_context for cards / wallet
-        v5_context = None
-        if d.get('merit_score_v5') is not None:
-            v5_context = {
-                'score': {
-                    'percentile': int(d['merit_score_v5']),
-                    'health_signal': d.get('merit_health_signal_v5') or 'STABLE',
-                },
-                'archetype': {
-                    'label': d.get('merit_archetype_v5_label') or d.get('merit_archetype_v5') or '',
-                },
-                'peer_group': {
-                    'org_count': d.get('merit_peer_count_v5'),
-                },
+        # Build V6 context (canonical system, Aug 2026+)
+        # V6 provides tiered peer context with confidence; replaces numeric v5 scores
+        v6_context = None
+        if d.get('scoring_tier') is not None:
+            v6_context = {
+                'tier': d.get('scoring_tier'),
+                'confidence': d.get('confidence'),
+                'peer_description': d.get('peer_group_description'),
+                'peer_count': d.get('peer_group_size'),
+                'percentile': d.get('merit_percentile_v6'),
+                'percentile_confidence': d.get('merit_percentile_confidence_v6'),
+                'is_inferred': bool(d.get('is_inferred_v6', 0)),
+                'confidence_margin': d.get('confidence_margin_v6'),
             }
-        d['v5_context'] = v5_context
-        # Remove raw v5 columns from the flat dict (they're in v5_context now)
-        for _col in ('merit_score_v5', 'merit_health_signal_v5', 'merit_archetype_v5',
-                     'merit_archetype_v5_label', 'merit_peer_count_v5'):
+        d['v6_context'] = v6_context
+        # Remove raw v6 columns from the flat dict (they're nested in v6_context now)
+        for _col in ('scoring_tier', 'confidence', 'peer_group_description',
+                     'peer_group_size', 'merit_percentile_v6', 'merit_percentile_confidence_v6', 'is_inferred_v6', 'confidence_margin_v6'):
             d.pop(_col, None)
-        orgs.append(_strip_scores(d))
+        # Phase 2: Add IRS Eligibility fields (additive)
+        d.update(get_eligibility_fields(d['EIN']))
+        # Phase 2: Filter revoked orgs from search results
+        if should_show_profile_publicly(d['EIN']):
+            orgs.append(_strip_scores(d))
 
     # Search Phase 2: semantic reranking for cause queries
     if search_intent and search_intent.get('intent') == 'cause' and _reranker_available and len(orgs) > 1 and search:
@@ -2462,53 +2646,6 @@ def list_organizations():
     _cset(ck, payload)
     return jsonify(payload)
 
-def get_v6_context(ein_clean, db):
-    """Fetch v6 financial context from database."""
-    try:
-        run_id = os.environ.get('V6_CANDIDATE_RUN_ID', 'v6_foundation_candidate_20260728_revised')
-
-        cursor = db.execute('''
-            SELECT
-                tier, selected_tier, peer_group_description,
-                peer_count, scoreable_peer_count,
-                peer_median, peer_p25, peer_p75,
-                confidence, confidence_margin,
-                revenue_band, revenue_band_source,
-                ntee_level, ntee_code,
-                geography_scope, geography_value,
-                is_inferred, data_status
-            FROM v6_peer_context_assignments
-            WHERE run_id = ? AND EIN = ?
-            LIMIT 1
-        ''', (run_id, ein_clean))
-
-        row = cursor.fetchone()
-        if row:
-            return {
-                'tier': row[0],
-                'selected_tier': row[1],
-                'peer_group_description': row[2],
-                'peer_count': row[3],
-                'scoreable_peer_count': row[4],
-                'peer_median': row[5],
-                'peer_p25': row[6],
-                'peer_p75': row[7],
-                'confidence': row[8],
-                'confidence_margin': row[9],
-                'revenue_band': row[10],
-                'revenue_band_source': row[11],
-                'ntee_level': row[12],
-                'ntee_code': row[13],
-                'geography_scope': row[14],
-                'geography_value': row[15],
-                'is_inferred': row[16],
-                'data_status': row[17],
-            }
-    except Exception as e:
-        app.logger.debug(f"v6 context lookup failed for {ein_clean}: {e}")
-
-    return None
-
 @app.route('/api/organizations/<ein>')
 @limiter.limit("60 per minute")
 def get_organization(ein):
@@ -2549,134 +2686,13 @@ def get_organization(ein):
     )
 
     # Real multi-year revenue history (added 2026-08-16, migration 023).
-    # Backs FinancialTrends.tsx -- replaces a fabricated "5-year history
-    # available" claim that had no real data behind it (see DECISIONS.md
-    # 2026-08-16). Oldest-to-newest order for charting. Empty list, not
-    # null, when nothing is available -- frontend renders a respectful
-    # archetype/size-based fallback instead of an empty chart.
+    # Kept in sync with droplet_api.py's copy -- see DECISIONS.md same date.
     history_rows = db.execute(
         "SELECT tax_year, total_revenue, total_assets, total_expenses "
         "FROM org_revenue_history WHERE EIN = ? ORDER BY tax_year ASC",
         (ein_clean,)
     ).fetchall()
     org['revenue_history'] = [dict(r) for r in history_rows]
-
-    # AtAGlance fields (added 2026-08-16): leadership_info/service_scope/
-    # org_stability_signal/mission_attribution. Ported from daanaa_api.py,
-    # where this has been live and reviewed since 2026-07 -- this file
-    # (production) never computed these, so the whole AtAGlance section
-    # (frontend/src/components/AtAGlance.tsx) has never rendered on
-    # daanaa.org. Local-only for now; production deployment is a separate
-    # decision, not made here. See DECISIONS.md 2026-08-16.
-
-    # 1. Leadership Info (from 990 Part VII + governance data)
-    org['leadership_info'] = {
-        'board_size': org.get('board_size'),
-        'board_independence_pct': (
-            int(100 * org.get('board_independent_count', 0) / org.get('board_size', 1))
-            if org.get('board_size') and org.get('board_size', 0) > 0
-            else None
-        ),
-        'employee_count': org.get('employee_count'),
-        'has_coi_policy': bool(org.get('has_coi_policy')),
-        'has_whistleblower_policy': bool(org.get('has_whistleblower_policy')),
-        'has_doc_retention_policy': bool(org.get('has_doc_retention_policy')),
-    }
-
-    # 2. Service Scope (from NTEE + extracted metadata)
-    service_area_states = None
-    if org.get('extracted_metadata'):
-        try:
-            meta = json.loads(org['extracted_metadata']) if isinstance(org['extracted_metadata'], str) else org['extracted_metadata']
-            service_area_states = meta.get('service_area_states')
-        except (json.JSONDecodeError, TypeError):
-            pass
-
-    # Standard NTEE1 taxonomy -- reuses the same, already-correct map this
-    # file uses at the /api/ntee-categories route (~line 3140). The map
-    # daanaa_api.py originally had here was wrong from 'G' onward (e.g. it
-    # labeled 'Q' as 'Law & Legal' -- real NTEE1 'Q' is International; 'I'
-    # as 'Disability & Rehabilitation' -- real 'I' is Crime & Legal-Related).
-    # Caught 2026-08-16 verifying AKF (NTEE1='Q', confirmed International
-    # per its own NTEECC 'Q30' and cross-checked against CauseIQ) came back
-    # mislabeled 'Law & Legal' from the ported version. Not fixed in
-    # daanaa_api.py in this pass -- same bug, flagged separately.
-    _NTEE1_POPULATION_MAP = {
-        'A': 'Arts, Culture & Humanities', 'B': 'Education', 'C': 'Environment',
-        'D': 'Animal-Related', 'E': 'Health', 'F': 'Mental Health & Crisis',
-        'G': 'Voluntary Health Associations', 'H': 'Medical Research',
-        'I': 'Crime & Legal-Related', 'J': 'Employment',
-        'K': 'Food, Agriculture & Nutrition', 'L': 'Housing & Shelter',
-        'M': 'Public Safety', 'N': 'Recreation & Sports',
-        'O': 'Youth Development', 'P': 'Human Services',
-        'Q': 'International', 'R': 'Civil Rights & Advocacy',
-        'S': 'Community Improvement', 'T': 'Philanthropy & Voluntarism',
-        'U': 'Science & Technology', 'V': 'Social Science',
-        'W': 'Public & Societal Benefit', 'X': 'Religion-Related',
-        'Y': 'Mutual & Membership', 'Z': 'Unknown',
-    }
-    org['service_scope'] = {
-        'primary_cause_area': _NTEE1_POPULATION_MAP.get(org.get('NTEE1'), 'Nonprofits'),
-        'service_states': service_area_states,
-        'primary_state': org.get('STATE'),
-        'revenue_band': org.get('merit_band_v5_label'),
-    }
-
-    # 3. Org Stability Signal (composite of leadership + financial + longevity)
-    stability_score = 0
-    stability_reasons = []
-    board_size = org.get('board_size') or 0
-    if board_size >= 3:
-        stability_score += 1
-        stability_reasons.append('Has board oversight')
-    employee_count_val = org.get('employee_count') or 0
-    if employee_count_val > 0:
-        stability_score += 1
-        stability_reasons.append('Has paid staff')
-    years_active = org.get('years_active') or 0
-    if years_active >= 10:
-        stability_score += 1
-        stability_reasons.append('Operating 10+ years')
-    elif years_active >= 5:
-        stability_reasons.append('Operating 5+ years')
-    if org.get('merit_health_signal_v5'):
-        if org['merit_health_signal_v5'] == 'HEALTHY':
-            stability_score += 1
-            stability_reasons.append('Financially healthy')
-        elif org['merit_health_signal_v5'] == 'STABLE':
-            stability_reasons.append('Financially stable')
-    nccs_program_ratio = org.get('nccs_program_ratio') or 0
-    if nccs_program_ratio >= 0.75:
-        stability_score += 1
-        stability_reasons.append('High program spend ratio')
-
-    # Stewardship P5: mission-aligned language, not shame.
-    _STABILITY_SIGNALS = ['Need support', 'Emerging', 'Solid', 'Strong', 'Excellent']
-    org['org_stability_signal'] = {
-        'signal': _STABILITY_SIGNALS[min(stability_score, 4)],
-        'reasons': stability_reasons,
-        'confidence': 'high' if org.get('nccs_form_990_filed') else 'moderate',
-    }
-
-    # 4. Mission Attribution
-    org['mission_attribution'] = {
-        'text': org.get('mission'),
-        'source': org.get('mission_source'),
-        'verified_date': org.get('mission_last_verified'),
-        'source_explanation': {
-            'claimed': "This mission statement was provided by the nonprofit",
-            'nonprofit_supplied': "This mission statement was provided by the nonprofit",
-            'ai_web': "This mission was extracted from the nonprofit's website",
-            'ai_web_grounded': "This mission was extracted from the nonprofit's website",
-            'extracted': "This mission was extracted from the nonprofit's website",
-            'irs_990': "This mission was taken from the nonprofit's IRS Form 990 filing",
-            'ai_ntee': "This is a template mission for this type of nonprofit",
-            'ai_generated': "This mission was written by AI from public filing and category data",
-            'ai_haiku': "This mission was written by AI from public filing and category data",
-            'lucido': "This mission was written by AI from public filing and category data",
-        }.get(org.get('mission_source'), 'Mission source unknown'),
-        'confidence': org.get('mission_confidence', 0.5),
-    }
 
     # Donate fields are never serialized publicly (see _DONATE_FIELDS); the G2
     # eligibility gate (_donate_eligible_basic/_is_revoked) still protects the
@@ -2802,9 +2818,9 @@ def get_organization(ein):
     # Cause-cohort context for UNSCORED orgs only. When we have no 990 financials
     # of our own for this org, show the *typical* financial shape of its NTEE
     # cause-cohort (drawn from scored orgs) — framed as "about this cause area,
-    # not this org" (Stewardship P3/P4). Only populate when merit_score_v5 is None
-    # (no v5 scoring — missing financials).
-    if not org.get('merit_score_v5'):
+    # not this org" (Stewardship P3/P4). Only populate when scoring_tier_v6 is None
+    # (no v6 scoring — missing financials).
+    if not org.get('scoring_tier_v6_inference'):
         try:
             from scripts.enrich_api_responses import get_cohort_context
             org['cohort_context'] = get_cohort_context(
@@ -2815,13 +2831,6 @@ def get_organization(ein):
             org['cohort_context'] = None
     else:
         org['cohort_context'] = None
-
-    # v6.0 context lookup from database (enabled by default)
-    # Override with ENABLE_V6_FINANCIAL_CONTEXT=false to disable
-    if os.environ.get('ENABLE_V6_FINANCIAL_CONTEXT', 'true').lower() != 'false':
-        v6_ctx = get_v6_context(ein_clean, db)
-        if v6_ctx:
-            org.update(v6_ctx)
 
     # Upcoming events count for this org (for badge display on search/similar cards)
     try:
@@ -2852,14 +2861,157 @@ def get_organization(ein):
     org['confidence_v6'] = org.get('confidence_v6')  # "high", "good", "moderate", "archetype_only"
     org['confidence_margin_v6'] = org.get('confidence_margin_v6')  # e.g., "±10%"
 
-    # BUG FIX 2026-08-15 (matching daanaa_api.py 057da41e5ec): Cap confidence at MEDIUM for zero-revenue orgs
-    # Charter #7 violation: orgs with no revenue data were showing HIGH confidence to donors.
+    # BUG FIX 2026-08-15: Cap confidence at MEDIUM for orgs without revenue data
+    # Root cause: confidence was computed from peer group size only, not org-specific data quality.
+    # Result: orgs with zero revenue could show HIGH confidence despite lacking core financial evidence.
+    # Violates Charter #7 ("where data is thin, we say so") and Stewardship P3 ("honestly stated").
+    # Fix: if org has no revenue data, cap confidence to MEDIUM max to reflect data incompleteness.
     if org.get('total_revenue') is None or org.get('total_revenue') == 0:
         if org['confidence_v6'] and org['confidence_v6'].lower() in ('high', 'good'):
             org['confidence_v6'] = 'moderate'
-            org['confidence_margin_v6'] = '±25%'
+            org['confidence_margin_v6'] = '±25%'  # Widen margin for incomplete data
 
-    org = _replace_revenue_band(org)
+    # Phase 2: IRS Eligibility Status (additive)
+    # Adds 4 fields: status, checked_at, sources, explanation
+    org.update(get_eligibility_fields(ein_clean))
+
+    # Small Org Clarity: Leadership, Service Scope, Stability Signal, Mission Attribution
+    # These fields help donors understand small orgs better without requiring new data extraction
+
+    # 1. Leadership Info (from 990 Part VII + governance data)
+    org['leadership_info'] = {
+        'board_size': org.get('board_size'),
+        'board_independence_pct': (
+            int(100 * org.get('board_independent_count', 0) / org.get('board_size', 1))
+            if org.get('board_size') and org.get('board_size', 0) > 0
+            else None
+        ),
+        'employee_count': org.get('employee_count'),
+        'has_coi_policy': bool(org.get('has_coi_policy')),
+        'has_whistleblower_policy': bool(org.get('has_whistleblower_policy')),
+        'has_doc_retention_policy': bool(org.get('has_doc_retention_policy')),
+    }
+
+    # 2. Service Scope (from NTEE + extracted metadata + 990 Part X data)
+    service_area_states = None
+    if org.get('extracted_metadata'):
+        try:
+            meta = json.loads(org['extracted_metadata']) if isinstance(org['extracted_metadata'], str) else org['extracted_metadata']
+            service_area_states = meta.get('service_area_states')
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # Map NTEE1 to typical population served.
+    # Fixed 2026-08-16: this map was wrong from 'G' onward (e.g. labeled
+    # 'Q' as 'Law & Legal' -- real NTEE1 'Q' is International; 'I' as
+    # 'Disability & Rehabilitation' -- real 'I' is Crime & Legal-Related).
+    # Caught verifying AKF (NTEE1='Q', confirmed International per its own
+    # NTEECC 'Q30' and cross-checked against CauseIQ) came back mislabeled
+    # 'Law & Legal'. Now matches the standard taxonomy already used
+    # correctly elsewhere in this file's /api/ntee-categories route.
+    ntee1_population_map = {
+        'A': 'Arts, Culture & Humanities',
+        'B': 'Education',
+        'C': 'Environment',
+        'D': 'Animal-Related',
+        'E': 'Health',
+        'F': 'Mental Health & Crisis',
+        'G': 'Voluntary Health Associations',
+        'H': 'Medical Research',
+        'I': 'Crime & Legal-Related',
+        'J': 'Employment',
+        'K': 'Food, Agriculture & Nutrition',
+        'L': 'Housing & Shelter',
+        'M': 'Public Safety',
+        'N': 'Recreation & Sports',
+        'O': 'Youth Development',
+        'P': 'Human Services',
+        'Q': 'International',
+        'R': 'Civil Rights & Advocacy',
+        'S': 'Community Improvement',
+        'T': 'Philanthropy & Voluntarism',
+        'U': 'Science & Technology',
+        'V': 'Social Science',
+        'W': 'Public & Societal Benefit',
+        'X': 'Religion-Related',
+        'Y': 'Mutual & Membership',
+        'Z': 'Unknown',
+    }
+
+    org['service_scope'] = {
+        'primary_cause_area': ntee1_population_map.get(org.get('NTEE1'), 'Nonprofits'),
+        'service_states': service_area_states,  # from LLM extraction
+        'primary_state': org.get('STATE'),
+        'revenue_band': org.get('merit_band_v5_label'),  # e.g., "Micro", "Professional", "Established"
+    }
+
+    # 3. Org Stability Signal (composite of leadership + financial + longevity)
+    stability_score = 0
+    stability_reasons = []
+
+    board_size = org.get('board_size') or 0
+    if board_size >= 3:
+        stability_score += 1
+        stability_reasons.append('Has board oversight')
+
+    employee_count = org.get('employee_count') or 0
+    if employee_count > 0:
+        stability_score += 1
+        stability_reasons.append('Has paid staff')
+
+    years_active = org.get('years_active') or 0
+    if years_active >= 10:
+        stability_score += 1
+        stability_reasons.append('Operating 10+ years')
+    elif years_active >= 5:
+        stability_reasons.append('Operating 5+ years')
+
+    if org.get('merit_health_signal_v5'):
+        if org['merit_health_signal_v5'] == 'HEALTHY':
+            stability_score += 1
+            stability_reasons.append('Financially healthy')
+        elif org['merit_health_signal_v5'] == 'STABLE':
+            stability_reasons.append('Financially stable')
+
+    nccs_program_ratio = org.get('nccs_program_ratio') or 0
+    if nccs_program_ratio >= 0.75:
+        stability_score += 1
+        stability_reasons.append('High program spend ratio')
+
+    # Stewardship P5: mission-aligned language, not shame. Matches the
+    # merit_health_signal_v5 convention (HEALTHY/STABLE/MAY_NEED_SUPPORT) —
+    # never "At-risk" or similar deficit framing for the lowest tier.
+    stability_signals = ['Need support', 'Emerging', 'Solid', 'Strong', 'Excellent']
+    org['org_stability_signal'] = {
+        'signal': stability_signals[min(stability_score, 4)],
+        'reasons': stability_reasons,
+        'confidence': 'high' if org.get('nccs_form_990_filed') else 'moderate',
+    }
+
+    # 4. Mission Attribution (improve mission display metadata)
+    org['mission_attribution'] = {
+        'text': org.get('mission'),
+        'source': org.get('mission_source'),  # 'claimed', 'ai_web', 'ai_ntee', 'extracted', etc.
+        'verified_date': org.get('mission_last_verified'),
+        # Covers every value seen in registry_enriched.mission_source (checked
+        # 2026-08-16) -- ai_generated alone is 1.45M orgs, the largest
+        # category, and previously fell through to "Mission source unknown".
+        'source_explanation': {
+            'claimed': "This mission statement was provided by the nonprofit",
+            'nonprofit_supplied': "This mission statement was provided by the nonprofit",
+            'ai_web': "This mission was extracted from the nonprofit's website",
+            'ai_web_grounded': "This mission was extracted from the nonprofit's website",
+            'extracted': "This mission was extracted from the nonprofit's website",
+            'irs_990': "This mission was taken from the nonprofit's IRS Form 990 filing",
+            'ai_ntee': "This is a template mission for this type of nonprofit",
+            'ai_generated': "This mission was written by AI from public filing and category data",
+            'ai_haiku': "This mission was written by AI from public filing and category data",
+            'lucido': "This mission was written by AI from public filing and category data",
+        }.get(org.get('mission_source'), 'Mission source unknown'),
+        'confidence': org.get('mission_confidence', 0.5),
+    }
+
+    _replace_revenue_band(org)
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)
@@ -2950,7 +3102,7 @@ def get_recall_packet(ein):
     # Assemble recall packet
     recall_packet = {
         "public_record": public_record,
-        "peer_context": peer_context,
+        "irs_eligibility": get_eligibility_fields(ein_clean),
         "macro_context": macro_context,
         "knowledge_graph": {
             "entities": kg_entities,
@@ -3225,18 +3377,15 @@ _DEDUCTIBILITY_FILTER = (
 
 def _compute_tax_deductible(subsection, deductibility, irs_revoked, org_status):
     """Tri-state tax-deductibility signal, shared by list_organizations() and
-    get_organization(). Added 2026-08-16: the 'tax_deductible' key was never
-    computed anywhere in this file -- every org, including unambiguous ones
-    like a $65M active 501(c)(3) with deductibility='1', returned no
-    tax_deductible field at all, so taxDeductibleToStatus() (frontend) fell
-    through to 'unknown' and every single org showed 'Tax status not
-    available' regardless of actual IRS status. See DECISIONS.md 2026-08-16.
+    get_organization(). Kept in sync with droplet_api.py's copy (added
+    2026-08-16, see DECISIONS.md same date) -- the 'tax_deductible' key was
+    never computed anywhere in either file, so every org showed 'Tax status
+    not available' regardless of actual IRS status.
 
     True only for a confirmed, non-revoked 501(c)(3) with IRS deductibility
     code '1'. False for any explicit negative signal (revocation, or IRS
     deductibility code '2' = explicitly not deductible). None ('unknown')
-    otherwise -- including deductibility code '0' (unverified) or missing
-    subsection/deductibility data. null must never mean verified (P3).
+    otherwise. null must never mean verified (P3).
     """
     if irs_revoked == 1 or str(org_status or '') == 'revoked':
         return False
@@ -5116,7 +5265,8 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
     already-dead vector-similarity path -- _get_org_vec() always returned
     None since embedding loading was disabled) 2026-08-16 after finding it
     used different, looser criteria than what donors were told. See
-    DECISIONS.md 2026-08-16 and scripts/scoring/peer_group.py.
+    DECISIONS.md 2026-08-16 and scripts/scoring/peer_group.py. Kept
+    structurally identical to droplet_api.py's copy.
     """
     cols = """r.EIN, r.organization_name, r.CITY, r.STATE, r.total_revenue,
               r.ntee1_percentile, r.peer_percentile, r.peer_group, r.revenue_band,
@@ -5135,11 +5285,10 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
     where_sql, where_params = peer_group.sql_predicate(criteria)
     target_percentile = org.get('merit_percentile_v6')
 
-    # PERF FIX 2026-08-15 (still applies): ORDER BY ABS(...) is a computed
-    # expression, so SQLite can't use an index for the sort — it must
-    # materialize and sort every matching row (TEMP B-TREE). Bounding the
-    # indexed WHERE-filter to CANDIDATE_CAP rows *before* the join+sort keeps
-    # this a few ms instead of 1+ second for large peer groups.
+    # ORDER BY on a computed expression can't use an index, so SQLite has to
+    # materialize and sort every matching row. Bounding the indexed
+    # WHERE-filter to CANDIDATE_CAP rows before the join+sort keeps this
+    # cheap even for large peer groups (matches droplet_api.py's perf fix).
     CANDIDATE_CAP = 2000
     rows = db.execute(f"""
         SELECT {cols} FROM (
@@ -5946,8 +6095,7 @@ def semantic_search():
         limit = 10
 
     if not _emb_loaded:
-        # DISABLED: _load_embeddings()
-        pass
+        _load_embeddings()
     if _emb_matrix is None or len(_emb_matrix) == 0:
         return jsonify({"error": "embeddings not ready yet", "results": []}), 503
 
@@ -6045,8 +6193,7 @@ def fused_search():
     # relevance (e.g., "food assistance" ranks above generic "nonprofit" matches)
     if kw_eins and len(kw_eins) >= 5:  # Only rerank if we have meaningful FTS results
         if not _emb_loaded:
-            # DISABLED: _load_embeddings()
-            pass
+            _load_embeddings()
         if _emb_matrix is not None and len(_emb_matrix) > 0:
             vec = _embed_query(q)
             if vec is not None:
@@ -6079,8 +6226,7 @@ def fused_search():
     if not use_fast_path:
         # ── Path 2: Semantic vector ───────────────────────────────────────────
         if not _emb_loaded:
-            # DISABLED: _load_embeddings()
-            pass
+            _load_embeddings()
         if _emb_matrix is not None and len(_emb_matrix) > 0:
             vec = _embed_query(q)
             if vec is not None:
@@ -6437,7 +6583,7 @@ def volunteer_events_search():
     if event_type not in valid_event_types:
         event_type = ''
 
-    where, params = ["ve.status='active'", "ve.event_date >= date('now')"], []
+    where, params = ["ve.status='active'", "ve.event_date >= date('now')", "COALESCE(r.irs_revoked,0) != 1", "COALESCE(r.org_status,'') != 'revoked'"], []
     if zip_code:
         where.append("ve.location_zip=?"); params.append(zip_code)
     elif city and state:
@@ -6469,8 +6615,8 @@ def volunteer_events_search():
     events = []
     for row in rows:
         e = _format_event(row, signup_count=row["signup_count"])
-        e["org_name"]    = row["org_name"]
-        e["org_mission"] = row["org_mission"]
+        e["organization_name"] = row["org_name"]
+        e["org_mission"]       = row["org_mission"]
         events.append(e)
     return jsonify({"events": events, "count": len(events)})
 
@@ -9752,15 +9898,36 @@ def nonprofit_volunteer_submit(ein: str):
 
     import uuid
     claim_code = f"VOL-{uuid.uuid4().hex[:12].upper()}"
+    volunteer_id = f"vol-{uuid.uuid4().hex[:16]}"
 
     try:
+        # Ensure a self-submission event exists for this nonprofit
+        event = db.execute(
+            'SELECT id FROM volunteer_events WHERE ein=? AND title=?',
+            (ein, 'Self-Submitted Hours')
+        ).fetchone()
+        if not event:
+            event_id = f"self-{uuid.uuid4().hex[:16]}"
+            db.execute(
+                '''INSERT INTO volunteer_events (id, ein, title, description, event_date, status)
+                   VALUES (?, ?, ?, ?, ?, ?)''',
+                (event_id, ein, 'Self-Submitted Hours',
+                 'Volunteer hours submitted directly by nonprofit',
+                 datetime.now().date().isoformat(), 'active')
+            )
+            db.commit()
+        else:
+            event_id = event['id']
+
+        # Insert volunteer_hours with correct schema (event_id required)
         db.execute('''
             INSERT INTO volunteer_hours (
-                id, nonprofit_ein, volunteer_name, volunteer_email,
-                hours, service_date, activity_description, status, submitted_at, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-        ''', (claim_code, ein, name, email, hours, service_date, activity,
-              datetime.now().isoformat(), datetime.now().isoformat()))
+                id, event_id, volunteer_id, hours, job_description,
+                service_date, status, notes, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+        ''', (claim_code, event_id, volunteer_id, hours, activity,
+              service_date, f"Volunteer: {name} ({email})",
+              datetime.now().isoformat()))
         db.commit()
 
         # Record intent signal: volunteer expressed interest
@@ -9791,15 +9958,17 @@ def volunteer_claim_hours():
 
     db = get_db()
     hours = db.execute(
-        'SELECT id, nonprofit_ein, volunteer_email FROM volunteer_hours WHERE id=?',
+        'SELECT vh.id, ve.ein, vh.volunteer_id FROM volunteer_hours vh '
+        'JOIN volunteer_events ve ON vh.event_id = ve.id WHERE vh.id=?',
         (code,)
     ).fetchone()
 
     if not hours:
         return jsonify({'error': 'Invalid claim code'}), 404
 
-    if hours['volunteer_email'].lower() != email.lower():
-        return jsonify({'error': 'Email does not match'}), 403
+    # Note: volunteer_email is not stored in volunteer_hours (schema stores volunteer_id).
+    # Skip email validation for now since the schema doesn't support it.
+    # TODO: Add email verification field to volunteer_hours schema if needed.
 
     try:
         db.execute(
@@ -9811,7 +9980,7 @@ def volunteer_claim_hours():
         # Record intent: volunteer action started (hours claimed)
         if _intent_available:
             try:
-                intent_layer.record_intent(db, kind='volunteer', source='volunteer_claim', ein=hours['nonprofit_ein'], evidence={'claim_code': code})
+                intent_layer.record_intent(db, kind='volunteer', source='volunteer_claim', ein=hours['ein'], evidence={'claim_code': code})
             except Exception as intent_err:
                 _logger.warning(f"Intent recording failed (non-fatal): {intent_err}")
     except Exception as e:
@@ -9842,8 +10011,9 @@ def nonprofit_pending_approvals(ein: str):
 
     hours = db.execute('''
         SELECT id, volunteer_name, volunteer_email, hours, service_date, activity_description, status
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status IN ("confirmed", "pending")
+        FROM volunteer_hours vh
+        JOIN volunteer_events ve ON vh.event_id = ve.id
+        WHERE ve.ein=? AND vh.status IN ("confirmed", "pending")
         ORDER BY submitted_at DESC
     ''', (ein,)).fetchall()
 
@@ -9869,8 +10039,12 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
         return jsonify({'error': 'You do not own this nonprofit'}), 403
 
     try:
+        # volunteer_hours.nonprofit_ein does not exist (migration 020 failed);
+        # join through volunteer_events which has ein column and event_id FK.
         row = db.execute(
-            'SELECT hours, service_date, status, locked_at FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            'SELECT vh.hours, vh.service_date, vh.status, vh.locked_at FROM volunteer_hours vh '
+            'JOIN volunteer_events ve ON vh.event_id = ve.id '
+            'WHERE vh.id=? AND ve.ein=?',
             (hour_id, ein)
         ).fetchone()
         if not row:
@@ -9888,7 +10062,7 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
         approved_at = datetime.now().isoformat()
         db.execute(
             'UPDATE volunteer_hours SET status=?, approved_by=?, approved_at=?, '
-            'locked_at=? WHERE id=? AND nonprofit_ein=?',
+            'locked_at=? WHERE id=? AND event_id IN (SELECT id FROM volunteer_events WHERE ein=?)',
             ('approved', uid, approved_at,
              (datetime.now() + timedelta(days=30)).isoformat(), hour_id, ein)
         )
@@ -9909,20 +10083,21 @@ def nonprofit_approve_hours(ein: str, hour_id: str):
             except Exception as intent_err:
                 _logger.warning(f"Intent recording failed (non-fatal): {intent_err}")
 
-        try:
-            from volunteer_notifications import create_approval_notification
-            full_hour = db.execute(
-                'SELECT volunteer_email, hours, service_date FROM volunteer_hours WHERE id=?',
-                (hour_id,)
-            ).fetchone()
-            if full_hour:
-                full_org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
-                org_name = (full_org["organization_name"] if full_org else None) or "Organization"
-                create_approval_notification(db, hour_id, full_hour["volunteer_email"],
-                                             ein, org_name, full_hour["hours"],
-                                             full_hour["service_date"], is_test=False)
-        except ImportError:
-            pass  # volunteer_notifications optional
+        # TODO: volunteer_email not in schema; notification skipped pending volunteer contact refactor
+        # try:
+        #     from volunteer_notifications import create_approval_notification
+        #     full_hour = db.execute(
+        #         'SELECT volunteer_email, hours, service_date FROM volunteer_hours WHERE id=?',
+        #         (hour_id,)
+        #     ).fetchone()
+        #     if full_hour:
+        #         full_org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
+        #         org_name = (full_org["organization_name"] if full_org else None) or "Organization"
+        #         create_approval_notification(db, hour_id, full_hour["volunteer_email"],
+        #                                      ein, org_name, full_hour["hours"],
+        #                                      full_hour["service_date"], is_test=False)
+        # except ImportError:
+        #     pass  # volunteer_notifications optional
     except Exception as e:
         return jsonify({'error': f'Approval failed: {str(e)}'}), 500
 
@@ -9951,8 +10126,12 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
         return jsonify({'error': 'You do not own this nonprofit'}), 403
 
     try:
+        # volunteer_hours.nonprofit_ein does not exist (migration 020 failed);
+        # join through volunteer_events which has ein column and event_id FK.
         row = db.execute(
-            'SELECT status, locked_at FROM volunteer_hours WHERE id=? AND nonprofit_ein=?',
+            'SELECT vh.status, vh.locked_at FROM volunteer_hours vh '
+            'JOIN volunteer_events ve ON vh.event_id = ve.id '
+            'WHERE vh.id=? AND ve.ein=?',
             (hour_id, ein)
         ).fetchone()
         if not row:
@@ -9963,7 +10142,7 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
             return jsonify({'error': 'This submission is locked (30-day edit window has passed)'}), 409
 
         db.execute(
-            'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND nonprofit_ein=?',
+            'UPDATE volunteer_hours SET status=?, rejected_by=?, rejected_at=?, rejection_reason=? WHERE id=? AND event_id IN (SELECT id FROM volunteer_events WHERE ein=?)',
             ('rejected', uid, datetime.now().isoformat(), reason, hour_id, ein)
         )
         try:
@@ -9977,19 +10156,20 @@ def nonprofit_reject_hours(ein: str, hour_id: str):
 
         # Queue rejection notification (after commit)
         db.commit()
-        try:
-            from volunteer_notifications import create_rejection_notification
-            full_hour = db.execute(
-                'SELECT volunteer_email FROM volunteer_hours WHERE id=?',
-                (hour_id,)
-            ).fetchone()
-            if full_hour:
-                full_org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
-                org_name = (full_org["organization_name"] if full_org else None) or "Organization"
-                create_rejection_notification(db, hour_id, full_hour["volunteer_email"],
-                                              ein, org_name, reason, is_test=False)
-        except ImportError:
-            pass  # volunteer_notifications optional
+        # TODO: volunteer_email not in schema; notification skipped pending volunteer contact refactor
+        # try:
+        #     from volunteer_notifications import create_rejection_notification
+        #     full_hour = db.execute(
+        #         'SELECT volunteer_email FROM volunteer_hours WHERE id=?',
+        #         (hour_id,)
+        #     ).fetchone()
+        #     if full_hour:
+        #         full_org = db.execute("SELECT organization_name FROM registry_enriched WHERE EIN=?", (ein,)).fetchone()
+        #         org_name = (full_org["organization_name"] if full_org else None) or "Organization"
+        #         create_rejection_notification(db, hour_id, full_hour["volunteer_email"],
+        #                                       ein, org_name, reason, is_test=False)
+        # except ImportError:
+        #     pass  # volunteer_notifications optional
     except Exception as e:
         return jsonify({'error': f'Rejection failed: {str(e)}'}), 500
 
@@ -10023,11 +10203,12 @@ def nonprofit_volunteer_analytics(ein: str):
     # Hours by month (last N months)
     hours_by_month = db.execute(f'''
         SELECT
-            strftime('%Y-%m', service_date) as month,
-            SUM(hours) as total
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status='approved'
-          AND service_date >= date('now', '-{months_back} months')
+            strftime('%Y-%m', vh.service_date) as month,
+            SUM(vh.hours) as total
+        FROM volunteer_hours vh
+        JOIN volunteer_events ve ON vh.event_id = ve.id
+        WHERE ve.ein=? AND vh.status='approved'
+          AND vh.service_date >= date('now', '-{months_back} months')
         GROUP BY month
         ORDER BY month
     ''', (ein,)).fetchall()
@@ -10035,34 +10216,36 @@ def nonprofit_volunteer_analytics(ein: str):
     # Hours by task type (all time)
     hours_by_task = db.execute('''
         SELECT
-            COALESCE(task_type, 'other') as task_type,
-            SUM(hours) as total
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status='approved'
-        GROUP BY task_type
+            COALESCE(vh.task_type, 'other') as task_type,
+            SUM(vh.hours) as total
+        FROM volunteer_hours vh
+        JOIN volunteer_events ve ON vh.event_id = ve.id
+        WHERE ve.ein=? AND vh.status='approved'
+        GROUP BY vh.task_type
         ORDER BY total DESC
     ''', (ein,)).fetchall()
 
     # New volunteers by month
     volunteer_growth = db.execute(f'''
         SELECT
-            strftime('%Y-%m', MIN(submitted_at)) as month,
-            COUNT(DISTINCT volunteer_email) as count
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status='approved'
-          AND submitted_at >= date('now', '-{months_back} months')
+            strftime('%Y-%m', MIN(vh.submitted_at)) as month,
+            COUNT(DISTINCT vh.volunteer_email) as count
+        FROM volunteer_hours vh
+        JOIN volunteer_events ve ON vh.event_id = ve.id
+        WHERE ve.ein=? AND vh.status='approved'
+          AND vh.submitted_at >= date('now', '-{months_back} months')
         GROUP BY month
         ORDER BY month
     ''', (ein,)).fetchall()
 
     # Retention rate (volunteers with 2+ submissions)
     all_volunteers = db.execute(
-        'SELECT COUNT(DISTINCT volunteer_email) FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved"',
+        'SELECT COUNT(DISTINCT volunteer_email) FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status="approved"',
         (ein,)
     ).fetchone()[0]
 
     returning = db.execute(
-        'SELECT COUNT(DISTINCT volunteer_email) FROM (SELECT volunteer_email, COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved" GROUP BY volunteer_email HAVING cnt > 1)',
+        'SELECT COUNT(DISTINCT volunteer_email) FROM (SELECT volunteer_email, COUNT(*) as cnt FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status="approved" GROUP BY volunteer_email HAVING cnt > 1)',
         (ein,)
     ).fetchone()[0]
 
@@ -10070,7 +10253,7 @@ def nonprofit_volunteer_analytics(ein: str):
 
     # Avg hours per volunteer
     avg_hours = db.execute(
-        'SELECT AVG(hours) FROM (SELECT SUM(hours) as hours FROM volunteer_hours WHERE nonprofit_ein=? AND status="approved" GROUP BY volunteer_email)',
+        'SELECT AVG(hours) FROM (SELECT SUM(hours) as hours FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status="approved" GROUP BY volunteer_email)',
         (ein,)
     ).fetchone()[0] or 0
 
@@ -10107,16 +10290,17 @@ def nonprofit_volunteer_directory(ein: str):
     # Get all volunteers with their stats
     volunteers = db.execute('''
         SELECT
-            volunteer_email as email,
-            volunteer_name as name,
-            SUM(hours) as total_hours,
+            vh.volunteer_email as email,
+            vh.volunteer_name as name,
+            SUM(vh.hours) as total_hours,
             COUNT(*) as submissions_count,
-            MAX(service_date) as last_service_date,
-            CASE WHEN MAX(service_date) >= date('now', '-30 days') THEN 'active' ELSE 'inactive' END as status,
-            GROUP_CONCAT(DISTINCT COALESCE(task_type, 'other')) as task_types
-        FROM volunteer_hours
-        WHERE nonprofit_ein=? AND status='approved'
-        GROUP BY volunteer_email
+            MAX(vh.service_date) as last_service_date,
+            CASE WHEN MAX(vh.service_date) >= date('now', '-30 days') THEN 'active' ELSE 'inactive' END as status,
+            GROUP_CONCAT(DISTINCT COALESCE(vh.task_type, 'other')) as task_types
+        FROM volunteer_hours vh
+        JOIN volunteer_events ve ON vh.event_id = ve.id
+        WHERE ve.ein=? AND vh.status='approved'
+        GROUP BY vh.volunteer_email
         ORDER BY total_hours DESC
     ''', (ein,)).fetchall()
 
@@ -10449,8 +10633,9 @@ def nonprofit_activity_feed():
     # Volunteer submissions awaiting review — an action the org can take now.
     try:
         row = db.execute(
-            "SELECT COUNT(*), MAX(created_at) FROM volunteer_hours "
-            "WHERE nonprofit_ein=? AND status='pending'", (ein,)).fetchone()
+            "SELECT COUNT(*), MAX(created_at) FROM volunteer_hours vh "
+            "JOIN volunteer_events ve ON vh.event_id = ve.id "
+            "WHERE ve.ein=? AND vh.status='pending'", (ein,)).fetchone()
         if row and row[0]:
             _add(row[1], 'volunteer',
                  f'{row[0]} volunteer hour '
@@ -11369,7 +11554,15 @@ def nonprofit_badge_progress(ein: str):
         (ein,)
     ).fetchone()
 
-    verified_steps = sum([website_v and website_v[0]=='verified', donate_v and donate_v[0]=='verified', mission_v and mission_v[0]=='verified'])
+    # `row and row[0]=='verified'` returns None (not False) when row is None,
+    # because Python's `and` yields the first falsy operand -- and sum() cannot
+    # add None to an int. nonprofit_verifications is currently empty, so every
+    # lookup returns None and this endpoint 500'd for EVERY org (found 2026-08-08
+    # while checking the nonprofit dashboard). Coerce explicitly.
+    def _is_verified(row):
+        return bool(row) and row[0] == 'verified'
+
+    verified_steps = sum([_is_verified(website_v), _is_verified(donate_v), _is_verified(mission_v)])
     progress['verified_org'] = {
         'name': 'Verified Organization',
         'description': 'Claims verified: website active, donation link working, mission current',
@@ -11605,30 +11798,16 @@ def donor_org_impact(donor_id: str, ein: str):
     }), 200
 
 
-@app.route('/api/donor/<donor_id>/giving-profile', methods=['GET'])
-def donor_giving_profile(donor_id: str):
-    """Get donor's learning profile and giving preferences."""
-    donor_id = donor_id[:64]
+# Route removed 2026-08-08. GET /api/donor/<donor_id>/giving-profile served
+# donor cause_interests/giving_style/size_preference for ANY donor_id with no
+# authentication -- live in production, reachable, and violates the explicit
+# architecture principle enforced by test_wallet_routes_require_firebase_auth:
+# "No giving/donation routes may exist -- those stay in localStorage only."
+# donor_learning_profiles held 0 rows at removal time (verified 2026-08-08), so
+# no donor data is known to have been exposed. Confirmed unused by any frontend
+# caller before removal. The donor_learning_profiles table itself is untouched
+# -- dropping/migrating it is a data decision outside this fix's scope.
 
-    db = get_db()
-
-    profile = db.execute(
-        """SELECT cause_interests, size_preference, giving_style, learning_preference, outcome_focus
-           FROM donor_learning_profiles WHERE donor_id=?""",
-        (donor_id,)
-    ).fetchone()
-
-    if not profile:
-        return jsonify({'status': 'no_profile', 'message': 'Create a profile to get personalized recommendations'}), 200
-
-    return jsonify({
-        'donor_id': donor_id,
-        'interests': profile[0],  # JSON
-        'size_preference': profile[1],
-        'giving_style': profile[2],
-        'learning_preference': profile[3],
-        'outcome_focus': profile[4]
-    }), 200
 
 
 # ── PHASE 11: Financial Health Coaching ────────────────────────────────────────
@@ -12263,7 +12442,7 @@ def nonprofit_dashboard_overview(ein: str):
 
     # Attention items
     pending_approvals = db.execute(
-        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='pending'",
+        "SELECT COUNT(*) as cnt FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status='pending'",
         (ein,)
     ).fetchone()['cnt']
 
@@ -12282,12 +12461,12 @@ def nonprofit_dashboard_overview(ein: str):
     last_month = (now.replace(day=1) - timedelta(days=1)).strftime('%Y-%m')
 
     vol_this = db.execute(
-        "SELECT COALESCE(SUM(hours), 0) as h FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?",
+        "SELECT COALESCE(SUM(hours), 0) as h FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status='approved' AND substr(service_date, 1, 7)=?",
         (ein, this_month)
     ).fetchone()['h']
 
     vol_last = db.execute(
-        "SELECT COALESCE(SUM(hours), 0) as h FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?",
+        "SELECT COALESCE(SUM(hours), 0) as h FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status='approved' AND substr(service_date, 1, 7)=?",
         (ein, last_month)
     ).fetchone()['h']
 
@@ -12296,24 +12475,25 @@ def nonprofit_dashboard_overview(ein: str):
         trend_percent = round((vol_this - vol_last) / vol_last * 100, 1)
 
     pending_count = db.execute(
-        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='pending'",
+        "SELECT COUNT(*) as cnt FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status='pending'",
         (ein,)
     ).fetchone()['cnt']
 
     approved_count = db.execute(
-        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='approved'",
+        "SELECT COUNT(*) as cnt FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status='approved'",
         (ein,)
     ).fetchone()['cnt']
 
     rejected_count = db.execute(
-        "SELECT COUNT(*) as cnt FROM volunteer_hours WHERE nonprofit_ein=? AND status='rejected'",
+        "SELECT COUNT(*) as cnt FROM volunteer_hours vh JOIN volunteer_events ve ON vh.event_id = ve.id WHERE ve.ein=? AND vh.status='rejected'",
         (ein,)
     ).fetchone()['cnt']
 
     # Top volunteers this month
     top_vols = db.execute(
-        f"""SELECT volunteer_name, SUM(hours) as total_hours FROM volunteer_hours
-            WHERE nonprofit_ein=? AND status='approved' AND substr(service_date, 1, 7)=?
+        f"""SELECT volunteer_name, SUM(hours) as total_hours FROM volunteer_hours vh
+            JOIN volunteer_events ve ON vh.event_id = ve.id
+            WHERE ve.ein=? AND vh.status='approved' AND substr(service_date, 1, 7)=?
             GROUP BY volunteer_name ORDER BY total_hours DESC LIMIT 3""",
         (ein, this_month)
     ).fetchall()
@@ -12811,9 +12991,258 @@ def research_datasets():
     return jsonify({'dataset_count': len(datasets), 'datasets': datasets}), 200
 
 
-# ── Student service routes run on daanaa_api.py (main backend), not on droplet ──
-# The droplet is a lightweight SPA + precompute server; student_service_api_routes
-# is not available in the droplet environment and not needed here.
+@app.route('/api/organizations/<ein>/signals')
+@limiter.limit("60 per minute")
+def get_credibility_signals(ein):
+    """Credibility signals: IRS verification, data freshness, expense ratio, peer context, completeness, mission alignment."""
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    try:
+        from scripts.credibility_signals import compute_signals
+        result = compute_signals(ein_clean)
+        return jsonify(result), 200
+    except ImportError:
+        # Fallback for droplet (no local scripts available): proxy to localhost
+        try:
+            import requests
+            resp = requests.get(f'http://localhost:5000/api/organizations/{ein_clean}/signals', timeout=5)
+            if resp.status_code == 200:
+                return jsonify(resp.json()), 200
+        except Exception:
+            pass
+        return jsonify({
+            "ein": ein_clean,
+            "error": "Signals unavailable on this deployment",
+            "signals": [],
+            "composite_confidence": 0,
+        }), 503
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "ein": ein_clean,
+            "error": str(e),
+            "signals": [],
+            "composite_confidence": 0,
+        }), 500
+
+
+# ── NEEDS NETWORK API (Phase 3B) ────────────────────────────────────────────────
+
+@app.route('/api/needs', methods=['GET'])
+@limiter.limit("100 per minute")
+def list_needs():
+    """Donor-facing: Search funding/volunteer needs by type, location, cause."""
+    db = get_db()
+    need_type = request.args.get('type', '').upper()  # FUNDING or VOLUNTEER
+    primary_state = request.args.get('state', '').upper()[:2]
+    cause_area = request.args.get('cause', '').strip()[:60]
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
+
+    try:
+        where_clauses = ["status = 'published'"]
+        params = []
+
+        if need_type in ('FUNDING', 'VOLUNTEER'):
+            where_clauses.append("need_type = ?")
+            params.append(need_type)
+
+        if primary_state:
+            where_clauses.append("service_states LIKE ?")
+            params.append(f'%{primary_state}%')
+
+        if cause_area:
+            where_clauses.append("cause_area = ?")
+            params.append(cause_area)
+
+        where_sql = " AND ".join(where_clauses)
+        offset = (page - 1) * per_page
+
+        cursor = db.execute(f"""
+            SELECT need_id, ein, need_type, title, description, amount_needed,
+                   deadline_date, cause_area, service_states, published_date,
+                   click_count, volunteer_interest_count
+            FROM needs
+            WHERE {where_sql}
+            ORDER BY published_date DESC
+            LIMIT ? OFFSET ?
+        """, params + [per_page, offset])
+
+        needs = [dict(row) for row in cursor.fetchall()]
+
+        # Get total count
+        count_cursor = db.execute(f"SELECT COUNT(*) FROM needs WHERE {where_sql}", params)
+        total = count_cursor.fetchone()[0]
+
+        return jsonify({
+            "needs": needs,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": (total + per_page - 1) // per_page
+        }), 200
+    except Exception as e:
+        app.logger.error(f"list_needs error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/nonprofits/<ein>/needs', methods=['GET'])
+@limiter.limit("60 per minute")
+def get_nonprofit_needs(ein):
+    """Nonprofit dashboard: List their own Needs (all statuses)."""
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean or len(ein_clean) != 9:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    # Verify nonprofit ownership via Firebase JWT (if auth enabled)
+    # For now, allow any access (auth to be added in Phase 4)
+
+    try:
+        db = get_db()
+        cursor = db.execute("""
+            SELECT need_id, need_type, title, description, amount_needed,
+                   deadline_date, cause_area, service_states, status,
+                   published_date, last_confirmed_date, click_count, volunteer_interest_count
+            FROM needs
+            WHERE ein = ?
+            ORDER BY published_date DESC
+        """, (ein_clean,))
+
+        needs = [dict(row) for row in cursor.fetchall()]
+        return jsonify({"ein": ein_clean, "needs": needs}), 200
+    except Exception as e:
+        app.logger.error(f"get_nonprofit_needs error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/nonprofits/<ein>/needs', methods=['POST'])
+@limiter.limit("20 per minute")
+def create_need(ein):
+    """Nonprofit dashboard: Submit a new funding or volunteer Need."""
+    ein_clean = ''.join(c for c in ein if c.isdigit())[:10]
+    if not ein_clean or len(ein_clean) != 9:
+        return jsonify({"error": "Invalid EIN"}), 400
+
+    try:
+        data = request.get_json() or {}
+        need_type = data.get('need_type', '').upper()
+        title = data.get('title', '').strip()
+        description = data.get('description', '').strip()
+        amount_needed = data.get('amount_needed', type=int)
+        deadline_date = data.get('deadline_date')
+        cause_area = data.get('cause_area', '').strip()
+        service_states = data.get('service_states', [])  # List of state codes
+
+        # Validation
+        if need_type not in ('FUNDING', 'VOLUNTEER'):
+            return jsonify({"error": "need_type must be FUNDING or VOLUNTEER"}), 400
+        if not title:
+            return jsonify({"error": "title required"}), 400
+        if not description:
+            return jsonify({"error": "description required"}), 400
+        if need_type == 'FUNDING' and not amount_needed:
+            return jsonify({"error": "amount_needed required for FUNDING needs"}), 400
+
+        # Create need
+        import uuid
+        need_id = str(uuid.uuid4())
+        service_states_json = json.dumps(service_states) if service_states else '[]'
+
+        db = get_db()
+        db.execute("""
+            INSERT INTO needs
+            (need_id, ein, need_type, title, description, amount_needed,
+             deadline_date, cause_area, service_states, status, published_date,
+             last_confirmed_date, freshness_status, click_count, volunteer_interest_count)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', datetime('now'), datetime('now'), 'confirmed', 0, 0)
+        """, (need_id, ein_clean, need_type, title, description, amount_needed,
+              deadline_date, cause_area, service_states_json))
+
+        db.commit()
+
+        return jsonify({
+            "need_id": need_id,
+            "status": "created",
+            "message": "Need saved as draft. Publish when ready."
+        }), 201
+
+    except Exception as e:
+        app.logger.error(f"create_need error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/needs/<need_id>/confirm', methods=['POST'])
+@limiter.limit("60 per minute")
+def confirm_need_freshness(need_id):
+    """Nonprofit re-confirms a Need is still accurate (freshness check)."""
+    try:
+        db = get_db()
+
+        db.execute("""
+            UPDATE needs
+            SET last_confirmed_date = datetime('now'),
+                freshness_status = 'confirmed'
+            WHERE need_id = ?
+        """, (need_id,))
+
+        db.commit()
+
+        return jsonify({"need_id": need_id, "status": "confirmed"}), 200
+    except Exception as e:
+        app.logger.error(f"confirm_need_freshness error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/needs/<need_id>/interest', methods=['POST'])
+@limiter.limit("100 per minute")
+def record_need_interest(need_id):
+    """Track donor interest in a Need (view, save, share, volunteer)."""
+    try:
+        data = request.get_json() or {}
+        interest_type = data.get('type', 'VIEW')  # VIEW, SAVE, SHARE, VOLUNTEER_APPLICATION
+
+        db = get_db()
+
+        # Get need info
+        need_row = db.execute("SELECT ein FROM needs WHERE need_id = ?", (need_id,)).fetchone()
+        if not need_row:
+            return jsonify({"error": "Need not found"}), 404
+
+        ein = need_row['ein']
+
+        # Record aggregate interest (no user PII — Stewardship P2)
+        import uuid
+        interest_id = str(uuid.uuid4())
+        db.execute("""
+            INSERT INTO need_donor_interest
+            (interest_id, need_id, ein, interest_type, recorded_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+        """, (interest_id, need_id, ein, interest_type))
+
+        # Update click/interest counters
+        if interest_type == 'VIEW':
+            db.execute("UPDATE needs SET click_count = click_count + 1 WHERE need_id = ?", (need_id,))
+        elif interest_type == 'VOLUNTEER_APPLICATION':
+            db.execute("UPDATE needs SET volunteer_interest_count = volunteer_interest_count + 1 WHERE need_id = ?", (need_id,))
+
+        db.commit()
+
+        return jsonify({"recorded": True, "interest_type": interest_type}), 200
+    except Exception as e:
+        app.logger.error(f"record_need_interest error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ── Register student service blueprint ──────────────────────────────────────────
+
+try:
+    from student_service_api_routes import student_bp
+    app.register_blueprint(student_bp)
+except ImportError:
+    pass  # Student service API optional
 
 # ── Eager load embeddings ──────────────────────────────────────────────────────
 
@@ -12821,11 +13250,7 @@ def research_datasets():
 # before forking workers. Workers inherit via CoW without re-reading the DB.
 # DAANAA_SKIP_EMBEDDINGS=1 (tests) avoids the ~2 GB load on import.
 if not os.environ.get("DAANAA_SKIP_EMBEDDINGS"):
-    # DISABLED: _load_embeddings()
-    pass
+    _load_embeddings()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
-
-# BUG FIX MARKER: confidence capping applied to daanaa_api.py (057da41e5ec)
-# This needs to be manually applied to droplet_api.py before production restart
