@@ -35,48 +35,30 @@ import { trackAtAGlanceVisible } from '../utils/analytics'
  * Stewardship P3 (evidence-based), P4 (small org fairness), P5/P6 (honest transparency).
  */
 export default function AtAGlance({ org }: { org: ApiOrganization }) {
-  const { leadership_info, service_scope, org_stability_signal } = org
-
-  // Track when this section becomes visible for Phase 3 measurement (Gate A.1)
-  useEffect(() => {
-    trackAtAGlanceVisible(service_scope?.revenue_band)
-  }, [service_scope?.revenue_band])
+  const { leadership_info } = org
 
   const hasPolicies = !!leadership_info && (
     leadership_info.has_coi_policy || leadership_info.has_whistleblower_policy || leadership_info.has_doc_retention_policy
   )
 
   // Don't render if we have nothing left to say that isn't said elsewhere
-  if (!hasPolicies && !org_stability_signal) {
+  if (!hasPolicies) {
     return null
   }
 
-  // Stewardship P5: mission-aligned language, not shame. The lowest tier
-  // ("Need support") deliberately gets no alarm color — matches the neutral,
-  // no-color treatment PeerContextBreakdown.tsx already uses for its lowest
-  // tier (CAUTION). Never red/"At-risk" — a nonprofit having less financial
-  // cushion is not a verdict on the organization.
-  const stabilityColors: Record<string, { bgClass: string; borderClass: string; textColor: string; label: string }> = {
-    'Excellent': { bgClass: 'bg-green-50', borderClass: 'border-green-200', textColor: '#15803d', label: 'Excellent' },
-    'Strong': { bgClass: 'bg-blue-50', borderClass: 'border-blue-200', textColor: '#1e40af', label: 'Strong' },
-    'Solid': { bgClass: 'bg-blue-50', borderClass: 'border-blue-200', textColor: '#1e40af', label: 'Solid' },
-    'Emerging': { bgClass: 'bg-amber-50', borderClass: 'border-amber-200', textColor: '#b45309', label: 'Emerging' },
-    'Need support': { bgClass: 'bg-slate-50', borderClass: 'border-light-grey', textColor: '#475569', label: 'Need support' },
-  }
-
-  const signal = org_stability_signal?.signal as string | null
-  const signalColor = signal ? stabilityColors[signal] : null
+  // NOTE: Stability card removed 2026-08-17. It duplicated BoardReviewSimulation
+  // (same signal + reasons + confidence structure), which is rendered below on the
+  // same page. Keeping Governance policies card only — that's unique to this component.
 
   return (
     <div className="mb-12">
       {/* Section title */}
       <h2 className="font-display italic text-deep-navy text-title-sm mb-6">At a glance</h2>
 
-      {/* At most 2 cards now (Leadership policies, Stability) -- grid capped
-          at 2 columns so a single surviving card doesn't stretch full-width
-          on wide screens. */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+      {/* Governance policies only — board size, stability signal, and other
+          assessments are now handled by dedicated sections below (BoardReviewSimulation,
+          FinancialContext, PeerContextBreakdown), eliminating duplication. */}
+      <div>
         {/* Leadership — governance policies only. Board size / independence %
             / employee count live in the header stats grid above; repeating
             them here was the main source of the page duplication. */}
@@ -111,33 +93,6 @@ export default function AtAGlance({ org }: { org: ApiOrganization }) {
             </div>
           </div>
         )}
-
-        {/* Org Stability Signal — the one AtAGlance card with no duplicate
-            elsewhere on the page. */}
-        {org_stability_signal && signal && signalColor && (
-          <div className={`rounded-xl p-5 border-2 ${signalColor.bgClass} ${signalColor.borderClass}`} role="status">
-            <h3 className="font-body text-small font-semibold mb-3 text-deep-navy">Stability</h3>
-            <div className="inline-block px-3 py-1.5 rounded-full font-body text-small font-semibold mb-3 text-white" style={{ backgroundColor: signalColor.textColor }}>
-              {signal}
-            </div>
-            {org_stability_signal.reasons && org_stability_signal.reasons.length > 0 && (
-              <div className="space-y-1">
-                {org_stability_signal.reasons.slice(0, 3).map((reason, idx) => (
-                  <div key={idx} className="font-body text-small flex items-start gap-1.5" style={{ color: signalColor.textColor }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="mt-0.5 shrink-0">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                    <span>{reason}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="mt-3 font-body text-xs text-cool-grey/60">
-              {org_stability_signal.confidence === 'high' ? 'High confidence' : 'Moderate confidence'}
-            </div>
-          </div>
-        )}
-
       </div>
     </div>
   )
