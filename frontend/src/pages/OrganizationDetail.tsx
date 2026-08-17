@@ -42,6 +42,7 @@ import { normalizeExternalUrl } from '../utils/externalLink'
 import AtAGlance from '../components/AtAGlance'
 import ExpenseBreakdown from '../components/ExpenseBreakdown'
 import FinancialTrends from '../components/FinancialTrends'
+import { nonprofitSizeLabel } from '../utils/orgSize'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
 function DataFreshnessBadge({ taxYear, dataSource, updatedAt }: {
@@ -228,6 +229,58 @@ function adaptOrg(apiOrg: ApiOrganization) {
 }
 
 const AI_MISSION_SOURCES = new Set(['ai_ntee', 'ai_haiku', 'ai_web', 'ai_generated'])
+function IrsProgramNarrative({ narratives, prominent = false }: {
+  narratives: NonNullable<ApiOrganization['irs_program_narrative']>
+  prominent?: boolean
+}) {
+  const filingYears = [...new Set(narratives.map(({ year }) => year).filter((year): year is number => Number.isFinite(year)))].sort((a, b) => a - b)
+  const filingCount = filingYears.length
+  const coverage = filingCount > 1 ? `${filingYears[0]} to ${filingYears[filingYears.length - 1]}` : String(filingYears[0] ?? '')
+  return (
+    <section className={prominent ? 'mt-6 sm:mt-8 max-w-[680px]' : 'mt-6'} aria-labelledby="irs-program-narrative">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <h2 id="irs-program-narrative" className={`font-display italic text-warm-cream ${prominent ? 'text-title-lg' : 'text-title-sm'}`}>In their own words</h2>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-soft-gold/40 bg-soft-gold/10 px-2.5 py-1 font-body text-micro font-medium text-soft-gold">IRS filing text</span>
+      </div>
+      <p className="font-body text-caption text-muted-cream mb-3">Program descriptions from {filingCount} IRS {filingCount === 1 ? 'filing' : 'filings'}{coverage ? `, ${coverage}` : ''}</p>
+      <div className={`border border-white/10 bg-white/6 rounded-xl ${prominent ? 'px-5 py-4' : 'px-4 py-3'} max-w-[680px]`}>
+        <p className={`font-body text-warm-cream/90 leading-[1.7] whitespace-pre-wrap ${prominent ? 'text-body' : 'text-small'}`}>{narratives[0].text}</p>
+        <p className="mt-3 font-body text-micro text-muted-cream tracking-[0.01em]">From the organization's {narratives[0].year} IRS filing</p>
+        {narratives.length > 1 && (
+          <details className="mt-4 border-t border-white/10 pt-3">
+            <summary className="cursor-pointer font-body text-small font-medium text-soft-gold hover:text-bright-gold transition-colors">Read {narratives.length - 1} more {narratives.length === 2 ? 'program description' : 'program descriptions'}</summary>
+            <div className="mt-4 space-y-5">
+              {narratives.slice(1).map((narrative, index) => (
+                <div key={`${narrative.year}-${index}`}>
+                  <p className="font-body text-small text-warm-cream/85 leading-[1.65] whitespace-pre-wrap">{narrative.text}</p>
+                  <p className="mt-2 font-body text-micro text-muted-cream">From the organization's {narrative.year} IRS filing</p>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function ProfileCompletionPrompt({ href, label }: { href: string; label: string }) {
+  return (
+    <div className="mt-4 max-w-[600px] border border-white/10 rounded-xl px-4 py-3">
+      <p className="font-body text-small font-medium text-warm-cream">Help complete this profile</p>
+      <p className="mt-1 font-body text-caption text-muted-cream">Learn more about this organization's work using the link below.</p>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-2 inline-flex items-center gap-1 font-body text-small text-soft-gold hover:text-bright-gold transition-colors"
+      >
+        {label}
+        <span aria-hidden="true">→</span>
+      </a>
+    </div>
+  )
+}
 
 // One shared control for the funding (green) and volunteering (red) intent
 // hearts. Both live on the page in two placements each (compact icon in the
@@ -492,6 +545,15 @@ export default function OrganizationDetail() {
   // Computed once and reused — the Ways-to-Support card and the public-record
   // fallback both need these links (was called twice). Lean: no repeated work.
   const actionLinks = getActionRowLinks(apiOrg!)
+  const isSmallOrg = ['Micro', 'Small'].includes(nonprofitSizeLabel(apiOrg!.total_revenue) ?? '')
+  const irsProgramNarratives = apiOrg!.irs_program_narrative?.filter(
+    (narrative) => Boolean(narrative.text?.trim())
+  ) ?? []
+  const profileCompletionLink = actionLinks.donateUrl
+    ? { href: actionLinks.donateUrl, label: 'Visit donation page' }
+    : actionLinks.websiteUrl
+      ? { href: actionLinks.websiteUrl, label: 'Visit website' }
+      : null
 
   // FinancialContext already shows "Reserves" (the months_of_reserve figure)
   // for Tier 1/2 orgs, in its own peer-comparison framing. Showing the same
@@ -562,6 +624,12 @@ export default function OrganizationDetail() {
                   {org.name}
                 </h1>
               </div>
+
+              {isSmallOrg && (irsProgramNarratives.length > 0 ? (
+                <IrsProgramNarrative narratives={irsProgramNarratives} prominent />
+              ) : profileCompletionLink ? (
+                <ProfileCompletionPrompt {...profileCompletionLink} />
+              ) : null)}
 
               {/* Mission statement — all caps, no italics, sits under the name to
                   clarify what's a proper noun and what's descriptive. Simple. */}
@@ -798,28 +866,9 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
-              {/* In Their Own Words — real Schedule O / Part III program narrative
-                  text pulled directly from the org's own IRS filing (added
-                  2026-08-17, GT990 backfill). Distinct from the AI-generated
-                  `mission` field above: this is the org's own filed text, not
-                  a summary. Most valuable for the smallest orgs (990-EZ
-                  filers) which previously had the thinnest pages on the
-                  platform. Renders nothing when the array is empty -- most
-                  orgs won't have this data yet. Only the most recent filing
-                  year is shown to keep the page uncluttered; older years
-                  remain in the API response if a future UI wants them. */}
-              {apiOrg?.irs_program_narrative && apiOrg.irs_program_narrative.length > 0 && (
-                <div className="mt-6">
-                  <p className="text-soft-gold text-sm font-medium mb-3">In their own words</p>
-                  <div className="bg-white/6 border border-white/10 rounded-xl px-4 py-3 max-w-[600px]">
-                    <p className="font-body text-small text-warm-cream/85 leading-[1.65] whitespace-pre-wrap">
-                      {apiOrg.irs_program_narrative[0].text}
-                    </p>
-                    <p className="mt-2 font-body text-micro text-muted-cream tracking-[0.01em]">
-                      From the organization's {apiOrg.irs_program_narrative[0].year} IRS filing
-                    </p>
-                  </div>
-                </div>
+              {/* Large organizations retain the mission as their lead narrative. */}
+              {!isSmallOrg && irsProgramNarratives.length > 0 && (
+                <IrsProgramNarrative narratives={irsProgramNarratives} />
               )}
 
               {/* Donor Voice — social proof from people who've supported this org.

@@ -2670,6 +2670,25 @@ def get_organization(ein):
     ).fetchall()
     org['revenue_history'] = [dict(r) for r in history_rows]
 
+    # Real IRS program/Schedule O narrative text (added 2026-08-17, GT990
+    # historical backfill -- 183K rows, mostly from 990-EZ filers, the
+    # smallest orgs on the platform). Filtered to schedule_o_source=
+    # 'irs_990_xml' (this pipeline's own writes, not the older propublica_api
+    # default) and >=100 chars -- verified against a real sample that
+    # shorter rows are almost always stray fragments (compensation notes,
+    # meeting-schedule lines), not program descriptions. Distinct from the
+    # AI-generated `mission` field: this is the org's own filed text.
+    narrative_rows = db.execute(
+        "SELECT schedule_o_year, schedule_o_text, extraction_confidence "
+        "FROM extracted_programs WHERE EIN = ? AND schedule_o_source = 'irs_990_xml' "
+        "AND LENGTH(schedule_o_text) >= 100 ORDER BY schedule_o_year DESC",
+        (ein_clean,)
+    ).fetchall()
+    org['irs_program_narrative'] = [
+        {"year": r["schedule_o_year"], "text": r["schedule_o_text"], "confidence": r["extraction_confidence"]}
+        for r in narrative_rows
+    ]
+
     # Donate fields are never serialized publicly (see _DONATE_FIELDS); the G2
     # eligibility gate (_donate_eligible_basic/_is_revoked) still protects the
     # claim flow, where donate data remains in use.
