@@ -1,0 +1,183 @@
+import { ApiOrganization } from '../data/api'
+import { formatCurrency, formatNumber } from '../data/organizations'
+
+/**
+ * WhyTrustThem: Unified Trust Narrative
+ *
+ * Combines financial health, governance quality, and verification status
+ * into a coherent story for donors. Stewardship P3 (evidence-based),
+ * P4 (small org fairness), P5 (honest transparency), P9 (explainability).
+ */
+export default function WhyTrustThem({ org }: { org: ApiOrganization }) {
+  const hasFinancials = org.total_revenue !== null || org.months_of_reserve !== null
+  const hasGovernance = org.leadership_info && (
+    org.leadership_info.board_size || org.leadership_info.employee_count
+  )
+  const hasVerification = org.latest_tax_year !== null
+
+  if (!hasFinancials && !hasGovernance && !hasVerification) {
+    return null
+  }
+
+  return (
+    <section className="mb-16 py-12 md:py-16 border-b border-cool-grey/20">
+      <h2 className="font-display italic text-deep-navy text-title-sm mb-8">Why should you trust them?</h2>
+
+      <div className="space-y-8">
+        {/* Financial Strength */}
+        {hasFinancials && (
+          <div>
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-4 uppercase tracking-wide">Financial Strength</h3>
+            <div className="space-y-3 mb-4">
+              {org.total_revenue !== null && (
+                <div className="flex justify-between items-baseline">
+                  <span className="font-body text-base text-cool-grey">Annual revenue</span>
+                  <span className="font-body text-base font-medium text-deep-navy">{formatCurrency(org.total_revenue)}</span>
+                </div>
+              )}
+              {org.months_of_reserve !== null && (
+                <div className="flex justify-between items-baseline">
+                  <span className="font-body text-base text-cool-grey">Months of reserves</span>
+                  <span className="font-body text-base font-medium text-deep-navy">
+                    {org.months_of_reserve > 999 ? '999+' : org.months_of_reserve < 0 ? `(${Math.round(Math.abs(org.months_of_reserve))})` : Math.round(org.months_of_reserve)} months
+                  </span>
+                </div>
+              )}
+            </div>
+            <p className="font-body text-small text-cool-grey leading-relaxed">
+              {org.months_of_reserve === null
+                ? 'This organization maintains a solid financial position to support their mission.'
+                : org.months_of_reserve < 0
+                ? 'This organization is managing through a challenging financial period but remains committed to their mission.'
+                : org.months_of_reserve < 3
+                ? 'This organization maintains modest reserves and is actively managing cash flow to continue their work.'
+                : 'This organization has built a solid financial cushion and can weather economic changes while continuing their mission.'}
+            </p>
+          </div>
+        )}
+
+        {/* Governance & Leadership */}
+        {hasGovernance && (
+          <div>
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-4 uppercase tracking-wide">Governance & Leadership</h3>
+            <div className="space-y-3 mb-4">
+              {org.leadership_info!.board_size && org.leadership_info!.board_size > 0 && (
+                <div className="flex justify-between items-baseline">
+                  <span className="font-body text-base text-cool-grey">Board size</span>
+                  <span className="font-body text-base font-medium text-deep-navy">
+                    {formatNumber(org.leadership_info!.board_size)} members
+                    {org.leadership_info!.board_independence_pct !== undefined && org.leadership_info!.board_independence_pct !== null && (
+                      <span className="text-cool-grey">, {Math.round(org.leadership_info!.board_independence_pct)}% independent</span>
+                    )}
+                  </span>
+                </div>
+              )}
+              {org.leadership_info!.employee_count && org.leadership_info!.employee_count > 0 && (
+                <div className="flex justify-between items-baseline">
+                  <span className="font-body text-base text-cool-grey">Staff</span>
+                  <span className="font-body text-base font-medium text-deep-navy">{formatNumber(org.leadership_info!.employee_count)} employees</span>
+                </div>
+              )}
+              {(org.leadership_info!.has_coi_policy || org.leadership_info!.has_whistleblower_policy || org.leadership_info!.has_doc_retention_policy) && (
+                <div className="flex items-start gap-2">
+                  <span className="font-body text-base text-cool-grey">Policies in place</span>
+                  <div className="flex flex-col gap-1">
+                    {org.leadership_info!.has_coi_policy && (
+                      <span className="inline-flex items-center gap-1.5 text-sm text-deep-navy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Conflict of Interest
+                      </span>
+                    )}
+                    {org.leadership_info!.has_whistleblower_policy && (
+                      <span className="inline-flex items-center gap-1.5 text-sm text-deep-navy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Whistleblower Protection
+                      </span>
+                    )}
+                    {org.leadership_info!.has_doc_retention_policy && (
+                      <span className="inline-flex items-center gap-1.5 text-sm text-deep-navy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Document Retention
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <p className="font-body text-small text-cool-grey leading-relaxed">
+              {org.leadership_info!.board_size && org.leadership_info!.board_size >= 5
+                ? 'A strong board and experienced staff team indicate sound organizational oversight and continuity.'
+                : "Active leadership is engaged in guiding the organization's mission."}
+            </p>
+          </div>
+        )}
+
+        {/* Peer Group Comparison */}
+        {org.peer_total && org.peer_total > 0 && org.peer_percentile !== null && (
+          <div>
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-4 uppercase tracking-wide">How they compare</h3>
+            <div className="space-y-3 mb-4">
+              <div className="flex justify-between items-baseline">
+                <span className="font-body text-base text-cool-grey">Financial ranking</span>
+                <span className="font-body text-base font-medium text-deep-navy">
+                  Top {Math.round(100 - org.peer_percentile)}% of similar organizations
+                </span>
+              </div>
+              {org.peer_group && (
+                <div className="flex justify-between items-baseline">
+                  <span className="font-body text-base text-cool-grey">Peer group size</span>
+                  <span className="font-body text-base font-medium text-deep-navy">{formatNumber(org.peer_total)} similar organizations</span>
+                </div>
+              )}
+              {org.revenue_band && (
+                <div className="flex justify-between items-baseline">
+                  <span className="font-body text-base text-cool-grey">Size category</span>
+                  <span className="font-body text-base font-medium text-deep-navy">{org.revenue_band}</span>
+                </div>
+              )}
+            </div>
+            <p className="font-body text-small text-cool-grey leading-relaxed">
+              This organization's financial profile places it in the top tier among {org.peer_total} similar organizations in their sector and size range.
+            </p>
+          </div>
+        )}
+
+        {/* Verification Status */}
+        {hasVerification && (
+          <div className="p-4 bg-soft-gold/10 rounded-lg border border-soft-gold/20">
+            <h3 className="font-body text-small font-semibold text-deep-navy mb-3">Verification Status</h3>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span className="font-body text-small text-deep-navy">US IRS 501(c)(3) nonprofit</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span className="font-body text-small text-deep-navy">
+                  Form 990 on file {org.latest_tax_year && `(FY ${org.latest_tax_year})`}
+                </span>
+              </div>
+              {org.data_source && (
+                <div className="flex items-center gap-2 mt-2 pt-2 border-t border-soft-gold/20">
+                  <span className="font-body text-caption text-cool-grey">
+                    Data verified by {org.data_source === 'propublica' ? 'ProPublica Nonprofit Explorer' : org.data_source === 'nccs' ? 'NCCS' : 'IRS'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}

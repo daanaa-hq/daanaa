@@ -44,6 +44,9 @@ import ExpenseBreakdown from '../components/ExpenseBreakdown'
 import FinancialTrends from '../components/FinancialTrends'
 import BoardReviewSimulation from '../components/BoardReviewSimulation'
 import PeerMethodologyExplainer from '../components/PeerMethodologyExplainer'
+import WhatTheyDo from '../components/WhatTheyDo'
+import WhyTrustThem from '../components/WhyTrustThem'
+import HowToHelp from '../components/HowToHelp'
 import { nonprofitSizeLabel } from '../utils/orgSize'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
@@ -990,33 +993,21 @@ export default function OrganizationDetail() {
       <div className="py-12 md:py-16 bg-warm-cream">
         <div className="max-w-[1200px] mx-auto px-6 lg:px-12">
 
-          {/* At a Glance moved to header section (Phase 1, 2026-08-13)
-              Reposition for decision-grade org page flow: key stats → glance → financial context */}
+          {/* Mockup-aligned narrative flow (2026-08-17): the page now follows a coherent
+              donor journey: What → Why → How → Details → Similar orgs. Each section is
+              self-contained so donors can skim or dive deep as needed. */}
 
-          {/* SECTION: Financial Health — helps users scan and understand page structure */}
-          <div className="mb-2">
-            <h2 className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">Financial Health</h2>
-          </div>
+          {/* SECTION 1: What do they do? Mission + programs in donor-friendly language */}
+          {apiOrg && <WhatTheyDo org={apiOrg} />}
 
-          {/* Peer financial context — the central financial insight. Each tier
-              branch in FinancialContext renders its own styled card, so no
-              extra wrapper here. */}
-          {apiOrg && <FinancialContext org={apiOrg} />}
+          {/* SECTION 2: Why trust them? Unified narrative: financial + governance + verification */}
+          {apiOrg && <WhyTrustThem org={apiOrg} />}
 
-          {/* Board Review Simulation — P9 Explainability.
-              Neutral assessment of how a board/funder would perceive the org
-              based on financial data. Not a score or ranking, but an evidence-based
-              narrative. Stewardship P3 (evidence-based), P4 (no size bias),
-              P5 (no shame framing). */}
-          {apiOrg && <BoardReviewSimulation org={apiOrg} />}
+          {/* SECTION 3: How to help? Impact story + expense allocation */}
+          {apiOrg && <HowToHelp org={apiOrg} />}
 
-          {/* Peer Methodology Explainer — P9 Explainability.
-              Shows how the peer group was constructed (NTEE + revenue band +
-              region) so donors understand "top 30% of what?" */}
-          {apiOrg && <PeerMethodologyExplainer org={apiOrg} />}
-
-          {/* SECTION: Ways to Support — helps users scan and understand page structure */}
-          <div className="mt-12 mb-4">
+          {/* SECTION 4: Ways to Support — Direct giving methods (moved here for narrative flow) */}
+          <div className="mb-4">
             <h2 className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">Ways to Support</h2>
           </div>
 
@@ -1026,6 +1017,28 @@ export default function OrganizationDetail() {
               <OrgInfoHierarchy org={apiOrg} />
             </div>
           )}
+
+          {/* SECTION 5: Deep Dive — Detailed financial context for interested donors */}
+          <div className="mt-16 pt-12 border-t border-cool-grey/20 mb-16">
+            <h2 className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase mb-8">Deep Dive: Financial Context</h2>
+
+            {/* Peer financial context — the central financial insight. Each tier
+                branch in FinancialContext renders its own styled card, so no
+                extra wrapper here. */}
+            {apiOrg && <FinancialContext org={apiOrg} />}
+
+            {/* Board Review Simulation — P9 Explainability.
+                Neutral assessment of how a board/funder would perceive the org
+                based on financial data. Not a score or ranking, but an evidence-based
+                narrative. Stewardship P3 (evidence-based), P4 (no size bias),
+                P5 (no shame framing). */}
+            {apiOrg && <BoardReviewSimulation org={apiOrg} />}
+
+            {/* Peer Methodology Explainer — P9 Explainability.
+                Shows how the peer group was constructed (NTEE + revenue band +
+                region) so donors understand "top 30% of what?" */}
+            {apiOrg && <PeerMethodologyExplainer org={apiOrg} />}
+          </div>
 
           {/* Provenance Layer Separation removed 2026-08-15 (donor readability
               pass): every field it showed — EIN, location, revenue, NTEE
