@@ -108,6 +108,25 @@ retry rsync --copy-links --checksum \
     "$BASE/scripts/scoring/peer_group.py" \
     "$DROPLET:/opt/daanaa/scripts/scoring/peer_group.py" 2>>"$LOG"
 
+# migrations/ (2026-08-17, found this run): this script has only ever shipped
+# droplet_api.py -- migrations/ was never part of any deploy path (verified:
+# neither this script nor safe_deploy_droplet.sh syncs it). droplet_api.py's
+# own _run_migrations() runs at module import against /opt/daanaa/migrations/,
+# so any migration applied locally (and even founder-approved) silently never
+# reached production. Migration 023 (org_revenue_history) shipped in
+# droplet_api.py's CODE without its own migration file ever arriving --
+# _run_migrations() found nothing to apply, the table was never created, and
+# every GET /api/organizations/<ein> request 500'd
+# ("no such table: org_revenue_history") until this was caught live and fixed
+# by hand. _run_migrations() tracks applied-by-filename in _migration_log and
+# is idempotent (CREATE TABLE/INDEX IF NOT EXISTS), so syncing the whole
+# directory on every deploy is safe -- already-applied files are skipped.
+log "Deploying migrations/..."
+$SSH "mkdir -p /opt/daanaa/migrations"
+retry rsync --checksum \
+    -e "ssh -i $SSH_KEY -o BatchMode=yes -o StrictHostKeyChecking=accept-new" \
+    "$BASE/migrations/" "$DROPLET:/opt/daanaa/migrations/" 2>>"$LOG"
+
 # Deploy new version
 #
 # --copy-links (2026-08-16, found this run): LOCAL_API is now a symlink
@@ -160,7 +179,15 @@ smoke() {
     # Directory listing route — died independently of /api/search in the
     # 2026-07-06 incident ("no such column: subsection"), so check it too.
     curl -sS --max-time 90 -o /dev/null -w '%{http_code}' \
-        'https://daanaa.org/api/organizations?state=TX&limit=1' 2>>"$LOG" | grep -q '^200$'
+        'https://daanaa.org/api/organizations?state=TX&limit=1' 2>>"$LOG" | grep -q '^200$' || return 1
+    # Single org-detail route (2026-08-17 incident): the 2026-08-17 outage
+    # ("no such table: org_revenue_history") lived here specifically -- list
+    # and search both stayed 200 the whole time, so this smoke test would
+    # NOT have caught it without this check. EIN 521231983 (AKF) is a stable,
+    # always-present real org used elsewhere in this codebase's own
+    # verification steps.
+    curl -sS --max-time 90 -o /dev/null -w '%{http_code}' \
+        'https://daanaa.org/api/organizations/521231983' 2>>"$LOG" | grep -q '^200$'
 }
 
 # Smoke runs UNCONDITIONALLY and decides the outcome. Previously a FAILED
