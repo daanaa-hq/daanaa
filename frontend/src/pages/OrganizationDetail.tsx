@@ -43,6 +43,7 @@ import AtAGlance from '../components/AtAGlance'
 import ExpenseBreakdown from '../components/ExpenseBreakdown'
 import FinancialTrends from '../components/FinancialTrends'
 import BoardReviewSimulation from '../components/BoardReviewSimulation'
+import PeerMethodologyExplainer from '../components/PeerMethodologyExplainer'
 import { nonprofitSizeLabel } from '../utils/orgSize'
 // ---- Metric Card ----
 // ---- Data freshness badge ----
@@ -1003,6 +1004,11 @@ export default function OrganizationDetail() {
               narrative. Stewardship P3 (evidence-based), P4 (no size bias),
               P5 (no shame framing). */}
           {apiOrg && <BoardReviewSimulation org={apiOrg} />}
+
+          {/* Peer Methodology Explainer — P9 Explainability.
+              Shows how the peer group was constructed (NTEE + revenue band +
+              region) so donors understand "top 30% of what?" */}
+          {apiOrg && <PeerMethodologyExplainer org={apiOrg} />}
 
           {/* Ways to Give — Mission-aligned giving methods */}
           {apiOrg && (
