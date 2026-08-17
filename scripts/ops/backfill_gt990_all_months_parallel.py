@@ -123,7 +123,36 @@ def save_state(path: Path, state: dict) -> None:
 
 
 def validate_mission_quality(mission: str | None) -> dict:
-    """Advisory-only quality flag. See module docstring for the exact heuristic."""
+    """Advisory-only quality flag. See module docstring for the exact heuristic.
+
+    Two real bugs found and fixed 2026-08-17, discovered by manually sampling
+    real, freshly-written mission text and finding it consistently legitimate
+    despite a ~65-70% "low quality" flag rate in the run logs:
+
+    1. The embedding call posted to f"{EMBED_SERVER}/api/embed" -- that is
+       Ollama's endpoint path. Port 11436 runs llama.cpp's llama-server (see
+       CLAUDE.md's inference-services table), whose OpenAI-compatible
+       endpoint is POST /v1/embeddings with {"input": text}, returning
+       {"data": [{"embedding": [...]}], ...}. Every call was silently 404ing
+       and falling through to the text-only fallback path -- this specific
+       failure mode was harmless (advisory-only, degrades safely by design),
+       but the embedding sanity check had never actually executed.
+
+    2. `m.isupper()` was treated as "likely junk" -- but IRS 990/990-EZ
+       mission text is very commonly transcribed entirely in capitals (a
+       normal filing/preparer convention, not a data-quality signal; e.g.
+       "PROVIDE YOUTH SKATING AND RECREATIONAL ACTIVITIES TO THE YOUTH OF
+       THE RHINELANDER AREA" is a completely legitimate, real mission
+       statement). This single check explains nearly the entire false-flag
+       rate observed. Removed -- casing is not evidence of quality here.
+
+    Neither bug affected what got written to the database: this check has
+    always been advisory-only (flags, never withholds), so mission/program
+    text written under the old code is exactly as correct as under this
+    fix. Only the "low_quality_missions" counter in already-completed run
+    logs is unreliable and should be disregarded; it does not reflect the
+    real data.
+    """
     if not mission:
         return {"valid": False, "reason": "empty"}
     m = mission.strip()
@@ -131,14 +160,13 @@ def validate_mission_quality(mission: str | None) -> dict:
         return {"valid": False, "reason": "too_short"}
     if len(m) > 500:
         return {"valid": False, "reason": "too_long"}
-    if m.isupper():
-        return {"valid": False, "reason": "all_caps_likely_junk"}
     if len(m.split()) < 2:
         return {"valid": False, "reason": "too_few_words"}
     try:
-        resp = requests.post(f"{EMBED_SERVER}/api/embed", json={"text": m}, timeout=2)
+        resp = requests.post(f"{EMBED_SERVER}/v1/embeddings", json={"input": m}, timeout=2)
         if resp.status_code == 200:
-            vec = resp.json().get("embedding")
+            data = resp.json().get("data")
+            vec = data[0].get("embedding") if data else None
             if vec:
                 norm = sum(x * x for x in vec) ** 0.5
                 if norm < 0.1 or norm > 100:
