@@ -993,6 +993,11 @@ export default function OrganizationDetail() {
           {/* At a Glance moved to header section (Phase 1, 2026-08-13)
               Reposition for decision-grade org page flow: key stats → glance → financial context */}
 
+          {/* SECTION: Financial Health — helps users scan and understand page structure */}
+          <div className="mb-2">
+            <h2 className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">Financial Health</h2>
+          </div>
+
           {/* Peer financial context — the central financial insight. Each tier
               branch in FinancialContext renders its own styled card, so no
               extra wrapper here. */}
@@ -1009,6 +1014,11 @@ export default function OrganizationDetail() {
               Shows how the peer group was constructed (NTEE + revenue band +
               region) so donors understand "top 30% of what?" */}
           {apiOrg && <PeerMethodologyExplainer org={apiOrg} />}
+
+          {/* SECTION: Ways to Support — helps users scan and understand page structure */}
+          <div className="mt-12 mb-4">
+            <h2 className="font-body text-label font-medium tracking-[0.08em] text-deep-gold uppercase">Ways to Support</h2>
+          </div>
 
           {/* Ways to Give — Mission-aligned giving methods */}
           {apiOrg && (
