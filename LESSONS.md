@@ -4,6 +4,88 @@
 
 ---
 
+## 2026-08-16: Production migration runner marked partially-failed migrations as "successfully run," never to retry
+
+**Symptom:** `daanaa_api.py`'s `_run_migrations()` splits each `.sql` file on
+literal `;` (`sql.split(';')`), with no awareness that a `;` can appear
+inside an inline `-- comment`. Migration 024's prose comments ("this
+session; this file", "self-assessment; diagnostic signal only") produced
+malformed SQL fragments that failed with `OperationalError` — caught and
+logged as a warning, correctly non-fatal to the overall startup — but the
+code then **unconditionally** ran `INSERT INTO _migration_log (migration_name)
+VALUES (?)` afterward regardless of whether every statement actually
+succeeded. A migration with a botched statement got marked "done" and would
+never be retried on any future startup. Checked all migration files for the
+same inline-`;`-in-comment pattern: three earlier ones (004, 019, 020) have
+it too, meaning they may have silently partially applied on their original
+run months ago — not re-audited in this pass (their tables are in daily use
+without a reported issue, so if something's missing it hasn't surfaced),
+flagged as a separate follow-up.
+
+**Root cause:** two independent bugs compounding. (1) Same class as the
+`executescript()` finding earlier this session — code assumed `;`
+unambiguously means "end of SQL statement," which is false the moment a
+comment can contain one. (2) A stricter, separate bug: "did the file get
+processed" and "did every statement in it succeed" were conflated into one
+signal (the `_migration_log` INSERT), so a partial failure was
+indistinguishable from full success to every future startup.
+
+**Preventing rule:** strip `-- comment` content per line before splitting
+SQL on `;` — comments in this codebase's migrations don't intentionally use
+`;` as a real statement separator, so this is safe for the actual style in
+use here (not a general-purpose SQL tokenizer, and would need one if a
+migration ever needs a `;` inside a real string literal). More generally:
+when a loop runs N sub-operations and reports one combined "done" signal,
+track success per sub-operation and only report done overall if all of them
+succeeded — a partial failure should look like "not done, retry me," never
+silently look identical to full success. Verified this fix directly: cleared
+migration 024's log entry, re-ran `_run_migrations()`, confirmed zero
+skipped-statement warnings and the schema unchanged (17 columns, 0 rows)
+before trusting it.
+
+---
+
+## 2026-08-16: `sqlite3.Connection.executescript()` doesn't honor an open transaction — a "rolled back" migration test wasn't
+
+**Symptom:** Testing a new migration (`migrations/024_irs_990_narrative_gpu_summary.sql`,
+990 Narrative Enrichment Phase 4) using the same safe pattern used all session
+— `db.execute("BEGIN")` → apply → verify → `db.execute("ROLLBACK")` — with
+`db.executescript(migration_sql)` as the "apply" step. Confirmed rolled back
+by print statements, moved on. Iterated on the schema (added two columns
+after a Codex review), re-ran the test — and the second run failed with
+`OperationalError: table irs_990_narrative_gpu_summary has no column named
+significant_new_program`. The table already existed in the live production
+DB, with the *first, stale* version of the schema — the "rolled back" test
+had silently created it for real.
+
+**Root cause:** Python's `sqlite3.Connection.executescript()` implicitly
+issues a `COMMIT` before running (per the stdlib docs: "if there is a
+pending transaction, an implicit COMMIT statement is executed first"), and
+its own statements aren't wrapped in the caller's transaction either — DDL
+inside it commits itself, outside `execute()`'s normal BEGIN/ROLLBACK
+control. Every other write in this session used `db.execute()` per statement
+inside `BEGIN`/`ROLLBACK` and rolled back correctly; only the one call that
+switched to `executescript()` (used because it was convenient for a
+multi-statement `.sql` file) broke the pattern. Caught immediately by the
+test itself failing on the next run — not by manual inspection — but the
+accidental table sat in production between the two test runs. 0 rows leaked
+(caught same session, corrected via `DROP TABLE`), but the near-miss is the
+lesson: a schema change landed in production without the approval CLAUDE.md
+requires for exactly this class of change, because the safety pattern was
+assumed to generalize to a tool call it didn't actually cover.
+
+**Preventing rule:** Never use `executescript()` inside a
+`BEGIN`/`ROLLBACK`-guarded test — it silently breaks the rollback guarantee.
+Either split the `.sql` file into individual statements and `execute()` each
+one (stays inside the transaction, rolls back correctly), or test schema
+changes against a throwaway copy of the DB file / an in-memory `:memory:`
+connection instead of the live DB connection at all. When a "rolled back"
+test's assumption is being extended to a new tool/method for the first time
+(not just repeating an already-proven pattern), verify the rollback actually
+took effect (query `sqlite_master` for the new object) before trusting it —
+don't assume a pattern proven for one API call generalizes to a different
+one that looks similar.
+
 ## 2026-08-15: "It's Slow After My Deploy" ≠ "My Deploy Caused It" — Don't Rollback Before Isolating
 
 **Symptom:** After deploying V6.1 precompute (v1→v2 swap) to production, org-detail endpoint response time jumped from ~50-100ms to 3.3-9+ seconds. Rolled back to v1 immediately, suspecting the swap. Latency was identical after rollback — the real cause was two pre-existing, unrelated SQL query bugs (`_find_similar_orgs` unindexed ORDER BY on a computed expression; category-rank COUNT queries with no supporting composite index), both hitting hardest on the *specific test org* used all session, which happened to sit in the single largest NTEE1 category (299K rows). A control test with a different org (86ms) would have shown this was category-specific, not deployment-wide, in under a minute — instead ~40 minutes were spent chasing disk I/O, memory pressure, DigitalOcean throttling, Sentry, and DNS before profiling (cProfile on an isolated Flask test_client call) pinpointed the actual queries.

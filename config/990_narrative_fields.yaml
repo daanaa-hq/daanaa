@@ -1,0 +1,152 @@
+# 990 XML narrative field mapping — machine-readable companion to
+# docs/990-enrichment/xml-field-inventory.md. Namespace for every path below:
+# http://www.irs.gov/efile (elided for readability, as in fetch_irs_direct_filing.py's NS).
+#
+# Status: implemented in scripts/ops/fetch_irs_direct_filing.py (Phase 3,
+# 2026-08-16). This file records the verified schema for reference/future
+# schema-version tolerance work -- it is not read at runtime by the parser.
+#
+# IMPORTANT: paths below were corrected against real 2026 IRS filings after
+# an initial draft guessed wrong. Verify against data/990_xml/samples/*.xml
+# (or a fresh sample) before trusting a path here for a new schema version --
+# see xml-field-inventory.md's raw walk tables for the full picture.
+
+version: 2
+generated_from_sample: "2026_TEOS_XML_06A (24 filings: 8x 990, 8x 990EZ, 8x 990PF)"
+corrected: "2026-08-16, verified by direct XML inspection during Phase 3 implementation"
+
+deterministic_fields:
+  mission:
+    - form: "990"
+      path: "IRS990/ActivityOrMissionDesc"
+      note: "Part I short mission statement. Preferred source (priority 1)."
+      priority: 1
+      implemented: true
+    - form: "990"
+      path: "IRS990/MissionDesc"
+      note: >
+        Part III mission narrative -- a DIRECT CHILD of IRS990, NOT nested
+        inside a ProgramServiceAccomplishmentGrp wrapper (that wrapper/field
+        name does not exist in current-year filings; an earlier draft of
+        this file guessed it did and was wrong). Distinct text from
+        ActivityOrMissionDesc, not a duplicate. Used as priority-2 fallback.
+      priority: 2
+      implemented: true
+    - form: "990EZ"
+      path: "IRS990EZ/PrimaryExemptPurposeTxt"
+      note: "990-EZ mission equivalent."
+      priority: 1
+      implemented: true
+
+  programs:
+    - form: "990"
+      note: >
+        NOT a repeating ProgramServiceAccomplishmentGrp (that schema does
+        not exist in current filings -- verified against 8 real 990s, the
+        field this project's original audit assumed never matched once).
+        Real shape: the PRIMARY (largest) program is reported as direct
+        IRS990 children; each ADDITIONAL program is a repeating
+        ProgSrvcAccomActyOtherGrp.
+      primary_program:
+        path: "IRS990 (direct children)"
+        fields: {description: "Desc", expense: "ExpenseAmt", revenue: "RevenueAmt", grant: "GrantAmt"}
+      additional_programs:
+        path: "IRS990/ProgSrvcAccomActyOtherGrp (repeating)"
+        fields: {description: "Desc", expense: "ExpenseAmt", revenue: "RevenueAmt", grant: "GrantAmt"}
+      change_signals:
+        # Deterministic booleans, siblings of MissionDesc -- directly answer
+        # the project's "new, materially changed, or discontinued programs"
+        # requirement with no model involved.
+        significant_new_program: "IRS990/SignificantNewProgramSrvcInd"
+        significant_change: "IRS990/SignificantChangeInd"
+      implemented: true
+    - form: "990EZ"
+      path: "IRS990EZ/ProgramSrvcAccomplishmentGrp (repeating -- this form DOES use a real repeating group, unlike full 990)"
+      fields:
+        description: "DescriptionProgramSrvcAccomTxt"
+        expense: "ProgramServiceExpensesAmt"
+      implemented: true
+
+  schedule_o:
+    - form: ["990", "990EZ"]
+      path: "IRS990ScheduleO/SupplementalInformationDetail"
+      fields:
+        explanation: "ExplanationTxt"
+        line_reference: "FormAndLineReferenceDesc"
+      note: >
+        High value, high volume (avg 5.5 explanations/filing in sample).
+        FormAndLineReferenceDesc filtering was recalibrated during
+        implementation: "PART I" was tried and rejected as an allow-pattern
+        (on 990-EZ, "Part I" covers the whole combined revenue/expense
+        statement, so real-world values under it were financial-line noise
+        -- "PART I, LINE 16 - OTHER EXPENSES", "PART I, LINE 4 - OTHER
+        INVESTMENT INCOME" -- never mission content). Final allowlist:
+        "PART III" (any spelling: "Part III", "PAGE 2, PART III", "Pt III")
+        + literal "MISSION" (catches "FORM 990 - ORGANIZATION'S MISSION").
+      writes_to: "extracted_programs (schedule_o_source='irs_990_xml') -- existing table, see DECISIONS.md 2026-08-16"
+      implemented: true
+
+  grant_purposes:
+    - form: "990"
+      schedule: "F"
+      path: "IRS990ScheduleF/GrantsToOrgOutsideUSGrp"
+      fields: {purpose: "PurposeOfGrantTxt", region: "RegionTxt", activity_type: "TypeOfActivitiesConductedTxt"}
+      implemented: true
+    - form: "990"
+      schedule: "I"
+      path: "IRS990ScheduleI/RecipientTable"
+      fields: {purpose: "PurposeOfGrantTxt"}
+      implemented: true
+    - form: "990PF"
+      path: "IRS990PF/SupplementaryInformationGrp/GrantOrContributionPdDurYrGrp"
+      note: >
+        NOT implemented. Phase 1 sampling found the majority of PF
+        grant-purpose text (25/39 sampled rows) was literally "SEE ATTACHED"
+        -- not useful signal. 990-PF is out of scope for parse_990_xml()
+        entirely (no mission-equivalent field either); revisit only if a
+        real need for PF grant data surfaces.
+      implemented: false
+
+junk_values_to_filter:
+  # scripts/ops/fetch_irs_direct_filing.py's GRANT_PURPOSE_JUNK set --
+  # same convention as scripts/enrichment/ingest_990_missions.py's JUNK set.
+  - "N/A"
+  - "NA"
+  - "NONE"
+  - "SEE ATTACHED"
+  - "SEE SCHEDULE O"
+  - "SEE SCH O"
+  - "SEE ATTACHED SCHEDULE"
+  - "SAME AS PRIOR YEAR"
+  - "NO CHANGE"
+  - "SEE PART III"
+  - "TBD"
+
+cause_tags_integration:
+  # Implemented: write_filing() calls scripts/enrichment/enrich_cause_tags_mission.py's
+  # apply_rules()/merge_tags() (imported, not reimplemented) against combined
+  # mission + program descriptions + Schedule O + grant purposes text.
+  # Additive only (merge_tags never removes a tag). Feeds org_fts and
+  # org_embeddings automatically -- no new search infrastructure needed.
+  implemented: true
+  validated_against: "24-filing dry run, 2026-08-16: 6/24 orgs gained cause_tags (16 new tags total), 0 false positives found on manual review"
+
+gpu_derived_fields:
+  # Not yet implemented (Phase 4). Produced ONLY from the bounded
+  # deterministic excerpts above -- never from a whole filing.
+  - mission_summary   # readability layer: takes the org's own (sometimes plain/transactional) IRS text and produces a donor-readable summary, clearly labeled as Daanaa's summary, without replacing the authoritative mission field
+  - services
+  - populations_served
+  - geographies
+  - programs_normalized
+  - reported_outcomes         # organization-reported only, never independently verified
+  - new_or_changed_programs   # can mostly be deterministic already via significant_new_program/significant_change above; GPU only needed to describe WHAT changed in readable terms
+
+not_written_to:
+  # Deliberate, per DECISIONS.md 2026-08-16 and STEWARDSHIP.md P7.
+  - table: "org_service_areas"
+    reason: >
+      Feeds a real +0.04 ranking boost in /api/search's RRF fusion
+      (daanaa_api.py). Writing model-derived/unverified geography here would
+      let an unverified extraction silently change search ranking --
+      a stewardship violation, not just an architecture preference.

@@ -298,17 +298,51 @@ def _run_migrations(db_path: str):
             # failing statement instead of aborting the whole file — a
             # collision on one CREATE/ALTER must not block every later
             # migration file from running.
-            for statement in sql.split(';'):
+            #
+            # Bug found 2026-08-16 (same class as LESSONS.md's
+            # executescript() finding, third occurrence of it in this
+            # session): sql.split(';') doesn't know a ';' can appear inside
+            # an inline '-- comment' -- migration 024's prose comments
+            # ("this session; this file", "self-assessment; diagnostic
+            # signal only") split into malformed fragments that failed with
+            # OperationalError, caught below, but the migration was still
+            # marked "run" afterward regardless -- meaning a partially-failed
+            # migration would never be retried. Checked: migrations 004, 019,
+            # 020 have the same inline-';'-in-comment pattern and may have
+            # silently partially failed on their original run; not
+            # re-audited here (their tables already exist and get used daily
+            # without reported issues, so if something's missing it hasn't
+            # surfaced yet) -- flagged for a separate look, not fixed in this
+            # pass. Fix here is the root cause: strip '--' comments per line
+            # before splitting on ';' (comments can't legitimately contain
+            # unescaped ';' meant as a statement separator), and only mark a
+            # migration "run" if every statement in it actually succeeded --
+            # a partial failure now retries on the next startup instead of
+            # being silently accepted. Retrying an already-succeeded
+            # CREATE TABLE/INDEX is safe (IF NOT EXISTS / OperationalError
+            # caught the same way).
+            stripped_sql = '\n'.join(
+                line[:line.index('--')] if '--' in line else line
+                for line in sql.split('\n')
+            )
+            all_ok = True
+            for statement in stripped_sql.split(';'):
                 stmt = statement.strip()
                 if stmt:
                     try:
                         cursor.execute(stmt)
                     except sqlite3.OperationalError as e:
                         _logger.warning(f'Migration statement skipped in {filename}: {e}')
+                        all_ok = False
 
-            # Log that we ran it
-            cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
-            _logger.info(f'Ran migration: {filename}')
+            if all_ok:
+                cursor.execute('INSERT INTO _migration_log (migration_name) VALUES (?)', (filename,))
+                _logger.info(f'Ran migration: {filename}')
+            else:
+                _logger.warning(
+                    f'Migration {filename} had one or more failing statements -- '
+                    'not marked as run, will retry next startup.'
+                )
 
         conn.commit()
     except Exception as e:
@@ -988,6 +1022,58 @@ def _strip_scores(org: dict) -> dict:
     if ENABLE_SCORES:
         return org
     return {k: (None if k in _SCORE_FIELDS else v) for k, v in org.items()}
+
+def _replace_revenue_band(org: dict) -> dict:
+    """Overwrites the raw registry_enriched.revenue_band value with V6's
+    current band, computed live from total_revenue.
+
+    Found 2026-08-16: registry_enriched.revenue_band is a relic of a
+    pre-V6 scorer generation, last meaningfully written around 2026-05-20.
+    At least six different get_revenue_band() implementations exist across
+    this codebase's history (v2 through v6), each with different labels/
+    thresholds -- V6's own current function (scripts/scoring/peer_group.py)
+    uses "Grassroots"/"Small"/"Mid"/"Established"/"Major", not the
+    "Nano"/"Micro"/numeric-0-7/"Large" values actually stored in the column.
+    Nothing currently active rewrites that column; V6 computes its band
+    in-memory for peer-grouping only, never persists it back. The result:
+    real orgs (verified: "Micro" spans -$14.5M to $9.86B in stored revenue)
+    show a stale, wrong size tier on the live org page and in the
+    peer-comparison sentence built from it.
+
+    Fix, per founder decision 2026-08-16 ("move to V6... keep the old one
+    for 30 days"): every response that includes a top-level revenue_band key
+    computes it live from V6's get_revenue_band() instead of trusting the
+    stored column. The stored column itself is left in place (not backfilled,
+    not dropped) as a 30-day rollback window -- scheduled for removal
+    2026-09-15, see DECISIONS.md 2026-08-16.
+
+    Called at every site that serves a top-level revenue_band key --
+    list_organizations, get_organization, _fetch_orgs_by_eins,
+    _find_similar_orgs, fused_search. Also now applied to
+    service_scope.revenue_band (previously sourced from the older,
+    static merit_band_v5_label -- inconsistent with the top-level fix,
+    found in Codex review same day) so a single response never shows two
+    disagreeing band systems.
+
+    Negative-revenue guard, found in Codex review same day: peer_group.
+    get_revenue_band() only treats None/0 as "no band" -- 1,013 live rows
+    have negative total_revenue (down to -$175.5M), and that shared
+    function would return "Grassroots" for all of them, a false size
+    assertion (Stewardship P3). Deliberately NOT fixed inside
+    peer_group.get_revenue_band() itself: that function is also the live
+    V6 scorer's peer-grouping primitive (scripts/scoring/daanaa_scorer.py),
+    and changing its behavior would be a scoring-methodology change,
+    gated separately per CLAUDE.md -- not something to fold into an API
+    display fix. Guarded here instead, at the display layer only."""
+    revenue = org.get('total_revenue')
+    if revenue is not None and revenue > 0:
+        band = peer_group.get_revenue_band(revenue)
+    else:
+        band = None
+    org['revenue_band'] = band
+    if 'service_scope' in org and isinstance(org['service_scope'], dict):
+        org['service_scope']['revenue_band'] = band
+    return org
 
 def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
     """V4 scores disabled (v5 only). Returns org unchanged."""
@@ -2479,6 +2565,7 @@ def list_organizations():
     for row in rows:
         d = dict(row)
         d = _attach_v4_scores(d, row)
+        d = _replace_revenue_band(d)
         # Every row here already passed _DEDUCTIBILITY_FILTER in the WHERE
         # clause above -- see _compute_tax_deductible() and DECISIONS.md
         # 2026-08-16.
@@ -2924,6 +3011,7 @@ def get_organization(ein):
         'confidence': org.get('mission_confidence', 0.5),
     }
 
+    _replace_revenue_band(org)
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)
@@ -5160,6 +5248,7 @@ def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[
     for r in rows:
         org = dict(r)
         org = _attach_v4_scores(org, r)
+        org = _replace_revenue_band(org)
         result.append(org)
     return sorted(result, key=lambda r: order.get(r["EIN"], 999))
 
@@ -5222,7 +5311,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
         '4_Archetype_Only': 'peer_group_tier4',
     }
     return (
-        [_attach_v4_scores(dict(r), r) for r in rows],
+        [_replace_revenue_band(_attach_v4_scores(dict(r), r)) for r in rows],
         mode_by_tier[criteria['tier']],
     )
 
@@ -6284,7 +6373,7 @@ def fused_search():
         fused_eins[:fetch_n]
     ).fetchall()
 
-    org_map = {dict(r)['EIN']: _attach_v4_scores(dict(r), r) for r in rows}
+    org_map = {dict(r)['EIN']: _replace_revenue_band(_attach_v4_scores(dict(r), r)) for r in rows}
 
     results = []
     for ein in fused_eins:

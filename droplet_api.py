@@ -866,6 +866,38 @@ def _attach_v4_scores(org: dict, v4_row: sqlite3.Row | None) -> dict:
             pass
     return org
 
+def _replace_revenue_band(org: dict) -> dict:
+    """Overwrites the raw registry_enriched.revenue_band value with V6's
+    current band, computed live from total_revenue.
+
+    Ported from daanaa_api.py 2026-08-16/17: this file (droplet_api.py) is
+    the actual production backend served at daanaa.org, and it never got
+    the daanaa_api.py fix from earlier that day -- it's a separate,
+    independently-forked file (scripts/droplet_api.py is a symlink to this
+    one), so the stale-revenue_band bug (registry_enriched.revenue_band is
+    a pre-V6 relic, e.g. "Micro" spanning -$14.5M to $9.86B) was still live
+    on the public site until this port. See daanaa_api.py's
+    _replace_revenue_band for full history; logic is identical here.
+    Negative-revenue guard included (peer_group.get_revenue_band() only
+    treats None/0 as "no band" -- fixed at this display layer only, not in
+    the shared scoring function, since that's also the live V6 scorer's
+    peer-grouping primitive).
+
+    Called at every site here that serves a top-level revenue_band key:
+    list_organizations, get_organization, _fetch_orgs_by_eins,
+    _find_similar_orgs, fused_search. Also overwrites service_scope.revenue_band
+    (previously sourced from merit_band_v5_label in get_organization) so a
+    single response never shows two disagreeing band systems."""
+    revenue = org.get('total_revenue')
+    if revenue is not None and revenue > 0:
+        band = peer_group.get_revenue_band(revenue)
+    else:
+        band = None
+    org['revenue_band'] = band
+    if 'service_scope' in org and isinstance(org['service_scope'], dict):
+        org['service_scope']['revenue_band'] = band
+    return org
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 # Claim verification — opaque HMAC token so raw PIN never appears in URLs.
@@ -2350,6 +2382,7 @@ def list_organizations():
     for row in rows:
         d = dict(row)
         d = _attach_v4_scores(d, row)
+        d = _replace_revenue_band(d)
         # Every row here already passed _DEDUCTIBILITY_FILTER in the WHERE
         # clause above (subsection='3' AND deductibility='1' AND not
         # revoked), so this is always True -- added 2026-08-16, see
@@ -2826,6 +2859,7 @@ def get_organization(ein):
             org['confidence_v6'] = 'moderate'
             org['confidence_margin_v6'] = '±25%'
 
+    org = _replace_revenue_band(org)
     result = _strip_scores(org)
     result['_disclosures'] = disclosures
     return jsonify(result)
@@ -5065,6 +5099,7 @@ def _fetch_orgs_by_eins(db, eins: list[str], active_only: bool = False) -> list[
     for r in rows:
         org = dict(r)
         org = _attach_v4_scores(org, r)
+        org = _replace_revenue_band(org)
         result.append(org)
     return sorted(result, key=lambda r: order.get(r["EIN"], 999))
 
@@ -5127,7 +5162,7 @@ def _find_similar_orgs(db, ein_clean, org, limit=6):
         '4_Archetype_Only': 'peer_group_tier4',
     }
     return (
-        [_attach_v4_scores(dict(r), r) for r in rows],
+        [_replace_revenue_band(_attach_v4_scores(dict(r), r)) for r in rows],
         mode_by_tier[criteria['tier']],
     )
 
@@ -6192,7 +6227,7 @@ def fused_search():
         fused_eins[:fetch_n]
     ).fetchall()
 
-    org_map = {dict(r)['EIN']: _attach_v4_scores(dict(r), r) for r in rows}
+    org_map = {dict(r)['EIN']: _replace_revenue_band(_attach_v4_scores(dict(r), r)) for r in rows}
 
     results = []
     for ein in fused_eins:

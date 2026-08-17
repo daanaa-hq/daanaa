@@ -1,5 +1,15 @@
 // Guided discovery state management, URL encoding, and result building
 
+// Bug found 2026-08-16: this file's two "smaller org" checks compared
+// org.revenue_band (a string, e.g. "Grassroots"/"Small"/"Mid"/"Established"
+// /"Major" -- see data/api.ts) with <= 1, a numeric comparison that always
+// evaluates false on a string (JS coerces "Grassroots" to NaN, and every
+// NaN comparison is false). The "smaller, community-rooted organization"
+// match/label never actually fired. Backend fixed same day to serve V6's
+// live band (daanaa_api.py's _replace_revenue_band()); this is the matching
+// frontend fix, string-based, not a magic number.
+const SMALLER_ORG_BANDS: ReadonlySet<string> = new Set(['Grassroots', 'Small'])
+
 export interface DiscoveryState {
   step: 1 | 2 | 3 | 4 | 5
   intent: string[]
@@ -178,7 +188,7 @@ export function explainInclusion(
   if (state.connection.includes('volunteer') && org.open_to_volunteers) {
     connectionLabels.push('has volunteer opportunities')
   }
-  if (state.connection.includes('smaller') && org.revenue_band <= 1) {
+  if (state.connection.includes('smaller') && SMALLER_ORG_BANDS.has(org.revenue_band)) {
     connectionLabels.push('is a smaller, community-rooted organization')
   }
 
@@ -213,7 +223,7 @@ export function countCriteriaMatch(org: any, state: DiscoveryState): number {
   if (state.connection.includes('volunteer') && org.open_to_volunteers) {
     count += 1
   }
-  if (state.connection.includes('smaller') && org.revenue_band <= 1) {
+  if (state.connection.includes('smaller') && SMALLER_ORG_BANDS.has(org.revenue_band)) {
     count += 1
   }
   if (state.connection.includes('recent-filing') && org.tax_prd_yr >= 2024 - 1) {

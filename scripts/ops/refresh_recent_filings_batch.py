@@ -211,6 +211,33 @@ def extract_requested_xmls(
             )
 
 
+def already_processed_eins(db: sqlite3.Connection, filings: dict[str, dict]) -> set[str]:
+    """EINs whose exact filing (same EIN, tax_year, object_id) already has a
+    row in irs_990_functional_expense_filings written by the CURRENT parser
+    version -- i.e. genuinely nothing new to extract, not just "we've seen
+    this EIN before". Verified 2026-08-16 that this gap was real: 17,912
+    filings already exist from earlier irs_direct runs, and process_batch()
+    had no check before this -- every EIN in a still-pending batch would be
+    re-downloaded/re-parsed/re-written on every retry regardless. Checking
+    parser_version (not just presence) deliberately still allows one-time
+    backfill of newly added extraction fields (Schedule O, programs,
+    cause_tags) for filings that were only ever processed by an older parser
+    version, which is real, wanted work -- not duplication."""
+    if not filings:
+        return set()
+    done = set()
+    for ein, filing in filings.items():
+        tax_year = int(filing["tax_period"][:4])
+        row = db.execute(
+            "SELECT 1 FROM irs_990_functional_expense_filings "
+            "WHERE EIN = ? AND tax_year = ? AND object_id = ? AND parser_version = ?",
+            (ein, tax_year, filing["object_id"], direct.PARSER_VERSION),
+        ).fetchone()
+        if row:
+            done.add(ein)
+    return done
+
+
 def process_batch(
     db: sqlite3.Connection,
     batch_id: str,
@@ -218,7 +245,17 @@ def process_batch(
     apply: bool,
 ) -> dict[str, int]:
     zip_url = direct.batch_zip_url(batch_id)
-    stats = {"matched_eins": len(filings), "parsed": 0, "written": 0}
+    stats = {"matched_eins": len(filings), "already_processed": 0, "parsed": 0, "written": 0}
+
+    already_done = already_processed_eins(db, filings)
+    if already_done:
+        stats["already_processed"] = len(already_done)
+        filings = {ein: f for ein, f in filings.items() if ein not in already_done}
+        print(f"  Skipping {len(already_done):,} EIN(s) already fully processed "
+              f"at parser_version={direct.PARSER_VERSION}")
+
+    if not filings:
+        return stats
 
     with tempfile.TemporaryDirectory(prefix=f"irs-990-{batch_id}-") as temp_dir:
         temp_path = Path(temp_dir)
@@ -347,7 +384,8 @@ def main() -> int:
                 print(f"\nProcessing {batch_id}: {len(filings):,} registry EIN(s)")
                 stats = process_batch(db, batch_id, filings, args.apply)
                 print(
-                    f"  parsed={stats['parsed']:,} "
+                    f"  already_processed={stats['already_processed']:,} "
+                    f"parsed={stats['parsed']:,} "
                     f"written={stats['written']:,} "
                     f"dry_run={not args.apply}"
                 )
@@ -357,6 +395,7 @@ def main() -> int:
                         "status": "completed",
                         "completed_at": datetime.now(timezone.utc).isoformat(),
                         "matched_eins": stats["matched_eins"],
+                        "already_processed": stats["already_processed"],
                         "parsed": stats["parsed"],
                         "written": stats["written"],
                         "source_url": direct.batch_zip_url(batch_id),

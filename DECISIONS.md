@@ -1389,3 +1389,278 @@ Also confirmed several other unused-but-populated fields (total_assets/revenue_3
 **Second investigation (Codex), scoped to the actual gap:** the one differentiating capability relevant to "website discovery and review" is Jina Reader's clean-webpage-to-markdown extraction. Checked whether that's genuinely missing: it isn't. `scripts/discovery/website_content.py` already fetches confirmed homepages and extracts clean text (strips script/nav/header/footer via BeautifulSoup); `scripts/enrichment/enrich_batch.py` already consumes it for AI-grounded mission generation, cause-tag grounding, donate-link confidence, and identity verification. Additionally, Jina's free tier (20 req/min) is incompatible with the existing concurrent crawler without new throttling, and proxying every nonprofit URL through a third party conflicts with the established crawler-etiquette convention (identified UA, robots checks, direct fetch — DECISIONS.md 2026-07-18).
 
 **Decision: declined, nothing installed, nothing built.** Both the broad tool and the narrow equivalent capability turned out unnecessary — verified against actual code, not assumed. If a real quality gap on JS-heavy sites surfaces later, the reviewable place to evaluate an optional fallback is `website_content.py` itself (behind the existing fetch/identity/robots gates), not a new top-level script.
+
+## 2026-08-16: 990 Narrative Enrichment — reuse existing tables/scripts instead of new ones (founder directive)
+
+**Chose:** extend `extracted_programs` (deployed schema: `EIN, schedule_o_text,
+schedule_o_year, schedule_o_source, extraction_confidence, extracted_at`) with a
+new `schedule_o_source='irs_990_xml'` value, populated from the same one-pass XML
+download `fetch_irs_direct_filing.py` already does for financials+mission — instead
+of a new `irs_990_narrative_fields` evidence table (Codex Review A's original
+recommendation). Reuse `enrich_cause_tags_mission.py`'s `apply_rules()`/`merge_tags()`
+(additive, keyword-rule based) against Schedule O + Part III text for `cause_tags`,
+instead of a separate tagging pipeline — those functions already take a bare text
+string, not a hardcoded column read, so no rewrite needed. No writes to
+`org_service_areas` (holds a real `+0.04` ranking boost in `/api/search`'s RRF
+fusion per `daanaa_api.py:6176` — writing unverified model-derived geography there
+would be a stewardship P7 violation, not just an architecture preference).
+
+**Why:** founder directive, twice ("align with the tables we already have... make
+sure it all works as one system without rework and more efficiently"). Investigation
+found `extracted_programs` already has a live producer script
+(`scripts/enrichment/schedule_o_extraction.py`, ProPublica-sourced, checkpoint/resume,
+never scheduled/run — 0 rows) matching the deployed schema exactly, plus a second,
+dead, *incompatible* producer (`program_extraction.py`, assumes different columns,
+would fail on write, not in crontab) — confirms the deployed schema is the real one
+to extend, not a schema I should design fresh. `cause_tags` already feeds both
+`org_fts` (FTS5) and `org_embeddings` directly (`build_fts_index.py`,
+`build_org_embeddings.py`) — the highest-leverage, zero-new-infrastructure path to
+better searchability from richer 990 text is feeding that column, not inventing a
+new search surface.
+
+**Rejected:** Codex Review A's `irs_990_narrative_fields` + `irs_990_programs`
+generic evidence tables — real engineering, but duplicates what
+`extracted_programs`/`cause_tags`/`mission` already do, and the founder explicitly
+asked to avoid parallel systems. Evidence requirement (source excerpt, provenance)
+still satisfied via `schedule_o_source` + `extracted_at` on the existing table,
+matching the same "raw evidence table + denormalized display column" pattern
+`write_filing()` already uses for financials.
+
+**Not touched:** `org_service_areas`. Deliberate, not an oversight — see above.
+
+**Follow-up same day, post-Codex-Review-B/C:** two real bugs found and fixed
+(mission-year guard compared `mission_last_verified` as TEXT, would misorder
+against a non-4-digit-year value; the financial write guard protected
+`total_revenue` from NULL-clobber but not `total_assets` independently — now
+`COALESCE`d against the existing value on both). Added `MAX_FIELD_TEXT_LEN`/
+`MAX_LIST_ITEMS` caps on all new extraction paths (cheap hardening against a
+pathological filing; not an XXE risk, stdlib `ET.fromstring` doesn't resolve
+external entities). Also added a real per-filing skip check
+(`already_processed_eins()` in `refresh_recent_filings_batch.py`) — verified
+17,912 filings already existed from earlier `irs_direct` runs with no
+existing dedup check before this, so every pending-batch retry would have
+re-downloaded/re-parsed/re-written them regardless (founder flagged this
+directly: "skip the data which is available... so we don't duplicate the
+effort"). Gated on `parser_version` matching current, not just presence.
+
+**Correction, same day, found while explaining this to the founder**: the
+above is true only for a batch still `pending`. `already_processed_eins()`
+runs inside `process_batch()`, which is never reached for a batch already
+marked `"completed"` in the state file — and the one batch processed so far
+(`2026_TEOS_XML_06A`, 18,806 EINs) already is. So the "one-time backfill of
+narrative fields for pre-narrative-era filings" does NOT happen
+automatically for that backlog; it only applies going forward, to EINs that
+show up in a genuinely new IRS batch (i.e., orgs filing their next annual
+return). Backfilling the existing 17,912+ filings needs a separate,
+explicit script — not yet built. See `docs/990-enrichment/architecture.md`
+"Backfill gap" for the corrected record.
+
+**Clarification on P7 (Codex Review B/C, finding #8):** `cause_tags` feeds
+both FTS ranking and semantic embeddings, so it affects search-relevance
+ordering — just not trust/merit scoring (no score/tier/percentile field
+touched). STEWARDSHIP.md P7's "no ranking manipulation" is read here as
+governing trust/merit signals, not search relevance, which improving is this
+project's stated purpose. What keeps this inside P7 either way: tags are
+rule-derived from the org's own IRS-filed narrative — deterministic,
+evidence-grounded, same bar the existing mission-derived `cause_tags` system
+already used — not inferred, guessed, or paid-for influence.
+
+See `docs/990-enrichment/codex-reviews.md` "Review B/C" for the full finding
+table.
+
+## 2026-08-16: 990 Narrative Enrichment Phase 4 (GPU semantic layer) — evidence-quote verification, deferred batching
+
+**Chose:** GPU-derived fields (mission_summary, services, populations_served,
+geographies, reported_outcomes, new_or_changed_programs, other_useful_facts)
+computed only from Phase 3's bounded deterministic excerpts (never a whole
+filing), via Qwen3-30B on port 11437, with `response_format: json_schema`
+enforced structured output — extending `scripts/enrichment/llm_extraction.py`
+(the project's existing local-LLM calling module) rather than a new one. A
+new table (`migrations/024_irs_990_narrative_gpu_summary.sql`, **not yet
+applied — requires founder approval** per CLAUDE.md's schema-change gate) —
+the one place in this project that genuinely needed new storage, since
+AI-derived content can't share a home with the deterministic `mission`/
+`cause_tags` fields without contaminating their evidentiary bar.
+
+**Why:** founder granted an explicit 1-hour daytime exception to the
+night-only GPU policy for this session. Real design finding while building:
+making the schema's array output fields optional let the constrained JSON
+decoder stop early once required fields were satisfied, even with rich
+source text available (confirmed via a raw non-schema call hitting
+`finish_reason=length` on the same input) — making them required (empty
+array is still an honest answer) fixed it.
+
+**Codex Review D (`codex exec -s read-only`)** found the single biggest gap:
+no evidence linkage between a generated claim and its source text, despite
+`architecture.md` claiming evidence IDs existed (stale language from the
+original Review A proposal, never actually built into the scoped-down v1).
+Fixed: `reported_outcomes` items now require a verbatim `evidence_quote`,
+mechanically verified (normalized substring match) against the bounded
+input before storage — unverified items are dropped and logged, not stored.
+`grounded` reframed as diagnostic self-assessment only, never a publication
+gate. Also fixed: `significant_new_program`/`significant_change` now
+persisted as their own deterministic columns (not just an LLM hint), a
+fuller model-artifact identifier for cache provenance, widened `_call_llm()`
+exception handling, and local schema-shape validation. **Deliberately
+deferred**: 4-6-slot concurrent batching (real concurrency-bug risk against
+single-writer SQLite, better built carefully before a 1,000-filing gate than
+rushed same-session).
+
+**Self-caught process failure, corrected same session:** testing the
+migration via `db.executescript()` inside a `BEGIN`/`ROLLBACK` block didn't
+actually roll back — `executescript()` implicitly commits pending
+transactions, so the table was created for real in production with a stale
+schema (schema change without approval). Caught when a second test run
+failed on a missing column; 0 rows had been written; corrected via
+`DROP TABLE`, verified clean. Root cause + preventing rule: `LESSONS.md`
+2026-08-16.
+
+**Also found, not this project's to fix:** `gpu_night.sh` documents a 9pm-9am
+GPU window; CLAUDE.md documents 10pm-6am. Pre-existing discrepancy, flagging
+for founder awareness, not silently resolving one direction without knowing
+which is authoritative.
+
+**Rejected:** rushing the batching work to hit a "fully wired" state in one
+session. Codex's own framing — "before the 1,000-filing run," not "before
+this ships" — matches treating the smaller, already-validated increment as
+the deliverable, with the scale work as an explicit next step.
+
+See `docs/990-enrichment/{architecture,codex-reviews}.md` "Review D" for
+full detail.
+
+## 2026-08-16: Migration 024 applied; Phase 7 framing requirements made explicit go/no-go criteria
+
+**Chose:** applied `migrations/024_irs_990_narrative_gpu_summary.sql` to the
+live DB (founder-approved same session) — 17 columns verified via
+`PRAGMA table_info`, 0 rows, correctly committed this time (per-statement
+`execute()`, not `executescript()` — see `LESSONS.md` 2026-08-16). Also
+added a mandatory Phase 7 framing section to `architecture.md`, written
+after re-reading the Daanaa Charter (`institution/DAANAA-CHARTER.md`)
+directly against this session's actual sampled output, not the abstract
+principle text.
+
+**Why:** founder asked explicitly whether Phase 3/4's output aligns with the
+Charter and Stewardship guidelines. Checked systematically against all 10
+Charter promises and the 11 Stewardship principles; most don't apply
+(no money, no donor data touched). Two are real and concrete, evidenced by
+actual output from this session, not hypothetical: Charter #7 ("we don't
+know enough," never "they failed") and Stewardship P4 (small-org fairness)
+are both threatened by the same mechanism — narrative richness in a 990
+filing tracks the org's staff capacity to write a detailed Schedule O, not
+the quality of its work. A real sample from this session's 24-filing test —
+an org's own Schedule O reading "limited activity due to health issues" —
+is the concrete case: sympathetic and honest in the org's own words, but
+liable to read as a failure signal if shown without explicit "we don't know
+enough" framing next to a richer profile. Stewardship P10 (AI as tool, not
+authority) needs the GPU-summary tier visually distinguished from the
+deterministic-mission tier, not flattened into one equally-authoritative
+block.
+
+**Not yet built:** the actual Phase 7 UI. These three rules are recorded as
+explicit go/no-go criteria for that work, not general reminders — checked
+in code review or design review, not assumed from good intentions.
+
+## 2026-08-16: Phase 3 backfill script — Codex drafted, real bug found in review, validated with a real small apply run
+
+**Chose:** `scripts/ops/backfill_990_narrative_phase3.py` — Codex (`codex
+exec -s read-only`) drafted the full file per the prior review's agreed
+scope (eligibility keyed on `parser_version`, batch-grouped ZIP-once
+downloads reusing `refresh_recent_filings_batch.py`'s helpers, separate
+state/lock file, dry-run default, before/after snapshotting for real
+verification counts, hard refusal rather than silent skip on inconsistent
+state). Claude applied it after review (workspace-write is broken in this
+Codex sandbox), per the session's established drafted-by-Codex/
+applied-by-Claude convention.
+
+**Real bug found in review, not assumed absent:** running `--batch-ids-only`
+against the live DB immediately hit a hard error — `source_url` for some
+eligible rows didn't match the `apps.irs.gov` shape the script assumed for
+all of them. Checked the actual data: `irs_990_functional_expense_filings`
+has rows from two different historical pipelines (17,882 from the
+`irs_direct` pipeline this backfill can re-fetch from; 30 from an older
+gt990 S3-sourced path it has no mechanism to re-fetch from). The script's
+own refusal-to-guess design caught this correctly (aborted rather than
+mishandling a wrong URL), but aborted the *entire* run on the *first*
+gt990 row rather than processing the 17,882 in-scope rows and reporting the
+30 out-of-scope ones separately. Fixed: `eligible_batches()` now filters to
+the known-compatible source and reports the excluded count, rather than
+treating "different, known, older pipeline" the same as "malformed data."
+
+**Validated, not just reviewed:** ran the built-in dry run (real download,
+real parse, zero DB writes) — clean. Then ran a real, small `--limit 25
+--apply` — this is the "small representative dry-run before applying" both
+reviews called for, actually executed, not just planned. Results: 23/24
+missions upgraded in one batch (higher than the earlier 24-filing curated
+sample — expected, since most of the registry's 1.58M+ AI-generated
+missions haven't been touched by this pipeline yet), 35 new cause_tags,
+8 Schedule O rows. Critically: `financial_substantive_changes=0` —
+empirically confirms `write_filing()`'s financial replay is truly
+idempotent on an already-known filing, not just assumed safe from reading
+the code. State file correctly marked one batch `"completed"` (1/1 done)
+and the large batch `"partial"` (24/17,881 done, safely resumable).
+
+**Not yet run:** the remaining ~17,857 filings (`--all --apply`). A full
+14.4GB DB backup from this morning (09:03, before this session's schema/data
+changes) exists as a safety net; scaling to the full backfill is the
+founder's call, not run automatically.
+
+## 2026-08-16: Two real mission-extraction bugs found reviewing production text, fixed, ~314 rows corrected
+
+**Chose:** ran the Phase 3 backfill to completion (all 17,882 in-scope filings), then reviewed a random sample of the actual written text at the founder's request ("review the results, especially the text parts") rather than trusting the aggregate counts alone.
+
+**Found, real, not hypothetical:** `542033897` had `mission = "SEE PART III, LINE 1."` — literal IRS cross-reference boilerplate written as a mission. Quantified: 76 of 16,057 (0.47%). Root cause: `ingest_990_missions.py` (the older NCCS-based mission pipeline) already filters this exact pattern (`JUNK` set, `SEE PART`/`SEE SCH`/`SEE ATTACH` prefixes); `fetch_irs_direct_filing.py`'s newer mission extraction never inherited that guard. Fixed by importing and reusing the same `JUNK` set (not duplicating it) in a new `_is_mission_junk()` check applied to both the 990 and 990-EZ mission candidates.
+
+**Second bug, found reviewing the fix's own output:** the junk filter caught the two direct mission fields but not the third fallback — joining Part III program descriptions — which produced results like `"SEE SCHEDULE O\n\nOUR Y IS COMMITTED TO..."` (a junk program description joined ahead of a real one via the code's own `\n\n` separator). Fixed: filter each program description individually before joining, drop the whole candidate if nothing real survives.
+
+**Third pass:** a broader manual scan surfaced 231 more cross-reference variants the original prefix list missed (`SEE PAGE`, `SEE SUMMARY`, `SEE MISSION STATEMENT ATTACHMENT`, `SEE FORM 990`) — added those prefixes too, deliberately keeping them specific rather than a blanket "starts with SEE" rule, since real mission text exists that legitimately opens with "See" as an imperative (`"SEE GOD'S CHILDREN AND CHOSEN DELIVERED..."` — verified this stays correctly unfiltered).
+
+**Process:** bumped `PARSER_VERSION` after each fix (1.2 → 1.3 → 1.4 → 1.5), targeted-cleared only the specifically-identified bad rows each time (not a blanket reset), reset the backfill's own state file (its "completed" status was for the old parser version and correctly refused to silently re-skip), and re-ran the full 17,882-filing backfill after each fix — all three re-runs completed in 30-40 seconds. Final verification: 0 junk missions remain across the full pattern set; broad random-sample review of missions, Schedule O text, and cause_tags across ~35 additional records all came back clean, specific, and correctly topical.
+
+**Rejected:** broadening the junk filter to catch any text starting with "See" — would have silently destroyed real mission statements that happen to open with an imperative "See."
+
+---
+
+## 2026-08-16: Precompute regen efficiency investigated (Codex) — real architecture fix found, deferred as its own project
+
+**Trigger:** After the parallelized `precompute_similar_orgs.py` hit a real memory-sharing failure (CPython refcounting defeats fork's copy-on-write, causing 6-worker swap thrashing; fell back to 2 workers, which completed successfully in ~5h: 1,935,390 orgs, 882,785 updated, 2,361,326 tier fields backfilled), investigated whether querying SQLite directly per org (reusing `peer_group.sql_predicate()`, same pattern the live API already uses) would let future runs scale past 2 workers reliably.
+
+**Finding: the naive per-org SQL redesign would NOT help, and might be slower.** Checked actual index coverage against each tier's predicate shape: only Tier 3b (`NTEE1 + revenue`) has a matching index (`idx_ntee1_revenue`). Tiers 1, 2, 3, and 4 would hit full table scans or ineffective skip-scans at 1.94M-query volume — `EXPLAIN` confirmed this directly, not assumed.
+
+**Real fix identified: restructure around peer-group KEYS, not individual orgs.** Enumerate the (far fewer) distinct peer-group keys from SQLite once, query each group's members once, rank and write that group's files, release, move to the next group. Eliminates both the multi-gigabyte Python dict and ~1.94M redundant repeated candidate queries. Bounds each worker's memory to one peer group's size instead of the whole 2M-org graph — this should genuinely scale to many more workers safely.
+
+**Why not built today, two real blockers:**
+1. Full performance requires new indexes (a materialized `ntee2` column + composite indexes for tiers 1/2/4) — a schema change requiring founder approval per CLAUDE.md's gate, not something to add unilaterally.
+2. The live API's similar-orgs query caps candidates at 2,000 and ranks by percentile distance only; precompute currently ranks the FULL peer cell by tag-overlap + percentile. Reusing the peer-group *definition* (`sql_predicate()`) is safe and already correct; copying the live query's exact candidate-selection/ranking would silently change precomputed results and is a methodology review item, not a drop-in swap.
+
+Also checked: `gc.freeze()` (a documented fork/COW mitigation) would NOT meaningfully help here — it addresses GC metadata pages, not the per-object refcount writes that actually caused the observed duplication (workers were reaching ~4.6GB RSS each regardless).
+
+**Status:** Scoped, not built. Current 2-worker approach is correct and already shipped a working result; this is a real but non-urgent efficiency project for the next time this needs to run at scale, gated on founder review of the index addition.
+
+## 2026-08-16: `registry_enriched.revenue_band` was serving stale, wrong data live -- moved to V6, old column kept 30 days
+
+**Chose:** every API response carrying a top-level `revenue_band` key now computes it live from V6's own `peer_group.get_revenue_band(total_revenue)`, via one shared helper (`_replace_revenue_band()`) applied at all 5 confirmed serving sites: `get_organization`, `list_organizations`, `_fetch_orgs_by_eins`, `_find_similar_orgs`, `fused_search`. The stored `registry_enriched.revenue_band` column is left in place, unread by any of these paths now, scheduled for removal **2026-09-15** (30 days) rather than dropped immediately -- founder decision: "move to V6, keep the old one for now and remove it after 30 days."
+
+**Why:** found reviewing the 990 backfill's results at the founder's request -- initially assumed dead/legacy, but tracing the actual code proved it live and wrong. Root cause: at least six different `get_revenue_band()` implementations exist across this codebase's scoring history (v2 through v6), each with different labels and thresholds; the stored column was last meaningfully written by a pre-V6 scorer around 2026-05-20 and has never been touched since (V6 computes its band in-memory for peer-grouping only, never persists it back). Verified real, severe impact before touching anything: the Michael & Susan Dell Foundation ($4.27 **billion** in real revenue) was stored and served as `"Micro"` -- confirmed via `codex`-independent trace through `_strip_scores`/`_attach_v4_scores` (the latter dead code with an unreachable early `return`, so nothing was overwriting the raw value) that this reached the live org detail page, directory listing, and search results.
+
+**Second bug found in the same area:** `frontend/src/lib/discovery.ts`'s "smaller, community-rooted organization" match logic did `org.revenue_band <= 1` -- comparing the string `"Micro"`/`"Grassroots"`/etc. to the number `1`. In JS this is always `false` (non-numeric string coerces to `NaN`; every `NaN` comparison is false), meaning the "find smaller orgs" discovery filter/label has never actually matched anything. Fixed with a named string-set constant (`SMALLER_ORG_BANDS = {'Grassroots', 'Small'}`), matching V6's real band vocabulary, not a magic number.
+
+**Verified with real data before considering done, not just code review:** Flask test-client calls against the live local codebase (not the droplet) confirmed the Dell Foundation now returns `"Major"` from `/api/organizations/364336415`, and a `/api/search?q=Dell+Foundation` sweep showed every result's band correctly matching its actual revenue against V6's real thresholds.
+
+**Also found, deliberately not touched:** `mapToDirectoryFilters()` in the same `discovery.ts` file builds `filters.revenue_band = ['0', '1']` (stale v4-era numeric-string values) for a "smaller" filter -- confirmed via full-codebase grep that this function is never called anywhere, genuinely dead code, left alone rather than expanding scope. Separately, `daanaa_api.py` has its own startup migration-runner that fails to parse `migrations/024_irs_990_narrative_gpu_summary.sql`'s inline comments (same class of issue as the `executescript()` finding in `LESSONS.md` 2026-08-16, a third distinct code path hitting it) -- harmless here since the table already exists and the runner just skips it, but worth fixing if a future migration needs this runner to actually apply it fresh.
+
+**Not yet done:** deploying this fix to the live droplet (`droplet_api.py`) -- this session's changes are on the local codebase only, gated by the same public-claims approval CLAUDE.md requires, separate from the code-correctness work done here. Also not done: actually dropping `registry_enriched.revenue_band` (scheduled 2026-09-15, needs its own approval when the date arrives, per CLAUDE.md's schema-change gate).
+
+## 2026-08-16: Codex pre-merge review found 4 real gaps; 3 fixed same day, 2 logged as separate follow-ups (one urgent)
+
+**Chose:** asked Codex for one more independent review pass before merging, covering everything built since its last review (the revenue_band fix, discovery.ts fix, migration-runner fix, `fill_990_coverage_gap.py`'s post-fix state). Verdict: "not ready to merge as-is," four material gaps.
+
+**Fixed same day, all verified against real data:**
+1. `peer_group.get_revenue_band()` only rejects `None`/`0`, not negative revenue -- 1,013 live rows have negative `total_revenue` (down to -$175.5M) and were getting labeled `"Grassroots"`, a false size assertion. **Deliberately not fixed inside the shared function itself** -- it's also the live V6 scorer's peer-grouping primitive, and changing its behavior would be a scoring-methodology change, gated separately per CLAUDE.md. Guarded instead at the display layer, inside `_replace_revenue_band()`. Verified: the actual -$175.5M org now returns `null`, not `"Grassroots"`.
+2. Same helper now also overwrites `service_scope.revenue_band` (previously still sourced from the older, static `merit_band_v5_label`) so a single API response never shows two disagreeing band systems -- Codex correctly flagged this as a scope gap in the original fix.
+3. `fill_990_coverage_gap.py`'s eligibility check had a fourth uncovered case: a 990-EZ filing can set `programs_available=1` (Part III program descriptions) while triggering none of the original three coverage signals -- confirmed real and non-hypothetical, 4,163 current registry rows. Added as a fourth signal (verified exclusive to this pipeline via full-codebase grep, no false-positive risk from another writer). Verified: 0 of those 4,163 EINs still show as eligible after the fix.
+
+**Not fixed, logged as separate follow-ups instead of folding into this change:**
+4. `GuidedDiscovery.tsx` doesn't actually fetch or pass `revenue_band` to `getOrganizations` at all, and the transformed results omit it entirely -- meaning the `discovery.ts` comparison fix from earlier today is *necessary but not sufficient*; the "smaller, community-rooted organization" feature still won't work end-to-end until that separate data-plumbing gap is closed. Not fixed in this pass -- different file, different layer, deserves its own change.
+5. **Found urgent, elevated from "worth checking" to confirmed live-broken**: migration `020_volunteer_hours_events_impact.sql` is logged as run (2026-07-22) but its three `ALTER TABLE volunteer_hours ADD COLUMN` statements never actually applied (same silent-partial-failure bug class as `LESSONS.md`'s finding). Checked whether anything live depends on the missing columns: **yes** -- `daanaa_api.py:10019` runs `SELECT hours, service_date, status, locked_at FROM volunteer_hours`, and `locked_at` does not exist on the live table. This query has been erroring on every call since the migration's logged run date, ~a month, unnoticed. `institution/tasks/T-2026-08-16-004` documents it with full severity; not fixed in this session -- flagged directly to the founder as urgent rather than silently expanding this session's scope further without checking in.
+
+**Also confirmed by Codex, no fix needed:** the per-line comment-stripping fix from the migration-runner lesson is safe for every real migration file (no `--` inside a genuine SQL string literal anywhere in `migrations/`). Live computation of `revenue_band` from `total_revenue` was confirmed aligned with Stewardship P3 and Charter #6 -- deterministic, source-derived, applied uniformly, better evidence practice than a stored label, provided (now true) invalid values return unknown rather than a wrong guess.
