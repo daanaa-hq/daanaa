@@ -149,59 +149,88 @@ def validate_mission_quality(mission: str | None) -> dict:
     return {"valid": True, "reason": "unverified_text_checks_only"}
 
 
-def extract_requested_xmls_lenient(zip_path: Path, extract_dir: Path, filings: dict) -> list[str]:
+def extract_requested_xmls_lenient(
+    zip_path: Path, extract_dir: Path, filings: dict, batch_id: str
+) -> list[str]:
     """
     Lenient variant of refresh_recent_filings_batch.extract_requested_xmls().
 
-    Real bug found running this script at scale (2026-08-17): the IRS's own
-    index CSV references OBJECT_IDs that are sometimes not actually present
-    in the batch ZIP for that XML_BATCH_ID (stale/mismatched index entries --
-    confirmed via 4,600+ "filename not matched" unzip warnings across a
-    handful of batches during a live 36-month run). The reference script's
-    extract_requested_xmls() raises BatchProcessingError if unzip's exit
-    code is non-zero for ANY missing member, which aborts the ENTIRE batch
-    -- including the tens of thousands of EINs whose XML *was* present and
-    successfully extracted. Two batches (2026_TEOS_XML_05A, 2025_TEOS_XML_05A)
-    were discarded whole this way despite the vast majority of their members
-    extracting fine.
+    Real bug #1 found running this script at scale (2026-08-17): the
+    reference script's extract_requested_xmls() raises BatchProcessingError
+    if unzip's exit code is non-zero for ANY missing member, which aborts
+    the ENTIRE batch -- including the tens of thousands of EINs whose XML
+    *was* present and successfully extracted. Two batches
+    (2026_TEOS_XML_05A, 2025_TEOS_XML_05A) were discarded whole this way
+    despite the vast majority of their members extracting fine. Fixed by
+    not raising on a non-zero unzip exit code -- unzip legitimately returns
+    non-zero (typically 11) when a subset of requested members are missing,
+    even though every other requested member in that same call extracted.
 
-    This function keeps the same command invocation and chunking as the
-    reference implementation, but does not raise on a non-zero unzip exit
-    code -- unzip legitimately returns non-zero (typically 11) when a subset
-    of requested members are missing, even though every other requested
-    member in that same call extracted successfully. Downstream code in this
-    script already handles a missing XML file per-EIN gracefully (skips that
-    EIN, logs it, continues with the rest of the batch) via a file-exists
-    check, so nothing here silently drops a *processable* filing -- it only
-    stops treating "a few stale index entries" as a reason to lose an entire
-    batch. Truly fatal conditions (corrupt ZIP, wrong URL, unzip missing)
-    still surface via the file-exists check downstream, or an exception from
-    the unzip call itself.
+    Real bug #2 found investigating why ALL nine 2024 batches wrote zero
+    filings (2026-08-17, same day): IRS packages its batch ZIPs
+    inconsistently. Some (confirmed: every 2026 batch checked) store members
+    at the ZIP root -- "{object_id}_public.xml". Others (confirmed: every
+    2024 batch checked, e.g. 2024_TEOS_XML_11A, downloaded and inspected
+    directly with `unzip -l`) nest every member one level down, inside a
+    folder named after the batch_id itself --
+    "{batch_id}/{object_id}_public.xml". Requesting only the root-level path
+    (what both this script and the reference script did originally) matches
+    nothing in a nested ZIP, which unzip reports as "not matched" for every
+    single member -- indistinguishable from bug #1's stale-index case
+    without actually downloading and inspecting a failing ZIP, which is what
+    surfaced this. Fixed with a two-pass extraction: try the flat root path
+    first (the common case, one unzip call, no wasted work for normal
+    batches); for any member still missing afterward, retry with the
+    batch_id-prefixed path, then move any newly-found file up out of the
+    nested folder to the flat location every downstream call in this script
+    expects (extract_dir / "{object_id}_public.xml") -- so callers never need
+    to know which of the two packaging styles a given batch used.
+
+    Downstream code in this script already handles a genuinely missing XML
+    file per-EIN gracefully (skips that EIN, logs it, continues with the
+    rest of the batch), so nothing here silently drops a *processable*
+    filing -- these two fixes only stop treating "packaging quirks" as a
+    reason to lose data that was actually there.
     """
+    import shutil
     import subprocess
 
-    members = []
+    object_ids = []
     for filing in filings.values():
         object_id = filing["object_id"]
         if not object_id.isdigit():
             raise recent.BatchProcessingError(f"Unsafe/unexpected OBJECT_ID: {object_id!r}")
-        members.append(f"{object_id}_public.xml")
+        object_ids.append(object_id)
 
-    unmatched: list[str] = []
-    for start in range(0, len(members), recent.EXTRACT_CHUNK_SIZE):
-        chunk = members[start:start + recent.EXTRACT_CHUNK_SIZE]
-        result = subprocess.run(
-            ["unzip", "-o", str(zip_path), *chunk, "-d", str(extract_dir)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        # Deliberately not checking result.returncode -- see docstring. Parse
-        # unzip's own "not matched" lines instead, purely for reporting.
-        for line in result.stderr.splitlines():
-            if "not matched" in line:
-                unmatched.append(line.strip())
+    def run_unzip(members: list[str], dest: Path) -> None:
+        dest.mkdir(parents=True, exist_ok=True)
+        for start in range(0, len(members), recent.EXTRACT_CHUNK_SIZE):
+            chunk = members[start:start + recent.EXTRACT_CHUNK_SIZE]
+            subprocess.run(
+                ["unzip", "-o", str(zip_path), *chunk, "-d", str(dest)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
 
+    # Pass 1: flat root-level path (the common case).
+    flat_members = [f"{oid}_public.xml" for oid in object_ids]
+    run_unzip(flat_members, extract_dir)
+
+    still_missing = [oid for oid in object_ids if not (extract_dir / f"{oid}_public.xml").exists()]
+
+    if still_missing:
+        # Pass 2: retry only the misses, under the batch_id-prefixed path.
+        nested_dir = extract_dir / "_nested"
+        nested_members = [f"{batch_id}/{oid}_public.xml" for oid in still_missing]
+        run_unzip(nested_members, nested_dir)
+
+        for oid in still_missing:
+            nested_path = nested_dir / batch_id / f"{oid}_public.xml"
+            if nested_path.exists():
+                shutil.move(str(nested_path), str(extract_dir / f"{oid}_public.xml"))
+
+    unmatched = [oid for oid in object_ids if not (extract_dir / f"{oid}_public.xml").exists()]
     return unmatched
 
 
@@ -228,11 +257,12 @@ def fetch_and_parse_batch_worker(args: tuple) -> dict:
             extract_dir.mkdir()
 
             recent.download_batch(zip_url, zip_path)
-            unmatched = extract_requested_xmls_lenient(zip_path, extract_dir, filings)
+            unmatched = extract_requested_xmls_lenient(zip_path, extract_dir, filings, batch_id)
             if unmatched:
                 errors.append(
-                    f"{len(unmatched)} object_id(s) not present in this batch's ZIP "
-                    f"(stale IRS index entries, not fatal to the rest of the batch)"
+                    f"{len(unmatched)} object_id(s) genuinely absent from this batch's ZIP "
+                    f"(checked both flat and {batch_id}/-prefixed paths; not fatal to the "
+                    f"rest of the batch)"
                 )
 
             for ein, filing in filings.items():
