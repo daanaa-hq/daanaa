@@ -149,6 +149,72 @@ def validate_mission_quality(mission: str | None) -> dict:
     return {"valid": True, "reason": "unverified_text_checks_only"}
 
 
+def discover_recent_batches_multi_type(
+    submission_years: list[int],
+    cutoff: date,
+    registry_eins: set[str],
+    return_types: frozenset[str],
+) -> dict[str, dict[str, dict]]:
+    """
+    Local variant of refresh_recent_filings_batch.discover_recent_batches(),
+    parameterized on return_types instead of hardcoding "990" only.
+
+    Added 2026-08-17: parse_990_xml() and write_filing() already fully
+    support 990-EZ (narrative fields only -- mission, programs, Schedule O,
+    grant purposes; financials deliberately left None and never clobber an
+    EIN's existing revenue/assets, per parse_990_xml()'s own docstring) and
+    the single-org CLI already exposes this via --include-ez. Neither batch
+    script (the nightly cron or this one) was ever wired to request it,
+    because discover_recent_batches() hardcodes an
+    `if RETURN_TYPE != "990"` filter. Sampling a real index (2026, ~500K
+    rows) found 990-EZ filings at roughly 2/3 the volume of 990 itself
+    (111,950 vs 163,606) -- a large, previously-untouched pool of orgs whose
+    donations are tax-deductible the same as any other 501(c)(3), just never
+    given direct-IRS mission/program coverage. 990-PF was also found in the
+    same sample (68,094) but is NOT included here: parse_990_xml() only
+    recognizes IRS990 and IRS990EZ root elements and returns None for
+    anything else (verified by reading the function, not assumed) -- 990-PF
+    has a genuinely different XML schema and would need real new parser
+    work, not just a wider filter. Left out deliberately rather than passed
+    through to write silently-empty rows.
+
+    This function is otherwise identical to the reference implementation:
+    same cutoff/registry-EIN filtering, same newest-tax-period-wins dedup
+    per batch. Not added to the reference script itself, to avoid changing
+    the nightly cron's existing, already-relied-upon 990-only behavior as a
+    side effect of this backfill's own scope expansion.
+    """
+    batches: dict[str, dict[str, dict]] = {}
+
+    for row in direct.iter_990_index_rows(submission_years, return_types):
+        if row.get("RETURN_TYPE", "").strip() not in return_types:
+            continue
+
+        ein = row.get("EIN", "").strip().zfill(9)
+        batch_id = row.get("XML_BATCH_ID", "").strip()
+        object_id = row.get("OBJECT_ID", "").strip()
+        tax_period = row.get("TAX_PERIOD", "").strip()
+
+        if ein not in registry_eins or not batch_id or not object_id or not tax_period:
+            continue
+
+        release_month = recent.batch_month(batch_id)
+        if release_month is None:
+            logger.warning(f"Skipping unrecognized XML_BATCH_ID: {batch_id}")
+            continue
+        if release_month < cutoff:
+            continue
+
+        filing = {"tax_period": tax_period, "object_id": object_id, "batch_id": batch_id}
+        filings_for_batch = batches.setdefault(batch_id, {})
+
+        previous = filings_for_batch.get(ein)
+        if previous is None or filing["tax_period"] > previous["tax_period"]:
+            filings_for_batch[ein] = filing
+
+    return batches
+
+
 def extract_requested_xmls_lenient(
     zip_path: Path, extract_dir: Path, filings: dict, batch_id: str
 ) -> list[str]:
@@ -299,27 +365,44 @@ def fetch_and_parse_batch_worker(args: tuple) -> dict:
 
 def write_batch_results(db: sqlite3.Connection, batch_id: str, parsed_filings: list) -> dict:
     """Serial write in the main process -- one transaction per batch, same
-    write_filing() call the sequential script uses."""
+    write_filing() call the sequential script uses.
+
+    Real bug found and fixed 2026-08-17, same day as the two extraction
+    fixes: this originally read parsed.get("mission") and
+    parsed.get("cause_tags"), but parse_990_xml() actually returns the
+    mission text under the key "mission_text", and never returns a
+    "cause_tags" key at all (cause tags are produced by a separate,
+    unrelated pipeline stage -- not part of this parser's output). Both
+    conditions were always false, so the GPU embedding-based mission-quality
+    check (validate_mission_quality(), which calls the local mxbai-embed
+    server on port 11436) silently never ran against any of the ~432K rows
+    written overnight -- every "low_quality_missions=0" in the logs meant
+    "the check was skipped", not "everything passed". Not a correctness
+    risk (the check is advisory-only and never gated a write either way),
+    but real wasted GPU capacity and a misleading log line. Fixed to use
+    the correct key and to report something real (schedule_o/programs
+    presence) in place of the never-real cause_tags_added metric."""
     now = datetime.now(timezone.utc).isoformat()
     written = 0
     missions_flagged_low_quality = 0
-    cause_tags_added = 0
+    with_narrative = 0
 
     with db:
         for ein, filing, parsed in parsed_filings:
             direct.write_filing(db, ein, filing, parsed, now)
             written += 1
-            if parsed.get("mission"):
-                quality = validate_mission_quality(parsed["mission"])
+            mission_text = parsed.get("mission_text")
+            if mission_text:
+                quality = validate_mission_quality(mission_text)
                 if not quality["valid"]:
                     missions_flagged_low_quality += 1
-            if parsed.get("cause_tags"):
-                cause_tags_added += 1
+            if parsed.get("schedule_o") or parsed.get("programs"):
+                with_narrative += 1
 
     return {
         "written": written,
         "missions_flagged_low_quality": missions_flagged_low_quality,
-        "cause_tags_added": cause_tags_added,
+        "with_narrative": with_narrative,
     }
 
 
@@ -332,12 +415,25 @@ def main() -> int:
     parser.add_argument("--workers", type=int, default=16, help="Parallel download/parse workers (default 16, max 16)")
     parser.add_argument("--apply", action="store_true", help="Write to the database and persist state")
     parser.add_argument("--force", action="store_true", help="Ignore resume state; reprocess all discovered batches")
-    parser.add_argument("--state-file", type=Path, default=DEFAULT_STATE_PATH)
+    parser.add_argument(
+        "--include-ez", action="store_true",
+        help="Also discover 990-EZ filings (narrative only: mission/programs/Schedule O, "
+             "no financials -- see discover_recent_batches_multi_type() docstring). Uses a "
+             "separate state file so a batch_id already marked complete under 990-only "
+             "scope is still re-checked for its newly-in-scope EZ filings.",
+    )
+    parser.add_argument("--state-file", type=Path, default=None)
     args = parser.parse_args()
 
     if args.months < 1:
         parser.error("--months must be at least 1")
     args.workers = max(1, min(args.workers, 16))
+
+    if args.state_file is None:
+        args.state_file = (
+            DEFAULT_STATE_PATH.with_name(DEFAULT_STATE_PATH.stem + "_with_ez.json")
+            if args.include_ez else DEFAULT_STATE_PATH
+        )
 
     state = load_state(args.state_file) if not args.force else {"version": 1, "batches": {}}
 
@@ -345,18 +441,24 @@ def main() -> int:
     cutoff = recent.subtract_months(today, args.months)
     submission_years = list(range(today.year, cutoff.year - 1, -1))
 
+    return_types = frozenset({"990", "990EZ"}) if args.include_ez else frozenset({"990"})
+
     db = sqlite3.connect(direct.DB_PATH, timeout=120)
     db.execute("PRAGMA busy_timeout = 120000")
 
     try:
         registry_eins = recent.known_eins(db)
         logger.info(f"Registry EINs loaded: {len(registry_eins):,}")
-        logger.info(f"Checking IRS submission years {submission_years}; batch cutoff {cutoff.isoformat()}")
+        logger.info(
+            f"Checking IRS submission years {submission_years}; batch cutoff {cutoff.isoformat()}; "
+            f"return_types={sorted(return_types)}"
+        )
 
-        batches = recent.discover_recent_batches(
+        batches = discover_recent_batches_multi_type(
             submission_years=submission_years,
             cutoff=cutoff,
             registry_eins=registry_eins,
+            return_types=return_types,
         )
 
         pending = {
@@ -413,7 +515,7 @@ def main() -> int:
 
         total_written = 0
         total_flagged = 0
-        total_cause_tags = 0
+        total_with_narrative = 0
         total_errors = 0
 
         with Pool(processes=args.workers) as pool:
@@ -431,18 +533,19 @@ def main() -> int:
                 if args.apply and parsed_filings:
                     write_stats = write_batch_results(db, batch_id, parsed_filings)
                 else:
-                    write_stats = {"written": 0, "missions_flagged_low_quality": 0, "cause_tags_added": 0}
+                    write_stats = {"written": 0, "missions_flagged_low_quality": 0, "with_narrative": 0}
 
                 logger.info(
                     f"✓ {batch_id}: matched={result['matched_eins']:,} "
                     f"parsed={len(parsed_filings):,} written={write_stats['written']:,} "
                     f"low_quality_missions={write_stats['missions_flagged_low_quality']:,} "
+                    f"with_narrative={write_stats['with_narrative']:,} "
                     f"in {result['elapsed_sec']:.1f}s"
                 )
 
                 total_written += write_stats["written"]
                 total_flagged += write_stats["missions_flagged_low_quality"]
-                total_cause_tags += write_stats["cause_tags_added"]
+                total_with_narrative += write_stats["with_narrative"]
 
                 if args.apply:
                     state["batches"][batch_id] = {
@@ -463,8 +566,8 @@ def main() -> int:
         logger.info("BACKFILL RUN COMPLETE")
         logger.info(f"  Batches processed: {len(worker_jobs)} (errors: {total_errors})")
         logger.info(f"  EINs written: {total_written:,}")
-        logger.info(f"  Missions flagged low-quality (advisory only): {total_flagged:,}")
-        logger.info(f"  Filings with cause tags: {total_cause_tags:,}")
+        logger.info(f"  Missions flagged low-quality by GPU embedding check (advisory only): {total_flagged:,}")
+        logger.info(f"  Filings with narrative (Schedule O or programs): {total_with_narrative:,}")
         logger.info(f"  Mode: {'Apply' if args.apply else 'Dry run'}")
         logger.info("=" * 60)
         return 1 if total_errors else 0
