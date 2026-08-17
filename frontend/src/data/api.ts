@@ -156,6 +156,11 @@ export interface ApiOrganization {
     total_assets: number | null;
     total_expenses: number | null;
   }>;
+  irs_program_narrative?: Array<{     // Org's own filed program/Schedule O text (added 2026-08-17,
+    year: number;                     // GT990 backfill). Empty array, not missing, when none exists --
+    text: string;                     // most orgs won't have this yet. Distinct from AI-generated
+    confidence: number | null;        // `mission`: this is the org's own words from a real IRS filing.
+  }>;
   // Only present on the search.db-fallback path (revoked orgs never get a
   // precomputed file -- precompute_orgs.py filters org_status='active' at
   // the source, so a revoked org's page is only reachable via this fallback).

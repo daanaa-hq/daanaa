@@ -798,6 +798,30 @@ export default function OrganizationDetail() {
                 </div>
               )}
 
+              {/* In Their Own Words — real Schedule O / Part III program narrative
+                  text pulled directly from the org's own IRS filing (added
+                  2026-08-17, GT990 backfill). Distinct from the AI-generated
+                  `mission` field above: this is the org's own filed text, not
+                  a summary. Most valuable for the smallest orgs (990-EZ
+                  filers) which previously had the thinnest pages on the
+                  platform. Renders nothing when the array is empty -- most
+                  orgs won't have this data yet. Only the most recent filing
+                  year is shown to keep the page uncluttered; older years
+                  remain in the API response if a future UI wants them. */}
+              {apiOrg?.irs_program_narrative && apiOrg.irs_program_narrative.length > 0 && (
+                <div className="mt-6">
+                  <p className="text-soft-gold text-sm font-medium mb-3">In their own words</p>
+                  <div className="bg-white/6 border border-white/10 rounded-xl px-4 py-3 max-w-[600px]">
+                    <p className="font-body text-small text-warm-cream/85 leading-[1.65] whitespace-pre-wrap">
+                      {apiOrg.irs_program_narrative[0].text}
+                    </p>
+                    <p className="mt-2 font-body text-micro text-muted-cream tracking-[0.01em]">
+                      From the organization's {apiOrg.irs_program_narrative[0].year} IRS filing
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Donor Voice — social proof from people who've supported this org.
                   Gated on the same wallet-entry check DonorVoice uses internally
                   (canShowDonorVoice) so the wrapper never renders an empty mt-6
