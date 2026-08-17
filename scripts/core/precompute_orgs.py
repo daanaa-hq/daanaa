@@ -193,6 +193,29 @@ def _load_financials_index(conn):
         })
     return index
 
+def _load_irs_program_narratives_index(conn):
+    """Load real IRS program/Schedule O narrative text keyed by EIN. Returns {} if table absent."""
+    try:
+        rows = conn.execute("""
+            SELECT EIN, schedule_o_year, schedule_o_text, extraction_confidence
+            FROM extracted_programs
+            WHERE schedule_o_source = 'irs_990_xml' AND LENGTH(schedule_o_text) >= 100
+            ORDER BY EIN, schedule_o_year DESC
+        """).fetchall()
+    except Exception:
+        return {}
+    index = {}
+    for r in rows:
+        ein = r[0]
+        if ein not in index:
+            index[ein] = []
+        index[ein].append({
+            'year':       r[1],
+            'text':       r[2],
+            'confidence': r[3],
+        })
+    return index
+
 
 def main():
     global IRS_CHECKED_AT
@@ -221,6 +244,9 @@ def main():
     print("  Loading financial history index...")
     financials_index = _load_financials_index(conn)
     print(f"  Financial history: {len(financials_index):,} orgs with multi-year data")
+
+    irs_narratives_index = _load_irs_program_narratives_index(conn)
+    print(f"  IRS program narratives: {len(irs_narratives_index):,} orgs with Schedule O text")
 
     # Check existing files FIRST (before loading all orgs into memory)
     print("  Checking existing files...")
@@ -276,6 +302,7 @@ def main():
         org_data = org_to_dict(row)
         org_data['similar_organizations'] = []
         org_data['financials'] = financials_index.get(ein, [])
+        org_data['irs_program_narrative'] = irs_narratives_index.get(ein, [])
         _write_org(org_data)
 
         processed += 1
