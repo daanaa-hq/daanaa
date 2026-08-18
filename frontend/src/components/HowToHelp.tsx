@@ -39,7 +39,7 @@ export default function HowToHelp({ org }: { org: ApiOrganization }) {
   const fundraisingPct = reconciles ? Math.round((fundraisingExpensesRaw / partsSum) * 100) : 0
 
   return (
-    <section className="mb-12 py-8 md:py-12 border-b border-cool-grey/20">
+    <section className="mb-6 py-6 md:py-8 border-b border-cool-grey/20">
       <h2 className="font-display text-deep-navy text-title-lg mb-4">How do I help?</h2>
 
       <div className="space-y-6">

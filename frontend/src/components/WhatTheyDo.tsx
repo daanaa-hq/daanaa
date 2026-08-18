@@ -18,7 +18,7 @@ export default function WhatTheyDo({ org }: { org: ApiOrganization }) {
   }
 
   return (
-    <section className="mb-12 py-8 md:py-12 border-b border-cool-grey/20">
+    <section className="mb-6 py-6 md:py-8 border-b border-cool-grey/20">
       <h2 className="font-display text-deep-navy text-title-lg mb-4">What do they do?</h2>
 
       {/* Mission narrative */}
